@@ -1,0 +1,861 @@
+* gibs (open arena has?)
+* kami wcstats
+* EV_GAMEOVER
+
+---------------------------------------------------------------
+* sounds wolfcam ctf -- capture, return global sounds
+* "found a secret" wolfcam
+* ad shader animations/effects
+* quad /powerups wolfcam
+* defer players clean up
+* SC_ParseColors* fixup -- rgb[a]
+* also for +scores check if the client has pressed it (sim. to acc), but what about spec demos?
+* +scores wolfcam highlight player being followed
+* dead body color applies to teammates?
+* wolfcam team overlay disable (or enable for only team)
+* timeouts fucked up, does time advance when mutlple timeouts are called?
+* bother making font data for giant,big,small,tiny ?
+* option to disable impact sparks made by other players
+* impact sparks for own player ok in 3rd person
+* red blue team names from config strings
+* update team scores, etc, in scoreboard
+* team overlay, limit text, opaque, exclude self
+* cg.select* stuff just committed probably wrong 115:5de0e93b45d3
+* highlighted player in ql scoreboard
+* client item timer style (right to left)
+* ql hud switch to spec hud, option to disable
+* wolfcam sometimes keel sound is being used  -- because the sound was triggered before the switch
+* switching from wolfcam can trigger reward sounds
+* check all cent refs regarding players to see if they are using previously stored values, maybe in addpacketent() use the reserved cg_entities for players
+* fix wolfcam third person crap
+* shit, check currentState.number refs which should be currentState.clientNum
+* MAX_MENUITEMS defined in multiple places
+* weapon bar fade
+* drawTeamVote exist?
+* r_mapgreyscale quad item is grey on some maps
+* wcstats efficiency
+* own impact sparks diff color
+* wcstats item timing stats, num pickups, and time
+* wolfcam pickup items
+* cvar for frag messages in chat area
+* weapon tracing done after positions have transitioned
+* servercommand to change sound config string, check
+* wolfcam follow should disable freecam
+* use EV_PAIN to determine shotgun impact sparks
+* use EV_PAIN to determine rail shooter -- older demos
+* '' rocket splash, plasma splash
+* wolfcam following, demo taker's rail is green -- keel
+* pain event health fucked up -- ca
+* ca and ctf point contents always showing point contents as fog
+* freecam crash loop bad entitynum -1 (respatialize sound), using hack of MAX_GENTITIES - 1
+* demo seek, check wcoldclients
+* vid_restart makes playback choppy -- sdl linux only certain modes
+* demo taker can show up in crosshair names even if dead and in limbo ca
+* list default binds in docs
+* comaprison docs with ql
+* obit nums, like chat messages
+* obit time
+* stupid demo list menu
+* mouse cursor event cgame
+* drawblack/green screen before adding entities  -- r_mapgreyscale with tint
+* wolfcam follow list of prefered
+* wolfcam follow fixed, will stay at last origin, or maybe look ahead and wait
+* cvar for q3 pak0 location for q3 gibs
+* last truetype font glyph is dropped -- maybe actually might not be
+* grenade alpha
+* ability to unregister font
+* doc ITEM_TEXTSTYLE
+* ups meter check incrementing cvars (including user created) until they don't exist
+* add light source
+* ffs a .dat file for q3 font
+* FADE_TIME
+* blacklist models for teamates
+* for the heck of it could create a plain number font for gfx/2d/numbers, menu/art/font*
+* for font scaleX scaleY instead of just scale (for q3font)
+* unregister font and keep usage count
+* need max height for fonts, either special case qlfont or store when they are loaded -- hack can use point size
+* add client num for missiles based on when they first appear
+* raise FILE_HASH_SIZE because of cvars ?
+* player names q3 font xy scaling
+* cg_deadbodydarken 2  transitions model to original
+* hunter has crap above her lips, james has stuff on chest, ranger shit on his arms, sarge arm, slash left of mouth, sorlag stuff on mouth, tankjr stuff on head, uriel stuff on legs, visor green in hair, xaero arms and feet -- fix with fuzz
+* low ammo warning is returning if ca and spec -- what if speccing someone
+* low ammo warning check ql defaults
+* get alive status from engine after rewind/ff  -- think it's done
+* update scores in client info change last scores time in scoreboard
+* /seekclock check for ready up (as opposed to warmup)
+* /time is better to print both server time demo time(from beginning of demo), clock time and real time
+* scoreboard spec list, x and x2 splitting a bit -- ql does same
+* CG_Text_Paint_Limit fixes like Text_Paint
+* CG_Text_Paint_Limit xscale for q3font
+* wolfcam interp, check for invalid snap keep going back and take time into account
+* newer ql grenade clientNum for logging missile hits
+* also for missile hits just try and keep track of owner based on when missile first appears, origin and trTime should id
+* follow team
+* message if requested player not available
+* cvar for static strings "waiting for players"
+* WP_ telefrag others
+* scoreboard scroll list  (ffa)
+* weapon icon for fragmessage just like obit weapon icons -- all the special ones like kam, suicide, etc..
+* skill rating what if more than one player connects /disconnects in same snapshot
+* lagometer font options are fucked up, split text  fixed i think, still needs to be split, fuck it
+* lower skybox clip
+* cg_lightningShaft 2  still bugged
+* override blend for icons and alpha
+* fix overprediction for demo taker, then  roll back positions
+* hitstyle color  see if overlay
+* <shift> tab  only show diff
+* cvar search diff
+* 2 pass, world, 2d
+* graphic filter plugin
+* codec plugin
+* team overlay needs align so it can grow up when at the bottom of screen
+* get glconfig if r_mode changes
+* score plum for things like wolfcam, freecam done early and based on refdef of demo taker
+* why did you need to create name image sprites at end of cg_init() ?
+* limit names in scoreboard so that they don't go into scores column
+* player-configs/cooler.cfg rapha.cfg  option to watch demos with their configs
+* shader override folder
+* ResampleTexture and scale uses 2048 get from glconfig
+* gamma/bright for hud, map, ents
+* check spec demos for models
+* see dm17 demo players not drawn at beg of demo
+* doc fs_homepath
+* gotoview <..> sometimes you still get stuck -- adjustorigin() bigger mins/maxs?
+* /chase <ent num> from here  for cameras
+* goto spline point for camera
+* nudge cam points to spline
+* options to add camera point
+* only draw cam points when near, or maybe only increase resolution when near
+* option to pause at end of demo
+* createsplinepoints()  take into account spline or interp
+* in addition to spline, interp, jump
+* maybe float numbers not as  entities
+* addcamerapoint 2 3
+* if multiple cam points with same origin, stack
+* smoothing time for selected, store original time
+* end with freecam position at end of path
+* /playcamera pause
+* addcamerapointspline convert that spline point to cam point and fix server time
+* option to lock onto spline curve, and movement keys (forward and back) move you along
+* pass cameraPoints to renderer in order to change path curve color for keypoints and interp
+* /playcamera pause (pause at end) test (plays selected and brings you back to where you were)
+* viewpoint icon order (the one you set, current cam point, next cam point)
+* /editcampoint (next, prev)
+* fix snapshot peeking to get entities as well
+* camera unlock view
+* "startviewent" grabs values from last camera point
+* splines based on distance
+* /splitcamera <cam point> <filename 1> <filename 2>  and delete > splitpoint
+* addcmaer point 2 3  to add new between those
+* camera timescale interp
+* playcam single range
+* save granularity in file
+* smooth speed
+* play camera while paused
+***** viewpoint stuff is fucked, you need to look ahead to see if it's a viewpoint or viewent, likewise if the cam point is viewent it needs to look head to see if it's viewent of viewpoint
+* how are angles treated before going to ent
+* select cam points and /transition viewpoints  will change all selected to have viewpoints and move evenly from the first to the last
+* add, edit, basiccly anything stops camera playing -- also need to stop camera playing  CG_TimeChange()
+* changecamerapoint is messedup -- changes origin to spline
+* cg.demoPlaying checks for camera stuff
+* for /chase option to follow behind:  /chase 123 <time> xoffset yoffset zoffset
+* /follow victim gets messed up with rewind and ca spec demo
+* /chase  option to not get embeded (do you have already?)
+* demo smoothing for others and also go as far as you have to for packets
+* nomove in lagometer for /follow
+* software gamma
+* check if timeout end clears centerprint -- yes and counts down "begins in 3,2,1" clear at 0
+* MAX_DEMOS defined twice i think
+* option for own model like rail
+* defpip
+* test projectile mode
+* glMode and blur
+***************  ql out of beta
+
+
+* teammates position always transmitted (friend icon) ?
+* mme blur work megs -- something reasonable
+* EV_MISSILE_MISS_DMGTHROUGH
+* ft gfx/misc/iceball
+* models/powerups/trailtest.md3 ?
+* for offline demo and (maybe demo smoothing, if you do more than 2) keep track of angle direction while you skip snapshots so that it doesn't do an 30 degree turn as opposed to a full 330
+* spites/flagcarrier
+* surfacePuff
+* machine gun tracers using gfx/misc/iceball
+* dynamic light for other powerups check (did battlesuit and quad)
+* hw gamma can't be set by some users?  ql forums  for ql
+* disconnect shader?
+* ql shadows (broken q3 shadows), options for shadowing
+* ql 1st person mg detail extends out more
+* scripting -- math in cvars
+* team gibs style
+* gib style 2 random, 3 both at the same time
+* fx trail scripts and water
+* fx flash, set model
+* fx trail parent* from missile,
+* fx emitterTime settable
+* fx lg flash scripting separate
+* CG_AdjustPositionForMover() for originterp 0  and now cg.ioverf
+* double check particles cg_marks.c and cg.ioverf
+* local entities (blood trail) cg.ioverf
+* com_maxfps also using ioverf in order to test
+* fx anglesModel rotates?
+* fx : next move* (gravity)
+* fx bubbles for mg, shotgun, rail
+* fx fire script
+* ERROR: CM_ClipHandleToModel: bad handle -1   gib03insta.dm_73  3:52
+* fx beam and fade options
+* fx add loopCount
+* fx treat sprites separately -- renderer
+* fx modellist and soundlist using 'loop' 0 likely called twice, and last num never called
+* fx *list loop might just mean random, so not like soundList
+* fx cullnear draw closer of overlapping sprites
+* impact sparks aligned to vieworg?  and also gib sparks
+* fx + localents and draw ent numbers -- maybe for models (gibs)
+* fx need culling, even with renderer max entities raised.  is cullradius default?  cvar
+* timescale and map animations -- done, check item bobbing though
+* fx is parentVelocity player or q3 gib starting velocity?
+* fx sprites overdraw
+* fx bubble trails without defining weapon trails
+* decal marks players
+* fx cull, script run interval, emit copy only size rotate origin etc, no memset memcpy, get rid of emit script for lights and sound, script run interval in real time so that it does the right thing for lower timescales
+* interpolation based on velocity and when velocity changes
+* dlight intensity and fall off
+* dlight and freecam block
+* fx LEF_TUMBLE evaltraj angles
+* fx assuming arg for impact is velocity
+* fx fxload can take arg
+* explosion sprites and corners
+* fx plainScriptEmit if not tied to emitter
+* fx kill emitter
+* fx decal and emit  blood sliding down the walls
+* fx player/holyshit  player/(other awards) and powerups
+* fx check grappling hook
+* fx dont use end in ScriptVars  is based on dir -- actually, why not
+* fx pass velocity to projectile scripts
+* devmap and low timescale "CL_GetSnapshot cl.snap.messageNum - snapshotNumber >= PACKET_BACKUP"
+* freecam getting stuck when entering and ups meter showing that you are building speed
+* fx don't draw sprites over 1st person view -- done but it should be done manually in fx script
+* freezetag obituary and parse_demo for obituaries  also alive status
+* freezetag thaw stats
+* useoriginter and spamming nextSnap == NULL when seeking
+* ft follow others when frozen
+* skipping first snapshot means the "prepare your team" sound isn't played with autoaction demos  -- actually that's probably not it
+* cg_vibrate without effect scripts
+* cg_vibrate need to reset roll after vibrate done -- screws up freecam
+* fx bounce (option to select velocity threshold before it is marked as TR_STATIONARY) (gibs)
+* crosshairnames/teammatehealth alpha 255 in newer ql I think
+* libfreetype vuln -- update
+* tab automatically pauses and fetches info from quakelive.com
+* quad sound volume firing
+* setup menu hidden menu pics
+* using _Text_Paint_Bottom() incorrectly -- see team overlay -- mean is
+* fast forward needs peeking as well
+* new code -- don't detect seek in cgame -- use CG_TIME_CHANGE -- crash with bad entityType  seen 61 and 59?  -- demo crash02  need to do seeking (ff/rewind) to trigger
+
+crash02.dm_73
+
+-----------------------------------------------------
+cg.frametime > 200  (10046)
+execing spectator.cfg
+cgame demo seeking cg.time: 47664178  serverTime: 47664175
+fastforward:  read 398 demo messages, cl.snap.serverTime 47674200, wantedTime 47674200
+cg.frametime > 200  (10022)
+cgame demo seeking cg.time: 47674381  serverTime: 47674375
+fastforward:  read 399 demo messages, cl.snap.serverTime 47684400, wantedTime 47684400
+cg.frametime > 200  (10019)
+cgame demo seeking cg.time: 47684565  serverTime: 47684550
+fastforward:  read 401 demo messages, cl.snap.serverTime 47694600, wantedTime 47694576
+cg.frametime > 200  (10035)
+cgame demo seeking cg.time: 47694765  serverTime: 47694750
+fastforward:  read 401 demo messages, cl.snap.serverTime 47704800, wantedTime 47704776
+cg.frametime > 200  (10035)
+execing ingame.cfg
+cgame demo seeking cg.time: 47704960  serverTime: 47704950
+fastforward:  read 400 demo messages, cl.snap.serverTime 47715000, wantedTime 47714976
+14:18 Bad entity type: 14
+--------------------------
+entity 177
+eType 14
+eFlags 16
+pos.trBase 385.000000 -996.000000 1091.000000
+apos.trBase 0.000000 0.000000 0.000000
+time 0
+time2 0
+angles 0.000000 0.000000 0.000000
+otherEntityNum 0
+otherEntityNum2 0
+groundEntityNum 1022
+constantLight 0
+loopSound 0
+modelindex 0
+modelindex2 0
+clientNum 0
+frame 0
+solid 0
+event 304
+eventParm 52
+powerups 1
+weapon 5
+legsAnim 15
+torsoAnim 11
+generic1 0
+
+Program received signal SIGSEGV, Segmentation fault.
+CG_AddCEntity (cent=0x81b27450) at code/cgame/cg_ents.c:1240
+1240                    *p = 666;
+(gdb) bt
+#0  CG_AddCEntity (cent=0x81b27450) at code/cgame/cg_ents.c:1240
+#1  0x817eda7b in CG_AddPacketEntities () at code/cgame/cg_ents.c:1356
+#2  0x8182b578 in CG_DrawActiveFrame (serverTime=11151, stereoView=2172568001, 
+    demoPlayback=177, videoRecording=14, ioverf=-1014988800)
+    at code/cgame/cg_view.c:2814
+Backtrace stopped: previous frame inner to this frame (corrupt stack?)
+(gdb) 
+
+  -- this is from copying over es->eType to currentState.eType (maybe) -- double check that's ok
+--------------------------------------------------------
+
+* timescale 0.001  seeking caused players to teleport to positions  -- need to clear wcsnapshots ?  -- or lagometer/ping fuck up
+* for invalid snapshots you could fill in a fake time with time advanced -- the problem is that sv_fps is an estimate and if it happens early on ??  -- maybe it won't matter -- it's all to make sure that a seek ends at the time requested
+* crash02 48584850 ent 68 should be corpse, but is invisible
+* can't use trTime for missiles to determine interp -- grenades change it when they bounce
+* interp missile explosions (take out check for event as well)
+* don't draw cam points when playing camera
+* /video time reported and rewind -- ex: camera path
+
+   videos/1286538323-0000.avi closed
+   video time: 72790200 -> 72789448  total -752 (-0.752000)
+
+  -- took out for now
+* interp teleport need to goto interp_done not just return true
+* demosmoothing eval trajectory, don't just average
+* demo smoothing go as far ahead as you can
+* weapon animations and ioverf
+* don't follow team as a default because of ql's new wh friend icons (team position/angles transmitted, but nothing else around them)
+* wcg.curSnapshotNumber < 10   define for 10, used in a lot of places, or just check it when moving positions back
+* interp-9452150-missile-150.dm_73  9452150 9452175  missile 150 moves back when paused and /seeknext
+* 2008 qcon demos -- EV_GIB_PLAYER always sent with EV_OBITUARY
+* gib dm_73 737325 freecam player teleporting to new teleport location  -- FIXED
+* same as above -- paused at the point and tried rewind low value '-' and:
+
+CM_ClipHandleToModel() bad handle -1
+4:03 Crash was railed by Bones
+]/servertime
+serverTime: 737325
+]\cg_freecam_use
+    cg_freecam_useTeamSettings = "1"  default "1"
+    cg_freecam_useServerView = "1"  default "1"
+]\cg_freecam_useServerView 0
+snapCount index: 0  718325  from 737350  want 300
+seeking to index 0 5815   cl.serverTime:737340  cl.snap.serverTime:737350, new clc.lastExecutedServercommand 0  clc.serverCommandSequence 271
+CL_SetCGameTime read 2339 demo messages cl.snap.serverTime:737050 cl.serverTime:718325 wantedTime:737050
+cgame demo seeking cg.time: 737340  serverTime: 737325
+4:03 Crash was railed by Bones
+CM_ClipHandleToModel() bad handle -1
+CM_ClipHandleToModel() bad handle -1
+FIXME snapPrev->serverTime > snapNext->serverTime  737050 > 737050
+4:03 crashing deliberately ...
+Received signal 11, exiting...
+----- CL_Shutdown -----
+disconnect
+Closing SDL audio device...
+SDL audio device shut down.
+RE_Shutdown( 1 )
+GLimp_Shutdown: mode 4 lastMode 4
+-----------------------
+
+* seeknext prev sometimes 1st person gun not drawn (it's the animation values)
+* when you get new snaps from seeking with offline demos maybe check animations and edit wcg.snaps[]
+* need cg_checkforofflinedemo when filling in wcg.snaps
+* parse hex allow alpha
+* r_ext_texture_env_add 0  doesn't seem to work in ioquake3
+* see if low ammo warning can be enabled for ca spec
+* im dm_73 10593275 dead body transitioning color (flashing)  demo taker I think
+* anims when rewinding in small increments (snapshot backups to find last anim)
+* fx did you forget trails for machinegun etc. ?
+* 4kings 4085625 respawn flash over corpse
+* flush() after ogl shaders?  (frame drops look weird)
+* demo smoothing -- note dir of angles
+* check ql to see how downsampling for bloom is done (what size is the resulting bloom texture)
+* refdef.time and sub ms timing
+* bloom -- 3d hud models are bloomed
+* bloom still needs r_BloomBlurScale r_BloomBlurFalloff r_BloomBlurRadius
+* bloom does r_BloomPasses even do anything?
+* 2010-12-14 EV_HEADSHOT scoreplums moving towards you  icons/headshot, cg_drawPregameMessages, cg_lowAmmoWarningPercentile, cg_lowAmmoWarningSound, cg_lowAmmoWeaponBarWarning, cg_selfOnTeamOverlay, atmospheric stuff
+
+* fx player trail  -- using clientoverride
+* lagometer opacity use teamoverlay background as pic
+* lagometer color
+* lagometer select order of powerups / flag
+* check silent night in hq in ql
+* interp by just adding all from snapshot so no lag either and maybe a cvar to trigger
+* chain gun for BULLET miss hitFlesh check player's weapon or also check rate of fire
+* com_timescalesafe 0  and spam
+* com_timescalesafe 1  and trying to skip in cgame without doing much processing
+* draw attacker use icon
+* SC_Cvar_Get_*()  if used alot for certain values just get once and store
+* don't calc ping if free spec
+* for really old demos which send gib events for every kill, maybe peek ahead and see if corpse is present
+* fx for freecam, generic weapon script?  ex: add marks to wall
+* align option for ownerdraw()
+* missing cvars tested from menus: ui_voteActive ui_forceEnemyModelBright com_allowConsole ui_forceTeamModel ui_forceTeamModelBright ui_screenDamage_Team_preset ui_forceEnemyModel ui_screenDamage_preset ui_postProcessPreset  sv_ranked
+* ingame_options.menu has new keywords
+* ft thaw in scoreboard
+* delagged crosshair names if a hidden player warping will show name (dead player to corpse transition)
+* cg_scaleModelsToBB
+* autopause when using console
+* add +acc to dscores and wcstats
+* fragforward broken by seeking
+* dell desktop can use pp, maybe not check GLimp_HaveExtension() and just rely on SDL_GetProcAddress()  -- done -- still fails, see which ones are missing
+* slight corpse twitch screen matching (transition from dead player to corpse)
+* see where you can use cg.ftime as sub for cg.time
+* water warp frequency and amplitude
+* bot offline demos corpse will turn or is it just devmap?
+* /fragforward indication that it's off
+* list default binds in doc
+* lost.dm_73 seek to 8892925 teleporting
+* /seek and player animations, took out seeknext hack, need to go back and see when new anim starts
+* console background ignore timescale
+* hud animations and timescale
+* ctf flight powerup text percentage, own owner draw?
+* check for cg.demoPlayback and useoriginterp
+* fx lg impact point animated even when paused  -- that's shader time
+* 3rd person interpolate based on velocity with error cvar
+* stencil -- kitt  no need for chroma
+* vstr* devmap
+* fx: possible buffer overflow if braces incorrect
+* fx: wobble degree seems lower than q3mme -- maybe not anymore since angle is treated differently -- check
+* fx rename to match fx scripting: ex: take out RT_SPRITE_FIXED
+* animation reset need to deal with cg.predicted*
+* fx:  cgs.gametype ?
+* fx: older demos and rail impact script
+* old demos and new scoreboard (grab from client side acc?)
+* demo start, end commands
+* ca end/start round corpse spin ps->clientNum
+* fx:  maybe add players and projectiles before events (since fx uses cent->)  -- did players, projectiles?
+* -fno-omit-frame-pointer vs omit:
+    139.9 141.6 139.8     141.1 144.7 142.0   timedemo03
+* need to add to README-wolfcam.txt about crashes
+* game pause and lagometer (no move)  -- admin pause (cooller strenx lag t4)
+* game pause and round timer still ticking -- see above
+* why doesn't qvm trigger the pointtoplane() assert?
+* maybe ignore duelscores if one disconnects so you don't get blank end of game scoreboard
+* y fov  (camera mode)
+* intermission fov
+* fx: c comments accepted  /* ... */
+* muzzle (fire origin) and mirrors (no mirrors in ql?)  (affects reg and fx)
+* note:  q3mme doesn't flip sprites/quads for mirrors
+* map loading by md5
+* -- new ql update 2011-02-02 :
+* CG_CopyStaticCentDataToScript() and CG_CopyStaticScriptDataToCent() can only handle 1 interval/distance script at a time
+* fx player/breath, player/dust
+* playcamera from point (now, next, etc.)
+* extended clock
+* reset animations after timein ?  (cg.time reversed?)
+* for freezing entities allow going past end of demo
+* fx mg sg trail
+* don't draw menus/scoreboard if freecam and intermission  -- check, might have fixed
+* not activating menus when using freecam -- check for forced like wanting scoreboard, acc, etc...
+* demo taker portal sound?  -- fx
+* wolfcam follow [victim|killer] option to fall back to closest not the other
+* wolfcam following and demo taker death (3rd person rendering and use orig interp)
+* lg impact -- option to not draw impact if actual origin trace hits something
+* Q_isanumber() not implemented in vm, used by voip and cvar validate
+* example fastforward bind (accel)
+* /listat in cgame -- convert time
+* get rid of demo info cgame traps, just getdemoinfo()
+* store ql +acc in clientinfo -- spec demos and switching views
+* lightning impact others -- broken
+* camera roll and sprites  http://www.youtube.com/watch?v=tliN-Ur5zZg
+* clan names in crosshair names and scoreboard, fragmessage, hud obit, team overlay
+* end round if lost ca, third person view sometimes looks up when it should look down -- bad viewangles in general
+* if ((cg.snap->snapFlags ^ cg.nextSnap->snapFlags) & SNAPFLAG_SERVERCOUNT)   for interp
+* also interp and playerstate eflags teleport
+* ps interp reset
+* minlight option to disable
+* plasma size
+* alt plasma options
+* crash info to doc
+* +scores crash might be related to /clientoverride  -- actually it might be max menus and triggered by seeking -- might have fixed it
+* checks for cg.freecam should include cg.cameraMode
+* volume for killbeep
+* volume for all different types
+* max parse entities error
+* option for num rewindBackups
+* show shaders  -- think you meant drawing something like shader number
+* sound indexing wasn't bugged -- see CS_MODELS -- your CS_SOUND index was off, well, it wasn't completely bugged (still had ambient sounds dropped)
+* automatic pause for scoreboard and console
+* low timescale (0.001) and rewinding (delayed?)
+* maybe set default to 1 for r_ext_texture_filter_anisotropic  and  r_ext_multisample
+* gamma option for hud
+* camera option to end and begin again spline calculation
+* hover time and /follow killer
+* macg cg_drawplayernames demo (name cut short)
+* fbo : screenshots, video, no depth texture (why does everyone make depth a render buffer?) ?
+* 08-edge-dots.dm_73  trinity map, ql has as well, fbo closest power of two
+* regen is in spec timer
+* GLvoid for void
+* createnamesprite and font
+* fx for 1st person death
+* +mouseseek  hit lowtimescale bind at loading screen and crash with trap_getSnapshot with null snapshot addr
+* cg_deathStyle and /follow
+* flag anim and seeking
+* seeking still problems with anims and same frame
+* camera offset curve?
+* fx system controlling camera
+* camera spline and floor()
+* cam option not to autopause ehen editing cam points
+* stay at end of camera when done
+* cam for roll should use LerpAngle
+* cam option for lerpdirection
+* cam hud don't show what isn't set
+* ql update 2011-05-31:
+* ups meter while seeking
+* ***  cam spline, cam smooth origin/angles/etc, cam add cam point in between, cam maybe circular, cam through fx, fovy fx formula, cam hud disgusting
+* recording message in cgame
+* maybe seeking while cgame recording
+* cam option not to auto seek when editing camera points
+* cam option to keep velocity in straight line and speed up at curved parts of path as opposed to the usual speeding down and curves -- err .. opposite is true
+* sse q3mme and ppc
+* ql update: CG_1ST_PLYR_PR CG_2ND_PLYR_PR CG_1ST_PLYR_TIER CG_2ND_PLYR_TIER CG_SERVER_OWNER UI_SERVER_OWNER
+* dedicated doesn't return input if killed (ctrl-c)
+* unknown player info keys:  rp, p, so, pq
+* client item timer -- if it would be visible and not there clear zero
+* fbo and glConfig.stereoEnabled, r_anaglyphMode-, check
+* give up getting fbo to work on shitty laptop
+* ctf stats 8 to 12, 12 is recent I think
+* bug: sound is only recorded for dma.samplebits == 16
+* /follow  frag message will say teammate if you switch to new view
+* /follow <num>  and hover
+* glconfig extensions_string should use malloc
+* negative camera rewind time, check
+* clean up fake args, argc also trap_args()
+* shadow color
+* note that self damage color is not like quake live, use alpha
+* vid_restart and seeking -- get message that you can't get first snapshot
+* teammate health shader
+* maxAnisotropy, textureFilterAnisotropic  not in glConfig -- oh, it's noted for compatability with id vms
+* ql update 2011-07-19:  tdm scoreboard (game and end), cg_quadKillCounter, clan tag crap and team games, menudef.h additions (FEEDER_ENDSCOREBOARD, FEEDER_REDTEAM_STATS, FEEDER_BLUETEAM_STATS, CG_SHOW_IF_PLYR_IS_ON_RED_OR_SPEC, CG_SHOW_IF_PLYR_IS_ON_BLUE_OR_SPEC, CG_SHOW_IF_PLYR_IS_ON_RED_NO_SPEC, CG_SHOW_IF_PLYR_IS_ON_BLUE_NO_SPEC, CG_RED_TEAM_PICKUPS_RA, CG_RED_TEAM_PICKUPS_YA, CG_RED_TEAM_PICKUPS_GA, CG_RED_TEAM_PICKUPS_MH, CG_RED_TEAM_PICKUPS_QUAD, CG_RED_TEAM_PICKUPS_BS, CG_BLUE_TEAM_PICKUPS_RA, CG_BLUE_TEAM_PICKUPS_YA, CG_BLUE_TEAM_PICKUPS_GA, CG_BLUE_TEAM_PICKUPS_MH, CG_BLUE_TEAM_PICKUPS_QUAD, CG_BLUE_TEAM_PICKUPS_BS, CG_RED_TEAM_TIMEHELD_QUAD, CG_RED_TEAM_TIMEHELD_BS, CG_BLUE_TEAM_TIMEHELD_QUAD, CG_BLUE_TEAM_TIMEHELD_BS) , telefragging teamates and team kill warning.. ???, align support for CG_[RED|BLUE]_SCORE, old tdm demos and hud scripting errors
+* demo end of game pause to review stats
+* scan demo note latest attacker and time/distance from demo taker
+* safe timescale and allowing higher fps
+* tdmstats have per weapon info?
+* ui/ add DC->executeText
+* ui event hack
+* ui hack of saving last item with focus (probably because of multiple menus -- hud counting as menu)
+* cvarinterp sort like 'at' commands so you don't always cycle through empty ones
+* cg_quadKillCounter messed up in both  (scaling down, possibly up)
+* you can get avg ping during demo parse
+* fix cg_forceModel
+* use own model for demo playback
+* http://cdn.quakelive.com/assets/20110315/game/baseq3/aerowalk.pk3
+* CG_[RED | BLUE]_SCORE alignment issue in new update
+* /follow keep track of attacker when parsing demo
+* teamoverlay and spec demos
+* /devmap nailgun projectiles reflect
+* cg_wh  also give prox mines shader
+* /placeplayer /savepos
+* constant calling of trap_R_Register...()
+* s_audioAnnouncer -- diff types, ex: countdown timer
+* fx for items (and item events) see anoncoward post
+* broken makefile  for distclean:  Makefile:13: *** missing separator (did you mean TAB instead of 8 spaces?).  Stop.
+* cg_wideScreen fix hard coded 640x480 stuff
+* issue with /video and name option coming first
+* option to hide player model if passing through them in freecam
+* fx grenade bounce
+* fx document "rotatearound"
+* fx impactflesh -- splash
+* check sin(double) vm
+* fx time:  sv.lastDistanceTime, sv.lastIntervalTime, startTime, endTime, liferate, re->shaderTime, problem -- pos.trTime, lastRunTime, fadeInTime
+* fx: push impact origin out,
+* fx: explosion sprite expands
+* fx and client valid
+* fx repeat allow stacking -- or test in q3mme
+* fx impact and rail + velocity (reflected impact) and old demos
+* fx doc and esr post
+* fx still need interval and dist for head, torso, and legs separated
+* fx -- fuck need last[model|trail|impact|distance][Interval|Distance] position and time
+* fx cvar for fx_min_[interval|distance]
+* fx parent crap
+* demo completion bug:  /demo gib[TAB]  -- can't reproduce now
+* /say command
+* MAX_FRAMETIME and reset ents
+* fx impactFlesh and interval/distance
+* fx railtrail and interval and distance
+* fx  make sure calls to q3runscript()  don't have zero interval and distance
+* fx powerups need their own last*Interval|DistanceTime|Position  note it
+* cg_wideScreen 4
+* cg_fovy and zoom
+* depth buffer save vsplit frgb
+* spl need jpeg, others
+* check bluroverlap > 15
+* s_forceScale and s_useTimescale only work for S_PaintChannelFrom16(), not S_PaintChannelFromMuLaw S_PaintChannelFromWavelet S_PaintChannelFromADPCM, doesn't work with openal
+* S_RegisterSound()  first check for extension before changing to 'ogg'
+* freecamlookatpoint 2  -- camtrace 3d
+* 1: 5.831070 megabytes for mme work buffer
+  0: 5.831070 megabytes for mme work buffer
+
+  even with an 0?
+* mac use MACOSX_DEPLOYMENT_TARGET=10.5
+* flash models
+* marks on players
+* /playcamera cam point
+* shader.mapShader
+* ------------  2011-12-14  new ql:  ctf scores, tdmscores2
+
+  *tdm  *score,   *config strings,
+  *ctf
+  *duel
+  *ffa
+  *ca
+  *ft
+
++#define CG_RED_TEAM_PICKUPS_FLAG 321
++#define CG_RED_TEAM_PICKUPS_MEDKIT 322
++#define CG_RED_TEAM_PICKUPS_REGEN 323
++#define CG_RED_TEAM_PICKUPS_HASTE 324
++#define CG_RED_TEAM_PICKUPS_INVIS 325
++#define CG_BLUE_TEAM_PICKUPS_FLAG 326
++#define CG_BLUE_TEAM_PICKUPS_MEDKIT 327
++#define CG_BLUE_TEAM_PICKUPS_REGEN 328
++#define CG_BLUE_TEAM_PICKUPS_HASTE 329
++#define CG_BLUE_TEAM_PICKUPS_INVIS 330
++#define CG_RED_TEAM_TIMEHELD_FLAG 331
++#define CG_RED_TEAM_TIMEHELD_REGEN 332
++#define CG_RED_TEAM_TIMEHELD_HASTE 333
++#define CG_RED_TEAM_TIMEHELD_INVIS 334
++#define CG_BLUE_TEAM_TIMEHELD_FLAG 335
++#define CG_BLUE_TEAM_TIMEHELD_REGEN 336
++#define CG_BLUE_TEAM_TIMEHELD_HASTE 337
++#define CG_BLUE_TEAM_TIMEHELD_INVIS 338
+
+  the above aren't even used in any of the menus
+
++#define CG_SERVER_SETTINGS 344  // intro.smenu
+
+
+
+  low ammo color in weapon bar now orange??
+
+  cvars referenced in menu files
+
+  ql accuracy window 'overall' (seems broken in ql)
+
+  wtf CS_INTERMISSION(14)  qfalse ?  :\
+
+
+* statics and vid_restart
+* CG_Text_Paint() to CG_Text_Paint_Align() in cg_newdraw.c
+* quad and bs kill counter -- don't hardcode values (scale)
+* powerup hud time disappears if > 999 (same in ql)
+* clan options hud / scoreboard
+* 'perfect' in scores shouldn't be boolean?
+* reset scores when match starts (might still have warmup scores)
+* scoreboard and scroll list bars and thumbs (tdm)
+* maps with random powerup
+* ev_obit with new check_events() cl_main.c
+* loaddeffered server command
+* periods
+* going from /follow to freecam person being followed was invisible
+* spec hud ca  "waiting for round to end"
+* video split -- depth  support for mode != 19
+  note that 19 implies split
+* loopsounds and pausing
+* proxtick and seeking
+* fx: player shader -- can pass health info
+* FFA-qzdm7-2010_07_24-18_42_16.dm_73  invisible rail
+* rest of endTime etc.. for LEF_REAL_TIME  so far only fadergb
+* debug path (like cam)
+* /playbath and draw speed
+* possibly take out 'long double' -- arb prec float math
+* pmove_* cvars
+* low fps can cam first sync (1 fps -- never triggered -- mac)
+* anti aliasing and invisible textures -- curves
+* rest of hardcoded times -- ex: attacker time
+* new ql item timers show which team controls it (ctf stream)
+
+* cg_cameraqueunlock time -- to let you change freecam pos and cam point
+* cam: selected points being ignored after edits:  (cg.camSelectedAll  &&  cg.camSelectedInner booleans)
+* cam: ups and debug path show both ups
+* client item timer (show black for personal pickups and color for team pickups  if spec pickup info available)
+* /ecam  add/sub time to selected
+* forfeit and last scoreboard -- also old demos
+* fx:
+
+ emitter 0.25 {
+            //size 3
+            size 4 * clip(2 - 2*lerp)
+            moveGravity 800
+            Sprite
+            //moveGravity 800 here causes it to draw twice -- check q3mme compatability
+            colorFade 0
+        }
+* instant switch is weapon[drop]raise both zero
+* fx:  broken.fx  some dos char breaking it
+* doppler diff in ql
+* fx: option to not clear?
+* does cg_muzzleflash apply to all weapons?
+* memory leak when r_singleShader fails to have lightmap stage?
+* need r_forcesky not require vid restart
+* debug commands and cvars (ex:  /printviewparms)
+* individual weapon muzzle flashes -- no don't need muzzleflash cvar for all weapons -- have per weapon exec
+* fx:  q3mme grapple trail treated as rail (option for trail like projectiles)
+* add server additions:  sv_broadcastall sv_randomClientSlot
+* double check serverTimeOffset
+* does grapple projectile have dyn light in ql?
+* /devmap projectiles sooner
+* /follow and step smoothing
+* "one" and "prepare to fight" when seeking back, and extraneous "tied for the lead" at beginning of duel
+* player scale and sink into ground
+* player shadow (1 and 2) and player scale
+* player scale and sprites
+* ql: cg_thirdpersonpitch
+* ql: cg_thridpersonrange default 80
+* cg_thirdperson latched cvars
+* stepsmooth and third person
+* server model stuff:   -- cg.serverModel -- double check newAnims  -- testing wolfcam bounding box --
+* player trail scripts and null models (don't reach)
+* /clientoverride clientInfo_t settings in own struct
+* fx q3mme has 'impactDeath', 'death', 'soundname', 'colorlist', 'colorblend', 'colorScale', 'colorHue', 'makeAngles', 'kill', 'once', 'script', 'scriptname'
+* ent.skinNum = cg.clientFrame & 1;   grep clientFrame *
+* ]\demo lgxlgimpact
+    lgimpact
+    lgimpact2
+
+  fucked up demo completion
+* when seeking (mouse) second rocket plume instead of first and colored yellow
+* duel score board print not ready -- end http://www.youtube.com/watch?v=rGQgN07zF00
+* scoreboard capture screenshot button not working? -- it used to work
+* going into freecam from player somehow changing x or y
+* ~ console key clears com_errorMessage
+* fx particle impact sounds
+* update diff scoreboards with game events (frags...)
+* fake scoreboards for non premium
+* q3 CG_ChangeConfigString() and cs
+* com_error option to crash
+* q3  protocol and q3_ui ui  (config strings)
+* q3 cgame:  direct access to config strings
+* cpma check all CG_EntityEvent() for player events and number >= MAX_CLIENTS
+* cpma above is it -16 or mask??
+* cpma STAT_UNKNOWN*
+* new sound fix:  check for last played time 0
+* need to check fall and pain for other players
+* contimestamp less than seconds
+* q3 take out server sound hack
+* item timer -- can use demo scan info for unknown times
+* old demos and new scoreboards -- fill in as much as possible
+* lerplerplerp -- animation check
+* q3 quad listed in item timer for duel
+* q3 skill rating stuff
+* q3 CSQ3_*  crap
+* don't do skill rating in CG_MAP_NAME
+* fx player add speed alive/dead health ammo
+* quad/bs kill counter old demos
+* fx gib -- weapon?
+* fx death
+* just one big score structure for all
+* change screen print function in cg_info.c
+* put fight sound in cg_draw.c ?
+* cpma max delag?
+* check eye map and hud fraglimit/roundlimit for diff game types
+* camerpoint add time, sub time
+* add colorized stuff in cam edit hud to docs
+* angle distance for roll
+* smooth and roll
+* -FILE   *FS_FileForHandle( fileHandle_t f ) {
+-       if ( f < 0 || f > MAX_FILE_HANDLES ) {
++static FILE    *FS_FileForHandle( fileHandle_t f ) {
++       if ( f < 1 || f > MAX_FILE_HANDLES ) {
+* particle displace/disturb
+* early projectiles
+* q3 colors  CG_TeamColor  hardcoded values  -- function isn't even used
+* fx add powerup info for weapons
+* projectile sound and entityfreeze maybe use cent->cgtime
+* bad sound spatialization with end of game buzzer:  duel-aerowalk-zero4-vs-strenx-136002.dm_73
+* cpma timeouts still advance clock???
+* cpma ctf announcer sounds reversed and cg.scores reversed???
+* quad fire sound and fx double check
+* fx and attach sound to players
+* HIC_MEDKIT etc...  in game/
+* "HoldableItem 3 not found" cpma  spam
+* fx:  medkit
+* colortable and cpma
+* 2012-04-30 new ql version  0.1.0.571
+* buzzer sound when going from intermission to warmup
+* clear warmup scores when match starts
+* fraglimit warnings in time based games
+* scorebard  cvar -- showSubscriber showHandicap
+* ctf flag options
+* thaw event client num warning
+* client side stats for older demos and new scoreboards?
+* spec hud had flag carrier status
+* check new doubler...
+* cg_domIconMin cg_domIconMax
+* flags color
+* dom nudge to fit image
+* blue/red wins round buffered
+* dompoint_distress
+* console and osp + cpma colors
+* 2012-05-15 new ql version
+* com_forceOsp
+* osp: shadow text black on black is fucked
+* ui NUM_CROSSHAIRS
+* crosshair3d
+* fx:  friend/self and foe icons
+* cvar .. engine report modified to vms
+* server print text filter
+* handicap crap
+* excessive ca  had all weapons -- need to register
+* new grappling hook
+* loading screen showing multiple weapon icons (lg??)
+* ZeRo4-vs-trolileerno-furiousheights-2012_03_25-18_09_36.dm_73   also ^  same demo  end buzzer is far away
+* cpm  megahealth timer -- show pickup
+* help icon flag carrier .. shoud always be on top
+* frag message token and player view switch
+* cl_aviframerate < 25
+* "If I do "/video wav name xxxx" (I tried it with cl_aviframerate 125), an avi WITH sound will also be outputted, but it will be really slow with broken sound and stuff."
+* check ET_BEAM and cg_drawEntNumbers
+* cg_ambientsounds fucked...  fucked with water gurp and drown and other EV_GENERAL sounds .., q3-- doors (check mods.. osp, cpma)
+* ql 'alias'  -<cmd>  executed even if in console
+* cg_[team|enemy]railColor[12]Team  and impact marks  and possibly item color, also double check that cg_[team|enemy]railcolor[12]  colorize impacts
+* cpm  callvote  --  don't draw vote string if it passed or failed
+* option to draw all ents...  green screening / no map drawn
+* clientoverride allow hex for rail colors
+* cpma new game types in info screen
+* doc:  map shaders... blend and lightmap  include example (r_singleShader)
+* doc:  decals   point to example shader
+* doc:  ad shader ^^
+* truncate server name in scoreboard
+* cg_consolecmds.c  don't add certain ones for demo playback
+* text paint limit like text paint limit bottom using text length and fixing count += ?  bug
+* osp location tokens in team say -- translate and option to show
+* stencil shadows projected long distances
+* g_customSettings
+* zoom and pass through dlight flares making them disappear
+* strafe practice map and game mode
+* quake3 spec demos showing spec in 2nd place scorebox
+* gtv lg accuracy not using attempts??
+* projectile early option
+* one minute warning (and others) and seeking... don't just reset
+* forfeit scoreboard has dash for score
+* demo0605 flares before 8:00 through map
+* corpse shader..  death shader
+* allow custom shader for any model
+* /clientoverride head|legs|torso skin option
+* q3mme.fx  gib sounds fucked up if else logic for random sounds
+* cg_roll --  for fov
+* drawrewards align still using ICON_SIZE ?
+* spectator numbers option
+* 2012-09-23  prev update:
+    bot chat using vtell, etc..
+* colored icon for hud 'head' element
+* change fragmessage align default to 1 -- center
+* better align description in docs
+* color fade in code use 1.0 not '1 - total...'
+* colorfade fx doc
+
+---------
+
+brugal

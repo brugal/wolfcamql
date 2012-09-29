@@ -1,0 +1,8 @@
+tag_head,
+tag_weapon,
+u_ratchet,cache/models/players/orbb/color.tga
+u_antenna,cache/models/players/orbb/color.tga
+u_antennaball,cache/models/players/orbb/orbb_light_color.tga
+u_tailight,cache/models/players/orbb/orbb_tail_color.tga
+u_torso,cache/models/players/orbb/color.tga
+tag_torso,
