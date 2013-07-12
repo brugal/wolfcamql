@@ -531,6 +531,7 @@ static src_t srcList[MAX_SRC];
 static int srcCount = 0;
 static int srcActiveCnt = 0;
 static qboolean alSourcesInitialised = qfalse;
+static int lastListenerNumber = -1;
 static vec3_t lastListenerOrigin = { 0.0f, 0.0f, 0.0f };
 
 typedef struct sentity_s
@@ -589,7 +590,7 @@ Adapt the gain if necessary to get a quicker fadeout when the source is too far 
 =================
 */
 
-static void S_AL_ScaleGain(src_t *chksrc, vec3_t origin)
+static void S_AL_ScaleGain(src_t *chksrc, const vec3_t origin)
 {
 	float distance;
 	
@@ -631,7 +632,7 @@ static qboolean S_AL_HearingThroughEntity( int entityNum )
 {
 	float	distanceSq;
 
-	if( clc.clientNum == entityNum )
+	if( lastListenerNumber == entityNum )
 	{
 		// FIXME: <tim@ngus.net> 28/02/06 This is an outrageous hack to detect
 		// whether or not the player is rendering in third person or not. We can't
@@ -1111,7 +1112,7 @@ void S_AL_UpdateEntityPosition( int entityNum, const vec3_t origin )
 
 	VectorCopy( origin, sanOrigin );
 	S_AL_SanitiseVector( sanOrigin );
-	if ( entityNum < 0 || entityNum > MAX_GENTITIES )
+	if ( entityNum < 0 || entityNum >= MAX_GENTITIES )
 		Com_Error( ERR_DROP, "S_UpdateEntityPosition: bad entitynum %i", entityNum );
 	VectorCopy( sanOrigin, entityList[entityNum].origin );
 }
@@ -1125,7 +1126,7 @@ Necessary for i.g. Western Quake3 mod which is buggy.
 */
 static qboolean S_AL_CheckInput(int entityNum, sfxHandle_t sfx)
 {
-	if (entityNum < 0 || entityNum > MAX_GENTITIES)
+	if (entityNum < 0 || entityNum >= MAX_GENTITIES)
 		Com_Error(ERR_DROP, "ERROR: S_AL_CheckInput: bad entitynum %i", entityNum);
 
 	if (sfx < 0 || sfx >= numSfx)
@@ -1173,7 +1174,7 @@ S_AL_StartSound
 Play a one-shot sound effect
 =================
 */
-static void S_AL_StartSound( vec3_t origin, int entnum, int entchannel, sfxHandle_t sfx )
+static void S_AL_StartSound( const vec3_t origin, int entnum, int entchannel, sfxHandle_t sfx )
 {
 	vec3_t sorigin;
 	srcHandle_t src;
@@ -2070,6 +2071,8 @@ static cvar_t *s_alCapture;
 #define ALDRIVER_DEFAULT "OpenAL32.dll"
 #elif defined(MACOS_X)
 #define ALDRIVER_DEFAULT "/System/Library/Frameworks/OpenAL.framework/OpenAL"
+#elif defined(__OpenBSD__)
+#define ALDRIVER_DEFAULT "libopenal.so"
 #else
 #define ALDRIVER_DEFAULT "libopenal.so.1"
 #endif
@@ -2095,22 +2098,28 @@ S_AL_Respatialize
 =================
 */
 static
-void S_AL_Respatialize( int entityNum, const vec3_t origin, vec3_t axis[3], int inwater )
+void S_AL_Respatialize( int entityNum, const vec3_t origin, const vec3_t axis[3], int inwater )
 {
 	float		velocity[3] = {0.0f, 0.0f, 0.0f};
 	float		orientation[6];
 	vec3_t	sorigin;
+	vec3_t ourAxis[3];
+
+	VectorCopy(axis[0], ourAxis[0]);
+	VectorCopy(axis[1], ourAxis[1]);
+	VectorCopy(axis[2], ourAxis[2]);
 
 	VectorCopy( origin, sorigin );
 	S_AL_SanitiseVector( sorigin );
 
-	S_AL_SanitiseVector( axis[ 0 ] );
-	S_AL_SanitiseVector( axis[ 1 ] );
-	S_AL_SanitiseVector( axis[ 2 ] );
+	S_AL_SanitiseVector( ourAxis[ 0 ] );
+	S_AL_SanitiseVector( ourAxis[ 1 ] );
+	S_AL_SanitiseVector( ourAxis[ 2 ] );
 
-	orientation[0] = axis[0][0]; orientation[1] = axis[0][1]; orientation[2] = axis[0][2];
+	orientation[0] = ourAxis[0][0]; orientation[1] = ourAxis[0][1]; orientation[2] = ourAxis[0][2];
 	orientation[3] = axis[2][0]; orientation[4] = axis[2][1]; orientation[5] = axis[2][2];
 
+	lastListenerNumber = entityNum;
 	VectorCopy( sorigin, lastListenerOrigin );
 
 	// Set OpenAL listener paramaters

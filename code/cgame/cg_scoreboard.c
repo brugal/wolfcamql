@@ -2,6 +2,15 @@
 //
 // cg_scoreboard -- draw the scoreboard on top of the game screen
 #include "cg_local.h"
+
+#include "cg_draw.h"
+#include "cg_drawtools.h"
+#include "cg_event.h"
+#include "cg_main.h"
+#include "cg_players.h"
+#include "cg_scoreboard.h"
+#include "cg_syscalls.h"
+
 #include "wolfcam_local.h"
 
 #define	SCOREBOARD_X		(0)
@@ -53,15 +62,10 @@
 static qboolean localClient; // true if local client has been displayed
 
 
-							 /*
-=================
-CG_DrawScoreboard
-=================
-*/
-static void CG_DrawClientScore( int y, score_t *score, float *color, float fade, qboolean largeFormat ) {
+static void CG_DrawClientScore( int y, const score_t *score, const float *color, float fade, qboolean largeFormat ) {
 	char	string[1024];
 	vec3_t	headAngles;
-	clientInfo_t	*ci;
+	const clientInfo_t *ci;
 	int iconx, headx;
 
 #if 0
@@ -76,7 +80,7 @@ static void CG_DrawClientScore( int y, score_t *score, float *color, float fade,
 		//		Com_Printf("  ...\n");
 		Com_Printf("  impressiveCount:  %d\n", score->impressiveCount);
 		Com_Printf("  excellentCount:  %d\n", score->excellentCount);
-		Com_Printf("  guantletCount:  %d\n", score->guantletCount);
+		Com_Printf("  gauntletCount:  %d\n", score->gauntletCount);
 		Com_Printf("  defendCount:  %d\n", score->defendCount);
 		Com_Printf("  assistCount:  %d\n", score->assistCount);
 		Com_Printf("  perfect:  %d\n", score->perfect);
@@ -150,10 +154,10 @@ static void CG_DrawClientScore( int y, score_t *score, float *color, float fade,
 	headAngles[YAW] = 180;
 	if( largeFormat ) {
 		CG_DrawHead( headx, y - ( ICON_SIZE - BIGCHAR_HEIGHT ) / 2, ICON_SIZE, ICON_SIZE, 
-			score->client, headAngles );
+					 score->client, headAngles, qtrue );
 	}
 	else {
-		CG_DrawHead( headx, y, 16, 16, score->client, headAngles );
+		CG_DrawHead( headx, y, 16, 16, score->client, headAngles, qtrue );
 	}
 
 #ifdef MISSIONPACK
@@ -193,6 +197,7 @@ static void CG_DrawClientScore( int y, score_t *score, float *color, float fade,
 					"               %s", ci->name);
 	}
 
+	//FIXME wolfcam
 	// highlight your position
 	if ( score->client == cg.snap->ps.clientNum ) {
 		float	hcolor[4];
@@ -244,10 +249,10 @@ CG_TeamScoreboard
 */
 static int CG_TeamScoreboard( int y, team_t team, float fade, int maxClients, int lineHeight ) {
 	int		i;
-	score_t	*score;
+	const score_t	*score;
 	float	color[4];
 	int		count;
-	clientInfo_t	*ci;
+	const clientInfo_t	*ci;
 
 	color[0] = color[1] = color[2] = 1.0;
 	color[3] = fade;
@@ -312,7 +317,7 @@ static int CG_TeamScoreboard( int y, team_t team, float fade, int maxClients, in
 
 /*
 =================
-CG_DrawScoreboard
+CG_DrawOldScoreboard
 
 Draw the normal in-game scoreboard
 =================
@@ -320,8 +325,8 @@ Draw the normal in-game scoreboard
 qboolean CG_DrawOldScoreboard( void ) {
 	int		x, y, w, i, n1, n2;
 	float	fade;
-	float	*fadeColor;
-	char	*s;
+	const float	*fadeColor;
+	const char	*s;
 	int maxClients;
 	int lineHeight;
 	int topBorderSize, bottomBorderSize;
@@ -498,7 +503,7 @@ static void CG_CenterGiantLine( float y, const char *string ) {
 
 /*
 =================
-CG_DrawTourneyScoreboard
+CG_DrawOldTourneyScoreboard
 
 Draw the oversize scoreboard for tournements
 =================
@@ -507,7 +512,7 @@ void CG_DrawOldTourneyScoreboard( void ) {
 	const char		*s;
 	vec4_t			color;
 	int				min, tens, ones;
-	clientInfo_t	*ci;
+	const clientInfo_t	*ci;
 	int				y;
 	int				i;
 
@@ -582,7 +587,4 @@ void CG_DrawOldTourneyScoreboard( void ) {
 			y += 64;
 		}
 	}
-
-
 }
-

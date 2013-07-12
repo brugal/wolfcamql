@@ -70,6 +70,7 @@ const char *COM_GetExtension( const char *name )
 		return "";
 }
 
+#if 0
 /*
 ============
 COM_StripExtension
@@ -82,6 +83,67 @@ void COM_StripExtension( const char *in, char *out, int destsize )
 		Q_strncpyz(out, in, (destsize < dot-in+1 ? destsize : dot-in+1));
 	else
 		Q_strncpyz(out, in, destsize);
+}
+#endif
+
+// allow overlapping array ranges
+void COM_StripExtension (const char *in, char *out, int destsize)
+{
+	const char *dot;
+	const char *slash;
+	int n;
+	int i;
+
+	dot = strrchr(in, '.');
+	slash = strrchr(in, '/');
+
+	if (dot  &&  (!slash  ||  slash < dot)) {
+		if (destsize < (dot - in + 1)) {
+			n = destsize;
+		} else {
+			n = dot - in + 1;
+		}
+	} else {
+		n = destsize;
+	}
+
+	for (i = 0;  i < n  &&  in[i] != '\0';  i++) {
+		char c;
+
+		c = in[i];
+		out[i] = c;
+	}
+
+	if (i < n) {
+		out[i] = '\0';
+	}
+
+	out[n - 1] = '\0';
+}
+
+/*
+============
+COM_CompareExtension
+
+string compare the end of the strings and return qtrue if strings match
+============
+*/
+qboolean COM_CompareExtension(const char *in, const char *ext)
+{
+	int inlen, extlen;
+
+	inlen = strlen(in);
+	extlen = strlen(ext);
+
+	if(extlen <= inlen)
+        {
+			in += inlen - extlen;
+
+			if(!Q_stricmp(in, ext))
+				return qtrue;
+        }
+
+	return qfalse;
 }
 
 /*
@@ -750,6 +812,9 @@ Safe strncpy that ensures a trailing zero
 =============
 */
 void Q_strncpyz( char *dest, const char *src, int destsize ) {
+	qboolean overlap = qfalse;
+	size_t srcLen;
+
   if ( !dest ) {
     Com_Error( ERR_FATAL, "Q_strncpyz: NULL dest" );
   }
@@ -761,8 +826,50 @@ void Q_strncpyz( char *dest, const char *src, int destsize ) {
 		Com_Error(ERR_FATAL,"Q_strncpyz: destsize < 1" );
 	}
 
-	strncpy( dest, src, destsize-1 );
-  dest[destsize-1] = 0;
+	srcLen = strlen(src) + 1;
+	// check for overlap
+	if (dest >= src  &&  dest <= (src + srcLen)) {
+		// dest starts in src range
+		Com_Printf("starts..\n");
+		overlap = qtrue;
+	} else if (dest <= src  &&  (dest + destsize) > src) {
+		// dest goes into src range
+		Com_Printf("goes into...\n");
+		overlap = qtrue;
+	}
+
+	if (overlap) {
+		Com_Printf("^1Q_strncpyz() destination and source overlap %p, %p  len %d\n", dest, src, destsize);
+		Com_Printf("src: '%s'\n", src);
+		//*(int *)0x0 = 6;
+	}
+
+	if (1) {  //(overlap) {
+		int i;
+
+
+		for (i = 0;  i < destsize  &&  src[i] != '\0';  i++) {
+			char c;
+
+			c = src[i];
+			dest[i] = c;
+		}
+
+		if (i < destsize) {
+			dest[i] = '\0';
+		}
+
+#if 0
+		for (  ;  i < destsize;  i++) {
+			dest[i] = '\0';
+		}
+#endif
+		dest[destsize - 1] = 0;
+		return;
+	} else {
+		strncpy( dest, src, destsize-1 );
+		dest[destsize-1] = 0;
+	}
 }
 
 int Q_stricmpn (const char *s1, const char *s2, int n) {
@@ -1478,4 +1585,21 @@ char *Com_SkipTokens( char *s, int numTokens, char *sep )
 		return p;
 	else
 		return s;
+}
+
+void Crash (void)
+{
+	*(volatile int *) 0 = 0x555;
+}
+
+void Q_PrintSubString (const char *start, const char *end)
+{
+	const char *p;
+
+	p = start;
+
+	while (p < end  &&  p[0] != '\0') {
+		Com_Printf("%c", p[0]);
+		p++;
+	}
 }

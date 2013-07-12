@@ -40,7 +40,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <math.h>
 
 #include "../renderer/tr_local.h"
-#include "../client/client.h"
 #include "../sys/sys_local.h"
 #include "sdl_icon.h"
 
@@ -1007,6 +1006,12 @@ success:
 	// again and you get the correct answer. This is a suspected driver bug, see
 	// http://bugzilla.icculus.org/show_bug.cgi?id=4316
 	glConfig.deviceSupportsGamma = SDL_SetGamma( 1.0f, 1.0f, 1.0f ) >= 0;
+
+	if ( -1 == r_ignorehwgamma->integer)
+		glConfig.deviceSupportsGamma = 1;
+
+	if ( 1 == r_ignorehwgamma->integer)
+		glConfig.deviceSupportsGamma = 0;
 
 	// get our config strings
 	Q_strncpyz( glConfig.vendor_string, (char *) qglGetString (GL_VENDOR), sizeof( glConfig.vendor_string ) );

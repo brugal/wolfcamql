@@ -1,4 +1,10 @@
 #include "cg_local.h"
+
+#include "cg_main.h"
+#include "cg_predict.h"
+#include "cg_spawn.h"
+#include "cg_syscalls.h"
+
 #include "sc.h"
 
 /*
@@ -6,13 +12,13 @@
 CG_AddSpawnVarToken
 ====================
 */
-char *CG_AddSpawnVarToken( const char *string ) {
+static char *CG_AddSpawnVarToken( const char *string ) {
     int             l;
     char    *dest;
 
     l = strlen( string );
     if ( cg.numSpawnVarChars + l + 1 > MAX_SPAWN_VARS_CHARS ) {
-        CG_Error( "CG_AddSpawnVarToken: MAX_SPAWN_VARS" );
+        CG_Error( "CG_AddSpawnVarToken: MAX_SPAWN_VARS_CHARS" );
     }
 
     dest = cg.spawnVarChars + cg.numSpawnVarChars;
@@ -33,7 +39,7 @@ typedef enum {
     noitem,
 } titem_t;
 
-static void AddTimedItem(int *num, timedItem_t *tlist, vec3_t origin, int respawnLength)
+static void AddTimedItem(int *num, timedItem_t *tlist, const vec3_t origin, int respawnLength)
 {
     int i, j, k;
     int place;
@@ -119,7 +125,7 @@ qboolean CG_ParseSpawnVars( void ) {
     char            com_token[MAX_TOKEN_CHARS];
     char    token[MAX_TOKEN_CHARS];
     //char buf[MAX_TOKEN_CHARS];
-    char *line;
+    const char *line;
     qboolean newLine;
     vec3_t origin;
     int wait;
@@ -140,6 +146,8 @@ qboolean CG_ParseSpawnVars( void ) {
     qboolean portalHasTarget;
     qboolean startTimer;
     qboolean stopTimer;
+    qboolean gotOrigin;
+    int pointContents;
     static char *gametypeNames[] = { "ffa", "tournament", "single", "team", /*FIXME clanarena*/ "ca",  "ctf", "oneflag", "obelisk", "harvester", "ft", "dom", "ad", "rr" };
 
     //Com_Printf("cgs.gametype : %d\n", cgs.gametype);
@@ -203,6 +211,7 @@ qboolean CG_ParseSpawnVars( void ) {
     blueSpawn = qfalse;
     initial = qfalse;
     deathmatch = qfalse;
+    gotOrigin = qfalse;
 
     // get the rest
     while (1) {
@@ -231,6 +240,7 @@ qboolean CG_ParseSpawnVars( void ) {
             portalHasTarget = qfalse;
             startTimer = qfalse;
             stopTimer = qfalse;
+            gotOrigin = qfalse;
             continue;
         }
         if ( keyname[0] == '}' ) {
@@ -277,9 +287,16 @@ qboolean CG_ParseSpawnVars( void ) {
                 Com_Printf("^5stop timer %f %f %f\n", origin[0], origin[1], origin[2]);
                 continue;
             }
+
+            if (gotOrigin) {
+                pointContents = CG_PointContents(origin, 0);
+            } else {
+                pointContents = 0;
+            }
+
             if (skipItem) {
                 continue;
-            } else if (CG_PointContents(origin, 0) & 0x1) {
+            } else if (pointContents & 0x1) {
                 // it's in an invalid place, some maps have this  qzdm20 has 2 megas
                 continue;
             } else if (ti == redArmor) {
@@ -384,6 +401,7 @@ qboolean CG_ParseSpawnVars( void ) {
                 origin[1] = 0.0;
                 origin[2] = 0.0;
             }
+            gotOrigin = qtrue;
             //Com_Printf("*** origin: %f %f %f\n", origin[0], origin[1], origin[2]);
         } else if (!Q_stricmp(keyname, "target")) {
             portalHasTarget = qtrue;
@@ -414,7 +432,8 @@ qboolean CG_ParseSpawnVars( void ) {
             while (*line) {
                 int ln;
                 //Com_Printf("line: '%s'\n", line);
-                line = CG_GetTokenGameType(line, token, qfalse, &newLine);
+                //FIXME const
+                line = (char *)CG_GetTokenGameType(line, token, qfalse, &newLine);
                 ln = strlen(token);
                 if (ln  &&  *token) {
                     if (token[ln - 1] == ',') {

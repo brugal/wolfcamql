@@ -22,7 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 // g_local.h -- local definitions for game module
 
-#include "../qcommon/version.h"
 #include "../qcommon/q_shared.h"
 #include "bg_public.h"
 #include "g_public.h"
@@ -160,7 +159,7 @@ struct gentity_s {
 	gentity_t	*teamchain;		// next entity in team
 	gentity_t	*teammaster;	// master of the team
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	int			kamikazeTime;
 	int			kamikazeShockTime;
 #endif
@@ -310,7 +309,7 @@ struct gclient_s {
 	// like health / armor countdowns and regeneration
 	int			timeResidual;
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	gentity_t	*persistantPowerup;
 	int			portalID;
 	int			ammoTimes[WP_NUM_WEAPONS];
@@ -405,7 +404,7 @@ typedef struct {
 	gentity_t	*locationHead;			// head of the location list
 	int			bodyQueIndex;			// dead bodies
 	gentity_t	*bodyQue[BODY_QUEUE_SIZE];
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	int			portalSequence;
 #endif
 	char serverSound[MAX_QPATH];
@@ -498,7 +497,7 @@ qboolean G_RadiusDamage (vec3_t origin, gentity_t *attacker, float damage, float
 int G_InvulnerabilityEffect( gentity_t *targ, vec3_t dir, vec3_t point, vec3_t impactpoint, vec3_t bouncedir );
 void body_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int meansOfDeath );
 void TossClientItems( gentity_t *self );
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 void TossClientPersistantPowerups( gentity_t *self );
 #endif
 void TossClientCubes( gentity_t *self );
@@ -508,7 +507,7 @@ void TossClientCubes( gentity_t *self );
 #define DAMAGE_NO_ARMOR				0x00000002	// armour does not protect from this damage
 #define DAMAGE_NO_KNOCKBACK			0x00000004	// do not affect velocity, just view angles
 #define DAMAGE_NO_PROTECTION		0x00000008  // armor, shields, invulnerability, and godmode have no effect
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 #define DAMAGE_NO_TEAM_PROTECTION	0x00000010  // armor, shields, invulnerability, and godmode have no effect
 #endif
 
@@ -522,7 +521,7 @@ gentity_t *fire_grenade (gentity_t *self, vec3_t start, vec3_t aimdir);
 gentity_t *fire_rocket (gentity_t *self, vec3_t start, vec3_t dir);
 gentity_t *fire_bfg (gentity_t *self, vec3_t start, vec3_t dir);
 gentity_t *fire_grapple (gentity_t *self, vec3_t start, vec3_t dir);
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 gentity_t *fire_nail( gentity_t *self, vec3_t start, vec3_t forward, vec3_t right, vec3_t up );
 gentity_t *fire_prox( gentity_t *self, vec3_t start, vec3_t aimdir );
 #endif
@@ -544,7 +543,7 @@ void trigger_teleporter_touch (gentity_t *self, gentity_t *other, trace_t *trace
 // g_misc.c
 //
 void TeleportPlayer( gentity_t *player, vec3_t origin, vec3_t angles );
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 void DropPortalSource( gentity_t *ent );
 void DropPortalDestination( gentity_t *ent );
 #endif
@@ -564,7 +563,7 @@ void Weapon_HookThink (gentity_t *ent);
 //
 // g_client.c
 //
-team_t TeamCount( int ignoreClientNum, int team );
+team_t TeamCount( int ignoreClientNum, team_t team );
 int TeamLeader( int team );
 team_t PickTeam( int ignoreClientNum );
 void SetClientViewAngle( gentity_t *ent, vec3_t angle );
@@ -590,7 +589,7 @@ qboolean G_FilterPacket (char *from);
 // g_weapon.c
 //
 void FireWeapon( gentity_t *ent );
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 void G_StartKamikaze( gentity_t *ent );
 #endif
 
@@ -609,10 +608,10 @@ void SetLeader(int team, int client);
 void CheckTeamLeader( int team );
 void G_RunThink (gentity_t *ent);
 void AddTournamentQueue(gclient_t *client);
-void QDECL G_LogPrintf( const char *fmt, ... );
+void QDECL G_LogPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void SendScoreboardMessageToAllClients( void );
-void QDECL G_Printf( const char *fmt, ... );
-void QDECL G_Error( const char *fmt, ... );
+void QDECL G_Printf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
+void QDECL G_Error( const char *fmt, ... ) __attribute__ ((noreturn, format (printf, 1, 2)));
 
 //
 // g_client.c

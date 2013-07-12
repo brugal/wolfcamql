@@ -1,9 +1,19 @@
 #include "cg_local.h"
+
+#include "cg_draw.h"  // lagometer
+#include "cg_main.h"
+#include "cg_players.h"
+#include "cg_syscalls.h"
+#include "sc.h"
+#include "wolfcam_ents.h"
+#include "wolfcam_main.h"
+
 #include "wolfcam_local.h"
+
 
 void Wolfcam_MarkValidEntities (void)
 {
-	centity_t *cent;
+	const centity_t *cent;
 	int num;
     int i;
 
@@ -40,7 +50,7 @@ void Wolfcam_MarkValidEntities (void)
     wclients[cg.snap->ps.clientNum].validTime = cg.time;
 }
 
-static void Wolfcam_ResetPlayerEntity (centity_t *cent, entityState_t *es, int time)
+static void Wolfcam_ResetPlayerEntity (centity_t *cent, const entityState_t *es, int time)
 {
 	//return;
 	if (es->number == es->clientNum) {
@@ -112,7 +122,7 @@ static void Wolfcam_ResetPlayerEntity (centity_t *cent, entityState_t *es, int t
 #endif
 }
 
-static void Wolfcam_ResetEntity (centity_t *cent, entityState_t *es, int time)
+static void Wolfcam_ResetEntity (centity_t *cent, const entityState_t *es, int time)
 {
 	//return;
 
@@ -171,7 +181,7 @@ static void Wolfcam_ResetEntity (centity_t *cent, entityState_t *es, int time)
 
 static snapshot_t tmpSnapshot;
 
-static qboolean IsCorpse (centity_t *cent)
+static qboolean IsCorpse (const centity_t *cent)
 {
 	if (cent->currentState.eType == ET_PLAYER  &&  cent->currentState.number >= MAX_CLIENTS  &&  cent->currentState.clientNum < MAX_CLIENTS  &&  cent->currentState.clientNum >= 0) {
 		return qtrue;
@@ -181,7 +191,7 @@ static qboolean IsCorpse (centity_t *cent)
 }
 
 #if 0
-static qboolean IsDeadPlayer (centity_t *cent)
+static qboolean IsDeadPlayer (const centity_t *cent)
 {
 	if (cent->currentState.number < MAX_CLIENTS  &&  cent->currentState.eFlags & EF_DEAD) {
 		return qtrue;
@@ -196,7 +206,9 @@ qboolean Wolfcam_InterpolateEntityPosition (centity_t *cent)
 	vec3_t		current, next;
 	float		f;
 	qboolean useCurrent = qfalse;
-	entityState_t *esOld, *esPrev, *esNext;
+	const entityState_t *esOld;
+	entityState_t *esPrev;
+	entityState_t *esNext;
 	entityState_t esPrevTmp, esNextTmp;
 	int i;
 	snapshot_t *snapOld, *snapPrev, *snapNext;

@@ -32,7 +32,7 @@ Some of the major features currently implemented are:
   * Many, many bug fixes
 
 The map editor and associated compiling tools are not included. We suggest you
-use a modern copy from http://www.qeradiant.com/.
+use a modern copy from http://icculus.org/gtkradiant/.
 
 The original id software readme that accompanied the Q3 source release has been
 renamed to id-readme.txt so as to prevent confusion. Please refer to the
@@ -600,6 +600,7 @@ but we have some general guidelines:
 ------------------------------------------------------------------ Credits -----
 
 Maintainers
+  James Canete <use.less01@gmail.com>
   Ludwig Nussel <ludwig.nussel@suse.de>
   Thilo Schulz <arny@ats.s.bawue.de>
   Tim Angus <tim@ngus.net>

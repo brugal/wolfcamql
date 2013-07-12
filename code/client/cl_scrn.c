@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "client.h"
 #include <time.h>
 
-qboolean	scr_initialized;		// ready to draw
+static qboolean	scr_initialized;		// ready to draw
 
 cvar_t		*cl_timegraph;
 cvar_t		*cl_debuggraph;
@@ -254,14 +254,16 @@ void SCR_DrawStringExt( int x, int y, float size, const char *string, float *set
 	xx = x;
 	re.SetColor( setColor );
 	while ( *s ) {
-		if ( !noColorEscape && Q_IsColorString( s ) ) {
+		if ( Q_IsColorString( s ) ) {
 			if ( !forceColor ) {
 				Com_Memcpy( color, g_color_table[ColorIndex(*(s+1))], sizeof( color ) );
 				color[3] = setColor[3];
 				re.SetColor( color );
 			}
-			s += 2;
-			continue;
+			if ( !noColorEscape ) {
+				s += 2;
+				continue;
+			}
 		}
 		SCR_DrawChar( xx, y, size, *s );
 		xx += size;

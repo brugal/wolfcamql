@@ -146,30 +146,16 @@ void GL_Cull( int cullType ) {
 	}
 	else
 	{
+		qboolean cullFront;
 		qglEnable( GL_CULL_FACE );
 
-		if ( cullType == CT_BACK_SIDED )
+		cullFront = (cullType == CT_FRONT_SIDED);
+		if ( backEnd.viewParms.isMirror )
 		{
-			if ( backEnd.viewParms.isMirror )
-			{
-				qglCullFace( GL_FRONT );
-			}
-			else
-			{
-				qglCullFace( GL_BACK );
-			}
+			cullFront = !cullFront;
 		}
-		else
-		{
-			if ( backEnd.viewParms.isMirror )
-			{
-				qglCullFace( GL_BACK );
-			}
-			else
-			{
-				qglCullFace( GL_FRONT );
-			}
-		}
+
+		qglCullFace( cullFront ? GL_FRONT : GL_BACK );
 	}
 }
 
@@ -247,7 +233,7 @@ void GL_State( unsigned long stateBits )
 	//
 	if ( diff & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) )
 	{
-		GLenum srcFactor, dstFactor;
+		GLenum srcFactor = GL_ONE, dstFactor = GL_ONE;
 
 		if ( stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) )
 		{
@@ -281,7 +267,6 @@ void GL_State( unsigned long stateBits )
 				srcFactor = GL_SRC_ALPHA_SATURATE;
 				break;
 			default:
-				srcFactor = GL_ONE;		// to get warning to shut up
 				ri.Error( ERR_DROP, "GL_State: invalid src blend state bits" );
 				break;
 			}
@@ -313,7 +298,6 @@ void GL_State( unsigned long stateBits )
 				dstFactor = GL_ONE_MINUS_DST_ALPHA;
 				break;
 			default:
-				dstFactor = GL_ONE;		// to get warning to shut up
 				ri.Error( ERR_DROP, "GL_State: invalid dst blend state bits" );
 				break;
 			}
@@ -521,6 +505,7 @@ void RB_BeginDrawingView (void) {
 			qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );	// FIXME: get color of sky
 		}
 	}
+
 	qglClear( clearBits );
 
 	if ( ( backEnd.refdef.rdflags & RDF_HYPERSPACE ) )
@@ -568,7 +553,7 @@ static vec3_t *PLsplinePoints = NULL;
 static int *PLnumSplinePoints = NULL;
 static vec4_t PLcolor;
 
-void RE_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, vec4_t color)
+void RE_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, const vec4_t color)
 {
 	PLnumCameraPoints = numCameraPoints;
 	PLcameraPoints = cameraPoints;
@@ -687,6 +672,7 @@ static void RB_BloomDownSample (void)
 {
 	GLenum target;
 	int width, height;
+	GLint loc;
 
 	GL_SelectTextureUnit(0);
 	qglDisable(GL_TEXTURE_2D);
@@ -706,7 +692,11 @@ static void RB_BloomDownSample (void)
 	qglBindTexture(target, tr.bloomTexture);
 
 	qglUseProgramObjectARB(tr.downSample1Sp);
-	qglUniform1iARB(qglGetUniformLocationARB(tr.downSample1Sp, "backBufferTex"), 0);
+	loc = qglGetUniformLocationARB(tr.downSample1Sp, "backBufferTex");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get backBufferTex", __FUNCTION__);
+	}
+	qglUniform1iARB(loc, 0);
 
 	//qglDisable(GL_BLEND);
 
@@ -744,6 +734,7 @@ static void RB_BloomBrightness (void)
 {
 	GLenum target;
 	int width, height;
+	GLint loc;
 
 	GL_SelectTextureUnit(0);
 	qglDisable(GL_TEXTURE_2D);
@@ -757,9 +748,17 @@ static void RB_BloomBrightness (void)
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, glConfig.vidHeight - height, width, height);
 
 	qglUseProgramObjectARB(tr.brightPassSp);
-	qglUniform1iARB(qglGetUniformLocationARB(tr.brightPassSp, "backBufferTex"), 0);
-	qglUniform1fARB(qglGetUniformLocationARB(tr.brightPassSp, "p_brightthreshold"), (GLfloat)r_BloomBrightThreshold->value);
+	loc = qglGetUniformLocationARB(tr.brightPassSp, "backBufferTex");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get backBufferTex", __FUNCTION__);
+	}
 
+	qglUniform1iARB(loc, 0);
+	loc = qglGetUniformLocationARB(tr.brightPassSp, "p_brightthreshold");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_brightthreshold", __FUNCTION__);
+	}
+	qglUniform1fARB(loc, (GLfloat)r_BloomBrightThreshold->value);
 
 	qglBegin(GL_QUADS);
 
@@ -787,6 +786,7 @@ static void RB_BloomBlurHorizontal (void)
 {
 	GLenum target;
 	int width, height;
+	GLint loc;
 
 	GL_SelectTextureUnit(0);
 	qglDisable(GL_TEXTURE_2D);
@@ -800,7 +800,11 @@ static void RB_BloomBlurHorizontal (void)
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, glConfig.vidHeight - height, width, height);
 
 	qglUseProgramObjectARB(tr.blurHorizSp);
-	qglUniform1iARB(qglGetUniformLocationARB(tr.blurHorizSp, "backBufferTex"), 0);
+	loc = qglGetUniformLocationARB(tr.blurHorizSp, "backBufferTex");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get backBufferTex", __FUNCTION__);
+	}
+	qglUniform1iARB(loc, 0);
 
 	qglBegin(GL_QUADS);
 
@@ -828,6 +832,7 @@ static void RB_BloomBlurVertical (void)
 {
 	GLenum target;
 	int width, height;
+	GLint loc;
 
 	GL_SelectTextureUnit(0);
 	qglDisable(GL_TEXTURE_2D);
@@ -841,7 +846,11 @@ static void RB_BloomBlurVertical (void)
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, glConfig.vidHeight - height, width, height);
 
 	qglUseProgramObjectARB(tr.blurVerticalSp);
-	qglUniform1iARB(qglGetUniformLocationARB(tr.blurVerticalSp, "backBufferTex"), 0);
+	loc = qglGetUniformLocationARB(tr.blurVerticalSp, "backBufferTex");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get backBufferTex", __FUNCTION__);
+	}
+	qglUniform1iARB(loc, 0);
 
 	qglBegin(GL_QUADS);
 
@@ -869,6 +878,7 @@ static void RB_BloomCombine (void)
 {
 	GLenum target;
 	int width, height;
+	GLint loc;
 
 	GL_SelectTextureUnit(0);
 	qglDisable(GL_TEXTURE_2D);
@@ -884,19 +894,46 @@ static void RB_BloomCombine (void)
 	qglUseProgramObjectARB(tr.combineSp);
 
 	qglBindTexture(target, tr.backBufferTexture);
-	qglUniform1iARB(qglGetUniformLocationARB(tr.combineSp, "backBufferTex"), 0);
+	loc = qglGetUniformLocationARB(tr.combineSp, "backBufferTex");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get backBufferTex", __FUNCTION__);
+	}
+	qglUniform1iARB(loc, 0);
 
 	GL_SelectTextureUnit(1);
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 
 	qglBindTexture(target, tr.bloomTexture);
-	qglUniform1iARB(qglGetUniformLocationARB(tr.combineSp, "bloomTex"), 1);
+	loc = qglGetUniformLocationARB(tr.combineSp, "bloomTex");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get bloomTex", __FUNCTION__);
+	}
+	qglUniform1iARB(loc, 1);
 
-	qglUniform1fARB(qglGetUniformLocationARB(tr.combineSp, "p_bloomsaturation"), (GLfloat)r_BloomSaturation->value);
-	qglUniform1fARB(qglGetUniformLocationARB(tr.combineSp, "p_scenesaturation"), (GLfloat)r_BloomSceneSaturation->value);
-	qglUniform1fARB(qglGetUniformLocationARB(tr.combineSp, "p_bloomintensity"), (GLfloat)r_BloomIntensity->value);
-	qglUniform1fARB(qglGetUniformLocationARB(tr.combineSp, "p_sceneintensity"), (GLfloat)r_BloomSceneIntensity->value);
+	loc = qglGetUniformLocationARB(tr.combineSp, "p_bloomsaturation");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_bloomsaturation", __FUNCTION__);
+	}
+	qglUniform1fARB(loc, (GLfloat)r_BloomSaturation->value);
+
+	loc = qglGetUniformLocationARB(tr.combineSp, "p_scenesaturation");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_scenesaturation", __FUNCTION__);
+	}
+	qglUniform1fARB(loc, (GLfloat)r_BloomSceneSaturation->value);
+
+	loc = qglGetUniformLocationARB(tr.combineSp, "p_bloomintensity");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_bloomintensity", __FUNCTION__);
+	}
+	qglUniform1fARB(loc, (GLfloat)r_BloomIntensity->value);
+
+	loc = qglGetUniformLocationARB(tr.combineSp, "p_sceneintensity");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_sceneintensity", __FUNCTION__);
+	}
+	qglUniform1fARB(loc, (GLfloat)r_BloomSceneIntensity->value);
 
 
 	width = glConfig.vidWidth;
@@ -1047,6 +1084,9 @@ static void RB_ColorCorrect (void)
 
     qglUseProgramObjectARB(tr.colorCorrectSp);
 	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "p_gammaRecip");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_gammaRecip", __FUNCTION__);
+	}
 	qglUniform1fARB(loc, (GLfloat)(1.0 / r_gamma->value));
 
 	mul = r_overBrightBitsValue->value;
@@ -1056,11 +1096,22 @@ static void RB_ColorCorrect (void)
 	shift = tr.overbrightBits;
 
 	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "p_overbright");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_overbright", __FUNCTION__);
+	}
 	qglUniform1fARB(loc, (GLfloat)((float)(1 << shift) * mul));
 
 	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "p_contrast");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get p_contrast", __FUNCTION__);
+	}
 	qglUniform1fARB(loc, (GLfloat)r_contrast->value);
-	qglUniform1iARB(qglGetUniformLocationARB(tr.colorCorrectSp, "backBufferTex"), 0);
+
+	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "backBufferTex");
+	if (loc < 0) {
+		Com_Error(ERR_DROP, "%s() couldn't get backBufferTex", __FUNCTION__);
+	}
+	qglUniform1iARB(loc, 0);
 
 	qglBegin(GL_QUADS);
 
@@ -1115,6 +1166,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	// draw everything
 	oldEntityNum = -1;
 	backEnd.currentEntity = &tr.worldEntity;
+	shader = NULL;
 	oldShader = NULL;
 	oldFogNum = -1;
 	oldDepthRange = qfalse;
@@ -1126,6 +1178,9 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	backEnd.pc.c_surfaces += numDrawSurfs;
 
 	for (i = 0, drawSurf = drawSurfs ; i < numDrawSurfs ; i++, drawSurf++) {
+		qboolean useMergable;
+		qboolean dontMerge;
+
 		if ( drawSurf->sort == oldSort ) {
 			// fast path, same as previous sort
 			rb_surfaceTable[ *drawSurf->surface ]( drawSurf->surface );
@@ -1134,17 +1189,35 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		oldSort = drawSurf->sort;
 		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted );
 
+		if (r_ignoreEntityMergable->integer == 0) {
+			useMergable = qtrue;
+		} else if (r_ignoreEntityMergable->integer == 2  &&  mme_saveDepth->integer == 0) {
+			useMergable = qtrue;
+		} else {
+			useMergable = qfalse;
+		}
+
+		if (useMergable) {
+			if (shader  &&  !shader->entityMergable) {
+				dontMerge = qtrue;
+			} else {
+				dontMerge = qfalse;
+			}
+		} else {
+			dontMerge = qtrue;
+		}
+
+
 		//
 		// change the tess parameters if needed
 		// a "entityMergable" shader is a shader that can have surfaces from seperate
 		// entities merged into a single batch, like smoke and blood puff sprites
-		if (shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted  || ( entityNum != oldEntityNum && (shader  &&  !shader->entityMergable) ) ) {
+		if (shader != NULL  &&  (shader != oldShader  ||
+			fogNum != oldFogNum  ||
+			dlighted != oldDlighted ||
+            (entityNum != oldEntityNum  &&  dontMerge) )
+			) {
 
-#if 1
-			//if (1) {  //(entityNum >= 0  &&  entityNum != ENTITYNUM_WORLD) {  //  &&  backEnd.refdef.entities[entityNum].e.reType != RT_SPRITE) {
-			//if (0) {  //(entityNum >= 0  &&  entityNum != ENTITYNUM_WORLD  &&  backEnd.refdef.entities[entityNum].e.reType != RT_SPRITE) {
-				// pass
-			//} else {
 			if (oldShader != NULL) {
 				RB_EndSurface();
 			}
@@ -1152,8 +1225,6 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			oldShader = shader;
 			oldFogNum = fogNum;
 			oldDlighted = dlighted;
-#endif
-			//}
 		}
 
 		//
@@ -1162,9 +1233,9 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		if ( entityNum != oldEntityNum ) {
 			depthRange = isCrosshair = qfalse;
 
-			if ( entityNum != ENTITYNUM_WORLD ) {
+			if ( entityNum != REFENTITYNUM_WORLD ) {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
-				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->e.shaderTime;
+				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->ePtr->shaderTime;
 				// we have to reset the shaderTime as well otherwise image animations start
 				// from the wrong frame
 				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
@@ -1177,7 +1248,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 					R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 				}
 
-				if(backEnd.currentEntity->e.renderfx & RF_DEPTHHACK)
+				if(backEnd.currentEntity->ePtr->renderfx & RF_DEPTHHACK)
 				{
 					// hack the depth range to prevent view model from poking into walls
 					depthRange = qtrue;
@@ -1188,7 +1259,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 						//Com_Printf("%s has depthhack\n", shader->name);
 					}
 #endif
-					if(backEnd.currentEntity->e.renderfx & RF_CROSSHAIR)
+					if(backEnd.currentEntity->ePtr->renderfx & RF_CROSSHAIR)
 						isCrosshair = qtrue;
 				}
 			} else {
@@ -1286,16 +1357,18 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 	//qglDepthRange (0, 1);  // testing
 
-#if 0
-	RB_DrawSun();
-#endif
-	// darken down any stencil shadows
-	RB_ShadowFinish();
+	if (r_drawSun->integer) {
+		RB_DrawSun(0.1, tr.sunShader);
+	}
+
+	RE_DrawPathLines();
 
 	// add light flares on lights that aren't obscured
 	RB_RenderFlares();
 
-	RE_DrawPathLines();
+	// darken down any stencil shadows
+	// do last since it messes with depth settings
+	RB_ShadowFinish();
 
 #if 0  // testing
 	{
@@ -1590,9 +1663,21 @@ const void	*RB_DrawBuffer( const void *data ) {
 		qglReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 	}
 
-	// clear screen for debugging
+	// clear screen
 	if ( r_clear->integer ) {
-		qglClearColor( 1, 0, 0.5, 1 );
+		if (*r_clearColor->string) {
+			int v, tr, tg, tb;
+
+			v = r_clearColor->integer;
+			tr = (v & 0xff0000) / 0x010000;
+			tg = (v & 0x00ff00) / 0x000100;
+			tb = (v & 0x0000ff) / 0x000001;
+
+			qglClearColor((float)tr / 255.0, (float)tg / 255.0, (float)tb / 255.0, 1.0);
+		} else {
+			qglClearColor( 1, 0, 0.5, 1 );
+		}
+
 		qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
 
@@ -2066,7 +2151,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 				cmd.height = afdLeft.height;
 				cmd.captureBuffer = afdLeft.cBuffer;
 				cmd.encodeBuffer = afdLeft.eBuffer;
-				cmd.motionJpeg = afdLeft.motionJpeg;
+				cmd.motionJpeg = (afdLeft.codec == CODEC_MJPEG);
 				cmd.avi = afdLeft.avi;
 				cmd.tga = afdLeft.tga;
 				cmd.jpg = afdLeft.jpg;

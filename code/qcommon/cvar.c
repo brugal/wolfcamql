@@ -84,6 +84,27 @@ static qboolean Cvar_ValidateString( const char *s ) {
 Cvar_FindVar
 ============
 */
+qboolean Cvar_Exists (const char *var_name)
+{
+	cvar_t	*var;
+	long hash;
+
+	hash = generateHashValue(var_name);
+
+	for (var=hashTable[hash] ; var ; var=var->hashNext) {
+		if (!Q_stricmp(var_name, var->name)) {
+			return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
+/*
+============
+Cvar_FindVar
+============
+*/
 cvar_t *Cvar_FindVar( const char *var_name ) {
 	cvar_t	*var;
 	long hash;
@@ -331,6 +352,18 @@ cvar_t *Cvar_Get( const char *var_name, const char *var_value, int flags ) {
 	{
 		var_value = Cvar_Validate(var, var_value, qfalse);
 
+		// Make sure the game code cannot mark engine-added variables as gamecode vars
+		if(var->flags & CVAR_VM_CREATED)
+		{
+			if(!(flags & CVAR_VM_CREATED))
+				var->flags &= ~CVAR_VM_CREATED;
+		}
+		else if (!(var->flags & CVAR_USER_CREATED))
+		{
+			if(flags & CVAR_VM_CREATED)
+				flags &= ~CVAR_VM_CREATED;
+		}
+
 		// if the C code is now specifying a variable that the user already
 		// set a value for, take the new value as the reset value
 		if(var->flags & CVAR_USER_CREATED)
@@ -349,18 +382,6 @@ cvar_t *Cvar_Get( const char *var_name, const char *var_value, int flags ) {
 
 				var->latchedString = CopyString(var_value);
 			}
-		}
-
-		// Make sure the game code cannot mark engine-added variables as gamecode vars
-		if(var->flags & CVAR_VM_CREATED)
-		{
-			if(!(flags & CVAR_VM_CREATED))
-				var->flags &= ~CVAR_VM_CREATED;
-		}
-		else
-		{
-			if(flags & CVAR_VM_CREATED)
-				flags &= ~CVAR_VM_CREATED;
 		}
 
 		// Make sure servers cannot mark engine-added variables as SERVER_CREATED
@@ -927,7 +948,9 @@ void Cvar_Set_f( void ) {
 	}
 	switch( cmd[3] ) {
 		case 'a':
-			if( !( v->flags & CVAR_ARCHIVE ) ) {
+			if (!Q_stricmpn("cg_forcebmodel", Cmd_Argv(1), strlen("cg_forcebmodel"))) {
+				Com_Printf("^3ignoring archive flag for '%s'\n", Cmd_Argv(1));
+			} else if( !( v->flags & CVAR_ARCHIVE ) ) {
 				v->flags |= CVAR_ARCHIVE;
 				cvar_modifiedFlags |= CVAR_ARCHIVE;
 			}

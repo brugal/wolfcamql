@@ -614,8 +614,9 @@ static sfxHandle_t Slider_Key( menuslider_s *s, int key )
 			break;
 	}
 
-	if ( sound && s->generic.callback )
+	if ( sound && s->generic.callback ) {
 		s->generic.callback( s, QM_ACTIVATED );
+	}
 
 	return (sound);
 }
@@ -1353,8 +1354,9 @@ void Menu_CursorMoved( menuframework_s *m )
 	if (m->cursor_prev >= 0 && m->cursor_prev < m->nitems)
 	{
 		callback = ((menucommon_s*)(m->items[m->cursor_prev]))->callback;
-		if (callback)
+		if (callback) {
 			callback(m->items[m->cursor_prev],QM_LOSTFOCUS);
+		}
 	}
 
 	if (m->cursor >= 0 && m->cursor < m->nitems)
@@ -1526,7 +1528,7 @@ void Menu_Draw( menuframework_s *menu )
 					trap_Error( va("Menu_Draw: unknown type %d", itemptr->type) );
 			}
 		}
-#ifndef NDEBUG
+#ifndef NQDEBUG
 		if( uis.debug ) {
 			int	x;
 			int	y;
@@ -1644,7 +1646,7 @@ sfxHandle_t Menu_DefaultKey( menuframework_s *m, int key )
 	// default handling
 	switch ( key )
 	{
-#if 0  //ndef NDEBUG
+#if 0  //ndef NQDEBUG
 		case K_F11:
 			uis.debug ^= 1;
 			break;
@@ -1709,9 +1711,12 @@ sfxHandle_t Menu_DefaultKey( menuframework_s *m, int key )
 		case K_AUX16:
 		case K_KP_ENTER:
 		case K_ENTER:
-			if (item)
-				if (!(item->flags & (QMF_MOUSEONLY|QMF_GRAYED|QMF_INACTIVE)))
+			if (item) {
+				if (!(item->flags & (QMF_MOUSEONLY|QMF_GRAYED|QMF_INACTIVE))) {
 					return (Menu_ActivateItem( m, item ));
+				} else {
+				}
+			}
 			break;
 	    default:
 			buf[0] = '\0';
@@ -1771,11 +1776,28 @@ void Menu_Cache( void )
 	}
 	uis.menuBackNoLogoShader = trap_R_RegisterShaderNoMip( "menubacknologo" );
 
+	//FIXME hack.. key handler depends on returning non zero sound if
+	// handled
 	menu_in_sound	= trap_S_RegisterSound( "sound/misc/menu2.wav", qfalse );
+	if (!menu_in_sound) {
+		menu_in_sound = -2;
+	}
 	menu_move_sound	= trap_S_RegisterSound( "sound/misc/menu2.wav", qfalse );
+	if (!menu_move_sound) {
+		menu_move_sound = -3;
+	}
 	menu_out_sound	= trap_S_RegisterSound( "sound/misc/menu2.wav", qfalse );
+	if (!menu_out_sound) {
+		menu_out_sound = -4;
+	}
 	menu_buzz_sound	= trap_S_RegisterSound( "sound/misc/menu2.wav", qfalse );
+	if (!menu_buzz_sound) {
+		menu_buzz_sound = -5;
+	}
 	weaponChangeSound	= trap_S_RegisterSound( "sound/weapons/change.wav", qfalse );
+	if (!weaponChangeSound) {
+		weaponChangeSound = -6;
+	}
 
 	// need a nonzero sound, make an empty sound for this
 	menu_null_sound = -1;

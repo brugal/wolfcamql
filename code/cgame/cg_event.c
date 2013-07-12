@@ -3,6 +3,23 @@
 // cg_event.c -- handle entity events at snapshot or playerstate transitions
 
 #include "cg_local.h"
+
+#include "cg_draw.h"  // CG_CenterPrint CG_CenterPrintFragMessage
+#include "cg_effects.h"
+#include "cg_ents.h"
+#include "cg_event.h"
+#include "cg_main.h"
+#include "cg_newdraw.h"
+#include "cg_players.h"
+#include "cg_predict.h"
+//#include "cg_servercmds.h"  // CG_VoiceChatLocal()
+#include "cg_syscalls.h"
+#include "cg_view.h"
+#include "cg_weapons.h"
+#include "sc.h"
+#include "wolfcam_event.h"
+#include "wolfcam_predict.h"
+
 #include "wolfcam_local.h"
 //#include <stdio.h>
 
@@ -61,7 +78,7 @@ const char	*CG_PlaceString( int rank ) {
 CG_Obituary
 =============
 */
-static void CG_Obituary( entityState_t *ent ) {
+static void CG_Obituary( const entityState_t *ent ) {
 	int			mod;
 	int			target, attacker;
 	char		*message;
@@ -71,7 +88,7 @@ static void CG_Obituary( entityState_t *ent ) {
 	char		targetName[MAX_QPATH * 2];
 	char		attackerName[MAX_QPATH * 2];
 	gender_t	gender;
-	clientInfo_t	*ci;
+	const clientInfo_t	*ci;
 	qhandle_t	icon;
 	//FIXME testing
 	//static int	count = 0;
@@ -271,6 +288,9 @@ static void CG_Obituary( entityState_t *ent ) {
 			icon = cg_weapons[WP_PROX_LAUNCHER].weaponIcon;
 			break;
 #endif
+		case MOD_SWITCH_TEAMS:
+			message = "switched teams";
+			break;
 		default:
 			if ( gender == GENDER_FEMALE )
 				message = "killed herself";
@@ -368,7 +388,7 @@ static void CG_Obituary( entityState_t *ent ) {
 
 	// check for kill messages from the current clientNum
 	if ( !wolfcam_following  &&  attacker == cg.snap->ps.clientNum ) {
-		char	*s;
+		const char	*s;
 
 		if (((!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER)  &&  cg_fragMessageStyle.integer == 1)  ||  cg_fragMessageStyle.integer == 2) {
 			if (cg_drawFragMessageSeparate.integer) {
@@ -407,7 +427,7 @@ static void CG_Obituary( entityState_t *ent ) {
 		cg.lastFragVictim = target;
 		cg.lastFragKiller = attacker;
 		Q_strncpyz(cg.lastFragVictimName, cgs.clientinfo[target].name, sizeof(cg.lastFragVictimName));
-		Q_strncpyz(cg.lastFragVictimWhiteName, cgs.clientinfo[target].name, sizeof(cg.lastFragVictimWhiteName));
+		Q_strncpyz(cg.lastFragVictimWhiteName, cgs.clientinfo[target].whiteName, sizeof(cg.lastFragVictimWhiteName));
 		cg.lastFragWeapon = CG_ModToWeapon(mod);
 		cg.lastFragMod = mod;
 		cg.lastFragVictimTeam = cgs.clientinfo[target].team;
@@ -415,7 +435,7 @@ static void CG_Obituary( entityState_t *ent ) {
 		// print the text message as well
 	} else if (wolfcam_following) {
         if (attacker == wcg.clientNum) {
-            char *s;
+            const char *s;
 			if (mod == MOD_THAW) {
 				s = va("You thawed %s", targetName);
 			} else {
@@ -431,7 +451,7 @@ static void CG_Obituary( entityState_t *ent ) {
 			cg.lastFragVictim = target;
 			cg.lastFragKiller = attacker;
 			Q_strncpyz(cg.lastFragVictimName, cgs.clientinfo[target].name, sizeof(cg.lastFragVictimName));
-			Q_strncpyz(cg.lastFragVictimWhiteName, cgs.clientinfo[target].name, sizeof(cg.lastFragVictimWhiteName));
+			Q_strncpyz(cg.lastFragVictimWhiteName, cgs.clientinfo[target].whiteName, sizeof(cg.lastFragVictimWhiteName));
 			cg.lastFragWeapon = CG_ModToWeapon(mod);
 			cg.lastFragMod = mod;
 			cg.lastFragVictimTeam = cgs.clientinfo[target].team;
@@ -550,7 +570,7 @@ static void CG_Obituary( entityState_t *ent ) {
 		}
 
 		if (message) {
-			char *s;
+			const char *s;
 
 			s = va("%s %s %s%s", targetName, message, attackerName, message2);
 			Q_strncpyz(cg.lastObituary.q3obitString, s, sizeof(cg.lastObituary.q3obitString));
@@ -574,11 +594,11 @@ static void CG_Obituary( entityState_t *ent ) {
 CG_UseItem
 ===============
 */
-static void CG_UseItem( centity_t *cent ) {
+static void CG_UseItem( const centity_t *cent ) {
 	clientInfo_t *ci;
 	int			itemNum, clientNum;
 	gitem_t		*item;
-	entityState_t *es;
+	const entityState_t *es;
 
 	es = &cent->currentState;
 
@@ -707,9 +727,9 @@ static void CG_ItemPickup( int itemNum ) {
 
 }
 
-void CG_TimedItemPickup (int index, vec3_t origin, int clientNum, int time, qboolean spec)
+void CG_TimedItemPickup (int index, const vec3_t origin, int clientNum, int time, qboolean spec)
 {
-	gitem_t *item;
+	const gitem_t *item;
 	int i;
 	timedItem_t *titem = NULL;
 	float len;
@@ -932,7 +952,7 @@ CG_WaterLevel
 Returns waterlevel for entity origin
 ================
 */
-int CG_WaterLevel(centity_t *cent) {
+static int CG_WaterLevel(const centity_t *cent) {
 	vec3_t point;
 	int contents, sample1, sample2, anim, waterlevel;
 
@@ -980,7 +1000,7 @@ Also called by playerstate transition
 ================
 */
 void CG_PainEvent( centity_t *cent, int health ) {
-	char	*snd;
+	const char	*snd;
 
 	//Com_Printf("%f  pain event %d  %p\n", cg.ftime, cent->currentState.number, cent);
 
@@ -1029,7 +1049,7 @@ void CG_PainEvent( centity_t *cent, int health ) {
 
 #define	DEBUGNAME(x) { eventName = x; if(cg_debugEvents.integer  ||  cg_drawEventNumbers.integer){Com_Printf(x"\n");} }
 
-int CG_EntityEventFromQ3 (int event)
+static int CG_EntityEventFromQ3 (int event)
 {
 	int e;
 
@@ -1319,7 +1339,7 @@ int CG_EntityEventFromQ3 (int event)
 	return e;
 }
 
-int CG_CheckClientEventCpma (int clientNum, entityState_t *es)
+int CG_CheckClientEventCpma (int clientNum, const entityState_t *es)
 {
 	if (es->number >= MAX_CLIENTS) {
 		clientNum = es->modelindex2 & 0xf;
@@ -1327,6 +1347,7 @@ int CG_CheckClientEventCpma (int clientNum, entityState_t *es)
 
 	return clientNum;
 }
+
 
 /*
 ==============
@@ -1337,13 +1358,13 @@ also called by CG_CheckPlayerstateEvents
 ==============
 */
 
-void CG_EntityEvent( centity_t *cent, vec3_t position ) {
-	entityState_t	*es;
+void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
+	entityState_t *es;  // sets es->loopSound
 	int				event;
 	vec3_t			dir;
 	const char		*s;
 	int				clientNum;
-	clientInfo_t	*ci;
+	clientInfo_t *ci;  //FIXME should be const
 	//int ourClientNum;
 	const char *eventName;
 	int id;
@@ -1423,7 +1444,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FOOTSTEP:
 		DEBUGNAME("EV_FOOTSTEP");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s clientnum %d\n", event, eventName, es->number);
 		}
 		if (cg_footsteps.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_BODY,
@@ -1433,7 +1454,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FOOTSTEP_METAL:
 		DEBUGNAME("EV_FOOTSTEP_METAL");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if (cg_footsteps.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_BODY,
@@ -1443,7 +1464,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FOOTSTEP_WOOD:
 		DEBUGNAME("EV_FOOTSTEP_WOOD");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if (cg_footsteps.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_BODY,
@@ -1453,7 +1474,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FOOTSTEP_SNOW:
 		DEBUGNAME("EV_FOOTSTEP_SNOW");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if (cg_footsteps.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_BODY,
@@ -1463,7 +1484,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FOOTSPLASH:
 		DEBUGNAME("EV_FOOTSPLASH");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if (cg_footsteps.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_BODY,
@@ -1473,7 +1494,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FOOTWADE:
 		DEBUGNAME("EV_FOOTWADE");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
 		}
 		if (cg_footsteps.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_BODY,
@@ -1483,7 +1504,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_SWIM:
 		DEBUGNAME("EV_SWIM");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
 		}
 		if (cg_footsteps.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_BODY,
@@ -1495,7 +1516,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FALL_SHORT:
 		DEBUGNAME("EV_FALL_SHORT");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.landSound );
 		if ( clientNum == cg.predictedPlayerState.clientNum ) {
@@ -1507,7 +1528,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FALL_MEDIUM:
 		DEBUGNAME("EV_FALL_MEDIUM");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		// use normal pain sound
 		trap_S_StartSound( NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, "*pain100_1.wav" ) );
@@ -1523,7 +1544,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_FALL_FAR:
 		DEBUGNAME("EV_FALL_FAR");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, CG_CustomSound( es->number, "*fall1.wav" ) );
 		cent->pe.painTime = cg.time;	// don't play a pain sound right after this
@@ -1547,7 +1568,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		int		step;
 
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		//Com_Printf("ev_step\n");
 		if ( clientNum != cg.predictedPlayerState.clientNum ) {
@@ -1625,7 +1646,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_JUMP:
 		DEBUGNAME("EV_JUMP");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, "*jump1.wav" ) );
 		if (es->number == cg.snap->ps.clientNum) {
@@ -1646,7 +1667,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_TAUNT:
 		DEBUGNAME("EV_TAUNT");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if (!cg_noTaunt.integer) {
 			trap_S_StartSound (NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, "*taunt.wav" ) );
@@ -1681,28 +1702,28 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_WATER_TOUCH:
 		DEBUGNAME("EV_WATER_TOUCH");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.watrInSound );
 		break;
 	case EV_WATER_LEAVE:
 		DEBUGNAME("EV_WATER_LEAVE");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.watrOutSound );
 		break;
 	case EV_WATER_UNDER:
 		DEBUGNAME("EV_WATER_UNDER");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.watrUnSound );
 		break;
 	case EV_WATER_CLEAR:
 		DEBUGNAME("EV_WATER_CLEAR");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, CG_CustomSound( es->number, "*gasp.wav" ) );
 		break;
@@ -1715,7 +1736,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_ITEM_PICKUP:
 		DEBUGNAME("EV_ITEM_PICKUP");
 		{
-			gitem_t	*item;
+			const gitem_t *item;
 			int		index;
 
 			if (cgs.cpma  ||  cgs.osp) {
@@ -1785,7 +1806,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_GLOBAL_ITEM_PICKUP:
 		DEBUGNAME("EV_GLOBAL_ITEM_PICKUP");
 		{
-			gitem_t	*item;
+			const gitem_t *item;
 			int		index;
 
 			index = es->eventParm;		// player predicted
@@ -1815,7 +1836,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_NOAMMO:
 		DEBUGNAME("EV_NOAMMO");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if ( !wolfcam_following  &&  es->number == cg.snap->ps.clientNum ) {
 			CG_OutOfAmmoChange();
@@ -1825,14 +1846,14 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_DROP_WEAPON:
 		DEBUGNAME("EV_DROP_WEAPON");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		//FIXME some type of click sound is played?
 		break;
 	case EV_CHANGE_WEAPON:
 		DEBUGNAME("EV_CHANGE_WEAPON");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StartSound (NULL, es->number, CHAN_AUTO, cgs.media.selectSound );
 		break;
@@ -1842,7 +1863,13 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 		DEBUGNAME("EV_FIRE_WEAPON");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			if (cgs.protocol == PROTOCOL_QL  &&  es->weapon == WP_GRENADE_LAUNCHER) {
+				// this is ok, can have 'world' weapons like the grenades
+				// in silentnight.bsp
+			} else {
+				CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			}
+			//CG_PrintEntityStatep(es);
 		}
         //Com_Printf("EV_FIRE_WEAPON: %d %d %p %s\n", clientNum, es->weapon, cent, cgs.clientinfo[clientNum].name);
 
@@ -1862,105 +1889,105 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_USE_ITEM0:
 		DEBUGNAME("EV_USE_ITEM0");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM1:
 		DEBUGNAME("EV_USE_ITEM1");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName,es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event,  eventName,es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM2:
 		DEBUGNAME("EV_USE_ITEM2");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM3:
 		DEBUGNAME("EV_USE_ITEM3");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM4:
 		DEBUGNAME("EV_USE_ITEM4");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM5:
 		DEBUGNAME("EV_USE_ITEM5");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM6:
 		DEBUGNAME("EV_USE_ITEM6");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM7:
 		DEBUGNAME("EV_USE_ITEM7");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM8:
 		DEBUGNAME("EV_USE_ITEM8");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM9:
 		DEBUGNAME("EV_USE_ITEM9");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM10:
 		DEBUGNAME("EV_USE_ITEM10");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM11:
 		DEBUGNAME("EV_USE_ITEM11");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM12:
 		DEBUGNAME("EV_USE_ITEM12");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM13:
 		DEBUGNAME("EV_USE_ITEM13");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
 	case EV_USE_ITEM14:
 		DEBUGNAME("EV_USE_ITEM14");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_UseItem( cent );
 		break;
@@ -1973,7 +2000,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_PLAYER_TELEPORT_IN:
 		DEBUGNAME("EV_PLAYER_TELEPORT_IN");
 		if (es->number >= MAX_CLIENTS) {
-			//Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			//CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if (*EffectScripts.playerTeleportIn) {
 			CG_ResetScriptVars();
@@ -1987,7 +2014,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_PLAYER_TELEPORT_OUT:
 		DEBUGNAME("EV_PLAYER_TELEPORT_OUT");
 		if (es->number >= MAX_CLIENTS) {
-			//Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			//CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		if (*EffectScripts.playerTeleportOut) {
 			CG_ResetScriptVars();
@@ -2006,7 +2033,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_ITEM_RESPAWN:
 		DEBUGNAME("EV_ITEM_RESPAWN");
 		{
-			gitem_t *item;
+			const gitem_t *item;
 			int index;
 			int i;
 			float len, newLen;
@@ -2106,6 +2133,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_JUICED:
 		DEBUGNAME("EV_JUICED");
+		CG_Printf("^3FIXME juiced in quakelive\n");
 		CG_InvulnerabilityJuiced( cent->lerpOrigin );
 		break;
 	case EV_LIGHTNINGBOLT:
@@ -2140,6 +2168,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			CG_PrintEntityStatep(es);
 		}
 #endif
+		//Com_Printf("base %f %f %f\n", es->pos.trBase[0], es->pos.trBase[1], es->pos.trBase[2]);
 		CG_MissileHitWall( es->weapon, 0, position, dir, IMPACTSOUND_DEFAULT, qfalse );
 		break;
 
@@ -2150,19 +2179,23 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 
 	case EV_RAILTRAIL: {
-		clientInfo_t ciTmp;
+		vec3_t origColor1;
+		vec3_t origColor2;
+		qboolean revertColors = qfalse;
 
 		DEBUGNAME("EV_RAILTRAIL");
 		cent->currentState.weapon = WP_RAILGUN;  // ???
 		if (cg.freezeEntity[es->clientNum]) {
 			return;
 		}
+
 		if (cg_railUseOwnColors.integer  &&  CG_IsUs(ci)) {
-			ci = &ciTmp;
-			//CG_Q3ColorFromString(SC_Cvar_Get_String("color1"), ci->color1);
-			//CG_Q3ColorFromString(SC_Cvar_Get_String("color2"), ci->color2);
+			VectorCopy(ci->color1, origColor1);
+			VectorCopy(ci->color2, origColor2);
+			//FIXME  bad..
 			VectorCopy(cg.color1, ci->color1);
 			VectorCopy(cg.color2, ci->color2);
+			revertColors = qtrue;
 		}
 		if (cg_railFromMuzzle.integer) {
 			vec3_t startPoint;
@@ -2183,8 +2216,15 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		} else {
 			CG_RailTrail(ci, es->origin2, es->pos.trBase);
 		}
+
+		if (revertColors) {  //(cg_railUseOwnColors.integer  &&  CG_IsUs(ci)) {
+			VectorCopy(origColor1, ci->color1);
+			VectorCopy(origColor2, ci->color2);
+		}
+
 		// if the end was on a nomark surface, don't make an explosion
 		if ( es->eventParm != 255 ) {
+			//Com_Printf("byte dir %d\n", es->eventParm);
 			ByteToDir( es->eventParm, dir );
 			CG_MissileHitWall( es->weapon, es->clientNum, position, dir, IMPACTSOUND_DEFAULT, qtrue );
 		}
@@ -2337,9 +2377,11 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
                        );
 #endif
         }
+
 		if (*EffectScripts.weapons[WP_MACHINEGUN].impactFleshScript) {
 			int clientNum;
 
+			//clientNum = es->otherEntityNum;  //es->eventParm;
 			clientNum = es->eventParm;
 			if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
 				clientNum = 0;
@@ -2349,19 +2391,34 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 			CG_CopyPlayerDataToScriptData(&cg_entities[clientNum]);
 			VectorCopy(es->pos.trBase, ScriptVars.origin);
 			VectorCopy(dir, ScriptVars.dir);
+			VectorSet(ScriptVars.end, 0, 0, 0);
+			if (cg_entities[es->otherEntityNum].currentValid  ||  cg.snap->ps.clientNum == es->otherEntityNum) {
+				VectorSubtract(cg_entities[es->otherEntityNum].lerpOrigin, es->pos.trBase, ScriptVars.end);
+			} else {
+				//Com_Printf("^1%d not valid end\n", es->otherEntityNum);
+			}
 			CG_RunQ3mmeScript(EffectScripts.weapons[WP_MACHINEGUN].impactFleshScript, NULL);
 		} else if (*EffectScripts.impactFlesh) {
 			int clientNum;
 
+			//clientNum = es->otherEntityNum;  //es->eventParm;
 			clientNum = es->eventParm;
 			if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
 				clientNum = 0;
+				//Com_Printf("wtf... %d\n", es->eventParm);
 			}
 
 			CG_ResetScriptVars();
 			CG_CopyPlayerDataToScriptData(&cg_entities[clientNum]);
 			VectorCopy(es->pos.trBase, ScriptVars.origin);
 			VectorCopy(dir, ScriptVars.dir);
+			VectorSet(ScriptVars.end, 0, 0, 0);
+			if (cg_entities[es->otherEntityNum].currentValid  ||  cg.snap->ps.clientNum == es->otherEntityNum) {
+				VectorSubtract(cg_entities[es->otherEntityNum].lerpOrigin, es->pos.trBase, ScriptVars.end);
+				//Com_Printf("^2%d valid end\n", es->otherEntityNum);
+			} else {
+				//Com_Printf("^1%d not valid end %s\n", es->otherEntityNum, cgs.clientinfo[es->otherEntityNum].name);
+			}
 			CG_RunQ3mmeScript((char *)EffectScripts.impactFlesh, NULL);
 		} else {
 			CG_Bullet( es->pos.trBase, es->otherEntityNum, dir, qtrue, es->eventParm );
@@ -2383,25 +2440,27 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 			n = es->eventParm;  // - 1;
 			//Com_Printf("general sound %d  %s\n", n, CG_ConfigString(CS_SOUNDS + n - 1));
-			if (cg_ambientSounds.integer == 0) {
-				break;
-			}
-
-			if (cg_ambientSounds.integer == 2  &&  (n != cg.powerupRespawnSoundIndex  &&  n != cg.kamikazeRespawnSoundIndex)) {
-				break;
-			}
 
 			if ( cgs.gameSounds[ n ] ) {
+				if (cg_ambientSounds.integer == 0) {
+					break;
+				}
+
+				if (cg_ambientSounds.integer == 2  &&  !CG_AllowedAmbientSound(cgs.gameSounds[n])) {
+					break;
+				}
+
+				//Com_Printf("playing....\n");
+
 				trap_S_StartSound (NULL, es->number, CHAN_VOICE, cgs.gameSounds[ n ] );
 			} else {
-				//Com_Printf("^1FIXME general sound custom: %d\n", n);
 				if (cgs.protocol == PROTOCOL_QL) {
 					s = CG_ConfigString( CS_SOUNDS + n - 1);
 				} else {
 					s = CG_ConfigString(CS_SOUNDS + n);
 				}
 
-				//Com_Printf("^2 general sound playing: %s\n", s);
+				//Com_Printf("^2(player) general sound playing: %s\n", s);
 				trap_S_StartSound (NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, s ) );
 			}
 			break;
@@ -2418,25 +2477,26 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		//Com_Printf("global sound %d  %s\n", n, CG_ConfigString(CS_SOUNDS + n - 1));
 		//Com_Printf("playing %d  %s\n", n, CG_ConfigString(CS_SOUNDS + n));
 
-		if (cg_ambientSounds.integer == 0) {
-			break;
-		}
-		if (cg_ambientSounds.integer == 2  &&  (n != cg.powerupRespawnSoundIndex  &&  n != cg.kamikazeRespawnSoundIndex)) {
-			break;
-		}
-
 		if ( cgs.gameSounds[ n ] ) {
+			if (cg_ambientSounds.integer == 0) {
+				break;
+			}
+			if (cg_ambientSounds.integer == 2  &&  !CG_AllowedAmbientSound(cgs.gameSounds[n])) {
+				break;
+			}
+
             if (!wolfcam_following)
                 trap_S_StartSound (NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.gameSounds[ n ] );
             else
                 trap_S_StartSound (NULL, wcg.clientNum, CHAN_AUTO, cgs.gameSounds[n]);
 		} else {
-			//Com_Printf("^1FIXME global sound custom:%d\n", n);
 			if (cgs.protocol == PROTOCOL_QL) {
 				s = CG_ConfigString( CS_SOUNDS + n - 1);
 			} else {
 				s = CG_ConfigString(CS_SOUNDS + n);
 			}
+			//Com_Printf("^2(player) global sound custom '%s' %d\n", s, n);
+
             if (!wolfcam_following)
                 trap_S_StartSound (NULL, cg.snap->ps.clientNum, CHAN_AUTO, CG_CustomSound( es->number, s ) );
             else
@@ -2516,7 +2576,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer) {
 					if (team == TEAM_BLUE) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
 							else
@@ -2524,7 +2584,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
  							CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
 					}
 						else if (team == TEAM_RED) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
 							else
@@ -2543,7 +2603,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer) {
 						if (team == TEAM_RED) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
 							else
@@ -2552,7 +2612,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 							CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
 						}
 						else if (team == TEAM_BLUE) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
 							else
@@ -2562,6 +2622,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					}
 					}
 					break;
+#if 1  //def MPACK
 				case GTS_REDOBELISK_ATTACKED: // Overload: red obelisk is being attacked
 					if (team == TEAM_RED) {
 						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
@@ -2572,7 +2633,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
 					}
 					break;
-
+#endif
 				case GTS_REDTEAM_SCORED:
 					if (cg_audioAnnouncerScore.integer) {
 						CG_AddBufferedSound(cgs.media.redScoredSound);
@@ -2604,7 +2665,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 						CG_AddBufferedSound( cgs.media.teamsTiedSound );
 					}
 					break;
-#if  1  //def MISSIONPACK
+#if  1  //def MPACK
 				case GTS_KAMIKAZE:
 					trap_S_StartLocalSound(cgs.media.kamikazeFarSound, CHAN_ANNOUNCER);
 					break;
@@ -2661,7 +2722,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer  &&  cgs.gametype != GT_CTFS) {
 					if (team == TEAM_BLUE) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
 							else
@@ -2669,7 +2730,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 						 	CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
 						}
 						else if (team == TEAM_RED) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
 							else
@@ -2687,7 +2748,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer  &&  cgs.gametype != GT_CTFS) {
 						if (team == TEAM_RED) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
 							else
@@ -2695,7 +2756,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 							CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
 						}
 						else if (team == TEAM_BLUE) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 							if (cgs.gametype == GT_1FCTF)
 								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
 							else
@@ -2747,7 +2808,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 						CG_AddBufferedSound( cgs.media.teamsTiedSound );
 					}
 					break;
-#if  1  //def MISSIONPACK
+#if  1  //def MPACK
 				case GTS_KAMIKAZE:
 					trap_S_StartLocalSound(cgs.media.kamikazeFarSound, CHAN_ANNOUNCER);
 					break;
@@ -2792,7 +2853,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 				}
 				break;
 			case GTS_ROUND_OVER: {
-				char *s;
+				const char *s;
 				char *s2;
 				char snum[128];
 				char buffer[MAX_STRING_CHARS];
@@ -2806,7 +2867,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 
 				buffer[0] = '\0';
 				strcat(buffer, "Round Winners:\n");
-				s = (char *)CG_ConfigString(CS_ROUND_WINNERS);
+				s = CG_ConfigString(CS_ROUND_WINNERS);
 				s2 = snum;
 				while (*s) {
 					s2[0] = s[0];
@@ -2828,7 +2889,8 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 				break;
 			}
 			case GTS_DOMINATION_POINT_CAPTURE: {
-				char *teamName, *pointName;
+				const char *teamName;
+				const char *pointName;
 				int ourTeam;
 
 				if (cg.warmup) {
@@ -2924,7 +2986,37 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 						break;
 					}
 				}
-				trap_S_StartLocalSound(cgs.media.perfectSound, CHAN_ANNOUNCER);
+				if (cg_audioAnnouncerRoundReward.integer) {
+					trap_S_StartLocalSound(cgs.media.perfectSound, CHAN_ANNOUNCER);
+				}
+				break;
+			}
+			case GTS_DENIED: {
+				//FIXME check if it is team specific
+				//FIXME err.. also check if this is a bug...
+				//CG_PrintEntityStatep(&cent->currentState);
+				if (wolfcam_following) {
+					if (cgs.clientinfo[wcg.clientNum].team != cgs.clientinfo[cg.snap->ps.clientNum].team) {
+						break;
+					}
+				}
+				if (cg_audioAnnouncerRoundReward.integer) {
+					trap_S_StartLocalSound(cgs.media.deniedSound, CHAN_ANNOUNCER);
+				}
+				break;
+			}
+			case GTS_PLAYER_INFECTED: {
+				// red rover infected
+				//Com_Printf("^3infected:\n");
+				//CG_PrintEntityStatep(es);
+#if 0
+				if (es->modelindex2 != TEAM_BLUE) {
+					Com_Printf("^1index != 2\n");
+				}
+#endif
+				if (es->modelindex2 == TEAM_BLUE  &&  team == TEAM_BLUE) {
+					trap_S_StartLocalSound(cgs.media.survivorSound, CHAN_LOCAL);
+				}
 				break;
 			}
 			default:
@@ -2979,7 +3071,7 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_DROWN:
 		DEBUGNAME("EV_DROWN");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StartSound(NULL, es->number, CHAN_VOICE, CG_CustomSound(es->number, "*drown.wav"));
 		break;
@@ -3083,12 +3175,25 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 		break;
 	case EV_GIB_PLAYER:
 		DEBUGNAME("EV_GIB_PLAYER");
+		if (es->number >= MAX_CLIENTS) {
+			if (1) {  //(!cgs.protocol == PROTOCOL_QL) {
+				// can't get client number in ql
+				//CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
+				//CG_PrintEntityStatep(es);
+			}
+		}
+
 		// don't play gib sound when using the kamikaze because it interferes
 		// with the kamikaze sound, downside is that the gib sound will also
 		// not be played when someone is gibbed while just carrying the kamikaze
 		if (cgs.cpma  ||  cgs.osp) {
 			//clientNum = CG_CheckClientEventCpma(clientNum, es);
 			//cent = &cg_entities[clientNum];
+		}
+
+		if (cgs.gametype == GT_FREEZETAG) {
+			Com_Printf("^5skipping extra gib....\n");
+			break;
 		}
 
 		if (*EffectScripts.gibbed) {
@@ -3127,10 +3232,10 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_STOPLOOPINGSOUND:
 		DEBUGNAME("EV_STOPLOOPINGSOUND");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		trap_S_StopLoopingSound( es->number );
-		es->loopSound = 0;
+		es->loopSound = 0;  //FIXME is this ok???
 		break;
 
 	case EV_DEBUG_LINE:
@@ -3157,9 +3262,14 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_THAW_PLAYER: {
 		DEBUGNAME("EV_THAW_PLAYER");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			if (!cgs.protocol == PROTOCOL_QL) {
+				// can't get client number in ql
+				CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
+				//Com_Printf("158  %s\n", cgs.clientinfo[es->number - 158].name);
+				//CG_PrintEntityStatep(es);
+			}
 		}
-		//Com_Printf("^3FIXME EV_THAW_PLAYER\n");
+		//Com_Printf("^5EV_THAW_PLAYER  num %d\n", es->number);
 		if (*EffectScripts.thawed) {
 			CG_FX_ThawPlayer(cent);
 		} else {
@@ -3171,7 +3281,10 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	case EV_THAW_TICK: {
 		DEBUGNAME("EV_THAW_TICK");
 		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+			if (!cgs.protocol == PROTOCOL_QL) {
+				// can't get client number in ql
+				CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
+			}
 		}
 		//trap_S_StartLocalSound(cgs.media.wearOffSound, CHAN_LOCAL_SOUND);
 		//trap_S_StartSound( NULL, es->number, CHAN_BODY, cgs.media.wearOffSound);
@@ -3180,11 +3293,16 @@ void CG_EntityEvent( centity_t *cent, vec3_t position ) {
 	}
 	case EV_HEADSHOT: {
 		DEBUGNAME("EV_HEADSHOT");
-		if (es->number >= MAX_CLIENTS) {
-			Com_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+		// es->otherEntityNum == person who hit head shot
+		if (*EffectScripts.headShot) {
+			CG_ResetScriptVars();
+			//VectorCopy(cent->lerpOrigin, ScriptVars.origin);
+			VectorCopy(es->pos.trBase, ScriptVars.origin);
+			ScriptVars.clientNum = es->otherEntityNum;
+			CG_RunQ3mmeScript(EffectScripts.headShot, NULL);
+		} else if (cg_headShots.integer) {
+			CG_HeadShotPlum(es->pos.trBase);
 		}
-		//FIXME
-		CG_Printf("FIXME EV_HEADSHOT\n");
 		break;
 	}
 	case EV_POI: {
@@ -3240,7 +3358,7 @@ void CG_CheckEvents( centity_t *cent ) {
 		}
 		// if this is a player event set the entity number of the client entity number
 		if ( cent->currentState.eFlags & EF_PLAYER_EVENT ) {
-			cent->currentState.number = cent->currentState.otherEntityNum;
+			cent->currentState.number = cent->currentState.otherEntityNum;  //FIXME damn
 		}
 
 		cent->previousEvent = 1;
@@ -3265,4 +3383,3 @@ void CG_CheckEvents( centity_t *cent ) {
 	//Com_Printf("event ent %d\n", cent->currentState.number);
 	CG_EntityEvent( cent, cent->lerpOrigin );
 }
-

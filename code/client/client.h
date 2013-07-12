@@ -1,3 +1,5 @@
+#ifndef client_h_included
+#define client_h_included
 /*
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
@@ -25,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qcommon.h"
 #include "../renderer/tr_public.h"
 #include "../ui/ui_public.h"
-#include "keys.h"
+//#include "keys.h"
 #include "snd_public.h"
 #include "../cgame/cg_public.h"
 #include "../game/bg_public.h"
@@ -39,6 +41,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "speex/speex.h"
 #include "speex/speex_preprocess.h"
 #endif
+
+#define MAX_DEMO_FILES 64
 
 // file full of random crap that gets used to create cl_guid
 #define QKEY_FILE "qkey"
@@ -88,7 +92,7 @@ typedef struct {
 // the parseEntities array must be large enough to hold PACKET_BACKUP frames of
 // entities, so that when a delta compressed message arives from the server
 // it can be un-deltad from the original 
-#define	MAX_PARSE_ENTITIES	2048  //(2048 * (1440 / 32))
+#define  MAX_PARSE_ENTITIES  ( PACKET_BACKUP * MAX_SNAPSHOT_ENTITIES )
 
 extern int g_console_field_width;
 
@@ -138,7 +142,7 @@ typedef struct {
 	int			serverId;			// included in each client message so the server
 												// can tell if it is for a prior map_restart
 	// big stuff at end of structure so most offsets are 15 bits or less
-	clSnapshot_t	snapshots[PACKET_BACKUP];
+	clSnapshot_t	snapshots[PACKET_BACKUP][MAX_DEMO_FILES];
 
 	entityState_t	entityBaselines[MAX_GENTITIES];	// for delta compression when not in previous frame
 
@@ -354,7 +358,20 @@ typedef struct {
 
 extern	clientStatic_t		cls;
 
-#define MAX_ITEM_PICKUPS (1024 * 4)
+typedef struct {
+	qboolean valid;
+	int num;
+	qhandle_t f;
+	int serverTime;
+	clSnapshot_t snap;
+	int serverMessageSequence;
+} demoFile_t;
+
+#define MAX_PLAYER_INFO 256
+
+typedef struct {
+	char modelName[MAX_QPATH];
+} playerInfo_t;
 
 typedef struct {
 	int numSnaps;
@@ -404,6 +421,20 @@ typedef struct {
 	int entitySnapShotTime[MAX_GENTITIES];
 	int protocol;
 	qboolean cpma;
+	int cpmaLastTs;
+	int cpmaLastTd;
+	int cpmaLastTe;
+
+	timeOut_t timeOuts[MAX_TIMEOUTS];
+	int numTimeouts;
+
+	demoFile_t demoFiles[MAX_DEMO_FILES];
+	int numDemoFiles;
+
+	int pov;
+
+	playerInfo_t playerInfo[MAX_PLAYER_INFO];
+	int numPlayerInfo;
 } demoInfo_t;
 
 extern demoInfo_t di;
@@ -411,6 +442,7 @@ extern demoInfo_t di;
 typedef struct {
     qboolean valid;
     int seekPoint;
+	int demoSeekPoints[MAX_DEMO_FILES];
     clientActive_t cl;
     clientConnection_t clc;
     clientStatic_t cls;
@@ -474,7 +506,7 @@ extern  cvar_t  *j_up_axis;
 
 extern	cvar_t	*cl_timedemo;
 extern	cvar_t	*cl_aviFrameRate;
-extern	cvar_t	*cl_aviMotionJpeg;
+extern	cvar_t	*cl_aviCodec;
 extern cvar_t *cl_aviAllowLargeFiles;
 extern cvar_t *cl_aviFetchMode;
 extern cvar_t *cl_aviExtension;
@@ -576,8 +608,6 @@ void IN_CenterView (void);
 void CL_VerifyCode( void );
 
 float CL_KeyState (kbutton_t *key);
-int Key_StringToKeynum( char *str );
-char *Key_KeynumToString (int keynum);
 
 //
 // cl_parse.c
@@ -592,6 +622,7 @@ void CL_Voip_f( void );
 
 void CL_SystemInfoChanged( void );
 void CL_ParseServerMessage( msg_t *msg );
+void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg);
 
 //====================================================================
 
@@ -717,3 +748,5 @@ void CL_Pause_f (void);
 void CL_AddAt (int serverTime, const char *clockTime, const char *command);
 
 qboolean CL_GetServerCommand (int serverCommandNumber);
+
+#endif  // client_h_included

@@ -276,7 +276,6 @@ static void ResampleTexture( unsigned *in, int inwidth, int inheight, unsigned *
 	for (i=0 ; i<outheight ; i++, out += outwidth) {
 		inrow = in + inwidth*(int)((i+0.25)*inheight/outheight);
 		inrow2 = in + inwidth*(int)((i+0.75)*inheight/outheight);
-		frac = fracstep >> 1;
 		for (j=0 ; j<outwidth ; j++) {
 			pix1 = (byte *)inrow + p1[j];
 			pix2 = (byte *)inrow + p2[j];
@@ -827,8 +826,8 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 		isLightmap = qtrue;
 	}
 
-	if ( tr.numImages == MAX_DRAWIMAGES ) {
-		ri.Error( ERR_DROP, "R_CreateImage: MAX_DRAWIMAGES hit");
+	if ( tr.numImages >= MAX_DRAWIMAGES ) {
+		ri.Error( ERR_DROP, "R_CreateImage: MAX_DRAWIMAGES (%d) hit", MAX_DRAWIMAGES);
 	}
 
 	image = tr.images[tr.numImages] = ri.Hunk_Alloc( sizeof( image_t ), h_low );

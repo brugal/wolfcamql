@@ -67,9 +67,10 @@ typedef struct {
 	// Nothing is drawn until R_RenderScene is called.
 	void	(*ClearScene)( void );
 	void	(*AddRefEntityToScene)( const refEntity_t *re );
-	void (*SetPathLines)(int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, vec4_t color);
+	void	(*AddRefEntityPtrToScene)(refEntity_t *re);
+	void (*SetPathLines)(int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, const vec4_t color);
 	void	(*AddPolyToScene)( qhandle_t hShader , int numVerts, const polyVert_t *verts, int num, int lightmap );
-	int		(*LightForPoint)( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
+	int		(*LightForPoint)( const vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
 	void	(*AddLightToScene)( const vec3_t org, float intensity, float r, float g, float b );
 	void	(*AddAdditiveLightToScene)( const vec3_t org, float intensity, float r, float g, float b );
 	void	(*RenderScene)( const refdef_t *fd );
@@ -120,10 +121,10 @@ typedef struct {
 //
 typedef struct {
 	// print message on the local console
-	void	(QDECL *Printf)( int printLevel, const char *fmt, ...);
+	void	(QDECL *Printf)( int printLevel, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 	// abort the game
-	void	(QDECL *Error)( int errorLevel, const char *fmt, ...);
+	void	(QDECL *Error)( int errorLevel, const char *fmt, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
 
 	// milliseconds should only be used for profiling, never
 	// for anything game related.  Get time from the refdef

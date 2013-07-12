@@ -62,7 +62,7 @@ static void *cURLLib = NULL;
 GPA
 =================
 */
-static void *GPA(char *str)
+static void *GPA(const char *str)
 {
 	void *rv;
 
@@ -208,7 +208,7 @@ void CL_cURL_Cleanup(void)
 	}
 }
 
-static int CL_cURL_CallbackProgress( void *dummy, double dltotal, double dlnow,
+static int CL_cURL_CallbackProgress( const void *dummy, double dltotal, double dlnow,
 	double ultotal, double ulnow )
 {
 	clc.downloadSize = (int)dltotal;
@@ -218,8 +218,8 @@ static int CL_cURL_CallbackProgress( void *dummy, double dltotal, double dlnow,
 	return 0;
 }
 
-static size_t CL_cURL_CallbackWrite(void *buffer, size_t size, size_t nmemb,
-	void *stream)
+static size_t CL_cURL_CallbackWrite(const void *buffer, size_t size, size_t nmemb,
+	const void *stream)
 {
 	FS_Write( buffer, size*nmemb, ((fileHandle_t*)stream)[0] );
 	return size*nmemb;
@@ -319,7 +319,7 @@ void CL_cURL_PerformDownload(void)
 	}
 	FS_FCloseFile(clc.download);
 	if(msg->msg == CURLMSG_DONE && msg->data.result == CURLE_OK) {
-		FS_SV_Rename(clc.downloadTempName, clc.downloadName);
+		FS_SV_Rename(clc.downloadTempName, clc.downloadName, qfalse);
 		clc.downloadRestart = qtrue;
 	}
 	else {

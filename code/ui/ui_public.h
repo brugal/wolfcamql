@@ -32,6 +32,7 @@ typedef struct {
 	char			servername[MAX_STRING_CHARS];
 	char			updateInfoString[MAX_STRING_CHARS];
 	char			messageString[MAX_STRING_CHARS];
+	qboolean demoplaying;
 } uiClientState_t;
 
 typedef enum {
@@ -138,6 +139,9 @@ typedef enum {
 
 	UI_OPEN_QUAKE_LIVE_DIRECTORY,
 	UI_OPEN_WOLFCAM_DIRECTORY,
+
+	UI_CVAR_EXISTS,
+
 } uiImport_t;
 
 typedef enum {

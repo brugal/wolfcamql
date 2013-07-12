@@ -168,12 +168,11 @@ void AAS_InitTravelFlagFromType(void)
 //===========================================================================
 static ID_INLINE int AAS_TravelFlagForType_inline(int traveltype)
 {
-	int tfl;
+	int tfl = 0;
 
-	tfl = 0;
-	if (tfl & TRAVELFLAG_NOTTEAM1)
+	if (traveltype & TRAVELFLAG_NOTTEAM1)
 		tfl |= TFL_NOTTEAM1;
-	if (tfl & TRAVELFLAG_NOTTEAM2)
+	if (traveltype & TRAVELFLAG_NOTTEAM2)
 		tfl |= TFL_NOTTEAM2;
 	traveltype &= TRAVELTYPE_MASK;
 	if (traveltype < 0 || traveltype >= MAX_TRAVELTYPES)
@@ -1067,7 +1066,7 @@ int AAS_ReadRouteCache(void)
 	botimport.FS_Read(&routecacheheader, sizeof(routecacheheader_t), fp );
 	if (routecacheheader.ident != RCID)
 	{
-		AAS_Error("%s is not a route cache dump\n");
+		AAS_Error("%s is not a route cache dump\n", filename);
 		return qfalse;
 	} //end if
 	if (routecacheheader.version != RCVERSION)

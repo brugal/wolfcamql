@@ -182,7 +182,7 @@ G_SetClientSound
 ===============
 */
 void G_SetClientSound( gentity_t *ent ) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if( ent->s.eFlags & EF_TICKING ) {
 		ent->client->ps.loopSound = G_SoundIndex( "sound/weapons/proxmine/wstbtick.wav");
 	}
@@ -632,7 +632,7 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 
 			break;
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		case EV_USE_ITEM3:		// kamikaze
 			// make sure the invulnerability is off
 			ent->client->invulnerabilityTime = 0;
@@ -660,7 +660,7 @@ void ClientEvents( gentity_t *ent, int oldEventSequence ) {
 
 }
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 /*
 ==============
 StuckInOtherClient
@@ -840,7 +840,7 @@ void ClientThink_real( gentity_t *ent ) {
 	// set speed
 	client->ps.speed = g_speed.value;
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if( bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT ) {
 		client->ps.speed *= 1.5;
 	}
@@ -873,7 +873,7 @@ void ClientThink_real( gentity_t *ent ) {
 		ent->client->pers.cmd.buttons |= BUTTON_GESTURE;
 	}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	// check for invulnerability expansion before doing the Pmove
 	if (client->ps.powerups[PW_INVULNERABILITY] ) {
 		if ( !(client->ps.pm_flags & PMF_INVULEXPAND) ) {
@@ -1132,7 +1132,7 @@ void ClientEndFrame( gentity_t *ent ) {
 		}
 	}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	// set powerup for player animation
 	if( bg_itemlist[ent->client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_GUARD ) {
 		ent->client->ps.powerups[PW_GUARD] = level.time;

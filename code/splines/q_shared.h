@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	ALIGN_OFF
 
 #ifdef _WIN32
+#ifdef _MSC_VER
 
 #pragma warning(disable : 4018)     // signed/unsigned mismatch
 #pragma warning(disable : 4032)
@@ -56,6 +57,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma warning(disable : 4711)		// selected for automatic inline expansion
 #pragma warning(disable : 4220)		// varargs matches remaining parameters
 
+#endif
 #endif
 
 #include <assert.h>
@@ -97,18 +99,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	QDECL	__cdecl
 
 // buildstring will be incorporated into the version string
-#ifdef NDEBUG
-#ifdef _M_IX86
-#define	CPUSTRING	"win-x86"
-#elif defined _M_ALPHA
-#define	CPUSTRING	"win-AXP"
-#endif
+#ifdef NQDEBUG
+  #ifdef _M_IX86
+  #define CPUSTRING "win-x86"
+  #elif defined _M_ALPHA
+  #define CPUSTRING "win-AXP"
+  #endif
 #else
-#ifdef _M_IX86
-#define	CPUSTRING	"win-x86-debug"
-#elif defined _M_ALPHA
-#define	CPUSTRING	"win-AXP-debug"
-#endif
+  #ifdef _M_IX86
+  #define CPUSTRING "win-x86-debug"
+  #elif defined _M_ALPHA
+  #define CPUSTRING "win-AXP-debug"
+  #endif
 #endif
 
 
@@ -583,8 +585,8 @@ void Com_MatchToken( const char *(*buf_p), const char *match, qboolean warning =
 void Com_MatchToken( const char *(*buf_p), const char *match, qboolean warning );
 #endif
 
-void Com_ScriptError( const char *msg, ... );
-void Com_ScriptWarning( const char *msg, ... );
+void Com_ScriptError( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
+void Com_ScriptWarning( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
 
 void Com_SkipBracedSection( const char *(*program) );
 void Com_SkipRestOfLine( const char *(*data) );
@@ -601,7 +603,7 @@ void Com_Parse3DMatrix( const char *(*buf_p), int z, int y, int x, float *m );
 	extern "C" {
 #endif
 
-void	QDECL Com_sprintf (char *dest, int size, const char *fmt, ...);
+void	QDECL Com_sprintf (char *dest, int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
 
 // mode parm for FS_FOpenFile
@@ -656,7 +658,7 @@ float	BigFloat (float l);
 float	LittleFloat (float l);
 
 void	Swap_Init (void);
-char	* QDECL va(char *format, ...);
+char	* QDECL va(char *format, ...) __attribute__ ((format (printf, 1, 2)));
 
 #ifdef __cplusplus
     }
@@ -759,9 +761,9 @@ drawVertMesh_t *SubdivideMapPatch( const mapPatch_t *patch, float maxError );
 	extern "C" {
 #endif
 
-void	QDECL Com_Error( int level, const char *error, ... );
-void	QDECL Com_Printf( const char *msg, ... );
-void	QDECL Com_DPrintf( const char *msg, ... );
+void	QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((noreturn, format(printf, 2, 3)));
+void	QDECL Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
+void	QDECL Com_DPrintf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
 
 #ifdef __cplusplus
 	}

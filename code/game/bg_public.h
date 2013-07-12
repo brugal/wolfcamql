@@ -1,3 +1,6 @@
+#ifndef bg_public_h_included
+#define bg_public_h_included
+
 /*
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
@@ -198,6 +201,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_DOMINATION_BLUE_POINTS 703
 
 #define CS_ROUND_WINNERS 705
+#define CS_CUSTOM_SERVER_SETTINGS 706
+#define CS_MAP_VOTE_INFO 707
+#define CS_MAP_VOTE_COUNT 708
+#define CS_DISABLE_MAP_VOTE 709
+
+#define CS_READY_UP_TIME 710  // ready up time if one player readied
+
+// 711
+
+// 712  infected:  500.000000
+
+
 
 // unknown ones which haven't been seen in quake live, but kept for compiling
 
@@ -206,6 +221,39 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_TEAMVOTE_TIME		MAX_CONFIGSTRINGS - 37  //19  //FIXME just anywere to let it compile
 #define CS_TEAMVOTE_STRING		MAX_CONFIGSTRINGS - 35  //22  // was 14
 #define CS_BOTINFO				MAX_CONFIGSTRINGS - 33  //25
+
+
+// quake live server custom settings
+/*
+#define SERVER_SETTING_MODIFIED_GAUNT 0x1
+#define SERVER_SETTING_MODIFIED_MG 0x2
+4 sg
+8 gl
+10 rl
+20 lg
+40 rg
+80 pg
+100 bfg
+200 grapple
+400 nailgun
+800 prox
+1000 cg
+*/
+
+// 0x0000 2000 air control
+// 0x0000 4000 ramp jumping
+// 0x0000 8000 modified physics
+// 0x0001 0000 modified weapon switch
+// 0x0002 0000 instagib
+// 0x0004 0000 quad hog
+// 0x0008 0000 regen health
+// 0x0010 0000 dropped damage health
+// 0x0020 0000 vampiric damage
+// 0x0040 0000 modified item spawning
+// 0x0080 0000 headshots enabled
+// 0x0100 0000 rail jumping
+
+#define SERVER_SETTING_INFECTED 0x04000000
 
 
 // doesn't work with quakelive
@@ -258,8 +306,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 // cpma
-#define CSCPMA_SCORES 710
 #define CSCPMA_GAMESTATE 672
+
+#define CSCPMA_SCORES 710
+
+#define CSCPMA_MESSAGE 718  // map message
+
+#define CSCPMA_RATE 726  // not sure
+// 727  max packet dup?  seen:  4
+
+#define CSCPMA_SNAPS 746
+#define CSCPMA_MAX_PACKETS 747
+
+// 752 -> 759  mod + server message?
 
 
 #if 1
@@ -466,7 +525,7 @@ typedef enum {
 	PERS_EXCELLENT_COUNT,			// two successive kills in a short amount of time
 	PERS_DEFEND_COUNT,				// defend awards
 	PERS_ASSIST_COUNT,				// assist awards
-	PERS_GAUNTLET_FRAG_COUNT,		// kills with the guantlet
+	PERS_GAUNTLET_FRAG_COUNT,		// kills with the gauntlet
 	PERS_CAPTURES,					// captures
 
 	PERS_ATTACKEE_ARMOR,			// health/armor of last person we attacked
@@ -851,6 +910,7 @@ typedef enum {
 
 } entity_event_q3_t;
 
+#define EVCPMA_FIRE_GRAPPLE 67
 #define EVCPMA_TAUNT 78
 
 typedef enum {
@@ -875,9 +935,10 @@ typedef enum {
 	GTS_ROUND_DRAW,
 	GTS_LAST_STANDING,
 	GTS_ROUND_OVER,
-	GTS_21,  // qldt plays 'denied' sound
+	GTS_DENIED,  // qldt plays 'denied' sound, in attack defend demo
 	GTS_ENEMY_TEAM_KILLED,
 	GTS_DOMINATION_POINT_CAPTURE,
+	GTS_PLAYER_INFECTED,  // guess, in red rover halloween infected
 } global_team_sound_t;
 
 // animations
@@ -1017,7 +1078,7 @@ typedef enum {
 	MOD_JUICED,
 #endif
 	MOD_GRAPPLE,
-	// ???   29
+	MOD_SWITCH_TEAMS,  // 29
 
 	MOD_THAW = 30,
 } meansOfDeath_t;
@@ -1061,19 +1122,19 @@ typedef struct gitem_s {
 
 // included in both the game dll and the client
 extern	gitem_t	bg_itemlist[];
-extern gitem_t bg_itemlistQ3[];
-extern gitem_t bg_itemlistCpma[];
+extern const gitem_t bg_itemlistQ3[];
+extern const gitem_t bg_itemlistCpma[];
 extern	int		bg_numItems;
 extern	int		bg_numItemsQ3;
 extern	int		bg_numItemsCpma;
 
 gitem_t	*BG_FindItem( const char *pickupName );
-gitem_t	*BG_FindItemForWeapon( weapon_t weapon );
-gitem_t	*BG_FindItemForPowerup( powerup_t pw );
-gitem_t	*BG_FindItemForHoldable( holdable_t pw );
+gitem_t	*BG_FindItemForWeapon( const weapon_t weapon );
+gitem_t	*BG_FindItemForPowerup( const powerup_t pw );
+gitem_t	*BG_FindItemForHoldable( const holdable_t pw );
 #define	ITEM_INDEX(x) ((x)-bg_itemlist)
 
-qboolean	BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps );
+qboolean	BG_CanItemBeGrabbed( const int gametype, const entityState_t *ent, const playerState_t *ps );
 
 
 // g_dmflags->integer flags
@@ -1128,12 +1189,12 @@ void BG_EvaluateTrajectoryDeltaf (const trajectory_t *tr, int atTimeMsec, vec3_t
 
 void	BG_AddPredictableEventToPlayerstate( int newEvent, int eventParm, playerState_t *ps );
 
-void	BG_TouchJumpPad( playerState_t *ps, entityState_t *jumppad );
+void	BG_TouchJumpPad( playerState_t *ps, const entityState_t *jumppad );
 
 void	BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean snap );
 void	BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s, int time, qboolean snap );
 
-qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTime );
+qboolean	BG_PlayerTouchesItem( const playerState_t *ps, const entityState_t *item, int atTime );
 
 
 #define ARENAS_PER_TIER		4
@@ -1166,3 +1227,4 @@ qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTim
 #define KAMI_BOOMSPHERE_MAXRADIUS		720
 #define KAMI_SHOCKWAVE2_MAXRADIUS		704
 
+#endif  // bg_public_h_included

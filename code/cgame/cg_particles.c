@@ -3,6 +3,9 @@
 
 #include "cg_local.h"
 
+#include "cg_predict.h"
+#include "cg_syscalls.h"
+
 #define BLOODRED	2
 #define EMISIVEFADE	3
 #define GREY75		4

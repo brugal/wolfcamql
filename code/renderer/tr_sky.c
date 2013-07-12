@@ -610,11 +610,8 @@ static void FillCloudBox( const shader_t *shader, int stage )
 void R_BuildCloudData( shaderCommands_t *input )
 {
 	int			i;
-	shader_t	*shader;
 
-	shader = input->shader;
-
-	assert( shader->isSky );
+	assert( input->shader->isSky );
 
 	sky_min = 1.0 / 256.0f;		// FIXME: not correct?
 	sky_max = 255.0 / 256.0f;
@@ -708,23 +705,23 @@ void R_InitSkyTexCoords( float heightCloud )
 /*
 ** RB_DrawSun
 */
-void RB_DrawSun( void ) {
+void RB_DrawSun( float scale, shader_t *shader ) {
 	float		size;
 	float		dist;
 	vec3_t		origin, vec1, vec2;
-	vec3_t		temp;
+	//vec3_t		temp;
+	byte sunColor[4] = { 255, 255, 255, 255 };
 
 	if ( !backEnd.skyRenderedThisView ) {
 		return;
 	}
-	if ( !r_drawSun->integer ) {
-		return;
-	}
+
 	qglLoadMatrixf( backEnd.viewParms.world.modelMatrix );
 	qglTranslatef (backEnd.viewParms.or.origin[0], backEnd.viewParms.or.origin[1], backEnd.viewParms.or.origin[2]);
 
 	dist = 	backEnd.viewParms.zFar / 1.75;		// div sqrt(3)
-	size = dist * 0.4;
+	//size = dist * 0.4;
+	size = dist * scale;
 
 	VectorScale( tr.sunDirection, dist, origin );
 	PerpendicularVector( vec1, tr.sunDirection );
@@ -736,6 +733,7 @@ void RB_DrawSun( void ) {
 	// farthest depth range
 	qglDepthRange( 1.0, 1.0 );
 
+#if 0  // ioquake3 takes out
 	// FIXME: use quad stamp
 	RB_BeginSurface( tr.sunShader, tess.fogNum );
 		VectorCopy( origin, temp );
@@ -788,6 +786,11 @@ void RB_DrawSun( void ) {
 		tess.indexes[tess.numIndexes++] = 0;
 		tess.indexes[tess.numIndexes++] = 2;
 		tess.indexes[tess.numIndexes++] = 3;
+#endif
+
+	RB_BeginSurface( shader, 0 );
+
+	RB_AddQuadStamp(origin, vec1, vec2, sunColor);
 
 	RB_EndSurface();
 

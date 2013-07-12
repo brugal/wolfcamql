@@ -183,6 +183,7 @@ static void RllSetupTable( void )
 }
 
 
+#if 0  // unused
 
 //-----------------------------------------------------------------------------
 // RllDecodeMonoToMono
@@ -197,7 +198,7 @@ static void RllSetupTable( void )
 //
 // Returns:		Number of samples placed in output buffer
 //-----------------------------------------------------------------------------
-long RllDecodeMonoToMono(unsigned char *from,short *to,unsigned int size,char signedOutput ,unsigned short flag)
+static long RllDecodeMonoToMono (const unsigned char *from, short *to, unsigned int size, char signedOutput , unsigned short flag)
 {
 	unsigned int z;
 	int prev;
@@ -213,6 +214,7 @@ long RllDecodeMonoToMono(unsigned char *from,short *to,unsigned int size,char si
 	return size;	//*sizeof(short));
 }
 
+#endif
 
 //-----------------------------------------------------------------------------
 // RllDecodeMonoToStereo
@@ -228,7 +230,7 @@ long RllDecodeMonoToMono(unsigned char *from,short *to,unsigned int size,char si
 //
 // Returns:		Number of samples placed in output buffer
 //-----------------------------------------------------------------------------
-long RllDecodeMonoToStereo(unsigned char *from,short *to,unsigned int size,char signedOutput,unsigned short flag)
+static long RllDecodeMonoToStereo (const unsigned char *from, short *to, unsigned int size, char signedOutput, unsigned short flag)
 {
 	unsigned int z;
 	int prev;
@@ -260,10 +262,10 @@ long RllDecodeMonoToStereo(unsigned char *from,short *to,unsigned int size,char 
 //
 // Returns:		Number of samples placed in output buffer
 //-----------------------------------------------------------------------------
-long RllDecodeStereoToStereo(unsigned char *from,short *to,unsigned int size,char signedOutput, unsigned short flag)
+static long RllDecodeStereoToStereo (const unsigned char *from,short *to,unsigned int size,char signedOutput, unsigned short flag)
 {
 	unsigned int z;
-	unsigned char *zz = from;
+	const unsigned char *zz = from;
 	int	prevL, prevR;
 
 	if (signedOutput) {
@@ -285,6 +287,7 @@ long RllDecodeStereoToStereo(unsigned char *from,short *to,unsigned int size,cha
 }
 
 
+#if 0  // unused
 //-----------------------------------------------------------------------------
 // RllDecodeStereoToMono
 //
@@ -298,7 +301,7 @@ long RllDecodeStereoToStereo(unsigned char *from,short *to,unsigned int size,cha
 //
 // Returns:		Number of samples placed in output buffer
 //-----------------------------------------------------------------------------
-long RllDecodeStereoToMono(unsigned char *from,short *to,unsigned int size,char signedOutput, unsigned short flag)
+static long RllDecodeStereoToMono(const unsigned char *from,short *to,unsigned int size,char signedOutput, unsigned short flag)
 {
 	unsigned int z;
 	int prevL,prevR;
@@ -320,6 +323,8 @@ long RllDecodeStereoToMono(unsigned char *from,short *to,unsigned int size,char 
 	return size;
 }
 
+#endif
+
 /******************************************************************************
 *
 * Function:		
@@ -328,7 +333,7 @@ long RllDecodeStereoToMono(unsigned char *from,short *to,unsigned int size,char 
 *
 ******************************************************************************/
 
-static void move8_32( byte *src, byte *dst, int spl )
+static void move8_32( const byte *src, byte *dst, int spl )
 {
 	int i;
 
@@ -348,7 +353,7 @@ static void move8_32( byte *src, byte *dst, int spl )
 *
 ******************************************************************************/
 
-static void move4_32( byte *src, byte *dst, int spl  )
+static void move4_32( const byte *src, byte *dst, int spl  )
 {
 	int i;
 
@@ -368,7 +373,7 @@ static void move4_32( byte *src, byte *dst, int spl  )
 *
 ******************************************************************************/
 
-static void blit8_32( byte *src, byte *dst, int spl  )
+static void blit8_32( const byte *src, byte *dst, int spl  )
 {
 	int i;
 
@@ -387,7 +392,7 @@ static void blit8_32( byte *src, byte *dst, int spl  )
 * Description:	
 *
 ******************************************************************************/
-static void blit4_32( byte *src, byte *dst, int spl  )
+static void blit4_32( const byte *src, byte *dst, int spl  )
 {
 	int i;
 
@@ -407,7 +412,7 @@ static void blit4_32( byte *src, byte *dst, int spl  )
 *
 ******************************************************************************/
 
-static void blit2_32( byte *src, byte *dst, int spl  )
+static void blit2_32( const byte *src, byte *dst, int spl  )
 {
 	memcpy(dst, src, 8);
 	memcpy(dst+spl, src+8, 8);
@@ -421,7 +426,7 @@ static void blit2_32( byte *src, byte *dst, int spl  )
 *
 ******************************************************************************/
 
-static void blitVQQuad32fs( byte **status, unsigned char *data )
+static void blitVQQuad32fs( byte **status, const unsigned char *data )
 {
 unsigned short	newd, celdata, code;
 unsigned int	index, i;
@@ -614,7 +619,7 @@ static unsigned int yuv_to_rgb24( long y, long u, long v )
 *
 ******************************************************************************/
 
-static void decodeCodeBook( byte *input, unsigned short roq_flags )
+static void decodeCodeBook( const byte *input, unsigned short roq_flags )
 {
 	long	i, j, two, four;
 	unsigned short	*aptr, *bptr, *cptr, *dptr;
@@ -967,7 +972,7 @@ static void setupQuad( long xOff, long yOff )
 *
 ******************************************************************************/
 
-static void readQuadInfo( byte *qData )
+static void readQuadInfo( const byte *qData )
 {
 	if (currentHandle < 0) return;
 

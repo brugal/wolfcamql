@@ -176,34 +176,6 @@ int Sys_Milliseconds (void)
 	return sys_curtime;
 }
 
-#ifndef __GNUC__ //see snapvectora.s
-/*
-================
-Sys_SnapVector
-================
-*/
-void Sys_SnapVector( float *v )
-{
-	int i;
-	float f;
-
-	f = *v;
-	__asm	fld		f;
-	__asm	fistp	i;
-	*v = i;
-	v++;
-	f = *v;
-	__asm	fld		f;
-	__asm	fistp	i;
-	*v = i;
-	v++;
-	f = *v;
-	__asm	fld		f;
-	__asm	fistp	i;
-	*v = i;
-}
-#endif
-
 /*
 ================
 Sys_RandomBytes
@@ -338,6 +310,15 @@ const char *Sys_Dirname( char *path )
 	dir[ length ] = '\0';
 
 	return dir;
+}
+
+/*
+==============
+Sys_FOpen
+==============
+*/
+FILE *Sys_FOpen( const char *ospath, const char *mode ) {
+	return fopen( ospath, mode );
 }
 
 /*
@@ -727,6 +708,10 @@ Windows specific initialisation
 void Sys_PlatformInit (qboolean useBacktrace)
 {
 	HMODULE bt;
+	OSVERSIONINFO vi;
+	const char *osname;
+	int ret;
+	const char *arch;  // = "x86";
 #ifndef DEDICATED
 	TIMECAPS ptc;
 	const char *SDL_VIDEODRIVER;
@@ -764,6 +749,163 @@ void Sys_PlatformInit (qboolean useBacktrace)
 	else
 		timerResolution = 0;
 #endif
+
+	memset(&vi, 0, sizeof(vi));
+	vi.dwOSVersionInfoSize = sizeof(vi);
+	ret = GetVersionEx(&vi);
+	if (!ret) {
+		Com_Printf("^1couldn't get Windows OS version info, error code: %lu\n", GetLastError());
+		return;
+	}
+
+	switch (vi.dwPlatformId) {
+	case 0:
+		osname = "Windows 3.1";
+		arch = "x86";
+		break;
+	case 1:
+		switch (vi.dwMinorVersion) {
+		case 0:
+			if (vi.szCSDVersion[1] == 'C'  ||  vi.szCSDVersion[1] == 'B') {
+				osname = "Windows 95 (Release 2)";
+			} else {
+				osname = "Windows 95";
+			}
+			break;
+		case 10:
+			if (vi.szCSDVersion[1] == 'A') {
+				osname = "Windows 98 SE";
+			} else {
+				osname = "Windows 98";
+			}
+			break;
+		case 90:
+			osname = "Windows Millennium";
+			break;
+		default:
+			osname = "Windows (unknown non nt)";
+			break;
+		}
+		arch = "x86";
+		break;
+	case 2: {
+		OSVERSIONINFOEX viex;
+		SYSTEM_INFO si;
+		qboolean ntWorkStation;
+
+		memset(&viex, 0, sizeof(viex));
+		memset(&si, 0, sizeof(si));
+
+		viex.dwOSVersionInfoSize = sizeof(viex);
+		ret = GetVersionEx((OSVERSIONINFO *)&viex);
+		if (!ret) {
+			Com_Printf("^1couldn't get extendend Windows OS information, error code: %lu\n", GetLastError());
+			osname = "Windows (unknown version after 98)";
+			arch = "???";
+			break;
+		}
+
+		// sanity check
+		if (vi.dwMajorVersion != viex.dwMajorVersion  ||  vi.dwMinorVersion != viex.dwMinorVersion  ||  vi.dwPlatformId != viex.dwPlatformId) {
+			Com_Printf("^1version info mismatch: major %lu %lu, minor %lu %lu, platform %lu %lu\n", vi.dwMajorVersion, viex.dwMajorVersion, vi.dwMinorVersion, viex.dwMinorVersion, vi.dwPlatformId, viex.dwPlatformId);
+			//osname = "Windows (unknown version after 98)";
+			//break;
+		}
+
+		if (viex.wProductType == VER_NT_WORKSTATION) {
+			ntWorkStation = qtrue;
+		} else {
+			ntWorkStation = qfalse;
+		}
+
+		//FIXME home, enteprise, basic, etc...
+
+		// GetNativeSystemInfo() to ignore compatability mode?
+		//GetSystemInfo(&si);
+		GetNativeSystemInfo(&si);
+
+		switch (si.wProcessorArchitecture) {
+		case PROCESSOR_ARCHITECTURE_AMD64:
+			arch = "x64";
+			break;
+		case PROCESSOR_ARCHITECTURE_ARM:
+			arch = "ARM";
+			break;
+		case PROCESSOR_ARCHITECTURE_IA64:
+			arch = "Intel Itanium-based";
+			break;
+		case PROCESSOR_ARCHITECTURE_INTEL:
+			arch = "x86";
+			break;
+		case PROCESSOR_ARCHITECTURE_UNKNOWN:
+			arch = "unknown architecture";
+			break;
+		default:
+			arch = "???";
+			break;
+		}
+
+		switch (vi.dwMajorVersion) {
+		case 6:  // vista +
+			switch (vi.dwMinorVersion) {
+			case 0:
+				if (ntWorkStation) {
+					osname = "Windows Vista";
+				} else {
+					osname = "Windows Server 2008";
+				}
+				break;
+			case 1:
+				if (ntWorkStation) {
+					osname = "Windows 7";
+				} else {
+					osname = "Windows Server 2008 R2";
+				}
+				break;
+			case 2:
+				if (ntWorkStation) {
+					osname = "Windows 8";
+				} else {
+					osname = "Windows Server 2012";
+				}
+				break;
+			default:
+				osname = "Windows (unknown version after xp)";
+				break;
+			}
+			break;
+		case 5:  // xp and 2000
+			switch (vi.dwMinorVersion) {
+			case 0:
+				osname = "Windows 2000";
+				break;
+			case 1:
+				osname = "Windows XP";
+				break;
+			case 2:
+				if (GetSystemMetrics(SM_SERVERR2)) {
+					osname = "Windows Server 2003 R2";
+				} else {
+					osname = "Windows Server 2003";
+				}
+				break;
+			default:
+				osname = "Windows (unknown version before vista)";
+				break;
+			}
+			break;
+		default:
+			osname = "Windows (unknown major version)";
+		}
+		break;
+	}
+	default:
+		osname = "Windows (unknown)";
+		arch = "???";
+		break;
+	}
+
+	Com_Printf("%s %s version %lu.%lu (%lu) Platform %lu  %s\n", osname, arch, vi.dwMajorVersion, vi.dwMinorVersion, vi.dwBuildNumber, vi.dwPlatformId, vi.szCSDVersion);
 }
 
 /*

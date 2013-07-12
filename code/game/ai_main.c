@@ -291,7 +291,7 @@ void BotReportStatus(bot_state_t *bs) {
 			else strcpy(flagstatus, S_COLOR_BLUE"F ");
 		}
 	}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	else if (gametype == GT_1FCTF) {
 		if (Bot1FCTFCarryingFlag(bs)) {
 			if (BotTeam(bs) == TEAM_RED) strcpy(flagstatus, S_COLOR_RED"F ");
@@ -440,7 +440,7 @@ void BotSetInfoConfigString(bot_state_t *bs) {
 			strcpy(carrying, "F ");
 		}
 	}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	else if (gametype == GT_1FCTF) {
 		if (Bot1FCTFCarryingFlag(bs)) {
 			strcpy(carrying, "F ");
@@ -1029,7 +1029,7 @@ int BotAI(int client, float thinktime) {
 			args[strlen(args)-1] = '\0';
 			trap_BotQueueConsoleMessage(bs->cs, CMS_CHAT, args);
 		}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		else if (!Q_stricmp(buf, "vchat")) {
 			BotVoiceChatCommand(bs, SAY_ALL, args);
 		}
@@ -1388,7 +1388,7 @@ int BotAILoadMap( int restart ) {
 	return qtrue;
 }
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 void ProximityMine_Trigger( gentity_t *trigger, gentity_t *other, trace_t *trace );
 #endif
 
@@ -1505,7 +1505,7 @@ int BotAIStartFrame(int time) {
 				trap_BotLibUpdateEntity(i, NULL);
 				continue;
 			}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 			// never link prox mine triggers
 			if (ent->r.contents == CONTENTS_TRIGGER) {
 				if (ent->touch == ProximityMine_Trigger) {
@@ -1651,7 +1651,7 @@ int BotInitLibrary(void) {
 	trap_Cvar_VariableStringBuffer("fs_homepath", buf, sizeof(buf));
 	if (strlen(buf)) trap_BotLibVarSet("homedir", buf);
 	//
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	trap_BotLibDefine("MISSIONPACK");
 #endif
 	//setup the bot library

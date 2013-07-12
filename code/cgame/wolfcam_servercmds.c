@@ -1,9 +1,12 @@
 #include "cg_local.h"
+
+#include "wolfcam_servercmds.h"
+
 #include "wolfcam_local.h"
 
 void Wolfcam_ScoreData (void)
 {
-    score_t *sc;
+    const score_t *sc;
     wclient_t *wc;
     //clientInfo_t *ci;
     int i;

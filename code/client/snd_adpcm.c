@@ -53,8 +53,8 @@ static int stepsizeTable[89] = {
 };
 
    
-void S_AdpcmEncode( short indata[], char outdata[], int len, struct adpcm_state *state ) {
-    short *inp;			/* Input buffer pointer */
+void S_AdpcmEncode( const short indata[], char outdata[], int len, struct adpcm_state *state ) {
+    const short *inp;			/* Input buffer pointer */
     signed char *outp;		/* output buffer pointer */
     int val;			/* Current input sample value */
     int sign;			/* Current adpcm sign bit */
@@ -153,7 +153,7 @@ void S_AdpcmEncode( short indata[], char outdata[], int len, struct adpcm_state 
 
 
 /* static */ void S_AdpcmDecode( const char indata[], short *outdata, int len, struct adpcm_state *state ) {
-    signed char *inp;		/* Input buffer pointer */
+    const signed char *inp;		/* Input buffer pointer */
     int outp;			/* output buffer pointer */
     int sign;			/* Current adpcm sign bit */
     int delta;			/* Current adpcm output value */
@@ -165,7 +165,7 @@ void S_AdpcmEncode( short indata[], char outdata[], int len, struct adpcm_state 
     int bufferstep;		/* toggle between inputbuffer/input */
 
     outp = 0;
-    inp = (signed char *)indata;
+    inp = (const signed char *)indata;
 
     valpred = state->sample;
     index = state->index;
@@ -268,7 +268,7 @@ int S_AdpcmMemoryNeeded( const wavinfo_t *info ) {
 S_AdpcmGetSamples
 ====================
 */
-void S_AdpcmGetSamples(sndBuffer *chunk, short *to) {
+void S_AdpcmGetSamples(const sndBuffer *chunk, short *to) {
 	adpcm_state_t	state;
 	byte			*out;
 
@@ -310,7 +310,7 @@ void S_AdpcmEncodeSound( sfx_t *sfx, short *samples ) {
 		newchunk = SND_malloc();
 		if (sfx->soundData == NULL) {
 			sfx->soundData = newchunk;
-		} else {
+		} else if (chunk != NULL) {
 			chunk->next = newchunk;
 		}
 		chunk = newchunk;

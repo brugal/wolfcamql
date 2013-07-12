@@ -8,28 +8,22 @@
 * ad shader animations/effects
 * quad /powerups wolfcam
 * defer players clean up
-* SC_ParseColors* fixup -- rgb[a]
 * also for +scores check if the client has pressed it (sim. to acc), but what about spec demos?
 * +scores wolfcam highlight player being followed
 * dead body color applies to teammates?
 * wolfcam team overlay disable (or enable for only team)
-* timeouts fucked up, does time advance when mutlple timeouts are called?
 * bother making font data for giant,big,small,tiny ?
 * option to disable impact sparks made by other players
 * impact sparks for own player ok in 3rd person
-* red blue team names from config strings
 * update team scores, etc, in scoreboard
 * team overlay, limit text, opaque, exclude self
 * cg.select* stuff just committed probably wrong 115:5de0e93b45d3
-* highlighted player in ql scoreboard
 * client item timer style (right to left)
-* ql hud switch to spec hud, option to disable
 * wolfcam sometimes keel sound is being used  -- because the sound was triggered before the switch
 * switching from wolfcam can trigger reward sounds
 * check all cent refs regarding players to see if they are using previously stored values, maybe in addpacketent() use the reserved cg_entities for players
 * fix wolfcam third person crap
 * shit, check currentState.number refs which should be currentState.clientNum
-* MAX_MENUITEMS defined in multiple places
 * weapon bar fade
 * drawTeamVote exist?
 * r_mapgreyscale quad item is grey on some maps
@@ -57,7 +51,6 @@
 * obit time
 * stupid demo list menu
 * mouse cursor event cgame
-* drawblack/green screen before adding entities  -- r_mapgreyscale with tint
 * wolfcam follow list of prefered
 * wolfcam follow fixed, will stay at last origin, or maybe look ahead and wait
 * cvar for q3 pak0 location for q3 gibs
@@ -65,11 +58,9 @@
 * grenade alpha
 * ability to unregister font
 * doc ITEM_TEXTSTYLE
-* ups meter check incrementing cvars (including user created) until they don't exist
 * add light source
 * ffs a .dat file for q3 font
 * FADE_TIME
-* blacklist models for teamates
 * for the heck of it could create a plain number font for gfx/2d/numbers, menu/art/font*
 * for font scaleX scaleY instead of just scale (for q3font)
 * unregister font and keep usage count
@@ -78,9 +69,8 @@
 * raise FILE_HASH_SIZE because of cvars ?
 * player names q3 font xy scaling
 * cg_deadbodydarken 2  transitions model to original
-* hunter has crap above her lips, james has stuff on chest, ranger shit on his arms, sarge arm, slash left of mouth, sorlag stuff on mouth, tankjr stuff on head, uriel stuff on legs, visor green in hair, xaero arms and feet -- fix with fuzz
+* hunter has crap above her lips, james has stuff on chest, ranger shit on his arms, sarge arm, slash left of mouth, sorlag stuff on mouth, tankjr stuff on head, uriel stuff on legs, visor green in hair, xaero arms and feet -- fix with fuzz  -- color skins
 * low ammo warning is returning if ca and spec -- what if speccing someone
-* low ammo warning check ql defaults
 * get alive status from engine after rewind/ff  -- think it's done
 * update scores in client info change last scores time in scoreboard
 * /seekclock check for ready up (as opposed to warmup)
@@ -105,7 +95,6 @@
 * fix overprediction for demo taker, then  roll back positions
 * hitstyle color  see if overlay
 * <shift> tab  only show diff
-* cvar search diff
 * 2 pass, world, 2d
 * graphic filter plugin
 * codec plugin
@@ -113,9 +102,7 @@
 * get glconfig if r_mode changes
 * score plum for things like wolfcam, freecam done early and based on refdef of demo taker
 * why did you need to create name image sprites at end of cg_init() ?
-* limit names in scoreboard so that they don't go into scores column
 * player-configs/cooler.cfg rapha.cfg  option to watch demos with their configs
-* shader override folder
 * ResampleTexture and scale uses 2048 get from glconfig
 * gamma/bright for hud, map, ents
 * check spec demos for models
@@ -165,7 +152,6 @@
 * demo smoothing for others and also go as far as you have to for packets
 * nomove in lagometer for /follow
 * software gamma
-* check if timeout end clears centerprint -- yes and counts down "begins in 3,2,1" clear at 0
 * MAX_DEMOS defined twice i think
 * option for own model like rail
 * defpip
@@ -383,7 +369,7 @@ GLimp_Shutdown: mode 4 lastMode 4
 * bloom -- 3d hud models are bloomed
 * bloom still needs r_BloomBlurScale r_BloomBlurFalloff r_BloomBlurRadius
 * bloom does r_BloomPasses even do anything?
-* 2010-12-14 EV_HEADSHOT scoreplums moving towards you  icons/headshot, cg_drawPregameMessages, cg_lowAmmoWarningPercentile, cg_lowAmmoWarningSound, cg_lowAmmoWeaponBarWarning, cg_selfOnTeamOverlay, atmospheric stuff
+* 2010-12-14 cg_drawPregameMessages, cg_selfOnTeamOverlay, atmospheric stuff
 
 * fx player trail  -- using clientoverride
 * lagometer opacity use teamoverlay background as pic
@@ -443,7 +429,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * why doesn't qvm trigger the pointtoplane() assert?
 * maybe ignore duelscores if one disconnects so you don't get blank end of game scoreboard
 * y fov  (camera mode)
-* intermission fov
 * fx: c comments accepted  /* ... */
 * muzzle (fire origin) and mirrors (no mirrors in ql?)  (affects reg and fx)
 * note:  q3mme doesn't flip sprites/quads for mirrors
@@ -637,8 +622,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 
 
 
-  low ammo color in weapon bar now orange??
-
   cvars referenced in menu files
 
   ql accuracy window 'overall' (seems broken in ql)
@@ -727,7 +710,7 @@ GLimp_Shutdown: mode 4 lastMode 4
   fucked up demo completion
 * when seeking (mouse) second rocket plume instead of first and colored yellow
 * duel score board print not ready -- end http://www.youtube.com/watch?v=rGQgN07zF00
-* scoreboard capture screenshot button not working? -- it used to work
+* scoreboard capture screenshot button not working? -- it used to work -- disabled deliberately
 * going into freecam from player somehow changing x or y
 * ~ console key clears com_errorMessage
 * fx particle impact sounds
@@ -773,8 +756,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * q3 colors  CG_TeamColor  hardcoded values  -- function isn't even used
 * fx add powerup info for weapons
 * projectile sound and entityfreeze maybe use cent->cgtime
-* bad sound spatialization with end of game buzzer:  duel-aerowalk-zero4-vs-strenx-136002.dm_73
-* cpma timeouts still advance clock???
 * cpma ctf announcer sounds reversed and cg.scores reversed???
 * quad fire sound and fx double check
 * fx and attach sound to players
@@ -793,7 +774,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * spec hud had flag carrier status
 * check new doubler...
 * cg_domIconMin cg_domIconMax
-* flags color
 * dom nudge to fit image
 * blue/red wins round buffered
 * dompoint_distress
@@ -817,7 +797,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * cl_aviframerate < 25
 * "If I do "/video wav name xxxx" (I tried it with cl_aviframerate 125), an avi WITH sound will also be outputted, but it will be really slow with broken sound and stuff."
 * check ET_BEAM and cg_drawEntNumbers
-* cg_ambientsounds fucked...  fucked with water gurp and drown and other EV_GENERAL sounds .., q3-- doors (check mods.. osp, cpma)
 * ql 'alias'  -<cmd>  executed even if in console
 * cg_[team|enemy]railColor[12]Team  and impact marks  and possibly item color, also double check that cg_[team|enemy]railcolor[12]  colorize impacts
 * cpm  callvote  --  don't draw vote string if it passed or failed
@@ -827,7 +806,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * doc:  map shaders... blend and lightmap  include example (r_singleShader)
 * doc:  decals   point to example shader
 * doc:  ad shader ^^
-* truncate server name in scoreboard
 * cg_consolecmds.c  don't add certain ones for demo playback
 * text paint limit like text paint limit bottom using text length and fixing count += ?  bug
 * osp location tokens in team say -- translate and option to show
@@ -844,17 +822,381 @@ GLimp_Shutdown: mode 4 lastMode 4
 * corpse shader..  death shader
 * allow custom shader for any model
 * /clientoverride head|legs|torso skin option
-* q3mme.fx  gib sounds fucked up if else logic for random sounds
 * cg_roll --  for fov
-* drawrewards align still using ICON_SIZE ?
 * spectator numbers option
 * 2012-09-23  prev update:
-    bot chat using vtell, etc..
+    bot chat using vtell, end of game map voting, etc..
 * colored icon for hud 'head' element
-* change fragmessage align default to 1 -- center
 * better align description in docs
-* color fade in code use 1.0 not '1 - total...'
 * colorfade fx doc
+* need something like 'headcolor' 'torsocolor' ... for self if you select bright/color skins for yourself
+* 2012-10-23 ql update
+  infected game type,
+* take out cg.menuScoreboard = NULL
+* fx bullets and bubble trails  -- not called and use that model for bubble fx bug
+* check ENTITYNUM_[WORLD|NONE] in sound (and other) code
+* quad hog game icon?
+* g_customSettings 0x0400 0000  is infected red rover
+* old scoreboard and if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG)
+* duel scoreboard and spec with queue number
+* old hud and new game types
+* double check spacing for reward medals
+* cg_headshots  ..  also client side
+* Q_MathScript and CG_Q3mmeMath shared
+* Parenthesis_Parse and Script_Parse shared
+* (char *) casting for const char* check ui_shared.c
+* setvar in global parse and assetdef parse
+* cvar math using Q_MathScript()
+*---------------------------------------------------
+* Float_Parse '(' use math
+* setvar in cgame
+* if/else upper blocks  (menudef assetdef)
+* check math and if/else in action blocks
+* ui-shared.c still a few trap_PC_Read token around
+* menuitem run() ?
+* UseScriptBuffer mess
+* itemDef dynamic run -- missing ItemParse_cvarStrList ItemParse_cvarFloatList  change to PC_String_Parse() ?
+* math cg.ftime
+* check other than 'rect' to see if updates need to be issued
+
+        //{"name", ItemParse_name, NULL},
+        //{"text", ItemParse_text, NULL},
+        {"group", ItemParse_group, NULL},
+        {"asset_model", ItemParse_asset_model, NULL},
+        {"asset_shader", ItemParse_asset_shader, NULL},
+        {"model_origin", ItemParse_model_origin, NULL},
+        {"model_fovx", ItemParse_model_fovx, NULL},
+        {"model_fovy", ItemParse_model_fovy, NULL},
+        {"model_rotation", ItemParse_model_rotation, NULL},
+        {"model_angle", ItemParse_model_angle, NULL},
+        //{"rect", ItemParse_rect, NULL},
+        //{"style", ItemParse_style, NULL},
+        {"decoration", ItemParse_decoration, NULL},
+        {"notselectable", ItemParse_notselectable, NULL},
+        {"wrapped", ItemParse_wrapped, NULL},
+        {"autowrapped", ItemParse_autowrapped, NULL},
+        {"horizontalscroll", ItemParse_horizontalscroll, NULL},
+        {"type", ItemParse_type, NULL},
+        {"elementwidth", ItemParse_elementwidth, NULL},
+        {"elementheight", ItemParse_elementheight, NULL},
+        {"elementcolor", ItemParse_elementColor, NULL},
+        {"selectedcolor", ItemParse_selectedColor, NULL},
+        {"altrowcolor", ItemParse_altRowColor, NULL},
+        {"feeder", ItemParse_feeder, NULL},
+        {"elementtype", ItemParse_elementtype, NULL},
+        {"columns", ItemParse_columns, NULL},
+        {"border", ItemParse_border, NULL},
+        {"bordersize", ItemParse_bordersize, NULL},
+        //{"visible", ItemParse_visible, NULL},
+        {"ownerdraw", ItemParse_ownerdraw, NULL},
+        {"align", ItemParse_align, NULL},
+        {"textalign", ItemParse_textalign, NULL},
+        {"textalignx", ItemParse_textalignx, NULL},
+        {"textaligny", ItemParse_textaligny, NULL},
+        {"textscale", ItemParse_textscale, NULL},
+        {"textstyle", ItemParse_textstyle, NULL},
+        {"backcolor", ItemParse_backcolor, NULL},
+        //{"forecolor", ItemParse_forecolor, NULL},
+        {"bordercolor", ItemParse_bordercolor, NULL},
+        {"outlinecolor", ItemParse_outlinecolor, NULL},
+        {"background", ItemParse_background, NULL},
+        {"onFocus", ItemParse_onFocus, NULL},
+        {"leaveFocus", ItemParse_leaveFocus, NULL},
+        {"mouseEnter", ItemParse_mouseEnter, NULL},
+        {"mouseExit", ItemParse_mouseExit, NULL},
+        {"mouseEnterText", ItemParse_mouseEnterText, NULL},
+        {"mouseExitText", ItemParse_mouseExitText, NULL},
+        {"action", ItemParse_action, NULL},
+        {"special", ItemParse_special, NULL},
+        {"cvar", ItemParse_cvar, NULL},
+        {"maxChars", ItemParse_maxChars, NULL},
+        {"maxPaintChars", ItemParse_maxPaintChars, NULL},
+        {"focusSound", ItemParse_focusSound, NULL},
+        {"cvarFloat", ItemParse_cvarFloat, NULL},
+        {"cvarStrList", ItemParse_cvarStrList, NULL},
+        {"cvarFloatList", ItemParse_cvarFloatList, NULL},
+        {"addColorRange", ItemParse_addColorRange, NULL},
+        {"ownerdrawFlag", ItemParse_ownerdrawFlag, NULL},
+        {"ownerdrawFlag2", ItemParse_ownerdrawFlag2, NULL},
+        {"enableCvar", ItemParse_enableCvar, NULL},
+        {"cvarTest", ItemParse_cvarTest, NULL},
+        {"disableCvar", ItemParse_disableCvar, NULL},
+        {"showCvar", ItemParse_showCvar, NULL},
+        {"hideCvar", ItemParse_hideCvar, NULL},
+        {"cinematic", ItemParse_cinematic, NULL},
+        {"doubleclick", ItemParse_doubleClick, NULL},
+        {"defaultContent", ItemParse_defaultContent, NULL},
+        {"cellId", ItemParse_cellId, NULL},
+        {"font", ItemParse_font, NULL},
+        {"precision", ItemParse_precision, NULL},
+        {"setvar", ItemParse_setVar, NULL},
+        {"run", ItemParse_run, NULL},
+        {"printval", ItemParse_printVal, NULL},
+
+* itemdef  'nodecoration' and others to clear flags
+* Q_stricmp() shaders, pics, etc.. to not always register
+* ui check for already registered font
+* 'smallfont' and 'bigfont' at all levels?
+* elementColor elementHeight  outlinecolor  cinematicName  cellid precision  soundName and soundloop
+
+
+
+* fx var to disallow q3mmemath fallback to cvar
+* fx pass in team red or blue
+* 'numeric values are just slot numbers' in g_cmds.c just like io 2355 patch
+* MenuParse_font() check how fonts are dealth with
+* PC_SourceFileAndLine() and filename length
+* quakelive hud doesn't use 'selectedColor' window.outlineColor used
+* need all those ownerdraw getvalues()
+* CG_1ST_PLYR_PR?  CG_2ND_PLYR_PR?  CG_1ST_PLYR_TIER CG_2ND_PLYR_TIER
+* check guant/gaunt q3 compatability with:
+   trap_SendConsoleCommand("cmd vsay kill_gauntlet\n");
+* CG_1STPLACE_PLYR_MODEL   CG_SELECTED_PLYR_NAME*
+* extraShader  stackable?
+* double check cs change and newInfo for players
+* /extrashader
+* hud scripting 'cmd' command:  cmd "exec test.cfg"
+* hud scripting  paint()  to reuse itemdef
+* hud scripting itemdef functions
+* hud scripting compile
+
+******** 2012-12-02  fx:  beam and angle draw multiple
+
+
+* cg_fovIdCamera
+* spawn vars now using 'tourney' instead of 'tournament' ?
+* atof() issues again.. change to strtof ??  -- definately for fx scripting
+* ui_shared.c check Parse_Float() when integer is wanted
+* hud:  com_parseext  keep original  PS_ReadToken()
+
+* crash cr.dm_73  /stopmusic
+* cpma ca and others warmup count announcments -- have tmp fix
+* r_uifullscreen and vertex light ??
+* check insta freeze and 'prepare your team' sound
+* cpma end of game buzzer
+* EVCPMA_GRAPPLE_FIRE
+* fabs() and float compares
+* gun fov offset and quakelive check
+* gtv/mvd demos and initial demo parsing..  long time
+* clientitem timer and timeouts (for now cleared)
+* timeout announcer -- diff games
+* draw spawn option for just warm up
+* hud:  check for int and float parse and strings like "+60"  -- plus token
+* cg_parseserverinfo()  check for first call
+* trap_SendConsoleCommand("condump cgameboot.log\n") at end of CG_Init() ?
+* trap_S_StartLocalSound(cgs.media.kamikazeFarSound, CHAN_ANNOUNCER);  -- not chan-announcer
+* GTS_ENEMY_TEAM_KILLED:  trap_S_StartLocalSound(cgs.media.perfectSound, CHAN_ANNOUNCER);   what type of announcer?  also maybe as a serverset option
+* FFA spacecamp-2011_04_02  0:39 pillars missing  -- also in ql  2012-12-20  old demos
+* overtimes and timeouts/pauses
+* osp timeouts/pauses
+* allow cg_hudfile1, cg_hudfile2, etc..
+* multi demo:  new playerstates and events
+* wolfcam_following and cg_drawFollowing shouldn't be separate
+* check for instances of MAX_QPATH being too short (MAX_OSPATH)
+* /pov next  doesn't take immediate effect when paused
+* ql 'player must ready' in ..   warm up message
+* shaderoverride doc
+* column limit for docs
+* cg_lowAmmoWarningSoundSwitch   plays sound everytime you switch to remind you
+* cleanup CG_ParseServerInfo()  treating as parsegamestate()
+* cpma team vote?
+* black listed enemymodel check modification count for cg_ourModel
+* 16:48 not showing round messages:  campgrounds-2012_06_08-21_52_50-fucking-rail-3:30.dm_73  /seekclock 16:40  cgs.roundStarted
+* huffyuv endianness
+* huffyuv  option for yuv422
+* gl_rgba mess
+* take out 'us' stuff in open avi write
+* video recording open file needs to save cvars -- they can be changed and screw up recording:  CL_OpenAVIForWriting()  cl_aviFrameRate cl_aviAllowLargeFiles   Cvar_VariableIntegerValue( "s_initsound")  s_backend check for openal
+  cl_aviCodec
+
+        cls.glconfig.vidWidth and height -- can change?
+
+
+  also cl_aviFrameRate used in other places that need static value
+* huffyuv bgr swapping change
+* cl_avi.c  --  static encode buffer huffyuv
+* CG_IsUs()  etc..  bad
+* *railcolor  and flash (weapon blast) -- no, use fx if you need that
+* fx:  for weapon/x/[trail|fire] parentDir is using muzzle origin, recalculate with lerpOrigin maybe
+* fx:  maybe option for real origin for weapon/*/[trail|flash]  ... in parentOrigin?  -- weapon/*/fire already has
+* 'low ammo warning' and other string tokens
+* check all instances of "FIGHT!" to see if it is controllable
+* q3mme math doesn't like .05  as 0.05  for tokens
+* fx:  friend and enemy icons
+* fx:  note in q3mme.fx quakelive specific options (ex: team color for grenades)
+* item timer and maps that change item layouts and old demo playback
+* fx:  cg.ftime should equal cg.ftime +=  random() % fpsFrametime
+* check max_polys renderer
+* addlocalentities()/fx going through the list twice to remove LEF_ALREADY_ADDED*
+* check new update and non premium duel scoreboard (is it new?)
+* old scoreboard not working?  search premium
+* Q_isanumber()  what about "1.2   "  does *p == ' '?
+* find out when grenade colors added to quakelive and check in code
+* CG_DrawActive()  using localents after CG_AddLocalEntities() already called
+* forcebmodel drawn twice, again if added from packet entities ?
+* cg_players.c:   // add the talk baloon or disconnect icon
+  typo balloon
+* note that shotgun pellet uses 2 traces .. can get 2 different values for player getting hit
+* CG_RegisterWeapon()  item list looping
+* const ..  checking
+* fx: check shadertime with CG_FX_Beam()
+* fx: shadertime with _decal ?
+* fx: shaderrate ?
+* fx:  ent id for unique trails, projectiles, etc..
+* fx:  ent time..  how many unique frames?
+* completionFunc_t
+* CG_DrawClientItemTimer()  writes to timedItem_t *
+* check 'color rand rand rand'  in q3mme
+* /runfxall :  where is origin stored  (only emitters/ movers?)
+* disable 'distance' and 'interval' for /runfx and/or /runfxall ?
+* /runfxall doc and examples
+* ci->breathPuffTime  should be in cent ?
+* check improper NDEBUG 's  check all asserts that are now disabled
+* fx:  note and/or fix that in wolfcamql 'decal' still has q3 cgame marks limit
+* fx:  able to change skinNum for models?
+* fx:  able to change render effects?
+* fx:  'move*' as a directive (function)
+* fx:  'sprite', 'dirmodel', etc..  as render functions
+* fx:  addfxemitted()  can have subscripts change values
+* fx:  fucked...  try to change size in model emitter script.. or rotation
+* option to save depth to alpha?  mme_saveDepth 2 ?
+* check for r_* vars that don't need to be set to cheat
+* rapid name change scripts and createnameshader()
+* fx:  'write' to store a value back
+* alpha channel -- draw twice and save  with options for alpha components
+* SC_[Red|Green|Blue]FromCvar used with fake cvars and shouldn't use (int) maybe?
+* just plain and simple addcamerapoint and editcamerapoint
+* for add/edit camera point note that you don't use server times anymore -- check for camerapoint time == current time can be wrong
+* enable bmodel for ads?
+* fx player/thawed  maybe scan through ents to find client match
+* check EV_GIB_PLAYER since you might be passing in wrong origin
+* cg_ambientSounds and haunted game mode?
+* /devmap sinister
+* ]/play music/sonic6
+Com_Error(): Z_Malloc: failed on allocation of 18602448 bytes from the main zone----- CL_Shutdown -----
+disconnect
+Closing SDL audio device...
+SDL audio device shut down.
+RE_Shutdown( 1 )
+GLimp_Shutdown: mode 4 lastMode 4
+-----------------------
+----- Server Shutdown (Server fatal crashed: Z_Malloc: failed on allocation of 18602448 bytes from the main zone) -----
+==== ShutdownGame ====
+AAS shutdown.
+---------------------------
+Z_Malloc: failed on allocation of 18602448 bytes from the main zone
+
+* weird bullet marks silence from top level down to rail floor texture and zooming  screenshots/shot0055.jpg <=
+* map artifact sinister screenshots/shot0056.jpg
+* able to select (and map select) whitelist filter file for cg_ambientSounds 2
+* grapple ET_GRAPPLE angles wrong
+* bot inv.h wrong numbers (ex:  invuln is 39 listed as 34)
+* /give weapon   weapon still not registered?
+* better to have cg_itemlistRegistered for bg_itemlist ?
+* server debug commands and cvars to doc
+* /devmap  /give all  produces pain sound
+* cent - cg_entities and &cg.predictedEntityState
+* group unique quake live commands in cg_servercmds.c
+* check server command "scores_duel" and more than 2 scores transmitted
+* new ql update 2013-02-26:  shader gfx/2d/unavailable  gfx/2d/race/start  gfx/2d/race/finish  gfx/misc/racenav,  ingame_scoreboard_race.smenu, configstring 709 changing at end of game
+* always compute average team pings -- all score parsing functions
+* always set scoreselection to null in scores parsing??
+* CG_SetScoreSelection(NULL) for demo play back ?
+* duel scoreboard new:  tied, in the lead bar broken
+* wins by forfeit  and seeking
+* 2013-02-25-78-to-neg3-no-deaths-demo1312.dm_68  no end of game buzzer
+* ladders 'silentfright'
+* CG_DuelPlayerInfoValid() is weird for getting score
+* duel scoreboard text for "ready" "not ready" "trails" "leads" ...
+* only one duel player shows name twice in scoreboard
+* cpm  and cg_drawTieredArmorAvailability
+* q_stricmp() for item pickup names --  use bg_itemlist
+* cg_drawTieredAmorAvailability and cg_thirdPerson
+* cg_drawTieredAmorAvailability and freecam  use team settings?
+* pql autoexec
+* freecam useteamsettings and other help icons (domination, etc...)
+* ql update:
+  Fixed an issue that would occur when using a medkit with more than 125HP and firing the weapon in the same frame.
+* ql update:  new third person stuff
+
+  Freecam spectating no longer uses a third person offset, and custom values of cg_thirdPersonAngle will no longer break spec cameras.
+
+  Smoothed out changes in height/viewheight when the spectatorCam flies into a flight of stairs.
+
+  Smooth out viewheight change when crouching while in third person.
+
+* harvester end game scoreboard should show captures
+* harvester hud skull offset with text
+* cg.cameraMode checks (in addition to freecam) ?
+* (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))  not just checking for wolfcam_following
+* help icons and freecam with useteamsettings
+* textalign and CG_OwnerDraw() : ex CG_HarvesterSkulls() 'textaligny 12'
+*
+
+  val(2 1874907735)(numOps:2): 4.500000
+math token: ''  script[0] 111  newLine:1
+q3mme math invalid first token(1 1014610811): 1.000000
+math error
+ads: 3
+ad 1: 'textures/ad_content/2x1_trans_sfx'
+ad 2: 'textures/ad_content/2x1_trans_sfx'
+ad 3: 'textures/ad_content/2x1_trans_sfx'
+
+fx running before first frame??
+
+* fx doc -- more q3mme differences (see q3mme.fx), adding angles to projectiles, etc...
+
+* fx:  color t0 t1 t2   doesn't work,  uses atof() directly
+* cg_fxCompiled 1   then cg_fxfile "scripts/q3mme.fx"  auto runs the change fov script??
+* fx need 'goto tokenHandled;'  ?  lcc?
+* fx  addfxentities  initial memcpy(ScriptVars  a big hit
+* fx  addfxentities  CG_Trace() with movebounce
+* fx  thread  (while renderering and other option is to spread between cores at time added), check if CG_Trace() is thread safe
+* trinity needs map autoexec :(
+* cg_drawarmortiered  cpm
+* fx 'pushparent' and compiled stuff
+* fx current:
+   remove memcpy in trap_R_AddRefEntity()  ent = *ent,
+   cg_trace() not thread safe,
+   check thread safety of other calls,
+   initial memcpy when you begin scripting calls,
+   memcpy to EmitterScriptVars,
+   cg_trace() inefficient -- find closest world point to see if you even
+     have to bother doing a trace,
+
+* disable backtrace dll to doc
+* /loadhud clears alloc_strings() used by fx ?  -- hack added to clear compiled tokens when hud loaded
+* osp encryption can be changed dynamically?  move to serverinfo check?
+* fx threads -- syscall global lock
+* fx threads  check result of CG_Error()
+* fx threads check 2013-04-14-61-to-neg4-no-deaths-demo0115.dm_68  before 3 minutes .. slowed down to about 20 fps  -- not threads it's q3bloodtrail
+* /localents  allow range for debugging  and print origin
+*  CTF-overlord-2011_06_12-10_04_39.dm_73  mvp awards not shown
+* cg_fxCompiled and cg_fxThreads to docs
+* ui_voteactive and cg_endmapvotingdisabled
+* restrict use of r_visibleWindow*  with only r_useFbo 1
+* check installed pk3s to see if older ones are mixed in
+
+* helpicon not showing in ctf ?
+* alt flag not shown in 1fctf
+* there is both cgs.media.flagShader[4] and cgs.media.flagShaders[3]
+* 1fctf warm1f.dm_73  help icon not shown through walls 1:29 warmup
+  above mention of help icon not seen through walls in 1fctf  -- need to get from map, not snap entities
+* doc mention that client item timer will use spec timer info
+* doc mention how q3mme emitters are one script and they are split in wc depending on how many emitters they have
+* cg_marks --  part of fx entities
+
+* next:  'end' for impactflesh
+
+
+
+---------------------------
+
+
+* q3mme render types
+* project shadows from cgame
+
+
 
 ---------
 

@@ -86,7 +86,8 @@ typedef struct dlight_s {
 // a trRefEntity_t has all the information passed in by
 // the client game, as well as some locally derived info
 typedef struct {
-	refEntity_t	e;
+	refEntity_t	ent;
+	refEntity_t *ePtr;
 
 	float		axisLength;		// compensate for non-normalized axis
 
@@ -372,6 +373,7 @@ typedef struct {
 
 typedef struct shader_s {
 	char		name[MAX_QPATH];		// game path, including extension
+	qboolean hasLightmapStage;
 	int			lightmapIndex;			// for a shader to match, both name and lightmapIndex must match
 
 	int			index;					// this shader == tr.shaders[index]
@@ -806,40 +808,6 @@ void		R_Modellist_f (void);
 //====================================================
 extern	refimport_t		ri;
 
-/*
-
-the drawsurf sort data is packed into a single 32 bit value so it can be
-compared quickly during the qsorting process
-
-the bits are allocated as follows:
-
-21 - 31	: sorted shader index
-11 - 20	: entity index
-2 - 6	: fog index
-//2		: used to be clipped flag REMOVED - 03.21.00 rad
-0 - 1	: dlightmap index
-
-	TTimo - 1.32
-17-31 : sorted shader index
-7-16  : entity index
-2-6   : fog index
-0-1   : dlightmap index
-*/
-//#define	QSORT_SHADERNUM_SHIFT	17
-//#define	QSORT_ENTITYNUM_SHIFT	7
-//#define	QSORT_FOGNUM_SHIFT		2
-
-/* wolfcam
-20-34 : sorted shader index
-7-19  : entity index  // 8192 ents
-2-6   : fog index
-0-1   : dlightmap index
-*/
-
-#define	QSORT_SHADERNUM_SHIFT	20
-#define	QSORT_ENTITYNUM_SHIFT	7
-#define	QSORT_FOGNUM_SHIFT		2
-
 extern	int			gl_filter_min, gl_filter_max;
 
 /*
@@ -953,7 +921,7 @@ typedef struct {
 	trRefEntity_t			*currentEntity;
 	trRefEntity_t			worldEntity;		// point currentEntity at this when rendering world
 	int						currentEntityNum;
-	int						shiftedEntityNum;	// currentEntityNum << QSORT_ENTITYNUM_SHIFT
+	int						shiftedEntityNum;	// currentEntityNum << QSORT_REFENTITYNUM_SHIFT
 	model_t					*currentModel;
 
 	viewParms_t				viewParms;
@@ -1163,6 +1131,7 @@ extern	cvar_t	*r_showtris;					// enables wireframe rendering of the world
 extern	cvar_t	*r_showsky;						// forces sky in front of all surfaces
 extern	cvar_t	*r_shownormals;					// draws wireframe normals
 extern	cvar_t	*r_clear;						// force screen clear every frame
+extern cvar_t *r_clearColor;
 
 extern	cvar_t	*r_shadows;						// controls shadows: 0 = none, 1 = blur, 2 = stencil, 3 = black planar projection
 extern	cvar_t	*r_flares;						// light flares
@@ -1233,6 +1202,7 @@ extern cvar_t *r_teleporterFlash;
 extern cvar_t *r_debugMarkSurface;
 extern cvar_t *r_ignoreNoMarks;
 extern cvar_t *r_fog;
+extern cvar_t *r_ignoreEntityMergable;
 
 //====================================================================
 
@@ -1509,7 +1479,7 @@ LIGHTS
 void R_DlightBmodel( bmodel_t *bmodel );
 void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent );
 void R_TransformDlights( int count, dlight_t *dl, orientationr_t *or );
-int R_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
+int R_LightForPoint( const vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
 
 
 /*
@@ -1535,7 +1505,7 @@ SKIES
 void R_BuildCloudData( shaderCommands_t *shader );
 void R_InitSkyTexCoords( float cloudLayerHeight );
 void R_DrawSkyBox( shaderCommands_t *shader );
-void RB_DrawSun( void );
+void RB_DrawSun( float scale, shader_t *shader );
 void RB_ClipSkyPolygons( shaderCommands_t *shader );
 
 /*
@@ -1578,7 +1548,8 @@ void R_ToggleSmpFrame( void );
 
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
-void RE_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, vec4_t color);
+void RE_AddRefEntityPtrToScene (refEntity_t *ent);
+void RE_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, const vec4_t color);
 void RE_AddPolyToScene( qhandle_t hShader , int numVerts, const polyVert_t *verts, int num, int lightmap );
 void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b );
 void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b );
@@ -1799,7 +1770,7 @@ typedef enum {
 typedef struct {
 	drawSurf_t	drawSurfs[MAX_DRAWSURFS];
 	dlight_t	dlights[MAX_DLIGHTS];
-	trRefEntity_t	entities[MAX_ENTITIES];
+	trRefEntity_t	entities[MAX_REFENTITIES];
 	srfPoly_t	*polys;//[MAX_POLYS];
 	polyVert_t	*polyVerts;//[MAX_POLYVERTS];
 	renderCommandList_t	commands;
@@ -1809,8 +1780,6 @@ extern	int		max_polys;
 extern	int		max_polyverts;
 
 extern	backEndData_t	*backEndData[SMP_FRAMES];	// the second one may not be allocated
-
-extern	volatile renderCommandList_t	*renderCommandList;
 
 extern	volatile qboolean	renderThreadActive;
 

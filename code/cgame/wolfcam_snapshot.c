@@ -1,5 +1,12 @@
 #include "cg_local.h"
+
+#include "cg_draw.h"  //  CG_lagometerMarkNoMove
+#include "cg_main.h"
+#include "cg_players.h"
+#include "wolfcam_snapshot.h"
+
 #include "wolfcam_local.h"
+
 
 #ifdef __LINUX__
 #pragma GCC diagnostic push
@@ -10,10 +17,12 @@ void Wolfcam_CheckNoMove (void)
 {
 	int clientNum;
 	int i;
-	centity_t *cent;
+	const centity_t *cent;
 	byte color[4] = { 0, 255, 0, 255 };
 	vec3_t origin;
-	entityState_t *es, *nes, *nnes;
+	const entityState_t *es;
+	entityState_t *nes;
+	const entityState_t *nnes;
 	qboolean inNextNextSnapshot;
 	qboolean nextNextReset;
 
@@ -55,17 +64,20 @@ void Wolfcam_CheckNoMove (void)
 			continue;
 		}
 
+		// view switching
+		if ((cg.snap->ps.clientNum != cg.nextSnap->ps.clientNum)  &&  (clientNum == cg.snap->ps.clientNum  ||  clientNum == cg.nextSnap->ps.clientNum)) {
+            continue;
+        }
+
 		if (clientNum != cg.snap->ps.clientNum  &&  !cent->inNextSnapshot) {
 			continue;
 		}
 
-		if (clientNum == cg.snap->ps.clientNum  &&  cg.snap->ps.clientNum != cg.nextSnap->ps.clientNum) {
-			continue;
-		}
-
+#if 0
 		if (clientNum == cg.nextSnap->ps.clientNum  &&  cg.snap->ps.clientNum != cg.nextSnap->ps.clientNum) {
 			continue;
 		}
+#endif
 
 		if (clientNum == cg.snap->ps.clientNum) {
 			if ((cg.snap->ps.eFlags ^ cg.nextSnap->ps.eFlags) & EF_TELEPORT_BIT) {
@@ -103,18 +115,35 @@ void Wolfcam_CheckNoMove (void)
 				}
 			}
 		} else {
+			qboolean inSnapshot;
+			qboolean inNextSnapshot;
+
+			inSnapshot = qfalse;
 			for (i = 0;  i < cg.snap->numEntities;  i++) {
 				es = &cg.snap->entities[i];
 				if (es->number == clientNum) {
+					inSnapshot = qtrue;
 					break;
 				}
 			}
+			if (!inSnapshot) {
+				CG_Printf("^1Wolfcam_CheckNoMove() not in snap %d\n", clientNum);
+				//es = NULL;
+				continue;  // shouldn't get here
+			}
 
+			inNextSnapshot = qfalse;
 			for (i = 0;  i < cg.nextSnap->numEntities;  i++) {
 				nes = &cg.nextSnap->entities[i];
 				if (nes->number == clientNum) {
+					inNextSnapshot = qtrue;
 					break;
 				}
+			}
+			if (!inNextSnapshot) {
+				CG_Printf("^1Wolfcam_CheckNoMove() not in next snap %d : %d\n", clientNum, cent->inNextSnapshot);
+				//nes = NULL;
+				continue;  // shouldn't get here
 			}
 
 #if 0
@@ -131,6 +160,9 @@ void Wolfcam_CheckNoMove (void)
 					inNextNextSnapshot = qtrue;
 					break;
 				}
+			}
+			if (!inNextNextSnapshot) {
+				nnes = NULL;
 			}
 
 			if ((es->eFlags ^ nes->eFlags) & EF_TELEPORT_BIT) {
@@ -195,9 +227,9 @@ static void Wolfcam_CheckWarp (void)
 
     for (clientNum = 0;  clientNum < MAX_CLIENTS;  clientNum++) {
         //clientInfo_t *ci;
-        centity_t *cent;
-        entityState_t *es = NULL;
-		entityState_t *nes = NULL;
+        const centity_t *cent;
+        const entityState_t *es = NULL;
+		const entityState_t *nes = NULL;
         vec3_t oldPosition = { 0, 0, 0 };
         vec3_t newPosition = { 0, 0, 0 };
         float xv;
@@ -231,11 +263,12 @@ static void Wolfcam_CheckWarp (void)
 			continue;
 		}
 
-		if (clientNum != cg.snap->ps.clientNum  &&  !cent->inNextSnapshot) {
-			continue;
-		}
+		// view switching
+		if ((cg.snap->ps.clientNum != cg.nextSnap->ps.clientNum)  &&  (clientNum == cg.snap->ps.clientNum  ||  clientNum == cg.nextSnap->ps.clientNum)) {
+            continue;
+        }
 
-		if (clientNum == cg.snap->ps.clientNum  &&  cg.snap->ps.clientNum != cg.nextSnap->ps.clientNum) {
+		if (clientNum != cg.snap->ps.clientNum  &&  !cent->inNextSnapshot) {
 			continue;
 		}
 
@@ -255,9 +288,13 @@ static void Wolfcam_CheckWarp (void)
 			VectorCopy(cg.nextSnap->ps.velocity, newVelocity);
 			newEflags = cg.nextSnap->ps.eFlags;
 		} else {
+			qboolean inSnapshot, inNextSnapshot;
+
 			if (cg.snap->numEntities <= 0  ||  cg.nextSnap->numEntities <= 0) {
 				continue;
 			}
+
+			inSnapshot = qfalse;
 			for (i = 0;  i < cg.snap->numEntities;  i++) {
 				es = &cg.snap->entities[i];
 				if (es->number == clientNum) {
@@ -265,18 +302,31 @@ static void Wolfcam_CheckWarp (void)
 					VectorCopy(es->pos.trDelta, oldVelocity);
 					oldEflags = es->eFlags;
 					oldGroundEntityNum = es->groundEntityNum;
+					inSnapshot = qtrue;
 					break;
 				}
 			}
+			if (!inSnapshot) {
+				CG_Printf("^1Wolfcam_CheckWarp() not in snapshot %d\n", clientNum);
+				continue;  // shouldn't get here
+			}
+
+			inNextSnapshot = qfalse;
 			for (i = 0;  i < cg.nextSnap->numEntities;  i++) {
 				nes = &cg.nextSnap->entities[i];
 				if (nes->number == clientNum) {
 					VectorCopy(nes->pos.trBase, newPosition);
 					VectorCopy(nes->pos.trDelta, newVelocity);
 					newEflags = nes->eFlags;
+					inNextSnapshot = qtrue;
 					break;
 				}
 			}
+			if (!inNextSnapshot) {
+				CG_Printf("^1Wolfcam_CheckWarp() not in next snapshot %d\n", clientNum);
+				continue;  // shouldn't get here
+			}
+
 		}
 
 		if ((oldEflags ^ newEflags) & EF_TELEPORT_BIT) {
@@ -368,7 +418,7 @@ static void Wolfcam_CheckWarp (void)
 void Wolfcam_NextSnapShotSet (void)
 {
 	int i;
-	entityState_t *es;
+	const entityState_t *es;
 
     //Wolfcam_MarkValidEntities ();  //FIXME yes, want here
 

@@ -2,7 +2,7 @@
 
 #include "cg_local.h"
 
-qboolean Q_Isfreeze (int clientNum)
+qboolean CG_FreezeTagFrozen (int clientNum)
 {
     if (cgs.gametype != GT_FREEZETAG) {
         return qfalse;

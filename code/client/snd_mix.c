@@ -23,6 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 #include "snd_local.h"
+//#include <inttypes.h>
+
 #if 0  //idppc_altivec && !defined(MACOS_X)
 #include <altivec.h>
 #endif
@@ -34,6 +36,8 @@ int*     snd_p;
 int      snd_linear_count;
 short*   snd_out;
 
+
+
 #if	!id386                                        // if configured not to use asm
 
 void S_WriteLinearBlastStereo16 (void)
@@ -44,6 +48,17 @@ void S_WriteLinearBlastStereo16 (void)
 	for (i=0 ; i<snd_linear_count ; i+=2)
 	{
 		val = snd_p[i]>>8;
+
+#if 0
+		if (&snd_p[i] < (int *)&paintbuffer[0]) {
+			Com_Printf("^3%s() writing below paintbuffer memory %zu\n", __FUNCTION__, (int *)&paintbuffer[0] - &snd_p[i]);
+		}
+		if (&snd_p[i + 1] >= (int *)&paintbuffer[PAINTBUFFER_SIZE]) {
+			Com_Printf("^3%s() writing past paintbuffer memory %zu\n", __FUNCTION__, &snd_p[i + 1] - (int *)&paintbuffer[PAINTBUFFER_SIZE]);
+		}
+#endif
+
+		//Com_Printf("%s  val %d  %d < %d\n", __FUNCTION__, val, i, snd_linear_count);
 		if (val > 0x7fff)
 			snd_out[i] = 0x7fff;
 		else if (val < -32768)
@@ -132,6 +147,12 @@ void S_TransferStereo16 (unsigned long *pbuf, int endtime)
 
 		snd_linear_count <<= 1;
 
+#if 0
+		if ((snd_p + snd_linear_count) - (int *)paintbuffer >= (PAINTBUFFER_SIZE * 2)) {
+			Com_Printf("^3%s() painting past paint buffer (%d > %d)\n", __FUNCTION__, (snd_p + snd_linear_count) - (int *)paintbuffer,  (PAINTBUFFER_SIZE * 2));
+		}
+#endif
+
 	// write a linear blast of samples
 		S_WriteLinearBlastStereo16 ();
 
@@ -181,6 +202,7 @@ void S_TransferPaintBuffer(int endtime)
 	else
 	{	// general case
 		p = (int *) paintbuffer;
+
 		count = (endtime - s_paintedtime) * dma.channels;
 		out_mask = dma.samples - 1; 
 		out_idx = s_paintedtime * dma.channels & out_mask;
@@ -407,6 +429,12 @@ static void S_PaintChannelFrom16_scalar( channel_t *ch, const sfx_t *sc, int cou
 	float					ooff, fdata, fdiv, fleftvol, frightvol;
 	float scale;
 
+#if 0
+	if (sampleOffset + count > sc->soundLength) {
+		Com_Printf("^3%s() sound length is less than count %d < %d\n", __FUNCTION__, sc->soundLength, sampleOffset + count);
+	}
+#endif
+
 	if (s_useTimescale->integer) {
 		scale = com_timescale->value;
 	} else if (s_forceScale->value > 0.0) {
@@ -414,6 +442,12 @@ static void S_PaintChannelFrom16_scalar( channel_t *ch, const sfx_t *sc, int cou
 	} else {
 		scale = 1;
 	}
+
+#if 0
+	if (bufferOffset >= PAINTBUFFER_SIZE) {
+		Com_Printf("^3%s() bufferOffset (%d) > PAINTBUFFER_SIZE (%d)\n", __FUNCTION__, bufferOffset, PAINTBUFFER_SIZE);
+	}
+#endif
 
 	samp = &paintbuffer[ bufferOffset ];
 
@@ -427,7 +461,7 @@ static void S_PaintChannelFrom16_scalar( channel_t *ch, const sfx_t *sc, int cou
 		chunk = chunk->next;
 		sampleOffsetf -= (float)SND_CHUNK_SIZE;
 		if (!chunk) {
-			//Com_Printf("wtf !chunk\n");
+			//Com_Printf("^1wtf !chunk\n");
 			chunk = sc->soundData;
 		}
 	}
@@ -455,6 +489,12 @@ static void S_PaintChannelFrom16_scalar( channel_t *ch, const sfx_t *sc, int cou
 				sampleOffsetf -= (float)SND_CHUNK_SIZE;
 				sampleOffset = floor(sampleOffsetf);
 			}
+
+#if 0
+			if (&samp[i] >= &samp[PAINTBUFFER_SIZE]) {
+				Com_Printf("^3%s() nd writing past paintbuffer: %"PRIi64"\n", __FUNCTION__, (int64_t)(&samp[i] - &samp[PAINTBUFFER_SIZE]));
+			}
+#endif
 
 			if (samples) {
 				data = samples[sampleOffset];
@@ -484,6 +524,7 @@ static void S_PaintChannelFrom16_scalar( channel_t *ch, const sfx_t *sc, int cou
 			ooff = ooff + (ch->dopplerScale * scale);
 			boff = ooff;
 			fdata = 0;
+
 			for (j=aoff; j<boff; j++) {
 				if (j == SND_CHUNK_SIZE) {
 					chunk = chunk->next;
@@ -493,9 +534,31 @@ static void S_PaintChannelFrom16_scalar( channel_t *ch, const sfx_t *sc, int cou
 					samples = chunk->sndChunk;
 					ooff -= SND_CHUNK_SIZE;
 				}
-				fdata  += samples[j&(SND_CHUNK_SIZE-1)];
+				if (chunk->next) {
+					fdata += samples[j&(SND_CHUNK_SIZE-1)];
+				} else {  // last chunk, don't read garbage
+					if (j < (sc->soundLength % SND_CHUNK_SIZE)) {
+						fdata += samples[j&(SND_CHUNK_SIZE-1)];
+					} else {
+						// invalid data past j
+						//FIXME should it even happen?
+						//fdata += samples[j&(SND_CHUNK_SIZE-1)];
+						//Com_Printf("^5would have overshot... %d\n", j);
+					}
+				}
 			}
+
+#if 0
+			if (&samp[i] >= &samp[PAINTBUFFER_SIZE]) {
+				Com_Printf("^3%s() nd writing past paintbuffer: %"PRIi64"\n", __FUNCTION__, (int64_t)(&samp[i] - &samp[PAINTBUFFER_SIZE]));
+			}
+#endif
 			fdiv = 256 * (boff-aoff);
+#if 0
+			if (fdiv == 0) {
+				Com_Error(ERR_DROP, "eek div 0");
+			}
+#endif
 			samp[i].left += (fdata * fleftvol)/fdiv;
 			samp[i].right += (fdata * frightvol)/fdiv;
 		}
@@ -673,7 +736,7 @@ void S_PaintChannelFromMuLaw( channel_t *ch, sfx_t *sc, int count, int sampleOff
 			samp[i].left += (data * leftvol)>>8;
 			samp[i].right += (data * rightvol)>>8;
 			samples++;
-			if (samples == (byte *)chunk->sndChunk+(SND_CHUNK_SIZE*2)) {
+			if (chunk != NULL && samples == (byte *)chunk->sndChunk+(SND_CHUNK_SIZE*2)) {
 				chunk = chunk->next;
 				samples = (byte *)chunk->sndChunk;
 			}
@@ -731,7 +794,6 @@ void S_PaintChannels( int endtime ) {
 		scale = 1;
 	}
 
-
 	while ( s_paintedtime < endtime ) {
 		// if paintbuffer is smaller than DMA buffer
 		// we may need to fill it multiple times
@@ -775,6 +837,8 @@ void S_PaintChannels( int endtime ) {
 
 				ch->leftvol = (float)ch->leftvol * s_announcerVolume->value;
 				ch->rightvol = (float)ch->rightvol * s_announcerVolume->value;
+			} else if (ch->entchannel == CHAN_LOCAL_SOUND) {
+				ch->leftvol = ch->rightvol = 127;
 			}
 			//FIXME uhm, leftvol and rightvol are ints
 			if (ch->leftvol < 0.25  &&  ch->rightvol < 0.25) {
@@ -809,11 +873,11 @@ void S_PaintChannels( int endtime ) {
 			sampleOffset = ltime - ch->startSample;
 
 			if ( count > 0 ) {
-				if( sc->soundCompressionMethod == 1) {
+				if( sc->soundCompressionMethod == SND_COMPRESSION_ADPCM) {
 					S_PaintChannelFromADPCM		(ch, sc, count, sampleOffset, ltime - s_paintedtime);
-				} else if( sc->soundCompressionMethod == 2) {
+				} else if( sc->soundCompressionMethod == SND_COMPRESSION_DAUB4) {
 					S_PaintChannelFromWavelet	(ch, sc, count, sampleOffset, ltime - s_paintedtime);
-				} else if( sc->soundCompressionMethod == 3) {
+				} else if( sc->soundCompressionMethod == SND_COMPRESSION_MULAW) {
 					S_PaintChannelFromMuLaw	(ch, sc, count, sampleOffset, ltime - s_paintedtime);
 				} else {
 					S_PaintChannelFrom16		(ch, sc, count, sampleOffset, sampleOffsetf, ltime - s_paintedtime);
@@ -883,12 +947,12 @@ void S_PaintChannels( int endtime ) {
 
 				//Com_Printf("%d\n", sc->soundCompressionMethod);
 
-				if ( count > 0 ) {	
-					if( sc->soundCompressionMethod == 1) {
+				if ( count > 0 ) {
+					if( sc->soundCompressionMethod == SND_COMPRESSION_ADPCM) {
 						S_PaintChannelFromADPCM		(ch, sc, count, sampleOffset, ltime - s_paintedtime);
-					} else if( sc->soundCompressionMethod == 2) {
+					} else if( sc->soundCompressionMethod == SND_COMPRESSION_DAUB4) {
 						S_PaintChannelFromWavelet	(ch, sc, count, sampleOffset, ltime - s_paintedtime);
-					} else if( sc->soundCompressionMethod == 3) {
+					} else if( sc->soundCompressionMethod == SND_COMPRESSION_MULAW) {
 						S_PaintChannelFromMuLaw		(ch, sc, count, sampleOffset, ltime - s_paintedtime);
 					} else {
 						S_PaintChannelFrom16		(ch, sc, count, sampleOffset, sampleOffsetf, ltime - s_paintedtime);

@@ -6,8 +6,8 @@ WolfcamQL is a quakelive/quake3 demo player with some hopefully helpful options 
 * demo pause/rewind/fast forward
 * demo viewing without needing an internet connection
 * viewing demos from other player's point of view or in freecam mode
-* compatability with all the client features that have been added to quakelive on top of the original quake3
-* adjust player and projectile positions to match more closely what occured on the demo taker's screen (demo treated as what the 'client saw' not what the 'server saw' and will also compensate for demo taker's ping)
+* compatibility with all the client features that have been added to quakelive on top of the original quake3
+* adjust player and projectile positions to match more closely what occurred on the demo taker's screen (demo treated as what the 'client saw' not what the 'server saw' and will also compensate for demo taker's ping)
 * camera system
 * q3mme style scripting to customize graphics and effects
 * raise/remove limits for video rendering and also options like motion blur
@@ -110,11 +110,11 @@ bloodExplosion
 // end text
 
 
-The bleeding effect can be turned on/off with cg_blood cvar.
+The bleeding effect can be turned on/off with com_blood cvar.
 
 -------------------------------------------------------------------------
 
-view demo from other player's point of view.
+* view demo from other player's point of view.
 
 In the console type:
 
@@ -126,12 +126,10 @@ Use /follow -1  to return to the demo taker's point of view.
 
 One of the limitations is that they won't always be present in the demo, they need to be close enough to the demo taker.
 
+* /follow killer
+  /follow victim
 
-
-/follow killer
-/follow victim
-
-Will look ahead in the demo and have those povs ready.  "wolfcam_drawFollowing 2" (the default) will highlight their names.
+   Will look ahead in the demo and have those povs ready.  "wolfcam_drawFollowing 2" (the default) will highlight their names.
 
 * wolfcam_switchMode 1 (switch back to demo taker if pov not available) 2 (try selected pov, then killer/victim, then demo taker pov)  0 (try selected pov, try closest opponent, demo pov)
 
@@ -151,11 +149,11 @@ In order to match colors and lighting post processing isn't needed, with the exc
 
 Quakelive's r_enablePostProcessing and r_enableColorCorrection sort of correspond to the old q3 cvar r_ignorehwgamma.
 
-There's alot of confusion about what's involved in quakelive's post processing since there isn't much documentation about what the cvars do.
+There's a lot of confusion about what's involved in quakelive's post processing since there isn't much documentation about what the cvars do.
 
-Here's my best take/quess on it:
+Here's my best take/guess on it:
 
-In quake3 if you wan't to use r_gamma and r_overbrightbits you need to enable hardware gamma (r_ignorehwgamma 0).  The problem is that setting gamma like that changes the color/brightness of your entire desktop not just the quake3 application.  In quake3 it isn't a big problem since you usually play fullscreen and don't really care about messed up colors in the desktop underneath.  Quakelive was designed to be run in a browser so they wanted to avoid changing gamma for the whole screen and wanted to restrict it to just the quakelive window.  The solution was r_enablePostProcessing, which at the price of a little performance drop (an extra rendering step), enabled gamma (r_gamma + r_overbrightbits) just for the quakelive window.  At that point in quakelive's history r_enablePostProcessing  1   corresponded  to r_ignorehwgamma 0  in quake3 (allow the use of r_gamma and r_overbrightbits).
+In quake3 if you want to use r_gamma and r_overbrightbits you need to enable hardware gamma (r_ignorehwgamma 0).  The problem is that setting gamma like that changes the color/brightness of your entire desktop not just the quake3 application.  In quake3 it isn't a big problem since you usually play fullscreen and don't really care about messed up colors in the desktop underneath.  Quakelive was designed to be run in a browser so they wanted to avoid changing gamma for the whole screen and wanted to restrict it to just the quakelive window.  The solution was r_enablePostProcessing, which at the price of a little performance drop (an extra rendering step), enabled gamma (r_gamma + r_overbrightbits) just for the quakelive window.  At that point in quakelive's history r_enablePostProcessing  1   corresponded  to r_ignorehwgamma 0  in quake3 (allow the use of r_gamma and r_overbrightbits).
 
 Bloom was later added  and it created a problem since r_enablePostProcessing didn't just deal with gamma anymore (it controlled both bloom and gamma).  So a later quakelive patch added r_enableColorCorrection which is basically gamma again.  This allowed you to keep r_enablePostProcessing 1  if you wanted bloom and r_enableColorCorrection 0  to disable disable gamma.  r_enablePostProcessing became a generic cvar enabling different types of post processing (gamma, bloom, anything else they might want to add, etc.).  r_enableColorCorrection 1 became the new r_ignorehwgamma 0.
 
@@ -168,10 +166,10 @@ In quakelive you need "r_enablePostProcessing 1  and r_enableColorCorrection 1" 
 Oh, and to add to the confusion, quakelive still has the r_ignorehwgamma cvar :(    It doesn't seem to do anything though.
 
 -----------------------------------------------------------------
-It's based on ioquake3 so you have a few features available:
+It's based on ioquake3 so you have a few features available and changed:
 
-  cl_aviFrameRate                   - the framerate to use when capturing video
-  cl_aviMotionJpeg                  - use the mjpeg codec when capturing video
+  cl_aviFrameRate                   - the frame rate to use when capturing video
+  cl_aviMotionJpeg                  - (this cvar is removed, see cl_aviCodec)
 
 New commands
   stopvideo               - stop video capture
@@ -183,19 +181,20 @@ Note: it's not mentioned in the ioquake3 documentation but you need to disable o
 
 added features:
 
+cl_aviCodec  uncompressed, mjpeg, huffyuv
+
 cl_aviAllowLargeFiles 1  to allow opendml avi files (up to about 500 gigabytes)
-All avi files have .ivax extension in order to prevent windows from locking up when it tries to scan and create thumbnail
 
 /video [avi, avins, tga, jpg, wav, name <file basename>]
   All files stored in video/
 
-  ex:  /video tga wav    to dump tga screenshots and a wav sound recording
+  ex:  /video tga wav    to dump tga screen-shots and a wav sound recording
   ex:  /video avins wav name myNewVideo     avi file with no sound and a wav file
   <see r_jpegCompressionQuality>
 
 cl_aviFetchMode GL_RGB (default switched from ioquake3 GL_RGBA default)
 
-When you take a screenshot you select what format you would like the video card to send back:  "red green blue", "blue green red alpha", etc..
+When you take a screen-shot you select what format you would like the video card to send back:  "red green blue", "blue green red alpha", etc..
 
 Some video cards might be faster or slower with certain formats.
 
@@ -203,11 +202,13 @@ Some video cards might be faster or slower with certain formats.
      bind i "toggle cl_avifetchmode gl_rgb gl_rgba gl_bgr gl_bgra; echopopupcva
 r cl_avifetchmode"
 
-  Do a test run and try the different values to see if you can get a performance boost when rendering.
+  Do a test run and try the different values to see if you can get a performance boost when rendering.  Note that there is no information in the alpha channel, so this isn't a way of getting transparency information.
 
 cl_aviNoAudioHWOutput  don't pass audio data to sound card when recording, default is 1
 
-cl_freezeDemoPauseVideoRecording  to pause recording of video/screenshots while paused
+cl_freezeDemoPauseVideoRecording  to pause recording of video/screen-shots while paused
+
+cl_aviExtension  allow changing '.avi' extension to something else to avoid Windows indexing of video file
 
 ------------------------------------------------------------------
 
@@ -235,6 +236,7 @@ q3mme fx scripting
      for the three above they are used to prevent values dipping below those
      thresholds
 
+  cg_fxCompiled  enable/disable performance optimization (2 or higher enables debugging output)
   cg_vibrate
   cg_vibrateForce
   cg_vibrateTime
@@ -246,17 +248,43 @@ q3mme fx scripting
 
 Some additions to q3mme fx scripting:
 
-* player/head/trail, player/torso/trail, player/legs/trail, player/flight
-* the following are passed on to the scripting system where appropriate:  team, clientnum, enemy, teammate, ineyes, surfacetype (for impacts).  You could have something like custom rails and rockets per team or different settings for enemies and also first person view.  See wolfcam-ql/scripts/q3mme.fx for more info.
+* shadertime to control when shader animations begin
+   ex:
+     weapon/rocket/projectile {
+        model models/powerups/pop.md3
+        shadertime cgtime / 1000.0   // sets shadertime to current time
+                                     // so the shader animation never
+                                     // advances
+        dirModel
+     }
 
-  surfacetype doesn't work that well since the maps only use it occasionaly:
+* soundlocal, soundlistlocal, soundweapon, and soundlistweapon in addition
+   to sound and souldlist to allow local (not placed inside 3d world) and
+   weapon (always 'inside player head) channels.
+* modulus math operator '%'.  Note: both input values are rounded to the nearest integer
+* player/head/trail, player/torso/trail, player/legs/trail, player/flight
+* the following are passed on to the scripting system where appropriate:  team, clientnum (less than 0 signifies non-player), enemy, teammate, ineyes, surfacetype (for impacts).  You could have something like custom rails and rockets per team or different settings for enemies and also first person view.  See wolfcam-ql/scripts/q3mme.fx for more info.
+
+  surfacetype doesn't work that well since the maps only use it occasionally:
   surfacetype 1 == metal
               2 == wood
+              3 == dust
+              4 == snow
 
 * weapon/<weapon name>/impactflesh, also weapon/common/impactflesh
+      inputs:  origin, dir, and end
+        'origin' is the impact point
+        'dir' is the reflected bounce direction from missile hits, for
+              machine gun, chain gun, shotgun, etc..  it's just a random
+              value
+        'end' is the direction of the shooter if their position is valid,
+              otherwise the length of this vector is 0
+
 * additional commands for testing/debugging:
        'return'  to exit the current script
-       'continue'  to skip the corrent block (skip to end brace)
+       'continue'  to skip the current block (skip to end brace)
+       'echo <var>' to print a scalar value
+
 * 'command' can be used to send a console command.  '%' indicates a script var and the final command will have that script var's value inserted.  Use '%%' to print a single percent sign.
 
 Ex:
@@ -267,13 +295,15 @@ Ex:
         command echopopup %% t0 is %t0
             -> will pop up onscreen message "% t0 is 2.66"
 
-* emitterId float to tag emitter
+* emitterId float to tag emitters and also, if set to a negative, number will
+  mark it as low priority (first to be dropped) if the maximum entity is
+  reached.
 
 Ex:
         distance 10.0 {
 
              // check for first person view and tag it
-             // since 1st and 3rd person gun origin is different a 1st
+             // since 1st and 3rd person gun origin is different.  A 1st
              // person effect might look bad when you switch to 3rd person.
              // You can clear it with:  /clearfx 6
 
@@ -292,6 +322,11 @@ Ex:
 /clearfx [emitter id number]
   without id number clears all
 
+* cg_fxDebugEntities  (1:  print a message when a non low priority entity
+    needed to be dropped, 2:  print a dropped message even for low priority
+    entities, 3:  add on screen display of number of local entities, 4:  additional debugging information, -1:  only on screen display of number of local entities)
+
+
 * 'loopcount'  as an alternative to 'loop':
 
   repeat 6 {
@@ -301,18 +336,27 @@ Ex:
 
 * some additional trig/math functions:  acos, asin, atan, atan2, pow
 
-* additional vars that can be read: 'end' (vector), 'cgtime' server time, 'team', 'clientnum', 'enemy', 'teammate', 'ineyes' (is it first person view), 'surfacetype', 'gametype' (0: ffa, 1: duel, 2: single player, 3: tdm, 4: clan arena, 5: ctf, 9: freezetag)
+  Note that atan2 and pow have the following syntax:
+    atan2 val1 val2   // or the following
+    pow (val1) (val2)
 
-* additional vars for reading and writing:  t0 up to t0  and v0 up to v9
+  The following syntax is invalid:
+    pow(10, 2)  // invalid
+
+* additional vars that can be read: 'end' (vector) (can also be written), 'cgtime' server time, 'team', 'clientnum', 'enemy', 'teammate', 'ineyes' (is it first person view), 'surfacetype', 'gametype' (0: ffa, 1: duel, 2: single player, 3: tdm, 4: clan arena, 5: ctf, 9: freezetag)
+
+* additional vars for reading and writing:  t0 up to t9  and v0 up to v9
 
 * impact scripts have the reflected velocity (off surface) in 'velocity', see scripts/dirtest.fx (red stuff is the reflected velocity and blue is 'dir' or the perpendicular vector to the face plane of the struck surface)
 
 * 'emitterf' which lets lerp go from 0.0 to greater than 1.0.  checking for lerp >= 1.0  can be used for clean up or to set final values
 
-* /runfx and /runfxat to run arbritary scripts and add effects indpendent of game events and can be used as a generic scripting system
+* 'extraShader', 'extraShaderClear', and 'extraShaderEndTime' for scripts associated with player entities.  For 'impactFlesh' scripts these refer to the victim and for other weapon scripts generally the attacker.
+
+* /runfx and /runfxat to run arbitrary scripts and add effects independent of game events and can be used as a generic scripting system
 
   /runfx <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]
-       if origin0 --> dir2 not given will uses current freecam or 1st peron view settings.
+       if origin0 --> dir2 not given will uses current freecam or 1st person view settings.
 
   /runfxat <'now' | server time | clock time> <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]
 
@@ -336,11 +380,20 @@ Ex:
         }
     }
 
+* /runfxall <script name>  will run script against all present fx entities
+  see scripts/alltest.fx :
+
+  set cg_fxfile "scripts/alltest.fx"
+  bind z "runfxall moveup"
+  /devmap campgrounds
+  /give all
+  shoot some lg and hit 'z'
+
 * /listfxscripts
 * /printdirvector  (prints current viewangles as a dir vector)
 
 
-Some notes about compatiblity with q3mme and some general things:
+Some notes about compatibility with q3mme and some general things:
 
 1) q3mme lists 'cross' as a supported function but it's not implemented in q3mme.  You can use this instead:
 
@@ -411,6 +464,41 @@ Some notes about compatiblity with q3mme and some general things:
 
     One other issue is using small 'emitter' times as well. If they are too small they might not even be drawn and there's no way around them not being fps and timescale dependent (other than setting a worst case scenario minimum value: cg_fxScriptMinEmitter). Thirty frames per second is common for movies, so that means that emitted entities with lifetimes of less than 33.333_ (1000.0 / 30) milliseconds might not be drawn.
 
+    If you have a script that uses small 'emitter' values and you find that it looks well at some low timescale but not at higher ones, you can try to simulate the lower timescale:
+
+    //-------------------------------------------------------------
+    // original version, looks bad at timescale 1.0 and good at
+    // timescale 0.3
+
+    distance rand * 10 {
+             ...
+             emitter 0.008 * rand {
+                     ...
+             }
+    }
+
+    //-----------------------------------------------------------
+
+    change to this:
+
+    // script looks good at timescale 0.3 but not at timescale 1.0
+    // try to simulate 0.3
+    t0 timescale
+    t1 1  // random value to check against
+    if t0 > 0.3 {
+       t1 1.0 / (t0 / 0.3)
+    }
+
+    distance rand * 10 {
+             if (rand < t1) {  // simulate timescale 0.3
+                  ...
+                  emitter 0.008 * rand {
+                        ...
+                  }
+             }
+    }
+
+
 5) fx scripting (both q3mme and wolfcamql): don't use multiple 'distance' or 'interval' blocks in scripts. It doesn't break things but wont work as expected:
 
    weapon/rocket/trail {
@@ -423,6 +511,16 @@ Some notes about compatiblity with q3mme and some general things:
    }
 
 6) FIXME -- wolfcamql  c-style comments:  /* sldkfj */  not supported yet
+
+7) In wolfcamql weapon/*/[fire|trail] uses weapon muzzle point for 'origin' as opposed to player origin in q3mme.  The real player origin is passed as 'parentOrigin' for weapon/*/fire scripts.  If clientNum < 0  it's a non-player fired
+weapon (ex: map grenades in silentnight) and dir, parentOrigin, and parentDir
+aren't available.
+
+8) The maximum number of entities for wolfcamql is a little over 16000.
+
+9) The maximum number of dynamic lights for both wolfcamql and q3mme is 32.
+  You should restrict the use of 'Light' to flash effects, explosions, and
+  possibly rocket projectiles.
 
 ---------------------------------------------------------------
 
@@ -461,8 +559,8 @@ client options:
   tl     team leader (old team arena stuff)
   rp     ready up status?  (qldt)
   p      ?
-  so     ?
-  pq     player queue?  (qldt)
+  so     spectator only?
+  pq     player queue
   su     subscriber (whether the player has a pro or premium account)
   c      country acronym
 
@@ -489,13 +587,209 @@ client options:
    value you had set
 
 /cconfigstrings
-  same as /configstrings but shows strings with overriden values
+  same as /configstrings but shows strings with overridden values
 
 ----------------------------------------------------------------
 
-* cg_quadFireSound  to enable/disable the extra sound effect when a player with quad powerup fires their weapon
+QuakeLive scripted hud extensions
 
-* cg_animationsIgnoreTimescale  animations will play in realtime regardless of what timescale setting is.  Default is 0.
+* you can switch fonts in hud configs, use "font" keyword
+
+* libfreetype2 font support:
+  Fonts can be set in your hud config and need to have a .ttf extension.  Try to avoid putting them in wolfcam-ql/fonts.  Ex:  copy  arial.ttf into wolfcam-ql/myfonts/  and then in your hud config:
+
+    //      font "fonts/smallfont" 12
+    //      smallFont "fonts/smallfont" 24
+    //      bigFont "fonts/smallfont" 48
+
+        font "myfonts/arial.ttf" 12
+        smallFont "myfonts/arial.ttf" 24
+        bigFont "myfonts/arial.ttf" 48
+
+q3fonts available as "q3tiny", "q3small", "q3big", "q3giant"
+qlfont available as "fontimage"
+
+Fonts can also be used for hud config elements:
+
+        itemDef {
+        name "a"
+        rect 16 5 63 12
+        visible 1
+        textstyle 3
+        decoration
+        textscale .45
+        forecolor 1 1 1 1
+        ownerdraw CG_PLAYER_AMMO_VALUE
+        addColorRange 6 999 1 .75 0 1
+        //font "fontsextra/times.ttf" 48
+        font "q3small" 48
+        }
+
+* /loadhud ui/somehud.cfg  to avoid having to set cg_hudfiles
+
+* cg_hudRedTeamColor  cg_hudBlueTeamColor  cg_hudNoTeamColor  for use with hud element CG_TEAM_COLOR
+
+* cg_hudForceRedTeamClanTag and cg_hudForceBlueTeamClanTag  (edit the team names in score-box)
+
+* allow absolute values for coordinates (see cg_wideScreen)
+
+* hud variables
+
+  Anywhere in a hud menu you can use 'setvar @varname (0.8)' to store a value and/or create a variable.  You can then use the variable anywhere you would normally use a decimal or integer number.  Note:  parenthesis, '(' and ')', are required.
+
+  ex:
+
+    itemDef {
+       ...
+       setvar @tscale (0.35)
+       textscale @tscale
+       ...
+    }
+
+* use math functions and variables to change user created variable values
+
+    + - / * %
+    > < ! =         (to test equality)
+    & |             (logical AND OR)
+    sqrt, ceil, floor, sin, cos, wave, clip, acos, asin, atan, atan2, pow
+    rand            (create a random value between 0.0 and 1.0)
+    crand           (create a random value between -1.0 and 1.0)
+    realtime        (system time in milliseconds)
+    gametime        (game/server time in milliseconds)
+    pi              (pi constant)
+    ownerdrawvalue
+
+  ex:
+     setvar @xscale ((@xscale / 2.0) * rand)
+     setvar @players (ownerdrawvalue CG_PLAYER_COUNTS)
+
+  Note that atan2 and pow have the following syntax:
+    atan2 val1 val2   // or the following
+    pow (val1) (val2)
+
+  The following syntax is invalid:
+    pow(10, 2)  // invalid
+
+
+  Math processing falls back to trying a cvar if an unknown keyword is found.
+   ex:
+      setvar @var (r_fullscreen + @otherVar)
+
+   If the cvar doesn't exist an error occurs.
+
+* if/else code blocks within itemDefs  (Note: not allowed in higher scopes like menuDef, also menu needs to be visible)
+
+  ex:
+   menuDef_t {
+    visible 1
+
+    itemDef {
+        ...
+        if (@xscale > 0.35) {
+           forecolor 1 0 0 1
+        } else {
+           forecolor 0 1 0 1
+        }
+        ...
+    }
+   }
+
+* itemDefs can have an optional 'run' script that gets run every screen draw and allows you to change things dynamically
+
+  ex:
+
+    // silly example that randomly changes the level timer size
+    itemDef {
+        name "Timer"
+        textalign ITEM_ALIGN_LEFT
+        style 1
+        rect 0 0 50 12
+        visible 1
+        textstyle 3
+        decoration
+        forecolor 1 0.64 0.04 .7
+        ownerdraw CG_LEVELTIMER
+
+        run {
+            setvar @xscale (0.7 * rand)
+            textscale @xscale
+        }
+    }
+
+* itemDef command 'cvarSet' to set a cvar to specified string value
+     ex:  cvarSet tmpCvar "this is a tmpCvar"
+
+* itemdef command 'textExt' to embed script variables and cvar strings into text:
+    textExt "some text %FORMAT_STRING{SCRIPTVAR_NAME}"
+      ex:
+        setvar @numPlayers (ownerdrawvalue CG_PLAYER_COUNTS)
+        textExt "Number of players: %d{@numPlayers}"
+
+      ex:
+        setvar @speed (ownerdrawvalue CG_SPEEDOMETER)
+        if (@speed > 320) {
+          textExt "^1%.2f{@speed} ^7ups"
+        } else {
+          textExt "^2%.2f{@speed} ^7ups"
+        }
+
+      ex:
+        cvarSet myTmpCvar "testing ^3text ^7input"
+        textExt "show this text: %s{myTmpCvar}"
+
+    use '%%' to print a a single '%'
+    only 'd', 'f', and 'x' accepted as format conversions and a hud script variable is used to get the value
+    's' will check the string value of a cvar
+
+* printval for debugging
+
+  ex:  printval (@rectWidth)
+
+* itemDef 'visible' can be toggled which might cause incompatibility.
+
+  ex:
+
+    itemDef {
+      ...
+      ownerdraw CG_1STPLACE_PLYR_MODEL
+      visible 1  // in quake live this will make it visible even if you set to '0' later on
+      visible 0  // ignored in quake live but in wolfcam will disable visibility
+      ...
+    }
+
+* additional ownerdraws:  include ui/wcmenudef.h to use them
+
+  WCG_GAMESTATUS
+
+    ex:
+
+       // quake3 osp style warmup message
+       setvar @gameStatus (ownerdrawvalue WCG_GAME_STATUS)
+
+       if (@gameStatus = W_STATUS_WARMUP) {
+         font "q3tiny" 48
+
+         setvar @fadeTime (900)
+         setvar @alpha (realtime % (@fadeTime * 2))
+         if (@alpha > @fadeTime) {
+            setvar @alpha (1.0 - ((@alpha - @fadeTime) / @fadeTime))
+         } else {
+            setvar @alpha (@alpha / @fadeTime)
+         }
+
+         textStyle ITEM_TEXTSTYLE_SHADOWEDMORE
+         forecolor 1 0 0 @alpha
+         textExt "Waiting for Players"
+       }
+
+
+  WCG_WEAPON_SELECTED, WCG_WEAPON_SELECT_TIME, WCG_WEAPON_HAVE_MACHINEGUN, WCG_WEAPON_AMMO_MACHINEGUN, and others to allow creation of custom weapon bars.  See wolfcam-ql/ui/wcweaponbar.menu for an example.
+
+----------------------------------------------------------------
+
+* cg_quadFireSound  to enable/disable the extra sound effect when a player with quad power-up fires their weapon
+
+* cg_animationsIgnoreTimescale  animations will play in real-time regardless of what timescale setting is.  Default is 0.
 
 * cg_animationsRate  you can speed up (> 1.0) or slow down animations (< 1.0).  Default is 1.0 .
 
@@ -509,12 +803,17 @@ client options:
 * s_maxSoundRepeatTime  skip playing a sound if it is repeated this often in milliseconds  (default is 0 to match quakelive, q3 is 50)  Noticeable with lg hit beeps
 * s_maxSoundInstances  (96: default similar to quake live, -1: q3 code which limits either 4 or 8 sounds attached to an entity -- with the bug of the 3d world counting as an entity)
 * s_qlAttenuate  (0: q3 style -- use smaller distance for sound volume calculation and always play at full volume sounds within 80 game units, 1: default calculate sound volumes like quake live)
+* s_debugMissingSounds
 
 * cg_audioAnnouncer "1"
 
 ------------------------------------------------------------
 
-Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_audioAnnouncerRound  ("round begins in ...  fight!", "blue wins the round", ...), cg_audioAnnouncerWarmup ("3 2 1 fight!", ...) , cg_audioAnnouncerVote, cg_audioAnnouncerTeamVote, cg_audioAnnouncerFlagStatus, cg_audioAnnouncerLead  ("taken the lead", "tied", ...), cg_audioAnnouncerTimeLimit  (timelimit warnings), cg_audioAnnouncerFragLimit  (fraglimit warnings), cg_audioAnnouncerWin, cg_audioAnnouncerScore ("red scores", ...), cg_audioAnnouncerLastStanding, cg_audioAnnouncerDominationPoint
+Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_audioAnnouncerRound  ("round begins in ...  fight!", "blue wins the round", ...), cg_audioAnnouncerWarmup ("3 2 1 fight!", ...) , cg_audioAnnouncerVote, cg_audioAnnouncerTeamVote, cg_audioAnnouncerFlagStatus, cg_audioAnnouncerLead  ("taken the lead", "tied", ...), cg_audioAnnouncerTimeLimit  (time-limit warnings), cg_audioAnnouncerFragLimit  (frag-limit warnings), cg_audioAnnouncerWin, cg_audioAnnouncerScore ("red scores", ...), cg_audioAnnouncerLastStanding, cg_audioAnnouncerDominationPoint
+
+* cg_audioAnnouncerRoundReward  to enable/disable end of round 'perfect' or 'denied' announcements
+
+* cg_audioAnnouncerRewardsFirst  enable first reward having a unique voice over
 
 * cg_attackDefendVoiceStyle (0: 'fight!',  1: like quake live -- 'attack/defend the flag')
 
@@ -531,7 +830,7 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 * r_forceMap
         ex:  set r_forceMap "pro-nodm9"; demo FFA-lostworld.dm_73
 
-* cg_customMirrorSurfaces  (when using r_forcemap will use the maps mirror info rmation to add reflected scenes)
+* cg_customMirrorSurfaces  (when using r_forcemap will use the map's mirror information to add reflected scenes)
    test command:  /addmirrorsurface <x> <y> <z>
 
 * q3mme motion blur:  mme_blurFrames, mme_blurType, mme_blurOverlap
@@ -540,7 +839,7 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
 * cg_plasmaStyle same as quakelive (2: purple bubble trails)
 
-* r_jpegCompressionQuality 90 (default)  for screenshots, jpg video dump, and cl_aviMotionJpeg
+* r_jpegCompressionQuality 90 (default)  for screen-shots, jpg video dump, and 'cl_aviCodec mjpeg'
 
 * cg_checkForOfflineDemo 1 (default)  demos recorded using /devmap or offline bot play wont stutter
 
@@ -551,20 +850,27 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
   ex:  set cg_weaponRailGun "cg_fov 90; cg_drawCrosshair 1"
        set cg_weaponDefault "cg_fov 110; cg_drawCrosshair 4"
 
-* cg_levelTimerDirection:  0, 1  same as quakelive, including bugs (always count up during overtimes regardless of the settings you have chosen), 2  count up and don't reset to 0 during overtimes  (ex:  14:53  is shown for duel 53 seconds into the second overtime), 3 countdown even during overtime and for matches with no timelimit use cg_levelTimerDefaultTimeLimit, 4 always count down and try to use the end of game time parsed from the demo -- otherwise use cg_levelTimerDefaultTimeLimit
+* cg_levelTimerDirection:  0, 1  same as quakelive, including bugs (always count up during overtimes regardless of the settings you have chosen), 2  count up and don't reset to 0 during overtimes  (ex:  14:53  is shown for duel 53 seconds into the second overtime), 3 countdown even during overtime and for matches with no time-limit use cg_levelTimerDefaultTimeLimit, 4 always count down and try to use the end of game time parsed from the demo -- otherwise use cg_levelTimerDefaultTimeLimit
 
 * r_lightmapColor to tint the lightmap
   extreme example:  r_lightmapColor "0xff0000" to make all the lights red
   better example: r_lightmapcolor "0xffafaf" to turn down blue and green a bit, without completely eliminating them
 
-* r_fog  enable/disable drawing fog
-
-* r_flares > 1 enables flares on dynamic lights
 
 ----------------------------------------------------------------
 
 In game camera creation and editing
   /addcamerapoint  ('v' default)
+
+     Adds a new camera point if none have been created yet or if the current
+     time is greater than the last camera point.
+
+     Inserts an additional camera point if current time lies between two camera
+     points that are already present.
+
+     If current time matches a camera point will change those camera point
+     values to match freecam values (origin, angles, roll, etc..)
+
   /clearcamerapoints
   /playcamera  ('o' default)
   /stopcamera
@@ -605,8 +911,7 @@ Edit all currently selected camera points
 /ecam roll <interp, fixed, pass> [roll value]
 /ecam initialVelocity <origin, angles, xoffset, yoffset, zoffset, fov, roll> <v
 alue, or 'reset' to reset to default fixed velocity>
-/ecam finalVelocity <origin, angles, xoffset, yoffset, zoffset, fov, roll> <val
-ue, or 'reset' to reset to default fixed velocity>
+/ecam finalVelocity <origin, angles, xoffset, yoffset, zoffset, fov, roll> <value, or 'reset' to reset to default fixed velocity>
 /ecam rebase [origin | angles | dir | dirna | time | timen <server time>]
    edit camera times to start now or at the time given time, use current angles, origin, or direction as the new starting values
    note:  dirna updates the camera direction without altering camera angles
@@ -646,7 +951,7 @@ ue, or 'reset' to reset to default fixed velocity>
 
 All the *useprevious settings are used when you want to transition from following an entity (player, missile, etc.) and want to transition the viewangles without jumping.
 
-*pass options mean to skip interpolating viewangles to the next camera point with the next camera point also having the possiblity of having the pass option.  ok.. that explantion sucks  //FIXME
+*pass options mean to skip interpolating viewangles to the next camera point with the next camera point also having the possibility of having the pass option.  ok.. that explanation sucks  //FIXME
 
 Origin types:
  interp:  move in a straight line towards next camera point
@@ -691,11 +996,13 @@ Velocity:
 
   So, if you have a camera that looks like you want it at 125fps and then you try to render a video at 30fps the camera will slow down.  If you try to render at 120fps with 20 blur frames the camera speeds up since effective fps is now (120 * 20 == 2400 fps)
 
-  You can try playing the camera normaly (without recording video) at whatever fps works well and use /recordpath command.  Then, when you record video, use /playpath command.
+  You can try playing the camera normally (without recording video) at whatever fps works well and use /recordpath command.  Then, when you record video, use /playpath command.
+
+  You might need to copy wolfcamql.exe to et.exe and set camtrace's 'Enemy Territory' folder setting to point to wolfcamql's location.
 
 ---------------------------------------------------------------------------
 
-* cg_inheritPowerupShader  for multiple powerups (ex: quad and medkit) do/don't apply the first powerup custom shader to the second
+* cg_inheritPowerupShader  for multiple power-ups (ex: quad and medkit) do/don't apply the first power-up custom shader to the second
 
 * +chat and cg_chatHistoryLength
 
@@ -704,7 +1011,7 @@ Velocity:
 * rewind and fast forward using mouse:
     +mouseseek (bound by default to SHIFT)
     cg_mouseSeekScale  how quickly/slowly you change time
-    cg_mouseSeekPollInterval  how often to check for mouse movement and then issue rewind/fastforward call.
+    cg_mouseSeekPollInterval  how often to check for mouse movement and then issue rewind/fast-forward call.
     cg_mouseSeekUseTimescale (1:  will scale demo seeking based on timescale value, 2: (default) take timescale value into account only when less than 1.0)
 
 * framebuffer object support:  You can record a video in a different resolution from the visible window.
@@ -730,9 +1037,9 @@ Velocity:
 
 * cg_obituaryFadeTime  milliseconds until obituary lines fade completely
 
-* cl_consoleAsChat 0  will let you issue console commands without have to add a '/' at the start
+* cl_consoleAsChat 0  will let you issue console commands without having to add a '/' at the start
 
-* cg_demoSmoothing   I'm not a fan of this kind of stuff, but I had to include something since alot of the servers have lag problems.  It doesn't smooth the entire demo, it only kicks in when you basically got screwed by the server (assuming you aren't deliberately lagging).  It looks ahead in the demo to see if there are sequential snapshots where you have some type of velocity in both snapshots but your origin hasn't changed.  That means the server hasn't gotten around to playing the packets you sent, which will make demo playback jerky.  A cyan bar will be drawn in the lagometer whenver this happens.  Applies to demo pov as well as other players.
+* cg_demoSmoothing   I'm not a fan of this kind of stuff, but I had to include something since a lot of the servers have lag problems.  It doesn't smooth the entire demo, it only kicks in when you basically got screwed by the server (assuming you aren't deliberately lagging).  It looks ahead in the demo to see if there are sequential snapshots where you have some type of velocity in both snapshots but your origin hasn't changed.  That means the server hasn't gotten around to playing the packets you sent, which will make demo playback jerky.  A cyan bar will be drawn in the lagometer whenever this happens.  Applies to demo pov as well as other players.
 
 --------------------------------------------------
 
@@ -742,7 +1049,7 @@ Velocity:
 
   Both will multiply the colors of a texture by a power of 2, with r_overBrightBits using gamma ramp.  So r_mapOverBrightBits 0  will multiply the colors 2^0 == 1, doesn't change them at all.  r_mapOverBrightBits 1 will multiply by 2^1 == 2, r_mapOverBrightBits 2 will multiply by 2^2 == 4, r_mapOverBrightBits 3 will multiply by 2^3 == 8.
 
-  Multiplying by powers of two doesn't offer very much control.  Personaly I find r_mapOverBrightBits 2 (multiply by 4) to be a little dark, but with r_mapOverBrightBits 3 (multipy by 8) you basically obliterate all the light sources in the map since textures are as bright as they could possibly be.  Set r_mapOverBrightBits to 0 and then use r_mapOverBrightBitsValue to multiply it by whatever number you want.
+  Multiplying by powers of two doesn't offer very much control.  Personally I find r_mapOverBrightBits 2 (multiply by 4) to be a little dark, but with r_mapOverBrightBits 3 (multiply by 8) you basically obliterate all the light sources in the map since textures are as bright as they could possibly be.  Set r_mapOverBrightBits to 0 and then use r_mapOverBrightBitsValue to multiply it by whatever number you want.
 
   Incidentally r_mapOverBrightBits will preserve color.  It won't keep brightening until things will become white (unlike, i think, r_intensity), so if one of the color components (red green blue) hits the max value of 255 it doesn't brighten anymore.
 
@@ -769,7 +1076,7 @@ Velocity:
           cg_drawFragMessageTeamTokens "You fragged %v, your teammate"
           cg_drawFragMessageThawTokens "You thawed %v"
           cg_drawFragMessageFreezeTokens "You froze %v"
-          cg_drawFragMessageFreezeTeamTokens "You froze %v, your temmate"
+          cg_drawFragMessageFreezeTeamTokens "You froze %v, your teammate"
 
 Available tokens:
   %v  victim name
@@ -804,7 +1111,16 @@ Available tokens:
 
 ---------------------------------------------------------
 
-* you can switch fonts in hud configs, use "font" keyword
+* preliminary support for combining multiple demos, still has a few bugs:
+   /demo c1.dm_73 c2.dm_73 ...
+
+   /set all_ents (1:  add all entities from all demos  2: extra debugging information)
+     known bugs:  replaying event sounds for players
+
+
+   temporary command '/pov next'   to cycle demos
+
+----------------------------------------------------------
 
 * cg_weather 0  to eliminate rain and snow
 
@@ -813,16 +1129,26 @@ Available tokens:
 * cg_scoreBoardWarmup  draw scoreboard when you die in warmup
 * cg_scoreBoardOld  use non premium scoreboards
 * cg_roundScoreBoard  in Attack and Defend game type
+* cg_spectatorListSkillRating  show skill rating if known in the scrolling scoreboard spectator list
+* cg_spectatorListScore
+* cg_spectatorListQue
+
 
 * demo looping  /setloopstart /setloopend /loop to start stop, or /loop <servertime start> <servertime stop>.  Check with /servertime command
 
 * command /reseta cg_drawAttacker  to reset cg_drawAttacker* cvars to defaults
 
-* command /fragforward [optional pre kill time ms] [optional death hover time ms]
+* command /fragforward [optional pre-kill time in seconds] [optional death hover time in seconds]
 
-* cg_railItemColor for the railguns that spawn or are dropped by players
+  Turn it off by simply issuing the /fragforward command again.
+  '/fragforward stop' also explicitly stops it
 
-* cg_railNudge 0  to let all rails pass through crosshair
+  Autoexec files fragforwardnext.cfg and fragforwarddone.cfg are executed when
+  seeking to next frag and when the last frag is played.
+
+* cg_railItemColor for the rail guns that spawn or are dropped by players
+
+* cg_railNudge 0  to let all rails pass through cross-hair
 
 * cg_railRings  enable/disable spiral rails
 
@@ -843,20 +1169,22 @@ Available tokens:
 
 * color skins for all models, they are generated automatically from the already available red and blue skins you can use r_colorSkinsFuzz (the amount that the difference between red and blue skins will signal a match and not replace with white: default 20)  and r_colorSkinsIntensity (default 1.0) and the /createcolorskins  vid_restart to tweak them.  You can then use skin overrides to allow either team or enemies to keep their models but use colorized skins:    ex:  set cg_enemyModel "", then cg_enemyHeadSkin "color", cg_enemyTorsoSkin "color", cg_enemyLegsSkin "color", same for team
 
-*cg_crosshairAlphaAdjust to adjust the transparent portions of crosshairs.  cg_crosshairAlphaAdjust > 0 will make them more visible, less than 0 will make them even more transparent
+*cg_crosshairAlphaAdjust to adjust the transparent portions of cross-hairs.  cg_crosshairAlphaAdjust > 0 will make them more visible, less than 0 will make them even more transparent
 
-* cg_crosshairBrightness values 0.0 -> 1.0 work the same as quake live (essentialy making it more like crosshair darkness).  Values greater than 1.0 will actually make it brighter.  The values above 1.0 will shift that integer amount of the pixels towards white.  cg_crosshairBrightness 255 will make all the original pixels white.
+* cg_crosshairBrightness values 0.0 -> 1.0 work the same as quake live (essentially making it more like cross-hair darkness).  Values greater than 1.0 will actually make it brighter.  The values above 1.0 will shift that integer amount of the pixels towards white.  cg_crosshairBrightness 255 will make all the original pixels white.
 
 * cg_crosshairHitStyle 0-8 same options as quake live
 * cg_crosshairHitTime, cg_crosshairHitColor
 
-* command /cvarsearch <string> to find any cvar containg the string.  Ex:  /cvarsearch rail  will show the cg_rail* cvars as well as r_rail*
+* command /cvarsearch <string> to find any cvar containing the string.  Ex:  /cvarsearch rail  will show the cg_rail* cvars as well as r_rail*
 
 * command /listcvarchanges to show  what is different from default
 
 * cg_drawRewardsMax (the number at which it only shows 1 icon with the count written below), cg_drawRewardsX, cg_drawRewardsY, cg_drawRewardsAlign, cg_drawRewardsStyle, cg_drawRewardsFont, cg_drawRewardsPointSize, cg_drawRewardsScale, cg_drawRewardsImageScale, cg_drawRewardsTime, cg_drawRewardsColor, cg_drawRewardsAlpha, cg_drawRewardsFade, cg_drawRewardsFadeTime
 
-* cg_drawRewards: 1   (default) draw reward count to the right of icon, 2: draw reward count below icon like quake3
+* cg_drawRewards: 1   (default) draw reward count to the right of icon, 2: draw reward count below icon like quake3, 3:  cpma style where multiple reward medals are shown
+
+* cg_rewardsStack  (0:  don't play multiple reward announcements for the same reward if it happens within cg_drawRewardsTime)
 
 * cg_fragMessageStyle controls placement string
       "You fragged SoAndSo"
@@ -864,7 +1192,7 @@ Available tokens:
 
    (0:  never draw, 1: (default) only for the appropriate game types, 2:  always)
 
-* option to seperate frag messages from center print:  cg_drawFragMessageSeperate 1,  frag messages can then be controlled with cg_drawFragMessageX, cg_drawFragMessageY, cg_drawFragMessageAlign (0: align left, 1: align center, 2: align right), cg_drawFragMessageStyle (0: none, 3: shadow, 6: shadow even more), cg_drawFragMessageFont, cg_drawFragMessagePointSize, cg_drawFragMessageScale (this controls the size of the drawn text), cg_drawFragMessageTime (how long to stay on screen), cg_drawFragMessageColor (will not override white in player names), cg_drawFragMessageAlpha, cg_drawFragMessageFade (0: don't fade, 1: fade), cg_drawFragMessageFadeTime
+* option to separate frag messages from center print:  cg_drawFragMessageSeperate 1,  frag messages can then be controlled with cg_drawFragMessageX, cg_drawFragMessageY, cg_drawFragMessageAlign (0: align left, 1: align center, 2: align right), cg_drawFragMessageStyle (0: none, 3: shadow, 6: shadow even more), cg_drawFragMessageFont, cg_drawFragMessagePointSize, cg_drawFragMessageScale (this controls the size of the drawn text), cg_drawFragMessageTime (how long to stay on screen), cg_drawFragMessageColor (will not override white in player names), cg_drawFragMessageAlpha, cg_drawFragMessageFade (0: don't fade, 1: fade), cg_drawFragMessageFadeTime
 
 * same options as above for cg_drawCenterPrint*
 
@@ -877,43 +1205,10 @@ Available tokens:
 
 ----------------------------------------------------
 
-* libfreetype2 font support:
-Fonts can be set in your hud config and need to have a .ttf extension.  Try to avoid putting them in wolfcam-ql/fonts.  Ex:  copy  arial.ttf into wolfcam-ql/myfonts/  and then in your hud config:
-
-    //      font "fonts/smallfont" 12
-    //      smallFont "fonts/smallfont" 24
-    //      bigFont "fonts/smallfont" 48
-
-        font "myfonts/arial.ttf" 12
-        smallFont "myfonts/arial.ttf" 24
-        bigFont "myfonts/arial.ttf" 48
-
-q3fonts available as "q3tiny", "q3small", "q3big", "q3giant"
-qlfont available as "fontimage"
-
-Fonts can also be used for hud config elements:
-
-        itemDef {
-        name "a"
-        rect 16 5 63 12
-        visible 1
-        textstyle 3
-        decoration
-        textscale .45
-        forecolor 1 1 1 1
-        ownerdraw CG_PLAYER_AMMO_VALUE
-        addColorRange 6 999 1 .75 0 1
-        //font "fontsextra/times.ttf" 48
-        font "q3small" 48
-        }
-
-----------------------------------------------------
-
-* /loadhud ui/somehud.cfg  to avoid having to set cg_hudfiles
 
 * cadd, csub, cmul, cdiv, ccopy   to modify cvars.  Ex:  /cadd timescale 0.5  to add 0.5 to current timescale value
 
-* /cvarinterp /clearcvarinterp  to gradualy change the value of a cvar
+* /cvarinterp /clearcvarinterp  to gradually change the value of a cvar
     ex:  /cvarinterp s_volume 0 0.7 6.0
          raises s_volume from 0 to 0.7 in 6 seconds
 
@@ -949,7 +1244,7 @@ Fonts can also be used for hud config elements:
 * cg_drawFoeMinWidth
 * cg_drawFoeMaxWidth
 
-* cg_drawSelf similar to cg_drawFriend and cg_drawFoe.  It draws a white triangle over the demo taker.  Usefull if you use /follow
+* cg_drawSelf similar to cg_drawFriend and cg_drawFoe.  It draws a white triangle over the demo taker.  Useful if you use /follow
 * cg_drawSelfMinWidth
 * cg_drawSelfMaxWidth
 
@@ -971,22 +1266,28 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 * /wcstatsall  or /wcstats <player number> to show client side stats (k/d,
   accuracy, lag, etc.)
 
+* /dumpstats  to print the stats data sent at the end of game in newer quake live demos
+
 * scripted cameras  (/idcamera <cameraname>,  /stopidcamera)
      see http://rfactory.org/camerascript.html
 
-* cg_drawClientItemTimer timer for major items (armors, mega health, quad, ect.)
+* cg_drawClientItemTimer timer for major items (armors, mega health, quad, etc.)
      1 (the default)  appends an asterisk when the
      player is controlling the item, it also "fades" out after a few seconds
      and just shows "-".  Old behavior of always showing a time and staying
      stuck at zero can be enabled with cg_drawClientItemTimer 2
 
-* cg_itemSpawnPrint  adds a chatline when items respawn and the demo was recorded with cg_enableRespawnTimer 1
+     customize with:  cg_drawClientItemTimerX, cg_drawClientItemTimerY, cg_drawClientItemTimerScale, cg_drawClientItemTimerTextColor, cg_drawClientItemTimerFont, cg_drawClientItemTimerPointSize, cg_drawClientItemTimerAlpha, cg_drawClientItemTimerStyle, cg_drawClientItemTimerAlign, cg_drawClientItemTimerSpacing, cg_drawClientItemTimerIcon, cg_drawClientItemTimerIconSize, cg_drawClientItemTimerIconXoffset, cg_drawClientItemTimerIconYoffset
+
+* cg_itemSpawnPrint  adds a chatline when items re-spawn and the demo was recorded with cg_enableRespawnTimer 1
 
 * r_mapGreyScale, r_greyscaleValue   load the map in grey, darken to
   taste, and players + items will be colorized.  good value for
   r_greyscaleValue is 0.9
 
 -----------------------------------------------------------
+
+* libfreetype2 font support for cvars that display text in the hud
 
 * xy, font, align, etc.  cvars for all the stuff not covered by hud configs:  cg_clientItemTimerX,
   cg_clientItemTimerY, cg_drawFPSX, cg_drawFPSY, cg_drawSnapshotX,
@@ -1023,12 +1324,31 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
     except for one change cg_weaponBar 5 is like cg_weaponBar 4 (weaponSelect)
     which doesn't fade off the screen.
 
-* cg_ambientSounds defaults to 2 which disables ambient sounds except for
-    powerup respawn ambient sound
+* cg_drawAmmoWarning (0: no message,  1: message for low and out of ammo,  2: message for no ammo)
 
-* cg_hitBeep  multi tone hitsounds, same values as quakelive
+* cg_lowAmmoWarningStyle (0:  broken q3 style based on total ammo of all weapons and estimate of seconds left, 1:  like quake live based on percentile, 2:  based on per weapon cvars)
 
-* exec files: automatically execs follow.cfg when following player (to allow different huds), freecam.cfg when switching to freecam, specator.cfg, ingame.cfg when you switch back to your own view, gameend.cfg, gamestart.cfg, roundend.cfg, roundstart.cfg, firstpersonswitch.cfg  when switching first person view to another player, wolfcamfirstpersonswitch.cfg  same as firstpersonswitch.cfg but using /follow, scoreboardon.cfg, scoreboardoff.cfg
+* cg_lowAmmoWarningPercentile  like quakelive
+* cg_lowAmmoWarningSound  like quakelive
+* cg_lowAmmoWeaponBarWarning  like quakelive
+
+* the following are used with 'cg_lowAmmoWarningStyle 2':
+  cg_lowAmmoWarningGauntlet, cg_lowAmmoWarningMachineGun,
+  cg_lowAmmoWarningShotgun, cg_lowAmmoWarningGrenadeLauncher,
+  cg_lowAmmoWarningRocketLauncher, cg_lowAmmoWarningLightningGun,
+  cg_lowAmmoWarningRailGun, cg_lowAmmoWarningPlasmaGun, cg_lowAmmoWarningBFG,
+  cg_lowAmmoWarningGrapplingHook, cg_lowAmmoWarningNailGun,
+  cg_lowAmmoWarningProximityLauncher, cg_lowAmmoWarningChainGun
+
+* cg_ambientSounds
+    0:  disables all map sounds (not recommended)
+    1:  play all map sounds
+    2:  (default)  disables ambient sounds except for various important sounds like powerup respawn, doors opening and closing, special item respawns, etc..
+    3:  (like quakelive's 's_ambient 0') disables map looping sounds like fire, wind, etc. and allows map triggered sounds
+
+* cg_hitBeep  multi-tone hit-sounds, same values as quakelive
+
+* exec files: automatically execs follow.cfg when following player (to allow different huds), freecam.cfg when switching to freecam, spectator.cfg, ingame.cfg when you switch back to your own view, gameend.cfg, gamestart.cfg, roundend.cfg, roundstart.cfg, firstpersonswitch.cfg  when switching first person view to another player, wolfcamfirstpersonswitch.cfg  same as firstpersonswitch.cfg but using /follow, scoreboardon.cfg, scoreboardoff.cfg
 
    cgameinit.cfg:  just before map load, most game info and commands not available
    cgamepostinit.cfg: all set up has been completed and all the game info and commands are available
@@ -1049,7 +1369,7 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
 * cg_drawSpawnsInitialZ
 
-* cg_drawSpawnsRespawns  Used with cg_drawSpawns 1 to show which spawns as possible respawn points after the game has started.
+* cg_drawSpawnsRespawns  Used with cg_drawSpawns 1 to show which spawns as possible re-spawn points after the game has started.
 
 * cg_drawSpawnsRespawnsZ
 
@@ -1059,19 +1379,49 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
    ex: "cg_drawSpawns 1;  cg_drawSpawnsInitial 1;  cg_drawSpawnsRespawns 0;  cg_drawSpawnsShared 0"     to only show initial spawns
 
-   ex: "cg_drawSpawns 1;  cg_drawSpawnsInitialZ 20;  cg_drawSpawnsRespawnsZ 40"   to draw initial spawns 20 units higher than normal and respawns 40 units higher than normal so that a possible overlap can be seen
+   ex: "cg_drawSpawns 1;  cg_drawSpawnsInitialZ 20;  cg_drawSpawnsRespawnsZ 40"   to draw initial spawns 20 units higher than normal and re-spawns 40 units higher than normal so that a possible overlap can be seen
 
 --------------------------------------------------------------------------
 freecam   type /freecam in console
   use your bound movement keys
-  cg_freecam_noclip, cg_freecam_sensitivity, cg_freecam_yaw, cg_freecam_pitch, cg_freecam_speed, cg_freecam_unlockPitch
-  cg_freecam_useServerView  to automatically turn off matching demo taker's screen (cg_useOriginalInterpolation 1) since it's pointless in third person.  Default is 1.  This also applies when using cg_thirdPerson.
-  also execs freecamon.cfg and freecamoff.cfg
-  cg_freecam_crosshair 1   to enable a crosshair
-  /view <entity num> [x offset] [y offset] [z offset]     [] are optional   also /view here    to lock view  /listentities
-/viewunlockyaw   /viewunlockpitch
 
-  Ex:  use /viewunlockpitch if you want to view someone strafe jumping and not have the view bounce up and down.
+  cvars:
+    cg_freecam_crosshair    enable/disable a crosshair
+    cg_freecam_noclip    pass through walls
+    cg_freecam_sensitivity    mouse sensitivity
+    cg_freecam_yaw    additional right/left mouse sensitivity
+    cg_freecam_pitch    additional up/down mouse sensitivity
+    cg_freecam_speed    movement speed
+
+    cg_freecam_unlockPitch    quake3 normally locks your view upwards.  If you
+        move your mouse so that you look upwards the view will stop changing
+        when you are looking directly upwards even if you keep moving the mouse
+        in the upward direction.  Unlocking pitch will let you keep changing
+        upward angles until you eventually loop around.
+
+    cg_freecam_useServerView    automatically turn off matching demo taker's
+        screen (cg_useOriginalInterpolation 1) since it's pointless in third
+        person.  Default is 1.  This also applies when using cg_thirdPerson.
+
+    cg_freecam_useTeamSettings  1: set demo takers skin/model to match teammates  2:  same as 1, but also use pov settings (ex:  showing flag taker capture point)
+
+  autoexecs freecamon.cfg and freecamoff.cfg
+
+  locking view to an entity or position:
+
+      /view <entity num> [x offset] [y offset] [z offset]    // [] are optional
+          or
+      /view here    // lock view to current freecam position
+
+
+      Use '/view' by itself to unlock.
+
+      Use /listentities or 'cg_drawEntNumbers 1' to get entity numbers.
+
+      /viewunlockyaw   // allow left/right view changes but keep pitch locked
+      /viewunlockpitch    // allow up/down view changes but keep yaw locked
+
+      Ex:  use /viewunlockpitch if you want to view someone strafe jumping and not have the view bounce up and down.
 
   /gotoview [forward] [right] [up] [force] relative to the viewed entity (or demo taker).  The force (integer) option means to jump to the view even if you might get stuck inside a wall.  []  are optional
 
@@ -1088,7 +1438,6 @@ freecam +rollright +rollleft /centerroll (like /centerview) +rollstopzero
       bind f "+rollstopzero"
       bind 3 "centerroll"
 
-cg_freecam_useTeamSettings  1: set demo takers skin/model to match teamates
 
 /chase <entNum> [x offset] [y offset] [z offset]     [] means optional
 
@@ -1104,12 +1453,23 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
 ---------------------------------------------------------------------------
 
 * cg_enemyModel "keel/bright"
+
 * cg_enemyHeadSkin ""  can be used to override.  Ex:  cg_enemyHeadSkin "xaero/color" to use xaero's head skin
 * cg_enemyTorsoSkin
 * cg_enemyLegsSkin
+
 * cg_enemyHeadColor   hex value  ex:  "0x00ff00"
 * cg_enemyTorsoColor
 * cg_enemyLegsColor
+
+
+  To change enemy or team colors without changing models you can use something like:
+      cg_enemyHeadSkin "bright"   // without specifying a model
+        or
+      cg_enemyHeadSkin "color"    // without specifying a model
+      ...
+
+
 * cg_enemyRailColor1
 * cg_enemyRailColor2
 
@@ -1126,10 +1486,15 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
 * cg_teamModel "crash/bright"
 * for cg_team* same options as cg_enemy*
 
-* cg_crosshairColor "0xffffff"
+* cg_disallowEnemyModelForTeammates  if cg_teamModel isn't set this will prevent a teammate having an enemy model
+
 * cg_deadBodyColor "0x101010"
 
+* cg_crosshairColor "0xffffff"
+
 * cg_wh "0"  // 1 or 0, gives players quad shader which can be seen through walls, alternative to watching a demo with r_shownormals
+* cg_whIncludeDeadBody  // 1 or 0, includes dead bodies
+* cg_whIncludeProjectile  // 1 or 0, includes projectiles
 * cg_whShader if you want to use something other than 'powerups/quad'
 * cg_playerShader to add a non wall hacked shader (can be used in combination with cg_whShader to make it easier to see when someone becomes visible)
 
@@ -1139,7 +1504,7 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
 
 * cg_useOriginalInterpolation "0"  // 0: try to match demo taker's screen (including ping correction), 1: same as q3/ql
 
-Setting to 0 will try to match the demo taker's screen with respect to player and projectile positions.  It compensates for both ping and the fact the actual gameplay involved predicting your own movement (see cg_nopredict).  Setting it to 1 will play back demos in the same way that other quake3 based games play them, showing what the server saw and not the client, and will always show the player's aim behind were it actually was.
+Setting to 0 will try to match the demo taker's screen with respect to player and projectile positions.  It compensates for both ping and the fact the actual game-play involved predicting your own movement (see cg_nopredict).  Setting it to 1 will play back demos in the same way that other quake3 based games play them, showing what the server saw and not the client, and will always show the player's aim behind were it actually was.
 
 * wolfcam  cg_interpolateMissiles "1"
 
@@ -1151,6 +1516,16 @@ One of the side effects of using cg_useOriginalInterpolation 0, is that it will 
 
 * cg_teamChatBeep
 * cg_teamChatBeepMaxTime  don't play team chat beeps faster than this (in seconds)".  It let's you have team chat beeps without being annoyed by someone with a spam bind.
+
+* cg_serverPrint  to enable/disable printing server messages in the center of the screen
+  cg_serverPrintToChat  to enable/disable printing server messages in the chat area
+  cg_serverPrintToConsole  to enable/disable printing server messages in the console
+
+  in quakelive 'server print' messages include things like 'player disconnected', 'vote failed', and ctf flag status messages
+
+* cg_serverCenterPrint*  (see cg_serverPrint*)
+
+  in quakelive 'server center print' messages include things like 'player switched teams'
 
 * cg_drawFollowing:  2 will always draw the following text even if it's the demo taker
 
@@ -1193,6 +1568,7 @@ One of the side effects of using cg_useOriginalInterpolation 0, is that it will 
 * cg_impactSparksHighlight  Draws a single white pixel at the center of the spark to make things a little more visible.
 
 * cg_simpleItemsScale
+* cg_simpleItemsBob and cg_simpleItemsHeightOffset same as quakelive
 
 * cg_smokeRadius_PL, cg_smokeRadius_RL, cg_smokeRadius_NG, cg_smokeRadius_GL, cg_smokeRadius_SG
 
@@ -1229,7 +1605,7 @@ In quake3 with really high timescale values information from the demo starts to 
 
 * r_BloomTextureScale similar to r_BloomBlurScale.
 
-When you implement bloom you take a screenshot, apply blur, filter by an intensity threshold, and then reblend with original image.  r_BloomTextureScale controls how small the screenshot that you are going to process will be.  By using a smaller image you improve performance and it also acts as a type of blurring.
+When you implement bloom you take a screen-shot, apply blur, filter by an intensity threshold, and then re-blend with original image.  r_BloomTextureScale controls how small the screen-shot that you are going to process will be.  By using a smaller image you improve performance and it also acts as a type of blurring.
 
 r_BloomBlurFalloff and r_BloomBlurRadius still not implemented, but the following work: r_enableBloom r_BloomPasses r_BloomSceneIntensity r_BloomSceneSaturation r_BloomIntensity r_BloomSaturation r_BloomBrightThreshold
 
@@ -1273,7 +1649,7 @@ r_BloomBlurFalloff and r_BloomBlurRadius still not implemented, but the followin
 
 * cg_lightningImpactCap (same as quakelive - don't draw the impact point any bigger than it is at this distance with respect to screen size)
 
-This was presumably added so that the impact point doesn't cover most of your screen when you are fighting up close or clip a wall.  The default for quake live is 192.  Use cg_debugLightningImpactDistance 1 and then /devmap <somemap> and find a spot where the distance is 192.  Use a ruler and measure on your monitor how big the impact image is.  If you move closer to the impact point while still firing lg you'll notice that the impact point still only takes up the same amout of screen space as when it was at a distance of 192.
+This was presumably added so that the impact point doesn't cover most of your screen when you are fighting up close or clip a wall.  The default for quake live is 192.  Use cg_debugLightningImpactDistance 1 and then /devmap <somemap> and find a spot where the distance is 192.  Use a ruler and measure on your monitor how big the impact image is.  If you move closer to the impact point while still firing lg you'll notice that the impact point still only takes up the same amount of screen space as when it was at a distance of 192.
 
 
 * cg_lightningImpactCapMin (to make sure it doesn't draw smaller than this)
@@ -1288,11 +1664,15 @@ It pushes the impact location this amount towards you in order to increase visib
 
 * cg_lightningImpactOthersSize  size of lg impact when demo taker or pov get's hit
 
-* cg_warmupTime [0: draw 0 in clock, 1 draw time in warmup and '(warmup)' string, 2 draw 0 and '(warmup)' string]
+* cg_warmupTime [0: draw 0 in clock, 1: draw time in warmup and '(warmup)' string, 2: draw 0 and '(warmup)' string, 3: draw only the time]
 
 * cg_drawItemPickupsCount  to enable/disable new quake live behavior
 
-* cg_fovy
+* cg_fovStyle  (0:  quake3 style where cg_fov sets the actual horizontal field of view,  1: quake live style where vertical field of view doesn't change with different window sizes and horizontal view is adjusted accordingly)
+
+* cg_fovy   to force a y fov
+
+* cg_fovIntermission  force a default fov during intermission, default is 90
 
 * cg_enableBreath [0: never, 1: if server/demo has enabled, 2: if map has it enabled even if server/demo don't, 3: always]
 
@@ -1300,7 +1680,7 @@ It pushes the impact location this amount towards you in order to increase visib
 
 * cg_smokeRadius_dust, cg_smokeRadius_breath, cg_smokeRadius_flight, cg_smokeRadius_haste
 
-* cg_drawgun > 1  eliminates bobbing like quake live
+* cg_drawgun  2:  eliminates bobbing like quake live, 3:  transparent weapon
 
 * cg_localTime (0: use demo time, 1: real time) default 0, cg_localTimeStyle (0: 24-hour clock, 1: am, pm) default 1
 
@@ -1312,7 +1692,7 @@ It pushes the impact location this amount towards you in order to increase visib
 
 * cg_drawScores cg_drawPlayersLeft cg_drawPowerups to enable/disable in the original quake3 hud (cg_qlhud 0).
 
-* cg_testQlFont  Replaces all uses of quake3 monospace font with quakelive's font.  Used for testing.
+* cg_testQlFont  Replaces all uses of quake3 mono-space font with quakelive's font.  Used for testing.
 
 * wolfcam  cg_perKillStatsExcludePostKillSpam "1"
 
@@ -1335,7 +1715,7 @@ Same as r_greyScale but only apply when picmip is allowed.
 
 * in_nograb
 
-You can use it in order to ungrab the mouse pointer without having to bring down the console.  Toggling it is bound by default to F2.  So, for example, you could start rendering a demo, hit F2, minimize the window, and then go off and do whatever until the rendering is done.
+You can use it in order to un-grab the mouse pointer without having to bring down the console.  Toggling it is bound by default to F2.  So, for example, you could start rendering a demo, hit F2, minimize the window, and then go off and do whatever until the rendering is done.
 
 * cg_drawJumpSpeeds*  [1: clear when velocity close to zero (like q3 defrag), 2
 : don't automatically clear]
@@ -1379,7 +1759,7 @@ You can use it in order to ungrab the mouse pointer without having to bring down
 * cg_forcePovModel  will use 'model' settings for 1st person pov
 * cg_wideScreen
 
-        0: original code
+        0: original code, with images stretched or shrunk horizontally
 
         1: don't adjust values to 4/3 aspect ratio, it will use the exact values specified
 
@@ -1389,7 +1769,9 @@ You can use it in order to ungrab the mouse pointer without having to bring down
            disables that behavior.
 
         2: adjust both y and x values based on only the x ratio (a bit of a hack to allow already created configs)
-        3: only adjust the crosshair
+
+        3: only adjust the crosshair, similar to quake live
+
 
   This isn't perfect as there are still some hard coded values assuming 4/3 aspect within the source code, but it should work well for movie configs to prevent stretching of the crosshair and text.
 
@@ -1397,8 +1779,6 @@ You can use it in order to ungrab the mouse pointer without having to bring down
 
 * r_anaglyph2d to allow or prevent splitting colors for the hud portion
 
-* cg_hudRedTeamColor  cg_hudBlueTeamColor  cg_hudNoTeamColor  for use with hud element CG_TEAM_COLOR
-* cg_hudForceRedTeamClanTag and cg_hudForceBlueTeamClanTag  (edit the team names in scorebox)
 * cg_drawFPS (2: higher precision and use given time in cgame not real time -- for debugging,  3:  use current frame value not average of last four)
 * cg_autoWriteConfig (0: don't automatically write q3config.cfg when a cvar changes (can be useful for testing configs), 1:  always write q3config.cfg when a cvar changes, 2:  (default) don't write q3config.cfg if a cvar is changed from fx scripting code or with /cvarinterp to prevent hard disk thrashing)
 
@@ -1430,7 +1810,20 @@ You can use it in order to ungrab the mouse pointer without having to bring down
       ex:  bind n "adddecal wc/poster"
            shoot at a wall, press 'n', and check cg_decal* values
 
-* cg_forceBModel[number]  to force the display of server set models in maps
+* cg_forceBModel[number]
+  cg_forceBModelPosition[number]
+  cg_forceBModelTrajectory[number]
+
+  force the display of server set models in maps
+
+  position format is "(float)origin[0] (float)origin[1] (float)origin[2]
+    (float)angles[0] (float)angles[1] (float)angles[2]"
+    ex: "100.0 -20.0 300.0 0.0 0.0 0.0"
+
+  trajectory format is "(int)type (int)time (int)duration (float)velocity[0]
+    (float)velocity[1] (float)velocity[2]"  ex:  "4 0 5000 0.0 0.0 4.0"
+    times are in milliseconds
+
   example to fix missing pillar texture/models in campgrounds pillars when freecaming and demo taker is out of range:
 
   ffa and duel:
@@ -1444,6 +1837,7 @@ You can use it in order to ungrab the mouse pointer without having to bring down
 
 
   note:  to find the model index find the entity number using 'cg_drawEntNumbers 1', then /printentitystate <ent number>,  and use the value given for 'modelindex'
+
 
 * cg_proxMineTick  (play proximity mine ticking sound)
 * cg_drawProxWarning*   (message about being mined and about to explode)
@@ -1502,7 +1896,7 @@ You can use it in order to ungrab the mouse pointer without having to bring down
 * cg_firstPersonSwitchSound  default "sound/wc/beep05"  play this sound when the view changes in a spectator demo.  Set to "" to disable.
 * wolfcam_firstPersonSwitchSoundStyle  (0: don't play cg_firstPersonSwitchSound when using '/follow'  1:  only play when switching back and forth from selected player, including /follow [victim|killer]  2:  always play switch sound when view changes)
 * com_execVerbose  default 0 to avoid spamming console when you execute a cfg file
-* cg_noTaunt  disable 'taunut' sound from players
+* cg_noTaunt  disable 'taunt' sound from players
 * r_showtris 2  will not have wallhack effect
 * r_shownormals 2  will not have wallhack effect
 * r_debugMarkSurface  when set to 1 will print the name of the map shader upon which impact marks are drawn
@@ -1524,6 +1918,7 @@ You can use it in order to ungrab the mouse pointer without having to bring down
 
     ex:  'bind h /remaplasttwoshaders'  shoot surface with shader you want, shoot surface you want to change, hit 'h'  (maps 0 to 1 in console)
 
+* cg_allowServerOverride to allow custom game type messages, sounds, sprites, etc...
 * player model scaling and server set models:
     cg_playerModelAutoScaleHeight  scale player models to match this height (default: 57, "" to disable)
 
@@ -1546,11 +1941,13 @@ You can use it in order to ungrab the mouse pointer without having to bring down
 
 * cl_numberPadInput  to disable number pad functions and allow them as input
 
-* com_qlColors (1: quake live, 2: quake3)
+* com_qlColors (1: quake live, 2: quake3)  colors used in hud and chat.  quakelive uses slightly pastel colors and replaces blue with baby-blue.
 
 * /setcolortable <index number> r g b a
     0 black, 1 red, 2 green, 3 yellow, 4 blue, 5 cyan, 6 magenta, 7 white, 8 light grey, 9, medium grey, 10 dark grey
     r g b a  from 0.0 to 1.0
+
+    for hud and chat colors
 
 * cg_powerupLight  (enable or disable player glow when they have a powerup)
 
@@ -1564,14 +1961,87 @@ You can use it in order to ungrab the mouse pointer without having to bring down
 
 * cg_drawDominationPointStatus cg_drawDominationPointStatusX cg_drawDominationPointStatusY cg_drawDominationPointStatusFont cg_drawDominationPointStatusPointSize cg_drawDominationPointStatusScale cg_drawDominationPointStatusEnemyColor cg_drawDominationPointStatusTeamColor cg_drawDominationPointStatusBackgroundColor cg_drawDominationPointStatusAlpha cg_drawDominationPointStatusTextColor cg_drawDominationPointStatusTextAlpha cg_drawDominationPointStatusTextStyle
 
-* cg_flagStyle  same as quake live
+* cg_flagStyle  (1:  regular flags,  2:  holographic models,  3:  holographic models which can be colorized with cg_teamFlagColor, cg_enemyFlagColor, cg_neutralFlagColor)
 
 * cg_debugImpactOrigin  to print to the console the origin of the last impact mark
 
 * cg_drawSpeed  hud speedometer (in game units per second)
 * cg_drawSpeedNoText  don't add 'UPS' text:  "400 UPS" ->  "400"
 
+* r_fog  enable/disable drawing fog
+
+* r_clearColor  if you use 'r_clear 1' to clear screen before drawing
+
+* r_ignoreEntityMergable  (0:  use shader's 'entityMergable' flag,  1:  ignore shader's 'entityMergable' flag,  2:  (default) ignore shader's 'entityMergable' flag if depth buffer is being saved)
+
+  quake3 has an optimization for sprites like smoke and blood that will lead to incorrect values if depth buffer is saved (mme_saveDepth).
+
 * r_flares 2  enables id software code for adding flares to dynamic lights (a little buggy)
+
+* cg_headShots  enable headshot reward sprite for servers that support it
+
+* cg_rocketAimbot  for the rocket aimbot  (2: autoaim in game)
+
+* cg_drawOrigin  draw origin, angles, and server time
+
+* some dubugging and informational commands:
+
+  /printtime  to print cgame and server time to the console
+  /printdirvector
+  /printlegsinfo
+  /printplayerstate
+  /printnextentitystate
+  /printviewparms
+  /printdatadir
+  /listentities
+
+* some server debugging and test commands (/devmap <map>) :
+
+  /spawn "<pickup name" [optional amount forward]
+      like /give but places the item in front of you
+
+  /juice
+      test EV_JUICED
+
+  /view yaw pitch roll
+
+------------------------------
+
+automated scripting examples:  playdemolist.py and recorddemolist.py
+
+  1) playdemolist.py
+
+  plays all the demos in wolfcam-ql/playdemos.txt
+  and then quits
+
+  format:
+
+  demo1.dm_73
+  ctfpickup09.dm_73
+  gaunt.dm_73
+
+  2) recorddemolist.py
+
+  plays demos from wolfcam-ql/recorddemos.txt and records portions of them and then quits, saving the avi files with the same name as the demo (blah.dm_73 -> videos/blah.avi)
+
+  format:
+
+  2:15 2:45 railing.dm_73
+  5:55 6:17 teamkills.dm_73
+
+
+  <starttime> <endtime> <demoname>
+
+  also automatically seeks to start time, see instructions in the file
+
+------------------------------
+
+
+* r_ignorehwgamma  can be set to -1 to force hardware gamma if SDL incorrectly reports that the hardware doesn't support it
+
+* cg_drawBBox  draw bounding box around players (not the same as hitbox)
+
+* cg_drawTieredArmorAvailability  (same as quakelive)
 
 ----------
 

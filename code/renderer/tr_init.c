@@ -135,6 +135,7 @@ cvar_t	*r_showsky;
 cvar_t	*r_shownormals;
 cvar_t	*r_finish;
 cvar_t	*r_clear;
+cvar_t *r_clearColor;
 cvar_t	*r_swapInterval;
 cvar_t	*r_textureMode;
 cvar_t	*r_offsetFactor;
@@ -212,6 +213,8 @@ cvar_t *r_teleporterFlash;
 cvar_t *r_debugMarkSurface;
 cvar_t *r_ignoreNoMarks;
 cvar_t *r_fog;
+cvar_t *r_ignoreEntityMergable;
+
 
 static void R_DeleteGlslShadersAndPrograms (void);
 
@@ -749,9 +752,6 @@ static void InitOpenGL( void )
 
 	// init command buffers and SMP
 	R_InitCommandBuffers();
-
-	// print info
-	GfxInfo_f();
 
 	InitFrameBufferAndRenderBuffer();
 	InitGlslShadersAndPrograms();
@@ -2113,8 +2113,38 @@ void GL_SetDefaultState( void )
 	qglEnable( GL_SCISSOR_TEST );
 	qglDisable( GL_CULL_FACE );
 	qglDisable( GL_BLEND );
+
+	qglColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+	qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+	qglClearDepth( 1.0 );
+	qglDrawBuffer( GL_FRONT );
+	qglClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_STENCIL_BUFFER_BIT );
+
+	qglDrawBuffer( GL_BACK );
+	qglClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_STENCIL_BUFFER_BIT );
 }
 
+/*
+================
+R_PrintLongString
+
+Workaround for ri.Printf's 1024 characters buffer limit.
+================
+*/
+static void R_PrintLongString(const char *string) {
+	char buffer[1024];
+	const char *p;
+	int size = strlen(string);
+
+	p = string;
+	while(size > 0)
+	{
+		Q_strncpyz(buffer, p, sizeof (buffer) );
+		ri.Printf( PRINT_ALL, "%s", buffer );
+		p += 1023;
+		size -= 1023;
+	}
+}
 
 /*
 ================
@@ -2137,7 +2167,8 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
-	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: %s\n", glConfig.extensions_string );
+	R_PrintLongString( glConfig.extensions_string );
+	ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 
@@ -2398,7 +2429,8 @@ void R_Register( void )
 	r_showtris = ri.Cvar_Get ("r_showtris", "0", CVAR_CHEAT);
 	r_showsky = ri.Cvar_Get ("r_showsky", "0", CVAR_CHEAT);
 	r_shownormals = ri.Cvar_Get ("r_shownormals", "0", CVAR_CHEAT);
-	r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_CHEAT);
+	r_clear = ri.Cvar_Get ("r_clear", "0", CVAR_ARCHIVE);
+	r_clearColor = ri.Cvar_Get("r_clearColor", "", CVAR_ARCHIVE);
 	r_offsetFactor = ri.Cvar_Get( "r_offsetfactor", "-1", CVAR_CHEAT );
 	r_offsetUnits = ri.Cvar_Get( "r_offsetunits", "-2", CVAR_CHEAT );
 	r_polygonFill = ri.Cvar_Get("r_polygonFill", "1", CVAR_CHEAT);
@@ -2435,6 +2467,7 @@ void R_Register( void )
 	r_debugMarkSurface = ri.Cvar_Get("r_debugMarkSurface", "0", CVAR_ARCHIVE);
 	r_ignoreNoMarks = ri.Cvar_Get("r_ignoreNoMarks", "0", CVAR_ARCHIVE);
 	r_fog = ri.Cvar_Get("r_fog", "1", CVAR_ARCHIVE);
+	r_ignoreEntityMergable = ri.Cvar_Get("r_ignoreEntityMergable", "2", CVAR_ARCHIVE);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown
@@ -2477,6 +2510,9 @@ void R_Init( void ) {
 		ri.Error( ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %zd != 11332", sizeof(glconfig_t));
 	}
 #endif
+
+	backEnd.entity2D.ePtr = &backEnd.entity2D.ent;
+	tr.worldEntity.ePtr = &tr.worldEntity.ent;
 
 //	Swap_Init();
 
@@ -2557,6 +2593,9 @@ void R_Init( void ) {
 	err = qglGetError();
 	if ( err != GL_NO_ERROR )
 		ri.Printf (PRINT_ALL, "glGetError() = 0x%x\n", err);
+
+	// print info
+	GfxInfo_f();
 
 	ri.Printf( PRINT_ALL, "----- finished R_Init -----\n" );
 }
@@ -2664,6 +2703,7 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 
 	re.ClearScene = RE_ClearScene;
 	re.AddRefEntityToScene = RE_AddRefEntityToScene;
+	re.AddRefEntityPtrToScene = RE_AddRefEntityPtrToScene;
 	re.SetPathLines = RE_SetPathLines;
 	re.AddPolyToScene = RE_AddPolyToScene;
 	re.LightForPoint = R_LightForPoint;

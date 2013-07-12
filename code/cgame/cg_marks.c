@@ -4,6 +4,12 @@
 
 #include "cg_local.h"
 
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_predict.h"
+#include "cg_syscalls.h"
+
 /*
 ===================================================================
 
@@ -13,9 +19,9 @@ MARK POLYS
 */
 
 
-markPoly_t	cg_activeMarkPolys;			// double linked list
-markPoly_t	*cg_freeMarkPolys;			// single linked list
-markPoly_t	cg_markPolys[MAX_MARK_POLYS];
+static markPoly_t	cg_activeMarkPolys;			// double linked list
+static markPoly_t	*cg_freeMarkPolys;			// single linked list
+static markPoly_t	cg_markPolys[MAX_MARK_POLYS];
 static		int	markTotal;
 
 /*
@@ -29,6 +35,8 @@ void	CG_InitMarkPolys( void ) {
 	int		i;
 
 	memset( cg_markPolys, 0, sizeof(cg_markPolys) );
+
+	//Com_Printf("^6mark polys: %f MB\n", (float)sizeof(cg_markPolys) / 1024.0 / 1024.0);
 
 	cg_activeMarkPolys.nextMark = &cg_activeMarkPolys;
 	cg_activeMarkPolys.prevMark = &cg_activeMarkPolys;
@@ -44,9 +52,9 @@ void	CG_InitMarkPolys( void ) {
 CG_FreeMarkPoly
 ==================
 */
-void CG_FreeMarkPoly( markPoly_t *le ) {
+static void CG_FreeMarkPoly( markPoly_t *le ) {
 	if ( !le->prevMark ) {
-		CG_Error( "CG_FreeLocalEntity: not active" );
+		CG_Error( "CG_FreeMarkPoly: not active" );
 	}
 
 	// remove from the doubly linked active list
@@ -65,7 +73,7 @@ CG_AllocMark
 Will allways succeed, even if it requires freeing an old active mark
 ===================
 */
-markPoly_t	*CG_AllocMark( void ) {
+static markPoly_t *CG_AllocMark( void ) {
 	markPoly_t	*le;
 	int time;
 
@@ -380,15 +388,15 @@ static int	numShaderAnims;
 #define		PARTICLE_GRAVITY	40
 #define		MAX_PARTICLES	1024
 
-cparticle_t	*active_particles, *free_particles;
-cparticle_t	particles[MAX_PARTICLES];
-int		cl_numparticles = MAX_PARTICLES;
+static cparticle_t	*active_particles, *free_particles;
+static cparticle_t	particles[MAX_PARTICLES];
+static int		cl_numparticles = MAX_PARTICLES;
 
-qboolean		initparticles = qfalse;
-vec3_t			pvforward, pvright, pvup;
-vec3_t			rforward, rright, rup;
+static qboolean		initparticles = qfalse;
+static vec3_t			pvforward, pvright, pvup;
+static vec3_t			rforward, rright, rup;
 
-float			oldtime;
+static float			oldtime;
 
 /*
 ===============
@@ -433,7 +441,7 @@ void CG_ClearParticles (void)
 CG_AddParticleToScene
 =====================
 */
-void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
+static void CG_AddParticleToScene (cparticle_t *p, const vec3_t org, float alpha)
 {
 
 	vec3_t		point;
@@ -1227,12 +1235,9 @@ void CG_AddParticles (void)
 	active_particles = active;
 }
 
-/*
-======================
-CG_AddParticles
-======================
-*/
-void CG_ParticleSnowFlurry (qhandle_t pshader, centity_t *cent)
+#if 0   // unused
+
+static void CG_ParticleSnowFlurry (qhandle_t pshader, const centity_t *cent)
 {
 	cparticle_t	*p;
 	qboolean turb = qtrue;
@@ -1302,7 +1307,9 @@ void CG_ParticleSnowFlurry (qhandle_t pshader, centity_t *cent)
 
 }
 
-void CG_ParticleSnow (qhandle_t pshader, vec3_t origin, vec3_t origin2, int turb, float range, int snum)
+#endif  // unused
+
+static void CG_ParticleSnow (qhandle_t pshader, const vec3_t origin, const vec3_t origin2, int turb, float range, int snum)
 {
 	cparticle_t	*p;
 
@@ -1361,7 +1368,7 @@ void CG_ParticleSnow (qhandle_t pshader, vec3_t origin, vec3_t origin2, int turb
 
 }
 
-void CG_ParticleBubble (qhandle_t pshader, vec3_t origin, vec3_t origin2, int turb, float range, int snum)
+static void CG_ParticleBubble (qhandle_t pshader, const vec3_t origin, const vec3_t origin2, int turb, float range, int snum)
 {
 	cparticle_t	*p;
 	float		randsize;
@@ -1422,7 +1429,10 @@ void CG_ParticleBubble (qhandle_t pshader, vec3_t origin, vec3_t origin2, int tu
 
 }
 
-void CG_ParticleSmoke (qhandle_t pshader, centity_t *cent)
+#if 0  // unused
+
+
+static void CG_ParticleSmoke (qhandle_t pshader, const centity_t *cent)
 {
 
 	// using cent->density = enttime
@@ -1470,7 +1480,7 @@ void CG_ParticleSmoke (qhandle_t pshader, centity_t *cent)
 }
 
 
-void CG_ParticleBulletDebris (vec3_t org, vec3_t vel, int duration)
+static void CG_ParticleBulletDebris (const vec3_t org, const vec3_t vel, int duration)
 {
 
 	cparticle_t	*p;
@@ -1511,13 +1521,15 @@ void CG_ParticleBulletDebris (vec3_t org, vec3_t vel, int duration)
 	
 }
 
+#endif   // unused
+
 /*
 ======================
 CG_ParticleExplosion
 ======================
 */
 
-void CG_ParticleExplosion (char *animStr, vec3_t origin, vec3_t vel, int duration, int sizeStart, int sizeEnd)
+void CG_ParticleExplosion (const char *animStr, const vec3_t origin, const vec3_t vel, int duration, int sizeStart, int sizeEnd)
 {
 	cparticle_t	*p;
 	int anim;
@@ -1570,12 +1582,17 @@ void CG_ParticleExplosion (char *animStr, vec3_t origin, vec3_t vel, int duratio
 
 }
 
+#if 0  // unused
+
 // Rafael Shrapnel
-void CG_AddParticleShrapnel (localEntity_t *le)
+static void CG_AddParticleShrapnel (const localEntity_t *le)
 {
 	return;
 }
 // done.
+
+#endif
+
 
 int CG_NewParticleArea (int num)
 {
@@ -1648,7 +1665,9 @@ int CG_NewParticleArea (int num)
 	return (1);
 }
 
-void	CG_SnowLink (centity_t *cent, qboolean particleOn)
+#if 0  // unused
+
+static void CG_SnowLink (const centity_t *cent, qboolean particleOn)
 {
 	cparticle_t		*p, *next;
 	int id;
@@ -1673,7 +1692,7 @@ void	CG_SnowLink (centity_t *cent, qboolean particleOn)
 	}
 }
 
-void CG_ParticleImpactSmokePuff (qhandle_t pshader, vec3_t origin)
+static void CG_ParticleImpactSmokePuff (qhandle_t pshader, const vec3_t origin)
 {
 	cparticle_t	*p;
 
@@ -1713,7 +1732,7 @@ void CG_ParticleImpactSmokePuff (qhandle_t pshader, vec3_t origin)
 	p->rotate = qtrue;
 }
 
-void CG_Particle_Bleed (qhandle_t pshader, vec3_t start, vec3_t dir, int fleshEntityNum, int duration)
+static void CG_Particle_Bleed (qhandle_t pshader, const vec3_t start, const vec3_t dir, int fleshEntityNum, int duration)
 {
 	cparticle_t	*p;
 
@@ -1763,7 +1782,7 @@ void CG_Particle_Bleed (qhandle_t pshader, vec3_t start, vec3_t dir, int fleshEn
 
 }
 
-void CG_Particle_OilParticle (qhandle_t pshader, centity_t *cent)
+static void CG_Particle_OilParticle (qhandle_t pshader, const centity_t *cent)
 {
 	cparticle_t	*p;
 
@@ -1827,7 +1846,7 @@ void CG_Particle_OilParticle (qhandle_t pshader, centity_t *cent)
 }
 
 
-void CG_Particle_OilSlick (qhandle_t pshader, centity_t *cent)
+static void CG_Particle_OilSlick (qhandle_t pshader, const centity_t *cent)
 {
 	cparticle_t	*p;
 	
@@ -1893,7 +1912,7 @@ void CG_Particle_OilSlick (qhandle_t pshader, centity_t *cent)
 
 }
 
-void CG_OilSlickRemove (centity_t *cent)
+static void CG_OilSlickRemove (const centity_t *cent)
 {
 	cparticle_t		*p, *next;
 	int				id;
@@ -1921,7 +1940,7 @@ void CG_OilSlickRemove (centity_t *cent)
 	}
 }
 
-qboolean ValidBloodPool (vec3_t start)
+static qboolean ValidBloodPool (vec3_t const start)
 {
 #define EXTRUDE_DIST	0.5
 
@@ -1955,7 +1974,7 @@ qboolean ValidBloodPool (vec3_t start)
 			CG_Trace (&trace, this_pos, NULL, NULL, end_pos, -1, CONTENTS_SOLID);
 
 			
-			if (trace.entityNum < (MAX_ENTITIES - 1)) // may only land on world
+			if (trace.entityNum != ENTITYNUM_WORLD) // may only land on world
 				return qfalse;
 
 			if (!(!trace.startsolid && trace.fraction < 1))
@@ -1967,7 +1986,7 @@ qboolean ValidBloodPool (vec3_t start)
 	return qtrue;
 }
 
-void CG_BloodPool (localEntity_t *le, qhandle_t pshader, trace_t *tr)
+static void CG_BloodPool (const localEntity_t *le, qhandle_t pshader, const trace_t *tr)
 {	
 	cparticle_t	*p;
 	qboolean	legit;
@@ -2030,7 +2049,7 @@ void CG_BloodPool (localEntity_t *le, qhandle_t pshader, trace_t *tr)
 #define NORMALSIZE	16
 #define LARGESIZE	32
 
-void CG_ParticleBloodCloud (centity_t *cent, vec3_t origin, vec3_t dir)
+static void CG_ParticleBloodCloud (const centity_t *cent, const vec3_t origin, const vec3_t dir)
 {
 	float	length;
 	float	dist;
@@ -2107,7 +2126,7 @@ void CG_ParticleBloodCloud (centity_t *cent, vec3_t origin, vec3_t dir)
 	
 }
 
-void CG_ParticleSparks (vec3_t org, vec3_t vel, int duration, float x, float y, float speed)
+static void CG_ParticleSparks (const vec3_t org, const vec3_t vel, int duration, float x, float y, float speed)
 {
 	cparticle_t	*p;
 
@@ -2155,7 +2174,7 @@ void CG_ParticleSparks (vec3_t org, vec3_t vel, int duration, float x, float y, 
 	
 }
 
-void CG_ParticleDust (centity_t *cent, vec3_t origin, vec3_t dir)
+static void CG_ParticleDust (const centity_t *cent, const vec3_t origin, const vec3_t dirx)
 {
 	float	length;
 	float	dist;
@@ -2164,7 +2183,10 @@ void CG_ParticleDust (centity_t *cent, vec3_t origin, vec3_t dir)
 	vec3_t	point;
 	cparticle_t	*p;
 	int		i;
-	
+	vec3_t dir;
+
+	VectorCopy(dirx, dir);
+
 	dist = 0;
 
 	VectorNegate (dir, dir);
@@ -2251,7 +2273,7 @@ void CG_ParticleDust (centity_t *cent, vec3_t origin, vec3_t dir)
 	
 }
 
-void CG_ParticleMisc (qhandle_t pshader, vec3_t origin, int size, int duration, float alpha)
+static void CG_ParticleMisc (qhandle_t pshader, const vec3_t origin, int size, int duration, float alpha)
 {
 	cparticle_t	*p;
 
@@ -2292,7 +2314,10 @@ void CG_ParticleMisc (qhandle_t pshader, vec3_t origin, int size, int duration, 
 	p->rotate = qfalse;
 }
 
-#if 0
+#endif  // unused
+
+
+#if 0   // testing
 static float   frand(void)
 {
 	return (rand()&32767)* (1.0/32767);
@@ -2304,7 +2329,7 @@ static float   crand(void)
 }
 
 
-void CG_Q2RailTrail (vec3_t start, vec3_t end)
+void CG_Q2RailTrail (const vec3_t start, const vec3_t end)
 {
 	vec3_t          move;
 	vec3_t          vec;
@@ -2364,7 +2389,7 @@ void CG_Q2RailTrail (vec3_t start, vec3_t end)
 			VectorAdd (move, vec, move);
         }
 
- core:
+//core:
 
 	dec = 0.75;
 	VectorScale (vec, dec, vec);

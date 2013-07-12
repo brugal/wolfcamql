@@ -301,10 +301,6 @@ FILE*		missingFiles = NULL;
 
 extern qboolean com_notInstalled;
 
-/* C99 defines __func__ */
-#ifndef __func__
-#define __func__ "(unknown)"
-#endif
 
 /*
 ==============
@@ -388,7 +384,7 @@ static fileHandle_t	FS_HandleForFile(void) {
 }
 
 FILE	*FS_FileForHandle( fileHandle_t f ) {
-	if ( f < 0 || f > MAX_FILE_HANDLES ) {
+	if ( f < 0 || f >= MAX_FILE_HANDLES ) {
 		Com_Error( ERR_DROP, "FS_FileForHandle: out of range" );
 	}
 	if (fsh[f].zipFile == qtrue) {
@@ -524,19 +520,21 @@ qboolean FS_CreatePath (char *OSPath) {
 
 /*
 =================
-FS_CheckFilenameIsNotExecutable
+FS_CheckFilenameIsMutable
 
-ERR_FATAL if trying to maniuplate a file with the platform library extension
+ERR_FATAL if trying to maniuplate a file with the platform library, QVM, or pk3 extension
 =================
  */
-static void FS_CheckFilenameIsNotExecutable( const char *filename,
+static void FS_CheckFilenameIsMutable( const char *filename,
 		const char *function )
 {
-	// Check if the filename ends with the library extension
-	if( !Q_stricmp( COM_GetExtension( filename ), DLL_EXT ) )
+	// Check if the filename ends with the library, QVM, or pk3 extension
+	if( !Q_stricmp( COM_GetExtension( filename ), DLL_EXT )
+		|| COM_CompareExtension( filename, ".qvm" )
+		|| COM_CompareExtension( filename, ".pk3" ) )
 	{
 		Com_Error( ERR_FATAL, "%s: Not allowed to manipulate '%s' due "
-			"to %s extension", function, filename, DLL_EXT );
+				   "to %s extension", function, filename, COM_GetExtension( filename ) );
 	}
 }
 
@@ -555,14 +553,14 @@ static void FS_CopyFile( char *fromOSPath, char *toOSPath ) {
 
 	Com_Printf( "copy %s to %s\n", fromOSPath, toOSPath );
 
-	FS_CheckFilenameIsNotExecutable( toOSPath, __func__ );
+	FS_CheckFilenameIsMutable( toOSPath, __func__ );
 
 	if (strstr(fromOSPath, "journal.dat") || strstr(fromOSPath, "journaldata.dat")) {
 		Com_Printf( "Ignoring journal files\n");
 		return;
 	}
 
-	f = fopen( fromOSPath, "rb" );
+	f = Sys_FOpen( fromOSPath, "rb" );
 	if ( !f ) {
 		return;
 	}
@@ -581,11 +579,13 @@ static void FS_CopyFile( char *fromOSPath, char *toOSPath ) {
 	fclose( f );
 
 	if( FS_CreatePath( toOSPath ) ) {
+		free(buf);
 		return;
 	}
 
-	f = fopen( toOSPath, "wb" );
+	f = Sys_FOpen( toOSPath, "wb" );
 	if ( !f ) {
+		free(buf);
 		return;
 	}
 	if (fwrite( buf, 1, len, f ) != len)
@@ -601,7 +601,7 @@ FS_Remove
 ===========
 */
 void FS_Remove( const char *osPath ) {
-	FS_CheckFilenameIsNotExecutable( osPath, __func__ );
+	FS_CheckFilenameIsMutable( osPath, __func__ );
 
 	remove( osPath );
 }
@@ -613,7 +613,7 @@ FS_HomeRemove
 ===========
 */
 void FS_HomeRemove( const char *homePath ) {
-	FS_CheckFilenameIsNotExecutable( homePath, __func__ );
+	FS_CheckFilenameIsMutable( homePath, __func__ );
 
 	remove( FS_BuildOSPath( fs_homepath->string,
 			fs_gamedir, homePath ) );
@@ -636,12 +636,22 @@ qboolean FS_FileExists( const char *file )
 
 	testpath = FS_BuildOSPath( fs_homepath->string, fs_gamedir, file );
 
-	f = fopen( testpath, "rb" );
+	f = Sys_FOpen( testpath, "rb" );
 	if (f) {
 		fclose( f );
 		return qtrue;
 	}
 	return qfalse;
+}
+
+// this includes files in search paths
+qboolean FS_VirtualFileExists (const char *file)
+{
+	if (FS_ReadFile(file, NULL) == -1) {
+		return qfalse;
+	}
+
+	return qtrue;
 }
 
 /*
@@ -659,7 +669,7 @@ qboolean FS_SV_FileExists( const char *file )
 	testpath = FS_BuildOSPath( fs_homepath->string, file, "");
 	testpath[strlen(testpath)-1] = '\0';
 
-	f = fopen( testpath, "rb" );
+	f = Sys_FOpen( testpath, "rb" );
 	if (f) {
 		fclose( f );
 		return qtrue;
@@ -692,7 +702,7 @@ fileHandle_t FS_SV_FOpenFileWrite( const char *filename ) {
 		Com_Printf( "FS_SV_FOpenFileWrite: %s\n", ospath );
 	}
 
-	FS_CheckFilenameIsNotExecutable( ospath, __func__ );
+	FS_CheckFilenameIsMutable( ospath, __func__ );
 
 	if( FS_CreatePath( ospath ) ) {
 		return 0;
@@ -743,7 +753,7 @@ int FS_SV_FOpenFileRead( const char *filename, fileHandle_t *fp ) {
 		Com_Printf( "FS_SV_FOpenFileRead (fs_homepath): %s\n", ospath );
 	}
 
-	fsh[f].handleFiles.file.o = fopen( ospath, "rb" );
+	fsh[f].handleFiles.file.o = Sys_FOpen( ospath, "rb" );
 	fsh[f].handleSync = qfalse;
 	if (!fsh[f].handleFiles.file.o)
 	{
@@ -759,7 +769,7 @@ int FS_SV_FOpenFileRead( const char *filename, fileHandle_t *fp ) {
 				Com_Printf( "FS_SV_FOpenFileRead (fs_basepath): %s\n", ospath );
 			}
 
-			fsh[f].handleFiles.file.o = fopen( ospath, "rb" );
+			fsh[f].handleFiles.file.o = Sys_FOpen( ospath, "rb" );
 			fsh[f].handleSync = qfalse;
 		}
 
@@ -784,7 +794,7 @@ FS_SV_Rename
 
 ===========
 */
-void FS_SV_Rename( const char *from, const char *to ) {
+void FS_SV_Rename( const char *from, const char *to, qboolean safe ) {
 	char			*from_ospath, *to_ospath;
 
 	if ( !fs_searchpaths ) {
@@ -803,12 +813,15 @@ void FS_SV_Rename( const char *from, const char *to ) {
 		Com_Printf( "FS_SV_Rename: %s --> %s\n", from_ospath, to_ospath );
 	}
 
-	FS_CheckFilenameIsNotExecutable( to_ospath, __func__ );
+	if ( safe ) {
+		FS_CheckFilenameIsMutable( to_ospath, __func__ );
+	}
 
 	if (rename( from_ospath, to_ospath )) {
 		// Failed, try copying it and deleting the original
-		FS_CopyFile ( from_ospath, to_ospath );
-		FS_Remove ( from_ospath );
+		//FS_CopyFile ( from_ospath, to_ospath );
+		//FS_Remove ( from_ospath );
+		Com_Printf("^3wolfcam FIXME check FS_SV_Rename() failed\n");
 	}
 }
 
@@ -837,7 +850,7 @@ void FS_Rename( const char *from, const char *to ) {
 		Com_Printf( "FS_Rename: %s --> %s\n", from_ospath, to_ospath );
 	}
 
-	FS_CheckFilenameIsNotExecutable( to_ospath, __func__ );
+	FS_CheckFilenameIsMutable( to_ospath, __func__ );
 
 	if (rename( from_ospath, to_ospath )) {
 		// Failed, try copying it and deleting the original
@@ -900,7 +913,7 @@ fileHandle_t FS_FOpenFileWrite( const char *filename ) {
 		Com_Printf( "FS_FOpenFileWrite: %s\n", ospath );
 	}
 
-	FS_CheckFilenameIsNotExecutable( ospath, __func__ );
+	FS_CheckFilenameIsMutable( ospath, __func__ );
 
 	if( FS_CreatePath( ospath ) ) {
 		return 0;
@@ -909,7 +922,7 @@ fileHandle_t FS_FOpenFileWrite( const char *filename ) {
 	// enabling the following line causes a recursive function call loop
 	// when running with +set logfile 1 +set developer 1
 	//Com_DPrintf( "writing to: %s\n", ospath );
-	fsh[f].handleFiles.file.o = fopen( ospath, "wb" );
+	fsh[f].handleFiles.file.o = Sys_FOpen( ospath, "wb" );
 
 	Q_strncpyz( fsh[f].name, filename, sizeof( fsh[f].name ) );
 
@@ -948,13 +961,13 @@ fileHandle_t FS_FOpenFileAppend( const char *filename ) {
 		Com_Printf( "FS_FOpenFileAppend: %s\n", ospath );
 	}
 
-	FS_CheckFilenameIsNotExecutable( ospath, __func__ );
+	FS_CheckFilenameIsMutable( ospath, __func__ );
 
 	if( FS_CreatePath( ospath ) ) {
 		return 0;
 	}
 
-	fsh[f].handleFiles.file.o = fopen( ospath, "ab" );
+	fsh[f].handleFiles.file.o = Sys_FOpen( ospath, "ab" );
 	fsh[f].handleSync = qfalse;
 	if (!fsh[f].handleFiles.file.o) {
 		f = 0;
@@ -1011,7 +1024,7 @@ void FS_FOpenSysFileRead (const char *filename, fileHandle_t *file)
 	Q_strncpyz(ospath, filename, sizeof(ospath));
 	FS_ReplaceSeparators(ospath);
 
-	fsh[*file].handleFiles.file.o = fopen(ospath, "rb");
+	fsh[*file].handleFiles.file.o = Sys_FOpen(ospath, "rb");
 	if (!fsh[*file].handleFiles.file.o) {
 		Com_Memset(&fsh[*file], 0, sizeof(fsh[*file]));
 		*file = 0;
@@ -1056,7 +1069,8 @@ Return qtrue if filename has a demo extension
 qboolean FS_IsDemoExt(const char *filename, int namelen)
 {
 	char *ext_test;
-	int index, protocol;
+	//int index
+	int protocol;
 
 	ext_test = strrchr(filename, '.');
 	if(ext_test && !Q_stricmpn(ext_test + 1, DEMOEXT, ARRAY_LEN(DEMOEXT) - 1))
@@ -1130,7 +1144,7 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 				dir = search->dir;
 
 				netpath = FS_BuildOSPath( dir->path, dir->gamedir, filename );
-				temp = fopen (netpath, "rb");
+				temp = Sys_FOpen (netpath, "rb");
 				if ( !temp ) {
 					continue;
 				}
@@ -1206,7 +1220,7 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 						   !FS_IsExt(filename, ".bot", len) &&
 						   !FS_IsExt(filename, ".arena", len) &&
 						   !FS_IsExt(filename, ".menu", len) &&
-						   Q_stricmp(filename, "qagame.qvm") != 0 &&
+						   Q_stricmp(filename, "vm/qagame.qvm") != 0 &&
 						   !strstr(filename, "levelshots"))
 						{
 							pak->referenced |= FS_GENERAL_REF;
@@ -1271,7 +1285,7 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 			dir = search->dir;
 
 			netpath = FS_BuildOSPath( dir->path, dir->gamedir, filename );
-			fsh[*file].handleFiles.file.o = fopen (netpath, "rb");
+			fsh[*file].handleFiles.file.o = Sys_FOpen (netpath, "rb");
 			if ( !fsh[*file].handleFiles.file.o ) {
 				continue;
 			}
@@ -1279,8 +1293,8 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 			Q_strncpyz( fsh[*file].name, filename, sizeof( fsh[*file].name ) );
 			fsh[*file].zipFile = qfalse;
 			if ( fs_debug->integer ) {
-				Com_Printf( "FS_FOpenFileRead: %s (found in '%s/%s')\n", filename,
-					dir->path, dir->gamedir );
+				Com_Printf( "FS_FOpenFileRead: %s (found in '%s%c%s')\n", filename,
+							dir->path, PATH_SEP, dir->gamedir );
 			}
 
 			return FS_filelength (*file);
@@ -1292,8 +1306,18 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 		fprintf(missingFiles, "%s\n", filename);
 	}
 #endif
-	*file = 0;
-	return -1;
+
+	if (file)
+	{
+		*file = 0;
+		return -1;
+	}
+	else
+	{
+		// When file is NULL, we're querying the existance of the file
+		// If we've got here, it doesn't exist
+		return 0;
+	}
 }
 
 
@@ -1507,7 +1531,6 @@ int FS_Seek( fileHandle_t f, long offset, int origin ) {
 			_origin = SEEK_SET;
 			break;
 		default:
-			_origin = SEEK_CUR;
 			Com_Error( ERR_FATAL, "Bad origin in FS_Seek" );
 			break;
 		}
@@ -2549,7 +2572,7 @@ void FS_Path_f( void ) {
 	Com_Printf ("Current search path:\n");
 	for (s = fs_searchpaths; s; s = s->next) {
 		if (s->pack) {
-			Com_Printf ("%s (%i files)\n", s->pack->pakFilename, s->pack->numfiles);
+			Com_Printf ("%s (%i files) %08x\n", s->pack->pakFilename, s->pack->numfiles, s->pack->checksum);
 			if ( fs_numServerPaks ) {
 				if ( !FS_PakIsPure(s->pack) ) {
 					Com_Printf( "    not on the pure list\n" );
@@ -3029,7 +3052,7 @@ static void FS_Startup( const char *gameName )
 
 #ifdef FS_MISSING
 	if (missingFiles == NULL) {
-		missingFiles = fopen( "\\missing.txt", "ab" );
+		missingFiles = Sys_FOpen( "\\missing.txt", "ab" );
 	}
 #endif
 	Com_Printf( "%d files in pk3 files\n", fs_packFiles );
@@ -3540,7 +3563,7 @@ void FS_Restart( int checksumFeed ) {
 		if (lastValidBase[0]) {
 			FS_PureServerSetLoadedPaks("", "");
 			Cvar_Set("fs_basepath", lastValidBase);
-			Cvar_Set("fs_gamedirvar", lastValidGame);
+			Cvar_Set("fs_game", lastValidGame);
 			lastValidBase[0] = '\0';
 			lastValidGame[0] = '\0';
 			FS_Restart(checksumFeed);

@@ -1,11 +1,287 @@
+10.1test1
 
-9.3test1  2012-06-24
+-----------------------------------
 
+10.0  2013-07-11
+
+* fx:  impactFlesh scripts 'end' input is the direction of the shooter, if the shooter's position isn't available its length will be 0
+* maximum impact marks raised from 256 to 4096
+* cg_drawClientItemTimerIcon, cg_drawClientItemTimerIconSize, cg_drawClientItemTimerIconXoffset, cg_drawClientItemTimerIconYoffset, cg_drawClientItemTimerTextColor
+* bug fix:  reset flag help icon after rewind or fast forward
+* bug fix:  1fctf use capture help icon instead of skull
+* bug fix:  cg_flagStyle 3  didn't take into account cg_freecam_useTeamSettings
+* cg_flagStyle 3  can be used with 1fctf and can be colorized with cg_neutralFlagColor
+* bug fix:  flag icon in score box offset up or down depending on the team that has the flag (match quakelive)
+* cg_warmupTime 3  draws only the time without the 'warmup' string
+* bug fix:  1fctf CG_SHOW_RED_TEAM_HAS_BLUEFLAG and CG_SHOW_BLUE_TEAM_HAS_REDFLAG swapped to match quakelive
+* bug fix:  1fctf don't draw base help icon if flag isn't at base
+* bug fix:  1fctf incorrect flag status values
+* bug fix:  1fctf flag status didn't reset after fast forwarding / rewinding in demos
+* cg_freecam_useTeamSettings 2  (now default) enables pov help icons for the person being followed
+* bug fix:  only show capture help icon in 1fctf if followed pov has flag
+* bug fix:  use correct capture help icon colors for 1fctf
+* bug fix:  possible crash when player models and skins fall back to default values
+* bug fix:  color escape options for names in frag tokens sometimes ignored
+* fx bug fix:  emitter scripts could run past their end points
+* bug fix:  cg_wideScreenScoreBoardHack  incorrectly calculating center of screen
+* bug fix:  possible memory corruption with 'scores' and 'stats' commands
+* bug fix:  incorrect detection of newer 'scores' commands
+* bug fix:  alternate map loading used wrong map config
+* bug fix:  quake3 team vote settings weren't being parsed from server info
+* bug fix:  possible cgame data corruption after disconnecting or demo ends
+* hud:  colorized tiered armor colors for cpm game mode
+* remove debug console messages about 'CG_Speaker()'
+* documentation updates
+* hud bug fix:  floating point values without leading numbers accepted (ex: .25)
+* fx bug fix:  floating point values without leading numbers accepted (ex: .25)
+* ioquake3 patches (allow r_drawSun, ...)
+* fx bug fix:  long math calculations could lead to memory corruption or crashing
+* fx:  performance optimization, cg_fxCompiled to enable/disable just in time compilation of the scripts
+* bug fix:  mid game switch to pql game type not recognized correctly
+
+--------------------------------------------
+9.11  2013-03-02
+
+* bug fix:  showing own base help icon in harvester
+* bug fix:  showing wrong number of skulls in harvester
+* bug fix:  empty ammo wasn't being drawn in red in quake live weaponbar
+* bug fix:  weapons in inventory could be unregistered
+* bug fix:  corrupt score data in forfeited matches
+* support for latest quake live update (new scores commands, duel score backup for forfeits, cg_drawTieredArmorAvailability, pql new max ammo values, scoreboard messages)
+* quake live's 'denied' global team sound
+* cg_audioAnnouncerRoundReward  to enable/disable end of round 'perfect' or 'denied' announcements
+* fx bug fix:  moving emitters weren't updating origin
+
+--------------------------------------------
+9.10  2013-02-25
+
+* cg_rocketAimbot i guess
+* bug fix:  weapon flash origin didn't take account slight bouncing effect when movement is blocked
+* changing cg_ambientSounds doesn't need a restart to take effect
+* cg_ambientSounds changed:
+    0:  disables all map sounds (not recommended)
+    1:  play all map sounds
+    2:  (default)  disables ambient sounds except for various important sounds like powerup respawn, doors opening and closing, special item respawns, etc..
+    3:  (like quakelive's 's_ambient 0') disables map looping sounds like fire, wind, etc. and allows map triggered sounds
+
+* s_debugMissingSounds
+* bug fix:  disabling ambient sounds disabled door opening and closing sounds
+* bug fix:  disabling ambient sounds disabled custom player sounds like drowning
+* default hud textScale value switched from 0.55 to 0.22 to match quake live
+* ignore stray gib events in freezetag
+* fx:  player/thawed only accepts origin since player information isn't always available
+* fx bug fix:  player/thawed  could use the wrong origin
+* remove console spamming in freezetag (EV_THAW_TICK and EV_THAW_PLAYER)
+* ignore archive flag for cg_forceBModel* cvars
+* hud:  current selected camera points always displayed and also drawn in yellow
+* bug fix:  /addcamerapoint would add a new camera point when it should have edited the current one
+* fx:  'rings' emitter type uses 'dir' to calculate end point (matches q3mme behavior)
+* fx bug fix:  'end0', 'end1', and 'end2' couldn't be set directly
+* map autoexec for 'sinister' to prevent teleporters disappearing in freecam
+* bug fix:  random angles with cg_forceBModelPosition*
+* bug fix:  adding too many loop sounds could lead to a crash
+* fx bug fix:  only one loop sound was being played at a time
+* bug fix:  doppler sound using random data
+* r_clearColor  if you use 'r_clear 1' to clear screen before drawing
+* r_ignoreEntityMergable  (0:  use shader's 'entityMergable' flag,  1:  ignore shader's 'entityMergable' flag,  2:  (default) ignore shader's 'entityMergable' flag if depth buffer is being saved)
+
+  quake3 has an optimization for sprites like smoke and blood that will lead to incorrect values if depth buffer is saved (mme_saveDepth).
+
+* fx bug fix:  moving emitters could sometimes use old origin values
+* fx bug fix:  correct 'skinNum' for models
+* fx:  'shadertime' can be changed within emitter scripts
+* fx bug fix:  'dir' can be changed in 'beam' and 'rings' emitter types (matches q3mme behavior)
+* fx bug fix:  weapon trail and fire origin were invalid if shooter wasn't present in current snapshot
+* valgrind 'unitialized value' fixes
+* bug fix:  invalid uses of strncpy()
+* use new sdl headers for linux build
+* extra opengl error checking
+* cg_flagStyle 3  allows colorized holographic flag model with cg_teamFlagColor and cg_enemyFlagColor
+* ioquake3 patches
+
+--------------------------------------------
+9.9  2013-02-05
+
+* bug fix:  view change in demo could register as player 'warping'
+* fx:  /runfxall <script name>  will run script against all present fx entities
+* bug fix:  if sound system isn't initialized it could lead to menu corruption
+* bug fix:  fragforwarddone.cfg wasn't being executed
+* fx:  'shadertime' to control when shader animations begin
+* fx:  match q3mme behavior of only setting shadertime to current time when emitters first appear
+* doc update:  forgot to add that r_ignorehwgamma can be set to -1 to force hardware gamma if SDL incorrectly reports that the hardware doesn't support it
+* bug fix:  projectile models sometimes being loaded after they appear in the demo
+* fx bug fix:  shotgun pellet origin could become corrupted
+
+--------------------------------------------
+9.8  2013-01-28
+
+* windows build doesn't require mingw dlls
+
+--------------------------------------------
+9.7  2013-01-27
+
+* map autoexecs for silence and useandabuse to fix disappearing freecam
+   entities
+* fx:  weapon/*/fire scripts included in q3mme.fx
+* fx:  soundweapon, soundlistweapon, soundlocal, and soundlistlocal to allow
+   non world sounds
+* cg_forceBModelPosition[number] and cg_forceBModelTrajectory[number] in
+   addition to cg_forceBModel[number] for maps like 'silence' and
+   'useandabuse' that also need to specify position, angles, and velocities
+   for brush/map models
+* 64bit fixes
+* some fixes related to non-player fired weapons (example:  grenade room in
+   silentnight)
+* fx:  entity limit doubled to about 16000
+* autoexec files fragforwardnext.cfg and fragforwarddone.cfg when seeking
+   to next frag and when the last frag is played
+* '/fragforward stop'  to force a stop
+* /fragforward command will print a message to the console indicating whether
+   it's on or off
+* cg_whIncludeDeadBody, cg_whIncludeProjectile
+* fx bug fix:  hitting fx entity limit could cause game models and images to
+   be dropped
+* fx:  emmitters with negative 'emitterid' are treated as 'low priority'
+   to allow control over which fx entities get dropped first if the
+   maximum entity limit is reached (a little over 8000)
+* fx:  cg_fxDebugEntities  to check if the maximum entity limit has been
+   reached and which entities needed to be dropped
+* fx:  added additional fx emitter types for /localents command
+* fx bug fix:  distance script could get stuck in an infinite loop
+* doc fixes and updates:  incorrect time values for /fragforward,
+   more information for /addcamerapoint, fx note about there being a limit
+   of only 32 dynamic lights
+* bug fix:  don't draw crosshair health/armor values for teammates if team information isn't available
+* cg_serverPrint  to enable/disable printing server messages in the center of the screen
+  cg_serverPrintToChat  to enable/disable printing server messages in the chat area
+  cg_serverPrintToConsole  to enable/disable printing server messages in the console
+
+  in quakelive 'server print' messages include things like 'player disconnected', 'vote failed', and ctf flag status messages
+
+* cg_serverCenterPrint*  (see cg_serverPrint*)
+
+  in quakelive 'server center print' messages include things like 'player switched teams'
+
+* fx:  weapon/*/fire now uses muzzle point for 'origin', if you need the real/player origin it is passed in as 'parentOrigin'
+* fx:  q3mme.fx rail example uses quake live cvars
+* bug fix:  cg_railUseOwnColors disabled rail rings
+* bug fix:  crash if /seekclock used from the command line
+* huffyuv compression option for avi recording
+* cl_aviMotionJpeg replaced with cl_aviCodec  (uncompressed, mjpeg, huffyuv)
+* bug fix:  blue flag status could be set incorrectly when seeking
+* load all player models at the beginning of demo playback to help avoid stuttering when a new player connects
+* cg_disallowEnemyModelForTeammates  if cg_teamModel isn't set this will prevent a teammate having an enemy model
+* reset vote settings after rewinding or fast forwarding
+* hud:  weapon bar uses orange color for low ammo to match quakelive
+* cg_drawAmmoWarning 2  to only show 'out of ammo' text message
+* cg_lowAmmoWarningStyle (0:  broken q3 style based on total ammo of all weapons and estimate of seconds left, 1:  like quake live based on percentile, 2:  based on per weapon cvars)
+* cg_lowAmmoWarningPercentile, cg_lowAmmoWarningSound,
+  and cg_lowAmmoWeaponBarWarning  like quakelive
+* cg_lowAmmoWarningMachineGun, cg_lowAmmoWarningRailGun, etc. for use
+  with cg_lowAmmoWarningStyle 2
+* bug fix:  cg_drawItemPickupsFade 0  would make item pickup message stay on screen indefinitely
+* cpma:  demo taker duel rewards in scoreboard
+* hud bug fix:  showing wrong game type icon for duel
+* ioquake3 patches
+* hud:  'ready up' countdown during warmup
+
+-------------------------------------------------
+9.6  2012-12-30
+
+* bug fix:  long demo names were being truncated
+* better support for combining demos:  don't play random events for extra demo takers, still missing some sounds/events
+
+-------------------------------------------------
+9.5  2012-12-22
+
+* typo in example weapon bar menu
+* hud bug fix:  'visible' can be toggled in menuDef sections
+* cg_allowServerOverride to allow custom game type messages, sounds, sprites, etc...
+* 'Infected' game type support
+* hud:  ownerdraw WCG_REAL_PLAYER_HEAD to draw real player head/icon without substituting team color skins
+* ioquake3 patches
+* bug fix:  demos that started inside a timeout would break /seekclock and /at
+* bug fix:  /seekclock and /at  calculated time incorrectly if called from within a timeout
+* bug fix:  support for referee (unlimited time) pause
+* bug fix:  /seekclock and /at take into account 'timein' and referee pausing
+* bug fix:  don't display corrupt client item timer values after game timeouts
+* bug fix:  /at takes into account game timeouts
+* fx bug fix:  haste and flight trails could cause playback to stop for a long time
+* more cpma support:  bfg scoreboard stats, players left for round based team games, cap/frag limit settings for more gametypes, timeouts
+* hud bug fix:  'following' name drawn 10 pixels lower than demo taker's name
+* hud bug fix:  'following' name wasn't using color and alpha options with /follow
+* hud:  CG_MATCH_DETAILS  display map name, not map message, in scoreboard for quake3 demos
+* cg_drawGun 3  transparent weapon like quake live
+* bug fix:  shader sorting error
+* less memory usage with map textures without valid lightmaps
+* preliminary support for combining multiple demos, still has a few bugs:
+   /demo c1.dm_73 c2.dm_73 ...
+
+   /set all_ents (1:  add all entities from all demos  2: extra debugging information)
+     known bugs:  replaying event sounds for players
+
+   temporary command '/pov next'   to cycle demos
+
+-------------------------------------------------
+9.4 2012-12-07
+
+* bug fix:  temporary fix for random warmup round announcements in cpma
+* bug fix:  timeout console message uses timestamps
+* bug fix:  /seekclock takes into account game timeouts in quake live demos
+* bug fix:  last version used corrupt fov value with /follow
+* increase maximum server message length to support last quake live update
+
+-------------------------------------------------
+9.3  2012-12-04
+
+* fx bug fix:  bubble trail being drawn outside of water
+* cg_spectatorListSkillRating, cg_spectatorListScore, cg_spectatorListQue  for the scrolling scoreboard spectator list
+* cg_fovStyle  (0:  quake3 style where cg_fov sets the actual horizontal field of view,  1: quake live style where vertical field of view doesn't change with different window sizes and horizontal view is adjusted accordingly)
+* cg_fovIntermission  force a default fov during intermission, default is 90
+* /dumpstats  to print the stats data sent at the end of game in newer quake live demos
+* bug fix:  some debugging images not drawn while paused
+* bug fix:  shadow code disabled drawing camera path lines
+* bug fix:  score could be reset to 0 in duel scoreboard
+* add more info to non premium duel scoreboard
+* fx:  use 'cg_railRings' instead of 'cg_oldRail' in q3mme.fx
+* fx:  print error message if cvar doesn't exist and a math script defaults to checking cvars
+* bug fix:  local sounds don't fade when view switches
+* scoreboard fix for scores sending only live player updates
+* scoreboard fix for non premium users being sent premium score commands
+* fx:  'extraShader', 'extraShaderClear', and 'extraShaderEndTime' for scripts associated with player entities.  For 'impactFlesh' scripts these refer to the victim and for other weapon scripts generally the attacker.
+* hud:  added some missing ownerdraws
+* documentation for the correct syntax for pow and atan2 functions
+* hud:  added 'elementColor' and highlighting of selected row
+* fx:  added modulus operator '%'
+* hud bug fix:  String_Allocate() memory leak
+* hud bug fix:  a font change will check if the font was already loaded
+* bug fix:  function keys in console with /devmap would only work once
+* hud extensions:  commands (cvarSet, textExt, etc...), hud variables, math processing, if/else blocks within itemDefs, additional ownerdraws, and ability to attach a 'run' script to items to dynamically change things  (see README-wolfcam.txt)
+
+  examples include quake3 osp style warmup message and custom weapon bar
+
+* cg_audioAnnouncerRewardsFirst  enable first reward having a unique voice over
+* cg_rewardsStack  (0:  don't play multiple reward announcements for the same reward if it happens within cg_drawRewardsTime)
+* cg_drawRewards 3  enables cpma style multiple reward medals shown
+* support EV_HEADSHOT and cg_headShots to enable/disable
+* fx:  'common/headShot'
+* fx: enabled weapon/machinegun/trail, weapon/chaingun/trail, and weapon/shotgun/trail
+* fx: added rtcw/et style moving tracers to machinegun, chaingun, and shotgun trails in scripts/q3mme.fx
+* fx:  added 'snow' surfacetype
+* bug fix:  adding more than 1022 entities would draw a null model at the center of the map
+* cg_simpleItemsBob and cg_simpleItemsHeightOffset same as quakelive
+* bug fix:  don't play gong sound when leaving intermission
+* scoreboard options work with old q3 scoreboard
+* bug fix:  seeking, fast-forwarding, rewinding into intermission would use the in-game scoreboard, not the end-of-game scoreboard
+* hud support for end of game map voting
+* hud bug fix:  text scale value for CG_AREA_NEW_CHAT was being ignored
+* bug fix:  incorrect picture alignment with cg_drawRewardsAlign
+* fx bug fix:  incorrect 'if/else' logic in q3mme.fx gib script
+* added some documentation about fx 'emitter' using small values
 * r_flares 2 enables id code for flares with dynamic lights (a little buggy)
 * small fix for r_flares to prevent drawing completely obscured flares
 * ioquake3 patches
-* added some missing information in the README file
-* r_flares > 1 enables flares on dynamic lights
+* fixed typos and added some missing cvars in the README file
 * r_fog  enable/disable drawing fog
 
 -----------------------------------------------------------

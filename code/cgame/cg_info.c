@@ -3,13 +3,18 @@
 // cg_info.c -- display information while data is being loading
 
 #include "cg_local.h"
+
+#include "cg_drawtools.h"
+#include "cg_info.h"
+#include "cg_main.h"
+#include "cg_players.h"
+#include "cg_syscalls.h"
+
 #include "wolfcam_local.h"
 #include "sc.h"
 
-#define MAX_LOADING_PLAYER_ICONS	16
+#define MAX_LOADING_PLAYER_ICONS	128  //16
 #define MAX_LOADING_ITEM_ICONS		26
-
-extern int UI_DrawProportionalString3 (int x, int y, const char* str, int style, vec4_t color);
 
 static int			loadingPlayerIconCount;
 static int			loadingItemIconCount;
@@ -69,7 +74,7 @@ CG_LoadingItem
 ===================
 */
 void CG_LoadingItem( int itemNum ) {
-	gitem_t		*item;
+	const gitem_t		*item;
 
 	item = &bg_itemlist[itemNum];
 	
@@ -104,7 +109,7 @@ void CG_LoadingClient( int clientNum ) {
 		}
 
 		Com_sprintf( iconName, MAX_QPATH, "models/players/%s/icon_%s.tga", model, skin );
-		
+
 		loadingPlayerIcons[loadingPlayerIconCount] = trap_R_RegisterShaderNoMip( iconName );
 		if ( !loadingPlayerIcons[loadingPlayerIconCount] ) {
 			Com_sprintf( iconName, MAX_QPATH, "models/players/characters/%s/icon_%s.tga", model, skin );
@@ -120,6 +125,54 @@ void CG_LoadingClient( int clientNum ) {
 	}
 
 	Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof(personality) );
+	Q_CleanStr( personality );
+	//Com_Printf("clean str %c%c  %s\n", personality[0], personality[1], personality);
+
+	if( cgs.gametype == GT_SINGLE_PLAYER ) {
+		trap_S_RegisterSound( va( "sound/player/announce/%s.wav", personality ), qtrue );
+	}
+
+	CG_LoadingString( personality );
+}
+
+void CG_LoadingFutureClient (const char *modelName)
+{
+	//const char		*info;
+	char			*skin;
+	char			personality[MAX_QPATH];
+	char			model[MAX_QPATH];
+	char			iconName[MAX_QPATH];
+
+	//info = CG_ConfigString( CS_PLAYERS + clientNum );
+
+	if ( loadingPlayerIconCount < MAX_LOADING_PLAYER_ICONS ) {
+		//Q_strncpyz( model, Info_ValueForKey( info, "model" ), sizeof( model ) );
+		Q_strncpyz(model, modelName, sizeof(model));
+		skin = strrchr( model, '/' );
+		if ( skin ) {
+			*skin++ = '\0';
+		} else {
+			skin = "default";
+		}
+
+		Com_sprintf( iconName, MAX_QPATH, "models/players/%s/icon_%s.tga", model, skin );
+
+		loadingPlayerIcons[loadingPlayerIconCount] = trap_R_RegisterShaderNoMip( iconName );
+		if ( !loadingPlayerIcons[loadingPlayerIconCount] ) {
+			Com_sprintf( iconName, MAX_QPATH, "models/players/characters/%s/icon_%s.tga", model, skin );
+			loadingPlayerIcons[loadingPlayerIconCount] = trap_R_RegisterShaderNoMip( iconName );
+		}
+		if ( !loadingPlayerIcons[loadingPlayerIconCount] ) {
+			Com_sprintf( iconName, MAX_QPATH, "models/players/%s/icon_%s.tga", DEFAULT_MODEL, "default" );
+			loadingPlayerIcons[loadingPlayerIconCount] = trap_R_RegisterShaderNoMip( iconName );
+		}
+		if ( loadingPlayerIcons[loadingPlayerIconCount] ) {
+			loadingPlayerIconCount++;
+		}
+	}
+
+	//Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof(personality) );
+	Q_strncpyz(personality, modelName, sizeof(personality));
 	Q_CleanStr( personality );
 	//Com_Printf("clean str %c%c  %s\n", personality[0], personality[1], personality);
 
@@ -294,7 +347,11 @@ void CG_DrawInformation (qboolean loading)
 	} else if (cgs.gametype == GT_DOMINATION) {
 		s = "Domination";
 	} else if (cgs.gametype == GT_RED_ROVER) {
-		s = "Red Rover";
+		if (cgs.customServerSettings & SERVER_SETTING_INFECTED) {
+			s = "Red Rover (Infected)";
+		} else {
+			s = "Red Rover";
+		}
 	} else {
 		s = "Unknown Gametype";
 	}
@@ -385,4 +442,3 @@ void CG_DrawInformation (qboolean loading)
 		y += PROP_HEIGHT * lines;
 	}
 }
-

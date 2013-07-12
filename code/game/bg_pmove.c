@@ -141,7 +141,7 @@ PM_ClipVelocity
 Slide off of the impacting surface
 ==================
 */
-void PM_ClipVelocity( vec3_t in, vec3_t normal, vec3_t out, float overbounce ) {
+void PM_ClipVelocity( const vec3_t in, const vec3_t normal, vec3_t out, float overbounce ) {
 	float	backoff;
 	float	change;
 	int		i;
@@ -238,7 +238,7 @@ PM_Accelerate
 Handles user intended acceleration
 ==============
 */
-static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel ) {
+static void PM_Accelerate( const vec3_t wishdir, float wishspeed, float accel ) {
 #if 1
 	// q2 style
 	int			i;
@@ -289,7 +289,7 @@ This allows the clients to use axial -127 to 127 values for all directions
 without getting a sqrt(2) distortion in speed.
 ============
 */
-static float PM_CmdScale( usercmd_t *cmd ) {
+static float PM_CmdScale( const usercmd_t *cmd ) {
 	int		max;
 	float	total;
 	float	scale;
@@ -541,7 +541,7 @@ static void PM_WaterMove( void ) {
 	PM_SlideMove( qfalse );
 }
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 /*
 ===================
 PM_InvulnerabilityMove
@@ -920,6 +920,9 @@ static int PM_FootstepForSurface( void ) {
 	}
 	if ( pml.groundTrace.surfaceFlags & SURF_METALSTEPS ) {
 		return EV_FOOTSTEP_METAL;
+	}
+	if ( pml.groundTrace.surfaceFlags & SURF_SNOW ) {
+		return EV_FOOTSTEP_SNOW;
 	}
 	return EV_FOOTSTEP;
 }
@@ -1626,7 +1629,7 @@ static void PM_Weapon( void ) {
 
 	// start the animation even if out of ammo
 	if ( pm->ps->weapon == WP_GAUNTLET ) {
-		// the guantlet only "fires" when it actually hits something
+		// the gauntlet only "fires" when it actually hits something
 		if ( !pm->gauntletHit ) {
 			pm->ps->weaponTime = 0;
 			pm->ps->weaponstate = WEAPON_READY;
@@ -1687,7 +1690,7 @@ static void PM_Weapon( void ) {
 	case WP_GRAPPLING_HOOK:
 		addTime = 400;
 		break;
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	case WP_NAILGUN:
 		addTime = 1000;
 		break;
@@ -1700,7 +1703,7 @@ static void PM_Weapon( void ) {
 #endif
 	}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if( bg_itemlist[pm->ps->stats[STAT_PERSISTANT_POWERUP]].giTag == PW_SCOUT ) {
 		addTime /= 1.5;
 	}
@@ -1730,7 +1733,7 @@ static void PM_Animate( void ) {
 			pm->ps->torsoTimer = TIMER_GESTURE;
 			PM_AddEvent( EV_TAUNT );
 		}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	} else if ( pm->cmd.buttons & BUTTON_GETFLAG ) {
 		if ( pm->ps->torsoTimer == 0 ) {
 			PM_StartTorsoAnim( TORSO_GETFLAG );
@@ -1986,7 +1989,7 @@ void PmoveSingle (pmove_t *pmove) {
 
 	PM_DropTimers();
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if ( pm->ps->powerups[PW_INVULNERABILITY] ) {
 		PM_InvulnerabilityMove();
 	} else

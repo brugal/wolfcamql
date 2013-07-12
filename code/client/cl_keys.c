@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "client.h"
+#include "keys.h"
 
 /*
 
@@ -29,8 +30,8 @@ key up events are sent even if in console mode
 
 field_t	historyEditLines[COMMAND_HISTORY];
 
-int			nextHistoryLine;		// the last line in the history buffer, not masked
-int			historyLine;	// the line being displayed from history buffer
+static int			nextHistoryLine;		// the last line in the history buffer, not masked
+static int			historyLine;	// the line being displayed from history buffer
 							// will be <= nextHistoryLine
 
 field_t		g_consoleField;
@@ -40,7 +41,7 @@ qboolean	chat_team;
 int			chat_playerNum;
 
 
-qboolean	key_overstrikeMode;
+static qboolean	key_overstrikeMode;
 
 int				anykeydown;
 qkey_t		keys[MAX_KEYS];
@@ -849,14 +850,14 @@ the K_* names are matched up.
 to be configured even if they don't have defined names.
 ===================
 */
-int Key_StringToKeynum( char *str ) {
+int Key_StringToKeynum( const char *str ) {
 	keyname_t	*kn;
 	
 	if ( !str || !str[0] ) {
 		return -1;
 	}
 	if ( !str[1] ) {
-		return str[0];
+		return tolower( str[0] );
 	}
 
 	// check for hex code
@@ -1070,9 +1071,9 @@ void Key_Bind_f (void)
 	if (c == 2)
 	{
 		if (keys[b].binding)
-			Com_Printf ("\"%s\" = \"%s\"\n", Cmd_Argv(1), keys[b].binding );
+			Com_Printf ("\"%s\" = \"%s\"\n", Key_KeynumToString(b), keys[b].binding );
 		else
-			Com_Printf ("\"%s\" is not bound\n", Cmd_Argv(1) );
+			Com_Printf ("\"%s\" is not bound\n", Key_KeynumToString(b) );
 		return;
 	}
 	
@@ -1377,6 +1378,8 @@ Called by CL_KeyEvent to handle a keyrelease
 */
 void CL_KeyUpEvent( int key, unsigned time )
 {
+	qboolean functionKey;
+
 	keys[key].repeats = 0;
 	keys[key].down = qfalse;
 	if (key != K_SCROLLOCK && key != K_KP_NUMLOCK && key != K_CAPSLOCK)
@@ -1389,6 +1392,40 @@ void CL_KeyUpEvent( int key, unsigned time )
 	// don't process key-up events for the console key
 	if ( key == K_CONSOLE ||  key == K_F1  ||  ( key == K_ESCAPE && keys[K_SHIFT].down ) )
 		return;
+
+	switch (key) {
+	case K_F1:
+	case K_F2:
+	case K_F3:
+	case K_F4:
+	case K_F5:
+	case K_F6:
+	case K_F7:
+	case K_F8:
+	case K_F9:
+	case K_F10:
+	case K_F11:
+	case K_F12:
+	case K_F13:
+	case K_F14:
+	case K_F15:
+		functionKey = qtrue;
+		break;
+	default:
+		functionKey = qfalse;
+		break;
+	}
+
+	//FIXME demo playback will send 2 up events
+	if (!clc.demoplaying  &&  (Key_GetCatcher( ) & KEYCATCH_CONSOLE) ) {
+		if (functionKey) {
+			if (cgvm) {
+				VM_Call( cgvm, CG_KEY_EVENT, key, qfalse );
+			} else if (uivm) {
+				VM_Call( uivm, UI_KEY_EVENT, key, qfalse );
+			}
+		}
+	}
 
 	//
 	// key up events only perform actions if the game key binding is

@@ -29,9 +29,9 @@ long myftol( float f );
 #define C2 0.2241438680420134
 #define C3 -0.1294095225512604
 
-void daub4(float b[], unsigned long n, int isign)
+static void daub4(float b[], unsigned long n, int isign)
 {
-	float wksp[4097];
+	float wksp[4097] = { 0.0f };
 	float	*a=b-1;						// numerical recipies so a[1] = b[0]
 
 	unsigned long nh,nh1,i,j;
@@ -59,7 +59,7 @@ void daub4(float b[], unsigned long n, int isign)
 	}
 }
 
-void wt1(float a[], unsigned long n, int isign)
+static void wt1(float a[], unsigned long n, int isign)
 {
 	unsigned long nn;
 	int inverseStartLength = n/4;
@@ -83,7 +83,7 @@ static unsigned char numBits[] = {
    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
 };
 
-byte MuLawEncode(short s) {
+static byte MuLawEncode(short s) {
 	unsigned long adjusted;
 	byte sign, exponent, mantissa;
 
@@ -98,7 +98,7 @@ byte MuLawEncode(short s) {
 	return ~(sign | (exponent<<4) | mantissa);
 }
 
-short MuLawDecode(byte uLaw) {
+static short MuLawDecode(byte uLaw) {
 	signed long adjusted;
 	byte exponent, mantissa;
 
@@ -113,11 +113,13 @@ short MuLawDecode(byte uLaw) {
 short mulawToShort[256];
 static qboolean madeTable = qfalse;
 
+#if 0  // unused
 static	int	NXStreamCount;
 
-void NXPutc(NXStream *stream, char out) {
+static void NXPutc(NXStream *stream, char out) {
 	stream[NXStreamCount++] = out;
 }
+#endif
 
 
 void encodeWavelet( sfx_t *sfx, short *packets) {
@@ -148,7 +150,7 @@ void encodeWavelet( sfx_t *sfx, short *packets) {
 		newchunk = SND_malloc();
 		if (sfx->soundData == NULL) {
 			sfx->soundData = newchunk;
-		} else {
+		} else if (chunk != NULL) {
 			chunk->next = newchunk;
 		}
 		chunk = newchunk;
@@ -217,7 +219,7 @@ void encodeMuLaw( sfx_t *sfx, short *packets) {
 		newchunk = SND_malloc();
 		if (sfx->soundData == NULL) {
 			sfx->soundData = newchunk;
-		} else {
+		} else if (chunk != NULL) {
 			chunk->next = newchunk;
 		}
 		chunk = newchunk;

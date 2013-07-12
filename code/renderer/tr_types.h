@@ -41,8 +41,44 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define LIGHTMAP_WHITEIMAGE -2
 #define LIGHTMAP_NONE       -1
 
+/*
+
+the drawsurf sort data is packed into a single 32 bit value so it can be
+compared quickly during the qsorting process
+
+the bits are allocated as follows:
+
+21 - 31	: sorted shader index
+11 - 20	: entity index
+2 - 6	: fog index
+//2		: used to be clipped flag REMOVED - 03.21.00 rad
+0 - 1	: dlightmap index
+
+	TTimo - 1.32
+17-31 : sorted shader index
+7-16  : entity index
+2-6   : fog index
+0-1   : dlightmap index
+*/
+//#define	QSORT_SHADERNUM_SHIFT	17
+//#define	QSORT_ENTITYNUM_SHIFT	7
+//#define	QSORT_FOGNUM_SHIFT		2
+
+/* wolfcam
+20-34 : sorted shader index
+7-19  : entity index  // 8192 ents
+2-6   : fog index
+0-1   : dlightmap index
+*/
+
+#define	QSORT_SHADERNUM_SHIFT	21
+#define	QSORT_REFENTITYNUM_SHIFT	7
+#define	QSORT_FOGNUM_SHIFT		2
+
 #define	MAX_DLIGHTS		32		// can't be increased, because bit flags are used on surfaces
-#define	MAX_ENTITIES		8191  //1023		// can't be increased without changing drawsurf bit packing
+#define	MAX_REFENTITIES		((1 << (QSORT_SHADERNUM_SHIFT - QSORT_REFENTITYNUM_SHIFT)) - 1)  // can't be increased without changing drawsurf bit packing
+#define REFENTITYNUM_WORLD (MAX_REFENTITIES - 1)
+//#define REFENTITYNUM_NONE (MAX_REFENTITIES - 2)  //FIXME need?
 
 // renderfx flags
 #define	RF_MINLIGHT		0x0001		// allways have some light (viewmodel, some items)
@@ -83,6 +119,9 @@ typedef struct poly_s {
 
 typedef enum {
 	RT_MODEL,
+	RT_MODEL_FX_DIR,
+	RT_MODEL_FX_ANGLES,
+	RT_MODEL_FX_AXIS,
 	RT_POLY,
 	RT_SPRITE,
 	RT_SPRITE_FIXED,
@@ -94,6 +133,7 @@ typedef enum {
 	RT_PORTALSURFACE,		// doesn't draw anything, just info for portals
 	RT_BEAM_Q3MME,
 	RT_RAIL_RINGS_Q3MME,
+	RT_GRAPPLE,
 
 	RT_MAX_REF_ENTITY_TYPE
 } refEntityType_t;

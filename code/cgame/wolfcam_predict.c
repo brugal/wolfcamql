@@ -1,8 +1,10 @@
 #include "cg_local.h"
+
+#include "cg_predict.h"
+#include "wolfcam_predict.h"
+
 #include "wolfcam_local.h"
 
-extern int cg_numSolidEntities;
-extern centity_t    *cg_solidEntities[MAX_ENTITIES_IN_SNAPSHOT];
 
 /* clientNum for calcMuzzle */
 void Wolfcam_WeaponTrace (trace_t *result, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int skipNumber, int mask)
@@ -84,4 +86,3 @@ mark_as_solid:
 
     cg_numSolidEntities -= addedEntities;
 }
-

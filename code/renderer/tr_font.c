@@ -357,6 +357,9 @@ float readFloat( void ) {
 	me.fred[1] = fdFile[fdOffset+1];
 	me.fred[2] = fdFile[fdOffset+2];
 	me.fred[3] = fdFile[fdOffset+3];
+#else
+  #error "shouldn't happen"
+    me.fred[0] = me.fred[1] = me.fred[2] = me.fred[3] = 0;
 #endif
 	fdOffset += 4;
 
@@ -521,7 +524,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 
  try_ttf:
 
-	Com_Printf("trying ttf\n");
+	//Com_Printf("trying ttf\n");
 
 	// make sure the render thread is stopped
 	if (!syncRenderThread) {

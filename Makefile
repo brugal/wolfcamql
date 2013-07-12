@@ -164,8 +164,10 @@ ifndef DEBUG_CFLAGS
 DEBUG_CFLAGS=-g -O0
 endif
 
-ifndef CPP
-CPP=g++
+ifdef CLANG
+CFLAGS=-Qunused-arguments
+CC=clang
+CPP=clang++
 endif
 
 ifdef CGAME_HARD_LINKED
@@ -227,25 +229,17 @@ ifneq ($(BUILD_CLIENT),0)
   endif
 endif
 
-# version info
-#VERSION=3.2
-
-USE_SVN=
-ifeq ($(wildcard .svn),.svn)
-  SVN_REV=$(shell LANG=C svnversion .)
-  ifneq ($(SVN_REV),)
-    VERSION:=$(VERSION)_SVN$(SVN_REV)
-    USE_SVN=1
-  endif
-else
-ifeq ($(wildcard .git/svn/.metadata),.git/svn/.metadata)
-  SVN_REV=$(shell LANG=C git svn info | awk '$$1 == "Revision:" {print $$2; exit 0}')
-  ifneq ($(SVN_REV),)
-    VERSION:=$(VERSION)_SVN$(SVN_REV)
-  endif
+# Add git version info
+USE_GIT=
+ifeq ($(wildcard .git),.git)
+  GIT_REV=$(shell git show -s --pretty=format:%h-%ad --date=short)
+ifneq ($(GIT_REV),)
+    VERSION:=$(VERSION)_GIT_$(GIT_REV)
+    USE_GIT=1
 endif
 endif
 
+CGAME_LIBS = -lpthread
 
 #############################################################################
 # SETUP AND BUILD -- LINUX
@@ -264,6 +258,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu"))
   else
   ifeq ($(ARCH),x86_64)
     LIB=lib64
+    LDFLAGS += -m64
   else
   ifeq ($(ARCH),ppc64)
     LIB=lib64
@@ -275,7 +270,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu"))
   endif
   endif
 
-  ifneq ($(CPP),)
+  ifndef CLANG
     CPP = g++
   endif
 
@@ -312,22 +307,20 @@ endif
     CLIENT_CFLAGS += -DBUILD_FREETYPE -I/usr/include/freetype2
   endif
 
-  OPTIMIZEVM = -O3 -funroll-loops -fno-omit-frame-pointer
-  #OPTIMIZEVM = -O3 -funroll-loops
-  OPTIMIZE = $(OPTIMIZEVM) -ffast-math
+  OPTIMIZEVM = -DNQDEBUG -O3 -funroll-loops -fno-omit-frame-pointer
+  OPTIMIZE += $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -fno-omit-frame-pointer -funroll-loops \
+    OPTIMIZEVM = -DNQDEBUG -O3 -fno-omit-frame-pointer -funroll-loops \
       -falign-loops=2 -falign-jumps=2 -falign-functions=2 \
-      -fstrength-reduce
+      -fstrength-reduce -m64
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   else
   ifeq ($(ARCH),i386)
-    OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer \
+    OPTIMIZEVM = -DNQDEBUG -O3 -march=i586 -fno-omit-frame-pointer \
       -funroll-loops -falign-loops=2 -falign-jumps=2 \
       -falign-functions=2 -fstrength-reduce
-    #OPTIMIZEVM = -O3 -march=i586
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
@@ -392,7 +385,7 @@ endif
   endif
 
   ifeq ($(USE_LOCAL_HEADERS),1)
-    CLIENT_CFLAGS += -I$(SDLHDIR)/include
+    #CLIENT_CFLAGS += -I$(SDLHDIR)/include
   endif
 
   ifeq ($(ARCH),i386)
@@ -418,7 +411,7 @@ ifeq ($(PLATFORM),darwin)
   endif
   HAVE_VM_COMPILED=true
   CLIENT_LIBS=
-  OPTIMIZEVM=
+  OPTIMIZEVM = -DNQDEBUG
 
   BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes
   CLIENT_CFLAGS =
@@ -527,11 +520,14 @@ ifeq ($(PLATFORM),mingw32)
   #  -D__USE_MINGW_ANSI_STDIO
   BASE_CFLAGS = -g -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
     -DUSE_ICON -msse
+
   #CLIENT_CFLAGS = -D__MINGW32__
   #CLIENT_CFLAGS = -I../../vorbis/include
   CLIENT_CFLAGS =
   CLIENT_LIBS =
   SERVER_CFLAGS =
+  # don't use pthreads with win32
+  CGAME_LIBS =
 
   # In the absence of wspiapi.h, require Windows XP or later
   ifeq ($(shell test -e $(CMDIR)/wspiapi.h; echo $$?),1)
@@ -565,14 +561,14 @@ ifeq ($(PLATFORM),mingw32)
 #  OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x64)
-    OPTIMIZEVM = -O3 -fno-omit-frame-pointer \
+    OPTIMIZEVM = -DNQDEBUG -O3 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
       -fstrength-reduce
     OPTIMIZE = $(OPTIMIZEVM) --fast-math
     HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer \
+    OPTIMIZEVM = -DNQDEBUG -O3 -march=i586 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
       -fstrength-reduce
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
@@ -587,7 +583,7 @@ ifeq ($(PLATFORM),mingw32)
 
   BINEXT=.exe
 
-  LIBS= -lws2_32 -lwinmm
+  LIBS= -lws2_32 -lwinmm -static-libgcc -static-libstdc++
   CLIENT_LDFLAGS = -mwindows
   CLIENT_LIBS += -lgdi32 -lole32 -lopengl32
 
@@ -645,7 +641,7 @@ ifeq ($(PLATFORM),freebsd)
   SERVER_CFLAGS =
   HAVE_VM_COMPILED = true
 
-  OPTIMIZEVM = -O3 -funroll-loops -fno-omit-frame-pointer
+  OPTIMIZEVM = -DNQDEBUG -O3 -funroll-loops -fno-omit-frame-pointer
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   SHLIBEXT=so
@@ -712,7 +708,7 @@ ifeq ($(PLATFORM),openbsd)
   BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
      -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS = $(SDL_CFLAGS)
-  SERVER_CFLAGS = 
+  SERVER_CFLAGS =
 
   ifeq ($(USE_OPENAL),1)
     CLIENT_CFLAGS += -DUSE_OPENAL
@@ -735,15 +731,17 @@ ifeq ($(PLATFORM),openbsd)
     USE_CURL_DLOPEN=0
   endif
 
+   # no shm_open on OpenBSD
+   USE_MUMBLE=0
+
   BASE_CFLAGS += -DNO_VM_COMPILED
   HAVE_VM_COMPILED=false
 
   SHLIBEXT=so
-  SHLIBNAME=.$(SHLIBEXT)
   SHLIBCFLAGS=-fPIC
   SHLIBLDFLAGS=-shared $(LDFLAGS)
 
-  THREAD_LIBS=-pthread
+  THREAD_LIBS=-lpthread
   LIBS=-lm
 
 #FIXME this is fucked up, do like the Mac version
@@ -753,7 +751,7 @@ ifeq ($(PLATFORM),openbsd)
 
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
-      CLIENT_LIBS += $(THREAD_LIBS) -lossaudio -lopenal
+      CLIENT_LIBS += $(THREAD_LIBS) -lopenal
     endif
   endif
 
@@ -761,7 +759,7 @@ ifeq ($(PLATFORM),openbsd)
     CLIENT_LIBS += -lvorbisfile -lvorbis -logg
   endif
 
-  ifeq ($(USE_CURL),1) 
+  ifeq ($(USE_CURL),1)
     ifneq ($(USE_CURL_DLOPEN),1)
       CLIENT_LIBS += -lcurl
     endif
@@ -813,7 +811,7 @@ ifeq ($(PLATFORM),irix64)
     -I. -I$(ROOT)/usr/include -DNO_VM_COMPILED
   CLIENT_CFLAGS = $(SDL_CFLAGS)
   OPTIMIZE = -O3
-  
+
   SHLIBEXT=so
   SHLIBCFLAGS=
   SHLIBLDFLAGS=-shared
@@ -853,7 +851,7 @@ ifeq ($(PLATFORM),sunos)
   CLIENT_CFLAGS = $(SDL_CFLAGS)
   SERVER_CFLAGS =
 
-  OPTIMIZEVM = -O3 -funroll-loops -DNDEBUG
+  OPTIMIZEVM = -DNQDEBUG -O3 -funroll-loops
 
   ifeq ($(ARCH),sparc)
     OPTIMIZEVM += -O3 \
@@ -871,7 +869,7 @@ ifeq ($(PLATFORM),sunos)
     CLIENT_LDFLAGS += -L/usr/X11/lib/NVIDIA -R/usr/X11/lib/NVIDIA
   endif
   endif
-  
+
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   ifneq ($(HAVE_VM_COMPILED),true)
@@ -895,7 +893,7 @@ else # ifeq sunos
 # SETUP AND BUILD -- GENERIC
 #############################################################################
   BASE_CFLAGS=-DNO_VM_COMPILED
-  OPTIMIZE = -DNDEBUG -O3
+  OPTIMIZE = -DNQDEBUG -O3
 
   SHLIBEXT=so
   SHLIBCFLAGS=-fPIC
@@ -938,9 +936,9 @@ ifneq ($(BUILD_GAME_SO),0)
     $(B)/baseq3/ui$(SHLIBNAME)
   ifneq ($(BUILD_MISSIONPACK),0)
     TARGETS += \
-    $(B)/missionpack/cgame$(SHLIBNAME) \
-    $(B)/missionpack/qagame$(SHLIBNAME) \
-    $(B)/missionpack/ui$(SHLIBNAME)
+      $(B)/missionpack/cgame$(SHLIBNAME) \
+      $(B)/missionpack/qagame$(SHLIBNAME) \
+      $(B)/missionpack/ui$(SHLIBNAME)
   endif
 endif
 
@@ -952,8 +950,8 @@ ifneq ($(BUILD_GAME_QVM),0)
       $(B)/baseq3/vm/ui.qvm
     ifneq ($(BUILD_MISSIONPACK),0)
       TARGETS += \
-      $(B)/missionpack/vm/qagame.qvm \
       $(B)/missionpack/vm/cgame.qvm \
+      $(B)/missionpack/vm/qagame.qvm \
       $(B)/missionpack/vm/ui.qvm
     endif
   endif
@@ -1006,7 +1004,7 @@ else
   STRIP_FLAG = -s
 endif
 
-BASE_CFLAGS += -DPRODUCT_VERSION=\\\"$(VERSION)\\\"
+BASE_CFLAGS += -DPRODUCT_VERSION=\\\"$(VERSION)\\\" -DWOLFCAM_VERSION=\\\"$(VERSION)\\\"
 
 ifeq ($(V),1)
 echo_cmd=@:
@@ -1214,11 +1212,13 @@ makedirs:
 #############################################################################
 
 TOOLS_OPTIMIZE = -g -O2 -Wall -fno-strict-aliasing
-#TOOLS_CFLAGS += $(TOOLS_OPTIMIZE) -DPRODUCT_VERSION=\\\"$(VERSION)\\\"
 TOOLS_CFLAGS += $(TOOLS_OPTIMIZE) \
                 -DTEMPDIR=\"$(TEMPDIR)\" -DSYSTEM=\"\" \
                 -I$(Q3LCCSRCDIR) \
                 -I$(LBURGDIR)
+
+#-DPRODUCT_VERSION=\\\"$(VERSION)\\\"  -DWOLFCAM_VERSION=\\\"$(VERSION)\\\"
+
 TOOLS_LIBS =
 TOOLS_LDFLAGS =
 
@@ -1329,6 +1329,9 @@ $(Q3LCC): $(Q3LCCOBJ) $(Q3RCC) $(Q3CPP)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(TOOLS_CFLAGS) $(TOOLS_LDFLAGS) -o $@ $(Q3LCCOBJ) $(TOOLS_LIBS)
 
+
+QVM_CFLAGS = -DPRODUCT_VERSION=\"$(VERSION)\"  -DWOLFCAM_VERSION=\"$(VERSION)\"
+
 define DO_Q3LCC
 $(echo_cmd) "Q3LCC $<"
 $(Q)$(Q3LCC) -o $@ $<
@@ -1336,37 +1339,37 @@ endef
 
 define DO_CGAME_Q3LCC
 $(echo_cmd) "CGAME_Q3LCC $<"
-$(Q)$(Q3LCC) -DCGAME -o $@ $<
+$(Q)$(Q3LCC) -DCGAME $(QVM_CFLAGS) -o $@ $<
 endef
 
 define DO_GAME_Q3LCC
 $(echo_cmd) "GAME_Q3LCC $<"
-$(Q)$(Q3LCC) -DQAGAME -o $@ $<
+$(Q)$(Q3LCC) -DQAGAME $(QVM_CFLAGS) -o $@ $<
 endef
 
 define DO_UI_Q3LCC
 $(echo_cmd) "UI_Q3LCC $<"
-$(Q)$(Q3LCC) -DUI -o $@ $<
+$(Q)$(Q3LCC) -DUI $(QVM_CFLAGS) -o $@ $<
 endef
 
 define DO_Q3LCC_MISSIONPACK
 $(echo_cmd) "Q3LCC_MISSIONPACK $<"
-$(Q)$(Q3LCC) -DMISSIONPACK -o $@ $<
+$(Q)$(Q3LCC) -DMISSIONPACK $(QVM_CFLAGS) -o $@ $<
 endef
 
 define DO_CGAME_Q3LCC_MISSIONPACK
 $(echo_cmd) "CGAME_Q3LCC_MISSIONPACK $<"
-$(Q)$(Q3LCC) -DMISSIONPACK -DCGAME -o $@ $<
+$(Q)$(Q3LCC) -DMISSIONPACK -DCGAME $(QVM_CFLAGS) -o $@ $<
 endef
 
 define DO_GAME_Q3LCC_MISSIONPACK
 $(echo_cmd) "GAME_Q3LCC_MISSIONPACK $<"
-$(Q)$(Q3LCC) -DMISSIONPACK -DQAGAME -o $@ $<
+$(Q)$(Q3LCC) -DMISSIONPACK -DQAGAME $(QVM_CFLAGS) -o $@ $<
 endef
 
 define DO_UI_Q3LCC_MISSIONPACK
 $(echo_cmd) "UI_Q3LCC_MISSIONPACK $<"
-$(Q)$(Q3LCC) -DMISSIONPACK -DUI -o $@ $<
+$(Q)$(Q3LCC) -DMISSIONPACK -DUI $(QVM_CFLAGS) -o $@ $<
 endef
 
 
@@ -1387,18 +1390,19 @@ $(Q3ASM): $(Q3ASMOBJ)
 #############################################################################
 
 Q3OBJ = \
+  $(B)/client/cl_avi.o \
   $(B)/client/cl_camera.o \
   $(B)/client/cl_cgame.o \
   $(B)/client/cl_cin.o \
   $(B)/client/cl_console.o \
   $(B)/client/cl_input.o \
+  $(B)/client/cl_huffyuv.o \
   $(B)/client/cl_keys.o \
   $(B)/client/cl_main.o \
   $(B)/client/cl_net_chan.o \
   $(B)/client/cl_parse.o \
   $(B)/client/cl_scrn.o \
   $(B)/client/cl_ui.o \
-  $(B)/client/cl_avi.o \
   \
   $(B)/client/cm_load.o \
   $(B)/client/cm_patch.o \
@@ -1817,22 +1821,22 @@ ifeq ($(ARCH),x86)
   Q3DOBJ += \
       $(B)/ded/matha.o \
       $(B)/ded/snapvector.o \
-      $(B)/ded/ftola.o 
+      $(B)/ded/ftola.o
 endif
 ifeq ($(ARCH),x86_64)
   Q3DOBJ += \
       $(B)/ded/snapvector.o \
-      $(B)/ded/ftola.o 
+      $(B)/ded/ftola.o
 endif
 ifeq ($(ARCH),amd64)
   Q3DOBJ += \
       $(B)/ded/snapvector.o \
-      $(B)/ded/ftola.o 
+      $(B)/ded/ftola.o
 endif
 ifeq ($(ARCH),x64)
   Q3DOBJ += \
       $(B)/ded/snapvector.o \
-      $(B)/ded/ftola.o 
+      $(B)/ded/ftola.o
 endif
 
 
@@ -1915,6 +1919,7 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/baseq3/cgame/cg_info.o \
   $(B)/baseq3/cgame/cg_localents.o \
   $(B)/baseq3/cgame/cg_marks.o \
+  $(B)/baseq3/cgame/cg_mem.o \
   $(B)/baseq3/cgame/cg_newdraw.o \
   $(B)/baseq3/cgame/cg_players.o \
   $(B)/baseq3/cgame/cg_playerstate.o \
@@ -1958,6 +1963,7 @@ Q3CGOBJ_ = \
   $(B)/baseq3/cgame/cg_info.o \
   $(B)/baseq3/cgame/cg_localents.o \
   $(B)/baseq3/cgame/cg_marks.o \
+  $(B)/baseq3/cgame/cg_mem.o \
   $(B)/baseq3/cgame/cg_newdraw.o \
   $(B)/baseq3/cgame/cg_players.o \
   $(B)/baseq3/cgame/cg_playerstate.o \
@@ -1988,13 +1994,13 @@ Q3CGOBJ_ = \
   $(B)/baseq3/qcommon/q_math.o \
   $(B)/baseq3/qcommon/q_shared.o
 
-Q3CGOBJ = $(Q3CGOBJ_) $(B)/baseq3/cgame/cg_syscalls.o
-Q3CGOBJHARDLINKED = $(Q3CGOBJHARDLINKED_) $(B)/baseq3/cgame/cg_syscalls.o
+Q3CGOBJ = $(Q3CGOBJ_) $(B)/baseq3/cgame/cg_syscalls.o $(B)/baseq3/cgame/cg_thread.o $(B)/baseq3/cgame/cg_dll.o
+Q3CGOBJHARDLINKED = $(Q3CGOBJHARDLINKED_) $(B)/baseq3/cgame/cg_syscalls.o $(B)/baseq3/cgame/cg_thread.o $(B)/baseq3/cgame/cg_dll.o
 Q3CGVMOBJ = $(Q3CGOBJ_:%.o=%.asm)
 
 $(B)/baseq3/cgame$(SHLIBNAME): $(Q3CGOBJ)
 	$(echo_cmd) "LD $@"
-	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3CGOBJ)
+	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3CGOBJ) $(CGAME_LIBS)
 
 $(B)/baseq3/vm/cgame.qvm: $(Q3CGVMOBJ) $(CGDIR)/cg_syscalls.asm $(Q3ASM)
 	$(echo_cmd) "Q3ASM $@"
@@ -2332,10 +2338,10 @@ $(B)/ded/%.o: $(NDIR)/%.c
 	$(DO_DED_CC)
 
 # Extra dependencies to ensure the SVN version is incorporated
-ifeq ($(USE_SVN),1)
-  $(B)/client/cl_console.o : .svn/entries
-  $(B)/client/common.o : .svn/entries
-  $(B)/ded/common.o : .svn/entries
+ifeq ($(USE_GIT),1)
+  $(B)/client/cl_console.o : .git/index
+  $(B)/client/common.o : .git/index
+  $(B)/ded/common.o : .git/index
 endif
 
 
@@ -2501,7 +2507,7 @@ toolsclean2:
 	@rm -f $(LBURG) $(DAGCHECK_C) $(Q3RCC) $(Q3CPP) $(Q3LCC) $(Q3ASM)
 
 distclean: clean toolsclean
-	@rm -rf $(BUILD_DIR)
+	@rm -rf $(BUILD_DIR) mac-binaries/cgamei386.dylib mac-binaries/qagamei386.dylib mac-binaries/uii386.dylib mac-binaries/wolfcamqlmac
 
 installer: release
 ifeq ($(PLATFORM),mingw32)
@@ -2511,10 +2517,8 @@ else
 endif
 
 dist:
-	rm -rf ioquake3-$(VERSION)
-	svn export . ioquake3-$(VERSION)
-	tar --owner=root --group=root --force-local -cjf ioquake3-$(VERSION).tar.bz2 ioquake3-$(VERSION)
-	rm -rf ioquake3-$(VERSION)
+	git archive --format zip --output $(CLIENTBIN)-$(VERSION).zip HEAD
+
 
 #############################################################################
 # DEPENDENCIES
@@ -2531,3 +2535,4 @@ endif
 	release targets \
 	toolsclean toolsclean2 toolsclean-debug toolsclean-release \
 	$(OBJ_D_FILES) $(TOOLSOBJ_D_FILES)
+

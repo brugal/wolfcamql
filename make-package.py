@@ -21,12 +21,15 @@ os.system("cp build/release-mingw32-x86/baseq3/*.dll %s/wolfcam-ql/" % packageDi
 os.system("cp code/libs/macosx/libSDL-1.2.0.dylib %s/" % packageDir)
 os.system("cp mac-binaries/wolfcamqlmac %s/" % packageDir)
 os.system("cp mac-binaries/*.dylib %s/wolfcam-ql/" % packageDir)
+os.system("cp ui/wcmenudef.h %s/wolfcam-ql/ui/" % packageDir)
+
 os.system("rm -r /tmp/wolfcamql-src/")
 os.system("mkdir /tmp/wolfcamql-src/")
 os.system("cp * /tmp/wolfcamql-src/")
 os.system("cp -a code/ ui/ misc/ /tmp/wolfcamql-src/")
 os.chdir("/tmp/wolfcamql-src/")
-os.system("rm -r .hg .hgignore tmp build demos package* code/cgame-diffs-2009-12-06 code/libs code/cgame.orig macwolfcambuild update-mac-binaries.sh")
+# uhmmm... this is dangerous
+os.system("rm -r .hg .hgignore tmp build demos package* code/libs macwolfcambuild update-mac-binaries.sh")
 os.chdir("/tmp")
 os.system("tar -zcvf wolfcamql-src.tar.gz wolfcamql-src/")
 

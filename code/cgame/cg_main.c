@@ -3,17 +3,34 @@
 // cg_main.c -- initialization and primary entry point for cgame
 #include "cg_local.h"
 
-#if 1  //def MISSIONPACK
-#include "../ui/ui_shared.h"
-// display context for new ui stuff
-displayContextDef_t cgDC;
-#endif
+#include "cg_consolecmds.h"
+#include "cg_draw.h"
+#include "cg_drawtools.h"
+#include "cg_info.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_newdraw.h"
+#include "cg_players.h"
+#include "cg_q3mme_scripts.h"
+#include "cg_servercmds.h"
+#include "cg_snapshot.h"
+#include "cg_spawn.h"
+#include "cg_syscalls.h"
+#include "cg_view.h"
+#include "cg_weapons.h"
+#include "sc.h"
 
+#include "../ui/ui_shared.h"
 #include "wolfcam_local.h"
 
-int forceModelModificationCount = -1;
+// display context for new ui stuff
+displayContextDef_t cgDC;
 
-char *gametypeConfigs[] = {
+
+static int forceModelModificationCount = -1;
+
+const char *gametypeConfigs[] = {
 	"ffa.cfg",
 	"duel.cfg",
 	"singleplayer.cfg",
@@ -29,11 +46,10 @@ char *gametypeConfigs[] = {
 	"rr.cfg",
 };
 
-floatNumber_t FloatNumbers[MAX_FLOAT_NUMBERS];
 
-void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qboolean demoPlayback);
-void CG_Shutdown( void );
-
+static void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qboolean demoPlayback);
+static void CG_Shutdown( void );
+static void CG_TimeChange (int serverTime, int ioverf);
 
 /*
 ================
@@ -60,7 +76,9 @@ Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3, i
 	case CG_CONSOLE_COMMAND:
 		return CG_ConsoleCommand();
 	case CG_DRAW_ACTIVE_FRAME:
+		//Com_Printf("^5active start\n");
 		CG_DrawActiveFrame(arg0, arg1, arg2, arg3, arg4, arg5);
+		//Com_Printf("^5active end\n");
 		return 0;
 	case CG_CROSSHAIR_PLAYER:
 		return CG_CrosshairPlayer();
@@ -71,7 +89,7 @@ Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3, i
 		CG_KeyEvent(arg0, arg1);
 		return 0;
 	case CG_MOUSE_EVENT:
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		cgDC.cursorx = cgs.cursorX;
 		cgDC.cursory = cgs.cursorY;
 #endif
@@ -159,12 +177,18 @@ vmCvar_t	cg_drawClientItemTimer;
 vmCvar_t	cg_drawClientItemTimerX;
 vmCvar_t	cg_drawClientItemTimerY;
 vmCvar_t	cg_drawClientItemTimerScale;
+vmCvar_t cg_drawClientItemTimerTextColor;
 vmCvar_t	cg_drawClientItemTimerFont;
 vmCvar_t	cg_drawClientItemTimerPointSize;
 vmCvar_t	cg_drawClientItemTimerAlpha;
 vmCvar_t	cg_drawClientItemTimerStyle;
 vmCvar_t	cg_drawClientItemTimerAlign;
 vmCvar_t	cg_drawClientItemTimerSpacing;
+vmCvar_t cg_drawClientItemTimerIcon;
+vmCvar_t cg_drawClientItemTimerIconSize;
+vmCvar_t cg_drawClientItemTimerIconXoffset;
+vmCvar_t cg_drawClientItemTimerIconYoffset;
+
 vmCvar_t cg_itemSpawnPrint;
 
 vmCvar_t	cg_drawFPS;
@@ -204,11 +228,30 @@ vmCvar_t cg_drawAmmoWarningStyle;
 vmCvar_t cg_drawAmmoWarningFont;
 vmCvar_t cg_drawAmmoWarningPointSize;
 vmCvar_t cg_drawAmmoWarningScale;
-vmCvar_t cg_drawAmmoWarningTime;
+//vmCvar_t cg_drawAmmoWarningTime;
 vmCvar_t cg_drawAmmoWarningColor;
 vmCvar_t cg_drawAmmoWarningAlpha;
-vmCvar_t cg_drawAmmoWarningFade;
-vmCvar_t cg_drawAmmoWarningFadeTime;
+//vmCvar_t cg_drawAmmoWarningFade;
+//vmCvar_t cg_drawAmmoWarningFadeTime;
+
+vmCvar_t cg_lowAmmoWarningStyle;
+vmCvar_t cg_lowAmmoWarningPercentile;
+vmCvar_t cg_lowAmmoWarningSound;
+vmCvar_t cg_lowAmmoWeaponBarWarning;
+vmCvar_t cg_lowAmmoWarningGauntlet;
+vmCvar_t cg_lowAmmoWarningMachineGun;
+vmCvar_t cg_lowAmmoWarningShotgun;
+vmCvar_t cg_lowAmmoWarningGrenadeLauncher;
+vmCvar_t cg_lowAmmoWarningRocketLauncher;
+vmCvar_t cg_lowAmmoWarningLightningGun;
+vmCvar_t cg_lowAmmoWarningRailGun;
+vmCvar_t cg_lowAmmoWarningPlasmaGun;
+vmCvar_t cg_lowAmmoWarningBFG;
+vmCvar_t cg_lowAmmoWarningGrapplingHook;
+vmCvar_t cg_lowAmmoWarningNailGun;
+vmCvar_t cg_lowAmmoWarningProximityLauncher;
+vmCvar_t cg_lowAmmoWarningChainGun;
+
 
 vmCvar_t	cg_drawCrosshair;
 
@@ -255,6 +298,7 @@ vmCvar_t cg_drawRewardsColor;
 vmCvar_t cg_drawRewardsAlpha;
 vmCvar_t cg_drawRewardsFade;
 vmCvar_t cg_drawRewardsFadeTime;
+vmCvar_t cg_rewardsStack;
 
 vmCvar_t	cg_crosshairSize;
 vmCvar_t cg_crosshairColor;
@@ -301,11 +345,15 @@ vmCvar_t	cg_autoswitch;
 vmCvar_t	cg_ignore;
 vmCvar_t	cg_simpleItems;
 vmCvar_t cg_simpleItemsScale;
+vmCvar_t cg_simpleItemsBob;
+vmCvar_t cg_simpleItemsHeightOffset;
 vmCvar_t cg_itemsWh;
 vmCvar_t cg_itemFx;
 vmCvar_t cg_itemSize;
 vmCvar_t	cg_fov;
 vmCvar_t cg_fovy;
+vmCvar_t cg_fovStyle;
+vmCvar_t cg_fovIntermission;
 vmCvar_t	cg_zoomFov;
 vmCvar_t cg_zoomTime;
 vmCvar_t cg_zoomIgnoreTimescale;
@@ -556,6 +604,18 @@ vmCvar_t cg_freecam_unlockPitch;
 vmCvar_t cg_chatTime;
 vmCvar_t cg_chatLines;
 vmCvar_t cg_chatHistoryLength;
+vmCvar_t cg_chatBeep;
+vmCvar_t cg_chatBeepMaxTime;
+vmCvar_t cg_teamChatBeep;
+vmCvar_t cg_teamChatBeepMaxTime;
+
+vmCvar_t cg_serverPrint;
+vmCvar_t cg_serverPrintToChat;
+vmCvar_t cg_serverPrintToConsole;
+
+vmCvar_t cg_serverCenterPrint;
+vmCvar_t cg_serverCenterPrintToChat;
+vmCvar_t cg_serverCenterPrintToConsole;
 
 vmCvar_t cg_drawCenterPrint;
 vmCvar_t cg_drawCenterPrintX;
@@ -650,6 +710,7 @@ vmCvar_t cg_enemyRailItemColor;
 vmCvar_t cg_enemyRailItemColorTeam;
 vmCvar_t cg_enemyRailRings;
 vmCvar_t cg_enemyRailNudge;
+vmCvar_t cg_enemyFlagColor;
 
 vmCvar_t cg_useDefaultTeamSkins;
 vmCvar_t cg_teamModel;
@@ -667,19 +728,19 @@ vmCvar_t cg_teamRailItemColor;
 vmCvar_t cg_teamRailItemColorTeam;
 vmCvar_t cg_teamRailRings;
 vmCvar_t cg_teamRailNudge;
+vmCvar_t cg_teamFlagColor;
+
+vmCvar_t cg_neutralFlagColor;
 
 vmCvar_t cg_ourModel;
-
 vmCvar_t cg_deadBodyColor;
+vmCvar_t cg_disallowEnemyModelForTeammates;
 
-
-vmCvar_t cg_chatBeep;
-vmCvar_t cg_chatBeepMaxTime;
-vmCvar_t cg_teamChatBeep;
-vmCvar_t cg_teamChatBeepMaxTime;
 vmCvar_t cg_audioAnnouncer;
 vmCvar_t cg_audioAnnouncerRewards;
+vmCvar_t cg_audioAnnouncerRewardsFirst;
 vmCvar_t cg_audioAnnouncerRound;
+vmCvar_t cg_audioAnnouncerRoundReward;
 vmCvar_t cg_audioAnnouncerWarmup;
 vmCvar_t cg_audioAnnouncerVote;
 vmCvar_t cg_audioAnnouncerTeamVote;
@@ -822,6 +883,11 @@ vmCvar_t cg_fxScriptMinEmitter;
 vmCvar_t cg_fxScriptMinDistance;
 vmCvar_t cg_fxScriptMinInterval;
 vmCvar_t cg_fxLightningGunImpactFps;
+vmCvar_t cg_fxDebugEntities;
+vmCvar_t cg_fxCompiled;
+#ifdef ENABLE_THREADS
+ vmCvar_t cg_fxThreads;
+#endif
 vmCvar_t cg_vibrate;
 vmCvar_t cg_vibrateTime;
 vmCvar_t cg_vibrateMaxDistance;
@@ -884,6 +950,8 @@ vmCvar_t cg_wideScreen;
 vmCvar_t cg_wideScreenScoreBoardHack;
 
 vmCvar_t cg_wh;
+vmCvar_t cg_whIncludeDeadBody;
+vmCvar_t cg_whIncludeProjectile;
 vmCvar_t cg_whShader;
 
 vmCvar_t cg_playerShader;
@@ -920,6 +988,7 @@ vmCvar_t cg_playerModelAutoScaleHeight;
 vmCvar_t cg_playerModelAllowServerScale;
 vmCvar_t cg_playerModelAllowServerScaleDefault;
 vmCvar_t cg_playerModelAllowServerOverride;
+vmCvar_t cg_allowServerOverride;
 
 vmCvar_t cg_powerupLight;
 vmCvar_t cg_buzzerSound;
@@ -951,18 +1020,28 @@ vmCvar_t cg_drawDominationPointStatusTextAlpha;
 vmCvar_t cg_drawDominationPointStatusTextStyle;
 
 vmCvar_t cg_roundScoreBoard;
+vmCvar_t cg_headShots;
+
+vmCvar_t cg_spectatorListSkillRating;
+vmCvar_t cg_spectatorListScore;
+vmCvar_t cg_spectatorListQue;
+
+vmCvar_t cg_rocketAimBot;
+vmCvar_t cg_drawTieredArmorAvailability;
 
 // end cvar_t
 
 typedef struct {
-	vmCvar_t	*vmCvar;
-	char		*cvarName;
-	char		*defaultString;
+	vmCvar_t*vmCvar;
+	const char *cvarName;
+	const char *defaultString;
 	int			cvarFlags;
 } cvarTable_t;
 
 #define xmstr(x) mstr(x)
 #define mstr(x) #x
+
+#define cvp(x) &x, #x
 
 static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_ignore, "cg_ignore", "0", 0 },	// used for debugging
@@ -974,6 +1053,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_zoomBroken, "cg_zoomBroken", "1", CVAR_ARCHIVE },
 	{ &cg_fov, "cg_fov", xmstr(DEFAULT_FOV), CVAR_ARCHIVE },
 	{ &cg_fovy, "cg_fovy", "", CVAR_ARCHIVE },
+	{ &cg_fovStyle, "cg_fovStyle", "1", CVAR_ARCHIVE },
+	{ &cg_fovIntermission, "cg_fovIntermission", "90", CVAR_ARCHIVE },
 	{ &cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE },
 	{ &cg_stereoSeparation, "cg_stereoSeparation", "0.4", CVAR_ARCHIVE  },
 	{ &cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE  },
@@ -1016,12 +1097,18 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawClientItemTimerX, "cg_drawClientItemTimerX", "635", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerY, "cg_drawClientItemTimerY", "150", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerScale, "cg_drawClientItemTimerScale", "0.4", CVAR_ARCHIVE },
+	{ cvp(cg_drawClientItemTimerTextColor), "", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerFont, "cg_drawClientItemTimerFont", "q3small", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerPointSize, "cg_drawClientItemTimerPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerAlpha, "cg_drawClientItemTimerAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerStyle, "cg_drawClientItemTimerStyle", "6", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerAlign, "cg_drawClientItemTimerAlign", "2", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerSpacing, "cg_drawClientItemTimerSpacing", "", CVAR_ARCHIVE },
+	{ cvp(cg_drawClientItemTimerIcon), "1", CVAR_ARCHIVE },
+	{ cvp(cg_drawClientItemTimerIconSize), "20", CVAR_ARCHIVE },
+	{ cvp(cg_drawClientItemTimerIconXoffset), "-55", CVAR_ARCHIVE },
+	{ cvp(cg_drawClientItemTimerIconYoffset), "0", CVAR_ARCHIVE },
+
 	{ &cg_itemSpawnPrint, "cg_itemSpawnPrint", "0", CVAR_ARCHIVE },
 
 	{ &cg_drawFPS, "cg_drawFPS", "1", CVAR_ARCHIVE },
@@ -1066,6 +1153,24 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawAmmoWarningAlpha, "cg_drawAmmoWarningAlpha", "255", CVAR_ARCHIVE },
 	//{ &cg_drawAmmoWarningFade, "cg_drawAmmoWarningFade", "1", CVAR_ARCHIVE },
 	//{ &cg_drawAmmoWarningFadeTime, "cg_drawAmmoWarningFadeTime", "200", CVAR_ARCHIVE },
+
+	{ cvp(cg_lowAmmoWarningStyle), "1", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningPercentile), "0.20", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningSound), "1", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWeaponBarWarning), "2", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningGauntlet), "5", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningMachineGun), "30", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningShotgun), "5", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningGrenadeLauncher), "5", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningRocketLauncher), "5", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningLightningGun), "30", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningRailGun), "5", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningPlasmaGun), "30", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningBFG), "5", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningGrapplingHook), "5", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningNailGun), "30", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningProximityLauncher), "30", CVAR_ARCHIVE },
+	{ cvp(cg_lowAmmoWarningChainGun), "30", CVAR_ARCHIVE },
 
 	{ &cg_drawAttacker, "cg_drawAttacker", "1", CVAR_ARCHIVE  },
 	{ &cg_drawAttackerX, "cg_drawAttackerX", "640", CVAR_ARCHIVE },
@@ -1127,6 +1232,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawRewardsAlpha, "cg_drawRewardsAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_drawRewardsFade, "cg_drawRewardsFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawRewardsFadeTime, "cg_drawRewardsFadeTime", "200", CVAR_ARCHIVE },
+	{ &cg_rewardsStack, "cg_rewardsStack", "1", CVAR_ARCHIVE },
 
 	{ &cg_crosshairSize, "cg_crosshairSize", "32", CVAR_ARCHIVE },
 	{ &cg_crosshairColor, "cg_crosshairColor", "0xffffff", CVAR_ARCHIVE },
@@ -1143,6 +1249,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_brassTime, "cg_brassTime", "2500", CVAR_ARCHIVE },
 	{ &cg_simpleItems, "cg_simpleItems", "0", CVAR_ARCHIVE },
 	{ &cg_simpleItemsScale, "cg_simpleItemsScale", "1.0", CVAR_ARCHIVE },
+	{ &cg_simpleItemsBob, "cg_simpleItemsBob", "0", CVAR_ARCHIVE },
+	{ &cg_simpleItemsHeightOffset, "cg_simpleItemsHeightOffset", "0", CVAR_ARCHIVE },
 	{ &cg_itemsWh, "cg_itemsWh", "0", CVAR_ARCHIVE },
 	{ &cg_itemFx, "cg_itemFx", "7", CVAR_ARCHIVE },
 	{ &cg_itemSize, "cg_itemSize", "1.0", CVAR_ARCHIVE },
@@ -1200,9 +1308,9 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT },
 	{ &cg_showmiss, "cg_showmiss", "0", 0 },
 	{ &cg_footsteps, "cg_footsteps", "1", CVAR_CHEAT },
-	{ &cg_tracerChance, "cg_tracerchance", "0.4", CVAR_CHEAT },
-	{ &cg_tracerWidth, "cg_tracerwidth", "1", CVAR_CHEAT },
-	{ &cg_tracerLength, "cg_tracerlength", "100", CVAR_CHEAT },
+	{ &cg_tracerChance, "cg_tracerChance", "0.4", CVAR_ARCHIVE },
+	{ &cg_tracerWidth, "cg_tracerWidth", "1", CVAR_ARCHIVE },
+	{ &cg_tracerLength, "cg_tracerLength", "100", CVAR_ARCHIVE },
 	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "40", CVAR_CHEAT },
 	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT },
 	{ &cg_thirdPerson, "cg_thirdPerson", "0", 0 },
@@ -1412,7 +1520,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_freecam_pitch, "cg_freecam_pitch", "1.0", CVAR_ARCHIVE },
 	{ &cg_freecam_speed, "cg_freecam_speed", "400", CVAR_ARCHIVE },
 	{ &cg_freecam_crosshair, "cg_freecam_crosshair", "1", CVAR_ARCHIVE },
-	{ &cg_freecam_useTeamSettings, "cg_freecam_useTeamSettings", "1", CVAR_ARCHIVE },
+	{ &cg_freecam_useTeamSettings, "cg_freecam_useTeamSettings", "2", CVAR_ARCHIVE },
 	{ &cg_freecam_rollValue, "cg_freecam_rollValue", "0.5", CVAR_ARCHIVE },
 	{ &cg_freecam_useServerView, "cg_freecam_useServerView", "1", CVAR_ARCHIVE },
 	{ &cg_freecam_unlockPitch, "cg_freecam_unlockPitch", "1", CVAR_ARCHIVE },
@@ -1420,6 +1528,18 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_chatTime, "cg_chatTime", "5000", CVAR_ARCHIVE },
 	{ &cg_chatLines, "cg_chatLines", "10", CVAR_ARCHIVE },
 	{ &cg_chatHistoryLength, "cg_chatHistoryLength", "15", CVAR_ARCHIVE },
+	{ &cg_chatBeep, "cg_chatBeep", "1", CVAR_ARCHIVE },
+	{ &cg_chatBeepMaxTime, "cg_chatBeepMaxTime", "0", CVAR_ARCHIVE },
+	{ &cg_teamChatBeep, "cg_teamChatBeep", "1", CVAR_ARCHIVE },
+	{ &cg_teamChatBeepMaxTime, "cg_teamChatBeepMaxTime", "0", CVAR_ARCHIVE },
+
+	{ cvp(cg_serverPrint), "0", CVAR_ARCHIVE },
+	{ cvp(cg_serverPrintToChat), "1", CVAR_ARCHIVE },
+	{ cvp(cg_serverPrintToConsole), "1", CVAR_ARCHIVE },
+
+	{ cvp(cg_serverCenterPrint), "1", CVAR_ARCHIVE },
+	{ cvp(cg_serverCenterPrintToChat), "0", CVAR_ARCHIVE },
+	{ cvp(cg_serverCenterPrintToConsole), "1", CVAR_ARCHIVE },
 
 	{ &cg_drawCenterPrint, "cg_drawCenterPrint", "1", CVAR_ARCHIVE },
 	{ &cg_drawCenterPrintX, "cg_drawCenterPrintX", "320", CVAR_ARCHIVE },
@@ -1490,6 +1610,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_interpolateMissiles, "cg_interpolateMissiles", "1", CVAR_ARCHIVE },
 
 	{ &cg_wh, "cg_wh", "0", CVAR_ARCHIVE },
+	{ cvp(cg_whIncludeDeadBody), "1", CVAR_ARCHIVE },
+	{ cvp(cg_whIncludeProjectile), "1", CVAR_ARCHIVE },
 	{ &cg_whShader, "cg_whShader", "", CVAR_ARCHIVE },
 	{ &cg_playerShader, "cg_playerShader", "", CVAR_ARCHIVE },
 	{ &wolfcam_fixedViewAngles, "wolfcam_fixedViewAngles", "0", CVAR_ARCHIVE },
@@ -1522,9 +1644,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_enemyRailNudge, "cg_enemyRailNudge", "1", CVAR_ARCHIVE },
 	{ &cg_enemyRailItemColor, "cg_enemyRailItemColor", "", CVAR_ARCHIVE },
 	{ &cg_enemyRailItemColorTeam, "cg_enemyRailItemColorTeam", "0", CVAR_ARCHIVE },
-
-	//{ (vmCvar_t *)&cg_teamModel, "cg_teamModel", "", CVAR_ARCHIVE },
-	//{ (vmCvar_t *)&cg_teamColors, "cg_teamColors", "", CVAR_ARCHIVE },
+	{ cvp(cg_enemyFlagColor), "0x00ff00", CVAR_ARCHIVE },
 
 	{ &cg_useDefaultTeamSkins, "cg_useDefaultTeamSkins", "1", CVAR_ARCHIVE },
 	{ &cg_teamModel, "cg_teamModel", "", CVAR_ARCHIVE },
@@ -1543,18 +1663,20 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_teamRailNudge, "cg_teamRailNudge", "1", CVAR_ARCHIVE },
 	{ &cg_teamRailItemColor, "cg_teamRailItemColor", "", CVAR_ARCHIVE },
 	{ &cg_teamRailItemColorTeam, "cg_teamRailItemColorTeam", "0", CVAR_ARCHIVE },
+	{ cvp(cg_teamFlagColor), "0xffffff", CVAR_ARCHIVE },
+
+	{ cvp(cg_neutralFlagColor), "0xf6f600", CVAR_ARCHIVE },
+
 	{ &cg_ourModel, "model", "", CVAR_ARCHIVE },
 	//{ (vmCvar_t *)&cg_deadBodyColor, "cg_deadBodyColor", "16 16 16 255", CVAR_ARCHIVE },
 	{ &cg_deadBodyColor, "cg_deadBodyColor", "0x101010", CVAR_ARCHIVE },
+	{ cvp(cg_disallowEnemyModelForTeammates), "1", CVAR_ARCHIVE },
 
-
-	{ &cg_chatBeep, "cg_chatBeep", "1", CVAR_ARCHIVE },
-	{ &cg_chatBeepMaxTime, "cg_chatBeepMaxTime", "0", CVAR_ARCHIVE },
-	{ &cg_teamChatBeep, "cg_teamChatBeep", "1", CVAR_ARCHIVE },
-	{ &cg_teamChatBeepMaxTime, "cg_teamChatBeepMaxTime", "0", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncer, "cg_audioAnnouncer", "1", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerRewards, "cg_audioAnnouncerRewards", "1", CVAR_ARCHIVE },
+	{ &cg_audioAnnouncerRewardsFirst, "cg_audioAnnouncerRewardsFirst", "1", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerRound, "cg_audioAnnouncerRound", "1", CVAR_ARCHIVE },
+	{ cvp(cg_audioAnnouncerRoundReward), "1", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerWarmup, "cg_audioAnnouncerWarmup", "1", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerVote, "cg_audioAnnouncerVote", "1", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerTeamVote, "cg_audioAnnouncerTeamVote", "1", CVAR_ARCHIVE },
@@ -1591,12 +1713,12 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_grenadeEnemyColor, "cg_grenadeEnemyColor", "0x00ff00", CVAR_ARCHIVE },
 	{ &cg_grenadeEnemyColorAlpha, "cg_grenadeEnemyColorAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_fragMessageStyle, "cg_fragMessageStyle", "1", CVAR_ARCHIVE },
-	{ &cg_drawFragMessageSeparate, "cg_drawFragMessageSeparate", "0", CVAR_ARCHIVE },
+	//{ &cg_drawFragMessageSeparate, "cg_drawFragMessageSeparate", "0", CVAR_ARCHIVE },
 	{ &cg_drawFragMessageSeparate, "cg_donka_rtcw_good_spellers", "0", CVAR_ARCHIVE },
 	{ &cg_drawFragMessageSeparate, "cg_drawFragMessageSeparate", "0", CVAR_ARCHIVE },
-	{ &cg_drawFragMessageX, "cg_drawFragMessageX", "0", CVAR_ARCHIVE },
-	{ &cg_drawFragMessageY, "cg_drawFragMessageY", "300", CVAR_ARCHIVE },
-	{ &cg_drawFragMessageAlign, "cg_drawFragMessageAlign", "0", CVAR_ARCHIVE },
+	{ &cg_drawFragMessageX, "cg_drawFragMessageX", "320", CVAR_ARCHIVE },
+	{ &cg_drawFragMessageY, "cg_drawFragMessageY", "120", CVAR_ARCHIVE },
+	{ &cg_drawFragMessageAlign, "cg_drawFragMessageAlign", "1", CVAR_ARCHIVE },
 	{ &cg_drawFragMessageStyle, "cg_drawFragMessageStyle", "6", CVAR_ARCHIVE },
 	{ &cg_drawFragMessageFont, "cg_drawFragMessageFont", "", CVAR_ARCHIVE },
 	{ &cg_drawFragMessagePointSize, "cg_drawFragMessagePointSize", "24", CVAR_ARCHIVE },
@@ -1695,6 +1817,11 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_fxScriptMinDistance, "cg_fxScriptMinDistance", "0.001", CVAR_ARCHIVE },
 	{ &cg_fxScriptMinInterval, "cg_fxScriptMinInterval", "0.001", CVAR_ARCHIVE },
 	{ &cg_fxLightningGunImpactFps, "cg_fxLightningGunImpactFps", "125", CVAR_ARCHIVE },
+	{ cvp(cg_fxDebugEntities), "0", CVAR_ARCHIVE },
+	{ cvp(cg_fxCompiled), "1", CVAR_ARCHIVE },
+#ifdef ENABLE_THREADS
+	{ cvp(cg_fxThreads), "1", CVAR_ARCHIVE },
+#endif
 	{ &cg_vibrate, "cg_vibrate", "0", CVAR_ARCHIVE },
 	{ &cg_vibrateTime, "cg_vibrateTime", "150.0", CVAR_ARCHIVE },
 	{ &cg_vibrateMaxDistance, "cg_vibrateMaxDistance", "800", CVAR_ARCHIVE },
@@ -1776,6 +1903,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_playerModelAllowServerScale, "cg_playerModelAllowServerScale", "1", CVAR_ARCHIVE },
 	{ &cg_playerModelAllowServerScaleDefault, "cg_playerModelAllowServerScaleDefault", "1.1", CVAR_ARCHIVE },
 	{ &cg_playerModelAllowServerOverride, "cg_playerModelAllowServerOverride", "1", CVAR_ARCHIVE },
+	{ cvp(cg_allowServerOverride), "1", CVAR_ARCHIVE },
 	{ &cg_powerupLight, "cg_powerupLight", "1", CVAR_ARCHIVE },
 	{ &cg_buzzerSound, "cg_buzzerSound", "1", CVAR_ARCHIVE },
 	{ &cg_flagStyle, "cg_flagStyle", "1", CVAR_ARCHIVE },
@@ -1805,6 +1933,13 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawDominationPointStatusTextStyle, "cg_drawDominationPointStatusTextStyle", "3", CVAR_ARCHIVE },
 
 	{ &cg_roundScoreBoard, "cg_roundScoreBoard", "1", CVAR_ARCHIVE },
+	{ &cg_headShots, "cg_headShots", "1", CVAR_ARCHIVE },
+	{ cvp(cg_spectatorListSkillRating), "1", CVAR_ARCHIVE },
+	{ cvp(cg_spectatorListScore), "1", CVAR_ARCHIVE },
+	{ cvp(cg_spectatorListQue), "1", CVAR_ARCHIVE },
+
+	{ cvp(cg_rocketAimBot), "0", CVAR_ARCHIVE },
+	{ cvp(cg_drawTieredArmorAvailability), "1", CVAR_ARCHIVE },
 
 #if 0
 	{ &cgr_gauntletHave, "cgr_gauntletHave", "0", CVAR_ROM },
@@ -1840,6 +1975,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 };
 
+#undef cvp
+
 // end cvar_t table
 
 static int  cvarTableSize = ARRAY_LEN(cvarTable);
@@ -1849,9 +1986,9 @@ static int  cvarTableSize = ARRAY_LEN(cvarTable);
 CG_RegisterCvars
 =================
 */
-void CG_RegisterCvars( void ) {
+static void CG_RegisterCvars( void ) {
 	int			i;
-	cvarTable_t	*cv;
+	const cvarTable_t *cv;
 	char		var[MAX_TOKEN_CHARS];
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
@@ -1880,7 +2017,7 @@ static void CG_ForceModelChange( void ) {
 	int		i;
 
 	for (i=0 ; i<MAX_CLIENTS ; i++) {
-		const char		*clientInfo;
+		const char *clientInfo;
 
 		clientInfo = CG_ConfigString( CS_PLAYERS+i );
 		if ( !clientInfo[0] ) {
@@ -1890,11 +2027,11 @@ static void CG_ForceModelChange( void ) {
 	}
 }
 
-void CG_CreateNameSprites (void)
+static void CG_CreateNameSprites (void)
 {
 	int i;
-	fontInfo_t *font;
-	char *name;
+	const fontInfo_t *font;
+	const char *name;
 
 	if (*cg_drawPlayerNamesFont.string) {
 		font = &cgs.media.playerNamesFont;
@@ -1923,10 +2060,12 @@ CG_UpdateCvars
 */
 void CG_UpdateCvars( void ) {
 	int			i;
-	cvarTable_t	*cv;
+	const cvarTable_t *cv;
 	int cvarscoreboardold = -1;
+	int ambientSoundsOld;  // = -1;
 
 	cvarscoreboardold = cg_scoreBoardOld.integer;
+	ambientSoundsOld = cg_ambientSounds.integer;
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
 		trap_Cvar_Update( cv->vmCvar );
@@ -1973,11 +2112,25 @@ void CG_UpdateCvars( void ) {
 		CG_CreateNameSprites();
 		cgs.media.playerNamesAlphaModificationCount = cg_drawPlayerNamesAlpha.modificationCount;
 	}
+
+	//FIXME map restart
+	if (cg_ambientSounds.integer != ambientSoundsOld) {
+		switch (cg_ambientSounds.integer) {
+		case 1:
+			break;
+		default:
+			// half are reserverd for fx, only change map ones
+			for (i = 0;  i < (MAX_LOOP_SOUNDS / 2);  i++) {
+				trap_S_StopLoopingSound(i);
+			}
+			break;
+		}
+	}
 }
 
-static qboolean CG_CheckIndividualFontUpdate (fontInfo_t *font, int pointSize, vmCvar_t *cv, int *modCount)
+static qboolean CG_CheckIndividualFontUpdate (fontInfo_t *font, int pointSize, const vmCvar_t *cv, int *modCount)
 {
-	char *s;
+	const char *s;
 
 	if (*modCount == cv->modificationCount) {
 		return qfalse;
@@ -2045,8 +2198,11 @@ void CG_CheckFontUpdates (void)
 	CG_CheckIndividualFontUpdate(&cgs.media.dominationPointStatusFont, cg_drawDominationPointStatusPointSize.integer, &cg_drawDominationPointStatusFont, &cgs.media.dominationPointStatusFontModificationCount);
 }
 
-void CG_TimeChange (int serverTime, int ioverf)
+static void CG_TimeChange (int serverTime, int ioverf)
 {
+
+	//Com_Printf("CG_TimeChange %d %d\n", serverTime, ioverf);
+
 	if (!cg.snap) {
 		// seeking while still loading cgame
 		//Com_Printf("CG_TimeChange() cgame not initialized yet, returning\n");
@@ -2068,6 +2224,9 @@ void CG_TimeChange (int serverTime, int ioverf)
 		// we have already synced, so this rewind/fastforward will screw things up ... not anymore don't think
 		//cg.cameraPlaying = qfalse;
 	}
+
+	//FIXME bad hack
+	cg.atCameraPoint = qfalse;
 }
 
 int CG_CrosshairPlayer( void ) {
@@ -2095,7 +2254,7 @@ void CG_AddChatLine (const char *line)
 	cg.chatAreaStringsIndex++;
 }
 
-void QDECL CG_PrintToScreen ( const char *msg, ... ) {
+void CG_PrintToScreen ( const char *msg, ... ) {
 	va_list		argptr;
 	char		text[1024];
 	int i;
@@ -2144,8 +2303,8 @@ void QDECL CG_Printf( const char *msg, ... ) {
 		int mins, seconds, tens;
 		int msec;
 
-		if (cg.time < cgs.timeoutEndTime) {
-			msec = cgs.timeoutBeginCgTime - cgs.levelStartTime;
+		if (CG_GameTimeout()) {
+			msec = cgs.timeoutBeginTime - cgs.levelStartTime;
         } else {
 			msec = cg.time - cgs.levelStartTime;
         }
@@ -2167,8 +2326,8 @@ void QDECL CG_Printf( const char *msg, ... ) {
 		int mins, seconds, tens;
 		int msec;
 
-		if (cg.time < cgs.timeoutEndTime) {
-			msec = cgs.timeoutBeginCgTime - cgs.levelStartTime;
+		if (CG_GameTimeout()) {
+			msec = cgs.timeoutBeginTime - cgs.levelStartTime;
         } else {
 			msec = cg.time - cgs.levelStartTime;
         }
@@ -2292,9 +2451,10 @@ The server says this item is used on this level
 =================
 */
 static void CG_RegisterItemSounds( int itemNum ) {
-	gitem_t			*item;
+	const gitem_t *item;
 	char			data[MAX_QPATH];
-	char			*s, *start;
+	const char *s;
+    const char *start;
 	int				len;
 
 	item = &bg_itemlist[ itemNum ];
@@ -2362,7 +2522,7 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.count1Sound = trap_S_RegisterSound( "sound/feedback/one.wav", qtrue );
 	cgs.media.countFightSound = trap_S_RegisterSound( "sound/feedback/fight.wav", qtrue );
 	cgs.media.countPrepareSound = trap_S_RegisterSound( "sound/feedback/prepare.wav", qtrue );
-#if 1  //def MISSIONPACK  //FIXME check
+#if 1  //def MPACK
 	cgs.media.countPrepareTeamSound = trap_S_RegisterSound( "sound/feedback/prepare_team.wav", qtrue );
 #endif
 
@@ -2420,7 +2580,7 @@ nd_draw.ogg", qtrue);
 			cgs.media.yourTeamTookEnemyFlagSound = trap_S_RegisterSound( "sound/teamplay/voc_team_flag.wav", qtrue );
 		}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		if ( cgs.gametype == GT_1FCTF || cg_buildScript.integer ) {
 			// FIXME: get a replacement for this sound ?
 			cgs.media.neutralFlagReturnedSound = trap_S_RegisterSound( "sound/teamplay/flagreturn_opponent.wav", qtrue );
@@ -2439,9 +2599,6 @@ nd_draw.ogg", qtrue);
 #else
 		cgs.media.youHaveFlagSound = trap_S_RegisterSound( "sound/teamplay/voc_you_flag.wav", qtrue );
 		cgs.media.holyShitSound = trap_S_RegisterSound("sound/feedback/voc_holyshit.wav", qtrue);
-		cgs.media.neutralFlagReturnedSound = trap_S_RegisterSound( "sound/teamplay/flagreturn_opponent.wav", qtrue );
-		//cgs.media.yourTeamTookTheFlagSound = trap_S_RegisterSound( "sound/teamplay/voc_team_1flag.wav", qtrue );
-		//cgs.media.enemyTookTheFlagSound = trap_S_RegisterSound( "sound/teamplay/voc_enemy_1flag.wav", qtrue );
 #endif
 	}
 
@@ -2496,7 +2653,7 @@ nd_draw.ogg", qtrue);
 	cgs.media.hitSound1 = trap_S_RegisterSound( "sound/feedback/hit1.ogg", qfalse );
 	cgs.media.hitSound2 = trap_S_RegisterSound( "sound/feedback/hit2.ogg", qfalse );
 	cgs.media.hitSound3 = trap_S_RegisterSound( "sound/feedback/hit3.ogg", qfalse );
-#if 0  //1  //def MISSIONPACK
+#if 0  //1  //def MPACK
 	cgs.media.hitSoundHighArmor = trap_S_RegisterSound( "sound/feedback/hithi.wav", qfalse );
 	cgs.media.hitSoundLowArmor = trap_S_RegisterSound( "sound/feedback/hitlo.wav", qfalse );
 #endif
@@ -2507,7 +2664,7 @@ nd_draw.ogg", qtrue);
 	cgs.media.humiliationSound = trap_S_RegisterSound( "sound/feedback/humiliation.wav", qtrue );
 	cgs.media.assistSound = trap_S_RegisterSound( "sound/feedback/assist.wav", qtrue );
 	cgs.media.defendSound = trap_S_RegisterSound( "sound/feedback/defense.wav", qtrue );
-#if 1  //def MISSIONPACK  //FIXME think so, check demo
+#if 1  //def MPACK
 	cgs.media.firstImpressiveSound = trap_S_RegisterSound( "sound/feedback/first_impressive.wav", qtrue );
 	cgs.media.firstExcellentSound = trap_S_RegisterSound( "sound/feedback/first_excellent.wav", qtrue );
 	cgs.media.firstHumiliationSound = trap_S_RegisterSound( "sound/feedback/first_gauntlet.wav", qtrue );
@@ -2517,7 +2674,7 @@ nd_draw.ogg", qtrue);
 	cgs.media.tiedLeadSound = trap_S_RegisterSound( "sound/feedback/tiedlead.wav", qtrue);
 	cgs.media.lostLeadSound = trap_S_RegisterSound( "sound/feedback/lostlead.wav", qtrue);
 
-#if 1 //def MISSIONPACK
+#if 1 //def MPACK
 	cgs.media.voteNow = trap_S_RegisterSound( "sound/feedback/vote_now.wav", qtrue);
 	cgs.media.votePassed = trap_S_RegisterSound( "sound/feedback/vote_passed.wav", qtrue);
 	cgs.media.voteFailed = trap_S_RegisterSound( "sound/feedback/vote_failed.wav", qtrue);
@@ -2565,13 +2722,13 @@ nd_draw.ogg", qtrue);
 //		}
 	}
 
-	cg.powerupRespawnSoundIndex = -999;
-	cg.kamikazeRespawnSoundIndex = -999;
-	//FIXME ac testing
-	//for ( i = 1 ; i < MAX_SOUNDS ; i++ ) {
+	//cg.powerupRespawnSoundIndex = -999;
+	//cg.kamikazeRespawnSoundIndex = -999;
+	cg.proxTickSoundIndex = -999;
+
 	for ( i = 1 ; i < MAX_SOUNDS ; i++ ) {
 		if (cgs.protocol == PROTOCOL_QL) {
-			soundName = CG_ConfigString( CS_SOUNDS+i - 1 );
+			soundName = CG_ConfigString(CS_SOUNDS +i - 1);
 		} else {
 			soundName = CG_ConfigString(CS_SOUNDS + i);
 		}
@@ -2582,15 +2739,19 @@ nd_draw.ogg", qtrue);
 		if ( soundName[0] == '*' ) {
 			continue;	// custom sound
 		}
-		cgs.gameSounds[i] = trap_S_RegisterSound( soundName, qfalse );
-		if (!Q_stricmpn(soundName, "sound/items/poweruprespawn.", sizeof("sound/items/poweruprespawn.") - 1)) {
-			cg.powerupRespawnSoundIndex = i;
-		} else if (!Q_stricmpn(soundName, "sound/items/kamikazerespawn.", sizeof("sound/items/kamikazerespawn.") - 1)) {
-			cg.kamikazeRespawnSoundIndex = i;
-		} else if (!Q_stricmpn(soundName, "sound/weapons/proxmine/wstbtick.", sizeof("sound/weapons/proxmine/wstbtick.") - 1)) {
+		COM_StripExtension(soundName, name, sizeof(name));
+		cgs.gameSounds[i] = trap_S_RegisterSound(name, qfalse);
+
+#if 0
+		if (!Q_stricmpn(soundName, "sound/weapons/proxmine/wstbtick.", sizeof("sound/weapons/proxmine/wstbtick.") - 1)) {
 			cg.proxTickSoundIndex = i;
 		}
-		Com_Printf("registered sound %d  %s\n", i, soundName);
+#endif
+		if (!Q_stricmpn(name, "sound/weapons/proxmine/wstbtick", strlen("sound/weapons/proxmine/wstbtick"))) {
+			cg.proxTickSoundIndex = i;
+			Com_Printf("proxTickSoundIndex %d\n", i);
+		}
+		Com_Printf("registered sound %d  '%s' %d\n", i, name, cgs.gameSounds[i]);
 	}
 
 	// FIXME: only needed with item
@@ -2619,6 +2780,7 @@ nd_draw.ogg", qtrue);
 	cgs.media.kamikazeExplodeSound = trap_S_RegisterSound( "sound/items/kam_explode.wav", qfalse );
 	cgs.media.kamikazeImplodeSound = trap_S_RegisterSound( "sound/items/kam_implode.wav", qfalse );
 	cgs.media.kamikazeFarSound = trap_S_RegisterSound( "sound/items/kam_explode_far.wav", qfalse );
+	cgs.media.kamikazeRespawnSound = trap_S_RegisterSound( "sound/items/kamikazerespawn.ogg", qfalse );
 	cgs.media.winnerSound = trap_S_RegisterSound( "sound/feedback/voc_youwin.wav", qfalse );
 	cgs.media.loserSound = trap_S_RegisterSound( "sound/feedback/voc_youlose.wav", qfalse );
 	cgs.media.youSuckSound = trap_S_RegisterSound( "sound/misc/yousuck.wav", qfalse );
@@ -2641,10 +2803,12 @@ nd_draw.ogg", qtrue);
 	cgs.media.hgrenb1aSound = trap_S_RegisterSound("sound/weapons/grenade/hgrenb1a.wav", qfalse);
 	cgs.media.hgrenb2aSound = trap_S_RegisterSound("sound/weapons/grenade/hgrenb2a.wav", qfalse);
 	cgs.media.thawTick = trap_S_RegisterSound("sound/misc/tim_pump.ogg", qfalse);
+	cgs.media.nightmareSound = trap_S_RegisterSound("sound/misc/nightmare.ogg", qfalse);
+	cgs.media.survivorSound = trap_S_RegisterSound("sound/feedback/survivor_01.ogg", qfalse);
 
 	// why did i put this here?
-	cgs.media.gametypeIcon[GT_FFA] = trap_R_RegisterShader("ui/assets/hud/dm");
-	cgs.media.gametypeIcon[GT_TOURNAMENT] = trap_R_RegisterShader("ui/assets/hud/dm");
+	cgs.media.gametypeIcon[GT_FFA] = trap_R_RegisterShader("ui/assets/hud/ffa");
+	cgs.media.gametypeIcon[GT_TOURNAMENT] = trap_R_RegisterShader("ui/assets/hud/duel");
 	cgs.media.gametypeIcon[GT_TEAM] = trap_R_RegisterShader("ui/assets/hud/tdm");
 	cgs.media.gametypeIcon[GT_CA] = trap_R_RegisterShader("ui/assets/hud/ca");
 	cgs.media.gametypeIcon[GT_CTF] = trap_R_RegisterShader("ui/assets/hud/ctf");
@@ -2759,7 +2923,7 @@ This function may execute for a couple of minutes with a slow disk.
 static void CG_RegisterGraphics( void ) {
 	int			i;
 	char		items[MAX_ITEMS+1];
-	static char		*sb_nums[11] = {
+	static const char *sb_nums[11] = {
 		"gfx/2d/numbers/zero_32b",
 		"gfx/2d/numbers/one_32b",
 		"gfx/2d/numbers/two_32b",
@@ -2798,6 +2962,7 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.viewBloodShader = trap_R_RegisterShader( "viewBloodBlend" );
 
 	cgs.media.deferShader = trap_R_RegisterShaderNoMip( "gfx/2d/defer.tga" );
+	cgs.media.unavailableShader = trap_R_RegisterShader("gfx/2d/unavailable");
 
 	//cgs.media.scoreboardName = trap_R_RegisterShaderNoMip( "menu/tab/name.tga" );
 	cgs.media.scoreboardName = trap_R_RegisterShader("scoreboardName");
@@ -2854,6 +3019,7 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.battleWeaponShader = trap_R_RegisterShader("powerups/battleWeapon" );
 	cgs.media.spawnArmorShader = trap_R_RegisterShader("powerups/spawnarmor");
 	cgs.media.spawnArmor2Shader = trap_R_RegisterShader("powerups/spawnarmor2");
+	cgs.media.gooShader = trap_R_RegisterShader("powerups/goo");
 	cgs.media.invisShader = trap_R_RegisterShader("powerups/invisibility" );
 	cgs.media.regenShader = trap_R_RegisterShader("powerups/regen" );
 	cgs.media.hastePuffShader = trap_R_RegisterShader("hasteSmokePuff" );
@@ -2889,7 +3055,7 @@ static void CG_RegisterGraphics( void ) {
 
 		cgs.media.blueFlagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
 		cgs.media.blueFlagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_blu3" );
-#if 1  //def MISSIONPACK  //FIXME check demo
+#if 1  //def MPACK
 		cgs.media.flagPoleModel = trap_R_RegisterModel( "models/flag2/flagpole.md3" );
 		cgs.media.flagFlapModel = trap_R_RegisterModel( "models/flag2/flagflap3.md3" );
 
@@ -2904,13 +3070,14 @@ static void CG_RegisterGraphics( void ) {
 #endif
 	}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if ( cgs.gametype == GT_1FCTF || cg_buildScript.integer ) {
 
 		cgs.media.flagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral1" );
-		cgs.media.flagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
-		cgs.media.flagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
-		cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral3" );
+		cgs.media.flagShader[1] = 0;  // unused
+		cgs.media.flagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
+		cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
+		cgs.media.flagShader[4] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral3" );
 	}
 
 	if ( cgs.gametype == GT_OBELISK || cg_buildScript.integer ) {
@@ -2986,6 +3153,7 @@ static void CG_RegisterGraphics( void ) {
 	}
 	cgs.media.foeShader = trap_R_RegisterShader("wc/foe");
 	cgs.media.selfShader = trap_R_RegisterShader("wc/self");
+	cgs.media.infectedFoeShader = trap_R_RegisterShader("gfx/2d/infected/bite");
 
 	if (cgs.gametype == GT_FREEZETAG) {
 		for (i = 0;  i < 3;  i++) {
@@ -3000,7 +3168,14 @@ static void CG_RegisterGraphics( void ) {
 	}
 
 	cgs.media.armorModel = trap_R_RegisterModel( "models/powerups/armor/armor_yel.md3" );
-	cgs.media.armorIcon  = trap_R_RegisterShaderNoMip( "icons/iconr_yellow" );
+
+	cgs.media.yellowArmorIcon  = trap_R_RegisterShaderNoMip( "icons/iconr_yellow" );
+	cgs.media.redArmorIcon  = trap_R_RegisterShaderNoMip( "icons/iconr_red" );
+	cgs.media.greenArmorIcon  = trap_R_RegisterShaderNoMip( "icons/iconr_green" );
+	cgs.media.megaHealthIcon  = trap_R_RegisterShaderNoMip( "icons/iconh_mega" );
+	cgs.media.quadIcon = trap_R_RegisterShaderNoMip("icons/quad");
+	cgs.media.battleSuitIcon = trap_R_RegisterShaderNoMip("icons/envirosuit");
+
 
 	cgs.media.machinegunBrassModel = trap_R_RegisterModel( "models/weapons2/shells/m_shell.md3" );
 	cgs.media.shotgunBrassModel = trap_R_RegisterModel( "models/weapons2/shells/s_shell.md3" );
@@ -3056,16 +3231,16 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.invulnerabilityJuicedModel = trap_R_RegisterModel( "models/powerups/shield/juicer.md3" );
 	cgs.media.medkitUsageModel = trap_R_RegisterModel( "models/powerups/regen.md3" );
 	cgs.media.heartShader = trap_R_RegisterShaderNoMip( "ui/assets/statusbar/selectedhealth.tga" );
-
+	cgs.media.invulnerabilityPowerupModel = trap_R_RegisterModel( "models/powerups/shield/shield.md3" );
 #endif
 
-	cgs.media.invulnerabilityPowerupModel = trap_R_RegisterModel( "models/powerups/shield/shield.md3" );
 	cgs.media.medalImpressive = trap_R_RegisterShaderNoMip( "medal_impressive" );
 	cgs.media.medalExcellent = trap_R_RegisterShaderNoMip( "medal_excellent" );
 	cgs.media.medalGauntlet = trap_R_RegisterShaderNoMip( "medal_gauntlet" );
 	cgs.media.medalDefend = trap_R_RegisterShaderNoMip( "medal_defend" );
 	cgs.media.medalAssist = trap_R_RegisterShaderNoMip( "medal_assist" );
 	cgs.media.medalCapture = trap_R_RegisterShaderNoMip( "medal_capture" );
+	cgs.media.headShotIcon = trap_R_RegisterShaderNoMip("icons/headshot");
 
 	cgs.media.adbox1x1 = trap_R_RegisterShader("adbox1x1");
     cgs.media.adbox2x1 = trap_R_RegisterShader("adbox2x1");
@@ -3088,8 +3263,21 @@ static void CG_RegisterGraphics( void ) {
 	Q_strncpyz(items, CG_ConfigString(CS_ITEMS), sizeof(items));
 
 	for ( i = 1 ; i < bg_numItems ; i++ ) {
-		if (items[ i ] == '1' || cg_buildScript.integer ||  cgs.cpma) {
+		// load all non weapons...  /devmap /spawn lksdjfdkf
+		// weapons can't be loaded since it screws up ql weapon bar behavior
+		if (items[ i ] == '1' || cg_buildScript.integer ||  cgs.cpma  ||  bg_itemlist[i].giType != IT_WEAPON) {
+			gitem_t *item;
+
 			//Com_Printf("^5%d '%s'\n", i, bg_itemlist[i].pickup_name);
+			item = &bg_itemlist[i];
+			if (!Q_stricmp(item->pickup_name, "Green Armor")) {
+				cgs.greenArmorItem = item;
+			} else if (!Q_stricmp(item->pickup_name, "Yellow Armor")) {
+				cgs.yellowArmorItem = item;
+			} else if (!Q_stricmp(item->pickup_name, "Red Armor")) {
+				cgs.redArmorItem = item;
+			}
+
 			CG_LoadingItem( i );
 			CG_RegisterItemVisuals( i );
 		}
@@ -3142,7 +3330,7 @@ static void CG_RegisterGraphics( void ) {
 		}
 	}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	// new stuff
 	cgs.media.patrolShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/patrol.tga");
 	cgs.media.assaultShader = trap_R_RegisterShaderNoMip("ui/assets/statusbar/assault.tga");
@@ -3162,6 +3350,7 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_capture.tga");
 	cgs.media.flagShaders[2] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_missing.tga");
 
+#if 0  // what's the point?
 	trap_R_RegisterModel( "models/players/james/lower.md3" );
 	trap_R_RegisterModel( "models/players/james/upper.md3" );
 	trap_R_RegisterModel( "models/players/heads/james/james.md3" );
@@ -3169,6 +3358,8 @@ static void CG_RegisterGraphics( void ) {
 	trap_R_RegisterModel( "models/players/janet/lower.md3" );
 	trap_R_RegisterModel( "models/players/janet/upper.md3" );
 	trap_R_RegisterModel( "models/players/heads/janet/janet.md3" );
+#endif
+
 
 #endif
 
@@ -3185,6 +3376,11 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.pickup_iconregen = trap_R_RegisterShader("pickup_REGEN");
 	cgs.media.pickup_iconhaste = trap_R_RegisterShader("pickup_HASTE");
 	cgs.media.pickup_iconinvis = trap_R_RegisterShader("pickup_INVIS");
+
+	cgs.media.ghostWeaponShader = trap_R_RegisterShader("ghostWeaponShader");
+	cgs.media.rocketAimShader = trap_R_RegisterShader("wc/wcrocketaim");
+	cgs.media.bboxShader = trap_R_RegisterShader( "bbox" );
+	cgs.media.bboxShader_nocull = trap_R_RegisterShader( "bbox_nocull" );
 
 	CG_ClearParticles ();
 /*
@@ -3233,12 +3429,37 @@ void CG_BuildSpectatorString(void) {
 	//Com_Printf("spec string cg.numScores %d\n", cg.numScores);
 
 	for (i = 0;  i < cg.numScores;  i++) {
-		score_t *sc;
+		const score_t *sc;
 
 		sc = &cg.scores[i];
 		if (sc->team == TEAM_SPECTATOR) {
+
+			if (cg_spectatorListSkillRating.integer  &&  cgs.clientinfo[sc->client].knowSkillRating) {
+				Q_strcat(slist, sizeof(slist), va("^5(%d)", cgs.clientinfo[sc->client].skillRating));
+			}
+			if (*cgs.clientinfo[sc->client].clanTag) {
+				Q_strcat(slist, sizeof(slist), va("^7%s ", cgs.clientinfo[sc->client].clanTag));
+			}
+
+			Q_strcat(slist, sizeof(slist), va("^7%s", cgs.clientinfo[sc->client].name));
+			//Q_strcat(slist, sizeof(slist), va("%s", cgs.clientinfo[sc->client].name));
+
+			if (cg_spectatorListScore.integer) {
+				Q_strcat(slist, sizeof(slist), va("^3(%d)", sc->score));
+			}
+			if (cg_spectatorListQue.integer  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT) {
+				if (cgs.clientinfo[sc->client].spectatorOnly) {
+					Q_strcat(slist, sizeof(slist), "^7(^5s^7)");
+				} else {
+					Q_strcat(slist, sizeof(slist), va("^7(%d)", cgs.clientinfo[sc->client].quePosition));
+				}
+			}
+
+			Q_strcat(slist, sizeof(slist), "^7     ");
+
+#if 0
 			//Com_Printf("%s\n", cgs.clientinfo[sc->client].name);
-			if (cgs.clientinfo[sc->client].knowSkillRating) {
+			if (cgs.clientinfo[sc->client].knowSkillRating  &&  cg_spectatorListSkillRating.integer) {
 				//Com_Printf("know for %s\n", cgs.clientinfo[sc->client].name);
 				if (*cgs.clientinfo[sc->client].clanTag) {
 					Q_strcat(slist, sizeof(slist), va("^5(%d)%s %s^3(%d)^7     ", cgs.clientinfo[sc->client].skillRating, cgs.clientinfo[sc->client].clanTag, cgs.clientinfo[sc->client].name, sc->score));
@@ -3252,6 +3473,7 @@ void CG_BuildSpectatorString(void) {
 					Q_strcat(slist, sizeof(slist), va("%s^3(%d)^7     ", cgs.clientinfo[sc->client].name, sc->score));
 				}
 			}
+#endif
 		}
 	}
 
@@ -3320,6 +3542,34 @@ CG_RegisterClients
 */
 static void CG_RegisterClients( void ) {
 	int		i;
+	clientInfo_t tmpCi;
+	int numExtraPlayers;
+
+	if (cg.demoPlayback) {
+		char modelName[MAX_QPATH];
+		char *skin;
+
+		numExtraPlayers = trap_GetNumPlayerInfos();
+
+		for (i = 0;  i < numExtraPlayers;  i++) {
+			trap_GetExtraPlayerInfo(i, modelName);
+			Com_Printf("^5extra %d  '%s'\n", i, modelName);
+
+			skin = strrchr(modelName, '/');
+			if (skin) {
+				*skin++ = '\0';
+			} else {
+				skin = "default";
+			}
+
+			// valgrind warnings
+			tmpCi.team = TEAM_SPECTATOR;
+			Q_strncpyz(tmpCi.modelName, modelName, sizeof(tmpCi.modelName));
+			Q_strncpyz(tmpCi.headModelName, modelName, sizeof(tmpCi.modelName));
+			CG_LoadingFutureClient(modelName);
+			CG_RegisterClientModelname(&tmpCi, modelName, skin, modelName, skin, "", qfalse);
+		}
+	}
 
 	CG_LoadingClient(cg.clientNum);
 	CG_NewClientInfo(cg.clientNum);
@@ -3340,6 +3590,7 @@ static void CG_RegisterClients( void ) {
 		CG_NewClientInfo( i );
 	}
 	//CG_BuildSpectatorString();
+
 }
 
 //===========================================================================
@@ -3482,6 +3733,10 @@ qboolean CG_ConfigStringIndexToQ3 (int *index)
 qboolean CG_ConfigStringIndexFromQ3 (int *index)
 {
 	int n;
+
+	if (cgs.cpma  &&  *index >= CSCPMA_GAMESTATE) {
+		return qtrue;
+	}
 
 	if (*index >= CSQ3_MODELS  &&  *index < CSQ3_MODELS + MAX_MODELS) {
 		n = *index - CSQ3_MODELS;
@@ -3656,24 +3911,33 @@ CG_StartMusic
 ======================
 */
 void CG_StartMusic( void ) {
-	char	*s;
+	const char *s;
 	char	parm1[MAX_QPATH], parm2[MAX_QPATH];
+    char buffer[MAX_STRING_CHARS];
+    char *ptr;
+
 
 	//FIXME
 	//CG_Printf("FIXME CG_StartMusic()\n");
 	//return;
 
 	// start the background music
-	s = (char *)CG_ConfigString( CS_MUSIC );
-	Q_strncpyz( parm1, COM_Parse( &s ), sizeof( parm1 ) );
-	Q_strncpyz( parm2, COM_Parse( &s ), sizeof( parm2 ) );
+	s = CG_ConfigString( CS_MUSIC );
+    Q_strncpyz(buffer, s, sizeof(buffer));
+    ptr = buffer;
+	Q_strncpyz( parm1, COM_Parse( &ptr ), sizeof( parm1 ) );
+	Q_strncpyz( parm2, COM_Parse( &ptr ), sizeof( parm2 ) );
 
 	//CG_Printf("cgame starting music  %s %s\n", parm1, parm2);
 
 	trap_S_StartBackgroundTrack( parm1, parm2 );
 }
-#if 1  //def MISSIONPACK
-char *CG_GetMenuBuffer(const char *filename) {
+
+#if 1  //def MPACK
+
+#if 0  // unused
+
+static char *CG_GetMenuBuffer(const char *filename) {
 	int	len;
 	fileHandle_t	f;
 	static char buf[MAX_MENUFILE];
@@ -3696,12 +3960,14 @@ char *CG_GetMenuBuffer(const char *filename) {
 	return buf;
 }
 
+#endif
+
 //
 // ==============================
 // new hud stuff ( mission pack )
 // ==============================
 //
-qboolean CG_Asset_Parse(int handle) {
+static qboolean CG_Asset_Parse(int handle) {
 	pc_token_t token;
 	const char *tempStr;
 
@@ -3852,7 +4118,26 @@ qboolean CG_Asset_Parse(int handle) {
 			continue;
 		}
 
-		Com_Printf("parseAsset() unknown token '%s'\n", token.string);
+		if (Q_stricmp(token.string, "setvar") == 0) {
+			const char *varName;
+			const char *mathScript;
+			float f;
+			int err;
+
+			if (!PC_String_Parse(handle, &varName)) {
+				Com_Printf("^1CG_Asset_Parse() couldn't read menu variable name\n");
+				break;
+			}
+			//FIXME const
+			PC_Parenthesis_Parse(handle, (const char **)&mathScript);
+			//FIXME const
+			Q_MathScript((char *)mathScript, &f, &err);
+			MenuVar_Set(varName, f);
+
+			continue;
+		}
+
+		Com_Printf("^3CG_Asset_Parse() unknown token '%s'\n", token.string);
 
 	}
 	return qfalse; // bk001204 - why not?
@@ -3863,6 +4148,7 @@ void CG_ParseMenu (const char *menuFile)
 	pc_token_t token;
 	int handle;
 	char altName[MAX_STRING_CHARS];
+	const char *fileName = NULL;
 
 	handle = trap_PC_LoadSource(menuFile);
 	if (!handle) {
@@ -3874,7 +4160,11 @@ void CG_ParseMenu (const char *menuFile)
 		if (!handle) {
 			Com_Printf("CG_ParseMenu() couldn't open %s.smenu\n", altName);
 			return;
+		} else {
+			fileName = altName;
 		}
+	} else {
+		fileName = menuFile;
 	}
 
 	//Com_Printf("CG_ParseMenu: '%s'\n", menuFile);
@@ -3894,6 +4184,10 @@ void CG_ParseMenu (const char *menuFile)
 		//	break;
 		//}
 
+		if (token.string[0] == '{') {
+			continue;
+		}
+
 		if ( token.string[0] == '}' ) {
 			break;
 		}
@@ -3910,12 +4204,35 @@ void CG_ParseMenu (const char *menuFile)
 		if (Q_stricmp(token.string, "menudef") == 0) {
 			// start a new menu
 			Menu_New(handle);
+			continue;
+		}
+
+		if (Q_stricmp(token.string, "setvar") == 0) {
+			const char *varName;
+			char *mathScript;
+			float f;
+			int err;
+
+			if (!PC_String_Parse(handle, &varName)) {
+				Com_Printf("^1CG_ParseMenu() couldn't read menu variable name\n");
+				break;
+			}
+			//FIXME const
+			PC_Parenthesis_Parse(handle, (const char **)&mathScript);
+			Q_MathScript(mathScript, &f, &err);
+			MenuVar_Set(varName, f);
+
+			continue;
+		}
+
+		if (1) {
+			Com_Printf("^3CG_ParseMenu() %s  unknown token '%s'\n", fileName, token.string);
 		}
 	}
 	trap_PC_FreeSource(handle);
 }
 
-qboolean CG_Load_Menu(char **p) {
+static qboolean CG_Load_Menu(char **p) {
 	char *token;
 
 	//Com_Printf("CG_Load_Menu() %s\n", *p);
@@ -3946,7 +4263,7 @@ qboolean CG_Load_Menu(char **p) {
 
 
 void CG_LoadMenus(const char *menuFile) {
-	char	*token;
+	const char*token;
 	char *p;
 	int	len, start;
 	fileHandle_t	f;
@@ -4001,6 +4318,10 @@ void CG_LoadMenus(const char *menuFile) {
 		//	break;
 		//}
 
+		if (token[0] == '{') {
+			continue;
+		}
+
 		if ( Q_stricmp( token, "}" ) == 0 ) {
 			break;
 		}
@@ -4012,6 +4333,8 @@ void CG_LoadMenus(const char *menuFile) {
 				break;
 			}
 		}
+
+		Com_Printf("^3CG_LoadMenus() unknown token '%s'\n", token);
 	}
 
 	Com_Printf("UI menu load time = %d milli seconds  %s\n", trap_Milliseconds() - start, menuFile);
@@ -4100,11 +4423,9 @@ static int CG_FeederCount(float feederID) {
 	return count;
 }
 
-
-void CG_SetScoreSelection (void *p)
+void CG_SetScoreSelection (menuDef_t *menu)
 {
-	menuDef_t *menu = (menuDef_t*)p;
-	playerState_t *ps = &cg.snap->ps;
+	const playerState_t *ps = &cg.snap->ps;
 	int i, red, blue;
 	int feeder;
 
@@ -4167,7 +4488,7 @@ static clientInfo_t * CG_InfoFromScoreIndex(int index, int team, int *scoreIndex
 	return &cgs.clientinfo[ cg.scores[index].client ];
 }
 
-static void CG_LimitText (char *s, int len)
+void CG_LimitText (char *s, int len)
 {
 	char *p;
 
@@ -4189,12 +4510,13 @@ static void CG_LimitText (char *s, int len)
 static const char *CG_FeederItemTextCa (float feederID, int index, int column, qhandle_t *handle)
 {
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
-	char *clanTag;
+	const char *clanTag;
 	int n;
+	const tdmPlayerScore_t *ts;
 
 	*handle = -1;
 
@@ -4210,6 +4532,7 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
 
 	sp = &cg.scores[scoreIndex];
+	ts = &cg.tdmScore.playerScore[sp->client];
 
 	if (info && info->infoValid) {
 		switch (column) {
@@ -4217,7 +4540,7 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			return "";
 		case 1: {
-			if (cg.tdmScore.playerScore[sp->client].subscriber  &&  cg_scoreBoardStyle.integer == 0) {
+			if (ts->subscriber  &&  cg_scoreBoardStyle.integer == 0) {
 				*handle = cgs.media.premiumIcon;
 			}
 			return "";
@@ -4230,6 +4553,7 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 
 		case 3: {
 			qboolean ready = qfalse;
+			qboolean alive;
 
 			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
 				ready = qtrue;
@@ -4243,7 +4567,13 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 				return "";
 			}
 
-			if (sp->alive) {
+			if (cg.tdmScore.version >= 3) {
+				alive = ts->alive;
+			} else {
+				alive = sp->alive;
+			}
+
+			if (alive) {
 				if (sp->team == TEAM_RED) {
 					*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 				} else {
@@ -4290,17 +4620,30 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 				}
 			}
 			break;
-		case 6:
-			return va("%d", sp->score);
+		case 6: {
+			int score;
+
+			if (cg.tdmScore.version >= 3) {
+				score = ts->score;
+			} else {
+				score = sp->score;
+			}
+
+			return va("%d", score);
+		}
 		case 7:  // net
 			if (cgs.cpma) {
 				s = va("%d", sp->net);
 				return s;
 			}
-			return va("%d/%d", sp->frags, sp->deaths);
+			if (cg.tdmScore.version >= 3) {
+				return va("%d/%d", ts->kills, ts->deaths);
+			} else {
+				return va("%d/%d", sp->frags, sp->deaths);
+			}
 		case 8:
-			if (cg.tdmScore.playerScore[sp->client].valid) {
-				n = cg.tdmScore.playerScore[sp->client].damageDone;
+			if (cg.tdmScore.valid  &&  ts->valid) {
+				n = ts->damageDone;
 				if (n >= 1000) {
 					s = va("%.1fk", (float)n / 1000.0);
 				} else {
@@ -4312,27 +4655,36 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 			}
 			break;
 		case 9:
-			if (cg.tdmScore.valid  &&  cg.tdmScore.playerScore[sp->client].damageDone == 0) {
+			if (cg.tdmScore.valid  &&  ts->valid  &&  ts->damageDone == 0) {
 				return "";
 			}
 
-			*handle = cg_weapons[sp->bestWeapon].weaponIcon;
-			if (!*handle) {
-				//*handle = -1;
+			if (cg.tdmScore.version >= 3) {
+				*handle = cg_weapons[ts->bestWeapon].weaponIcon;
+			} else {
+				*handle = cg_weapons[sp->bestWeapon].weaponIcon;
 			}
 			return "";
 		case 10:
-			if (!cg.tdmScore.valid) {
+			if (!cg.tdmScore.valid  ||  !ts->valid) {
 				return va("%d%%", sp->accuracy);
 			}
 
-			if (cg.tdmScore.playerScore[sp->client].damageDone == 0) {
+			if (ts->damageDone == 0) {
 				return "";
 			}
 
-			return va("%d%%", cg.tdmScore.playerScore[sp->client].accuracy);
+			if (cg.tdmScore.version >= 3) {
+				return va("%d%%", ts->bestWeaponAccuracy);
+			} else {
+				return va("%d%%", ts->accuracy);
+			}
 		case 11:
-			return va("%d", sp->ping);
+			if (cg.tdmScore.version >= 3) {
+				return va("%d", ts->ping);
+			} else {
+				return va("%d", sp->ping);
+			}
 		default:
 			//Com_Printf("wtf tdmcolumn %d\n", column);
 			break;
@@ -4347,12 +4699,13 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 static const char *CG_FeederItemTextTdm (float feederID, int index, int column, qhandle_t *handle)
 {
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
-	char *clanTag;
+	const char *clanTag;
 	int n;
+	const tdmPlayerScore_t *ts;
 
 	*handle = -1;
 
@@ -4368,6 +4721,7 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
 
 	sp = &cg.scores[scoreIndex];
+	ts = &cg.tdmScore.playerScore[sp->client];
 
 	if (info && info->infoValid) {
 		switch (column) {
@@ -4375,14 +4729,30 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else {  // default is cg_scoreBoardStyle.integer == 1
-				*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+				int bestWeapon;
+
+				if (cg.tdmScore.version >= 3) {
+					bestWeapon = ts->bestWeapon;
+				} else {
+					bestWeapon = sp->bestWeapon;
+				}
+
+				*handle = cg_weapons[bestWeapon].weaponIcon;
 				if (!*handle) {
 					//*handle = cgs.media.redCubeIcon;
 				}
 			}
 			return "";
 		case 1: {
-			if (cg.tdmScore.playerScore[sp->client].subscriber  &&  cg_scoreBoardStyle.integer == 0) {
+			int subscriber;
+
+			if (cg.tdmScore.version >= 3) {
+				subscriber = ts->subscriber;
+			} else {
+				subscriber = info->premiumSubscriber;
+			}
+			//if (cg.tdmScore.playerScore[sp->client].subscriber  &&  cg_scoreBoardStyle.integer == 0) {
+			if (subscriber  &&  cg_scoreBoardStyle.integer == 0) {
 				*handle = cgs.media.premiumIcon;
 			}
 			return "";
@@ -4425,28 +4795,48 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 				CG_LimitText(s, TDM_TEXT_LIMIT);
 				return s;
 			} else {
+				int accuracy;
+
+				switch (cg.tdmScore.version) {
+				case 3:
+					accuracy = ts->accuracy;
+					break;
+				default:
+					accuracy = sp->accuracy;
+					break;
+				}
+
 				clanTag = info->clanTag;
 				if (info->knowSkillRating) {
 					if (*clanTag) {
-						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
+						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
-						s = va("^3%3d   ^1%d  ^7%s", sp->accuracy, info->skillRating, info->name);
+						s = va("^3%3d   ^1%d  ^7%s", accuracy, info->skillRating, info->name);
 					}
 					CG_LimitText(s, TDM_TEXT_LIMIT);
 					return s;
 				} else {
 					if (*clanTag) {
-						s = va("^3%3d   ^7%s ^7%s", sp->accuracy, clanTag, info->name);
+						s = va("^3%3d   ^7%s ^7%s", accuracy, clanTag, info->name);
 					} else {
-						s = va("^3%3d   ^7%s", sp->accuracy, info->name);
+						s = va("^3%3d   ^7%s", accuracy, info->name);
 					}
 					CG_LimitText(s, TDM_TEXT_LIMIT);
 					return s;
 				}
 			}
 			break;
-		case 6:
-			return va("%d", sp->score);
+		case 6: {
+			int score;
+
+			if (cg.tdmScore.version >= 3) {
+				score = ts->score;
+			} else {
+				score = sp->score;
+			}
+
+			return va("%d", score);
+		}
 		case 7:  // net
 			if (cgs.cpma) {
 				s = va("%d", sp->net);
@@ -4455,17 +4845,19 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 			switch (cg.tdmScore.version) {
 			case 1:
 			case 2:
-				s = va("%d", sp->frags - sp->deaths - cg.tdmScore.playerScore[sp->client].tks + cg.tdmScore.playerScore[sp->client].tkd);
+				s = va("%d", sp->frags - sp->deaths - ts->tks + ts->tkd);
+				break;
+			case 3:
+				s = va("%d", ts->kills - ts->deaths - ts->tks + ts->tkd);
 				break;
 			default:
-				//Com_Printf("default\n");
 				s = va("%d", sp->frags - sp->deaths);
 				break;
 			}
 			return s;
 		case 8:
-			if (cg.tdmScore.playerScore[sp->client].valid) {
-				n = cg.tdmScore.playerScore[sp->client].damageDone;
+			if (cg.tdmScore.valid  &&  ts->valid) {
+				n = ts->damageDone;
 				if (n >= 1000) {
 					s = va("%.1fk", (float)n / 1000.0);
 				} else {
@@ -4476,8 +4868,16 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 				return "-";
 			}
 			break;
-		case 9:
-			return va("%d", sp->ping);
+		case 9: {
+			int ping;
+
+			if (cg.tdmScore.version >= 3) {
+				ping = ts->ping;
+			} else {
+				ping = sp->ping;
+			}
+			return va("%d", ping);
+		}
 		default:
 			//Com_Printf("wtf tdmcolumn %d\n", column);
 			break;
@@ -4492,11 +4892,14 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 static const char *CG_FeederItemTextCtf (float feederID, int index, int column, qhandle_t *handle)
 {
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
-	char *clanTag;
+	const char *clanTag;
+	const ctfPlayerScore_t *ts;
+	int clientTeam;
+	int version;
 
 	*handle = -1;
 
@@ -4512,7 +4915,16 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
 
 	sp = &cg.scores[scoreIndex];
-	if (sp->team != team) {
+	ts = &cg.ctfScore.playerScore[sp->client];
+
+	version = cg.ctfScore.version;
+	if (version >= 1) {
+		clientTeam = ts->team;
+	} else {
+		clientTeam = sp->team;
+	}
+
+	if (clientTeam != team) {
 		return "";
 	}
 
@@ -4522,14 +4934,19 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else {  // default is cg_scoreBoardStyle.integer == 1
-				*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+				if (version >= 1) {
+					*handle = cg_weapons[ts->bestWeapon].weaponIcon;
+				} else {
+					*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+				}
 				if (!*handle) {
 					//*handle = cgs.media.redCubeIcon;
 				}
 			}
 			return "";
 		case 1: {
-			if (cg.ctfScore.playerScore[sp->client].subscriber  &&  cg_scoreBoardStyle.integer == 0) {
+			//if (cg.ctfScore.playerScore[sp->client].subscriber  &&  cg_scoreBoardStyle.integer == 0) {
+			if (info->premiumSubscriber  &&  cg_scoreBoardStyle.integer == 0) {
 				*handle = cgs.media.premiumIcon;
 			}
 			return "";
@@ -4541,6 +4958,13 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			return "";
 		case 3: {
 			qboolean ready = qfalse;
+			int powerups;
+
+			if (version >= 1) {
+				powerups = ts->powerups;
+			} else {
+				powerups = sp->powerups;
+			}
 
 			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
 				ready = qtrue;
@@ -4552,9 +4976,9 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
 				}
 				return "";
-			} else if (sp->powerups & ( 1 << PW_REDFLAG )) {
+			} else if (powerups & ( 1 << PW_REDFLAG )) {
 					*handle = cgs.media.pickup_iconredflag;
-			} else if (sp->powerups & ( 1 << PW_BLUEFLAG )) {
+			} else if (powerups & ( 1 << PW_BLUEFLAG )) {
 					*handle = cgs.media.pickup_iconblueflag;
 			}
 
@@ -4577,20 +5001,28 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 				CG_LimitText(s, CTF_TEXT_LIMIT);
 				return s;
 			} else {
+				int accuracy;
+
+				if (version >= 1) {
+					accuracy = ts->accuracy;
+				} else {
+					accuracy = sp->accuracy;
+				}
+
 				clanTag = info->clanTag;
 				if (info->knowSkillRating) {
 					if (*clanTag) {
-						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
+						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
-						s = va("^3%3d   ^1%d  ^7%s", sp->accuracy, info->skillRating, info->name);
+						s = va("^3%3d   ^1%d  ^7%s", accuracy, info->skillRating, info->name);
 					}
 					CG_LimitText(s, CTF_TEXT_LIMIT);
 					return s;
 				} else {
 					if (*clanTag) {
-						s = va("^3%3d   ^7%s ^7%s", sp->accuracy, clanTag, info->name);
+						s = va("^3%3d   ^7%s ^7%s", accuracy, clanTag, info->name);
 					} else {
-						s = va("^3%3d   ^7%s", sp->accuracy, info->name);
+						s = va("^3%3d   ^7%s", accuracy, info->name);
 					}
 					CG_LimitText(s, CTF_TEXT_LIMIT);
 					return s;
@@ -4598,7 +5030,11 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			}
 			break;
 		case 6:
-			return va("%d", sp->score);
+			if (version >= 1) {
+				return va("%d", ts->score);
+			} else {
+				return va("%d", sp->score);
+			}
 		case 7:  // net
 			if (cgs.cpma) {
 				if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
@@ -4606,19 +5042,38 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 				}
 				return va("%d", sp->net);
 			}
-			//return va("%d", sp->frags - sp->deaths);
-			return va("%d/%d", sp->frags, sp->deaths);
+			if (version >= 1) {
+				return va("%d/%d", ts->kills, ts->deaths);
+			} else {
+				return va("%d/%d", sp->frags, sp->deaths);
+			}
 		case 8:
-			return va("%d", sp->captures);
+			if (version >= 1) {
+				return va("%d", ts->captures);
+			} else {
+				return va("%d", sp->captures);
+			}
 		case 9:
 			if (cgs.cpma) {
 				return "-";
 			}
-			return va("%d", sp->assistCount);
+			if (version >= 1) {
+				return va("%d", ts->awardAssist);
+			} else {
+				return va("%d", sp->assistCount);
+			}
 		case 10:
-			return va("%d", sp->defendCount);
+			if (version >= 1) {
+				return va("%d", ts->awardDefend);
+			} else {
+				return va("%d", sp->defendCount);
+			}
 		case 11:
-			return va("%d", sp->ping);
+			if (version >= 1) {
+				return va("%d", ts->ping);
+			} else {
+				return va("%d", sp->ping);
+			}
 		default:
 			//Com_Printf("wtf ctfcolumn %d\n", column);
 			break;
@@ -4631,12 +5086,12 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 static const char *CG_FeederItemTextCaStats (float feederID, int index, int column, qhandle_t *handle)
 {
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
-	char *clanTag;
-	caStats_t *ts;
+	const char *clanTag;
+	const caStats_t *ts;
 
 	*handle = -1;
 
@@ -4711,12 +5166,12 @@ static const char *CG_FeederItemTextCaStats (float feederID, int index, int colu
 static const char *CG_FeederItemTextTdmStats (float feederID, int index, int column, qhandle_t *handle)
 {
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
-	char *clanTag;
-	tdmStats_t *ts;
+	const char *clanTag;
+	const tdmStats_t *ts;
 
 	*handle = -1;
 
@@ -4796,12 +5251,12 @@ static const char *CG_FeederItemTextTdmStats (float feederID, int index, int col
 static const char *CG_FeederItemTextCtfStats (float feederID, int index, int column, qhandle_t *handle)
 {
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
-	char *clanTag;
-	ctfStats_t *ts;
+	const char *clanTag;
+	const ctfStats_t *ts;
 
 	*handle = -1;
 
@@ -4884,12 +5339,12 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 {
 	//gitem_t *item;
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
 	//int clientNum;
-	char *clanTag;
+	const char *clanTag;
 
 	*handle = -1;
 
@@ -5011,12 +5466,12 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 {
 	//gitem_t *item;
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
 	//int clientNum;
-	char *clanTag;
+	const char *clanTag;
 
 	*handle = -1;
 
@@ -5129,12 +5584,12 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 {
 	//gitem_t *item;
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
 	//int clientNum;
-	char *clanTag;
+	const char *clanTag;
 
 	*handle = -1;
 
@@ -5251,12 +5706,12 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 {
 	//gitem_t *item;
 	int scoreIndex = 0;
-	clientInfo_t *info = NULL;
+	const clientInfo_t *info = NULL;
 	int team = -1;
-	score_t *sp = NULL;
+	const score_t *sp = NULL;
 	char *s;
 	//int clientNum;
-	char *clanTag;
+	const char *clanTag;
 
 	if (cgs.gametype == GT_CA  &&  !cg_scoreBoardOld.integer) {
 		if (feederID == FEEDER_REDTEAM_STATS  ||  feederID == FEEDER_BLUETEAM_STATS) {
@@ -5487,7 +5942,7 @@ static void CG_FeederSelection(float feederID, int index) {
 }
 #endif
 
-#if 1  //def MISSIONPACK // bk001204 - only needed there
+#if 1  //def MPACK // bk001204 - only needed there
 float CG_Cvar_Get (const char *cvar)
 {
 	char buff[128];
@@ -5498,9 +5953,9 @@ float CG_Cvar_Get (const char *cvar)
 }
 #endif
 
-#if 1  //def MISSIONPACK
- void CG_Text_PaintWithCursor(float x, float y, float scale, vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style, int fontIndex) {
-	 fontInfo_t *font;
+#if 1  //def MPACK
+static void CG_Text_PaintWithCursor(float x, float y, float scale, const vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style, int fontIndex) {
+	 const fontInfo_t *font;
 
 	 if (fontIndex <= 0) {
 		 font = &cgDC.Assets.textFont;
@@ -5514,8 +5969,8 @@ float CG_Cvar_Get (const char *cvar)
 	 //FIXME cursor
 }
 
- static int CG_OwnerDrawWidth(int ownerDraw, float scale, int fontIndex) {
-	 fontInfo_t *font;
+static int CG_OwnerDrawWidth(int ownerDraw, float scale, int fontIndex) {
+	 const fontInfo_t *font;
 
 	 if (fontIndex <= 0) {
 		 font = &cgDC.Assets.textFont;
@@ -5573,7 +6028,7 @@ CG_InitDC();
 
 =================
 */
-void CG_InitDC (void)
+static void CG_InitDC (void)
 {
 	//char buff[1024];
 	//const char *hudSet;
@@ -5592,7 +6047,7 @@ void CG_InitDC (void)
 	cgDC.drawSides = &CG_DrawSides;
 	cgDC.drawTopBottom = &CG_DrawTopBottom;
 	cgDC.clearScene = &trap_R_ClearScene;
-	cgDC.addRefEntityToScene = &trap_R_AddRefEntityToScene;
+	cgDC.addRefEntityToScene = &CG_AddRefEntity;
 	cgDC.renderScene = &trap_R_RenderScene;
 	cgDC.registerFont = &trap_R_RegisterFont;
 	cgDC.ownerDrawItem = &CG_OwnerDraw;
@@ -5603,6 +6058,7 @@ void CG_InitDC (void)
 	cgDC.setCVar = trap_Cvar_Set;
 	cgDC.getCVarString = trap_Cvar_VariableStringBuffer;
 	cgDC.getCVarValue = CG_Cvar_Get;
+	cgDC.cvarExists = trap_Cvar_Exists;
 	cgDC.drawTextWithCursor = &CG_Text_PaintWithCursor;
 	//cgDC.setOverstrikeMode = &trap_Key_SetOverstrikeMode;
 	//cgDC.getOverstrikeMode = &trap_Key_GetOverstrikeMode;
@@ -5644,7 +6100,7 @@ void CG_InitDC (void)
 #endif
 }
 
-void CG_AssetCache( void ) {
+static void CG_AssetCache( void ) {
 	//if (Assets.textFont == NULL) {
 	//  trap_R_RegisterFont("fonts/arial.ttf", 72, &Assets.textFont);
 	//}
@@ -5677,30 +6133,36 @@ void CG_ResetTimedItemPickupTimes (void)
 
 	val = -999999;
 	for (i = 0;   i < cg.numMegaHealths;  i++) {
+		cg.megaHealths[i].specPickupTime = 0;
 		cg.megaHealths[i].pickupTime = val;
 		cg.megaHealths[i].respawnTime = val;
 		cg.megaHealths[i].clientNum = -1;
 	}
 	for (i = 0;   i < cg.numRedArmors;  i++) {
+		cg.redArmors[i].specPickupTime = 0;
 		cg.redArmors[i].pickupTime = val;
 		cg.redArmors[i].respawnTime = val;
 		cg.redArmors[i].clientNum = -1;
 	}
 	for (i = 0;   i < cg.numYellowArmors;  i++) {
+		cg.yellowArmors[i].specPickupTime = 0;
 		cg.yellowArmors[i].pickupTime = val;
 		cg.yellowArmors[i].respawnTime = val;
 		cg.yellowArmors[i].clientNum = -1;
 	}
 	for (i = 0;   i < cg.numGreenArmors;  i++) {
+		cg.greenArmors[i].specPickupTime = 0;
 		cg.greenArmors[i].pickupTime = val;
 		cg.greenArmors[i].respawnTime = val;
 		cg.greenArmors[i].clientNum = -1;
 	}
 	for (i = 0;   i < cg.numQuads;  i++) {
+		cg.quads[i].specPickupTime = 0;
 		cg.quads[i].pickupTime = val;
 		cg.quads[i].respawnTime = val;
 	}
 	for (i = 0;   i < cg.numBattleSuits;  i++) {
+		cg.battleSuits[i].specPickupTime = 0;
 		cg.battleSuits[i].pickupTime = val;
 		cg.battleSuits[i].respawnTime = val;
 	}
@@ -5713,7 +6175,7 @@ void CG_CreateScoresFromClientInfo (void)
 	cg.numScores = 0;
 
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
-		clientInfo_t *ci;
+		const clientInfo_t *ci;
 		score_t *s;
 
 		//cgs.newConnectedClient[i] = qfalse;
@@ -5740,17 +6202,14 @@ Called after every level change or subsystem restart
 Will perform callbacks to make the loading info screen update.
 =================
 */
-//static byte imageBuff[48 * 48 * 32 * 4];  //FIXME
-
-void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qboolean demoPlayback)
+static void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qboolean demoPlayback)
 {
 	const char	*s;
 	int i;
 	//char mname[MAX_STRING_CHARS];
 	char buff[1024];
 	const char *hudSet;
-	//byte imageBuff[48 * 48 * 32 * 4];  //FIXME
-	gitem_t *item;
+	const gitem_t *item;
 	qboolean val;
 
 	trap_Cvar_Set("com_errorMessage", "");
@@ -5758,15 +6217,6 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 	Com_Printf("CG_Init() version: %s\n", WOLFCAM_VERSION);
 
 	Com_Printf("CG_Init()  serverMessageNum %d  serverCommandSequence %d  clientNum %d\n", serverMessageNum, serverCommandSequence, clientNum);
-
-#if 0
-	{
-		float f;
-	f = 0;
-	f += 1.0;
-	Com_Printf("%f\n", 10.0 / (f - 1.0));
-	}
-#endif
 
 	// clear everything
 	memset( &cgs, 0, sizeof( cgs ) );
@@ -5879,15 +6329,6 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 	cgs.media.charsetPropGlow	= trap_R_RegisterShaderNoMip( "menu/art/font1_prop_glo.tga" );
 	cgs.media.charsetPropB		= trap_R_RegisterShaderNoMip( "menu/art/font2_prop.tga" );
 
-#if 0
-	for (i = 0;  i < MAX_NAME_LENGTH * 48 * 48;  i += 4) {
-		imageBuff[i + 0] = 255;  //i % 256;
-		imageBuff[i + 1] = 0;
-		imageBuff[i + 2] = 0;
-		imageBuff[i + 3] = 255;
-	}
-#endif
-
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		// 48 * 48 * 32 * 4
 		//cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), (byte *)&cg, MAX_QPATH * 48, 48, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
@@ -5916,19 +6357,18 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 	// get the gamestate from the client system
 	trap_GetGameState( &cgs.gameState );
 
+	cgs.rocketSpeed = 900;
 	if (cgs.protocol == PROTOCOL_Q3) {
+		cgs.rocketSpeed = 800;
 		if (!Q_stricmp("cpma-1", CG_ConfigString(CS_GAME_VERSION))) {  //FIXME hack
 			cgs.cpma = qtrue;
 			memcpy(&bg_itemlist, &bg_itemlistCpma, sizeof(gitem_t) * bg_numItemsCpma);
 			bg_numItems = bg_numItemsCpma;
 			//GT_CTFS = 7;
-			Com_Printf("^5cpma\n");
 
-			//FIXME cq3, vq3, etc...
-			if (!Q_stricmp("cpm", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"))  ||  !Q_stricmp("pmc", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"))) {
-				cgs.cpm = qtrue;
-				Com_Printf("^5cpm gameplay\n");
-			}
+			STAT_ARMOR_TIER = 9;
+
+			Com_Printf("^5cpma\n");
 		} else if (!Q_stricmp("osp", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "gamename"))  ||  !Q_stricmpn(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "gameversion"), "osp", strlen("osp") - 1)) {
 			cgs.osp = qtrue;
 			cgs.ospEncrypt = atoi(CG_ConfigString(872));
@@ -5984,7 +6424,9 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 		Com_sprintf(cgs.mapname, sizeof(cgs.mapname), "maps/%s.bsp", SC_Cvar_Get_String("r_forceMap"));
 		Com_Printf("^3forcing %s\n", cgs.mapname);
 	}
-	Q_strncpyz(buff, cgs.mapname, sizeof(buff));
+	trap_GetRealMapName(cgs.mapname, cgs.realMapName, sizeof(cgs.realMapName));
+	//Com_Printf("^3map: '%s' -> '%s'\n", cgs.mapname, cgs.realMapName);
+	Q_strncpyz(buff, cgs.realMapName, sizeof(buff));
 	i = strlen(buff);
 	buff[i - 1] = 'g';
 	buff[i - 2] = 'f';
@@ -5995,7 +6437,7 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 	//COM_StripExtension(cgs.mapname, mname, sizeof(mname));
 	//trap_Cvar_Set("mapname", mname);
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	String_Init();
 #endif
 
@@ -6003,15 +6445,55 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 
 	CG_LoadingString( "sounds" );
 
+	{
+		int i;
+		const char *as[] = {
+			"sound/items/poweruprespawn",
+			"sound/items/kamikazerespawn",
+			"sound/ambient/1shot_bell_01",  //FIXME map specific -- sinister.bsp
+			"sound/movers/doors/dr1_strt",
+			"sound/movers/doors/dr1_end",
+			"sound/player/gurp1",
+			"sound/player/gurp2",
+		};
+
+		cg.numAllowedAmbientSounds = 0;
+		for (i = 0;  i < ARRAY_LEN(as);  i++) {
+			qhandle_t h;
+
+			h = trap_S_RegisterSound(as[i], qfalse);
+			cg.allowedAmbientSounds[cg.numAllowedAmbientSounds] = h;
+			cg.numAllowedAmbientSounds++;
+
+			Com_Printf("registered allowed ambient sound '%s' %d\n", as[i], h);
+		}
+	}
+
 	CG_RegisterSounds();
 
 	CG_RegisterFonts();  //FIXME better place
 
 	CG_LoadingString( "graphics" );
 
-	CG_RegisterGraphics();
-
 	//Com_Printf("^1%d -> %d\n", cgs.gametype, GT_RED_ROVER);
+
+	// quakelive custom game modes, /devmap /give item..  just have to
+	// always load all weapons so that projectiles will be present
+	//FIXME ugh, terrible hack
+	if (cgs.protocol == PROTOCOL_QL) {
+	    for (item = bg_itemlist + 1;  item->classname;  item++) {
+			if (item->giType != IT_WEAPON) {
+				continue;
+			}
+
+			CG_LoadingItem(item - bg_itemlist);
+			CG_RegisterWeapon(item->giTag);
+			//Com_Printf("weapon %d '%s'\n", item->giTag, item->pickup_name);
+			// for 'full weapon bar' need to know only held or available from
+			// gametype/map
+			cg_weapons[item->giTag].registered = qfalse;
+		}
+	}
 
 	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_DOMINATION  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER) {
 		for (i = WP_GAUNTLET;  i < WP_BFG;  i++) {
@@ -6043,18 +6525,18 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 		}
 	}
 
+	CG_RegisterGraphics();
+
 	CG_LoadingString( "clients" );
 
 	CG_RegisterClients();		// if low on memory, some clients will be deferred
 	CG_CreateScoresFromClientInfo();
 	CG_BuildSpectatorString();
 
-#if 1
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	CG_AssetCache();
 	//CG_LoadDefaultMenus();
 	//CG_LoadHudMenu();      // load new hud stuff
-#endif
 #endif
 
 	cg.loading = qfalse;	// future players will be deferred
@@ -6073,7 +6555,7 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 
 	CG_LoadingString( "" );
 
-#if 1 //def MISSIONPACK
+#if 1 //def MPACK
 	CG_InitTeamChat();
 #endif
 
@@ -6083,7 +6565,7 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 
 #if 0
     if (!wc_logfile) {
-        char *fname = "shotdata.log";
+        const char *fname = "shotdata.log";
         int ret;
 
 #if 0
@@ -6115,7 +6597,7 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 
 	//CG_LoadDefaultMenus();
 	//FIXME before or after default menus?
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	//CG_AssetCache();
 	CG_InitDC();      // load new hud stuff
 	CG_LoadDefaultMenus();
@@ -6138,7 +6620,11 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 
 	CG_ReloadQ3mmeScripts(cg_fxfile.string);
 	CG_CreateNameSprites();
-	trap_SendConsoleCommand("condump cgameboot.log\n");
+	if (cgs.protocol == PROTOCOL_QL  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cgs.gametype == GT_RED_ROVER) {
+		CG_LoadInfectedGameTypeModels();
+	}
+
+	trap_SendConsoleCommand("condump cgameboot.log\n");  //FIXME this at end?
 
 	if (SC_Cvar_Get_Int("cl_freezeDemo")) {
 		cg.infoScreenText[0] = 0;
@@ -6175,6 +6661,10 @@ void CG_Init (int serverMessageNum, int serverCommandSequence, int clientNum, qb
 #endif
 			//Com_Printf("%d  (%f, %f)\n", i, atan2(pattern[i][0] * scale, 292.82), atan2(pattern[i][1] * scale, 292.82));
 		}
+	}
+
+	if (cg.demoPlayback) {
+		trap_Get_Demo_Timeouts(&cgs.numTimeouts, cgs.timeOuts);
 	}
 }
 
@@ -6240,7 +6730,8 @@ CG_Shutdown
 Called before every level change or subsystem restart
 =================
 */
-void CG_Shutdown( void ) {
+static void CG_Shutdown( void ) {
+	CG_ShutdownLocalEnts(qfalse);
 	// some mods may need to do cleanup work here,
 	// like closing files or archiving session data
 	if (cg.recordPathFile) {
@@ -6252,6 +6743,7 @@ void CG_Shutdown( void ) {
 		cg.dumpFile = 0;
 	}
 
+	CG_FreeFxJitTokens();
     trap_SendConsoleCommand("exec shutdown.cfg\n");
 }
 
@@ -6259,12 +6751,27 @@ void CG_SetDuelPlayers (void)
 {
 	int i;
 
-	cg.duelPlayer1 = -1;
-	cg.duelPlayer2 = -1;
+	cg.duelPlayer1 = DUEL_PLAYER_INVALID;
+	cg.duelPlayer2 = DUEL_PLAYER_INVALID;
+
+	if (CG_CheckQlVersion(0, 1, 0, 719)) {
+		if (cg.numDuelScores > 0) {
+			cg.duelPlayer1 = cg.duelScores[0].clientNum;
+		}
+		if (cg.numDuelScores > 1) {
+			cg.duelPlayer2 = cg.duelScores[1].clientNum;
+		}
+
+		//Com_Printf("^2 d1 %d  d2 %d\n", cg.duelPlayer1, cg.duelPlayer2);
+
+		if (cg.numDuelScores > 0) {
+			return;
+		}
+	}
 
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		if (cgs.clientinfo[i].infoValid  &&  cgs.clientinfo[i].team == TEAM_FREE) {
-			if (cg.duelPlayer1 == -1) {
+			if (cg.duelPlayer1 == DUEL_PLAYER_INVALID) {
 				cg.duelPlayer1 = i;
 			} else {
 				cg.duelPlayer2 = i;
@@ -6272,4 +6779,6 @@ void CG_SetDuelPlayers (void)
 			}
 		}
 	}
+
+	//Com_Printf("duel 1: %s\nduel 2: %s\n", cgs.clientinfo[cg.duelPlayer1].name, cgs.clientinfo[cg.duelPlayer2].name);
 }

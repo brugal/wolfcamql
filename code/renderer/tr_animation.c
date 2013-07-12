@@ -77,11 +77,11 @@ void RB_SurfaceAnim( md4Surface_t *surface ) {
 	int				frameSize;
 
 
-	if (  backEnd.currentEntity->e.oldframe == backEnd.currentEntity->e.frame ) {
+	if (  backEnd.currentEntity->ePtr->oldframe == backEnd.currentEntity->ePtr->frame ) {
 		backlerp = 0;
 		frontlerp = 1;
 	} else  {
-		backlerp = backEnd.currentEntity->e.backlerp;
+		backlerp = backEnd.currentEntity->ePtr->backlerp;
 		frontlerp = 1.0f - backlerp;
 	}
 	header = (md4Header_t *)((byte *)surface + surface->ofsHeader);
@@ -89,9 +89,9 @@ void RB_SurfaceAnim( md4Surface_t *surface ) {
 	frameSize = (size_t)( &((md4Frame_t *)0)->bones[ header->numBones ] );
 
 	frame = (md4Frame_t *)((byte *)header + header->ofsFrames + 
-			backEnd.currentEntity->e.frame * frameSize );
+			backEnd.currentEntity->ePtr->frame * frameSize );
 	oldFrame = (md4Frame_t *)((byte *)header + header->ofsFrames + 
-			backEnd.currentEntity->e.oldframe * frameSize );
+			backEnd.currentEntity->ePtr->oldframe * frameSize );
 
 	RB_CheckOverflow( surface->numVerts, surface->numTriangles * 3 );
 

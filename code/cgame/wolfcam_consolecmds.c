@@ -1,8 +1,13 @@
 #include "cg_local.h"
+
+#include "cg_main.h"
+#include "cg_syscalls.h"
+#include "wolfcam_consolecmds.h"
+
 #include "wolfcam_local.h"
 
 // from "enemy territory"
-int BG_cleanName( const char *pszIn, char *pszOut, unsigned int dwMaxLength, qboolean fCRLF )
+static int BG_cleanName( const char *pszIn, char *pszOut, unsigned int dwMaxLength, qboolean fCRLF )
 {
     const char *pInCopy = pszIn;
     const char *pszOutStart = pszOut;
@@ -24,7 +29,7 @@ int BG_cleanName( const char *pszIn, char *pszOut, unsigned int dwMaxLength, qbo
 void Wolfcam_List_Player_Models_f (void)
 {
 	int i;
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		ci = &cgs.clientinfoOrig[i];
@@ -44,19 +49,19 @@ print some info about players
 void Wolfcam_Players_f (void)
 {
     int i;
-    clientInfo_t *ci;
+    const clientInfo_t *ci;
     char color;
-	char *clanTag;
+	const char *clanTag;
 
     for (i = 0;  i < MAX_CLIENTS;  i++) {
         ci = &cgs.clientinfo[i];
         if (!ci->infoValid)
             continue;
         switch (ci->team) {
-        case TEAM_AXIS:
+        case TEAM_RED:
             color = '1';
             break;
-        case TEAM_ALLIES:
+        case TEAM_BLUE:
             color = '4';
             break;
         case TEAM_SPECTATOR:
@@ -93,7 +98,7 @@ print some info about players
 void Wolfcam_Playersw_f (void)
 {
     int i;
-    clientInfo_t *ci;
+    const clientInfo_t *ci;
     char color;
     char name[MAX_QPATH];
 
@@ -102,10 +107,10 @@ void Wolfcam_Playersw_f (void)
         if (!ci->infoValid)
             continue;
         switch (ci->team) {
-        case TEAM_AXIS:
+        case TEAM_RED:
             color = '1';
             break;
-        case TEAM_ALLIES:
+        case TEAM_BLUE:
             color = '4';
             break;
         case TEAM_SPECTATOR:
@@ -210,7 +215,7 @@ static int totalClients;
 static float avgWarp;
 static int avgSeverity;
 
-static void print_ind_weap_stats (wweaponStats_t *w)
+static void print_ind_weap_stats (const wweaponStats_t *w)
 {
     if (w->kills < 1000)
         Com_Printf (" ");
@@ -286,9 +291,9 @@ static void wolfcam_reset_weapon_stats (int clientNum, qboolean oldclient)
 static void wolfcam_calc_averages (void)
 {
 	int i, j;
-	woldclient_t *woc;
-	wclient_t *wc;
-	wweaponStats_t *ws;
+	const woldclient_t *woc;
+	const wclient_t *wc;
+	const wweaponStats_t *ws;
 
 	memset(totalKills, 0, sizeof(totalKills));
 	totalWarp = 0;
@@ -350,7 +355,7 @@ static void wolfcam_calc_averages (void)
 
 static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
 {
-    char *name;
+    const char *name;
     int kills;
     int deaths;
     int suicides;
@@ -365,15 +370,15 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
 	int serverPingSamples;
 	//int snapshotPingAccum;
 	int snapshotPingSamples;
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 	//float fwarp;
 	//int sev;
 
-    wweaponStats_t *w;
-    wweaponStats_t *ws;  //[WP_NUM_WEAPONS];
+    const wweaponStats_t *w;
+    const wweaponStats_t *ws;  //[WP_NUM_WEAPONS];
 
     if (oldclient) {
-        woldclient_t *wc = &woldclients[clientNum];
+        const woldclient_t *wc = &woldclients[clientNum];
 
 		ci = &woldclients[clientNum].clientinfo;
         name = woldclients[clientNum].clientinfo.name;
@@ -394,7 +399,7 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
 
         ws = woldclients[clientNum].wstats;
     } else {
-        wclient_t *wc = &wclients[clientNum];
+        const wclient_t *wc = &wclients[clientNum];
 
 		ci = &cgs.clientinfo[clientNum];
         name = cgs.clientinfo[clientNum].name;

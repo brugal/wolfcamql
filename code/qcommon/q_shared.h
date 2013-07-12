@@ -81,11 +81,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //#pragma intrinsic( memset, memcpy )
 #endif
 
+
 //Ignore __attribute__ on non-gcc platforms
 #ifndef __GNUC__
-#ifndef __attribute__
-#define __attribute__(x)
+#  ifndef __attribute__
+#    define __attribute__(x)
+#  endif
 #endif
+
+#define STRING(s)			#s
+// expand constants before stringifying them
+#define XSTRING(s)			STRING(s)
+
+
+/* C99 defines __func__ */
+#if __STDC_VERSION__ < 199901L
+#  if __GNUC__ >= 2 || _MSC_VER >= 1300
+#    define __func__ __FUNCTION__
+#  endif
+#endif
+
+// for qvms and non C99
+#ifndef __func__
+#  define __func__ __FILE__ ":" XSTRING(__LINE__)
 #endif
 
 #if (defined _MSC_VER)
@@ -153,7 +171,7 @@ typedef int intptr_t;
   #define Q_vsnprintf vsnprintf
 #endif
 
-#endif
+#endif  // ifdef Q3_VM
 
 
 #include "q_platform.h"
@@ -192,10 +210,6 @@ typedef int		clipHandle_t;
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
-
-#define STRING(s)			#s
-// expand constants before stringifying them
-#define XSTRING(s)			STRING(s)
 
 #define	MAX_QINT			0x7fffffff
 #define	MIN_QINT			(-MAX_QINT-1)
@@ -237,6 +251,14 @@ typedef int		clipHandle_t;
 #define	MAX_NAME_LENGTH		32		// max length of a client name
 
 #define	MAX_SAY_TEXT	150
+
+//FIXME linked list
+#define	PACKET_BACKUP	32  //144000   //  :\  //32	// number of old messages that must be kept on client and
+							// server for delta comrpession and ping estimation
+#define	PACKET_MASK		(PACKET_BACKUP-1)
+
+#define	MAX_PACKET_USERCMDS		32		// max number of usercmd_t in a packet
+#define MAX_SNAPSHOT_ENTITIES 256
 
 // paramters for command buffer stuffing
 typedef enum {
@@ -298,8 +320,10 @@ typedef enum {
 #define UI_INVERSE		0x00002000
 #define UI_PULSE		0x00004000
 
+#if 0
 #if defined(NDEBUG) && !defined(BSPC)
 	#define HUNK_DEBUG
+#endif
 #endif
 
 typedef enum {
@@ -680,7 +704,7 @@ qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
 float AngleMod (float a);
 float LerpAngle (float from, float to, float frac);
 float AngleSubtract (float a1, float a2);
-void AnglesSubtract (vec3_t v1, vec3_t v2, vec3_t v3);
+void AnglesSubtract (const vec3_t v1, const vec3_t v2, vec3_t v3);
 float AngleAdd (float a1, float a2);
 
 float AngleNormalize360 (float angle);
@@ -701,6 +725,10 @@ void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 void PerpendicularVector( vec3_t dst, const vec3_t src );
+
+void VectorStartEndDir (const vec3_t start, const vec3_t end, vec3_t dir);
+void VectorReflect (const vec3_t src, const vec3_t reflectNorm, vec3_t reflected);
+
 int Q_floatIsNan (float x);  //FIXME don't pass double
 void Q_SetColors (qboolean ql);
 void Q_SetColorTable (int n, float r, float g, float b, float a);
@@ -720,6 +748,7 @@ float Com_Clamp( float min, float max, float value );
 char	*COM_SkipPath( char *pathname );
 const char	*COM_GetExtension( const char *name );
 void	COM_StripExtension(const char *in, char *out, int destsize);
+qboolean COM_CompareExtension(const char *in, const char *ext);
 void	COM_DefaultExtension( char *path, int maxSize, const char *extension );
 
 void	COM_BeginParseSession( const char *name );
@@ -857,14 +886,14 @@ void Com_TruncateLongString( char *buffer, const char *s );
 char *Info_ValueForKey( const char *s, const char *key );
 char *Info_ValueForKeyExt (const char *s, const char *key, qboolean *hasKey);
 void Info_RemoveKey( char *s, const char *key );
-void Info_RemoveKey_big( char *s, const char *key );
+void Info_RemoveKey_Big( char *s, const char *key );
 void Info_SetValueForKey( char *s, const char *key, const char *value );
 void Info_SetValueForKey_Big( char *s, const char *key, const char *value );
 qboolean Info_Validate( const char *s );
 void Info_NextPair( const char **s, char *key, char *value );
 
 // this is only here so the functions in q_shared.c and bg_*.c can link
-void	QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((format (printf, 2, 3)));
+void	QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((noreturn, format (printf, 2, 3)));
 void	QDECL Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
 
 
@@ -1002,7 +1031,7 @@ typedef struct {
 // or ENTITYNUM_NONE, ENTITYNUM_WORLD
 
 
-// markfragments are returned by CM_MarkFragments()
+// markfragments are returned by R_MarkFragments()
 typedef struct {
 	int		firstPoint;
 	int		numPoints;
@@ -1072,6 +1101,7 @@ typedef enum {
 #define	ENTITYNUM_WORLD		(MAX_GENTITIES-2)
 #define	ENTITYNUM_MAX_NORMAL	(MAX_GENTITIES-2)
 
+#define MAX_LOOP_SOUNDS (MAX_GENTITIES * 2)
 
 #define	MAX_MODELS			256		// these are sent over the net as 8 bits
 #define	MAX_SOUNDS			256		// so they cannot be blindly increased
@@ -1179,7 +1209,7 @@ typedef struct playerState_s {
 
 	// not communicated over the net at all
 	int			ping;			// server to game info for scoreboard
-	int			pmove_framecount;	// FIXME: don't transmit over the network
+	int			pmove_framecount;
 	int			jumppad_frame;
 	int			entityEventSequence;
 } playerState_t;
@@ -1387,7 +1417,7 @@ typedef enum _flag_status {
 	FLAG_TAKEN,			// CTF
 	FLAG_TAKEN_RED,		// One Flag CTF
 	FLAG_TAKEN_BLUE,	// One Flag CTF
-	FLAG_DROPPED
+	FLAG_DROPPED        // One Flag CTF
 } flagStatus_t;
 
 
@@ -1406,5 +1436,10 @@ typedef enum _flag_status {
 
 #define LERP( a, b, w ) ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )
+
+
+void Crash (void);
+qboolean VectorCheck (const vec3_t v);
+void Q_PrintSubString (const char *start, const char *end);
 
 #endif	// __Q_SHARED_H

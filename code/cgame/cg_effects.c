@@ -4,6 +4,14 @@
 // of event processing
 
 #include "cg_local.h"
+
+#include "cg_effects.h"
+#include "cg_freeze.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_syscalls.h"
+#include "sc.h"
+
 #include "wolfcam_local.h"
 
 /*
@@ -13,7 +21,7 @@ CG_BubbleTrail
 Bullets shot underwater
 ==================
 */
-void CG_BubbleTrail( vec3_t start, vec3_t end, float spacing ) {
+void CG_BubbleTrail (const vec3_t start, const vec3_t end, float spacing ) {
 	vec3_t		move;
 	vec3_t		vec;
 	float		len;
@@ -142,7 +150,7 @@ localEntity_t *CG_SmokePuff( const vec3_t p, const vec3_t vel,
 	return le;
 }
 
-void CG_DeathEffect( vec3_t org ) {
+static void CG_DeathEffect( const vec3_t org ) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 
@@ -184,7 +192,8 @@ CG_SpawnEffect
 Player teleporting in or out
 ==================
 */
-void CG_SpawnEffect( vec3_t org ) {
+void CG_SpawnEffect (const vec3_t org)
+{
 	localEntity_t	*le;
 	refEntity_t		*re;
 
@@ -223,7 +232,7 @@ void CG_SpawnEffect( vec3_t org ) {
 CG_LightningBoltBeam
 ===============
 */
-void CG_LightningBoltBeam( vec3_t start, vec3_t end ) {
+void CG_LightningBoltBeam( const vec3_t start, const vec3_t end ) {
 	localEntity_t	*le;
 	refEntity_t		*beam;
 
@@ -249,7 +258,7 @@ void CG_LightningBoltBeam( vec3_t start, vec3_t end ) {
 CG_KamikazeEffect
 ==================
 */
-void CG_KamikazeEffect( vec3_t org ) {
+void CG_KamikazeEffect( const vec3_t org ) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 
@@ -280,7 +289,7 @@ void CG_KamikazeEffect( vec3_t org ) {
 CG_ObeliskExplode
 ==================
 */
-void CG_ObeliskExplode( vec3_t org, int entityNum ) {
+void CG_ObeliskExplode( const vec3_t org, int entityNum ) {
 	localEntity_t	*le;
 	vec3_t origin;
 
@@ -302,7 +311,7 @@ void CG_ObeliskExplode( vec3_t org, int entityNum ) {
 CG_ObeliskPain
 ==================
 */
-void CG_ObeliskPain( vec3_t org ) {
+void CG_ObeliskPain( const vec3_t org ) {
 	float r;
 	sfxHandle_t sfx;
 
@@ -324,7 +333,7 @@ void CG_ObeliskPain( vec3_t org ) {
 CG_InvulnerabilityImpact
 ==================
 */
-void CG_InvulnerabilityImpact( vec3_t org, vec3_t angles ) {
+void CG_InvulnerabilityImpact( const vec3_t org, const vec3_t angles ) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 	int				r;
@@ -365,7 +374,7 @@ void CG_InvulnerabilityImpact( vec3_t org, vec3_t angles ) {
 CG_InvulnerabilityJuiced
 ==================
 */
-void CG_InvulnerabilityJuiced( vec3_t org ) {
+void CG_InvulnerabilityJuiced( const vec3_t org ) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 	vec3_t			angles;
@@ -400,7 +409,7 @@ void CG_InvulnerabilityJuiced( vec3_t org ) {
 CG_ScorePlum
 ==================
 */
-void CG_ScorePlum( int client, vec3_t org, int score ) {
+void CG_ScorePlum( int client, const vec3_t org, int score ) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 	vec3_t			angles;
@@ -440,13 +449,52 @@ void CG_ScorePlum( int client, vec3_t org, int score ) {
 	AnglesToAxis( angles, re->axis );
 }
 
+/*
+==================
+CG_HeadShotPlum
+==================
+*/
+void CG_HeadShotPlum (const vec3_t org)
+{
+	localEntity_t	*le;
+	refEntity_t		*re;
+	vec3_t			angles;
+	static vec3_t lastPos;
+
+	// only visualize for the client that scored
+	//if (client != cg.predictedPlayerState.clientNum || cg_scorePlums.integer == 0) {
+	if (0) {  //(client != cg.snap->ps.clientNum || cg_scorePlums.integer == 0) {
+		return;
+	}
+
+	le = CG_AllocLocalEntity();
+	le->leFlags = 0;
+	le->leType = LE_HEADSHOTPLUM;
+	le->startTime = cg.time;
+	le->endTime = cg.time + 2000;  //4000;
+	le->lifeRate = 1.0 / ( le->endTime - le->startTime );
+
+	le->color[0] = le->color[1] = le->color[2] = le->color[3] = 1.0;
+
+	VectorCopy( org, le->pos.trBase );
+	if (org[2] >= lastPos[2] - 20 && org[2] <= lastPos[2] + 20) {
+		le->pos.trBase[2] -= 20;
+	}
+
+	VectorCopy(org, lastPos);
+
+	re = &le->refEntity;
+	re->reType = RT_SPRITE;
+	VectorClear(angles);
+	AnglesToAxis( angles, re->axis );
+}
 
 /*
 ====================
 CG_MakeExplosion
 ====================
 */
-localEntity_t *CG_MakeExplosion( vec3_t origin, vec3_t dir,
+localEntity_t *CG_MakeExplosion( const vec3_t origin, const vec3_t dir,
 								qhandle_t hModel, qhandle_t shader,
 								int msec, qboolean isSprite ) {
 	float			ang;
@@ -511,7 +559,7 @@ CG_Bleed
 This is the spurt of blood when a character gets hit
 =================
 */
-void CG_Bleed( vec3_t origin, int entityNum ) {
+void CG_Bleed( const vec3_t origin, int entityNum ) {
 	localEntity_t	*ex;
 
 	if ( !cg_blood.integer ) {
@@ -537,7 +585,7 @@ void CG_Bleed( vec3_t origin, int entityNum ) {
 	}
 }
 
-void CG_ImpactSparks( int weapon, vec3_t origin, vec3_t dir, int entityNum)
+void CG_ImpactSparks( int weapon, const vec3_t origin, const vec3_t dir, int entityNum)
 {
 	localEntity_t *le;
 	qhandle_t shader;
@@ -578,7 +626,7 @@ void CG_ImpactSparks( int weapon, vec3_t origin, vec3_t dir, int entityNum)
 		if (cgs.clientinfo[entityNum].team == cgs.clientinfo[ourClientNum].team) {
 			return;
 		}
-		if (Q_Isfreeze(entityNum)) {
+		if (CG_FreezeTagFrozen(entityNum)) {
 			return;
 		}
 	}
@@ -593,7 +641,7 @@ void CG_ImpactSparks( int weapon, vec3_t origin, vec3_t dir, int entityNum)
 			shader = trap_R_RegisterShader("wc/tracer");
 		}
 
-		SC_Vec3ColorFromCvar(color, cg_impactSparksColor);
+		SC_Vec3ColorFromCvar(color, &cg_impactSparksColor);
 		color[3] = 1.0;
 	}
 	radius = cg_impactSparksSize.value;
@@ -615,12 +663,7 @@ void CG_ImpactSparks( int weapon, vec3_t origin, vec3_t dir, int entityNum)
 	le->refEntity.rotation = 0;
 }
 
-/*
-==================
-CG_LaunchGib
-==================
-*/
-void CG_LaunchGib_ql (vec3_t origin, vec3_t velocity, qhandle_t hModel)
+static void CG_LaunchGib_ql (const vec3_t origin, const vec3_t velocity, qhandle_t hModel)
 {
 	localEntity_t	*le;
 	refEntity_t		*re;
@@ -657,7 +700,8 @@ void CG_LaunchGib_ql (vec3_t origin, vec3_t velocity, qhandle_t hModel)
 	le->leMarkType = LEMT_BLOOD;
 }
 
-void CG_LaunchGib_ql_floating1 (vec3_t origin, vec3_t velocity, qhandle_t hModel)
+#if 0  // unused
+static void CG_LaunchGib_ql_floating1 (const vec3_t origin, const vec3_t velocity, qhandle_t hModel)
 {
 	localEntity_t	*le;
 	refEntity_t		*re;
@@ -687,8 +731,9 @@ void CG_LaunchGib_ql_floating1 (vec3_t origin, vec3_t velocity, qhandle_t hModel
 	le->leBounceSoundType = 0;  //LEBS_BLOOD;
 	le->leMarkType = 0;  //LEMT_BLOOD;
 }
+#endif
 
-void CG_LaunchGib_ql_floating (vec3_t origin, vec3_t velocity, qhandle_t hModel)
+static void CG_LaunchGib_ql_floating (const vec3_t origin, const vec3_t velocity, qhandle_t hModel)
 {
 	localEntity_t	*le;
 	qhandle_t shader;
@@ -704,7 +749,7 @@ void CG_LaunchGib_ql_floating (vec3_t origin, vec3_t velocity, qhandle_t hModel)
 		} else {
 			shader = trap_R_RegisterShader("wc/tracer");
 		}
-		SC_Vec3ColorFromCvar(color, cg_gibSparksColor);
+		SC_Vec3ColorFromCvar(color, &cg_gibSparksColor);
 		color[3] = 1.0;
 	}
 
@@ -730,7 +775,12 @@ void CG_LaunchGib_ql_floating (vec3_t origin, vec3_t velocity, qhandle_t hModel)
 	return;
 }
 
-void CG_LaunchGib( vec3_t origin, vec3_t velocity, qhandle_t hModel ) {
+/*
+==================
+CG_LaunchGib
+==================
+*/
+static void CG_LaunchGib( const vec3_t origin, const vec3_t velocity, qhandle_t hModel ) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 
@@ -772,7 +822,7 @@ void CG_LaunchGib( vec3_t origin, vec3_t velocity, qhandle_t hModel ) {
 #endif
 }
 
-void CG_LaunchIce (vec3_t origin, vec3_t velocity, qhandle_t hModel)
+static void CG_LaunchIce (const vec3_t origin, const vec3_t velocity, qhandle_t hModel)
 {
 	localEntity_t	*le;
 	refEntity_t		*re;
@@ -815,18 +865,10 @@ void CG_LaunchIce (vec3_t origin, vec3_t velocity, qhandle_t hModel)
 #endif
 }
 
-/*
-===================
-CG_GibPlayer
-
-Generated a bunch of gibs launching out from the bodies location
-===================
-*/
-
 #define	GIB_VELOCITY	250
 #define	GIB_JUMP		250
 
-void CG_GibPlayer_ql (centity_t *cent)
+static void CG_GibPlayer_ql (const centity_t *cent)
 {
 	vec3_t	origin, velocity;
 	int i;
@@ -931,11 +973,15 @@ void CG_FX_ThawPlayer (centity_t *cent)
 {
 	//vec3_t velocity;
 
+	//FIXME maybe find client, possibly in last snapshot
+
 	//memset(&ScriptVars, 0, sizeof(ScriptVars));
 	CG_ResetScriptVars();
 	//VectorCopy(cent->lerpOrigin, ScriptVars.origin);
-	CG_CopyPlayerDataToScriptData(cent);
-	VectorCopy(cent->lerpOrigin, ScriptVars.lastIntervalPosition);
+	//CG_CopyPlayerDataToScriptData(cent);
+
+	VectorCopy(cent->currentState.pos.trBase, ScriptVars.origin);
+	VectorCopy(ScriptVars.origin, ScriptVars.lastIntervalPosition);
 	ScriptVars.lastIntervalTime = cg.ftime;
 
 
@@ -945,7 +991,15 @@ void CG_FX_ThawPlayer (centity_t *cent)
 	CG_RunQ3mmeScript(EffectScripts.thawed, NULL);
 }
 
-void CG_GibPlayer (centity_t *cent)
+/*
+===================
+CG_GibPlayer
+
+Generated a bunch of gibs launching out from the bodies location
+===================
+*/
+
+void CG_GibPlayer (const centity_t *cent)
 {
 	vec3_t	origin, velocity;
 	vec3_t playerOrigin;
@@ -1033,7 +1087,7 @@ void CG_GibPlayer (centity_t *cent)
 	CG_LaunchGib( origin, velocity, cgs.media.gibLeg );
 }
 
-void CG_ThawPlayer (centity_t *cent)
+void CG_ThawPlayer (const centity_t *cent)
 {
 	vec3_t	origin, velocity;
 	vec3_t playerOrigin;
@@ -1067,12 +1121,9 @@ void CG_ThawPlayer (centity_t *cent)
 	}
 }
 
-/*
-==================
-CG_LaunchGib
-==================
-*/
-void CG_LaunchExplode( vec3_t origin, vec3_t velocity, qhandle_t hModel ) {
+#if 0  // unused
+
+static void CG_LaunchExplode( const vec3_t origin, const vec3_t velocity, qhandle_t hModel ) {
 	localEntity_t	*le;
 	refEntity_t		*re;
 
@@ -1097,17 +1148,15 @@ void CG_LaunchExplode( vec3_t origin, vec3_t velocity, qhandle_t hModel ) {
 	le->leBounceSoundType = LEBS_BRASS;  //LEBS_BLOOD;  //LEBS_BRASS;
 	le->leMarkType = LEMT_NONE;  //LEMT_BLOOD;  //LEMT_NONE;
 }
+#endif
+
+
+#if 0  // unused
 
 #define	EXP_VELOCITY	100
 #define	EXP_JUMP		150
-/*
-===================
-CG_GibPlayer
 
-Generated a bunch of gibs launching out from the bodies location
-===================
-*/
-void CG_BigExplode( vec3_t playerOrigin ) {
+static void CG_BigExplode( const vec3_t playerOrigin ) {
 	vec3_t	origin, velocity;
 	qhandle_t model;
 
@@ -1149,3 +1198,4 @@ void CG_BigExplode( vec3_t playerOrigin ) {
 	CG_LaunchExplode( origin, velocity, model );
 }
 
+#endif

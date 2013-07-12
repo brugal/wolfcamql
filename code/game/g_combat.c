@@ -126,7 +126,7 @@ void TossClientItems( gentity_t *self ) {
 	}
 }
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 
 /*
 =================
@@ -306,7 +306,7 @@ char	*modNames[] = {
 	"MOD_SUICIDE",
 	"MOD_TARGET_LASER",
 	"MOD_TRIGGER_HURT",
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	"MOD_NAIL",
 	"MOD_CHAINGUN",
 	"MOD_PROXIMITY_MINE",
@@ -316,7 +316,7 @@ char	*modNames[] = {
 	"MOD_GRAPPLE"
 };
 
-#if  1  //def MISSIONPACK
+#if  1  //def MPACK
 /*
 ==================
 Kamikaze_DeathActivate
@@ -459,7 +459,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 	if (self->client && self->client->hook) {
 		Weapon_HookFree(self->client->hook);
 	}
-#if  1  //def MISSIONPACK
+#if  1  //def MPACK
 	if ((self->client->ps.eFlags & EF_TICKING) && self->activator) {
 		self->client->ps.eFlags &= ~EF_TICKING;
 		self->activator->think = G_FreeEntity;
@@ -567,7 +567,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 
 	TossClientItems( self );
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	TossClientPersistantPowerups( self );
 	if( g_gametype.integer == GT_HARVESTER ) {
 		TossClientCubes( self );
@@ -657,7 +657,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		// globally cycle through the different death animations
 		i = ( i + 1 ) % 3;
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		if (self->s.eFlags & EF_KAMIKAZE) {
 			Kamikaze_DeathTimer( self );
 		}
@@ -742,7 +742,7 @@ int RaySphereIntersections( vec3_t origin, float radius, vec3_t point, vec3_t di
 	return 0;
 }
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 /*
 ================
 G_InvulnerabilityEffect
@@ -812,7 +812,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	int			asave;
 	int			knockback;
 	int			max;
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	vec3_t		bouncedir, impactpoint;
 #endif
 
@@ -825,7 +825,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	if ( level.intermissionQueued ) {
 		return;
 	}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if ( targ->client && mod != MOD_JUICED) {
 		if ( targ->client->invulnerabilityTime > level.time) {
 			if ( dir && point ) {
@@ -858,7 +858,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 	// unless they are rocket jumping
 	if ( attacker->client && attacker != targ ) {
 		max = attacker->client->ps.stats[STAT_MAX_HEALTH];
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		if( bg_itemlist[attacker->client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_GUARD ) {
 			max /= 2;
 		}
@@ -923,7 +923,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 
 		// if TF_NO_FRIENDLY_FIRE is set, don't do damage to the target
 		// if the attacker was on the same team
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		if ( mod != MOD_JUICED && targ != attacker && !(dflags & DAMAGE_NO_TEAM_PROTECTION) && OnSameTeam (targ, attacker)  ) {
 #else
 		if ( targ != attacker && OnSameTeam (targ, attacker)  ) {
@@ -932,7 +932,7 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 				return;
 			}
 		}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		if (mod == MOD_PROXIMITY_MINE) {
 			if (inflictor && inflictor->parent && OnSameTeam(targ, inflictor->parent)) {
 				return;
@@ -1065,47 +1065,93 @@ qboolean CanDamage (gentity_t *targ, vec3_t origin) {
 	vec3_t	dest;
 	trace_t	tr;
 	vec3_t	midpoint;
+	vec3_t	offsetmins = {-15, -15, -15};
+	vec3_t	offsetmaxs = {15, 15, 15};
 
 	// use the midpoint of the bounds instead of the origin, because
 	// bmodels may have their origin is 0,0,0
 	VectorAdd (targ->r.absmin, targ->r.absmax, midpoint);
 	VectorScale (midpoint, 0.5, midpoint);
 
-	VectorCopy (midpoint, dest);
-	trap_Trace ( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+	VectorCopy(midpoint, dest);
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
 	if (tr.fraction == 1.0 || tr.entityNum == targ->s.number)
 		return qtrue;
 
 	// this should probably check in the plane of projection, 
-	// rather than in world coordinate, and also include Z
-	VectorCopy (midpoint, dest);
-	dest[0] += 15.0;
-	dest[1] += 15.0;
-	trap_Trace ( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+	// rather than in world coordinate
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
 	if (tr.fraction == 1.0)
 		return qtrue;
 
-	VectorCopy (midpoint, dest);
-	dest[0] += 15.0;
-	dest[1] -= 15.0;
-	trap_Trace ( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmins[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
 	if (tr.fraction == 1.0)
 		return qtrue;
 
-	VectorCopy (midpoint, dest);
-	dest[0] -= 15.0;
-	dest[1] += 15.0;
-	trap_Trace ( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
 	if (tr.fraction == 1.0)
 		return qtrue;
 
-	VectorCopy (midpoint, dest);
-	dest[0] -= 15.0;
-	dest[1] -= 15.0;
-	trap_Trace ( &tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmins[1];
+	dest[2] += offsetmaxs[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
 	if (tr.fraction == 1.0)
 		return qtrue;
 
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
+	if (tr.fraction == 1.0)
+		return qtrue;
+
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmaxs[0];
+	dest[1] += offsetmins[1];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
+	if (tr.fraction == 1.0)
+		return qtrue;
+
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmaxs[1];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
+	if (tr.fraction == 1.0)
+		return qtrue;
+
+	VectorCopy(midpoint, dest);
+	dest[0] += offsetmins[0];
+	dest[1] += offsetmins[2];
+	dest[2] += offsetmins[2];
+	trap_Trace(&tr, origin, vec3_origin, vec3_origin, dest, ENTITYNUM_NONE, MASK_SOLID);
+
+	if (tr.fraction == 1.0)
+		return qtrue;
 
 	return qfalse;
 }

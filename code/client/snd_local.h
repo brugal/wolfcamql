@@ -32,6 +32,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SND_CHUNK_SIZE_FLOAT	(SND_CHUNK_SIZE/2)		// floats
 #define SND_CHUNK_SIZE_BYTE		(SND_CHUNK_SIZE*2)		// floats
 
+typedef enum {
+	SND_COMPRESSION_16BIT = 0,
+	SND_COMPRESSION_ADPCM,
+	SND_COMPRESSION_DAUB4,
+	SND_COMPRESSION_MULAW,
+} compressionMethod_t;
+
 typedef struct {
 	int			left;	// the final values will be clamped to +/- 0x00ffff00 and shifted down
 	int			right;
@@ -54,7 +61,7 @@ typedef struct sfx_s {
 	qboolean		defaultSound;			// couldn't be loaded, so use buzz
 	qboolean		inMemory;				// not in Memory
 	qboolean		soundCompressed;		// not in Memory
-	int				soundCompressionMethod;	
+	compressionMethod_t soundCompressionMethod;
 	int 			soundLength;
 	char 			soundName[MAX_QPATH];
 	int				lastTimeUsed;
@@ -121,7 +128,7 @@ typedef struct {
 typedef struct
 {
 	void (*Shutdown)(void);
-	void (*StartSound)( vec3_t origin, int entnum, int entchannel, sfxHandle_t sfx );
+	void (*StartSound)( const vec3_t origin, int entnum, int entchannel, sfxHandle_t sfx );
 	void (*StartLocalSound)( sfxHandle_t sfx, int channelNum );
 	void (*StartBackgroundTrack)( const char *intro, const char *loop );
 	void (*StopBackgroundTrack)( void );
@@ -131,7 +138,7 @@ typedef struct
 	void (*AddLoopingSound)( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
 	void (*AddRealLoopingSound)( int entityNum, const vec3_t origin, const vec3_t velocity, sfxHandle_t sfx );
 	void (*StopLoopingSound)(int entityNum );
-	void (*Respatialize)( int entityNum, const vec3_t origin, vec3_t axis[3], int inwater );
+	void (*Respatialize)( int entityNum, const vec3_t origin, const vec3_t axis[3], int inwater );
 	void (*UpdateEntityPosition)( int entityNum, const vec3_t origin );
 	void (*Update)( void );
 	void (*DisableSounds)( void );
@@ -204,6 +211,7 @@ extern cvar_t *s_showMiss;
 extern cvar_t *s_maxSoundRepeatTime;
 extern cvar_t *s_maxSoundInstances;
 extern cvar_t *s_qlAttenuate;
+extern cvar_t *s_debugMissingSounds;
 
 qboolean S_LoadSound( sfx_t *sfx );
 
@@ -213,7 +221,7 @@ void		SND_setup( void );
 
 void S_PaintChannels(int endtime);
 
-void S_memoryLoad(sfx_t *sfx);
+//void S_memoryLoad(sfx_t *sfx);
 
 // spatializes a channel
 void S_Spatialize(channel_t *ch);
@@ -221,7 +229,7 @@ void S_Spatialize(channel_t *ch);
 // adpcm functions
 int  S_AdpcmMemoryNeeded( const wavinfo_t *info );
 void S_AdpcmEncodeSound( sfx_t *sfx, short *samples );
-void S_AdpcmGetSamples(sndBuffer *chunk, short *to);
+void S_AdpcmGetSamples(const sndBuffer *chunk, short *to);
 
 // wavelet function
 

@@ -3,9 +3,22 @@
 // cg_ents.c -- present snapshot entities, happens every single frame
 
 #include "cg_local.h"
+
+#include "cg_ents.h"
+#include "cg_effects.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_players.h"
+#include "cg_predict.h"
+#include "cg_syscalls.h"
+#include "cg_weapons.h"
+#include "sc.h"
+#include "wolfcam_ents.h"
+
 #include "wolfcam_local.h"
 
-void CG_PrintEntityStatep (entityState_t *ent)
+void CG_PrintEntityStatep (const entityState_t *ent)
 {
 	Com_Printf("number %d\n", ent->number);
 	Com_Printf("eType %d\n", ent->eType);
@@ -59,6 +72,19 @@ void CG_PrintEntityState (int n)
 	CG_PrintEntityStatep(&cg_entities[n].currentState);
 }
 
+qboolean CG_AllowedAmbientSound (qhandle_t h)
+{
+	int i;
+
+	for (i = 0;  i < cg.numAllowedAmbientSounds;  i++) {
+		if (h == cg.allowedAmbientSounds[i]) {
+			return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
 /*
 ======================
 CG_PositionEntityOnTag
@@ -68,7 +94,7 @@ tag location
 ======================
 */
 void CG_PositionEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
-							qhandle_t parentModel, char *tagName ) {
+							qhandle_t parentModel, const char *tagName ) {
 	int				i;
 	orientation_t	lerped;
 
@@ -84,6 +110,7 @@ void CG_PositionEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
 
 	// had to cast away the const to avoid compiler problems...
 	MatrixMultiply( lerped.axis, ((refEntity_t *)parent)->axis, entity->axis );
+	//MatrixMultiply( lerped.axis, parent->axis, entity->axis );
 	entity->backlerp = parent->backlerp;
 }
 
@@ -97,7 +124,7 @@ tag location
 ======================
 */
 void CG_PositionRotatedEntityOnTag( refEntity_t *entity, const refEntity_t *parent,
-							qhandle_t parentModel, char *tagName ) {
+							qhandle_t parentModel, const char *tagName ) {
 	int				i;
 	orientation_t	lerped;
 	vec3_t			tempAxis[3];
@@ -135,7 +162,7 @@ CG_SetEntitySoundPosition
 Also called by event processing code
 ======================
 */
-void CG_SetEntitySoundPosition( centity_t *cent ) {
+void CG_SetEntitySoundPosition( const centity_t *cent ) {
 	if ( cent->currentState.solid == SOLID_BMODEL ) {
 		vec3_t	origin;
 		float	*v;
@@ -155,7 +182,7 @@ CG_EntityEffects
 Add continuous entity effects, like local entity emission and lighting
 ==================
 */
-static void CG_EntityEffects( centity_t *cent ) {
+static void CG_EntityEffects( const centity_t *cent ) {
 
 	// update sound origins
 	CG_SetEntitySoundPosition( cent );
@@ -170,28 +197,34 @@ static void CG_EntityEffects( centity_t *cent ) {
 		}
 	} else if (cent->currentState.loopSound) {
 
-		//Com_Printf("loop %d\n", cent->currentState.loopSound);
+		//Com_Printf("%d loop %d  '%s'\n", cent->currentState.number, cent->currentState.loopSound, CG_ConfigString(CS_SOUNDS + cent->currentState.loopSound - (cgs.protocol == PROTOCOL_QL ? 1 : 0)));
 
 		if (cent->currentState.eType != ET_SPEAKER) {
 			//Com_Printf("^3adding loop sound to %d  %d  %s\n", cent->currentState.number, cent->currentState.loopSound, CG_ConfigString( CS_SOUNDS + cent->currentState.loopSound));
 			//Com_Printf("^3                         %d  %s\n", cent->currentState.loopSound - 1, CG_ConfigString(CS_SOUNDS + cent->currentState.loopSound - 1));
-			if (cg_ambientSounds.integer == 1  ||  (cg_ambientSounds.integer == 2  &&  cg.powerupRespawnSoundIndex == cent->currentState.loopSound)  ||  (cg_ambientSounds.integer == 2  &&  cg.kamikazeRespawnSoundIndex == cent->currentState.loopSound) ) {
-				//Com_Printf("loop %d\n", cent->currentState.loopSound);
+			if (cg_ambientSounds.integer == 1  ||  (cg_ambientSounds.integer == 2  &&  CG_AllowedAmbientSound(cgs.gameSounds[cent->currentState.loopSound]))) {
+				//Com_Printf("loop not speaker playing %d\n", cent->currentState.loopSound);
 				//Com_Printf("%s  %d %d\n", CG_ConfigString( CS_SOUNDS+cent->currentState.loopSound - 1 ), cent->currentState.eType, cent->currentState.weapon);
 				trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[ cent->currentState.loopSound] );
+			} else {
+				//trap_S_StopLoopingSound(cent->currentState.number);
 			}
 		} else {
 			//FIXME this is wrong, maybe not
+
+			// q3
 			//Com_Printf("ceenteffe addrealloopsound %d  %s\n", cent->currentState.loopSound, CG_ConfigString( CS_SOUNDS + cent->currentState.loopSound));
+
+			// ql
 			//Com_Printf("                           %d  %s\n", cent->currentState.loopSound - 1, CG_ConfigString( CS_SOUNDS + cent->currentState.loopSound - 1));
-#if 1
-			if (cg_ambientSounds.integer == 1  ||  (cg_ambientSounds.integer == 2  &&  cg.powerupRespawnSoundIndex == cent->currentState.loopSound)  ||  (cg_ambientSounds.integer == 2  &&  cg.kamikazeRespawnSoundIndex == cent->currentState.loopSound)) {
-				//Com_Printf("playing sound\n");
-				//trap_S_AddRealLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[ cent->currentState.loopSound ] );
+
+			if (cg_ambientSounds.integer == 1  ||  (cg_ambientSounds.integer == 2  &&  CG_AllowedAmbientSound(cgs.gameSounds[cent->currentState.loopSound]))) {
+				//Com_Printf("playing speaker sound %f %f %f\n", cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2]);
 				trap_S_AddRealLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[ cent->currentState.loopSound ] );
 				//Com_Printf("^3real: %s  %d %d\n", CG_ConfigString( CS_SOUNDS+cent->currentState.loopSound - 1 ), cent->currentState.eType, cent->currentState.weapon);
+			} else {
+				//trap_S_StopLoopingSound(cent->currentState.number);
 			}
-#endif
 		}
 	}
 
@@ -262,7 +295,7 @@ static void CG_DominationControlPoint (centity_t *cent)
 
 	if (team == ourTeam) {  // team
 		if (*cg_dominationPointTeamColor.string) {
-			SC_Vec3ColorFromCvar(color, cg_dominationPointTeamColor);
+			SC_Vec3ColorFromCvar(color, &cg_dominationPointTeamColor);
 			alpha = (float)cg_dominationPointTeamAlpha.integer / 255.0;
 			altColor = qtrue;
 		} else {
@@ -276,7 +309,7 @@ static void CG_DominationControlPoint (centity_t *cent)
 		}
 	} else if (team > 0) {  // enemy
 		if (*cg_dominationPointEnemyColor.string) {
-			SC_Vec3ColorFromCvar(color, cg_dominationPointEnemyColor);
+			SC_Vec3ColorFromCvar(color, &cg_dominationPointEnemyColor);
 			alpha = (float)cg_dominationPointEnemyAlpha.integer / 255.0;
 			altColor = qtrue;
 		} else {
@@ -290,7 +323,7 @@ static void CG_DominationControlPoint (centity_t *cent)
 		}
 	} else {  // neutral
 		if (*cg_dominationPointNeutralColor.string) {
-			SC_Vec3ColorFromCvar(color, cg_dominationPointNeutralColor);
+			SC_Vec3ColorFromCvar(color, &cg_dominationPointNeutralColor);
 			alpha = (float)cg_dominationPointNeutralAlpha.integer / 255.0;
 			altColor = qtrue;
 		} else {
@@ -458,7 +491,7 @@ static void CG_DominationControlPoint (centity_t *cent)
 			ent.shaderRGBA[1] = 255 * color[1];
 			ent.shaderRGBA[2] = 255 * color[2];
 			ent.shaderRGBA[3] = 255 * alpha;
-			trap_R_AddRefEntityToScene(&ent);
+			CG_AddRefEntity(&ent);
 		}
 	}
 
@@ -509,7 +542,7 @@ static void CG_DominationControlPoint (centity_t *cent)
 	ent.shaderRGBA[2] = 255 * color[2];
 	ent.shaderRGBA[3] = 255 * alpha;
 
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 
 	memset(&ent, 0, sizeof(ent));
 	ent.reType = RT_MODEL;
@@ -539,7 +572,7 @@ static void CG_DominationControlPoint (centity_t *cent)
 	ent.shaderRGBA[2] = 255 * color[2];
 	ent.shaderRGBA[3] = 255 * alpha;
 
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 }
 
 /*
@@ -549,7 +582,7 @@ CG_General
 */
 static void CG_General( centity_t *cent ) {
 	refEntity_t			ent;
-	entityState_t		*s1;
+	const entityState_t		*s1;
 
 	s1 = &cent->currentState;
 
@@ -585,7 +618,7 @@ static void CG_General( centity_t *cent ) {
 	AnglesToAxis( cent->lerpAngles, ent.axis );
 
 	// add to refresh list
-	trap_R_AddRefEntityToScene (&ent);
+	CG_AddRefEntity(&ent);
 }
 
 /*
@@ -596,6 +629,8 @@ Speaker entities can automatically play sounds
 ==================
 */
 static void CG_Speaker( centity_t *cent ) {
+	int n;
+
 	if ( ! cent->currentState.clientNum ) {	// FIXME: use something other than clientNum...
 		return;		// not auto triggering
 	}
@@ -604,16 +639,21 @@ static void CG_Speaker( centity_t *cent ) {
 		return;
 	}
 
-	//Com_Printf("speaker %d\n", cent->currentState.eventParm);
+	n = cent->currentState.eventParm;
 
-	trap_S_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.gameSounds[cent->currentState.eventParm] );
+
+	if (cg_ambientSounds.integer == 1  ||  cg_ambientSounds.integer == 3  ||  (cg_ambientSounds.integer == 2  &&  CG_AllowedAmbientSound(cgs.gameSounds[n]))) {
+		//Com_Printf("CG_Speaker()  %d speaker %d  %s\n", cent->currentState.number, n, CG_ConfigString(CS_SOUNDS + n - 1));
+
+		trap_S_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.gameSounds[n] );
+	}
 
 	//	ent->s.frame = ent->wait * 10;
 	//	ent->s.clientNum = ent->random * 10;
 	cent->miscTime = cg.time + cent->currentState.frame * 100 + cent->currentState.clientNum * 100 * crandom();
 }
 
-static void CG_DrawFlagHelpIcon (centity_t *cent, gitem_t *item)
+static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 {
 	int ourTeam;
 	int ourClientNum;
@@ -745,8 +785,84 @@ static void CG_DrawFlagHelpIcon (centity_t *cent, gitem_t *item)
 	ent.shaderRGBA[1] = 255 * color[1];
 	ent.shaderRGBA[2] = 255 * color[2];
 	ent.shaderRGBA[3] = 255 * alpha;
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 	//Com_Printf("adding ent %f  radius: %f\n", cg.ftime, ent.radius);
+}
+
+static void CG_TieredArmorAvailability (const centity_t *cent, const gitem_t *item)
+{
+	enum { greenAmor = 0, yellowArmor, redArmor };
+	int ourArmorAmount;
+	int ourArmorType;
+	qboolean available;
+
+	if (cg_drawTieredArmorAvailability.integer == 0) {
+		return;
+	}
+
+	if (wolfcam_following) {
+		return;
+	}
+
+	if (cgs.protocol != PROTOCOL_QL) {
+		return;
+	}
+
+	if (!cgs.armorTiered) {
+		return;
+	}
+
+	if (cg.freecam) {
+		return;
+	}
+
+	if (item != cgs.greenArmorItem  &&  item != cgs.yellowArmorItem  &&  item != cgs.redArmorItem) {
+		return;
+	}
+
+	ourArmorAmount = cg.snap->ps.stats[STAT_ARMOR];
+	ourArmorType = cg.snap->ps.stats[STAT_ARMOR_TIER];
+
+	if (ourArmorType != redArmor  &&  ourArmorType != yellowArmor) {
+		return;
+	}
+
+	available = qtrue;
+	switch (ourArmorType) {
+	case redArmor:
+		if (item == cgs.yellowArmorItem  &&  ourArmorAmount > 132) {
+			available = qfalse;
+		} else if (item == cgs.greenArmorItem  &&  ourArmorAmount > 66) {
+			available = qfalse;
+		}
+		break;
+	case yellowArmor:
+		if (item == cgs.greenArmorItem  &&  ourArmorAmount > 75) {
+			available = qfalse;
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (!available) {
+		vec3_t dir;
+		vec3_t origin;
+
+		VectorCopy(cent->currentState.pos.trBase, origin);
+
+		if (cg.freecam) {
+			VectorSubtract(cg.freecamPlayerState.origin, origin, dir);
+		} else {
+			VectorSubtract(cg.snap->ps.origin, origin, dir);
+		}
+
+		VectorNormalize(dir);
+		VectorMA(origin, 32, dir, origin);
+		origin[2] += 10;
+
+		CG_FloatSprite(cgs.media.unavailableShader, origin, 0, NULL, 12);
+	}
 }
 
 /*
@@ -756,12 +872,12 @@ CG_Item
 */
 static void CG_Item ( centity_t *cent ) {
 	refEntity_t		ent;
-	entityState_t	*es;
+	const entityState_t	*es;
 	gitem_t			*item;
 	int				msec;
 	float			frac;
 	float			scale;
-	weaponInfo_t	*wi;
+	const weaponInfo_t	*wi;
 
 	es = &cent->currentState;
 	if ( es->modelindex >= bg_numItems ) {
@@ -776,6 +892,7 @@ static void CG_Item ( centity_t *cent ) {
 	}
 
 	item = &bg_itemlist[ es->modelindex ];
+
 	if (cgs.gametype == GT_1FCTF) {
 		if (item->giTag == PW_REDFLAG  ||  item->giTag == PW_BLUEFLAG) {
 			return;
@@ -799,7 +916,19 @@ static void CG_Item ( centity_t *cent ) {
 		ent.shaderRGBA[2] = 255;
 		ent.shaderRGBA[3] = 255;
 
-		trap_R_AddRefEntityToScene(&ent);
+		if (cg_simpleItemsBob.integer) {
+			scale = 0.005 + cent->currentState.number * 0.00001;
+			cent->lerpOrigin[2] += 4 + cos( ( cg.time + 1000 ) *  scale ) * 4;
+			ent.origin[2] = cent->lerpOrigin[2];
+		}
+
+		ent.origin[2] += cg_simpleItemsHeightOffset.value;
+
+		CG_AddRefEntity(&ent);
+
+		if (item->giType == IT_ARMOR) {
+			CG_TieredArmorAvailability(cent, item);
+		}
 		return;
 	}
 
@@ -851,7 +980,47 @@ static void CG_Item ( centity_t *cent ) {
 
 	// flag
 	if (item->giType == IT_TEAM  &&  (item->giTag == PW_REDFLAG  ||  item->giTag == PW_BLUEFLAG  ||  item->giTag == PW_NEUTRALFLAG)) {
-		if (cg_flagStyle.integer == 2) {
+		if (cg_flagStyle.integer == 3  &&  item->giTag != PW_NEUTRALFLAG) {
+			int clientNum;
+			int team;
+
+			if (wolfcam_following) {
+				clientNum = wcg.clientNum;
+			} else {
+				clientNum = cg.snap->ps.clientNum;
+			}
+			team = cgs.clientinfo[clientNum].team;
+
+			if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
+				team = TEAM_FREE;
+			}
+
+			if (team == TEAM_RED  ||  team == TEAM_BLUE) {
+				if ((team == TEAM_RED  &&  item->giTag == PW_REDFLAG)  ||  (team == TEAM_BLUE  &&  item->giTag == PW_BLUEFLAG)) {
+					// team color
+					ent.hModel = cgs.media.neutralFlagModel3;
+					SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_teamFlagColor);
+					ent.shaderRGBA[3] = 255;
+				} else {
+					// enemy color
+					ent.hModel = cgs.media.neutralFlagModel3;
+					SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_enemyFlagColor);
+					ent.shaderRGBA[3] = 255;
+				}
+			} else {
+				if (item->giTag == PW_REDFLAG) {
+					ent.hModel = cgs.media.redFlagModel2;
+				} else if (item->giTag == PW_BLUEFLAG) {
+					ent.hModel = cgs.media.blueFlagModel2;
+				} else {
+					ent.hModel = cgs.media.neutralFlagModel2;
+				}
+			}
+		} else if (cg_flagStyle.integer == 3  &&  item->giTag == PW_NEUTRALFLAG) {
+			ent.hModel = cgs.media.neutralFlagModel3;
+			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_neutralFlagColor);
+			ent.shaderRGBA[3] = 255;
+		} else if (cg_flagStyle.integer) {
 			//ent.hModel = cg_items[es->modelindex].models[1];
 			if (item->giTag == PW_REDFLAG) {
 				ent.hModel = cgs.media.redFlagModel2;
@@ -935,7 +1104,7 @@ static void CG_Item ( centity_t *cent ) {
 		ent.shaderRGBA[1] = EC_Colors[1][1];
 		ent.shaderRGBA[2] = EC_Colors[1][2];
 #endif
-		SC_ByteVec3ColorFromCvar(ent.shaderRGBA, cg_railItemColor);
+		SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_railItemColor);
 		ent.shaderRGBA[3] = 255;
 	}
 
@@ -944,7 +1113,7 @@ static void CG_Item ( centity_t *cent ) {
 	}
 
 	// add to refresh list
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 
 #if 1  //def MPACK
 	if ( item->giType == IT_WEAPON && wi->barrelModel ) {
@@ -966,7 +1135,7 @@ static void CG_Item ( centity_t *cent ) {
 		if (cg_itemsWh.integer) {
 			barrel.renderfx |= RF_DEPTHHACK;
 		}
-		trap_R_AddRefEntityToScene( &barrel );
+		CG_AddRefEntity(&barrel);
 	}
 #endif
 
@@ -998,9 +1167,13 @@ static void CG_Item ( centity_t *cent ) {
 				if (cg_itemsWh.integer) {
 					ent.renderfx |= RF_DEPTHHACK;
 				}
-				trap_R_AddRefEntityToScene( &ent );
+				CG_AddRefEntity(&ent);
 			}
 		}
+	}
+
+	if (item->giType == IT_ARMOR) {
+		CG_TieredArmorAvailability(cent, item);
 	}
 }
 
@@ -1031,6 +1204,8 @@ static void CG_Missile( centity_t *cent ) {
 		return;
 	}
 
+	//CG_Printf("missile %p\n", cent);
+
 	cgtime = cent->cgtime;
 
 	s1 = &cent->currentState;
@@ -1038,7 +1213,9 @@ static void CG_Missile( centity_t *cent ) {
 		s1->weapon = 0;
 	}
 	weapon = &cg_weapons[s1->weapon];
-
+	if (!weapon->registered) {
+		CG_RegisterWeapon(s1->weapon);
+	}
 	// calculate the axis
 	VectorCopy( s1->angles, cent->lerpAngles);
 
@@ -1052,11 +1229,23 @@ static void CG_Missile( centity_t *cent ) {
 			int clientNum;
 
 			// older demos don't set clientNum
-			clientNum = s1->clientNum;
-			if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
-				clientNum = 0;
+			//Com_Printf("^1other %d\n", s1->otherEntityNum);
+
+			if (s1->otherEntityNum > 0) {
+				clientNum = s1->otherEntityNum;
+			} else {
+				clientNum = s1->clientNum;
 			}
-			CG_CopyPlayerDataToScriptData(&cg_entities[clientNum]);
+
+			if (cgs.protocol == PROTOCOL_QL  &&  (clientNum >= 0  &&  clientNum < MAX_CLIENTS)) {
+				CG_CopyPlayerDataToScriptData(&cg_entities[clientNum]);
+			} else {
+				ScriptVars.inEyes = qfalse;
+				ScriptVars.clientNum = -2;
+				ScriptVars.team = 0;
+				ScriptVars.enemy = qtrue;
+				ScriptVars.teamMate = qfalse;
+			}
 		}
 		VectorCopy(s1->pos.trDelta, ScriptVars.velocity);
 		VectorCopy(s1->pos.trDelta, ScriptVars.dir);
@@ -1155,11 +1344,18 @@ static void CG_Missile( centity_t *cent ) {
 #endif
 
 		contents = CG_PointContents(cent->lerpOrigin, -1);
+
 		//lastContents = CG_PointContents(ScriptVars.lastOrigin, -1);
 		if (contents & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA)) {
 			//if (contents & lastContents & CONTENTS_WATER) {
 			if (contents & CONTENTS_WATER) {
 				if (*EffectScripts.bubbles) {
+					if (!(cent->lastPointContents & CONTENTS_WATER)) {
+						VectorCopy(cent->lerpOrigin, ScriptVars.lastIntervalPosition);
+						ScriptVars.lastIntervalTime = cgtime;
+						VectorCopy(cent->lerpOrigin, ScriptVars.lastDistancePosition);
+						ScriptVars.lastDistanceTime = cgtime;
+					}
 					CG_RunQ3mmeScript(EffectScripts.bubbles, NULL);
 					VectorCopy(ScriptVars.lastIntervalPosition, cent->lastTrailIntervalPosition);
 					cent->lastTrailIntervalTime = ScriptVars.lastIntervalTime;
@@ -1183,9 +1379,13 @@ static void CG_Missile( centity_t *cent ) {
 			cent->trailTime = cgtime;
 			//Com_Printf("cg_ents trail time %d\n", cg.time - cent->lastTrailTime);
 		}
+
+		cent->lastPointContents = contents;
+
 		//cent->trailTime = cg.time;
 	} else if ( weapon->missileTrailFunc ) {
 		weapon->missileTrailFunc( cent, weapon );
+		cent->lastPointContents = 0;  //FIXME hack for fx
 	}
 /*
 	if ( cent->currentState.modelindex == TEAM_RED ) {
@@ -1237,7 +1437,7 @@ static void CG_Missile( centity_t *cent ) {
 	ent.shaderRGBA[1] = 0xff;
 	ent.shaderRGBA[2] = 0xff;
 	ent.shaderRGBA[3] = 0x8f;
-	trap_R_AddRefEntityToScene( &ent );
+	CG_AddRefEntity(&ent);
 #endif
 
 	// create the render entity
@@ -1250,7 +1450,7 @@ static void CG_Missile( centity_t *cent ) {
 		ent.radius = 16;
 		ent.rotation = 0;
 		ent.customShader = cgs.media.plasmaBallShader;
-		trap_R_AddRefEntityToScene( &ent );
+		CG_AddRefEntity(&ent);
 		return;
 	}
 
@@ -1285,17 +1485,17 @@ static void CG_Missile( centity_t *cent ) {
 			currentClientNum = cg.snap->ps.clientNum;
 		}
 		if (s1->clientNum == currentClientNum) {
-			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, cg_grenadeColor);
+			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_grenadeColor);
 			ent.shaderRGBA[3] = cg_grenadeColorAlpha.integer;
 			//Com_Printf("0x%x 0x%x %d\n", cg_grenadeColor.integer, (int)cg_grenadeColor.value, SC_RedFromCvar(cg_grenadeColor));
 			//Com_Printf("%d %d %d %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2], ent.shaderRGBA[3]);
 			//Com_Printf("own grenade color set to %d %d %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2]);
 		} else if (cgs.gametype >= GT_TEAM  &&  cgs.clientinfo[currentClientNum].team == cgs.clientinfo[s1->clientNum].team) {
-			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, cg_grenadeTeamColor);
+			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_grenadeTeamColor);
 			ent.shaderRGBA[3] = cg_grenadeTeamColorAlpha.integer;
 			//Com_Printf("team grenade color set to %d %d %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2]);
 		} else {
-			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, cg_grenadeEnemyColor);
+			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_grenadeEnemyColor);
 			ent.shaderRGBA[3] = cg_grenadeEnemyColorAlpha.integer;
 			//Com_Printf("enemy grenade color set to %d %d %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2]);
 		}
@@ -1333,6 +1533,13 @@ static void CG_Missile( centity_t *cent ) {
 
 	// add to refresh list, possibly with quad glow
 	CG_AddRefEntityWithPowerups( &ent, s1, TEAM_FREE );
+
+#if 0
+	if (cg.timef > cent->extraShaderEntTime  &&  cent->extraShader) {
+		ent->customShader = cent->extraShader;
+		CG_AddRefEntity(ent);
+	}
+#endif
 	}
 }
 
@@ -1353,6 +1560,10 @@ static void CG_Grapple( centity_t *cent ) {
 		s1->weapon = 0;
 	}
 	weapon = &cg_weapons[s1->weapon];
+	if (!weapon->registered) {
+		//Com_Printf("wtf....\n");
+		CG_RegisterWeapon(s1->weapon);
+	}
 
 	// calculate the axis
 	VectorCopy( s1->angles, cent->lerpAngles);
@@ -1367,22 +1578,94 @@ static void CG_Grapple( centity_t *cent ) {
 	// Will draw cable if needed
 	CG_GrappleTrail ( cent, weapon );
 
+	if (EffectScripts.weapons[s1->weapon].hasProjectileScript) {
+		//FIXME check if CG_ResetEntity() is called for this or if
+		// ET_MISSILE just converts to ET_GRAPPLE (for distance, interval
+		// scripts)
+
+		//FIXME duplicate code:  see CG_Missile()
+
+		CG_ResetScriptVars();
+		VectorCopy(s1->pos.trDelta, ScriptVars.velocity);
+		VectorCopy(s1->pos.trDelta, ScriptVars.dir);
+		VectorNormalize(ScriptVars.dir);
+		//ScriptVars.entNumber = cent->currentState.number;
+		ScriptVars.rotate = s1->time;
+		VectorCopy(cent->lerpOrigin, ScriptVars.origin);
+		VectorCopy(cent->lerpAngles, ScriptVars.angles);
+
+		VectorCopy(cent->lerpOrigin, ScriptVars.parentOrigin);
+		VectorCopy(cent->lerpAngles, ScriptVars.parentAngles);
+		VectorCopy(s1->pos.trDelta, ScriptVars.parentVelocity);
+		VectorCopy(s1->pos.trDelta, ScriptVars.parentDir);
+		VectorNormalize(ScriptVars.parentDir);
+
+		if ( VectorNormalize2( s1->pos.trDelta, ent.axis[0] ) == 0 ) {
+			ent.axis[0][2] = 1;
+		}
+		VectorCopy(ent.axis[0], ScriptVars.axis[0]);
+		VectorCopy(ent.axis[1], ScriptVars.axis[1]);
+		VectorCopy(ent.axis[2], ScriptVars.axis[2]);
+		ScriptVars.size = 1;
+
+		VectorCopy(cent->lastModelIntervalPosition, ScriptVars.lastIntervalPosition);
+		ScriptVars.lastIntervalTime = cent->lastModelIntervalTime;
+		VectorCopy(cent->lastModelDistancePosition, ScriptVars.lastDistancePosition);
+		ScriptVars.lastDistanceTime = cent->lastModelDistanceTime;
+
+		CG_RunQ3mmeScript(EffectScripts.weapons[s1->weapon].projectileScript, NULL);
+		VectorCopy(ScriptVars.lastIntervalPosition, cent->lastModelIntervalPosition);
+		cent->lastModelIntervalTime = ScriptVars.lastIntervalTime;
+		VectorCopy(ScriptVars.lastDistancePosition, cent->lastModelDistancePosition);
+		cent->lastModelDistanceTime = ScriptVars.lastDistanceTime;
+		return;
+	}
+
 	// create the render entity
 	memset (&ent, 0, sizeof(ent));
 	VectorCopy( cent->lerpOrigin, ent.origin);
 	VectorCopy( cent->lerpOrigin, ent.oldorigin);
+
 
 	// flicker between two skins
 	ent.skinNum = cg.clientFrame & 1;
 	ent.hModel = weapon->missileModel;
 	ent.renderfx = weapon->missileRenderfx | RF_NOSHADOW;
 
+#if 1
 	// convert direction of travel into axis
 	if ( VectorNormalize2( s1->pos.trDelta, ent.axis[0] ) == 0 ) {
 		ent.axis[0][2] = 1;
 	}
+#endif
 
-	trap_R_AddRefEntityToScene( &ent );
+	AnglesToAxis(cent->lerpAngles, ent.axis);
+	//RotateAroundDirection( ent.axis, s1->time );
+
+	//CG_Printf("adding grapple weapon %d  model %d\n", s1->weapon, ent.hModel);
+	//CG_Printf("grapple %p\n", cent);
+	//ent.renderfx |= RF_DEPTHHACK;
+
+	//CG_ScaleModel(&ent, 5.0);
+
+	CG_AddRefEntity(&ent);
+
+#if 0  // test flare
+	memset (&ent, 0, sizeof(ent));
+	VectorCopy( cent->lerpOrigin, ent.origin);
+	VectorCopy( cent->lerpOrigin, ent.oldorigin);
+
+	ent.reType = RT_SPRITE;
+	ent.radius = 64;
+	ent.rotation = 0;
+	ent.customShader = trap_R_RegisterShader("flareShader");  //cgs.media.plasmaBallShader;
+	ent.shaderRGBA[0] = 0xff;
+	ent.shaderRGBA[1] = 0xff;
+	ent.shaderRGBA[2] = 0xff;
+	ent.shaderRGBA[3] = 0x8f;
+	CG_AddRefEntity(&ent);
+#endif
+
 }
 
 /*
@@ -1392,7 +1675,7 @@ CG_Mover
 */
 static void CG_Mover( centity_t *cent ) {
 	refEntity_t			ent;
-	entityState_t		*s1;
+	const entityState_t		*s1;
 	vec3_t mins;
 	vec3_t maxs;
 	//byte color[4];
@@ -1404,6 +1687,7 @@ static void CG_Mover( centity_t *cent ) {
 	memset (&ent, 0, sizeof(ent));
 
 	VectorCopy( cent->lerpOrigin, ent.origin);
+	//Com_Printf("%d:  %f %f %f\n", s1->number, cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2]);
 	VectorCopy( cent->lerpOrigin, ent.oldorigin);
 	AnglesToAxis( cent->lerpAngles, ent.axis );
 
@@ -1420,13 +1704,13 @@ static void CG_Mover( centity_t *cent ) {
 	}
 
 	// add to refresh list
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 
 	// add the secondary model
 	if ( s1->modelindex2 ) {
 		ent.skinNum = 0;
 		ent.hModel = cgs.gameModels[s1->modelindex2];
-		trap_R_AddRefEntityToScene(&ent);
+		CG_AddRefEntity(&ent);
 	}
 
 	trap_R_ModelBounds(ent.hModel, mins, maxs);
@@ -1455,9 +1739,9 @@ CG_Beam
 Also called as an event
 ===============
 */
-void CG_Beam( centity_t *cent ) {
+void CG_Beam( const centity_t *cent ) {
 	refEntity_t			ent;
-	entityState_t		*s1;
+	const entityState_t		*s1;
 
 	s1 = &cent->currentState;
 
@@ -1471,7 +1755,7 @@ void CG_Beam( centity_t *cent ) {
 	ent.renderfx = RF_NOSHADOW;
 
 	// add to refresh list
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 }
 
 
@@ -1480,10 +1764,10 @@ void CG_Beam( centity_t *cent ) {
 CG_Portal
 ===============
 */
-static void CG_Portal (centity_t *cent)
+static void CG_Portal (const centity_t *cent)
 {
 	refEntity_t			ent;
-	entityState_t		*s1;
+	const entityState_t		*s1;
 	vec3_t transformed;
 
 	s1 = &cent->currentState;
@@ -1557,7 +1841,7 @@ static void CG_Portal (centity_t *cent)
 	//Com_Printf("portal %d eventparm %d\n", s1->number, s1->eventParm);
 
 	// add to refresh list
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 }
 
 
@@ -1568,21 +1852,22 @@ CG_AdjustPositionForMover
 Also called by client movement prediction code
 =========================
 */
-void CG_AdjustPositionForMover (const vec3_t in, int moverNum, int fromTime, int toTime, vec3_t out, float subTime)
+void CG_AdjustPositionForMover (const vec3_t in, int moverNum, int fromTime, int toTime, vec3_t out, float subTime, const vec3_t angles_in, vec3_t angles_out)
 {
-	centity_t	*cent;
+	const centity_t	*cent;
 	vec3_t	oldOrigin, origin, deltaOrigin;
-	vec3_t	oldAngles, angles;
-	//vec3_t deltaAngles;
+	vec3_t	oldAngles, angles, deltaAngles;
 
 	if ( moverNum <= 0 || moverNum >= ENTITYNUM_MAX_NORMAL ) {
 		VectorCopy( in, out );
+		VectorCopy(angles_in, angles_out);
 		return;
 	}
 
 	cent = &cg_entities[ moverNum ];
 	if ( cent->currentState.eType != ET_MOVER ) {
 		VectorCopy( in, out );
+		VectorCopy(angles_in, angles_out);
 		return;
 	}
 
@@ -1593,9 +1878,10 @@ void CG_AdjustPositionForMover (const vec3_t in, int moverNum, int fromTime, int
 	BG_EvaluateTrajectoryf (&cent->currentState.apos, toTime, angles, subTime);
 
 	VectorSubtract( origin, oldOrigin, deltaOrigin );
-	//VectorSubtract( angles, oldAngles, deltaAngles );
+	VectorSubtract( angles, oldAngles, deltaAngles );
 
 	VectorAdd( in, deltaOrigin, out );
+	VectorAdd( angles_in, deltaAngles, angles_out );
 
 	// FIXME: origin change when on a rotating object
 }
@@ -1768,15 +2054,15 @@ static void CG_CalcEntityLerpPositions( centity_t *cent ) {
 	// player state
 	if ( cent != &cg.predictedPlayerEntity ) {
 		CG_AdjustPositionForMover( cent->lerpOrigin, cent->currentState.groundEntityNum,
-								   cg.snap->serverTime, cg.time, cent->lerpOrigin, cg.foverf );
+								   cg.snap->serverTime, cg.time, cent->lerpOrigin, cg.foverf, cent->lerpAngles, cent->lerpAngles );
 	}
 }
 
-static void CG_DrawHarversterHelpIcons (centity_t *cent)
+static void CG_DrawHarversterHelpIcons (const centity_t *cent)
 {
-	//int ourTeam;
+	int ourTeam;
 	int ourClientNum;
-	centity_t *pcent;
+	const centity_t *pcent;
 	refEntity_t ent;
 	vec4_t color;
 	float alpha;
@@ -1790,6 +2076,10 @@ static void CG_DrawHarversterHelpIcons (centity_t *cent)
 		return;
 	}
 
+	if (cg.freecam  &&  !cg_freecam_useTeamSettings.integer) {
+        return;
+    }
+
 	if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR  &&  !wolfcam_following) {
 		return;
 	}
@@ -1801,11 +2091,14 @@ static void CG_DrawHarversterHelpIcons (centity_t *cent)
 	}
 
 	pcent = &cg_entities[ourClientNum];
-	if (pcent->currentState.generic1 == 0) {
+	if ((pcent->currentState.generic1 & 0x3f) == 0) {
 		return;
 	}
 
-	//ourTeam = cgs.clientinfo[ourClientNum].team;
+	ourTeam = cgs.clientinfo[ourClientNum].team;
+	if (cent->currentState.modelindex == ourTeam) {
+		return;
+	}
 
 	if (cent->currentState.modelindex == TEAM_RED) {
 		VectorSet(color, 1, 0, 0);
@@ -1878,10 +2171,10 @@ static void CG_DrawHarversterHelpIcons (centity_t *cent)
 	ent.shaderRGBA[1] = 255 * color[1];
 	ent.shaderRGBA[2] = 255 * color[2];
 	ent.shaderRGBA[3] = 255 * alpha;
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 }
 
-static void CG_Draw1FctfHelpIcons (centity_t *cent)
+static void CG_Draw1FctfHelpIcons (const centity_t *cent)
 {
 	int ourTeam;
 	int ourClientNum;
@@ -1921,14 +2214,38 @@ static void CG_Draw1FctfHelpIcons (centity_t *cent)
 
 	ourTeam = cgs.clientinfo[ourClientNum].team;
 
+	// colors switched to match the player's team
 	alpha = 255.0;
 	if (cent->currentState.modelindex == TEAM_RED) {
-		VectorSet(color, 1, 0, 0);
-	} else if (cent->currentState.modelindex == TEAM_BLUE) {
 		VectorSet(color, 0, 0.5, 1);
+	} else if (cent->currentState.modelindex == TEAM_BLUE) {
+		VectorSet(color, 1, 0, 0);
 	} else {
 		// flag not taken
+		if (cgs.flagStatus != FLAG_ATBASE) {
+			return;
+		}
 		VectorSet(color, 0.65, 0.65, 0.65);
+	}
+
+	if (cent->currentState.modelindex == TEAM_RED  ||  cent->currentState.modelindex == TEAM_BLUE) {
+		qboolean hasFlag;
+
+		if (ourClientNum == cg.snap->ps.clientNum) {
+			hasFlag = cg.snap->ps.powerups[PW_NEUTRALFLAG];
+		} else {
+			hasFlag = cg_entities[ourClientNum].currentState.powerups & (1 << PW_NEUTRALFLAG);
+		}
+
+		// don't show if person isn't the flag carrier
+		if (!hasFlag) {
+			return;
+		}
+
+		// we have the flag
+		if (cg.freecam  &&  cg_freecam_useTeamSettings.integer != 2) {
+			return;
+		}
 	}
 
 	//Com_Printf("%d  ..  %d\n", ourTeam, cent->currentState.modelindex);
@@ -1941,7 +2258,8 @@ static void CG_Draw1FctfHelpIcons (centity_t *cent)
 	VectorCopy(cent->lerpOrigin, ent.origin);
 	ent.origin[2] += 64 + 16;  //32;
 	ent.reType = RT_SPRITE;
-	ent.customShader = cgs.media.harvesterCapture;
+	//ent.customShader = cgs.media.harvesterCapture;
+	ent.customShader = cgs.media.adCapture;
 	ent.radius = 16;
 	if (cg_helpIconStyle.integer == 1) {
 		ent.radius = 16;
@@ -1979,17 +2297,6 @@ static void CG_Draw1FctfHelpIcons (centity_t *cent)
 		if (Distance(ent.origin, org) > dist  &&  minWidth > 0.1) {
 			ent.radius = radius * (Distance(ent.origin, org) / dist);
 		}
-
-#if 0
-		ent.radius = 16;
-
-		dist = 400;
-		if (Distance(ent.origin, org) > dist) {
-			VectorSubtract(ent.origin, org, dir);
-			VectorNormalize(dir);
-			VectorMA(org, dist, dir, ent.origin);
-		}
-#endif
 	}
 
 	ent.origin[2] += ent.radius;
@@ -1998,7 +2305,7 @@ static void CG_Draw1FctfHelpIcons (centity_t *cent)
 	ent.shaderRGBA[1] = 255 * color[1];
 	ent.shaderRGBA[2] = 255 * color[2];
 	ent.shaderRGBA[3] = 255 * alpha;
-	trap_R_AddRefEntityToScene(&ent);
+	CG_AddRefEntity(&ent);
 }
 
 /*
@@ -2008,7 +2315,7 @@ CG_TeamBase
 */
 static void CG_TeamBase( centity_t *cent ) {
 	refEntity_t model;
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	vec3_t angles;
 	int t, h;
 	float c;
@@ -2033,9 +2340,9 @@ static void CG_TeamBase( centity_t *cent ) {
 		else {
 			model.hModel = cgs.media.neutralFlagBaseModel;
 		}
-		trap_R_AddRefEntityToScene( &model );
+		CG_AddRefEntity(&model);
 	}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	else if ( cgs.gametype == GT_OBELISK ) {
 		// show the obelisk
 		memset(&model, 0, sizeof(model));
@@ -2045,7 +2352,7 @@ static void CG_TeamBase( centity_t *cent ) {
 		AnglesToAxis( cent->currentState.angles, model.axis );
 
 		model.hModel = cgs.media.overloadBaseModel;
-		trap_R_AddRefEntityToScene( &model );
+		CG_AddRefEntity(&model);
 		// if hit
 		if ( cent->currentState.frame == 1) {
 			// show hit model
@@ -2057,7 +2364,7 @@ static void CG_TeamBase( centity_t *cent ) {
 			model.shaderRGBA[3] = 0xff;
 			//
 			model.hModel = cgs.media.overloadEnergyModel;
-			trap_R_AddRefEntityToScene( &model );
+			CG_AddRefEntity(&model);
 		}
 		// if respawning
 		if ( cent->currentState.frame == 2) {
@@ -2084,7 +2391,7 @@ static void CG_TeamBase( centity_t *cent ) {
 			model.shaderRGBA[3] = c * 0xff;
 
 			model.hModel = cgs.media.overloadLightsModel;
-			trap_R_AddRefEntityToScene( &model );
+			CG_AddRefEntity(&model);
 			// show the target
 			if (t > h) {
 				if ( !cent->pe.muzzleFlashTime ) {
@@ -2106,7 +2413,7 @@ static void CG_TeamBase( centity_t *cent ) {
 				//
 				model.origin[2] += 56;
 				model.hModel = cgs.media.overloadTargetModel;
-				trap_R_AddRefEntityToScene( &model );
+				CG_AddRefEntity(&model);
 			}
 			else {
 				//FIXME: show animated smoke
@@ -2123,11 +2430,11 @@ static void CG_TeamBase( centity_t *cent ) {
 			model.shaderRGBA[3] = 0xff;
 			// show the lights
 			model.hModel = cgs.media.overloadLightsModel;
-			trap_R_AddRefEntityToScene( &model );
+			CG_AddRefEntity(&model);
 			// show the target
 			model.origin[2] += 56;
 			model.hModel = cgs.media.overloadTargetModel;
-			trap_R_AddRefEntityToScene( &model );
+			CG_AddRefEntity(&model);
 		}
 	}
 	else if (cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_1FCTF) {
@@ -2162,7 +2469,7 @@ static void CG_TeamBase( centity_t *cent ) {
 			model.customSkin = 0;
 		}
 
-		trap_R_AddRefEntityToScene( &model );
+		CG_AddRefEntity(&model);
 
 		CG_DrawHarversterHelpIcons(cent);
 		CG_Draw1FctfHelpIcons(cent);
@@ -2469,7 +2776,7 @@ void CG_AddPacketEntities( void ) {
 			VectorCopy(cg.mirrorSurfaces[i], ent.origin);
 			VectorCopy(cg.mirrorSurfaces[i], ent.oldorigin);
 			ent.reType = RT_PORTALSURFACE;
-			trap_R_AddRefEntityToScene(&ent);
+			CG_AddRefEntity(&ent);
 		}
 	}
 
@@ -2529,7 +2836,7 @@ void CG_AddPacketEntities( void ) {
 		} else {
 		if (wcg.snapOld  &&  wcg.snapPrev  &&  wcg.snapNext) {
 			centity_t centTmp;
-			entityState_t *es;
+			const entityState_t *es;
 			for (num = 0;  num < wcg.snapPrev->numEntities;  num++) {
 				es = &wcg.snapPrev->entities[num];
 				cent = &cg_entities[es->number];

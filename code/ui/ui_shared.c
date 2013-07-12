@@ -19,10 +19,25 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// 
+//
 // string allocation/managment
 
 #include "ui_shared.h"
+
+//FIXME argh...  hack
+static char *ScriptBuffer = NULL;
+static qboolean UseScriptBuffer = qfalse;
+
+
+typedef struct menuVar_s {
+	char name[MAX_MENU_VAR_NAME];
+	float value;
+} menuVar_t;
+
+static menuVar_t menuVars[MAX_MENU_VARS];
+
+//FIXME hack for team game lists
+static listBoxDef_t *LastListSelected = NULL;
 
 #define SCROLL_TIME_START					500
 #define SCROLL_TIME_ADJUST				150
@@ -69,6 +84,7 @@ static qboolean debugMode = qfalse;
 static int lastListBoxClickTime = 0;
 
 void Item_RunScript(itemDef_t *item, const char *s);
+static void Item_RunFrameScript (itemDef_t *item, const char *script);
 void Item_SetupKeywordHash(void);
 void Menu_SetupKeywordHash(void);
 int BindingIDFromName(const char *name);
@@ -76,6 +92,9 @@ qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down);
 itemDef_t *Menu_SetPrevCursorItem(menuDef_t *menu);
 itemDef_t *Menu_SetNextCursorItem(menuDef_t *menu);
 static qboolean Menu_OverActiveItem(menuDef_t *menu, float x, float y);
+char *Q_MathScript (char *script, float *val, int *error);
+
+qboolean ItemParse_if (itemDef_t *item, int handle, char *token, qboolean forceSkip);
 
 #ifdef CGAME
 #define MEM_POOL_SIZE  (1024 * 1024 * 2)  //128 * 1024
@@ -100,7 +119,6 @@ void *UI_Alloc( int size ) {
 		if (DC->Print) {
 			DC->Print("UI_Alloc: Failure. Out of memory!  %d + %d > %d\n", allocPoint, size, MEM_POOL_SIZE);
 		}
-    //DC->trap_Print(S_COLOR_YELLOW"WARNING: UI Out of Memory!\n");
 		return NULL;
 	}
 
@@ -124,8 +142,6 @@ void UI_InitMemory( void ) {
 qboolean UI_OutOfMemory( void ) {
 	return outOfMemory;
 }
-
-
 
 
 
@@ -170,6 +186,7 @@ const char *String_Alloc(const char *p) {
 	static const char *staticNULL = "";
 
 	if (p == NULL) {
+		Com_Printf("^1String_Alloc() p == NULL\n");
 		return NULL;
 	}
 
@@ -187,17 +204,30 @@ const char *String_Alloc(const char *p) {
 		str = str->next;
 	}
 
+#if 0
+	Com_Printf("%0x  new string '%s'  len %d\n", hash, p, strlen(p));
+	str = strHandle[hash];
+	while (str) {
+		Com_Printf("^5%0x '%s'\n", hash, str->str);
+		if (strcmp(p, str->str) == 0) {
+			//Com_Printf("String_Alloc() got it: '%s'\n", str->str);
+			return str->str;
+		}
+		str = str->next;
+	}
+#endif
+
 	len = strlen(p);
 	if (len + strPoolIndex + 1 < STRING_POOL_SIZE) {
 		int ph = strPoolIndex;
 		strcpy(&strPool[strPoolIndex], p);
 		strPoolIndex += len + 1;
 
-		str = strHandle[hash];
-		last = str;
-		while (str && str->next) {
-			last = str;
-			str = str->next;
+		last = strHandle[hash];
+		if (last) {
+			while (last->next) {
+				last = last->next;
+			}
 		}
 
 		str  = UI_Alloc(sizeof(stringDef_t));
@@ -208,8 +238,15 @@ const char *String_Alloc(const char *p) {
 		} else {
 			strHandle[hash] = str;
 		}
+
+		//Com_Printf("^5String_Alloc() space left: %fmb of %fmb\n", (STRING_POOL_SIZE - strPoolIndex) / (1024.0 * 1024.0), STRING_POOL_SIZE / (1024.0 * 1024.0));
+
 		return &strPool[ph];
 	}
+
+	Com_Printf("^1String_Alloc() out of memory\n");
+	String_Report();
+
 	return NULL;
 }
 
@@ -293,6 +330,53 @@ void PC_SourceError(int handle, char *format, ...) {
 	Com_Printf(S_COLOR_RED "ERROR: %s, line %d: %s\n", filename, line, string);
 }
 
+qboolean MenuVar_Set (const char *varName, float f)
+{
+	int i;
+
+	for (i = 0;  i < MAX_MENU_VARS;  i++) {
+		menuVar_t *mv;
+
+		mv = &menuVars[i];
+		if (mv->name[0] == '\0'  ||  !Q_stricmp(varName, mv->name)) {
+			if (mv->name[0] == '\0') {
+				Q_strncpyz(mv->name, varName, sizeof(mv->name));
+			}
+			mv->value = f;
+
+			return qtrue;
+		}
+	}
+
+	Com_Printf("^3MenuSetVar() couldn't set '%s', MAX_MENU_VARS (%d) reached\n", varName, MAX_MENU_VARS);
+
+	return qfalse;
+}
+
+float MenuVar_Get (const char *varName)
+{
+	int i;
+	float f;
+
+	f = 0;
+	for (i = 0;  i < MAX_MENU_VARS;  i++) {
+		menuVar_t *mv;
+
+		mv = &menuVars[i];
+		if (mv->name[0] == '\0') {
+			Com_Printf("^3MenuVar_Get() no such menu variable '%s'\n", varName);
+			break;
+		}
+
+		if (!Q_stricmp(varName, mv->name)) {
+			f = mv->value;
+			break;
+		}
+	}
+
+	return f;
+}
+
 /*
 =================
 LerpColor
@@ -318,13 +402,25 @@ void LerpColor(vec4_t a, vec4_t b, vec4_t c, float t)
 Float_Parse
 =================
 */
-qboolean Float_Parse(char **p, float *f) {
+qboolean Float_Parse (char **p, float *f) {
 	char	*token;
 	token = COM_ParseExt(p, qfalse);
 	if (token && token[0] != 0) {
-		*f = atof(token);
+		if (token[0] != '@') {
+			if (token[0] == '0'  &&  (token[1] == 'x'  ||  token[1] == 'X')) {
+				*f = Com_HexStrToInt(token);
+			} else {
+				if (!Q_isdigit(token[0])  &&  (token[0] != '+'  &&  token[0] != '-'  &&  token[0] != '.')) {
+					Com_Printf("^1Float_Parse() invalid float token: '%s'\n", token);
+				}
+				*f = atof(token);
+			}
+		} else {
+			*f = MenuVar_Get(token);
+		}
 		return qtrue;
 	} else {
+		Com_Printf("^1Float_Parse() couldn't get token\n");
 		return qfalse;
 	}
 }
@@ -336,23 +432,36 @@ PC_Float_Parse
 */
 qboolean PC_Float_Parse(int handle, float *f) {
 	pc_token_t token;
-	int negative = qfalse;
+	char *p;
+	char buf[MAX_TOKENLENGTH];
 
-	if (!trap_PC_ReadToken(handle, &token))
+	if (UseScriptBuffer) {
+		return Float_Parse(&ScriptBuffer, f);
+	}
+
+	p = buf;
+	p[0] = '\0';
+
+	if (!trap_PC_ReadToken(handle, &token)) {
+		Com_Printf("^1PC_Float_Parse() couldn't get token1\n");
 		return qfalse;
+	}
+
 	if (token.string[0] == '-') {
-		if (!trap_PC_ReadToken(handle, &token))
+		p[0] = '-';
+		p[1] = '\0';
+		p++;
+		if (!trap_PC_ReadToken(handle, &token)) {
+			Com_Printf("^1PC_Float_Parse() couldn't get token2\n");
 			return qfalse;
-		negative = qtrue;
+		}
 	}
-	if (token.type != TT_NUMBER) {
-		PC_SourceError(handle, "expected float but found %s", token.string);
-		return qfalse;
-	}
-	if (negative)
-		*f = -token.floatvalue;
-	else
-		*f = token.floatvalue;
+
+	Q_strncpyz(p, token.string, sizeof(buf) - 1);
+
+	p = buf;
+	Float_Parse(&p, f);
+
 	return qtrue;
 }
 
@@ -367,6 +476,7 @@ qboolean Color_Parse(char **p, vec4_t *c) {
 
 	for (i = 0; i < 4; i++) {
 		if (!Float_Parse(p, &f)) {
+			Com_Printf("^1Color_Parse() couldn't get token %d\n", i);
 			return qfalse;
 		}
 		(*c)[i] = f;
@@ -383,8 +493,13 @@ qboolean PC_Color_Parse(int handle, vec4_t *c) {
 	int i;
 	float f;
 
+	if (UseScriptBuffer) {
+		return Color_Parse(&ScriptBuffer, c);
+	}
+
 	for (i = 0; i < 4; i++) {
 		if (!PC_Float_Parse(handle, &f)) {
+			Com_Printf("^1PC_Color_Parse() couldn't get token %d\n", i);
 			return qfalse;
 		}
 		(*c)[i] = f;
@@ -402,9 +517,21 @@ qboolean Int_Parse(char **p, int *i) {
 	token = COM_ParseExt(p, qfalse);
 
 	if (token && token[0] != 0) {
-		*i = atoi(token);
+		if (token[0] != '@') {
+			if (token[0] == '0'  &&  (token[1] == 'x'  ||  token[1] == 'X')) {
+                *i = Com_HexStrToInt(token);
+			} else {
+				if (!Q_isdigit(token[0])  &&  (token[0] != '+'  &&  token[0] != '-')) {
+					Com_Printf("^1Int_Parse() invalid integer token: '%s'\n", token);
+				}
+				*i = atoi(token);
+			}
+		} else {
+			*i = round(MenuVar_Get(token));
+		}
 		return qtrue;
 	} else {
+		Com_Printf("^1Int_Parse() couldn't get token\n");
 		return qfalse;
 	}
 }
@@ -414,24 +541,39 @@ qboolean Int_Parse(char **p, int *i) {
 PC_Int_Parse
 =================
 */
-qboolean PC_Int_Parse(int handle, int *i) {
+qboolean PC_Int_Parse (int handle, int *i)
+{
 	pc_token_t token;
-	int negative = qfalse;
+	char *p;
+	char buf[MAX_TOKENLENGTH];
 
-	if (!trap_PC_ReadToken(handle, &token))
+	if (UseScriptBuffer) {
+		return Int_Parse(&ScriptBuffer, i);
+	}
+
+	p = buf;
+	p[0] = '\0';
+
+	if (!trap_PC_ReadToken(handle, &token)) {
+		Com_Printf("^1PC_Int_Parse() couldn't get token1\n");
 		return qfalse;
+	}
+
 	if (token.string[0] == '-') {
-		if (!trap_PC_ReadToken(handle, &token))
+		p[0] = '-';
+		p[1] = '\0';
+		p++;
+		if (!trap_PC_ReadToken(handle, &token)) {
+			Com_Printf("^1PC_Int_Parse() couldn't get token2\n");
 			return qfalse;
-		negative = qtrue;
+		}
 	}
-	if (token.type != TT_NUMBER) {
-		PC_SourceError(handle, "expected integer but found %s", token.string);
-		return qfalse;
-	}
-	*i = token.intvalue;
-	if (negative)
-		*i = - *i;
+
+	Q_strncpyz(p, token.string, sizeof(buf) - 1);
+
+	p = buf;
+	Int_Parse(&p, i);
+
 	return qtrue;
 }
 
@@ -450,6 +592,8 @@ qboolean Rect_Parse(char **p, rectDef_t *r) {
 			}
 		}
 	}
+
+	Com_Printf("^1Rect_Parse() couldn't parse rectangle\n");
 	return qfalse;
 }
 
@@ -459,6 +603,10 @@ PC_Rect_Parse
 =================
 */
 qboolean PC_Rect_Parse(int handle, rectDef_t *r) {
+	if (UseScriptBuffer) {
+		return Rect_Parse(&ScriptBuffer, r);
+	}
+
 	if (PC_Float_Parse(handle, &r->x)) {
 		if (PC_Float_Parse(handle, &r->y)) {
 			if (PC_Float_Parse(handle, &r->w)) {
@@ -468,6 +616,8 @@ qboolean PC_Rect_Parse(int handle, rectDef_t *r) {
 			}
 		}
 	}
+
+	Com_Printf("^1PC_Rect_Parse() couldn't parse rectangle\n");
 	return qfalse;
 }
 
@@ -482,8 +632,15 @@ qboolean String_Parse(char **p, const char **out) {
 	token = COM_ParseExt(p, qfalse);
 	if (token && token[0] != 0) {
 		*(out) = String_Alloc(token);
+		if (!*(out)) {
+			Com_Printf("^1String_Parse() couldn't allocate string\n");
+			return qfalse;
+		}
+
 		return qtrue;
 	}
+
+	//Com_Printf("^1String_Parse() couldn't parse string\n");
 	return qfalse;
 }
 
@@ -495,39 +652,157 @@ PC_String_Parse
 qboolean PC_String_Parse(int handle, const char **out) {
 	pc_token_t token;
 
-	if (!trap_PC_ReadToken(handle, &token))
+	if (UseScriptBuffer) {
+		return String_Parse(&ScriptBuffer, out);
+	}
+
+	if (!trap_PC_ReadToken(handle, &token)) {
+		//Com_Printf("^1PC_String_Parse() couldn't read token\n");
 		return qfalse;
-	
+	}
+
 	*(out) = String_Alloc(token.string);
+
+	if (!*(out)) {
+		Com_Printf("^1PC_String_Parse() couldn't allocate string\n");
+		return qfalse;
+	}
+
     return qtrue;
+}
+
+qboolean Script_ParseExt (char **p, const char **out, const char **lastToken)
+{
+	char script[1024];
+	const char *token;
+	int braceCount;
+
+	memset(script, 0, sizeof(script));
+	if (lastToken) {
+		*lastToken = NULL;
+	}
+
+	// scripts start with { and have ; separated command lists.. commands are command, arg..
+	// basically we want everything between the { } as it will be interpreted at run time
+
+	if (!String_Parse(p, &token)) {
+		Com_Printf("^1Script_Parse() couldn't get first token\n");
+		return qfalse;
+	}
+	if (Q_stricmp(token, "{") != 0) {
+		if (lastToken == NULL) {
+			Com_Printf("^1Script_Parse() first token != '{'  '%s'\n", token);
+			return qfalse;
+		} else {
+			*lastToken = String_Alloc(token);
+			return qfalse;
+		}
+	}
+
+	braceCount = 1;
+	while ( 1 ) {
+		if (!String_Parse(p, &token)) {
+			Com_Printf("^1Script_Parse() couldn't get token in loop\n");
+			return qfalse;
+		}
+		if (!token) {
+			Com_Printf("^1Script_Parse() token == NULL\n");
+			Com_Printf("p == '%s'\n", *p);
+			return qfalse;
+		}
+
+		if (Q_stricmp(token, "}") == 0) {
+			braceCount--;
+			if (braceCount < 0) {
+				Com_Printf("^1Script_Parse() braceCount < 0 (%d)\n", braceCount);
+				return qfalse;
+			} else if (braceCount == 0) {
+				*out = String_Alloc(script);
+				if (!*(out)) {
+					Com_Printf("^1Script_Parse() couldn't allocate string\n");
+					return qfalse;
+				}
+				return qtrue;
+			}
+		} else if (Q_stricmp(token, "{") == 0) {
+			braceCount++;
+		}
+
+		if (token[1] != '\0') {
+			Q_strcat(script, 1024, va("\"%s\"", token));
+		} else {
+			Q_strcat(script, 1024, token);
+		}
+		Q_strcat(script, 1024, " ");
+	}
+
+	// shouldn't get here
+	return qfalse;
 }
 
 /*
 =================
-PC_Script_Parse
+Script_Parse
 =================
 */
-qboolean PC_Script_Parse(int handle, const char **out) {
+qboolean Script_Parse (char **p, const char **out)
+{
+	return Script_ParseExt(p, out, NULL);
+}
+
+qboolean PC_Script_ParseExt (int handle, const char **out, const char **lastToken)
+{
 	char script[1024];
 	pc_token_t token;
+	int braceCount;
 
-	memset(script, 0, sizeof(script));
-	// scripts start with { and have ; separated command lists.. commands are command, arg.. 
-	// basically we want everything between the { } as it will be interpreted at run time
-  
-	if (!trap_PC_ReadToken(handle, &token))
-		return qfalse;
-	if (Q_stricmp(token.string, "{") != 0) {
-	    return qfalse;
+	if (UseScriptBuffer) {
+		return Script_ParseExt(&ScriptBuffer, out, lastToken);
 	}
 
-	while ( 1 ) {
-		if (!trap_PC_ReadToken(handle, &token))
-			return qfalse;
+	memset(script, 0, sizeof(script));
+	if (lastToken) {
+		*lastToken = NULL;
+	}
 
+	// scripts start with { and have ; separated command lists.. commands are command, arg..
+	// basically we want everything between the { } as it will be interpreted at run time
+
+	if (!trap_PC_ReadToken(handle, &token)) {
+		Com_Printf("^1PC_Script_Parse() couldn't get first token\n");
+		return qfalse;
+	}
+	if (Q_stricmp(token.string, "{") != 0) {
+		if (lastToken == NULL) {
+			Com_Printf("^1PC_Script_Parse() first token != '{'  '%s'\n", token.string);
+			return qfalse;
+		} else {
+			*lastToken = String_Alloc(token.string);
+			return qfalse;
+		}
+	}
+
+	braceCount = 1;
+	while ( 1 ) {
+		if (!trap_PC_ReadToken(handle, &token)) {
+			Com_Printf("^1PC_Script_Parse() couldn't get token in loop\n");
+			return qfalse;
+		}
 		if (Q_stricmp(token.string, "}") == 0) {
-			*out = String_Alloc(script);
-			return qtrue;
+			braceCount--;
+			if (braceCount < 0) {
+				Com_Printf("^1PC_Script_Parse() braceCount < 0 (%d)\n", braceCount);
+				return qfalse;
+			} else if (braceCount == 0) {
+				*out = String_Alloc(script);
+				if (!*out) {
+					Com_Printf("^1PC_Script_Parse() couldn't allocate string\n");
+					return qfalse;
+				}
+				return qtrue;
+			}
+		} else if (Q_stricmp(token.string, "{") == 0) {
+			braceCount++;
 		}
 
 		if (token.string[1] != '\0') {
@@ -537,11 +812,143 @@ qboolean PC_Script_Parse(int handle, const char **out) {
 		}
 		Q_strcat(script, 1024, " ");
 	}
+
+	// shouldn't get here
+	return qfalse;
+}
+
+/*
+=================
+PC_Script_Parse
+=================
+*/
+qboolean PC_Script_Parse (int handle, const char **out)
+{
+	return PC_Script_ParseExt(handle, out, NULL);
+}
+
+/*
+=================
+Parenthesis_Parse
+=================
+*/
+qboolean Parenthesis_Parse(char **p, const char **out) {
+	char script[1024];
+	const char *token;
+	int braceCount;
+
+	memset(script, 0, sizeof(script));
+	// scripts start with { and have ; separated command lists.. commands are command, arg..
+	// basically we want everything between the { } as it will be interpreted at run time
+
+	if (!String_Parse(p, &token)) {
+		Com_Printf("^1Parenthesis_Parse() couldn't get first token\n");
+		return qfalse;
+	}
+	if (Q_stricmp(token, "(") != 0) {
+		Com_Printf("^1Parenthesis_Parse() first token != '('  '%s'\n", token);
+	    return qfalse;
+	}
+
+	braceCount = 1;
+	while ( 1 ) {
+		if (!String_Parse(p, &token)) {
+			Com_Printf("^1Parenthesis_Parse() couldn't get token in loop\n");
+			return qfalse;
+		}
+		if (Q_stricmp(token, ")") == 0) {
+			braceCount--;
+			if (braceCount < 0) {
+				Com_Printf("^1Parenthesis_Parse() braceCount < 0 (%d)\n", braceCount);
+				return qfalse;
+			} else if (braceCount == 0) {
+				*out = String_Alloc(script);
+				if (!*out) {
+					Com_Printf("^1Parenthesis_Parse() couldn't allocate string\n");
+					return qfalse;
+				}
+				return qtrue;
+			}
+		} else if (Q_stricmp(token, "(") == 0) {
+			braceCount++;
+		}
+
+		if (token[1] != '\0') {
+			Q_strcat(script, 1024, va("\"%s\"", token));
+		} else {
+			Q_strcat(script, 1024, token);
+		}
+		Q_strcat(script, 1024, " ");
+	}
+
+	// shouldn't get here
+	return qfalse;
+}
+
+/*
+=================
+PC_Parenthesis_Parse
+=================
+*/
+qboolean PC_Parenthesis_Parse(int handle, const char **out) {
+	char script[1024];
+	pc_token_t token;
+	int braceCount;
+
+	if (UseScriptBuffer) {
+		return Parenthesis_Parse(&ScriptBuffer, out);
+	}
+
+	memset(script, 0, sizeof(script));
+	// scripts start with { and have ; separated command lists.. commands are command, arg..
+	// basically we want everything between the { } as it will be interpreted at run time
+
+	if (!trap_PC_ReadToken(handle, &token)) {
+		Com_Printf("^1PC_Parenthesis_Parse() couldn't get first token\n");
+		return qfalse;
+	}
+	if (Q_stricmp(token.string, "(") != 0) {
+		Com_Printf("^1PC_Parenthesis_Parse() first token != '('  '%s'\n", token.string);
+	    return qfalse;
+	}
+
+	braceCount = 1;
+	while ( 1 ) {
+		if (!trap_PC_ReadToken(handle, &token)) {
+			Com_Printf("^1PC_Parenthesis_Parse() couldn't get token in loop\n");
+			return qfalse;
+		}
+		if (Q_stricmp(token.string, ")") == 0) {
+			braceCount--;
+			if (braceCount < 0) {
+				Com_Printf("^1PC_Parenthesis_Parse() braceCount < 0 (%d)\n", braceCount);
+				return qfalse;
+			} else if (braceCount == 0) {
+				*out = String_Alloc(script);
+				if (!*out) {
+					Com_Printf("^1PC_Parenthesis_Parse() couldn't allocate string\n");
+					return qfalse;
+				}
+				return qtrue;
+			}
+		} else if (Q_stricmp(token.string, "(") == 0) {
+			braceCount++;
+		}
+
+		if (token.string[1] != '\0') {
+			Q_strcat(script, 1024, va("\"%s\"", token.string));
+		} else {
+			Q_strcat(script, 1024, token.string);
+		}
+		Q_strcat(script, 1024, " ");
+	}
+
+	// shouldn't get here
 	return qfalse;
 }
 
 // display, window, menu, item code
-// 
+//
 
 /*
 ==================
@@ -884,13 +1291,15 @@ void Script_SetAsset(itemDef_t *item, char **args) {
 
 void Script_SetBackground(itemDef_t *item, char **args) {
   const char *name;
+
   // expecting name to set asset to
   if (String_Parse(args, &name)) {
-    item->window.background = DC->registerShaderNoMip(name);
+	  if (Q_stricmp(name, item->window.backgroundName)) {
+		  item->window.background = DC->registerShaderNoMip(name);
+		  item->window.backgroundName = String_Alloc(name);
+	  }
   }
 }
-
-
 
 
 itemDef_t *Menu_FindItemByName(menuDef_t *menu, const char *p) {
@@ -1211,7 +1620,27 @@ void Script_SetCvar(itemDef_t *item, char **args) {
 	if (String_Parse(args, &cvar) && String_Parse(args, &val)) {
 		DC->setCVar(cvar, val);
 	}
-	
+}
+
+void Script_SetVar (itemDef_t *item, char **args)
+{
+	const char *var;
+	const char *mathScript;
+	float f;
+	int err;
+
+	if (!String_Parse(args, &var)) {
+		Com_Printf("^1Script_SetVar() couldn't get variable name\n");
+		return;
+	}
+
+	if (!Parenthesis_Parse(args, &mathScript)) {
+		Com_Printf("^1Script_SetVar() couldn't get math block\n");
+		return;
+	}
+
+	Q_MathScript((char *)mathScript, &f, &err);
+	MenuVar_Set(var, f);
 }
 
 void Script_Exec(itemDef_t *item, char **args) {
@@ -1227,7 +1656,11 @@ void Script_Exec(itemDef_t *item, char **args) {
 void Script_Play(itemDef_t *item, char **args) {
 	const char *val;
 	if (String_Parse(args, &val)) {
-		DC->startLocalSound(DC->registerSound(val, qfalse), CHAN_LOCAL_SOUND);
+		if (Q_stricmp(val, item->playSoundName)) {
+			item->playSound = DC->registerSound(val, qfalse);
+			item->playSoundName = String_Alloc(val);
+		}
+		DC->startLocalSound(item->playSound, CHAN_LOCAL_SOUND);
 	}
 }
 
@@ -1259,6 +1692,7 @@ commandDef_t commandList[] =
   {"setplayerhead", &Script_SetPlayerHead},     // sets this background color to team color
   {"transition", &Script_Transition},           // group/name
   {"setcvar", &Script_SetCvar},           // group/name
+  {"setvar", &Script_SetVar},
   {"exec", &Script_Exec},           // group/name
   {"play", &Script_Play},           // group/name
   {"playlooped", &Script_playLooped},           // group/name
@@ -1367,8 +1801,6 @@ qboolean Item_SetFocus(itemDef_t *item, float x, float y) {
 	if (item == NULL || item->window.flags & WINDOW_DECORATION || item->window.flags & WINDOW_HASFOCUS || !(item->window.flags & WINDOW_VISIBLE)) {
 		return qfalse;
 	}
-
-	//Com_Printf("yes\n");
 
 	// this can be NULL
 	parent = (menuDef_t*)item->parent; 
@@ -1887,8 +2319,11 @@ qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, qboolea
 				lastListBoxClickTime = DC->realTime + DOUBLE_CLICK_DELAY;
 				if (item->cursorPos != listPtr->cursorPos) {
 					item->cursorPos = listPtr->cursorPos;
+					listPtr->selectedCursorPos = listPtr->cursorPos;
+					LastListSelected = listPtr;
 					DC->feederSelection(item->special, item->cursorPos);
 				}
+				//Com_Printf("selected %p\n", item);
 			}
 			return qtrue;
 		}
@@ -3828,7 +4263,16 @@ void Item_ListBox_Paint(itemDef_t *item) {
 				// always draw at least one
 				// which may overdraw the box if it is too small for the element
 
-				if ((int)i % 2 == 1) {
+				if (LastListSelected == listPtr  &&  i == listPtr->selectedCursorPos) {
+#if 0
+					vec4_t color;
+
+					Vector4Copy(listPtr->selectedColor, color);
+					color[3] = 0.5;
+#endif
+
+				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, item->window.outlineColor);  //color);
+				} else if ((int)i % 2 == 1) {
 				    //DC->fillRect(x + 2, y + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, item->window.outlineColor);
 				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, listPtr->altRowColor);
 				}
@@ -3840,7 +4284,8 @@ void Item_ListBox_Paint(itemDef_t *item) {
 						if (optionalImage >= 0) {
 							DC->drawHandlePic(x + 4 + listPtr->columnInfo[j].pos, y - 1 + listPtr->elementHeight / 2, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage);
 						} else if (text) {
-							DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex);
+							//DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex);
+							DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight, item->textscale, listPtr->elementColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex);
 							//Com_Printf("max: %d\n", listPtr->columnInfo[j].maxChars);
 						}
 					}
@@ -3849,7 +4294,8 @@ void Item_ListBox_Paint(itemDef_t *item) {
 					if (optionalImage >= 0) {
 						//DC->drawHandlePic(x + 4 + listPtr->elementHeight, y, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage);
 					} else if (text) {
-						DC->drawText(x + 4, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, 0, item->textStyle, item->fontIndex);
+						//DC->drawText(x + 4, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, 0, item->textStyle, item->fontIndex);
+						DC->drawText(x + 4, y + listPtr->elementHeight, item->textscale, listPtr->elementColor, text, 0, 0, item->textStyle, item->fontIndex);
 					}
 				}
 
@@ -3936,7 +4382,6 @@ void Item_OwnerDraw_Paint(itemDef_t *item) {
 	}
 }
 
-
 void Item_Paint(itemDef_t *item) {
   vec4_t red;
   menuDef_t *parent;
@@ -3947,12 +4392,20 @@ void Item_Paint(itemDef_t *item) {
     return;
   }
 
+  if (item->run) {
+	  //UseScriptBuffer = qtrue;
+	  //ScriptBuffer = (char *)item->run;
+	  Item_RunFrameScript(item, item->run);
+	  Item_UpdatePosition(item);
+	  //Com_Printf("name %s\n", item->window.name);
+  }
+
   parent = (menuDef_t *)item->parent;
 
   if (item->window.flags & WINDOW_ORBITING) {
     if (DC->realTime > item->window.nextTime) {
       float rx, ry, a, c, s, w, h;
-      
+
       item->window.nextTime = DC->realTime + item->window.offsetTime;
       // translate
       w = item->window.rectClient.w / 2;
@@ -3975,6 +4428,7 @@ void Item_Paint(itemDef_t *item) {
       int done = 0;
       item->window.nextTime = DC->realTime + item->window.offsetTime;
 			// transition the x,y
+
 			if (item->window.rectClient.x == item->window.rectEffects.x) {
 				done++;
 			} else {
@@ -4090,7 +4544,7 @@ void Item_Paint(itemDef_t *item) {
 
   switch (item->type) {
     case ITEM_TYPE_OWNERDRAW:
-      Item_OwnerDraw_Paint(item);
+	  Item_OwnerDraw_Paint(item);
       break;
     case ITEM_TYPE_TEXT:
     case ITEM_TYPE_BUTTON:
@@ -4238,7 +4692,7 @@ menuDef_t *Menus_ActivateByName(const char *p) {
 
 void Item_Init(itemDef_t *item) {
 	memset(item, 0, sizeof(itemDef_t));
-	item->textscale = 0.55f;
+	item->textscale = 0.22f;  // 0.55f
 	Window_Init(&item->window);
 }
 
@@ -4322,6 +4776,8 @@ void Menu_Paint(menuDef_t *menu, qboolean forcePaint) {
 	if (menu == NULL) {
 		return;
 	}
+
+	//FIXME menu->run script
 
 	if (!(menu->window.flags & WINDOW_VISIBLE) &&  !forcePaint) {
 		return;
@@ -4459,11 +4915,14 @@ qboolean ItemParse_name( itemDef_t *item, int handle ) {
 
 // name <string>
 qboolean ItemParse_focusSound( itemDef_t *item, int handle ) {
-	const char *temp;
-	if (!PC_String_Parse(handle, &temp)) {
+	const char *name;
+	if (!PC_String_Parse(handle, &name)) {
 		return qfalse;
 	}
-	item->focusSound = DC->registerSound(temp, qfalse);
+	if (Q_stricmp(name, item->focusSoundName)) {
+		item->focusSound = DC->registerSound(name, qfalse);
+		item->focusSoundName = String_Alloc(name);
+	}
 	return qtrue;
 }
 
@@ -4473,6 +4932,161 @@ qboolean ItemParse_text( itemDef_t *item, int handle ) {
 	if (!PC_String_Parse(handle, &item->text)) {
 		return qfalse;
 	}
+	return qtrue;
+}
+
+qboolean ItemParse_textExt( itemDef_t *item, int handle ) {
+	const char *inb;
+	char outb[MAX_STRING_CHARS];
+	const char *ip;
+	char *op;
+	char token[MAX_STRING_CHARS];
+	char formatString[MAX_STRING_CHARS];
+	char cvarStringBuffer[MAX_STRING_CHARS];
+	char *tp;
+	int length;
+	float f;
+	char *s;
+
+	if (!PC_String_Parse(handle, &inb)) {
+		return qfalse;
+	}
+
+	outb[0] = '\0';
+	ip = inb;
+	op = outb;
+
+	length = 0;
+	while (ip[0] != '\0') {
+		if (length >= (MAX_STRING_CHARS - 1)) {
+			Com_Printf("^1ItemParse_textExt() output string overflow\n");
+			return qfalse;
+		}
+
+		if (ip[0] == '%') {
+			if (ip[1] == '\0') {
+				Com_Printf("^1ItemParse_textExt() invalid string '%s'\n", inb);
+				return qfalse;
+			} else if (ip[1] == '%') {
+				ip++;
+			} else {  // check for script variable
+				int slength;
+				int tlength;
+				qboolean convertToInt;
+				qboolean convertToString;
+
+				//ip++;  // skip '%'
+
+				// get formatString
+				formatString[0] = '\0';
+				s = formatString;
+				slength = 0;
+
+				convertToInt = qfalse;
+				convertToString = qfalse;
+				while (1) {
+					if (slength >= (MAX_STRING_CHARS - 1)) {
+						Com_Printf("^1ItemParse_textExt() format string too long\n");
+						return qfalse;
+					}
+					if (ip[0] == '\0') {
+						Com_Printf("^1ItemParse_textExt() missing format string\n");
+						return qfalse;
+					}
+
+					if (ip[0] == '{') {
+						s[0] = '\0';
+						ip++;
+						break;
+					}
+
+					if (!(ip[0] == ' '  ||  isdigit(ip[0])  ||  ip[0] == '.'  ||  ip[0] == 'f'  ||  ip[0] == 'd'  ||  ip[0] == 'x'  ||  ip[0] == '%'  ||  ip[0] == 's') ) {
+						Com_Printf("^1ItemParse_textExt() invalid conversion char '%c'\n", ip[0]);
+						return qfalse;
+					}
+
+					if (ip[0] == 'd'  ||  ip[0] == 'x') {
+						convertToInt = qtrue;
+					}
+
+					if (ip[0] == 's') {
+						convertToString = qtrue;
+					}
+
+					s[0] = ip[0];
+					s++;
+					ip++;
+					slength++;
+				}
+
+				if (strlen(formatString) < 2) {
+					Com_Printf("^1ItemParse_textExt() invalid format string '%s'\n", formatString);
+					return qfalse;
+				}
+
+				token[0] = '\0';
+				tp = token;
+				tlength = 0;
+
+				while (1) {
+					if (tlength >= (MAX_STRING_CHARS - 1)) {
+						Com_Printf("^1ItemParse_textExt() token string too long\n");
+						return qfalse;
+					}
+					if (ip[0] == '\0') {
+						Com_Printf("^1ItemParse_textExt() missing closing '}'\n");
+						return qfalse;
+					}
+					if (ip[0] == '}') {
+						tp[0] = '\0';
+						ip++;
+						break;
+					}
+
+					tp[0] = ip[0];
+					tp++;
+					ip++;
+					tlength++;
+				}
+
+				if (convertToString) {
+					cvarStringBuffer[0] = '\0';
+					DC->getCVarString(token, cvarStringBuffer, sizeof(cvarStringBuffer));
+					s = cvarStringBuffer;
+					//Com_Printf("cvar '%s'\n", s);
+				} else {
+					f = MenuVar_Get(token);
+					if (convertToInt) {
+						s = va(formatString, (int)round(f));
+					} else {
+						s = va(formatString, f);
+					}
+				}
+
+				while (*s) {
+					if (length >= (MAX_STRING_CHARS - 1)) {
+						Com_Printf("^1ItemParse_textExt() output string too long\n");
+						return qfalse;
+					}
+					op[0] = s[0];
+					op++;
+					s++;
+					length++;
+				}
+			}
+		}
+
+		op[0] = ip[0];
+
+		ip++;
+		op++;
+		length++;
+	}
+
+	op[0] = '\0';
+
+	item->text = String_Alloc(outb);
+
 	return qtrue;
 }
 
@@ -4494,8 +5108,11 @@ qboolean ItemParse_asset_model( itemDef_t *item, int handle ) {
 	if (!PC_String_Parse(handle, &temp)) {
 		return qfalse;
 	}
-	item->asset = DC->registerModel(temp);
-	modelPtr->angle = rand() % 360;
+	if (Q_stricmp(temp, item->assetName)) {
+		item->asset = DC->registerModel(temp);
+		item->assetName = String_Alloc(temp);
+		modelPtr->angle = rand() % 360;
+	}
 	return qtrue;
 }
 
@@ -4506,7 +5123,10 @@ qboolean ItemParse_asset_shader( itemDef_t *item, int handle ) {
 	if (!PC_String_Parse(handle, &temp)) {
 		return qfalse;
 	}
-	item->asset = DC->registerShaderNoMip(temp);
+	if (Q_stricmp(temp, item->assetName)) {
+		item->asset = DC->registerShaderNoMip(temp);
+		item->assetName = String_Alloc(temp);
+	}
 	return qtrue;
 }
 
@@ -4579,6 +5199,7 @@ qboolean ItemParse_rect( itemDef_t *item, int handle ) {
 	if (!PC_Rect_Parse(handle, &item->window.rectClient)) {
 		return qfalse;
 	}
+	//Com_Printf("%f %f %f %f\n", item->window.rectClient.x, item->window.rectClient.y, item->window.rectClient.w, item->window.rectClient.h);
 	return qtrue;
 }
 
@@ -4664,20 +5285,19 @@ qboolean ItemParse_elementheight( itemDef_t *item, int handle ) {
 qboolean ItemParse_elementColor( itemDef_t *item, int handle ) {
 	listBoxDef_t *listPtr;
 
-	Com_Printf("FIXME ui_shared.c elementColor\n");
 	Item_ValidateTypeData(item);
 	listPtr = (listBoxDef_t*)item->typeData;
 	if (!PC_Color_Parse(handle, &listPtr->elementColor)) {
 		return qfalse;
 	}
-	//listPtr->elementColor[3] = 0.0;
+
 	return qtrue;
 }
 
 qboolean ItemParse_selectedColor( itemDef_t *item, int handle ) {
 	listBoxDef_t *listPtr;
 
-	Com_Printf("FIXME ui_shared.c selectedColor\n");
+	//Com_Printf("FIXME ui_shared.c selectedColor\n");
 	Item_ValidateTypeData(item);
 	listPtr = (listBoxDef_t*)item->typeData;
 	if (!PC_Color_Parse(handle, &listPtr->selectedColor)) {
@@ -4690,7 +5310,6 @@ qboolean ItemParse_selectedColor( itemDef_t *item, int handle ) {
 qboolean ItemParse_altRowColor( itemDef_t *item, int handle ) {
 	listBoxDef_t *listPtr;
 
-	//Com_Printf("FIXME ui_shared.c altRowColor\n");
 	Item_ValidateTypeData(item);
 	listPtr = (listBoxDef_t*)item->typeData;
 	if (!PC_Color_Parse(handle, &listPtr->altRowColor)) {
@@ -4776,7 +5395,10 @@ qboolean ItemParse_visible( itemDef_t *item, int handle ) {
 	}
 	if (i) {
 		item->window.flags |= WINDOW_VISIBLE;
+	} else {
+		item->window.flags &= ~WINDOW_VISIBLE;
 	}
+
 	return qtrue;
 }
 
@@ -4820,6 +5442,7 @@ qboolean ItemParse_textscale( itemDef_t *item, int handle ) {
 	if (!PC_Float_Parse(handle, &item->textscale)) {
 		return qfalse;
 	}
+	//Com_Printf("item %p '%s'  scale %f\n", item, item->window.name, item->textscale);
 	return qtrue;
 }
 
@@ -4880,12 +5503,16 @@ qboolean ItemParse_outlinecolor( itemDef_t *item, int handle ) {
 }
 
 qboolean ItemParse_background( itemDef_t *item, int handle ) {
-	const char *temp;
+	const char *name;
 
-	if (!PC_String_Parse(handle, &temp)) {
+	if (!PC_String_Parse(handle, &name)) {
 		return qfalse;
 	}
-	item->window.background = DC->registerShaderNoMip(temp);
+	if (Q_stricmp(name, item->window.backgroundName)) {
+		item->window.background = DC->registerShaderNoMip(name);
+		item->window.backgroundName = String_Alloc(name);
+	}
+
 	return qtrue;
 }
 
@@ -4991,6 +5618,23 @@ qboolean ItemParse_cvar( itemDef_t *item, int handle ) {
 	return qtrue;
 }
 
+qboolean ItemParse_cvarSet (itemDef_t *item, int handle)
+{
+	const char *cvarName;
+	const char *cvarString;
+
+	if (!PC_String_Parse(handle, &cvarName)) {
+		return qfalse;
+	}
+	if (!PC_String_Parse(handle, &cvarString)) {
+		return qfalse;
+	}
+
+	DC->setCVar(cvarName, cvarString);
+
+	return qtrue;
+}
+
 qboolean ItemParse_maxChars( itemDef_t *item, int handle ) {
 	editFieldDef_t *editPtr;
 	int maxChars;
@@ -5061,6 +5705,7 @@ qboolean ItemParse_cvarStrList( itemDef_t *item, int handle ) {
 
 	pass = 0;
 	while ( 1 ) {
+		///////////////// here
 		if (!trap_PC_ReadToken(handle, &token)) {
 			PC_SourceError(handle, "end of file inside menu item");
 			return qfalse;
@@ -5108,6 +5753,7 @@ qboolean ItemParse_cvarFloatList( itemDef_t *item, int handle ) {
 	}
 
 	while ( 1 ) {
+		/////////////// here
 		if (!trap_PC_ReadToken(handle, &token)) {
 			PC_SourceError(handle, "end of file inside menu item");
 			return qfalse;
@@ -5208,7 +5854,10 @@ qboolean ItemParse_defaultContent( itemDef_t *item, int handle ) {
 	if (!PC_String_Parse(handle, &temp)) {
 		return qfalse;
 	}
-	item->window.background = DC->registerShaderNoMip(temp);
+	if (Q_stricmp(temp, item->window.backgroundName)) {
+		item->window.background = DC->registerShaderNoMip(temp);
+		item->window.backgroundName = String_Alloc(temp);
+	}
 	return qtrue;
 }
 
@@ -5218,13 +5867,16 @@ qboolean ItemParse_cellId( itemDef_t *item, int handle ) {
 		return qfalse;
 	}
 	//item->window.ownerDrawFlags |= i;
-	//FIXME 
+	//FIXME
 	return qtrue;
 }
 
 qboolean ItemParse_font (itemDef_t *item, int handle) {
 	const char *fontName;
 	int pointSize;
+	char checkName[MAX_QPATH];
+	char baseName[MAX_QPATH];
+	int i;
 
 	if (!PC_String_Parse(handle, &fontName)) {
 		return qfalse;
@@ -5233,7 +5885,28 @@ qboolean ItemParse_font (itemDef_t *item, int handle) {
 		return qfalse;
 	}
 
+	if (!Q_stricmp(fontName, "qlfont")) {
+		item->fontIndex = 0;
+		return qtrue;
+	} else if (!Q_stricmp(fontName, "q3tiny")  ||  !Q_stricmp(fontName, "q3small")  ||  !Q_stricmp(fontName, "q3big")  ||  !Q_stricmp(fontName, "q3giant")) {
+		Q_strncpyz(checkName, fontName, sizeof(checkName));
+	} else {
+		Q_strncpyz(checkName, fontName, sizeof(checkName));
+		COM_StripExtension(COM_SkipPath(checkName), baseName, sizeof(baseName));
+		Q_strncpyz(checkName, va("fonts2/%s_%i.dat", baseName, pointSize), sizeof(checkName));
+	}
+
+	for (i = 0;  i <= DC->Assets.numFonts;  i++) {
+		//Com_Printf("^5%d '%s'\n", i, DC->Assets.extraFonts[i].name);
+		if (!Q_stricmp(checkName, DC->Assets.extraFonts[i].name)) {
+			//Com_Printf("font '%s' already loaded\n", fontName);
+			item->fontIndex = i;
+			return qtrue;
+		}
+	}
+
 	if (DC->Assets.numFonts + 1 >= MAX_FONTS + 1) {
+		Com_Printf("^3ItemParse_font() MAX_FONTS (%d) reached, couldn't load '%s'\n", MAX_FONTS, fontName);
 		item->fontIndex = 0;
 		return qtrue;
 	}
@@ -5252,9 +5925,696 @@ qboolean ItemParse_precision( itemDef_t *item, int handle ) {
 	return qtrue;
 }
 
+char *Q_GetToken (char *inputString, char *token, qboolean isFilename, qboolean *newLine)
+{
+    char *p;
+    char c;
+    qboolean gotFirstToken;
+
+	if (!inputString) {
+		Com_Printf("Q_GetToken inputString == NULL\n");
+		return NULL;
+	}
+
+    *newLine = qfalse;
+    p = inputString;
+    token[0] = '\0';
+
+    if (p[0] == '\0') {  //  ||  (p[0] != '\t'  &&  (p[0] < ' '  ||  p[0] > '~'))) {
+        //Com_Printf("xx\n");
+        *newLine = qtrue;
+        //Com_Printf("CG_GetToken() '%s'\n", tokenOrig);
+        return p;
+    }
+
+#if 0
+    if (p[0] == '\0'  ||  (p[0] != '\t'  &&  (p[0] < ' '  ||  p[0] > '~'))) {
+        Com_Printf("xx\n");
+        *newLine = qtrue;
+        return p;
+    }
+#endif
+
+    gotFirstToken = qfalse;
+
+    while (1) {
+        c = p[0];
+        if (c == '\0') {
+            //Com_Printf("end\n");
+            *newLine = qtrue;
+            break;
+        }
+        if (c != '\t'  &&  (c < ' '  ||  c > '~')) {
+            *newLine = qtrue;
+            if (gotFirstToken) {
+                p--;
+            }
+            break;
+        }
+
+        if (c == ' '  ||  c == '\t'  ||  c == '\''  ||  c == '"') {
+            if (!gotFirstToken) {
+                p++;
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        if (!isFilename  &&  (c == '/'  ||  c == '-'  ||  c == '+'  ||  c == '*'  ||  c  == '('  ||  c  == ')' ||  c == ',')) {
+            if (gotFirstToken) {
+                p--;
+                break;
+            } else {
+                token[0] = c;
+                token++;
+                break;
+            }
+        }
+
+        if (c < '!'  ||  c > '~') {
+            break;
+        }
+
+        if (c == '{'  ||  c == '}') {
+            if (gotFirstToken) {
+                p--;
+                break;
+            }
+        }
+
+        token[0] = c;
+        token++;
+        p++;
+        gotFirstToken = qtrue;
+    }
+
+    p++;
+    token[0] = '\0';
+
+#if 0
+    if (isFilename) {
+        Com_Printf("^6filename token: '%s'\n", start);
+    } else {
+        Com_Printf("^5token: '%s'\n", start);
+    }
+#endif
+
+    //Com_Printf("CG_GetToken() '%s'\n", tokenOrig);
+
+    return p;
+}
+
+//FIXME
+#define OP_NOP 0
+#define OP_PLUS 1
+#define OP_MINUS 2
+#define OP_MULT 3
+#define OP_DIV 4
+#define OP_LESS 5
+#define OP_GREATER 6
+#define OP_NOT 7
+#define OP_EQUAL 8
+#define OP_AND 9
+#define OP_OR 10
+#define OP_VAL 11
+#define OP_MOD 12
+
+//#define OP_CVAR 12  //FIXME probably not
+//#define OP_RAND 13
+
+#define OP_FSQRT 14
+#define OP_FCEIL 15
+#define OP_FFLOOR 16
+#define OP_FSIN 17
+#define OP_FCOS 18
+#define OP_FWAVE 19
+#define OP_FCLIP 20
+#define OP_FACOS 21
+#define OP_FASIN 22
+#define OP_FATAN 23
+#define OP_FATAN2 24
+#define OP_FTAN 25
+#define OP_FPOW 26
+#define OP_FOWNERDRAWVALUE 27
+#define OP_FINWATER 28
+
+#define OP_FUNCFIRST OP_FSQRT
+#define OP_FUNCLAST OP_FINWATER
+
+#define USE_SWITCH 0
+
+char *Q_MathScript (char *script, float *val, int *error)
+{
+    char token[MAX_QPATH];
+    char buffer[256];  //FIXME
+    char *p;
+    float ops[256];
+    int numOps;
+    int i;
+    int j;
+    int err;
+    static int recursiveCount = 0;
+    int uniqueId;
+    qboolean newLine;
+    int verbose;
+
+    recursiveCount++;
+    uniqueId = rand();
+    verbose = qfalse;  //SC_Cvar_Get_Int("debug_math");
+    //verbose = SC_Cvar_Get_Int("debug_math");
+
+    //Com_Printf("math(%d %d): '%s'\n", recursiveCount, uniqueId, script);
+
+	newLine = qfalse;
+    numOps = 0;
+    while (1) {
+        script = Q_GetToken(script, token, qfalse, &newLine);
+        if (verbose) {
+            //Com_Printf("token: '%s'  script[0] '%c' %d  newLine:%d\n", token, script[0], script[0], newLine);
+            Com_Printf("qmath token: '%s'  script[0] %d  newLine:%d\n", token, script[0], newLine);
+        }
+        if (token[0] == '\0'  ||  token[0] == '{') {  //  ||  newLine)  {  // ||  end) {
+        //if (token[0] == '\0'  ||  token[0] == '}') {  //  ||  newLine)  {  // ||  end) {
+            break;
+        }
+
+        if (token[0] == '(') {
+            int parenCount;
+
+            parenCount = 1;
+            p = script;
+            while (1) {
+                float tmpVal;
+
+                if (p[0] == '(') {
+                    parenCount++;
+                } else if (p[0] == ')') {
+                    parenCount--;
+                }
+
+                if (p[0] == '\t') {  // the only non printable char allowed
+                    p++;
+                    continue;
+                }
+
+                if (parenCount == 0  ||  p[0] == '\0'  ||  p[0] == '\n'  ||  (p[0] < ' '  ||  p[0] > '~')) {
+                    memcpy(buffer, script, p - script);
+                    buffer[p - script] = '\0';
+                    //Com_Printf("paren(%d): %d '%s'\n", recursiveCount + 1, p - script, buffer);
+                    err = 0;
+                    Q_MathScript(buffer, &tmpVal, &err);
+                    if (err) {
+                        *error = err;
+                        recursiveCount--;
+                        return script;
+                    }
+                    ops[numOps] = OP_VAL;
+                    numOps++;
+                    ops[numOps] = tmpVal;
+                    numOps++;
+                    script = p + 1;
+                    break;
+                }
+                p++;
+            }
+        }
+
+		if (0) {
+
+        } else if (!USE_SWITCH  &&  token[0] == '+') {
+            ops[numOps] = OP_PLUS;
+            numOps += 2;
+			goto tokenHandled;
+        } else if (!USE_SWITCH  &&  token[0] == '-') {
+            ops[numOps] = OP_MINUS;
+            numOps += 2;
+			goto tokenHandled;
+        } else if (!USE_SWITCH  &&  token[0] == '*') {
+            ops[numOps] = OP_MULT;
+            numOps += 2;
+			goto tokenHandled;
+        } else if (!USE_SWITCH  &&  token[0] == '/') {
+            ops[numOps] = OP_DIV;
+            numOps += 2;
+			goto tokenHandled;
+		} else if (!USE_SWITCH  &&  token[0] == '%') {
+            ops[numOps] = OP_MOD;
+            numOps += 2;
+			goto tokenHandled;
+        } else if (!USE_SWITCH  &&  token[0] == '<') {
+            ops[numOps] = OP_LESS;
+            numOps += 2;
+			goto tokenHandled;
+        } else if (token[0] == '>') {
+            ops[numOps] = OP_GREATER;
+            numOps += 2;
+        } else if (token[0] == '!') {
+            ops[numOps] = OP_NOT;
+            numOps += 2;
+        } else if (token[0] == '=') {
+            ops[numOps] = OP_EQUAL;
+            numOps += 2;
+        } else if (token[0] == '&') {
+            ops[numOps] = OP_AND;
+            numOps += 2;
+        } else if (token[0] == '|') {
+            ops[numOps] = OP_OR;
+            numOps += 2;
+        } else if (!USE_SWITCH  &&  (token[0] == '.'  ||  (token[0] >= '0'  &&  token[0] <= '9'))) {  //((token[0] >= '0'  &&  token[0] <= '9')  ||  (token[0] == '-'  &&  (token[1] >= '0'  &&  token[1] <= '9'))) {
+			//opnumbertoken:
+            ops[numOps] = OP_VAL;
+            numOps++;
+            ops[numOps] = atof(token);
+            numOps++;
+			goto tokenHandled;
+#if 0
+        } else if (!Q_stricmpt(token, "time")) {
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = (cg.ftime - (float)cgs.levelStartTime) / 1000.0;
+            //ops[numOps + 1] = (cg.time - (float)cgs.levelStartTime) / 1000.0;
+            numOps += 2;
+#endif
+        // functions //
+
+        } else if (!Q_stricmp(token, "sqrt")) {
+            ops[numOps] = OP_FSQRT;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "ceil")) {
+            ops[numOps] = OP_FCEIL;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "floor")) {
+            ops[numOps] = OP_FFLOOR;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "sin")) {
+            ops[numOps] = OP_FSIN;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "cos")) {
+            ops[numOps] = OP_FCOS;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "wave")) {
+            ops[numOps] = OP_FWAVE;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "clip")) {
+            ops[numOps] = OP_FCLIP;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "acos")) {
+            ops[numOps] = OP_FACOS;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "asin")) {
+            ops[numOps] = OP_FASIN;
+            numOps += 2;
+        } else if (!Q_stricmp(token, "atan")) {
+            ops[numOps] = OP_FATAN;
+            numOps += 2;
+		} else if (!Q_stricmp(token, "atan2")) {
+			ops[numOps] = OP_FATAN2;
+			numOps += 2;
+        } else if (!Q_stricmp(token, "tan")) {
+            ops[numOps] = OP_FTAN;
+            numOps += 2;
+		} else if (!Q_stricmp(token, "pow")) {
+			ops[numOps] = OP_FPOW;
+			numOps += 2;
+		} else if (!Q_stricmp(token, "pi")) {
+            ops[numOps] = OP_VAL;
+            numOps++;
+            ops[numOps] = M_PI;
+            numOps++;
+        } else if (!Q_stricmp(token, "rand")) {
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = random();
+            numOps += 2;
+        } else if (!Q_stricmp(token, "crand")) {
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = crandom();
+            numOps += 2;
+		} else if (!Q_stricmp(token, "realtime")) {
+			float val;
+
+			val = DC->realTime;
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = val;
+            numOps += 2;
+		} else if (!Q_stricmp(token, "gametime")) {
+			float val;
+
+			val = DC->cgTime;
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = val;
+            numOps += 2;
+		} else if (!Q_stricmp(token, "ownerdrawvalue")) {
+			ops[numOps] = OP_FOWNERDRAWVALUE;
+			numOps += 2;
+		} else if (token[0] == '@') {
+			float f;
+
+			f = MenuVar_Get(token);
+
+			ops[numOps] = OP_VAL;
+			ops[numOps + 1] = f;
+			numOps += 2;
+		} else if (token[0] == '(') {
+			// pass
+        } else if (DC->cvarExists(token)) {
+			//FIXME check @vars
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = DC->getCVarValue(token);  //trap_Cvar_VariableValue(token)  //SC_Cvar_Get_Float(token);
+            numOps += 2;
+            if (verbose) {
+                //Com_Printf("^3q3math unknown token: 's'\n", token);
+                //Com_Printf("cvar: '%s' %f\n", token, SC_Cvar_Get_Float(token));
+            }
+        } else {
+			Com_Printf("^3qmath unknown token/cvar '%s'\n", token);
+			recursiveCount--;
+			return script;
+		}
+
+	tokenHandled:
+        if (newLine) {
+            break;
+        }
+    }
+
+    // sanity check
+    if (ops[0] >= OP_PLUS  &&  ops[0] <= OP_OR  &&  ops[0] != OP_MINUS) {
+        *error = 1;
+        Com_Printf("^3qmath invalid first token(%d %d): %f\n", recursiveCount, uniqueId, ops[0]);
+        recursiveCount--;
+        return script;
+    }
+
+    if (numOps > 0  &&  (ops[numOps - 2] >= OP_PLUS  &&  ops[numOps - 2] <= OP_OR)) {
+        *error = 2;
+        Com_Printf("^3qmath invalid last token(%d %d): %f\n", recursiveCount, uniqueId, ops[numOps - 2]);
+        recursiveCount--;
+        return script;
+    }
+
+    // functions
+    for (i = numOps - 2;  i >= 0;  i -= 2) {
+        float val, val2;
+
+        if (ops[i] < OP_FUNCFIRST  ||  ops[i] > OP_FUNCLAST) {
+            continue;
+        }
+
+        val = 0;
+        if ((i + 2) < (numOps - 1)) {
+            if (ops[i + 2] != OP_VAL) {
+                *error = 6;
+                Com_Printf("^3qmath invalid function value type (%d %d): %f\n", recursiveCount, uniqueId, ops[i + 2]);
+                recursiveCount--;
+                return script;
+            }
+            val = ops[i + 3];
+        }
+
+        if (ops[i] == OP_FSQRT) {
+            val = sqrt(val);
+        } else if (ops[i] == OP_FCEIL) {
+            val = ceil(val);
+        } else if (ops[i] == OP_FFLOOR) {
+            val = floor(val);
+        } else if (ops[i] == OP_FSIN) {
+            val = sin(DEG2RAD(val));
+        } else if (ops[i] == OP_FCOS) {
+            val = cos(DEG2RAD(val));
+        } else if (ops[i] == OP_FWAVE) {
+            //val = sin(val / M_PI);
+			// fucking q3mme -- this is what they have
+			val = sin(val * 2 * M_PI);
+        } else if (ops[i] == OP_FCLIP) {
+            if (val < 0.0) {
+                val = 0;
+            } else if (val > 1.0) {
+                val = 1;
+            }
+        } else if (ops[i] == OP_FACOS) {
+            val = RAD2DEG(acos(val));
+        } else if (ops[i] == OP_FASIN) {
+            val = RAD2DEG(M_PI / 2.0 - acos(val));
+        } else if (ops[i] == OP_FATAN) {
+            val = RAD2DEG(M_PI / 2.0 - acos(val / (sqrt(val * val + 1))));
+		} else if (ops[i] == OP_FATAN2) {
+            val2 = ops[i + 5];
+			val = RAD2DEG(atan2(val, val2));
+			numOps -= 2;
+        } else if (ops[i] == OP_FTAN) {
+			val = tan(DEG2RAD(val));
+		} else if (ops[i] == OP_FPOW) {
+            val2 = ops[i + 5];
+			val = powf(val, val2);
+			numOps -= 2;
+		} else if (ops[i] == OP_FOWNERDRAWVALUE) {
+			val = DC->getValue(val);
+        } else {
+            Com_Printf("^3qmath unknown function %f\n", ops[i]);
+        }
+
+        ops[i] = OP_VAL;
+        ops[i + 1] = val;
+
+        for (j = i + 4;  j < numOps;  j++) {
+            ops[j - 2] = ops[j];
+        }
+        numOps -= 2;
+    }
+
+    // checking
+    for (i = 2;  i < numOps;  i += 2) {
+        if (ops[i] >= OP_PLUS  &&  ops[i] <= OP_OR) {
+            if (ops[i + 2] >= OP_PLUS  &&  ops[i + 2] <= OP_OR) {
+                if (ops[i + 2] != OP_MINUS) {
+                    *error = 3;
+                    Com_Printf("^3qmath two operands following each other(%d %d)\n", recursiveCount, uniqueId);
+                    recursiveCount--;
+                    return script;
+                } else {
+                    i += 2;
+                }
+            }
+        }
+    }
+
+    // - as multiplier
+    for (i = 0;  i < numOps;  i += 2) {
+        if (ops[i] == OP_NOP) {
+            continue;
+        }
+        if (ops[i] == OP_MINUS) {
+            if (i == 0  ||  (i >= 2  &&  (ops[i - 2] >= OP_PLUS  &&  ops[i - 2] <= OP_OR))) {
+                ops[i] = OP_VAL;
+                ops[i + 1] = -(ops[i + 3]);
+                for (j = i + 4;  j < numOps;  j++) {
+                    ops[j - 2] = ops[j];
+                }
+                numOps -= 2;
+            }
+        }
+    }
+
+    // * /
+
+    for (i = 0;  i < numOps;  i += 2) {
+        if (ops[i] == OP_NOP) {
+            continue;
+        }
+
+        if (ops[i] == OP_MULT) {
+            //Com_Printf("(%d %d)  %f * %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] *= ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        } else if (ops[i] == OP_DIV) {
+            //Com_Printf("(%d %d)  %f / %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+#if 0
+			if (ops[i + 3] == 0.0) {
+				Com_Printf("^3qmath divide by zero\n");
+			}
+#endif
+            ops[i - 1] /= ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+		} else if (ops[i] == OP_MOD) {
+            //Com_Printf("(%d %d)  %f % %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = (int)round(ops[i - 1]) % (int)round(ops[i + 3]);
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        }
+    }
+
+    // + -
+
+    for (i = 0;  i < numOps;  i += 2) {
+        if (ops[i] == OP_NOP) {
+            continue;
+        }
+
+        if (ops[i] == OP_PLUS) {
+            //Com_Printf("(%d %d)  %f + %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] += ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        } else if (ops[i] == OP_MINUS) {
+            //Com_Printf("(%d %d)  %f - %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] -= ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        }
+    }
+
+    // < > ! = & |
+
+    for (i = 0;  i < numOps;  i += 2) {
+        if (ops[i] == OP_NOP) {
+            continue;
+        }
+
+        if (ops[i] == OP_LESS) {
+            //Com_Printf("(%d %d)  %f < %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = ops[i - 1] < ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        } else if (ops[i] == OP_GREATER) {
+            //Com_Printf("(%d %d)  %f > %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = ops[i - 1] > ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        } else if (ops[i] == OP_NOT) {
+            //Com_Printf("(%d %d)  %f != %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = ops[i - 1] != ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        } else if (ops[i] == OP_EQUAL) {
+            //Com_Printf("(%d %d)  %f == %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = ops[i - 1] == ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        } else if (ops[i] == OP_AND) {
+            //Com_Printf("(%d %d)  %f && %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = ops[i - 1] && ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        } else if (ops[i] == OP_OR) {
+            //Com_Printf("(%d %d)  %f || %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = ops[i - 1] || ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+        }
+    }
+
+    // sanity check
+    if (ops[0] != OP_VAL) {
+        *error = 5;
+        Com_Printf("^3qmath invalid final value op(%d %d): %f\n", recursiveCount, uniqueId, ops[0]);
+        recursiveCount--;
+        return script;
+    }
+
+    *val = ops[1];
+    if (verbose) {
+        Com_Printf("val(%d %d)(numOps:%d): %f\n", recursiveCount, uniqueId, numOps, *val);
+    }
+
+    recursiveCount--;
+    return script;
+}
+
+qboolean ItemParse_setVar (itemDef_t *item, int handle)
+{
+	const char *var;
+	char *mathScript;
+	int err;
+	float f;
+
+	if (!PC_String_Parse(handle, &var)) {
+		return qfalse;
+	}
+
+	if (!PC_Parenthesis_Parse(handle, (const char **)&mathScript)) {
+		return qfalse;
+	}
+	Q_MathScript(mathScript, &f, &err);
+	if (!MenuVar_Set(var, f)) {
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
+qboolean ItemParse_run (itemDef_t *item, int handle)
+{
+	if (PC_Script_Parse(handle, &item->run)) {
+		return qtrue;
+	}
+	return qfalse;
+}
+
+qboolean ItemParse_printVal (itemDef_t *item, int handle)
+{
+	char *mathScript;
+	int err;
+	float f;
+
+	if (!PC_Parenthesis_Parse(handle, (const char **)&mathScript)) {
+		return qfalse;
+	}
+	Q_MathScript(mathScript, &f, &err);
+	Com_Printf("%f\n", f);
+
+	return qtrue;
+}
+
 keywordHash_t itemParseKeywords[] = {
 	{"name", ItemParse_name, NULL},
 	{"text", ItemParse_text, NULL},
+	{"textext", ItemParse_textExt, NULL},
 	{"group", ItemParse_group, NULL},
 	{"asset_model", ItemParse_asset_model, NULL},
 	{"asset_shader", ItemParse_asset_shader, NULL},
@@ -5303,6 +6663,7 @@ keywordHash_t itemParseKeywords[] = {
 	{"action", ItemParse_action, NULL},
 	{"special", ItemParse_special, NULL},
 	{"cvar", ItemParse_cvar, NULL},
+	{"cvarset", ItemParse_cvarSet, NULL},
 	{"maxChars", ItemParse_maxChars, NULL},
 	{"maxPaintChars", ItemParse_maxPaintChars, NULL},
 	{"focusSound", ItemParse_focusSound, NULL},
@@ -5321,8 +6682,11 @@ keywordHash_t itemParseKeywords[] = {
 	{"doubleclick", ItemParse_doubleClick, NULL},
 	{"defaultContent", ItemParse_defaultContent, NULL},
 	{"cellId", ItemParse_cellId, NULL},
-	{"font", ItemParse_font, NULL },
-	{"precision", ItemParse_precision, NULL },
+	{"font", ItemParse_font, NULL},
+	{"precision", ItemParse_precision, NULL},
+	{"setvar", ItemParse_setVar, NULL},
+	{"run", ItemParse_run, NULL},
+	{"printval", ItemParse_printVal, NULL},
 	{NULL, 0, NULL}
 };
 
@@ -5342,6 +6706,186 @@ void Item_SetupKeywordHash(void) {
 	}
 }
 
+static void Item_RunFrameScript (itemDef_t *item, const char *script)
+{
+	keywordHash_t *key;
+	const char *token;
+	char *oldScriptBuffer;
+	qboolean oldUseScriptBuffer;
+
+	if (item == NULL) {
+		Com_Printf("^1Item_RunFrameScript() item == NULL\n");
+		return;
+	}
+
+	if (script == NULL) {
+		Com_Printf("^1Item_RunFrameScript() script == NULL\n");
+		return;
+	}
+
+	oldScriptBuffer = ScriptBuffer;
+	oldUseScriptBuffer = UseScriptBuffer;
+
+	UseScriptBuffer = qtrue;
+	ScriptBuffer = (char *)script;
+	while ( 1 ) {
+	loopStart:
+		if (!String_Parse(&ScriptBuffer, &token)) {
+			// all done
+			break;
+		}
+
+		while (!Q_stricmp(token, "if")) {
+			char s[MAX_TOKEN_CHARS];
+
+			if (!ItemParse_if(item, -1, s, qfalse)) {
+				ScriptBuffer = oldScriptBuffer;
+				UseScriptBuffer = oldUseScriptBuffer;
+				return;
+			}
+			if (s[0] == '\0') {
+				goto loopStart;
+			}
+			token = String_Alloc(s);
+		}
+
+		key = KeywordHash_Find(itemParseKeywordHash, (char *)token);
+		if (!key) {
+			Com_Printf("^1Item_RunFrameScript()  unknown menu item keyword '%s'\n", token);
+			continue;
+		}
+		if ( !key->func(item, -1) ) {
+			Com_Printf("^1Item_RunFrameScript()  couldn't parse menu item keyword '%s'\n", token);
+			break;
+		}
+	}
+
+	ScriptBuffer = oldScriptBuffer;
+	UseScriptBuffer = oldUseScriptBuffer;
+}
+
+qboolean ItemParse_if (itemDef_t *item, int handle, char *lastToken, qboolean forceSkip)
+{
+	char *mathScript;
+	const char *script;
+	float f;
+	int err;
+	int oldUseScriptBuffer;
+	char *oldScriptBuffer;
+	const char *token;
+	qboolean runElse;
+
+	if (!PC_Parenthesis_Parse(handle, (const char **)&mathScript)) {
+		return qfalse;
+	}
+
+	if (!forceSkip) {
+		Q_MathScript(mathScript, &f, &err);
+	} else {
+		f = 0;
+	}
+
+	if (!PC_Script_Parse(handle, &script)) {
+		return qfalse;
+	}
+
+	runElse = qfalse;
+	if (f == 0.0) {
+		runElse = qtrue;
+	}
+
+	// handle 'if' block
+	if (!forceSkip  &&  !runElse) {
+		//FIXME :(
+ 		oldUseScriptBuffer = UseScriptBuffer;
+		oldScriptBuffer = ScriptBuffer;
+
+		Item_RunFrameScript(item, script);
+
+		ScriptBuffer = oldScriptBuffer;
+		UseScriptBuffer = oldUseScriptBuffer;
+	}
+
+	// handle 'else' and 'elif' blocks
+
+	//while (1) {
+	if (!PC_String_Parse(handle, &token)) {
+		// end of script
+		lastToken[0] = '\0';
+		return qtrue;
+	}
+
+	Q_strncpyz(lastToken, token, MAX_TOKEN_CHARS);
+
+	if (token[0] == '}') {
+		return qtrue;
+	} else if (!Q_stricmp(token, "else")) {
+		if (!PC_Script_ParseExt(handle, &script, &token)) {
+			if (!Q_stricmp(token, "if")) {
+				if (!forceSkip  &&  runElse) {
+					return ItemParse_if(item, handle, lastToken, qfalse);
+				} else {
+					return ItemParse_if(item, handle, lastToken, qtrue);
+				}
+			} else {
+				return qfalse;
+			}
+		}
+
+		if (!forceSkip  &&  runElse) {
+			oldUseScriptBuffer = UseScriptBuffer;
+			oldScriptBuffer = ScriptBuffer;
+
+			Item_RunFrameScript(item, script);
+
+			ScriptBuffer = oldScriptBuffer;
+			UseScriptBuffer = oldUseScriptBuffer;
+		}
+		lastToken[0] = '\0';
+		return qtrue;
+	} else {
+		return qtrue;
+	}
+
+	//}
+}
+
+/*
+===============
+Item_ApplyHacks
+
+Hacks to fix issues with Team Arena menu scripts
+===============
+*/
+static void Item_ApplyHacks( itemDef_t *item ) {
+
+	// Fix length of favorite address in createfavorite.menu
+	if ( item->type == ITEM_TYPE_EDITFIELD && item->cvar && !Q_stricmp( item->cvar, "ui_favoriteAddress" ) ) {
+		editFieldDef_t *editField = (editFieldDef_t *)item->typeData;
+
+		// enough to hold an IPv6 address plus null
+		if ( editField->maxChars < 48 ) {
+			Com_Printf( "Extended create favorite address edit field length to hold an IPv6 address\n" );
+			editField->maxChars = 48;
+		}
+	}
+
+	if ( item->type == ITEM_TYPE_EDITFIELD && item->cvar && ( !Q_stricmp( item->cvar, "ui_Name" ) || !Q_stricmp( item->cvar, "ui_findplayer" ) ) ) {
+		editFieldDef_t *editField = (editFieldDef_t *)item->typeData;
+
+		// enough to hold a full player name
+		if ( editField->maxChars < MAX_NAME_LENGTH ) {
+			if ( editField->maxPaintChars > editField->maxChars ) {
+				editField->maxPaintChars = editField->maxChars;
+			}
+
+			Com_Printf( "Extended player name field using cvar %s to %d characters\n", item->cvar, MAX_NAME_LENGTH );
+			editField->maxChars = MAX_NAME_LENGTH;
+		}
+	}
+
+}
+
 /*
 ===============
 Item_Parse
@@ -5351,29 +6895,47 @@ qboolean Item_Parse(int handle, itemDef_t *item) {
 	pc_token_t token;
 	keywordHash_t *key;
 
-
 	if (!trap_PC_ReadToken(handle, &token))
 		return qfalse;
 	if (*token.string != '{') {
 		return qfalse;
 	}
+
+	UseScriptBuffer = qfalse;
 	while ( 1 ) {
+	loopStart:
 		if (!trap_PC_ReadToken(handle, &token)) {
-			PC_SourceError(handle, "end of file inside menu item");
+			PC_SourceError(handle, "Item_Parse() end of file inside menu item");
 			return qfalse;
 		}
 
+		// hack for reading extra token in parse_if()
+		// returns qfalse if last token was '}'
+		while (!Q_stricmp(token.string, "if")) {
+			char s[MAX_TOKEN_CHARS];
+
+			if (!ItemParse_if(item, handle, s, qfalse)) {
+				return qfalse;
+			}
+			if (s[0] == '\0') {
+				goto loopStart;
+			}
+			Q_strncpyz(token.string, s, sizeof(token.string));
+		}
+
 		if (*token.string == '}') {
+			Item_ApplyHacks( item );
 			return qtrue;
 		}
 
 		key = KeywordHash_Find(itemParseKeywordHash, token.string);
 		if (!key) {
-			PC_SourceError(handle, "unknown menu item keyword %s", token.string);
+			PC_SourceError(handle, "Item_Parse() unknown menu item keyword %s", token.string);
 			continue;
 		}
+
 		if ( !key->func(item, handle) ) {
-			PC_SourceError(handle, "couldn't parse menu item keyword %s", token.string);
+			PC_SourceError(handle, "Item_Parse() couldn't parse menu item keyword %s", token.string);
 			return qfalse;
 		}
 	}
@@ -5469,7 +7031,10 @@ qboolean MenuParse_visible( itemDef_t *item, int handle ) {
 	}
 	if (i) {
 		menu->window.flags |= WINDOW_VISIBLE;
+	} else {
+		menu->window.flags &= ~WINDOW_VISIBLE;
 	}
+
 	return qtrue;
 }
 
@@ -5540,6 +7105,7 @@ qboolean MenuParse_forecolor( itemDef_t *item, int handle ) {
 		}
 		menu->window.foreColor[i]  = f;
 		menu->window.flags |= WINDOW_FORECOLORSET;
+		Com_Printf("color[%d] %f\n", i, f);
 	}
 	return qtrue;
 }
@@ -5601,7 +7167,10 @@ qboolean MenuParse_background( itemDef_t *item, int handle ) {
 	if (!PC_String_Parse(handle, &buff)) {
 		return qfalse;
 	}
-	menu->window.background = DC->registerShaderNoMip(buff);
+	if (Q_stricmp(buff, menu->window.backgroundName)) {
+		menu->window.background = DC->registerShaderNoMip(buff);
+		menu->window.backgroundName = String_Alloc(buff);
+	}
 	return qtrue;
 }
 
@@ -5710,7 +7279,7 @@ qboolean MenuParse_itemDef( itemDef_t *item, int handle ) {
 		Item_InitControls(menu->items[menu->itemCount]);
 		menu->items[menu->itemCount++]->parent = menu;
 	} else {
-		Com_Printf("^1ERROR: menu->itemCount >= MAX_MENUITEMS (%d)\n", MAX_MENUITEMS);
+		Com_Printf("^1MenuParse_itemDef() menu->itemCount >= MAX_MENUITEMS (%d)\n", MAX_MENUITEMS);
 	}
 	return qtrue;
 }
@@ -5745,6 +7314,7 @@ keywordHash_t menuParseKeywords[] = {
 	{"fadeClamp", MenuParse_fadeClamp, NULL},
 	{"fadeCycle", MenuParse_fadeCycle, NULL},
 	{"fadeAmount", MenuParse_fadeAmount, NULL},
+	{"setvar", ItemParse_setVar, NULL},
 	{NULL, 0, NULL}
 };
 
@@ -5764,6 +7334,137 @@ void Menu_SetupKeywordHash(void) {
 	}
 }
 
+#if 0
+qboolean MenuParse_if (itemDef_t *item, int handle, char *lastToken);
+
+static void Menu_RunFrameScript (itemDef_t *item, const char *script)
+{
+	keywordHash_t *key;
+	const char *token;
+	char *oldScriptBuffer;
+	qboolean oldUseScriptBuffer;
+
+	if (item == NULL) {
+		Com_Printf("^1Menu_RunFrameScript() item == NULL\n");
+		return;
+	}
+
+	if (script == NULL) {
+		Com_Printf("^1Menu_RunFrameScript() script == NULL\n");
+		return;
+	}
+
+	oldScriptBuffer = ScriptBuffer;
+	oldUseScriptBuffer = UseScriptBuffer;
+
+	UseScriptBuffer = qtrue;
+	ScriptBuffer = (char *)script;
+	while ( 1 ) {
+	loopStart:
+		if (!String_Parse(&ScriptBuffer, &token)) {
+			// all done
+			break;
+		}
+
+		while (!Q_stricmp(token, "if")) {
+			char s[MAX_TOKEN_CHARS];
+
+			if (!MenuParse_if(item, -1, s)) {
+				ScriptBuffer = oldScriptBuffer;
+				UseScriptBuffer = oldUseScriptBuffer;
+				return;
+			}
+			if (s[0] == '\0') {
+				goto loopStart;
+			}
+			token = String_Alloc(s);
+		}
+
+		key = KeywordHash_Find(menuParseKeywordHash, (char *)token);
+		if (!key) {
+			Com_Printf("^1Menu_RunFrameScript()  unknown menu item keyword '%s'\n", token);
+			continue;
+		}
+		if ( !key->func(item, -1) ) {
+			Com_Printf("^1Menu_RunFrameScript()  couldn't parse menu item keyword '%s'\n", token);
+			break;
+		}
+	}
+
+	ScriptBuffer = oldScriptBuffer;
+	UseScriptBuffer = oldUseScriptBuffer;
+}
+
+qboolean MenuParse_if (itemDef_t *item, int handle, char *lastToken)
+{
+	char *mathScript;
+	const char *script;
+	float f;
+	int err;
+	int oldUseScriptBuffer;
+	char *oldScriptBuffer;
+	const char *token;
+	qboolean runElse;
+
+	if (!PC_Parenthesis_Parse(handle, (const char **)&mathScript)) {
+		return qfalse;
+	}
+
+	Q_MathScript(mathScript, &f, &err);
+	if (!PC_Script_Parse(handle, &script)) {
+		return qfalse;
+	}
+
+	runElse = qfalse;
+	if (f == 0.0) {
+		runElse = qtrue;
+	}
+
+	// handle 'if' block
+	if (!runElse) {
+		//FIXME :(
+ 		oldUseScriptBuffer = UseScriptBuffer;
+		oldScriptBuffer = ScriptBuffer;
+
+		Menu_RunFrameScript(item, script);
+
+		ScriptBuffer = oldScriptBuffer;
+		UseScriptBuffer = oldUseScriptBuffer;
+	}
+
+	// handle 'else' block
+
+	if (!PC_String_Parse(handle, &token)) {
+		// end of script
+		lastToken[0] = '\0';
+		return qtrue;
+	}
+
+	Q_strncpyz(lastToken, token, MAX_TOKEN_CHARS);
+
+	if (token[0] == '}') {
+		return qtrue;
+	} else	if (!Q_stricmp(token, "else")) {
+		if (!PC_Script_Parse(handle, &script)) {
+			return qfalse;
+		}
+		if (runElse) {
+			oldUseScriptBuffer = UseScriptBuffer;
+			oldScriptBuffer = ScriptBuffer;
+
+			Menu_RunFrameScript(item, script);
+
+			ScriptBuffer = oldScriptBuffer;
+			UseScriptBuffer = oldUseScriptBuffer;
+		}
+		lastToken[0] = '\0';
+		return qtrue;
+	} else {
+		return qtrue;
+	}
+}
+#endif
+
 /*
 ===============
 Menu_Parse
@@ -5778,7 +7479,7 @@ qboolean Menu_Parse(int handle, menuDef_t *menu) {
 	if (*token.string != '{') {
 		return qfalse;
 	}
-    
+
 	while ( 1 ) {
 
 		memset(&token, 0, sizeof(pc_token_t));
@@ -5786,6 +7487,23 @@ qboolean Menu_Parse(int handle, menuDef_t *menu) {
 			PC_SourceError(handle, "end of file inside menu");
 			return qfalse;
 		}
+
+#if 0
+		// hack for reading extra token in parse_if()
+		// returns qfalse if last token was '}'
+		if (!Q_stricmp(token.string, "if")) {
+			char s[MAX_TOKEN_CHARS];
+
+			Com_Printf("menuparse if\n");
+			if (!MenuParse_if((itemDef_t *)menu, handle, s)) {
+				return qfalse;
+			}
+			if (s[0] == '\0') {
+				continue;
+			}
+			Q_strncpyz(token.string, s, sizeof(token.string));
+		}
+#endif
 
 		if (*token.string == '}') {
 			//PC_SourceError(handle, "close %s", token.string);
@@ -5835,7 +7553,6 @@ void Menu_PaintAll(void) {
 	}
 
 	for (i = 0; i < Menu_Count(); i++) {
-		//Com_Printf("%s\n", Menus[i].window.name);
 		Menu_Paint(&Menus[i], qfalse);
 	}
 

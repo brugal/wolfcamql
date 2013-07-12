@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // cl_cgame.c  -- client system interaction with client game
 
 #include "client.h"
+#include "keys.h"
+#include <inttypes.h>
 
 #include "../botlib/botlib.h"
 
@@ -141,7 +143,12 @@ CL_GetSnapshot
 */
 qboolean	CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 	clSnapshot_t	*clSnap;
+	clSnapshot_t *extraSnap;
 	int				i, count;
+	int j;
+	qboolean added[MAX_GENTITIES];
+	int addExtraEnts;
+	int pov;
 
 	if ( snapshotNumber > cl.snap.messageNum ) {
 		Com_Printf("%s snapshotNumber > cl.snap.messageNum\n", __FUNCTION__);
@@ -155,8 +162,17 @@ qboolean	CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 		return qfalse;
 	}
 
+	if (clc.demoplaying) {
+		pov = di.pov;
+	} else {
+		pov = 0;
+	}
+
+	clSnap = &cl.snapshots[pov][snapshotNumber & PACKET_MASK];
+	//extraSnap = &cl.snapshots[1][snapshotNumber & PACKET_MASK];
+
 	// if the frame is not valid, we can't return it
-	clSnap = &cl.snapshots[snapshotNumber & PACKET_MASK];
+
 	if ( !clSnap->valid ) {  // &&  !clc.demoplaying ) {
 		// old snapshots get marked as invalid
 		//Com_Printf("%s snapshot %d invalid\n", __FUNCTION__, snapshotNumber);
@@ -165,10 +181,12 @@ qboolean	CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 
 	// if the entities in the frame have fallen out of their
 	// circular buffer, we can't return it
-	if ( cl.parseEntitiesNum - clSnap->parseEntitiesNum >= MAX_PARSE_ENTITIES ) {
-		Com_Printf("%s cl.parseEntitiesNum - clSnap->parseEntitiesNum >= MAX_PARSE_ENTITIES\n", __FUNCTION__);
+	if (cl.parseEntitiesNum - clSnap->parseEntitiesNum >= MAX_PARSE_ENTITIES) {
+		Com_Printf("%s cl.parseEntitiesNum(%d) - clSnap->parseEntitiesNum(%d) >= MAX_PARSE_ENTITIES(%d)   %d ents  want snap %d  current %d\n", __FUNCTION__, cl.parseEntitiesNum, clSnap->parseEntitiesNum, MAX_PARSE_ENTITIES, cl.parseEntitiesNum - clSnap->parseEntitiesNum, snapshotNumber, cl.snap.messageNum);
 		return qfalse;
 	}
+
+	memset(added, 0, sizeof(added));
 
 	// write the snapshot
 	snapshot->snapFlags = clSnap->snapFlags;
@@ -178,7 +196,10 @@ qboolean	CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 	snapshot->messageNum = clSnap->messageNum;
 	Com_Memcpy( snapshot->areamask, clSnap->areamask, sizeof( snapshot->areamask ) );
 	snapshot->ps = clSnap->ps;
+	//snapshot->ps = extraSnap->ps;
+	added[snapshot->ps.clientNum] = qtrue;
 	count = clSnap->numEntities;
+	//Com_Printf("0 ents %d\n", count);
 	if ( count > MAX_ENTITIES_IN_SNAPSHOT ) {
 		//Com_DPrintf( "CL_GetSnapshot: truncated %i entities to %i\n", count, MAX_ENTITIES_IN_SNAPSHOT );
 		Com_Printf( "CL_GetSnapshot: truncated %i entities to %i\n", count, MAX_ENTITIES_IN_SNAPSHOT );
@@ -188,6 +209,56 @@ qboolean	CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 	for ( i = 0 ; i < count ; i++ ) {
 		snapshot->entities[i] =
 			cl.parseEntities[ ( clSnap->parseEntitiesNum + i ) & (MAX_PARSE_ENTITIES-1) ];
+		added[snapshot->entities[i].number] = qtrue;
+	}
+
+	addExtraEnts = Cvar_VariableIntegerValue("all_ents");
+
+	//Com_Printf("0 %d   1 %d\n", clSnap->parseEntitiesNum, extraSnap->parseEntitiesNum);
+
+	if (clc.demoplaying  &&  addExtraEnts) {
+		int newAdded = 0;
+
+		for (j = 1;  j < di.numDemoFiles;  j++) {
+			if (!di.demoFiles[j].valid) {
+				continue;
+			}
+
+			extraSnap = &cl.snapshots[j][snapshotNumber & PACKET_MASK];
+			//snapshot->numEntities += extraSnap->numEntities;
+			for (i = 0;  i < extraSnap->numEntities;  i++) {
+				entityState_t *es;
+
+				es = &cl.parseEntities[(extraSnap->parseEntitiesNum + i) & (MAX_PARSE_ENTITIES - 1)];
+				if (added[es->number]) {
+					if (addExtraEnts > 1) {
+						Com_Printf("%d demo %d skipping %d (already added)\n", cl.snap.serverTime, j, es->number);
+					}
+					continue;
+				}
+				snapshot->entities[count + newAdded] = *es;
+				//cl.parseEntities[ ( extraSnap->parseEntitiesNum + i ) & (MAX_PARSE_ENTITIES-1) ];
+				snapshot->numEntities++;
+				newAdded++;
+			}
+			if (!added[extraSnap->ps.clientNum]) {
+				playerState_t ps;
+
+				memset(&ps, 0, sizeof(ps));
+				ps = extraSnap->ps;
+				if (addExtraEnts > 1) {
+					Com_Printf("new ps %d  entityEventSequence %d  eventSequence %d\n", ps.clientNum, ps.entityEventSequence, ps.eventSequence);
+				}
+				//FIXME external events -- hack until cgame supports more than one playerstate
+				BG_PlayerStateToEntityState(&ps, &snapshot->entities[count + newAdded], qfalse);
+				snapshot->numEntities++;
+				newAdded++;
+			} else {
+				if (addExtraEnts > 1) {
+					Com_Printf("%d demo %d skipping ps %d (already added)\n", cl.snap.serverTime, j, extraSnap->ps.clientNum);
+				}
+			}
+		}
 	}
 
 	// FIXME: configstring changes and server commands!!!
@@ -448,7 +519,7 @@ void CL_ConfigstringModified( void ) {
 
 	index = atoi( Cmd_Argv(1) );
 	if ( index < 0 || index >= MAX_CONFIGSTRINGS ) {
-		Com_Error( ERR_DROP, "configstring > MAX_CONFIGSTRINGS" );
+		Com_Error( ERR_DROP, "CL_ConfigstringModified: bad index %i", index );
 	}
 	// get everything after "cs <num>"
 	s = Cmd_ArgsFrom(2);
@@ -745,6 +816,8 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	case CG_CVAR_VARIABLESTRINGBUFFER:
 		Cvar_VariableStringBuffer( VMA(1), VMA(2), args[3] );
 		return 0;
+	case CG_CVAR_EXISTS:
+		return Cvar_Exists(VMA(1));
 	case CG_ARGC:
 		return Cmd_Argc();
 	case CG_ARGV:
@@ -897,6 +970,11 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	case CG_R_ADDREFENTITYTOSCENE:
 		if (cl.draw) {
 			re.AddRefEntityToScene( VMA(1) );
+		}
+		return 0;
+	case CG_R_ADDREFENTITYPTRTOSCENE:
+		if (cl.draw) {
+			re.AddRefEntityPtrToScene(VMA(1));
 		}
 		return 0;
 	case CG_R_ADDPOLYTOSCENE:
@@ -1150,8 +1228,82 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	}
 	case CG_R_GETSINGLESHADER:
 		return re.GetSingleShader();
+	case CG_GET_DEMO_TIMEOUTS: {
+		timeOut_t *to;
+		int *numTimeouts;
+
+		numTimeouts = (int *)VMA(1);
+
+		*numTimeouts = di.numTimeouts;
+		to = (timeOut_t *)VMA(2);
+		memcpy(to, di.timeOuts, sizeof(di.timeOuts));
+
+		return 0;
+	}
+	case CG_GET_NUM_PLAYER_INFO: {
+		return di.numPlayerInfo;
+	}
+	case CG_GET_EXTRA_PLAYER_INFO: {
+		char *output;
+
+		if (args[1] >= di.numPlayerInfo) {
+			Com_Printf("^1CL_CgameSystemCalls CG_GET_EXTRA_PLAYER_INFO invalid number %"PRIdPTR"\n", args[1]);
+			return 0;
+		}
+
+		output = (char *)VMA(2);
+		Q_strncpyz(output, di.playerInfo[args[1]].modelName, MAX_QPATH);
+		return 0;
+	}
+	case CG_GET_REAL_MAP_NAME: {
+		const char *name;
+		char *output;
+		int sz;
+		int i;
+
+		name = (const char *)VMA(1);
+		output = (char *)VMA(2);
+		sz = args[3];
+
+		//output[0] = '\0';
+		Q_strncpyz(output, name, sz);
+
+		if (!FS_VirtualFileExists(name)) {
+			i = 0;
+			while (1) {
+				if (MapNames[i].oldName == NULL) {
+					break;
+				}
+				if (!Q_stricmp(name, MapNames[i].oldName)) {
+					if (!FS_VirtualFileExists(MapNames[i].newName)) {
+						// couldn't find alt map
+						//Com_Printf("newName '%s' doesn't exist\n", MapNames[i].newName);
+						break;
+					} else {
+						Q_strncpyz(output, MapNames[i].newName, sz);
+					}
+					break;
+				}
+
+				if (!Q_stricmp(name, MapNames[i].newName)) {
+					if (!FS_VirtualFileExists(MapNames[i].oldName)) {
+						// couldn't find alt map
+						//Com_Printf("oldName '%s' doesn't exist\n", MapNames[i].oldName);
+						break;
+					} else {
+						Q_strncpyz(output, MapNames[i].oldName, sz);
+					}
+					break;
+				}
+
+				i++;
+			}
+		}
+
+		return 0;
+	}
 	default:
-	        assert(0);
+		//assert(0);
 		Com_Error( ERR_DROP, "Bad cgame system trap: %ld", (long int) args[0] );
 	}
 	return 0;

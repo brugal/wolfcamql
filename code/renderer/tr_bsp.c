@@ -2172,6 +2172,12 @@ qboolean R_GetEntityToken( char *buffer, int size ) {
 
 	s = COM_Parse( &s_worldData.entityParsePoint );
 	Q_strncpyz( buffer, s, size );
+	if (!s[0]) {
+		Com_Printf("^2bsp:   !s[0]\n");
+		//s_worldData.entityParsePoint = s_worldData.entityString;
+		//return qfalse;
+	}
+
 	//if ( !s_worldData.entityParsePoint || !s[0] ) {
 	if ( !s_worldData.entityParsePoint ) {  // || !s[0] ) {
 		//Com_Printf("%p '%c'\n", s_worldData.entityParsePoint, s[0]);

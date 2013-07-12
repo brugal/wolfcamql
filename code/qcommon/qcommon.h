@@ -95,9 +95,6 @@ float	MSG_ReadAngle16 (msg_t *sb);
 void	MSG_ReadData (msg_t *sb, void *buffer, int size);
 int		MSG_LookaheadByte (msg_t *msg);
 
-void MSG_WriteDeltaUsercmd( msg_t *msg, struct usercmd_s *from, struct usercmd_s *to );
-void MSG_ReadDeltaUsercmd( msg_t *msg, struct usercmd_s *from, struct usercmd_s *to );
-
 void MSG_WriteDeltaUsercmdKey( msg_t *msg, int key, usercmd_t *from, usercmd_t *to );
 void MSG_ReadDeltaUsercmdKey( msg_t *msg, int key, usercmd_t *from, usercmd_t *to );
 
@@ -129,13 +126,6 @@ NET
 // disables ipv6 multicast support if set.
 #define NET_DISABLEMCAST        0x08
 
-
-//FIXME linked list
-#define	PACKET_BACKUP	32  //144000   //  :\  //32	// number of old messages that must be kept on client and
-							// server for delta comrpession and ping estimation
-#define	PACKET_MASK		(PACKET_BACKUP-1)
-
-#define	MAX_PACKET_USERCMDS		32		// max number of usercmd_t in a packet
 
 #define	PORT_ANY			-1
 
@@ -190,7 +180,7 @@ void		NET_LeaveMulticast6(void);
 void		NET_Sleep(int msec);
 
 
-#define	MAX_MSGLEN				16384		// max length of a message, which may
+#define	MAX_MSGLEN				(16384 * 2)		// max length of a message, which may
 											// be fragmented into multiple packets
 
 #define MAX_DOWNLOAD_WINDOW			8		// max of eight download frames
@@ -566,6 +556,7 @@ void	Cvar_Restart(qboolean unsetVM);
 void	Cvar_Restart_f( void );
 
 void Cvar_CompleteCvarName( char *args, int argNum );
+qboolean Cvar_Exists (const char *var_name);
 cvar_t *Cvar_FindVar( const char *var_name );
 
 extern	int			cvar_modifiedFlags;
@@ -621,6 +612,7 @@ char	**FS_ListFiles( const char *directory, const char *extension, int *numfiles
 void	FS_FreeFileList( char **list );
 
 qboolean FS_FileExists( const char *file );
+qboolean FS_VirtualFileExists (const char *file);
 
 qboolean FS_CreatePath (char *OSPath);
 char   *FS_BuildOSPath( const char *base, const char *game, const char *qpath );
@@ -637,7 +629,7 @@ fileHandle_t	FS_FOpenFileAppend( const char *filename );
 
 fileHandle_t FS_SV_FOpenFileWrite( const char *filename );
 int		FS_SV_FOpenFileRead( const char *filename, fileHandle_t *fp );
-void	FS_SV_Rename( const char *from, const char *to );
+void	FS_SV_Rename( const char *from, const char *to, qboolean safe );
 void FS_FOpenSysFileRead (const char *filename, fileHandle_t *file);
 int		FS_FOpenFileRead( const char *qpath, fileHandle_t *file, qboolean uniqueFILE );
 // if uniqueFILE is true, then a new FILE will be fopened even if the file
@@ -692,7 +684,7 @@ int		FS_FOpenFileByMode( const char *qpath, fileHandle_t *f, fsMode_t mode );
 int		FS_Seek( fileHandle_t f, long offset, int origin );
 // seek on a file (doesn't work for zip files!!!!!!!!)
 
-//FILE	*FS_FileForHandle( fileHandle_t f );
+FILE *FS_FileForHandle( fileHandle_t f );
 
 qboolean FS_FilenameCompare( const char *s1, const char *s2 );
 
@@ -815,7 +807,7 @@ void		Com_BeginRedirect (char *buffer, int buffersize, void (*flush)(char *));
 void		Com_EndRedirect( void );
 void 		QDECL Com_Printf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void 		QDECL Com_DPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
-void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((format (printf, 2, 3)));
+void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((noreturn, format (printf, 2, 3)));
 void 		Com_Quit_f( void );
 void		Com_GameRestart(int checksumFeed, qboolean clientRestart);
 
@@ -907,8 +899,10 @@ temp file loading
 
 */
 
+#if 0
 #if defined(NDEBUG) && !defined(BSPC)
 	#define ZONE_DEBUG
+#endif
 #endif
 
 #ifdef ZONE_DEBUG
@@ -977,7 +971,7 @@ void CL_JoystickEvent( int axis, int value, int time );
 
 void CL_PacketEvent( netadr_t from, msg_t *msg );
 
-void CL_ConsolePrint( char *text );
+//void CL_ConsolePrint( char *text );
 
 void CL_MapLoading( void );
 // do a screen update before starting to load a map
@@ -1064,7 +1058,7 @@ void	*Sys_GetBotLibAPI( void *parms );
 
 char	*Sys_GetCurrentUser( void );
 
-void	QDECL Sys_Error( const char *error, ...) __attribute__ ((format (printf, 1, 2)));
+void	QDECL Sys_Error( const char *error, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
 void	Sys_Quit (void);
 char	*Sys_GetClipboardData( void );	// note that this isn't journaled...
 
@@ -1073,8 +1067,6 @@ void	Sys_Print( const char *msg );
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps
 int		Sys_Milliseconds (void);
-
-void	Sys_SnapVector( float *v );
 
 qboolean Sys_RandomBytes( byte *string, int len );
 
@@ -1094,6 +1086,7 @@ qboolean	Sys_StringToAdr( const char *s, netadr_t *a, netadrtype_t family );
 qboolean	Sys_IsLANAddress (netadr_t adr);
 void		Sys_ShowIP(void);
 
+FILE  *Sys_FOpen( const char *ospath, const char *mode );
 qboolean Sys_Mkdir( const char *path );
 char	*Sys_Cwd( void );
 void	Sys_SetDefaultInstallPath(const char *path);

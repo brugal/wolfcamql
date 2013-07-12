@@ -111,7 +111,6 @@ static cvarTable_t		gameCvarTable[] = {
 	{ NULL, "gamename", GAMEVERSION , CVAR_SERVERINFO | CVAR_ROM, 0, qfalse  },
 	{ NULL, "gamedate", __DATE__ , CVAR_ROM, 0, qfalse  },
 	{ &g_restarted, "g_restarted", "0", CVAR_ROM, 0, qfalse  },
-	{ NULL, "sv_mapname", "", CVAR_SERVERINFO | CVAR_ROM, 0, qfalse  },
 
 	// latched vars
 	{ &g_gametype, "g_gametype", "0", CVAR_SERVERINFO | CVAR_USERINFO | CVAR_LATCH, 0, qfalse  },
@@ -328,7 +327,7 @@ void G_FindTeams( void ) {
 }
 
 void G_RemapTeamShaders( void ) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	char string[1024];
 	float f = level.time * 0.001;
 	Com_sprintf( string, sizeof(string), "team_icon/%s_red", g_redteam.string );
@@ -371,6 +370,7 @@ void G_RegisterCvars( void ) {
 	if ( g_gametype.integer < 0 || g_gametype.integer >= GT_MAX_GAME_TYPE ) {
 		G_Printf( "g_gametype %i is out of range, defaulting to 0\n", g_gametype.integer );
 		trap_Cvar_Set( "g_gametype", "0" );
+		trap_Cvar_Update( &g_gametype );
 	}
 
 	level.warmupModificationCount = g_warmup.modificationCount;
@@ -1256,7 +1256,7 @@ void CheckIntermissionExit( void ) {
 		if ( cl->pers.connected != CON_CONNECTED ) {
 			continue;
 		}
-		if ( g_entities[cl->ps.clientNum].r.svFlags & SVF_BOT ) {
+		if ( g_entities[i].r.svFlags & SVF_BOT ) {
 			continue;
 		}
 
@@ -1385,10 +1385,6 @@ void CheckExitRules( void ) {
 			LogExit( "Timelimit hit." );
 			return;
 		}
-	}
-
-	if ( level.numPlayingClients < 2 ) {
-		return;
 	}
 
 	if ( g_gametype.integer < GT_CTF && g_fraglimit.integer ) {
@@ -1550,7 +1546,12 @@ void CheckTournament( void ) {
 		// if all players have arrived, start the countdown
 		if ( level.warmupTime < 0 ) {
 			// fudge by -1 to account for extra delays
-			level.warmupTime = level.time + ( g_warmup.integer - 1 ) * 1000;
+			if ( g_warmup.integer > 1 ) {
+				level.warmupTime = level.time + ( g_warmup.integer - 1 ) * 1000;
+			} else {
+				level.warmupTime = 0;
+			}
+
 			trap_SetConfigstring( CS_WARMUP, va("\\time\\%i", level.warmupTime) );
 			return;
 		}
@@ -1795,7 +1796,7 @@ void G_RunFrame( int levelTime ) {
 	G_UpdateCvars();
 
 	if (*level.serverSound) {
-		gentity_t	*te;
+		//gentity_t	*te;
 
 #if 0
 		te = G_TempEntity(level.serverSoundOrigin, EV_GLOBAL_SOUND);

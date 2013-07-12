@@ -1,4 +1,9 @@
 #include "cg_local.h"
+
+#include "cg_main.h"
+#include "cg_syscalls.h"
+#include "wolfcam_main.h"
+
 #include "wolfcam_local.h"
 #include "../game/bg_local.h"
 
@@ -6,21 +11,9 @@ wcg_t wcg;
 wclient_t wclients[MAX_CLIENTS];
 woldclient_t woldclients[MAX_CLIENTS];
 int wnumOldClients;
-//fileHandle_t wc_logfile;
-
-int wolfcam_initialSnapshotNumber;
-
-int wolfcam_gameVersion = WOLFCAM_BASEQ3;
 
 qboolean wolfcam_following;
 
-vmCvar_t wolfcam_debugErrors;
-vmCvar_t wolfcam_debugDrawGun;
-vmCvar_t wolfcam_fakelag;
-vmCvar_t wolfcam_fast_forward_timescale;
-vmCvar_t wolfcam_fast_forward_invalid_time;
-//vmCvar_t wolfcam_execIntermission;
-//vmCvar_t wolfcam_execShutdown;
 vmCvar_t wolfcam_fixedViewAngles;
 vmCvar_t cg_useOriginalInterpolation;
 vmCvar_t cg_drawBBox;
@@ -63,22 +56,16 @@ char *weapNamesCasual[] = {
 	"undefined",
 };
 
-void Wolfcam_AddBox (vec3_t origin, int x, int y, int z, int red, int green, int blue)
+void Wolfcam_AddBox (const vec3_t origin, int x, int y, int z, int red, int green, int blue)
 {
 	polyVert_t verts[4];
 	int i;
 	float extx, exty, extz;
 	vec3_t corners[8];
-	qhandle_t bboxShader, bboxShader_nocull;
 	vec3_t mins, maxs;
 
-	// get the shader handles
-	bboxShader = trap_R_RegisterShader( "bbox" );
-	bboxShader_nocull = trap_R_RegisterShader( "bbox_nocull" );
-
 	// if they don't exist, forget it
-	if ( !bboxShader || !bboxShader_nocull ) {
-		CG_Printf ("fuck no shaders\n");
+	if (!cgs.media.bboxShader  ||  !cgs.media.bboxShader_nocull) {
 		return;
 	}
 
@@ -135,42 +122,42 @@ void Wolfcam_AddBox (vec3_t origin, int x, int y, int z, int red, int green, int
 	VectorCopy( corners[1], verts[1].xyz );
 	VectorCopy( corners[2], verts[2].xyz );
 	VectorCopy( corners[3], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader, 4, verts, qfalse );
 
 	// bottom
 	VectorCopy( corners[7], verts[0].xyz );
 	VectorCopy( corners[6], verts[1].xyz );
 	VectorCopy( corners[5], verts[2].xyz );
 	VectorCopy( corners[4], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader, 4, verts, qfalse );
 
 	// top side
 	VectorCopy( corners[3], verts[0].xyz );
 	VectorCopy( corners[2], verts[1].xyz );
 	VectorCopy( corners[6], verts[2].xyz );
 	VectorCopy( corners[7], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 
 	// left side
 	VectorCopy( corners[2], verts[0].xyz );
 	VectorCopy( corners[1], verts[1].xyz );
 	VectorCopy( corners[5], verts[2].xyz );
 	VectorCopy( corners[6], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 
 	// right side
 	VectorCopy( corners[0], verts[0].xyz );
 	VectorCopy( corners[3], verts[1].xyz );
 	VectorCopy( corners[7], verts[2].xyz );
 	VectorCopy( corners[4], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 
 	// bottom side
 	VectorCopy( corners[1], verts[0].xyz );
 	VectorCopy( corners[0], verts[1].xyz );
 	VectorCopy( corners[4], verts[2].xyz );
 	VectorCopy( corners[5], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 }
 
 /*
@@ -180,14 +167,13 @@ Wolfcam_AddBoundingBox
 Draws a bounding box around a player.  Called from CG_Player.
 =================
 */
-void Wolfcam_AddBoundingBox( centity_t *cent ) {
+void Wolfcam_AddBoundingBox( const centity_t *cent ) {
 	polyVert_t verts[4];
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 	int i;
 	vec3_t mins, maxs;
 	float extx, exty, extz;
 	vec3_t corners[8];
-	qhandle_t bboxShader, bboxShader_nocull;
 
 	if ( !cg_drawBBox.integer ) {
 		return;
@@ -207,13 +193,8 @@ void Wolfcam_AddBoundingBox( centity_t *cent ) {
 	VectorCopy(bg_playerMins, mins);
 	VectorCopy(bg_playerMaxs, maxs);
 
-	// get the shader handles
-	bboxShader = trap_R_RegisterShader( "bbox" );
-	bboxShader_nocull = trap_R_RegisterShader( "bbox_nocull" );
-
 	// if they don't exist, forget it
-	if ( !bboxShader || !bboxShader_nocull ) {
-		//CG_Printf ("fuck no shaders\n");
+	if ( !cgs.media.bboxShader || !cgs.media.bboxShader_nocull ) {
 		return;
 	}
 
@@ -301,48 +282,48 @@ void Wolfcam_AddBoundingBox( centity_t *cent ) {
 	VectorCopy( corners[1], verts[1].xyz );
 	VectorCopy( corners[2], verts[2].xyz );
 	VectorCopy( corners[3], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader, 4, verts, qfalse );
 
 	// bottom
 	VectorCopy( corners[7], verts[0].xyz );
 	VectorCopy( corners[6], verts[1].xyz );
 	VectorCopy( corners[5], verts[2].xyz );
 	VectorCopy( corners[4], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader, 4, verts, qfalse );
 
 	// top side
 	VectorCopy( corners[3], verts[0].xyz );
 	VectorCopy( corners[2], verts[1].xyz );
 	VectorCopy( corners[6], verts[2].xyz );
 	VectorCopy( corners[7], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 
 	// left side
 	VectorCopy( corners[2], verts[0].xyz );
 	VectorCopy( corners[1], verts[1].xyz );
 	VectorCopy( corners[5], verts[2].xyz );
 	VectorCopy( corners[6], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 
 	// right side
 	VectorCopy( corners[0], verts[0].xyz );
 	VectorCopy( corners[3], verts[1].xyz );
 	VectorCopy( corners[7], verts[2].xyz );
 	VectorCopy( corners[4], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 
 	// bottom side
 	VectorCopy( corners[1], verts[0].xyz );
 	VectorCopy( corners[0], verts[1].xyz );
 	VectorCopy( corners[4], verts[2].xyz );
 	VectorCopy( corners[5], verts[3].xyz );
-	trap_R_AddPolyToScene( bboxShader_nocull, 4, verts, qfalse );
+	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 }
 
 int Wolfcam_PlayerHealth (int clientNum)
 {
 	//int value;
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 
 	if (clientNum >= MAX_CLIENTS) {
 		return -9999;
@@ -386,7 +367,7 @@ int Wolfcam_PlayerHealth (int clientNum)
 
 int Wolfcam_PlayerArmor (int clientNum) {
 	//int value;
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 
 	if (clientNum >= MAX_CLIENTS) {
 		return -1;

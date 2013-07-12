@@ -76,8 +76,8 @@ int PERS_CAPTURES = 13;
 int PERS_ATTACKEE_ARMOR = 14;
 
 
-vec3_t bg_playerMins = { -15, -15, -24 };
-vec3_t bg_playerMaxs = { 15, 15, 32 };
+const vec3_t bg_playerMins = { -15, -15, -24 };
+const vec3_t bg_playerMaxs = { 15, 15, 32 };
 
 /*QUAKED item_***** ( 0 0 0 ) (-16 -16 -16) (16 16 16) suspended
 DO NOT USE THIS CLASS, IT JUST HOLDS GENERAL INFORMATION.
@@ -1006,7 +1006,7 @@ Only in One Flag CTF games
 };
 
 
-gitem_t	bg_itemlistQ3[] = 
+const gitem_t bg_itemlistQ3[] =
 {
 	{
 		NULL,
@@ -1885,7 +1885,7 @@ Only in One Flag CTF games
 	{NULL}
 };
 
-gitem_t	bg_itemlistCpma[] =
+const gitem_t bg_itemlistCpma[] =
 {
 	{
 		NULL,
@@ -2818,7 +2818,7 @@ int		bg_numItemsCpma = ARRAY_LEN(bg_itemlistCpma) - 1;
 BG_FindItemForPowerup
 ==============
 */
-gitem_t	*BG_FindItemForPowerup( powerup_t pw ) {
+gitem_t	*BG_FindItemForPowerup( const powerup_t pw ) {
 	int		i;
 
 	for ( i = 0 ; i < bg_numItems ; i++ ) {
@@ -2839,7 +2839,7 @@ gitem_t	*BG_FindItemForPowerup( powerup_t pw ) {
 BG_FindItemForHoldable
 ==============
 */
-gitem_t	*BG_FindItemForHoldable( holdable_t pw ) {
+gitem_t	*BG_FindItemForHoldable( const holdable_t pw ) {
 	int		i;
 
 	for ( i = 0 ; i < bg_numItems ; i++ ) {
@@ -2862,7 +2862,7 @@ BG_FindItemForWeapon
 
 ===============
 */
-gitem_t	*BG_FindItemForWeapon( weapon_t weapon ) {
+gitem_t	*BG_FindItemForWeapon( const weapon_t weapon ) {
 	gitem_t	*it;
 	
 	for ( it = bg_itemlist + 1 ; it->classname ; it++) {
@@ -2904,7 +2904,7 @@ Items can be picked up without actually touching their physical bounds to make
 grabbing them easier
 ============
 */
-qboolean	BG_PlayerTouchesItem( playerState_t *ps, entityState_t *item, int atTime ) {
+qboolean	BG_PlayerTouchesItem( const playerState_t *ps, const entityState_t *item, int atTime ) {
 	vec3_t		origin;
 
 	BG_EvaluateTrajectory( &item->pos, atTime, origin );
@@ -2932,7 +2932,7 @@ Returns false if the item should not be picked up.
 This needs to be the same for client side prediction and server use.
 ================
 */
-qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const playerState_t *ps ) {
+qboolean BG_CanItemBeGrabbed( const int gametype, const entityState_t *ent, const playerState_t *ps ) {
 	gitem_t	*item;
 #if 1  //def MPACK
 	int		upperBound;
@@ -3021,7 +3021,7 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 #endif
 
 	case IT_TEAM: // team items, such as flags
-#ifdef MISSIONPACK		
+#if 1  //def MPACK
 		if( gametype == GT_1FCTF ) {
 			// neutral flag can always be picked up
 			if( item->giTag == PW_NEUTRALFLAG ) {
@@ -3055,7 +3055,7 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
 			}
 		}
 
-#ifdef MISSIONPACK
+#if 1  //def MISSIONPACK
 		if( gametype == GT_HARVESTER ) {
 			return qtrue;
 		}
@@ -3072,10 +3072,8 @@ qboolean BG_CanItemBeGrabbed( int gametype, const entityState_t *ent, const play
         case IT_BAD:
             Com_Error( ERR_DROP, "BG_CanItemBeGrabbed: IT_BAD" );
         default:
-#ifndef Q3_VM
-#ifndef NDEBUG // bk0001204
+#if 1  //ndef Q3_VM
           Com_Printf("BG_CanItemBeGrabbed: unknown enum %d\n", item->giType );
-#endif
 #endif
          break;
 	}
@@ -3130,7 +3128,7 @@ void BG_EvaluateTrajectory( const trajectory_t *tr, int atTime, vec3_t result ) 
 		}
 		break;
 	default:
-		Com_Error( ERR_DROP, "BG_EvaluateTrajectory: unknown trType: %i", tr->trTime );
+		Com_Error( ERR_DROP, "BG_EvaluateTrajectory: unknown trType: %i", tr->trType );
 		break;
 	}
 }
@@ -3180,7 +3178,7 @@ void BG_EvaluateTrajectoryf (const trajectory_t *tr, int atTimeMsec, vec3_t resu
 		}
 		break;
 	default:
-		Com_Error( ERR_DROP, "BG_EvaluateTrajectoryf: unknown trType: %i", tr->trTime );
+		Com_Error( ERR_DROP, "BG_EvaluateTrajectoryf: unknown trType: %i", tr->trType );
 		break;
 	}
 }
@@ -3223,7 +3221,7 @@ void BG_EvaluateTrajectoryDelta( const trajectory_t *tr, int atTime, vec3_t resu
 		result[2] -= DEFAULT_GRAVITY * deltaTime;		// FIXME: local gravity...
 		break;
 	default:
-		Com_Error( ERR_DROP, "BG_EvaluateTrajectoryDelta: unknown trType: %i", tr->trTime );
+		Com_Error( ERR_DROP, "BG_EvaluateTrajectoryDelta: unknown trType: %i", tr->trType );
 		break;
 	}
 }
@@ -3263,13 +3261,13 @@ void BG_EvaluateTrajectoryDeltaf (const trajectory_t *tr, int atTimeMsec, vec3_t
 		result[2] -= DEFAULT_GRAVITY * deltaTime;		// FIXME: local gravity...
 		break;
 	default:
-		Com_Error( ERR_DROP, "BG_EvaluateTrajectoryDeltaf: unknown trType: %i", tr->trTime );
+		Com_Error( ERR_DROP, "BG_EvaluateTrajectoryDeltaf: unknown trType: %i", tr->trType );
 		break;
 	}
 }
 
 
-char *eventnames[] = {
+const char *eventnames[] = {
 	"EV_NONE",
 
 	"EV_FOOTSTEP",
@@ -3382,7 +3380,9 @@ Handles the sequence numbers
 ===============
 */
 
+#ifdef _DEBUG
 void	trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
+#endif
 
 void BG_AddPredictableEventToPlayerstate( int newEvent, int eventParm, playerState_t *ps ) {
 
@@ -3409,7 +3409,7 @@ void BG_AddPredictableEventToPlayerstate( int newEvent, int eventParm, playerSta
 BG_TouchJumpPad
 ========================
 */
-void BG_TouchJumpPad( playerState_t *ps, entityState_t *jumppad ) {
+void BG_TouchJumpPad( playerState_t *ps, const entityState_t *jumppad ) {
 	vec3_t	angles;
 	float p;
 	int effectNum;
@@ -3498,6 +3498,7 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 		int		seq;
 
 		if ( ps->entityEventSequence < ps->eventSequence - MAX_PS_EVENTS) {
+			//FIXME do this here??
 			ps->entityEventSequence = ps->eventSequence - MAX_PS_EVENTS;
 		}
 		seq = ps->entityEventSequence & (MAX_PS_EVENTS-1);

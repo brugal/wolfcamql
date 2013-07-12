@@ -4,8 +4,25 @@
 // not necessarily every single rendered frame
 
 #include "cg_local.h"
+
+#include "cg_draw.h"  // reset lagometer
+#include "cg_event.h"
+#include "cg_freeze.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_players.h"
+#include "cg_playerstate.h"
+#include "cg_predict.h"
+#include "cg_servercmds.h"
+#include "cg_snapshot.h"
+#include "cg_syscalls.h"
+#include "sc.h"
+#include "wolfcam_ents.h"
+#include "wolfcam_snapshot.h"
+
 #include "wolfcam_local.h"
-#include "../qcommon/qcommon.h"
+//#include "../qcommon/qcommon.h"
 
 /*
 ==================
@@ -48,12 +65,15 @@ void CG_ResetEntity( centity_t *cent ) {
 	VectorCopy(cent->currentState.pos.trBase, cent->lastImpactIntervalPosition);
 	VectorCopy(cent->currentState.pos.trBase, cent->lastImpactDistancePosition);
 
-	//Com_Printf("reset: %f %f %f  --  %f %f %f\n", cent->currentState.origin[0], cent->currentState.origin[1], cent->currentState.origin[2], cent->currentState.pos.trBase[0], cent->currentState.pos.trBase[1], cent->currentState.pos.trBase[2]);
-
 	//VectorCopy (cent->currentState.origin, cent->lerpOrigin);
 	//VectorCopy (cent->currentState.angles, cent->lerpAngles);
 	VectorCopy(cent->currentState.pos.trBase, cent->lerpOrigin);
 	VectorCopy(cent->currentState.pos.trBase, cent->lerpAngles);
+
+	CG_UpdatePositionData(cent, &cent->flightPositionData);
+	CG_UpdatePositionData(cent, &cent->hastePositionData);
+
+	//Com_Printf("reset: %f %f %f  --  %f %f %f\n", cent->currentState.origin[0], cent->currentState.origin[1], cent->currentState.origin[2], cent->currentState.pos.trBase[0], cent->currentState.pos.trBase[1], cent->currentState.pos.trBase[2]);
 
 	cent->wasReset = qtrue;
 
@@ -119,7 +139,7 @@ CG_TransitionSnapshot instead.
 FIXME: Also called by map_restart?
 ==================
 */
-void CG_SetInitialSnapshot( snapshot_t *snap ) {
+static void CG_SetInitialSnapshot( snapshot_t *snap ) {
 	int				i;
 	centity_t		*cent;
 	entityState_t	*state;
@@ -280,7 +300,8 @@ static void CG_TransitionSnapshot( void ) {
 
 	// check for playerstate transition events
 	if ( oldFrame ) {
-		playerState_t	*ops, *ps;
+		playerState_t *ops;
+		const playerState_t *ps;
 
 		ops = &oldFrame->ps;
 		ps = &cg.snap->ps;
@@ -311,7 +332,7 @@ static void CG_TransitionSnapshot( void ) {
 			continue;
 		}
 		memcpy(&wc->lastKillwstats, &wc->perKillwstats, sizeof(wc->lastKillwstats));
-		memset(&wc->perKillwstats, 0, sizeof(&wc->perKillwstats));
+		memset(&wc->perKillwstats, 0, sizeof(wc->perKillwstats));
 	}
 
 }
@@ -431,7 +452,8 @@ static void CG_SetNextSnap( snapshot_t *snap ) {
 	}
 
 	if (cg.demoPlayback  &&  cg.snap  &&  cg.nextSnap) {
-		playerState_t *ops, *ps;
+		const playerState_t *ops;
+		const playerState_t *ps;
 		float diff;
 
 		ops = &cg.snap->ps;
@@ -626,6 +648,10 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		cent->lastImpactDistanceTime = -1;
 		//VectorCopy(cent->currentState.origin, cent->lastDistancePosition);
 		//VectorCopy(cent->currentState.origin, cent->lastModelDistancePosition);
+		cent->flightPositionData.intervalTime = -1;
+		cent->flightPositionData.distanceTime = -1;
+		cent->hastePositionData.intervalTime = -1;
+		cent->hastePositionData.distanceTime = -1;
 	}
 
 	memset(&cg.predictedPlayerEntity, 0, sizeof(cg.predictedPlayerEntity));
@@ -674,6 +700,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	//pe = cg.predictedPlayerEntity.pe;
 	memset(&cg.predictedPlayerEntity, 0, sizeof(cg.predictedPlayerEntity));
 	//cg.predictedPlayerEntity.pe = pe;  //FIXME hack
+	cg.scoresValid = qfalse;
 	CG_CreateScoresFromClientInfo();
 	CG_BuildSpectatorString();
 	cgs.lastConnectedDisconnectedPlayer = -1;
@@ -681,39 +708,105 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cgs.serverCommandSequence = trap_GetLastExecutedServerCommand();
 	cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
-	cgs.dominationRedPoints = atoi(CG_ConfigString(CS_DOMINATION_RED_POINTS));
-	cgs.dominationBluePoints = atoi(CG_ConfigString(CS_DOMINATION_BLUE_POINTS));
+	if (cgs.protocol == PROTOCOL_QL) {
+		cgs.dominationRedPoints = atoi(CG_ConfigString(CS_DOMINATION_RED_POINTS));
+		cgs.dominationBluePoints = atoi(CG_ConfigString(CS_DOMINATION_BLUE_POINTS));
+	} else {
+		cgs.dominationRedPoints = 0;
+		cgs.dominationBluePoints = 0;
+	}
 
 	cg.warmup = 0;
 	CG_ParseWarmup();
 	cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME));
 	cg.intermissionStarted = atoi(CG_ConfigString(CS_INTERMISSION));
-	if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+	if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF) {
 		cgs.redflag = CG_ConfigString(CS_FLAGSTATUS)[0] - '0';
-		cgs.redflag = CG_ConfigString(CS_FLAGSTATUS)[1] - '0';
-	}
-	//FIXME GT_1FCTF see cg_servercmds.c
-	cgs.redPlayersLeft = atoi(CG_ConfigString(CS_RED_PLAYERS_LEFT));
-	cgs.bluePlayersLeft = atoi(CG_ConfigString(CS_BLUE_PLAYERS_LEFT));
-	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER) {
-		if (CG_ConfigString(CS_ROUND_STATUS)[0] == '\0') {
-			cgs.roundStarted = qtrue;
-			cgs.roundBeginTime = -999;
-			cgs.roundNum = 0;  //-999;
-		} else {
-			cgs.roundStarted = qfalse;
-			cgs.roundBeginTime = atoi(Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "time"));
-			cgs.roundNum = atoi(Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "round"));
+		cgs.blueflag = CG_ConfigString(CS_FLAGSTATUS)[1] - '0';
+		if (cgs.gametype == GT_1FCTF) {
+			cgs.flagStatus = atoi(CG_ConfigString(CS_FLAGSTATUS));
 		}
 	}
+	//FIXME GT_1FCTF see cg_servercmds.c
+	if (cgs.protocol == PROTOCOL_QL) {
+		cgs.redPlayersLeft = atoi(CG_ConfigString(CS_RED_PLAYERS_LEFT));
+		cgs.bluePlayersLeft = atoi(CG_ConfigString(CS_BLUE_PLAYERS_LEFT));
+	} else {
+		cgs.redPlayersLeft = 0;
+		cgs.bluePlayersLeft = 0;
+	}
+
+	if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER) {
+			if (CG_ConfigString(CS_ROUND_STATUS)[0] == '\0') {
+				cgs.roundStarted = qtrue;
+				cgs.roundBeginTime = -999;
+				cgs.roundNum = 0;  //-999;
+			} else {
+				cgs.roundStarted = qfalse;
+				cgs.roundBeginTime = atoi(Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "time"));
+				cgs.roundNum = atoi(Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "round"));
+			}
+		}
+	} else {
+		cgs.roundStarted = qfalse;
+		cgs.roundBeginTime = 0;
+		cgs.roundNum = 0;
+	}
+
 	//FIXME CS_ROUND_TIME
-	//FIXME CS_TIMEOUT_BEGIN_TIME  CS_TIMEOUT_END_TIME
-	cgs.timeoutBeginTime = atoi(CG_ConfigString(CS_TIMEOUT_BEGIN_TIME));
-	cgs.timeoutBeginCgTime = cgs.timeoutBeginTime;
-	cgs.timeoutEndTime = atoi(CG_ConfigString(CS_TIMEOUT_END_TIME));
-	cgs.timeoutCountingDown = qfalse;
-	cgs.redTeamTimeoutsLeft = atoi(CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT));
-	cgs.blueTeamTimeoutsLeft = atoi(CG_ConfigString(CS_BLUE_TEAM_TIMEOUTS_LEFT));
+	if (cgs.protocol == PROTOCOL_QL) {
+		cgs.timeoutBeginTime = atoi(CG_ConfigString(CS_TIMEOUT_BEGIN_TIME));
+		cgs.timeoutEndTime = atoi(CG_ConfigString(CS_TIMEOUT_END_TIME));
+		cgs.timeoutCountingDown = qfalse;
+		cgs.redTeamTimeoutsLeft = atoi(CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT));
+		cgs.blueTeamTimeoutsLeft = atoi(CG_ConfigString(CS_BLUE_TEAM_TIMEOUTS_LEFT));
+		if ((cg.time < cgs.timeoutEndTime)  ||  (cgs.timeoutBeginTime  &&  cgs.timeoutEndTime == 0)) {
+			CG_ResetTimedItemPickupTimes();  //FIXME change eventually
+		}
+	} else {
+		cgs.timeoutBeginTime = 0;
+		cgs.timeoutEndTime = 0;
+		cgs.timeoutCountingDown = qfalse;
+		cgs.redTeamTimeoutsLeft = 0;
+		cgs.blueTeamTimeoutsLeft = 0;
+	}
+
+	if (cgs.cpma) {
+		const char *s;
+		// correct level start time, round info, timeouts
+		//cgs.cpmaLastTd = 0;
+		cgs.cpmaLastTe = 0;
+		CG_CpmaParseGameState(qtrue);
+		s = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
+		if (atoi(Info_ValueForKey(s, "te"))) {
+#if 0
+			Com_Printf("in timeout %d\n", serverTime);
+			for (i = 0;  i < cgs.numTimeouts;  i++) {
+				timeOut_t *t;
+
+				t = &cgs.timeOuts[i];
+				Com_Printf("^5%d  %d -> %d\n", i, t->startTime, t->endTime);
+
+				if (t->endTime < serverTime) {
+					continue;
+				}
+				if (t->startTime > serverTime) {
+					continue;
+				}
+				if (t->startTime <= serverTime  &&  t->endTime >= serverTime) {
+					Com_Printf("^3in timeout #%d\n", i + 1);
+					//cgs.cpmaLastTd = t->cpmaTd;
+					//CG_CpmaParseGameState(qtrue);  // bah
+					break;
+				}
+			}
+#endif
+			CG_ResetTimedItemPickupTimes();  //FIXME change eventually
+		}
+		CG_CpmaParseScores();
+	}
+
 	cg.centerPrintLines = 0;
 	cg.lastWeapon = -1;
 
@@ -737,6 +830,12 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cg.zoomBrokenTime += timeDiff;
 	cg.scoresRequestTime = 0;
 	cg.scoreFadeTime = 0;
+	cg.duelScoresServerTime = 0;
+	cg.tdmScore.serverTime = 0;
+	cg.ctfScore.serverTime = 0;
+	cg.duelScoresValid = qfalse;
+	cg.tdmScore.valid = qfalse;
+	cg.ctfScore.valid = qfalse;
 	cg.spectatorTime = 0;
 	cg.centerPrintTime = 0;
 	cg.crosshairClientTime = 0;
@@ -772,7 +871,8 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cg.proxTime = 0;
 	cg.proxCounter = 0;
 	cg.proxTick = 0;
-	cgs.cpmaTimeoutTime = 0;
+	//cgs.cpmaTimeoutTime = 0;
+	cg.duelForfeit = qfalse;
 
 	if (cgs.gametype == GT_TOURNAMENT) {
 		CG_SetDuelPlayers();
@@ -854,13 +954,13 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 					cg_entities[cg.snap->ps.clientNum].currentValid = qtrue;
 
 					for (j = 0;  j < cg.snap->numEntities;  j++) {
-						cg_entities[j].inCurrentSnapshot = qtrue;
-						cg_entities[j].currentValid = qtrue;
+						cg_entities[cg.snap->entities[j].number].inCurrentSnapshot = qtrue;
+						cg_entities[cg.snap->entities[j].number].currentValid = qtrue;
 					}
 
 					cg_entities[cg.nextSnap->ps.clientNum].inNextSnapshot = qtrue;
 					for (j = 0;  j < cg.nextSnap->numEntities;  j++) {
-						cg_entities[j].inNextSnapshot = qtrue;
+						cg_entities[cg.nextSnap->entities[j].number].inNextSnapshot = qtrue;
 					}
 
 					//cg.time = cg.snap->serverTime;
@@ -942,7 +1042,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 			speedScale = 1;
 		}
 
-		if (Q_Isfreeze(state->number)) {
+		if (CG_FreezeTagFrozen(state->number)) {
 			speedScale = 0;
 		}
 
@@ -1016,7 +1116,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 				speedScale = 1;
 			}
 
-			if (Q_Isfreeze(state->number)) {
+			if (CG_FreezeTagFrozen(state->number)) {
 				speedScale = 0;
 			}
 
@@ -1048,16 +1148,17 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		cg.nextNextSnapValid = qfalse;
 	}
 
-
 	//
 	// sound warnings, count downs, etc.
 	//
 	cgs.thirtySecondWarningPlayed = qfalse;
-	if (cgs.roundStarted) {
+	if (cgs.roundStarted  &&  cgs.protocol == PROTOCOL_QL) {
 		ival = cg.time - atoi(CG_ConfigString(CS_ROUND_TIME));
 		if (cgs.roundtimelimit - (ival / 1000) < 30) {
 			cgs.thirtySecondWarningPlayed = qtrue;
 		}
+	} else {
+		cgs.thirtySecondWarningPlayed = qtrue;
 	}
 
 	// round count down
@@ -1223,7 +1324,8 @@ static snapshot_t *CG_ReadNextSnapshot( void ) {
 			//Com_Printf("^5%d -> %d  ping %d\n", dest->serverTime, dest->ps.commandTime, dest->ping);
 			CG_AddLagometerSnapshotInfo( dest );
 			if (SC_Cvar_Get_Int("debug_snapshots")) {
-				Com_Printf("readnextsnap() got snap %d  serverTime %d\n", cgs.processedSnapshotNum++, dest->serverTime);
+				//Com_Printf("readnextsnap() got snap %d  serverTime %d\n", cgs.processedSnapshotNum++, dest->serverTime);
+				Com_Printf("readnextsnap() got snap %d  serverTime %d\n", cgs.processedSnapshotNum, dest->serverTime);
 			}
 			return dest;
 		}
@@ -1249,10 +1351,10 @@ static snapshot_t *CG_ReadNextSnapshot( void ) {
 	return NULL;
 }
 
-void CG_TemporarySnapshotTransition (snapshot_t *snap)
+static void CG_TemporarySnapshotTransition (snapshot_t *snap)
 {
 	int num;
-	entityState_t *es;
+	const entityState_t *es;
 	centity_t *cent;
 	int i;
 	snapshot_t *oldFrame;
@@ -1340,7 +1442,8 @@ void CG_TemporarySnapshotTransition (snapshot_t *snap)
 
 
 	if (oldFrame) {
-		playerState_t *ops, *ps;
+		playerState_t *ops;
+		const playerState_t *ps;
 
 		ops = &oldFrame->ps;
 		ps = &snap->ps;
@@ -1365,7 +1468,7 @@ void CG_TemporarySnapshotTransition (snapshot_t *snap)
 			continue;
 		}
 		memcpy(&wc->lastKillwstats, &wc->perKillwstats, sizeof(wc->lastKillwstats));
-		memset(&wc->perKillwstats, 0, sizeof(&wc->perKillwstats));
+		memset(&wc->perKillwstats, 0, sizeof(wc->perKillwstats));
 	}
 }
 

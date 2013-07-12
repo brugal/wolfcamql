@@ -23,9 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef __UI_LOCAL_H__
 #define __UI_LOCAL_H__
 
-#include "../qcommon/version.h"
 #include "../qcommon/q_shared.h"
 #include "../renderer/tr_types.h"
+#include "../ui/ui_common.h"
 //NOTE: include the ui_public.h from the new UI
 #include "../ui/ui_public.h"
 //redefine to old API version
@@ -108,7 +108,6 @@ extern vmCvar_t ui_doubleClickTime;
 #define	MAX_EDIT_LINE			256
 
 #define MAX_MENUDEPTH			8
-#define MAX_MENUITEMS			1024  //500  //64  //FIXME move out of here
 
 #define MTYPE_NULL				0
 #define MTYPE_SLIDER			1
@@ -628,7 +627,7 @@ void UI_SPSkillMenu_Cache( void );
 // ui_syscalls.c
 //
 void			trap_Print( const char *string );
-void			trap_Error( const char *string );
+void			trap_Error( const char *string ) __attribute__ ((noreturn));
 int				trap_Milliseconds( void );
 void			trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );
 void			trap_Cvar_Update( vmCvar_t *vmCvar );

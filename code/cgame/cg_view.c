@@ -3,6 +3,28 @@
 // cg_view.c -- setup all the parameters (position, angle, etc)
 // for a 3D rendering
 #include "cg_local.h"
+
+#include "cg_consolecmds.h"  // popup()
+#include "cg_draw.h"  // CG_Fade()
+#include "cg_effects.h"
+#include "cg_ents.h"
+#include "cg_info.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_players.h"  // CG_Q3ColorFromString()
+#include "cg_predict.h"
+#include "cg_servercmds.h"  // CG_PlayBufferedVoiceChats()
+#include "cg_snapshot.h"
+#include "cg_syscalls.h"
+#include "cg_view.h"
+#include "cg_weapons.h"
+#include "sc.h"
+#include "wolfcam_playerstate.h"
+#include "wolfcam_predict.h"
+#include "wolfcam_view.h"
+#include "wolfcam_weapons.h"
+
 #include "wolfcam_local.h"
 #include "../client/keycodes.h"
 #include "../game/bg_local.h"
@@ -146,7 +168,7 @@ static void CG_AddTestModel (void) {
 		}
 	}
 
-	trap_R_AddRefEntityToScene( &cg.testModelEntity );
+	CG_AddRefEntity(&cg.testModelEntity);
 }
 
 
@@ -563,6 +585,52 @@ double CG_CalcZoom (double fov_x)
 	return fov_x;
 }
 
+void CG_AdjustedFov (float fov_x, float *new_fov_x, float *new_fov_y)
+{
+	double x;
+	double fov_y;
+
+	if (cg_fovStyle.integer == 0) {   // quake3
+		if (*cg_fovy.string) {
+			fov_y = cg_fovy.value;
+		} else {
+			x = cg.refdef.width / tan(fov_x / 360.0 * M_PI);
+			fov_y = atan2(cg.refdef.height, x);
+			fov_y = fov_y * 360.0 / M_PI;
+		}
+		*new_fov_x = fov_x;
+		*new_fov_y = fov_y;
+		return;
+	}
+
+	// quake live
+	// preserves y fov as if viewing area was 4:3
+
+	// also fov_x = 2 * atan(tan(fov_y/2) * width/height)
+
+	if (fov_x < 1.0) {
+		fov_x = 1.0;
+	} else if (fov_x > 180.0) {
+		//fov_x = 180.0;
+	}
+
+	if (*cg_fovy.string) {
+		fov_y = cg_fovy.value;
+	} else {
+		x = 640.0 / tan(fov_x / 360.0 * M_PI);
+		fov_y = atan2(480.0, x);
+		fov_y = fov_y * 360.0 / M_PI;
+	}
+
+	//Com_Printf("yfov %f\n", fov_y);
+
+	fov_x = 360.0 / M_PI * atan2((float)cg.refdef.width / (float)cg.refdef.height * tan(fov_y * M_PI / 360.0), 1);
+	//Com_Printf("%f  ->  %f\n", cg_fov.value, fov_x);
+
+	*new_fov_x = fov_x;
+	*new_fov_y = fov_y;
+}
+
 /*
 ====================
 CG_CalcFov
@@ -574,17 +642,20 @@ Fixed fov at intermissions, otherwise account for fov variable and zooms.
 #define	WAVE_FREQUENCY	0.4
 
 static int CG_CalcFov( void ) {
-	float	x;
 	float	phase;
 	float	v;
 	int		contents;
 	double	fov_x, fov_y;
 	int		inwater;
+	float nx, ny;
 
 	if ( cg.predictedPlayerState.pm_type == PM_INTERMISSION ) {
 		// if in intermission, use a fixed value
-		fov_x = 90;
-		//Com_Printf("intermission 90 fov\n");
+		if (*cg_fovIntermission.string) {
+			fov_x = cg_fovIntermission.value;
+		} else {
+			fov_x = cg_fov.value;
+		}
 	} else {
 		// user selectable
 		if (0) {  //( cgs.dmflags & DF_FIXED_FOV ) {  //FIXME some ql demos have it set,   maybe dmflags have changed
@@ -603,13 +674,9 @@ static int CG_CalcFov( void ) {
 		fov_x = CG_CalcZoom(fov_x);
 	}
 
-	if (*cg_fovy.string) {
-		fov_y = cg_fovy.value;
-	} else {
-		x = cg.refdef.width / tan(fov_x / 360.0 * M_PI);
-		fov_y = atan2(cg.refdef.height, x);
-		fov_y = fov_y * 360.0 / M_PI;
-	}
+	CG_AdjustedFov(fov_x, &nx, &ny);
+	fov_x = nx;
+	fov_y = ny;
 
 	// warp if underwater
 	if (cg_waterWarp.integer) {
@@ -704,14 +771,14 @@ static void CG_DamageBlendBlob( void ) {
 		alpha = cg_screenDamageAlpha.integer;
 	}
 
-	ent.shaderRGBA[0] = SC_RedFromCvar(colorCvar);
-	ent.shaderRGBA[1] = SC_GreenFromCvar(colorCvar);
-	ent.shaderRGBA[2] = SC_BlueFromCvar(colorCvar);
+	ent.shaderRGBA[0] = SC_RedFromCvar(&colorCvar);
+	ent.shaderRGBA[1] = SC_GreenFromCvar(&colorCvar);
+	ent.shaderRGBA[2] = SC_BlueFromCvar(&colorCvar);
 	ent.shaderRGBA[3] = alpha * ( 1.0 - ((float)t / maxTime) );
 
 	//Com_Printf("%x %x %x  %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2], alpha);
 
-	trap_R_AddRefEntityToScene( &ent );
+	CG_AddRefEntity(&ent);
 }
 
 
@@ -723,7 +790,7 @@ Sets cg.refdef view values
 ===============
 */
 static int CG_CalcViewValues( void ) {
-	playerState_t	*ps;
+	const playerState_t	*ps;
 
 	memset( &cg.refdef, 0, sizeof( cg.refdef ) );
 
@@ -753,8 +820,10 @@ static int CG_CalcViewValues( void ) {
 // camera script
 	if (cg.cameraMode) {
 		vec3_t origin, angles;
-		float fov = 90;
-		float x;
+		float fov = 90;  //FIXME cg_fovIdCamera
+		//float x;
+		float nx, ny;
+
 		//if (trap_getCameraInfo(cg.time, &origin, &angles, &fov)) {
 		if (trap_getCameraInfo(cg.realTime, &origin, &angles, &fov)) {
 			VectorCopy(origin, cg.refdef.vieworg);
@@ -762,10 +831,15 @@ static int CG_CalcViewValues( void ) {
 			angles[PITCH] = -angles[PITCH]; // Bug Fix for GtkRadiant cameras
 			VectorCopy(angles, cg.refdefViewAngles);
 			AnglesToAxis( cg.refdefViewAngles, cg.refdef.viewaxis );
+			/*
 			x = cg.refdef.width / tan(fov / 360.0 * M_PI);
 			cg.refdef.fov_y = atan2(cg.refdef.height, x);
 			cg.refdef.fov_y = cg.refdef.fov_y * 360.0 / M_PI;
 			cg.refdef.fov_x = fov;
+			*/
+			CG_AdjustedFov(fov, &nx, &ny);
+			cg.refdef.fov_x = nx;
+			cg.refdef.fov_y = ny;
 			trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
 			return 0;
 		} else {
@@ -928,7 +1002,7 @@ static void Wolfcam_Stall (unsigned int ticks)
 //FIXME hack to avoid spamming
 static char BlackListedShader[MAX_QPATH];
 
-void CG_DrawAdvertisements (void)
+static void CG_DrawAdvertisements (void)
 {
 	float *vt;
 	int i;
@@ -1388,7 +1462,7 @@ Advertisement 8:
 				ent.shaderRGBA[2] = 255;
 			}
 			ent.shaderRGBA[3] = 255;
-			trap_R_AddRefEntityToScene( &ent );
+			CG_AddRefEntity(&ent);
 		}
 #endif
 	}
@@ -1436,6 +1510,7 @@ static void CG_ForceBModels (void)
 	refEntity_t ent;
 	int modelindex;
 	vec3_t lerpAngles = { 0, 0, 0 };
+	int ret;
 
 	i = 1;
 	while (1) {
@@ -1453,14 +1528,39 @@ static void CG_ForceBModels (void)
 		ent.skinNum = (cg.time >> 6) & 1;
 
 		ent.hModel = cgs.inlineDrawModel[modelindex];
-		trap_R_AddRefEntityToScene(&ent);
+		st = SC_Cvar_Get_String(va("cg_forceBModelPosition%d", i));
+		if (*st) {
+			vec3_t angles;
+
+			VectorSet(ent.origin, 0, 0, 0);
+			VectorSet(angles, 0, 0, 0);
+			ret = sscanf(st, "%f %f %f %f %f %f", &ent.origin[0], &ent.origin[1], &ent.origin[2], &angles[0], &angles[1], &angles[2]);
+			if (ret <= 0) {
+				Com_Printf("^3invalid string for cg_forceBModelPosition%d\n", i);
+			}
+
+			VectorCopy(ent.origin, ent.oldorigin);
+			AnglesToAxis(angles, ent.axis);
+		}
+		st = SC_Cvar_Get_String(va("cg_forceBModelTrajectory%d", i));
+		if (*st) {
+			trajectory_t tr;
+
+			memset(&tr, 0, sizeof(tr));
+
+			sscanf(st, "%d %d %d %f %f %f", (int *)&tr.trType, &tr.trTime, &tr.trDuration, &tr.trDelta[0], &tr.trDelta[1], &tr.trDelta[2]);
+			VectorCopy(ent.origin, tr.trBase);
+			BG_EvaluateTrajectoryf(&tr, cg.time, ent.origin, cg.foverf);
+			VectorCopy(ent.origin, ent.oldorigin);
+		}
+		CG_AddRefEntity(&ent);
 		//Com_Printf("adding model %d\n", modelindex);
 
 		i++;
 	}
 }
 
-void CG_DrawSpawns (void)
+static void CG_DrawSpawns (void)
 {
 	int i;
 	refEntity_t ent;
@@ -1626,7 +1726,7 @@ void CG_DrawSpawns (void)
 			v.integer = SC_Cvar_Get_Int("wolfcam_spawncolor");
 			v.value = v.integer;
 			//Com_Printf("color %f\n", v.value);
-			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, v);
+			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &v);
 			ent.shaderRGBA[3] = 255;
 		}
 
@@ -1636,7 +1736,7 @@ void CG_DrawSpawns (void)
 		ent.origin[2] += 16;
 		ent.customShader = 0;
 
-		trap_R_AddRefEntityToScene( &ent );
+		CG_AddRefEntity(&ent);
 
 		count++;
 	}
@@ -1651,7 +1751,7 @@ static void CG_PlayPath (void)
 		vec3_t o, no;
 		vec3_t a, na;
 		int i;
-		char *s = NULL;
+		const char *s = NULL;
 		int x;
 
 		if (cg.snap->serverTime < cg.pathCurrentServerTime) {
@@ -1716,13 +1816,7 @@ static void CG_PlayPath (void)
 			cg.refdef.fov_x = 1;
 		}
 
-		if (*cg_fovy.string) {
-			cg.refdef.fov_y = cg_fovy.value;
-		} else {
-			x = cg.refdef.width / tan(cg.refdef.fov_x / 360.0 * M_PI);
-			cg.refdef.fov_y = atan2(cg.refdef.height, x);
-			cg.refdef.fov_y = cg.refdef.fov_y * 360.0 / M_PI;
-		}
+		CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
 
 		cg.refdef.time = cg.time;  //cg.realTime;  //cg.time;
 		trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
@@ -1740,8 +1834,8 @@ static void CG_PlayPath (void)
 		vec3_t o, no;
 		vec3_t a, na;
 		int i;
-		char *s = NULL;
-		int x;
+		const char *s = NULL;
+		//int x;
 		int skipNum;
 
 		if (cg.paused) {
@@ -1830,13 +1924,7 @@ static void CG_PlayPath (void)
 			cg.refdef.fov_x = 1;
 		}
 
-		if (*cg_fovy.string) {
-			cg.refdef.fov_y = cg_fovy.value;
-		} else {
-			x = cg.refdef.width / tan(cg.refdef.fov_x / 360.0 * M_PI);
-			cg.refdef.fov_y = atan2(cg.refdef.height, x);
-			cg.refdef.fov_y = cg.refdef.fov_y * 360.0 / M_PI;
-		}
+		CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
 
 		cg.refdef.time = cg.time;  //cg.realTime;  //cg.time;
 		trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
@@ -1866,7 +1954,7 @@ static float CosineInterp (float y1, float y2, double t)
 #endif
 
 #if 0
-float LerpAngle2 (float from, float to, float frac)
+static float LerpAngle2 (float from, float to, float frac)
 {
 	float a;
 	float t, f;
@@ -1907,23 +1995,26 @@ float LerpAngle2 (float from, float to, float frac)
 
 static qboolean CG_PlayCamera (void)
 {
-	cameraPoint_t *cp, *cpnext, *cpprev;
-	cameraPoint_t *lastPoint;
+	cameraPoint_t *cp;
+	const cameraPoint_t *cpnext;
+	const cameraPoint_t *cpprev;
+	const cameraPoint_t *lastPoint;
 	double f;
 	vec3_t o, a, no, na;
-	int x;
-	centity_t *cent;
+	//int x;
+	const centity_t *cent;
 	vec3_t dir;
 	vec3_t origin;
 	float fov, nfov;
-	cameraPoint_t *c1, *c2;
+	const cameraPoint_t *c1;
+	const cameraPoint_t *c2;
 	double roll, nroll;
 	double totalDist;
 	double totalTime;
 	double accel;
 	double dist;
 	double t;
-	cameraPoint_t *pointNext;
+	const cameraPoint_t *pointNext;
 	int i;
 	qboolean foundMatch;
 	vec3_t refOriginOrig;
@@ -1931,6 +2022,7 @@ static qboolean CG_PlayCamera (void)
 	float refFovxOrig;
 	float refFovyOrig;
 	vec3_t velocityOrig;
+	qboolean cameraDebugPath = qfalse;
 
 	if (cg.numCameraPoints < 2) {
 		cg.cameraPlaying = qfalse;
@@ -1948,12 +2040,20 @@ static qboolean CG_PlayCamera (void)
 	}
 
 	if (cg_cameraDebugPath.integer) {
+		cameraDebugPath = qtrue;
+	}
+
+	if (cameraDebugPath) {
 		VectorCopy(cg.refdef.vieworg, refOriginOrig);
 		VectorCopy(cg.refdefViewAngles, refAnglesOrig);
 		refFovxOrig = cg.refdef.fov_x;
 		refFovyOrig = cg.refdef.fov_y;
 		VectorCopy(cg.freecamPlayerState.velocity, velocityOrig);
+	} else {
+		//refFovxOrig = 0;
 	}
+
+//#if 1  // gcc warning
 
 	lastPoint = &cg.cameraPoints[cg.numCameraPoints - 1];
 
@@ -2115,6 +2215,8 @@ static qboolean CG_PlayCamera (void)
 		}
 	}
 
+//#if 1  // gcc warning
+
 	if (cg.ftime < lastPoint->cgtime) {
 		cg.cameraPlayedLastFrame = qtrue;
 	} else {
@@ -2130,6 +2232,8 @@ static qboolean CG_PlayCamera (void)
 	// d = (Vf + Vi) / 2  * t
 	// a = (Vf - Vi) / t
 	// d = Vi * t + 1/2 * a * t^2
+
+//#if 1  // gcc warning
 
 	if (cp->type == CAMERA_JUMP) {
 		VectorCopy(cp->origin, cg.refdef.vieworg);
@@ -2226,7 +2330,7 @@ static qboolean CG_PlayCamera (void)
 		}
 
 		if (cp->hasQuadratic) {
-			cameraPoint_t *p1, *p2, *p3, *cpnextnext, *prev;
+			const cameraPoint_t *p1, *p2, *p3, *cpnextnext, *prev;
 
 			cpnextnext = NULL;
 			if (cg.currentCameraPoint + 2 < cg.numCameraPoints) {
@@ -2365,6 +2469,8 @@ static qboolean CG_PlayCamera (void)
 		cg.cameraPlayedLastFrame = qfalse;
 		return qfalse;
 	}
+
+//#if 1  // gcc warning
 
 	if (cp->viewType == CAMERA_ANGLES_INTERP  ||  cp->viewType == CAMERA_ANGLES_INTERP_USE_PREVIOUS) {
 
@@ -2688,6 +2794,8 @@ static qboolean CG_PlayCamera (void)
 		return qfalse;
 	}
 
+#if 1  // gcc warning  // up to here
+
 	// roll
 	if (cp->rollType == CAMERA_ROLL_INTERP) {
 		//roll = nroll = 0;  // silence compiler warning
@@ -2902,13 +3010,7 @@ static qboolean CG_PlayCamera (void)
 		cg.refdef.fov_x = 1;
 	}
 
-	if (*cg_fovy.string) {
-		cg.refdef.fov_y = cg_fovy.value;
-	} else {
-		x = cg.refdef.width / tan(cg.refdef.fov_x / 360.0 * M_PI);
-		cg.refdef.fov_y = atan2(cg.refdef.height, x);
-		cg.refdef.fov_y = cg.refdef.fov_y * 360.0 / M_PI;
-	}
+	CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
 
 	cg.refdef.time = cg.time;
 	trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
@@ -2966,8 +3068,9 @@ static qboolean CG_PlayCamera (void)
     trap_Cvar_Set("com_timescaleAdjust", va("%f", tscale));
 #endif
 
+#endif  // gcc warning
 
-	if (cg_cameraDebugPath.integer) {  //(1) {
+	if (cameraDebugPath) {  //cg_cameraDebugPath.integer) {  //(1) {
 		refEntity_t ent;
 		byte color[4] = { 0, 255, 0, 255 };
 
@@ -2984,12 +3087,12 @@ static qboolean CG_PlayCamera (void)
 		ent.shaderRGBA[2] = 255;
 		ent.renderfx = RF_DEPTHHACK;
 
-		trap_R_AddRefEntityToScene(&ent);
+		CG_AddRefEntity(&ent);
 
 		AngleVectors(cg.refdefViewAngles, dir, NULL, NULL);
 		VectorCopy(ent.origin, origin);
 		VectorMA(origin, 300, dir, origin);
-		CG_SimpleRailTrail(ent.origin, origin, color);
+		CG_SimpleRailTrail(ent.origin, origin, cg_railTrailTime.value, color);
 
 		VectorCopy(refOriginOrig, cg.refdef.vieworg);
 		VectorCopy(refAnglesOrig, cg.refdefViewAngles);
@@ -3004,7 +3107,7 @@ static qboolean CG_PlayCamera (void)
 	return qtrue;
 }
 
-void CG_AdjustOriginToAvoidSolid (vec3_t origin, centity_t *cent)
+void CG_AdjustOriginToAvoidSolid (vec3_t origin, const centity_t *cent)
 {
 	trace_t         trace;
 	vec3_t mins, maxs;
@@ -3036,7 +3139,7 @@ static void CG_FreeCam (void)
 	int tm;
 	playerState_t *ps;
 	pmove_t pmove;
-	int x;
+	//int x;
 	//char *s = NULL;
 
 	ps = &cg.freecamPlayerState;
@@ -3086,13 +3189,7 @@ static void CG_FreeCam (void)
 			cg.refdef.fov_x = 1;
 		}
 
-		if (*cg_fovy.string) {
-			cg.refdef.fov_y = cg_fovy.value;
-		} else {
-			x = cg.refdef.width / tan(cg.refdef.fov_x / 360.0 * M_PI);
-			cg.refdef.fov_y = atan2(cg.refdef.height, x);
-			cg.refdef.fov_y = cg.refdef.fov_y * 360.0 / M_PI;
-		}
+		CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
 
 		cg.refdef.time = cg.time;  //dcg.realTime;  //cg.time;
 
@@ -3375,14 +3472,8 @@ static void CG_FreeCam (void)
 
 	cg.refdef.fov_x = CG_CalcZoom(cg.refdef.fov_x);
 
-	if (*cg_fovy.string) {
-		cg.refdef.fov_y = cg_fovy.value;
-	} else {
-		x = cg.refdef.width / tan(cg.refdef.fov_x / 360.0 * M_PI);
-		cg.refdef.fov_y = atan2(cg.refdef.height, x);
-		cg.refdef.fov_y = cg.refdef.fov_y * 360.0 / M_PI;
-	}
-
+	CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
+	
 	cg.refdef.time = cg.time;  //dcg.realTime;  //cg.time;
 
 	if (cg.keya  &&  !cg.mouseSeeking) {
@@ -3412,7 +3503,7 @@ static void CG_FreeCam (void)
 			//CG_RailTrail(&ci, muzzle, end);
 			VectorMA(muzzle, 8, right, muzzle);
 			//CG_SimpleRailTrail(muzzle, end, color);
-			CG_SimpleRailTrail(muzzle, tr.endpos, color);
+			CG_SimpleRailTrail(muzzle, tr.endpos, cg_railTrailTime.value, color);
 			trap_S_StartSound(NULL, MAX_GENTITIES - 1, CHAN_WEAPON, cg_weapons[WP_RAILGUN].flashSound[0]);
 			if (tr.entityNum < MAX_CLIENTS  &&  tr.entityNum >= 0) {
 				CG_GibPlayer(&cg_entities[tr.entityNum]);
@@ -3429,7 +3520,7 @@ static void CG_FreeCam (void)
 	}
 
 	if (cg.chaseEnt > -1) {
-		centity_t *cent;
+		const centity_t *cent;
 		vec3_t origin;
 		//vec3_t forward, right, up;
 		//vec3_t dir;
@@ -3530,7 +3621,7 @@ static void CG_DrawRawCameraPathKeyPoints (void)
 		if (i > 0) {
 			//FIXME
 			//CG_RailTrail(&ci, cg.rawCameraPoints[i - 1].origin, cg.rawCameraPoints[i].origin);
-			CG_SimpleRailTrail(cg.rawCameraPoints[i - 1].origin, cg.rawCameraPoints[i].origin, lineColor);
+			CG_SimpleRailTrail(cg.rawCameraPoints[i - 1].origin, cg.rawCameraPoints[i].origin, cg_railTrailTime.value, lineColor);
 		}
 	}
 }
@@ -3601,7 +3692,7 @@ static void CG_DrawSplinePoints (void)
 		if (i > 0  &&  i % 10 == 0) {
 			//CG_RailTrail(&ci, cg.splinePoints[i - 1], cg.splinePoints[i]);
 			//CG_RailTrail(&ci, lastDrawn, cg.splinePoints[i]);
-			CG_SimpleRailTrail(lastDrawn, cg.splinePoints[i], color3);
+			CG_SimpleRailTrail(lastDrawn, cg.splinePoints[i], cg_railTrailTime.value, color3);
 			VectorCopy(cg.splinePoints[i], lastDrawn);
 			//VectorCopy(cg.splinePoints[i - 1], cent.currentState.pos.trBase);
 			//VectorCopy(cg.splinePoints[i], cent.currentState.origin2);
@@ -3610,7 +3701,7 @@ static void CG_DrawSplinePoints (void)
 	}
 	if (i > 0) {
 		//CG_RailTrail(&ci, cg.splinePoints[cg.numSplinePoints - 1], lastDrawn);
-		CG_SimpleRailTrail(cg.splinePoints[cg.numSplinePoints - 1], lastDrawn, color3);
+		CG_SimpleRailTrail(cg.splinePoints[cg.numSplinePoints - 1], lastDrawn, cg_railTrailTime.value, color3);
 	}
 #endif
 
@@ -3729,7 +3820,7 @@ static void CG_DrawFloatNumbers (void)
 	int j;
 
 	for (i = 0;  i < cg.numFloatNumbers;  i++) {
-		floatNumber_t *f;
+		const floatNumber_t *f;
 
 		f = &cg.floatNumbers[i];
 		if ((f->startTime + f->time) >= cg.time) {
@@ -3763,7 +3854,7 @@ static void CG_DrawPoiPics (void)
 		poiPic_t *p;
 
 		p = &cg.poiPics[i];
-		if ((p->startTime + p->length) >= cg.time) {
+		if ((p->startTime + p->length) >= cg.time  &&  cg.time >= p->startTime) {
 			//CG_FloatNumber(f->number, f->origin, f->renderfx, f->color, 0.1);
 			//FIXME draw pic
 			if (p->team != team  &&  cg_helpIconStyle.integer) {
@@ -3832,7 +3923,7 @@ static void CG_DrawPoiPics (void)
 				} else {
 					ent.shaderRGBA[3] = 255;
 				}
-				trap_R_AddRefEntityToScene(&ent);
+				CG_AddRefEntity(&ent);
 			}
 		} else {
 			if (cg.numPoiPics > 1) {
@@ -3852,7 +3943,7 @@ static void CG_CheckRepeatKeys (void)
 {
     int t;
     char binding[MAX_STRING_CHARS];
-    char *s;
+    const char *s;
     char token[MAX_TOKEN_CHARS];
     qboolean newLine;
     int timing;
@@ -3936,7 +4027,7 @@ static void CG_CheckAtCommands (void)
 {
 	int i;
 	atCommand_t *at;
-	char *s;
+	const char *s;
 
 	for (i = 0;  i < MAX_AT_COMMANDS;  i++) {
 		at = &cg.atCommands[i];
@@ -3986,10 +4077,10 @@ static void CG_CheckCvarChange (void)
 	}
 }
 
-static void CG_DumpEntity (centity_t *cent)
+static void CG_DumpEntity (const centity_t *cent)
 {
-	char *s;
-	entityState_t *es;
+	const char *s;
+	const entityState_t *es;
 
 	es = &cent->currentState;
 
@@ -4003,7 +4094,7 @@ static void CG_DumpEntity (centity_t *cent)
 static void CG_DumpEntities (void)
 {
 	int i;
-	centity_t *cent;
+	const centity_t *cent;
 	centity_t fakeCent;
 
 	if (!cg.dumpEntities) {
@@ -4023,9 +4114,16 @@ static void CG_DumpEntities (void)
 	}
 
 	if (cg.dumpFreecam) {
+		memset(&fakeCent, 0, sizeof(fakeCent));
 		VectorCopy(cg.refdef.vieworg, fakeCent.lerpOrigin);
 		VectorCopy(cg.refdefViewAngles, fakeCent.lerpAngles);
 		fakeCent.currentState.number = -1;
+		fakeCent.currentState.eFlags = 0;
+		fakeCent.nextState.eFlags = 0;
+		fakeCent.currentState.legsAnim = 0;
+		fakeCent.currentState.torsoAnim = 0;
+		fakeCent.currentState.eType = 0;
+		fakeCent.currentState.weapon = 0;
 		CG_DumpEntity(&fakeCent);
 	}
 
@@ -4050,6 +4148,7 @@ static void CG_DumpEntities (void)
 
 	cg.dumpLastServerTime = cg.snap->serverTime;
 }
+
 
 /*
 =================
@@ -4085,8 +4184,10 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	}
 #endif
 
-
+	FxLoopSounds = FX_LOOP_SOUNDS_BASE;
+	CG_ClearLocalFrameEntities();
 	CG_CleanUpFieldNumber();
+
 	//FIXME if r_mode changes
 	trap_GetGlconfig( &cgs.glconfig );
 	cgs.screenXScale = cgs.glconfig.vidWidth / 640.0;
@@ -4113,16 +4214,23 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	cg.paused = SC_Cvar_Get_Int("cl_freezeDemo");
 
+	if (!cg.paused) {
+		cg.atCameraPoint = qfalse;
+	}
+
 	cg.videoRecording = videoRecording;
 	cg.ioverf = ioverf;
 	//Com_Printf("ioverf %d\n", ioverf);
 	cg.foverf = (double)ioverf / SUBTIME_RESOLUTION;
 	cg.draw = draw;
 	cg.realTime = trap_Milliseconds();
+	cgDC.realTime = cg.realTime;
 	//CG_Printf("serverTime: %d\n", serverTime);
 
 	cg.time = serverTime;
 	cg.ftime = (double)cg.time + cg.foverf;
+	cgDC.cgTime = cg.ftime;
+
 	//Com_Printf("%d  %f  %f\n", cg.time, cg.ftime, cg.foverf);
 
 	if (cg.ftime != cg.cameraPointCommandTime) {
@@ -4164,7 +4272,6 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		if ( (wcg.nextVictimServerTime >= 0  &&  cg.snap->serverTime > wcg.nextVictimServerTime + cg.fragForwardDeathHoverTime)  ||  wcg.ourLastClientNum != cg.snap->ps.clientNum) {
 			qboolean haveVictims, haveVictims2;
 
-			//Com_Printf("blah\n");
 			haveVictims = trap_GetNextVictim(cg.snap->ps.clientNum, wcg.nextVictimServerTime + 200, &cn, &st, qtrue);
 			haveVictims2 = trap_GetNextVictim(cg.clientNum, wcg.nextVictimServerTime + 200, &cn2, &st2, qtrue);
 			if (haveVictims  ||  haveVictims2) {
@@ -4198,16 +4305,14 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 				wcg.nextVictim = cn;
 				wcg.nextVictimServerTime = st;
 
-				trap_S_StartLocalSound( cgs.media.klaxon2, CHAN_LOCAL_SOUND );
+				trap_SendConsoleCommand("exec fragforwardnext.cfg\n");
 				trap_SendConsoleCommand(va("seekservertime %f\n", (double)(wcg.nextVictimServerTime - cg.fragForwardPreKillTime)));
 			} else {
 				//cg.showScores = qfalse;
 				cg.fragForwarding = qfalse;
 				wcg.nextVictim = -1;
 				wcg.nextVictimServerTime = -1;
-				trap_S_StartLocalSound(cgs.media.buzzer, CHAN_LOCAL_SOUND);
-				trap_SendConsoleCommand("echopopup No more frags\n");
-				trap_SendConsoleCommand("pause\n");
+				trap_SendConsoleCommand("exec fragforwarddone.cfg\n");
 			}
 		}
 	}
@@ -4378,7 +4483,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		ent.shaderRGBA[3] = 255;
 
 		VectorCopy(cg.startTimerOrigin, ent.origin);
-		trap_R_AddRefEntityToScene( &ent );
+		CG_AddRefEntity(&ent);
 
 	}
 #endif
@@ -4447,7 +4552,6 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 #endif
 
         if (wolfcam_following) {
-			//Wolfcam_SwitchPlayerModels();
 			//FIXME player models and also select client to view should happen before CG_AddPacketEntities()  -- probable cause of flashing when changing views
             Wolfcam_TransitionPlayerState(oldClientNum);
 			Wolfcam_OffsetFirstPersonView();
@@ -4511,7 +4615,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	}
 
 	if (currentWeapon != cg.lastWeapon) {
-		vmCvar_t *weapCvar[] = {
+		const vmCvar_t *weapCvar[] = {
 			&cg_weaponNone,
 			&cg_weaponGauntlet,
 			&cg_weaponMachineGun,
@@ -4662,7 +4766,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 #if 0  // old
 	if (cg.recordPath  &&  !cg.paused) {
 		if (cg.snap->serverTime != cg.recordPathLastServerTime) {
-			char *s;
+			const char *s;
 
 			//s = va("%d %f %f %f %f %f %f %d\n", cg.snap->serverTime, ps->origin[0], ps->origin[1], ps->origin[2], ps->viewangles[0], ps->viewangles[1], ps->viewangles[2], cg.viewEnt);
 			s = va("%d %f %f %f %f %f %f %d\n", cg.snap->serverTime, cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], cg.viewEnt);
@@ -4675,7 +4779,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	if (cg.recordPath  &&  !cg.paused) {
 		//if (cg.snap->serverTime != cg.recordPathLastServerTime) {
-			char *s;
+			const char *s;
 
 			//s = va("%d %f %f %f %f %f %f %d\n", cg.snap->serverTime, ps->origin[0], ps->origin[1], ps->origin[2], ps->viewangles[0], ps->viewangles[1], ps->viewangles[2], cg.viewEnt);
 			s = va("%f %f %f %f %f %f %f %d\n", cg.ftime, cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], cg.viewEnt);
@@ -4729,4 +4833,3 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	cg.demoSeeking = qfalse;
 }
-

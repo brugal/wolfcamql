@@ -23,7 +23,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define __MATH_VECTOR_H__
 
 #if defined(_WIN32)
+#ifdef _MSC_VER
 #pragma warning(disable : 4244)
+#endif
 #endif
 
 #include <math.h>

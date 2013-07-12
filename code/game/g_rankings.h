@@ -229,7 +229,7 @@ Key digits:
 #define QGR_KEY_PICKUP_UNKNOWN			1111021109
 #define QGR_KEY_TIME_UNKNOWN			1111021110
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 // new to team arena
 #define QGR_KEY_FRAG_NAILGIN			1211021200
 #define QGR_KEY_SUICIDE_NAILGIN			1111021201
@@ -296,7 +296,7 @@ Key digits:
 #define QGR_KEY_BOXES_BFG_AMMO			1111030800
 #define QGR_KEY_ROUNDS_BFG_AMMO			1111030801
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 // new to team arena
 #define QGR_KEY_BOXES_NAILGUN_AMMO		1111030900
 #define QGR_KEY_ROUNDS_NAILGUN_AMMO	 	1111030901
@@ -334,7 +334,7 @@ Key digits:
 #define QGR_KEY_REGEN					1111060500
 #define QGR_KEY_FLIGHT					1111060600
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 // persistant powerup keys
 // new to team arena
 #define QGR_KEY_SCOUT					1111160800
@@ -351,7 +351,7 @@ Key digits:
 #define QGR_KEY_TELEPORTER				1111070100
 #define QGR_KEY_TELEPORTER_USE			1111070101
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 // new to team arena
 #define QGR_KEY_KAMIKAZE				1111070200
 #define QGR_KEY_KAMIKAZE_USE			1111070201

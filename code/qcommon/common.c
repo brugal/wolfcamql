@@ -31,6 +31,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <winsock.h>
 #endif
 
+#ifndef DEDICATED
+#include "../client/cl_console.h"
+#endif
+
 int demo_protocols[] =
 	{ 73 };  //{ 66, 67, 68, 0 };
 
@@ -169,6 +173,7 @@ mapNames_t MapNames[] = {
 	{ "maps/qzteam4.bsp", "maps/scornforge.bsp", NULL, NULL },  // scornforge
 	{ "maps/qzteam6.bsp", "maps/vortexportal.bsp", NULL, NULL },  // vortex portal
 	{ "maps/qzteam7.bsp", "maps/rebound.bsp", NULL, NULL },  // rebound
+	{ "maps/cpm3a.bsp", "maps/useandabuse.bsp", NULL, NULL },  // use and abuse
 	{ NULL, NULL, NULL, NULL },
 };
 
@@ -247,17 +252,17 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 			struct tm *newtime;
 			time_t aclock;
 
-      opening_qconsole = qtrue;
+			opening_qconsole = qtrue;
 
 			time( &aclock );
 			newtime = localtime( &aclock );
 
 			logfile = FS_FOpenFileWrite( "qconsole.log" );
-			
+
 			if(logfile)
 			{
 				Com_Printf( "logfile opened on %s\n", asctime( newtime ) );
-			
+
 				if ( com_logfile->integer > 1 )
 				{
 					// force it to not buffer so we get valid
@@ -267,11 +272,11 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 			}
 			else
 			{
-				Com_Printf("Opening qconsole.log failed!\n");
+				Com_Printf("^1Opening qconsole.log failed!\n");
 				Cvar_SetValue("logfile", 0);
 			}
 
-      opening_qconsole = qfalse;
+			opening_qconsole = qfalse;
 		}
 		if ( logfile && FS_Initialized()) {
 			FS_Write(msg, strlen(msg), logfile);
@@ -314,22 +319,14 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	va_list		argptr;
 	static int	lastErrorTime;
 	static int	errorCount;
-	static qboolean	calledSysError = qfalse;
 	int			currentTime;
 
 	//Com_Printf(S_COLOR_RED "error\n");
 	//Sys_Error("sldkfjk\n");
 	//return;
 
-	if(com_errorEntered)
-	{
-		if(!calledSysError)
-		{
-			calledSysError = qtrue;
-			Sys_Error("recursive error after: %s", com_errorMessage);
-		}
-		
-		return;
+	if(com_errorEntered) {
+		Sys_Error("recursive error after: %s", com_errorMessage);
 	}
 
 	com_errorEntered = qtrue;
@@ -409,7 +406,6 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 
 	Com_Shutdown ();
 
-	calledSysError = qtrue;
 	Sys_Error ("%s", com_errorMessage);
 }
 
@@ -588,14 +584,23 @@ void Info_Print( const char *s ) {
 	char	value[BIG_INFO_VALUE];
 	char	*o;
 	int		l;
+	int charsWritten;
 
 	if (*s == '\\')
 		s++;
 	while (*s)
 	{
 		o = key;
-		while (*s && *s != '\\')
+		charsWritten = 0;
+		while (*s && *s != '\\') {
+			if (charsWritten >= sizeof(key)) {
+				Com_Printf(S_COLOR_YELLOW "%s() key truncated\n", __FUNCTION__);
+				o--;
+				break;
+			}
 			*o++ = *s++;
+			charsWritten++;
+		}
 
 		l = o - key;
 		if (l < 20)
@@ -615,8 +620,16 @@ void Info_Print( const char *s ) {
 
 		o = value;
 		s++;
-		while (*s && *s != '\\')
+		charsWritten = 0;
+		while (*s && *s != '\\') {
+			if (charsWritten >= sizeof(value)) {
+				Com_Printf(S_COLOR_YELLOW "%s() value truncated\n", __FUNCTION__);
+				o--;
+				break;
+			}
 			*o++ = *s++;
+			charsWritten++;
+		}
 		*o = 0;
 
 		if (*s)
@@ -957,9 +970,6 @@ void Z_Free( void *ptr ) {
 		block->size += other->size;
 		block->next = other->next;
 		block->next->prev = block;
-		if (other == zone->rover) {
-			zone->rover = block;
-		}
 	}
 }
 
@@ -1005,7 +1015,9 @@ void *Z_TagMallocDebug( int size, int tag, char *label, char *file, int line ) {
 void *Z_TagMalloc( int size, int tag ) {
 #endif
 	int		extra;
-	//int allocSize;
+#ifdef ZONE_DEBUG
+	int allocSize;
+#endif
 	memblock_t	*start, *rover, *new, *base;
 	memzone_t *zone;
 
@@ -1020,7 +1032,10 @@ void *Z_TagMalloc( int size, int tag ) {
 		zone = mainzone;
 	}
 
-	//allocSize = size;
+#ifdef ZONE_DEBUG
+	allocSize = size;
+#endif
+
 	//
 	// scan through the block list looking for the first free block
 	// of sufficient size

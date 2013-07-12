@@ -22,7 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // console.c
 
 #include "client.h"
-
+#include "cl_console.h"
+#include "keys.h"
 
 int g_console_field_width = 78;
 
@@ -52,8 +53,6 @@ typedef struct {
 								// for transparent notify lines
 	vec4_t	color;
 } console_t;
-
-extern	console_t	con;
 
 console_t	con;
 
@@ -175,7 +174,9 @@ void Con_Dump_f (void)
 	int		l, x, i;
 	short	*line;
 	fileHandle_t	f;
-	char	buffer[1024];
+	int		bufferlen;
+	char	*buffer;
+	char	filename[MAX_QPATH];
 
 	if (Cmd_Argc() != 2)
 	{
@@ -183,12 +184,15 @@ void Con_Dump_f (void)
 		return;
 	}
 
-	Com_Printf ("Dumped console text to %s\n", Cmd_Argv(1) );
+	Q_strncpyz( filename, Cmd_Argv( 1 ), sizeof( filename ) );
+	COM_DefaultExtension( filename, sizeof( filename ), ".txt" );
 
-	f = FS_FOpenFileWrite( Cmd_Argv( 1 ) );
+	Com_Printf ("Dumped console text to %s.\n", filename );
+
+	f = FS_FOpenFileWrite( filename );
 	if (!f)
 	{
-		Com_Printf ("ERROR: couldn't open.\n");
+		Com_Printf ("ERROR: couldn't open %s.\n", filename);
 		return;
 	}
 
@@ -203,8 +207,20 @@ void Con_Dump_f (void)
 			break;
 	}
 
+#ifdef _WIN32
+	bufferlen = con.linewidth + 3 * sizeof ( char );
+#else
+	bufferlen = con.linewidth + 2 * sizeof ( char );
+#endif
+
+	buffer = Hunk_AllocateTempMemory( bufferlen );
+	if (!buffer) {
+		Com_Printf("^3%s() couldn't allocate memory for line buffer\n", __FUNCTION__);
+		return;
+	}
+
 	// write the remaining lines
-	buffer[con.linewidth] = 0;
+	buffer[bufferlen-1] = 0;
 	for ( ; l <= con.current ; l++)
 	{
 		line = con.text + (l%con.totallines)*con.linewidth;
@@ -217,10 +233,15 @@ void Con_Dump_f (void)
 			else
 				break;
 		}
-		strcat( buffer, "\n" );
+#ifdef _WIN32
+		Q_strcat(buffer, bufferlen, "\r\n");
+#else
+		Q_strcat(buffer, bufferlen, "\n");
+#endif
 		FS_Write(buffer, strlen(buffer), f);
 	}
 
+	Hunk_FreeTempMemory( buffer );
 	FS_FCloseFile( f );
 }
 
@@ -392,7 +413,8 @@ All console printing must go through this in order to be logged to disk
 If no console is visible, the text will appear at the top of the game window
 ================
 */
-void CL_ConsolePrint( char *txt ) {
+void CL_ConsolePrint (const char *txt)
+{
 	int             y, l;
 	unsigned char   c;
 	unsigned short  color;
@@ -603,8 +625,6 @@ void Con_DrawNotify (void)
 
 		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v,
 			SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
-
-		v += BIGCHAR_HEIGHT;
 	}
 
 }

@@ -7,15 +7,21 @@
 
 #include "cg_local.h"
 
+#include "cg_ents.h"
+#include "cg_main.h"
+#include "cg_players.h"
+#include "cg_playerstate.h"
+#include "cg_predict.h"
+#include "cg_syscalls.h"
+#include "sc.h"
+
+int cg_numSolidEntities;
+centity_t *cg_solidEntities[MAX_ENTITIES_IN_SNAPSHOT];
+
 static	pmove_t		cg_pmove;
 
-//static	int			cg_numSolidEntities;
-int cg_numSolidEntities;
-
-//static	centity_t	*cg_solidEntities[MAX_ENTITIES_IN_SNAPSHOT];
-centity_t	*cg_solidEntities[MAX_ENTITIES_IN_SNAPSHOT];
 static	int			cg_numTriggerEntities;
-static	centity_t	*cg_triggerEntities[MAX_ENTITIES_IN_SNAPSHOT];
+static centity_t *cg_triggerEntities[MAX_ENTITIES_IN_SNAPSHOT];
 
 /*
 ====================
@@ -29,8 +35,8 @@ efficient collision detection
 void CG_BuildSolidList( void ) {
 	int			i;
 	centity_t	*cent;
-	snapshot_t	*snap;
-	entityState_t	*ent;
+	const snapshot_t	*snap;
+	const entityState_t	*ent;
 	clipHandle_t 	cmodel;
 
 	cg_numSolidEntities = 0;
@@ -89,11 +95,11 @@ static void CG_ClipMoveToEntities ( const vec3_t start, const vec3_t mins, const
 							int skipNumber, int mask, trace_t *tr ) {
 	int			i, x, zd, zu;
 	trace_t		trace;
-	entityState_t	*ent;
+	const entityState_t	*ent;
 	clipHandle_t 	cmodel;
 	vec3_t		bmins, bmaxs;
 	vec3_t		origin, angles;
-	centity_t	*cent;
+	const centity_t	*cent;
 	vec3_t tmpOrigin;
 
 	for ( i = 0 ; i < cg_numSolidEntities ; i++ ) {
@@ -175,8 +181,8 @@ CG_PointContents
 */
 int		CG_PointContents( const vec3_t point, int passEntityNum ) {
 	int			i;
-	entityState_t	*ent;
-	centity_t	*cent;
+	const entityState_t	*ent;
+	const centity_t	*cent;
 	clipHandle_t cmodel;
 	int			contents;
 
@@ -219,7 +225,7 @@ static void CG_InterpolatePlayerState( qboolean grabAngles ) {
 	double			f;
 	int				i;
 	playerState_t	*out;
-	snapshot_t		*prev, *next;
+	const snapshot_t		*prev, *next;
 	//static int lastCgtime = 0;  // testing
 
 	out = &cg.predictedPlayerState;
@@ -300,7 +306,7 @@ CG_TouchItem
 ===================
 */
 static void CG_TouchItem( centity_t *cent ) {
-	gitem_t		*item;
+	const gitem_t		*item;
 
 	if ( !cg_predictItems.integer ) {
 		return;
@@ -322,9 +328,9 @@ static void CG_TouchItem( centity_t *cent ) {
 
 	// Special case for flags.
 	// We don't predict touching our own flag
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if( cgs.gametype == GT_1FCTF ) {
-		if( item->giTag != PW_NEUTRALFLAG ) {
+		if( item->giType == IT_TEAM && item->giTag != PW_NEUTRALFLAG ) {
 			return;
 		}
 	}
@@ -332,10 +338,10 @@ static void CG_TouchItem( centity_t *cent ) {
 	if(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 #endif
 		if (cg.predictedPlayerState.persistant[PERS_TEAM] == TEAM_RED &&
-			item->giTag == PW_REDFLAG)
+			item->giType == IT_TEAM && item->giTag == PW_REDFLAG)
 			return;
 		if (cg.predictedPlayerState.persistant[PERS_TEAM] == TEAM_BLUE &&
-			item->giTag == PW_BLUEFLAG)
+			item->giType == IT_TEAM && item->giTag == PW_BLUEFLAG)
 			return;
 	}
 
@@ -587,9 +593,9 @@ void CG_PredictPlayerState( void ) {
 				}
 				cg.thisFrameTeleport = qfalse;
 			} else {
-				vec3_t	adjusted;
+				vec3_t	adjusted, new_angles;
 				CG_AdjustPositionForMover( cg.predictedPlayerState.origin, 
-										   cg.predictedPlayerState.groundEntityNum, cg.physicsTime, cg.oldTime, adjusted, cg.foverf );
+										   cg.predictedPlayerState.groundEntityNum, cg.physicsTime, cg.oldTime, adjusted, cg.foverf, cg.predictedPlayerState.viewangles, new_angles );
 
 				if ( cg_showmiss.integer ) {
 					if (!VectorCompare( oldPlayerState.origin, adjusted )) {
@@ -668,7 +674,7 @@ void CG_PredictPlayerState( void ) {
 	// adjust for the movement of the groundentity
 	CG_AdjustPositionForMover( cg.predictedPlayerState.origin, 
 		cg.predictedPlayerState.groundEntityNum, 
-							   cg.physicsTime, cg.time, cg.predictedPlayerState.origin, cg.foverf );
+							   cg.physicsTime, cg.time, cg.predictedPlayerState.origin, cg.foverf, cg.predictedPlayerState.viewangles, cg.predictedPlayerState.viewangles );
 
 	if ( cg_showmiss.integer ) {
 		if (cg.predictedPlayerState.eventSequence > oldPlayerState.eventSequence + MAX_PS_EVENTS) {

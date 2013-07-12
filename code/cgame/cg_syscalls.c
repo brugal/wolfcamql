@@ -8,6 +8,10 @@
 
 #include "cg_local.h"
 
+#include "cg_syscalls.h"
+
+
+
 #ifdef CGAME_HARD_LINKED
 #define syscall cgame_syscall
 extern int cgame_syscall (int arg, ...);
@@ -22,7 +26,7 @@ Q_EXPORT void dllEntry( intptr_t (QDECL  *syscallptr)( intptr_t arg,... ) ) {
 #endif
 
 
-int PASSFLOAT( float x ) {
+static int PASSFLOAT( float x ) {
 	floatint_t fi;
 	fi.f = x;
 	return fi.i;
@@ -32,8 +36,9 @@ void	trap_Print( const char *fmt ) {
 	syscall( CG_PRINT, fmt );
 }
 
-void	trap_Error( const char *fmt ) {
+void __attribute__ ((noreturn)) trap_Error( const char *fmt ) {
 	syscall( CG_ERROR, fmt );
+	exit(1);  // silence gcc warning
 }
 
 int		trap_Milliseconds( void ) {
@@ -54,6 +59,11 @@ void	trap_Cvar_Set( const char *var_name, const char *value ) {
 
 void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize ) {
 	syscall( CG_CVAR_VARIABLESTRINGBUFFER, var_name, buffer, bufsize );
+}
+
+qboolean trap_Cvar_Exists (const char *var_name)
+{
+	return syscall(CG_CVAR_EXISTS, var_name);
 }
 
 int		trap_Argc( void ) {
@@ -173,7 +183,7 @@ int		trap_CM_MarkFragments( int numPoints, const vec3_t *points,
 	return syscall( CG_CM_MARKFRAGMENTS, numPoints, points, projection, maxPoints, pointBuffer, maxFragments, fragmentBuffer );
 }
 
-void	trap_S_StartSound( vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx ) {
+void	trap_S_StartSound( const vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfx ) {
 	syscall( CG_S_STARTSOUND, origin, entityNum, entchannel, sfx );
 }
 
@@ -249,6 +259,11 @@ void	trap_R_AddRefEntityToScene( const refEntity_t *re ) {
 	syscall( CG_R_ADDREFENTITYTOSCENE, re );
 }
 
+void trap_R_AddRefEntityPtrToScene (refEntity_t *re)
+{
+	syscall(CG_R_ADDREFENTITYPTRTOSCENE, re);
+}
+
 void	trap_R_AddPolyToScene( qhandle_t hShader , int numVerts, const polyVert_t *verts, int lightmap ) {
 	syscall( CG_R_ADDPOLYTOSCENE, hShader, numVerts, verts, lightmap );
 }
@@ -257,7 +272,7 @@ void	trap_R_AddPolysToScene( qhandle_t hShader , int numVerts, const polyVert_t 
 	syscall( CG_R_ADDPOLYSTOSCENE, hShader, numVerts, verts, num );
 }
 
-int		trap_R_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir ) {
+int		trap_R_LightForPoint( const vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir ) {
 	return syscall( CG_R_LIGHTFORPOINT, point, ambientLight, directedLight, lightDir );
 }
 
@@ -291,7 +306,7 @@ void	trap_R_AddLightToScene( const vec3_t org, float intensity, float r, float g
 	re.shaderRGBA[2] = 255.0 * b;
 	re.shaderRGBA[3] = 100;
 
-	trap_R_AddRefEntityToScene(&re);
+	CG_AddRefEntity(&re);
 #endif
 }
 
@@ -366,11 +381,11 @@ void		trap_SetUserCmdValue( int stateValue, float sensitivityScale ) {
 	syscall( CG_SETUSERCMDVALUE, stateValue, PASSFLOAT(sensitivityScale) );
 }
 
-void		testPrintInt( char *string, int i ) {
+void		testPrintInt( const char *string, int i ) {
 	syscall( CG_TESTPRINTINT, string, i );
 }
 
-void		testPrintFloat( char *string, float f ) {
+void		testPrintFloat( const char *string, float f ) {
 	syscall( CG_TESTPRINTFLOAT, string, PASSFLOAT(f) );
 }
 
@@ -531,7 +546,7 @@ void trap_CalcSpline (int step, float tension, float *out)
 	syscall(CG_CALCSPLINE, step, PASSFLOAT(tension), out);
 }
 
-void trap_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, vec4_t color)
+void trap_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *numSplinePoints, vec3_t *splinePoints, const vec4_t color)
 {
 	syscall(CG_SETPATHLINES, numCameraPoints, cameraPoints, numSplinePoints, splinePoints, color);
 }
@@ -586,4 +601,24 @@ int trap_GetItemPickup (int pickupNumber, itemPickup_t *ip)
 qhandle_t trap_R_GetSingleShader (void)
 {
 	return syscall(CG_R_GETSINGLESHADER);
+}
+
+void trap_Get_Demo_Timeouts (int *numTimeouts, timeOut_t *timeOuts)
+{
+	syscall(CG_GET_DEMO_TIMEOUTS, numTimeouts, timeOuts);
+}
+
+int trap_GetNumPlayerInfos (void)
+{
+	return syscall(CG_GET_NUM_PLAYER_INFO);
+}
+
+void trap_GetExtraPlayerInfo (int num, char *modelName)
+{
+	syscall(CG_GET_EXTRA_PLAYER_INFO, num, modelName);
+}
+
+void trap_GetRealMapName (char *name, char *realName, size_t szRealName)
+{
+	syscall(CG_GET_REAL_MAP_NAME, name, realName, szRealName);
 }

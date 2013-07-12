@@ -741,7 +741,7 @@ static void Cmd_Unaliasall_f (void)
 
 static void Cmd_CompleteAliasName (char *args, int argNum)
 {
-	char *name;
+	const char *name;
 	int i;
 
 	name = args + 7;
@@ -812,7 +812,7 @@ char	*Cmd_Argv( int arg ) {
 	if ( (unsigned)arg >= cmd_argc ) {
 		return "";
 	}
-	return cmd_argv[arg];	
+	return cmd_argv[arg];
 }
 
 /*

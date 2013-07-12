@@ -29,7 +29,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdio.h>
 
 #ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning(disable : 4710)     // function 'blah' not inlined
+#endif
 #endif
 
 void TestStringClass ();
@@ -140,7 +142,7 @@ public:
 	static   int      cmpn( const char *s1, const char *s2, int n );
 	static   int      cmp( const char *s1, const char *s2 );
 
-	static   void     snprintf ( char *dst, int size, const char *fmt, ... );
+	static   void     snprintf ( char *dst, int size, const char *fmt, ... ) __attribute__ ((format (printf, 3, 4)));
 
 	static   bool	   isNumeric( const char *str );
     bool    isNumeric( void ) const;

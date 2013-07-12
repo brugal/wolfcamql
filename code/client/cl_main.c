@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 #include "cl_avi.h"
+#include "keys.h"
 #include "snd_local.h"
 #include <limits.h>
 
@@ -35,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifdef USE_MUMBLE
 #include "libmumblelink.h"
 #endif
+
 
 #ifdef USE_MUMBLE
 cvar_t	*cl_useMumble;
@@ -74,7 +76,7 @@ cvar_t	*cl_timedemo;
 cvar_t	*cl_timedemoLog;
 cvar_t	*cl_autoRecordDemo;
 cvar_t	*cl_aviFrameRate;
-cvar_t	*cl_aviMotionJpeg;
+cvar_t	*cl_aviCodec;
 cvar_t *cl_aviAllowLargeFiles;
 cvar_t *cl_aviFetchMode;
 cvar_t *cl_aviExtension;
@@ -133,6 +135,8 @@ clientConnection_t	clc;
 clientStatic_t		cls;
 vm_t				*cgvm;
 
+char                            cl_reconnectArgs[MAX_OSPATH];
+
 // Structure containing functions exported from refresh DLL
 refexport_t	re;
 
@@ -178,10 +182,13 @@ extern cvar_t *s_backend;
 
 extern void GLimp_Minimize (void);
 extern void SV_BotFrame( int time );
-void CL_CheckForResend( void );
-void CL_ShowIP_f(void);
-void CL_ServerStatus_f(void);
-void CL_ServerStatusResponse( netadr_t from, msg_t *msg );
+
+static void CL_CheckForResend( void );
+static void CL_ShowIP_f(void);
+static void CL_ServerStatus_f(void);
+static void CL_ServerStatusResponse( netadr_t from, msg_t *msg );
+
+static void CL_ReadExtraDemoMessage (demoFile_t *df);
 
 /*
 ===============
@@ -532,25 +539,6 @@ void CL_AddReliableCommand(const char *cmd, qboolean isDisconnectCmd)
 
 	Q_strncpyz(clc.reliableCommands[++clc.reliableSequence & (MAX_RELIABLE_COMMANDS - 1)],
 		   cmd, sizeof(*clc.reliableCommands));
-}
-
-/*
-======================
-CL_ChangeReliableCommand
-======================
-*/
-void CL_ChangeReliableCommand( void ) {
-	//int r;
-	int index, l;
-
-	//r = clc.reliableSequence - (random() * 5);
-	index = clc.reliableSequence & ( MAX_RELIABLE_COMMANDS - 1 );
-	l = strlen(clc.reliableCommands[ index ]);
-	if ( l >= MAX_STRING_CHARS - 1 ) {
-		l = MAX_STRING_CHARS - 2;
-	}
-	clc.reliableCommands[ index ][ l ] = '\n';
-	clc.reliableCommands[ index ][ l+1 ] = '\0';
 }
 
 /*
@@ -1000,7 +988,7 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			r = MSG_ReadByte(inMsg);
 			MSG_WriteByte(&outMsg, 0);
 			// we know it's definately delta
-			old = &cl.snapshots[(cl.snap.messageNum - r) & PACKET_MASK];
+			old = &cl.snapshots[0][(cl.snap.messageNum - r) & PACKET_MASK];
 
 			// snap flags
 			r = MSG_ReadByte(inMsg);
@@ -1071,7 +1059,7 @@ void CL_ReadDemoMessage (qboolean seeking)
 	msg_t		buf;
 	byte		bufData[ MAX_MSGLEN ];
 	int			s;
-	//int i;
+	int i;
 	rewindBackups_t *rb;
 	//double currentTime;
 
@@ -1092,6 +1080,7 @@ void CL_ReadDemoMessage (qboolean seeking)
 
 	//Com_Printf("snaps in demo: %d\n", di.snapsInDemo);
 
+
 	if ( !di.testParse  &&  di.snapCount < MAX_REWIND_BACKUPS  &&
 		 ((!di.gotFirstSnap  &&  !(cls.state >= CA_CONNECTED && cls.state < CA_PRIMED))
       ||
@@ -1109,6 +1098,16 @@ void CL_ReadDemoMessage (qboolean seeking)
 			rb->valid = qtrue;
 			rb->numSnaps = di.numSnaps;
 			rb->seekPoint = FS_FTell(clc.demoReadFile);
+			for (i = 1;  i < di.numDemoFiles;  i++) {
+				demoFile_t *df;
+
+				df = &di.demoFiles[i];
+				if (df->valid) {
+					rb->demoSeekPoints[i] = FS_FTell(df->f);
+				} else {
+					rb->demoSeekPoints[i] = -1;
+				}
+			}
 			memcpy(&rb->cl, &cl, sizeof(clientActive_t));
 			memcpy(&rb->clc, &clc, sizeof(clientConnection_t));
 			memcpy(&rb->cls, &cls, sizeof(clientStatic_t));
@@ -1140,8 +1139,21 @@ keep_reading:
 		CL_DemoCompleted ();
 		return;
 	}
+
+#if 0
+	if (1) {  //(buf.cursize > 16000) {
+		static int biggest = 0;
+
+		if (buf.cursize > biggest) {
+			biggest = buf.cursize;
+		}
+
+		Com_Printf("^3buf size: %d  ^2%d\n", buf.cursize, biggest);
+	}
+#endif
+
 	if ( buf.cursize > buf.maxsize ) {
-		Com_Error (ERR_DROP, "CL_ReadDemoMessage: demoMsglen > MAX_MSGLEN");
+		Com_Error (ERR_DROP, "CL_ReadDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d)", buf.cursize, buf.maxsize);
 	}
 	r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
 	if ( r != buf.cursize ) {
@@ -1161,6 +1173,44 @@ keep_reading:
 			CL_WriteDemoMessage(&buf, 0);
 		}
 	}
+
+	if (!di.testParse  &&  clc.demoplaying) {
+		for (i = 1;  i < di.numDemoFiles;  i++) {
+			demoFile_t *df;
+			int pos;
+
+			df = &di.demoFiles[i];
+			if (!df->valid) {
+				continue;
+			}
+
+			while (1) {
+				int oldServerTime;
+
+				oldServerTime = df->serverTime;
+				pos = FS_FTell(df->f);
+				//Com_Printf("pack %d\n", cl.parseEntitiesNum);
+				CL_ReadExtraDemoMessage(df);
+				//Com_Printf("pack %d\n", cl.parseEntitiesNum);
+
+				//Com_Printf("%d  (%d)demoFile %d  serverTime %d\n", cl.snap.serverTime, i, df->f, df->serverTime);
+
+				if (df->serverTime < cl.snap.serverTime) {
+					continue;
+				}
+
+				if (df->serverTime > cl.snap.serverTime) {
+					FS_Seek(df->f, pos, FS_SEEK_SET);
+					df->serverTime = oldServerTime;
+					break;
+				}
+
+				// got it
+				//Com_Printf("%d  demoFile %d  serverTime %d\n", cl.snap.serverTime, df->f, df->serverTime);
+				break;
+			}
+		}
+	}
 }
 
 /*
@@ -1168,7 +1218,7 @@ keep_reading:
 CL_WalkDemoExt
 ====================
 */
-static void CL_WalkDemoExt(char *arg, char *name, int *demofile)
+static void CL_WalkDemoExt (const char *arg, char *name, int *demofile)
 {
 	int i = 0;
 	*demofile = 0;
@@ -1267,14 +1317,14 @@ static void testParseCommandString (msg_t *msg)
 }
 #endif
 
-static void check_events (entityState_t *es, int serverTime)
+static void check_events (const entityState_t *es, int serverTime)
 {
 	int event;
 	int clientNum;
 	int i;
 	demoObit_t *d;
 	itemPickup_t *ip;
-	gitem_t *item;
+	const gitem_t *item;
 	int index;
 
 	event = es->event & ~EV_EVENT_BITS;
@@ -1469,7 +1519,7 @@ static void check_events (entityState_t *es, int serverTime)
 	}
 }
 
-static void parse_new_snapshot (clSnapshot_t *snap, clSnapshot_t *oldSnap)
+static void parse_new_snapshot (const clSnapshot_t *snap, const clSnapshot_t *oldSnap)
 {
 	entityState_t es;
 	int i;
@@ -1607,11 +1657,12 @@ static void parse_demo (void)
 	int serverTime;
 	int lastMessageNum = -1;
 	clSnapshot_t *oldSnap = NULL;
+	int i;
 
 	//return;
 
 	tstart = Sys_Milliseconds();
-	memset(&di, 0, sizeof(di));
+	//memset(&di, 0, sizeof(di));
 	di.gameStartTime = -1;
 	di.gameEndTime = -1;
 
@@ -1711,7 +1762,7 @@ static void parse_demo (void)
 			}
 
 			if (lastMessageNum != snap->messageNum) {
-				oldSnap = &cl.snapshots[(cl.snap.messageNum - 1) & PACKET_MASK];
+				oldSnap = &cl.snapshots[0][(cl.snap.messageNum - 1) & PACKET_MASK];
 				//Com_Printf("new snap: %d  %p %p  %d\n", snap->messageNum, oldSnap, snap, oldSnap->messageNum);
 
 				if ( cl.parseEntitiesNum - snap->parseEntitiesNum >= MAX_PARSE_ENTITIES ) {
@@ -1742,10 +1793,34 @@ static void parse_demo (void)
 	Msg_TestParse = qfalse;
 	Msg_Abort = qfalse;
 
+	//FIXME quake live hack for timeouts
+	if (di.protocol == PROTOCOL_QL) {
+		for (i = 0;  i < di.numTimeouts;  i++) {
+			if (di.timeOuts[i].endTime) {
+				di.timeOuts[i].endTime += di.serverFrameTime;
+			}
+		}
+
+		if (di.numTimeouts) {
+			if (di.timeOuts[di.numTimeouts - 1].endTime == 0) {
+				// demo ends before ref or client timeout ends
+				di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime;
+			}
+		}
+	} else if (di.cpma) {  // hack for cpma demos
+		if (di.numTimeouts) {
+			if (di.timeOuts[di.numTimeouts - 1].endTime == 0) {
+				// demo ends before timeout is over
+				di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime;
+			}
+		}
+	}
+
 	Com_Printf("last serverTime %d   total %f minutes\n", cl.snap.serverTime, (cl.snap.serverTime - di.firstServerTime) / 1000.0 / 60.0);
 	Com_Printf("%d snaps in demo\n", di.snapsInDemo);
 	Com_Printf("%d obits in demo\n", di.obitNum);
 	Com_Printf("%d item pickups in demo\n", di.numItemPickups);
+	Com_Printf("%d timeout spans in demo\n", di.numTimeouts);
 	Com_Printf("parse time %f seconds\n", (float)(Sys_Milliseconds() - tstart) / 1000.0);
 	FS_Seek(clc.demoReadFile, 0, FS_SEEK_SET);
 	clc.demoplaying = qfalse;
@@ -1767,38 +1842,77 @@ static void parse_demo (void)
 	Cmd_RemoveCommand("voip");
 }
 
+static void CL_ReadExtraDemoMessage (demoFile_t *df)
+{
+	int			r;
+	msg_t		buf;
+	byte		bufData[ MAX_MSGLEN ];
+	int			s;
 
-/*
-====================
-CL_PlayDemo_f
-
-demo <demoname>
-
-====================
-*/
-void CL_PlayDemo_f( void ) {
-	char		name[MAX_OSPATH];
-	char		*arg, *ext_test;
-	int			protocol;
-	//int i;
-	char		retry[MAX_OSPATH];
-
-	if (Cmd_Argc() != 2) {
-		Com_Printf("demo <demoname>\n");
+	if ( !df  ||  !df->valid ) {
+		//CL_DemoCompleted ();
 		return;
 	}
 
-	// make sure a local server is killed
-	// 2 means don't force disconnect of local client
-	Cvar_Set( "sv_killserver", "2" );
+	// get the sequence number
+	r = FS_Read(&s, 4, df->f);
+	if ( r != 4 ) {
+		//CL_DemoCompleted ();
+		Com_Printf("demoFile %d ended\n", df->f);
+		return;
+	}
+	df->serverMessageSequence = LittleLong( s );
+	//Com_Printf("demoFile %d  sequence %d (%d)\n", df->f, df->serverMessageSequence, clc.serverMessageSequence);
 
-	arg = Cmd_Argv(1);
+	// init the message
+	MSG_Init(&buf, bufData, sizeof(bufData));
 
-	CL_Disconnect( qtrue );
+	// get the length
+	r = FS_Read (&buf.cursize, 4, df->f);
+	if ( r != 4 ) {
+		//CL_DemoCompleted ();
+		Com_Printf("demoFile %d truncated\n", df->f);
+		return;
+	}
+	buf.cursize = LittleLong( buf.cursize );
+	if ( buf.cursize == -1 ) {
+		//CL_DemoCompleted ();
+		Com_Printf("demoFile %d done\n", df->f);
+		return;
+	}
+
+	if ( buf.cursize > buf.maxsize ) {
+		//Com_Error (ERR_DROP, "CL_ReadDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d)", buf.cursize, buf.maxsize);
+		Com_Printf ("^1CL_ReadExtraDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d) for demoFile %d\n", buf.cursize, buf.maxsize, df->f);
+		return;
+	}
+	r = FS_Read( buf.data, buf.cursize, df->f );
+	if ( r != buf.cursize ) {
+		Com_Printf( "Demo file %d was truncated(2)\n", df->f);
+		//CL_DemoCompleted ();
+		return;
+	}
+
+	//clc.lastPacketTime = cls.realtime;
+	buf.readcount = 0;
+	CL_ParseExtraServerMessage(df, &buf);
+}
+
+static qhandle_t CL_OpenDemoFile (const char *arg)
+{
+	char		name[MAX_OSPATH];
+	char		*ext_test;
+	int			protocol;
+	char		retry[MAX_OSPATH];
+	qhandle_t file;
+
+	if (!arg  ||  !*arg) {
+		return 0;
+	}
 
 	if (!Q_stricmpn(arg, "ql:", strlen("ql:"))) {
 		Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), arg + 3);
-		FS_FOpenSysFileRead(name, &clc.demoReadFile);
+		FS_FOpenSysFileRead(name, &file);
 	} else if (strstr(arg, "demos/") != arg) {
 		// check for an extension .DEMOEXT_?? (?? is protocol)
 		ext_test = strrchr(arg, '.');
@@ -1817,7 +1931,7 @@ void CL_PlayDemo_f( void ) {
 			//if(demo_protocols[i] || protocol == com_protocol->integer)
 			if (protocol == com_protocol->integer) {
 				Com_sprintf (name, sizeof(name), "demos/%s", arg);
-				FS_FOpenFileRead( name, &clc.demoReadFile, qtrue );
+				FS_FOpenFileRead( name, &file, qtrue );
 			} else {
 				int len;
 
@@ -1829,36 +1943,36 @@ void CL_PlayDemo_f( void ) {
 
 				Q_strncpyz(retry, arg, len + 1);
 				retry[len] = '\0';
-				CL_WalkDemoExt( retry, name, &clc.demoReadFile );
+				CL_WalkDemoExt( retry, name, &file );
 			}
 		} else {
-			CL_WalkDemoExt(arg, name, &clc.demoReadFile);
+			CL_WalkDemoExt(arg, name, &file);
 		}
 	} else {  // arg is absolute path
-		FS_FOpenFileRead(arg, &clc.demoReadFile, qtrue);
+		FS_FOpenFileRead(arg, &file, qtrue);
 	}
 
-	if (!clc.demoReadFile) {
+	if (!file) {
 		// check quakelive dir as last resort
 		Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s", Sys_QuakeLiveDir(), arg);
-		FS_FOpenSysFileRead(name, &clc.demoReadFile);
-		if (!clc.demoReadFile) {
+		FS_FOpenSysFileRead(name, &file);
+		if (!file) {
 			Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.dm_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-			FS_FOpenSysFileRead(name, &clc.demoReadFile);
-			if (!clc.demoReadFile) {
+			FS_FOpenSysFileRead(name, &file);
+			if (!file) {
 				Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.DM_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-				FS_FOpenSysFileRead(name, &clc.demoReadFile);
-				if (!clc.demoReadFile) {
+				FS_FOpenSysFileRead(name, &file);
+				if (!file) {
 					// :/
 					Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.dM_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-					FS_FOpenSysFileRead(name, &clc.demoReadFile);
-					if (!clc.demoReadFile) {
+					FS_FOpenSysFileRead(name, &file);
+					if (!file) {
 						// :{   :/
 						Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.Dm_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-						FS_FOpenSysFileRead(name, &clc.demoReadFile);
-						if (!clc.demoReadFile) {
+						FS_FOpenSysFileRead(name, &file);
+						if (!file) {
 							Com_Error(ERR_DROP, "couldn't open %s", arg);
-							return;
+							return 0;
 						}
 					}
 				}
@@ -1866,14 +1980,102 @@ void CL_PlayDemo_f( void ) {
 		}
 	}
 
+	return file;
+}
+
+
+/*
+====================
+CL_PlayDemo_f
+
+demo <demoname>
+
+====================
+*/
+
+//FIXME ...
+static char DemoNames[MAX_DEMO_FILES][MAX_OSPATH];
+
+void CL_PlayDemo_f (void)
+{
+	char		*arg;
+	int i;
+	int n;
+
+	n = Cmd_Argc();
+
+	if (Cmd_Argc() < 2) {
+		Com_Printf("demo <demoname1> <demoname2> ...\n");
+		return;
+	}
+
+	// make sure a local server is killed
+	// 2 means don't force disconnect of local client
+	Cvar_Set( "sv_killserver", "2" );
+
+	for (i = 1;  i < n  &&  i <= MAX_DEMO_FILES;  i++) {
+		arg = Cmd_Argv(i);
+		Q_strncpyz(DemoNames[i - 1], arg, MAX_OSPATH);
+	}
+
+	arg = DemoNames[0];
+
+	CL_Disconnect( qtrue );
+
+	clc.demoReadFile = CL_OpenDemoFile(arg);
+	if (!clc.demoReadFile) {
+		Com_Printf("^1CL_PlayDemo_f() couldn't open demo file '%s'\n", arg);
+		return;
+	}
+
+	//FIXME
+	memset(&di, 0, sizeof(di));
+	//FIXME
+	for (i = 0;  i < MAX_DEMO_FILES;  i++) {
+		di.demoFiles[i].num = i;
+	}
+	di.demoFiles[0].f = clc.demoReadFile;
+	di.demoFiles[0].valid = qtrue;
+	di.numDemoFiles++;
+
+	//n = Cmd_Argc();
+	for (i = 2;  i < n  &&  i <= MAX_DEMO_FILES;  i++) {
+		qhandle_t file;
+		demoFile_t *df;
+
+#if 0
+		if (di.numDemoFiles > MAX_DEMO_FILES) {
+			Com_Printf("^3CL_PlayDemo_f MAX_DEMO_FILES(%d)\n", MAX_DEMO_FILES);
+			break;
+		}
+#endif
+
+		//arg = Cmd_Argv(i);
+		arg = DemoNames[i - 1];
+		Com_Printf("^4'%s'\n", arg);
+		//di.demoFiles[di.numDemoFiles].f = CL_OpenDemoFile(arg);
+		file = CL_OpenDemoFile(arg);
+		if (!file) {
+			Com_Printf("^3CL_PlayDemo_f couldn't open '%s'\n", arg);
+			continue;
+		}
+		Com_Printf("%d\n", file);
+		df = &di.demoFiles[di.numDemoFiles];
+		df->f = file;
+		df->valid = qtrue;
+		di.numDemoFiles++;
+	}
+
 	//Q_strncpyz( clc.demoName, Cmd_Argv(1), sizeof( clc.demoName ) );
+
+	//Com_Printf("^1slkdfkdjf\n");
 
 	Con_Close();
 
 	parse_demo();
 	cls.state = CA_CONNECTED;
 	clc.demoplaying = qtrue;
-	Q_strncpyz( cls.servername, Cmd_Argv(1), sizeof( cls.servername ) );
+	Q_strncpyz( cls.servername, arg, sizeof( cls.servername ) );
 
 	// read demo messages until connected
 	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
@@ -2156,6 +2358,20 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	if ( clc.demoReadFile ) {
 		FS_FCloseFile( clc.demoReadFile );
 		clc.demoReadFile = 0;
+		//di.demoFiles[0].f = 0;
+		//di.demoFiles[0].valid = qfalse;
+
+		for (i = 1;  i < di.numDemoFiles;  i++) {
+			demoFile_t *df;
+
+			df = &di.demoFiles[i];
+			if (!df->valid) {
+				continue;
+			}
+
+			FS_FCloseFile(df->f);
+		}
+
 		for (i = 0;  i < MAX_REWIND_BACKUPS;  i++) {
 			rewindBackups[i].valid = qfalse;
 		}
@@ -2201,6 +2417,7 @@ void CL_Disconnect( qboolean showMainMenu ) {
 #endif
 
 	CL_UpdateGUID( NULL, 0 );
+	CL_ShutdownCGame();
 }
 
 
@@ -2398,12 +2615,11 @@ CL_Reconnect_f
 ================
 */
 void CL_Reconnect_f( void ) {
-	if ( !strlen( cls.servername ) || !strcmp( cls.servername, "localhost" ) ) {
-		Com_Printf( "Can't reconnect to localhost.\n" );
+	if ( !strlen( cl_reconnectArgs ) )
 		return;
-	}
+
 	Cvar_Set("ui_singlePlayerActive", "0");
-	Cbuf_AddText( va("connect %s\n", cls.servername ) );
+	Cbuf_AddText( va("connect %s\n", cl_reconnectArgs ) );
 }
 
 /*
@@ -2436,6 +2652,9 @@ void CL_Connect_f( void ) {
 
 		server = Cmd_Argv(2);
 	}
+
+	// save arguments for reconnect
+	Q_strncpyz( cl_reconnectArgs, Cmd_Args(), sizeof( cl_reconnectArgs ) );
 
 	Cvar_Set("ui_singlePlayerActive", "0");
 
@@ -3100,6 +3319,7 @@ void CL_CheckForResend( void ) {
 	}
 }
 
+#if 0  // removed in ioquake3 svn 2366
 /*
 ===================
 CL_DisconnectPacket
@@ -3131,7 +3351,7 @@ void CL_DisconnectPacket( netadr_t from ) {
 	Cvar_Set("com_errorMessage", "Server disconnected for unknown reason\n" );
 	CL_Disconnect( qtrue );
 }
-
+#endif
 
 /*
 ===================
@@ -3167,7 +3387,7 @@ void CL_MotdPacket( netadr_t from ) {
 CL_InitServerInfo
 ===================
 */
-void CL_InitServerInfo( serverInfo_t *server, netadr_t *address ) {
+void CL_InitServerInfo( serverInfo_t *server, const netadr_t *address ) {
 	server->adr = *address;
 	server->clients = 0;
 	server->hostName[0] = '\0';
@@ -3395,12 +3615,14 @@ void CL_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		return;
 	}
 
+#if 0  // removed in ioquake3 svn 2075:  "Fix serveral UDP spoofing security issues
 	// a disconnect message from the server, which will happen if the server
 	// dropped the connection but it is still getting packets from us
 	if (!Q_stricmp(c, "disconnect")) {
 		CL_DisconnectPacket( from );
 		return;
 	}
+#endif
 
 	// echo request from server
 	if ( !Q_stricmp(c, "echo") ) {
@@ -4224,6 +4446,7 @@ static void rewind_demo (double wantedTime)
 {
 	int i;
 	rewindBackups_t *rb;
+	int j;
 
 	if (wantedTime < (double)di.firstServerTime) {
 		wantedTime = di.firstServerTime;
@@ -4255,6 +4478,19 @@ static void rewind_demo (double wantedTime)
 
 	//Com_Printf("seeking to index %d %d   cl.serverTime:%d  cl.snap.serverTime:%d, new clc.lastExecutedServercommand %d  clc.serverCommandSequence %d\n", i, rb->seekPoint, cl.serverTime, cl.snap.serverTime, rb->clc.lastExecutedServerCommand, rb->clc.serverCommandSequence);
 	FS_Seek(clc.demoReadFile, rb->seekPoint, FS_SEEK_SET);
+	for (j = 1;  j < di.numDemoFiles;  j++) {
+		demoFile_t *df;
+
+		df = &di.demoFiles[j];
+		if (!df->valid) {
+			continue;
+		}
+		if (rb->demoSeekPoints[j] < 0) {
+			continue;
+		}
+		FS_Seek(df->f, rb->demoSeekPoints[j], FS_SEEK_SET);
+		df->serverTime = 0;
+	}
 	di.numSnaps = rb->numSnaps;
 	di.snapCount = i + 1;  //FIXME hack
 
@@ -4474,12 +4710,12 @@ void CL_SeekPrev_f (void)
 	}
 
 	//Com_Printf("seekprev()  cl.serverTime %d  cl.snap.serverTime %d\n", cl.serverTime, cl.snap.serverTime);
-	//clSnap = &cl.snapshots[(cl.snap.messageNum - 1) & PACKET_MASK];
+	//clSnap = &cl.snapshots[0][(cl.snap.messageNum - 1) & PACKET_MASK];
 
 	// takes into account offline demos with snapshots having same server time
 	i = 0;
 	while (1) {
-		clSnap = &cl.snapshots[(cl.snap.messageNum - i) & PACKET_MASK];
+		clSnap = &cl.snapshots[0][(cl.snap.messageNum - i) & PACKET_MASK];
 		//if (clSnap->serverTime < cl.snap.serverTime) {
 		if (clSnap->serverTime < cl.serverTime) {
 			break;
@@ -4591,6 +4827,69 @@ static void CL_SetColorTable_f (void)
 	}
 }
 
+static void CL_Pov_f (void)
+{
+	int pov;
+	char *arg;
+	int i;
+
+	if (Cmd_Argc() < 2) {
+		Com_Printf("usage: pov <demo number, or 'next'>\n");
+		return;
+	}
+	if (!clc.demoplaying) {
+		Com_Printf("not playing back demos\n");
+		return;
+	}
+
+	arg = Cmd_Argv(1);
+	if (!Q_stricmp(arg, "next")) {
+		int currentPov;
+
+		if (di.numDemoFiles < 2) {
+			Com_Printf("only one demo point of view available\n");
+			return;
+		}
+
+		currentPov = di.pov;
+		i = di.pov;
+		while (1) {
+			demoFile_t *df;
+
+			if (i >= di.numDemoFiles) {
+				i = 0;
+			} else {
+				i++;
+			}
+
+			if (i == currentPov) {
+				Com_Printf("CL_Pov_f() FIXME pov cycled\n");
+				return;
+			}
+
+			df = &di.demoFiles[i];
+			if (df->valid) {
+				di.pov = i;
+				break;
+			}
+		}
+
+		return;
+	} else {
+		pov = atoi(arg);
+		if (pov >= di.numDemoFiles) {
+			Com_Printf("only %d demo point of views available\n", di.numDemoFiles);
+			return;
+		}
+		if (!di.demoFiles[pov].valid) {
+			Com_Printf("invalid demo pov\n");
+			return;
+		}
+
+		di.pov = pov;
+	}
+}
+
 /*
 ====================
 CL_Init
@@ -4631,7 +4930,7 @@ void CL_Init ( void ) {
 	cl_timedemoLog = Cvar_Get ("cl_timedemoLog", "", CVAR_ARCHIVE);
 	cl_autoRecordDemo = Cvar_Get ("cl_autoRecordDemo", "0", CVAR_ARCHIVE);
 	cl_aviFrameRate = Cvar_Get ("cl_aviFrameRate", "50", CVAR_ARCHIVE);
-	cl_aviMotionJpeg = Cvar_Get ("cl_aviMotionJpeg", "0", CVAR_ARCHIVE);
+	cl_aviCodec = Cvar_Get ("cl_aviCodec", "uncompressed", CVAR_ARCHIVE);
 	cl_aviAllowLargeFiles = Cvar_Get("cl_aviAllowLargeFiles", "1", CVAR_ARCHIVE);
 	cl_aviFetchMode = Cvar_Get("cl_aviFetchMode", "GL_RGB", CVAR_ARCHIVE);
 	cl_aviExtension = Cvar_Get("cl_aviExtension", "avi", CVAR_ARCHIVE);
@@ -4825,6 +5124,7 @@ void CL_Init ( void ) {
 	Cmd_AddCommand("printdatadir", CL_PrintDataDir_f);
 	Cmd_AddCommand("stall", CL_Stall_f);
 	Cmd_AddCommand("setcolortable", CL_SetColorTable_f);
+	Cmd_AddCommand("pov", CL_Pov_f);
 
 	CL_InitRef();
 

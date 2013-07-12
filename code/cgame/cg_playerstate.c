@@ -6,11 +6,23 @@
 // when the snapshot transitions like all the other entities
 
 #include "cg_local.h"
+
+#include "cg_draw.h"  // reset lagometer
+#include "cg_event.h"
+#include "cg_main.h"
+#include "cg_playerstate.h"
+#include "cg_predict.h"
+#include "cg_servercmds.h"
+#include "cg_syscalls.h"
+#include "cg_view.h"
+#include "cg_weapons.h"
+#include "sc.h"
+
 #include "wolfcam_local.h"
 
 void CG_PrintPlayerState (void)
 {
-	playerState_t *ps;
+	const playerState_t *ps;
 	int i;
 
 	ps = &cg.snap->ps;
@@ -94,6 +106,166 @@ void CG_PrintPlayerState (void)
 	Com_Printf("entityEventSequence %d\n", ps->entityEventSequence);
 }
 
+// ammoOffset hack for quakelive weapon bar not in sync with sound
+int CG_GetAmmoWarning (int weapon, int style, int ammoOffset)
+{
+	int i;
+	int weapons;
+	int ammoWarning;
+	int total;
+	int maxAmmo;
+
+	ammoWarning = AMMO_WARNING_OK;
+
+	//FIXME other gametypes
+	if (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
+		//return;
+	}
+
+	if (wolfcam_following) {
+		return AMMO_WARNING_OK;
+	}
+
+	if (cg.snap->ps.ammo[weapon] < 0) {
+		return AMMO_WARNING_OK;
+	}
+
+	if (style == 0) {  // old q3 (broken) style
+		// see about how many seconds of ammo we have remaining
+		weapons = cg.snap->ps.stats[ STAT_WEAPONS ];
+		total = 0;
+		for ( i = WP_MACHINEGUN ; i < WP_NUM_WEAPONS ; i++ ) {
+			if ( ! ( weapons & ( 1 << i ) ) ) {
+				continue;
+			}
+			switch ( i ) {
+			case WP_ROCKET_LAUNCHER:
+			case WP_GRENADE_LAUNCHER:
+			case WP_RAILGUN:
+			case WP_SHOTGUN:
+#if 1  //def MPACK
+			case WP_PROX_LAUNCHER:
+#endif
+				total += cg.snap->ps.ammo[i] * 1000;
+				break;
+			default:
+				total += cg.snap->ps.ammo[i] * 200;
+				break;
+			}
+			if ( total >= 5000 ) {
+				ammoWarning = AMMO_WARNING_OK;
+				return ammoWarning;
+			}
+		}
+
+		if (total == 0) {
+			ammoWarning = AMMO_WARNING_EMPTY;
+		} else {
+			ammoWarning = AMMO_WARNING_LOW;
+		}
+	} else if (style == 1) {  // quake live style bassed on low ammo percentage
+		total = cg.snap->ps.ammo[weapon] + ammoOffset;
+
+		if (cgs.armorTiered) {
+			switch (weapon) {
+			case WP_MACHINEGUN:
+			case WP_LIGHTNING:
+			case WP_PLASMAGUN:
+				maxAmmo = 100;
+				break;
+			case WP_SHOTGUN:
+			case WP_GRENADE_LAUNCHER:
+			case WP_ROCKET_LAUNCHER:
+			case WP_RAILGUN:
+				maxAmmo = 20;
+				break;
+			case WP_CHAINGUN:
+				maxAmmo = 100;
+				break;
+			case WP_PROX_LAUNCHER:
+				maxAmmo = 5;
+				break;
+			case WP_BFG:
+				maxAmmo = 10;
+			case WP_NAILGUN:
+				maxAmmo = 20;
+				break;
+			default:
+				maxAmmo = 150;
+				break;
+			}
+		} else {
+			switch (weapon) {
+			case WP_MACHINEGUN:
+			case WP_LIGHTNING:
+			case WP_PLASMAGUN:
+				maxAmmo = 150;
+				break;
+			case WP_SHOTGUN:
+			case WP_GRENADE_LAUNCHER:
+			case WP_ROCKET_LAUNCHER:
+			case WP_RAILGUN:
+				maxAmmo = 25;
+				break;
+			case WP_CHAINGUN:
+				maxAmmo = 200;  // yes, broken
+				break;
+			case WP_PROX_LAUNCHER:
+				maxAmmo = 5;
+				break;
+			case WP_BFG:
+			case WP_NAILGUN:
+				maxAmmo = 25;  // yes, broken
+				break;
+			default:
+				maxAmmo = 150;
+				break;
+			}
+		}
+
+		if (total == ammoOffset) {
+			ammoWarning = AMMO_WARNING_EMPTY;
+		} else if ((float)total / (float)maxAmmo < cg_lowAmmoWarningPercentile.value) {
+			ammoWarning = AMMO_WARNING_LOW;
+		} else {
+			return AMMO_WARNING_OK;
+		}
+	} else {  // based on fixed values from cvars
+		const vmCvar_t *weapCvar[] = {
+			NULL, // weapon none
+			&cg_lowAmmoWarningGauntlet,
+			&cg_lowAmmoWarningMachineGun,
+			&cg_lowAmmoWarningShotgun,
+			&cg_lowAmmoWarningGrenadeLauncher,
+			&cg_lowAmmoWarningRocketLauncher,
+			&cg_lowAmmoWarningLightningGun,
+			&cg_lowAmmoWarningRailGun,
+			&cg_lowAmmoWarningPlasmaGun,
+			&cg_lowAmmoWarningBFG,
+			&cg_lowAmmoWarningGrapplingHook,
+			&cg_lowAmmoWarningNailGun,
+			&cg_lowAmmoWarningProximityLauncher,
+			&cg_lowAmmoWarningChainGun,
+		};
+
+		if (weapon <= WP_NONE  ||  weapon >= WP_NUM_WEAPONS) {
+			return AMMO_WARNING_OK;
+		}
+
+		total = cg.snap->ps.ammo[weapon];
+
+		if (total == 0) {
+			ammoWarning = AMMO_WARNING_EMPTY;
+		} else if (total < weapCvar[weapon]->integer) {
+			ammoWarning = AMMO_WARNING_LOW;
+		} else {
+			return AMMO_WARNING_OK;
+		}
+	}
+
+	return ammoWarning;
+}
+
 /*
 ==============
 CG_CheckAmmo
@@ -101,15 +273,12 @@ CG_CheckAmmo
 If the ammo has gone low enough to generate the warning, play a sound
 ==============
 */
-void CG_CheckAmmo( void ) {
-	int		i;
-	int		total;
+static void CG_CheckAmmo( void ) {
 	int		previous;
-	int		weapons;
 
 	previous = cg.lowAmmoWarning;
 
-	cg.lowAmmoWarning = 0;
+	cg.lowAmmoWarning = AMMO_WARNING_OK;
 
 	//FIXME other gametypes
 	if (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
@@ -120,46 +289,23 @@ void CG_CheckAmmo( void ) {
 		return;
 	}
 
-	// see about how many seconds of ammo we have remaining
-	weapons = cg.snap->ps.stats[ STAT_WEAPONS ];  //FIXME ok this seems to be broken
-	total = 0;
-	for ( i = WP_MACHINEGUN ; i < WP_NUM_WEAPONS ; i++ ) {
-		if ( ! ( weapons & ( 1 << i ) ) ) {  // this line looks fucked up when you are drunk
-			continue;
-		}
-		switch ( i ) {
-		case WP_ROCKET_LAUNCHER:
-		case WP_GRENADE_LAUNCHER:
-		case WP_RAILGUN:
-		case WP_SHOTGUN:
-#if 1  //def MPACK
-		case WP_PROX_LAUNCHER:
-#endif
-			total += cg.snap->ps.ammo[i] * 1000;
-			break;
-		default:
-			total += cg.snap->ps.ammo[i] * 200;
-			break;
-		}
-		//Com_Printf("FIXME testing ammo: total:%d  %d\n", total, cg.snap->ps.ammo[i]);
-		if ( total >= 5000 ) {
-			cg.lowAmmoWarning = 0;
-			return;
-		}
-	}
-
-
-
-	if ( total == 0 ) {
-		cg.lowAmmoWarning = 2;
-	} else {
-		cg.lowAmmoWarning = 1;
+	cg.lowAmmoWarning = CG_GetAmmoWarning(cg.snap->ps.weapon, cg_lowAmmoWarningStyle.integer, 0);
+	if (cg.lowAmmoWarning == AMMO_WARNING_OK) {
+		return;
 	}
 
 	// play a sound on transitions
-	if (!wolfcam_following  ||  (wolfcam_following  && wcg.clientNum == cg.snap->ps.clientNum)) {
-		if ( cg.lowAmmoWarning != previous  &&  !cg.freecam ) {
-			trap_S_StartLocalSound( cgs.media.noAmmoSound, CHAN_LOCAL_SOUND );
+	if ((!wolfcam_following  ||  (wolfcam_following  && wcg.clientNum == cg.snap->ps.clientNum))  &&  !cg.freecam) {
+		if (cg_lowAmmoWarningSound.integer == 0) {
+			return;
+		} else if (cg_lowAmmoWarningSound.integer == 1) {  // only out of ammo
+			if (cg.lowAmmoWarning != previous  &&  cg.lowAmmoWarning == AMMO_WARNING_EMPTY) {
+				trap_S_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
+			}
+		} else {  // both out of ammo and low ammo
+			if (cg.lowAmmoWarning != previous) {
+				trap_S_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
+			}
 		}
 	}
 }
@@ -169,7 +315,7 @@ void CG_CheckAmmo( void ) {
 CG_DamageFeedback
 ==============
 */
-void CG_DamageFeedback( int yawByte, int pitchByte, int damage ) {
+static void CG_DamageFeedback( int yawByte, int pitchByte, int damage ) {
 	float		left, front, up;
 	float		kick;
 	int			health;
@@ -282,14 +428,14 @@ void CG_Respawn( void ) {
 	cg.weaponSelect = cg.snap->ps.weapon;
 }
 
-extern char *eventnames[];
+//extern char *eventnames[];
 
 /*
 ==============
 CG_CheckPlayerstateEvents
 ==============
 */
-void CG_CheckPlayerstateEvents( playerState_t *ps, playerState_t *ops ) {
+static void CG_CheckPlayerstateEvents( const playerState_t *ps, const playerState_t *ops ) {
 	int			i;
 	int			event;
 	centity_t	*cent;
@@ -337,7 +483,7 @@ void CG_CheckPlayerstateEvents( playerState_t *ps, playerState_t *ops ) {
 CG_CheckChangedPredictableEvents
 ==================
 */
-void CG_CheckChangedPredictableEvents( playerState_t *ps ) {
+void CG_CheckChangedPredictableEvents( const playerState_t *ps ) {
 	int i;
 	int event;
 	centity_t	*cent;
@@ -374,6 +520,18 @@ pushReward
 ==================
 */
 static void pushReward(sfxHandle_t sfx, qhandle_t shader, int rewardCount) {
+	int i;
+
+	if (cg_rewardsStack.integer == 0  &&  (cg.time - cg.rewardTime) < cg_drawRewardsTime.integer) {  // uhmm, nice name
+		for (i = (cg.rewardStack);  i >= 0;  i--) {
+			//Com_Printf("%d:  %d  --> %d\n", i, shader, cg.rewardShader[i]);
+			if (cg.rewardShader[i] == shader) {
+				cg.rewardCount[i] = rewardCount;
+				return;
+			}
+		}
+	}
+
 	if (cg.rewardStack < (MAX_REWARDSTACK-1)) {
 		cg.rewardStack++;
 		cg.rewardSound[cg.rewardStack] = sfx;
@@ -415,7 +573,7 @@ static void print_bits (int number)
 }
 #endif
 
-static void CG_CheckShotgunHits (playerState_t *ps, playerState_t *ops)
+static void CG_CheckShotgunHits (const playerState_t *ps, const playerState_t *ops)
 {
 	int hits;
 
@@ -446,7 +604,7 @@ static void CG_CheckShotgunHits (playerState_t *ps, playerState_t *ops)
 CG_CheckLocalSounds
 ==================
 */
-void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
+static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *ops ) {
 	int			highScore, armor, reward;
 	//int health;
 	sfxHandle_t sfx;
@@ -490,14 +648,14 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 
 	// hit changes
 	if ( ps->persistant[PERS_HITS] > ops->persistant[PERS_HITS] ) {
-		int health;
+		//int health;
 
 		//Com_Printf(" hits:  %d  >  %d\n", ps->persistant[PERS_HITS], ops->persistant[PERS_HITS]);
 		cg.damageDoneTime = cg.time;
 		//cg.damageHits = ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS];
 
 		armor  = ps->persistant[PERS_ATTACKEE_ARMOR] & 0xff;
-		health = ps->persistant[PERS_ATTACKEE_ARMOR] >> 8;
+		//health = ps->persistant[PERS_ATTACKEE_ARMOR] >> 8;
 		cg.damageDone = armor;  //FIXME fucked up -- cg_crosshairHitStyle 2 and fucking rail
 		//Com_Printf("hits: %d  armor: %d  health: %d\n",  ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS], armor, health);
 
@@ -572,7 +730,7 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 			cg.hitSound = 0;
 			break;
 		}
-		//Com_Printf("generic1 %d\n", ps->generic1);
+		//Com_Printf("^5generic1 %d\n", ps->generic1);
 
         if ((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))  &&  !cg.freecam  &&  !cg.cameraMode) {
 			if (cg_hitBeep.integer == 1) {
@@ -704,8 +862,8 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 	if (ps->persistant[PERS_IMPRESSIVE_COUNT] > ops->persistant[PERS_IMPRESSIVE_COUNT]) {
 		//cg.rewardImpressive = qtrue;
 		//Com_Printf("^3impressive\n");
-#if 1  //def MISSIONPACK
-		if (ps->persistant[PERS_IMPRESSIVE_COUNT] == 1) {
+#if 1  //def MPACK
+		if (ps->persistant[PERS_IMPRESSIVE_COUNT] == 1  &&  cg_audioAnnouncerRewardsFirst.integer) {
 			sfx = cgs.media.firstImpressiveSound;
 		} else {
 			sfx = cgs.media.impressiveSound;
@@ -721,8 +879,8 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 	if (ps->persistant[PERS_EXCELLENT_COUNT] > ops->persistant[PERS_EXCELLENT_COUNT]) {
 		//cg.rewardExcellent = qtrue;
 
-#if 1  //def MISSIONPACK
-		if (ps->persistant[PERS_EXCELLENT_COUNT] == 1) {
+#if 1  //def MPACK
+		if (ps->persistant[PERS_EXCELLENT_COUNT] == 1  &&  cg_audioAnnouncerRewardsFirst.integer) {
 			sfx = cgs.media.firstExcellentSound;
 		} else {
 			sfx = cgs.media.excellentSound;
@@ -737,8 +895,8 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 	if (ps->persistant[PERS_GAUNTLET_FRAG_COUNT] > ops->persistant[PERS_GAUNTLET_FRAG_COUNT]) {
 		//cg.rewardHumiliation = qtrue;
 
-#if 1  //def MISSIONPACK
-		if (ops->persistant[PERS_GAUNTLET_FRAG_COUNT] == 1) {
+#if 1  //def MPACK
+		if (ps->persistant[PERS_GAUNTLET_FRAG_COUNT] == 1  &&  cg_audioAnnouncerRewardsFirst.integer) {
 			sfx = cgs.media.firstHumiliationSound;
 		} else {
 			sfx = cgs.media.humiliationSound;
@@ -748,7 +906,7 @@ void CG_CheckLocalSounds( playerState_t *ps, playerState_t *ops ) {
 #endif
 		pushReward(sfx, cgs.media.medalGauntlet, ps->persistant[PERS_GAUNTLET_FRAG_COUNT]);
 		reward = qtrue;
-		//Com_Printf("guantlet frag\n");
+		//Com_Printf("gauntlet frag\n");
 	}
 	if (ps->persistant[PERS_DEFEND_COUNT] > ops->persistant[PERS_DEFEND_COUNT]) {
 		//cg.rewardDefend = qtrue;
@@ -970,7 +1128,7 @@ Com_Printf("%d %d\n", i, j);
 }
 #endif
 
-static void test_flags (playerState_t *ps)
+static void test_flags (const playerState_t *ps)
 {
 	if (!SC_Cvar_Get_Int("cg_testflags")) {
 		return;
@@ -986,7 +1144,7 @@ static void test_flags (playerState_t *ps)
 	}
 }
 
-static void test_persStats (playerState_t *ps)
+static void test_persStats (const playerState_t *ps)
 {
 	int i;
 
@@ -1027,10 +1185,6 @@ static void test_persStats (playerState_t *ps)
 	}
 }
 
-static void CG_SetWeaponCvars (void)
-{
-
-}
 
 /*
 ===============
@@ -1038,16 +1192,33 @@ CG_TransitionPlayerState
 
 ===============
 */
-void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
+//FIXME writing to ops
+void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 	int i;
 	timedItem_t *ti;
+	int weapons;
 
 	// check for changing follow mode
 	//if (ps != cg.nextSnap) {
 	//	Com_Printf("wtf\n");
 	//}
 
-	CG_SetWeaponCvars();
+	//FIXME ops ?
+	weapons = ps->stats[STAT_WEAPONS];
+	for (i = WP_GAUNTLET;  i < WP_NUM_WEAPONS;  i++) {
+		qboolean haveWeapon;
+		const weaponInfo_t *wi;
+
+		haveWeapon = weapons & (1 << i);
+		if (!haveWeapon) {
+			continue;
+		}
+
+		wi = &cg_weapons[i];
+		if (!wi->registered){
+			CG_RegisterWeapon(i);
+		}
+	}
 
 	if (cgs.cpma) {
 		//if (!cg.intermissionStarted  &&  ps->pm_type == PM_INTERMISSION) {
@@ -1085,7 +1256,7 @@ void CG_TransitionPlayerState( playerState_t *ps, playerState_t *ops ) {
 	if ( ps->clientNum != ops->clientNum ) {
 		cg.thisFrameTeleport = qtrue;
 		// make sure we don't get any unwanted transition effects
-		*ops = *ps;
+		*ops = *ps;  //FIXME const,  write hmmmmm
 		CG_ResetLagometer();
 	}
 

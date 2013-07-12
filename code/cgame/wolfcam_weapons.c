@@ -1,10 +1,17 @@
 #include "cg_local.h"
+
+#include "cg_main.h"
+#include "cg_syscalls.h"
+#include "cg_weapons.h"
+#include "sc.h"
+#include "wolfcam_weapons.h"
+
 #include "wolfcam_local.h"
 
 qboolean Wolfcam_CalcMuzzlePoint (int entityNum, vec3_t muzzle, vec3_t forward, vec3_t right, vec3_t up, qboolean useLerp)
 {
     vec3_t f;
-    centity_t *cent;
+    const centity_t *cent;
     int anim;
 
     cent = &cg_entities[entityNum];
@@ -14,23 +21,27 @@ qboolean Wolfcam_CalcMuzzlePoint (int entityNum, vec3_t muzzle, vec3_t forward, 
             VectorCopy (cent->lerpOrigin, muzzle);
             muzzle[2] += cg.snap->ps.viewheight;
             AngleVectors (cent->lerpAngles, f, right, up);
-            if (forward)
+            if (forward) {
                 VectorCopy (f, forward);
+            }
             VectorMA (muzzle, 14, f, muzzle);
             return qtrue;
         } else {
             VectorCopy (cg.snap->ps.origin, muzzle);
             muzzle[2] += cg.snap->ps.viewheight;
             AngleVectors (cg.snap->ps.viewangles, f, right, up);
-            if (forward)
+            if (forward) {
                 VectorCopy (f, forward);
+            }
             VectorMA (muzzle, 14, f, muzzle);
             return qtrue;
         }
     }
 
-    if (!cent->currentValid)
+    if (!cent->currentValid) {
+        //CG_Printf("^3Wolfcam_CalcMuzzlePoint() invalid cent %d\n", entityNum);
         return qfalse;
+    }
 
     if (useLerp) {
         VectorCopy (cent->lerpOrigin, muzzle);
@@ -39,8 +50,9 @@ qboolean Wolfcam_CalcMuzzlePoint (int entityNum, vec3_t muzzle, vec3_t forward, 
         VectorCopy( cent->currentState.pos.trBase, muzzle );
         AngleVectors (cent->currentState.apos.trBase, f, right, up);
     }
-    if (forward)
+    if (forward) {
         VectorCopy (f, forward);
+    }
 
     anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
     if ( anim == LEGS_WALKCR || anim == LEGS_IDLECR ) {
@@ -57,8 +69,8 @@ qboolean Wolfcam_CalcMuzzlePoint (int entityNum, vec3_t muzzle, vec3_t forward, 
 void Wolfcam_AddViewWeapon (void)
 {
     vec3_t origin;
-    centity_t *cent;
-    entityState_t *es;
+    const centity_t *cent;
+    const entityState_t *es;
 
     if (!wolfcam_following) {
         return;

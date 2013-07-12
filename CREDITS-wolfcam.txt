@@ -6,12 +6,15 @@ Cloud Wu:  backtrace
 OpenArena:  some content
 Cyberstorm:  anim map change
 iodfe:  number pad fix
+Ben Rudiak-Gould: HuffYUV
+ffmpeg project:  HuffYUV implementation
 
 
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program
 KittenIgnition:  helping others, ideas and suggestions, beta testing
 mccormic:  making movies, letting me know what features are needed/helpful for movie makers, beta testing
 Biox1dE:  suggestions and testing
+Adam Pyle:  technical information regarding quake live
 
 
 Ed Bow:  qldt

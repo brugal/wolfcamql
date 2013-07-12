@@ -23,7 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 
-char *svc_strings[256] = {
+static char *svc_strings[256] = {
 	"svc_bad",
 
 	"svc_nop",
@@ -38,7 +38,7 @@ char *svc_strings[256] = {
 	"svc_voip",
 };
 
-void SHOWNET( msg_t *msg, char *s) {
+void SHOWNET( const msg_t *msg, const char *s) {
 	if ( cl_shownet->integer >= 2) {
 		Com_Printf ("%3i:%s\n", msg->readcount-1, s);
 	}
@@ -105,7 +105,7 @@ CL_ParsePacketEntities
 
 ==================
 */
-void CL_ParsePacketEntities( msg_t *msg, clSnapshot_t *oldframe, clSnapshot_t *newframe) {
+void CL_ParsePacketEntities( msg_t *msg, const clSnapshot_t *oldframe, clSnapshot_t *newframe) {
 	int			newnum;
 	entityState_t	*oldstate;
 	int			oldindex, oldnum;
@@ -209,13 +209,168 @@ void CL_ParsePacketEntities( msg_t *msg, clSnapshot_t *oldframe, clSnapshot_t *n
 	}
 }
 
+static void CL_ParseExtraSnapshot (demoFile_t *df, msg_t *msg, clSnapshot_t *sn, qboolean justPeek)
+{
+	int			len;
+	clSnapshot_t	*old;
+	clSnapshot_t	newSnap;
+	int			deltaNum;
+	int			oldMessageNum;
+	int			i, packetNum;
+
+	//Com_Printf("CL_ParseExtraSnapshot\n");
+
+	// read in the new snapshot to a temporary buffer
+	// we will only copy to cl.snap if it is valid
+	Com_Memset (&newSnap, 0, sizeof(newSnap));
+
+	// we will have read any new server commands in this
+	// message before we got to svc_snapshot
+
+	//FIXME
+	newSnap.serverCommandNum = clc.serverCommandSequence;
+
+	//Com_Printf("parse snap: %d\n", newSnap.serverCommandNum);
+
+	newSnap.serverTime = MSG_ReadLong( msg );
+	df->serverTime = newSnap.serverTime;
+
+	//FIXME
+	newSnap.messageNum = clc.serverMessageSequence;
+
+	deltaNum = MSG_ReadByte( msg );
+	if ( !deltaNum ) {
+		newSnap.deltaNum = -1;
+	} else {
+		newSnap.deltaNum = newSnap.messageNum - deltaNum;
+	}
+	newSnap.snapFlags = MSG_ReadByte( msg );
+
+	// If the frame is delta compressed from data that we
+	// no longer have available, we must suck up the rest of
+	// the frame, but not use it, then ask for a non-compressed
+	// message
+	if ( newSnap.deltaNum <= 0 ) {
+		newSnap.valid = qtrue;		// uncompressed frame
+		old = NULL;
+		//clc.demowaiting = qfalse;	// we can start recording now
+		//Com_Printf("%d newSnap.deltaNum <= 0\n", clc.serverMessageSequence);
+	} else {
+		//Com_Printf("deltaNum: %d (us %d)  newSnap servertime %d\n", newSnap.deltaNum, clc.serverMessageSequence, newSnap.serverTime);
+		old = &cl.snapshots[df->num][newSnap.deltaNum & PACKET_MASK];
+		if ( !old->valid ) {
+			// should never happen
+			if (1) {  //(!clc.demoplaying) {
+				//Com_Printf ("Delta from invalid frame (not supposed to happen!)  %d -> %d\n", newSnap.deltaNum, clc.serverMessageSequence);
+				newSnap.valid = qfalse;
+			} else {
+				newSnap.valid = qtrue;
+			}
+		} else if ( old->messageNum != newSnap.deltaNum ) {
+			// The frame that the server did the delta from
+			// is too old, so we can't reconstruct it properly.
+			if (!clc.demoplaying) {
+				Com_Printf ("Delta frame too old.\n");
+			} else {
+				// could be seeking in demo
+				newSnap.valid = qtrue;
+			}
+		} else if ( cl.parseEntitiesNum - old->parseEntitiesNum > MAX_PARSE_ENTITIES - MAX_SNAPSHOT_ENTITIES ) {
+			if (!clc.demoplaying) {
+				Com_Printf ("Delta parseEntitiesNum too old.\n");
+			} else {
+				newSnap.valid = qtrue;
+			}
+		} else {
+			newSnap.valid = qtrue;	// valid delta parse
+		}
+	}
+
+	// read areamask
+	len = MSG_ReadByte( msg );
+
+	if(len > sizeof(newSnap.areamask))
+	{
+		Com_Printf("^1CL_ParseExtraSnapshot: Invalid size %d for areamask for demoFile %d", len, df->f);
+		return;
+	}
+
+	MSG_ReadData( msg, &newSnap.areamask, len);
+
+	// read playerinfo
+	SHOWNET( msg, "playerstate" );
+	if ( old ) {
+		MSG_ReadDeltaPlayerstate( msg, &old->ps, &newSnap.ps );
+	} else {
+		MSG_ReadDeltaPlayerstate( msg, NULL, &newSnap.ps );
+	}
+
+	// read packet entities
+	SHOWNET( msg, "packet entities" );
+	CL_ParsePacketEntities( msg, old, &newSnap );
+
+	if (sn) {
+		*sn = newSnap;
+	}
+
+	//FIXME
+	//return;
+
+	if (justPeek) {
+		return;
+	}
+	// if not valid, dump the entire thing now that it has
+	// been properly read
+	if ( !newSnap.valid ) {
+		Com_Printf("%s invalid snap returning\n", __FUNCTION__);
+		return;
+	}
+
+	// clear the valid flags of any snapshots between the last
+	// received and this one, so if there was a dropped packet
+	// it won't look like something valid to delta from next
+	// time we wrap around in the buffer
+	oldMessageNum = cl.snap.messageNum + 1;
+
+	if ( newSnap.messageNum - oldMessageNum >= PACKET_BACKUP ) {
+		oldMessageNum = newSnap.messageNum - ( PACKET_BACKUP - 1 );
+	}
+	for ( ; oldMessageNum < newSnap.messageNum ; oldMessageNum++ ) {
+		cl.snapshots[df->num][oldMessageNum & PACKET_MASK].valid = qfalse;
+	}
+
+	// copy to the current good spot
+	cl.snap = newSnap;
+	cl.snap.ping = 999;
+	// calculate ping time
+	for ( i = 0 ; i < PACKET_BACKUP ; i++ ) {
+		packetNum = ( clc.netchan.outgoingSequence - 1 - i ) & PACKET_MASK;
+		if ( cl.snap.ps.commandTime >= cl.outPackets[ packetNum ].p_serverTime ) {
+			cl.snap.ping = cls.realtime - cl.outPackets[ packetNum ].p_realtime;
+			break;
+		}
+	}
+
+	// save the frame off in the backup array for later delta comparisons
+	cl.snapshots[df->num][cl.snap.messageNum & PACKET_MASK] = cl.snap;
+
+	if (cl_shownet->integer == 3) {
+		Com_Printf( "   snapshot:%i  delta:%i  ping:%i\n", cl.snap.messageNum,
+		cl.snap.deltaNum, cl.snap.ping );
+	}
+
+	//cl.newSnapshots = qtrue;
+
+
+	//Com_Printf("%s snap set\n", __FUNCTION__);
+}
 
 /*
 ================
 CL_ParseSnapshot
 
 If the snapshot is parsed properly, it will be copied to
-cl.snap and saved in cl.snapshots[].  If the snapshot is invalid
+cl.snap and saved in cl.snapshots[][].  If the snapshot is invalid
 for any reason, no changes to the state will be made at all.
 ================
 */
@@ -269,7 +424,7 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 		//Com_Printf("%d newSnap.deltaNum <= 0\n", clc.serverMessageSequence);
 	} else {
 		//Com_Printf("deltaNum: %d (us %d)  newSnap servertime %d\n", newSnap.deltaNum, clc.serverMessageSequence, newSnap.serverTime);
-		old = &cl.snapshots[newSnap.deltaNum & PACKET_MASK];
+		old = &cl.snapshots[0][newSnap.deltaNum & PACKET_MASK];
 		if ( !old->valid ) {
 			// should never happen
 			if (1) {  //(!clc.demoplaying) {
@@ -287,7 +442,7 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 				// could be seeking in demo
 				newSnap.valid = qtrue;
 			}
-		} else if ( cl.parseEntitiesNum - old->parseEntitiesNum > MAX_PARSE_ENTITIES-128 ) {
+		} else if ( cl.parseEntitiesNum - old->parseEntitiesNum > MAX_PARSE_ENTITIES - MAX_SNAPSHOT_ENTITIES ) {
 			if (!clc.demoplaying) {
 				Com_Printf ("Delta parseEntitiesNum too old.\n");
 			} else {
@@ -344,7 +499,7 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 		oldMessageNum = newSnap.messageNum - ( PACKET_BACKUP - 1 );
 	}
 	for ( ; oldMessageNum < newSnap.messageNum ; oldMessageNum++ ) {
-		cl.snapshots[oldMessageNum & PACKET_MASK].valid = qfalse;
+		cl.snapshots[0][oldMessageNum & PACKET_MASK].valid = qfalse;
 	}
 
 	// copy to the current good spot
@@ -410,10 +565,10 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 	}
 
 	// save the frame off in the backup array for later delta comparisons
-	cl.snapshots[cl.snap.messageNum & PACKET_MASK] = cl.snap;
+	cl.snapshots[0][cl.snap.messageNum & PACKET_MASK] = cl.snap;
 
 	if (cl_shownet->integer == 3) {
-		Com_Printf( "   snapshot:%i  delta:%i  ping:%i\n", cl.snap.messageNum,
+		Com_Printf( "0   snapshot:%i  delta:%i  ping:%i\n", cl.snap.messageNum,
 		cl.snap.deltaNum, cl.snap.ping );
 	}
 
@@ -575,6 +730,90 @@ static void CL_ParseServerInfo(void)
 	}
 }
 
+static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
+{
+	int				i;
+	entityState_t	*es;
+	int				newnum;
+	entityState_t	nullstate;
+	int				cmd;
+	char			*s;
+	int serverCommandSequence;
+	entityState_t tmpEntity;
+	int clientNum;
+	int checksumFeed;
+
+	//clc.connectPacketCount = 0;
+
+	// wipe local client state
+	//CL_ClearState();
+
+	// a gamestate always marks a server command sequence
+	serverCommandSequence = MSG_ReadLong( msg );
+
+	// parse all the configstrings and baselines
+	//cl.gameState.dataCount = 1;	// leave a 0 at the beginning for uninitialized configstrings
+	while ( 1 ) {
+		cmd = MSG_ReadByte( msg );
+
+		if ( cmd == svc_EOF ) {
+			break;
+		}
+
+		if ( cmd == svc_configstring ) {
+			//int		len;
+
+			i = MSG_ReadShort( msg );
+			if ( i < 0 || i >= MAX_CONFIGSTRINGS ) {
+				//Parse_Error( ERR_DROP, "configstring > MAX_CONFIGSTRINGS" );
+				Com_Printf("^1CL_ParseExtraGamestate configstring(%d) > MAX_CONFIGSTRINGS(%d) demoFile %d\n", i, MAX_CONFIGSTRINGS, df->f);
+				return;
+			}
+			s = MSG_ReadBigString( msg );
+			//len = strlen( s );
+
+#if 0
+			if ( len + 1 + cl.gameState.dataCount > MAX_GAMESTATE_CHARS ) {
+				Parse_Error( ERR_DROP, "MAX_GAMESTATE_CHARS exceeded" );
+				return;
+			}
+#endif
+
+			//Com_Printf("cs %d '%s'\n", i, s);
+
+			// append it to the gameState string buffer
+			//cl.gameState.stringOffsets[ i ] = cl.gameState.dataCount;
+			//Com_Memcpy( cl.gameState.stringData + cl.gameState.dataCount, s, len + 1 );
+			//cl.gameState.dataCount += len + 1;
+		} else if ( cmd == svc_baseline ) {
+			newnum = MSG_ReadBits( msg, GENTITYNUM_BITS );
+			if ( newnum < 0 || newnum >= MAX_GENTITIES ) {
+				//Parse_Error( ERR_DROP, "Baseline number out of range: %i", newnum );
+				Com_Printf("^1CL_ParseExtraGamestate baseline number out of range: %d for demoFile %d\n", newnum, df->f);
+				return;
+			}
+			//Com_Memset (&nullstate, 0, sizeof(nullstate));
+			//es = &cl.entityBaselines[ newnum ];
+			es = &tmpEntity;
+			//MSG_ReadDeltaEntity( msg, &nullstate, es, newnum );
+			MSG_ReadDeltaEntity(msg, &nullstate, es, newnum);
+		} else {
+			//Parse_Error( ERR_DROP, "CL_ParseGamestate: bad command byte" );
+			Com_Printf("^1CL_ParseExtraGamestate bad command byte %d for demoFile %d\n", cmd, df->f);
+			return;
+		}
+	}
+
+	//clc.clientNum = MSG_ReadLong(msg);
+	clientNum = MSG_ReadLong(msg);
+	// read the checksum feed
+	//clc.checksumFeed = MSG_ReadLong( msg );
+	checksumFeed = MSG_ReadLong(msg);
+
+	// parse useful values out of CS_SERVERINFO
+	//CL_ParseServerInfo();
+}
+
 /*
 ==================
 CL_ParseGamestate
@@ -616,16 +855,18 @@ void CL_ParseGamestate( msg_t *msg ) {
 
 			i = MSG_ReadShort( msg );
 			if ( i < 0 || i >= MAX_CONFIGSTRINGS ) {
-				Parse_Error( ERR_DROP, "configstring > MAX_CONFIGSTRINGS" );
+				Parse_Error(ERR_DROP, "CL_ParseGamestate configstring(%d) > MAX_CONFIGSTRINGS(%d)", i, MAX_CONFIGSTRINGS);
 				return;
 			}
 			s = MSG_ReadBigString( msg );
 			len = strlen( s );
 
 			if ( len + 1 + cl.gameState.dataCount > MAX_GAMESTATE_CHARS ) {
-				Parse_Error( ERR_DROP, "MAX_GAMESTATE_CHARS exceeded" );
+				Parse_Error( ERR_DROP, "CL_ParseGamestate MAX_GAMESTATE_CHARS(%d) exceeded", MAX_GAMESTATE_CHARS);
 				return;
 			}
+
+			//Com_Printf("cs %d '%s'\n", i, s);
 
 			// append it to the gameState string buffer
 			cl.gameState.stringOffsets[ i ] = cl.gameState.dataCount;
@@ -634,14 +875,14 @@ void CL_ParseGamestate( msg_t *msg ) {
 		} else if ( cmd == svc_baseline ) {
 			newnum = MSG_ReadBits( msg, GENTITYNUM_BITS );
 			if ( newnum < 0 || newnum >= MAX_GENTITIES ) {
-				Parse_Error( ERR_DROP, "Baseline number out of range: %i", newnum );
+				Parse_Error( ERR_DROP, "CL_ParseGamesate Baseline number out of range: %i", newnum );
 				return;
 			}
 			Com_Memset (&nullstate, 0, sizeof(nullstate));
 			es = &cl.entityBaselines[ newnum ];
 			MSG_ReadDeltaEntity( msg, &nullstate, es, newnum );
 		} else {
-			Parse_Error( ERR_DROP, "CL_ParseGamestate: bad command byte" );
+			Parse_Error(ERR_DROP, "CL_ParseGamestate: bad command byte", cmd);
 			return;
 		}
 	}
@@ -684,6 +925,31 @@ void CL_ParseGamestate( msg_t *msg ) {
 				di.gameStartTime = atoi(cl.gameState.stringData + cl.gameState.stringOffsets[CS_LEVEL_START_TIME]);
 			}
 		}
+
+		// check if demo starts in a timeout
+		if (di.protocol == PROTOCOL_QL) {
+			info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_TIMEOUT_BEGIN_TIME];
+			if (Q_isdigit(info[0])) {
+				// cl.snap.serverTime is 0, but that's ok
+				di.timeOuts[di.numTimeouts].startTime = cl.snap.serverTime;
+				di.timeOuts[di.numTimeouts].serverTime = cl.snap.serverTime;
+				//Com_Printf("^3start inside timeout %d\n", cl.snap.serverTime);
+				di.numTimeouts++;
+			}
+		} else if (di.cpma) {
+			int te, td;
+
+			info = cl.gameState.stringData + cl.gameState.stringOffsets[CSCPMA_GAMESTATE];
+			te = atoi(Info_ValueForKey(info, "te"));
+			td = atoi(Info_ValueForKey(info, "td"));
+			if (te) {
+				di.timeOuts[di.numTimeouts].startTime = 0;
+				di.timeOuts[di.numTimeouts].endTime = 0;
+				di.cpmaLastTe = te;
+				di.cpmaLastTd = td;
+				di.numTimeouts++;
+			}
+		}
 	}
 
 	if (!di.testParse) {
@@ -708,6 +974,11 @@ void CL_ParseGamestate( msg_t *msg ) {
 
 
 //=====================================================================
+
+static void CL_ParseExtraDownload (demoFile_t *df, msg_t *msg)
+{
+	Com_Printf("FIXME CL_ParseExtraDownload\n");
+}
 
 /*
 =====================
@@ -788,7 +1059,7 @@ void CL_ParseDownload ( msg_t *msg ) {
 			clc.download = 0;
 
 			// rename the file
-			FS_SV_Rename ( clc.downloadTempName, clc.downloadName );
+			FS_SV_Rename ( clc.downloadTempName, clc.downloadName, qfalse );
 		}
 
 		// send intentions now
@@ -820,6 +1091,11 @@ qboolean CL_ShouldIgnoreVoipSender(int sender)
 		return qtrue;  // too quiet to play.
 
 	return qfalse;
+}
+
+static void CL_ParseExtraVoip (demoFile_t *df, msg_t *msg)
+{
+	Com_Printf("FIXME CL_ParseExtraVoip\n");
 }
 
 /*
@@ -962,6 +1238,23 @@ void CL_ParseVoip ( msg_t *msg ) {
 #endif
 
 
+static void CL_ParseExtraCommandString (demoFile_t *df, msg_t *msg)
+{
+	char	*s;
+	int		seq;
+
+	seq = MSG_ReadLong( msg );
+	s = MSG_ReadString( msg );
+
+	//Com_Printf("^3'%s'\n", s);
+
+	if (cl_shownet->integer == 3) {
+		Com_Printf("demoFile %d cs (%d) '%s'\n", df->f, seq, s);
+	}
+
+	//FIXME other stuff
+}
+
 /*
 =====================
 CL_ParseCommandString
@@ -972,9 +1265,11 @@ when it transitions a snapshot
 */
 void CL_ParseCommandString( msg_t *msg ) {
 	char	*s;
+	const char *s2;
 	int		seq;
 	int		index;
 	char *val;
+	int n;
 
 	seq = MSG_ReadLong( msg );
 	s = MSG_ReadString( msg );
@@ -995,6 +1290,156 @@ void CL_ParseCommandString( msg_t *msg ) {
 	Q_strncpyz( clc.serverCommands[ index ], s, sizeof( clc.serverCommands[ index ] ) );
 
 	if (di.testParse) {
+#define BUFFER_SIZE 32
+		char txtNum[BUFFER_SIZE];  //FIXME
+		char *p;
+		int csnum;
+		int count;
+
+		// "cs ??? blahblah"
+		txtNum[0] = '\0';
+		count = 0;
+		p = s + strlen("cs ");
+		while (1) {
+			if (count >= BUFFER_SIZE) {
+				txtNum[BUFFER_SIZE - 1] = '\0';
+				break;
+			}
+			txtNum[count] = p[count];
+			if (txtNum[count] == '\0'  ||  txtNum[count] == ' ') {
+				txtNum[count] = '\0';
+				break;
+			}
+			count++;
+		}
+		csnum = atoi(txtNum);
+#undef BUFFER_SIZE
+
+		// models used in demos
+		if (  (di.protocol == PROTOCOL_QL  &&  (csnum >= CS_PLAYERS  &&  csnum < (CS_PLAYERS + MAX_CLIENTS)))  ||
+			  (di.protocol == PROTOCOL_Q3  &&  (csnum >= CSQ3_PLAYERS  &&  csnum < (CSQ3_PLAYERS + MAX_CLIENTS)))
+			) {
+			char *model;
+			//char *skin;
+			int i;
+
+			p = s + strlen("cs XXX ");
+			model = Info_ValueForKey(p, "model");
+#if 0
+			skin = strrchr(model, '/');
+			if (skin) {
+				*skin++ = '\0';
+			}
+#endif
+			if (*model) {
+				qboolean found = qfalse;
+
+				for (i = 0;  i < di.numPlayerInfo;  i++) {
+					if (!Q_stricmp(di.playerInfo[i].modelName, model)) {
+						found = qtrue;
+						break;
+					}
+				}
+				if (!found) {
+					Q_strncpyz(di.playerInfo[di.numPlayerInfo].modelName, model, MAX_QPATH);
+					di.numPlayerInfo++;
+				}
+			}
+			model = Info_ValueForKey(p, "hmodel");
+#if 0
+			skin = strrchr(model, '/');
+			if (skin) {
+				*skin++ = '\0';
+			}
+#endif
+			if (*model) {
+				qboolean found = qfalse;
+
+				for (i = 0;  i < di.numPlayerInfo;  i++) {
+					if (!Q_stricmp(di.playerInfo[i].modelName, model)) {
+						found = qtrue;
+						break;
+					}
+				}
+				if (!found) {
+					Q_strncpyz(di.playerInfo[di.numPlayerInfo].modelName, model, MAX_QPATH);
+					di.numPlayerInfo++;
+				}
+			}
+		}
+
+		// timeouts
+		if (di.protocol == PROTOCOL_QL) {
+			if (!Q_stricmpn(s, "cs 669 ", strlen("cs 669 "))) {
+				//Com_Printf("^2%d  timeout start %s\n", cl.snap.serverTime, s);
+				s2 = s + strlen("cs 669 ") + 1;
+				if (Q_isdigit(s2[0])) {
+					n = atoi(s2);
+					//Com_Printf("%d\n", n);
+
+					if (di.numTimeouts >= MAX_TIMEOUTS) {
+						Com_Printf("^3MAX_TIMEOUTS(%d) couldn't set timeout start time\n", MAX_TIMEOUTS);
+					} else {
+						//di.timeOuts[di.numTimeouts].startTime = n;
+						di.timeOuts[di.numTimeouts].startTime = cl.snap.serverTime;
+						di.timeOuts[di.numTimeouts].serverTime = cl.snap.serverTime;
+						//Com_Printf("^5 snap %d  %d\n", cl.snap.serverTime, n);
+						di.numTimeouts++;
+					}
+				} else {
+					//Com_Printf("^2timeout end %d -> %d (%d)\n", di.timeOuts[di.numTimeouts - 1].startTime, di.timeOuts[di.numTimeouts - 1].endTime, cl.snap.serverTime);
+					di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime;
+					//di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime + 25;
+					//Com_Printf("servertime %d\n", cl.serverTime);
+					//Com_Printf("clSnap %d\n", clSnap.serverTime);
+				}
+			}
+		} else if (di.cpma) {
+
+#define DEFAULT_TIMEOUT_AMOUNT (1000 * 1000)  //FIXME
+			if (!Q_stricmpn(s, "cs 672 ", strlen("cs 672 "))) {
+				int te, td;
+
+				//Com_Printf("^2%d  timeout check start %s\n", cl.snap.serverTime, s);
+				s2 = s + strlen("cs 672 ") + 1;
+				te = atoi(Info_ValueForKey(s2, "te"));
+				td = atoi(Info_ValueForKey(s2, "td"));
+
+				if (te  &&  di.cpmaLastTe == 0) {  // timeout called
+					if (di.numTimeouts >= MAX_TIMEOUTS) {
+						Com_Printf("^3MAX_TIMEOUTS(%d) couldn't set cpma timeout\n", MAX_TIMEOUTS);
+					} else {
+						di.timeOuts[di.numTimeouts].startTime = cl.snap.serverTime;
+						di.timeOuts[di.numTimeouts].endTime = cl.snap.serverTime + DEFAULT_TIMEOUT_AMOUNT;
+						//Com_Printf("^2timeout %d at %d (%d)\n", di.numTimeouts, cl.snap.serverTime, ts + td + te);
+						di.numTimeouts++;
+					}
+				} else if (te  &&  td != di.cpmaLastTd) {  // timein called
+					di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime;
+					if (di.numTimeouts >= MAX_TIMEOUTS) {
+						Com_Printf("^3MAX_TIMEOUTS(%d) couldn't set cpma timeout\n", MAX_TIMEOUTS);
+					} else {
+						di.timeOuts[di.numTimeouts].startTime = cl.snap.serverTime;
+						di.timeOuts[di.numTimeouts].endTime = cl.snap.serverTime + DEFAULT_TIMEOUT_AMOUNT;
+						//Com_Printf("^2timeout %d at %d (%d)\n", di.numTimeouts, cl.snap.serverTime, ts + td + te);
+						di.numTimeouts++;
+					}
+				} else if (!te  &&  di.cpmaLastTe) {  // timeout over
+					if (di.numTimeouts <= 0) {
+						Com_Printf("^3FIXME cpma timeout end without timeout detected\n");
+					} else if (di.numTimeouts <= MAX_TIMEOUTS) {
+						di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime;
+					}
+				}
+
+				di.cpmaLastTd = td;
+				di.cpmaLastTe = te;
+			}
+#undef DEFAULT_TIMEOUT_AMOUNT
+
+		}  // done with timeout check
+
+		// game start and end times
 		//Com_Printf("xx %s\n", s);
 		if (di.gameStartTime == -1) {
 			//Com_Printf("test %s\n", s);
@@ -1023,9 +1468,6 @@ void CL_ParseCommandString( msg_t *msg ) {
 			} else {  // q3  CS_WARMUP
 				//Com_Printf("ss %s\n", s);
 				if (!Q_stricmpn(s, "cs 5 ", strlen("cs 5 "))) {
-					int n;
-					const char *s2;
-
 					//Com_Printf("^3'%s'\n", s);
 
 					s2 = s + strlen("cs 5 ");
@@ -1159,6 +1601,96 @@ void CL_ParseServerMessage( msg_t *msg ) {
 		case svc_voip:
 #ifdef USE_VOIP
 			CL_ParseVoip( msg );
+#endif
+			break;
+		}
+	}
+}
+
+void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
+{
+	int			cmd;
+	int reliableAcknowledge;
+
+	if ( cl_shownet->integer == 1 ) {
+		Com_Printf ("%i ",msg->cursize);
+	} else if ( cl_shownet->integer >= 2 ) {
+		Com_Printf ("------------------\n");
+	}
+
+	MSG_Bitstream(msg);
+
+	// get the reliable sequence acknowledge number
+	reliableAcknowledge = MSG_ReadLong( msg );
+
+#if 0
+	//
+	if ( clc.reliableAcknowledge < clc.reliableSequence - MAX_RELIABLE_COMMANDS ) {
+		clc.reliableAcknowledge = clc.reliableSequence;
+	}
+#endif
+
+	//
+	// parse the message
+	//
+	while ( 1 ) {
+		if ( msg->readcount > msg->cursize ) {
+			//Parse_Error (ERR_DROP,"CL_ParseServerMessage: read past end of server message");
+			Com_Printf("^1CL_ParseExtraServerMessage() read past end of server message demoFile %d", df->f);
+			return;
+		}
+
+		cmd = MSG_ReadByte( msg );
+
+		// See if this is an extension command after the EOF, which means we
+		//  got data that a legacy client should ignore.
+		if ((cmd == svc_EOF) && (MSG_LookaheadByte( msg ) == svc_extension)) {
+			SHOWNET( msg, "EXTENSION" );
+			MSG_ReadByte( msg );  // throw the svc_extension byte away.
+			cmd = MSG_ReadByte( msg );  // something legacy clients can't do!
+			// sometimes you get a svc_extension at end of stream...dangling
+			//  bits in the huffman decoder giving a bogus value?
+			if (cmd == -1) {
+				cmd = svc_EOF;
+			}
+		}
+
+		if (cmd == svc_EOF) {
+			SHOWNET( msg, "END OF MESSAGE" );
+			break;
+		}
+
+		if ( cl_shownet->integer >= 2 ) {
+			if ( (cmd < 0) || (!svc_strings[cmd]) ) {
+				Com_Printf( "%3i:BAD CMD %i\n", msg->readcount-1, cmd );
+			} else {
+				SHOWNET( msg, svc_strings[cmd] );
+			}
+		}
+
+	// other commands
+		switch ( cmd ) {
+		default:
+			//Parse_Error (ERR_DROP, "CL_ParseServerMessage: Illegible server message %d", cmd);
+			Com_Printf("^1CL_ParseExtraServerMessage: Illegible server message %d for demoFile %d", cmd, df->f);
+			return;
+		case svc_nop:
+			break;
+		case svc_serverCommand:
+			CL_ParseExtraCommandString(df,  msg);
+			break;
+		case svc_gamestate:
+			CL_ParseExtraGamestate(df, msg);
+			break;
+		case svc_snapshot:
+			CL_ParseExtraSnapshot(df, msg, NULL, qfalse);
+			break;
+		case svc_download:
+			CL_ParseExtraDownload(df, msg);
+			break;
+		case svc_voip:
+#ifdef USE_VOIP
+			CL_ParseExtraVoip(df, msg);
 #endif
 			break;
 		}

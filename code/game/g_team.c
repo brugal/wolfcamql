@@ -303,9 +303,11 @@ void Team_FragBonuses(gentity_t *targ, gentity_t *inflictor, gentity_t *attacker
 		enemy_flag_pw = PW_REDFLAG;
 	}
 
+#if 1  //def MPACK
 	if (g_gametype.integer == GT_1FCTF) {
 		enemy_flag_pw = PW_NEUTRALFLAG;
 	} 
+#endif
 
 	// did the attacker frag the flag carrier?
 	tokens = 0;
@@ -775,9 +777,8 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 			player->client->pers.teamState.lasthurtcarrier = -5;
 		} else if (player->client->sess.sessionTeam ==
 			cl->sess.sessionTeam) {
- #ifdef MISSIONPACK
-			if (player != other)  //FIXME uhmm.. this is always true...
-				AddScore(player, ent->r.currentOrigin, CTF_TEAM_BONUS);
+#ifdef MISSIONPACK
+			AddScore(player, ent->r.currentOrigin, CTF_TEAM_BONUS);
 #endif
 			// award extra points for capture assists
 			if (player->client->pers.teamState.lastreturnedflag + 
@@ -1073,17 +1074,32 @@ void TeamplayInfoMessage( gentity_t *ent ) {
 	int			cnt;
 	int			h, a;
 	int			clients[TEAM_MAXOVERLAY];
+	int team;
 
 	if ( ! ent->client->pers.teamInfo )
 		return;
+
+	// send team info to spectator for team of followed client
+	if (ent->client->sess.sessionTeam == TEAM_SPECTATOR) {
+		if ( ent->client->sess.spectatorState != SPECTATOR_FOLLOW
+			 || ent->client->sess.spectatorClient < 0 ) {
+			return;
+		}
+		team = g_entities[ ent->client->sess.spectatorClient ].client->sess.sessionTeam;
+	} else {
+		team = ent->client->sess.sessionTeam;
+	}
+
+	if (team != TEAM_RED && team != TEAM_BLUE) {
+		return;
+	}
 
 	// figure out what client should be on the display
 	// we are limited to 8, but we want to use the top eight players
 	// but in client order (so they don't keep changing position on the overlay)
 	for (i = 0, cnt = 0; i < g_maxclients.integer && cnt < TEAM_MAXOVERLAY; i++) {
 		player = g_entities + level.sortedClients[i];
-		if (player->inuse && player->client->sess.sessionTeam == 
-			ent->client->sess.sessionTeam ) {
+		if (player->inuse && player->client->sess.sessionTeam == team ) {
 			clients[cnt++] = level.sortedClients[i];
 		}
 	}
@@ -1097,9 +1113,7 @@ void TeamplayInfoMessage( gentity_t *ent ) {
 
 	for (i = 0, cnt = 0; i < g_maxclients.integer && cnt < TEAM_MAXOVERLAY; i++) {
 		player = g_entities + i;
-		if (player->inuse && player->client->sess.sessionTeam == 
-			ent->client->sess.sessionTeam ) {
-
+		if (player->inuse && player->client->sess.sessionTeam == team ) {
 			h = player->client->ps.stats[STAT_HEALTH];
 			a = player->client->ps.stats[STAT_ARMOR];
 			if (h < 0) h = 0;
@@ -1153,7 +1167,7 @@ void CheckTeamStatus(void) {
 				continue;
 			}
 
-			if (ent->inuse && (ent->client->sess.sessionTeam == TEAM_RED ||	ent->client->sess.sessionTeam == TEAM_BLUE)) {
+			if (ent->inuse) {
 				TeamplayInfoMessage( ent );
 			}
 		}

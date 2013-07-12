@@ -1,12 +1,13 @@
 #include "cg_local.h"
+
+#include "cg_players.h"
+#include "cg_predict.h"
+#include "cg_syscalls.h"
+#include "cg_view.h"
+#include "sc.h"
+#include "wolfcam_view.h"
+
 #include "wolfcam_local.h"
-
-void Wolfcam_SwitchPlayerModels (void)
-{
-	//int i;
-
-	//FIXME allow followed player with his own model
-}
 
 static void RegisterClientModelnameWithFallback (clientInfo_t *ci, const char *modelName, const char *skinName, const char *headModelName, const char *headSkinName, const char *teamName, qboolean dontForceTeamSkin)
 {
@@ -41,7 +42,7 @@ static void RegisterClientModelnameWithFallback (clientInfo_t *ci, const char *m
 		}
 }
 
-void CG_GetModelName (char *s, char *model)
+void CG_GetModelName (const char *s, char *model)
 {
 	char *p;
 
@@ -56,7 +57,7 @@ void CG_GetModelName (char *s, char *model)
 	}
 }
 
-void CG_GetModelAndSkinName (char *s, char *model, char *skin)
+void CG_GetModelAndSkinName (const char *s, char *model, char *skin)
 {
 	char *p;
 
@@ -75,14 +76,17 @@ void CG_GetModelAndSkinName (char *s, char *model, char *skin)
 	Q_strncpyz(skin, p, MAX_QPATH);
 }
 
-void Wolfcam_LoadTeamModel (void)
+//FIXME cg.
+static int TeamModel_modc = -1;
+
+static void Wolfcam_LoadTeamModel (void)
 {
 	char modelStr[MAX_QPATH];
 	//char modelName[MAX_QPATH];
 	//char skinName[MAX_QPATH];
 	char *skin;
 	int i;
-	static int modc = -1;
+	//static int modc = -1;
 	static int modchead = -1;
 	static int modctorso = -1;
 	static int modclegs = -1;
@@ -94,11 +98,11 @@ void Wolfcam_LoadTeamModel (void)
 		cg_teamTorsoColor.modificationCount != modctorsocolor  ||
 		cg_teamLegsColor.modificationCount != modclegscolor
 		) {
-		SC_ByteVec3ColorFromCvar(cg.teamColors[0], cg_teamHeadColor);
+		SC_ByteVec3ColorFromCvar(cg.teamColors[0], &cg_teamHeadColor);
 		cg.teamColors[0][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.teamColors[1], cg_teamTorsoColor);
+		SC_ByteVec3ColorFromCvar(cg.teamColors[1], &cg_teamTorsoColor);
 		cg.teamColors[1][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.teamColors[2], cg_teamLegsColor);
+		SC_ByteVec3ColorFromCvar(cg.teamColors[2], &cg_teamLegsColor);
 		cg.teamColors[2][3] = 255;
 		modcheadcolor = cg_teamHeadColor.modificationCount;
 		modctorsocolor = cg_teamTorsoColor.modificationCount;
@@ -106,14 +110,14 @@ void Wolfcam_LoadTeamModel (void)
 		//EC_Loaded = 1;
 	}
 
-	if (cg_teamModel.modificationCount != modc  ||
+	if (cg_teamModel.modificationCount != TeamModel_modc  ||
 		cg_teamHeadSkin.modificationCount != modchead  ||
 		cg_teamTorsoSkin.modificationCount != modctorso  ||
 		cg_teamLegsSkin.modificationCount != modclegs
 
 ) {
 		//EM_Loaded = 0;
-		modc = cg_teamModel.modificationCount;
+		TeamModel_modc = cg_teamModel.modificationCount;
 		modchead = cg_teamHeadSkin.modificationCount;
 		modctorso = cg_teamTorsoSkin.modificationCount;
 		modclegs = cg_teamLegsSkin.modificationCount;
@@ -136,6 +140,12 @@ void Wolfcam_LoadTeamModel (void)
 	//if (*cg_teamModel.string  ||  *cg_teamHeadSkin.string  ||  *cg_teamTorsoSkin.string  ||  *cg_teamLegsSkin.string) {
 	if (*cg_teamModel.string) {
 		Q_strncpyz (modelStr, cg_teamModel.string, sizeof(modelStr));
+	} else {
+		//FIXME changes in cg_ourModel
+		// use this for black listed enemy model as teammate
+		Q_strncpyz(modelStr, cg_ourModel.string, sizeof(modelStr));
+	}
+
 		if ((skin = strchr(modelStr, '/')) == NULL) {
 			skin = "default";
 			cg.useTeamSkins = qtrue;
@@ -169,7 +179,6 @@ void Wolfcam_LoadTeamModel (void)
 
 		cg.teamModelBlue.team = TEAM_BLUE;
 		RegisterClientModelnameWithFallback(&cg.teamModelBlue, cg.teamModelBlue.modelName, cg.teamModelBlue.skinName, cg.teamModelBlue.headModelName, cg.teamModelBlue.headSkinName, "", qfalse);
-	}
 
 	if (*cg_teamHeadSkin.string  ||  *cg_teamTorsoSkin.string  ||  *cg_teamLegsSkin.string) {
 		Com_Printf("reseting altskins\n");
@@ -185,7 +194,7 @@ void Wolfcam_LoadTeamModel (void)
 	}
 }
 
-void Wolfcam_LoadOurModel (void)
+static void Wolfcam_LoadOurModel (void)
 {
 	char modelStr[MAX_QPATH];
 	//char modelName[MAX_QPATH];
@@ -199,6 +208,10 @@ void Wolfcam_LoadOurModel (void)
 
 	if (cg_ourModel.modificationCount != modc) {
 		modc = cg_ourModel.modificationCount;
+		//FIXME hack for black listing enemy model for teammates
+		if (!*cg_teamModel.string) {
+			TeamModel_modc = -1;
+		}
 	} else {
 		return;
 	}
@@ -396,11 +409,11 @@ void Wolfcam_LoadModels (void)
 		cg_enemyTorsoColor.modificationCount != modctorsocolor  ||
 		cg_enemyLegsColor.modificationCount != modclegscolor
 		) {
-		SC_ByteVec3ColorFromCvar(EC_Colors[0], cg_enemyHeadColor);
+		SC_ByteVec3ColorFromCvar(EC_Colors[0], &cg_enemyHeadColor);
 		EC_Colors[0][3] = 255;
-		SC_ByteVec3ColorFromCvar(EC_Colors[1], cg_enemyTorsoColor);
+		SC_ByteVec3ColorFromCvar(EC_Colors[1], &cg_enemyTorsoColor);
 		EC_Colors[1][3] = 255;
-		SC_ByteVec3ColorFromCvar(EC_Colors[2], cg_enemyLegsColor);
+		SC_ByteVec3ColorFromCvar(EC_Colors[2], &cg_enemyLegsColor);
 		EC_Colors[2][3] = 255;
 		modcheadcolor = cg_enemyHeadColor.modificationCount;
 		modctorsocolor = cg_enemyTorsoColor.modificationCount;
@@ -434,7 +447,7 @@ int Wolfcam_OffsetThirdPersonView (void)
         float           focusDist;
         float           forwardScale, sideScale;
         //clientInfo_t *ci;
-        centity_t *cent;
+        const centity_t *cent;
 
         //ci = &cgs.clientinfo[wcg.clientNum];
         cent = &cg_entities[wcg.clientNum];
@@ -517,9 +530,9 @@ Sets cg.refdef view values if following other players
 int Wolfcam_OffsetFirstPersonView (void)
 {
     int clientNum;
-    clientInfo_t *ci;
+    const clientInfo_t *ci;
     centity_t *cent;
-    entityState_t *es;
+    const entityState_t *es;
     wclient_t *wc;
     float ratio;
     float v_dmg_pitch;
@@ -542,7 +555,7 @@ int Wolfcam_OffsetFirstPersonView (void)
     clientNum = wcg.clientNum;
 
 	if (wcg.followMode == WOLFCAM_FOLLOW_KILLER) {
-		centity_t *c;
+		const centity_t *c;
 
 		c = &cg_entities[cg.wcKillerClientNum];
 		t = wcg.nextKillerServerTime - cg.snap->serverTime;
@@ -717,7 +730,7 @@ int Wolfcam_OffsetFirstPersonView (void)
 			VectorCopy(cg.victimAngles, cg.refdefViewAngles);
 		}
 	} else if (wcg.followMode == WOLFCAM_FOLLOW_KILLER) {
-		centity_t *c;
+		const centity_t *c;
 
 		c = &cg_entities[cg.wcKillerClientNum];
 		t = wcg.nextKillerServerTime - cg.snap->serverTime;
@@ -754,6 +767,7 @@ static void Wolfcam_AdjustZoomVal (float val, int type)
 #endif
 
 
+#if 0
 void Wolfcam_ZoomIn (void)
 {
     //centity_t *cent;
@@ -848,6 +862,8 @@ void Wolfcam_Zoom (void)
 #endif
 }
 
+#endif
+
 #define	WAVE_AMPLITUDE	1
 #define	WAVE_FREQUENCY	0.4
 
@@ -855,15 +871,15 @@ int Wolfcam_CalcFov (void)
 {
 	//FIXME wolfcam-rtcw
 	//static float lastfov = 90;		// for transitions back from zoomed in modes
-	float	x;
+	//float	x;
 	float	phase;
 	float	v;
 	int		contents;
 	double	fov_x, fov_y;
 	int		inwater;
     //clientInfo_t *ci;
-    centity_t *cent;
-    entityState_t *es;
+    const centity_t *cent;
+    const entityState_t *es;
     wclient_t *wc;
 
     //ci = &cgs.clientinfo[wcg.clientNum];
@@ -871,7 +887,7 @@ int Wolfcam_CalcFov (void)
     es = &cent->currentState;
     wc = &wclients[wcg.clientNum];
 
-	Wolfcam_Zoom();
+	//Wolfcam_Zoom();
 
 	//if ( cg.predictedPlayerState.stats[STAT_HEALTH] <= 0 && !(cg.snap->ps.pm_flags & PMF_FOLLOW) )
     if (es->eFlags & EF_DEAD)
@@ -883,7 +899,11 @@ int Wolfcam_CalcFov (void)
 
 	if ( cg.predictedPlayerState.pm_type == PM_INTERMISSION ) {
 		// if in intermission, use a fixed value
-		fov_x = 90;
+		if (*cg_fovIntermission.string) {
+			fov_x = cg_fovIntermission.value;
+		} else {
+			fov_x = cg_fov.value;
+		}
 	} else {
 		fov_x = cg_fov.value;
 
@@ -895,17 +915,10 @@ int Wolfcam_CalcFov (void)
 
 	fov_x = CG_CalcZoom(fov_x);
 
-	if (*cg_fovy.string) {
-		fov_y = cg_fovy.value;
-	} else {
-		// Arnout: this is weird... (but ensures square pixel ratio!)
-		x = cg.refdef.width / tan(fov_x / 360.0 * M_PI);
-		fov_y = atan2(cg.refdef.height, x);
-		fov_y = fov_y * 360.0 / M_PI;
+	CG_AdjustedFov(fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
 
-		// And this seems better - but isn't really
-		//fov_y = fov_x / cgs.glconfig.windowAspect;
-	}
+	fov_x = cg.refdef.fov_x;
+	fov_y = cg.refdef.fov_y;
 
 	// warp if underwater
 	//if ( cg_pmove.waterlevel == 3 ) {
@@ -922,6 +935,7 @@ int Wolfcam_CalcFov (void)
 		cg.refdef.rdflags &= ~RDF_UNDERWATER;
 		inwater = qfalse;
 #endif
+		inwater = qfalse;
 	}
 
 	// set it

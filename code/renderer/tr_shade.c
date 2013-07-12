@@ -1168,7 +1168,7 @@ static void ComputeTexCoords( shaderStage_t *pStage ) {
 				break;
 
 			case TMOD_ENTITY_TRANSLATE:
-				RB_CalcScrollTexCoords( backEnd.currentEntity->e.shaderTexCoord,
+				RB_CalcScrollTexCoords( backEnd.currentEntity->ePtr->shaderTexCoord,
 									 ( float * ) tess.svars.texcoords[b] );
 				break;
 

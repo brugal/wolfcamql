@@ -101,7 +101,7 @@ static snd_codec_t *S_FindCodecForFile(const char *filename)
 S_CodecInit
 =================
 */
-void S_CodecInit()
+void S_CodecInit(void)
 {
 	codecs = NULL;
 	S_CodecRegister(&wav_codec);
@@ -115,7 +115,7 @@ void S_CodecInit()
 S_CodecShutdown
 =================
 */
-void S_CodecShutdown()
+void S_CodecShutdown(void)
 {
 	codecs = NULL;
 }

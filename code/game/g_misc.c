@@ -346,7 +346,7 @@ void SP_shooter_grenade( gentity_t *ent ) {
 }
 
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 static void PortalDie (gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int damage, int mod) {
 	G_FreeEntity( self );
 	//FIXME do something more interesting

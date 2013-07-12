@@ -1,0 +1,836 @@
+#include "ui/menudef.h"
+#include "ui/wcmenudef.h"
+
+// weapon bar
+
+menuDef {
+	visible 1
+	rect 50 100 40 50
+
+	itemDef {
+		// initialize some variables
+	  	run {
+		    setvar @weaponBarX (-5)
+		    setvar @weaponBarY (0)
+		    setvar @weaponBarW (70)
+		    setvar @weaponBarH (20)
+		}
+       	}
+
+	// first:   draw selected weapon indicator
+
+	itemDef {  // gauntlet
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GAUNTLET) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_GAUNTLET) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+	itemDef {  // machinegun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_MACHINEGUN) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_MACHINEGUN) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+   	}
+
+	itemDef {  // shotgun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_SHOTGUN) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_SHOTGUN) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // grenade launcher
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GRENADE_LAUNCHER) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_GRENADE_LAUNCHER) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // rocket launcher
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_ROCKET_LAUNCHER) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_ROCKET_LAUNCHER) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // lightning
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_LIGHTNING) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_LIGHTNING) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // railgun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_RAILGUN) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_RAILGUN) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // plasmagun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_PLASMAGUN) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_PLASMAGUN) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // bfg
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_BFG) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_BFG) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // grappling hook
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GRAPPLING_HOOK) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_GRAPPLING_HOOK) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // nailgun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_NAILGUN) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_NAILGUN) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // prox launcher
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_PROX_LAUNCHER) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_PROX_LAUNCHER) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	itemDef {  // chaingun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_CHAINGUN) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_CHAINGUN) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
+	///  weapon icons
+
+	itemDef {
+	   // reset y var
+	   run {
+	       setvar @weaponBarX (0)
+	       setvar @weaponBarY (0)
+	       setvar @weaponBarW (20)
+	   }
+	}
+
+	itemDef {  // gauntlet
+		visible 1
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GAUNTLET) {
+		       background "icons/iconw_gauntlet"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+	itemDef {  // machinegun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_MACHINEGUN) {
+		       background "icons/iconw_machinegun"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+	itemDef {  // shotgun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_SHOTGUN) {
+		       background "icons/iconw_shotgun"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // grenade launcher
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GRENADE_LAUNCHER) {
+		       background "icons/iconw_grenade"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // rocket launcher
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_ROCKET_LAUNCHER) {
+		       background "icons/iconw_rocket"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // lightning
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_LIGHTNING) {
+		       background "icons/iconw_lightning"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // railgun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_RAILGUN) {
+		       background "icons/iconw_railgun"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // plasmagun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_PLASMAGUN) {
+		       background "icons/iconw_plasma"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // bfg
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_BFG) {
+		       background "icons/iconw_bfg"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // grappling hook
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GRAPPLING_HOOK) {
+		       background "icons/iconw_grapple"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // nailgun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_NAILGUN) {
+		       background "icons/iconw_nailgun"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // prox launcher
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_PROX_LAUNCHER) {
+		       background "icons/iconw_proxlauncher"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // chaingun
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_CHAINGUN) {
+		       background "icons/iconw_chaingun"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	///  ammo
+
+	itemDef {
+	   // reset y var
+	   run {
+	       setvar @weaponBarX (25)
+	       setvar @weaponBarY (0)
+	       setvar @weaponBarW (20)
+	       setvar @weaponBarH (20)
+	   }
+	}
+
+	itemDef {  // gauntlet
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GAUNTLET) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_GAUTNLET)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // machinegun
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_MACHINEGUN) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_MACHINEGUN)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // shotgun
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_SHOTGUN) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_SHOTGUN)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // grenade launcher
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GRENADE_LAUNCHER) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_GRENADE_LAUNCHER)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // rocket launcher
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_ROCKET_LAUNCHER) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_ROCKET_LAUNCHER)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // lightning
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_LIGHTNING) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_LIGHTNING)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // railgun
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_RAILGUN) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_RAILGUN)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // plasmagun
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_PLASMAGUN) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_PLASMAGUN)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // bfg
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_BFG) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_BFG)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // grappling hook
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_GRAPPLING_HOOK) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_GRAPPLING_HOOK)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // nailgun
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_NAILGUN) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_NAILGUN)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // prox launcher
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_PROX_LAUNCHER) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_PROX_LAUNCHER)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+	itemDef {  // chaingun
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_CHAINGUN) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_CHAINGUN)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
+}

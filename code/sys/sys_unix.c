@@ -44,6 +44,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 #include <dlfcn.h>
 
+//#ifdef __linux__
+#include <sys/utsname.h>
+//#endif
+
+#ifdef __APPLE__
+//#include <CoreServices/CoreServices.h>
+#endif
+
 qboolean stdinIsATTY;
 
 // Used to determine where to store user-specific files
@@ -135,31 +143,6 @@ int Sys_Milliseconds (void)
 	return curtime;
 }
 
-#if !id386
-/*
-==================
-fastftol
-==================
-*/
-long fastftol( float f )
-{
-	return (long)f;
-}
-
-/*
-==================
-Sys_SnapVector
-==================
-*/
-void Sys_SnapVector( float *v )
-{
-	v[0] = rint(v[0]);
-	v[1] = rint(v[1]);
-	v[2] = rint(v[2]);
-}
-#endif
-
-
 /*
 ==================
 Sys_RandomBytes
@@ -240,6 +223,21 @@ Sys_Dirname
 const char *Sys_Dirname( char *path )
 {
 	return dirname( path );
+}
+
+/*
+==============
+Sys_FOpen
+==============
+*/
+FILE *Sys_FOpen( const char *ospath, const char *mode ) {
+	struct stat buf;
+
+	// check if path exists and is a directory
+	if ( !stat( ospath, &buf ) && S_ISDIR( buf.st_mode ) )
+		return NULL;
+
+	return fopen( ospath, mode );
 }
 
 /*
@@ -859,6 +857,8 @@ void Sys_PlatformInit (qboolean useBacktrace)
 {
 	struct sigaction action;
 	const char *term = getenv("TERM");
+	struct utsname un;
+	int err;
 
 	if (useBacktrace) {
 		memset(&action, 0, sizeof(action));
@@ -901,6 +901,59 @@ void Sys_PlatformInit (qboolean useBacktrace)
 
 	stdinIsATTY = isatty( STDIN_FILENO ) &&
 		!( term && ( !strcmp( term, "raw" ) || !strcmp( term, "dumb" ) ) );
+
+	err = uname(&un);
+	if (err == -1) {
+		Com_Printf("^1couldn't get uname() info\n");
+	} else {
+		Com_Printf("%s, %s, %s, %s\n", un.sysname, un.release, un.version, un.machine);
+	}
+
+#if defined(__linux__)   ||  defined(__APPLE__)
+	{
+		FILE *f;
+		char buf[32];
+		int n;
+#if defined(__linux__)
+		const char *fname = "/etc/os-release";
+#elif defined(__APPLE__)
+		const char *fname = "/System/Library/CoreServices/SystemVersion.plist";
+#else
+		const char *fname = NULL;
+#endif
+
+		if (fname) {
+			f = fopen(fname, "r");
+			if (f) {
+				while (1) {
+					n = fread(buf, 1, sizeof(buf) - 1, f);
+					if (n < 1) {
+						break;
+					}
+					if (ferror(f)) {
+						Com_Printf("^1couldn't read %s\n", fname);
+						break;
+					}
+					buf[n] = '\0';
+					Com_Printf("%s", buf);
+				}
+				Com_Printf("\n");
+				fclose(f);
+			}
+		}
+	}
+#elif 0  //defined(__APPLE__)
+	{
+		SInt32 majorVersion, minorVersion, bugFixVersion;
+
+		Gestalt(gestaltSystemVersionMajor, &majorVersion);
+		Gestalt(gestaltSystemVersionMinor, &minorVersion);
+		Gestalt(gestaltSystemVersionBugFix, &bugFixVersion);
+
+		//FIXME SInt32 on 64 bit
+		Com_Printf("Mac OS X %d.%d.%d\n", (int)majorVersion, (int)minorVersion, (int)bugFixVersion);
+	}
+#endif
 }
 
 /*

@@ -2,6 +2,11 @@
 #define cl_avi_h_included
 
 #include "../qcommon/q_shared.h"
+#include "ffmpegcompat.h"
+
+#define CODEC_UNCOMPRESSED 0
+#define CODEC_MJPEG 1
+#define CODEC_HUFFYUV 2
 
 #define MAX_RIFF_CHUNKS 16
 
@@ -74,7 +79,7 @@ typedef struct aviFileData_s
     int64_t     numVideoFramesHeaderOffset;
 
   int           maxRecordSize;
-  qboolean      motionJpeg;
+    int codec;
 
   qboolean      audio;
   audioFormat_t a;
@@ -119,6 +124,7 @@ typedef struct aviFileData_s
     int PcmBytesInBuffer;
     byte pcmCaptureBuffer[PCM_BUFFER_SIZE];
 
+    AVCodecContext *AC;
 } aviFileData_t;
 
 extern aviFileData_t afdMain;
@@ -129,6 +135,6 @@ extern aviFileData_t afdDepth;
 extern aviFileData_t afdDepthLeft;
 extern aviFileData_t afdDepthRight;
 
-qboolean CL_VideoRecording (aviFileData_t *afd);
+qboolean CL_VideoRecording (const aviFileData_t *afd);
 
 #endif  // cl_avi_h_included

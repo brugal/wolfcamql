@@ -4,14 +4,35 @@
 // executed by a key binding
 
 #include "cg_local.h"
+#include "../qcommon/q_shared.h"
+#include "../game/bg_public.h"
+
+#include "cg_consolecmds.h"
+#include "cg_draw.h"  // cg_fade...
+#include "cg_ents.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_newdraw.h"
+#include "cg_players.h"
+#include "cg_playerstate.h"
+#include "cg_q3mme_scripts.h"
+#include "cg_syscalls.h"
+#include "cg_view.h"
+#include "cg_weapons.h"
+#include "sc.h"
+#include "wolfcam_consolecmds.h"
+#include "wolfcam_view.h"
+
 #include "../ui/ui_shared.h"
 #include "wolfcam_local.h"
 
+static void CG_UpdateCameraInfo (void);
 static void CG_GotoViewPointMark_f (void);
 static void CG_ChangeSelectedCameraPoints_f (void);
 
 
-float CameraAngleDistance (vec3_t a0, vec3_t a1)
+float CameraAngleDistance (const vec3_t a0, const vec3_t a1)
 {
 	float dist;
 	float d0, d1;
@@ -138,6 +159,11 @@ static void CG_LoadHud_f (void)
 
 	memset(buff, 0, sizeof(buff));
 	String_Init();
+
+	//FIXME hack for fx scripts using String_Alloc()
+	//memset(&EffectScripts.jitToken, 0, sizeof(EffectScripts.jitToken));
+	CG_FreeFxJitTokens();
+
 	Menu_Reset();
 
 	if (cg_loadDefaultMenus.integer) {
@@ -396,7 +422,8 @@ static void CG_TauntDeathInsult_f (void ) {
 }
 
 static void CG_TauntGauntlet_f (void ) {
-	trap_SendConsoleCommand("cmd vsay kill_guantlet\n");
+	//FIXME check q3 compatability
+	trap_SendConsoleCommand("cmd vsay kill_gauntlet\n");
 }
 
 static void CG_TaskSuicide_f (void ) {
@@ -472,7 +499,7 @@ static void CG_StartOrbit_f( void ) {
 // camera script
 /*
 ==============
-CG_StartCamera
+CG_StartidCamera
 ==============
 */
 void CG_StartidCamera( const char *name, qboolean startBlack ) {
@@ -528,7 +555,7 @@ typedef struct {
 static void CG_ListTimedItems_f (void)
 {
 	int i, j;
-	titems_list_t t[] = {
+	const titems_list_t t[] = {
 		{ "red armor", &cg.numRedArmors, cg.redArmors },
 		{ "yellow armor", &cg.numYellowArmors, cg.yellowArmors },
 		{ "green armor", &cg.numGreenArmors, cg.greenArmors },
@@ -701,7 +728,7 @@ static void CG_SetViewPos_f (void)
 static void CG_SetViewAngles_f (void)
 {
 	int argc;
-	vec3_t forward, right, up;
+	//vec3_t forward, right, up;
 
 	if (CG_Argc() < 2) {
 		Com_Printf("usage: setviewangles [pitch] [yaw] [roll]\n");
@@ -731,6 +758,113 @@ static void CG_SetViewAngles_f (void)
 	}
 }
 
+// in milliseconds
+int CG_AdjustTimeForTimeouts (int timeLength, qboolean forward)
+{
+	int i;
+	int startServerTime;
+	int endServerTime;
+	const timeOut_t *t;
+
+	if (forward) {
+		if (cg.snap) {
+			startServerTime = cg.snap->serverTime;
+		} else {
+			startServerTime = trap_GetFirstServerTime();
+		}
+
+		endServerTime = startServerTime + timeLength;
+
+		//Com_Printf("start length %d\n", timeLength);
+
+		for (i = 0;  i < cgs.numTimeouts;  i++) {
+			t = &cgs.timeOuts[i];
+
+			if (t->endTime < startServerTime) {
+				continue;
+			}
+			if (t->startTime > endServerTime) {
+				continue;
+			}
+
+			if (t->startTime >= startServerTime  &&  t->endTime <= endServerTime) {
+				// timeout contained in interval
+				//Com_Printf("%d contained\n", i);
+				timeLength += (t->endTime - t->startTime);
+			} else if (t->startTime < startServerTime) {
+				// started within a timeout, skip remaining time
+				//Com_Printf("%d start within\n", i);
+				timeLength += (t->endTime - startServerTime);
+			} else if (t->endTime > endServerTime) {
+				// end inside a timeout
+				//Com_Printf("%d end inside  %d > %d\n", i, t->endTime, endServerTime);
+				//timeLength += (t->endTime - t->startTime);
+				timeLength += (t->endTime - t->startTime);
+			} else {
+				Com_Printf("^3FIXME CG_AdjustTimeForTimeouts() invalid forward\n");
+			}
+
+			//Com_Printf("^3%d  %d -> %d length %f\n", i, t->serverTime, t->endTime, (t->endTime - t->startTime) / 1000.0);
+			//Com_Printf("%d new timelength %d\n", i, timeLength);
+
+			if (cg.snap) {
+				startServerTime = cg.snap->serverTime;
+			} else {
+				startServerTime = trap_GetFirstServerTime();
+			}
+			endServerTime = startServerTime + timeLength;
+		}
+
+		return (endServerTime - startServerTime);
+
+	} else {  // rewind
+		if (cg.snap) {
+			endServerTime = cg.snap->serverTime;
+		} else {
+			endServerTime = trap_GetFirstServerTime();
+		}
+		startServerTime = endServerTime - timeLength;
+
+		for (i = cgs.numTimeouts - 1;  i >= 0;  i--) {
+			t = &cgs.timeOuts[i];
+
+			if (t->startTime > endServerTime) {
+				continue;
+			}
+			if (t->endTime < startServerTime) {
+				continue;
+			}
+
+			if (t->startTime >= startServerTime  &&  t->endTime <= endServerTime) {
+				// timeout contained in interval
+				timeLength += (t->endTime - t->startTime);
+			} else if (t->endTime > endServerTime) {
+				// start inside a timeout, skip beginning of timeout
+				timeLength += (endServerTime - t->startTime);
+			} else if (t->startTime < startServerTime) {
+				// end within a timeout
+				timeLength += (t->endTime - t->startTime);
+			} else {
+				Com_Printf("^3FIXME CG_AdjustTimeForTimeouts() invalid rewind\n");
+			}
+
+			//Com_Printf("^3%d  %d  length %f\n", i, t->serverTime, (t->endTime - t->startTime) / 1000.0);
+
+			//FIXME if you are at a timeout fast forward?
+
+			if (cg.snap) {
+				startServerTime = cg.snap->serverTime - timeLength;
+				endServerTime = cg.snap->serverTime;
+			} else {
+				startServerTime = trap_GetFirstServerTime() - timeLength;
+				endServerTime = trap_GetFirstServerTime();
+			}
+		}
+
+		return (endServerTime - startServerTime);
+	}
+}
+
 static void CG_SeekClock_f (void)
 {
 	const char *timeString;
@@ -740,6 +874,7 @@ static void CG_SeekClock_f (void)
 	int clockTimeWanted;
 	int currentTime;
 	qboolean warmupTime;
+	int timeLength;
 
 	if (!cg.demoPlayback) {
 		Com_Printf("CG_SeekClock_f() not playing a demo\n");
@@ -789,15 +924,15 @@ static void CG_SeekClock_f (void)
 		if (!warmupTime) {
 			if (cg.snap) {
 				currentTime = cg.snap->serverTime - trap_GetGameStartTime();
-				Com_Printf("current time %d  up %d\n", currentTime, cg.timerGoesUp);
+				//Com_Printf("current time %d  up %d\n", currentTime, cg.timerGoesUp);
 			} else {
 				currentTime = trap_GetFirstServerTime() - trap_GetGameStartTime();
-				Com_Printf("first server time %d  up %d\n", currentTime, cg.timerGoesUp);
+				//Com_Printf("first server time %d  up %d\n", currentTime, cg.timerGoesUp);
 			}
 		} else {
 			if (cg.snap) {
 				currentTime = cg.snap->serverTime - cg.warmupTimeStart;
-				Com_Printf("want warmup -- current time %d\n", currentTime);
+				//Com_Printf("want warmup -- current time %d\n", currentTime);
 			} else {
 				currentTime = trap_GetFirstServerTime() - cg.warmupTimeStart;
 			}
@@ -813,15 +948,23 @@ static void CG_SeekClock_f (void)
 
 	if (cg.timerGoesUp) {
 		if (currentTime > clockTimeWanted) {
-			trap_SendConsoleCommand(va("rewind %f\n", (double)(currentTime - clockTimeWanted) / 1000.0));
+			timeLength = currentTime - clockTimeWanted;
+			timeLength = CG_AdjustTimeForTimeouts(timeLength, qfalse);
+			trap_SendConsoleCommand(va("rewind %f\n", (double)(timeLength / 1000.0)));
 		} else if (currentTime < clockTimeWanted) {
-			trap_SendConsoleCommand(va("fastforward %f\n", (double)(clockTimeWanted - currentTime) / 1000.0));
+			timeLength = clockTimeWanted - currentTime;
+			timeLength = CG_AdjustTimeForTimeouts(timeLength, qtrue);
+			trap_SendConsoleCommand(va("fastforward %f\n", (double)(timeLength / 1000.0)));
 		}
 	} else {
 		if (currentTime > clockTimeWanted) {
-			trap_SendConsoleCommand(va("fastforward %f\n", (double)(currentTime - clockTimeWanted) / 1000.0));
+			timeLength = currentTime - clockTimeWanted;
+			timeLength = CG_AdjustTimeForTimeouts(timeLength, qtrue);
+			trap_SendConsoleCommand(va("fastforward %f\n", (double)(timeLength / 1000.0)));
 		} else if (currentTime < clockTimeWanted) {
-			trap_SendConsoleCommand(va("rewind %f\n", (double)(clockTimeWanted - currentTime) / 1000.0));
+			timeLength = clockTimeWanted - currentTime;
+			timeLength = CG_AdjustTimeForTimeouts(timeLength, qfalse);
+			trap_SendConsoleCommand(va("rewind %f\n", (double)(timeLength / 1000.0)));
 		}
 	}
 }
@@ -908,7 +1051,6 @@ static void CG_EchoPopupt_f (void)
 	if (CG_Argc() < 2) {
 		return;
 	}
-
 }
 
 static void CG_EchoPopuptxy_f (void)
@@ -916,7 +1058,6 @@ static void CG_EchoPopuptxy_f (void)
 	if (CG_Argc() < 2) {
 		return;
 	}
-
 }
 #endif
 
@@ -1073,11 +1214,11 @@ static char *entTypes[] = {
 static void CG_ListEntities_f (void)
 {
 	int i;
-	centity_t *cent;
+	const centity_t *cent;
 	//int clientNum;
-	entityState_t *ent;
-	char *etypeStr;
-	char *name;
+	const entityState_t *ent;
+	const char *etypeStr;
+	const char *name;
 	char weapname[1024];
 
 	for (i = 0;  i < MAX_GENTITIES;  i++) {
@@ -1142,7 +1283,7 @@ static void CG_GotoView_f (void)
 {
 	vec3_t forward, right, up;
 	float f, r, u;
-	centity_t *cent;
+	const centity_t *cent;
 	qboolean force;
 
 	if (!cg.snap) {
@@ -1210,18 +1351,216 @@ static void CG_ServerTime_f (void)
 	Com_Printf("serverTime: %d\n", cg.snap->serverTime);
 }
 
+#if 0
 static void CG_PrintScores_f (void)
 {
 	int i;
-	score_t *sc;
-	clientInfo_t *ci;
+	const score_t *sc;
+	const clientInfo_t *ci;
 
 	for (i = 0;  i < cg.numScores;  i++) {
 		sc = &cg.scores[i];
 		ci = &cgs.clientinfo[sc->client];
-		Com_Printf("%d %s %d %d\n", sc->client, ci->name, sc->team, ci->team);
+		Com_Printf("%d %s %d %d %d\n", sc->client, ci->name, ci->score, sc->team, ci->team);
 	}
 }
+#endif
+
+#define pp(x) Com_Printf(#x ": %d\n", s->x)
+#define ppf(x) Com_Printf(#x ": %f\n", s->x)
+
+static void CG_DumpStats_f (void)
+{
+	qboolean fallbackToOldScores = qtrue;
+	int i;
+	int j;
+
+	Com_Printf("game stats:\n\n");
+
+	if (cgs.gametype == GT_TOURNAMENT  &&  cg.duelScoresValid) {
+		fallbackToOldScores = qfalse;
+
+		for (i = 0;  i < 2;  i++) {
+			const duelScore_t *s;
+			const duelScore_t *sbackup;
+			int clientNum;
+
+			if (i == 0) {
+				s = &cg.duelScores[0];
+				clientNum = cg.duelPlayer1;
+			} else {
+				s = &cg.duelScores[1];
+				clientNum = cg.duelPlayer2;
+			}
+
+			Com_Printf("\n");
+			Com_Printf("client: %d\n", clientNum);
+			Com_Printf("name: %s\n", s->ci.name);
+			pp(ping);
+			pp(kills);
+			pp(deaths);
+			pp(accuracy);
+			pp(damage);
+			pp(redArmorPickups);
+			ppf(redArmorTime);
+			pp(yellowArmorPickups);
+			ppf(yellowArmorTime);
+			pp(greenArmorPickups);
+			ppf(greenArmorTime);
+			pp(megaHealthPickups);
+			ppf(megaHealthTime);
+			pp(awardExcellent);
+			pp(awardImpressive);
+			pp(awardHumiliation);
+
+			sbackup = s;
+			for (j = 1;  j < WP_NUM_WEAPONS;  j++) {
+				const duelWeaponStats_t *s = &sbackup->weaponStats[j];
+
+				Com_Printf("weapon %d\n", j);
+				Com_Printf("weapon name: %s\n", weapNamesCasual[j]);
+				pp(hits);
+				pp(atts);
+				pp(accuracy);
+				pp(damage);
+				pp(kills);
+			}
+		}
+	} else {
+		for (i = 0;  i < MAX_CLIENTS;  i++) {
+			const caStats_t *s = &cg.caStats[i];
+
+			if (!s->valid) {
+				continue;
+			}
+			if (!cgs.clientinfo[s->clientNum].infoValid) {
+				continue;
+			}
+
+			fallbackToOldScores = qfalse;
+			Com_Printf("\n");
+			Com_Printf("client: %d\n", s->clientNum);
+			Com_Printf("name: %s\n", cgs.clientinfo[s->clientNum].name);
+			pp(damageDone);
+			pp(damageReceived);
+			pp(gauntKills);
+			pp(mgAccuracy);
+			pp(mgKills);
+			pp(sgAccuracy);
+			pp(sgKills);
+			pp(glAccuracy);
+			pp(glKills);
+			pp(rlAccuracy);
+			pp(rlKills);
+			pp(lgAccuracy);
+			pp(lgKills);
+			pp(rgAccuracy);
+			pp(rgKills);
+			pp(pgAccuracy);
+			pp(pgKills);
+		}
+
+		for (i = 0;  i < MAX_CLIENTS;  i++) {
+			const tdmStats_t *s;
+
+			s = &cg.tdmStats[i];
+
+			if (!s->valid) {
+				continue;
+			}
+			if (!cgs.clientinfo[s->clientNum].infoValid) {
+				continue;
+			}
+
+			fallbackToOldScores = qfalse;
+			Com_Printf("\n");
+			Com_Printf("client: %d\n", s->clientNum);
+			Com_Printf("name: %s\n", cgs.clientinfo[s->clientNum].name);
+			pp(selfKill);
+			pp(tks);
+			pp(tkd);
+			pp(damageDone);
+			pp(damageReceived);
+			pp(ra);
+			pp(ya);
+			pp(ga);
+			pp(mh);
+			pp(quad);
+			pp(bs);
+
+			//FIXME per weapon stats
+		}
+
+		for (i = 0;  i < MAX_CLIENTS;  i++) {
+			const ctfStats_t *s;
+
+			s = &cg.ctfStats[i];
+
+			if (!s->valid) {
+				continue;
+			}
+			if (!cgs.clientinfo[s->clientNum].infoValid) {
+				continue;
+			}
+
+			fallbackToOldScores = qfalse;
+			Com_Printf("\n");
+			Com_Printf("client: %d\n", s->clientNum);
+			Com_Printf("name: %s\n", cgs.clientinfo[s->clientNum].name);
+			pp(selfKill);
+			pp(damageDone);
+			pp(damageReceived);
+			pp(ra);
+			pp(ya);
+			pp(ga);
+			pp(mh);
+			pp(quad);
+			pp(bs);
+			pp(regen);
+			pp(haste);
+			pp(invis);
+		}
+	}
+
+	if (!fallbackToOldScores) {
+		return;
+	}
+
+	for (i = 0;  i < cg.numScores;  i++) {
+		const score_t *s;
+
+		s = &cg.scores[i];
+		if (!cgs.clientinfo[s->client].infoValid) {
+			continue;
+		}
+
+		Com_Printf("\n");
+		Com_Printf("client: %d\n", s->client);
+		Com_Printf("name: %s\n", cgs.clientinfo[s->client].name);
+		pp(score);
+		pp(ping);
+		pp(time);
+		pp(scoreFlags);
+		// powerups?
+		pp(accuracy);
+		pp(impressiveCount);
+		pp(excellentCount);
+		pp(gauntletCount);
+		pp(defendCount);
+		pp(assistCount);
+		pp(captures);
+		pp(perfect);
+		pp(team);
+		// alive?
+		pp(frags);
+		pp(deaths);
+		pp(bestWeapon);
+		pp(net);
+
+	}
+}
+#undef pp
+#undef ppf
 
 static void CG_SetLoopStart_f (void)
 {
@@ -1261,11 +1600,25 @@ static void CG_Loop_f (void)
 
 static void CG_FragForward_f (void)
 {
-	if (!cg.snap) {
+	int serverTime;
+
+	if (CG_Argc() > 1  &&  !Q_stricmp("stop", CG_Argv(1))) {
+		Com_Printf("fragforward off\n");
+		cg.fragForwarding = qfalse;
 		return;
 	}
 
+	if (!cg.snap) {
+		//Com_Printf("fragforward off...  demo hasn't started yet");
+		serverTime = 0;
+		//return;
+	} else {
+		serverTime = cg.snap->serverTime;
+	}
+
 	cg.fragForwarding = !cg.fragForwarding;
+
+	Com_Printf("fragforward %s\n", cg.fragForwarding ? "on" : "off");
 
 	if (!cg.fragForwarding) {
 		//Com_Printf("not fast forwarding to frags\n");
@@ -1277,27 +1630,7 @@ static void CG_FragForward_f (void)
 			//wolfcam_following = qfalse;
 		}
 		cg.fragForwardFragCount = 0;
-		wcg.nextVictimServerTime = cg.snap->serverTime - 200;
-
-		//FIXME don't do this here
-#if 0
-		if (trap_GetNextVictim(cg.snap->ps.clientNum, cg.snap->serverTime, &wcg.nextVictim, &wcg.nextVictimServerTime, qtrue)) {
-            Com_Printf("frag forward next victim for %s: %d %d %s\n", cgs.clientinfo[cg.snap->ps.clientNum].name, wcg.nextVictim, wcg.nextVictimServerTime, cgs.clientinfo[wcg.nextVictim].name);
-            //FIXME hack to not switch away so fast
-            wcg.nextVictimServerTime += 0;  //2000;
-            wcg.ourLastClientNum = cg.snap->ps.clientNum;
-			trap_S_StartLocalSound( cgs.media.klaxon2, CHAN_LOCAL_SOUND );
-			trap_SendConsoleCommand(va("seekservertime %f\n", (double)(wcg.nextVictimServerTime - cg.fragForwardPreKillTime)));
-        } else {
-            //Com_Printf("no next victim\n");
-			CG_CenterPrint("No more frags", 120, BIGCHAR_WIDTH);
-            wcg.nextVictim = -1;
-            wcg.nextVictimServerTime = -1;
-			cg.fragForwarding = qfalse;
-			trap_S_StartLocalSound( cgs.media.buzzer, CHAN_LOCAL_SOUND );
-			trap_SendConsoleCommand("pause\n");
-        }
-#endif
+		wcg.nextVictimServerTime = serverTime - 200;
 	}
 
 	if (CG_Argc() > 1) {
@@ -1322,7 +1655,7 @@ static void CG_LoadModels_f (void)
 
 static void CG_RecordPath_f (void)
 {
-	char *s;
+	const char *s;
 	const char *fname;
 	qboolean useDefaultFolder = qtrue;
 	//qboolean useDefaultName = qtrue;
@@ -1380,7 +1713,7 @@ static void CG_RecordPath_f (void)
 static void CG_PlayPath_f (void)
 {
 	int len;
-	char *s;
+	const char *s;
 	//char buffer[1024];
 	int i;
 	int nve;
@@ -1533,7 +1866,7 @@ static void CG_DrawRawPath_f (void)
 {
 	qhandle_t f;
 	int len;
-	char *s = NULL;
+	const char *s = NULL;
 	int linesRead;
 	rawCameraPathKeyPoint_t *c;
 	int nve;
@@ -1626,16 +1959,24 @@ static void CG_AddCameraPoint_f (void)
 
 	incrementCameraPoints = qtrue;
 	cp = NULL;
+	if (cg.atCameraPoint) {
+		// we will be modifying the camera point, not adding a new one
+		incrementCameraPoints = qfalse;
+		cp = &cg.cameraPoints[cg.selectedCameraPointMin];
+		cameraPointNum = cg.selectedCameraPointMin;
+		//Com_Printf("at camera point %d\n", cameraPointNum);
+	} else {
 	for (i = 0;  i < cg.numCameraPoints;  i++) {
-		if (cg.ftime == cg.cameraPoints[i].cgtime) {
+#if 1  //FIXME broken, kept for paused camera point add...
+		if ((double)cg.ftime == cg.cameraPoints[i].cgtime) {
 			// we will be modifying the camera point, not adding a new one
 			incrementCameraPoints = qfalse;
 			cp = &cg.cameraPoints[i];
 			cameraPointNum = i;
 			break;
 		}
-
-		if (cg.ftime < cg.cameraPoints[i].cgtime) {
+#endif
+		if ((double)cg.ftime < cg.cameraPoints[i].cgtime) {
 			if (cg.numCameraPoints >= MAX_CAMERAPOINTS - 3) {  // three fake ones
 				Com_Printf("too many camera points\n");
 				return;
@@ -1647,6 +1988,7 @@ static void CG_AddCameraPoint_f (void)
 			cameraPointNum = i;
 			break;
 		}
+	}
 	}
 
 	if (!cp) {
@@ -1830,6 +2172,7 @@ static void CG_AddCameraPoint_f (void)
 	}
 #endif
 
+	//Com_Printf("add camera point selected : %d\n", cg.selectedCameraPointMin);
 }
 
 static void CG_ClearCameraPoints_f (void)
@@ -1878,7 +2221,7 @@ static void CG_StopCamera_f (void)
 	cg.cameraPlayedLastFrame = qfalse;
 }
 
-static void CG_WriteString (char *s, qhandle_t file)
+static void CG_WriteString (const char *s, qhandle_t file)
 {
 	trap_FS_Write(s, strlen(s), file);
 }
@@ -1886,9 +2229,9 @@ static void CG_WriteString (char *s, qhandle_t file)
 static void CG_SaveCamera_f (void)
 {
 	qhandle_t f;
-	char *s;
+	const char *s;
 	int i;
-	cameraPoint_t *cp;
+	const cameraPoint_t *cp;
 	int len;
 	const char *fname;
 	qboolean useDefaultFolder = qtrue;
@@ -1995,7 +2338,7 @@ static void CG_SaveCamera_f (void)
 static void CG_CamtraceSave_f (void)
 {
 	int i;
-	cameraPoint_t *cp;
+	const cameraPoint_t *cp;
 	char buffer[MAX_STRING_CHARS];
 	qboolean useOldFormat;
 
@@ -2058,7 +2401,7 @@ static void CG_LoadCamera_f (void)
 	qhandle_t f;
 	int len;
 	int version;
-	char *s;
+	const char *s;
 	cameraPoint_t *cp;
 	int slen;
 	qboolean useDefaultFolder = qtrue;
@@ -2375,7 +2718,10 @@ static void CG_EditCameraPoint_f (void)
 	VectorSet(cg.freecamPlayerState.velocity, 0, 0, 0);
 	//Com_Printf("^3camera time: %f\n", cg.cameraPoints[cameraPoint].cgtime);
 	trap_Cvar_Set("cl_freezeDemo", "1");
-	trap_SendConsoleCommand(va("seekservertime %f\n", cg.cameraPoints[cameraPoint].cgtime));
+	//trap_SendConsoleCommand(va("seekservertime %f\n", cg.cameraPoints[cameraPoint].cgtime));
+	trap_SendConsoleCommandNow(va("seekservertime %f\n", cg.cameraPoints[cameraPoint].cgtime));
+	//FIXME bad hack
+	cg.atCameraPoint = qtrue;
 }
 
 static void CG_DeleteCameraPoint_f (void)
@@ -2447,7 +2793,7 @@ static void FindQuadradic (long double x0, long double y0, long double x1, long 
 	//Com_Printf("^3quadratic: %LFx**2  +  %LFx  +  %\n", *a, *b, *c);
 }
 
-static double CameraCurveDistance (cameraPoint_t *cp, cameraPoint_t *cpnext)
+static double CameraCurveDistance (const cameraPoint_t *cp, const cameraPoint_t *cpnext)
 {
 	long double dist;
 	int i;
@@ -2483,7 +2829,7 @@ static double CameraCurveDistance (cameraPoint_t *cp, cameraPoint_t *cpnext)
 	return dist;
 }
 
-void CG_UpdateCameraInfo (void)
+static void CG_UpdateCameraInfo (void)
 {
 	int i;
 	float tension;
@@ -2499,10 +2845,10 @@ void CG_UpdateCameraInfo (void)
 	double dist;
 	cameraPoint_t *cp;
 	cameraPoint_t *cpnext;
-	cameraPoint_t *cpnextnext;
-	cameraPoint_t *cptmp;
-	cameraPoint_t *cpprev;
-	cameraPoint_t *cpprevprev;
+	const cameraPoint_t *cpnextnext;
+	const cameraPoint_t *cptmp;
+	const cameraPoint_t *cpprev;
+	const cameraPoint_t *cpprevprev;
 	int count;
 	int passStart;
 	int passEnd;
@@ -2735,7 +3081,7 @@ void CG_UpdateCameraInfo (void)
 		}
 
 		if (cp->type == CAMERA_CURVE) {
-			cameraPoint_t *p1, *p2, *p3;
+			const cameraPoint_t *p1, *p2, *p3;
 
 			cp->curveCount = curveCount;
 			curveCount++;
@@ -3216,7 +3562,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 	vec3_t angs1;
 	//double totalTime;
 	cameraPoint_t *cstart;
-	cameraPoint_t *cend;
+	const cameraPoint_t *cend;
 	int n;
 
 	cg.cameraPlaying = qfalse;
@@ -3290,7 +3636,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				vec3_t dir;
 				//vec3_t offset;
 				vec3_t tmpAngles;
-				vec3_t origNextOrigin;
+				//vec3_t origNextOrigin;
 				vec3_t fUp;
 
 				if (cg.numCameraPoints < 2) {
@@ -3303,7 +3649,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 					noAngles = qfalse;
 				}
 
-				VectorCopy(cg.cameraPoints[1].origin, origNextOrigin);
+				//VectorCopy(cg.cameraPoints[1].origin, origNextOrigin);
 
 				AngleVectors(cg.refdefViewAngles, newForward, newRight, newUp);
 				VectorNormalize(newForward);
@@ -4812,57 +5158,9 @@ static void CG_FXLoad_f (void)
 	}
 }
 
-extern localEntity_t cg_activeLocalEntities;
-
 static void CG_LocalEnts_f (void)
 {
-	localEntity_t *le, *next;
-	int count;
-	int scripts;
-	int lights;
-	int sounds;
-	int loopSounds;
-	int fxEmitted;
-
-	count = 0;
-	scripts = 0;
-	fxEmitted = 0;
-	lights = 0;
-	sounds = 0;
-	loopSounds = 0;
-
-	le = cg_activeLocalEntities.prev;
-	for ( ; le != &cg_activeLocalEntities ; le = next ) {
-		count++;
-		// grab next now, so if the local entity is freed we
-		// still have it
-		next = le->prev;
-
-		if (le->fxType == LEFX_EMIT) {
-			fxEmitted++;
-			if (le->refEntity.reType == RT_SPRITE) {
-				Com_Printf("^3%5d ^7emitterId %f fxsprite timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
-			} else if (le->refEntity.reType == RT_SPRITE_FIXED) {
-				Com_Printf("^3%5d ^7emitterId %f fxsprite fixed timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
-			} else if (le->refEntity.reType == RT_MODEL) {
-				Com_Printf("^3%5d ^7emitterId %f fxmodel timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.model);
-			}
-		} else if (le->fxType == LEFX_SCRIPT) {
-			Com_Printf("^3%5d ^7emitterId %f fxscript timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
-			scripts++;
-		} else if (le->fxType == LEFX_EMIT_LIGHT) {
-			lights++;
-			Com_Printf("^3%5d ^7emitterId %f fxlight timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
-		} else if (le->fxType == LEFX_EMIT_SOUND) {
-			sounds++;
-			Com_Printf("^3%5d ^7emitterId %f fxsound timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
-		} else if (le->fxType == LEFX_EMIT_LOOPSOUND) {
-			loopSounds++;
-			Com_Printf("^3%5d ^7emitterId %f fxloopsound timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
-		}
-	}
-
-	Com_Printf("^5total %d   scripts %d   fxEmitted %d  lights %d  sounds %d  loopsounds %d\n", count, scripts, fxEmitted, lights, sounds, loopSounds);
+	CG_ListLocalEntities();
 }
 
 static void CG_ClearFX_f (void)
@@ -4925,7 +5223,7 @@ void CG_ChangeConfigString (const char *buffer, int index)
 	int i;
 	const char *dup;
 	int len;
-	char *old;
+	const char *old;
 
 	//Com_Printf("%d: '%s'\n", index, buffer);
 
@@ -5483,7 +5781,7 @@ static void CG_AddAtCommand_f (void)
 static void CG_ListAtCommands_f (void)
 {
 	int i;
-	atCommand_t *at;
+	const atCommand_t *at;
 
 	for (i = 0;  i < MAX_AT_COMMANDS;  i++) {
 		at = &cg.atCommands[i];
@@ -5534,8 +5832,8 @@ static void CG_SaveAtCommands_f (void)
 {
 	qhandle_t f;
 	int i;
-	char *s;
-	atCommand_t *at;
+	const char *s;
+	const atCommand_t *at;
 
 	if (!cg.atCommands[0].valid) {
 		return;
@@ -5731,7 +6029,7 @@ static void CG_EntityFreeze_f (void)
 		}
 		cg.freezeEntity[i] = !cg.freezeEntity[i];
 		if (cg.freezeEntity[i]) {
-			centity_t *cent;
+			const centity_t *cent;
 
 			if (i == cg.snap->ps.clientNum) {
 				cent = &cg.predictedPlayerEntity;
@@ -5819,7 +6117,7 @@ static void CG_MouseSeekUp_f (void)
 
 static void CG_PrintLegsInfo (int entNumber)
 {
-	lerpFrame_t *lf;
+	const lerpFrame_t *lf;
 
 	if (entNumber < 0  ||  entNumber >= MAX_GENTITIES) {
 		return;
@@ -6262,7 +6560,7 @@ static void CG_StopDumpEnts_f (void)
 	Com_Printf("stopped dumping entities\n");
 }
 
-void CG_RunFx (const char *name, vec3_t origin, vec3_t dir, vec3_t velocity)
+static void CG_RunFx (const char *name, const vec3_t origin, const vec3_t dir, const vec3_t velocity)
 {
 	int i;
 
@@ -6291,9 +6589,9 @@ void CG_RunFx (const char *name, vec3_t origin, vec3_t dir, vec3_t velocity)
 	Com_Printf("couldn't find fx '%s'\n", name);
 }
 
-void CG_RunFx_f (void)
+static void CG_RunFx_f (void)
 {
-	centity_t *cent;
+	const centity_t *cent;
 	vec3_t origin;
 	vec3_t velocity;
 	vec3_t dir;
@@ -6362,9 +6660,22 @@ void CG_RunFx_f (void)
 	CG_RunFx(arg, origin, dir, velocity);
 }
 
+static void CG_RunFxAll_f (void)
+{
+	char name[MAX_STRING_CHARS];
+
+	if (CG_Argc() < 2) {
+		Com_Printf("usage:  runfxall <fx name>\n");
+		return;
+	}
+	Q_strncpyz(name, CG_Argv(1), sizeof(name));
+
+	CG_RunFxAll(name);
+}
+
 static void CG_RunFxAt_f (void)
 {
-	centity_t *cent;
+	const centity_t *cent;
 	vec3_t origin;
 	vec3_t velocity;
 	vec3_t dir;
@@ -6447,7 +6758,7 @@ static void CG_ListFxScripts_f (void)
 static void CG_PrintDirVector_f (void)
 {
 	vec3_t dir;
-	centity_t *cent;
+	const centity_t *cent;
 
 	if (cg.freecam) {
 		AngleVectors(cg.freecamPlayerState.viewangles, dir, NULL, NULL);
@@ -6471,7 +6782,7 @@ static void CG_ImportQ3mmeCamera_f (void)
 	int len;
 	qhandle_t f;
 	char filename[MAX_QPATH];
-	char *line;
+	const char *line;
 	qboolean gotPoint;
 	cameraPoint_t *cp;
 
@@ -6621,9 +6932,22 @@ static void CG_AddDecal_f (void)
 	//sscanf(st, "%f %f %f %f %f %f %f %f %f %f %f %f %63s", &origin[0], &origin[1], &origin[2], &frontPoint[0], &frontPoint[1], &frontPoint[2], &orientation, &r, &g, &b, &a, &radius, shaderName);  // FIXME 63 MAX_QPATH
 }
 
+static void CG_PrintTime_f (void)
+{
+	int serverTime;
+
+	if (cg.snap) {
+		serverTime = cg.snap->serverTime;
+	} else {
+		serverTime = -1;
+	}
+
+	Com_Printf("cgame: %d %f   server: %d\n", cg.time, cg.ftime, serverTime);
+}
+
 typedef struct {
-	char	*cmd;
-	void	(*function)(void);
+	const char *cmd;
+	void (*function)(void);
 } consoleCommand_t;
 
 static consoleCommand_t	commands[] = {
@@ -6710,7 +7034,8 @@ static consoleCommand_t	commands[] = {
 	{ "testreplace", CG_TestReplaceShaderImage_f },
 	{ "stopmovement", CG_StopMovement_f },
 	{ "servertime", CG_ServerTime_f },
-	{ "printscores", CG_PrintScores_f },
+	//{ "printscores", CG_PrintScores_f },
+	{ "dumpstats", CG_DumpStats_f },
 	{ "setloopstart", CG_SetLoopStart_f },
 	{ "setloopend", CG_SetLoopEnd_f },
 	{ "loop", CG_Loop_f },
@@ -6792,12 +7117,14 @@ static consoleCommand_t	commands[] = {
 	{ "stopdumpents", CG_StopDumpEnts_f },
 	{ "runfx", CG_RunFx_f },
 	{ "runfxat", CG_RunFxAt_f },
+	{ "runfxall", CG_RunFxAll_f },
 	{ "listfxscripts", CG_ListFxScripts_f },
 	{ "printdirvector", CG_PrintDirVector_f },
 	//{ "importq3mmecamera", CG_ImportQ3mmeCamera_f },
 	{ "eventfilter", CG_EventFilter_f },
 	{ "listeventfilter", CG_ListEventFilter_f },
 	{ "adddecal", CG_AddDecal_f },
+	{ "printtime", CG_PrintTime_f },
 };
 
 

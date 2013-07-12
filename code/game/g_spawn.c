@@ -459,7 +459,7 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	}
 #endif
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	G_SpawnInt( "notta", "0", &i );
 	if ( i ) {
 		ADJUST_AREAPORTAL();

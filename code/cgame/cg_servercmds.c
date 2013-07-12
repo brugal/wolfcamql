@@ -5,10 +5,21 @@
 // be a valid snapshot this frame
 
 #include "cg_local.h"
+
+#include "cg_consolecmds.h"  // start camera
+#include "cg_draw.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_players.h"
+#include "cg_servercmds.h"
+#include "cg_syscalls.h"
+#include "sc.h"
+#include "wolfcam_servercmds.h"
+
 //#include "../../ui/menudef.h" // bk001205 - for Q3_ui as well
 #include "wolfcam_local.h"
 
-static void CG_CpmaParseScores (void);
 static void CG_MapRestart (void);
 
 
@@ -43,6 +54,10 @@ static int CG_ValidOrder(const char *p) {
 }
 #endif
 
+//FIXME hack for demos that might send stray premium scores commands to
+//      non premium users
+#define MAX_OLD_SCORE_TIME 500
+
 /*
 =================
 CG_ParseScores
@@ -51,16 +66,39 @@ CG_ParseScores
 */
 static void CG_ParseScores( void ) {
 	int		i;
-	//int powerups;
 	int redCount = 0;
 	int blueCount = 0;
 	int redTotalPing = 0;
 	int blueTotalPing = 0;
 	int SCSIZE;
 
+	if (cg.snap->serverTime > (cg.duelScoresServerTime + MAX_OLD_SCORE_TIME)) {
+		cg.duelScoresValid = qfalse;
+	}
+	if (cg.snap->serverTime > (cg.tdmScore.serverTime + MAX_OLD_SCORE_TIME)) {
+		if (cg.tdmScore.valid) {
+			memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
+			//Com_Printf("^1clearing tdm scores\n");
+		}
+		cg.tdmScore.valid = qfalse;
+	}
+	if (cg.snap->serverTime > (cg.ctfScore.serverTime + MAX_OLD_SCORE_TIME)) {
+		if (cg.ctfScore.valid) {
+			memset(&cg.ctfScore, 0, sizeof(cg.ctfScore));
+		}
+		cg.ctfScore.valid = qfalse;
+	}
+
+	cg.scoresValid = qtrue;
 	cg.numScores = atoi( CG_Argv( 1 ) );
 	if ( cg.numScores > MAX_CLIENTS ) {
+		Com_Printf("^3CG_ParseScores() cg.numScores (%d) > MAX_CLIENTS (%d)\n", cg.numScores, MAX_CLIENTS);
 		cg.numScores = MAX_CLIENTS;
+	}
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		cgs.clientinfo[i].scoreValid = qfalse;
+		cg.clientHasScore[i] = qfalse;
 	}
 
 	cg.teamScores[0] = atoi( CG_Argv( 2 ) );
@@ -68,9 +106,7 @@ static void CG_ParseScores( void ) {
 
 	cg.avgRedPing = 0;
 	cg.avgBluePing = 0;
-	memset( cg.scores, 0, sizeof( cg.scores ) );
-
-	//#define SCSIZE 18  // was 14
+	//memset( cg.scores, 0, sizeof( cg.scores ) );
 
 	if (cgs.protocol == PROTOCOL_QL) {
 		SCSIZE = 18;
@@ -79,9 +115,13 @@ static void CG_ParseScores( void ) {
 	}
 
 	for ( i = 0 ; i < cg.numScores ; i++ ) {
-		//int t1, t2, t3, t4;
+		int clientNum;
 
-		cg.scores[i].client = atoi( CG_Argv( i * SCSIZE + 4 ) );
+		clientNum = atoi( CG_Argv( i * SCSIZE + 4 ) );
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores() invalid client number %d\n", clientNum);
+		}
+		cg.scores[i].client = clientNum;
 		cg.scores[i].score = atoi( CG_Argv( i * SCSIZE + 5 ) );
 		cg.scores[i].ping = atoi( CG_Argv( i * SCSIZE + 6 ) );
 		cg.scores[i].time = atoi( CG_Argv( i * SCSIZE + 7 ) );
@@ -90,7 +130,7 @@ static void CG_ParseScores( void ) {
 		cg.scores[i].accuracy = atoi(CG_Argv(i * SCSIZE + 10));
 		cg.scores[i].impressiveCount = atoi(CG_Argv(i * SCSIZE + 11));
 		cg.scores[i].excellentCount = atoi(CG_Argv(i * SCSIZE + 12));
-		cg.scores[i].guantletCount = atoi(CG_Argv(i * SCSIZE + 13));
+		cg.scores[i].gauntletCount = atoi(CG_Argv(i * SCSIZE + 13));
 		cg.scores[i].defendCount = atoi(CG_Argv(i * SCSIZE + 14));
 		cg.scores[i].assistCount = atoi(CG_Argv(i * SCSIZE + 15));
 		cg.scores[i].perfect = atoi(CG_Argv(i * SCSIZE + 16));
@@ -123,8 +163,14 @@ static void CG_ParseScores( void ) {
 		}
 		cgs.clientinfo[ cg.scores[i].client ].score = cg.scores[i].score;
 		cgs.clientinfo[ cg.scores[i].client ].powerups = cg.scores[i].powerups;
+		cgs.clientinfo[cg.scores[i].client].scoreIndexNum = i;
+
+		cgs.clientinfo[cg.scores[i].client].scoreValid = qtrue;
+		cg.clientHasScore[cg.scores[i].client] = qtrue;
 
 		cg.scores[i].team = cgs.clientinfo[cg.scores[i].client].team;
+
+		//Com_Printf("^1sss  %s  score %d\n", cgs.clientinfo[cg.scores[i].client].name, cgs.clientinfo[cg.scores[i].client].score);
 
 		if (cg.scores[i].team == TEAM_RED) {
 			redCount++;
@@ -147,11 +193,24 @@ static void CG_ParseScores( void ) {
 		cg.avgBluePing = 0;
 	}
 
-#if 1  //def MISSIONPACK
+	//Com_Printf("^5red ping %d  blue ping %d\n", cg.avgRedPing, cg.avgBluePing);
+
+#if 1  //def MPACK
 	CG_SetScoreSelection(NULL);
 #endif
+
+	if (cgs.gametype == GT_TOURNAMENT) {
+		CG_SetDuelPlayers();
+	}
+
+	// check sizes
+	if (CG_Argc() != (i * SCSIZE + 4)) {
+		CG_Printf("^1CG_ParseScores() argc (%d) != %d\n", CG_Argc(), (i * SCSIZE + 4));
+	}
+
 //#undef SCSIZE
 }
+#undef MAX_OLD_SCORE_TIME
 
 static void CG_ParseRRScores (void)
 {
@@ -164,8 +223,10 @@ static void CG_ParseRRScores (void)
 
 	// they forgot score->team ?
 
+	cg.scoresValid = qtrue;
 	cg.numScores = atoi( CG_Argv( 1 ) );
 	if ( cg.numScores > MAX_CLIENTS ) {
+		Com_Printf("^3CG_ParseRRScores() numScores (%d) > MAX_CLIENTS (%d)\n", cg.numScores, MAX_CLIENTS);
 		cg.numScores = MAX_CLIENTS;
 	}
 
@@ -174,15 +235,23 @@ static void CG_ParseRRScores (void)
 
 	cg.avgRedPing = 0;
 	cg.avgBluePing = 0;
-	memset( cg.scores, 0, sizeof( cg.scores ) );
+	//memset( cg.scores, 0, sizeof( cg.scores ) );
 
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		cgs.clientinfo[i].scoreValid = qfalse;
+		cg.clientHasScore[i] = qfalse;
+	}
 
 	SCSIZE = 19;
 
 	for ( i = 0 ; i < cg.numScores ; i++ ) {
-		//int t1, t2, t3, t4;
+		int clientNum;
 
-		cg.scores[i].client = atoi( CG_Argv( i * SCSIZE + 4 ) );
+		clientNum = atoi( CG_Argv( i * SCSIZE + 4 ) );
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseRRScores() invalid client number %d\n", clientNum);
+		}
+		cg.scores[i].client = clientNum;
 		cg.scores[i].score = atoi( CG_Argv( i * SCSIZE + 5 ) );
 		// 6
 		cg.scores[i].ping = atoi( CG_Argv( i * SCSIZE + 7 ) );
@@ -192,7 +261,7 @@ static void CG_ParseRRScores (void)
 		cg.scores[i].accuracy = atoi(CG_Argv(i * SCSIZE + 11));
 		cg.scores[i].impressiveCount = atoi(CG_Argv(i * SCSIZE + 12));
 		cg.scores[i].excellentCount = atoi(CG_Argv(i * SCSIZE + 13));
-		cg.scores[i].guantletCount = atoi(CG_Argv(i * SCSIZE + 14));
+		cg.scores[i].gauntletCount = atoi(CG_Argv(i * SCSIZE + 14));
 		cg.scores[i].defendCount = atoi(CG_Argv(i * SCSIZE + 15));
 		cg.scores[i].assistCount = atoi(CG_Argv(i * SCSIZE + 16));
 		cg.scores[i].perfect = atoi(CG_Argv(i * SCSIZE + 17));
@@ -208,6 +277,10 @@ static void CG_ParseRRScores (void)
 			cg.scores[i].client = 0;
 		}
 		cgs.clientinfo[ cg.scores[i].client ].score = cg.scores[i].score;
+
+		cgs.clientinfo[cg.scores[i].client].scoreValid = qtrue;
+		cg.clientHasScore[cg.scores[i].client] = qtrue;
+
 		cgs.clientinfo[ cg.scores[i].client ].powerups = cg.scores[i].powerups;
 
 		cg.scores[i].team = cgs.clientinfo[cg.scores[i].client].team;
@@ -233,18 +306,23 @@ static void CG_ParseRRScores (void)
 		cg.avgBluePing = 0;
 	}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	CG_SetScoreSelection(NULL);
 #endif
+
+	// check sizes
+	if (CG_Argc() != (i * SCSIZE + 4)) {
+		CG_Printf("^1CG_ParseRRScores() argc (%d) != %d\n", CG_Argc(), (i * SCSIZE + 4));
+	}
 }
 
 static void CG_ParseCaScores (void)
 {
 	int i;
-	int n;
+	int clientNum;
 	tdmPlayerScore_t *s;
 
-	memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
+	//memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
 
 	cg.tdmScore.valid = qtrue;
 
@@ -254,8 +332,12 @@ static void CG_ParseCaScores (void)
 		if (!*CG_Argv(i + 1)) {
 			break;
 		}
-		n = atoi(CG_Argv(i + 1));
-		s = &cg.tdmScore.playerScore[n];
+		clientNum = atoi(CG_Argv(i + 1));
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseCaScores() invalid client number %d\n", clientNum);
+			return;
+		}
+		s = &cg.tdmScore.playerScore[clientNum];
 		s->valid = qtrue;
 
 		s->team = atoi(CG_Argv(i + 2));
@@ -265,15 +347,20 @@ static void CG_ParseCaScores (void)
 
 		i += 5;
 	}
+
+	// check sizes
+	if (CG_Argc() != (i + 1)) {
+		CG_Printf("^1CG_ParseCaScores() argc (%d) != %d\n", CG_Argc(), (i + 1));
+	}
 }
 
 static void CG_ParseTdmScores (void)
 {
 	int i;
-	int n;
+	int clientNum;
 	int team;
 
-	memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
+	//memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
 
 	cg.tdmScore.valid = qtrue;
 	cg.tdmScore.version = 1;
@@ -301,32 +388,42 @@ static void CG_ParseTdmScores (void)
 		if (!*CG_Argv(i)) {
 			break;
 		}
-		n = atoi(CG_Argv(i));
+		clientNum = atoi(CG_Argv(i));
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseTdmScores() invalid client number %d\n", clientNum);
+			return;
+		}
+
 		team = atoi(CG_Argv(i + 1));
 
 		if (team == TEAM_RED  ||  team == TEAM_BLUE) {
-			cg.tdmScore.playerScore[n].valid = qtrue;
+			cg.tdmScore.playerScore[clientNum].valid = qtrue;
 
-			cg.tdmScore.playerScore[n].team = atoi(CG_Argv(i + 1));
-			cg.tdmScore.playerScore[n].tks = atoi(CG_Argv(i + 2));
-			cg.tdmScore.playerScore[n].tkd = atoi(CG_Argv(i + 3));
-			cg.tdmScore.playerScore[n].damageDone = atoi(CG_Argv(i + 4));
+			cg.tdmScore.playerScore[clientNum].team = atoi(CG_Argv(i + 1));
+			cg.tdmScore.playerScore[clientNum].tks = atoi(CG_Argv(i + 2));
+			cg.tdmScore.playerScore[clientNum].tkd = atoi(CG_Argv(i + 3));
+			cg.tdmScore.playerScore[clientNum].damageDone = atoi(CG_Argv(i + 4));
 
-			//Com_Printf("%d  (%d %d %d   -- %d)\n", n, cg.tdmScore.playerScore[n].team, cg.tdmScore.playerScore[n].tkd, cg.tdmScore.playerScore[n].tks, cg.tdmScore.playerScore[n].damageDone);
+			//Com_Printf("%d  (%d %d %d   -- %d)\n", clientNum, cg.tdmScore.playerScore[clientNum].team, cg.tdmScore.playerScore[clientNum].tkd, cg.tdmScore.playerScore[clientNum].tks, cg.tdmScore.playerScore[clientNum].damageDone);
 
 		}
 
 		i += 5;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseTdmScores() argc (%d) != %d\n", CG_Argc(), i);
 	}
 }
 
 static void CG_ParseTdmScores2 (void)
 {
 	int i;
-	int n;
+	int clientNum;
 	int team;
 
-	memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
+	//memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
 
 	cg.tdmScore.valid = qtrue;
 	cg.tdmScore.version = 2;
@@ -369,35 +466,41 @@ static void CG_ParseTdmScores2 (void)
 		if (!*CG_Argv(i)) {
 			break;
 		}
-		n = atoi(CG_Argv(i));
+		clientNum = atoi(CG_Argv(i));
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseTdmScores2() invalid client number %d\n", clientNum);
+			return;
+		}
+
 		team = atoi(CG_Argv(i + 1));
 
 		if (team == TEAM_RED  ||  team == TEAM_BLUE) {
-			cg.tdmScore.playerScore[n].valid = qtrue;
+			cg.tdmScore.playerScore[clientNum].valid = qtrue;
 
-			cg.tdmScore.playerScore[n].team = atoi(CG_Argv(i + 1));
-			cg.tdmScore.playerScore[n].subscriber = atoi(CG_Argv(i + 2));
-			cg.tdmScore.playerScore[n].tks = atoi(CG_Argv(i + 3));
-			cg.tdmScore.playerScore[n].tkd = atoi(CG_Argv(i + 4));
-			cg.tdmScore.playerScore[n].damageDone = atoi(CG_Argv(i + 5));
+			cg.tdmScore.playerScore[clientNum].team = atoi(CG_Argv(i + 1));
+			cg.tdmScore.playerScore[clientNum].subscriber = atoi(CG_Argv(i + 2));
+			cg.tdmScore.playerScore[clientNum].tks = atoi(CG_Argv(i + 3));
+			cg.tdmScore.playerScore[clientNum].tkd = atoi(CG_Argv(i + 4));
+			cg.tdmScore.playerScore[clientNum].damageDone = atoi(CG_Argv(i + 5));
 
-			//Com_Printf("%d  (%d %d %d %d   -- %d)\n", n, cg.tdmScore.playerScore[n].u2, cg.tdmScore.playerScore[n].u3, cg.tdmScore.playerScore[n].u4, cg.tdmScore.playerScore[n].u5, cg.tdmScore.playerScore[n].damageDone);
-
-			//Com_Printf("%d  %d  %d\n", n, cg.tdmScore.playerScore[n].damageDone, cg.tdmScore.playerScore[n].subscriber);
-			//Com_Printf("%d  (%d %d %d %d  %d)\n", n, cg.tdmScore.playerScore[n].team, cg.tdmScore.playerScore[n].subscriber, cg.tdmScore.playerScore[n].tks, cg.tdmScore.playerScore[n].tkd, cg.tdmScore.playerScore[n].damageDone);
 		}
 
 		i += 6;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseTdmScores2() argc (%d) != %d\n", CG_Argc(), i);
 	}
 }
 
 static void CG_ParseCtfScores (void)
 {
 	int i;
-	int n;
+	int clientNum;
 	int team;
 
-	memset(&cg.ctfScore, 0, sizeof(cg.ctfScore));
+	//memset(&cg.ctfScore, 0, sizeof(cg.ctfScore));
 
 	cg.ctfScore.valid = qtrue;
 	cg.ctfScore.version = 0;
@@ -446,25 +549,30 @@ static void CG_ParseCtfScores (void)
 		if (!*CG_Argv(i)) {
 			break;
 		}
-		n = atoi(CG_Argv(i));
+		clientNum = atoi(CG_Argv(i));
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseCtfScores() invalid client number %d\n", clientNum);
+			return;
+		}
+
 		team = atoi(CG_Argv(i + 1));
 
 		if (team == TEAM_RED  ||  team == TEAM_BLUE) {
-			cg.ctfScore.playerScore[n].valid = qtrue;
+			cg.ctfScore.playerScore[clientNum].valid = qtrue;
 
-			cg.ctfScore.playerScore[n].team = atoi(CG_Argv(i + 1));
-			cg.ctfScore.playerScore[n].subscriber = atoi(CG_Argv(i + 2));
-			//cg.ctfScore.playerScore[n].tks = atoi(CG_Argv(i + 3));
-			//cg.ctfScore.playerScore[n].tkd = atoi(CG_Argv(i + 4));
-			//cg.ctfScore.playerScore[n].damageDone = atoi(CG_Argv(i + 5));
-
-			//Com_Printf("%d  (%d %d %d %d   -- %d)\n", n, cg.ctfScore.playerScore[n].u2, cg.ctfScore.playerScore[n].u3, cg.ctfScore.playerScore[n].u4, cg.ctfScore.playerScore[n].u5, cg.ctfScore.playerScore[n].damageDone);
-
-			//Com_Printf("%d  %d  %d\n", n, cg.ctfScore.playerScore[n].damageDone, cg.ctfScore.playerScore[n].subscriber);
-			//Com_Printf("%d  (%d %d %d %d  %d)\n", n, cg.ctfScore.playerScore[n].team, cg.ctfScore.playerScore[n].subscriber, cg.ctfScore.playerScore[n].tks, cg.ctfScore.playerScore[n].tkd, cg.ctfScore.playerScore[n].damageDone);
+			cg.ctfScore.playerScore[clientNum].team = atoi(CG_Argv(i + 1));
+			cg.ctfScore.playerScore[clientNum].subscriber = atoi(CG_Argv(i + 2));
+			//cg.ctfScore.playerScore[clientNum].tks = atoi(CG_Argv(i + 3));
+			//cg.ctfScore.playerScore[clientNum].tkd = atoi(CG_Argv(i + 4));
+			//cg.ctfScore.playerScore[clientNum].damageDone = atoi(CG_Argv(i + 5));
 		}
 
 		i += 3;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseCtfScores() argc (%d) != %d\n", CG_Argc(), i);
 	}
 }
 
@@ -475,6 +583,7 @@ static void CG_ParseCaStats (void)
 
 	clientNum = atoi(CG_Argv(1));
 	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^1CG_ParseCaStats() invalid client number %d\n", clientNum);
 		return;
 	}
 
@@ -500,7 +609,7 @@ static void CG_ParseCaStats (void)
 	s->pgAccuracy = atoi(CG_Argv(18));
 	s->pgKills = atoi(CG_Argv(19));
 
-	// the rest ....  
+	// the rest ....
 }
 
 
@@ -512,6 +621,7 @@ static void CG_ParseTdmStats (void)
 
 	clientNum = atoi(CG_Argv(1));
 	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^1CG_ParseTdmStats() invalid client number %d\n", clientNum);
 		return;
 	}
 
@@ -541,6 +651,7 @@ static void CG_ParseCtfStats (void)
 
 	clientNum = atoi(CG_Argv(1));
 	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^1CG_ParseCtfStats() invalid client number %d\n", clientNum);
 		return;
 	}
 
@@ -569,32 +680,38 @@ CG_ParseTeamInfo
 */
 static void CG_ParseTeamInfo( void ) {
 	int		i;
-	int		client;
+	int		clientNum;
 
 	numSortedTeamPlayers = atoi( CG_Argv( 1 ) );
 	//Com_Printf("CG_ParseTeamInfo numSortedTeamPlayers %d\n", numSortedTeamPlayers);
 
 	for ( i = 0 ; i < numSortedTeamPlayers ; i++ ) {
-		client = atoi( CG_Argv( i * 6 + 2 ) );
+		clientNum = atoi( CG_Argv( i * 6 + 2 ) );
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseTeamInfo() invalid client number %d\n", clientNum);
+			return;
+		}
+		sortedTeamPlayers[i] = clientNum;
+		//Com_Printf("%s\n", cgs.clientinfo[clientNum].name);
 
-		sortedTeamPlayers[i] = client;
-		//Com_Printf("%s\n", cgs.clientinfo[client].name);
-
-		cgs.clientinfo[ client ].location = atoi( CG_Argv( i * 6 + 3 ) );
-		cgs.clientinfo[ client ].health = atoi( CG_Argv( i * 6 + 4 ) );
-		cgs.clientinfo[ client ].armor = atoi( CG_Argv( i * 6 + 5 ) );
-		cgs.clientinfo[ client ].curWeapon = atoi( CG_Argv( i * 6 + 6 ) );
-		cgs.clientinfo[ client ].powerups = atoi( CG_Argv( i * 6 + 7 ) );
+		cgs.clientinfo[ clientNum ].location = atoi( CG_Argv( i * 6 + 3 ) );
+		cgs.clientinfo[ clientNum ].health = atoi( CG_Argv( i * 6 + 4 ) );
+		cgs.clientinfo[ clientNum ].armor = atoi( CG_Argv( i * 6 + 5 ) );
+		cgs.clientinfo[ clientNum ].curWeapon = atoi( CG_Argv( i * 6 + 6 ) );
+		cgs.clientinfo[ clientNum ].powerups = atoi( CG_Argv( i * 6 + 7 ) );
 	}
 }
 
 /*
+  QuakeLive  0.1.0.728 linux-i386 Feb 28 2013 13:20:49 (new scores)
+  0.1.0.719 linux-i386 Feb 21 2013 11:37:37  (has new scores commands)
+
   0.1.0.578  linux-i386 May 16 2012 17:53:25
   0.1.0.577  linux-i386 May 11 2012 16:18:15
        * last standing vo includes team number
   0.1.0.571  QuakeLive linux-i386 Apr 17 2012 14:51:00
   0.1.0.495  QuakeLive  0.1.0.495 linux-i386 Dec 14 2011 16:08:54
-       * new ctf scoreboard
+       * new ctf scoreboard, orange color for weapon bar low ammo text
   0.1.0.491  QuakeLive  0.1.0.491 linux-i386 Oct 20 2011 17:01:17
   0.1.0.484  QuakeLive  0.1.0.484 linux-i386 Jul 19 2011 17:51:58  (hotfix)
   0.1.0.482  QuakeLive  0.1.0.482 linux-i386 Jul 18 2011 10:19:51
@@ -621,10 +738,10 @@ static void CG_ParseTeamInfo( void ) {
   0.1.0.256  QuakeLive  0.1.0.256 linux-i386 Aug 10 2009 19:56:10
 */
 
-void CG_ParseVersion (const char *info)
+static void CG_ParseVersion (const char *info)
 {
-	char *val;
-	char *p;
+	const char *val;
+	const char *p;
 	char buffer[1024];
 	int bufferPos;
 	int i;
@@ -766,6 +883,74 @@ static void CG_LoadServerModelOverride (void)
 	}
 }
 
+void CG_LoadInfectedGameTypeModels (void)
+{
+	char *modelStr;
+	char *skin;
+	const char *dir;
+	const char *s;
+	int i;
+	clientInfo_t *ci;
+
+	ci = &cgs.bonesInfected;
+	memset(ci, 0, sizeof(*ci));
+
+	modelStr = "bones";
+	skin = "default";
+
+	Q_strncpyz(ci->modelName, modelStr, sizeof(ci->modelName));
+	Q_strncpyz(ci->skinName, skin, sizeof(ci->skinName));
+
+	Q_strncpyz(ci->headModelName, ci->modelName, sizeof(ci->headModelName));
+	Q_strncpyz(ci->headSkinName, ci->skinName, sizeof(ci->headSkinName));
+
+	CG_RegisterClientModelname(ci, ci->modelName, ci->skinName, ci->headModelName, ci->headSkinName, "", qtrue);
+
+	// sounds
+	dir = ci->modelName;
+	//fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+
+	for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
+		s = cg_customSoundNames[i];
+		if (!s) {
+			break;
+		}
+		ci->sounds[i] = 0;
+
+		// if the model didn't load use the sounds of the default model
+		ci->sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
+	}
+
+	ci = &cgs.urielInfected;
+	memset(ci, 0, sizeof(*ci));
+
+	modelStr = "uriel";
+	skin = "default";
+
+	Q_strncpyz(ci->modelName, modelStr, sizeof(ci->modelName));
+	Q_strncpyz(ci->skinName, skin, sizeof(ci->skinName));
+
+	Q_strncpyz(ci->headModelName, ci->modelName, sizeof(ci->headModelName));
+	Q_strncpyz(ci->headSkinName, ci->skinName, sizeof(ci->headSkinName));
+
+	CG_RegisterClientModelname(ci, ci->modelName, ci->skinName, ci->headModelName, ci->headSkinName, "", qtrue);
+
+	// sounds
+	dir = ci->modelName;
+	//fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+
+	for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
+		s = cg_customSoundNames[i];
+		if (!s) {
+			break;
+		}
+		ci->sounds[i] = 0;
+
+		// if the model didn't load use the sounds of the default model
+		ci->sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
+	}
+}
+
 static void CG_SetScorePlace (void)
 {
 	if (cgs.protocol != PROTOCOL_QL) {
@@ -789,12 +974,12 @@ and whenever the server updates any serverinfo flagged cvars
 void CG_ParseServerinfo (qboolean firstCall)
 {
 	const char	*info;
-	char	*mapname;
+	const char *str;
+	const char	*mapname;
 	int val, i, numClients;
 	int df;
 	qboolean instaGib;
 	const char *gametypeConfig = NULL;
-	const char *cinfo;
 
 	info = CG_ConfigString( CS_SERVERINFO );
 
@@ -851,6 +1036,7 @@ void CG_ParseServerinfo (qboolean firstCall)
 	trap_Cvar_Set("cg_gametype", va("%i", cgs.gametype));
 	trap_Cvar_Set("g_gametype", va("%i", cgs.gametype));
 
+	//FIXME q3 and ql differences
 	cgs.dmflags = atoi( Info_ValueForKey( info, "dmflags" ) );
 	df = cgs.dmflags;
 	df &= ~(DF_NO_SELF_HEALTH_DAMAGE | DF_NO_SELF_ARMOR_DAMAGE | DF_NO_FALLING_DAMAGE | DF_NO_FOOTSTEPS);
@@ -863,12 +1049,7 @@ void CG_ParseServerinfo (qboolean firstCall)
 	cgs.teamflags = atoi( Info_ValueForKey( info, "teamflags" ) );
 
 	if (cgs.cpma) {
-		cinfo = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
-		cgs.fraglimit = atoi(Info_ValueForKey(cinfo, "sl"));
-		cgs.timelimit = atoi(Info_ValueForKey(cinfo, "tl"));
-		cgs.realTimelimit = cgs.timelimit;
-		cgs.levelStartTime = atoi(Info_ValueForKey(cinfo, "ts"));
-		cg.warmup = atoi(Info_ValueForKey(cinfo, "tw"));
+		CG_CpmaParseGameState(qtrue);
 	} else {
 		cgs.scorelimit = atoi( Info_ValueForKey( info, "scorelimit" ) );
 		cgs.fraglimit = atoi( Info_ValueForKey( info, "fraglimit" ) );
@@ -877,33 +1058,21 @@ void CG_ParseServerinfo (qboolean firstCall)
 		cgs.capturelimit = atoi( Info_ValueForKey( info, "capturelimit" ) );
 		cgs.timelimit = atoi( Info_ValueForKey( info, "timelimit" ) );
 		cgs.realTimelimit = cgs.timelimit;
+
+		if (cgs.protocol == PROTOCOL_QL) {
+			str = CG_ConfigString(CS_ROUND_STATUS);
+			cgs.roundNum = atoi(Info_ValueForKey(str, "round"));
+			cgs.roundTurn = atoi(Info_ValueForKey(str, "turn"));
+		}
 	}
 
 	if (cgs.timelimit == 0) {
-#if 0
-		if (cgs.gametype == GT_FFA) {
-			cgs.timelimit = 15;
-		} else if (cgs.gametype == GT_TOURNAMENT) {
-			cgs.timelimit = 10;
-		} else if (cgs.gametype == GT_TEAM) {
-			cgs.timelimit = 20;
-		} else if (cgs.gametype == GT_CA) {
-			// great :(
-			// 2010-08-07 new servers didn't set -- dumb ass it just means unlimited time
-			cgs.timelimit = 20;
-		} else if (cgs.gametype == GT_CTF) {
-			cgs.timelimit = 20;
-		} else if (cgs.gametype == GT_FREEZETAG) {
-			cgs.timelimit = 15;
-		}
-#endif
 		if (cg_levelTimerDirection.integer == 4) {
 			int s, e;
 
 			s = trap_GetGameEndTime();
 			e = trap_GetGameStartTime();
 			if (s  &&  e) {
-				//cgs.timelimit = cg_levelTimerDefaultTimeLimit.integer;
 				cgs.timelimit = trap_GetGameEndTime() - trap_GetGameStartTime();
 				cgs.timelimit /= (60 * 1000);
 			} else {
@@ -927,6 +1096,44 @@ void CG_ParseServerinfo (qboolean firstCall)
 		CG_CpmaParseScores();
 	}
 
+	if (cgs.cpma) {
+		if (!Q_stricmp("cpm", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"))  ||  !Q_stricmp("pmc", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"))) {
+			cgs.cpm = qtrue;
+			cgs.rocketSpeed = 900;
+			trap_Cvar_Set("cg_armorTiered", "1");
+			//Com_Printf("^5cpm gameplay\n");
+		} else {
+			cgs.cpm = qfalse;
+			cgs.rocketSpeed = 800;
+			trap_Cvar_Set("cg_armorTiered", "0");
+			//Com_Printf("^5not cpm gameplay\n");
+		}
+	}
+
+	if (!cgs.cpma) {
+		cgs.voteModified = qfalse;
+		cgs.voteTime = atoi(CG_ConfigString(CS_VOTE_TIME));
+		cgs.voteYes = atoi(CG_ConfigString(CS_VOTE_YES));
+		cgs.voteNo = atoi(CG_ConfigString(CS_VOTE_NO));
+		Q_strncpyz(cgs.voteString, CG_ConfigString(CS_VOTE_STRING), sizeof(cgs.voteString));
+
+		//FIXME team votes
+		if (cgs.protocol == PROTOCOL_QL) {
+			//FIXME team vote not seen yet in ql
+		} else {
+			cgs.teamVoteTime[0] = atoi(CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_TIME + 0));
+			cgs.teamVoteTime[1] = atoi(CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_TIME + 1));
+			Q_strncpyz(cgs.teamVoteString[0], CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_STRING + 0), MAX_STRING_TOKENS);
+			Q_strncpyz(cgs.teamVoteString[1], CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_STRING + 1), MAX_STRING_TOKENS);
+			cgs.teamVoteYes[0] = atoi(CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_YES + 0));
+			cgs.teamVoteYes[1] = atoi(CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_YES + 1));
+			cgs.teamVoteNo[0] = atoi(CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_NO + 0));
+			cgs.teamVoteNo[1] = atoi(CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_NO + 1));
+			cgs.teamVoteModified[0] = qfalse;
+			cgs.teamVoteModified[1] = qfalse;
+		}
+	}
+
 	if (cgs.protocol != PROTOCOL_QL) {
 		if (firstCall) {
 			Q_strncpyz(cgs.redTeamClanTag, "Red Team", sizeof(cgs.redTeamClanTag));
@@ -938,8 +1145,14 @@ void CG_ParseServerinfo (qboolean firstCall)
 			trap_Cvar_Set("g_blueTeam", cgs.blueTeamName);
 		}
 		CG_BuildSpectatorString();
+	}
+
+	if (cgs.protocol != PROTOCOL_QL) {
 		return;
 	}
+
+	//////////////////////////////////////////////////
+	// from here on only PROTOCOL_QL
 
 	CG_SetScorePlace();
 
@@ -974,14 +1187,12 @@ void CG_ParseServerinfo (qboolean firstCall)
 	}
 
 	cgs.sv_fps = atoi(Info_ValueForKey(info, "sv_fps"));
-	//Com_Printf("sv_fps %d\n", cgs.sv_fps);
 
-	//Com_Printf("^5sv_skillRating %s\n", Info_ValueForKey(info, "sv_skillrating"));
 	val = atoi(Info_ValueForKey(info, "sv_skillrating"));
 	trap_Cvar_Set("sv_skillrating", va("%d", val));
 
 	//FIXME breaks with seeking
-	if (cgs.protocol == PROTOCOL_QL  &&  (cgs.lastConnectedDisconnectedPlayer > -1  &&  cgs.lastConnectedDisconnectedPlayerName[0]  &&  cgs.lastConnectedDisconnectedPlayerClientInfo  &&  cgs.needToCheckSkillRating)) {
+	if (cgs.lastConnectedDisconnectedPlayer > -1  &&  cgs.lastConnectedDisconnectedPlayerName[0]  &&  cgs.lastConnectedDisconnectedPlayerClientInfo  &&  cgs.needToCheckSkillRating) {
 		for (i = 0, numClients = 0;  i < MAX_CLIENTS;  i++) {
 			if (cgs.clientinfo[i].infoValid) {
 				numClients++;
@@ -1015,23 +1226,30 @@ void CG_ParseServerinfo (qboolean firstCall)
 		}
 	} else {
 	}
+
 	cgs.skillRating = val;
 	//Com_Printf("^3sv_skillRating %d\n", val);
 	//FIXME in CG_SetConfigValues
 	CG_ParseVersion(info);
 
 	if (CG_CheckQlVersion(0, 1, 0, 495)) {
+		const char *val;
+
 		info = CG_ConfigString(CS_ARMOR_TIERED);
-		trap_Cvar_Set("cg_armorTiered", Info_ValueForKey(info, "armor_tiered"));
+		val = Info_ValueForKey(info, "armor_tiered");
+		if (*val) {
+			cgs.armorTiered = atoi(val);
+		} else {
+			cgs.armorTiered = qfalse;
+		}
+		trap_Cvar_Set("cg_armorTiered", val);
 	}
 
 
 	if (CG_CheckQlVersion(0, 1, 0, 495)) {
 		info = CG_ConfigString(CS_CUSTOM_PLAYER_MODELS2);
-		//Com_Printf("info2:  %s\n", info);
 	} else {
 		info = CG_ConfigString(CS_CUSTOM_PLAYER_MODELS);
-		//Com_Printf("info1:  %s\n", info);
 	}
 
 	if (*info) {
@@ -1081,6 +1299,16 @@ void CG_ParseServerinfo (qboolean firstCall)
 			Com_Printf("FIXME unknown gametype: %d\n", cgs.gametype);
 		}
 	}
+
+	//FIXME check for first call
+	cgs.timeoutBeginTime = atoi(CG_ConfigString(CS_TIMEOUT_BEGIN_TIME));
+	cgs.timeoutEndTime = atoi(CG_ConfigString(CS_TIMEOUT_END_TIME));
+	cgs.redTeamTimeoutsLeft = atoi(CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT));
+	cgs.blueTeamTimeoutsLeft = atoi(CG_ConfigString(CS_BLUE_TEAM_TIMEOUTS_LEFT));
+
+	if (firstCall) {
+		cgs.customServerSettings = atoi(CG_ConfigString(CS_CUSTOM_SERVER_SETTINGS));
+	}
 }
 
 /*
@@ -1104,6 +1332,7 @@ void CG_ParseWarmup( void ) {
 	}
 
 	cg.warmupCount = -1;
+	//Com_Printf("^1sssssssssssssssssssssss  %d\n", warmup);
 
 	if ( warmup == 0 && cg.warmup ) {
 		Com_Printf("reset match start\n");
@@ -1164,7 +1393,7 @@ void CG_SetConfigValues( void ) {
 		cgs.redflag = s[0] - '0';
 		cgs.blueflag = s[1] - '0';
 	}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	else if( cgs.gametype == GT_1FCTF ) {
 		s = CG_ConfigString( CS_FLAGSTATUS );
 		cgs.flagStatus = s[0] - '0';
@@ -1249,43 +1478,6 @@ void CG_InterMissionHit (void)
 #endif
 
 	//Com_Printf("intermission hit\n");
-	if (cgs.gametype == GT_FFA  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endscore_menu_ffa");
-	} else if (cgs.gametype == GT_TOURNAMENT  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endscore_menu_duel");
-	} else if (cgs.gametype == GT_TEAM  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_tdm");
-	} else if (cgs.gametype == GT_CA  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ca");
-	} else if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS)  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ctf");
-	} else if (cgs.gametype == GT_FREEZETAG  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ft");
-	} else if (cgs.gametype == GT_1FCTF  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_1fctf");
-	} else if (cgs.gametype == GT_HARVESTER  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_har");
-	} else if (cgs.gametype == GT_DOMINATION  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_dom");
-	} else if (cgs.gametype == GT_CTFS  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ad");
-	} else if (cgs.gametype == GT_RED_ROVER  &&  !cg_scoreBoardOld.integer) {
-		cg.menuScoreboard = Menus_FindByName("endscore_menu_ffa");
-	} else {
-		if ( cgs.gametype >= GT_TEAM ) {
-			cg.menuScoreboard = Menus_FindByName("endteamscore_menu");
-			if (!cg.menuScoreboard) {
-				Com_Printf("couldn't find teamscore_menu\n");
-			}
-		} else {
-			cg.menuScoreboard = Menus_FindByName("endscore_menu");
-			if (!cg.menuScoreboard) {
-				Com_Printf("couldn't find score_menu\n");
-			}
-		}
-	}
-
-	//Com_Printf("intermission menu: %p\n", cg.menuScoreboard);
 }
 
 static qboolean CG_IsModelConfigString (int num, int *modelNum)
@@ -1426,17 +1618,21 @@ static qboolean CG_IsTeamVoteString (int num, int *newNum)
 	return qfalse;
 }
 
-static void CG_CpmaParseScores (void)
+void CG_CpmaParseScores (void)
 {
 	const char *str;
 	int i;
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 
 	str = CG_ConfigStringNoConvert(CSCPMA_SCORES);
 
 	if (cgs.gametype >= GT_TEAM) {
 		cgs.scores1 = atoi(Info_ValueForKey(str, "sr"));
 		cgs.scores2 = atoi(Info_ValueForKey(str, "sb"));
+		cgs.bluePlayersLeft = atoi(Info_ValueForKey(str, "pb"));
+		cgs.redPlayersLeft = atoi(Info_ValueForKey(str, "pr"));
+		// tw round time
+
 	} else {  // duel or ffa
 		cgs.scores1 = atoi(Info_ValueForKey(str, "sr"));
 		cgs.scores2 = atoi(Info_ValueForKey(str, "sb"));
@@ -1486,71 +1682,154 @@ static void CG_CpmaParseScores (void)
 	//Com_Printf("^5FIXME red %d  blue %d\n", cgs.scores1, cgs.scores2);
 }
 
-static qboolean CG_CpmaCs (int num)
+void CG_CpmaParseGameState (qboolean initial)
 {
 	const char *str;
-	int x;
+	int x, td, te, ts;
 
-	str = CG_ConfigStringNoConvert(num);
+	//FIXME plays buzzer sound to mark intermission?
+
+	str = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
+
+	//Com_Printf("%d ^2%s\n", cg.snap ? cg.snap->serverTime : 0, str);
+
+	/*
+
+first timeout at 1:04 or something:
+
+1:14 Wait another 0.0s to issue timeout
+1:15 10.rat ate 10.rat's rocket
+1:15 10.rat blew himself up.
+165994 sb\2\sr\5\pm\2\t\3\f\139395221\i\2147451900\tw\0\ts\89302\td\0\te\76692\to\5\tl\20\sl\0\h\100\a\0\wr\30\pu\90\vt\0\vs\\vf\0\va\0\p\4\cr\2\cb\2\nr\\nb\\
+1:16 lastte 76692
+196420 sb\2\sr\5\pm\2\t\3\f\139395221\i\2147451900\tw\0\ts\89302\td\30426\te\76692\to\5\tl\20\sl\0\h\100\a\0\wr\30\pu\90\vt\0\vs\\vf\0\va\0\p\4\cr\2\cb\2\nr\\nb\\
+201403 sb\2\sr\5\pm\2\t\3\f\139395220\i\2147451900\tw\0\ts\89302\td\35409\te\0\to\5\tl\20\sl\0\h\100\a\0\wr\30\pu\90\vt\0\vs\\vf\0\va\0\p\4\cr\2\cb\2\nr\\nb\\
+0:41 lastte 0
+
+te + ts + td == serverTime
+
+	*/
+
+	/**********
+
+		  sb\0\sr\0\pm\2\t\1\f\139395204\i\16745468\tw\63450\ts\0\td\0\te\0\to\2\tl\10\sl\0\h\100\a\0\wr\15\pu\90\vt\0\vs\\vf\0\va\0\p\2\cr\0\cb\0\nr\\nb\	\
+
+		  pm\2\t\1\f\139395204\i\16745468\td\0\to\2\wr\15\pu\90\p\2\cr\0\cb\0\nr\\nb\\
+
+		  // pm  promode?
+		  // f flags?  changes with gameplay
+		  // p changes with gameplay
+
+		  sb  score blue
+		  sr  score red
+		  tw  warmup time
+		  ts  level start time
+		  td  time delay ?
+		  tl  time limit
+		  sl  score limit
+		  te  timeout end?
+		  vt  vote time
+		  vf  vote for
+		  va  vote against
+		  vs  vote string
+		  h   starting health
+          a   starting armor
+		  wr  weapon respawn?
+		  pu  power up respawn?
+		  pb  max blue players?
+		  pr  max red players?
+
+		  t   ?  seen 5 for pub ca,  teamsize?
+
+		**********/
+
+		cgs.fraglimit = atoi(Info_ValueForKey(str, "sl"));  // score limit
+		//cgs.capturelimit = cgs.fraglimit;
+		cgs.scorelimit = cgs.fraglimit;
+		cgs.roundlimit = cgs.fraglimit;
+		cgs.timelimit = atoi(Info_ValueForKey(str, "tl"));
+		cgs.realTimelimit = cgs.timelimit;
+		ts = atoi(Info_ValueForKey(str, "ts"));
+		cgs.levelStartTime = ts;
+		td = atoi(Info_ValueForKey(str, "td"));
+		cgs.levelStartTime += td;
+
+		x = atoi(Info_ValueForKey(str, "tw"));
+		if (!x  &&  cg.warmup) {
+			cg.warmup = x;  // to play sound
+			CG_MapRestart();  // hmmmmmm no? not sure  //FIXME seeking
+		}
+		cg.warmup = x;
+
+		//Com_Printf("%f  level startTime %f\n", cg.ftime, (float) cgs.levelStartTime);
+
+		cgs.redPlayersLeft = atoi(Info_ValueForKey(str, "pr"));
+		cgs.bluePlayersLeft = atoi(Info_ValueForKey(str, "pb"));
+
+		x = atoi(Info_ValueForKey(str, "vt"));
+		if (x) {
+			if (x != cgs.voteTime  &&  !initial) {
+				if (cg_audioAnnouncerVote.integer) {
+					trap_S_StartLocalSound(cgs.media.voteNow, CHAN_ANNOUNCER);
+				}
+			}
+			cgs.voteModified = qtrue;
+		}
+
+		cgs.voteTime = x;
+		cgs.voteYes = atoi(Info_ValueForKey(str, "vf"));
+		cgs.voteNo = atoi(Info_ValueForKey(str, "va"));
+		Q_strncpyz(cgs.voteString, Info_ValueForKey(str, "vs"), sizeof(cgs.voteString));
+
+		te = atoi(Info_ValueForKey(str, "te"));
+
+		if (te  &&  cgs.cpmaLastTe == 0) {  // timeout called
+			cgs.timeoutEndTime = ts + td + te + (320 * 1000);
+			cgs.timeoutBeginTime = ts + td + te;
+			if (!initial) {
+				trap_S_StartLocalSound(cgs.media.klaxon1, CHAN_LOCAL_SOUND);
+				CG_ResetTimedItemPickupTimes();  //FIXME take out eventually
+			}
+		} else if (te  &&  td != cgs.cpmaLastTd) {  // timein called
+			cgs.timeoutBeginTime = ts + td + te;
+			// for cpma compat:
+			if (!initial) {
+				//trap_S_StartLocalSound(cgs.media.countPrepareSound, CHAN_LOCAL_SOUND);
+			}
+		} else if (!te  &&  cgs.cpmaLastTe) {  // timeout over
+			cgs.timeoutEndTime = 0;
+			cgs.timeoutBeginTime = 0;
+			// for cpma compat:
+			if (!initial) {
+				//trap_S_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
+			}
+		}
+
+		cgs.cpmaLastTe = te;
+		cgs.cpmaLastTd = td;
+}
+
+static qboolean CG_CpmaCs (int num)
+{
+	//FIXME plays buzzer sound to mark intermission?
 
 	if (num == CSCPMA_SCORES) {
 		CG_CpmaParseScores();
 		// hack for overtime or end of buzzer scores that trigger
 		// PM_INTERMISSION  but scores haven't updated
+		//FIXME no, not here
 		if (!cg.intermissionStarted  &&  cg.snap->ps.pm_type == PM_INTERMISSION) {
 			trap_SendConsoleCommand("exec gameend.cfg\n");
 			CG_InterMissionHit();
 			cg.intermissionStarted = cg.time;
 		}
-	} else if (num == 657) {  //CSCPMA_GAMESTATE) {  //FIXME wtf?
-		//Com_Printf("^1%f  657  '%s'\n", cg.ftime, str);
-		if (1) {  //(!*str) {
-			str = CG_ConfigStringNoConvert(672);
-		} else {
-			Com_Printf("^2st valid '%s'\n", str);
-		}
-		cgs.fraglimit = atoi(Info_ValueForKey(str, "sl"));
-		cgs.timelimit = atoi(Info_ValueForKey(str, "tl"));
-		cgs.realTimelimit = cgs.timelimit;
-		cgs.levelStartTime = atoi(Info_ValueForKey(str, "ts"));
-
-		x = atoi(Info_ValueForKey(str, "tw"));
-		if (!x  &&  cg.warmup) {
-			cg.warmup = x;  // to play sound
-			CG_MapRestart();
-		}
-		cg.warmup = x;
-
-		//Com_Printf("%f  level startTime %f\n", cg.ftime, (float) cgs.levelStartTime);
-		//} else if (num == CSCPMA_GAMESTATE) {
-		//Com_Printf("^5gamestate\n");
-		x = atoi(Info_ValueForKey(str, "vt"));
-		if (x) {
-			//Com_Printf("^3vote %d\n", x);
-			if (x != cgs.voteTime) {
-				if (cg_audioAnnouncerVote.integer) {
-					trap_S_StartLocalSound(cgs.media.voteNow, CHAN_ANNOUNCER);
-				}
-			}
-			cgs.voteTime = x;
-			cgs.voteModified = qtrue;
-			cgs.voteYes = atoi(Info_ValueForKey(str, "vf"));
-			cgs.voteNo = atoi(Info_ValueForKey(str, "va"));
-			Q_strncpyz(cgs.voteString, Info_ValueForKey(str, "vs"), sizeof(cgs.voteString));
-		}
-		x = atoi(Info_ValueForKey(str, "te"));
-		if (x  &&  x != cgs.cpmaTimeoutTime) {
-			cgs.timeoutEndTime = x + cg.snap->serverTime;
-			cgs.timeoutBeginTime = cg.snap->serverTime;
-			cgs.timeoutBeginCgTime = cg.time;
-			cgs.cpmaTimeoutTime = x;
-			trap_S_StartLocalSound(cgs.media.klaxon1, CHAN_LOCAL_SOUND);
-		} else if (!x) {
-			cgs.timeoutBeginTime = 0;
-			cgs.timeoutBeginCgTime = 0;
-			cgs.timeoutEndTime = 0;
-		}
+	} else if (num == CSCPMA_GAMESTATE) {
+		CG_CpmaParseGameState(qfalse);
 	} else {
+		const char *str;
+
+		str = CG_ConfigStringNoConvert(num);
+		CG_Printf("^3unknown cpma config string: \n'%s'\n", str);
 		return qfalse;
 	}
 
@@ -1668,8 +1947,8 @@ static void CG_ConfigStringModified( void ) {
 		cgs.teamVoteNo[n] = atoi(str);
 		cgs.teamVoteModified[n] = qtrue;
 	} else if (CG_IsTeamVoteString(numOrig, &n)) {
-		Q_strncpyz( cgs.teamVoteString[n], str, sizeof( cgs.teamVoteString ) );
-#if 1 //def MISSIONPACK
+		Q_strncpyz(cgs.teamVoteString[n], str, MAX_STRING_TOKENS);
+#if 1 //def MPACK
 		//FIXME wc and if you are not on the same team??
 		if (*str  &&  cg_audioAnnouncerTeamVote.integer) {
 			trap_S_StartLocalSound( cgs.media.voteNow, CHAN_ANNOUNCER );
@@ -1677,10 +1956,28 @@ static void CG_ConfigStringModified( void ) {
 #endif
 	} else if ( num == CS_INTERMISSION ) {
 		if (cg.intermissionStarted == 0) {
+			CG_InterMissionHit();
 			trap_SendConsoleCommand("exec gameend.cfg\n");
 		}
-		cg.intermissionStarted = atoi( str );
-		CG_InterMissionHit();
+
+		//FIXME quakelive has qtrue for intermission
+		if (cgs.protocol == PROTOCOL_QL) {
+			if (*str) {
+				cg.intermissionStarted = qtrue;
+			} else {
+				cg.intermissionStarted = qfalse;
+			}
+		} else {
+			cg.intermissionStarted = atoi( str );
+		}
+
+#if 0
+		if (cg.intermissionStarted) {
+			CG_InterMissionHit();
+		}
+
+		Com_Printf("^1intermission %d\n", cg.intermissionStarted);
+#endif
 	} else if (CG_IsModelConfigString(numOrig, &n)) {
 		//Com_Printf("model string\n");
 		cgs.gameModels[n] = trap_R_RegisterModel( str );
@@ -1700,8 +1997,13 @@ static void CG_ConfigStringModified( void ) {
 			cgs.gameSounds[ n + 1] = trap_S_RegisterSound( str, qfalse );  //FIXME +1 check
 		}
 	} else if (CG_IsPlayerConfigString(numOrig, &n)) {
+		//int start;
+
+		//start = trap_Milliseconds();
 		//Com_Printf("cs client %d\n", n);
 		CG_NewClientInfo(n);
+		//Com_Printf("^5client:  %d ms\n", trap_Milliseconds() - start);
+
 		CG_BuildSpectatorString();
 		//Com_Printf("build spec string\n");
 	} else if ( num == CS_FLAGSTATUS ) {
@@ -1711,9 +2013,9 @@ static void CG_ConfigStringModified( void ) {
 			cgs.redflag = str[0] - '0';
 			cgs.blueflag = str[1] - '0';
 		}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 		else if( cgs.gametype == GT_1FCTF ) {
-			cgs.flagStatus = str[0] - '0';
+			cgs.flagStatus = atoi(str);
 		}
 #endif
 	}
@@ -1736,7 +2038,7 @@ static void CG_ConfigStringModified( void ) {
 	} else if (num == CS_BLUE_PLAYERS_LEFT) {
 		cgs.bluePlayersLeft = atoi(str);
 	} else if (num == CS_ROUND_STATUS  &&  (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER)) {
-		//Com_Printf("%d FIXME %d CS_ROUND_STATUS  %s\n", cg.time, num, str);
+		//Com_Printf("^3%d FIXME %d CS_ROUND_STATUS  %s\n", cg.time, num, str);
 		if (str[0] == '\0') {
 			cgs.roundStarted = qtrue;
 			for (i = 0;  i < cg.numScores;  i++) {
@@ -1747,6 +2049,7 @@ static void CG_ConfigStringModified( void ) {
 			}
 			cgs.thirtySecondWarningPlayed = qfalse;
 		} else {
+			//cgs.roundStarted = qfalse;
 			cgs.roundBeginTime = atoi(Info_ValueForKey(str, "time"));
 			cgs.roundNum = atoi(Info_ValueForKey(str, "round"));
 			cgs.roundTurn = atoi(Info_ValueForKey(str, "turn"));
@@ -1755,13 +2058,8 @@ static void CG_ConfigStringModified( void ) {
 	} else if (num == CS_ROUND_TIME  &&  (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER)) {
 		int val;
 
-#if 0
-		cgs.redPlayersLeft = atoi(CG_ConfigString(CS_RED_PLAYERS_LEFT));
-		cgs.bluePlayersLeft = atoi(CG_ConfigString(CS_BLUE_PLAYERS_LEFT));
-		Com_Printf("^1red ^7%d   ^4blue ^7%d\n", cgs.redPlayersLeft, cgs.bluePlayersLeft);
-#endif
-
 		val = atoi(str);
+		//Com_Printf("%d CS_ROUND_TIME %d\n", cg.time, val);
 		if (val > 0  &&  !cgs.roundStarted) {
 			//trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 			cgs.roundStarted = qtrue;
@@ -1771,42 +2069,13 @@ static void CG_ConfigStringModified( void ) {
 			cgs.roundStarted = qfalse;
 			cgs.roundBeginTime = -999;
 			cgs.countDownSoundPlayed = -999;
-#if 0
-			if (cgs.gametype == GT_CA) {
-				if (cgs.redPlayersLeft == 0) {
-					if (cg_audioAnnouncerRound.integer) {
-						trap_S_StartLocalSound(cgs.media.blueWinsRoundSound, CHAN_ANNOUNCER);
-					}
-					CG_CenterPrint("Blue Wins the Round", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-				} else if (cgs.bluePlayersLeft == 0) {
-					if (cg_audioAnnouncerRound.integer) {
-						trap_S_StartLocalSound(cgs.media.redWinsRoundSound, CHAN_ANNOUNCER);
-					}
-					CG_CenterPrint("Red Wins the Round", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-				} else {
-					if (cg_audioAnnouncerRound.integer) {
-						trap_S_StartLocalSound(cgs.media.roundDrawSound, CHAN_ANNOUNCER);
-					}
-					CG_CenterPrint("Round Draw", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-				}
-			} else if (cgs.gametype == GT_FREEZETAG) {
-				if (cgs.redPlayersLeft != 0  &&  cgs.bluePlayersLeft != 0) {
-					if (cg_audioAnnouncerRound.integer) {
-						trap_S_StartLocalSound(cgs.media.roundDrawSound, CHAN_ANNOUNCER);
-					}
-					CG_CenterPrint("Round Draw", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-				}
-			}
-#endif
 			trap_SendConsoleCommand("exec roundend.cfg\n");
 			//Com_Printf("round end\n");
 		}
 	} else if (num == CS_TIMEOUT_BEGIN_TIME) {
 		cgs.timeoutBeginTime = atoi(str);
-		cgs.timeoutBeginCgTime = cg.time;
 	} else if (num == CS_TIMEOUT_END_TIME) {
 		cgs.timeoutEndTime = atoi(str);
-		//FIXME do shit
 	} else if (num == CS_RED_TEAM_TIMEOUTS_LEFT) {
 		cgs.redTeamTimeoutsLeft = atoi(str);
 	} else if (num == CS_BLUE_TEAM_TIMEOUTS_LEFT) {
@@ -1893,6 +2162,24 @@ static void CG_ConfigStringModified( void ) {
 	} else if (num == CS_DOMINATION_BLUE_POINTS) {
 		cgs.dominationBluePoints = atoi(str);
 	} else if (num == CS_ROUND_WINNERS) {
+	} else if (num == CS_MAP_VOTE_INFO) {
+	} else if (num == CS_MAP_VOTE_COUNT) {
+	} else if (num == CS_DISABLE_MAP_VOTE) {
+	} else if (num == CS_PMOVE_SETTINGS) {
+	} else if (num == CS_WEAPON_SETTINGS2  &&  newcs) {
+	} else if (num == CS_WEAPON_SETTINGS  &&  !newcs) {
+	} else if (num == CS_CUSTOM_SERVER_SETTINGS) {
+		cgs.customServerSettings = atoi(str);
+	} else if (num == CS_ARMOR_TIERED  &&  newcs) {
+		const char *val;
+
+		val = Info_ValueForKey(str, "armor_tiered");
+		if (*val) {
+			cgs.armorTiered = atoi(val);
+		} else {
+			cgs.armorTiered = qfalse;
+		}
+		trap_Cvar_Set("cg_armorTiered", val);
 	} else {
 		CG_Printf("%d unknown config string modified  %d: %s\n", cg.time, num, str);
 	}
@@ -1907,7 +2194,8 @@ CG_AddToTeamChat
 */
 static void CG_AddToTeamChat( const char *str ) {
 	int len;
-	char *p, *ls;
+	char *p;
+    const char *ls;
 	int lastcolor;
 	int chatHeight;
 
@@ -1988,7 +2276,7 @@ static void CG_MapRestart( void ) {
 	//int i;
 	//int val;
 
-	Com_Printf("reset map restart\n");
+	Com_Printf("cgame: map restart\n");
 
 	if ( cg_showmiss.integer ) {
 		CG_Printf( "CG_MapRestart\n" );
@@ -2011,6 +2299,7 @@ static void CG_MapRestart( void ) {
 	cg.attackerTime = 0;
 	cg.voiceTime = 0;
 	cg.rewardTime = 0;
+	cg.rewardStack = 0;
 	cg.soundTime = 0;
 #ifdef MISSIONPACK
 	cg.voiceChatTime = 0;
@@ -2063,7 +2352,11 @@ static void CG_MapRestart( void ) {
 	}
 #endif
 	//trap_Cvar_Set("cg_thirdPerson", "0");  //FIXME wolfcam
-	cg.matchRestartServerTime = cg.snap->serverTime;
+	if (cg.snap) {
+		cg.matchRestartServerTime = cg.snap->serverTime;
+	} else {
+		cg.matchRestartServerTime = 0;
+	}
 	CG_ParseWarmup();
 }
 
@@ -2106,7 +2399,7 @@ headModelVoiceChat_t headModelVoiceChat[MAX_HEADMODELS];
 CG_ParseVoiceChats
 =================
 */
-int CG_ParseVoiceChats( const char *filename, voiceChatList_t *voiceChatList, int maxVoiceChats ) {
+static int CG_ParseVoiceChats( const char *filename, voiceChatList_t *voiceChatList, int maxVoiceChats ) {
 	int	len, i;
 	fileHandle_t f;
 	char buf[MAX_VOICEFILESIZE];
@@ -2227,12 +2520,12 @@ void CG_LoadVoiceChats( void ) {
 CG_HeadModelVoiceChats
 =================
 */
-int CG_HeadModelVoiceChats( char *filename ) {
+static int CG_HeadModelVoiceChats( const char *filename ) {
 	int	len, i;
 	fileHandle_t f;
 	char buf[MAX_VOICEFILESIZE];
 	char **p, *ptr;
-	char *token;
+	const char *token;
 
 	len = trap_FS_FOpenFile( filename, &f, FS_READ );
 	if ( !f ) {
@@ -2274,7 +2567,7 @@ int CG_HeadModelVoiceChats( char *filename ) {
 CG_GetVoiceChat
 =================
 */
-int CG_GetVoiceChat( voiceChatList_t *voiceChatList, const char *id, sfxHandle_t *snd, char **chat) {
+static int CG_GetVoiceChat( const voiceChatList_t *voiceChatList, const char *id, sfxHandle_t *snd, char **chat) {
 	int i, rnd;
 
 	for ( i = 0; i < voiceChatList->numVoiceChats; i++ ) {
@@ -2293,12 +2586,13 @@ int CG_GetVoiceChat( voiceChatList_t *voiceChatList, const char *id, sfxHandle_t
 CG_VoiceChatListForClient
 =================
 */
-voiceChatList_t *CG_VoiceChatListForClient( int clientNum ) {
+static voiceChatList_t *CG_VoiceChatListForClient( int clientNum ) {
 	clientInfo_t *ci;
 	int voiceChatNum, i, j, k, gender;
 	char filename[MAX_QPATH], headModelName[MAX_QPATH];
 
 	if ( clientNum < 0 || clientNum >= MAX_CLIENTS ) {
+		CG_Printf("^1CG_VoiceChatListForClient() invalid client number %d\n", clientNum);
 		clientNum = 0;
 	}
 	ci = &cgs.clientinfo[ clientNum ];
@@ -2398,7 +2692,7 @@ bufferedVoiceChat_t voiceChatBuffer[MAX_VOICECHATBUFFER];
 CG_PlayVoiceChat
 =================
 */
-void CG_PlayVoiceChat( bufferedVoiceChat_t *vchat ) {
+static void CG_PlayVoiceChat( const bufferedVoiceChat_t *vchat ) {
 #ifdef MISSIONPACK
 	// if we are going into the intermission, don't start any voices
 	if ( cg.intermissionStarted ) {
@@ -2451,7 +2745,7 @@ void CG_PlayBufferedVoiceChats( void ) {
 CG_AddBufferedVoiceChat
 =====================
 */
-void CG_AddBufferedVoiceChat( bufferedVoiceChat_t *vchat ) {
+static void CG_AddBufferedVoiceChat( const bufferedVoiceChat_t *vchat ) {
 #ifdef MISSIONPACK
 	// if we are going into the intermission, don't start any voices
 	if ( cg.intermissionStarted ) {
@@ -2486,6 +2780,7 @@ void CG_VoiceChatLocal( int mode, qboolean voiceOnly, int clientNum, int color, 
 	}
 
 	if ( clientNum < 0 || clientNum >= MAX_CLIENTS ) {
+		CG_Printf("^1CG_VoiceChatLocal() invalid client number %d\n", clientNum);
 		clientNum = 0;
 	}
 	ci = &cgs.clientinfo[ clientNum ];
@@ -2521,7 +2816,7 @@ void CG_VoiceChatLocal( int mode, qboolean voiceOnly, int clientNum, int color, 
 CG_VoiceChat
 =================
 */
-void CG_VoiceChat( int mode ) {
+static void CG_VoiceChat( int mode ) {
 	const char *cmd;
 	int clientNum, color;
 	qboolean voiceOnly;
@@ -2541,7 +2836,7 @@ void CG_VoiceChat( int mode ) {
 
 	CG_VoiceChatLocal( mode, voiceOnly, clientNum, color, cmd );
 }
-#endif
+#endif  // MPACK
 
 /*
 =================
@@ -2613,6 +2908,7 @@ static qboolean CG_CpmaParseMstats (void)
 	int totalAtts;
 	const char *s;
 	wclient_t *wc;
+	//int val;
 
 	// none -- 26 args
 
@@ -2623,7 +2919,15 @@ static qboolean CG_CpmaParseMstats (void)
 
 	n = 1;
 	clientNum = atoi(CG_Argv(n));  n++; // player num
+	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^1CG_CpmaParseMstats() invalid client number %d\n", clientNum);
+		return qtrue;
+	}
+
 	wc = &wclients[clientNum];
+
+	cg.duelScoresValid = qtrue;
+	cg.duelScoresServerTime = cg.snap->serverTime;
 
 	//FIXME
 	duelPlayer = 0;
@@ -2648,6 +2952,7 @@ static qboolean CG_CpmaParseMstats (void)
 	}
 
 	ds = &cg.duelScores[duelPlayer];
+	ds->ci = cgs.clientinfo[duelPlayer];
 
 	totalHits = 0;
 	totalAtts = 0;
@@ -2675,9 +2980,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x2) {
@@ -2692,9 +2997,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x4) {
@@ -2709,9 +3014,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x8) {
@@ -2726,9 +3031,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x10) {
@@ -2743,9 +3048,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x20) {
@@ -2760,9 +3065,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x40) {
@@ -2777,9 +3082,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x80) {
@@ -2794,9 +3099,9 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
 	}
 
 	if (wflags & 0x100) {
@@ -2811,9 +3116,32 @@ static qboolean CG_CpmaParseMstats (void)
 			ws->accuracy = 0;
 		}
 		ws->kills = atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
-		atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
+	}
+
+	if (wflags & 0x200) {
+		ws = &ds->weaponStats[WP_BFG];
+		ws->hits = atoi(CG_Argv(n));  n++;
+		ws->atts = atoi(CG_Argv(n));  n++;
+		totalHits += ws->hits;
+		totalAtts += ws->atts;
+		if (ws->atts) {
+			ws->accuracy = (100 * ws->hits) / ws->atts;
+		} else {
+			ws->accuracy = 0;
+		}
+		ws->kills = atoi(CG_Argv(n));  n++;
+		ws->deaths = atoi(CG_Argv(n));  n++;
+		ws->take = atoi(CG_Argv(n));  n++;
+		ws->drop = atoi(CG_Argv(n));  n++;
+	}
+	if (wflags & 0x400) {
+		Com_Printf("^3FIXME cpma stats wflags 0x400\n");
+	}
+	if (wflags & 0x800) {
+		Com_Printf("^3FIXME cpma stats wflags 0x800\n");
 	}
 
 	ds->damage = atoi(CG_Argv(n));  n++;  // damage done
@@ -2823,7 +3151,7 @@ static qboolean CG_CpmaParseMstats (void)
 	ds->megaHealthPickups = atoi(CG_Argv(n));  n++;
 	ds->redArmorPickups = atoi(CG_Argv(n));  n++;
 	ds->yellowArmorPickups = atoi(CG_Argv(n));  n++;
-	atoi(CG_Argv(n));  n++;
+	atoi(CG_Argv(n));  n++;  // green armor?
 	atoi(CG_Argv(n));  n++;
 	atoi(CG_Argv(n));  n++;  // 2
 	s = CG_Argv(n);  n++;  // abataiayaaaa
@@ -2839,10 +3167,10 @@ static qboolean CG_CpmaParseMstats (void)
 	cgs.clientinfo[clientNum].score = atoi(CG_Argv(n));  n++;  // score?
 	ds->kills = atoi(CG_Argv(n));  n++;  // frags?
 	atoi(CG_Argv(n));  n++;  // deaths?
-	atoi(CG_Argv(n));  n++;
-	atoi(CG_Argv(n));  n++;
-	atoi(CG_Argv(n));  n++;
-	atoi(CG_Argv(n));  n++;
+	atoi(CG_Argv(n));  n++;  // ?
+	atoi(CG_Argv(n));  n++;  // ?
+	atoi(CG_Argv(n));  n++;  // team damage
+	atoi(CG_Argv(n));  n++;  // team kills
 	atoi(CG_Argv(n));  n++;
 	atoi(CG_Argv(n));  n++;
 	atoi(CG_Argv(n));  n++;
@@ -2854,6 +3182,16 @@ static qboolean CG_CpmaParseMstats (void)
 		ds->accuracy = (100 * totalHits) / totalAtts;
 	} else {
 		ds->accuracy = 0;
+	}
+
+	if (clientNum == cg.snap->ps.clientNum) {
+		ds->awardExcellent = cg.snap->ps.persistant[PERS_EXCELLENT_COUNT];
+		ds->awardImpressive = cg.snap->ps.persistant[PERS_IMPRESSIVE_COUNT];
+		ds->awardHumiliation = cg.snap->ps.persistant[PERS_GAUNTLET_FRAG_COUNT];
+	} else {
+		ds->awardExcellent = -1;
+		ds->awardImpressive = -1;
+		ds->awardHumiliation = -1;
 	}
 
 	return qtrue;
@@ -2872,13 +3210,20 @@ static qboolean CG_CpmaMM2 (void)
 {
 	int clientNum;
 	int location;
-	char *s;
+	const char *s;
 
 	clientNum = atoi(CG_Argv(1));
+	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^1CG_CpmaMM2() invalid client number %d\n", clientNum);
+		return qtrue;
+	}
+
 	location = atoi(CG_Argv(2));
 	s = va("(%s^7) (%s): ^5%s", cgs.clientinfo[clientNum].name, CG_ConfigString(CS_LOCATIONS + location), CG_Argv(3));
 	CG_Printf("%s\n", s);
-	CG_PrintToScreen("%s", s);
+	if (cg_serverPrintToChat.integer) {  //FIXME treat as 'print' ?
+		CG_PrintToScreen("%s", s);
+	}
 
 	return qtrue;
 }
@@ -2889,7 +3234,7 @@ static qboolean CG_CpmaXscores (void)
 	int i;
 	int n;
 	int clientNum;
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 	const char *s;
 	//const char *s2;
 	//int x;
@@ -2911,6 +3256,10 @@ static qboolean CG_CpmaXscores (void)
 		sc = &cg.scores[i];
 
 		clientNum = atoi(CG_Argv(n));  n++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_CpmaXscores() invalid client number %d\n", clientNum);
+			return qtrue;
+		}
 		sc->client = clientNum;
 
 		ci = &cgs.clientinfo[clientNum];
@@ -3014,7 +3363,7 @@ static void CG_ParseCtfsRoundScores (void)
 	cg.ctfsBlueScore = atoi(CG_Argv(22));
 }
 
-static void CG_FilterOspTeamChatLocation (char *text)
+static void CG_FilterOspTeamChatLocation (const char *text)
 {
 #if 0
 	char *p;
@@ -3032,6 +3381,660 @@ static void CG_FilterOspTeamChatLocation (char *text)
 #endif
 
 	return;
+}
+
+static void CG_ParseScores_Duel (void)
+{
+	int i;
+	int n;
+	int j;
+
+	cg.duelScoresValid = qtrue;
+	cg.duelScoresServerTime = cg.snap->serverTime;
+
+	cg.numDuelScores = atoi(CG_Argv(1));
+	if (cg.numDuelScores > 2) {
+		Com_Printf("^3FIXME scores_duel num %d (more than 2)\n", cg.numDuelScores);
+	}
+
+	n = 2;
+	for (i = 0;  i < 2;  i++) {
+		duelScore_t *ds;
+		clientInfo_t *ci;
+
+		ds = &cg.duelScores[i];
+
+		if (!*CG_Argv(n)) {
+			break;
+		}
+
+		ds->clientNum = atoi(CG_Argv(n));  n++;
+		if (ds->clientNum < 0  ||  ds->clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Duel() invalid client number %d\n", ds->clientNum);
+			return;
+		}
+
+		ci = &cgs.clientinfo[ds->clientNum];
+
+		if (ci->infoValid) {
+			ds->ci = cgs.clientinfo[ds->clientNum];
+		}
+
+		ds->score = atoi(CG_Argv(n));  n++;
+		//FIXME ughhh
+		ci->score = ds->score;
+		ds->ci.score = ds->score;
+
+		ds->ping = atoi(CG_Argv(n));  n++;
+		ds->time = atoi(CG_Argv(n));  n++;
+		ds->kills = atoi(CG_Argv(n));  n++;
+		ds->deaths = atoi(CG_Argv(n));  n++;
+		ds->accuracy = atoi(CG_Argv(n));  n++;
+		ds->bestWeapon = atoi(CG_Argv(n));  n++;
+		ds->damage = atoi(CG_Argv(n));  n++;
+		ds->awardImpressive = atoi(CG_Argv(n));  n++;
+		ds->awardExcellent = atoi(CG_Argv(n));  n++;
+		ds->awardHumiliation = atoi(CG_Argv(n));  n++;
+		ds->perfect = atoi(CG_Argv(n));  n++;
+
+		ds->redArmorPickups = atoi(CG_Argv(n));  n++;
+		ds->redArmorTime = atof(CG_Argv(n));  n++;
+		ds->yellowArmorPickups = atoi(CG_Argv(n));  n++;
+		ds->yellowArmorTime = atof(CG_Argv(n));  n++;
+		ds->greenArmorPickups = atoi(CG_Argv(n));  n++;
+		ds->greenArmorTime = atof(CG_Argv(n));  n++;
+		ds->megaHealthPickups = atoi(CG_Argv(n));  n++;
+		ds->megaHealthTime = atof(CG_Argv(n));  n++;
+
+		for (j = 1;  j < WP_NUM_WEAPONS;  j++) {
+			duelWeaponStats_t *ws;
+
+			ws = &ds->weaponStats[j];
+
+			ws->hits = atoi(CG_Argv(n));  n++;
+			ws->atts = atoi(CG_Argv(n));  n++;
+			ws->accuracy = atoi(CG_Argv(n));  n++;
+			ws->damage = atoi(CG_Argv(n));  n++;
+			ws->kills = atoi(CG_Argv(n));  n++;
+		}
+	}
+
+	CG_SetDuelPlayers();
+
+	// check sizes
+	if (CG_Argc() != n) {
+		CG_Printf("^1CG_ParseScores_Duel() argc (%d) != %d\n", CG_Argc(), n);
+	}
+}
+
+static void CG_ParseScores_Tdm (void)
+{
+	int i;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+
+	//memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
+
+	cg.tdmScore.valid = qtrue;
+	cg.tdmScore.version = 3;
+
+	cg.tdmScore.rra = atoi(CG_Argv(1));
+	cg.tdmScore.rya = atoi(CG_Argv(2));
+	cg.tdmScore.rga = atoi(CG_Argv(3));
+	cg.tdmScore.rmh = atoi(CG_Argv(4));
+	cg.tdmScore.rquad = atoi(CG_Argv(5));
+	cg.tdmScore.rbs = atoi(CG_Argv(6));
+	cg.tdmScore.rregen = atoi(CG_Argv(7));
+	cg.tdmScore.rhaste = atoi(CG_Argv(8));
+	cg.tdmScore.rinvis = atoi(CG_Argv(9));
+
+	cg.tdmScore.rquadTime = atoi(CG_Argv(10));
+	cg.tdmScore.rbsTime = atoi(CG_Argv(11));
+	cg.tdmScore.rregenTime = atoi(CG_Argv(12));
+	cg.tdmScore.rhasteTime = atoi(CG_Argv(13));
+	cg.tdmScore.rinvisTime = atoi(CG_Argv(14));
+
+	cg.tdmScore.bra = atoi(CG_Argv(15));
+	cg.tdmScore.bya = atoi(CG_Argv(16));
+	cg.tdmScore.bga = atoi(CG_Argv(17));
+	cg.tdmScore.bmh = atoi(CG_Argv(18));
+	cg.tdmScore.bquad = atoi(CG_Argv(19));
+	cg.tdmScore.bbs = atoi(CG_Argv(20));
+	cg.tdmScore.bregen = atoi(CG_Argv(21));
+	cg.tdmScore.bhaste = atoi(CG_Argv(22));
+	cg.tdmScore.binvis = atoi(CG_Argv(23));
+
+	cg.tdmScore.bquadTime = atoi(CG_Argv(24));
+	cg.tdmScore.bbsTime = atoi(CG_Argv(25));
+	cg.tdmScore.bregenTime = atoi(CG_Argv(26));
+	cg.tdmScore.bhasteTime = atoi(CG_Argv(27));
+	cg.tdmScore.binvisTime = atoi(CG_Argv(28));
+
+	cg.tdmScore.numPlayerScores = atoi(CG_Argv(29));
+	//CG_Printf("^5num player scores %d\n", cg.tdmScore.numPlayerScores);
+
+	i = 30;
+
+	// can't use version check because some servers (sampler?) are running
+	// old server binaries with new cgame dlls
+
+	// 16
+	//if (CG_CheckQlVersion(0, 1, 0, 728)) {
+	if (CG_Argc() > (cg.tdmScore.numPlayerScores * 16 + 31)) {
+		cg.teamScores[0] = atoi(CG_Argv(i));  i++;
+		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
+	}
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+
+	memset(&cg.tdmScore.playerScore, 0, sizeof(cg.tdmScore.playerScore));
+
+	while (1) {
+		tdmPlayerScore_t *ts;
+		int clientNum;
+		int team;
+
+		if (!*CG_Argv(i)) {
+			break;
+		}
+		clientNum = atoi(CG_Argv(i));  i++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Tdm() invalid client number %d\n", clientNum);
+			return;
+		}
+
+		team = atoi(CG_Argv(i));  i++;
+
+		//Com_Printf("client %d  team %d\n", clientNum, team);
+
+		ts = &cg.tdmScore.playerScore[clientNum];
+
+		if (team == TEAM_RED  ||  team == TEAM_BLUE) {
+			ts->valid = qtrue;
+		} else {
+			//FIXME maybe??
+			ts->valid = qfalse;
+		}
+
+		ts->clientNum = clientNum;
+		ts->team = team;
+		ts->subscriber = atoi(CG_Argv(i));  i++;
+		ts->score = atoi(CG_Argv(i));  i++;
+		ts->ping = atoi(CG_Argv(i));  i++;
+		ts->time = atoi(CG_Argv(i));  i++;
+		ts->kills = atoi(CG_Argv(i));  i++;
+		ts->deaths = atoi(CG_Argv(i));  i++;
+		ts->accuracy = atoi(CG_Argv(i));  i++;
+		ts->bestWeapon = atoi(CG_Argv(i));  i++;
+		ts->awardImpressive = atoi(CG_Argv(i));  i++;
+		ts->awardExcellent = atoi(CG_Argv(i));  i++;
+		ts->awardHumiliation = atoi(CG_Argv(i));  i++;
+		ts->tks = atoi(CG_Argv(i));  i++;
+		ts->tkd = atoi(CG_Argv(i));  i++;
+		ts->damageDone = atoi(CG_Argv(i));  i++;
+
+		if (ts->team == TEAM_RED) {
+			redCount++;
+			redTotalPing += ts->ping;
+		} else if (ts->team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += ts->ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseScores_Tdm() argc (%d) != %d\n", CG_Argc(), i);
+	}
+}
+
+static void CG_ParseScores_Ca (void)
+{
+	int i;
+	tdmPlayerScore_t *ts;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+
+	cg.tdmScore.valid = qtrue;
+	cg.tdmScore.version = 3;
+
+	cg.tdmScore.numPlayerScores = atoi(CG_Argv(1));
+
+	memset(&cg.tdmScore.playerScore, 0, sizeof(cg.tdmScore.playerScore));
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+
+	i = 2;
+
+	// can't use version check because some servers (sampler?) are running
+	// old server binaries with new cgame dlls
+
+	// 17
+	//if (CG_CheckQlVersion(0, 1, 0, 728)) {
+	if (CG_Argc() > (cg.tdmScore.numPlayerScores * 17 + 3)) {
+		cg.teamScores[0] = atoi(CG_Argv(i));  i++;
+		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
+	}
+
+	while (1) {
+		int clientNum;
+
+		if (!*CG_Argv(i)) {
+			break;
+		}
+
+		clientNum = atoi(CG_Argv(i));  i++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Ca() invalid client number %d\n", clientNum);
+			return;
+		}
+
+		ts = &cg.tdmScore.playerScore[clientNum];
+		ts->valid = qtrue;
+		ts->clientNum = clientNum;
+		ts->team = atoi(CG_Argv(i));  i++;
+		ts->subscriber = atoi(CG_Argv(i));  i++;
+		ts->score = atoi(CG_Argv(i));  i++;
+		ts->ping = atoi(CG_Argv(i));  i++;
+		ts->time = atoi(CG_Argv(i));  i++;
+		ts->kills = atoi(CG_Argv(i));  i++;
+		ts->deaths = atoi(CG_Argv(i));  i++;
+		ts->accuracy = atoi(CG_Argv(i));  i++;
+		ts->bestWeapon = atoi(CG_Argv(i));  i++;
+		ts->bestWeaponAccuracy = atoi(CG_Argv(i));  i++;
+		ts->damageDone = atoi(CG_Argv(i));  i++;
+		ts->awardImpressive = atoi(CG_Argv(i));  i++;
+		ts->awardExcellent = atoi(CG_Argv(i));  i++;
+		ts->awardHumiliation = atoi(CG_Argv(i));  i++;
+		ts->perfect = atoi(CG_Argv(i));  i++;
+		ts->alive = atoi(CG_Argv(i));  i++;
+
+		if (ts->team == TEAM_RED) {
+			redCount++;
+			redTotalPing += ts->ping;
+		} else if (ts->team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += ts->ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseScores_Ca() argc (%d) != %d\n", CG_Argc(), i);
+	}
+}
+
+static void CG_ParseScores_Ctf (void)
+{
+	int i;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+
+	cg.ctfScore.valid = qtrue;
+	cg.ctfScore.version = 1;
+
+	cg.ctfScore.rra = atoi(CG_Argv(1));
+	cg.ctfScore.rya = atoi(CG_Argv(2));
+	cg.ctfScore.rga = atoi(CG_Argv(3));
+	cg.ctfScore.rmh = atoi(CG_Argv(4));
+	cg.ctfScore.rquad = atoi(CG_Argv(5));
+	cg.ctfScore.rbs = atoi(CG_Argv(6));
+	cg.ctfScore.rregen = atoi(CG_Argv(7));
+	cg.ctfScore.rhaste = atoi(CG_Argv(8));
+	cg.ctfScore.rinvis = atoi(CG_Argv(9));
+	cg.ctfScore.rflag = atoi(CG_Argv(10));
+	cg.ctfScore.rmedkit = atoi(CG_Argv(11));
+
+	cg.ctfScore.rquadTime = atoi(CG_Argv(12));
+	cg.ctfScore.rbsTime = atoi(CG_Argv(13));
+	cg.ctfScore.rregenTime = atoi(CG_Argv(14));
+	cg.ctfScore.rhasteTime = atoi(CG_Argv(15));
+	cg.ctfScore.rinvisTime = atoi(CG_Argv(16));
+	cg.ctfScore.rflagTime = atoi(CG_Argv(17));
+
+	cg.ctfScore.bra = atoi(CG_Argv(18));
+	cg.ctfScore.bya = atoi(CG_Argv(19));
+	cg.ctfScore.bga = atoi(CG_Argv(20));
+	cg.ctfScore.bmh = atoi(CG_Argv(21));
+	cg.ctfScore.bquad = atoi(CG_Argv(22));
+	cg.ctfScore.bbs = atoi(CG_Argv(23));
+	cg.ctfScore.bregen = atoi(CG_Argv(24));
+	cg.ctfScore.bhaste = atoi(CG_Argv(25));
+	cg.ctfScore.binvis = atoi(CG_Argv(26));
+	cg.ctfScore.bflag = atoi(CG_Argv(27));
+	cg.ctfScore.bmedkit = atoi(CG_Argv(28));
+
+	cg.ctfScore.bquadTime = atoi(CG_Argv(29));
+	cg.ctfScore.bbsTime = atoi(CG_Argv(30));
+	cg.ctfScore.bregenTime = atoi(CG_Argv(31));
+	cg.ctfScore.bhasteTime = atoi(CG_Argv(32));
+	cg.ctfScore.binvisTime = atoi(CG_Argv(33));
+	cg.ctfScore.bflagTime = atoi(CG_Argv(34));
+
+	i = 35;
+
+	memset(&cg.ctfScore.playerScore, 0, sizeof(cg.ctfScore.playerScore));
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+
+	cg.ctfScore.numPlayerScores = atoi(CG_Argv(i));  i++;
+
+	// can't use version check because some servers (sampler?) are running
+	// old server binaries with new cgame dlls
+
+	// 19
+	//if (CG_CheckQlVersion(0, 1, 0, 728)) {
+	if (CG_Argc() > (cg.ctfScore.numPlayerScores * 19 + 36)) {
+		cg.teamScores[0] = atoi(CG_Argv(i));  i++;
+		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
+	}
+
+	while (1) {
+		ctfPlayerScore_t *s;
+		int clientNum;
+
+		if (!*CG_Argv(i)) {
+			break;
+		}
+		clientNum = atoi(CG_Argv(i));  i++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Ctf() invalid client number %d\n", clientNum);
+			return;
+		}
+
+		s = &cg.ctfScore.playerScore[clientNum];
+		s->clientNum = clientNum;
+		s->team = atoi(CG_Argv(i));  i++;
+
+		if (s->team == TEAM_RED  ||  s->team == TEAM_BLUE) {
+			s->valid = qtrue;
+		} else {
+			s->valid = qfalse;  //FIXME  maybe??
+		}
+
+		s->subscriber = atoi(CG_Argv(i));  i++;
+		s->score = atoi(CG_Argv(i));  i++;
+		s->ping = atoi(CG_Argv(i));  i++;
+		s->time = atoi(CG_Argv(i));  i++;
+		s->kills = atoi(CG_Argv(i));  i++;
+		s->deaths = atoi(CG_Argv(i));  i++;
+		s->powerups = atoi(CG_Argv(i));  i++;
+		s->accuracy = atoi(CG_Argv(i));  i++;
+		s->bestWeapon = atoi(CG_Argv(i));  i++;
+		s->awardImpressive = atoi(CG_Argv(i));  i++;
+		s->awardExcellent = atoi(CG_Argv(i));  i++;
+		s->awardHumiliation = atoi(CG_Argv(i));  i++;
+		s->awardDefend = atoi(CG_Argv(i));  i++;
+		s->awardAssist = atoi(CG_Argv(i));  i++;
+		s->captures = atoi(CG_Argv(i));  i++;
+		s->perfect = atoi(CG_Argv(i));  i++;
+		s->alive = atoi(CG_Argv(i));  i++;
+
+		if (s->team == TEAM_RED) {
+			redCount++;
+			redTotalPing += s->ping;
+		} else if (s->team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += s->ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseScores_Ctf() argc (%d) != %d\n", CG_Argc(), i);
+	}
+}
+
+static void CG_ParseScores_Rr (void)
+{
+	int		i;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+	int n;
+
+	// they forgot score->team ?
+
+	cg.scoresValid = qtrue;
+	cg.scoresVersion = 1;
+
+	cg.numScores = atoi(CG_Argv(1));
+
+	if (cg.numScores > MAX_CLIENTS) {
+		Com_Printf("^3CG_ParseScores_Rr() numScores (%d) > MAX_CLIENTS (%d)\n", cg.numScores, MAX_CLIENTS);
+		cg.numScores = MAX_CLIENTS;
+	}
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		cgs.clientinfo[i].scoreValid = qfalse;
+		cg.clientHasScore[i] = qfalse;
+	}
+
+	cg.teamScores[0] = atoi( CG_Argv( 2 ) );
+	cg.teamScores[1] = atoi( CG_Argv( 3 ) );
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+	//memset( cg.scores, 0, sizeof( cg.scores ) );
+
+	i = 4;
+
+	for (n = 0;  n < cg.numScores;  n++) {
+		score_t *s;
+		int clientNum;
+		clientInfo_t *ci;
+
+		clientNum = atoi(CG_Argv(i));  i++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Rr() invalid client number %d\n", clientNum);
+			return;
+		}
+		s = &cg.scores[n];
+		ci = &cgs.clientinfo[clientNum];
+
+		s->client = clientNum;
+		s->team = ci->team;
+
+		s->score = atoi(CG_Argv(i));  i++;
+		ci->score = s->score;
+
+		ci->scoreValid = qtrue;
+		cg.clientHasScore[clientNum] = qtrue;
+
+		s->roundScore = atoi(CG_Argv(i));  i++;
+		s->ping = atoi(CG_Argv(i));  i++;
+		s->time = atoi(CG_Argv(i));  i++;
+		s->frags = atoi(CG_Argv(i));  i++;
+		s->deaths = atoi(CG_Argv(i));  i++;
+
+		s->powerups = atoi(CG_Argv(i));  i++;
+		ci->powerups = s->powerups;
+
+		s->accuracy = atoi(CG_Argv(i));  i++;
+		s->bestWeapon = atoi(CG_Argv(i));  i++;
+		s->bestWeaponAccuracy = atoi(CG_Argv(i));  i++;
+		s->impressiveCount = atoi(CG_Argv(i));  i++;
+		s->excellentCount = atoi(CG_Argv(i));  i++;
+		s->gauntletCount = atoi(CG_Argv(i));  i++;
+		s->defendCount = atoi(CG_Argv(i));  i++;
+		s->assistCount = atoi(CG_Argv(i));  i++;
+		s->perfect = atoi(CG_Argv(i));  i++;
+		s->captures = atoi(CG_Argv(i));  i++;
+		s->alive = atoi(CG_Argv(i));  i++;
+
+		if (s->team == TEAM_RED) {
+			redCount++;
+			redTotalPing += s->ping;
+		} else if (s->team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += s->ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+#if 1  //def MPACK
+	CG_SetScoreSelection(NULL);
+#endif
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseScores_Rr() argc (%d) != %d\n", CG_Argc(), i);
+	}
+}
+
+static void CG_ParseDScores (void)
+{
+	int i;
+	int n;
+	int j;
+	//FIXME hack
+	static int oldDuelPlayer1 = DUEL_PLAYER_INVALID;
+	static int oldDuelPlayer2 = DUEL_PLAYER_INVALID;
+	static qboolean oldScoreValid = qfalse;
+
+	//oldDuelPlayer1 = cg.duelPlayer1;
+	//oldDuelPlayer2 = cg.duelPlayer2;
+	//oldScoreValid = cg.duelScoresValid;
+
+	CG_SetDuelPlayers();
+	cg.duelScoresValid = qtrue;
+	cg.duelScoresServerTime = cg.snap->serverTime;
+
+	//CG_Printf("dscores argc %d\n", CG_Argc());
+
+	if (cg.duelPlayer1 == DUEL_PLAYER_INVALID  ||  cg.duelPlayer2 == DUEL_PLAYER_INVALID) {
+		//CG_Printf("^5d1 %d  d2 %d  oldvalid %d\n", oldDuelPlayer1, oldDuelPlayer2, oldScoreValid);
+
+		if ((cg.snap->ps.pm_type == PM_INTERMISSION  ||  !cg.warmup)  &&  oldScoreValid  &&  oldDuelPlayer1 != DUEL_PLAYER_INVALID  &&  oldDuelPlayer2 != DUEL_PLAYER_INVALID) {
+			// one player quit match
+			//Com_Printf("^6duel was forfeited\n");
+			cg.duelPlayer1 = oldDuelPlayer1;
+			cg.duelPlayer2 = oldDuelPlayer2;
+			return;
+		}
+	}
+
+	oldDuelPlayer1 = cg.duelPlayer1;
+	oldDuelPlayer2 = cg.duelPlayer2;
+	oldScoreValid = qtrue;
+
+	n = 1;
+	for (i = 0;  i < 2;  i++) {
+		duelScore_t *ds;
+
+		ds = &cg.duelScores[i];
+
+#if 0
+		if (!*CG_Argv(n)) {
+			CG_Printf("^4duel forfeit\n");
+		}
+#endif
+
+		ds->ping = atoi(CG_Argv(n));  n++;
+		ds->kills = atoi(CG_Argv(n));  n++;
+		ds->deaths = atoi(CG_Argv(n));  n++;
+		ds->accuracy = atoi(CG_Argv(n));  n++;
+		ds->damage = atoi(CG_Argv(n));  n++;
+		ds->awardImpressive = atoi(CG_Argv(n));  n++;  // 6
+		ds->awardExcellent = atoi(CG_Argv(n));  n++;  // 7
+		ds->awardHumiliation = atoi(CG_Argv(n));  n++;  // 8
+		//Com_Printf("%d  %s\n", i, CG_Argv(n));  n++;  // 9
+		//Com_Printf("%d  %s\n", i, CG_Argv(n)); n++;  // 10
+		n++;  // 9
+		n++;  // 10
+		ds->redArmorPickups = atoi(CG_Argv(n));  n++;
+		ds->redArmorTime = atof(CG_Argv(n));  n++;
+		ds->yellowArmorPickups = atoi(CG_Argv(n));  n++;
+		ds->yellowArmorTime = atof(CG_Argv(n));  n++;
+		ds->greenArmorPickups = atoi(CG_Argv(n));  n++;
+		ds->greenArmorTime = atof(CG_Argv(n));  n++;
+		ds->megaHealthPickups = atoi(CG_Argv(n));  n++;
+		ds->megaHealthTime = atof(CG_Argv(n));  n++;
+
+		for (j = 1;  j < WP_NUM_WEAPONS;  j++) {
+			duelWeaponStats_t *ws;
+
+			ws = &ds->weaponStats[j];
+
+			ws->hits = atoi(CG_Argv(n));  n++;
+			ws->atts = atoi(CG_Argv(n));  n++;
+			ws->accuracy = atoi(CG_Argv(n));  n++;
+			ws->damage = atoi(CG_Argv(n));  n++;
+			ws->kills = atoi(CG_Argv(n));  n++;
+		}
+	}
+
+	if (cg.duelPlayer1 != DUEL_PLAYER_INVALID) {
+		cg.duelScores[0].clientNum = cg.duelPlayer1;
+		if (cgs.clientinfo[cg.duelPlayer1].infoValid) {
+			//Q_strncpyz(cg.duelScores[0].name, cgs.clientinfo[cg.duelPlayer1].name, sizeof(cg.duelScores[0].name));
+			cg.duelScores[0].ci = cgs.clientinfo[cg.duelPlayer1];
+		}
+	}
+	if (cg.duelPlayer2 != DUEL_PLAYER_INVALID) {
+		cg.duelScores[1].clientNum = cg.duelPlayer2;
+		if (cgs.clientinfo[cg.duelPlayer2].infoValid) {
+			//Q_strncpyz(cg.duelScores[1].name, cgs.clientinfo[cg.duelPlayer2].name, sizeof(cg.duelScores[1].name));
+			cg.duelScores[1].ci = cgs.clientinfo[cg.duelPlayer2];
+		}
+	}
 }
 
 /*
@@ -3071,7 +4074,7 @@ static void CG_ServerCommand( void ) {
 
 	// camera script
 	if ( !strcmp( cmd, "startCam" ) ) {
-		//CG_StartCamera( CG_Argv(1), atoi(CG_Argv(2)) );
+		//CG_StartidCamera( CG_Argv(1), atoi(CG_Argv(2)) );
 		return;
 	}
 	if ( !strcmp( cmd, "stopCam" ) ) {
@@ -3081,8 +4084,16 @@ static void CG_ServerCommand( void ) {
 	// end camera script
 
 	if ( !strcmp( cmd, "cp" ) ) {
-		//Com_Printf("'%s'\n", CG_Argv(1));
-		CG_CenterPrint( CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
+		//Com_Printf("^5---  '%s'\n", CG_Argv(1));
+		if (cg_serverCenterPrint.integer) {
+			CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+		}
+		if (cg_serverCenterPrintToChat.integer) {
+			CG_PrintToScreen("%s", CG_Argv(1));
+		}
+		if (cg_serverCenterPrintToConsole.integer) {
+			CG_Printf("%s", CG_Argv(1));
+		}
 		return;
 	}
 
@@ -3092,10 +4103,17 @@ static void CG_ServerCommand( void ) {
 	}
 
 	if ( !strcmp( cmd, "print" ) ) {
-		CG_Printf( "%s", CG_Argv(1) );
-		CG_PrintToScreen("%s", CG_Argv(1));
+		if (cg_serverPrint.integer) {
+			CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+		}
+		if (cg_serverPrintToChat.integer) {
+			CG_PrintToScreen("%s", CG_Argv(1));
+		}
+		if (cg_serverPrintToConsole.integer) {
+			CG_Printf("%s", CG_Argv(1));
+		}
 
-#if 1 //def MISSIONPACK
+#if 1 //def MPACK
 		cmd = CG_Argv(1);			// yes, this is obviously a hack, but so is the way we hear about
 									// votes passing or failing
 
@@ -3107,6 +4125,17 @@ static void CG_ServerCommand( void ) {
 			trap_S_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
 		} else if (!Q_stricmpn(cmd, "team vote passed", 16)  &&  cg_audioAnnouncerTeamVote.integer) {
 			trap_S_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
+		} else if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT  &&  !Q_stricmpn(cmd, "Game has been forfeited", 23)) {
+			//FIXME bad hack
+			Com_Printf("^5forfeit...\n");
+			cg.duelForfeit = qtrue;
+			if (!cgs.clientinfo[cg.duelPlayer1].infoValid  ||  cgs.clientinfo[cg.duelPlayer1].team  != TEAM_FREE) {
+				cg.duelPlayerForfeit = 1;
+			} else if (!cgs.clientinfo[cg.duelPlayer2].infoValid  ||  cgs.clientinfo[cg.duelPlayer2].team  != TEAM_FREE) {
+				cg.duelPlayerForfeit = 2;
+			} else {
+				CG_Printf("^1unknown player forfeited\n");
+			}
 		}
 #endif
 		return;
@@ -3157,23 +4186,6 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-	if ( !strcmp( cmd, "bchat" ) ) {  //FIXME bot chat ??
-		if ( !cg_teamChatsOnly.integer ) {
-			if (cg_chatBeep.integer) {
-				if (cg.time - cg.lastChatBeepTime >= (cg_chatBeepMaxTime.value * 1000)) {
-					trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
-					cg.lastChatBeepTime = cg.time;
-				}
-			}
-			Q_strncpyz( text, CG_Argv(1), MAX_SAY_TEXT );
-			//CG_RemoveChatEscapeChar( text );
-			CG_Printf( "%s\n", text );
-			CG_PrintToScreen("%s", text);
-			//Q_strncpyz(cg.lastChatString, text, sizeof(cg.lastChatString));
-		}
-		return;
-	}
-
 #ifdef MISSIONPACK
 	if ( !strcmp( cmd, "vchat" ) ) {
 		CG_VoiceChat( SAY_ALL );
@@ -3201,20 +4213,6 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-	if ( !strcmp( cmd, "rrscores" ) ) {
-		//Com_Printf("^3---------------rrscores\n");
-		//memset(cgs.newConnectedClient, 0, sizeof(cgs.newConnectedClient));
-		CG_ParseRRScores();
-		Wolfcam_ScoreData();
-		CG_BuildSpectatorString();
-		return;
-	}
-
-	if (!strcmp(cmd, "adscores")) {
-		CG_ParseCtfsRoundScores();
-		return;
-	}
-
 	if ( !strcmp( cmd, "tinfo" ) ) {
 		CG_ParseTeamInfo();
 		return;
@@ -3225,7 +4223,7 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-  if ( Q_stricmp (cmd, "remapShader") == 0 ) {
+	if ( Q_stricmp (cmd, "remapShader") == 0 ) {
 		if (trap_Argc() == 4) {
 			//CG_Printf("remapshader %s  %s\n", CG_Argv(1), CG_Argv(2));
 			//trap_R_RemapShader(CG_Argv(1), CG_Argv(2), CG_Argv(3), qfalse);
@@ -3273,128 +4271,154 @@ static void CG_ServerCommand( void ) {
 				return;
 			}
 		}
-	}
-
-	// quake live
-	if (!strcmp(cmd, "acc")) {
-		int i;
-
-		cg.serverAccuracyStatsTime = cg.time;
-		cg.serverAccuracyStatsClientNum = cg.snap->ps.clientNum;
-
-		//CG_Printf("acc: \n");
-		for (i = WP_NONE;  i < WP_NUM_WEAPONS;  i++) {
-			//CG_Printf("  %s    %s\n", CG_Argv(i + 1), weapNames[i]);
-			cg.serverAccuracyStats[i] = atoi(CG_Argv(i + 1));
-		}
-		return;
-	}
-
-	if (!strcmp(cmd, "pcp")) {  // pause center print??
-		// timeout
-		//CG_AddBufferedSound(cgs.media.klaxon1);
-		trap_S_StartLocalSound( cgs.media.klaxon1, CHAN_LOCAL_SOUND );
-		CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
-		Com_Printf("%s\n", CG_Argv(1));
-		return;
-	}
-
-	if (!Q_stricmp(cmd, "playSound")) {
-		//Com_Printf("^3playsound:  '%s'\n", CG_Argv(1));
-		//trap_S_StartLocalSound(CG_Argv(1));
-		trap_SendConsoleCommand(va("play %s\n", CG_Argv(1)));
-		return;
-	}
-
-	if (!Q_stricmp(cmd, "dscores")) {
-		int n;
-		int j;
-
-		CG_SetDuelPlayers();
-
-		n = 1;
-		for (i = 0;  i < 2;  i++) {
-			duelScore_t *ds;
-
-			ds = &cg.duelScores[i];
-
-			ds->ping = atoi(CG_Argv(n));  n++;
-			ds->kills = atoi(CG_Argv(n));  n++;
-			ds->deaths = atoi(CG_Argv(n));  n++;
-			ds->accuracy = atoi(CG_Argv(n));  n++;
-			ds->damage = atoi(CG_Argv(n));  n++;
-			ds->awardImpressive = atoi(CG_Argv(n));  n++;  // 6
-			ds->awardExcellent = atoi(CG_Argv(n));  n++;  // 7
-			ds->awardHumiliation = atoi(CG_Argv(n));  n++;  // 8
-			//Com_Printf("%d  %s\n", i, CG_Argv(n));  n++;  // 9
-			//Com_Printf("%d  %s\n", i, CG_Argv(n)); n++;  // 10
-			n++;  // 9
-			n++;  // 10
-			ds->redArmorPickups = atoi(CG_Argv(n));  n++;
-			ds->redArmorTime = atof(CG_Argv(n));  n++;
-			ds->yellowArmorPickups = atoi(CG_Argv(n));  n++;
-			ds->yellowArmorTime = atof(CG_Argv(n));  n++;
-			ds->greenArmorPickups = atoi(CG_Argv(n));  n++;
-			ds->greenArmorTime = atof(CG_Argv(n));  n++;
-			ds->megaHealthPickups = atoi(CG_Argv(n));  n++;
-			ds->megaHealthTime = atof(CG_Argv(n));  n++;
-
-			for (j = 1;  j < WP_NUM_WEAPONS;  j++) {
-				duelWeaponStats_t *ws;
-
-				ws = &ds->weaponStats[j];
-
-				ws->hits = atoi(CG_Argv(n));  n++;
-				ws->atts = atoi(CG_Argv(n));  n++;
-				ws->accuracy = atoi(CG_Argv(n));  n++;
-				ws->damage = atoi(CG_Argv(n));  n++;
-				ws->kills = atoi(CG_Argv(n));  n++;
+#if 0
+		if (!Q_stricmp(cmd, "xstats2")) {
+			if (CG_CpmaXstats2()) {
+				return;
 			}
 		}
-		//Com_Printf("dscores:  n %d\n", n);
-		return;
+#endif
 	}
 
-	if (!Q_stricmp(cmd, "cascores")) {
-		CG_ParseCaScores();
-		return;
-	}
+	if (cgs.protocol == PROTOCOL_QL) {
+		// crash tutorial
+		if (!Q_stricmp(cmd, "playSound")) {
+			trap_SendConsoleCommand(va("play %s\n", CG_Argv(1)));
+			return;
+		}
 
-	if (!Q_stricmp(cmd, "castats")) {
-		CG_ParseCaStats();
-		return;
-	}
+		if ( !strcmp( cmd, "bchat" ) ) {  //FIXME bot chat ??, crash tutorial?
+			if ( !cg_teamChatsOnly.integer ) {
+				if (cg_chatBeep.integer) {
+					if (cg.time - cg.lastChatBeepTime >= (cg_chatBeepMaxTime.value * 1000)) {
+						trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+						cg.lastChatBeepTime = cg.time;
+					}
+				}
+				Q_strncpyz( text, CG_Argv(1), MAX_SAY_TEXT );
+				//CG_RemoveChatEscapeChar( text );
+				CG_Printf( "%s\n", text );
+				CG_PrintToScreen("%s", text);
+				//Q_strncpyz(cg.lastChatString, text, sizeof(cg.lastChatString));
+			}
+			return;
+		}
 
-	if (!Q_stricmp(cmd, "tdmscores")) {
-		CG_ParseTdmScores();
-		return;
-	}
+		if (!Q_stricmp(cmd, "scores_duel")) {
+			CG_ParseScores_Duel();
+			return;
+		}
+		if (!Q_stricmp(cmd, "scores_tdm")) {
+			CG_ParseScores_Tdm();
+			return;
+		}
+		if (!Q_stricmp(cmd, "scores_ca")) {
+			CG_ParseScores_Ca();
+			return;
+		}
+		if (!Q_stricmp(cmd, "scores_ctf")) {
+			CG_ParseScores_Ctf();
+			return;
+		}
+		if (!Q_stricmp(cmd, "scores_rr")) {
+			CG_ParseScores_Rr();
+			return;
+		}
 
-	if (!Q_stricmp(cmd, "tdmstats")) {
-		//Com_Printf("tdmstats\n");
-		CG_ParseTdmStats();
-		return;
-	}
+		if (!Q_stricmp(cmd, "dscores")) {
+			CG_ParseDScores();
+			return;
+		}
 
-	if (!Q_stricmp(cmd, "tdmscores2")) {
-		//Com_Printf("^3tdmscores2\n");
-		CG_ParseTdmScores2();
-		return;
-	}
+		if (!Q_stricmp(cmd, "cascores")) {
+			CG_ParseCaScores();
+			return;
+		}
 
-	if (!Q_stricmp(cmd, "ctfscores")) {
-		CG_ParseCtfScores();
-		return;
-	}
+		if (!Q_stricmp(cmd, "castats")) {
+			CG_ParseCaStats();
+			return;
+		}
 
-	if (!Q_stricmp(cmd, "ctfstats")) {
-		CG_ParseCtfStats();
-		return;
-	}
+		if (!Q_stricmp(cmd, "tdmscores")) {
+			CG_ParseTdmScores();
+			return;
+		}
 
-	if (!Q_stricmp(cmd, "rcmd")) {
-		CG_Printf("^3remote command '%s'\n", CG_ArgsFrom(1));
-		return;
+		if (!Q_stricmp(cmd, "tdmstats")) {
+			//Com_Printf("tdmstats\n");
+			CG_ParseTdmStats();
+			return;
+		}
+
+		if (!Q_stricmp(cmd, "tdmscores2")) {
+			//Com_Printf("^3tdmscores2\n");
+			CG_ParseTdmScores2();
+			return;
+		}
+
+		if (!Q_stricmp(cmd, "ctfscores")) {
+			CG_ParseCtfScores();
+			return;
+		}
+
+		if (!Q_stricmp(cmd, "ctfstats")) {
+			CG_ParseCtfStats();
+			return;
+		}
+
+		if ( !strcmp( cmd, "rrscores" ) ) {
+			//Com_Printf("^3---------------rrscores\n");
+			//memset(cgs.newConnectedClient, 0, sizeof(cgs.newConnectedClient));
+			CG_ParseRRScores();
+			Wolfcam_ScoreData();
+			CG_BuildSpectatorString();
+			return;
+		}
+
+		if (!strcmp(cmd, "adscores")) {
+			CG_ParseCtfsRoundScores();
+			return;
+		}
+
+		if (!Q_stricmp(cmd, "rcmd")) {
+			CG_Printf("^3remote command '%s'\n", CG_ArgsFrom(1));
+			return;
+		}
+
+		if (!strcmp(cmd, "acc")) {
+			int i;
+
+			cg.serverAccuracyStatsTime = cg.time;
+			cg.serverAccuracyStatsClientNum = cg.snap->ps.clientNum;
+
+			//CG_Printf("acc: \n");
+			for (i = WP_NONE;  i < WP_NUM_WEAPONS;  i++) {
+				//CG_Printf("  %s    %s\n", CG_Argv(i + 1), weapNames[i]);
+				cg.serverAccuracyStats[i] = atoi(CG_Argv(i + 1));
+			}
+			return;
+		}
+
+		if (!strcmp(cmd, "pcp")) {  // pause center print??, player called pause?
+			// timeout
+			//CG_AddBufferedSound(cgs.media.klaxon1);
+			trap_S_StartLocalSound( cgs.media.klaxon1, CHAN_LOCAL_SOUND );
+			if (cg_serverCenterPrint.integer) {
+				CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+			}
+			if (cg_serverCenterPrintToChat.integer) {
+				CG_PrintToScreen("%s", CG_Argv(1));
+			}
+#if 1  //FIXME
+			if (cg_serverCenterPrintToConsole.integer) {
+				CG_Printf("%s", CG_Argv(1));
+			}
+#endif
+			//CG_Printf("%s\n", CG_Argv(1));
+			CG_ResetTimedItemPickupTimes();  //FIXME take out eventually
+			return;
+		}
 	}
 
 	// unknown:

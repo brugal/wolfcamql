@@ -1,0 +1,957 @@
+1753
+
+2011-02-17
+
+1754 * build the dedicated server with voip support (benmachine)
+1755 * Remove r_displayRefresh as it's not connected to anything, now
+1756 skip:  * (bug #4364) Fix missing -DNDEBUG
+1757 applied before:  * (bug #4369)  Cvar modified flags are not updated in Cvar_Get (Lakitu7)
+1758 * (bug #4346) Dedicated server uses 100% CPU when stdin is not a TTY
+* com_speeds reports misleading values on dedicated server (Guillaume Bougard)
+1759 * Handle SIGINT
+1760 skip:  * (bug #4357) CVAR_ROM+CVAR_ARCHIVE is not read from q3config
+ -- can add
+1761 skip:  * That probably deserves a Com_DPrintf as well -- related to above
+1762 * Rate limit getstatus and rcon connectionless requests
+1763 did with 1762:  * Fix some compiler warnings
+1764 * update mumble link interface for version 1.2
+1765 * mmap could fail, handle gracefully
+1766 * set default rate to broadband
+1767 * make reason for voip disable more visible
+1768 * fix mumble coordinate transmission
+1769 * avoid setting cvars by name each frame
+1770 * (bug #4271) FreeBSD fixes (Dominic Fandrey)
+1771 * Clean-up whitespace in net_ip.c
+1772 * __WORDSIZE is not available on non-GNU systems (Dominic Fandrey)
+1773 skip:  * Sys_Dialog for more user friendly error reporting, * (bug #3932) Recovery from bad video settings  --  need to check CL_Shutdown() changes
+1774 skip:  * Oops, missed a bit
+1775 skip:  * Fix a memory leak in OS X Sys_Dialog, * Fix compilation on Snow Leopard
+1776 * need to hardcode "baseq3" to prevent download of id files even if compiled STANDALONE
+1777 * enable (dummy) cdkey calls in standalone mode to prevents mods from crashing
+1778 skip:  * 64bit Windows support (patch by Michael Menegakis)
+1779 * don't link librt on FreeBSD (bug 4507)
+1780 * fix mingw32 build
+1781 * package zlib1.dll in nsis installer
+1782 skip:  * rename x86_64 -> x64 for Windows
+1783 * 64bit Windows fix (patch by Marcus Meissner)
+1784 skip:  * fix OP_BLOCK_COPY alignment for win64 (patch by Marcus Meissner)
+1785 skip:  * fix stack alignment dynamically for OP_BLOCK_COPY
+1786 * fix typo
+1787 * Fix typo
+1788 * Fix buffer overflow, report and patch by Eugene C. (#4669)
+1789 * Fix bug in uncompressed MDR model loading, thansk to Zack "ZTurtleMan" Middleton for reporting.
+1790 * First batch of bug fixes reported and patched by Zack "ZTurtleMan" Middleton:
+1791 * Second batch of bug fixes reported and patched by Zack "ZTurtleMan" Middleton:
+1792 * Fix "unhandles OpenAL error", and sound fallback behaviour for model files. Thanks Ansa89 for reporting, and Zack Middleton for the patch.
+1793 * fix typo
+1794 * another fix. Thanks Zakk Middleton
+1795 * Fix flaw in my fix to #4737, thanks Zakk Middleton
+1796 done:  * Followup to #4733
+1797 * uninstall zlib1.dll, disable description panel (bug 4779)
+1798 * Bug 4566: Slackbuild update for 64bit.
+1799 * the dishes, and Bugzilla bug 4780 are DONE.
+1800 done:  * Bugzilla #4749    TAHUD: Fix hud fallback
+1801 * Bugzilla #4753  Potential buffer overflow in UpdateTournamentInfo()
+1802 * Bugzilla #4629  commands sent to client when disconnected
+1803 * use mmap on freebsd too
+1804 skip:  * Use correct compiler defines for OS detection on Windows
+1805 * (bug #4800) Don't prepend a slash to console commands if they're empty
+       (bug #4800) Limit console input length such that there is always room for a leading slash
+1806 * (bug #4853) Fix comment that refers to old code
+1807 * (bug #4842) Speedup shader buffer creation (Eugene C.)
+1808 skip:  * Shut up compiler error
+1809 * Fix potential segfault when no PK3s have been loaded (may happen when compiled with -DSTANDALONE)
+1810 * Fix this bug in a better way.
+1811 skip:  Make it use the correct game name in getserversExt queries
+1812 skip:  Revert changes because dpmaster doesn't work that way.
+1813 * Fix name resolution for domains with A and AAAA record
+1814 * Fix bug reported by cyrri
+1815 skip:  Make this change so standalone developers will know to change the HEARTBEAT game string for their versions, too.
+1816 skip:  Make number of supported master servers tunable via define
+1817 * Make sure status reply always has at least one space between address and qport, important for ipv6 addresses.
+1818 * Make sure com_developer global var gets written right after developer has been read from cmd line
+1819 * Patch from /dev/humancontroller (thx)
+1820 * ffffffffffffffffffffaaaaaaaaaaaaaassssssssst math movement on freebsd to OPTIMIZE
+1821 * remove the unused flags_t::field (/dev/hc again for this and previous checkin on Makefile, thanks!!!)
+1822 * add a missing \n from a cgame print (thanks again /dev/hc)
+1823 * Alan Cox provided these patch notes:
+Guvf vf npghnyyl n cngpu gb eryvrir hapbzsbegnoyr btt/ibeovf pbafgreangvbanoyr pbzcvyr-gvzr jneavatf sebz /qri/uhznapbagebyyre
+
+Gunaxf 2 lbh.
+
+1824 skip:  Fix compiler warnings (#4887)
+1825 skip:  well, shit.
+1826 * Fix hanging client when map_restart executed on the server while client is still loading the map
+1827 skip:  Make Ludwig happy
+1828 Add parameter checking to CL_*Ping* functions, remove unused CL_UpdateServerInfo function (wolfcam didn't remove)
+1829 * Fix floating point imprecision causing glitches in snapshot sending
+1830 * cvar is called fs_game (bug 4866)
+1831 * Explicitly set timer resolution on windows
+1832 * Only adjust timer resolution for clients
+1833 * Windows doesn't know z in format string
+1834 done: Delete unused variable
+1835 skip:  Use select() to sleep when idle as opposed to busy waiting.  Introduce com_busyWait cvar to go back to old behaviour
+1836 skip:  r1833 now made some Linux systems spit out warnings. Fix this once and for all
+1837 * Server crash can cause recursive call to Com_Error, too
+1838 * Fix bug #4769 remote server crash, Fix potential 1-byte-buffer overflow in gamecode
+1839 * whatever devhc you're right
+1840 skip:  Change runtime standalone detection:
+     * com_standalone now read-only
+     * add new cvars com_basegame, com_homepath
+     * standalone now automatically detected when com_basegame is set to something different than baseq3 and no id pak pk3s are found
+     * This fixes https://bugzilla.icculus.org/show_bug.cgi?id=4699
+   - Replace a few hardcoded string literals with macros
+   - Add checks for Team Arena PK3s to FS_CheckPak0()
+1841 skip:  Fix banfile writing to wrong game directory
+1842 skip:  Add cvars cl_gamename, sv_heartbeat, sv_flatline so standalone games can customise their messages to the master server
+1843 * https://bugzilla.icculus.org/show_bug.cgi?id=4460
+1844 * Fix a warning
+1845 * Fix https://bugzilla.icculus.org/show_bug.cgi?id=4733
+1846 * https://bugzilla.icculus.org/show_bug.cgi?id=4576
+1847 * Thanks Simon McVittie for fixing the bug regression in https://bugzilla.icculus.org/show_bug.cgi?id=4629
+1848 * Thanks for the patch, gimhael. (#4576)  (allow any number of lightmaps)
+1849 * Add support for linearly desaturating images via r_greyscale, Use correct luminance values for rendering textures, Patch submitted by Forrest Voight.
+1850 * Ben Millwood fixing his own stuff (#4598)
+1851 * Fix #4683, thanks Zack Middleton
+1852 * Fix division by zero, reported by Simon McVittie
+1853 * typos, patch by Ansgar Burchardt <ansgar@43-1.org>
+1854 * Fix fp literals
+1855 * Support GNU/kFreeBSD, patch by Cyril Brulebois. Thanks.
+1856 skip:  Patch by Simon McVittie to improve dynamic library loading (#4700)
+1857 * Remove guid again because we don't want every play on the server to know all guids, thanks brain for reporting
+1858 * Fix flag collision in botlib code, thanks Cyrri for reporting (#4886)
+1859 * Fix compilation on alpha, fix by Steve Langasek (#4703)
+1860 * Fix tourney score board. Thanks Zack Middleton for the patch and report
+1861 * Fix adding multiple entries for same server when using globalservers several times, patch by Tequila
+1862 skip:  Oops typo.
+1863 * misusing CGEN_* enums with alphaGen
+1864 * Fix GNU/kFreeBSD patch by Cyril Brulebois. --> ... <--
+1865 * Hopefully fix (#3984) compiler errors on Solaris while not introducing too many new ones on the other platforms, With _BSD_SOURCE now explicitly defined bring back strdup to vm_x86_64_assembler.c
+1866 * Fix buffer overflow, reported by Mads Lind
+1867 skip:  strdup still not accepted by some systems. *sigh*.
+1868 * Allow user to specify different temp dir for building (#4349)
+1869 * Thank you devhc
+1870 * Ok, getifaddrs() is not POSIX compliant. Fix #3984 as suggested by Vincent Cojot
+1871 * mage size_t typedef unsigned int instead of just int, thx devhc for suggesting
+1872 * Fix levelshot so that it cannot be executed by remote clients (#4339)
+1873 * A few code cleanups in gamecode, Add a bit of stuff from Zakk Middleton
+1874 * Code cleanup patch by devhc
+1875 * By ZTurtleMan: Cleanup; only load harvester data in harvester gametype, removed unused var, and ifdef a missionpack only var.
+1876 * Cleanup STANDALONE
+1877 * fix compiling error when in standalone mode
+1878 * Still not compiling when STANDALONE is set
+1879 * Fix STANDALONE in files.c
+1880 * Fix memmove with new size_t typedef, thanks DevHC for reporting
+1881 * It's late, I'm tired.
+1882 * Fix strcpy copying buffer into itself, thanks to Simon McVittie for reporting and the patch (#4894)
+1883 skip:  First batch of getting replacing malloc() with Z_Malloc
+1884 * Brace for incoming grammar fix by DevHC!
+1885 * Finally fix missionpack compiling for STANDALONE=1, yes, this is tested.
+1886 * Make Q_vsnprintf() more standard conform in bg_lib.c, patch by devhc
+1887 * (minor English issues, most of which are via /dev/humancontroller)
+1888 skip some:  Replace various malloc() with Z_Malloc, Fix several memory leaks when VM compilation failed and Com_Error is called, Make failed mmap/VirtualAlloc/malloc calls fatal
+
+  did:  Use MAP_FAILED error code for check whether mmap() was successful
+1889 skip some: embed VM_FREEBUFFERS() macro in do-while-loop
+
+  did:  Make some string functions in g_cmds.c cleaner, by DevHC
+1890 * Add minimize command (#4531)
+1891 * update readme for last commit
+1892 * Fix console tab autocomplete for exec and condump on pure servers, patch by Zack Middleton
+1893 skip (done):  JPEG quality control patch, by Zack Middleton (#4673)
+1894 skip:  Merge "which" command upstream from Tremulous, patch provided by Chris Schwarz
+1895 * OMGWHATISTHISSHITIDONTEVENKNOW
+1896 * Auto complete demos on not in pk3s while in pure servers. Patch by Zack Middleton (#4794)
+1897 skip:  Support non-256x256 videos in shaders, by Zack Middleton (#4745)
+1898 * Fix Sys_Milliseconds wrapping causing the flood protection code to malfunction and block all traffic (reported by bubu^)
+1899 * Fix unterminated string errors in Q_vsnprintf() on windows. Thanks to Eugene C. for reporting, Get rid of bigbuffer in Com_sprintf(), Get rid of Q_snprintf and replace with Com_sprintf()
+1900 skip:  Make NET_Sleep wait 1ms less than requested, then busy-wait the last ms for better timeout precision.
+1901 done:  Patch by Zack Middleton (#4920) (crouch and lg bolt)
+1902 * (#4918) Gametype clamping using constant integer in missionpack ui, by Zack Middleton
+1903 * (#4919) Extra variable in missionpack ui's bind_t structure, by Zack Middleton
+1904 skip:  (#4291) Redundant statement in client console, by Zack Middleton
+1905 * (#4922) Use screenYScale, not screenXScale, for scaling Y, by Zack Middleton
+1906 * Fix quirk reported by Zack Middleton
+1907 * Also send empty valued system cvars, fix proposed by DevHC
+1908 * Add cvar "protocol" so user can change protocol version on command line, for standalone games. Most of the patch by Simon McVittie with a few minor modifications by myself
+1909 * Fix systeminfo command, fix by DevHC
+1910 * Refactoring patch by DevHC
+1911 * Fix potential out-of-bounds read in files.c, fix by using new FS_IsExt, Add capability to load demos with com_protocol suffix, partially applied patches from Simon McVittie, Fix demo loading if protocol number has more digits than 2, Minor refactoring, replace all occurances of suffix "dm_" with global macro DEMOEXT
+1912 * Add in_availableJoysticks to list usable joysticks, similar to s_alAvailableDevices. Some parts of the patch provided by Zack Middleton
+1913 * Make Video settings menu revert some settings to default values via Cvar_Reset() instead of hardcoded values (#2589)
+1914 * Add g_humansplayers (found by server) and g_needpass (cvar) to serverinfo (#4702)
+1915 * Zack Middleton made me do it
+1916 * (#3767) Some protection from malicious qvms - patches and ideas by Amanieu d'Antras and Ben Millwood
+1917 * Rename cvar "in_joystickThreshold" to "joy_threshold" as QVMs use the latter name.
+1918 * I accidentally committed patch by slacker from (#4915) in r1916. Patch adds input device selection support, Add check for ALC_ENUMERATE_ALL_EXT before using ALC_ALL_DEVICES_SPECIFIER in device enumeration, Patch readme for new cvars by Zack Middleton
+1919 * Fix bug where Com_StartupVariable would set CVAR_USER_CREATED on already existing cvars
+1920 * Fix a compiler warning, Fix the detection of the enumeration extensions, Fix default device for s_alInputDevice, Adjust formatting of S_AL_Info output
+1921 skip:  (#4925) - com_pipefile to create a named pipe for sending commands from other processes, patch by Chris Schwarz
+1922 done:  Fix misplaced ; in MSVC _vsnprintf wrapper
+1923 * strtod exists in bg_lib.c now so Q_isanumber will work in the VMs, too.
+1924 * Make buffers for device lists a bit longer. Just in case.
+1925 done:  Revert premature change to Makefile for migration to jpeg-8c. *sigh*
+1926 skip for now:  Migrate to jpeg-8c, Add possibility to link against system libjpeg
+1927 * include alext.h for ALC_ALL_DEVICES_SPECIFIER  This assumes OpenAL Soft (Simon McVittie, bug 4927)
+1928 skip for now:  add missing jconfig.h
+1929 * include vm_local.h in vm_powerpc_asm.c  Patch by Simon McVittie, bug 4930
+1930 some:  Remove alext.h dependency and manually add the required macros, Use ALC_DEFAULT_ALL_DEVICES_SPECIFIER instead of ALC_DEFAULT_DEVICE_SPECIFIER if extension exists -- (wolfcam: commented out no 'defaultdevice')
+1931 done:  Fix whitespace
+1932 * Properly use ALC_ALL_DEVICES_SPECIFIER in sound info, Properly use ALC_CAPTURE_DEVICE_SPECIFIER in sound info
+1933 * Fix dynamic lighting for moving world surfaces. Patch by gimhael, thx
+1934 skip for now jpeg stuff: Bug 4935 - dedicated server linked against libjpeg if using system libjpeg, patch by Simon McVittie
+1935 * Bug 4936 - Wrong color for non-ascii symbols in console
+1936 skip for now jpeg stuff:  Fix JPEG compression for screenshots and mjpeg video recording with new JPG library
+1937 skip:  Crash recovery for com_pipeFile (Lakitu7)
+1938 skip for now jpeg stuff:  Fix jpeg warnings
+1939 * Fix player queueing for tournament play (#4939)
+1940 done:  Actually call Sys_PlatformExit
+1941 some (skipped jpeg stuff):  Fix a few comments (#4591)
+1942 * Consider key states before startup, patch by Zack Middleton (#4950)
+1943 * Make Sys_SetEnv behave alike on Windows and Linux
+1944 skip:  Fix data alignment issue with glReadPixel call, reported by Guillaume Bougard (#4954), Fix data alignment issue in raw AVI recording for weird resolutions (like 1366x768)
+1945 * Let codec loader decide which extension to give to extensionless filenames
+1946 * Add better support for analog joysticks, patch by use.less01
+1947 * Use memcmp instead of self-built while loop
+1948 * Fix a little quirk still
+1949 * Replace a few numeric constants with already defined macros, patch by ZTurtleMan
+1950 skip (new protocol):  udp spoofing protection (http://aluigi.altervista.org/papers/q3noclient.txt)
+1951 skip:  Change the layout of the README and split "misc" section into a part for end users, and a part for developers, Update the readme for rev. 1950
+1952 skip (revert protocol):  Revert protocol 69 pending further discussion (#4962)
+1953 skip (too much):  Add Inter-Quake Model (IQM) Format support, patch by gimhael with minor modifications by myself (#4965), Changed model_t::md4 to model_t::modelData, Fix R_ModelBounds for MD4, MDR and IQM models (#4966), Support Model format fallback similar to image formats in tr_image.c, patch by Zack Middleton (#4967)
+1954 * Do not retry image loader for image that failed, patch by Zack Middleton (#4968)
+1955 * Fix out of bounds array index (#4960) patch by Ben Millwood
+1956 * Remove sv_strictAuth cvar for STANDALONE games
+1957 * Fix sending reliable commands before being connected, patch by Eugene C. (#4971)
+1958 skip (new model type):  Add licence headers to new files, Add patch from Zack Middleton which fixes a few issues still
+1959 skip (new model stuff):  [23:59:05] <ZTurtleMan> Thilo: altName (created using va) does not point to model filename in developer-only printf as va is used to load images before the printf. http://pastebin.com/1KCjz6Ct
+1960 * Do use the SV_Game{Error,Print} functions (#4972)
+1961 skip:  Add HOMEPATH default name define to q_shared.c, patch by uZu (#4973), reverted change from (#4972) and implemented the other suggestion to be consistent with cl_cgame.c and cl_ui.c
+1962 skip (new model stuff): Remove C99 code constructs from IQM code, patch by gimhael (#4974)
+1963 skip (new model stuff):  IQM skin support and print limit info, make other limit info consistent, patch by Zack Middleton (#4978)
+1964 * fix overzealous cvar cheat protection, patch by cyrri (#4974)
+1965 * Add error handling to malloc as well
+1966 * Fix nasty crash bug
+1967 skip:  Add codec fallback support for sound files not found, Patch by Zack Middleton (#4982)
+1968 skip:  Choose better alignment for heavy-duty rendering structures, patch by Matt Turner (#4981)
+1969 skip:  Add opStack protection to defend against malicious QVMs
+1970 some done and skip:  Remove newlines in Com_Error(), Update register description
+1971 done:  whoops, that one was not Com_Error()
+1972 * Fix spawnflag behaviour for trigger_hurt, patch by DevHC
+1973 * Fix one byte overflow
+1974 * Refactoring patch by DevHC
+1975 done:  DevHC messed up
+1976 skip (new audio codec loader):  Fix crash bug in new codec audio loader, thanks brain for reporting
+1977 skip (new audio codec loader):  More codec loader troubles with extensions
+1978 done:  Remove newlines from Com_Error message format strings, patch by DevHC
+1979 done:  Ffffuuuuuu  I don't even know....
+1980 done:  Remove newlines from Com_Error calls, patch by DevHC
+1981 some (skip vm stuff):  ensure that ent->classname is always non-null (for entity numbers up to level.num_entities-1, and ENTITYNUM_WORLD and ENTITYNUM_NONE), for player entities and #ENTITYNUM_NONE in particular, patch by DevHC
+1982 done/skip (vm stuff):  Reverting accidentally committed vm_x86.c, Last commit contained some refactoring for vm_x86_64.c
+1983 * Make bg_lib.c strchr ANSI-C conformant
+1984 * Fix typecast
+1985 skip (vm stuff):  Add vm_x86.c optimization patch by Eugene C., Remove ASM syntax specific code (AT&T vs MASM) for OP_CALL and replace with machine code
+1986 * move MIN/MAX definition, use MIN() instead of min(), patch by DevHC
+1987 * Remove Q_strrchr(), replace with standard, portable strrchr(), Add strrchr() to bg_lib.c, patch by DevHC
+1988 * Refactor and bugfix COM_*Extension functions, patch by DevHC
+1989 * Fix lokisetup makefile problems, Bump version number to 1.36
+1990 * Optimise VectorNormalize functions, patch by Matt Turner
+1991 * 0 --> NULL
+1992 skip (vm stuff):  Fix SEGV in while loop getop() after t = b = 0, Fix iss8, iss16 and iss32 which would not correctly detect 32-bit signed integer range, Add support for "addb", "subb" etc. assembler mnemonic, Change opStack protection for x86_64 VM: No overflow checks necessary anymore as offset register is 1 byte long only
+1993 skip (vm stuff):  Set default opStack size to 256, Fix integer wraparound. opStack offset in rbx will always be >= 0
+1994 skip (vm stuff):  Use edx for CALLs instead of ecx, as the latter does not require any push to stack, Make Linux AT&T asm code consistent with the MASM codeblock
+1995 skip (vm stuff):  Use scaled indexing mode n=4 for addressing opStack, this way we can use the 8 bit offset value in %%bl to address an OPSTACK_SIZE of 1024 which was the old value.
+1996 skip (vm stuff):  Fix VM call for release version, bug introduced by myself in r1994
+1997 skip (vm stuff):  I don't seem to get these constraints right. This should fix it
+1998 skip (vm stuff):  Do assignment of value 0xDEADBEEF after the 4-byte alignment, Add all GPR to clobber list as GCC function callAsmCall seems to change register r11 without saving it to stack first, which may result in SIGSEGV in VM_CallCompiled()
+1999 skip (vm stuff):  Implement opStack protection: Use register %ebx for scaled indexed addressing mode to access opStack, make opStack push/pop operate on %bl portion only, dd a third pass to VM compilation for computation of jump address offsets, removing the need to dereference into vm->instructionPointers[] for every call/jump, Make use of 0F opcode prefix relative jumps, Call Com_Memcpy for OP_BLOCK_COPY, Fix several missing range checks for vm->dataBase memory access
+2000 skip (vm stuff):  Add instruction number checks to jumps and calls to SPARC VM, patch by David Miller
+2001 skip (vm stuff):  Fix compilation on mingw64
+2002 skip (vm stuff):  Fix is*() functions for windows where long value is 4 bytes
+2003 skip most (vm stuff) use of intptr_t:  Add x86_64 support to vm_x86.c, Fix warning on mingw64
+2004 skip (vm stuff):  Use EmitCallDoSyscall() to call the jump violations function which guarantees 16-byte stack alignment, Add x64 code for MSVC _asm() blocks, not tested yet.
+2005 * Fix newlines in Com_Error, patch by Zack Middleton (#5023)
+2006 * Properly fill in occurances of "foobar" in GPL file headers, patch by Zack Middleton (#5024)
+2007 * Fix wrong usage info message for cmd dumpuser, patch by Zack Middleton (#5024)
+2008 * OpenBSD compile fixes, patch provided by Jonathan Gray (#4994)
+2009 * Makefile fix for mips architecture (#4995):  Fixes the \n in the $ARCH variable for IRIX/mips  Patch by Patrick Baggett
+2010 * (#5016) - Calls to trap_CM_PointContents don't update their origins based on moving entities (water). Patch by Ensiform
+2011 * Fix return values for several syscall functions, patch by Zack Middleton (#5018)
+2012 * Remove misleading comment
+2013 skip (new jpeg and new model):  Adapt MSVC project files to new libjpeg, fix by Guillaume Bougard and cyrri, add tr_model_iqm.c to MSVC project, by cyrri
+2014 skip (iqm model stuff):  Fixes to IQM support, by Zack Middleton
+      - Bug 5029 - IQM skin support for upper case surface names
+      - Bug 5030 - IQM version 2 support
+      - Bug 5031 - Animated IQMs cause segfault
+      - Bug 5032 - IQM does not setup tag axis/origin correctly
+      - Bug 5033 - IQM bounds swap and segfault issues
+2015 * Bug 5035 - Automatically selecting player model in q3_ui does not work if skin is not specified, patch by Zack Middleton
+2016 * Bug 5036 - Grappling hook does not load trail shader, patch by Zack Middleton
+2017 * Bug 5034  - q3_ui: fill whole screen and allow cursor to move to edge in widescreen, patch by Zack Middleton
+2018 skip (iqm stuff):  Fix forgotten IQM2 support in iqm.h, patch by Zack Middleton
+2019 skip:  Add static SDL libraries for compilation with MSVC
+2020 skip (too many changes at once):   - Add MASM assembler files for MSVC x64 projects to support vm_x86 in x64 mode
+     - Clean up ftol()/snapvector() mess
+     - Make use of SSE instructions for ftol()/snapvector() if available
+     - move ftol/snapvector pure assembler to inline assembler, this will add x86_64 and improve support for different calling conventions
+     - Set FPU control word at program startup to get consistent behaviour on all platforms
+2021 skip (based on last patch)
+2022 skip (more crap to fix ugly patch):  Forgot the inline assembler parts, here they come! Using inline asm to get rid of all the boilerplate stuff
+2023 skip (more crap to fix ugly patch):    - Still forgot qasm-inline.h
+     - Leave GCC more freedom in choice of registers
+2024 skip:  - mingw64 now links against SDL64.dll to allow for 32 and 64 bit version in the same directory
+     - Add library files for MinGW64
+2025 skip:  Project files for Microsoft Visual Studio 10. Has x86 and x64 build configurations (#2681)
+2026 skip (more crap to fix ugly patch):  Fix #if macros for idx64 and id386
+2027 skip (trem done though): - Merge http://svn.icculus.org/tremulous?view=rev&revision=2185, patch by Chris Schwarz
+     - Remove Q_snprintf as Com_sprintf exists already
+2028 * Need space of len+1 for snprintf to work
+-- check 2029
+2030 skip
+2031 skip
+2032 skip
+2033 skip
+2034 skip
+2035 skip
+2036 Clear game logfile handle after closing file. (patch from tremulous)
+2037 skip
+2038 skip
+2039 skip
+2040 skip
+2041 skip
+-- check 2042
+2043 Bug 5047 - Win32 dedicated server console title should use define, patch by Zack Middleton
+2044 Bug 5048 - Entity constant light does not work correctly, bug found by Eraesr (Eraser?)
+-- check 2045
+
+
+2049 skip
+
+2054 skip
+
+2056 * Fix grenade rotation ends always the orientation (#5053), patch by Eugene C.
+2057 Get rid of redundancy
+
+2060 skip (done)
+2061 Make g_doWarmup archived cvar
+2062 skip
+2063 All patches by Zack Middleton:
+     - Bug 5057  - Two weapon number range checks allows invalid number
+     - Bug 5058  - Railgun explosion cannot be colorized
+     - Bug 5059  - Client's railgun does not glow in third person and mirror
+     - Bug 5060  - Warning in RAVENMD4 R_GetAnimTag cross compiling with amd64-mingw32
+2064 done
+2065 - Add better protection against DoSing connecting users from connecting
+     - Have Com_sprintf return string length
+     - add STR_LEN macro for static strings
+2066 Add fixes to ui menu by Ensiform and DevHC (#5062)
+2067 Make naming a bit more foolproof for new macro
+2068 skip  (Fix indentation)
+2069 Bug 5067 - Remove references to unused teamtournament gametype. Toggle areaportal on mover ents where due is needed, patch by Ensiform
+2070 skip (plasma explosion is distracting)
+2071 Bug 5069 - Remove unused variable console_color, by uZu
+
+
+
+2084 skip (done?)
+
+-- check 2086 IRIX alignment fix
+
+-- check 2090 gcc printf defines
+
+2092 skip
+
+2099 Include q_shared.h instead of redefining these
+
+2101 Bug 5096  - Define PRODUCT_VERSION in q_shared.h if it is not, patch by Zack Middleton
+
+2107 Fix cvar flags to get rid of warnings (#2881)
+
+2109 Bug 5134 - q3_ui incorrectly tells user to refresh servers while auto-refreshing, patch by Zack Middleton
+2110 Some more removal of unused code in addition to r2104, by Zack Middleton
+
+2115 check
+2116 Batch of bug fixes for gamecode. Patch compiled and log message written by Tobias Kuehnhammer (#5144)
+
+2118 check
+
+2124 Fixed some typos in the readme.
+2125 skip
+2126 Remove executable property from these files
+
+2129 check
+2130 check
+
+2134 check -- probably skip
+2135 maybe -- gcc warnings
+2136 Use STDOUT_FILENO instead of 1 in con_tty.c
+2137 Don't grab mouse till UI loads.
+2138 Don't create clientsmp directory (which is no longer used), pointed out by DevHC.
+2139 skip
+2140 skip
+
+2144 check
+2145 check
+
+2152 add maintainer to list in README-ioquake
+
+2157 Changed the joystick axis to key remap to start at K_JOY17 (fits better with hat_keys and K_JOY16 is used by button).
+2158 Removed unused IN_ButtonDown and IN_ButtonUp functions.
+2159 Fixed some function name comments in cl_cin.c
+2160 Removed unused kbutton_t declarations in client.h
+2161 Use BIGCHAR_WIDTH instead of hardcoded 16 in cl_scrn.c
+2162 Use EXEC_NOW instead of hardcoded 0 in cl_ui.c
+2163 Support vm syscalls with up to 15 args using 64 bit compiled vm (like interprated vms).
+2164 Restored loading ".dat" journal files from disk when connect to pure servers. Accidentally broke in r1911, reported by Ensiform.
+2165 Fixed win32 dedicated server console output. It use to write input line and then write output over the top of it. Reported by Ensiform.
+2166 Use platform's path separator in FS_Path_f (for consistent output on Windows), reported by Ensiform.
+
+2168 Only include libmumblelink.h if USE_MUMBLE is defined, reported by Ensiform.
+
+2173 Bug 5178  - Sound quality menu option has no effect
+2174 check - probably skip
+2175 Center ioq3 credits vertically.
+2176 Bug 5238  - cURL wrong use of curl_easy_setopt property, by Adrian Fuhrmann
+
+2179 Throw error when making calls to empty VM
+2180 check
+2181 check
+
+2185 Force unload of running VMs when quitting through signal handler
+2186 fixes point contents on the server side related to the cg fix with moving water...
+2187 ...  some  clang support
+2188 ... some
+
+2190 done
+
+2193 seems done
+2194 Client no longer tries to run UI_SHUTDOWN on ui vms with an unsupported API version.
+
+2196 Fixed usage of various entity defines.
+2197 Added missing newlines to game dedicated chat messages.
+
+2199 skip maybe Disable blood on HUD when com_blood is 0.
+
+2202 Removed duplicate setting of contents for trigger_hurt.
+2203 Fix net_restart when networking was temporarily disabled
+2204 Use GENTITYNUM_BITS for jumppad_ent bits.
+2205 Enable zone and hunk debug in debug build.
+2206 Show file/line/label in Com_Error messages when run out of memory in debug build.
+2207 Removed an unused variable (which wasn't compiled in as _DEBUG isn't defined using make).
+2208 Removed unused functoin Hunk_Trash.
+2209 done
+2210 done
+
+2212 The mailing list sub e-mail address has been wrong for a depressingly long amount of time.
+
+2214 bugzilla bug #5273
+exploit resolved, we're now disallowing forwardmove of -128 and vice versa
+Thanks, devhc!
+2215 Fixed UI to use MAX_QPATH for skin filename buffer length.
+2216 skip
+2217 skip
+
+2218 #5313 - EF_CONNECTION set on wrong eFlags  #5314 - snc drawn in nirvana instead at lagometer
+
+2221 Allow analog joystick up axis to be remapped too.
+2222 Added new joystick cvars to README.
+2223 Support up to 16 joystick axes, select which to use with j_*_axis cvars.
+2224 Added range checks to j_*_axis cvars.
+2225 skip
+2226 Fixed writing pre-rendered font TGAs, needed to flip image.
+2227 Fixed possibly placing a font glyph (at the beginning of a row) past the bottom of a font cache image.
+2228 Make sure font glyph shader names are null-terminated.
+2229 Removed set but not used variable 'satLevels' from tr_font.c.
+2230 skip
+2231 skip
+2232 check
+2233 skip because modular renderer not implemented
+2234 skip
+2235 #5439 - Potential memory leak in host name resolution. (Eugene C.)
+2236 #5453 - Tell command for server.
+2237 check
+2238 check
+2239 done
+2240 check
+2241 check
+2242 maybe skip
+2243 maybe skip
+2244 removing the smp stuff from the mac build script.
+2245 done
+2246 #5462 - do not require clients to have a matching qagame.qvm (adapted from OpenArena)
+2247 * Fixed two issues pointed out in a PVS-Studio static code analyzer article (bug #5505).
+2248 * #5503 - SIGSEGV with r_vertexlight 1 in missionpack (patch by Serge Belyshev).
+2249 check
+2250 check
+2251 In CheckTeamLeader, make sure to only set one client as team leader. Reported by Tobias Kuehnhammer.
+2252 Removed unnessicary "!!".
+2253 skip (not applicable)
+2254 Cleaned up game server command usage messages.
+2255 done
+2256 fix wrong socket ID comparison, from /dev/humancontroller
+2257 fix IPv6-only operation of Windows binaries
+
+the SOCKET type is unsigned on Windows, and should be casted to an int before comparing with the highestfd variable (note: ``int highestfd = -1;'')
+
+From /dev/humancontroller.
+2258 add the "execq" command, a more quiet version of the "exec" command
+in exec/execq, always print the extension for the filename
+
+From /dev/humancontroller.
+2259 add missing commands to autocompletition
+
+found by Ensiform
+2260 non-missionpack build throws up a few "0" plums
+
+found by Ensiform
+2261 add a missing '\n', remove some unwanted ones
+
+From /dev/humancontroller.
+2262 bring some freeish()ing operations ahead from after Errorish() calls
+
+From /dev/humancontroller.
+2263 remove a bunch of unused stuff from game
+
+From /dev/humancontroller.
+2264 fix some typos
+
+From /dev/humancontroller.
+2265 REFACTOR
+
+From /dev/humancontroller.
+2266 never set groundEntityNum to -1, use ENTITYNUM_NONE instead
+
+From /dev/humancontroller.
+2267 REFACTOR [a vs an]
+
+From /dev/humancontroller.
+2268 REFACTOR [reletive -> relative]
+
+From /dev/humancontroller.
+2269 fix the usage description of the clientkick server command (also rename SV_KickNum_f() to SV_ClientKick_f())
+
+found by Ensiform
+2270 Removed unneeded va() and use CG_Error instead of trap_Error in cgame. Found by Ensiform.
+2271 REFACTOR [anough to enough]
+2272 Made more code for Team Arena be inside ifdef MISSIONPACK, from Ensiform.
+2273 Let's actually use MOD_CHAINGUN! From Ensiform.
+2274 Only have bots issue vtaunt commands in Team Arena.
+2275 Added execq to README.
+2276 Fixed comment in server.h (ent->v.absmax to ent->r.absmax).
+2277 Fixed typo in README from r2275.
+2278 Removed 0xAD character, from /dev/humancontroller.
+2279 rename trap_Printf() to trap_Print() in the game module, as that function has nothing to do with printf()-like formatting
+
+From /dev/humancontroller.
+2280 remove a bunch of superfluous formatting calls
+
+From /dev/humancontroller.
+2281 fix a WRONG size argument to a memset() call found by Clang/LLVM
+
+From /dev/humancontroller.
+2282 when interacting with QVMs, Clang/LLVM requires the standard use of the va_*() macros instead of (fast) call hacks
+
+From /dev/humancontroller.
+2283 more '\n' business
+
+From /dev/humancontroller.
+2284 Added kicknum, kickall, and kickbots commands, patch by Ensiform.
+2285 static-ize inline functions for Clang/LLVM
+
+From /dev/humancontroller.
+2286 #5672 - Fixed incorrect type usage in NET_Sleep(), patch from Özkan Sezer.
+2287 skip
+2288 Fixed fatal error ("OP_BLOCK_COPY out of range!") when using qvms on Mac OS X powerpc (see r2031 and r2034).
+2289 prevent using getinfo as an amplifier for DDOS attacks (#5678). Patch by DevHC
+2290 Support building on cygwin with cross-make-mingw*.sh (#5405) - patch by q3urt.undead@gmail.com
+2291 More intelligent exponentiation in strtod/strtol (#5487) - patch by Ben Millwood
+2292 Incorrect number of overbright bits printed by GfxInfo_f() (#5510) - fix by Serge Belyshev
+2293 r_ignorehwgamma 1 does not actually turn on software gamma (#5511) - patch by Serge Belyshev
+2294 Various bugfixes by Tobias Kuehnhammer (#5270)
+- A stupid bug where bots re-trigger jumppads if they fell onto it.
+- A small "memset" bug concerning player animations.
+- Reward sounds were never cleared and thus they are played on a map restart.
+- Safer and more secure handling of disconnected clients and clients with 
+  malformed or illegal info strings.
+- first_gauntlet_hit.wav was not played (ops/ps) bug
+- capturelimit not hit (from OAX)
+2295 skip .. later reverted  -- Support for .pk3dir (#5298) - Patch by Andrew (dersaidin@gmail.com)
+2296 skip  Mark JPEG lib changes, file provided by Simon McVittie
+2297 skip .. never applied  -- Revert pk3dir patch because some users report the code gets stuck in an infinite loop in the new code
+2298 We should not try to broadcast via the IPv4 socket if that socket is closed.
+
+Previously, error messages were generated when querying local servers while IPv4 was disabled. Patch from /dev/humancontroller.
+2299 Fixed G_LogPrintf format warning on 64 bit systems added in r2294.
+2300 skip .. not implemented --  * (bug #5709) Fix crash when invoked with --version
+2301 skip .. not implemented -- Fix windows as well
+2302 skip .. not implemented -- * Fix warning
+2303 skip .. switch mac to the framework SDL...
+2304 skip .. not implemented -- Fix this for real now.
+2305 skip .. vm -- Move argument passing from VM to engine to global variables which allows to get rid of lots of OS specific stuff and also fixes errors that happens when compilers add lots of boilerplate to the DoSyscall() function
+2306 skip .. vm -- Oops, still need this
+2307 Don't replay to status OOB requests in Team Arena single player.
+2308 Added MISSIONPACK ifdef around GT_1FCTF code.
+2309 More MISSIONPACK ifdeffery.
+2310 Removed a check that was made unnessicary by r1644.
+2311 skip .. already have -- Added r_mode -2, uses desktop resolution. Bug #5408. Patch by Andrei Drexler and myself.
+2312 skip   Use correct fallback height and width for r_mode -2.
+2313 Remove a redundant code statement.
+2314 Don't have g_teamAutoJoin affect bot's team
+
+Bots set their team later, setting it here causes some bots to change team and die later. Can cause extra skulls to be spawn at beginning of harvester (bug #5740).
+
+2315 Send team info for team overlay to spectators for the team of the client they're following (bug #5740).
+2316 Fix g_warmup < 2 causing client prediction issues (bug #5740). (Reused code for tournament gametype.)
+2317 Fix game getting stuck in a do-while loop when "team follow1" or "team follow2" client sends a follownext or followprev command.
+2318 Cache servers for each master server in q3_ui, otherwise servers from last updated master for shown for all Internet# sources.
+2319 Fix UI player model FOV when using non-640x480 resolution.
+2320 Added myself to ioq3 credits in q3_ui.
+2321 Fix arrow buttons in q3_ui join server menu to be selectable by mouse.
+2322 Fix resetting single player level selection in q3_ui when there is no training level, such as in demoq3.
+2323 skip, not needed  Play correct team sounds when in spectator mode and following a player.
+2324 Don't include client.h in sdl_glimp.c as it is part of the external renderer lib.
+2325 Check last listener number instead of clc.clientNum in S_AL_HearingThroughEntity so sound work correctly when spectate following a client. (Related to bug 5741.)
+2326 skip.. no   When in third person, don't play player's sounds as full volume in Base sound system. OpenAL already does this. (Related to bug 5741.)
+2327 have  skip .. no  (changing ENTITY WORLD constant)
+2328 have  skip   From /dev/humancontroller:
+to further reduce confusion, rename constants like MAX_ENTITIES to MAX_REFENTITIES
+2329
+2330 Fix restoring fs_game when default.cfg is missing.
+2331 Added myself to the list of maintainers.
+2332
+2333
+2334 Add smiletheory to credits in q3_ui.
+2335 Split Rend2's printing OpenGL extensions string (> 1024 characters) into separate function and merged into opengl1 renderer. (Fixes bug #5559.)
+2336 Merge changes to GL_Cull from Rend2 into opengl1 renderer, behavior is the same.
+2337
+2338
+2339
+2340 skip  From /dev/humancontroller:
+fix the SMP functionality not being utilized (as of the import of Rend2)
+2341 skip From /dev/humancontroller:
+when hard-linking renderers, put the old renderer (not the new one) into the "ioquake3" executable, and use a distinguished "ioquake3_rend2" executable for the new renderer
+(Fixes bug #5789.)
+2342 Remove initializing "sv_mapname" cvar in game. It's set to "" and never used.
+2343
+2344
+2345
+2346 check
+2347 Don't draw cursor during Team Arena's loading screen.
+2348
+2349 Change more operator commands to require sv_running to be usable. Patch by Ensiform.
+2350
+2351
+2352
+2353 Fix some "> MAX_*" to be ">= MAX_*".
+2354 Change error message in CL_ConfigstringModified to specify out of range index like in server.
+2355 Fix follow command to find clients whose name begins with a number.
+2356 - Fix up "gc" command, make it more like "tell". Based on patch by Ensiform.
+     - Add usage messages for gc, tell, vtell, and votell commands.
+     - Check player names in gc, tell, vtell, and votell commands.
+2357 Remove anti tamper leftover code 'CL_ChangeReliableCommand'. From Ensiform.
+2358 #5799 - Change messagemode text box to display colors like in console input box.
+2359 Improve "play" command, based on a patch from Ensiform.
+2360 Remove unneeded name buffer in S_Play_f.
+2361 skip  - Check for invalid filename in OpenAL's RegisterSound function.
+     - Changed Base sound system to warn not error when sound filename is empty or too long.
+2362 Remove references to non-existent functions CM_MarkFragments and CM_LerpTag.
+2363
+2364 Changes suggested by DevHC:
+- Remove "!target" checks from tell, vtell, and gc commands. Target was just set, cannot be NULL.
+- Validate "order" in gc command before "player id."
+2365 Update standalone code in Catch the Chicken NSIS installer.
+2366 Remove unused function CL_DisconnectPacket. Pointed out by Ensiform.
+2367 Fix function prototype for Info_RemoveKey_Big. Pointed out by Ensiform.
+2368 In q3_ui if uis.demoversion is set, hide "Team Arena" and "Mods" in main menu. (They aren't shown in id's q3a demo and use to be drawn under demo message).
+2369 Add length check here as well, thanks Ensiform
+2370
+2371
+2372
+2373
+2374
+2375
+2376
+2377
+2378
+2379 check
+2380 check voip
+2381 check voip
+2382
+2383
+2384 Fix clients being able to reset their player state and respawn using donedl.
+2385 Fix passing arg9 (qvm only), arg10, and arg11 to vmMain for native libs and non-i386 compiled or interpated qvms. (Currently they aren't use in vmMain in game, cgame, or ui.)
+Fix passing args[11] to args[15] from vm to engine on ppc64 and sparc64. Some of the args are used by game bot prediction syscalls. May have been causing bugs. Note: This was fixed for x86_64 in r2163.
+2386 Fix reconnect command to work after leaving server. (#5794)
+2387 Fix dedicated server crashing when using MSG_ReadDelta*, though it only happens if someone modifies the engine. (#5449)
+2388 Makefile fixes for OpenBSD by Jonathan Gray. (#5728)
+2389 Save all arguments from connect for reconnect command.
+Remove unnecessary localhost check from reconnect command.
+2390
+2391
+2392
+2393 - Fix spectator client being switched from follow to free after map_restart if following a client with a higher client number.
+- Fix client unlinking issue caused by ent->s.number being set to followed client's ps->clientNum after map_restart. Reported by Ensiform.
+2394 Changes from Ensiform:
+- In G_AddBot, try to allocate clientNum before doing anything else.
+- In G_AddBot, don't set SVF_BOT and inuse. It's done in ClientConnect, plus inuse causes ClientDisconnect to be run for no reason.
+- In G_AddBot, only set skill in bot useinfo once.
+- Avoid using cl->ps.clientNum to check if cl is a bot.
+2395 Fix bot skill format so it doesn't always have a space at the beginning of it.
+2396
+2397
+2398
+
+----------- now git  2398 == 2d02694749efe39ae54652c8b86ca98530d255eb ------
+-------   2013-01-03-01   f6c98fd29f3eb18ab0bd69c870ac00394fab961f   -------
+----------------------------------------------------------------------------
+
+2013-01-03-01 Replace svnversion use with git equivalent
+
+2013-01-05-01 Fix whitespace
+2013-01-05-02 Fix dist target and comment refering to svn
+2013-01-05-03 some:  Assorted whitespace fixes
+
+2013-01-06-01 Increase various arbitrary limits - Bug #5463
+2013-01-06-02 skip:  Fixed a small bug in my new version of this script.
+2013-01-06-03 skip:  Merge pull request #1 from richard-allen/master
+2013-01-06-04 skip:  Fixed a typo in a comment
+
+2013-01-07-01 skip:  #5818 - Modular renderer and Rend2 support for MSVC.
+2013-01-07-02 skip:  #5863 - Use proper texture coordinates for alpha tested materials when doing depth prepass.
+
+2013-01-08-01 Colorize text on win32 console
+
+2013-01-09-01 Fix win32 dedicated input line printing to backlog
+2013-01-09-02 skip:  Don't look for colors past win32 input line length
+2013-01-09-03 skip (rend2):  #5866: Fix surface culling through portals, and use the correct number of frustum planes.
+2013-01-09-04 Fix #5849 - broken snapvector inverts player speed
+2013-01-09-05 skip (rend2):  Merge branch 'master' of https://github.com/ioquake/ioq3
+
+2013-01-10-01 Fix win32 input left on buffer and overwritten
+2013-01-10-02 Make win32 console cursor visible
+2013-01-10-03 Fix win32 console partial print being overwritten
+
+2013-01-11-01 Remove old FIXME, pmove_framecount isn't networked
+
+2013-01-13-01 Fix FS_FOpenFileRead corner case
+2013-01-13-02 skip:  Fix screwed up whitespace in files.c
+2013-01-13-03 Fix error message in BG_EvaluateTrajectoryDelta
+
+2013-01-14-01 done:  Fix error message in BG_EvaluateTrajectory
+
+2013-01-16-01 skip:  Add togglemenu command
+2013-01-16-02 skip:  Add togglemenu to q3_ui controls menu
+2013-01-16-03 skip:  Run toggleconsole in binds while in menu or message mode
+2013-01-16-04 skip:  Fix typo in README
+
+2013-01-17-01 not needed:  Add vim stuff to .gitignore
+2013-01-17-02 Make UI_CVAR_CREATE use VM specific code
+
+2013-01-24-01 skip:  Remove the SMP renderer feature
+
+2013-01-25-01 skip:  Update README
+
+2013-01-26-01 skip:  Fix some SMP bits I missed
+
+2013-02-01-01 Fix MSG_ReadDeltaKey setting bit 1<<bits often
+  MSG_ReadDeltaKey would often set 1<<bits, it should never be set. It exceeds the size of what was being read.
+  Worked okay for weapons/forward/right/up as they stored as chars (value would wrap around to correct value, lucky).
+  Angles had the wrong value, not sure if it was causing issues.
+
+2013-02-02-01 Remove some unused defines from msg.c
+2013-02-02-02 Use Q_strncpyz in G_AddRandomBot
+2013-02-02-03 Remove MSG_WriteDeltaUsercmd and MSG_ReadDeltaUsercmd
+
+2013-02-04-01 skip:  Merge Reaction renderer features, remove "#ifdef REACTION"s
+2013-02-04-02 skip:  Merge branch 'reactionmerge'
+
+2013-02-07-01 Increase favorite address buffer size in Team Arena UI
+2013-02-07-02 Fix creating favorite when not on view favorite servers
+2013-02-07-03 skip (rend2):  Merge branch 'master' of https://github.com/ioquake/ioq3
+
+2013-02-08-01 Fix resolving IPv6 favorites in Team Arena UI
+2013-02-08-02 Extend Team Arena Favorite Address edit field to hold an IPv6 address
+2013-02-08-03 Fix IPv6 favorites in q3_ui
+
+2013-02-11-01 skip:  Fix renderering TrueType Fonts in Rend2
+2013-02-11-02 Unify/cleanup max snapshot entities on client and server
+2013-02-11-03 Adds Z checking to CanDamage function.
+2013-02-11-04 Add missing traps to cg_local.h
+2013-02-11-05 skip (rend2):  Remove newlines from Rend2 error messages
+2013-02-11-06 Update invalid g_gametype right away
+2013-02-11-07 skip (need previous patches):  5289 - Support for .pk3dir
+2013-02-11-08 skip (need previous patches):  Change pk3dir README / comments to fit in better
+2013-02-11-09 skip (need previous patches):  Don't add pk3dirs if connecting to a pure server
+2013-02-11-10 Extend Team Arena name edit fields to MAX_NAME_LENGTH
+2013-02-11-11 Fix possible delta from invalid entity
+2013-02-11-12 Fix compiling
+
+2013-02-12-01 skip (rend2):  #5878: Ensure surfaces are drawn before executing full-screen render
+
+2013-02-15-01 skip (renaming renderer dirs):  renderer -> renderergl1, rend2 -> renderergl2
+2013-02-15-02 skip (renderer2):  Fixed build for mac (s/rend2/opengl2/)
+2013-02-15-03 5097 - Menu corrupted on start (on IRIX)
+2013-02-15-04 5717 - Gamecode can open file "" for reading
+2013-02-15-05 Remove unneeded variable extern
+2013-02-15-06 condump improvements
+
+2013-02-16-01 Fix freeing source while parsing botfiles/items.c
+2013-02-16-02 skip (renderer2):  Move some things into renderercommon
+2013-02-16-03 Change radiant URL in README
+2013-02-16-04 skip (renderer2):  Add renderercommon/tr_common.h
+2013-02-16-05 skip:  Remove a few name tags
+2013-02-16-06 skip (renderer2):  Add GPL header to tr_common.h
+2013-02-16-07 skip (renderer2):  Fix zakk's screwups
+
+2013-02-17-01 skip:  5882 - Update OpenAL Headers to OpenAL Soft 1.15.1
+2013-02-17-02 skip:  Add Ogg Opus support
+2013-02-17-03 skip:  Add libopus 1.0.2 and libopusfile 0.2
+2013-02-17-04 skip:  Add libogg 1.3.0
+2013-02-17-05 skip:  Fix compiling opus using mingw
+2013-02-17-06 skip:  Add ogg and opus Makefile options to README
+2013-02-17-07 skip:  Add missing config_types.h for libogg
+2013-02-17-08 skip:  Fix last commit
+
+2013-02-18-01 skip:  Fix compiling opusfile on mingw32
+2013-02-18-02 Remove Sys_SnapVector
+
+2013-02-27-01 skip:  Fix comment in snd_codec_opus.c
+2013-02-27-02 skip (renderer2):  Move noise function declations to tr_common.h
+2013-02-27-03 be_ai_weap.c: s/move state/weapon state/g
+2013-02-27-04 Remove unused config string code from botlib
+2013-02-27-05 Fix BotExportTest's args for BotGetReachabilityToGoal
+2013-02-27-06 Fix comment for gametype parsing in ui
+
+2013-03-03-01 Fix Key_StringToKeynum to return lowercased ascii
+2013-03-03-02 Show lowercased ascii in bind command
+2013-03-03-03 Fix vote Y/1 and teamvote Y/1
+
+2013-03-05-01 skip (renderer2):  Calculate viewport and screen texture coordinates correctly for sun s...
+2013-03-05-02 skip (renderer2):  Simplify previous patch.
+2013-03-05-03 skip (renderer2):  Oops, fix typo.
+2013-03-05-04 skip (build):  Testing out autobuild stuff.
+2013-03-05-05 skip (build):  Fixed the auto build, for details go here: https://travis-ci.org/ioqu...
+
+2013-03-06-01 skip (build):  updated travis file to notify us in our lonely IRC outpost of love.
+2013-03-06-02 skip (build):  autobuild: Enable Ogg Vorbis, Freetype, and MDR model support
+2013-03-06-03 skip (build):  autobuild: test default build, with extra options, and mingw
+2013-03-06-04 skip (build):  autobuild: try to fix extra options build and mingw builds
+2013-03-06-05 skip (renderer2):  Fix RAVENMD4 warnings in OpenGL2
+2013-03-06-06 skip (build):  Improve build-test.sh for non-travis-ci usage
+2013-03-06-07 skip (build):  build-test.sh always run clean first, for non-travis-ci
+
+2013-03-07-01 skip (build):  Use the mingw fork that gets maintained
+2013-03-07-02 skip (build):  Use -q instead of -qq on apt-get
+2013-03-07-03 skip (build):  One last try...
+2013-03-07-04 skip (renderer2):  Fix clampmapped images being always treated as sRGB.
+2013-03-07-05 skip (build):  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
+2013-03-07-06 skip (build):  Only spam IRC on failure
+
+2013-03-08-01 skip (no iqm):  Fix origin returned by IQM's LerpTag
+2013-03-08-02 skip (no yml):  Merge branch 'master' of https://github.com/ioquake/ioq3
+2013-03-08-03 skip (no iqm):  Fix size reserved for IQM jointMats (allocated more than used)
+
+2013-03-09-01 Fix displaying demo name when loading demo
+
+2013-03-11-01 skip:  Remove old x86_64 JIT compiler
+2013-03-11-02 skip (not needed):  Remove README note about USE_OLD_VM64
+2013-03-11-03 skip (rend2):  Always reset vertex attrib pointers with animated meshes.
+
+2013-03-12-01 skip (rend2):  Move renderers a bit closer together
+2013-03-12-02 skip (rend common):  Fix USE_FREETYPE breakage
+2013-03-12-03 skip (rend2):  Oops missed a bit
+2013-03-12-04 skip:  Move mingw to separate build job on travis-ci
+2013-03-12-05 skip (clang?):  Fix some clang warnings
+2013-03-12-06 skip:  Fix mingw gcc name in build-test.sh
+2013-03-12-07 skip:  Disable freetype and vorbis for mingw travis build
+2013-03-12-08 skip:  Remove some more automatic sRGB image flags.
+
+2013-03-14-01 skip:  Fix compilation in VS2008.
+2013-03-14-02 skip (rend2):  Support more tcgens in lightall shader.
+
+2013-03-18-01 skip:  Remove RAVENMD4 #define
+2013-03-18-02 skip (iqm):  Fix loading and rendering IQMs with no joints
+2013-03-18-03 Use PATH_SEP for a debug message in FS_FOpenFileReadDir
+2013-03-18-04 skip (iqm):  Always initialize joint_names in R_LoadIQM
+2013-03-18-05 Fix NET_IPSocket and NET_IP6Socket return type
+
+2013-03-20-01 skip (rend2):  Make all GLSL shaders use the same set of uniforms.
+
+2013-03-21-01 skip:  Consolidate architecture names
+2013-03-21-02 skip:  Merge mingw build scripts
+2013-03-21-03 skip:  Add jenkins-ci-build.sh
+2013-03-21-04 skip:  Fix cross-make-mingw.sh when no ARCH is supplied
+2013-03-21-05 skip:  Fix comment grammar (and test jenkins)
+
+2013-03-22-01 skip:  Ditch 'historical compatibility' and use 'logic' instead
+2013-03-22-02 skip:  Add DEBUG_MAKEFILE to... debug the Makefile
+2013-03-22-03 skip:  Move cross-make-mingw.sh's functionality to the Makefile and remove it
+2013-03-22-04 skip:  Fix travis build
+2013-03-22-05 skip:  (Hopefully) fix the Jenkins build
+2013-03-22-06 skip:  Fix it more
+2013-03-22-07 skip:  Make travis silent
+2013-03-22-08 skip:  Use distclean for jenkins builds
+
+2013-03-23-01 skip:  (bug #5904) Fix OpenBSD and Solaris builds
+
+2013-03-24-01 skip:  Enable building QVMs when cross-compiling
+
+2013-03-25-01 skip (rend2):  s/enum/typedef enum/g on uniform_t for glorious fix of mac build. h/t...
+2013-03-25-02 skip:  Cross compiling for OS X
+
+2013-03-26-01 Fix some of the things clang --analyze flagged
+2013-03-26-02 Fix the warning caused by fixing the warnings
+2013-03-26-03 skip:  Fix 'make -jX clean release'
+2013-03-26-04 skip:  Make the build summary more pretty
+
+2013-03-27-01 skip:  Add option to create archive of build product
+2013-03-27-02 Change missionpack QVM build order in Makefile
+
+2013-03-28-01 skip:  Fix OSX app/ub scripts
+2013-03-28-02 skip:  Fix typo preventing OSX native compiles
+
+2013-04-02-01 skip (rend2):  Add sunlight/lightmap merging by multiply (r_sunlightMode 1)
+2013-04-02-02 skip (merge):  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
+
+2013-04-05-01 Fix setting CVAR_VM_CREATED flag on user created cvars
+
+2013-04-09-01 skip (not needed):  Fix shfolder.dll not getting freed
+
+2013-04-10-01 skip (rend2):  Fix zone memory leak in OpenGL2 renderer
+
+2013-04-13-01 Remove old .mak files from botlib
+
+2013-04-14-01 Fix memmove()
+
+2013-04-20-01 Add fallback for __func__ (ioq3 isn't compiled as c99 by default)
+
+2013-04-22-01 Fix referencing pk3 with only qagame QVM
+2013-04-22-02 skip (never added com_basegame):  Give botlib com_basegame for botlib.log path
+2013-04-22-03 skip (rend2):  Don't scale shadow multipliers by overbrightbits, and improve documen...
+
+2013-04-24-01 Don't allow modifying qvms or pk3s
+2013-04-24-02 Rename FS_CheckFilenameIsNotExecutable to ..NotImmutable
+2013-04-24-03 Rename FS_CheckFilenameIsNotImmutable to ..IsMutable
+
+2013-04-26-01 Correct TeamCount return type and team argument type
+2013-04-26-02 skip (rend2):  #5889: Do post-processing only on viewport portion of frame buffer.
+
+2013-05-03-01 skip (rend2):  Use specular texture RGB as specular reflectance, multiplied by per-m...
+2013-05-03-02 part:  Show surface names in excessive vertexes and triangles warnings
+
+2013-05-04-01 dlopen libopenal.so not libopenal.so.1 on OpenBSD
+2013-05-04-02 correct the linked libs on OpenBSD
+2013-05-04-03 skip:  sync the OpenBSD cflags with Linux
+2013-05-04-04 skip:  Merge pull request #2 from jonathangray/openbsd_fixes
+
+2013-05-13-01 Remove unused renderCommandList variable from renderers
+
+2013-05-22-01 Fix predicting touching items in CTF and 1FCTF
+
+2013-05-24-01 skip (rend2):  Remove RF_SUNFLARE from OpenGL2 renderer
+2013-05-24-02 skip (rend2):  Clarify comment for OpenGL2's RDF_NOFOG
+
+2013-05-27-01 skip:  Fix Freetype build problems
+2013-05-27-02 Allow drawing sun in OpenGL1 renderer
+
+2013-05-29-01 skip (rend2):  Suppress warning

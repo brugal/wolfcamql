@@ -131,13 +131,18 @@ int BotSortTeamMatesByBaseTravelTime(bot_state_t *bs, int *teammates, int maxtea
 	int traveltimes[MAX_CLIENTS];
 	bot_goal_t *goal = NULL;
 
-	if (gametype == GT_CTF || gametype == GT_1FCTF) {
+#if 1  //def MPACK
+	if (gametype == GT_CTF || gametype == GT_1FCTF)
+#else
+	if (gametype == GT_CTF)
+#endif
+	{
 		if (BotTeam(bs) == TEAM_RED)
 			goal = &ctf_redflag;
 		else
 			goal = &ctf_blueflag;
 	}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	else {
 		if (BotTeam(bs) == TEAM_RED)
 			goal = &redobelisk;
@@ -272,7 +277,7 @@ BotSayTeamOrders
 ==================
 */
 void BotSayTeamOrder(bot_state_t *bs, int toclient) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	// voice chats only
 	char buf[MAX_MESSAGE_SIZE];
 
@@ -288,7 +293,7 @@ BotVoiceChat
 ==================
 */
 void BotVoiceChat(bot_state_t *bs, int toclient, char *voicechat) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if (toclient == -1)
 		// voice only say team
 		trap_EA_Command(bs->client, va("vsay_team %s", voicechat));
@@ -304,7 +309,7 @@ BotVoiceChatOnly
 ==================
 */
 void BotVoiceChatOnly(bot_state_t *bs, int toclient, char *voicechat) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if (toclient == -1)
 		// voice only say team
 		trap_EA_Command(bs->client, va("vosay_team %s", voicechat));
@@ -320,7 +325,7 @@ BotSayVoiceTeamOrder
 ==================
 */
 void BotSayVoiceTeamOrder(bot_state_t *bs, int toclient, char *voicechat) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	BotVoiceChat(bs, toclient, voicechat);
 #endif
 }
@@ -936,7 +941,7 @@ void BotTeamOrders(bot_state_t *bs) {
 	}
 }
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 
 /*
 ==================
@@ -2015,7 +2020,7 @@ void BotTeamAI(bot_state_t *bs) {
 				bs->teamgiveorders_time = 0;
 			}
 		}
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	} else if (gametype == GT_1FCTF) {
 		{
 			if (bs->numteammates != numteammates || bs->flagstatuschanged || bs->forceorders) {

@@ -22,10 +22,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 #include "snd_local.h"
-#include "../qcommon/version.h"
 #include "cl_avi.h"
 
 #include <errno.h>
+
+/////////////////////////////
 
 #define INDEX_FILENAME_EXT ".stdindex.dat"
 #define INDEX_VIDEO_FILENAME_EXT ".vindex.dat"
@@ -44,11 +45,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //static int PcmBytesInBuffer = 0;
 
-FILE  *FS_FileForHandle( fileHandle_t f );
-
 static void CL_NewRiff (aviFileData_t *afd);
-static void CL_PadEndOfFile (aviFileData_t *afd);
-static void CL_PadEndOfFileExt (aviFileData_t *afd, int pad);
+static void CL_PadEndOfFile (const aviFileData_t *afd);
+static void CL_PadEndOfFileExt (const aviFileData_t *afd, int pad);
 
 
 //static aviFileData_t afd;
@@ -306,10 +305,13 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
           WRITE_4BYTES( 56 );                   //"strh" "chunk" size
           WRITE_STRING( "vids" );
 
-          if( afd->motionJpeg )
-            WRITE_STRING( "MJPG" );
-          else
-            WRITE_4BYTES( 0 );                  // BI_RGB
+          if (afd->codec == CODEC_MJPEG) {
+              WRITE_STRING("MJPG");
+          } else if (afd->codec == CODEC_HUFFYUV) {
+              WRITE_STRING("HFYU");
+          } else {
+              WRITE_4BYTES(0);                  // BI_RGB
+          }
 
           WRITE_4BYTES( 0 );                    //dwFlags
           WRITE_4BYTES( 0 );                    //dwPriority
@@ -331,30 +333,41 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
           WRITE_2BYTES( afd->height );           //rcFrame
 
           WRITE_STRING( "strf" );
-          WRITE_4BYTES( 40 );                   //"strf" "chunk" size
-          WRITE_4BYTES( 40 );                   //biSize
+
+          if (afd->codec == CODEC_HUFFYUV) {
+              WRITE_4BYTES(40 + afd->AC->extradata_size);  //"strf" "chunk" size
+              WRITE_4BYTES(40 + afd->AC->extradata_size);  //biSize
+          } else {
+              WRITE_4BYTES(40);                   //"strf" "chunk" size
+              WRITE_4BYTES(40);                   //biSize
+          }
           WRITE_4BYTES( afd->width );            //biWidth
           WRITE_4BYTES( afd->height );           //biHeight
           WRITE_2BYTES( 1 );                    //biPlanes
           WRITE_2BYTES( 24 );                   //biBitCount
 
-          if( afd->motionJpeg )                  //biCompression
-          {
-            WRITE_STRING( "MJPG" );
-            WRITE_4BYTES( afd->width *
-                afd->height );                   //biSizeImage
-          }
-          else
-          {
-            WRITE_4BYTES( 0 );                  // BI_RGB
-            WRITE_4BYTES( afd->width *
-                afd->height * 3 );               //biSizeImage
+          // biCompression:
+          if (afd->codec == CODEC_MJPEG) {
+              WRITE_STRING("MJPG");
+              WRITE_4BYTES(afd->width * afd->height);      //biSizeImage
+          } else if (afd->codec == CODEC_HUFFYUV) {
+              WRITE_STRING("HFYU");
+              WRITE_4BYTES(afd->width * afd->height * 3);  //biSizeImage
+          } else {
+              WRITE_4BYTES(0);                             // BI_RGB
+              WRITE_4BYTES(afd->width * afd->height * 3);  //biSizeImage
           }
 
           WRITE_4BYTES( 0 );                    //biXPelsPetMeter
           WRITE_4BYTES( 0 );                    //biYPelsPetMeter
           WRITE_4BYTES( 0 );                    //biClrUsed
           WRITE_4BYTES( 0 );                    //biClrImportant
+
+          if (afd->codec == CODEC_HUFFYUV) {
+              for (i = 0;  i < afd->AC->extradata_size;  i++) {
+                  WRITE_1BYTES(afd->AC->extradata[i]);
+              }
+          }
 
           if (afd->useOpenDml) {
               START_CHUNK(afd, "indx");
@@ -495,7 +508,7 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
   }
 }
 
-static void CL_InitIndexes (aviFileData_t *afd)
+static void CL_InitIndexes (const aviFileData_t *afd)
 {
   // 0
   fwriteString("00ix", afd->idxVF);
@@ -542,6 +555,10 @@ Creates an AVI file and gets it into a state where
 writing the actual data can begin
 ===============
 */
+
+// us:  called internally if odml isn't used and a series of avi files is
+// written for one recording
+
 qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean depth, qboolean split, qboolean left)
 {
     byte *cBuffer, *eBuffer;
@@ -685,10 +702,12 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
       //Com_Printf("regular avi (size limit)\n");
   }
 
-  if( cl_aviMotionJpeg->integer ) {
-    afd->motionJpeg = qtrue;
+  if (!Q_stricmp(cl_aviCodec->string, "mjpeg")) {
+      afd->codec = CODEC_MJPEG;
+  } else if (!Q_stricmp(cl_aviCodec->string, "huffyuv")) {
+      afd->codec = CODEC_HUFFYUV;
   } else {
-    afd->motionJpeg = qfalse;
+      afd->codec = CODEC_UNCOMPRESSED;
   }
 
   if (!us) {
@@ -740,6 +759,21 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
       afd->newRiffOrCloseFileSize = (1024 * 1024) * Cvar_VariableIntegerValue("testodml");
   } else {
       afd->newRiffOrCloseFileSize = (1024 * 1024) * 950;  //950;  //(1024 * 1024) * 20;  //(1024 * 1024 * 1024);  //FIXME  base it on sample sizes subtracted from defined value
+  }
+
+  if (!us  &&  afd->codec == CODEC_HUFFYUV) {
+      afd->AC = calloc(1, sizeof(AVCodecContext));
+      if (!afd->AC) {
+          Com_Error(ERR_DROP, "%s couldn't allocate memory for codec", __FUNCTION__);
+      }
+      afd->AC->priv_data = calloc(1, sizeof(HYuvContext));
+      //afd->AC->priv_data = calloc(1, 1024 * 1024);  //FIXME size and free
+      if (!afd->AC->priv_data) {
+          Com_Error(ERR_DROP, "%s couldn't allocate memory for codec private data", __FUNCTION__);
+      }
+      afd->AC->width = afd->width;  //800;
+      afd->AC->height = afd->height;  //600;
+      huffyuv_encode_init(afd->AC);
   }
 
   // This doesn't write a real header, but allocates the
@@ -842,7 +876,7 @@ static qboolean CL_CheckRiffSize (aviFileData_t *afd, int bytesToAdd)
 CL_WriteAVIVideoFrame
 ===============
 */
-void CL_WriteAVIVideoFrame (aviFileData_t *afd, const byte *imageBuffer, int size)
+static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuffer, int size)
 {
   int   chunkOffset = afd->riffSize - afd->moviOffset - 8;
   int   chunkSize = 8 + size;
@@ -895,7 +929,7 @@ void CL_WriteAVIVideoFrame (aviFileData_t *afd, const byte *imageBuffer, int siz
   if( size > afd->maxRecordSize)  //  &&  afd->riffCount == 1)
     afd->maxRecordSize = size;
 
-  if (size != afd->maxRecordSize  &&  !afd->motionJpeg) {
+  if (size != afd->maxRecordSize  &&  afd->codec == CODEC_UNCOMPRESSED) {
       Com_Printf("^1size != afd->maxRecordSize  %d  %d\n", size, afd->maxRecordSize);
   }
 
@@ -920,7 +954,65 @@ void CL_WriteAVIVideoFrame (aviFileData_t *afd, const byte *imageBuffer, int siz
   afd->numVIndices++;
 }
 
+//FIXME
+static byte *EncodeBuffer = NULL;
+static int EncodeBufferSize = 0;
 
+void CL_WriteAVIVideoFrame (aviFileData_t *afd, const byte *imageBuffer, int size)
+{
+    int newSize;
+    byte *newBuffer;
+    AVFrame VlcFrame;
+    int bufSize;
+
+    //FIXME
+    bufSize = afd->width * afd->height * 4 * 2;
+    if (!EncodeBuffer) {
+        EncodeBuffer = malloc(bufSize);
+        if (!EncodeBuffer) {
+            Com_Error(ERR_DROP, "%s couldn't allocate encode buffer", __FUNCTION__);
+        }
+        EncodeBufferSize = bufSize;
+    }
+
+    if (bufSize > EncodeBufferSize) {
+        EncodeBuffer = realloc(EncodeBuffer, bufSize);
+        if (!EncodeBuffer) {
+            Com_Error(ERR_DROP, "%s couldn't reallocate encode buffer", __FUNCTION__);
+        }
+        EncodeBufferSize = bufSize;
+    }
+
+    if (afd->codec == CODEC_HUFFYUV) {
+        int i;
+        byte *p;
+
+        p = (byte *)imageBuffer;
+
+        //FIXME change codec so you don't have to swap bgr
+        for (i = 0;  i < size;  i += 3) {
+            int r, b;
+
+            r = p[i + 0];
+            b = p[i + 2];
+
+            p[i + 0] = b;
+            p[i + 2] = r;
+        }
+
+        VlcFrame.data[0] = (uint8_t *)imageBuffer;
+        VlcFrame.linesize[0] = afd->width * 3;
+
+        newSize = huffyuv_encode_frame(afd->AC, EncodeBuffer, EncodeBufferSize, &VlcFrame);
+        newBuffer = EncodeBuffer;
+        //Com_Printf("size  %d  ->  %d\n", size, newSize);
+    } else {
+        newSize = size;
+        newBuffer = (byte *)imageBuffer;
+    }
+
+    CL_WriteAVIVideoFrameReal(afd, newBuffer, newSize);
+}
 
 /*
 ===============
@@ -1054,12 +1146,12 @@ void CL_TakeVideoFrame (aviFileData_t *afd)
         return;
     }
 
-    re.TakeVideoFrame(afd, afd->width, afd->height, afd->cBuffer, afd->eBuffer, afd->motionJpeg, afd->avi, afd->tga, afd->jpg, afd->picCount, afd->givenFileName);
+    re.TakeVideoFrame(afd, afd->width, afd->height, afd->cBuffer, afd->eBuffer, afd->codec == CODEC_MJPEG, afd->avi, afd->tga, afd->jpg, afd->picCount, afd->givenFileName);
 
     afd->picCount++;
 }
 
-static void CL_PadEndOfFile (aviFileData_t *afd)
+static void CL_PadEndOfFile (const aviFileData_t *afd)
 {
     int paddingSize;
     int i;
@@ -1078,7 +1170,7 @@ static void CL_PadEndOfFile (aviFileData_t *afd)
     }
 }
 
-static void CL_PadEndOfFileExt (aviFileData_t *afd, int pad)
+static void CL_PadEndOfFileExt (const aviFileData_t *afd, int pad)
 {
     int paddingSize;
     int i;
@@ -1336,7 +1428,7 @@ static void CL_WriteIndexes (aviFileData_t *afd)
   }
 }
 
-static void CL_CloseRiff (aviFileData_t *afd)
+static void CL_CloseRiff (const aviFileData_t *afd)
 {
     int64_t sz;
     int64_t pos;
@@ -1460,6 +1552,12 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
   if (!us) {
       free(afd->cBuffer);
       free(afd->eBuffer);
+
+      if (afd->codec == CODEC_HUFFYUV) {
+          huffyuv_encode_end(afd->AC);
+          free(afd->AC->priv_data);
+          free(afd->AC);
+      }
   }
 
   FS_FCloseFile( afd->f );
@@ -1589,7 +1687,7 @@ static void CL_NewRiff (aviFileData_t *afd)
 CL_VideoRecording
 ===============
 */
-qboolean CL_VideoRecording(aviFileData_t *afd)
+qboolean CL_VideoRecording (const aviFileData_t *afd)
 {
     return afd->recording;
 }

@@ -37,15 +37,17 @@ int CM_PointLeafnum_r( const vec3_t p, int num ) {
 	{
 		node = cm.nodes + num;
 		plane = node->plane;
-		
+
 		if (plane->type < 3)
 			d = p[plane->type] - plane->dist;
 		else
 			d = DotProduct (plane->normal, p) - plane->dist;
-		if (d < 0)
+		if (d < 0) {  // (0.0) {
 			num = node->children[1];
-		else
+		} else {
 			num = node->children[0];
+		}
+		//Com_Printf("point %f  nan %d\n", d, IS_NAN(d));
 	}
 
 	c_pointcontents++;		// optimize counter
@@ -172,6 +174,7 @@ CM_BoxLeafnums
 int	CM_BoxLeafnums( const vec3_t mins, const vec3_t maxs, int *list, int listsize, int *lastLeaf) {
 	leafList_t	ll;
 
+	memset(&ll, 0, sizeof(ll));
 	cm.checkcount++;
 
 	VectorCopy( mins, ll.bounds[0] );
@@ -197,6 +200,7 @@ CM_BoxBrushes
 int CM_BoxBrushes( const vec3_t mins, const vec3_t maxs, cbrush_t **list, int listsize ) {
 	leafList_t	ll;
 
+	memset(&ll, 0, sizeof(ll));
 	cm.checkcount++;
 
 	VectorCopy( mins, ll.bounds[0] );

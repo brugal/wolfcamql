@@ -46,6 +46,7 @@ void trap_Print( const char *string ) {
 
 void trap_Error( const char *string ) {
 	syscall( UI_ERROR, string );
+	exit(1);  // silence gcc warning
 }
 
 int trap_Milliseconds( void ) {
@@ -88,6 +89,11 @@ void trap_Cvar_Create( const char *var_name, const char *var_value, int flags ) 
 
 void trap_Cvar_InfoStringBuffer( int bit, char *buffer, int bufsize ) {
 	syscall( UI_CVAR_INFOSTRINGBUFFER, bit, buffer, bufsize );
+}
+
+qboolean trap_Cvar_Exists (const char *var_name)
+{
+	return syscall(UI_CVAR_EXISTS, var_name);
 }
 
 int trap_Argc( void ) {

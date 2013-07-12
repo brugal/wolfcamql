@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../client/keycodes.h"
 
 #include "../../ui/menudef.h"
+#include "ui_common.h"
 
 #define MAX_MENUNAME 32
 #define MAX_ITEMTEXT 64
@@ -35,9 +36,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define MAX_MENUDEFFILE 4096
 #define MAX_MENUFILE 32768
 #define MAX_MENUS 128
-#define MAX_MENUITEMS 1024  //96
+
 #define MAX_COLOR_RANGES 10
 #define MAX_OPEN_MENUS 16
+
+#define MAX_MENU_VARS 128
+#define MAX_MENU_VAR_NAME 64
 
 #define WINDOW_MOUSEOVER			0x00000001	// mouse is over it, non exclusive
 #define WINDOW_HASFOCUS				0x00000002	// has cursor focus, exclusive
@@ -71,9 +75,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CURSOR_SIZER				0x00000004
 
 #ifdef CGAME
-#define STRING_POOL_SIZE 128*1024
+#define STRING_POOL_SIZE 2 * 1024 * 1024  //128*1024 //128*1024
 #else
-#define STRING_POOL_SIZE 384*1024
+#define STRING_POOL_SIZE 2 * 1024 * 1024  //384*1024
 #endif
 #define MAX_STRING_HANDLES 4096
 
@@ -143,7 +147,8 @@ typedef struct {
   vec4_t backColor;               // border color
   vec4_t borderColor;             // border color
   vec4_t outlineColor;            // border color
-  qhandle_t background;           // background asset  
+  qhandle_t background;           // background asset
+	const char *backgroundName;
 } windowDef_t;
 
 typedef windowDef_t Window;
@@ -177,6 +182,7 @@ typedef struct listBoxDef_s {
 	int endPos;
 	int drawPadding;
 	int cursorPos;
+	int selectedCursorPos;
 	float elementWidth;
 	float elementHeight;
 	int elementStyle;
@@ -236,6 +242,8 @@ typedef struct itemDef_s {
   const char *text;              // display text
   void *parent;                  // menu owner
   qhandle_t asset;               // handle to asset
+	const char *assetName;
+  const char *run;  // run this script every frame
   const char *mouseEnterText;    // mouse enter script
   const char *mouseExitText;     // mouse exit script
   const char *mouseEnter;        // mouse enter script
@@ -243,11 +251,16 @@ typedef struct itemDef_s {
   const char *action;            // select script
   const char *onFocus;           // select script
   const char *leaveFocus;        // select script
-  const char *cvar;              // associated cvar 
+  const char *cvar;              // associated cvar
   const char *cvarTest;          // associated cvar for enable actions
-	const char *enableCvar;			   // enable, disable, show, or hide based on value, this can contain a list
+  const char *enableCvar;		 // enable, disable, show, or hide based on value, this can contain a list
 	int cvarFlags;								 //	what type of action to take on cvarenables
   sfxHandle_t focusSound;
+	const char *focusSoundName;
+
+	sfxHandle_t playSound;
+	const char *playSoundName;
+
 	int numColors;								 // number of color ranges
 	colorRangeDef_t colorRanges[MAX_COLOR_RANGES];
 	float special;								 // used for feeder id's etc.. diff per type
@@ -328,7 +341,7 @@ typedef struct {
   void (*setColor) (const vec4_t v);
   void (*drawHandlePic) (float x, float y, float w, float h, qhandle_t asset);
   void (*drawStretchPic) (float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader );
-	void (*drawText) (float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex );
+	void (*drawText) (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex );
 	int (*textWidth) (const char *text, float scale, int limit, int fontIndex);
 	int (*textHeight) (const char *text, float scale, int limit, int fontIndex);
   qhandle_t (*registerModel) (const char *p);
@@ -341,7 +354,7 @@ typedef struct {
   void (*addRefEntityToScene) (const refEntity_t *re );
   void (*renderScene) ( const refdef_t *fd );
   void (*registerFont) (const char *pFontname, int pointSize, fontInfo_t *font);
-	void (*ownerDrawItem) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int fontIndex);
+	void (*ownerDrawItem) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex);
 	//void (*ownerDrawItem2) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int fontIndex);
 	float (*getValue) (int ownerDraw);
 	qboolean (*ownerDrawVisible) (int flags, int flags2);
@@ -350,7 +363,8 @@ typedef struct {
   void (*getCVarString)(const char *cvar, char *buffer, int bufsize);
   float (*getCVarValue)(const char *cvar);
   void (*setCVar)(const char *cvar, const char *value);
-	void (*drawTextWithCursor)(float x, float y, float scale, vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style, int fontIndex);
+	qboolean (*cvarExists)(const char *var_name);
+	void (*drawTextWithCursor)(float x, float y, float scale, const vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style, int fontIndex);
   void (*setOverstrikeMode)(qboolean b);
   qboolean (*getOverstrikeMode)( void );
   void (*startLocalSound)( sfxHandle_t sfx, int channelNum );
@@ -362,9 +376,9 @@ typedef struct {
 	void (*keynumToStringBuf)( int keynum, char *buf, int buflen );
 	void (*getBindingBuf)( int keynum, char *buf, int buflen );
 	void (*setBinding)( int keynum, const char *binding );
-	void (*executeText)(int exec_when, const char *text );	
-	void (*Error)(int level, const char *error, ...);
-	void (*Print)(const char *msg, ...);
+	void (*executeText)(int exec_when, const char *text );
+	void (*Error)(int level, const char *error, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
+	void (*Print)(const char *msg, ...) __attribute__ ((format (printf, 1, 2)));
 	void (*Pause)(qboolean b);
 	int (*ownerDrawWidth)(int ownerDraw, float scale, int fontIndex);
 	sfxHandle_t (*registerSound)(const char *name, qboolean compressed);
@@ -379,6 +393,7 @@ typedef struct {
   float			xscale;
   float			bias;
   int				realTime;
+	float cgTime;
   int				frameTime;
 	int				cursorx;
 	int				cursory;
@@ -418,6 +433,11 @@ qboolean PC_Int_Parse(int handle, int *i);
 qboolean PC_Rect_Parse(int handle, rectDef_t *r);
 qboolean PC_String_Parse(int handle, const char **out);
 qboolean PC_Script_Parse(int handle, const char **out);
+qboolean PC_Parenthesis_Parse(int handle, const char **out);
+qboolean MenuVar_Set (const char *varName, float f);
+float MenuVar_Get (const char *varName);
+char *Q_MathScript (char *script, float *val, int *error);  //FIXME not here
+
 int Menu_Count( void );
 void Menu_New(int handle);
 void Menu_PaintAll( void );

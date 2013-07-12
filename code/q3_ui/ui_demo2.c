@@ -144,8 +144,8 @@ static void Demos_PlayDemoOrChangeDir (void)
 		return;
 	} else {
 		//FIXME hack
-		UI_ForceMenuOff();
 		//Com_Printf("^3dirName '%s'  fname '%s'\n", s_demos.dirName, fname);
+		UI_ForceMenuOff();
 		trap_Cmd_ExecuteText(EXEC_APPEND, va("demo \"%s/%s\"\n", s_demos.dirName, fname));
 	}
 }
@@ -157,7 +157,7 @@ Demos_MenuEvent
 */
 static void Demos_MenuEvent (void *ptr, int event)
 {
-	//Com_Printf("demos menuEvent %p %d\n", ptr, event);
+	//Com_Printf("demos menuEvent %p event %d  id %d\n", ptr, event, ((menucommon_s *)ptr)->id);
 
 	if (event == QM_DOUBLECLICKED) {
 		Demos_PlayDemoOrChangeDir();

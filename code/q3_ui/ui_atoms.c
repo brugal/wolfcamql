@@ -137,8 +137,9 @@ void UI_PopMenu (void)
 
 	uis.menusp--;
 
-	if (uis.menusp < 0)
+	if (uis.menusp < 0) {
 		trap_Error ("UI_PopMenu: menu stack underflow");
+	}
 
 	if (uis.menusp) {
 		uis.activemenu = uis.stack[uis.menusp-1];
@@ -832,7 +833,7 @@ void UI_SetActiveMenu( uiMenuCommand_t menu ) {
 	case UIMENU_TEAM:
 	case UIMENU_POSTGAME:
 	default:
-#ifndef NDEBUG
+#if 1  //ndef NQDEBUG
 	  Com_Printf("UI_SetActiveMenu: bad enum %d\n", menu );
 #endif
 	  break;
@@ -1227,7 +1228,7 @@ void UI_Refresh( int realtime )
 	UI_SetColor( NULL );
 	UI_DrawHandlePic( uis.cursorx-16, uis.cursory-16, 32, 32, uis.cursor);
 
-#ifndef NDEBUG
+#ifndef NQDEBUG
 	if (uis.debug)
 	{
 		// cursor coordinates

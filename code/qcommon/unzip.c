@@ -84,9 +84,11 @@ woven in by Terry Thorsen 1/2003.
 #define SIZEZIPLOCALHEADER (0x1e)
 
 
+//FIXME
+void Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
 
 
-const char unz_copyright[] =
+static const char unz_copyright[] =
    " unzip 1.01 Copyright 1998-2004 Gilles Vollant - http://www.winimage.com/zLibDll";
 
 /* unz_file_info_interntal contain internal info about a file in zipfile*/
@@ -359,8 +361,10 @@ local uLong unzlocal_SearchCentralDir(pzlib_filefunc_def,filestream)
         uMaxBack = uSizeFile;
 
     buf = (unsigned char*)ALLOC(BUFREADCOMMENT+4);
-    if (buf==NULL)
+    if (buf==NULL) {
+        Com_Printf("^1%s() couldn't allocate memory for buffer\n", __FUNCTION__);
         return 0;
+    }
 
     uBackRead = 4;
     while (uBackRead<uMaxBack)
@@ -502,7 +506,11 @@ extern unzFile ZEXPORT unzOpen2 (path, pzlib_filefunc_def)
 
 
     s=(unz_s*)ALLOC(sizeof(unz_s));
-    *s=us;
+    if (!s) {
+        Com_Printf("^1%s() couldn't allocate memory\n", __FUNCTION__);
+    } else {
+        *s=us;
+    }
     unzGoToFirstFile((unzFile)s);
     return (unzFile)s;
 }
@@ -735,18 +743,13 @@ local int unzlocal_GetCurrentFileInfoInternal (file,
 
         if (lSeek!=0)
         {
-            if (ZSEEK(s->z_filefunc, s->filestream,lSeek,ZLIB_FILEFUNC_SEEK_CUR)==0)
-                lSeek=0;
-            else
+            if (ZSEEK(s->z_filefunc, s->filestream,lSeek,ZLIB_FILEFUNC_SEEK_CUR)!=0)
                 err=UNZ_ERRNO;
         }
         if ((file_info.size_file_comment>0) && (commentBufferSize>0))
             if (ZREAD(s->z_filefunc, s->filestream,szComment,uSizeRead)!=uSizeRead)
                 err=UNZ_ERRNO;
-        lSeek+=file_info.size_file_comment - uSizeRead;
     }
-    else
-        lSeek+=file_info.size_file_comment;
 
     if ((err==UNZ_OK) && (pfile_info!=NULL))
         *pfile_info=file_info;
@@ -1112,8 +1115,10 @@ extern int ZEXPORT unzOpenCurrentFile3 (file, method, level, raw, password)
 
     pfile_in_zip_read_info = (file_in_zip_read_info_s*)
                                         ALLOC(sizeof(file_in_zip_read_info_s));
-    if (pfile_in_zip_read_info==NULL)
+    if (pfile_in_zip_read_info==NULL) {
+        Com_Printf("^1%s() couldn't allocate info memory\n", __FUNCTION__);
         return UNZ_INTERNALERROR;
+    }
 
     pfile_in_zip_read_info->read_buffer=(char*)ALLOC(UNZ_BUFSIZE);
     pfile_in_zip_read_info->offset_local_extrafield = offset_local_extrafield;
@@ -1123,6 +1128,7 @@ extern int ZEXPORT unzOpenCurrentFile3 (file, method, level, raw, password)
 
     if (pfile_in_zip_read_info->read_buffer==NULL)
     {
+        Com_Printf("^1%s() couldn't allocate read buffer\n", __FUNCTION__);
         TRYFREE(pfile_in_zip_read_info);
         return UNZ_INTERNALERROR;
     }
@@ -1166,13 +1172,12 @@ extern int ZEXPORT unzOpenCurrentFile3 (file, method, level, raw, password)
       pfile_in_zip_read_info->stream.next_in = (voidpf)0;
       pfile_in_zip_read_info->stream.avail_in = 0;
 
-      err=inflateInit2(&pfile_in_zip_read_info->stream, -MAX_WBITS);
-      if (err == Z_OK)
+      if (inflateInit2(&pfile_in_zip_read_info->stream, -MAX_WBITS) == Z_OK)
         pfile_in_zip_read_info->stream_initialised=1;
       else
       {
         TRYFREE(pfile_in_zip_read_info);
-        return err;
+        return UNZ_INTERNALERROR;
       }
         /* windowBits is passed < 0 to tell that there is no zlib header.
          * Note that in this case inflate *requires* an extra "dummy" byte
@@ -1219,7 +1224,7 @@ extern int ZEXPORT unzOpenCurrentFile3 (file, method, level, raw, password)
 #    endif
 
 
-    return UNZ_OK;
+    return err;
 }
 
 extern int ZEXPORT unzOpenCurrentFile (file)

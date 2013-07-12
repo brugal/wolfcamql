@@ -3,22 +3,7 @@
 
 //#include "cg_local.h"
 
-#include "../qcommon/version.h"
-
 #define DEBUG_BUFFER_SIZE 4192
-
-//#define WOLFCAM_VERSION "6.2"
-
-#define WOLFCAM_UNKNOWN 0
-#define WOLFCAM_BASEQ3 1
-//#define WOLFCAM_ETMAIN 1
-//#define WOLFCAM_ETPRO 2
-
-// rtcw
-#define TEAM_AXIS TEAM_RED
-#define TEAM_ALLIES TEAM_BLUE
-
-#define PAIN_EV_TIME 700
 
 #define MAX_SNAPSHOT_BACKUP     256
 #define MAX_SNAPSHOT_MASK       (MAX_SNAPSHOT_BACKUP - 1)
@@ -216,10 +201,6 @@ typedef struct {
 
 } woldclient_t;
 
-extern int wolfcam_gameVersion;
-
-extern char globalDebugString[DEBUG_BUFFER_SIZE];
-extern int wolfcam_initialSnapshotNumber;
 
 extern qboolean wolfcam_following;
 
@@ -227,81 +208,13 @@ extern wcg_t wcg;
 extern wclient_t wclients[MAX_CLIENTS];
 extern woldclient_t woldclients[MAX_CLIENTS];  // clients that have disconnected
 extern int wnumOldClients;
-//extern fileHandle_t wc_logfile;
+
 extern char *weapNames[];
 extern char *weapNamesCasual[];
 
-extern vmCvar_t wolfcam_debugErrors;
-extern vmCvar_t wolfcam_debugDrawGun;
-extern vmCvar_t wolfcam_fakelag;
-extern vmCvar_t wolfcam_fast_forward_timescale;
-extern vmCvar_t wolfcam_fast_forward_invalid_time;
-//extern vmCvar_t wolfcam_execIntermission;
-//extern vmCvar_t wolfcam_execShutdown;
 extern vmCvar_t wolfcam_fixedViewAngles;
 extern vmCvar_t cg_useOriginalInterpolation;
 extern vmCvar_t cg_drawBBox;
 
-//extern wcvar_t cg_teamModel;
-//extern wcvar_t cg_teamColors;
-//extern wcvar_t wolfcam_grenadeColor;
-//extern wcvar_t cg_deadBodyColor;
-
-void Wolfcam_Players_f (void);
-void Wolfcam_Playersw_f (void);
-
-
-void Wolfcam_Follow_f (void);
-void Wolfcam_Server_Info_f (void);
-
-void Wolfcam_Weapon_Stats_f (void);
-void Wolfcam_Weapon_Statsall_f (void);
-void Wolfcam_List_Player_Models_f (void);
-
-void Wolfcam_DemoKeyClick (int key, qboolean down);
-
-void Wolfcam_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float speial, float scale, vec4_t color, qhandle_t shader, int textStyle);
-
-//void Wolfcam_Draw2D (void);
-void Wolfcam_ColorForHealth (vec4_t hcolor);
-void Wolfcam_AddViewWeapon (void);
-
-void Wolfcam_TransitionPlayerState (int oldClientNum);
-
-void Wolfcam_ZoomIn (void);
-void Wolfcam_ZoomOut (void);
-int Wolfcam_CalcFov (void);
-int Wolfcam_OffsetThirdPersonView (void);
-int Wolfcam_OffsetFirstPersonView (void);
-
-void Wolfcam_EntityEvent (centity_t *cent, vec3_t position);
-
-//void Wolfcam_DrawFollowing (void);
-//void Wolfcam_DrawCrosshairNames (void);
-
-void wolfcam_etpro_command (const char *cmd);
-
-void Wolfcam_DamageBlendBlob (void);
-void Wolfcam_DrawActive( stereoFrame_t stereoView );
-void Wolfcam_MarkValidEntities (void);
-
-void Wolfcam_LogMissileHit (int weapon, vec3_t origin, vec3_t dir, int entityNum);
-void Wolfcam_WeaponTrace (trace_t *result, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int skipNumber, int mask);
-qboolean Wolfcam_CalcMuzzlePoint (int entityNum, vec3_t muzzle, vec3_t forward, vec3_t right, vec3_t up, qboolean useLerp);
-qboolean Wolfcam_InterpolateEntityPosition (centity_t *cent);
-void Wolfcam_AddBox (vec3_t origin, int x, int y, int z, int red, int green, int blue);
-void Wolfcam_AddBoundingBox( centity_t *cent );
-void Wolfcam_ScoreData (void);
-void Wolfcam_SwitchPlayerModels (void);
-void Wolfcam_LoadModels (void);
-
-void wolfcam_log_event (centity_t *cent, vec3_t position);
-void Wolfcam_NextSnapShotSet (void);
-int find_best_target (int attackerClientNum, qboolean useLerp, vec_t *distance, vec3_t offsets);
-int Wolfcam_PlayerHealth (int clientNum);
-int Wolfcam_PlayerArmor (int clientNum);
-void Wolfcam_Reset_Weapon_Stats_f (void);
-int wolfcam_find_client_to_follow (void);
-void Wolfcam_CheckNoMove (void);
 
 #endif // wolfcam_h_include

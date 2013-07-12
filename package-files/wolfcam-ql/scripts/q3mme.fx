@@ -8,7 +8,7 @@
 //    teammate
 //    ineyes       1 if first person view is with this player
 //    surfacetype  for impact scripts:  0 not specified, 1 metal, 2 wood,
-//                   3 dust
+//                   3 dust, 4 snow
 //
 
 /////////////////////////////////////////////////////
@@ -230,12 +230,12 @@ player/gibbed {
                                 // wolfcam  need to add gib splat sounds yourself
                                 if rand < 0.5 {
                                     t0 rand * 3
-                                    if t0 < 3 {
-                                        sound sound/player/gibimp3.wav
+                                    if t0 < 1 {
+                                        sound sound/player/gibimp1.wav
                                     } else if t0 < 2 {
                                         sound sound/player/gibimp2.wav
                                     } else {
-                                        sound sound/player/gibimp1.wav
+                                        sound sound/player/gibimp3.wav
                                     }
                                 }
 				size 16 + rand*32
@@ -264,15 +264,16 @@ player/gibbed {
 	}
     } else {
            t0 rand * 4
-           if t0 < 4 {
-               sound sound/misc/electrogib_04.ogg
-	   } else if t0 < 3 {
-	       sound sound/misc/electrogib_03.ogg
-	   } else if t0 < 2 {
-               sound sound/misc/electrogib_02.ogg
-	   } else {
+           if t0 < 1 {
                sound sound/misc/electrogib_01.ogg
+	   } else if t0 < 2 {
+	       sound sound/misc/electrogib_02.ogg
+	   } else if t0 < 3 {
+               sound sound/misc/electrogib_03.ogg
+	   } else {
+               sound sound/misc/electrogib_04.ogg
 	   }
+
            // death effect
            shader deathEffect
            size 100
@@ -301,14 +302,14 @@ player/gibbed {
 			impact 50 {
                                 if rand < 0.5 {
                                     t0 rand * 4
-                                    if t0 < 4 {
-                                        sound sound/misc/electrogib_bounce_04.ogg
-                                    } else if t0 < 3 {
-                                        sound sound/misc/electrogib_bounce_03.ogg
+                                    if t0 < 1 {
+                                        sound sound/misc/electrogib_bounce_01.ogg
                                     } else if t0 < 2 {
                                         sound sound/misc/electrogib_bounce_02.ogg
+                                    } else if t0 < 3 {
+                                        sound sound/misc/electrogib_bounce_03.ogg
                                     } else {
-                                        sound sound/misc/electrogib_bounce_01.ogg
+                                        sound sound/misc/electrogib_bounce_04.ogg
                                     }
                                 }
 				//size 16 + rand*32
@@ -333,9 +334,7 @@ player/gibbed {
 }
 
 // Freezetag thaw
-// input: origin, velocity, team, clientnum, enemy, teammate, ineyes
-//
-// wolfcam: guessing that velocity corresponds to player
+// input: origin
 //
 // player/thawed {}
 
@@ -352,7 +351,13 @@ player/gibbed {
 //   and 'chaingun'
 // wolfcam: weapons also have, in addition to /impact scripts, /impactflesh
 //   scripts.  ex:  weapon/plasma/impactflesh
-//   inputs for 'impactflesh' are: origin and dir
+//   inputs for 'impactflesh' are: origin, dir, and end
+//      'origin' is the impact point
+//      'dir' is the reflected bounce direction from missile hits, for
+//            machine gun, chain gun, shotgun, etc..  it's just a random
+//            value
+//      'end' is the direction of the shooter if their position is valid,
+//            otherwise the length of this vector is 0
 //
 //   If a weapon doesn't have an impactflesh script 'weapon/common/impactFlesh'
 //   will be checked.  'weapon/common/impactFlesh' would be a good place to
@@ -361,15 +366,26 @@ player/gibbed {
 
 // input: origin, dir, team, clientnum, enemy, teammate, ineyes
 //weapon/common/impactFlesh {
-//	shader flareShader
+//        if (ineyes) {
+//           return
+//        }
+//	  shader flareShader
 //        size 5
 //        color 1 0 1
 //        emitter 4 {
 //               //origin2 origin2 + lerp * 8
+//               if (cgtime % 2) {
+//                  color 0.8 0 1
+//               } else {
+//                  color 0.5 0 0
+//               }
 //               velocity2 200
 //               moveGravity 0
 //               Sprite
 //        }
+//
+//        extraShader "powerups/battlesuit"
+//        extraShaderEndTime cgtime + 2000
 //}
 
 
@@ -377,6 +393,8 @@ player/gibbed {
 // input: origin
 weapon/common/bubbles {
         shader waterbubble
+        clear velocity
+
 	distance 5+rand*10 {
 		size 1 + rand * 2
 		random	dir
@@ -387,6 +405,13 @@ weapon/common/bubbles {
 			Sprite
 		}
 	}
+}
+
+// input: origin, team, clientnum, enemy, teammate, ineyes, dir
+//   (note: if clientnum < 0  it's a non-player fired weapon.   dir,
+//    and parentDir aren't available)
+weapon/rocket/fire {
+   soundweapon sound/weapons/rocket/rocklf1a
 }
 
 // input: origin, team, clientnum, enemy, teammate, ineyes
@@ -458,6 +483,10 @@ weapon/rocket/impact {
 	}
 }
 
+weapon/bfg/fire {
+   soundweapon sound/weapons/bfg/bfg_fire
+}
+
 // input: origin, team, clientnum, enemy, teammate, ineyes
 weapon/bfg/flash {
 	color	1 0.7 1
@@ -500,6 +529,10 @@ weapon/bfg/impact {
 	emitter 0.6 {
 		sprite
 	}
+}
+
+weapon/grenade/fire {
+   soundweapon sound/weapons/grenade/grenlf1a
 }
 
 // input: origin, team, clientnum, enemy, teammate, ineyes
@@ -562,6 +595,10 @@ weapon/grenade/impact {
 	}
 }
 
+weapon/plasma/fire {
+   soundweapon sound/weapons/plasma/hyprbf1a
+}
+
 // input: origin, team, clientnum, enemy, teammate, ineyes
 weapon/plasma/flash {
 	color	0.6 0.6 1
@@ -575,6 +612,7 @@ weapon/plasma/flash {
 weapon/plasma/projectile {
 	// The sprite for the plasma
 	size 16
+        rotate rand * 360
 	shader	sprites/plasma1
 	sprite
 	// Plasma flying sound
@@ -605,6 +643,10 @@ weapon/plasma/impact {
 	size	24
 	shader	gfx/damage/plasma_mrk
 	Decal energy
+}
+
+weapon/rail/fire {
+   soundweapon sound/weapons/railgun/railgf1a
 }
 
 // input: origin, team, clientnum, enemy, teammate, ineyes
@@ -651,8 +693,9 @@ weapon/rail/trail {
 	// color2 is stored in the parent input structure, retrieve it like this
 	pushparent color2
 	pop color
-	if cg_oldrail {
-		// Do the rail rings
+	//if cg_oldrail {
+        if cg_railQL {  // wolfcam: 'cg_oldrail' doesn't exist
+		// Do the rail rings -- inside the rail beam
 		size r_railWidth*0.5
 		// Rings take their stepsize from the width variable
 		width r_railSegmentLength
@@ -660,7 +703,9 @@ weapon/rail/trail {
 			colorFade 0.1
 			Rings
 		}
-	} else {
+	}
+
+        if cg_railRings {  // wolfcam: 'cg_oldrail' doesn't exist
 		// Do a spiral around the rail direction
 		// Get length in t0
 		t0 dir
@@ -687,6 +732,10 @@ weapon/rail/trail {
 			}
 		}
 	}
+}
+
+weapon/shotgun/fire {
+   soundweapon sound/weapons/shotgun/sshotf1b
 }
 
 // input: origin, team, clientnum, enemy, teammate, ineyes
@@ -727,9 +776,59 @@ weapon/shotgun/impact {
 	}
 }
 
-
+// input: origin, end, dir, clientnum, enemy, teammate, ineyes
 weapon/shotgun/trail {
-// Yep empty and not called
+        // rtcw / et style moving tracers
+
+        if (rand > cg_tracerChance) {  // cg_tracerChance.value == 0.4
+            return
+        }
+
+        // move randomly forward a bit
+        // le->startTime = cg.time - (cg.frametime ? (rand()%cg.frametime)/2 : 0);
+        normalize dir
+        addscale origin dir origin (rand * 160)
+
+        sub end origin v0
+        t0 v0   // t0 == distance
+        if (t0 < (2.0 * cg_tracerLength)) {  // cg_tracerLength.value == 160.0 rtcw
+            return
+        }
+
+        // subtract the length of the tracer from the end point so that
+        // it doesn't go through the end point
+        addscale end dir end -cg_tracerLength
+        sub end origin v1
+        t1 v1  // t1 == adjusted distance
+
+
+        // cg_tracerSpeed.value == 4500.0  rtcw, not in q3
+        scale dir velocity 4500.0
+        shader gfx/misc/tracer
+        size cg_tracerWidth  // 0.8 rtcw
+        copy dir v3
+        copy origin v5
+        emitter (t1 / 4500.0) {  // cg_tracerSpeed == 4500.0 rtcw
+            // v5 is original 'origin'
+            // v3 is old 'dir', 'beam' uses 'dir' to determine end point
+            addscale v5 v3 origin (t1 * lerp)
+
+            addscale origin v3 v4 cg_tracerLength
+            sub v4 origin dir
+            beam
+        }
+
+        addscale v5 dir origin (cg_tracerLength / 2.0)
+        sound sound/weapons/machinegun/buletby1.wav
+}
+
+weapon/machinegun/fire {
+    soundlistweapon {
+        sound/weapons/machinegun/machgf1b
+        sound/weapons/machinegun/machgf2b
+        sound/weapons/machinegun/machgf3b
+        sound/weapons/machinegun/machgf4b
+    }
 }
 
 // input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype
@@ -767,8 +866,54 @@ weapon/machinegun/impact {
 	}
 }
 
+// input: origin, end, dir, clientnum, enemy, teammate, ineyes
 weapon/machinegun/trail {
-// Empty
+        // rtcw / et style moving tracers
+
+        if (rand > cg_tracerChance) {  // cg_tracerChance.value == 0.4
+            return
+        }
+
+        // move randomly forward a bit
+        // le->startTime = cg.time - (cg.frametime ? (rand()%cg.frametime)/2 : 0);
+        normalize dir
+        addscale origin dir origin (rand * 160)
+
+        sub end origin v0
+        t0 v0   // t0 == distance
+        if (t0 < (2.0 * cg_tracerLength)) {  // cg_tracerLength.value == 160.0 rtcw
+            return
+        }
+
+        // subtract the length of the tracer from the end point so that
+        // it doesn't go through the end point
+        addscale end dir end -cg_tracerLength
+        sub end origin v1
+        t1 v1  // t1 == adjusted distance
+
+
+        // cg_tracerSpeed.value == 4500.0  rtcw, not in q3
+        scale dir velocity 4500.0
+        shader gfx/misc/tracer
+        size cg_tracerWidth  // 0.8 rtcw
+        copy dir v3
+        copy origin v5
+        emitter (t1 / 4500.0) {  // cg_tracerSpeed == 4500.0 rtcw
+            // v5 is original 'origin'
+            // v3 is old 'dir', 'beam' uses 'dir' to determine end point
+            addscale v5 v3 origin (t1 * lerp)
+
+            addscale origin v3 v4 cg_tracerLength
+            sub v4 origin dir
+            beam
+        }
+
+        addscale v5 dir origin (cg_tracerLength / 2.0)
+        sound sound/weapons/machinegun/buletby1.wav
+}
+
+weapon/lightning/fire {
+    soundweapon sound/weapons/lightning/lg_fire
 }
 
 // input: origin, team, clientnum, enemy, teammate, ineyes
@@ -802,7 +947,7 @@ weapon/lightning/trail {
 		// Clear the previous shader so it uses the one in the model
 		shaderClear
 		model "models/weaphits/crackle.md3"
-		size 1
+		size 0.6  // 1
 		// Slightly before the endpoint
 		addScale origin dir origin ( (t0 - 16 ) / t0 )
 		// Just a random model in it's angles
@@ -833,23 +978,86 @@ weapon/lightning/impact {
 
 	// Hole mark shader decal
 	shader	gfx/damage/hole_lg_mrk
-	size	12
+	size	6
 	decal
 
 	// a single sprite shooting up from impact surface
 	shader	flareShader
 	alpha	0.8
-	color	0.3 0.3 0.9
+	//color	0.3 0.3 0.9
+	color	0.5 0.6 1.0
 	repeat 3 {
 		wobble	dir velocity 10 + rand*20
 		scale	velocity velocity 200 + rand*50
 		size	2 + rand
+                t0 size
 		emitter "0.6 + rand*0.3" {
-			moveGravity 300
-			colorFade 0.7
+                        size (t0 * (1.0 - lerp))
+			//moveGravity 300
+			moveBounce 300 0.7
+			colorFade 0.3  // 0.7
 			Sprite
 		}
 	}
+}
+
+weapon/chaingun/fire {
+    soundlistweapon {
+        sound/weapons/vulcan/vulcanf1b
+        sound/weapons/vulcan/vulcanf2b
+        sound/weapons/vulcan/vulcanf3b
+        sound/weapons/vulcan/vulcanf4b
+    }
+}
+
+// input: origin, end, dir, clientnum, enemy, teammate, ineyes
+weapon/chaingun/trail {
+        // rtcw / et style moving tracers
+
+        if (rand > cg_tracerChance) {  // cg_tracerChance.value == 0.4
+            return
+        }
+
+        // move randomly forward a bit
+        // le->startTime = cg.time - (cg.frametime ? (rand()%cg.frametime)/2 : 0);
+        normalize dir
+        addscale origin dir origin (rand * 160)
+
+        sub end origin v0
+        t0 v0   // t0 == distance
+        if (t0 < (2.0 * cg_tracerLength)) {  // cg_tracerLength.value == 160.0 rtcw
+            return
+        }
+
+        // subtract the length of the tracer from the end point so that
+        // it doesn't go through the end point
+        addscale end dir end -cg_tracerLength
+        sub end origin v1
+        t1 v1  // t1 == adjusted distance
+
+
+        // cg_tracerSpeed.value == 4500.0  rtcw, not in q3
+        scale dir velocity 4500.0
+        shader gfx/misc/tracer
+        size cg_tracerWidth  // 0.8 rtcw
+        copy dir v3
+        copy origin v5
+        emitter (t1 / 4500.0) {  // cg_tracerSpeed == 4500.0 rtcw
+            // v5 is original 'origin'
+            // v3 is old 'dir', 'beam' uses 'dir' to determine end point
+            addscale v5 v3 origin (t1 * lerp)
+
+            addscale origin v3 v4 cg_tracerLength
+            sub v4 origin dir
+            beam
+        }
+
+        addscale v5 dir origin (cg_tracerLength / 2.0)
+        sound sound/weapons/machinegun/buletby1.wav
+}
+
+weapon/gauntlet/fire {
+    soundweapon sound/weapons/melee/fstatck
 }
 
 // input: origin, team, clientnum, enemy, teammate, ineyes
@@ -900,6 +1108,14 @@ common/jumpPad {
         sprite cullNear
     }
 }
+
+// wolfcam, not in q3mme
+// input: origin, clientnum
+//
+// clientnum is the person who hit the headshot
+//common/headShot {
+//
+//}
 
 // example for runfx
 // fx version of '/cvarinterp cg_fov 0 110 10'

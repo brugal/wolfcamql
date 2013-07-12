@@ -1,6 +1,15 @@
 
 #include "cg_local.h"
+
+#include "cg_main.h"
+//#include "cg_q3mme_scripts.h"
+//#include "cg_localents.h"
+#include "cg_syscalls.h"
+#include "wolfcam_predict.h"
+
 #include "wolfcam_local.h"
+
+
 
 void SC_Lowercase (char *p)
 {
@@ -158,6 +167,7 @@ int SC_ParseVec3FromStr (const char *s, vec3_t v)
                 //colors[r][c] = atoi(s + i);
                 //v[c] = (float)atoi(s + i);
 				v[c] = atof(s + i);
+				//Com_Printf("%f '%s' xx\n", v[c], s + i);
                 //CG_Printf("[%d][%d]:  %d\n", r, c, colors[r][c]);
                 c++;
                 if (c == 3) {
@@ -179,12 +189,11 @@ int SC_ParseVec3FromStr (const char *s, vec3_t v)
 #undef CSIZE
 }
 
-int SC_RedFromCvar (vmCvar_t cvar)
+int SC_RedFromCvar (const vmCvar_t *cvar)
 {
     int val;
 
-    //val = cvar.value;
-    val = cvar.integer;
+    val = cvar->integer;
 
     if (val <= 0xffffff) {
         val &= 0xff0000;
@@ -197,12 +206,11 @@ int SC_RedFromCvar (vmCvar_t cvar)
     return val;
 }
 
-int SC_GreenFromCvar (vmCvar_t cvar)
+int SC_GreenFromCvar (const vmCvar_t *cvar)
 {
     int val;
 
-    //val = cvar.value;
-    val = cvar.integer;
+    val = cvar->integer;
 
     if (val <= 0xffffff) {
         val &= 0x00ff00;
@@ -215,12 +223,11 @@ int SC_GreenFromCvar (vmCvar_t cvar)
     return val;
 }
 
-int SC_BlueFromCvar (vmCvar_t cvar)
+int SC_BlueFromCvar (const vmCvar_t *cvar)
 {
     int val;
 
-    //val = cvar.value;
-    val = cvar.integer;
+    val = cvar->integer;
 
     if (val <= 0xffffff) {
         val &= 0x0000ff;
@@ -233,12 +240,11 @@ int SC_BlueFromCvar (vmCvar_t cvar)
     return val;
 }
 
-int SC_AlphaFromCvar (vmCvar_t cvar)
+int SC_AlphaFromCvar (const vmCvar_t *cvar)
 {
     int val;
 
-    //val = cvar.value;
-    val = cvar.integer;
+    val = cvar->integer;
 
     if (val <= 0xffffff) {
         val = 0;
@@ -252,7 +258,7 @@ int SC_AlphaFromCvar (vmCvar_t cvar)
 
 // doesn't work
 #if 0
-void SC_Vec4ColorFromCvar (vec4_t *v, vmCvar_t cvar)
+void SC_Vec4ColorFromCvar (vec4_t *v, const vmCvar_t *cvar)
 {
 #if 0
     v[0] = (float)SC_RedFromCvar(cvar);
@@ -264,7 +270,7 @@ void SC_Vec4ColorFromCvar (vec4_t *v, vmCvar_t cvar)
 #endif
 
 // for shader colors
-void SC_ByteVec3ColorFromCvar (byte *b, vmCvar_t cvar)
+void SC_ByteVec3ColorFromCvar (byte *b, const vmCvar_t *cvar)
 {
     b[0] = SC_RedFromCvar(cvar);
     b[1] = SC_GreenFromCvar(cvar);
@@ -273,20 +279,19 @@ void SC_ByteVec3ColorFromCvar (byte *b, vmCvar_t cvar)
     // vec4 doesn't work, incorrect values
 }
 
-void SC_Vec4ColorFromCvars (vec4_t color, vmCvar_t colorCvar, vmCvar_t alphaCvar)
+void SC_Vec4ColorFromCvars (vec4_t color, const vmCvar_t *colorCvar, const vmCvar_t *alphaCvar)
 {
     color[0] = (float)SC_RedFromCvar(colorCvar) / 255.f;
     color[1] = (float)SC_GreenFromCvar(colorCvar) / 255.f;
     color[2] = (float)SC_BlueFromCvar(colorCvar) / 255.f;
-    color[3] = (float)alphaCvar.integer / 255.f;
+    color[3] = (float)alphaCvar->integer / 255.f;
 }
 
-void SC_Vec3ColorFromCvar (vec3_t color, vmCvar_t colorCvar)
+void SC_Vec3ColorFromCvar (vec3_t color, const vmCvar_t *colorCvar)
 {
     color[0] = (float)SC_RedFromCvar(colorCvar) / 255.f;
     color[1] = (float)SC_GreenFromCvar(colorCvar) / 255.f;
     color[2] = (float)SC_BlueFromCvar(colorCvar) / 255.f;
-    //color[3] = (float)alphaCvar.integer / 255.f;
 }
 
 void SC_ByteVecColorFromInt (byte *b, int color)
@@ -327,10 +332,10 @@ const char *SC_Cvar_Get_String (const char *cvar)
     return (const char *)buff;
 }
 
-qboolean CG_IsEnemy (clientInfo_t *ci)
+qboolean CG_IsEnemy (const clientInfo_t *ci)
 {
     int ourClientNum;
-    clientInfo_t *us;
+    const clientInfo_t *us;
 
     if (wolfcam_following) {
         ourClientNum = wcg.clientNum;
@@ -354,10 +359,10 @@ qboolean CG_IsEnemy (clientInfo_t *ci)
     return qfalse;
 }
 
-qboolean CG_IsTeammate (clientInfo_t *ci)
+qboolean CG_IsTeammate (const clientInfo_t *ci)
 {
     int ourClientNum;
-    clientInfo_t *us;
+    const clientInfo_t *us;
 
     if (cgs.gametype < GT_TEAM) {
         return qfalse;
@@ -378,7 +383,7 @@ qboolean CG_IsTeammate (clientInfo_t *ci)
     return qtrue;
 }
 
-qboolean CG_IsUs (clientInfo_t *ci)
+qboolean CG_IsUs (const clientInfo_t *ci)
 {
     int ourClientNum;
 
@@ -394,6 +399,36 @@ qboolean CG_IsUs (clientInfo_t *ci)
     }
 
     return qfalse;
+}
+
+qboolean CG_IsFirstPersonView (int clientNum)
+{
+    if (cg.freecam) {
+        return qfalse;
+    }
+    if (cg.cameraMode) {
+        return qfalse;
+    }
+    if (cg.renderingThirdPerson) {
+        return qfalse;
+    }
+    if (wolfcam_following  &&  wcg.clientNum != clientNum) {
+        return qfalse;
+    }
+
+    if (clientNum != cg.snap->ps.clientNum) {
+        return qfalse;
+    }
+
+#if 0
+	if (cg.snap->ps.stats[STAT_HEALTH] <= 0) {
+		qfalse;
+	}
+#endif
+
+    //FIXME free float spectator?
+
+    return qtrue;
 }
 
 qboolean CG_IsTeamGame (int gametype)
@@ -445,10 +480,10 @@ char *CG_FS_ReadLine (qhandle_t f, int *len)
     return NULL;
 }
 
-char *CG_GetToken (char *inputString, char *token, qboolean isFilename, qboolean *newLine)
+const char *CG_GetToken (const char *inputString, char *token, qboolean isFilename, qboolean *newLine)
 {
     //int i;
-    char *p;
+    const char *p;
     char c;
     qboolean gotFirstToken;
     //char *start;
@@ -467,6 +502,8 @@ char *CG_GetToken (char *inputString, char *token, qboolean isFilename, qboolean
 		return NULL;
 	}
 
+
+	//if (inputString >= EffectScripts.weapons[0]
     *newLine = qfalse;
     p = inputString;
     token[0] = '\0';
@@ -474,6 +511,15 @@ char *CG_GetToken (char *inputString, char *token, qboolean isFilename, qboolean
     if (p[0] == '\0') {  //  ||  (p[0] != '\t'  &&  (p[0] < ' '  ||  p[0] > '~'))) {
         //Com_Printf("xx\n");
         *newLine = qtrue;
+
+#if 0
+		if (jt  &&  !jt->valid) {
+			jt->valid = qtrue;
+			jt->end = p;
+			Q_strncpyz(jt->token, tokenStart, sizeof(jt->token));
+			jt->hitNewLine = *newLine;
+		}
+#endif
         //Com_Printf("CG_GetToken() '%s'\n", tokenOrig);
         return p;
     }
@@ -482,6 +528,16 @@ char *CG_GetToken (char *inputString, char *token, qboolean isFilename, qboolean
     if (p[0] == '\0'  ||  (p[0] != '\t'  &&  (p[0] < ' '  ||  p[0] > '~'))) {
         Com_Printf("xx\n");
         *newLine = qtrue;
+
+#if 0
+		if (jt  &&  !jt->valid) {
+			jt->valid = qtrue;
+			jt->end = p;
+			Q_strncpyz(jt->token, tokenStart, sizeof(jt->token));
+			jt->hitNewLine = *newLine;
+		}
+#endif
+
         return p;
     }
 #endif
@@ -512,7 +568,7 @@ char *CG_GetToken (char *inputString, char *token, qboolean isFilename, qboolean
             }
         }
 
-        if (!isFilename  &&  (c == '/'  ||  c == '-'  ||  c == '+'  ||  c == '*'  ||  c  == '('  ||  c  == ')')) {
+        if (!isFilename  &&  (c == '/'  ||  c == '-'  ||  c == '+'  ||  c == '*'  ||  c  == '('  ||  c  == ')'  ||  c == ',')) {
             if (gotFirstToken) {
                 p--;
                 break;
@@ -556,10 +612,10 @@ char *CG_GetToken (char *inputString, char *token, qboolean isFilename, qboolean
     return p;
 }
 
-char *CG_GetTokenGameType (char *inputString, char *token, qboolean isFilename, qboolean *newLine)
+const char *CG_GetTokenGameType (const char *inputString, char *token, qboolean isFilename, qboolean *newLine)
 {
     //int i;
-    char *p;
+    const char *p;
     char c;
     qboolean gotFirstToken;
     //char *start;
@@ -761,36 +817,6 @@ void CG_ScaleModel (refEntity_t *re, float size)
     re->nonNormalizedAxes = qtrue;
 }
 
-qboolean CG_IsFirstPersonView (int clientNum)
-{
-    if (cg.freecam) {
-        return qfalse;
-    }
-    if (cg.cameraMode) {
-        return qfalse;
-    }
-    if (cg.renderingThirdPerson) {
-        return qfalse;
-    }
-    if (wolfcam_following  &&  wcg.clientNum != clientNum) {
-        return qfalse;
-    }
-
-    if (clientNum != cg.snap->ps.clientNum) {
-        return qfalse;
-    }
-
-#if 0
-	if (cg.snap->ps.stats[STAT_HEALTH] <= 0) {
-		qfalse;
-	}
-#endif
-
-    //FIXME free float spectator?
-
-    return qtrue;
-}
-
 const char *CG_GetLocalTimeString (void)
 {
     qtime_t now;
@@ -871,7 +897,7 @@ qboolean CG_CheckQlVersion (int n0, int n1, int n2, int n3)
 }
 
 // not freezetag
-qboolean CG_EntityFrozen (centity_t *cent)
+qboolean CG_EntityFrozen (const centity_t *cent)
 {
 	qboolean entFreeze;
 
@@ -887,4 +913,171 @@ qboolean CG_EntityFrozen (centity_t *cent)
 	}
 
 	return entFreeze;
+}
+
+qboolean CG_GameTimeout (void)
+{
+	qboolean inTimeout = qfalse;
+
+	if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.timeoutBeginTime) {
+			if (!cgs.timeoutEndTime) {  // ref pause
+				inTimeout = qtrue;
+			} else if (cg.time < cgs.timeoutEndTime) {
+				inTimeout = qtrue;
+			}
+		}
+	} else if (cgs.cpma) {
+		if (cg.time < cgs.timeoutEndTime) {
+			inTimeout = qtrue;
+		}
+	}
+
+	//FIXME osp
+
+	return inTimeout;
+}
+
+//FIXME check for falling off ledge
+//FIXME land and move
+static void predict_player_position (const centity_t *cent, vec3_t result, float t)
+{
+	vec3_t velocity;
+	float gravity = 800.0f;
+	trace_t tr;
+
+    //FIXME check that abs(velocity) > 20 ?
+    //VectorCopy(ent->s.pos.trBase, result);
+    //VectorCopy(cent->lerpOrigin, result);
+	VectorCopy(cent->currentState.pos.trBase, result);
+	// lerp
+	t += (cg.ftime - cg.snap->serverTime) / 1000.0f;
+	VectorCopy(cent->currentState.pos.trDelta, velocity);
+
+    result[0] = result[0] + velocity[0] * t;
+    result[1] = result[1] + velocity[1] * t;
+	result[2] = result[2] + velocity[2] * t;
+    if (cent->currentState.groundEntityNum == ENTITYNUM_NONE) {
+        result[2] = result[2] + (0.5 * -gravity * t * t);
+	}
+
+	memset(&tr, 0, sizeof(tr));
+	//CG_Trace(&tr, cg.refdef.vieworg, mins, maxs, view, wcg.clientNum, MASK_SOLID );
+
+    //FIXME check traces to see if player wont be stopped
+
+	//FIXME bg_playerMins
+	Wolfcam_WeaponTrace(&tr, cent->lerpOrigin, NULL, NULL, result, cent->currentState.number, CONTENTS_SOLID);  //FIXME CONTENTS_BODY for other players
+
+	VectorCopy(tr.endpos, result);
+}
+
+#define MINVAL 0.000001f
+
+static float rocket_flight_time (const vec3_t origin, const vec3_t end, float rocketSpeed)
+{
+	vec3_t dir;
+	float dist;
+
+	if (rocketSpeed <= 0.0) {
+	    CG_Printf("^1rocket_flight_time() rocket speed (%f) <= 0.0\n", rocketSpeed);
+		return -1;
+    }
+
+	VectorSubtract(end, origin, dir);
+    dist = VectorLength (dir);
+    dist -= 14.0;  // CalcMuzz
+    dist -= 45.0;  // MISSILE_PRESTEP_TIME  //FIXME why isn't this 50?
+    if (dist <= MINVAL) {
+        dist = 0.0;
+    }
+
+	return (dist / rocketSpeed);
+}
+#undef MINVAL
+
+//FIXME check that player velocity isn't higher than rocket
+
+void CG_Rocket_Aim (const centity_t *enemy, vec3_t epos)
+{
+    float flightTime;
+    int i;
+    vec3_t ourPosEstimate, enemyPosEstimate;
+
+	float rocketSpeed;
+	int iterations;
+	float maxError;
+	float tError;
+	qboolean debug;
+
+	debug = qfalse;
+
+	rocketSpeed = cgs.rocketSpeed;
+
+	if (wolfcam_following) {
+		//VectorCopy(cg_entities[wcg.clientNum].lerpOrigin, ourPosEstimate);
+		VectorCopy(cg_entities[wcg.clientNum].currentState.pos.trBase, ourPosEstimate);
+	} else {
+		VectorCopy(cg.snap->ps.origin, ourPosEstimate);
+	}
+
+	VectorCopy(enemy->lerpOrigin, enemyPosEstimate);
+
+	flightTime = rocket_flight_time(ourPosEstimate, enemyPosEstimate, rocketSpeed);
+    predict_player_position(enemy, enemyPosEstimate, flightTime);
+
+	//VectorCopy(enemyPosEstimate, epos);
+
+	//VectorCopy(enemy->currentState.pos.trBase, enemyPosEstimate);
+	//ftimeLast = 0;
+	iterations = 40;  //40;  //200;  //40;
+	maxError = 32.0f / rocketSpeed / 2.0f;  // 32 game units, about the player hit box
+	for (i = 0;  i < iterations;  i ++) {
+		float ftime;
+		float ftimeNew;
+
+		ftime = rocket_flight_time(ourPosEstimate, enemyPosEstimate, rocketSpeed);
+		predict_player_position(enemy, enemyPosEstimate, ftime);
+
+		ftimeNew = rocket_flight_time(ourPosEstimate, enemyPosEstimate, rocketSpeed);
+		tError = ftimeNew - ftime;
+		if (debug) {
+			CG_Printf("%f  error %f\n", cg.ftime, tError);
+		}
+
+		if (tError < maxError  &&  tError > -maxError) {
+			if (debug) {
+				CG_Printf("^5got it.... %d  %f ***************\n", i, ftimeNew - ftime);
+			}
+			VectorCopy(enemyPosEstimate, epos);
+			return;
+		}
+
+		if (ftimeNew > ftime) {
+			// moving away from us
+			if (debug) {
+				Com_Printf("%f  moving away...\n", cg.ftime);
+			}
+			//flightTime *= (1.0 + (0.1 * (iterations - i)/iterations));
+			ftime *= (1.0 + (0.1 * (iterations - i)/iterations));
+		} else if (ftimeNew < ftime) {
+			// moving towards us
+			if (debug) {
+				Com_Printf("%f  moving towards us\n", cg.ftime);
+			}
+			//flightTime *= (1.0 - (0.1 * (iterations - i)/iterations));
+			ftime *= (1.0 - (0.1 * (iterations - i)/iterations));
+		}
+		//ftime = (ftime + ftimeNew) / 2.0f;
+
+		predict_player_position(enemy, enemyPosEstimate, ftime);
+		VectorCopy(enemyPosEstimate, epos);
+	}
+
+
+	if (debug) {
+		CG_Printf("^1couldn't get accurate rocket aim cent %d  error %f  time %f\n", enemy->currentState.number, tError, flightTime);
+		//trap_Cvar_Set("cl_freezeDemo", "1");
+	}
+	return;
 }

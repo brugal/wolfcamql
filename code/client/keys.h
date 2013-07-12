@@ -1,3 +1,6 @@
+#ifndef keys_h_included
+#define keys_h_included
+
 /*
 ===========================================================================
 Copyright (C) 1999-2005 Id Software, Inc.
@@ -27,7 +30,7 @@ typedef struct {
 	char		*binding;
 } qkey_t;
 
-extern	qboolean	key_overstrikeMode;
+//extern	qboolean	key_overstrikeMode;
 extern	qkey_t		keys[MAX_KEYS];
 
 // NOTE TTimo the declaration of field_t and Field_Clear is now in qcommon/qcommon.h
@@ -55,3 +58,8 @@ qboolean Key_GetOverstrikeMode( void );
 void Key_SetOverstrikeMode( qboolean state );
 void Key_ClearStates( void );
 int Key_GetKey(const char *binding);
+
+int Key_StringToKeynum( const char *str );
+char *Key_KeynumToString (int keynum);
+
+#endif  // keys_h_included

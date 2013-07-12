@@ -62,7 +62,7 @@ qboolean EntityIsDead(aas_entityinfo_t *entinfo);
 qboolean EntityIsInvisible(aas_entityinfo_t *entinfo);
 //returns true if the entity is shooting
 qboolean EntityIsShooting(aas_entityinfo_t *entinfo);
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 //returns true if this entity has the kamikaze
 qboolean EntityHasKamikaze(aas_entityinfo_t *entinfo);
 #endif
@@ -147,7 +147,7 @@ void BotCTFSeekGoals(bot_state_t *bs);
 //set ctf goals (defend base, get enemy flag) during retreat
 void BotCTFRetreatGoals(bot_state_t *bs);
 //
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 int Bot1FCTFCarryingFlag(bot_state_t *bs);
 int BotHarvesterCarryingCubes(bot_state_t *bs);
 void Bot1FCTFSeekGoals(bot_state_t *bs);
@@ -198,7 +198,7 @@ extern vmCvar_t bot_challenge;
 
 extern bot_goal_t ctf_redflag;
 extern bot_goal_t ctf_blueflag;
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 extern bot_goal_t ctf_neutralflag;
 extern bot_goal_t redobelisk;
 extern bot_goal_t blueobelisk;

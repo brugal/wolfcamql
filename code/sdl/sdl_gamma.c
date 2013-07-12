@@ -40,7 +40,7 @@ void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 	int i, j;
 
 	if (!r_enablePostProcess->integer  ||  !r_enableColorCorrect->integer  ||  !glConfig.glsl) {
-		if( !glConfig.deviceSupportsGamma || r_ignorehwgamma->integer ) {
+		if( !glConfig.deviceSupportsGamma || r_ignorehwgamma->integer > 0 ) {
 			return;
 		}
 	}

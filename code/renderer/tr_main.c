@@ -275,16 +275,16 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	vec3_t	delta;
 	float	axisLength;
 
-	if ( ent->e.reType != RT_MODEL ) {
+	if (ent->ePtr->reType != RT_MODEL  &&  ent->ePtr->reType != RT_MODEL_FX_DIR  &&  ent->ePtr->reType != RT_MODEL_FX_ANGLES  &&  ent->ePtr->reType != RT_MODEL_FX_AXIS) {
 		*or = viewParms->world;
 		return;
 	}
 
-	VectorCopy( ent->e.origin, or->origin );
+	VectorCopy( ent->ePtr->origin, or->origin );
 
-	VectorCopy( ent->e.axis[0], or->axis[0] );
-	VectorCopy( ent->e.axis[1], or->axis[1] );
-	VectorCopy( ent->e.axis[2], or->axis[2] );
+	VectorCopy( ent->ePtr->axis[0], or->axis[0] );
+	VectorCopy( ent->ePtr->axis[1], or->axis[1] );
+	VectorCopy( ent->ePtr->axis[2], or->axis[2] );
 
 	glMatrix[0] = or->axis[0][0];
 	glMatrix[4] = or->axis[1][0];
@@ -313,8 +313,8 @@ void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms,
 	VectorSubtract( viewParms->or.origin, or->origin, delta );
 
 	// compensate for scale in the axes if necessary
-	if ( ent->e.nonNormalizedAxes ) {
-		axisLength = VectorLength( ent->e.axis[0] );
+	if ( ent->ePtr->nonNormalizedAxes ) {
+		axisLength = VectorLength( ent->ePtr->axis[0] );
 		if ( !axisLength ) {
 			axisLength = 0;
 		} else {
@@ -692,7 +692,7 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD ) {
+	if ( entityNum != REFENTITYNUM_WORLD ) {
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
 
@@ -719,22 +719,22 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 	// the origin of the camera
 	for ( i = 0 ; i < tr.refdef.num_entities ; i++ ) {
 		e = &tr.refdef.entities[i];
-		if ( e->e.reType != RT_PORTALSURFACE ) {
+		if ( e->ePtr->reType != RT_PORTALSURFACE ) {
 			continue;
 		}
 
-		d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
+		d = DotProduct( e->ePtr->origin, originalPlane.normal ) - originalPlane.dist;
 		if ( d > 64 || d < -64) {
 			continue;
 		}
 
 		// get the pvsOrigin from the entity
-		VectorCopy( e->e.oldorigin, pvsOrigin );
+		VectorCopy( e->ePtr->oldorigin, pvsOrigin );
 
 		// if the entity is just a mirror, don't use as a camera point
-		if ( e->e.oldorigin[0] == e->e.origin[0] &&
-			e->e.oldorigin[1] == e->e.origin[1] &&
-			e->e.oldorigin[2] == e->e.origin[2] ) {
+		if ( e->ePtr->oldorigin[0] == e->ePtr->origin[0] &&
+			e->ePtr->oldorigin[1] == e->ePtr->origin[1] &&
+			e->ePtr->oldorigin[2] == e->ePtr->origin[2] ) {
 			VectorScale( plane.normal, plane.dist, surface->origin );
 			VectorCopy( surface->origin, camera->origin );
 			VectorSubtract( vec3_origin, surface->axis[0], camera->axis[0] );
@@ -747,21 +747,21 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 
 		// project the origin onto the surface plane to get
 		// an origin point we can rotate around
-		d = DotProduct( e->e.origin, plane.normal ) - plane.dist;
-		VectorMA( e->e.origin, -d, surface->axis[0], surface->origin );
+		d = DotProduct( e->ePtr->origin, plane.normal ) - plane.dist;
+		VectorMA( e->ePtr->origin, -d, surface->axis[0], surface->origin );
 
 		// now get the camera origin and orientation
-		VectorCopy( e->e.oldorigin, camera->origin );
-		AxisCopy( e->e.axis, camera->axis );
+		VectorCopy( e->ePtr->oldorigin, camera->origin );
+		AxisCopy( e->ePtr->axis, camera->axis );
 		VectorSubtract( vec3_origin, camera->axis[0], camera->axis[0] );
 		VectorSubtract( vec3_origin, camera->axis[1], camera->axis[1] );
 
 		// optionally rotate
-		if ( e->e.oldframe ) {
+		if ( e->ePtr->oldframe ) {
 			// if a speed is specified
-			if ( e->e.frame ) {
+			if ( e->ePtr->frame ) {
 				// continuous rotate
-				d = (tr.refdef.time/1000.0f) * e->e.frame;
+				d = (tr.refdef.time/1000.0f) * e->ePtr->frame;
 				VectorCopy( camera->axis[1], transformed );
 				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
@@ -772,14 +772,14 @@ qboolean R_GetPortalOrientations( drawSurf_t *drawSurf, int entityNum,
 				} else {
 					d = 0;
 				}
-				d = e->e.skinNum + d * 4;
+				d = e->ePtr->skinNum + d * 4;
 				VectorCopy( camera->axis[1], transformed );
 				RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 				CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
 			}
 		}
-		else if ( e->e.skinNum ) {
-			d = e->e.skinNum;
+		else if ( e->ePtr->skinNum ) {
+			d = e->ePtr->skinNum;
 			VectorCopy( camera->axis[1], transformed );
 			RotatePointAroundVector( camera->axis[1], camera->axis[0], transformed, d );
 			CrossProduct( camera->axis[0], camera->axis[1], camera->axis[2] );
@@ -813,7 +813,7 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	R_PlaneForSurface( drawSurf->surface, &originalPlane );
 
 	// rotate the plane if necessary
-	if ( entityNum != ENTITYNUM_WORLD )
+	if ( entityNum != REFENTITYNUM_WORLD )
 	{
 		tr.currentEntityNum = entityNum;
 		tr.currentEntity = &tr.refdef.entities[entityNum];
@@ -829,10 +829,6 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 		// translate the original plane
 		originalPlane.dist = originalPlane.dist + DotProduct( originalPlane.normal, tr.or.origin );
 	}
-	else
-	{
-		plane = originalPlane;
-	}
 
 	// locate the portal entity closest to this plane.
 	// origin will be the origin of the portal, origin2 will be
@@ -840,19 +836,19 @@ static qboolean IsMirror( const drawSurf_t *drawSurf, int entityNum )
 	for ( i = 0 ; i < tr.refdef.num_entities ; i++ )
 	{
 		e = &tr.refdef.entities[i];
-		if ( e->e.reType != RT_PORTALSURFACE ) {
+		if ( e->ePtr->reType != RT_PORTALSURFACE ) {
 			continue;
 		}
 
-		d = DotProduct( e->e.origin, originalPlane.normal ) - originalPlane.dist;
+		d = DotProduct( e->ePtr->origin, originalPlane.normal ) - originalPlane.dist;
 		if ( d > 64 || d < -64) {
 			continue;
 		}
 
 		// if the entity is just a mirror, don't use as a camera point
-		if ( e->e.oldorigin[0] == e->e.origin[0] &&
-			e->e.oldorigin[1] == e->e.origin[1] &&
-			e->e.oldorigin[2] == e->e.origin[2] )
+		if ( e->ePtr->oldorigin[0] == e->ePtr->origin[0] &&
+			e->ePtr->oldorigin[1] == e->ePtr->origin[1] &&
+			e->ePtr->oldorigin[2] == e->ePtr->origin[2] )
 		{
 			return qtrue;
 		}
@@ -1040,10 +1036,10 @@ int R_SpriteFogNum( trRefEntity_t *ent ) {
 	for ( i = 1 ; i < tr.world->numfogs ; i++ ) {
 		fog = &tr.world->fogs[i];
 		for ( j = 0 ; j < 3 ; j++ ) {
-			if ( ent->e.origin[j] - ent->e.radius >= fog->bounds[1][j] ) {
+			if ( ent->ePtr->origin[j] - ent->ePtr->radius >= fog->bounds[1][j] ) {
 				break;
 			}
-			if ( ent->e.origin[j] + ent->e.radius <= fog->bounds[0][j] ) {
+			if ( ent->ePtr->origin[j] + ent->ePtr->radius <= fog->bounds[0][j] ) {
 				break;
 			}
 		}
@@ -1138,8 +1134,8 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader,
 	index = tr.refdef.numDrawSurfs & DRAWSURF_MASK;
 	// the sort data is packed into a single 32 bit value so it can be
 	// compared quickly during the qsorting process
-	tr.refdef.drawSurfs[index].sort = (shader->sortedIndex << QSORT_SHADERNUM_SHIFT)
-		| tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | (int)dlightMap;
+	tr.refdef.drawSurfs[index].sort = ((uint64_t)shader->sortedIndex << QSORT_SHADERNUM_SHIFT)
+		| (uint64_t)(tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | (int)dlightMap);
 	//Com_Printf("%llu\n", tr.refdef.drawSurfs[index].sort);
 	tr.refdef.drawSurfs[index].surface = surface;
 	tr.refdef.numDrawSurfs++;
@@ -1154,7 +1150,7 @@ void R_DecomposeSort( uint64_t sort, int *entityNum, shader_t **shader,
 					 int *fogNum, int *dlightMap ) {
 	*fogNum = ( sort >> QSORT_FOGNUM_SHIFT ) & 31;
 	*shader = tr.sortedShaders[ ( sort >> QSORT_SHADERNUM_SHIFT ) & (MAX_SHADERS-1) ];
-	*entityNum = ( sort >> QSORT_ENTITYNUM_SHIFT ) & (MAX_ENTITIES);
+	*entityNum = ( sort >> QSORT_REFENTITYNUM_SHIFT ) & (MAX_REFENTITIES);
 	*dlightMap = sort & 3;
 }
 
@@ -1240,19 +1236,19 @@ void R_AddEntitySurfaces (void) {
 		ent->needDlights = qfalse;
 
 		// preshift the value we are going to OR into the drawsurf sort
-		tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
+		tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 		//
 		// the weapon model must be handled special --
 		// we don't want the hacked weapon position showing in
 		// mirrors, because the true body position will already be drawn
 		//
-		if ( (ent->e.renderfx & RF_FIRST_PERSON) && tr.viewParms.isPortal) {
+		if ( (ent->ePtr->renderfx & RF_FIRST_PERSON) && tr.viewParms.isPortal) {
 			continue;
 		}
 
 		// simple generated models, like sprites and beams, are not culled
-		switch ( ent->e.reType ) {
+		switch ( ent->ePtr->reType ) {
 		case RT_PORTALSURFACE:
 			break;		// don't draw anything
 		case RT_SPRITE:
@@ -1264,21 +1260,26 @@ void R_AddEntitySurfaces (void) {
 		case RT_RAIL_RINGS:
 		case RT_BEAM_Q3MME:
 		case RT_RAIL_RINGS_Q3MME:
+		case RT_GRAPPLE:
 			// self blood sprites, talk balloons, etc should not be drawn in the primary
 			// view.  We can't just do this check for all entities, because md3
 			// entities may still want to cast shadows from them
-			if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
+			if ( (ent->ePtr->renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
 				continue;
 			}
-			shader = R_GetShaderByHandle( ent->e.customShader );
+			shader = R_GetShaderByHandle( ent->ePtr->customShader );
+			//Com_Printf("shader num %d  '%s'\n", ent->e.customShader, shader->name);
 			R_AddDrawSurf( &entitySurface, shader, R_SpriteFogNum( ent ), 0 );
 			break;
 
 		case RT_MODEL:
+		case RT_MODEL_FX_DIR:
+		case RT_MODEL_FX_ANGLES:
+		case RT_MODEL_FX_AXIS:
 			// we must set up parts of tr.or for model culling
 			R_RotateForEntity( ent, &tr.viewParms, &tr.or );
 
-			tr.currentModel = R_GetModelByHandle( ent->e.hModel );
+			tr.currentModel = R_GetModelByHandle( ent->ePtr->hModel );
 			if (!tr.currentModel) {
 				R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
 			} else {
@@ -1298,10 +1299,10 @@ void R_AddEntitySurfaces (void) {
 					R_AddBrushModelSurfaces( ent );
 					break;
 				case MOD_BAD:		// null model axis
-					if ( (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
+					if ( (ent->ePtr->renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal) {
 						break;
 					}
-					shader = R_GetShaderByHandle( ent->e.customShader );
+					shader = R_GetShaderByHandle( ent->ePtr->customShader );
 					R_AddDrawSurf( &entitySurface, tr.defaultShader, 0, 0 );
 					break;
 				default:

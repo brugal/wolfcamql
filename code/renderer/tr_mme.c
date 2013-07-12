@@ -277,7 +277,7 @@ void R_MME_InitMemory (qboolean verbose, shotData_t *shotData)
 	if (verbose) {
 		Com_Printf("%d: %f megabytes for mme work buffer\n", shotData == &shotDataMain, (float)(shotData->workSize + 16) / 1024.0 / 1024.0);
 	}
-	shotData->workAlign = (char *)(((int)shotData->workAlloc + 15) & ~15);
+	shotData->workAlign = (char *)(((intptr_t)shotData->workAlloc + 15) & ~15);
 	shotData->lastSetBlurFrames = mme_blurFrames->integer;
 	shotData->lastSetOverlapFrames = mme_blurOverlap->integer;
 }

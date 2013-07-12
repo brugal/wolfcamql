@@ -1,97 +1,11 @@
 #include "cg_local.h"
+
+//#include "cg_playerstate.h"
+#include "cg_syscalls.h"
+#include "wolfcam_playerstate.h"
+
 #include "wolfcam_local.h"
 
-#if 0
-int wolfcam_find_client_to_follow (void)
-{
-    int i;
-    qboolean foundNewClient;
-    qboolean foundBackupClient;
-    int backupClient = -1;  // cg.snap->ps.clientNum acts as second backup client
-    float newClientDist;
-    float backupDist;
-
-    if (wclients[wcg.selectedClientNum].currentValid)
-        return wcg.selectedClientNum;
-
-    foundNewClient = qfalse;
-    foundBackupClient = qfalse;
-    newClientDist = 9999999;
-    backupDist = 9999999;
-
-    for (i = wcg.clientNum;  i < MAX_CLIENTS;  i++) {
-        if (!cgs.clientinfo[i].infoValid)
-            continue;
-        if (!wclients[i].currentValid)
-            continue;
-        //if (i == cg.snap->ps.clientNum  &&  wolfcam_avoidDemoPov.integer)
-        if (i == cg.clientNum  &&  1)  //wolfcam_avoidDemoPov.integer)
-            continue;
-
-        if (cg_entities[i].currentState.eFlags & EF_DEAD) {
-            //continue;
-            //Com_Printf("%d dead\n", cg.time);
-        }
-
-        if (cg_entities[i].currentState.number != cg_entities[i].currentState.clientNum) {
-            Com_Printf("num: %d  clientNum: %d\n", cg_entities[i].currentState.number, cg_entities[i].currentState.clientNum);
-        }
-
-        if (cgs.clientinfo[i].team != cgs.clientinfo[wcg.selectedClientNum].team  &&  1)  { //wolfcam_tryToStickWithTeam.integer) {
-            if (!foundBackupClient) {
-                foundBackupClient = qtrue;
-                backupClient = i;
-            }
-            continue;
-        }
-        foundNewClient = qtrue;
-        break;
-    }
-
-    if (foundNewClient)
-        return i;
-
-    for (i = 0;  i < wcg.clientNum;  i++) {
-        if (!cgs.clientinfo[i].infoValid)
-            continue;
-        if (!wclients[i].currentValid)
-            continue;
-        //if (i == cg.snap->ps.clientNum  &&  wolfcam_avoidDemoPov.integer)
-        if (i == cg.clientNum  &&  1)  //wolfcam_avoidDemoPov.integer)
-            continue;
-
-        if (cg_entities[i].currentState.eFlags & EF_DEAD) {
-            //continue;
-            //Com_Printf("%d dead\n", cg.time);
-        }
-
-        if (cg_entities[i].currentState.number != cg_entities[i].currentState.clientNum) {
-            Com_Printf("num: %d  clientNum: %d\n", cg_entities[i].currentState.number, cg_entities[i].currentState.clientNum);
-        }
-
-        if (cgs.clientinfo[i].team != cgs.clientinfo[wcg.selectedClientNum].team  &&  1)  { //wolfcam_tryToStickWithTeam.integer) {
-            if (!foundBackupClient) {
-                foundBackupClient = qtrue;
-                backupClient = i;
-            }
-            continue;
-        }
-        foundNewClient = qtrue;
-        break;
-    }
-
-    if (foundNewClient)
-        return i;
-
-    if (foundBackupClient)
-        return backupClient;
-
-    if (wclients[wcg.clientNum].currentValid)
-        return wcg.clientNum;
-
-    return cg.snap->ps.clientNum;
-}
-#endif
 
 int wolfcam_find_client_to_follow (void)
 {
@@ -328,9 +242,10 @@ int wolfcam_find_client_to_follow (void)
 void Wolfcam_TransitionPlayerState (int oldClientNum)
 {
     clientInfo_t *ci;
-    clientInfo_t *cio;
-    centity_t *cent;
-    entityState_t *cs, *os;
+    const clientInfo_t *cio;
+    const centity_t *cent;
+    const entityState_t *cs;
+    entityState_t *os;
     wclient_t *wc;
     //qboolean wasCrouching, wasStanding;
     //qboolean isCrouching, isStanding;
@@ -399,38 +314,6 @@ void Wolfcam_TransitionPlayerState (int oldClientNum)
         wcg.weaponSelectTime = 0;
     }
 
-#if 0  // wolfcam testing
-    //FIXME wolfcam, as 'follow' option, 
-    //FIXME wolfcam not in this function
-    //FIXME wolfcam finer grained cg_main timescale (don't skip too far ahead)
-    if ((wcg.fastForwarding  &&  cg.clientNum == wcg.clientNum)  ||  ci->team == TEAM_SPECTATOR) {
-        trap_Cvar_Set ("s_volume", wcg.oldVolume);
-        trap_Cvar_Set ("timescale", wcg.oldTimescale);
-        trap_SendConsoleCommand ("s_stop\n");
-        wcg.fastForwarding = qfalse;
-    }
-
-    if (cg.clientNum != wcg.clientNum) {  //if (wcg.fastForward) {
-        if (cg.time - wcg.validTime > (wolfcam_fast_forward_invalid_time.value * 1000.0)) {
-            if (!wcg.fastForwarding) {
-                //CG_Printf ("timescale: %f\n", cg_timescale.value);
-                trap_Cvar_VariableStringBuffer ("s_volume", wcg.oldVolume, sizeof(wcg.oldVolume));
-                trap_Cvar_VariableStringBuffer ("timescale", wcg.oldTimescale, sizeof(wcg.oldTimescale));
-                trap_Cvar_Set ("s_volume", "0");
-                trap_Cvar_Set ("timescale", wolfcam_fast_forward_timescale.string);
-                wcg.fastForwarding = qtrue;
-            }
-        } else {
-            if (wcg.fastForwarding) {
-                //CG_Printf ("^3 setting timescale back: %s", wcg.oldTimescale);
-                trap_Cvar_Set ("s_volume", wcg.oldVolume);
-                trap_Cvar_Set ("timescale", wcg.oldTimescale);
-                trap_SendConsoleCommand ("s_stop\n");
-                wcg.fastForwarding = qfalse;
-            }
-        }
-    }
-#endif
 
     if (wc->weapAnimTimer > 0) {
         wc->weapAnimTimer -= cg.frametime;
@@ -518,7 +401,7 @@ void Wolfcam_TransitionPlayerState (int oldClientNum)
     }
 #endif
 
-    // respawning 
+    // respawning
     //FIXME wolfcam
 #if 0
     if( ps->persistant[PERS_SPAWN_COUNT] != ops->persistant[PERS_SPAWN_COUNT]) {
@@ -532,7 +415,7 @@ void Wolfcam_TransitionPlayerState (int oldClientNum)
         cg.mapRestart = qfalse;
     }
 
-    if ( cg.snap->ps.pm_type != PM_INTERMISSION 
+    if ( cg.snap->ps.pm_type != PM_INTERMISSION
          && ps->persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
         CG_CheckLocalSounds( ps, ops );
     }
@@ -588,11 +471,11 @@ void Wolfcam_TransitionPlayerState (int oldClientNum)
      //BG_EvaluateTrajectoryDelta (&cs->pos, cg.time, velocity, qfalse, -1);
      //BG_EvaluateTrajectoryDelta (&cs->pos, cg.time, velocity);
      VectorCopy (cs->pos.trDelta, velocity);
- 
+
      if (wcg.clientNum != cg.snap->ps.clientNum)
          wc->xyspeed = sqrt (velocity[0] * velocity[0] + velocity[1] * velocity[1]);
      else  {// view what demo pov
-         playerState_t *ps = &cg.predictedPlayerState;
+         const playerState_t *ps = &cg.predictedPlayerState;
          wc->xyspeed = sqrt( ps->velocity[0] * ps->velocity[0] +
                              ps->velocity[1] * ps->velocity[1] );
      }

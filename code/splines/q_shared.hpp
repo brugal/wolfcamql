@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	ALIGN_OFF
 
 #ifdef _WIN32
+#ifdef _MSC_VER
 
 #pragma warning(disable : 4018)     // signed/unsigned mismatch
 #pragma warning(disable : 4032)
@@ -56,6 +57,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma warning(disable : 4711)		// selected for automatic inline expansion
 #pragma warning(disable : 4220)		// varargs matches remaining parameters
 
+#endif
 #endif
 
 #include <assert.h>
@@ -97,7 +99,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	QDECL	__cdecl
 
 // buildstring will be incorporated into the version string
-#ifdef NDEBUG
+#ifdef NQDEBUG
 #ifdef _M_IX86
 #define	CPUSTRING	"win-x86"
 #elif defined _M_ALPHA

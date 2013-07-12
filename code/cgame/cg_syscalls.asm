@@ -132,3 +132,9 @@ equ trap_R_ClearRemappedShader -135
 equ trap_GetItemPickupNumber -136
 equ trap_GetItemPickup -137
 equ trap_R_GetSingleShader -138
+equ trap_Cvar_Exists -139
+equ trap_Get_Demo_Timeouts -140
+equ trap_GetNumPlayerInfos -141
+equ trap_GetExtraPlayerInfo -142
+equ trap_GetRealMapName -143
+equ trap_R_AddRefEntityPtrToScene -144

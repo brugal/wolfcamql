@@ -1,5 +1,14 @@
 #include "cg_local.h"
 
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_mem.h"
+#include "cg_predict.h"
+#include "cg_q3mme_scripts.h"
+#include "cg_syscalls.h"
+#include "sc.h"
+
 //FIXME epsilon for float comaparisons
 //FIXME special float values
 //FIXME shaderlist
@@ -20,8 +29,11 @@
 #define OP_AND 9
 #define OP_OR 10
 #define OP_VAL 11
-#define OP_CVAR 12  //FIXME probably not
+#define OP_MOD 12
+
+//#define OP_CVAR 12  //FIXME probably not
 //#define OP_RAND 13
+
 #define OP_FSQRT 14
 #define OP_FCEIL 15
 #define OP_FFLOOR 16
@@ -40,7 +52,6 @@
 #define OP_FUNCFIRST OP_FSQRT
 #define OP_FUNCLAST OP_FINWATER
 
-#define USE_SWITCH 0
 
 typedef enum {
 	FX_MODEL_DIR,
@@ -49,7 +60,6 @@ typedef enum {
 } fxModelType_t;
 
 ScriptVars_t ScriptVars;
-ScriptVars_t EmitterScriptVars;
 
 static int parsingEmitterScriptLevel = 0;
 qboolean EmitterScript = qfalse;
@@ -62,6 +72,668 @@ effectScripts_t EffectScripts;
 static int EmittedEntities = 0;
 
 //static qboolean WithinComment = qfalse;
+
+#if 0
+enum {
+	TOKEN_NOID = 0,
+	TOKEN_ORIGIN = 1,
+	TOKEN_ORIGIN0,
+	TOKEN_ORIGIN1,
+	TOKEN_ORIGIN2,
+
+	TOKEN_V1,
+	//FIXME rest
+
+	TOKEN_COLORFADE,
+	TOKEN_MOVEGRAVITY,
+
+	TOKEN_ADDSCALE,
+
+	TOKEN_LERP,
+	TOKEN_EMITTERID,
+
+	TOKEN_SPRITE,
+
+	TOKEN_MATH_MULT,
+
+	//
+	TOKEN_NUMBER,
+
+	//////////////////
+
+	TOKEN_FIXME,
+};
+#endif
+
+enum {
+	// runscript()
+
+    TOKEN_NOID = 0,
+    TOKEN_RED,
+    TOKEN_GREEN,
+    TOKEN_BLUE,
+    TOKEN_COLOR,
+    TOKEN_ALPHA,
+    TOKEN_SHADER,
+    TOKEN_MODEL,
+    TOKEN_SIZE,
+    TOKEN_WIDTH,
+    TOKEN_ANGLE,
+    TOKEN_T0,
+    TOKEN_T1,
+    TOKEN_T2,
+    TOKEN_T3,
+    TOKEN_T4,
+    TOKEN_T5,
+    TOKEN_T6,
+    TOKEN_T7,
+    TOKEN_T8,
+    TOKEN_T9,
+    TOKEN_VELOCITY,
+    TOKEN_VELOCITY0,
+    TOKEN_VELOCITY1,
+    TOKEN_VELOCITY2,
+    TOKEN_ORIGIN,
+    TOKEN_ORIGIN0,
+    TOKEN_ORIGIN1,
+    TOKEN_ORIGIN2,
+    TOKEN_END,
+    TOKEN_END0,
+    TOKEN_END1,
+    TOKEN_END2,
+    TOKEN_DIR,
+    TOKEN_DIR0,
+    TOKEN_DIR1,
+    TOKEN_DIR2,
+    TOKEN_ANGLES,
+    TOKEN_ANGLES0,
+    TOKEN_ANGLES1,
+    TOKEN_ANGLES2,
+    TOKEN_V0,
+    TOKEN_V00,
+    TOKEN_V01,
+    TOKEN_V02,
+    TOKEN_V1,
+    TOKEN_V10,
+    TOKEN_V11,
+    TOKEN_V12,
+    TOKEN_V2,
+    TOKEN_V20,
+    TOKEN_V21,
+    TOKEN_V22,
+    TOKEN_V3,
+    TOKEN_V30,
+    TOKEN_V31,
+    TOKEN_V32,
+    TOKEN_V4,
+    TOKEN_V40,
+    TOKEN_V41,
+    TOKEN_V42,
+    TOKEN_V5,
+    TOKEN_V50,
+    TOKEN_V51,
+    TOKEN_V52,
+    TOKEN_V6,
+    TOKEN_V60,
+    TOKEN_V61,
+    TOKEN_V62,
+    TOKEN_V7,
+    TOKEN_V70,
+    TOKEN_V71,
+    TOKEN_V72,
+    TOKEN_V8,
+    TOKEN_V80,
+    TOKEN_V81,
+    TOKEN_V82,
+    TOKEN_V9,
+    TOKEN_V90,
+    TOKEN_V91,
+    TOKEN_V92,
+    TOKEN_SCALE,
+    TOKEN_ADD,
+    TOKEN_ADDSCALE,
+    TOKEN_SUB,
+    TOKEN_SUBSCALE,
+    TOKEN_COPY,
+    TOKEN_CLEAR,
+    TOKEN_WOBBLE,
+    TOKEN_RANDOM,
+    TOKEN_NORMALIZE,
+    TOKEN_PERPENDICULAR,
+    TOKEN_CROSS,
+    TOKEN_SPRITE,
+    TOKEN_SPARK,
+    TOKEN_QUAD,
+    TOKEN_BEAM,
+    TOKEN_LIGHT,
+    TOKEN_DISTANCE,
+    TOKEN_EMITTER,
+    TOKEN_EMITTERF,
+    TOKEN_ALPHAFADE,
+    TOKEN_SHADERTIME,
+    TOKEN_DIRMODEL,
+    TOKEN_LOOPSOUND,
+    TOKEN_ROTATE,
+    TOKEN_VIBRATE,
+    TOKEN_EMITTERID,
+    TOKEN_DECAL,
+    TOKEN_SOUND,
+    TOKEN_SOUNDLOCAL,
+    TOKEN_SOUNDWEAPON,
+    TOKEN_ANGLESMODEL,
+    TOKEN_AXISMODEL,
+    TOKEN_INTERVAL,
+    TOKEN_COLORFADE,
+    TOKEN_PUSHPARENT,
+    TOKEN_POP,
+    TOKEN_IF,
+    TOKEN_ELSE,
+    TOKEN_ELIF,
+    TOKEN_REPEAT,
+    TOKEN_ROTATEAROUND,
+    TOKEN_PARENTORIGIN,
+    TOKEN_MOVEGRAVITY,
+    TOKEN_SOUNDLIST,
+    TOKEN_SOUNDLISTLOCAL,
+    TOKEN_SOUNDLISTWEAPON,
+    TOKEN_SHADERCLEAR,
+    TOKEN_EXTRASHADER,
+    TOKEN_EXTRASHADERCLEAR,
+	TOKEN_EXTRASHADERENDTIME,
+    TOKEN_TRACE,
+    TOKEN_DECALTEMP,
+    TOKEN_MODELLIST,
+    TOKEN_SHADERLIST,
+    TOKEN_YAW,
+    TOKEN_PITCH,
+    TOKEN_ROLL,
+    TOKEN_MOVEBOUNCE,
+    TOKEN_SINK,
+    TOKEN_IMPACT,
+    TOKEN_PARENTVELOCITY,
+    TOKEN_INVERSE,
+    TOKEN_RINGS,
+    TOKEN_ECHO,
+    TOKEN_RETURN,
+    TOKEN_CONTINUE,
+    TOKEN_COMMAND,
+
+    ////////////
+
+	// math
+	TOKEN_NUMBER,
+
+
+	//TOKEN_PARENTORIGIN,
+	TOKEN_PARENTORIGIN0,
+
+	TOKEN_PARENTORIGIN1,
+	TOKEN_PARENTORIGIN2,
+	//TOKEN_PARENTVELOCITY,
+	TOKEN_PARENTVELOCITY0,
+	TOKEN_PARENTVELOCITY1,
+	TOKEN_PARENTVELOCITY2,
+	TOKEN_PARENTANGLES,
+	TOKEN_PARENTANGLES0,
+	TOKEN_PARENTANGLES1,
+	TOKEN_PARENTANGLES2,
+	TOKEN_PARENTANGLE,
+	TOKEN_PARENTYAW,
+	TOKEN_PARENTPITCH,
+	TOKEN_PARENTROLL,
+	TOKEN_PARENTSIZE,
+	TOKEN_PARENTDIR,
+	TOKEN_PARENTDIR0,
+	TOKEN_PARENTDIR1,
+	TOKEN_PARENTDIR2,
+	TOKEN_PARENTEND,
+	TOKEN_PARENTEND0,
+	TOKEN_PARENTEND1,
+	TOKEN_PARENTEND2,
+
+	TOKEN_TIME,
+	TOKEN_CGTIME,
+	TOKEN_LOOP,
+	TOKEN_LOOPCOUNT,
+	TOKEN_PI,
+	TOKEN_RAND,
+	TOKEN_CRAND,
+	TOKEN_LERP,
+	TOKEN_LIFE,
+	TOKEN_CLIENTNUM,
+	TOKEN_ENEMY,
+	TOKEN_TEAMMATE,
+	TOKEN_INEYES,
+	TOKEN_TEAM,
+	TOKEN_SURFACETYPE,
+	TOKEN_GAMETYPE,
+	TOKEN_INWATER,
+
+	TOKEN_MATH_MULT,
+	TOKEN_MATH_DIV,
+	TOKEN_MATH_MINUS,
+	TOKEN_MATH_PLUS,
+	TOKEN_MATH_MOD,
+	TOKEN_MATH_LESS,
+	TOKEN_MATH_GREATER,
+	TOKEN_MATH_NOT,
+	TOKEN_MATH_EQUAL,
+	TOKEN_MATH_AND,
+	TOKEN_MATH_OR,
+
+	TOKEN_MATH_SQRT,
+	TOKEN_MATH_CEIL,
+	TOKEN_MATH_FLOOR,
+	TOKEN_MATH_SIN,
+	TOKEN_MATH_COS,
+	TOKEN_MATH_TAN,
+	TOKEN_MATH_WAVE,
+	TOKEN_MATH_CLIP,
+	TOKEN_MATH_ASIN,
+	TOKEN_MATH_ACOS,
+	TOKEN_MATH_ATAN,
+	TOKEN_MATH_ATAN2,
+	TOKEN_MATH_POW,
+
+	//
+
+	// vectors
+	//FIXME
+
+    TOKEN_FIXME,
+};
+
+typedef struct {  // fxToken_s {
+	const char *name;
+	int id;
+} fxToken_t;
+
+#if 0
+static fxToken_t fxTokens[] = {
+	{ NULL, TOKEN_NOID },
+
+	{ "origin", TOKEN_ORIGIN },
+	{ "origin0", TOKEN_ORIGIN0 },
+	{ "origin1", TOKEN_ORIGIN1 },
+	{ "origin2", TOKEN_ORIGIN2 },
+
+	{ "v1", TOKEN_V1 },
+
+	{ "colorfade", TOKEN_COLORFADE },
+	{ "movegravity", TOKEN_MOVEGRAVITY },
+
+	{ "addscale", TOKEN_ADDSCALE },
+
+
+	{ "emitterid", TOKEN_EMITTERID },
+
+	{ "sprite", TOKEN_SPRITE },
+
+	{ "lerp", TOKEN_LERP },
+	{ "*", TOKEN_MATH_MULT },
+
+};
+#endif
+
+static fxToken_t fxTokens[] = {
+    { NULL, TOKEN_NOID },
+
+    { "red", TOKEN_RED },
+    { "green", TOKEN_GREEN },
+    { "blue", TOKEN_BLUE },
+    { "color", TOKEN_COLOR },
+    { "alpha", TOKEN_ALPHA },
+    { "shader", TOKEN_SHADER },
+    { "model", TOKEN_MODEL },
+    { "size", TOKEN_SIZE },
+    { "width", TOKEN_WIDTH },
+    { "angle", TOKEN_ANGLE },
+    { "t0", TOKEN_T0 },
+    { "t1", TOKEN_T1 },
+    { "t2", TOKEN_T2 },
+    { "t3", TOKEN_T3 },
+    { "t4", TOKEN_T4 },
+    { "t5", TOKEN_T5 },
+    { "t6", TOKEN_T6 },
+    { "t7", TOKEN_T7 },
+    { "t8", TOKEN_T8 },
+    { "t9", TOKEN_T9 },
+    { "velocity", TOKEN_VELOCITY },
+    { "velocity0", TOKEN_VELOCITY0 },
+    { "velocity1", TOKEN_VELOCITY1 },
+    { "velocity2", TOKEN_VELOCITY2 },
+    { "origin", TOKEN_ORIGIN },
+    { "origin0", TOKEN_ORIGIN0 },
+    { "origin1", TOKEN_ORIGIN1 },
+    { "origin2", TOKEN_ORIGIN2 },
+    { "end", TOKEN_END },
+    { "end0", TOKEN_END0 },
+    { "end1", TOKEN_END1 },
+    { "end2", TOKEN_END2 },
+    { "dir", TOKEN_DIR },
+    { "dir0", TOKEN_DIR0 },
+    { "dir1", TOKEN_DIR1 },
+    { "dir2", TOKEN_DIR2 },
+    { "angles", TOKEN_ANGLES },
+    { "angles0", TOKEN_ANGLES0 },
+    { "angles1", TOKEN_ANGLES1 },
+    { "angles2", TOKEN_ANGLES2 },
+    { "v0", TOKEN_V0 },
+    { "v00", TOKEN_V00 },
+    { "v01", TOKEN_V01 },
+    { "v02", TOKEN_V02 },
+    { "v1", TOKEN_V1 },
+    { "v10", TOKEN_V10 },
+    { "v11", TOKEN_V11 },
+    { "v12", TOKEN_V12 },
+    { "v2", TOKEN_V2 },
+    { "v20", TOKEN_V20 },
+    { "v21", TOKEN_V21 },
+    { "v22", TOKEN_V22 },
+    { "v3", TOKEN_V3 },
+    { "v30", TOKEN_V30 },
+    { "v31", TOKEN_V31 },
+    { "v32", TOKEN_V32 },
+    { "v4", TOKEN_V4 },
+    { "v40", TOKEN_V40 },
+    { "v41", TOKEN_V41 },
+    { "v42", TOKEN_V42 },
+    { "v5", TOKEN_V5 },
+    { "v50", TOKEN_V50 },
+    { "v51", TOKEN_V51 },
+    { "v52", TOKEN_V52 },
+    { "v6", TOKEN_V6 },
+    { "v60", TOKEN_V60 },
+    { "v61", TOKEN_V61 },
+    { "v62", TOKEN_V62 },
+    { "v7", TOKEN_V7 },
+    { "v70", TOKEN_V70 },
+    { "v71", TOKEN_V71 },
+    { "v72", TOKEN_V72 },
+    { "v8", TOKEN_V8 },
+    { "v80", TOKEN_V80 },
+    { "v81", TOKEN_V81 },
+    { "v82", TOKEN_V82 },
+    { "v9", TOKEN_V9 },
+    { "v90", TOKEN_V90 },
+    { "v91", TOKEN_V91 },
+    { "v92", TOKEN_V92 },
+    { "scale", TOKEN_SCALE },
+    { "add", TOKEN_ADD },
+    { "addscale", TOKEN_ADDSCALE },
+    { "sub", TOKEN_SUB },
+    { "subscale", TOKEN_SUBSCALE },
+    { "copy", TOKEN_COPY },
+    { "clear", TOKEN_CLEAR },
+    { "wobble", TOKEN_WOBBLE },
+    { "random", TOKEN_RANDOM },
+    { "normalize", TOKEN_NORMALIZE },
+    { "perpendicular", TOKEN_PERPENDICULAR },
+    { "cross", TOKEN_CROSS },
+    { "sprite", TOKEN_SPRITE },
+    { "spark", TOKEN_SPARK },
+    { "quad", TOKEN_QUAD },
+    { "beam", TOKEN_BEAM },
+    { "light", TOKEN_LIGHT },
+    { "distance", TOKEN_DISTANCE },
+    { "emitter", TOKEN_EMITTER },
+    { "emitterf", TOKEN_EMITTERF },
+    { "alphafade", TOKEN_ALPHAFADE },
+    { "shadertime", TOKEN_SHADERTIME },
+    { "dirmodel", TOKEN_DIRMODEL },
+    { "loopsound", TOKEN_LOOPSOUND },
+    { "rotate", TOKEN_ROTATE },
+    { "vibrate", TOKEN_VIBRATE },
+    { "emitterid", TOKEN_EMITTERID },
+    { "decal", TOKEN_DECAL },
+    { "sound", TOKEN_SOUND },
+    { "soundlocal", TOKEN_SOUNDLOCAL },
+    { "soundweapon", TOKEN_SOUNDWEAPON },
+    { "anglesmodel", TOKEN_ANGLESMODEL },
+    { "axismodel", TOKEN_AXISMODEL },
+    { "interval", TOKEN_INTERVAL },
+    { "colorfade", TOKEN_COLORFADE },
+    { "pushparent", TOKEN_PUSHPARENT },
+    { "pop", TOKEN_POP },
+    { "if", TOKEN_IF },
+    { "else", TOKEN_ELSE },
+    { "elif", TOKEN_ELIF },
+    { "repeat", TOKEN_REPEAT },
+    { "rotatearound", TOKEN_ROTATEAROUND },
+    { "parentorigin", TOKEN_PARENTORIGIN },
+    { "movegravity", TOKEN_MOVEGRAVITY },
+    { "soundlist", TOKEN_SOUNDLIST },
+    { "soundlistlocal", TOKEN_SOUNDLISTLOCAL },
+    { "soundlistweapon", TOKEN_SOUNDLISTWEAPON },
+    { "shaderclear", TOKEN_SHADERCLEAR },
+    { "extrashader", TOKEN_EXTRASHADER },
+    { "extrashaderendtime", TOKEN_EXTRASHADERENDTIME },
+    { "extrashaderclear", TOKEN_EXTRASHADERCLEAR },
+    { "trace", TOKEN_TRACE },
+    { "decaltemp", TOKEN_DECALTEMP },
+    { "modellist", TOKEN_MODELLIST },
+    { "shaderlist", TOKEN_SHADERLIST },
+    { "yaw", TOKEN_YAW },
+    { "pitch", TOKEN_PITCH },
+    { "roll", TOKEN_ROLL },
+    { "movebounce", TOKEN_MOVEBOUNCE },
+    { "sink", TOKEN_SINK },
+    { "impact", TOKEN_IMPACT },
+    { "parentvelocity", TOKEN_PARENTVELOCITY },
+    { "inverse", TOKEN_INVERSE },
+    { "rings", TOKEN_RINGS },
+    { "echo", TOKEN_ECHO },
+    { "return", TOKEN_RETURN },
+    { "continue", TOKEN_CONTINUE },
+    { "command", TOKEN_COMMAND },
+
+	// math
+
+	{ "parentOrigin", TOKEN_PARENTORIGIN },
+	{ "parentOrigin0", TOKEN_PARENTORIGIN0 },
+	{ "parentOrigin1", TOKEN_PARENTORIGIN1 },
+	{ "parentOrigin2", TOKEN_PARENTORIGIN2 },
+	{ "parentVelocity", TOKEN_PARENTVELOCITY },
+	{ "parentVelocity0", TOKEN_PARENTVELOCITY0 },
+	{ "parentVelocity1", TOKEN_PARENTVELOCITY1 },
+	{ "parentVelocity2", TOKEN_PARENTVELOCITY2 },
+	{ "parentAngles", TOKEN_PARENTANGLES },
+	{ "parentAngles0", TOKEN_PARENTANGLES0 },
+	{ "parentAngles1", TOKEN_PARENTANGLES1 },
+	{ "parentAngles2", TOKEN_PARENTANGLES2 },
+	{ "parentangle", TOKEN_PARENTANGLE },
+	{ "parentyaw", TOKEN_PARENTYAW },
+	{ "parentpitch", TOKEN_PARENTPITCH },
+	{ "parentroll", TOKEN_PARENTROLL },
+	{ "parentsize", TOKEN_PARENTSIZE },
+	{ "parentDir", TOKEN_PARENTDIR },
+	{ "parentDir0", TOKEN_PARENTDIR0 },
+	{ "parentDir1", TOKEN_PARENTDIR1 },
+	{ "parentDir2", TOKEN_PARENTDIR2 },
+	{ "parentEnd", TOKEN_PARENTEND },
+	{ "parentEnd0", TOKEN_PARENTEND0 },
+	{ "parentEnd1", TOKEN_PARENTEND1 },
+	{ "parentEnd2", TOKEN_PARENTEND2 },
+
+	{ "time", TOKEN_TIME },
+	{ "cgtime", TOKEN_CGTIME },
+	{ "loop", TOKEN_LOOP },
+	{ "loopcount", TOKEN_LOOPCOUNT },
+	{ "pi", TOKEN_PI },
+	{ "rand", TOKEN_RAND },
+	{ "crand", TOKEN_CRAND },
+	{ "lerp", TOKEN_LERP },
+	{ "life", TOKEN_LIFE },
+	{ "clientnum", TOKEN_CLIENTNUM },
+	{ "enemy", TOKEN_ENEMY },
+	{ "teammate", TOKEN_TEAMMATE },
+	{ "ineyes", TOKEN_INEYES },
+	{ "surfacetype", TOKEN_SURFACETYPE },
+	{ "gametype", TOKEN_GAMETYPE },
+	{ "inwater", TOKEN_INWATER },
+
+	{ "*", TOKEN_MATH_MULT },
+	{ "/", TOKEN_MATH_DIV },
+	{ "-", TOKEN_MATH_MINUS },
+	{ "+", TOKEN_MATH_PLUS },
+	{ "%", TOKEN_MATH_MOD },
+	{ "<", TOKEN_MATH_LESS },
+	{ ">", TOKEN_MATH_GREATER },
+	{ "!", TOKEN_MATH_NOT },
+	{ "=", TOKEN_MATH_EQUAL },
+	{ "&", TOKEN_MATH_AND },
+	{ "|", TOKEN_MATH_OR },
+
+	{ "sqrt", TOKEN_MATH_SQRT },
+	{ "ceil", TOKEN_MATH_CEIL },
+	{ "floor", TOKEN_MATH_FLOOR },
+	{ "sin", TOKEN_MATH_SIN },
+	{ "cos", TOKEN_MATH_COS },
+	{ "wave", TOKEN_MATH_WAVE },
+	{ "clip", TOKEN_MATH_CLIP },
+	{ "acos", TOKEN_MATH_ACOS },
+	{ "asin", TOKEN_MATH_ASIN },
+	{ "atan", TOKEN_MATH_ATAN },
+	{ "atan2", TOKEN_MATH_ATAN2 },
+	{ "pow", TOKEN_MATH_POW },
+
+};
+
+static const char *PrintShort (const char *s, int len)
+{
+	static char buffer[1024];
+	int n;
+
+	if (len >= sizeof(buffer)) {
+		n = sizeof(buffer);
+	} else {
+		n = len;
+	}
+
+	Q_strncpyz(buffer, s, n);
+
+	return buffer;
+}
+
+static const char *CG_GetFxTokenExt (const char *inputString, char *token, qboolean isFilename, qboolean *newLine, int *tokenId, float *tokenValue)
+{
+	int jitIndex;
+	jitFxToken_t *jt;
+	const char *ret;
+	qboolean canCompile;
+
+	if (!inputString) {
+		Com_Printf("CG_GetFxTokenExt() inputString == NULL\n");
+		return NULL;
+	}
+
+	canCompile = qfalse;
+	jitIndex = (int)(inputString - EffectScripts.weapons[0].fireScript);
+	if (cg_fxCompiled.integer  &&  jitIndex >= 0  &&  inputString < (const char *)&EffectScripts.names[0])  {  // hack
+		jt = EffectScripts.jitToken[jitIndex];
+		canCompile = qtrue;
+	} else {
+		jt = NULL;
+	}
+
+	//Com_Printf(" -- CG_GetFxTokenExt() '%s'\n", PrintShort(inputString, 8));
+
+	if (jt  &&  jt->valid) {
+		if (1) {  //(!jt->tokenId) {
+			//Q_strncpyz(token, jt->token, sizeof(jt->token));  // argh...
+			//Q_strcpyz(token, jt->token);
+			strcpy(token, jt->token);
+		}
+		//Com_Printf("^5jit '%s'\n", token);
+		*newLine = jt->hitNewLine;
+		*tokenId = jt->tokenId;
+		*tokenValue = jt->value;
+		return jt->end;
+	}
+
+	ret = CG_GetToken(inputString, token, isFilename, newLine);
+	*tokenId = 0;
+
+	if (cg_fxCompiled.integer > 1) {
+		Com_Printf("^%cCG_GetFxTokenExt() token '%s' %s %d in range %d\n", inputString < (const char *)&EffectScripts.names[0] ? '6' : '3', token, inputString < (const char *)&EffectScripts.names[0] ? "compiled" : "", jitIndex, inputString < (const char *)&EffectScripts.names[0]);
+	}
+
+	//if (jt  &&  !jt->valid) {
+	if (canCompile) {
+		int i;
+
+		EffectScripts.jitToken[jitIndex] = CG_CallocMem(sizeof(jitFxToken_t));
+		jt = EffectScripts.jitToken[jitIndex];
+		if (!jt) {
+			Com_Printf("^1couldn't allocate memory for jitFxToken_t\n");
+			return ret;
+		}
+		jt->valid = qtrue;
+		jt->end = ret;
+		//Q_strncpyz(jt->token, token, sizeof(jt->token));
+		jt->token = String_Alloc(token);
+		//Com_Printf("^3jttoken '%s'\n", jt->token);
+		jt->hitNewLine = *newLine;
+
+		if (token[0] == '.'  ||  (token[0] >= '0'  &&  token[0] <= '9')) {
+			jt->tokenId = TOKEN_NUMBER;
+			jt->value = atof(token);
+		} else {
+			for (i = 0;  i < ARRAY_LEN(fxTokens);  i++) {
+				if (fxTokens[i].name == NULL) {
+					continue;
+				}
+				if (!Q_stricmp(token, fxTokens[i].name)) {
+					jt->tokenId = fxTokens[i].id;
+					break;
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
+void CG_FreeFxJitTokens (void)
+{
+	int i;
+	size_t s;
+	jitFxToken_t *j;
+
+	s = 0;
+
+	for (i = 0;  i < ARRAY_LEN(EffectScripts.jitToken);  i++) {
+		j = EffectScripts.jitToken[i];
+		if (j == NULL) {
+			continue;
+		}
+
+		s += sizeof(jitFxToken_t);
+		CG_FreeMem(j);
+		EffectScripts.jitToken[i] = NULL;
+	}
+
+	Com_Printf("freed %f mb for jit fx tokens\n", s / (1024.0 * 1024.0));
+}
+
+static const char *CG_GetFxToken (const char *inputString, char *token, qboolean isFilename, qboolean *newLine, int *tokenId)
+{
+	float tokenValue;
+
+	return CG_GetFxTokenExt(inputString, token, isFilename, newLine, tokenId, &tokenValue);
+}
+
+static localEntity_t *CG_AllocFxEntity (float id)
+{
+	localEntity_t *le;
+
+	le = CG_AllocLocalEntity();
+	if (id < 0.0) {
+		CG_MakeLowPriorityEntity(le);
+	}
+
+	return le;
+}
 
 #if 0  //def CGAMESO
 #include <sys/time.h>
@@ -110,23 +782,29 @@ static int Q_stricmpt (const char *s1, const char *s2)
 
 #endif
 
-char *CG_Q3mmeMath (char *script, float *val, int *error)
+#define MAX_OPS 256
+static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *val, int *error, qboolean checkCompiled)
 {
     char token[MAX_QPATH];
-    char buffer[256];  //FIXME
-    char *p;
-    float ops[256];
+    //char buffer[256];  //FIXME
+    const char *p;
+    float ops[MAX_OPS];
     int numOps;
     int i;
     int j;
     int err;
     static int recursiveCount = 0;
-    int uniqueId;
+    static int uniqueId = 0;
     qboolean newLine;
     int verbose;
+	int tokenId = 0;
+	float tokenValue;
+	//const char *oo;
+
+	//oo = script;
 
     recursiveCount++;
-    uniqueId = rand();
+    uniqueId++;  // = rand();
     verbose = qfalse;  //SC_Cvar_Get_Int("debug_math");
     //verbose = SC_Cvar_Get_Int("debug_math");
 
@@ -134,11 +812,32 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
 
     numOps = 0;
     while (1) {
-        script = CG_GetToken(script, token, qfalse, &newLine);
+		const char *scriptStart;
+
+		if (end  &&  script >= end) {
+			break;
+		}
+
+		scriptStart = script;
+
+		if (checkCompiled) {
+			script = CG_GetFxTokenExt(script, token, qfalse, &newLine, &tokenId, &tokenValue);
+		} else {
+			script = CG_GetToken(script, token, qfalse, &newLine);
+			tokenId = 0;
+		}
+
+		if (end  &&  script > end) {
+			//Com_Printf("went past end: %p  here: %p\n", end, script);
+			script = scriptStart;
+			break;
+		}
+
         if (verbose) {
             //Com_Printf("token: '%s'  script[0] '%c' %d  newLine:%d\n", token, script[0], script[0], newLine);
             Com_Printf("math token: '%s'  script[0] %d  newLine:%d\n", token, script[0], newLine);
         }
+
         if (token[0] == '\0'  ||  token[0] == '{') {  //  ||  newLine)  {  // ||  end) {
             break;
         }
@@ -162,17 +861,49 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
                     continue;
                 }
 
-                if (parenCount == 0  ||  p[0] == '\0'  ||  p[0] == '\n'  ||  (p[0] < ' '  ||  p[0] > '~')) {
+                if (parenCount == 0  ||  p[0] == '\0'  ||  p[0] == '\n'  ||  (p[0] < ' '  ||  p[0] > '~')) {  //  ||  (end  &&  p >= end)) {
+					//int sn;
+
+					//FIXME just testing old scripts, take out
+#if 0
+					sn = (int)(p - script);
+					if (sn >= sizeof(buffer)) {
+						Com_Printf("^3CG_Q3mmeMathExt() open paren temp buffer exceeded:  %d >= %d\n", sn, sizeof(buffer));
+					}
+#endif
+
+
+#if 0  // old way
+					sn = (int)(p - script);
+					if (sn >= sizeof(buffer)) {
+						CG_Printf("^1CG_Q3mmeMathExt() open paren temp buffer exceeded:  %d >= %d\n", sn, sizeof(buffer));
+						*error = err;
+						recursiveCount--;
+						return script;
+					}
                     memcpy(buffer, script, p - script);
                     buffer[p - script] = '\0';
                     //Com_Printf("paren(%d): %d '%s'\n", recursiveCount + 1, p - script, buffer);
                     err = 0;
                     CG_Q3mmeMath(buffer, &tmpVal, &err);
+#endif
+
+#if 1
+					err = 0;
+					CG_Q3mmeMathExt(script, p, &tmpVal, &err, checkCompiled);
+					//CG_Q3mmeMathExt(script, p, &tmpVal, &err, checkCompiled);
+#endif
                     if (err) {
                         *error = err;
                         recursiveCount--;
                         return script;
                     }
+
+					if (numOps + 2 >= MAX_OPS) {
+						CG_Printf("^3CG_Q3mmeMathExt() max ops (%d) in parenthesis parse\n", MAX_OPS);
+						script = p + 1;
+						break;
+					}
                     ops[numOps] = OP_VAL;
                     numOps++;
                     ops[numOps] = tmpVal;
@@ -184,738 +915,1539 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
             }
         }
 
-	if (USE_SWITCH) {
-		switch(token[0]) {
-		case '+':
-			goto opplustoken;
-		case '-':
-			goto opnegativetoken;
-		case '*':
-			goto opmultiplytoken;
-		case '/':
-			goto opdividetoken;
-		case '<':
-			goto oplessthantoken;
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			goto opnumbertoken;
-		case 'l':  /**/
-			switch(token[1]) {  // l
-			case 'e':
-				switch(token[2]) {  // le
-				case 'r':
-					switch(token[3]) {  // ler
-					case 'p':
-						switch(token[4]) {  // lerp
-						case '\0':
-							goto lerptoken;
-						}
-					}
-				}
-			}
-		case 'o':  /**/
-			switch(token[1]) {  // o
-			case 'r':
-				switch(token[2]) {  // or
-				case 'i':
-					switch(token[3]) {  // ori
-					case 'g':
-						switch(token[4]) {  // orig
-						case 'i':
-							switch(token[5]) {  // origi
-							case 'n':
-								switch(token[6]) {  // origin
-								case '\0':
-									goto origintoken;
-								}
-							}
-						}
-					}
-				}
-			}
-		case 'v':  /**/
-			switch(token[1]) {  // v
-			case '1':
-				switch(token[2]) {  // v1
-				case '\0':
-					goto v1token;
-				}
+
+#if 0
+		// tks math
+		if (tokenId) {
+			//Com_Printf("^5q3math tokenid %d\n", tokenId);
+			switch(tokenId) {
+			case TOKEN_ORIGIN:
+				goto origintoken;
+				break;
+			case TOKEN_ORIGIN0:
+				goto origin0token;
+				break;
+			case TOKEN_ORIGIN1:
+				goto origin1token;
+				break;
+			case TOKEN_ORIGIN2:
+				goto origin2token;
+				break;
+
+			case TOKEN_V1:
+				goto v1token;
+				break;
+
+			case TOKEN_LERP:
+				goto lerptoken;
+				break;
+
+			case TOKEN_COLORFADE:
+				goto colorfadetoken;
+				break;
+
+			case TOKEN_MOVEGRAVITY:
+				goto movegravitytoken;
+				break;
+
+			case TOKEN_EMITTERID:
+				goto emitteridtoken;
+				break;
+
+			case TOKEN_MATH_MULT:
+				goto mathmulttoken;
+				break;
+
+			case TOKEN_NUMBER:
+				ops[numOps] = OP_VAL;
+				numOps++;
+				ops[numOps] = tokenValue;
+				numOps++;
+				goto handledToken;
+				break;
+
+			default:
+				Com_Printf("^1CG_Q3mmeMathExt() unhandled token %d '%s'\n", tokenId, token);
+				break;
 			}
 		}
-	}
+#endif
+
+		if (tokenId) {
+			switch (tokenId) {
+			case TOKEN_NUMBER:
+				ops[numOps] = OP_VAL;
+				numOps++;
+				ops[numOps] = tokenValue;
+				numOps++;
+				goto handledToken;
+				break;
+
+			case TOKEN_PARENTORIGIN:
+				goto parentorigintoken;
+				break;
+			case TOKEN_PARENTORIGIN0:
+				goto parentorigin0token;
+				break;
+			case TOKEN_PARENTORIGIN1:
+				goto parentorigin1token;
+				break;
+			case TOKEN_PARENTORIGIN2:
+				goto parentorigin2token;
+				break;
+			case TOKEN_PARENTVELOCITY:
+				goto parentvelocitytoken;
+				break;
+			case TOKEN_PARENTVELOCITY0:
+				goto parentvelocity0token;
+				break;
+			case TOKEN_PARENTVELOCITY1:
+				goto parentvelocity1token;
+				break;
+			case TOKEN_PARENTVELOCITY2:
+				goto parentvelocity2token;
+				break;
+			case TOKEN_PARENTANGLES:
+				goto parentanglestoken;
+				break;
+			case TOKEN_PARENTANGLES0:
+				goto parentangles0token;
+				break;
+			case TOKEN_PARENTANGLES1:
+				goto parentangles1token;
+				break;
+			case TOKEN_PARENTANGLES2:
+				goto parentangles2token;
+				break;
+			case TOKEN_PARENTANGLE:
+				goto parentangletoken;
+				break;
+			case TOKEN_PARENTYAW:
+				goto parentyawtoken;
+				break;
+			case TOKEN_PARENTPITCH:
+				goto parentpitchtoken;
+				break;
+			case TOKEN_PARENTROLL:
+				goto parentrolltoken;
+				break;
+			case TOKEN_PARENTSIZE:
+				goto parentsizetoken;
+				break;
+			case TOKEN_PARENTDIR:
+				goto parentdirtoken;
+				break;
+			case TOKEN_PARENTDIR0:
+				goto parentdir0token;
+				break;
+			case TOKEN_PARENTDIR1:
+				goto parentdir1token;
+				break;
+			case TOKEN_PARENTDIR2:
+				goto parentdir2token;
+				break;
+			case TOKEN_PARENTEND:
+				goto parentendtoken;
+				break;
+			case TOKEN_PARENTEND0:
+				goto parentend0token;
+				break;
+			case TOKEN_PARENTEND1:
+				goto parentend1token;
+				break;
+			case TOKEN_PARENTEND2:
+				goto parentend2token;
+				break;
+
+
+			/////////////////////////
+
+			case TOKEN_T0:
+				goto t0token;
+				break;
+			case TOKEN_T1:
+				goto t1token;
+				break;
+			case TOKEN_T2:
+				goto t2token;
+				break;
+			case TOKEN_T3:
+				goto t3token;
+				break;
+			case TOKEN_T4:
+				goto t4token;
+				break;
+			case TOKEN_T5:
+				goto t5token;
+				break;
+			case TOKEN_T6:
+				goto t6token;
+				break;
+			case TOKEN_T7:
+				goto t7token;
+				break;
+			case TOKEN_T8:
+				goto t8token;
+				break;
+			case TOKEN_T9:
+				goto t9token;
+				break;
+			case TOKEN_V0:
+				goto v0token;
+				break;
+			case TOKEN_V00:
+				goto v00token;
+				break;
+			case TOKEN_V01:
+				goto v01token;
+				break;
+			case TOKEN_V02:
+				goto v02token;
+				break;
+			case TOKEN_V1:
+				goto v1token;
+				break;
+			case TOKEN_V10:
+				goto v10token;
+				break;
+			case TOKEN_V11:
+				goto v11token;
+				break;
+			case TOKEN_V12:
+				goto v12token;
+				break;
+			case TOKEN_V2:
+				goto v2token;
+				break;
+			case TOKEN_V20:
+				goto v20token;
+				break;
+			case TOKEN_V21:
+				goto v21token;
+				break;
+			case TOKEN_V22:
+				goto v22token;
+				break;
+			case TOKEN_V3:
+				goto v3token;
+				break;
+			case TOKEN_V30:
+				goto v30token;
+				break;
+			case TOKEN_V31:
+				goto v31token;
+				break;
+			case TOKEN_V32:
+				goto v32token;
+				break;
+			case TOKEN_V4:
+				goto v4token;
+				break;
+			case TOKEN_V40:
+				goto v40token;
+				break;
+			case TOKEN_V41:
+				goto v41token;
+				break;
+			case TOKEN_V42:
+				goto v42token;
+				break;
+			case TOKEN_V5:
+				goto v5token;
+				break;
+			case TOKEN_V50:
+				goto v50token;
+				break;
+			case TOKEN_V51:
+				goto v51token;
+				break;
+			case TOKEN_V52:
+				goto v52token;
+				break;
+			case TOKEN_V6:
+				goto v6token;
+				break;
+			case TOKEN_V60:
+				goto v60token;
+				break;
+			case TOKEN_V61:
+				goto v61token;
+				break;
+			case TOKEN_V62:
+				goto v62token;
+				break;
+			case TOKEN_V7:
+				goto v7token;
+				break;
+			case TOKEN_V70:
+				goto v70token;
+				break;
+			case TOKEN_V71:
+				goto v71token;
+				break;
+			case TOKEN_V72:
+				goto v72token;
+				break;
+			case TOKEN_V8:
+				goto v8token;
+				break;
+			case TOKEN_V80:
+				goto v80token;
+				break;
+			case TOKEN_V81:
+				goto v81token;
+				break;
+			case TOKEN_V82:
+				goto v82token;
+				break;
+			case TOKEN_V9:
+				goto v9token;
+				break;
+			case TOKEN_V90:
+				goto v90token;
+				break;
+			case TOKEN_V91:
+				goto v91token;
+				break;
+			case TOKEN_V92:
+				goto v92token;
+				break;
+
+			case TOKEN_END:
+				goto endtoken;
+				break;
+			case TOKEN_END0:
+				goto end0token;
+				break;
+			case TOKEN_END1:
+				goto end1token;
+				break;
+			case TOKEN_END2:
+				goto end2token;
+				break;
+
+			case TOKEN_ANGLES:
+				goto anglestoken;
+				break;
+			case TOKEN_ANGLES0:
+				goto angles0token;
+				break;
+			case TOKEN_ANGLES1:
+				goto angles1token;
+				break;
+			case TOKEN_ANGLES2:
+				goto angles2token;
+				break;
+
+			case TOKEN_DIR:
+				goto dirtoken;
+				break;
+			case TOKEN_DIR0:
+				goto dir0token;
+				break;
+			case TOKEN_DIR1:
+				goto dir1token;
+				break;
+			case TOKEN_DIR2:
+				goto dir2token;
+				break;
+
+			case TOKEN_VELOCITY:
+				goto velocitytoken;
+				break;
+			case TOKEN_VELOCITY0:
+				goto velocity0token;
+				break;
+			case TOKEN_VELOCITY1:
+				goto velocity1token;
+				break;
+			case TOKEN_VELOCITY2:
+				goto velocity2token;
+				break;
+
+			case TOKEN_ORIGIN:
+				goto origintoken;
+				break;
+			case TOKEN_ORIGIN0:
+				goto origin0token;
+				break;
+			case TOKEN_ORIGIN1:
+				goto origin1token;
+				break;
+			case TOKEN_ORIGIN2:
+				goto origin2token;
+				break;
+
+			///////////////////////
+
+			case TOKEN_MOVEGRAVITY:
+				goto movegravitytoken;
+				break;
+			case TOKEN_COLORFADE:
+				goto colorfadetoken;
+				break;
+			case TOKEN_SHADERTIME:
+				goto shadertimetoken;
+				break;
+			case TOKEN_ALPHAFADE:
+				goto alphafadetoken;
+				break;
+			case TOKEN_EMITTERID:
+				goto emitteridtoken;
+				break;
+			case TOKEN_VIBRATE:
+				goto vibratetoken;
+				break;
+			case TOKEN_ROTATE:
+				goto rotatetoken;
+				break;
+
+			case TOKEN_ALPHA:
+				goto alphatoken;
+				break;
+			case TOKEN_BLUE:
+				goto bluetoken;
+				break;
+			case TOKEN_GREEN:
+				goto greentoken;
+				break;
+			case TOKEN_RED:
+				goto redtoken;
+				break;
+			case TOKEN_CGTIME:
+				goto cgtimetoken;
+				break;
+			case TOKEN_ROLL:
+				goto rolltoken;
+				break;
+			case TOKEN_PITCH:
+				goto pitchtoken;
+				break;
+			case TOKEN_YAW:
+				goto yawtoken;
+				break;
+			case TOKEN_ANGLE:
+				goto angletoken;
+				break;
+			case TOKEN_WIDTH:
+				goto widthtoken;
+				break;
+			case TOKEN_SIZE:
+				goto sizetoken;
+				break;
+
+			////////////////////
+
+			case TOKEN_TIME:
+				goto timetoken;
+				break;
+			case TOKEN_LOOP:
+				goto looptoken;
+				break;
+			case TOKEN_LOOPCOUNT:
+				goto loopcounttoken;
+				break;
+			case TOKEN_PI:
+				goto pitoken;
+				break;
+			case TOKEN_RAND:
+				goto randtoken;
+				break;
+			case TOKEN_CRAND:
+				goto crandtoken;
+				break;
+			case TOKEN_LERP:
+				goto lerptoken;
+				break;
+			case TOKEN_LIFE:
+				goto lifetoken;
+				break;
+			case TOKEN_CLIENTNUM:
+				goto clientnumtoken;
+				break;
+			case TOKEN_ENEMY:
+				goto enemytoken;
+				break;
+			case TOKEN_TEAMMATE:
+				goto teammatetoken;
+				break;
+			case TOKEN_INEYES:
+				goto ineyestoken;
+				break;
+			case TOKEN_TEAM:
+				goto teamtoken;
+				break;
+			case TOKEN_SURFACETYPE:
+				goto surfacetypetoken;
+				break;
+			case TOKEN_GAMETYPE:
+				goto gametypetoken;
+				break;
+			case TOKEN_INWATER:
+				goto inwatertoken;
+				break;
+
+			case TOKEN_MATH_MULT:
+				goto math_multtoken;
+				break;
+			case TOKEN_MATH_DIV:
+				goto math_divtoken;
+				break;
+			case TOKEN_MATH_MINUS:
+				goto math_minustoken;
+				break;
+			case TOKEN_MATH_PLUS:
+				goto math_plustoken;
+				break;
+			case TOKEN_MATH_MOD:
+				goto math_modtoken;
+				break;
+			case TOKEN_MATH_LESS:
+				goto math_lesstoken;
+				break;
+			case TOKEN_MATH_GREATER:
+				goto math_greatertoken;
+				break;
+			case TOKEN_MATH_NOT:
+				goto math_nottoken;
+				break;
+			case TOKEN_MATH_EQUAL:
+				goto math_equaltoken;
+				break;
+			case TOKEN_MATH_AND:
+				goto math_andtoken;
+				break;
+			case TOKEN_MATH_OR:
+				goto math_ortoken;
+				break;
+
+			case TOKEN_MATH_SQRT:
+				goto math_sqrttoken;
+				break;
+			case TOKEN_MATH_CEIL:
+				goto math_ceiltoken;
+				break;
+			case TOKEN_MATH_FLOOR:
+				goto math_floortoken;
+				break;
+			case TOKEN_MATH_SIN:
+				goto math_sintoken;
+				break;
+			case TOKEN_MATH_COS:
+				goto math_costoken;
+				break;
+			case TOKEN_MATH_TAN:
+				goto math_tantoken;
+				break;
+			case TOKEN_MATH_WAVE:
+				goto math_wavetoken;
+				break;
+			case TOKEN_MATH_CLIP:
+				goto math_cliptoken;
+				break;
+			case TOKEN_MATH_ASIN:
+				goto math_asintoken;
+				break;
+			case TOKEN_MATH_ACOS:
+				goto math_acostoken;
+				break;
+			case TOKEN_MATH_ATAN:
+				goto math_atantoken;
+				break;
+			case TOKEN_MATH_ATAN2:
+				goto math_atan2token;
+				break;
+			case TOKEN_MATH_POW:
+				goto math_powtoken;
+				break;
+			default:
+				Com_Printf("^1CG_Q3mmeMathExt() unhandled token %d '%s'\n", tokenId, token);
+				break;
+			}
+		}
+
 		if (0) {
 
-        } else if (!USE_SWITCH  &&  token[0] == '+') {
-		opplustoken:
+        } else if (token[0] == '+') {
+		math_plustoken:
             ops[numOps] = OP_PLUS;
             numOps += 2;
-			goto tokenHandled;
-        } else if (!USE_SWITCH  &&  token[0] == '-') {
-		opnegativetoken:
+			goto handledToken;
+        } else if (token[0] == '-') {
+		math_minustoken:
             ops[numOps] = OP_MINUS;
             numOps += 2;
-			goto tokenHandled;
-        } else if (!USE_SWITCH  &&  token[0] == '*') {
-		opmultiplytoken:
+			goto handledToken;
+        } else if (token[0] == '*') {
+		math_multtoken:
             ops[numOps] = OP_MULT;
             numOps += 2;
-			goto tokenHandled;
-        } else if (!USE_SWITCH  &&  token[0] == '/') {
-		opdividetoken:
+			goto handledToken;
+        } else if (token[0] == '/') {
+		math_divtoken:
             ops[numOps] = OP_DIV;
             numOps += 2;
-			goto tokenHandled;
-        } else if (!USE_SWITCH  &&  token[0] == '<') {
-		oplessthantoken:
+			goto handledToken;
+        } else if (token[0] == '%') {
+		math_modtoken:
+            ops[numOps] = OP_MOD;
+            numOps += 2;
+			goto handledToken;
+        } else if (token[0] == '<') {
+		math_lesstoken:
             ops[numOps] = OP_LESS;
             numOps += 2;
-			goto tokenHandled;
+			goto handledToken;
         } else if (token[0] == '>') {
+		math_greatertoken:
             ops[numOps] = OP_GREATER;
             numOps += 2;
+			goto handledToken;
         } else if (token[0] == '!') {
+		math_nottoken:
             ops[numOps] = OP_NOT;
             numOps += 2;
+			goto handledToken;
         } else if (token[0] == '=') {
+		math_equaltoken:
             ops[numOps] = OP_EQUAL;
             numOps += 2;
+			goto handledToken;
         } else if (token[0] == '&') {
+		math_andtoken:
             ops[numOps] = OP_AND;
             numOps += 2;
+			goto handledToken;
         } else if (token[0] == '|') {
+		math_ortoken:
             ops[numOps] = OP_OR;
             numOps += 2;
-        } else if (!USE_SWITCH  &&  token[0] >= '0'  &&  token[0] <= '9') {  //((token[0] >= '0'  &&  token[0] <= '9')  ||  (token[0] == '-'  &&  (token[1] >= '0'  &&  token[1] <= '9'))) {
-		opnumbertoken:
+			goto handledToken;
+        } else if (token[0] == '.'  ||  (token[0] >= '0'  &&  token[0] <= '9')) {  //((token[0] >= '0'  &&  token[0] <= '9')  ||  (token[0] == '-'  &&  (token[1] >= '0'  &&  token[1] <= '9'))) {
             ops[numOps] = OP_VAL;
             numOps++;
             ops[numOps] = atof(token);
             numOps++;
-			goto tokenHandled;
-
+			goto handledToken;
         } else if (!Q_stricmpt(token, "size")) {
+		sizetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.size;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "width")) {
+		widthtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.width;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angle")) {
+		angletoken:
             ops[numOps] = OP_VAL;
             //ops[numOps + 1] = ScriptVars.angle;
             ops[numOps + 1] = ScriptVars.rotate;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t0")) {
+		t0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t0;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t1")) {
+		t1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t1;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t2")) {
+		t2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t2;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t3")) {
+		t3token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t3;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t4")) {
+		t4token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t4;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t5")) {
+		t5token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t5;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t6")) {
+		t6token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t6;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t7")) {
+		t7token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t7;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t8")) {
+		t8token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t8;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t9")) {
+		t9token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.t9;
             numOps += 2;
-        } else if (!USE_SWITCH  &&  !Q_stricmpt(token, "origin")) {
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "origin")) {
 		origintoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.origin);
             numOps += 2;
-			goto tokenHandled;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "origin0")) {
+		origin0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.origin[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "origin1")) {
+		origin1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.origin[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "origin2")) {
+		origin2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.origin[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "velocity")) {
+		velocitytoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.velocity);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "velocity0")) {
+		velocity0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.velocity[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "velocity1")) {
+		velocity1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.velocity[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "velocity2")) {
+		velocity2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.velocity[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dir")) {
+		dirtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.dir);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dir0")) {
+		dir0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.dir[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dir1")) {
+		dir1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.dir[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dir2")) {
+		dir2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.dir[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angles")) {
+		anglestoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.angles);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angles0")) {
+		angles0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.angles[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angles1")) {
+		angles1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.angles[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angles2")) {
+		angles2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.angles[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "yaw")) {
+		yawtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.angles[YAW];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "pitch")) {
+		pitchtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.angles[PITCH];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "roll")) {
+		rolltoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.angles[ROLL];
             numOps += 2;
-#if 0  // stupid
+			goto handledToken;
+#if 0  // -- definately not used in q3mme (color0, color1, color2)
         } else if (!Q_stricmpt(token, "color")) {
+		colortoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.color);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "color0")) {
+		color0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.color[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "color1")) {
+		color1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.color[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "color2")) {
+		color2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.color[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "color3")) {  // alpha
+		color3token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.color[3];
             numOps += 2;
+			goto handledToken;
 #endif
         } else if (!Q_stricmpt(token, "parentOrigin")) {
+		parentorigintoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.parentOrigin);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentOrigin0")) {
+		parentorigin0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentOrigin[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentOrigin1")) {
+		parentorigin1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentOrigin[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentOrigin2")) {
+		parentorigin2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentOrigin[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentvelocity")) {
+		parentvelocitytoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.parentVelocity);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentVelocity0")) {
+		parentvelocity0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentVelocity[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentVelocity1")) {
+		parentvelocity1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentVelocity[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentVelocity2")) {
+		parentvelocity2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentVelocity[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentAngles")) {
+		parentanglestoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.parentAngles);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentAngles0")) {
+		parentangles0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentAngles[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentAngles1")) {
+		parentangles1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentAngles[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentAngles2")) {
+		parentangles2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentAngles[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentangle")) {
+		parentangletoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentAngle;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentyaw")) {
+		parentyawtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentAngles[YAW];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentpitch")) {
+		parentpitchtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentAngles[PITCH];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentroll")) {
+		parentrolltoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentAngles[ROLL];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentsize")) {
+		parentsizetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentSize;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentDir")) {
+		parentdirtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.parentDir);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentDir0")) {
+		parentdir0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentDir[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentDir1")) {
+		parentdir1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentDir[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentDir2")) {
+		parentdir2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentDir[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentEnd")) {
+		parentendtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.parentEnd);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentEnd0")) {
+		parentend0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentEnd[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentEnd1")) {
+		parentend1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentEnd[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentEnd2")) {
+		parentend2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.parentEnd[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "end")) {
+		endtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.end);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "end0")) {
+		end0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.end[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "end1")) {
+		end1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.end[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "end2")) {
+		end2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.end[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "time")) {
+		timetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = (cg.ftime - (float)cgs.levelStartTime) / 1000.0;
             //ops[numOps + 1] = (cg.time - (float)cgs.levelStartTime) / 1000.0;
             numOps += 2;
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "cgtime")) {
+		cgtimetoken:
 			ops[numOps] = OP_VAL;
 			ops[numOps + 1] = cg.ftime;
 			numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "loop")) {
+		looptoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.loop;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "loopcount")) {
+		loopcounttoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.loopCount;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "red")) {
+		redtoken:
             ops[numOps] = OP_VAL;
             //ops[numOps + 1] = ScriptVars.red;
             ops[numOps + 1] = ScriptVars.color[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "green")) {
+		greentoken:
             ops[numOps] = OP_VAL;
             //ops[numOps + 1] = ScriptVars.green;
             ops[numOps + 1] = ScriptVars.color[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "blue")) {
+		bluetoken:
             ops[numOps] = OP_VAL;
             //ops[numOps + 1] = ScriptVars.blue;
             ops[numOps + 1] = ScriptVars.color[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "alpha")) {
+		alphatoken:
             ops[numOps] = OP_VAL;
             //ops[numOps + 1] = ScriptVars.alpha;
             ops[numOps + 1] = ScriptVars.color[3];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "pi")) {
+		pitoken:
             ops[numOps] = OP_VAL;
             numOps++;
             ops[numOps] = M_PI;
             numOps++;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rand")) {
+		randtoken:
             //FIXME how is rand set, it's supposed to be a fixed value ??
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = random();  //ScriptVars.rand;
 			//Com_Printf("rand() %f\n", ops[numOps + 1]);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "crand")) {
+		crandtoken:
             //FIXME how is crand set, it's supposed to be a fixed value ??
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = crandom();  //ScriptVars.crand;
             numOps += 2;
-        } else if (!USE_SWITCH  &&  !Q_stricmpt(token, "lerp")) {
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "lerp")) {
 		lerptoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.lerp;
             numOps += 2;
-			goto tokenHandled;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "life")) {
+		lifetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.life;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v0")) {
+		v0token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v0);
             numOps += 2;
-        } else if (!USE_SWITCH  &&  !Q_stricmpt(token, "v1")) {
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "v1")) {
 		v1token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v1);
             numOps += 2;
-			goto tokenHandled;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v2")) {
+		v2token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v2);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v3")) {
+		v3token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v3);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v4")) {
+		v4token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v4);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v5")) {
+		v5token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v5);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v6")) {
+		v6token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v6);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v7")) {
+		v7token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v7);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v8")) {
+		v8token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v8);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v9")) {
+		v9token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = VectorLength(ScriptVars.v9);
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v00")) {
+		v00token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v0[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v01")) {
+		v01token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v0[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v02")) {
+		v02token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v0[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v10")) {
+		v10token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v1[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v11")) {
+		v11token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v1[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v12")) {
+		v12token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v1[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v20")) {
+		v20token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v2[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v21")) {
+		v21token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v2[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v22")) {
+		v22token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v2[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v30")) {
+		v30token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v3[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v31")) {
+		v31token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v3[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v32")) {
+		v32token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v3[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v40")) {
+		v40token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v4[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v41")) {
+		v41token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v4[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v42")) {
+		v42token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v4[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v50")) {
+		v50token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v5[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v51")) {
+		v51token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v5[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v52")) {
+		v52token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v5[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v60")) {
+		v60token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v6[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v61")) {
+		v61token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v6[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v62")) {
+		v62token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v6[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v70")) {
+		v70token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v7[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v71")) {
+		v71token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v7[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v72")) {
+		v72token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v7[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v80")) {
+		v80token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v8[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v81")) {
+		v81token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v8[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v82")) {
+		v82token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v8[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v90")) {
+		v90token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v9[0];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v91")) {
+		v91token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v9[1];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v92")) {
+		v92token:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.v9[2];
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rotate")) {
+		rotatetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.rotate;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "vibrate")) {
+		vibratetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.vibrate;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "emitterid")) {
+		emitteridtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.emitterId;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "alphafade")) {
+		alphafadetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.alphaFade;
             numOps += 2;
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "shadertime")) {
+		shadertimetoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.shaderTime;
+            numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "colorfade")) {
+		colorfadetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.colorFade;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "movegravity")) {
+		movegravitytoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.moveGravity;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "team")) {
+		teamtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.team;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "clientnum")) {
+		clientnumtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.clientNum;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "enemy")) {
+		enemytoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.enemy;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "teammate")) {
+		teammatetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.teamMate;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "ineyes")) {
+		ineyestoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.inEyes;
             numOps += 2;
+			goto handledToken;
 #if 0
         } else if (!Q_stricmpt(token, "rewardImpressive")) {
+		rewardImpressivetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.rewardImpressive;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rewardExcellent")) {
+		rewardExcellenttoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.rewardExcellent;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rewardHumiliation")) {
+		rewardHumiliationtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.rewardHumiliation;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rewardDefend")) {
+		rewardDefendtoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.rewardDefend;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rewardAssist")) {
+		rewardAssisttoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.rewardAssist;
             numOps += 2;
+			goto handledToken;
 #endif
         } else if (!Q_stricmpt(token, "surfacetype")) {
+		surfacetypetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.surfaceType;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "gametype")) {
+		gametypetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = cgs.gametype;
             numOps += 2;
+			goto handledToken;
 
         // functions //
 
         } else if (!Q_stricmpt(token, "sqrt")) {
+		math_sqrttoken:
             ops[numOps] = OP_FSQRT;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "ceil")) {
+		math_ceiltoken:
             ops[numOps] = OP_FCEIL;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "floor")) {
+		math_floortoken:
             ops[numOps] = OP_FFLOOR;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "sin")) {
+		math_sintoken:
             ops[numOps] = OP_FSIN;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "cos")) {
+		math_costoken:
             ops[numOps] = OP_FCOS;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "wave")) {
+		math_wavetoken:
             ops[numOps] = OP_FWAVE;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "clip")) {
+		math_cliptoken:
             ops[numOps] = OP_FCLIP;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "acos")) {
+		math_acostoken:
             ops[numOps] = OP_FACOS;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "asin")) {
+		math_asintoken:
             ops[numOps] = OP_FASIN;
             numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "atan")) {
+		math_atantoken:
             ops[numOps] = OP_FATAN;
             numOps += 2;
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "atan2")) {
+		math_atan2token:
 			ops[numOps] = OP_FATAN2;
 			numOps += 2;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "tan")) {
+		math_tantoken:
             ops[numOps] = OP_FTAN;
             numOps += 2;
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "pow")) {
+		math_powtoken:
 			ops[numOps] = OP_FPOW;
 			numOps += 2;
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "inwater")) {
+		inwatertoken:
 			ops[numOps] = OP_VAL;
 			ops[numOps + 1] = CG_PointContents(ScriptVars.origin, -1) & CONTENTS_WATER;
 			numOps += 2;
-        } else if (token[0] != '(') {
+			goto handledToken;
+		} else if (token[0] == '(') {
+			// pass
+        } else if (trap_Cvar_Exists(token)) {
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = SC_Cvar_Get_Float(token);
             numOps += 2;
@@ -923,10 +2455,20 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
                 //Com_Printf("^3q3mme math unknown token: 's'\n", token);
                 Com_Printf("cvar: '%s' %f\n", token, SC_Cvar_Get_Float(token));
             }
-        }
+        } else {
+			Com_Printf("^3q3mme math unknown token/cvar '%s'\n", token);
+			Com_Printf("next: '%s'\n", PrintShort(script, 16));
+			//CG_Abort();
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = 0;
+            numOps += 2;
+			//recursiveCount--;
+			//return script;
+		}
 
-	tokenHandled:
+	handledToken:
         if (newLine) {
+			//Com_Printf("^2math done rest: '%s'\n", PrintShort(script, 10));
             break;
         }
     }
@@ -934,15 +2476,16 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
     // sanity check
     if (ops[0] >= OP_PLUS  &&  ops[0] <= OP_OR  &&  ops[0] != OP_MINUS) {
         *error = 1;
-        Com_Printf("q3mme math invalid first token(%d %d): %f\n", recursiveCount, uniqueId, ops[0]);
+        Com_Printf("^3q3mme math invalid first token(%d %d): %f\n", recursiveCount, uniqueId, ops[0]);
         recursiveCount--;
         return script;
     }
 
     if (numOps > 0  &&  (ops[numOps - 2] >= OP_PLUS  &&  ops[numOps - 2] <= OP_OR)) {
         *error = 2;
-        Com_Printf("q3mme math invalid last token(%d %d): %f\n", recursiveCount, uniqueId, ops[numOps - 2]);
+        Com_Printf("^3q3mme math invalid last token(%d %d): %f\n", recursiveCount, uniqueId, ops[numOps - 2]);
         recursiveCount--;
+		//CG_Abort();
         return script;
     }
 
@@ -958,7 +2501,7 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
         if ((i + 2) < (numOps - 1)) {
             if (ops[i + 2] != OP_VAL) {
                 *error = 6;
-                Com_Printf("q3mme math invalid function value type (%d %d): %f\n", recursiveCount, uniqueId, ops[i + 2]);
+                Com_Printf("^3q3mme math invalid function value type (%d %d): %f\n", recursiveCount, uniqueId, ops[i + 2]);
                 recursiveCount--;
                 return script;
             }
@@ -1003,7 +2546,7 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
 			val = powf(val, val2);
 			numOps -= 2;
         } else {
-            Com_Printf("q3mme math unknown function %f\n", ops[i]);
+            Com_Printf("^3q3mme math unknown function %f\n", ops[i]);
         }
 
         ops[i] = OP_VAL;
@@ -1021,7 +2564,7 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
             if (ops[i + 2] >= OP_PLUS  &&  ops[i + 2] <= OP_OR) {
                 if (ops[i + 2] != OP_MINUS) {
                     *error = 3;
-                    Com_Printf("q3mme math two operands following each other(%d %d)\n", recursiveCount, uniqueId);
+                    Com_Printf("^3q3mme math two operands following each other(%d %d)\n", recursiveCount, uniqueId);
                     recursiveCount--;
                     return script;
                 } else {
@@ -1048,7 +2591,7 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
         }
     }
 
-    // * /
+    // * / %
 
     for (i = 0;  i < numOps;  i += 2) {
         if (ops[i] == OP_NOP) {
@@ -1068,10 +2611,19 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
             //Com_Printf("(%d %d)  %f / %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
 #if 0
 			if (ops[i + 3] == 0.0) {
-				CG_Printf("^3fxmath divide by zero\n");
+				CG_Printf("^3q3mme math divide by zero\n");
 			}
 #endif
             ops[i - 1] /= ops[i + 3];
+            for (j = i + 4;  j < numOps;  j++) {
+                ops[j - 4] = ops[j];
+            }
+            numOps -= 4;
+            i -= 2;
+            continue;
+		} else if (ops[i] == OP_MOD) {
+            //Com_Printf("(%d %d)  %f % %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
+            ops[i - 1] = (int)round(ops[i - 1]) % (int)round(ops[i + 3]);
             for (j = i + 4;  j < numOps;  j++) {
                 ops[j - 4] = ops[j];
             }
@@ -1176,8 +2728,10 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
     // sanity check
     if (ops[0] != OP_VAL) {
         *error = 5;
-        Com_Printf("q3mme math invalid final value op(%d %d): %f\n", recursiveCount, uniqueId, ops[0]);
+        Com_Printf("^3q3mme math invalid final value op(%d %d): %f\n", recursiveCount, uniqueId, ops[0]);
         recursiveCount--;
+		//Com_Printf("orig '%s'\n", PrintShort(oo, 16));
+		//CG_Abort();
         return script;
     }
 
@@ -1189,89 +2743,153 @@ char *CG_Q3mmeMath (char *script, float *val, int *error)
     recursiveCount--;
     return script;
 }
+#undef MAX_OPS
 
-static vec3_t *CG_GetScriptVector (char *name)
+const char *CG_Q3mmeMath (const char *script, float *val, int *error)
 {
-	char *token;
+	return CG_Q3mmeMathExt(script, NULL, val, error, qtrue);
+}
 
-	token = name;
+static vec3_t *CG_GetScriptVector (const char *name, int tokenId)
+{
+	// tks vector
+    if (tokenId) {
+		switch (tokenId) {
+		case TOKEN_ORIGIN:
+			goto origintoken;
+			break;
 
- if (USE_SWITCH) {
-	switch(token[0]) {
-	case 'o':  /**/
-		switch(token[1]) {  // o
-		case 'r':
-			switch(token[2]) {  // or
-			case 'i':
-				switch(token[3]) {  // ori
-				case 'g':
-					switch(token[4]) {  // orig
-					case 'i':
-						switch(token[5]) {  // origi
-						case 'n':
-							switch(token[6]) {  // origin
-							case '\0':
-								goto origintoken;
-							}
-						}
-					}
-				}
-			}
-		}
-	case 'v':  /**/
-		switch(token[1]) {  // v
-		case '1':
-			switch(token[2]) {  // v1
-			case '\0':
-				goto v1token;
-			}
+		case TOKEN_V0:
+			goto v0token;
+			break;
+		case TOKEN_V1:
+			goto v1token;
+			break;
+		case TOKEN_V2:
+			goto v2token;
+			break;
+		case TOKEN_V3:
+			goto v3token;
+			break;
+		case TOKEN_V4:
+			goto v4token;
+			break;
+		case TOKEN_V5:
+			goto v5token;
+			break;
+		case TOKEN_V6:
+			goto v6token;
+			break;
+		case TOKEN_V7:
+			goto v7token;
+			break;
+		case TOKEN_V8:
+			goto v8token;
+			break;
+		case TOKEN_V9:
+			goto v9token;
+			break;
+
+		case TOKEN_VELOCITY:
+			goto velocitytoken;
+			break;
+		case TOKEN_DIR:
+			goto dirtoken;
+			break;
+		case TOKEN_ANGLES:
+			goto anglestoken;
+			break;
+		case TOKEN_COLOR:
+			goto colortoken;
+			break;
+		case TOKEN_PARENTORIGIN:
+			goto parentorigintoken;
+			break;
+		case TOKEN_PARENTVELOCITY:
+			goto parentvelocitytoken;
+			break;
+		case TOKEN_PARENTANGLES:
+			goto parentanglestoken;
+			break;
+		case TOKEN_PARENTDIR:
+			goto parentdirtoken;
+			break;
+		case TOKEN_PARENTEND:
+			goto parentendtoken;
+			break;
+
+		case TOKEN_END:
+			goto endtoken;
+			break;
+
+		default:
+			Com_Printf("^3CG_GetScriptVector() unhandled token %d '%s'\n", tokenId, name);
+			break;
 		}
 	}
- }
 
     if (!Q_stricmpt(name, "v0")) {
+	v0token:
         return &ScriptVars.v0;
-    } else if (!USE_SWITCH  &&  !Q_stricmpt(name, "v1")) {
+    } else if (!Q_stricmpt(name, "v1")) {
 	v1token:
         return &ScriptVars.v1;
     } else if (!Q_stricmpt(name, "v2")) {
+	v2token:
         return &ScriptVars.v2;
     } else if (!Q_stricmpt(name, "v3")) {
+	v3token:
         return &ScriptVars.v3;
     } else if (!Q_stricmpt(name, "v4")) {
+	v4token:
         return &ScriptVars.v4;
     } else if (!Q_stricmpt(name, "v5")) {
+	v5token:
         return &ScriptVars.v5;
     } else if (!Q_stricmpt(name, "v6")) {
+	v6token:
         return &ScriptVars.v6;
     } else if (!Q_stricmpt(name, "v7")) {
+	v7token:
         return &ScriptVars.v7;
     } else if (!Q_stricmpt(name, "v8")) {
+	v8token:
         return &ScriptVars.v8;
     } else if (!Q_stricmpt(name, "v9")) {
+	v9token:
         return &ScriptVars.v9;
-    } else if (!USE_SWITCH  &&  !Q_stricmpt(name, "origin")) {
+    } else if (!Q_stricmpt(name, "origin")) {
 	origintoken:
         return &ScriptVars.origin;
     } else if (!Q_stricmpt(name, "velocity")) {
+	velocitytoken:
         return &ScriptVars.velocity;
     } else if (!Q_stricmpt(name, "dir")) {
+	dirtoken:
         return &ScriptVars.dir;
     } else if (!Q_stricmpt(name, "angles")) {
+	anglestoken:
         return &ScriptVars.angles;
     } else if (!Q_stricmpt(name, "color")) {
+	colortoken:
         return (vec3_t *)&ScriptVars.color;
     } else if (!Q_stricmpt(name, "parentOrigin")) {
+	parentorigintoken:
         return &ScriptVars.parentOrigin;
     } else if (!Q_stricmpt(name, "parentvelocity")) {
+	parentvelocitytoken:
         return &ScriptVars.parentVelocity;
     } else if (!Q_stricmpt(name, "parentAngles")) {
+	parentanglestoken:
         return &ScriptVars.parentAngles;
     } else if (!Q_stricmpt(name, "parentDir")) {
+	parentdirtoken:
         return &ScriptVars.parentDir;
 	} else if (!Q_stricmpt(name, "parentEnd")) {
+	parentendtoken:
 		return &ScriptVars.parentEnd;
     } else if (!Q_stricmpt(name, "end")) {
+	endtoken:
 		return &ScriptVars.end;
 	}
 
@@ -1280,9 +2898,9 @@ static vec3_t *CG_GetScriptVector (char *name)
     return &ScriptVars.tmpVector;  // just avoiding problems and for testing
 }
 
-static char *CG_SkipOpeningBrace (char *script)
+static const char *CG_SkipOpeningBrace (const char *script)
 {
-    char *p;
+    const char *p;
 
     p = script;
     while (1) {
@@ -1300,10 +2918,10 @@ static char *CG_SkipOpeningBrace (char *script)
 }
 
 // assumed opening brace not included
-static char *CG_SkipBlock (char *script)
+static const char *CG_SkipBlock (const char *script)
 {
     int block;
-    char *p;
+    const char *p;
 
 	if (!script) {
 		Com_Printf("CG_SkipBlock() script == NULL\n");
@@ -1335,9 +2953,9 @@ static char *CG_SkipBlock (char *script)
 
 #if 0
 // assumed opening brace not included, returns error
-static int CG_CopyBlock (char *src, char *dest)
+static int CG_CopyBlock (const char *src, char *dest)
 {
-    char *end;
+    const char *end;
 
     end = CG_SkipBlock(src);
 	if (end - src >= (1024 * 32)) {  //FIXME tracking bug
@@ -1357,13 +2975,14 @@ static int CG_CopyBlock (char *src, char *dest)
 }
 #endif
 
-static int CG_NumIfBlocks (char *script, char **endOfBlocks)
+static int CG_NumIfBlocks (const char *script, const char **endOfBlocks)
 {
-    char *p;
-    char *tp;
+    const char *p;
+    const char *tp;
     int n;
     char token[MAX_QPATH];
     qboolean newLine;
+	int tokenId;
 
     //p = script;
     p = CG_SkipOpeningBrace(script);
@@ -1382,7 +3001,7 @@ static int CG_NumIfBlocks (char *script, char **endOfBlocks)
     while (1) {
         tp = p;
         while (1) {
-            tp = CG_GetToken(tp, token, qfalse, &newLine);
+            tp = CG_GetFxToken(tp, token, qfalse, &newLine, &tokenId);
             if (tp[0] == '\0') {
                 return 0;
             }
@@ -1410,7 +3029,7 @@ static int CG_NumIfBlocks (char *script, char **endOfBlocks)
     }
 
     if (endOfBlocks) {
-        *endOfBlocks = p;
+        *endOfBlocks = p;  //(char *)p;  //FIXME const
     }
 
     return n;
@@ -1439,7 +3058,7 @@ static void CG_FX_SetRenderfx (int *renderfx)
 }
 
 //FIXME don't pass anything in
-static void CG_FX_Wobble (vec3_t dir, vec3_t newDir, vec3_t origin, float degrees)
+static void CG_FX_Wobble (const vec3_t dir, vec3_t newDir, const vec3_t origin, float degrees)
 {
     vec3_t right, up;
     double newLen;
@@ -1530,7 +3149,7 @@ static void CG_CopyStoredScriptVarsToLE (localEntity_t *le)
 	memcpy(&le->sv, &ScriptVars, sizeof(ScriptVars_t));
 }
 
-void CG_GetStoredScriptVarsFromLE (localEntity_t *le)
+void CG_GetStoredScriptVarsFromLE (const localEntity_t *le)
 {
 #if 0
 	VectorCopy(le->v0, ScriptVars.v0);
@@ -1592,7 +3211,7 @@ static void CG_FX_Sprite (qboolean viewAligned, qboolean isSpark)
     //VectorCopy(ScriptVars.origin, move);
 
     if (parsingEmitterScriptLevel > 0) {
-		le = CG_AllocLocalEntity();
+		le = CG_AllocFxEntity(ScriptVars.emitterId);
 		EmittedEntities++;
 		le->emitterScript = ScriptVars.emitterScriptStart;
 		le->emitterScriptEnd = ScriptVars.emitterScriptEnd;
@@ -1627,7 +3246,9 @@ static void CG_FX_Sprite (qboolean viewAligned, qboolean isSpark)
 		le->pos.trDelta[0] = ScriptVars.velocity[0];
 		le->pos.trDelta[1] = ScriptVars.velocity[1];
 		le->pos.trDelta[2] = ScriptVars.velocity[2];
+		re->shaderTime = cg.ftime / 1000.0f;
 		//Com_Printf("yes\n");
+		//Com_Printf("^1sprite size: %f '%s'\n", ScriptVars.size, ScriptVars.shader);
     } else {
 		//Com_Printf("no\n");
 		//le->fxType = LEFX_NONE;
@@ -1635,7 +3256,9 @@ static void CG_FX_Sprite (qboolean viewAligned, qboolean isSpark)
 		re = &ent;
     }
 
-    re->shaderTime = cg.ftime / 1000.0f;
+	if (ScriptVars.hasShaderTime) {
+		re->shaderTime = ScriptVars.shaderTime;
+	}
 
 	if (isSpark) {
 		re->reType = RT_SPARK;
@@ -1679,7 +3302,7 @@ static void CG_FX_Sprite (qboolean viewAligned, qboolean isSpark)
 	//FIXME axis angles
 
 	if (parsingEmitterScriptLevel == 0) {
-		trap_R_AddRefEntityToScene(re);
+		CG_AddRefEntityFX(re);
 	}
 }
 
@@ -1726,7 +3349,7 @@ static void CG_FX_Beam (void)
 
 
     if (parsingEmitterScriptLevel > 0) {
-		le = CG_AllocLocalEntity();
+		le = CG_AllocFxEntity(ScriptVars.emitterId);
 		EmittedEntities++;
 		le->emitterScript = ScriptVars.emitterScriptStart;
 		le->emitterScriptEnd = ScriptVars.emitterScriptEnd;
@@ -1755,6 +3378,7 @@ static void CG_FX_Beam (void)
 		le->pos.trTime = cg.ftime;
 		le->trTimef = cg.ftime;
 
+		re->shaderTime = cg.time / 1000.0f;  //FIXME check, was 0
     } else {
         //le->emitterScript[0] = '\0';
 		//le->fxType = LEFX_NONE;  // so that the script isn't run
@@ -1762,7 +3386,9 @@ static void CG_FX_Beam (void)
 		re = &ent;
     }
 
-    re->shaderTime = 0;  //cg.time / 1000.0f;
+	if (ScriptVars.hasShaderTime) {
+		re->shaderTime = ScriptVars.shaderTime;
+	}
 
     re->reType = RT_BEAM_Q3MME;
     re->rotation = ScriptVars.rotate;
@@ -1791,7 +3417,7 @@ static void CG_FX_Beam (void)
 	VectorCopy(ScriptVars.dir, re->oldorigin);
 
 	if (parsingEmitterScriptLevel == 0) {
-		trap_R_AddRefEntityToScene(re);
+		CG_AddRefEntityFX(re);
 	}
 }
 
@@ -1810,7 +3436,7 @@ static void CG_FX_Light (void)
 #endif
 
 	if (parsingEmitterScriptLevel > 0) {
-		le = CG_AllocLocalEntity();
+		le = CG_AllocFxEntity(ScriptVars.emitterId);
 		EmittedEntities++;
 		le->emitterScript = ScriptVars.emitterScriptStart;
 		le->emitterScriptEnd = ScriptVars.emitterScriptEnd;
@@ -1866,7 +3492,7 @@ static void CG_FX_Model (fxModelType_t ftype)
     //s1 = &ScriptVars.currentState;
 
     if (parsingEmitterScriptLevel > 0) {
-		le = CG_AllocLocalEntity();
+		le = CG_AllocFxEntity(ScriptVars.emitterId);
 		EmittedEntities++;
 #if 0
         if (CG_CopyBlock(ScriptVars.emitterScriptStart, le->emitterScript)) {
@@ -1893,6 +3519,8 @@ static void CG_FX_Model (fxModelType_t ftype)
 		le->sv.lastIntervalTime = cg.ftime;
 
 		le->fxType = LEFX_EMIT;
+
+		re->shaderTime = cg.ftime / 1000.0f;
     } else {
         //le->emitterScript[0] = '\0';
 		memset(&ent, 0, sizeof(ent));
@@ -1900,9 +3528,27 @@ static void CG_FX_Model (fxModelType_t ftype)
 		//Com_Printf("using local refEnt: '%s'\n", ScriptVars.model);
     }
 
-	re->shaderTime = cg.ftime / 1000.0f;
+	if (ScriptVars.hasShaderTime) {
+		re->shaderTime = ScriptVars.shaderTime;
+	}
 
-	re->reType = RT_MODEL;
+	//re->reType = RT_MODEL;
+	switch (ftype) {
+	case FX_MODEL_DIR:
+		re->reType = RT_MODEL_FX_DIR;
+		break;
+	case FX_MODEL_ANGLES:
+		re->reType = RT_MODEL_FX_ANGLES;
+		break;
+	case FX_MODEL_AXIS:
+		re->reType = RT_MODEL_FX_AXIS;
+		break;
+	default:
+		CG_Printf("^1CG_FX_Model() invalid model type %d\n", ftype);
+		re->reType = RT_MODEL;
+		break;
+	}
+
 	VectorCopy(ScriptVars.origin, re->origin);
 	VectorCopy(ScriptVars.origin, re->oldorigin);
 
@@ -1989,10 +3635,10 @@ static void CG_FX_Model (fxModelType_t ftype)
 	}
 
 	// add to refresh list, possibly with quad glow
-	//CG_AddRefEntityWithPowerups( &ent, s1, TEAM_FREE );
+	//CG_AddRefEntityWithPowerups( &ent, s1, TEAM_FREE );  //FIXME missile?
     //FIXME powerups option
     if (parsingEmitterScriptLevel == 0) {
-		trap_R_AddRefEntityToScene(re);
+		CG_AddRefEntityFX(re);
 	}
 }
 
@@ -2015,6 +3661,9 @@ static void CG_FX_Decal (void)
 	if (!shader) {
 		return;
 	}
+
+	//FIXME shader time?
+
     CG_ImpactMark(shader, ScriptVars.origin, ScriptVars.dir, ScriptVars.rotate, ScriptVars.color[0], ScriptVars.color[1], ScriptVars.color[2], ScriptVars.color[3], ScriptVars.decalAlpha, ScriptVars.size, qfalse, ScriptVars.decalEnergy, qtrue);  //FIXME sure about 'debug' as qtrue??
 	//Com_Printf("impact mark color %f %f %f %f\n", ScriptVars.color[0], ScriptVars.color[1], ScriptVars.color[2], ScriptVars.color[3]);
 }
@@ -2052,7 +3701,9 @@ static void CG_FX_Rings (void)
 
 	//Com_Printf("rings\n");
 
-	le = CG_AllocLocalEntity();
+	le = CG_AllocFxEntity(ScriptVars.emitterId);
+
+	re = &le->refEntity;
 
     if (parsingEmitterScriptLevel > 0) {
 #if 0
@@ -2073,15 +3724,20 @@ static void CG_FX_Rings (void)
 		le->sv.lastIntervalTime = cg.ftime;
 
 		le->fxType = LEFX_EMIT;
+
+		re->shaderTime = cg.ftime / 1000.0f;
     } else {
         //le->emitterScript[0] = '\0';
 		le->fxType = LEFX_NONE;
     }
 
-	re = &le->refEntity;
+	if (ScriptVars.hasShaderTime) {
+		re->shaderTime = ScriptVars.shaderTime;
+	}
 
 	VectorCopy(ScriptVars.origin, re->origin);
-	VectorCopy(ScriptVars.end, re->oldorigin);
+	//VectorCopy(ScriptVars.end, re->oldorigin);
+	VectorCopy(ScriptVars.dir, re->oldorigin);
 	re->radius = ScriptVars.size;
 	re->rotation = ScriptVars.width;
 	//ScriptVars.rotate = ScriptVars.width;
@@ -2095,7 +3751,6 @@ static void CG_FX_Rings (void)
 	le->pos.trTime = cg.ftime;
 	le->trTimef = cg.ftime;
 
-	re->shaderTime = cg.ftime / 1000.0f;
 	re->reType = RT_RAIL_RINGS_Q3MME;
 	re->customShader = cgs.media.railRingsShader;
 
@@ -2112,7 +3767,7 @@ static void CG_FX_Rings (void)
 	le->color[3] = ScriptVars.color[3];
 }
 
-static void CG_FX_Sound (void)
+static void CG_FX_Sound (int channel)
 {
 	localEntity_t *le;
 	sfxHandle_t sfx;
@@ -2128,7 +3783,7 @@ static void CG_FX_Sound (void)
 #endif
 
 	if (parsingEmitterScriptLevel > 0) {
-		le = CG_AllocLocalEntity();
+		le = CG_AllocFxEntity(ScriptVars.emitterId);
 		EmittedEntities++;
 		le->emitterScript = ScriptVars.emitterScriptStart;
 		le->emitterScriptEnd = ScriptVars.emitterScriptEnd;
@@ -2159,7 +3814,13 @@ static void CG_FX_Sound (void)
 	} else {
 		if (*ScriptVars.sound) {
 			sfx = trap_S_RegisterSound(ScriptVars.sound, qfalse);
-			trap_S_StartSound(ScriptVars.origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx);
+			if (channel == CHAN_WEAPON) {
+				trap_S_StartSound(NULL, ScriptVars.clientNum, CHAN_WEAPON, sfx);
+			} else if (channel == CHAN_LOCAL) {
+				trap_S_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
+			} else {
+				trap_S_StartSound(ScriptVars.origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx);
+			}
 		}
 	}
 }
@@ -2180,7 +3841,7 @@ static void CG_FX_LoopSound (void)
 #endif
 
 	if (parsingEmitterScriptLevel > 0) {
-		le = CG_AllocLocalEntity();
+		le = CG_AllocFxEntity(ScriptVars.emitterId);
 		EmittedEntities++;
 		le->emitterScript = ScriptVars.emitterScriptStart;
 		le->emitterScriptEnd = ScriptVars.emitterScriptEnd;
@@ -2212,18 +3873,26 @@ static void CG_FX_LoopSound (void)
 	} else {
 		lsound = trap_S_RegisterSound(ScriptVars.loopSound, qfalse);
 		if (lsound) {
-			//trap_S_AddLoopingSound(ScriptVars.entNumber, ScriptVars.origin, ScriptVars.velocity, lsound);
-			//FIXME 1021 hack
-			trap_S_AddLoopingSound(1021 /**/, ScriptVars.origin, ScriptVars.velocity, lsound);
+			if (0) {  //(ScriptVars.parentCent) {
+				trap_S_AddLoopingSound(ScriptVars.parentCent->currentState.number, ScriptVars.origin, ScriptVars.velocity, lsound);
+			} else {
+				if (FxLoopSounds >= MAX_LOOP_SOUNDS) {
+					CG_Printf("^3fx:  max loop sounds added\n");
+				} else {
+					trap_S_AddLoopingSound(FxLoopSounds, ScriptVars.origin, ScriptVars.velocity, lsound);
+					FxLoopSounds++;
+				}
+			}
 		}
 	}
 }
 
-static char *CG_ParseRenderTokens (char *script)
+static const char *CG_ParseRenderTokens (const char *script)
 {
     char token[MAX_QPATH];
     qboolean newLine;
-	char *s;
+	const char *s;
+	int tokenId;
 
     ScriptVars.firstPerson = qfalse;
     ScriptVars.thirdPerson = qfalse;
@@ -2235,7 +3904,7 @@ static char *CG_ParseRenderTokens (char *script)
     newLine = qfalse;
 
     while (!newLine) {
-        s = CG_GetToken(script, token, qfalse, &newLine);
+        s = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
         if (token[0] == '\0') {
             break;
         } else if (!Q_stricmpt(token, "firstperson")) {
@@ -2269,7 +3938,7 @@ static char *CG_ParseRenderTokens (char *script)
 
 
 
-qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
+qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 {
     int braceCount;
     char token[MAX_QPATH];
@@ -2278,9 +3947,10 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
     float f;
     vec3_t *vsrc1, *vsrc2, *vdest;
     vec3_t tvec;
-    char *p;
+    const char *p;
     int i;
-	qboolean copiedEmitterScriptVars;
+	int tokenId;
+	qboolean fullLerp;
 	//int startTime;
 #if 0  //def CGAMESO
 	struct timeval start, end;
@@ -2288,183 +3958,30 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 
 #endif
 
-#if 0
-	if (SC_Cvar_Get_Int("cl_freezeDemo")) {
-		Com_Printf("script while paused\n");
-		return qtrue;
-	}
-#endif
 
 #if 0  //def CGAMESO
 	gettimeofday(&start, NULL);
 	startf = start.tv_sec * 1000000.0 + start.tv_usec;
 #endif
 
-#if 0  //FIXME remove switch test
-	//FIXME switch test
-	if (EmitterScript) {
-	i = 666;
-	switch (i) {
-	case 0: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 1: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 2: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 3: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 4: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 5: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 6: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 7: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 8: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 9: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 10: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 11: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 12: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 13: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 14: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 15: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 16: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 17: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 18: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 19: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 20: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 21: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 22: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 23: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 24: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 25: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 26: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 27: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 28: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 29: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	case 30: {
-		Com_Printf("%d\n", i - 1);
-		break;
-	}
-	default: {
-#if 0  //def CGAMESO
-		//gettimeofday(&end, NULL);
-		//endf = end.tv_sec * 1000000.0 + end.tv_usec;
-		//Com_Printf("%lld\n", endf - startf);
-
-#endif
-	}
-	}
-	return qfalse;
-	}
-#endif
 
 	//startTime = trap_Milliseconds();
-   
+
     // moveGravity moveBounce moveImpact sink impact death
 
     //FIXME alot more from strings
 
     braceCount = 1;
-	copiedEmitterScriptVars = qfalse;
 
     //Com_Printf("script: %s\n", script);
 
     while (1) {
-        script = CG_GetToken(script, token, qfalse, &newLine);
+        script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 		if (script == NULL) {
 			Com_Printf("CG_RunQ3mmeScript() script == NULL\n");
 			return qtrue;
 		}
         if (script[0] == '\0') {  //(token[0] == '\0') {
-			if (EmitterScript  &&  !copiedEmitterScriptVars) {
-				//Com_Printf("'%s'  copying emitter script vars\n", token);
-				memcpy(&EmitterScriptVars, &ScriptVars, sizeof(ScriptVars_t));
-				copiedEmitterScriptVars = qtrue;
-			}
             break;
 			//Com_Printf("breaking\n");
         }
@@ -2475,31 +3992,19 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 			}
 		}
 
-		if (EmitterScript  &&  !copiedEmitterScriptVars) {
-			if (emitterEnd  &&  script >= emitterEnd) {
-				//Com_Printf("'%s'  copying emitter script vars\n", token);
-				//Com_Printf("emitter shader: '%s'\n", ScriptVars.shader);
-				memcpy(&EmitterScriptVars, &ScriptVars, sizeof(ScriptVars_t));
-				copiedEmitterScriptVars = qtrue;
+		if (!tokenId) {
+			if (token[0] == '\0') {
+				continue;
+			}
+
+			if (token[0] == '{') {
+				braceCount++;
+			} else if (token[0] == '}') {
+				braceCount--;
 			}
 		}
 
-        if (token[0] == '\0') {
-            continue;
-        }
-
-        if (token[0] == '{') {
-            braceCount++;
-        } else if (token[0] == '}') {
-            braceCount--;
-        }
-
-        if (braceCount == 0) {
-			if (EmitterScript  &&  !copiedEmitterScriptVars) {
-				//Com_Printf("'%s'  copying emitter script vars\n", token);
-				memcpy(&EmitterScriptVars, &ScriptVars, sizeof(ScriptVars_t));
-				copiedEmitterScriptVars = qtrue;
-			}
+        if (braceCount == 0  ||  (emitterEnd  &&  script >= emitterEnd)) {
 
 #if 0  //def CGAMESO
 			gettimeofday(&end, NULL);
@@ -2516,219 +4021,419 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 	startf = start.tv_sec * 1000000.0 + start.tv_usec;
 #endif
 
-	if (USE_SWITCH) {
-	    switch(token[0]) {
-		case 'a':  /**/
-			switch(token[1]) {  // a
-			case 'd':
-				switch (token[2]) {  // ad
-				case 'd':
-					switch(token[3]) {  // add
-					case 's':
-						switch(token[4]) {  // adds
-						case 'c':
-							switch(token[5]) {  // addsc
-							case 'a':
-								switch(token[6]) {  // addsca
-								case 'l':
-									switch(token[7]) {  // addscal
-									case 'e':
-										switch(token[8]) { // addscale
-										case '\0':
-											goto addscaletoken;
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				break;
-		    case 'l':
-				switch(token[2]) {  // al
-				case 'p':
-					switch(token[3]) {  // alp
-					case 'h':
-						switch(token[4]) {  // alph
-						case 'a':
-							switch(token[5]) {  // alpha
-							case '\0':
-								goto alphatoken;
-							}
-						}
-					}
-				}
-			}
+	// tks CG_RunQ3mmeScript
+	if (tokenId) {
+		//Com_Printf("runq3mmescript tokenid %d\n", tokenId);
+		switch (tokenId) {
+		case TOKEN_RED:
+			goto redtoken;
 			break;
-		case 'b':  /**/
-			switch(token[1]) {  // b
-			case 'l':
-				switch(token[2]) {  // bl
-				case 'u':
-					switch(token[3]) {  // blu
-					case 'e':
-						switch(token[4]) {  // blue
-						case '\0':
-							goto bluetoken;
-						}
-					}
-				}
-			}
+		case TOKEN_GREEN:
+			goto greentoken;
 			break;
-		case 'c':  /**/
-			//Com_Printf("c\n");
-			switch(token[1]) {  // c
-			case 'o':
-				switch(token[2]) {  // co
-				case 'l':
-					switch(token[3]) {  // col
-					case 'o':
-						switch(token[4]) {  // colo
-						case 'r':
-							switch(token[5]) {  // color
-							case '\0':
-								goto colortoken;
-							case 'f':
-								switch(token[6]) {  // colorf
-								case 'a':
-									switch(token[7]) {  // colorfa
-									case 'd':
-										switch(token[8]) {  // colorfad
-										case 'e':
-											switch(token[9]) {  // colorfade
-											case '\0':
-												goto colorfadetoken;
-											}
-										}
-									}
-								}
-								break;
-								//}
-							}
-							break;
-						}
-						break;
-					}
-					break;
-				}
-				break;
-			}
+		case TOKEN_BLUE:
+			goto bluetoken;
 			break;
-	    case 'd':  /**/
+		case TOKEN_COLOR:
+			goto colortoken;
 			break;
-		case 'e': /**/
+		case TOKEN_ALPHA:
+			goto alphatoken;
 			break;
-		case 'f': /**/
+		case TOKEN_SHADER:
+			goto shadertoken;
 			break;
-		case 'g': /**/
-			switch(token[1]) {  // g
-			case 'r':
-				switch(token[2]) {  // gr
-				case 'e':
-					switch(token[3]) {  // gre
-					case 'e':
-						switch(token[4]) {  // gree
-						case 'n':
-							switch(token[5]) {  // green
-							case '\0':
-								goto greentoken;
-							}
-						}
-					}
-				}
-			}
+		case TOKEN_MODEL:
+			goto modeltoken;
 			break;
-		case 'h':  /**/
+		case TOKEN_SIZE:
+			goto sizetoken;
 			break;
-		case 'i':  /**/
+		case TOKEN_WIDTH:
+			goto widthtoken;
 			break;
-		case 'j':  /**/
+		case TOKEN_ANGLE:
+			goto angletoken;
 			break;
-		case 'k':  /**/
+		case TOKEN_T0:
+			goto t0token;
 			break;
-		case 'l':  /**/
+		case TOKEN_T1:
+			goto t1token;
 			break;
-		case 'm':  /**/
+		case TOKEN_T2:
+			goto t2token;
 			break;
-		case 'n':  /**/
+		case TOKEN_T3:
+			goto t3token;
 			break;
-		case 'o':  /**/
+		case TOKEN_T4:
+			goto t4token;
 			break;
-		case 'p':  /**/
+		case TOKEN_T5:
+			goto t5token;
 			break;
-		case 'q':  /**/
+		case TOKEN_T6:
+			goto t6token;
 			break;
-		case 'r':  /**/
-			switch(token[1]) {  // r
-			case 'e':
-				switch(token[2]) {  // re
-				case 'd':
-					switch(token[3]) {  // red
-					case '\0':
-						goto redtoken;
-					}
-				}
-			}
+		case TOKEN_T7:
+			goto t7token;
 			break;
-		case 's':  /**/
-			switch(token[1]) {  // s
-			case 'h':
-				switch(token[2]) {  // sh
-				case 'a':
-					switch(token[3]) {  // sha
-					case 'd':
-						switch(token[4]) {  // shad
-						case 'e':
-							switch(token[5]) {  // shade
-							case 'r':
-								switch(token[6]) {  // shader
-								case '\0':
-									goto shadertoken;
-								}
-							}
-						}
-					}
-				}
-			case 'p':
-				switch(token[2]) {  // sp
-				case 'r':
-					switch(token[3]) {  // spr
-					case 'i':
-						switch(token[4]) {  // spri
-						case 't':
-							switch(token[5]) {  // sprit
-							case 'e':
-								switch(token[6]) {  // sprite
-								case '\0':
-									goto spritetoken;
-								}
-							}
-						}
-					}
-				}
-			}
+		case TOKEN_T8:
+			goto t8token;
 			break;
-		case 't':  /**/
+		case TOKEN_T9:
+			goto t9token;
 			break;
-		case 'u':  /**/
+		case TOKEN_VELOCITY0:
+			goto velocity0token;
 			break;
-		case 'v':  /**/
+		case TOKEN_VELOCITY1:
+			goto velocity1token;
 			break;
-		case 'w':  /**/
+		case TOKEN_VELOCITY2:
+			goto velocity2token;
 			break;
-		case 'x':  /**/
+		case TOKEN_ORIGIN0:
+			goto origin0token;
 			break;
-		case 'y':  /**/
+		case TOKEN_ORIGIN1:
+			goto origin1token;
 			break;
-		case 'z':  /**/
+		case TOKEN_ORIGIN2:
+			goto origin2token;
+			break;
+		case TOKEN_END0:
+			goto end0token;
+			break;
+		case TOKEN_END1:
+			goto end1token;
+			break;
+		case TOKEN_END2:
+			goto end2token;
+			break;
+		case TOKEN_DIR0:
+			goto dir0token;
+			break;
+		case TOKEN_DIR1:
+			goto dir1token;
+			break;
+		case TOKEN_DIR2:
+			goto dir2token;
+			break;
+		case TOKEN_ANGLES0:
+			goto angles0token;
+			break;
+		case TOKEN_ANGLES1:
+			goto angles1token;
+			break;
+		case TOKEN_ANGLES2:
+			goto angles2token;
+			break;
+		case TOKEN_V00:
+			goto v00token;
+			break;
+		case TOKEN_V01:
+			goto v01token;
+			break;
+		case TOKEN_V02:
+			goto v02token;
+			break;
+		case TOKEN_V10:
+			goto v10token;
+			break;
+		case TOKEN_V11:
+			goto v11token;
+			break;
+		case TOKEN_V12:
+			goto v12token;
+			break;
+		case TOKEN_V20:
+			goto v20token;
+			break;
+		case TOKEN_V21:
+			goto v21token;
+			break;
+		case TOKEN_V22:
+			goto v22token;
+			break;
+		case TOKEN_V30:
+			goto v30token;
+			break;
+		case TOKEN_V31:
+			goto v31token;
+			break;
+		case TOKEN_V32:
+			goto v32token;
+			break;
+		case TOKEN_V40:
+			goto v40token;
+			break;
+		case TOKEN_V41:
+			goto v41token;
+			break;
+		case TOKEN_V42:
+			goto v42token;
+			break;
+		case TOKEN_V50:
+			goto v50token;
+			break;
+		case TOKEN_V51:
+			goto v51token;
+			break;
+		case TOKEN_V52:
+			goto v52token;
+			break;
+		case TOKEN_V60:
+			goto v60token;
+			break;
+		case TOKEN_V61:
+			goto v61token;
+			break;
+		case TOKEN_V62:
+			goto v62token;
+			break;
+		case TOKEN_V70:
+			goto v70token;
+			break;
+		case TOKEN_V71:
+			goto v71token;
+			break;
+		case TOKEN_V72:
+			goto v72token;
+			break;
+		case TOKEN_V80:
+			goto v80token;
+			break;
+		case TOKEN_V81:
+			goto v81token;
+			break;
+		case TOKEN_V82:
+			goto v82token;
+			break;
+		case TOKEN_V90:
+			goto v90token;
+			break;
+		case TOKEN_V91:
+			goto v91token;
+			break;
+		case TOKEN_V92:
+			goto v92token;
+			break;
+		case TOKEN_SCALE:
+			goto scaletoken;
+			break;
+		case TOKEN_ADD:
+			goto addtoken;
+			break;
+		case TOKEN_ADDSCALE:
+			goto addscaletoken;
+			break;
+		case TOKEN_SUB:
+			goto subtoken;
+			break;
+		case TOKEN_SUBSCALE:
+			goto subscaletoken;
+			break;
+		case TOKEN_COPY:
+			goto copytoken;
+			break;
+		case TOKEN_CLEAR:
+			goto cleartoken;
+			break;
+		case TOKEN_WOBBLE:
+			goto wobbletoken;
+			break;
+		case TOKEN_RANDOM:
+			goto randomtoken;
+			break;
+		case TOKEN_NORMALIZE:
+			goto normalizetoken;
+			break;
+		case TOKEN_PERPENDICULAR:
+			goto perpendiculartoken;
+			break;
+		case TOKEN_CROSS:
+			goto crosstoken;
+			break;
+		case TOKEN_SPRITE:
+			goto spritetoken;
+			break;
+		case TOKEN_SPARK:
+			goto sparktoken;
+			break;
+		case TOKEN_QUAD:
+			goto quadtoken;
+			break;
+		case TOKEN_BEAM:
+			goto beamtoken;
+			break;
+		case TOKEN_LIGHT:
+			goto lighttoken;
+			break;
+		case TOKEN_DISTANCE:
+			goto distancetoken;
+			break;
+		case TOKEN_EMITTER:
+			goto emittertoken;
+			break;
+		case TOKEN_EMITTERF:
+			goto emitterftoken;
+			break;
+		case TOKEN_ALPHAFADE:
+			goto alphafadetoken;
+			break;
+		case TOKEN_SHADERTIME:
+			goto shadertimetoken;
+			break;
+		case TOKEN_DIRMODEL:
+			goto dirmodeltoken;
+			break;
+		case TOKEN_LOOPSOUND:
+			goto loopsoundtoken;
+			break;
+		case TOKEN_ROTATE:
+			goto rotatetoken;
+			break;
+		case TOKEN_VIBRATE:
+			goto vibratetoken;
+			break;
+		case TOKEN_EMITTERID:
+			goto emitteridtoken;
+			break;
+		case TOKEN_DECAL:
+			goto decaltoken;
+			break;
+		case TOKEN_SOUND:
+			goto soundtoken;
+			break;
+		case TOKEN_SOUNDLOCAL:
+			goto soundlocaltoken;
+			break;
+		case TOKEN_SOUNDWEAPON:
+			goto soundweapontoken;
+			break;
+		case TOKEN_ANGLESMODEL:
+			goto anglesmodeltoken;
+			break;
+		case TOKEN_AXISMODEL:
+			goto axismodeltoken;
+			break;
+		case TOKEN_INTERVAL:
+			goto intervaltoken;
+			break;
+		case TOKEN_COLORFADE:
+			goto colorfadetoken;
+			break;
+		case TOKEN_PUSHPARENT:
+			goto pushparenttoken;
+			break;
+		case TOKEN_POP:
+			goto poptoken;
+			break;
+		case TOKEN_IF:
+			goto iftoken;
+			break;
+#if 0  //FIXME
+		case TOKEN_ELSE:
+			goto elsetoken;
+			break;
+		case TOKEN_ELIF:
+			goto eliftoken;
+			break;
+#endif
+		case TOKEN_REPEAT:
+			goto repeattoken;
+			break;
+		case TOKEN_ROTATEAROUND:
+			goto rotatearoundtoken;
+			break;
+		case TOKEN_PARENTORIGIN:
+			goto parentorigintoken;
+			break;
+		case TOKEN_MOVEGRAVITY:
+			goto movegravitytoken;
+			break;
+		case TOKEN_SOUNDLIST:
+			goto soundlisttoken;
+			break;
+		case TOKEN_SOUNDLISTLOCAL:
+			goto soundlistlocaltoken;
+			break;
+		case TOKEN_SOUNDLISTWEAPON:
+			goto soundlistweapontoken;
+			break;
+		case TOKEN_SHADERCLEAR:
+			goto shadercleartoken;
+			break;
+		case TOKEN_EXTRASHADER:
+			goto extrashadertoken;
+			break;
+		case TOKEN_EXTRASHADERCLEAR:
+			goto extrashadercleartoken;
+			break;
+		case TOKEN_EXTRASHADERENDTIME:
+			goto extrashaderendtimetoken;
+			break;
+		case TOKEN_TRACE:
+			goto tracetoken;
+			break;
+		case TOKEN_DECALTEMP:
+			goto decaltemptoken;
+			break;
+		case TOKEN_MODELLIST:
+			goto modellisttoken;
+			break;
+		case TOKEN_SHADERLIST:
+			goto shaderlisttoken;
+			break;
+		case TOKEN_YAW:
+			goto yawtoken;
+			break;
+		case TOKEN_PITCH:
+			goto pitchtoken;
+			break;
+		case TOKEN_ROLL:
+			goto rolltoken;
+			break;
+		case TOKEN_MOVEBOUNCE:
+			goto movebouncetoken;
+			break;
+		case TOKEN_SINK:
+			goto sinktoken;
+			break;
+		case TOKEN_IMPACT:
+			goto impacttoken;
+			break;
+		case TOKEN_PARENTVELOCITY:
+			goto parentvelocitytoken;
+			break;
+		case TOKEN_INVERSE:
+			goto inversetoken;
+			break;
+		case TOKEN_RINGS:
+			goto ringstoken;
+			break;
+		case TOKEN_ECHO:
+			goto echotoken;
+			break;
+		case TOKEN_RETURN:
+			goto returntoken;
+			break;
+		case TOKEN_CONTINUE:
+			goto continuetoken;
+			break;
+		case TOKEN_COMMAND:
+			goto commandtoken;
+			break;
+		default:
+			Com_Printf("^1CG_RunQ3mmeScript() unhandled token %d '%s'\n", tokenId, token);
 			break;
 		}
-	} // USE_SWITCH
-
-
+	}
 		if (0) {
 
-		} else if (!USE_SWITCH  &&  !Q_stricmpt(token, "red")) {
+		} else if (!Q_stricmpt(token, "red")) {
 		redtoken:
 			err = 0;
 			script = CG_Q3mmeMath(script, &ScriptVars.color[0], &err);
@@ -2737,8 +4442,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 				return qtrue;
 			}
 			goto handledToken;
-
-		} else if (!USE_SWITCH  &&  !Q_stricmpt(token, "green")) {
+		} else if (!Q_stricmpt(token, "green")) {
 		greentoken:
 			err = 0;
 			script = CG_Q3mmeMath(script, &ScriptVars.color[1], &err);
@@ -2747,8 +4451,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 				return qtrue;
 			}
 			goto handledToken;
-
-		} else if (!USE_SWITCH  &&  !Q_stricmpt(token, "blue")) {
+		} else if (!Q_stricmpt(token, "blue")) {
 		bluetoken:
 			err = 0;
 			script = CG_Q3mmeMath(script, &ScriptVars.color[2], &err);
@@ -2757,18 +4460,16 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 				return qtrue;
 			}
 			goto handledToken;
-
-		} else if (!USE_SWITCH  &&  !Q_stricmpt(token, "color")) {
+		} else if (!Q_stricmpt(token, "color")) {
 		colortoken:
-			script = CG_GetToken(script, token, qfalse, &newLine);
+			script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			ScriptVars.color[0] = atof(token);
-			script = CG_GetToken(script, token, qfalse, &newLine);
+			script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			ScriptVars.color[1] = atof(token);
-			script = CG_GetToken(script, token, qfalse, &newLine);
+			script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			ScriptVars.color[2] = atof(token);
 			goto handledToken;
-
-        } else if (!USE_SWITCH  &&  !Q_stricmpt(token, "alpha")) {
+        } else if (!Q_stricmpt(token, "alpha")) {
 		alphatoken:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.color[3], &err);
@@ -2777,15 +4478,17 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
 			goto handledToken;
-        } else if (!USE_SWITCH  &&  !Q_stricmpt(token, "shader")) {
+        } else if (!Q_stricmpt(token, "shader")) {
 		shadertoken:
 			//Com_Printf("about to get shader\n");
-            script = CG_GetToken(script, ScriptVars.shader, qtrue, &newLine);
+            script = CG_GetFxToken(script, ScriptVars.shader, qtrue, &newLine, &tokenId);
 			goto handledToken;
-
         } else if (!Q_stricmpt(token, "model")) {
-            script = CG_GetToken(script, ScriptVars.model, qtrue, &newLine);
+		modeltoken:
+            script = CG_GetFxToken(script, ScriptVars.model, qtrue, &newLine, &tokenId);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "size")) {
+		sizetoken:
             //Com_Printf("script size\n");
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.size, &err);
@@ -2793,7 +4496,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "width")) {
+		widthtoken:
             //Com_Printf("script width\n");
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.width, &err);
@@ -2801,7 +4506,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angle")) {
+		angletoken:
             //Com_Printf("script angle\n");
             err = 0;
             //script = CG_Q3mmeMath(script, &ScriptVars.angle, &err);
@@ -2810,294 +4517,406 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t0")) {
+		t0token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t0, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t1")) {
+		t1token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t1, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t2")) {
+		t2token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t2, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t3")) {
+		t3token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t3, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t4")) {
+		t4token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t4, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t5")) {
+		t5token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t5, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t6")) {
+		t6token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t6, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t7")) {
+		t7token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t7, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t8")) {
+		t8token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t8, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "t9")) {
+		t9token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.t9, &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "velocity0")) {
+		velocity0token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.velocity[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "velocity1")) {
+		velocity1token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.velocity[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "velocity2")) {
+		velocity2token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.velocity[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "origin0")) {
+		origin0token:
+			//Com_Printf("^5origin0 script xxx rest '%s'\n", PrintShort(script, 10));
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.origin[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "origin1")) {
+		origin1token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.origin[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "origin2")) {
+		origin2token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.origin[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "end0")) {
+		end0token:
+            err = 0;
+            script = CG_Q3mmeMath(script, &ScriptVars.end[0], &err);
+            if (err) {
+                Com_Printf("^1math error\n");
+                return qtrue;
+            }
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "end1")) {
+		end1token:
+            err = 0;
+            script = CG_Q3mmeMath(script, &ScriptVars.end[1], &err);
+            if (err) {
+                Com_Printf("^1math error\n");
+                return qtrue;
+            }
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "end2")) {
+		end2token:
+            err = 0;
+            script = CG_Q3mmeMath(script, &ScriptVars.end[2], &err);
+            if (err) {
+                Com_Printf("^1math error\n");
+                return qtrue;
+            }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dir0")) {
+		dir0token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.dir[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dir1")) {
+		dir1token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.dir[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dir2")) {
+		dir2token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.dir[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angles0")) {
+		angles0token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.angles[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angles1")) {
+		angles1token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.angles[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "angles2")) {
+		angles2token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.angles[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v00")) {
+		v00token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v0[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v01")) {
+		v01token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v0[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v02")) {
+		v02token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v0[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v10")) {
+		v10token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v1[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v11")) {
+		v11token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v1[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v12")) {
+		v12token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v1[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v20")) {
+		v20token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v2[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v21")) {
+		v21token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v2[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v22")) {
+		v22token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v2[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v30")) {
+		v30token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v3[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v31")) {
+		v31token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v3[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v32")) {
+		v32token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v3[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v40")) {
+		v40token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v4[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v41")) {
+		v41token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v4[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v42")) {
+		v42token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v4[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v50")) {
+		v50token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v5[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v51")) {
+		v51token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v5[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v52")) {
+		v52token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v5[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v60")) {
+		v60token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v6[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v61")) {
+		v61token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v6[1], &err);
             if (err) {
@@ -3105,80 +4924,101 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
         } else if (!Q_stricmpt(token, "v62")) {
+		v62token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v6[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v70")) {
+		v70token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v7[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v71")) {
+		v71token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v7[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v72")) {
+		v72token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v7[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v80")) {
+		v80token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v8[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v81")) {
+		v81token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v8[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v82")) {
+		v82token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v8[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v90")) {
+		v90token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v9[0], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v91")) {
+		v91token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v9[1], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "v92")) {
+		v92token:
             err = 0;
             script = CG_Q3mmeMath(script, &ScriptVars.v9[2], &err);
             if (err) {
                 Com_Printf("^1math error\n");
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "scale")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		scaletoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3191,24 +5031,27 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             (*vdest)[2] = (*vsrc1)[2] * f;
 #endif
 			VectorScale(*vsrc1, f, *vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "add")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc2 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		addtoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc2 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             VectorAdd(*vsrc1, *vsrc2, *vdest);
 			goto handledToken;
 
-        } else if (!USE_SWITCH  &&  !Q_stricmpt(token, "addscale")) {
+        } else if (!Q_stricmpt(token, "addscale")) {
 		addscaletoken:
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc2 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc2 = CG_GetScriptVector(token, tokenId);
+			//Com_Printf("src2 '%s'\n", token);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3227,20 +5070,23 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 			//VectorMA(*vsrc1, f, tvec, *vdest);
 			goto handledToken;
         } else if (!Q_stricmpt(token, "sub")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc2 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		subtoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc2 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             VectorSubtract(*vsrc1, *vsrc2, *vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "subscale")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc2 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		subscaletoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc2 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3251,21 +5097,27 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             tvec[1] = (*vsrc2)[1] * f;
             tvec[2] = (*vsrc2)[2] * f;
             VectorSubtract(*vsrc1, tvec, *vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "copy")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		copytoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             VectorCopy(*vsrc1, *vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "clear")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		cleartoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             VectorClear(*vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "wobble")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		wobbletoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3273,9 +5125,11 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
             CG_FX_Wobble(*vsrc1, *vdest, ScriptVars.origin, f);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "random")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		randomtoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
 #if 0
             (*vdest)[0] = 1000.0 * crandom();
             (*vdest)[1] = 1000.0 * crandom();
@@ -3285,7 +5139,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             (*vdest)[1] = crandom();
             (*vdest)[2] = crandom();
             VectorNormalize(*vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "normalize")) {
+		normalizetoken:
             // note: can be 1 or 2 args
             //
             // normalize <src> <dst> Normalize a vector so make it length 1
@@ -3295,34 +5151,38 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             // t0 dir
             // normalize dir
             //Com_Printf("normalize\n");
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
             if (token[0] == '\0') {
                 //Com_Printf("only 1 arg for normalize\n");
                 vdest = vsrc1;
             } else {
-                vdest = CG_GetScriptVector(token);
+                vdest = CG_GetScriptVector(token, tokenId);
             }
             VectorCopy(*vsrc1, *vdest);
             VectorNormalize(*vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "perpendicular")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		perpendiculartoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             PerpendicularVector(*vdest, *vsrc1);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "cross")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc2 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		crosstoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc2 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             CrossProduct(*vsrc1, *vsrc2, *vdest);
 			goto handledToken;
 
-        } else if (!USE_SWITCH  &&  !Q_stricmpt(token, "sprite")) {
+        } else if (!Q_stricmpt(token, "sprite")) {
 		spritetoken:
             // sprite <options> -> view aligned image -> origin, shader, color, size, angle
 			ScriptVars.emitterScriptEnd = script;
@@ -3333,6 +5193,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             CG_FX_Sprite(qtrue, qfalse);
 			goto handledToken;
         } else if (!Q_stricmpt(token, "spark")) {
+		sparktoken:
             // spark <options> -> view aligned spark -> origin, velocity, shader, color, size, width
 			ScriptVars.emitterScriptEnd = script;
             script = CG_ParseRenderTokens(script);
@@ -3340,7 +5201,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qfalse;
             }
             CG_FX_Spark();
+			goto handledToken;
         } else if (!Q_stricmpt(token, "quad")) {
+		quadtoken:
             // quad -> fixed aligned sprite -> origin, dir, shader, color, size, angle
 			ScriptVars.emitterScriptEnd = script;
             script = CG_ParseRenderTokens(script);
@@ -3348,7 +5211,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qfalse;
             }
             CG_FX_Sprite(qfalse, qfalse);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "beam")) {
+		beamtoken:
             // beam -> image stretched between 2 points, origin, shader
 			ScriptVars.emitterScriptEnd = script;
             script = CG_ParseRenderTokens(script);
@@ -3356,10 +5221,16 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qfalse;
             }
             CG_FX_Beam();
+			goto handledToken;
         } else if (!Q_stricmpt(token, "light")) {
+		lighttoken:
 			ScriptVars.emitterScriptEnd = script;
             CG_FX_Light();
+			goto handledToken;
         } else if (!Q_stricmpt(token, "distance")) {
+		distancetoken:
+			{
+
             qboolean runBlock;
 			vec3_t dir;
 			vec3_t origOrigin;
@@ -3380,9 +5251,8 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 			if (DistanceScript) {
 				if (ScriptVars.distance >= f  &&  f > 0.0) {
 					runBlock = qtrue;
-					Com_Printf("running distance %f\n", ScriptVars.distance);
+					//Com_Printf("running distance %f\n", ScriptVars.distance);
 					ScriptVars.distance = 0;
-					EmitterScriptVars.distance = 0;  //FIXME hack
 				} else {
 					//Com_Printf("not running distance %f\n", ScriptVars.distance);
 				}
@@ -3399,6 +5269,8 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 			}
             if (runBlock) {
 				vec3_t newOrigin;
+				float oldDistance;
+				//ScriptVars_t svOrig;
 
 				if (f < cg_fxScriptMinDistance.value) {
 					f = cg_fxScriptMinDistance.value;
@@ -3410,39 +5282,45 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 
 				//FIXME linear motion -- gravity needs to be taken into account
 
-                //if (1) {  //(!DistanceScript) {  //(ScriptVars.cent) {  //FIXME idiot
 				VectorSubtract(ScriptVars.origin, ScriptVars.lastDistancePosition, dir);
-				//VectorSubtract(ScriptVars.lastDistancePosition, ScriptVars.origin, dir);
 				VectorNormalize(dir);
 				VectorCopy(ScriptVars.origin, origOrigin);
 				VectorCopy(ScriptVars.origin, newOrigin);
+
 				count = 0;
 
-				while (Distance(ScriptVars.lastDistancePosition, origOrigin) >= f) {
+				//memcpy(&svOrig, &ScriptVars, sizeof(svOrig));
+
+				while (1) {  //(Distance(ScriptVars.lastDistancePosition, origOrigin) >= f) {
+					vec_t d;
+
+					d = Distance(ScriptVars.lastDistancePosition, origOrigin);
+					if (d < f) {
+						break;
+					}
+
+					// check if it overshoots
+					if (count == 0) {
+
+					} else {
+						if (d >= oldDistance) {
+							//Com_Printf("^5overshooting:  old %f  new %f  count %d\n", oldDistance, d, count);
+							break;
+						}
+					}
+					oldDistance = d;
 					count++;
 
-					if (!EmitterScript) {
-						//Com_Printf("running distance script:  emitter %d\n", EmitterScript);
-					}
-					//VectorMA(ScriptVars.lastDistancePosition, f, dir, ScriptVars.origin);
 					VectorMA(ScriptVars.lastDistancePosition, f, dir, newOrigin);
 					VectorCopy(newOrigin, ScriptVars.origin);
 
-					//Com_Printf("distance script: %f\n", ScriptVars.distance);
 					if (CG_RunQ3mmeScript(script, NULL)) {
 						return qtrue;
 					}
 					VectorCopy(newOrigin, ScriptVars.lastDistancePosition);
 
-#if 0
-					if (count > cg_fxScriptMaxCount.integer) {
-						Com_Printf("^1distance max count\n");
-						break;
-					}
-#endif
-					//Com_Printf("dist: %f  count %d\n", Distance(ScriptVars.lastDistancePosition, origOrigin), count);
+					//Com_Printf("dist %f  step %f  count %d\n", Distance(ScriptVars.lastDistancePosition, origOrigin), f, count);
 				}
-				//Com_Printf("dist count %d\n", count);
 				VectorCopy(origOrigin, ScriptVars.origin);
 				VectorCopy(origOrigin, ScriptVars.lastDistancePosition);
 				ScriptVars.lastDistanceTime = cg.ftime;
@@ -3452,7 +5330,21 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             if (!script) {
                 return qtrue;
             }
-        } else if (!Q_stricmpt(token, "emitter")  ||  (!Q_stricmpt(token, "emitterf"))) {
+			}
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "emitter")) {
+		emittertoken:
+
+			fullLerp = qfalse;
+			goto emitterblock;
+
+        } else if (!Q_stricmpt(token, "emitterf")) {
+		emitterftoken:
+
+			fullLerp = qtrue;
+
+		emitterblock:
+			{
 			localEntity_t *le;
 			//char *debugstart;
 			qboolean lastEmitterScriptValue;
@@ -3483,17 +5375,21 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 			}
 
             parsingEmitterScriptLevel++;
+			//Com_Printf("^3parsingEmitterScriptLevel %d\n", parsingEmitterScriptLevel);
 
 			if (f < cg_fxScriptMinEmitter.value) {
 				f = cg_fxScriptMinEmitter.value;
 			}
 
             ScriptVars.emitterTime = f;
+#if 0
 			if (!Q_stricmpt(token, "emitterf")) {
 				ScriptVars.emitterFullLerp = qtrue;
 			} else {
 				ScriptVars.emitterFullLerp = qfalse;
 			}
+#endif
+			ScriptVars.emitterFullLerp = fullLerp;
 			ScriptVars.emitterKill = qfalse;
 
             //Com_Printf("emitter %f\n", f);
@@ -3505,7 +5401,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             ScriptVars.emitterScriptStart = script;
 #if 0
 			// hack to do things like light in emitter
-			le = CG_AllocLocalEntity();
+			le = CG_AllocFxEntity(ScriptVars.emitterId);
 
 			le->emitterScript = script;
 			CG_CopyStoredScriptVarsToLE(le);
@@ -3535,7 +5431,8 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 			ScriptJustParsing = qfalse;
 
 			if (!numEmittedEntities) {
-				le = CG_AllocLocalEntity();
+				//Com_Printf("non emitted\n");
+				le = CG_AllocFxEntity(ScriptVars.emitterId);
 
 				le->emitterScript = script;
 				CG_CopyStoredScriptVarsToLE(le);
@@ -3556,7 +5453,10 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
             parsingEmitterScriptLevel--;
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "alphaFade")) {
+		alphafadetoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3565,15 +5465,32 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             }
             ScriptVars.alphaFade = f;
             ScriptVars.hasAlphaFade = qtrue;
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "shaderTime")) {
+		shadertimetoken:
+            err = 0;
+            script = CG_Q3mmeMath(script, &f, &err);
+            if (err) {
+                Com_Printf("^1math error\n");
+                return qtrue;
+            }
+            ScriptVars.shaderTime = f;
+            ScriptVars.hasShaderTime = qtrue;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "dirmodel")) {
+		dirmodeltoken:
 			ScriptVars.emitterScriptEnd = script;
             //CG_FX_DirModel();
 			CG_FX_Model(FX_MODEL_DIR);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "loopsound")) {
+		loopsoundtoken:
 			ScriptVars.emitterScriptEnd = script;
-            script = CG_GetToken(script, ScriptVars.loopSound, qtrue, &newLine);
+            script = CG_GetFxToken(script, ScriptVars.loopSound, qtrue, &newLine, &tokenId);
 			CG_FX_LoopSound();
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rotate")) {
+		rotatetoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3581,7 +5498,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
             ScriptVars.rotate = f;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "vibrate")) {
+		vibratetoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3590,7 +5509,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             }
             ScriptVars.vibrate = f;
 			CG_FX_Vibrate();
+			goto handledToken;
         } else if (!Q_stricmpt(token, "emitterId")) {
+		emitteridtoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3598,13 +5519,15 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
             ScriptVars.emitterId = f;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "decal")) {
+		decaltoken:
             // options:  energy alpha
 			ScriptVars.emitterScriptEnd = script;
             ScriptVars.decalEnergy = qfalse;
             ScriptVars.decalAlpha = qfalse;
             while (!newLine) {
-                script = CG_GetToken(script, token, qfalse, &newLine);
+                script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
                 if (token[0] == '\0') {
                     break;
                 } else if (!Q_stricmpt(token, "energy")) {
@@ -3618,19 +5541,39 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 //Com_Printf("decal option: '%s'\n", token);
             }
             CG_FX_Decal();
+			goto handledToken;
         } else if (!Q_stricmpt(token, "sound")) {
+		soundtoken:
 			ScriptVars.emitterScriptEnd = script;
-            script = CG_GetToken(script, ScriptVars.sound, qtrue, &newLine);
-			//Com_Printf("got sound: '%s'\n", ScriptVars.sound);
-			CG_FX_Sound();
+            script = CG_GetFxToken(script, ScriptVars.sound, qtrue, &newLine, &tokenId);
+			CG_FX_Sound(CHAN_AUTO);
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "soundlocal")) {
+		soundlocaltoken:
+			ScriptVars.emitterScriptEnd = script;
+            script = CG_GetFxToken(script, ScriptVars.sound, qtrue, &newLine, &tokenId);
+			CG_FX_Sound(CHAN_LOCAL);
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "soundweapon")) {
+		soundweapontoken:
+			ScriptVars.emitterScriptEnd = script;
+            script = CG_GetFxToken(script, ScriptVars.sound, qtrue, &newLine, &tokenId);
+			CG_FX_Sound(CHAN_WEAPON);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "anglesmodel")) {
+		anglesmodeltoken:
 			ScriptVars.emitterScriptEnd = script;
             //CG_FX_AnglesModel();
 			CG_FX_Model(FX_MODEL_ANGLES);
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "axismodel")) {
+		axismodeltoken:
 			ScriptVars.emitterScriptEnd = script;
 			CG_FX_Model(FX_MODEL_AXIS);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "interval")) {
+		intervaltoken:
+			{
             qboolean runBlock;
 			double cgftimeOrig;
 			double cgtimeOrig;
@@ -3700,9 +5643,10 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             if (!script) {
                 return qtrue;
             }
+			}
 			goto handledToken;
 
-		} else if (!USE_SWITCH  &&  !Q_stricmpt(token, "colorfade")) {
+		} else if (!Q_stricmpt(token, "colorfade")) {
 		colorfadetoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
@@ -3714,6 +5658,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             ScriptVars.hasColorFade = qtrue;
 			goto handledToken;
         } else if (!Q_stricmpt(token, "pushparent")) {
+		pushparenttoken:
             // see color2 in weapon/rail/trail
             // color2 is stored in the parent input structure, retrieve it like this
             // pushparent color2
@@ -3722,7 +5667,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 Com_Printf("vecStack full:  %d >= MAX_SCRIPTED_VARS_VECTOR_STACK\n", ScriptVars.vecStackCount);
                 return qtrue;
             }
-            script = CG_GetToken(script, token, qfalse, &newLine);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
             if (!Q_stricmpt(token, "color1")) {
                 VectorCopy(ScriptVars.color1, ScriptVars.vecStack[ScriptVars.vecStackCount]);
                 ScriptVars.vecStackCount++;
@@ -3733,19 +5678,24 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 Com_Printf("pushparent: unknown token '%s'\n", token);
                 return qtrue;
             }
+			goto handledToken;
         } else if (!Q_stricmpt(token, "pop")) {
+		poptoken:
             // see 'pushparent'
             if (ScriptVars.vecStackCount <= 0) {
                 Com_Printf("pop error, vecStackCount %d\n", ScriptVars.vecStackCount);
                 return qtrue;
             }
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             VectorCopy(ScriptVars.vecStack[ScriptVars.vecStackCount - 1], *vdest);
             ScriptVars.vecStackCount--;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "if")) {
+		iftoken:
+			{
             int numIfBlocks;
-            char *endOfAllBlocks;
+            const char *endOfAllBlocks;
 
             //Com_Printf("script: 'if'\n");
             numIfBlocks = CG_NumIfBlocks(script, &endOfAllBlocks);
@@ -3758,7 +5708,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             for (i = 0;  i < numIfBlocks;  i++) {
                 if (i > 0) {
                     while (1) {
-                        script = CG_GetToken(script, token, qfalse, &newLine);
+                        script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
                         if (script[0] == '\0') {
                             //Com_Printf("if block %d eof\n", i);
                             return qtrue;
@@ -3775,7 +5725,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                         // check for 'else if'
                         p = script;
                         while (1) {
-                            p = CG_GetToken(p, token, qfalse, &newLine);
+                            p = CG_GetFxToken(p, token, qfalse, &newLine, &tokenId);
                             if (p[0] == '\0') {
                                 //Com_Printf("parsing else block eof\n");
                                 return qtrue;
@@ -3839,7 +5789,11 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             script = endOfAllBlocks;
             //Com_Printf("end 'if' token '%c'\n", script[0]);
             //Com_Printf("end 'if' '%s'\n", script);
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "repeat")) {
+		repeattoken:
+			{
             //qboolean runBlock;
 			float lastLoopVal;
 			int lastLoopCount;
@@ -3875,15 +5829,19 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             if (!script) {
                 return qtrue;
             }
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rotatearound")) {
+		rotatearoundtoken:
+			{
 			vec3_t tmp;
 
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc1 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vsrc2 = CG_GetScriptVector(token);
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc1 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vsrc2 = CG_GetScriptVector(token, tokenId);
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3898,10 +5856,15 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             RotatePointAroundVector(*vdest, *vsrc2, tmp, f);
             //RotatePointAroundVector(*vdest, tmp, *vsrc1, f);
 			//Com_Printf("rotatearound: distance %f\n", Distance(*vdest, *vsrc2));
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentorigin")) {
-            Com_Printf("can't set parentOrigin\n");
+		parentorigintoken:
+            Com_Printf("^3CG_RunQ3mmeScript() can't set parentOrigin\n");
             return qtrue;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "movegravity")) {
+		movegravitytoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -3910,7 +5873,10 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             }
             ScriptVars.moveGravity = f;
 			ScriptVars.hasMoveGravity = qtrue;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "soundlist")) {
+		soundlisttoken:
+			{
             qboolean hasMathToken;
 
 			ScriptVars.emitterScriptEnd = script;
@@ -3918,7 +5884,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             hasMathToken = qfalse;
             p = script;
             while (1) {
-                p = CG_GetToken(p, token, qfalse, &newLine);
+                p = CG_GetFxToken(p, token, qfalse, &newLine, &tokenId);
                 if (p[0] == '\0') {
                     return qtrue;
                 }
@@ -3954,7 +5920,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                     Com_Printf("ScriptVars.numSoundList >= MAX_FX_SOUND_LIST\n");
                     break;
                 }
-                script = CG_GetToken(script, token, qtrue, &newLine);
+                script = CG_GetFxToken(script, token, qtrue, &newLine, &tokenId);
                 if (script[0] == '\0') {
                     return qtrue;
                 }
@@ -3988,24 +5954,228 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
 			Q_strncpyz(ScriptVars.sound, ScriptVars.soundList[ScriptVars.selectedSoundList], MAX_QPATH);
-			CG_FX_Sound();
+			CG_FX_Sound(CHAN_AUTO);
+			}
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "soundlistlocal")) {
+		soundlistlocaltoken:
+			{
+            qboolean hasMathToken;
+
+			ScriptVars.emitterScriptEnd = script;
+            // check for math token
+            hasMathToken = qfalse;
+            p = script;
+            while (1) {
+                p = CG_GetFxToken(p, token, qfalse, &newLine, &tokenId);
+                if (p[0] == '\0') {
+                    return qtrue;
+                }
+                if (token[0] == '\0') {
+                    continue;
+                }
+                if (token[0] == '{') {
+                    break;
+                } else {
+                    hasMathToken = qtrue;
+                    break;
+                }
+            }
+            if (hasMathToken) {
+                err = 0;
+                CG_Q3mmeMath(script, &f, &err);
+                if (err) {
+                    Com_Printf("^1math error\n");
+                    return qtrue;
+                }
+                //ScriptVars.selectedSoundList = f;
+            } else {
+                //ScriptVars.selectedSoundList = rand();  // modulo later
+				f = random();
+            }
+            script = CG_SkipOpeningBrace(script);
+            if (!script) {
+                return qtrue;
+            }
+            ScriptVars.numSoundList = 0;
+            while (1) {
+                if (ScriptVars.numSoundList >= MAX_FX_SOUND_LIST) {
+                    Com_Printf("ScriptVars.numSoundList >= MAX_FX_SOUND_LIST\n");
+                    break;
+                }
+                script = CG_GetFxToken(script, token, qtrue, &newLine, &tokenId);
+                if (script[0] == '\0') {
+                    return qtrue;
+                }
+                if (token[0] == '\0') {
+                    continue;
+                }
+                if (token[0] == '}') {
+                    break;
+                }
+                Q_strncpyz(ScriptVars.soundList[ScriptVars.numSoundList], token, MAX_QPATH);
+                ScriptVars.numSoundList++;
+            }
+            if (ScriptVars.numSoundList <= 0) {
+                Com_Printf("^1Error numSoundList <= 0\n");
+                return qtrue;
+            }
+
+			ScriptVars.selectedSoundList = f * (float)(ScriptVars.numSoundList - 1);
+
+#if 0
+            if (!hasMathToken) {
+                ScriptVars.selectedSoundList = ScriptVars.selectedSoundList % ScriptVars.numSoundList;
+            } else {
+				ScriptVars.selectedSoundList *= (ScriptVars.numSoundList - 1);
+				Com_Printf("sound list selected: %d\n", ScriptVars.selectedSoundList);
+			}
+#endif
+
+            if (ScriptVars.selectedSoundList >= ScriptVars.numSoundList) {
+                Com_Printf("^1Error ScriptVars.selectedSoundList >= ScriptVars.numSoundList\n");
+                return qtrue;
+            }
+			Q_strncpyz(ScriptVars.sound, ScriptVars.soundList[ScriptVars.selectedSoundList], MAX_QPATH);
+			CG_FX_Sound(CHAN_LOCAL);
+			}
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "soundlistweapon")) {
+		soundlistweapontoken:
+			{
+            qboolean hasMathToken;
+
+			ScriptVars.emitterScriptEnd = script;
+            // check for math token
+            hasMathToken = qfalse;
+            p = script;
+            while (1) {
+                p = CG_GetFxToken(p, token, qfalse, &newLine, &tokenId);
+                if (p[0] == '\0') {
+                    return qtrue;
+                }
+                if (token[0] == '\0') {
+                    continue;
+                }
+                if (token[0] == '{') {
+                    break;
+                } else {
+                    hasMathToken = qtrue;
+                    break;
+                }
+            }
+            if (hasMathToken) {
+                err = 0;
+                CG_Q3mmeMath(script, &f, &err);
+                if (err) {
+                    Com_Printf("^1math error\n");
+                    return qtrue;
+                }
+                //ScriptVars.selectedSoundList = f;
+            } else {
+                //ScriptVars.selectedSoundList = rand();  // modulo later
+				f = random();
+            }
+            script = CG_SkipOpeningBrace(script);
+            if (!script) {
+                return qtrue;
+            }
+            ScriptVars.numSoundList = 0;
+            while (1) {
+                if (ScriptVars.numSoundList >= MAX_FX_SOUND_LIST) {
+                    Com_Printf("ScriptVars.numSoundList >= MAX_FX_SOUND_LIST\n");
+                    break;
+                }
+                script = CG_GetFxToken(script, token, qtrue, &newLine, &tokenId);
+                if (script[0] == '\0') {
+                    return qtrue;
+                }
+                if (token[0] == '\0') {
+                    continue;
+                }
+                if (token[0] == '}') {
+                    break;
+                }
+                Q_strncpyz(ScriptVars.soundList[ScriptVars.numSoundList], token, MAX_QPATH);
+                ScriptVars.numSoundList++;
+            }
+            if (ScriptVars.numSoundList <= 0) {
+                Com_Printf("^1Error numSoundList <= 0\n");
+                return qtrue;
+            }
+
+			ScriptVars.selectedSoundList = f * (float)(ScriptVars.numSoundList - 1);
+
+#if 0
+            if (!hasMathToken) {
+                ScriptVars.selectedSoundList = ScriptVars.selectedSoundList % ScriptVars.numSoundList;
+            } else {
+				ScriptVars.selectedSoundList *= (ScriptVars.numSoundList - 1);
+				Com_Printf("sound list selected: %d\n", ScriptVars.selectedSoundList);
+			}
+#endif
+
+            if (ScriptVars.selectedSoundList >= ScriptVars.numSoundList) {
+                Com_Printf("^1Error ScriptVars.selectedSoundList >= ScriptVars.numSoundList\n");
+                return qtrue;
+            }
+			Q_strncpyz(ScriptVars.sound, ScriptVars.soundList[ScriptVars.selectedSoundList], MAX_QPATH);
+			CG_FX_Sound(CHAN_WEAPON);
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "shaderclear")) {
+		shadercleartoken:
             // from base_weapons.fx:
             // Clear the previous shader so it uses the one in the model
 			ScriptVars.shader[0] = '\0';
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "extrashader")) {
+		extrashadertoken:
+			script = CG_GetFxToken(script, token, qtrue, &newLine, &tokenId);
+			if (ScriptVars.parentCent  &&  *token) {
+				//FIXME nomip?
+				ScriptVars.parentCent->extraShader = trap_R_RegisterShader(token);
+			}
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "extrashaderclear")) {
+		extrashadercleartoken:
+			if (ScriptVars.parentCent) {
+				ScriptVars.parentCent->extraShader = 0;
+			}
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "extrashaderendtime")) {
+		extrashaderendtimetoken:
+			{
+			float f;
+			err = 0;
+			script = CG_Q3mmeMath(script, &f, &err);
+			if (err) {
+				Com_Printf("^1math error\n");
+				return qtrue;
+			}
+			if (ScriptVars.parentCent) {
+				ScriptVars.parentCent->extraShaderEndTime = f;
+			}
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "trace")) {
+		tracetoken:
+			{
 			vec3_t endPoint;
 			trace_t trace;
 
 			VectorMA(ScriptVars.origin, 8192 * 16, ScriptVars.dir, endPoint);
 			CG_Trace(&trace, ScriptVars.origin, NULL, NULL, endPoint, -1, CONTENTS_SOLID);
 			VectorCopy(trace.endpos, ScriptVars.origin);
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "decaltemp")) {
+		decaltemptoken:
 			ScriptVars.emitterScriptEnd = script;
             ScriptVars.decalEnergy = qfalse;
             ScriptVars.decalAlpha = qfalse;
             while (!newLine) {
-                script = CG_GetToken(script, token, qfalse, &newLine);
+                script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
                 if (token[0] == '\0') {
                     break;
                 } else if (!Q_stricmpt(token, "energy")) {
@@ -4019,14 +6189,17 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 //Com_Printf("decal option: '%s'\n", token);
             }
             CG_FX_DecalTemp();
+			goto handledToken;
         } else if (!Q_stricmpt(token, "modellist")) {
+		modellisttoken:
+			{
             qboolean hasMathToken;
 
             // check for math token
             hasMathToken = qfalse;
             p = script;
             while (1) {
-                p = CG_GetToken(p, token, qfalse, &newLine);
+                p = CG_GetFxToken(p, token, qfalse, &newLine, &tokenId);
                 if (p[0] == '\0') {
                     return qtrue;
                 }
@@ -4063,7 +6236,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                     Com_Printf("ScriptVars.numModelList >= MAX_FX_MODEL_LIST\n");
                     break;
                 }
-                script = CG_GetToken(script, token, qtrue, &newLine);
+                script = CG_GetFxToken(script, token, qtrue, &newLine, &tokenId);
                 if (script[0] == '\0') {
                     return qtrue;
                 }
@@ -4098,14 +6271,18 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
 			Q_strncpyz(ScriptVars.model, ScriptVars.modelList[ScriptVars.selectedModelList], MAX_QPATH);
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "shaderlist")) {
+		shaderlisttoken:
+			{
             qboolean hasMathToken;
 
             // check for math token
             hasMathToken = qfalse;
             p = script;
             while (1) {
-                p = CG_GetToken(p, token, qfalse, &newLine);
+                p = CG_GetFxToken(p, token, qfalse, &newLine, &tokenId);
                 if (p[0] == '\0') {
                     return qtrue;
                 }
@@ -4139,7 +6316,7 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                     Com_Printf("ScriptVars.numShaderList >= MAX_FX_SHADER_LIST\n");
                     break;
                 }
-                script = CG_GetToken(script, token, qtrue, &newLine);
+                script = CG_GetFxToken(script, token, qtrue, &newLine, &tokenId);
                 if (script[0] == '\0') {
                     return qtrue;
                 }
@@ -4163,7 +6340,10 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
 			Q_strncpyz(ScriptVars.shader, ScriptVars.shaderList[ScriptVars.selectedShaderList], MAX_QPATH);
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "yaw")) {
+		yawtoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -4171,7 +6351,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
             ScriptVars.angles[YAW] = f;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "pitch")) {
+		pitchtoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -4179,7 +6361,9 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
             ScriptVars.angles[PITCH] = f;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "roll")) {
+		rolltoken:
             err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -4187,7 +6371,12 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
                 return qtrue;
             }
             ScriptVars.angles[ROLL] = f;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "movebounce")) {
+		movebouncetoken:
+			{
+			const char *scriptOrig;
+
 #if 0
             //FIXME double check two math args
             err = 0;
@@ -4207,24 +6396,38 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 			ScriptVars.hasMoveBounce = qtrue;
 			Com_Printf("*movebounce\n");
 #endif
-			script = CG_GetToken(script, token, qfalse, &newLine);
+			scriptOrig = script;
+			script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			err = 0;
-			CG_Q3mmeMath(token, &f, &err);
+		    //Com_Printf("1 %p %p '%s'\n", scriptOrig, script, PrintShort(scriptOrig, 10));
+			//Com_Printf("new '%s'\n", PrintShort(script, 10));
+			//CG_Q3mmeMath(token, &f, &err);
+			CG_Q3mmeMathExt(scriptOrig, script, &f, &err, qtrue);
 			if (err) {
 				Com_Printf("^1math error\n");
 				return qtrue;
 			}
 			ScriptVars.moveBounce1 = f;
-			script = CG_GetToken(script, token, qfalse, &newLine);
+
+			scriptOrig = script;
+			script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			err = 0;
-			CG_Q3mmeMath(token, &f, &err);
+		    //Com_Printf("2 '%s'\n", PrintShort(scriptOrig, 10));
+			//CG_Q3mmeMath(token, &f, &err);
+			CG_Q3mmeMathExt(scriptOrig, script, &f, &err, qtrue);
 			if (err) {
 				Com_Printf("^1math error\n");
 				return qtrue;
 			}
 			ScriptVars.moveBounce2 = f;
 			ScriptVars.hasMoveBounce = qtrue;
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "sink")) {
+		sinktoken:
+			{
+			const char *scriptOrig;
+
             //FIXME double check two math args
 #if 0
             err = 0;
@@ -4243,27 +6446,36 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             ScriptVars.sink2 = f;
 			ScriptVars.hasSink = qtrue;
 			//Com_Printf("*sink\n");
-			CG_GetToken(script, token, qfalse, &newLine);
+			CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			Com_Printf("sink next token: '%s'\n", token);
 #endif
-			script = CG_GetToken(script, token, qfalse, &newLine);
+			scriptOrig = script;
+			script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			err = 0;
-			CG_Q3mmeMath(token, &f, &err);
+			//CG_Q3mmeMath(token, &f, &err);
+			CG_Q3mmeMathExt(scriptOrig, script, &f, &err, qtrue);
 			if (err) {
 				Com_Printf("^1math error\n");
 				return qtrue;
 			}
 			ScriptVars.sink1 = f;
-			script = CG_GetToken(script, token, qfalse, &newLine);
+
+			scriptOrig = script;
+			script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
 			err = 0;
-			CG_Q3mmeMath(token, &f, &err);
+			//CG_Q3mmeMath(token, &f, &err);
+			CG_Q3mmeMathExt(scriptOrig, script, &f, &err, qtrue);
 			if (err) {
 				Com_Printf("^1math error\n");
 				return qtrue;
 			}
 			ScriptVars.sink2 = f;
 			ScriptVars.hasSink = qtrue;
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "impact")) {
+		impacttoken:
+			{
             qboolean runBlock;
 
             runBlock = qfalse;
@@ -4309,18 +6521,27 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             if (!script) {
                 return qtrue;
             }
+			}
+			goto handledToken;
         } else if (!Q_stricmpt(token, "parentvelocity")) {
-            Com_Printf("can't set parentVelocity\n");
+		parentvelocitytoken:
+            Com_Printf("^3CG_RunQ3mmeScript() can't set parentVelocity\n");
             return qtrue;
+			goto handledToken;
         } else if (!Q_stricmpt(token, "inverse")) {
-            script = CG_GetToken(script, token, qfalse, &newLine);
-            vdest = CG_GetScriptVector(token);
+		inversetoken:
+            script = CG_GetFxToken(script, token, qfalse, &newLine, &tokenId);
+            vdest = CG_GetScriptVector(token, tokenId);
             VectorInverse(*vdest);
+			goto handledToken;
         } else if (!Q_stricmpt(token, "rings")) {
+		ringstoken:
             //FIXME contenders weapon/rail/trail --  huh?
 			ScriptVars.emitterScriptEnd = script;
             CG_FX_Rings();
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "echo")) {
+		echotoken:
 			err = 0;
             script = CG_Q3mmeMath(script, &f, &err);
             if (err) {
@@ -4329,12 +6550,19 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
             }
 			Com_Printf("%f\n", f);
 			//Com_Printf("%s\n", script);
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "return")) {  // for testing
+		returntoken:
 			//Com_Printf("returning...\n");
 			return qtrue;
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "continue")) {  // for testing
+		continuetoken:
 			script = CG_SkipBlock(script);
+			goto handledToken;
 		} else if (!Q_stricmpt(token, "command")) {
+		commandtoken:
+			{
 			char c;
 			int count;
 			char newToken[MAX_QPATH];
@@ -4370,7 +6598,8 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 							c = script[0];
 							if (c < '0'  ||  c > 'z') {
 								newToken[i] = '\0';
-								CG_Q3mmeMath(newToken, &f, &err);
+								//CG_Q3mmeMath(newToken, &f, &err);
+								CG_Q3mmeMathExt(newToken, NULL, &f, &err, qfalse);
 								//Com_Printf("'%s'  %f\n", newToken, f);
 								script--;
 								break;
@@ -4388,8 +6617,10 @@ qboolean CG_RunQ3mmeScript (char *script, char *emitterEnd)
 				count++;
 				script++;
 			}
+			}
+			goto handledToken;
         } else if (token[0] != '\0'  &&  token[0] != '}') {
-            Com_Printf("q3mme script unknown token: '%s'\n", token);
+            Com_Printf("q3mme script unknown token: '%s'  tokenId %d  rest: '%s'\n", token, tokenId, script);
 			//Com_Printf("%d\n", trap_Milliseconds() - startTime);
 #if 0  //def CGAMESO
 			gettimeofday(&end, NULL);
@@ -4415,7 +6646,7 @@ handledToken:
 
 }
 
-static void CG_SetQ3mmeFXScript (char *name, char *dest, int destSize, fileHandle_t handle, char *lastLine)
+static void CG_SetQ3mmeFXScript (const char *name, char *dest, int destSize, fileHandle_t handle, char *lastLine)
 {
     int len;
     int braceCount;
@@ -4514,7 +6745,7 @@ static void CG_SetQ3mmeFXScript (char *name, char *dest, int destSize, fileHandl
     return;
 }
 
-static void CG_ParseQ3mmeEffect (char *name, char *lastLine, fileHandle_t handle)
+static void CG_ParseQ3mmeEffect (const char *name, char *lastLine, fileHandle_t handle)
 {
     char token[MAX_QPATH];
     char *line;
@@ -4584,6 +6815,9 @@ static void CG_ParseQ3mmeEffect (char *name, char *lastLine, fileHandle_t handle
 		return;
 	} else if (!Q_stricmpt(name, "common/jumpPad")) {
 		CG_SetQ3mmeFXScript(name, EffectScripts.jumpPad, sizeof(EffectScripts.jumpPad), handle, lastLine);
+		return;
+	} else if (!Q_stricmpt(name, "common/headShot")) {
+		CG_SetQ3mmeFXScript(name, EffectScripts.headShot, sizeof(EffectScripts.headShot), handle, lastLine);
 		return;
 	} else if (!Q_stricmpt(name, "player/gibbed")) {
 		CG_SetQ3mmeFXScript(name, EffectScripts.gibbed, sizeof(EffectScripts.gibbed), handle, lastLine);
@@ -5047,7 +7281,10 @@ static void CG_ParseQ3mmeEffect (char *name, char *lastLine, fileHandle_t handle
         }
 
         while (1) {
-            line = CG_GetToken(line, token, qfalse, &newLine);
+			//FIXME const
+			// don't use CG_GetFxToken() uses wrong newline status
+            //line = (char *)CG_GetFxToken(line, token, qfalse, &newLine, &tokenId);
+            line = (char *)CG_GetToken(line, token, qfalse, &newLine);
             if (token[0] == '\0') {
                 break;
             }
@@ -5122,7 +7359,10 @@ static void CG_ParseQ3mmeScripts (const char *fileName)
         }
 #endif
         //Com_Printf("line: '%s'\n", line);
-        line = CG_GetToken(line, token, qtrue, &newLine);
+		//FIXME const
+		// not CG_GetFxToken() compiled with wrong newline status
+        //line = (char *)CG_GetFxToken(line, token, qtrue, &newLine, &tokenId);
+        line = (char *)CG_GetToken(line, token, qtrue, &newLine);
         if (token[0] == '\0') {
             continue;
         }
@@ -5149,6 +7389,7 @@ void CG_ReloadQ3mmeScripts (const char *fileName)
 	centity_t *cent;
 
 	CG_RemoveFXLocalEntities(qtrue, 0);
+	CG_FreeFxJitTokens();
 	memset(&EffectScripts, 0, sizeof(EffectScripts));
 	CG_ResetFXScripting();
 	CG_ParseQ3mmeScripts(fileName);
@@ -5198,7 +7439,7 @@ void CG_ResetScriptVars (void)
 
 void CG_CopyPlayerDataToScriptData (centity_t *cent)
 {
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 	int clientNum;
 
 	//Com_Printf("CG_CopyPlayerDataToScriptData() cent %d  es.num %d cnum %d\n", cent - cg_entities, cent->currentState.number, cent->currentState.clientNum);
@@ -5227,6 +7468,13 @@ void CG_CopyPlayerDataToScriptData (centity_t *cent)
 	}
 	VectorCopy(ci->color1, ScriptVars.color1);
 	VectorCopy(ci->color2, ScriptVars.color2);
+
+	if (clientNum == cg.snap->ps.clientNum) {
+		ScriptVars.parentCent =  &cg.predictedPlayerEntity;
+	} else {
+		ScriptVars.parentCent = cent;
+	}
+
 #if 0
 	if (cent->currentState.clientNum == cg.snap->ps.clientNum) {
 		ScriptVars.rewardImpressive = cg.rewardImpressive;
@@ -5244,6 +7492,7 @@ void CG_CopyPlayerDataToScriptData (centity_t *cent)
 #endif
 }
 
+#if 0
 void CG_CopyStaticScriptDataToCent (centity_t *cent)
 {
 	VectorCopy(ScriptVars.lastIntervalPosition, cent->lastModelIntervalPosition);
@@ -5252,10 +7501,37 @@ void CG_CopyStaticScriptDataToCent (centity_t *cent)
 	cent->lastModelDistanceTime = ScriptVars.lastDistanceTime;
 }
 
-void CG_CopyStaticCentDataToScript (centity_t *cent)
+void CG_CopyStaticCentDataToScript (const centity_t *cent)
 {
 	VectorCopy(cent->lastModelIntervalPosition, ScriptVars.lastIntervalPosition);
 	ScriptVars.lastIntervalTime = cent->lastModelIntervalTime;
 	VectorCopy(cent->lastModelDistancePosition, ScriptVars.lastDistancePosition);
 	ScriptVars.lastDistanceTime = cent->lastModelDistanceTime;
+}
+#endif
+
+/////
+
+void CG_CopyPositionDataToCent (positionData_t *pd)
+{
+	VectorCopy(ScriptVars.lastIntervalPosition, pd->intervalPosition);
+	pd->intervalTime = ScriptVars.lastIntervalTime;
+	VectorCopy(ScriptVars.lastDistancePosition, pd->distancePosition);
+	pd->distanceTime = ScriptVars.lastDistanceTime;
+}
+
+void CG_CopyPositionDataToScript (const positionData_t *pd)
+{
+	VectorCopy(pd->intervalPosition, ScriptVars.lastIntervalPosition);
+	ScriptVars.lastIntervalTime = pd->intervalTime;
+	VectorCopy(pd->distancePosition, ScriptVars.lastDistancePosition);
+	ScriptVars.lastDistanceTime = pd->distanceTime;
+}
+
+void CG_UpdatePositionData (const centity_t *cent, positionData_t *pd)
+{
+	VectorCopy(cent->lerpOrigin, pd->intervalPosition);
+	pd->intervalTime = cg.ftime;
+	VectorCopy(cent->lerpOrigin, pd->distancePosition);
+	pd->distanceTime = cg.ftime;
 }

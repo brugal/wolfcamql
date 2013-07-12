@@ -6,12 +6,167 @@
 
 #include "cg_local.h"
 
-#define	MAX_LOCAL_ENTITIES	8192  //4096  //1024  //1024  //512
-localEntity_t	cg_localEntities[MAX_LOCAL_ENTITIES];
-localEntity_t	cg_activeLocalEntities;		// double linked list
-localEntity_t	*cg_freeLocalEntities;		// single linked list
+#include "cg_effects.h"
+#include "cg_localents.h"
+#include "cg_main.h"
+#include "cg_marks.h"
+#include "cg_predict.h"
+#include "cg_syscalls.h"
+#if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+  #include "cg_thread.h"
+#endif
+#include "sc.h"
+
+//#define THREAD_DEBUG
+
+#define MAX_LOCAL_ENTITIES (MAX_REFENTITIES - 3)
+
+static localEntity_t	cg_localEntities[MAX_LOCAL_ENTITIES];
+static localEntity_t	cg_activeLocalEntities;		// double linked list
+static localEntity_t	*cg_freeLocalEntities;		// single linked list
 
 static localEntity_t tmpLocalEntity;
+
+int FxLoopSounds = FX_LOOP_SOUNDS_BASE;
+
+
+#define FRAME_COUNT_THREAD_SHUTDOWN -1000
+#define FRAME_COUNT_INITIAL 1
+#define MAX_FRAME_COUNT 32
+
+static int FrameCount = FRAME_COUNT_INITIAL;
+
+#define MAX_THREADS 7
+
+// list iteration can change held pointer
+// thread index 0 means no threads, if using threads index begins at 1 (main process) and the rest are MAX_THREADS
+static localEntity_t *Next[MAX_THREADS + 2];
+
+
+#if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+static qboolean ThreadInit = qfalse;
+static thread_t ThreadIds[MAX_THREADS];
+
+static thread_mutex_t OurGlobalLock;
+static thread_mutex_t EntListLock;
+static thread_mutex_t NextLock;
+static thread_mutex_t CountLock;
+static thread_mutex_t EntHandledLock;
+static thread_mutex_t SysCallLock;
+
+static semaphore_t RunSem[MAX_THREADS];
+static semaphore_t StopSem[MAX_THREADS];
+
+
+#if 1
+
+#define Lock_Global() thread_mutex_lock(&OurGlobalLock)
+#define Unlock_Global() thread_mutex_unlock(&OurGlobalLock)
+
+#else
+
+#define Lock_Global()
+#define Unlock_Global()
+
+#endif
+
+#define Lock_Next() thread_mutex_lock(&NextLock)
+#define Unlock_Next() thread_mutex_unlock(&NextLock)
+
+#define Lock_EntList() thread_mutex_lock(&EntListLock)
+#define Unlock_EntList() thread_mutex_unlock(&EntListLock)
+
+#define Lock_Count() thread_mutex_lock(&CountLock)
+#define Unlock_Count() thread_mutex_unlock(&CountLock)
+
+#define Lock_EntHandled() thread_mutex_lock(&EntHandledLock)
+#define Unlock_EntHandled() thread_mutex_unlock(&EntHandledLock)
+
+#define Lock_SysCall() thread_mutex_lock(&SysCallLock)
+#define Unlock_SysCall() thread_mutex_unlock(&SysCallLock)
+
+
+#else  // if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+#define Lock_Global()
+#define Unlock_Global()
+
+#define Lock_EntList()
+#define Unlock_EntList()
+
+#define Lock_Next()
+#define Unlock_Next()
+
+#define Lock_Count()
+#define Unlock_Count()
+
+#define Lock_EntHandled()
+#define Unlock_EntHandled()
+
+#define Lock_SysCall()
+#define Unlock_SysCall()
+
+#endif  // if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+
+static void Increment_FrameCount (void)
+{
+	FrameCount++;
+
+	// negative FrameCount used as signal
+	if (FrameCount > MAX_FRAME_COUNT) {
+		FrameCount = FRAME_COUNT_INITIAL;
+	}
+}
+
+#if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+static void CG_AddLocalEntitiesExt (int threadNum);
+
+static void *runThread (void *data)
+{
+	int number;
+	int newCount;
+
+	number = (int)data;
+
+	while (1) {
+		qboolean done;
+
+		semaphore_wait(&RunSem[number]);
+
+		done = qfalse;
+
+		Lock_Count();
+		newCount = FrameCount;
+		Unlock_Count();
+
+		// doit
+
+		if (newCount == FRAME_COUNT_THREAD_SHUTDOWN) {
+			//Com_Printf("exit thread %d %f\n", number, cg.ftime);
+			done = qtrue;
+		} else {
+			CG_AddLocalEntitiesExt(number + 2);
+			//Com_Printf("thread %d: %d\n", number, count);
+		}
+
+		//Com_Printf("*thread(%d) complete %d %f\n", number, count, cg.ftime);
+
+		// tell main thread we are done
+		semaphore_post(&StopSem[number]);
+
+		if (done) {
+			break;
+		}
+
+	}
+
+	//Com_Printf("thread %d dead %f\n", number, cg.ftime);
+    thread_exit(NULL);
+}
+#endif
 
 /*
 ===================
@@ -20,53 +175,140 @@ CG_InitLocalEntities
 This is called at startup and for tournement restarts
 ===================
 */
-//void CG_InitLocalEntities (qboolean firstCall)
 void CG_InitLocalEntities (void)
 {
 	int		i;
 
-#if 0
-	if (!firstCall) {
-		CG_ClearLocalEntitiesTimeChange();
-		return;
-	}
-#endif
+#if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
 
-	memset( cg_localEntities, 0, sizeof( cg_localEntities ) );
+	if (!ThreadInit) {
+		thread_mutex_init(&OurGlobalLock, NULL);
+		thread_mutex_init(&EntListLock, NULL);
+		thread_mutex_init(&NextLock, NULL);
+		thread_mutex_init(&CountLock, NULL);
+		thread_mutex_init(&EntHandledLock, NULL);
+		thread_mutex_init(&SysCallLock, NULL);
+
+		for (i = 0;  i < ARRAY_LEN(RunSem);  i++) {
+			if (semaphore_init(&RunSem[i], 0, 0) != 0) {
+				Com_Printf("run semaphore %d init failed\n", i);
+			}
+		}
+
+		for (i = 0;  i < ARRAY_LEN(StopSem);  i++) {
+			if (semaphore_init(&StopSem[i], 0, 0) != 0) {
+				Com_Printf("stop semaphore %d init failed\n", i);
+			}
+		}
+	}
+
+#endif  // if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+	Lock_EntList();
+
+	memset(cg_localEntities, 0, sizeof(cg_localEntities));
+
 	cg_activeLocalEntities.next = &cg_activeLocalEntities;
 	cg_activeLocalEntities.prev = &cg_activeLocalEntities;
 	cg_freeLocalEntities = cg_localEntities;
+	cg_activeLocalEntities.lowNext = &cg_activeLocalEntities;
+	cg_activeLocalEntities.lowPrev = &cg_activeLocalEntities;
+
 	for ( i = 0 ; i < MAX_LOCAL_ENTITIES - 1 ; i++ ) {
 		cg_localEntities[i].next = &cg_localEntities[i+1];
 	}
-}
 
-#if 0
-void CG_ClearLocalEntitiesTimeChange (void)
-{
-	localEntity_t	*le, *next;
-
-	le = cg_activeLocalEntities.prev;
-	for ( ; le != &cg_activeLocalEntities ; le = next ) {
-		// grab next now, so if the local entity is freed we
-		// still have it
-		next = le->prev;
-
-		if (le->fxType  &&  le->sv.dontClear) {
-			//CG_FreeLocalEntity(le);
-			continue;
-		}
-		CG_FreeLocalEntity(le);
+	Lock_Next();
+	for (i = 0;  i < ARRAY_LEN(Next);  i++) {
+		Next[i] = NULL;
 	}
-}
+	Unlock_Next();
+
+	cg.numLocalEntities = 0;
+
+	Unlock_EntList();
+
+#if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+	if (!ThreadInit) {
+		int r;
+
+		for (i = 0;  i < ARRAY_LEN(ThreadIds);  i++) {
+			r = thread_create(&ThreadIds[i], NULL, runThread, (void *)i);
+			if (r) {
+				CG_Printf("^1%s couldn't create thread %d\n", __FUNCTION__, i + 1);
+			} else {
+				CG_Printf("^6thread %d started\n", i + 1);
+			}
+		}
+
+		ThreadInit = qtrue;
+	}
 #endif
+
+	Com_Printf("jitToken %f\n", sizeof(EffectScripts.jitToken) / (1024.0 * 1024.0));
+}
+
+void CG_ShutdownLocalEnts (qboolean destructor)
+{
+	if (!destructor) {
+		CG_Printf("^5local ents shutdown\n");
+	}
+
+#if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+	if (ThreadInit) {
+		int i;
+
+		Lock_Count();
+		FrameCount = FRAME_COUNT_THREAD_SHUTDOWN;
+		Unlock_Count();
+
+		// wake threads
+		for (i = 0;  i < ARRAY_LEN(RunSem);  i++) {
+			semaphore_post(&RunSem[i]);
+		}
+
+		// wait until threads are done
+		for (i = 0;  i < ARRAY_LEN(StopSem);  i++) {
+			semaphore_wait(&StopSem[i]);
+		}
+
+		thread_join(ThreadIds[1], NULL);
+
+		//CG_Printf("threads done...\n");
+
+		thread_mutex_destroy(&OurGlobalLock);
+		thread_mutex_destroy(&EntListLock);
+		thread_mutex_destroy(&NextLock);
+		thread_mutex_destroy(&CountLock);
+		thread_mutex_destroy(&EntHandledLock);
+		thread_mutex_destroy(&SysCallLock);
+
+		for (i = 0;  i < ARRAY_LEN(RunSem);  i++) {
+			semaphore_destroy(&RunSem[i]);
+		}
+
+		for (i = 0;  i < ARRAY_LEN(StopSem);  i++) {
+			semaphore_destroy(&StopSem[i]);
+		}
+
+		ThreadInit = qfalse;
+		if (!destructor) {
+			CG_Printf("threads shutdown\n");
+		}
+	}
+#endif  // if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+}
 
 /*
 ==================
 CG_FreeLocalEntity
 ==================
 */
-void CG_FreeLocalEntity( localEntity_t *le ) {
+static void CG_FreeLocalEntity( localEntity_t *le ) {
+	int i;
+
 	if (le == &tmpLocalEntity) {
 		return;
 	}
@@ -75,15 +317,128 @@ void CG_FreeLocalEntity( localEntity_t *le ) {
 		CG_Error( "CG_FreeLocalEntity: not active" );
 	}
 
-	//le->emitterScript[0] = '\0';
+	Lock_Next();
 
 	// remove from the doubly linked active list
 	le->prev->next = le->next;
 	le->next->prev = le->prev;
 
+	if (le->lowPriority) {
+		le->lowPrev->lowNext = le->lowNext;
+		le->lowNext->lowPrev = le->lowPrev;
+	}
+
+
+	for (i = 0;  i < ARRAY_LEN(Next);  i++) {
+		if (Next[i] == le  &&  le) {
+			Next[i] = le->prev;
+			//Com_Printf("shifting %p\n", le);
+		}
+	}
+
+
 	// the free list is only singly linked
 	le->next = cg_freeLocalEntities;
 	cg_freeLocalEntities = le;
+	cg.numLocalEntities--;
+
+	Unlock_Next();
+
+}
+
+static void CG_DropLocalEntity (void)
+{
+	localEntity_t *le;
+	int count;
+
+	//Lock_EntList();
+
+	if (cg_fxDebugEntities.integer > 2) {
+		Com_Printf("start---\n");
+	}
+
+	//FIXME testing
+	//CG_FreeLocalEntity(cg_activeLocalEntities.prev);
+	//Unlock_EntList();
+	//return;
+
+	le = cg_activeLocalEntities.lowPrev;
+	if (le != &cg_activeLocalEntities) {
+		if (cg_fxDebugEntities.integer > 1) {
+			Com_Printf("^5%f  max local ents, freeing low priority entity %p  emitterId %f  startTime %f\n", cg.ftime, le, le->sv.emitterId, le->startTime);
+		}
+		CG_FreeLocalEntity(le);
+	} else {
+		le = cg_activeLocalEntities.prev;
+		count = 0;
+		while (1) {
+			if (le == &cg_activeLocalEntities) {
+				if (cg_fxDebugEntities.integer > 1) {
+					Com_Printf("^1CG_DropLocalEntity() couldn't find nonfx entity to free up using %p\n", le);
+				}
+				le = cg_activeLocalEntities.prev;
+				break;
+			}
+
+			count++;
+
+			if (le->leFlags & LEF_ALREADY_ADDED) {
+				// skip
+				if (cg_fxDebugEntities.integer > 3) {
+					Com_Printf("^3%f  skipping already added nonfx %p (id %d)  %d  startTime %f\n", cg.ftime, le, le->leMarkType, count, le->startTime);
+				}
+				le = le->prev;
+				continue;
+			}
+
+			// found it
+			break;
+		}
+		if (cg_fxDebugEntities.integer > 0) {
+			Com_Printf("^3%f  max local ents, freeing entity %p startTime %f\n", cg.ftime, le, le->startTime);
+		}
+		CG_FreeLocalEntity(le);
+	}
+
+	//Unlock_EntList();
+}
+
+
+static localEntity_t *CG_AllocLocalEntityExt (qboolean checkPause)
+{
+	localEntity_t	*le;
+
+	Lock_EntList();
+
+	if (checkPause  &&  SC_Cvar_Get_Int("cl_freezeDemo")) {
+		//Com_Printf("script while paused\n");
+		memset(&tmpLocalEntity, 0, sizeof(tmpLocalEntity));
+		Unlock_EntList();
+		return &tmpLocalEntity;
+	}
+
+	if ( !cg_freeLocalEntities ) {
+		// no free entities, so free the one at the end of the chain
+		// remove the oldest active entity
+		CG_DropLocalEntity();
+	}
+
+	le = cg_freeLocalEntities;
+	cg_freeLocalEntities = cg_freeLocalEntities->next;
+
+	memset( le, 0, sizeof( *le ) );
+
+	// link into the active list
+	le->next = cg_activeLocalEntities.next;
+	le->prev = &cg_activeLocalEntities;
+	cg_activeLocalEntities.next->prev = le;
+	cg_activeLocalEntities.next = le;
+
+	cg.numLocalEntities++;
+
+    Unlock_EntList();
+
+	return le;
 }
 
 /*
@@ -93,45 +448,30 @@ CG_AllocLocalEntity
 Will allways succeed, even if it requires freeing an old active entity
 ===================
 */
-//static localEntity_t testEntity;
 
-localEntity_t	*CG_AllocLocalEntity( void ) {
-	localEntity_t	*le;
-
-	if (SC_Cvar_Get_Int("cl_freezeDemo")) {
-		//Com_Printf("script while paused\n");
-		memset(&tmpLocalEntity, 0, sizeof(tmpLocalEntity));
-		return &tmpLocalEntity;
-	}
-
-	// testing
-	//memset(&testEntity, 0, sizeof(testEntity));
-	//return &testEntity;
-
-	if ( !cg_freeLocalEntities ) {
-		// no free entities, so free the one at the end of the chain
-		// remove the oldest active entity
-		//CG_Printf("^1max local entities\n");
-		CG_FreeLocalEntity( cg_activeLocalEntities.prev );
-	}
-
-	le = cg_freeLocalEntities;
-	cg_freeLocalEntities = cg_freeLocalEntities->next;
-
-
-
-	memset( le, 0, sizeof( *le ) );
-
-	//Com_Printf("%d sizeof le %d\n", trap_Milliseconds(), sizeof(*le));
-
-	// link into the active list
-	le->next = cg_activeLocalEntities.next;
-	le->prev = &cg_activeLocalEntities;
-	cg_activeLocalEntities.next->prev = le;
-	cg_activeLocalEntities.next = le;
-	return le;
+localEntity_t *CG_AllocLocalEntity (void)
+{
+	return CG_AllocLocalEntityExt(qtrue);
 }
 
+// entities that work in real time:  camera path lines and freecam rail
+localEntity_t *CG_AllocLocalEntityRealTime (void)
+{
+	return CG_AllocLocalEntityExt(qfalse);
+}
+
+void CG_MakeLowPriorityEntity (localEntity_t *le)
+{
+	Lock_EntList();
+
+	le->lowNext = cg_activeLocalEntities.lowNext;
+	le->lowPrev = &cg_activeLocalEntities;
+	cg_activeLocalEntities.lowNext->lowPrev = le;
+	cg_activeLocalEntities.lowNext = le;
+	le->lowPriority = qtrue;
+
+	Unlock_EntList();
+}
 
 /*
 ====================================================================================
@@ -161,17 +501,14 @@ localEntity_t *CG_SmokePuff_ql( const vec3_t p, const vec3_t vel,
 				   int leFlags,
 				   qhandle_t hShader )
 {
-	//static int	seed = 0x92;
 	localEntity_t	*le;
 	refEntity_t		*re;
-//	int fadeInTime = startTime + duration / 2;
 
 	le = CG_AllocLocalEntity();
 	le->leFlags = leFlags;
 	le->radius = radius;
 
 	re = &le->refEntity;
-	//re->rotation = Q_random( &seed ) * 360;
 	re->radius = radius;
 	re->shaderTime = startTime / 1000.0f;
 
@@ -219,7 +556,7 @@ localEntity_t *CG_SmokePuff_ql( const vec3_t p, const vec3_t vel,
 	return le;
 }
 
-void CG_BloodTrail_ql( localEntity_t *le ) {
+static void CG_BloodTrail_ql( const localEntity_t *le ) {
 	int		t;
 	int		t2;
 	int		step;
@@ -228,22 +565,10 @@ void CG_BloodTrail_ql( localEntity_t *le ) {
 	qhandle_t	shader;
 	float radius;
 	int i;
-	//vec3_t normal;
 	vec4_t color;
 
-	//shader = cgs.media.plasmaBallShader;
-	//shader = trap_R_RegisterShader("models/gibs/gibs");
-	//shader = trap_R_RegisterShaderNoMip("models/gibs/gibs");
-	//shader = trap_R_RegisterShader("gibspark");
-
 	shader = trap_R_RegisterShader("xgibs");
-	//shader = trap_R_RegisterShader("flareShader");
-	//shader = trap_R_RegisterShader("bloodExplosion");
-	//shader = trap_R_RegisterShader("textures/sfx/specular5.jpg");
-	//shader = trap_R_RegisterShader("viewBloodBlend");
-	//shader = trap_R_RegisterShader("gfx/damage/blood_screen.png");
-	//shader = trap_R_RegisterShader("gfx/misc/flare.tga");
-	//shader = trap_R_RegisterShader("gfx/misc/tracer2.jpg");
+
 	if (!*cg_gibSparksColor.string) {
 		shader = trap_R_RegisterShader("gfx/misc/tracer");
 		Vector4Set(color, 1, 1, 1, 1);
@@ -253,15 +578,14 @@ void CG_BloodTrail_ql( localEntity_t *le ) {
 		} else {
 			shader = trap_R_RegisterShader("wc/tracer");
 		}
-		SC_Vec3ColorFromCvar(color, cg_gibSparksColor);
+		SC_Vec3ColorFromCvar(color, &cg_gibSparksColor);
 		color[3] = 1.0;
 	}
 
 
-	//radius = 2;  //20; //0.25;  //0.5;  //100;  //2;
 	radius = cg_gibSparksSize.value;
 
-	step = cg_gibStepTime.integer;  //150;  //100;  //25;  //500;  //150;
+	step = cg_gibStepTime.integer;
 	t = step * ( (cg.time - cg.frametime + step ) / step );
 	t2 = step * ( cg.time / step );
 
@@ -273,7 +597,6 @@ void CG_BloodTrail_ql( localEntity_t *le ) {
 		BG_EvaluateTrajectory( &le->pos, t, newOrigin );
 
 		//Com_Printf("trail t %d\n", t);
-#if 1
 		blood = CG_SmokePuff_ql( newOrigin, vec3_origin,
 					  radius,		// radius
 					  //0, 1, 0, 0.01,	// color
@@ -299,25 +622,12 @@ void CG_BloodTrail_ql( localEntity_t *le ) {
 		VectorCopy( newOrigin, blood->refEntity.origin );
 		VectorCopy( newOrigin, blood->refEntity.oldorigin );
 		AxisCopy( axisDefault, blood->refEntity.axis );
-		//trap_R_AddLightToScene(newOrigin, 1000.0, 0.0, 1.0, 0.0);
 		blood->refEntity.rotation = 0;
-#if 0
-		blood->refEntity.radius = radius;
-		blood->refEntity.shaderRGBA[0] = 0;
-		blood->refEntity.shaderRGBA[1] = 255;
-		blood->refEntity.shaderRGBA[2] = 0;
-		blood->refEntity.shaderRGBA[3] = 255;
-#endif
-#endif
-		//AxisCopy( axisDefault, axis );
-		//FIXME
-		//VectorSet(normal, 0, 0, 1);
-		//CG_ImpactMark(shader, newOrigin, normal, random()*360, 1, 1, 1, 1, qfalse, radius, qfalse, qfalse, qfalse);
 		}
 	}
 }
 
-void CG_BloodTrail( localEntity_t *le ) {
+static void CG_BloodTrail( const localEntity_t *le ) {
 	int		t;
 	int		t2;
 	int		step;
@@ -359,7 +669,7 @@ void CG_BloodTrail( localEntity_t *le ) {
 	}
 }
 
-void CG_IceTrail( localEntity_t *le ) {
+static void CG_IceTrail( const localEntity_t *le ) {
 	int		t;
 	int		t2;
 	int		step;
@@ -401,7 +711,7 @@ void CG_IceTrail( localEntity_t *le ) {
 CG_FragmentBounceMark
 ================
 */
-void CG_FragmentBounceMark( localEntity_t *le, trace_t *trace ) {
+static void CG_FragmentBounceMark( localEntity_t *le, const trace_t *trace ) {
 	int			radius;
 	qhandle_t	shader;
 
@@ -443,7 +753,7 @@ void CG_FragmentBounceMark( localEntity_t *le, trace_t *trace ) {
 CG_FragmentBounceSound
 ================
 */
-void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
+static void CG_FragmentBounceSound( localEntity_t *le, const trace_t *trace ) {
 	if ( le->leBounceSoundType == LEBS_BLOOD ) {
 		// half the gibs will make splat sounds
 		if ( rand() & 1 ) {
@@ -488,22 +798,22 @@ void CG_FragmentBounceSound( localEntity_t *le, trace_t *trace ) {
 CG_ReflectVelocity
 ================
 */
-void CG_ReflectVelocity( localEntity_t *le, trace_t *trace ) {
+static void CG_ReflectVelocity( localEntity_t *le, const trace_t *trace ) {
 	vec3_t	velocity;
-	float	dot;
+	//float	dot;
 	int		hitTime;
 
-	// reflect the velocity on the trace plane
 	hitTime = cg.time - cg.frametime + cg.frametime * trace->fraction;
 	BG_EvaluateTrajectoryDelta( &le->pos, hitTime, velocity );
-	dot = DotProduct( velocity, trace->plane.normal );
-	VectorMA( velocity, -2*dot, trace->plane.normal, le->pos.trDelta );
+
+	// reflect the velocity on the trace plane
+
+	VectorReflect(velocity, trace->plane.normal, le->pos.trDelta);
 
 	VectorScale( le->pos.trDelta, le->bounceFactor, le->pos.trDelta );
 
 	VectorCopy( trace->endpos, le->pos.trBase );
 	le->pos.trTime = cg.time;
-
 
 	// check for stop, making sure that even on low FPS systems it doesn't bobble
 	if ( trace->allsolid ||
@@ -520,10 +830,10 @@ void CG_ReflectVelocity( localEntity_t *le, trace_t *trace ) {
 CG_AddFragment
 ================
 */
-void CG_AddFragment( localEntity_t *le ) {
+static void CG_AddFragment( localEntity_t *le ) {
 	vec3_t	newOrigin;
 	trace_t	trace;
-	refEntity_t *re;
+	const refEntity_t *re;
 
 	re = &le->refEntity;
 
@@ -557,13 +867,27 @@ void CG_AddFragment( localEntity_t *le ) {
 		case RT_SPRITE:
 		case RT_SPRITE_FIXED:
 			if (fabs(newZ - oldZ) > re->radius) {
-				CG_FreeLocalEntity(le);
+				//Lock_EntList();
+				//CG_FreeLocalEntity(le);
+				//Unlock_EntList();
+				// already called trap_R_AddRefEntityPtrToScene()
+				le->endTime = 0;
+				//le->startTime = -1;
+				le->fxType = 0;
+				//le->leFlags = LEF_ALREADY_ADDED_FX;
 			}
 			break;
 		case RT_MODEL:
 			trap_R_ModelBounds(re->hModel, mins, maxs);
 			if (fabs(newZ - oldZ) > ((float)maxs[2] * re->radius)) {
-				CG_FreeLocalEntity(le);
+				//Lock_EntList();
+				//CG_FreeLocalEntity(le);
+				//Unlock_EntList();
+				// already called trap_R_AddRefEntityPtrToScene()
+				le->endTime = 0;
+				//le->startTime = -2;
+				le->fxType = 0;
+				//le->leFlags = LEF_ALREADY_ADDED_FX;
 			}
 			break;
 		default:
@@ -608,7 +932,9 @@ void CG_AddFragment( localEntity_t *le ) {
 	// this keeps gibs from waiting at the bottom of pits of death
 	// and floating levels
 	if ( CG_PointContents( trace.endpos, 0 ) & CONTENTS_NODROP ) {
+		Lock_EntList();
 		CG_FreeLocalEntity( le );
+		Unlock_EntList();
 		return;
 	}
 
@@ -620,7 +946,9 @@ void CG_AddFragment( localEntity_t *le ) {
 #ifndef Q3_VM
 		//__asm__("int3");
 #endif
+		Lock_EntList();
 		CG_FreeLocalEntity(le);
+		Unlock_EntList();
 		//trap_R_AddRefEntityToScene(&le->refEntity);
 		//trap_Cvar_Set("cl_freezedemo", "1");
 		return;
@@ -652,7 +980,7 @@ These only do simple scaling or modulation before passing to the renderer
 CG_AddFadeRGB
 ====================
 */
-void CG_AddFadeRGB( localEntity_t *le ) {
+static void CG_AddFadeRGB( localEntity_t *le ) {
 	refEntity_t *re;
 	float c;
 	double ourTime;
@@ -713,7 +1041,9 @@ static void CG_AddMoveScaleFade( localEntity_t *le ) {
 	if ( len < le->radius  &&  !cg_allowLargeSprites.integer) {
 		//Com_Printf("view in sprite\n");
 		if (!cg_allowSpritePassThrough.integer) {
+			Lock_EntList();
 			CG_FreeLocalEntity( le );
+			Unlock_EntList();
 		}
 		return;
 	}
@@ -751,7 +1081,9 @@ static void CG_AddScaleFade( localEntity_t *le ) {
 	len = VectorLength( delta );
 	if ( len < le->radius  &&  !cg_allowLargeSprites.integer) {
 		if (!cg_allowSpritePassThrough.integer) {
+			Lock_EntList();
 			CG_FreeLocalEntity( le );
+			Unlock_EntList();
 		}
 		return;
 	}
@@ -799,7 +1131,9 @@ static void CG_AddFallScaleFade( localEntity_t *le ) {
 	len = VectorLength( delta );
 	if ( len < le->radius  &&  !cg_allowLargeSprites.integer) {
 		if (!cg_allowSpritePassThrough.integer) {
+			Lock_EntList();
 			CG_FreeLocalEntity( le );
+			Unlock_EntList();
 		}
 		return;
 	}
@@ -814,8 +1148,8 @@ static void CG_AddFallScaleFade( localEntity_t *le ) {
 CG_AddExplosion
 ================
 */
-static void CG_AddExplosion( localEntity_t *ex ) {
-	refEntity_t	*ent;
+static void CG_AddExplosion( const localEntity_t *ex ) {
+	const refEntity_t	*ent;
 
 	ent = &ex->refEntity;
 
@@ -843,7 +1177,7 @@ CG_AddSpriteExplosion
 ================
 */
 static void CG_AddSpriteExplosion( localEntity_t *le ) {
-	refEntity_t	re;
+	refEntity_t	re;  //FIXME why a copy?
 	float c;
 
 	re = le->refEntity;
@@ -885,7 +1219,7 @@ static void CG_AddSpriteExplosion( localEntity_t *le ) {
 CG_AddKamikaze
 ====================
 */
-void CG_AddKamikaze( localEntity_t *le ) {
+static void CG_AddKamikaze( localEntity_t *le ) {
 	refEntity_t	*re;
 	refEntity_t shockwave;
 	float		c;
@@ -933,7 +1267,7 @@ void CG_AddKamikaze( localEntity_t *le ) {
 		shockwave.shaderRGBA[2] = 0xff - c;
 		shockwave.shaderRGBA[3] = 0xff - c;
 
-		trap_R_AddRefEntityToScene( &shockwave );
+		CG_AddRefEntity(&shockwave);
 	}
 
 	if (tf > (double)KAMI_EXPLODE_STARTTIME && tf < (double)KAMI_IMPLODE_ENDTIME) {
@@ -961,7 +1295,7 @@ void CG_AddKamikaze( localEntity_t *le ) {
 		VectorScale( axis[2], c * KAMI_BOOMSPHERE_MAXRADIUS / KAMI_BOOMSPHEREMODEL_RADIUS, re->axis[2] );
 		re->nonNormalizedAxes = qtrue;
 
-		trap_R_AddRefEntityToScene( re );
+		CG_AddRefEntity(re);
 		// add the dlight
 		trap_R_AddLightToScene( re->origin, c * 1000.0, 1.0, 1.0, c );
 	}
@@ -1007,7 +1341,7 @@ void CG_AddKamikaze( localEntity_t *le ) {
 		shockwave.shaderRGBA[2] = 0xff - c;
 		shockwave.shaderRGBA[3] = 0xff - c;
 
-		trap_R_AddRefEntityToScene( &shockwave );
+		CG_AddRefEntity(&shockwave);
 	}
 }
 
@@ -1016,7 +1350,7 @@ void CG_AddKamikaze( localEntity_t *le ) {
 CG_AddInvulnerabilityImpact
 ===================
 */
-void CG_AddInvulnerabilityImpact( localEntity_t *le ) {
+static void CG_AddInvulnerabilityImpact( const localEntity_t *le ) {
 	trap_R_AddRefEntityToScene( &le->refEntity );
 }
 
@@ -1025,7 +1359,7 @@ void CG_AddInvulnerabilityImpact( localEntity_t *le ) {
 CG_AddInvulnerabilityJuiced
 ===================
 */
-void CG_AddInvulnerabilityJuiced( localEntity_t *le ) {
+static void CG_AddInvulnerabilityJuiced( localEntity_t *le ) {
 	//int t;
 	double tf;
 	centity_t cent;
@@ -1057,10 +1391,10 @@ void CG_AddInvulnerabilityJuiced( localEntity_t *le ) {
 
 /*
 ===================
-CG_AddRefEntity
+CG_AddLocalRefEntity
 ===================
 */
-void CG_AddRefEntity( localEntity_t *le ) {
+static void CG_AddLocalRefEntity( localEntity_t *le ) {
 	double ourTime;
 
 	if (le->leFlags & LEF_REAL_TIME) {
@@ -1072,7 +1406,9 @@ void CG_AddRefEntity( localEntity_t *le ) {
 	//FIXME wc  huh????
 	//if (le->endTime < ourTime) {
 	if (le->endTime > ourTime) {
+		Lock_EntList();
 		CG_FreeLocalEntity( le );
+		Unlock_EntList();
 		return;
 	}
 	trap_R_AddRefEntityToScene( &le->refEntity );
@@ -1086,7 +1422,7 @@ CG_AddScorePlum
 */
 #define NUMBER_SIZE		8
 
-void CG_AddScorePlum( localEntity_t *le ) {
+static void CG_AddScorePlum( localEntity_t *le ) {
 	refEntity_t	*re;
 	vec3_t		origin, delta, dir, vec, up = {0, 0, 1};
 	float		c, len;
@@ -1139,7 +1475,9 @@ void CG_AddScorePlum( localEntity_t *le ) {
 	len = VectorLength( delta );
 	if ( len < 20  &&  !cg_allowLargeSprites.integer) {
 		if (!cg_allowSpritePassThrough.integer) {
+			Lock_EntList();
 			CG_FreeLocalEntity( le );
+			Unlock_EntList();
 		}
 		return;
 	}
@@ -1163,10 +1501,116 @@ void CG_AddScorePlum( localEntity_t *le ) {
 	for (i = 0; i < numdigits; i++) {
 		VectorMA(origin, (float) (((float) numdigits / 2) - i) * NUMBER_SIZE, vec, re->origin);
 		re->customShader = cgs.media.numberShaders[digits[numdigits-1-i]];
-		trap_R_AddRefEntityToScene( re );
+		CG_AddRefEntity(re);
 	}
 }
 
+/*
+===================
+CG_AddHeadShotPlum
+===================
+*/
+static void CG_AddHeadShotPlum( localEntity_t *le ) {
+	refEntity_t	*re;
+	vec3_t		origin, delta, dir, vec, up = {0, 0, 1};
+	float		c, len;
+	float r;
+
+	re = &le->refEntity;
+
+	c = ( le->endTime - cg.ftime ) * le->lifeRate;
+
+	re->shaderRGBA[0] = 0xff;
+	re->shaderRGBA[1] = 0xff;
+	re->shaderRGBA[2] = 0xff;
+	re->shaderRGBA[3] = 0xff;
+
+	r = 32.0;
+	re->radius = r - (r * c);
+
+	VectorCopy(le->pos.trBase, origin);
+	origin[2] += 110 - c * 100;
+
+	VectorSubtract(cg.refdef.vieworg, origin, dir);
+	CrossProduct(dir, up, vec);
+	VectorNormalize(vec);
+
+	VectorMA(origin, -10 + 20 * sin(c * 2 * M_PI), vec, origin);
+
+	// if the view would be "inside" the sprite, kill the sprite
+	// so it doesn't add too much overdraw
+	VectorSubtract( origin, cg.refdef.vieworg, delta );
+	len = VectorLength( delta );
+	if ( len < 20  &&  !cg_allowLargeSprites.integer) {
+		if (!cg_allowSpritePassThrough.integer) {
+			Lock_EntList();
+			CG_FreeLocalEntity( le );
+			Unlock_EntList();
+		}
+		return;
+	}
+
+	re->customShader = cgs.media.headShotIcon;
+	VectorCopy(origin, re->origin);
+
+	trap_R_AddRefEntityToScene(re);
+}
+
+void CG_RunFxAll (const char *name)
+{
+	localEntity_t *le, *next;
+	int i;
+	const char *fx;
+
+	fx = NULL;
+	for (i = 0;  i < EffectScripts.numEffects;  i++) {
+		if (!Q_stricmp(name, EffectScripts.names[i])) {
+			//CG_RunQ3mmeScript(EffectScripts.ptr[i], NULL);
+			fx = EffectScripts.ptr[i];
+			break;
+		}
+	}
+
+	if (!fx) {
+		Com_Printf("couldn't find fx '%s'\n", name);
+		return;
+	}
+
+	Lock_EntList();
+
+	le = cg_activeLocalEntities.prev;
+	for ( ;  le != &cg_activeLocalEntities;  le = next) {
+		next = le->prev;
+
+		if (!le->fxType) {
+			continue;
+		}
+		CG_GetStoredScriptVarsFromLE(le);
+
+		CG_RunQ3mmeScript(fx, NULL);
+
+		//CG_CopyStoredScriptVarsToLE(le);
+		memcpy(&le->sv, &ScriptVars, sizeof(ScriptVars_t));
+		//VectorCopy(ScriptVars.origin, re->origin);
+		//VectorCopy(ScriptVars.origin, le->pos.trBase);
+	}
+
+	Unlock_EntList();
+}
+
+static qboolean IsFxModel (int reType)
+{
+	switch (reType) {
+	case RT_MODEL_FX_DIR:
+	case RT_MODEL_FX_ANGLES:
+	case RT_MODEL_FX_AXIS:
+		return qtrue;
+		break;
+	default:
+		return qfalse;
+		break;
+	}
+}
 
 static void CG_Add_FX_Emitted (localEntity_t *le)
 {
@@ -1185,43 +1629,18 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 	//int hitTime;
 	float ratio;
 
-#if 0
-	if (1) {  //(rand() % 100 != 0) {
-		trap_R_AddRefEntityToScene(&le->refEntity);
-		return;
-	}
-#endif
-
-#if 0
-	re = &le->refEntity;
-	//len = Distance(cg.refdef.vieworg, ScriptVars.origin);
-	len = Distance(cg.refdef.vieworg, re->origin);
-	if (len > 500) {
-		//return;
-	}
-
-	if (re->reType == RT_SPRITE  ||  re->reType == RT_SPRITE_FIXED  ||  re->reType == RT_SPARK) {
-		ratio = re->radius / len;
-		if (ratio < cg_fxratio.value) {  //0.002) {
-			Com_Printf("1 returning\n");
-			trap_R_AddRefEntityToScene(re);
-			return;
-		}
-	}
-#endif
-
-	//Com_Printf("%f fx %p\n", cg.ftime, le);
 
 	CG_GetStoredScriptVarsFromLE(le);
-	//Com_Printf("%f fx %p gravity %d\n", cg.ftime, le, ScriptVars.hasMoveGravity);
 
-#if 1
+	// testing
+	//trap_R_AddRefEntityPtrToScene(&le->refEntity);
+	//return;
+
 	if (cg.renderingThirdPerson  ||  cg.freecam) {
 		ScriptVars.inEyes = qfalse;
 	} else {
 		ScriptVars.inEyes = CG_IsUs(&cgs.clientinfo[ScriptVars.clientNum]);
 	}
-#endif
 
 	ScriptVars.lerp = (cg.ftime - le->startTime) / (le->endTime - le->startTime);
 	if (ScriptVars.lerp >= 1.0) {
@@ -1230,17 +1649,21 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 
 	re = &le->refEntity;
 
-	//FIXME before or after running script?  If before can do distance and impact
-	//FIXME other move, check for velocity?
-
-#if 0
-	if (le->pos.trType == TR_STATIONARY) {
-		re->customShader = cgs.media.connectionShader;
+#if 0  //FIXME maybe?
+	if (IsFxModel(re->reType)  &&  VectorNormalize2(ScriptVars.velocity, re->axis[0]) == 0) {
+		//Com_Printf("^3yes... model\n");
+		re->axis[0][2] = 1;
 	}
 #endif
 
+	if (IsFxModel(re->reType)) {
+		re->skinNum = cg.clientFrame & 1;  //FIXME changeable from scripts?
+	}
+
+	//FIXME before or after running script?  If before can do distance and impact
+	//FIXME other move, check for velocity?
+
 	if (ScriptVars.hasSink  &&  le->pos.trType == TR_STATIONARY) {
-		//int t;
 		double tf;
 		float oldZ;
 		float newZ;
@@ -1250,7 +1673,6 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		// assuming sink1 is removal time as percent of total time
 		// assuming sink2 is sink velocity
 		sinkTime = (1.0 - ScriptVars.sink1) * (le->endTime - le->startTime);
-		//t = le->endTime - cg.ftime;
 		tf = le->endTime - cg.ftime;
 
 		if (tf < sinkTime  &&  sinkTime != 0.0) {
@@ -1259,12 +1681,12 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			oldZ = re->origin[2];
 			re->origin[2] -= ScriptVars.sink2 * (1.0 - (float)tf / sinkTime);
 			newZ = re->origin[2];
-			trap_R_AddRefEntityToScene(re);
+			trap_R_AddRefEntityPtrToScene(re);
 			re->origin[2] = oldZ;
 		} else {
 			oldZ = re->origin[2];
 			newZ = re->origin[2];
-			trap_R_AddRefEntityToScene(re);
+			trap_R_AddRefEntityPtrToScene(re);
 		}
 
 		switch (re->reType) {
@@ -1272,20 +1694,35 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		case RT_SPRITE:
 		case RT_SPRITE_FIXED:
 			if (fabs(newZ - oldZ) > re->radius) {
-				CG_FreeLocalEntity(le);
+				//Lock_EntList();
+				//CG_FreeLocalEntity(le);
+				//Unlock_EntList();
+				// already called trap_R_AddRefEntityPtrToScene()
+				le->endTime = 0;
+				//le->startTime = -3;
+				le->fxType = 0;
+				//le->leFlags = LEF_ALREADY_ADDED_FX;
 			}
 			break;
 		case RT_MODEL:
 			trap_R_ModelBounds(re->hModel, mins, maxs);
 			if (fabs(newZ - oldZ) > ((float)maxs[2] * re->radius)) {
 				//Com_Printf("free model\n");
-				CG_FreeLocalEntity(le);
+				//Lock_EntList();
+				//CG_FreeLocalEntity(le);
+				//Unlock_EntList();
+				// already called trap_R_AddRefEntityPtrToScene()
+				le->endTime = 0;
+				//le->startTime = -4;
+				le->fxType = 0;
+				//le->leFlags = LEF_ALREADY_ADDED_FX;
 			}
 			break;
 		default:
 			break;
 		}
 
+		//Com_Printf("sink...\n");
 		return;  //FIXME run script?
 
 	} else if (ScriptVars.hasMoveBounce  ||  ScriptVars.hasMoveGravity) {
@@ -1318,16 +1755,37 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		}
 
 		//Com_Printf("vl %f distance %f time %f distance from orig %f\n", VectorLength(ScriptVars.velocity), Distance(ScriptVars.origin, newOrigin), deltaTime, Distance(le->pos.trBase, newOrigin));
+
+#if 0  // no..  fast moving emitter can go through something and both start and end in non solid
+		//Com_Printf("distance %f\n", Distance(re->origin, newOrigin));
+
+		if (CG_PointContents(newOrigin, 0) & CONTENTS_SOLID) {
+
+			CG_Trace(&trace, re->origin, NULL, NULL, newOrigin, -1, CONTENTS_SOLID);
+		} else {
+			VectorCopy(newOrigin, trace.endpos);
+			trace.fraction = 1.0;
+		}
+
+#else
+
 		CG_Trace(&trace, re->origin, NULL, NULL, newOrigin, -1, CONTENTS_SOLID);
+
+#endif
+
 		if (trace.fraction != 1.0) {
 			if (CG_PointContents(trace.endpos, 0) & CONTENTS_NODROP) {
 				//Com_Printf("freeing entity: nodrop\n");
+				Lock_EntList();
 				CG_FreeLocalEntity(le);
+				Unlock_EntList();
 				return;
 			}
 			if (trace.surfaceFlags & SURF_NOIMPACT) {
 				//Com_Printf("freeing entity: noimpact\n");
+				Lock_EntList();
 				CG_FreeLocalEntity(le);
+				Unlock_EntList();
 				return;
 			}
 			VectorCopy(trace.endpos, newOrigin);
@@ -1354,12 +1812,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 				ScriptVars.impacted = qtrue;
 				le->sv.impacted = qtrue;
 				// check for stop
-#if 0
-				if (trace.allsolid  ||  (trace.plane.normal[2] > 0  &&  (ScriptVars.velocity[2] < 40  ||  ScriptVars.velocity[2] < -cg.frametime * ScriptVars.velocity[2]))) {
-					le->pos.trType = TR_STATIONARY;
-					//re->customShader = cgs.media.connectionShader;
-				}
-#endif
+
 				//if (trace.allsolid  ||  (trace.plane.normal[2] > 0  &&  ScriptVars.velocity[2] < 40)) {
 				if (VectorLength(ScriptVars.velocity) < 20) {
 					le->pos.trType = TR_STATIONARY;
@@ -1367,7 +1820,9 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 				}
 			} else {
 				//Com_Printf("freeing local ent\n");
+				Lock_EntList();
 				CG_FreeLocalEntity(le);
+				Unlock_EntList();
 				return;
 			}
 		} else {
@@ -1382,18 +1837,11 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		//ScriptVars.distance = 0;  //FIXME testing
 		VectorCopy(newOrigin, ScriptVars.origin);
 
-		//Com_Printf("moving\n");
+		//Com_Printf("moving %f %f %f\n", ScriptVars.origin[0], ScriptVars.origin[1], ScriptVars.origin[2]);
 		//FIXME trace, stop, gravity, bounce, distance
 	}
 
-#if 0
-	{
-		char buffer[4192];
-		memcpy(buffer, le->emitterScript, le->emitterScriptEnd - le->emitterScript);
-		buffer[le->emitterScriptEnd - le->emitterScript] = '\0';
-		Com_Printf("emitter script: '%s'\n", buffer);
-	}
-#endif
+	//trap_R_AddRefEntityPtrToScene(&le->refEntity);
 
 	len = Distance(cg.refdef.vieworg, ScriptVars.origin);
 	if (len > 500) {
@@ -1411,7 +1859,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		ratio = re->radius / len;
 		if (ratio < cg_fxratio.value) {  //0.002) {
 			//Com_Printf("returning\n");
-			trap_R_AddRefEntityToScene(re);
+			trap_R_AddRefEntityPtrToScene(re);
 			return;
 		}
 	}
@@ -1421,12 +1869,29 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		DistanceScript = qfalse;  //qtrue;  //FIXME hack
 		EmitterScript = qtrue;
 		//Com_Printf("script: %s\n", le->emitterScript);
+#if 0
+		if (1) {  //(re->reType == RT_SPRITE) {
+				//Com_Printf("script: %s\n", le->emitterScript);
+			Com_Printf("^4script: (%f) '", ScriptVars.size);
+			Q_PrintSubString(le->emitterScript, le->emitterScriptEnd);
+			Com_Printf("'\n");
+		}
+#endif
+        //Com_Printf("radius: %f\n", re->radius);
 		CG_RunQ3mmeScript(le->emitterScript, le->emitterScriptEnd);
 		EmitterScript = qfalse;
 		DistanceScript = qfalse;
 		le->lastRunTime = cg.ftime;
-		//memcpy(&ScriptVars, &EmitterScriptVars, sizeof(ScriptVars_t));  //FIXME testing -- take out ScriptVars.* from below
-		VectorCopy(EmitterScriptVars.origin, re->origin);
+
+		//FIXME this is fucked up since emitter scripts can change origin
+		//FIXME move* has to be a command...  fix
+		if (ScriptVars.hasMoveBounce  ||  ScriptVars.hasMoveGravity) {
+			VectorCopy(newOrigin, re->origin);
+		} else {
+			//no.... use re->origin
+			// jujy
+			VectorCopy(ScriptVars.origin, re->origin);
+		}
 		//FIXME size?
 		//VectorCopy(ScriptVars.origin, le->pos.trBase);
 	} else {
@@ -1437,46 +1902,53 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			// use re->origin
 		}
 		//Com_Printf("width %f\n", re->width);
-		trap_R_AddRefEntityToScene(re);
+		trap_R_AddRefEntityPtrToScene(re);
 		return;
 	}
 
 
 	//Com_Printf("shader: '%s'\n", ScriptVars.shader);
-	//FIXME check shaderTime
+	if (ScriptVars.hasShaderTime) {
+		re->shaderTime = ScriptVars.shaderTime;
+	}
+
 	//FIXME *scale *fade and move properties
 
 	// kill sprite if view inside
 	if (re->reType == RT_SPRITE  ||  re->reType == RT_SPRITE_FIXED  ||  re->reType == RT_SPARK) {
 		VectorSubtract(re->origin, cg.refdef.vieworg, delta);
 		len = VectorLength(delta);
-		if (len < EmitterScriptVars.size) {
+		if (len < ScriptVars.size) {
 			// don't free just skip
+			//Lock_EntList();
 			//CG_FreeLocalEntity(le);
+			//Unlock_EntList();
 			//return;
 		}
 	}
 
 	if (ScriptVars.hasAlphaFade) {
-		totalFade = 1.0 - EmitterScriptVars.alphaFade;
-		lf = 1 - totalFade * EmitterScriptVars.lerp;
+		totalFade = 1.0 - ScriptVars.alphaFade;
+		lf = 1 - totalFade * ScriptVars.lerp;
 
-		EmitterScriptVars.color[3] *= lf;
+		ScriptVars.color[3] *= lf;
 	}
-	if (EmitterScriptVars.hasColorFade) {
-		totalFade = 1.0 - EmitterScriptVars.colorFade;
-		lf = 1 - totalFade * EmitterScriptVars.lerp;
 
-		EmitterScriptVars.color[0] *= lf;
-		EmitterScriptVars.color[1] *= lf;
-		EmitterScriptVars.color[2] *= lf;
+	if (ScriptVars.hasColorFade) {
+		totalFade = 1.0 - ScriptVars.colorFade;
+		lf = 1.0 - totalFade * ScriptVars.lerp;
+
+		//Com_Printf("lf %f\n", lf);
+		ScriptVars.color[0] *= lf;
+		ScriptVars.color[1] *= lf;
+		ScriptVars.color[2] *= lf;
 	}
-	re->shaderRGBA[0] = 255 * EmitterScriptVars.color[0];
-	re->shaderRGBA[1] = 255 * EmitterScriptVars.color[1];
-	re->shaderRGBA[2] = 255 * EmitterScriptVars.color[2];
-	re->shaderRGBA[3] = 255 * EmitterScriptVars.color[3];
+	re->shaderRGBA[0] = 255 * ScriptVars.color[0];
+	re->shaderRGBA[1] = 255 * ScriptVars.color[1];
+	re->shaderRGBA[2] = 255 * ScriptVars.color[2];
+	re->shaderRGBA[3] = 255 * ScriptVars.color[3];
 	//Com_Printf("shader: '%d'\n", re->customShader);
-	if (*EmitterScriptVars.shader) {
+	if (*ScriptVars.shader) {
 		//Com_Printf("loading shader '%s'\n", ScriptVars.shader);
 		//re->customShader = trap_R_RegisterShader(ScriptVars.shader);
 	} else {
@@ -1485,40 +1957,108 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 	//re->customShader = 0;
 
 	if (re->reType == RT_SPRITE  ||  re->reType == RT_SPRITE_FIXED  ||  re->reType == RT_SPARK) {
-		if (re->reType == RT_SPARK) {  //(EmitterScriptVars.width) {
-			VectorCopy(EmitterScriptVars.velocity, re->oldorigin);
-			re->width = EmitterScriptVars.width;
+		if (re->reType == RT_SPARK) {  //(ScriptVars.width) {
+			VectorCopy(ScriptVars.velocity, re->oldorigin);
+			re->width = ScriptVars.width;
 		} else if (re->reType == RT_SPRITE_FIXED) {
-			VectorCopy(EmitterScriptVars.dir, re->oldorigin);
+			VectorCopy(ScriptVars.dir, re->oldorigin);
 			re->width = 0;
 		}
+	} else if (re->reType == RT_BEAM_Q3MME) {  //  ||  re->reType == RT_RAIL_RINGS_Q3MME) {
+		VectorCopy(ScriptVars.dir, re->oldorigin);
+		//VectorCopy(ScriptVars.dir, re->oldorigin);
+	} else if (re->reType == RT_RAIL_RINGS_Q3MME) {
+		//VectorCopy(ScriptVars.end, re->oldorigin);
+		VectorCopy(ScriptVars.dir, re->oldorigin);
 	}
 
-	re->radius = EmitterScriptVars.size;
+	re->radius = ScriptVars.size;
 	//Com_Printf("size %f\n", re->radius);
 	//FIXME hack
 	if (re->reType == RT_RAIL_RINGS_Q3MME) {
-		re->rotation = EmitterScriptVars.width;
+		re->rotation = ScriptVars.width;
 	} else {
-		re->rotation = EmitterScriptVars.rotate;
+		re->rotation = ScriptVars.rotate;
 		//FIXME check
-		//re->rotation = EmitterScriptVars.angle;
+		//re->rotation = ScriptVars.angle;
 	}
 	//Com_Printf("rotation %f\n", re->rotation);
 	//FIXME add velocity or not?
 	//VectorCopy(ScriptVars.velocity, le->pos.trDelta);
 
+	//FIXME for models:
+
+#if 0  //FIXME maybe?
+	if (IsFxModel(re->reType)  &&  VectorNormalize2(ScriptVars.velocity, re->axis[0]) == 0) {
+		Com_Printf("^3yes2... model\n");
+		re->axis[0][2] = 1;
+	}
+#endif
+
+#if 0
+	//FIXME duplicate code... no, sort of
+	if (re->reType == RT_MODEL_FX_DIR  ||  re->reType == RT_MODEL_FX_ANGLES) {
+		vec3_t ang;
+
+		//if (VectorLength(ScriptVars.velocity)) {
+		if (VectorLength(le->sv.velocity)) {
+			if (re->reType == RT_MODEL_FX_DIR) {
+				vectoangles(ScriptVars.dir, ang);
+				AnglesToAxis(ang, re->axis);
+			} else if (re->reType == RT_MODEL_FX_ANGLES) {
+				AnglesToAxis(ScriptVars.angles, re->axis);
+				//Com_Printf("angles to axis\n");
+			}
+		} else {  // hack to match behavior of dirModel and anglesModel
+			if (!VectorLength(ScriptVars.angles)) {
+				vectoangles(ScriptVars.dir, ang);
+				AnglesToAxis(ang, re->axis);
+			} else {
+				// hack for lg impact beam
+				AnglesToAxis(ScriptVars.angles, re->axis);
+			}
+		}
+	}
+#endif
+
+#if 0
+	if (IsFxModel(re->reType)) {
+		if (re->rotation) {
+			//FIXME duplicate code
+			//FIXME stationary check
+			Com_Printf("rotation: %f\n", re->rotation);
+			RotateAroundDirection(re->axis, re->rotation);
+		}
+
+#if 0
+		if (1) {  //(re->radius != 1) {
+			VectorScale(re->axis[0], re->radius, re->axis[0]);
+			VectorScale(re->axis[1], re->radius, re->axis[1]);
+			VectorScale(re->axis[2], re->radius, re->axis[2]);
+			re->nonNormalizedAxes = qtrue;
+        } else {
+			//re->nonNormalizedAxes = qfalse;
+		}
+#endif
+	}
+#endif
+
+	//FIXME save origin here for non-move types?
+
 	// use ScriptVars incase it was reset by script system
 	le->sv.distance = ScriptVars.distance;
 	le->sv.impacted = ScriptVars.impacted;
-	//VectorCopy(EmitterScriptVars.origin, le->sv.origin);
+	//VectorCopy(ScriptVars.origin, le->sv.origin);
 	VectorCopy(ScriptVars.lastIntervalPosition, le->sv.lastIntervalPosition);
 	le->sv.lastIntervalTime = ScriptVars.lastIntervalTime;
 	VectorCopy(ScriptVars.lastDistancePosition, le->sv.lastDistancePosition);
 	le->sv.lastDistanceTime = ScriptVars.lastDistanceTime;
 	//FIXME distance and radius culling
 
-	trap_R_AddRefEntityToScene(re);
+	//Com_Printf("origin: %f %f %f\n", re->origin[0], re->origin[1], re->origin[2]);
+    //Com_Printf("adding sprite SV %f  radius %f\n", ScriptVars.size, re->radius);
+
+	trap_R_AddRefEntityPtrToScene(re);
 }
 
 static void CG_Run_FX_Emitted_Script (localEntity_t *le)
@@ -1560,6 +2100,12 @@ static void CG_Add_FX_Emitted_Light (localEntity_t *le)
 	}
 
 	//return;
+
+#if 0
+	Com_Printf("^3light script: (%f) '", ScriptVars.size);
+	Q_PrintSubString(le->emitterScript, le->emitterScriptEnd);
+	Com_Printf("'\n");
+#endif
 
 	if (cg.ftime != le->lastRunTime) {
 		EmitterScript = qtrue;
@@ -1625,33 +2171,102 @@ static void CG_Add_FX_Emitted_LoopSound (localEntity_t *le)
 	}
 	lsound = trap_S_RegisterSound(ScriptVars.loopSound, qfalse);
 	if (lsound) {
-		//trap_S_AddLoopingSound(ScriptVars.entNumber, ScriptVars.origin, ScriptVars.velocity, lsound);
-		//FIXME 1021 hack
-		trap_S_AddLoopingSound(1021 /**/, ScriptVars.origin, ScriptVars.velocity, lsound);
+		//FIXME duplicate code
+		if (0) {  //(ScriptVars.parentCent) {
+			trap_S_AddLoopingSound(ScriptVars.parentCent->currentState.number, ScriptVars.origin, ScriptVars.velocity, lsound);
+		} else {
+			if (FxLoopSounds >= MAX_LOOP_SOUNDS) {
+				CG_Printf("^3fx:  (emitted) max loop sounds added\n");
+			} else {
+				trap_S_AddLoopingSound(FxLoopSounds, ScriptVars.origin, ScriptVars.velocity, lsound);
+				FxLoopSounds++;
+			}
+		}
+
 	}
 }
 
 //==============================================================================
 
-/*
-===================
-CG_AddLocalEntities
 
-===================
-*/
-void CG_AddLocalEntities( void ) {
-	localEntity_t	*le, *next;
+static void CG_AddLocalEntitiesExt (int threadNum)
+{
+	localEntity_t	*le;  // *next;
 	int count;
 	double ourTime;
+	int handled;
+
+	//Lock_Global();
 
 	// walk the list backwards, so any new local entities generated
 	// (trails, marks, etc) will be present this frame
-	le = cg_activeLocalEntities.prev;
+	//le = cg_activeLocalEntities.prev;
+	Lock_Next();
+	le = Next[threadNum];
+	Unlock_Next();
+
+	handled = 0;
 	count = 0;
-	for ( ; le != &cg_activeLocalEntities ; le = next ) {
+	//for ( ; le != &cg_activeLocalEntities ; le = next ) {
+	//for ( ; le != &cg_activeLocalEntities ; le = Next[threadNum], count++ ) {
+	for ( ;  le != &cg_activeLocalEntities;  count++ ) {
+	//while (le != &cg_activeLocalEntities) {
+	//count++;
+
 		// grab next now, so if the local entity is freed we
 		// still have it
-		next = le->prev;
+
+		if (count > 1) {
+			Lock_Next();
+			le = Next[threadNum];
+			Unlock_Next();
+			if (le == &cg_activeLocalEntities) {
+				break;
+			}
+		}
+
+		Lock_Next();
+		if (le) {
+			Next[threadNum] = le->prev;
+		} else {
+			Next[threadNum] = NULL;
+			Unlock_Next();
+			break;
+		}
+		Unlock_Next();
+
+		Lock_EntHandled();
+
+		if (1) {  //(threadNum != 0) {
+			// threads
+			if (le->frameCountHandled == FrameCount) {
+				// already handled
+				//Com_Printf("handled %p\n", le);
+				Unlock_EntHandled();
+				continue;
+			}
+		}
+
+		le->frameCountHandled = FrameCount;
+		Unlock_EntHandled();
+
+		handled++;
+
+		//Com_Printf("add ent thread %d  %p\n", threadNum, le);
+
+
+		if (le->leFlags & LEF_ALREADY_ADDED) {
+			//Lock_EntList();
+			//CG_FreeLocalEntity(le);
+			//Unlock_EntList();
+			//trap_R_AddRefEntityPtrToScene(&le->refEntity);
+			continue;
+		} else if (le->leFlags & LEF_ALREADY_ADDED_FX) {
+			Lock_SysCall();
+			trap_R_AddRefEntityPtrToScene(&le->refEntity);
+			Unlock_SysCall();
+			continue;
+		}
 
 		if (le->leFlags & LEF_REAL_TIME) {
 			ourTime = cg.realTime;
@@ -1659,78 +2274,71 @@ void CG_AddLocalEntities( void ) {
 			ourTime = cg.ftime;
 		}
 
+
 		if (!le->fxType) {
 			if (ourTime >= le->endTime) {
+				Lock_EntList();
 				CG_FreeLocalEntity(le);
+				Unlock_EntList();
+				//Unlock_Global();
 				continue;
 			}
 		} else {
 			if (le->sv.emitterFullLerp  &&  le->sv.emitterKill) {
 				//Com_Printf("killing emitter full %p\n", le);
+				Lock_EntList();
 				CG_FreeLocalEntity(le);
+				Unlock_EntList();
+				//Unlock_Global();
 				continue;
 			} else if (le->sv.emitterFullLerp  &&  ourTime >= le->endTime) {
 				//Com_Printf("going to kill emitter %p\n", le);
 				le->sv.emitterKill = qtrue;
 			} else if (ourTime >= le->endTime) {
+				Lock_EntList();
 				CG_FreeLocalEntity(le);
+				Unlock_EntList();
+				//Unlock_Global();
 				continue;
 			}
 		}
 
-#if 0  // testing
-		switch (le->fxType) {
-		case LEFX_EMIT: {
-			refEntity_t *re;
-			float dist;
-			float ratio;
-
-			re = &le->refEntity;
-			dist = Distance(cg.refdef.vieworg, re->origin);
-			ratio = re->radius / dist;
-			//Com_Printf("%d  %f\n", count, ratio);
-			//if (ratio > 0.0005) {
-			if (ratio > 0.0020) {
-				trap_R_AddRefEntityToScene(&le->refEntity);
-			}
-			break;
-		}
-		default:
-			break;
-		}
-		continue;
-#endif
-
-		count++;
-
-#if 0  // testing
-		if (count > 200) {
-			continue;
-		}
-#endif
-
+		//FIXME check thread saftey
 		switch (le->fxType) {
 		case LEFX_EMIT:
+			Lock_Global();
 			CG_Add_FX_Emitted(le);
+			Unlock_Global();
 			continue;
 		case LEFX_SCRIPT:
+			Lock_Global();
 			CG_Run_FX_Emitted_Script(le);
+			Unlock_Global();
 			continue;
 		case LEFX_EMIT_LIGHT:
+			Lock_Global();
 			CG_Add_FX_Emitted_Light(le);
+			Unlock_Global();
 			continue;
 		case LEFX_EMIT_SOUND:
+			Lock_Global();
 			CG_Add_FX_Emitted_Sound(le);
+			Unlock_Global();
 			continue;
 		case LEFX_EMIT_LOOPSOUND:
+			Lock_Global();
 			CG_Add_FX_Emitted_LoopSound(le);
+			Unlock_Global();
 			continue;
 		default:
 			break;
 		}
+
+		Lock_Global();
 
 		switch ( le->leType ) {
 		default:
+			Unlock_Global();
 			CG_Error( "Bad leType: %i", le->leType );
 			break;
 
@@ -1769,6 +2377,10 @@ void CG_AddLocalEntities( void ) {
 			CG_AddScorePlum( le );
 			break;
 
+		case LE_HEADSHOTPLUM:
+			CG_AddHeadShotPlum(le);
+			break;
+
 #if 1  //def MPACK
 		case LE_KAMIKAZE:
 			CG_AddKamikaze( le );
@@ -1780,11 +2392,131 @@ void CG_AddLocalEntities( void ) {
 			CG_AddInvulnerabilityJuiced( le );
 			break;
 		case LE_SHOWREFENTITY:
-			CG_AddRefEntity( le );
+			CG_AddLocalRefEntity( le );
 			break;
 #endif
 		}
+
+		Unlock_Global();
 	}
+
+#ifdef THREAD_DEBUG
+	Lock_SysCall();
+	Com_Printf("thread %d handled %d\n", threadNum, handled);
+	Unlock_SysCall();
+#endif
+
+	//Unlock_Global();
+}
+
+/*
+===================
+CG_AddLocalEntities
+
+===================
+*/
+
+#if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+void CG_AddLocalEntities (void)
+{
+	int i;
+
+	for (i = 0;  i < ARRAY_LEN(Next);  i++) {
+		Next[i] = cg_activeLocalEntities.prev;
+	}
+
+	if (cg_fxThreads.integer > 0) {
+		int numThreads;
+
+		numThreads = cg_fxThreads.integer;
+		if (numThreads > MAX_THREADS) {
+			numThreads = MAX_THREADS;
+		}
+		if (numThreads > ARRAY_LEN(RunSem)) {
+			numThreads = ARRAY_LEN(RunSem);
+		}
+		if (numThreads > ARRAY_LEN(StopSem)) {
+			numThreads = ARRAY_LEN(StopSem);
+		}
+
+		Lock_Count();
+		Increment_FrameCount();
+		Unlock_Count();
+
+		//Com_Printf("about to wake threads %d\n", FrameCount);
+
+		// wake threads
+		for (i = 0;  i < numThreads;  i++) {
+			semaphore_post(&RunSem[i]);
+		}
+
+		//Com_Printf("main thread %d %f\n", count, cg.ftime);
+		CG_AddLocalEntitiesExt(1);
+		//Com_Printf("main thread %d done %f\n", count, cg.ftime);
+
+		// wait for threads to finish
+		for (i = 0;  i < numThreads;  i++) {
+			semaphore_wait(&StopSem[i]);
+		}
+
+#ifdef THREAD_DEBUG
+		Com_Printf("thread done %d %f\n", FrameCount, cg.ftime);
+#endif
+	} else {
+		Increment_FrameCount();
+		CG_AddLocalEntitiesExt(0);
+	}
+}
+
+#else  // if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+void CG_AddLocalEntities (void)
+{
+	Next[0] = cg_activeLocalEntities.prev;
+	Increment_FrameCount();
+	CG_AddLocalEntitiesExt(0);
+}
+
+#endif  // #if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
+
+void CG_ClearLocalFrameEntities (void)
+{
+	localEntity_t *le;
+	localEntity_t *next;
+	int count;
+
+	//FIXME don't go through this list twice
+	le = cg_activeLocalEntities.prev;
+	if (!le) {  // local entities not initialized yet
+		return;
+	}
+
+	count = 0;
+	Lock_EntList();
+
+	for ( ; le != &cg_activeLocalEntities ; le = next ) {
+		// grab next now, so if the local entity is freed we
+		// still have it
+		next = le->prev;
+
+		if (le->leFlags & LEF_ALREADY_ADDED  ||  le->leFlags & LEF_ALREADY_ADDED_FX) {
+			count++;
+#if 0
+			if (count > 300) {
+				Com_Printf("^1count: %d\n", count);
+			}
+#endif
+			//Lock_EntList();
+			CG_FreeLocalEntity(le);
+			//Unlock_EntList();
+			continue;
+		}
+
+		//Com_Printf("next %p  active %p\n", next, &cg_activeLocalEntities);
+	}
+
+	Unlock_EntList();
 }
 
 void CG_RemoveFXLocalEntities (qboolean all, float emitterId)
@@ -1799,10 +2531,112 @@ void CG_RemoveFXLocalEntities (qboolean all, float emitterId)
 
 		//if (le->fxType == LEFX_EMIT  ||  le->fxType == LEFX_SCRIPT  ||  le->fxType == LEFX_EMIT_LIGHT  ||  le->fxType == LEFX_EMIT_SOUND  ||  le->fxType == LEFX_EMIT_LOOPSOUND) {
 		if (le->fxType  &&  (all  ||  le->sv.emitterId == emitterId)) {
+			Lock_EntList();
 			CG_FreeLocalEntity(le);
+			Unlock_EntList();
 			continue;
 		}
 	}
 }
 
+void CG_ListLocalEntities (void)
+{
+	const localEntity_t *le;
+	const localEntity_t *next;
+	int count;
+	int scripts;
+	int lights;
+	int sounds;
+	int loopSounds;
+	int fxEmitted;
 
+	count = 0;
+	scripts = 0;
+	fxEmitted = 0;
+	lights = 0;
+	sounds = 0;
+	loopSounds = 0;
+
+	le = cg_activeLocalEntities.prev;
+	for ( ; le != &cg_activeLocalEntities ; le = next ) {
+		count++;
+		// grab next now, so if the local entity is freed we
+		// still have it
+		next = le->prev;
+
+		if (le->fxType == LEFX_EMIT) {
+			fxEmitted++;
+			if (le->refEntity.reType == RT_SPRITE) {
+				Com_Printf("^3%5d ^7emitterId %f fxsprite timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
+			} else if (le->refEntity.reType == RT_SPRITE_FIXED) {
+				Com_Printf("^3%5d ^7emitterId %f fxsprite fixed timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
+			} else if (le->refEntity.reType == RT_MODEL) {
+				Com_Printf("^3%5d ^7emitterId %f fxmodel timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.model);
+			} else if (le->refEntity.reType == RT_SPARK) {
+				Com_Printf("^3%5d ^7emitterId %f fxspark timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
+			} else if (le->refEntity.reType == RT_BEAM_Q3MME) {
+				Com_Printf("^3%5d ^7emitterId %f fxbeamq3mme timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
+			} else if (le->refEntity.reType == RT_RAIL_RINGS_Q3MME) {
+				Com_Printf("^3%5d ^7emitterId %f fxrailringsq3mme timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
+			} else {
+				Com_Printf("^3%5d ^7emitterId %f fxunknown timeleft: %f (%f) '%d reType'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->refEntity.reType);
+			}
+		} else if (le->fxType == LEFX_SCRIPT) {
+			Com_Printf("^3%5d ^7emitterId %f fxscript timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
+			scripts++;
+		} else if (le->fxType == LEFX_EMIT_LIGHT) {
+			lights++;
+			Com_Printf("^3%5d ^7emitterId %f fxlight timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
+		} else if (le->fxType == LEFX_EMIT_SOUND) {
+			sounds++;
+			Com_Printf("^3%5d ^7emitterId %f fxsound timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
+		} else if (le->fxType == LEFX_EMIT_LOOPSOUND) {
+			loopSounds++;
+			Com_Printf("^3%5d ^7emitterId %f fxloopsound timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
+		} else if (le->leFlags == LEF_ALREADY_ADDED) {
+			Com_Printf("^3%5d ^7cgame direct frame render\n", count);
+		} else if (le->leFlags == LEF_ALREADY_ADDED_FX) {
+			Com_Printf("^3%5d ^7fx direct frame render\n", count);
+		}
+	}
+
+	Com_Printf("^5total %d   scripts %d   fxEmitted %d  lights %d  sounds %d  loopsounds %d\n", count, scripts, fxEmitted, lights, sounds, loopSounds);
+}
+
+void CG_AddRefEntity (const refEntity_t *re)
+{
+	localEntity_t *le;
+
+	// Need to add it to local entity list in case the limit is reached
+	// and the renderer drops it.
+
+	le = CG_AllocLocalEntityExt(qfalse);
+	le->endTime = 0;
+	le->leFlags = LEF_ALREADY_ADDED;
+
+	// testing
+	// careful with this and cgame added entities since they need
+	// to be rendered first come first serve, while addlocalentities()
+	// renders newest to oldest
+	//memcpy(&le->refEntity, re, sizeof(le->refEntity));
+
+	trap_R_AddRefEntityToScene(re);
+}
+
+void CG_AddRefEntityFX (const refEntity_t *re)
+{
+	localEntity_t *le;
+
+	// Need to add it to local entity list in case the limit is reached
+	// and the renderer drops it.
+
+	//le = CG_AllocLocalEntity();
+	le = CG_AllocLocalEntityExt(qfalse);
+	le->endTime = 0;
+	le->leFlags = LEF_ALREADY_ADDED_FX;
+
+	// can still be removed if needed
+	memcpy(&le->refEntity, re, sizeof(le->refEntity));
+
+	//trap_R_AddRefEntityToScene(re);
+}

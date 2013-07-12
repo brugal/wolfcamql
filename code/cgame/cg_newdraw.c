@@ -1,15 +1,23 @@
-
-#ifndef MISSIONPACK // bk001204
-//#error This file not be used for classic Q3A.
-#endif
-
 #include "cg_local.h"
+
+#include "cg_consolecmds.h"  // CG_AdjustTimeForTimeouts
+#include "cg_draw.h"
+#include "cg_drawtools.h"
+#include "cg_event.h"
+#include "cg_newdraw.h"
+#include "cg_main.h"
+#include "cg_players.h"  // color from string
+#include "cg_playerstate.h"
+#include "cg_syscalls.h"
+#include "cg_weapons.h"
+#include "wolfcam_info.h"
+#include "wolfcam_main.h"
+
 #include "../ui/ui_shared.h"
 
 #include "wolfcam_local.h"
 #include "sc.h"
-
-extern displayContextDef_t cgDC;
+#include "../../ui/wcmenudef.h"
 
 typedef struct {
 	float x;
@@ -26,14 +34,14 @@ typedef struct {
 	vec4_t color;
 	qhandle_t shader;
 	int textStyle;
-	fontInfo_t *font;
+	const fontInfo_t *font;
 } odArgs_t;
 
 // set in CG_ParseTeamInfo
 
 //static int sortedTeamPlayers[TEAM_MAXOVERLAY];
 //static int numSortedTeamPlayers;
-int drawTeamOverlayModificationCount = -1;
+//int drawTeamOverlayModificationCount = -1;
 
 //static char systemChat[256];
 //static char teamChat1[256];
@@ -124,7 +132,7 @@ void CG_CheckOrderPending(void) {
 
 static void CG_SetSelectedPlayerName(void) {
   if (cg_currentSelectedPlayer.integer >= 0 && cg_currentSelectedPlayer.integer < numSortedTeamPlayers) {
-		clientInfo_t *ci = cgs.clientinfo + sortedTeamPlayers[cg_currentSelectedPlayer.integer];
+		const clientInfo_t *ci = cgs.clientinfo + sortedTeamPlayers[cg_currentSelectedPlayer.integer];
 	  if (ci) {
 			trap_Cvar_Set("cg_selectedPlayerName", ci->name);
 			trap_Cvar_Set("cg_selectedPlayer", va("%d", sortedTeamPlayers[cg_currentSelectedPlayer.integer]));
@@ -134,7 +142,7 @@ static void CG_SetSelectedPlayerName(void) {
 		trap_Cvar_Set("cg_selectedPlayerName", "Everyone");
 	}
 }
-int CG_GetSelectedPlayer(void) {
+static int CG_GetSelectedPlayer(void) {
 	if (cg_currentSelectedPlayer.integer < 0 || cg_currentSelectedPlayer.integer >= numSortedTeamPlayers) {
 		cg_currentSelectedPlayer.integer = 0;
 	}
@@ -162,7 +170,7 @@ void CG_SelectPrevPlayer(void) {
 }
 
 
-static void CG_DrawPlayerArmorIcon( rectDef_t *rect, qboolean draw2D ) {
+static void CG_DrawPlayerArmorIcon( const rectDef_t *rect, qboolean draw2D ) {
 	//centity_t	*cent;
 	//playerState_t	*ps;
 	vec3_t		angles;
@@ -180,7 +188,7 @@ static void CG_DrawPlayerArmorIcon( rectDef_t *rect, qboolean draw2D ) {
 	//ps = &cg.snap->ps;
 
 	if ( draw2D || ( !cg_draw3dIcons.integer && cg_drawIcons.integer) ) { // bk001206 - parentheses
-		CG_DrawPic( rect->x, rect->y + rect->h/2 + 1, rect->w, rect->h, cgs.media.armorIcon );
+		CG_DrawPic( rect->x, rect->y + rect->h/2 + 1, rect->w, rect->h, cgs.media.yellowArmorIcon );
   } else if (cg_draw3dIcons.integer) {
 	  VectorClear( angles );
     origin[0] = 90;
@@ -193,11 +201,11 @@ static void CG_DrawPlayerArmorIcon( rectDef_t *rect, qboolean draw2D ) {
 
 }
 
-static void CG_DrawPlayerArmorValue(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font) {
+static void CG_DrawPlayerArmorValue(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
 	char	num[16];
   int value;
   //centity_t	*cent;
-	playerState_t	*ps;
+	const playerState_t	*ps;
 
 	if (wolfcam_following) {
 		//Com_Printf("wolfcam\n");
@@ -225,7 +233,7 @@ static void CG_DrawPlayerArmorValue(rectDef_t *rect, float scale, vec4_t color, 
 }
 
 #if 0  //ndef MISSIONPACK // bk001206
-static float healthColors[4][4] = {
+static const float healthColors[4][4] = {
 //		{ 0.2, 1.0, 0.2, 1.0 } , { 1.0, 0.2, 0.2, 1.0 }, {0.5, 0.5, 0.5, 1} };
   // bk0101016 - float const
   { 1.0f, 0.69f, 0.0f, 1.0f } ,		// normal
@@ -234,7 +242,7 @@ static float healthColors[4][4] = {
   { 1.0f, 1.0f, 1.0f, 1.0f } };		// health > 100
 #endif
 
-static void CG_DrawPlayerAmmoIcon( rectDef_t *rect, qboolean draw2D ) {
+static void CG_DrawPlayerAmmoIcon( const rectDef_t *rect, qboolean draw2D ) {
 	//centity_t	*cent;
 	//playerState_t	*ps;
 	vec3_t		angles;
@@ -268,11 +276,11 @@ static void CG_DrawPlayerAmmoIcon( rectDef_t *rect, qboolean draw2D ) {
   }
 }
 
-static void CG_DrawPlayerAmmoValue(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font) {
+static void CG_DrawPlayerAmmoValue(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
 	char	num[16];
 	int value;
-	centity_t	*cent;
-	playerState_t	*ps;
+	const centity_t	*cent;
+	const playerState_t	*ps;
 
 	if (wolfcam_following) {
 		return;
@@ -302,16 +310,23 @@ static void CG_DrawPlayerAmmoValue(rectDef_t *rect, float scale, vec4_t color, q
 
 }
 
-
-
-static void CG_DrawPlayerHead(rectDef_t *rect, qboolean draw2D) {
+static void CG_DrawPlayerHead (const rectDef_t *rect, qboolean draw2D, qboolean useDefaultTeamSkin)
+{
 	vec3_t		angles;
 	float		size, stretch;
 	float		frac;
 	float		x = rect->x;
+	int clientNum;
+
+	if (!cg.snap) {
+		return;
+	}
 
 	if (wolfcam_following) {
-		return;  //FIXME
+		clientNum = wcg.clientNum;
+		return;  //FIXME  damage time
+	} else {
+		clientNum = cg.snap->ps.clientNum;
 	}
 
 	VectorClear( angles );
@@ -356,11 +371,12 @@ static void CG_DrawPlayerHead(rectDef_t *rect, qboolean draw2D) {
 	angles[YAW] = cg.headStartYaw + ( cg.headEndYaw - cg.headStartYaw ) * frac;
 	angles[PITCH] = cg.headStartPitch + ( cg.headEndPitch - cg.headStartPitch ) * frac;
 
-	CG_DrawHead( x, rect->y, rect->w, rect->h, cg.snap->ps.clientNum, angles );
+
+	CG_DrawHead( x, rect->y, rect->w, rect->h, clientNum, angles, useDefaultTeamSkin );
 }
 
-static void CG_DrawSelectedPlayerHealth( rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font ) {
-	clientInfo_t *ci;
+static void CG_DrawSelectedPlayerHealth( const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font ) {
+	const clientInfo_t *ci;
 	int value;
 	char num[16];
 
@@ -378,8 +394,8 @@ static void CG_DrawSelectedPlayerHealth( rectDef_t *rect, float scale, vec4_t co
 	}
 }
 
-static void CG_DrawSelectedPlayerArmor( rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font ) {
-	clientInfo_t *ci;
+static void CG_DrawSelectedPlayerArmor( const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font ) {
+	const clientInfo_t *ci;
 	int value;
 	char num[16];
 
@@ -400,7 +416,7 @@ static void CG_DrawSelectedPlayerArmor( rectDef_t *rect, float scale, vec4_t col
  	}
 }
 
-qhandle_t CG_StatusHandle(int task) {
+static qhandle_t CG_StatusHandle(int task) {
 	qhandle_t h = cgs.media.assaultShader;
 	switch (task) {
 		case TEAMTASK_OFFENSE :
@@ -431,8 +447,8 @@ qhandle_t CG_StatusHandle(int task) {
 	return h;
 }
 
-static void CG_DrawSelectedPlayerStatus( rectDef_t *rect ) {
-	clientInfo_t *ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
+static void CG_DrawSelectedPlayerStatus( const rectDef_t *rect ) {
+	const clientInfo_t *ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
 
 	if (ci) {
 		qhandle_t h;
@@ -450,8 +466,8 @@ static void CG_DrawSelectedPlayerStatus( rectDef_t *rect ) {
 }
 
 
-static void CG_DrawPlayerStatus( rectDef_t *rect ) {
-	clientInfo_t *ci = &cgs.clientinfo[cg.snap->ps.clientNum];
+static void CG_DrawPlayerStatus( const rectDef_t *rect ) {
+	const clientInfo_t *ci = &cgs.clientinfo[cg.snap->ps.clientNum];
 
 	if (wolfcam_following) {
 		ci = &cgs.clientinfo[wcg.clientNum];
@@ -464,16 +480,20 @@ static void CG_DrawPlayerStatus( rectDef_t *rect ) {
 }
 
 
-static void CG_DrawSelectedPlayerName( rectDef_t *rect, float scale, vec4_t color, qboolean voice, int textStyle, fontInfo_t *font) {
-	clientInfo_t *ci;
+static void CG_DrawSelectedPlayerName( const rectDef_t *rect, float scale, const vec4_t color, qboolean voice, int textStyle, const fontInfo_t *font) {
+	const clientInfo_t *ci;
   ci = cgs.clientinfo + ((voice) ? cgs.currentVoiceClient : sortedTeamPlayers[CG_GetSelectedPlayer()]);
   if (ci) {
-	  CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, ci->name, 0, 0, textStyle, font);
+	  if (ci->clanTag) {
+		  CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, va("%s ^7%s", ci->clanTag, ci->name), 0, 0, textStyle, font);
+	  } else {
+		  CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, ci->name, 0, 0, textStyle, font);
+	  }
   }
 }
 
-static void CG_DrawSelectedPlayerLocation( rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font ) {
-	clientInfo_t *ci;
+static void CG_DrawSelectedPlayerLocation( const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font ) {
+	const clientInfo_t *ci;
   ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
   if (ci) {
 		const char *p = CG_ConfigString(CS_LOCATIONS + ci->location);
@@ -484,8 +504,8 @@ static void CG_DrawSelectedPlayerLocation( rectDef_t *rect, float scale, vec4_t 
   }
 }
 
-static void CG_DrawPlayerLocation( rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font  ) {
-	clientInfo_t *ci = &cgs.clientinfo[cg.snap->ps.clientNum];
+static void CG_DrawPlayerLocation( const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font  ) {
+	const clientInfo_t *ci = &cgs.clientinfo[cg.snap->ps.clientNum];
 
 	if (wolfcam_following) {
 		ci = &cgs.clientinfo[wcg.clientNum];
@@ -502,8 +522,8 @@ static void CG_DrawPlayerLocation( rectDef_t *rect, float scale, vec4_t color, i
 
 
 
-static void CG_DrawSelectedPlayerWeapon( rectDef_t *rect ) {
-	clientInfo_t *ci;
+static void CG_DrawSelectedPlayerWeapon( const rectDef_t *rect ) {
+	const clientInfo_t *ci;
 
   ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
   if (ci) {
@@ -515,7 +535,7 @@ static void CG_DrawSelectedPlayerWeapon( rectDef_t *rect ) {
   }
 }
 
-static void CG_DrawPlayerScore( rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font ) {
+static void CG_DrawPlayerScore( const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font ) {
   char num[16];
   int value = cg.snap->ps.persistant[PERS_SCORE];
 
@@ -534,7 +554,7 @@ static void CG_DrawPlayerScore( rectDef_t *rect, float scale, vec4_t color, qhan
 	}
 }
 
-static void CG_DrawPlayerItem( rectDef_t *rect, float scale, qboolean draw2D) {
+static void CG_DrawPlayerItem( const rectDef_t *rect, float scale, qboolean draw2D) {
 	int		value;
   vec3_t origin, angles;
 
@@ -580,8 +600,8 @@ static void CG_DrawPlayerItem( rectDef_t *rect, float scale, qboolean draw2D) {
 }
 
 
-static void CG_DrawSelectedPlayerPowerup( rectDef_t *rect, qboolean draw2D ) {
-	clientInfo_t *ci;
+static void CG_DrawSelectedPlayerPowerup( const rectDef_t *rect, qboolean draw2D ) {
+	const clientInfo_t *ci;
   int j;
   float x, y;
 
@@ -608,9 +628,9 @@ static void CG_DrawSelectedPlayerPowerup( rectDef_t *rect, qboolean draw2D ) {
 }
 
 
-static void CG_DrawSelectedPlayerHead( rectDef_t *rect, qboolean draw2D, qboolean voice ) {
+static void CG_DrawSelectedPlayerHead( const rectDef_t *rect, qboolean draw2D, qboolean voice ) {
 	clipHandle_t	cm;
-	clientInfo_t	*ci;
+	const clientInfo_t	*ci;
 	float			len;
 	vec3_t			origin;
 	vec3_t			mins, maxs, angles;
@@ -646,6 +666,7 @@ static void CG_DrawSelectedPlayerHead( rectDef_t *rect, qboolean draw2D, qboolea
       CG_Draw3DModel( rect->x, rect->y, rect->w, rect->h, ci->headModel, ci->headSkin, origin, angles );
   	} else if ( cg_drawIcons.integer ) {
 	  	CG_DrawPic( rect->x, rect->y, rect->w, rect->h, ci->modelIcon );
+	  	//CG_DrawPic( rect->x, rect->y, rect->w, rect->h, ci->modelIconReal );
   	}
 
   	// if they are deferred, draw a cross out
@@ -657,8 +678,8 @@ static void CG_DrawSelectedPlayerHead( rectDef_t *rect, qboolean draw2D, qboolea
 }
 
 
-static void CG_DrawPlayerHealth(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font ) {
-	playerState_t	*ps;
+static void CG_DrawPlayerHealth(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font ) {
+	const playerState_t	*ps;
   int value;
 	char	num[16];
 
@@ -685,7 +706,7 @@ static void CG_DrawPlayerHealth(rectDef_t *rect, float scale, vec4_t color, qhan
 }
 
 
-static void CG_DrawRedScore (rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font, int align)
+static void CG_DrawRedScore (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
 {
 	//int value;
 	char num[16];
@@ -702,7 +723,7 @@ static void CG_DrawRedScore (rectDef_t *rect, float scale, vec4_t color, qhandle
 	CG_Text_Paint_Align(rect, scale, color, num, 0, 0, textStyle, font, align);
 }
 
-static void CG_DrawBlueScore (rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font, int align)
+static void CG_DrawBlueScore (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
 {
 	//int value;
 	char num[16];
@@ -721,19 +742,19 @@ static void CG_DrawBlueScore (rectDef_t *rect, float scale, vec4_t color, qhandl
 }
 
 // FIXME: team name support
-static void CG_DrawRedName(rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font, int align ) {
+static void CG_DrawRedName(const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font, int align ) {
 	//CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, cg_redTeamName.string , 0, 0, textStyle, font);
 	//Com_Printf("red team name\n");
 	CG_Text_Paint_Align(rect, scale, color, cg_redTeamName.string , 0, 0, textStyle, font, align);
 	//CG_Text_Paint_Align(rect, scale, color, "fuck you" , 0, 0, textStyle, font, align);
 }
 
-static void CG_DrawBlueName(rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font, int align ) {
+static void CG_DrawBlueName(const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font, int align ) {
 	//CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, cg_blueTeamName.string, 0, 0, textStyle, font);
 	CG_Text_Paint_Align(rect, scale, color, cg_blueTeamName.string, 0, 0, textStyle, font, align);
 }
 
-static void CG_DrawBlueFlagName(rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font ) {
+static void CG_DrawBlueFlagName(const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font ) {
   int i;
   for ( i = 0 ; i < cgs.maxclients ; i++ ) {
 	  if ( cgs.clientinfo[i].infoValid && cgs.clientinfo[i].team == TEAM_RED  && cgs.clientinfo[i].powerups & ( 1<< PW_BLUEFLAG )) {
@@ -743,7 +764,7 @@ static void CG_DrawBlueFlagName(rectDef_t *rect, float scale, vec4_t color, int 
   }
 }
 
-static void CG_DrawBlueFlagStatus(rectDef_t *rect, qhandle_t shader) {
+static void CG_DrawBlueFlagStatus(const rectDef_t *rect, qhandle_t shader) {
 	if (cgs.gametype != GT_CTF  &&  cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS) {
 		if (cgs.gametype == GT_HARVESTER) {
 		  vec4_t color = {0, 0, 1, 1};
@@ -756,7 +777,7 @@ static void CG_DrawBlueFlagStatus(rectDef_t *rect, qhandle_t shader) {
   if (shader) {
 		CG_DrawPic( rect->x, rect->y, rect->w, rect->h, shader );
   } else {
-	  gitem_t *item = BG_FindItemForPowerup( PW_BLUEFLAG );
+	  const gitem_t *item = BG_FindItemForPowerup( PW_BLUEFLAG );
     if (item) {
 		  vec4_t color = {0, 0, 1, 1};
 		  trap_R_SetColor(color);
@@ -770,20 +791,20 @@ static void CG_DrawBlueFlagStatus(rectDef_t *rect, qhandle_t shader) {
   }
 }
 
-static void CG_DrawBlueFlagHead(rectDef_t *rect) {
+static void CG_DrawBlueFlagHead(const rectDef_t *rect) {
   int i;
   for ( i = 0 ; i < cgs.maxclients ; i++ ) {
 	  if ( cgs.clientinfo[i].infoValid && cgs.clientinfo[i].team == TEAM_RED  && cgs.clientinfo[i].powerups & ( 1<< PW_BLUEFLAG )) {
       vec3_t angles;
       VectorClear( angles );
  		  angles[YAW] = 180 + 20 * sin( cg.time / 650.0 );;
-      CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles );
+		  CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles, qtrue );
       return;
     }
   }
 }
 
-static void CG_DrawRedFlagName(rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font ) {
+static void CG_DrawRedFlagName(const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font ) {
   int i;
   for ( i = 0 ; i < cgs.maxclients ; i++ ) {
 	  if ( cgs.clientinfo[i].infoValid && cgs.clientinfo[i].team == TEAM_BLUE  && cgs.clientinfo[i].powerups & ( 1<< PW_REDFLAG )) {
@@ -793,7 +814,7 @@ static void CG_DrawRedFlagName(rectDef_t *rect, float scale, vec4_t color, int t
   }
 }
 
-static void CG_DrawRedFlagStatus(rectDef_t *rect, qhandle_t shader) {
+static void CG_DrawRedFlagStatus(const rectDef_t *rect, qhandle_t shader) {
 	if (cgs.gametype != GT_CTF && cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS) {
 		if (cgs.gametype == GT_HARVESTER) {
 		  vec4_t color = {1, 0, 0, 1};
@@ -806,7 +827,7 @@ static void CG_DrawRedFlagStatus(rectDef_t *rect, qhandle_t shader) {
   if (shader) {
 		CG_DrawPic( rect->x, rect->y, rect->w, rect->h, shader );
   } else {
-	  gitem_t *item = BG_FindItemForPowerup( PW_REDFLAG );
+	  const gitem_t *item = BG_FindItemForPowerup( PW_REDFLAG );
     if (item) {
 		  vec4_t color = {1, 0, 0, 1};
 		  trap_R_SetColor(color);
@@ -820,24 +841,24 @@ static void CG_DrawRedFlagStatus(rectDef_t *rect, qhandle_t shader) {
   }
 }
 
-static void CG_DrawRedFlagHead(rectDef_t *rect) {
+static void CG_DrawRedFlagHead(const rectDef_t *rect) {
   int i;
   for ( i = 0 ; i < cgs.maxclients ; i++ ) {
 	  if ( cgs.clientinfo[i].infoValid && cgs.clientinfo[i].team == TEAM_BLUE  && cgs.clientinfo[i].powerups & ( 1<< PW_REDFLAG )) {
       vec3_t angles;
       VectorClear( angles );
  		  angles[YAW] = 180 + 20 * sin( cg.time / 650.0 );;
-      CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles );
+		  CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles, qtrue );
       return;
     }
   }
 }
 
-static void CG_HarvesterSkulls(rectDef_t *rect, float scale, vec4_t color, qboolean force2D, int textStyle, fontInfo_t *font ) {
+static void CG_HarvesterSkulls(const rectDef_t *rect, float scale, const vec4_t color, qboolean force2D, int textStyle, const fontInfo_t *font ) {
 	char num[16];
 	vec3_t origin, angles;
 	qhandle_t handle;
-	int value = cg.snap->ps.generic1;
+	int value = cg.snap->ps.generic1 & 0x3f;
 
 	if (wolfcam_following) {
 		return;
@@ -879,11 +900,29 @@ static void CG_HarvesterSkulls(rectDef_t *rect, float scale, vec4_t color, qbool
 	}
 }
 
-static void CG_OneFlagStatus(rectDef_t *rect) {
+#define FLAG_OFFSET 9
+
+static void CG_OneFlagStatus(const rectDef_t *rect) {
+	int yoffset = 0;
+	qboolean blueIsFirst;
+
 	if (cgs.gametype != GT_1FCTF) {
 		return;
 	} else {
 		gitem_t *item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
+
+		blueIsFirst = qfalse;
+
+		if (cgs.scores2 > cgs.scores1) {
+			blueIsFirst = qtrue;
+		} else if (cgs.scores2 < cgs.scores1) {
+			blueIsFirst = qfalse;
+		} else {  // scores tied, so demo pov is first
+			if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE) {
+				blueIsFirst = qtrue;
+			}
+		}
+
 		if (item) {
 			if( cgs.flagStatus >= 0 && cgs.flagStatus <= 4 ) {
 				vec4_t color = {1, 1, 1, 1};
@@ -891,21 +930,32 @@ static void CG_OneFlagStatus(rectDef_t *rect) {
 				if (cgs.flagStatus == FLAG_TAKEN_RED) {
 					color[1] = color[2] = 0;
 					index = 1;
+					if (blueIsFirst) {
+						yoffset = FLAG_OFFSET;
+					} else {
+						yoffset = -FLAG_OFFSET;
+					}
 				} else if (cgs.flagStatus == FLAG_TAKEN_BLUE) {
 					color[0] = color[1] = 0;
 					index = 1;
+					if (blueIsFirst) {
+						yoffset = -FLAG_OFFSET;
+					} else {
+						yoffset = FLAG_OFFSET;
+					}
 				} else if (cgs.flagStatus == FLAG_DROPPED) {
 					index = 2;
 				}
 			  trap_R_SetColor(color);
-				CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagShaders[index] );
+				CG_DrawPic( rect->x, rect->y + yoffset, rect->w, rect->h, cgs.media.flagShaders[index] );
 			}
 		}
 	}
 }
 
+#undef FLAG_OFFSET
 
-static void CG_DrawCTFPowerUp(rectDef_t *rect) {
+static void CG_DrawCTFPowerUp(const rectDef_t *rect) {
 	int		value;
 
 	if (cgs.protocol == PROTOCOL_Q3) {
@@ -938,7 +988,7 @@ static void CG_DrawCTFPowerUp(rectDef_t *rect) {
 
 
 
-static void CG_DrawTeamColor(rectDef_t *rect, vec4_t color) {
+static void CG_DrawTeamColor(const rectDef_t *rect, const vec4_t color) {
 	if (wolfcam_following) {
 		CG_DrawTeamBackground(rect->x, rect->y, rect->w, rect->h, color[3], cgs.clientinfo[wcg.clientNum].team);
 	} else {
@@ -946,15 +996,15 @@ static void CG_DrawTeamColor(rectDef_t *rect, vec4_t color) {
 	}
 }
 
-static void CG_DrawAreaPowerUp(rectDef_t *rect, int align, float special, float scale, vec4_t color, fontInfo_t *font) {
+static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, float scale, const vec4_t color, const fontInfo_t *font) {
 	char num[16];
 	int		sorted[MAX_POWERUPS];
 	int		sortedTime[MAX_POWERUPS];
 	int		i, j, k;
 	int		active;
-	playerState_t	*ps;
+	const playerState_t	*ps;
 	int		t;
-	gitem_t	*item;
+	const gitem_t	*item;
 	float	f;
 	rectDef_t r2;
 	float *inc;
@@ -1066,13 +1116,80 @@ static void CG_DrawAreaPowerUp(rectDef_t *rect, int align, float special, float 
 
 }
 
+static qboolean CG_HaveWeapon (int weapon)
+{
+	if (wolfcam_following) {
+		if (cg_entities[wcg.clientNum].currentState.weapon == weapon) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	} else {
+		if (cg.snap->ps.stats[STAT_WEAPONS] & (1 << weapon)) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+}
+
+//FIXME duplicate code in CG_DrawWeaponSelect()
+static int CG_NumHeldWeapons (void)
+{
+	int count;
+	int bits;
+	int i;
+
+	if (wolfcam_following) {
+		bits = (1 << cg_entities[wcg.clientNum].currentState.weapon);
+	} else {
+		bits = cg.snap->ps.stats[STAT_WEAPONS];
+	}
+
+	count = 0;
+	//FIXME i < 16
+	for (i = 1;  i < 16;  i++) {
+		if (bits & (1 << i)) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static int CG_WeaponAmmo (int weapon)
+{
+	if (wolfcam_following) {
+		return W_AMMO_UNKNOWN;  //FIXME hack
+	}
+
+	return cg.snap->ps.ammo[weapon];
+}
+
 float CG_GetValue(int ownerDraw) {
-	centity_t	*cent;
- 	clientInfo_t *ci;
-	playerState_t	*ps;
+	const centity_t	*cent;
+ 	const clientInfo_t *ci;
+	const playerState_t	*ps;
+	int ourClientNum;
+	const score_t *score;
+	int i;
+	int count;
+	float f;
+
+	if (!cg.snap) {
+		return 0;
+	}
 
   cent = &cg_entities[cg.snap->ps.clientNum];
 	ps = &cg.snap->ps;
+
+	if (wolfcam_following) {
+		ourClientNum = wcg.clientNum;
+	} else {
+		ourClientNum = cg.snap->ps.clientNum;
+	}
+	ci = &cgs.clientinfo[ourClientNum];
+	score = &cg.scores[ci->scoreIndexNum];
 
   switch (ownerDraw) {
   case CG_SELECTEDPLAYER_ARMOR:
@@ -1140,6 +1257,1325 @@ float CG_GetValue(int ownerDraw) {
   case CG_BLUE_SCORE:
 		return cgs.scores2;
     break;
+
+	/////////////////// new from here
+
+  case CG_SELECTEDPLAYER_WEAPON:
+	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  return ci->curWeapon;
+	  break;
+
+#if 0
+  case CG_SELECTEDPLAYER_POWERUP:
+	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  return ci->health;
+	  break;
+#endif
+
+	  ////CG_FLAGCARRIER_WEAPON
+	  ////CG_FLAGCARRIER_POWERUP
+
+  case CG_HARVESTER_SKULLS:
+	  if (wolfcam_following) {
+		  return 0;
+	  } else {
+		  if (cg.snap) {
+			  return (cg.snap->ps.generic1 & 0x3f);
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_ONEFLAG_STATUS:
+	  return cgs.flagStatus;
+	  break;
+
+	  ////CG_PLAYER_HASFLAG
+
+  case CG_GAME_TYPE:
+	  return cgs.gametype;
+	  break;
+
+  case CG_ACCURACY:
+	  if (ci->scoreValid) {
+		  return score->accuracy;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_ASSISTS:
+	  if (ci->scoreValid) {
+		  return score->assistCount;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_DEFEND:
+	  if (ci->scoreValid) {
+		  return score->defendCount;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_CAPTURES:
+	  if (ci->scoreValid) {
+		  return score->captures;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_EXCELLENT:
+	  if (ci->scoreValid) {
+		  return score->excellentCount;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_IMPRESSIVE:
+	  if (ci->scoreValid) {
+		  return score->impressiveCount;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_PERFECT:
+	  if (ci->scoreValid) {
+		  return score->perfect;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_GAUNTLET:
+	  if (ci->scoreValid) {
+		  return score->gauntletCount;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_CAPFRAGLIMIT: {
+	  int limit;
+
+	  if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER) {
+		  limit = cgs.roundlimit;
+	  } else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM) {
+		  limit = cgs.timelimit;
+	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF) {
+		  if (cgs.capturelimit) {
+			  limit = cgs.capturelimit;
+		  } else {
+			  limit = cgs.timelimit;
+		  }
+	  } else if (cgs.gametype == GT_DOMINATION  ||  cgs.gametype == GT_CTFS) {
+		  limit = cgs.scorelimit;
+	  } else {
+		  limit = cgs.fraglimit;
+	  }
+
+	  return limit;
+	  break;
+  }
+	  ////CG_LEVELTIMER  ??
+
+	  //FIXME ugggggggggg
+	//CG_1ST_PLACE_SCORE
+	//CG_2ND_PLACE_SCORE
+
+
+  case CG_SELECTED_PLYR_ACCURACY:
+#if 0
+	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (ci->scoreValid) {
+		  return cg.scores[ci->scoreIndexNum].accuracy;
+	  } else {
+		  return 0;
+	  }
+#endif
+	  return cg.scores[cg.selectedScore].accuracy;
+	  break;
+
+  case CG_PLAYER_COUNTS:
+	  count = 0;
+	  for (i = 0;  i < MAX_CLIENTS;  i++) {
+		  if (!cgs.clientinfo[i].infoValid) {
+			  continue;
+		  }
+		  // ql includes the specs in player count
+		  count++;
+	  }
+	  return count;
+	  break;
+
+  case CG_RED_PLAYER_COUNT:
+	  count = 0;
+	  for (i = 0;  i < MAX_CLIENTS;  i++) {
+		  if (!cgs.clientinfo[i].team != TEAM_RED) {
+			  continue;
+		  }
+		  count++;
+	  }
+	  return count;
+	  break;
+
+  case CG_BLUE_PLAYER_COUNT:
+	  count = 0;
+	  for (i = 0;  i < MAX_CLIENTS;  i++) {
+		  if (!cgs.clientinfo[i].team != TEAM_BLUE) {
+			  continue;
+		  }
+		  count++;
+	  }
+	  return count;
+	  break;
+
+  case CG_RED_CLAN_PLYRS:
+	  return cgs.redPlayersLeft;
+	  break;
+
+  case CG_BLUE_CLAN_PLYRS:
+	  return cgs.bluePlayersLeft;
+	  break;
+
+	  //FIXME check
+	//CG_GAME_LIMIT
+
+	////CG_ROUNDTIMER ??
+
+  case CG_RED_TIMEOUT_COUNT:
+	  f = 0;
+	  if (cgs.protocol == PROTOCOL_QL) {
+		  f = atof(CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT));
+	  }
+	  return f;
+	  break;
+
+  case CG_BLUE_TIMEOUT_COUNT:
+	  f = 0;
+	  if (cgs.protocol == PROTOCOL_QL) {
+		  f = atof(CG_ConfigString(CS_BLUE_TEAM_TIMEOUTS_LEFT));
+	  }
+	  return f;
+	  break;
+
+  case CG_SPEEDOMETER:
+	  //FIXME duplicate code
+	  f = 0;
+	  if (!wolfcam_following) {
+		  f = cg.xyspeed;
+	  } else {
+		  if (wcg.clientNum != cg.snap->ps.clientNum) {
+			  const entityState_t *es;
+
+			  es = &cg_entities[wcg.clientNum].currentState;
+			  f = sqrt (es->pos.trDelta[0] * es->pos.trDelta[0] + es->pos.trDelta[1] * es->pos.trDelta[1]);
+		  } else {
+			  const playerState_t *ps;
+
+			  //ps = &cg.predictedPlayerState;
+			  ps = &cg.snap->ps;
+			  f = sqrt( ps->velocity[0] * ps->velocity[0] +
+							ps->velocity[1] * ps->velocity[1] );
+		  }
+	  }
+	  return f;
+	  break;
+
+  case CG_1ST_PLYR_SCORE:
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  return cg.duelScores[0].score;
+	  } else {
+		  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+			  return cgs.clientinfo[cg.duelPlayer1].score;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_1ST_PLYR_FRAGS:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[0].kills;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].frags;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_1ST_PLYR_DEATHS:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[0].deaths;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].deaths;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_1ST_PLYR_DMG:
+	  return cg.duelScores[0].damage;
+	  break;
+
+  case CG_1ST_PLYR_TIME:
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  return cg.duelScores[0].time;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].time;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_1ST_PLYR_PING:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[0].ping;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].ping;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_1ST_PLYR_WINS:
+	  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+		  return cgs.clientinfo[cg.duelPlayer1].wins;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_1ST_PLYR_ACC:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[0].accuracy;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].accuracy;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+	  //FIXME
+	//CG_1ST_PLYR_TIMEOUT_COUNT
+
+  case CG_2ND_PLYR_SCORE:
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  return cg.duelScores[1].score;
+	  } else {
+		  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+			  return cgs.clientinfo[cg.duelPlayer2].score;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_2ND_PLYR_FRAGS:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[1].kills;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].frags;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_2ND_PLYR_DEATHS:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[1].deaths;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].deaths;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_2ND_PLYR_DMG:
+	  return cg.duelScores[1].damage;
+	  break;
+
+  case CG_2ND_PLYR_TIME:
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  return cg.duelScores[1].time;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].time;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+  case CG_2ND_PLYR_PING:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[1].ping;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].ping;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_2ND_PLYR_WINS:
+	  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+		  return cgs.clientinfo[cg.duelPlayer2].wins;
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_2ND_PLYR_ACC:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[1].accuracy;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].accuracy;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+	  //FIXME
+	//CG_2ND_PLYR_TIMEOUT_COUNT
+
+  case CG_RED_AVG_PING:
+	  return cg.avgRedPing;
+	  break;
+
+  case CG_BLUE_AVG_PING:
+	  return cg.avgBluePing;
+	  break;
+
+  case CG_VOTECOUNT1:
+	  //FIXME cache
+	  return atof(Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_COUNT), "0"));
+	  break;
+
+  case CG_VOTECOUNT2:
+	  return atof(Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_COUNT), "1"));
+	  break;
+
+  case CG_VOTECOUNT3:
+	  return atof(Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_COUNT), "2"));
+	  break;
+
+	//CG_VOTETIMER  ??
+	//CG_LOCALTIME  ??
+
+  case CG_1ST_PLYR_FRAGS_G:
+	  return cg.duelScores[0].weaponStats[WP_GAUNTLET].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_MG:
+	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_SG:
+	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_GL:
+	  return cg.duelScores[0].weaponStats[WP_GRENADE_LAUNCHER].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_RL:
+	  return cg.duelScores[0].weaponStats[WP_ROCKET_LAUNCHER].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_LG:
+	  return cg.duelScores[0].weaponStats[WP_LIGHTNING].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_RG:
+	  return cg.duelScores[0].weaponStats[WP_RAILGUN].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_PG:
+	  return cg.duelScores[0].weaponStats[WP_PLASMAGUN].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_BFG:
+	  return cg.duelScores[0].weaponStats[WP_BFG].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_CG:
+	  return cg.duelScores[0].weaponStats[WP_CHAINGUN].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_NG:
+	  return cg.duelScores[0].weaponStats[WP_NAILGUN].kills;
+	  break;
+
+  case CG_1ST_PLYR_FRAGS_PL:
+	  return cg.duelScores[0].weaponStats[WP_PROX_LAUNCHER].kills;
+	  break;
+
+  case CG_1ST_PLYR_HITS_MG:
+	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_SG:
+	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_GL:
+	  return cg.duelScores[0].weaponStats[WP_GRENADE_LAUNCHER].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_RL:
+	  return cg.duelScores[0].weaponStats[WP_ROCKET_LAUNCHER].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_LG:
+	  return cg.duelScores[0].weaponStats[WP_LIGHTNING].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_RG:
+	  return cg.duelScores[0].weaponStats[WP_RAILGUN].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_PG:
+	  return cg.duelScores[0].weaponStats[WP_PLASMAGUN].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_BFG:
+	  return cg.duelScores[0].weaponStats[WP_BFG].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_CG:
+	  return cg.duelScores[0].weaponStats[WP_CHAINGUN].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_NG:
+	  return cg.duelScores[0].weaponStats[WP_NAILGUN].hits;
+	  break;
+
+  case CG_1ST_PLYR_HITS_PL:
+	  return cg.duelScores[0].weaponStats[WP_PROX_LAUNCHER].hits;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_MG:
+	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_SG:
+	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_GL:
+	  return cg.duelScores[0].weaponStats[WP_GRENADE_LAUNCHER].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_RL:
+	  return cg.duelScores[0].weaponStats[WP_ROCKET_LAUNCHER].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_LG:
+	  return cg.duelScores[0].weaponStats[WP_LIGHTNING].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_RG:
+	  return cg.duelScores[0].weaponStats[WP_RAILGUN].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_PG:
+	  return cg.duelScores[0].weaponStats[WP_PLASMAGUN].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_BFG:
+	  return cg.duelScores[0].weaponStats[WP_BFG].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_CG:
+	  return cg.duelScores[0].weaponStats[WP_CHAINGUN].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_NG:
+	  return cg.duelScores[0].weaponStats[WP_NAILGUN].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_PL:
+	  return cg.duelScores[0].weaponStats[WP_PROX_LAUNCHER].atts;
+	  break;
+
+  case CG_1ST_PLYR_DMG_G:
+	  return cg.duelScores[0].weaponStats[WP_GAUNTLET].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_MG:
+	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_SG:
+	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_GL:
+	  return cg.duelScores[0].weaponStats[WP_GRENADE_LAUNCHER].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_RL:
+	  return cg.duelScores[0].weaponStats[WP_ROCKET_LAUNCHER].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_LG:
+	  return cg.duelScores[0].weaponStats[WP_LIGHTNING].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_RG:
+	  return cg.duelScores[0].weaponStats[WP_RAILGUN].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_PG:
+	  return cg.duelScores[0].weaponStats[WP_PLASMAGUN].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_BFG:
+	  return cg.duelScores[0].weaponStats[WP_BFG].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_CG:
+	  return cg.duelScores[0].weaponStats[WP_CHAINGUN].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_NG:
+	  return cg.duelScores[0].weaponStats[WP_NAILGUN].damage;
+	  break;
+
+  case CG_1ST_PLYR_DMG_PL:
+	  return cg.duelScores[0].weaponStats[WP_PROX_LAUNCHER].damage;
+	  break;
+
+  case CG_1ST_PLYR_ACC_MG:
+	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_SG:
+	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_GL:
+	  return cg.duelScores[0].weaponStats[WP_GRENADE_LAUNCHER].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_RL:
+	  return cg.duelScores[0].weaponStats[WP_ROCKET_LAUNCHER].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_LG:
+	  return cg.duelScores[0].weaponStats[WP_LIGHTNING].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_RG:
+	  return cg.duelScores[0].weaponStats[WP_RAILGUN].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_PG:
+	  return cg.duelScores[0].weaponStats[WP_PLASMAGUN].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_BFG:
+	  return cg.duelScores[0].weaponStats[WP_BFG].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_CG:
+	  return cg.duelScores[0].weaponStats[WP_CHAINGUN].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_NG:
+	  return cg.duelScores[0].weaponStats[WP_NAILGUN].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_PL:
+	  return cg.duelScores[0].weaponStats[WP_PROX_LAUNCHER].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_PICKUPS_RA:
+	  return cg.duelScores[0].redArmorPickups;
+	  break;
+
+  case CG_1ST_PLYR_PICKUPS_YA:
+	  return cg.duelScores[0].yellowArmorPickups;
+	  break;
+
+  case CG_1ST_PLYR_PICKUPS_GA:
+	  return cg.duelScores[0].greenArmorPickups;
+	  break;
+
+  case CG_1ST_PLYR_PICKUPS_MH:
+	  return cg.duelScores[0].megaHealthPickups;
+	  break;
+
+  case CG_1ST_PLYR_AVG_PICKUP_TIME_RA:
+	  return cg.duelScores[0].redArmorTime;
+	  break;
+
+  case CG_1ST_PLYR_AVG_PICKUP_TIME_YA:
+	  return cg.duelScores[0].yellowArmorTime;
+	  break;
+
+  case CG_1ST_PLYR_AVG_PICKUP_TIME_GA:
+	  return cg.duelScores[0].greenArmorTime;
+	  break;
+
+  case CG_1ST_PLYR_AVG_PICKUP_TIME_MH:
+	  return cg.duelScores[0].megaHealthTime;
+	  break;
+
+  // now player 2
+
+  case CG_2ND_PLYR_FRAGS_G:
+	  return cg.duelScores[1].weaponStats[WP_GAUNTLET].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_MG:
+	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_SG:
+	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_GL:
+	  return cg.duelScores[1].weaponStats[WP_GRENADE_LAUNCHER].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_RL:
+	  return cg.duelScores[1].weaponStats[WP_ROCKET_LAUNCHER].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_LG:
+	  return cg.duelScores[1].weaponStats[WP_LIGHTNING].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_RG:
+	  return cg.duelScores[1].weaponStats[WP_RAILGUN].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_PG:
+	  return cg.duelScores[1].weaponStats[WP_PLASMAGUN].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_BFG:
+	  return cg.duelScores[1].weaponStats[WP_BFG].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_CG:
+	  return cg.duelScores[1].weaponStats[WP_CHAINGUN].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_NG:
+	  return cg.duelScores[1].weaponStats[WP_NAILGUN].kills;
+	  break;
+
+  case CG_2ND_PLYR_FRAGS_PL:
+	  return cg.duelScores[1].weaponStats[WP_PROX_LAUNCHER].kills;
+	  break;
+
+  case CG_2ND_PLYR_HITS_MG:
+	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_SG:
+	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_GL:
+	  return cg.duelScores[1].weaponStats[WP_GRENADE_LAUNCHER].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_RL:
+	  return cg.duelScores[1].weaponStats[WP_ROCKET_LAUNCHER].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_LG:
+	  return cg.duelScores[1].weaponStats[WP_LIGHTNING].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_RG:
+	  return cg.duelScores[1].weaponStats[WP_RAILGUN].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_PG:
+	  return cg.duelScores[1].weaponStats[WP_PLASMAGUN].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_BFG:
+	  return cg.duelScores[1].weaponStats[WP_BFG].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_CG:
+	  return cg.duelScores[1].weaponStats[WP_CHAINGUN].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_NG:
+	  return cg.duelScores[1].weaponStats[WP_NAILGUN].hits;
+	  break;
+
+  case CG_2ND_PLYR_HITS_PL:
+	  return cg.duelScores[1].weaponStats[WP_PROX_LAUNCHER].hits;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_MG:
+	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_SG:
+	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_GL:
+	  return cg.duelScores[1].weaponStats[WP_GRENADE_LAUNCHER].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_RL:
+	  return cg.duelScores[1].weaponStats[WP_ROCKET_LAUNCHER].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_LG:
+	  return cg.duelScores[1].weaponStats[WP_LIGHTNING].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_RG:
+	  return cg.duelScores[1].weaponStats[WP_RAILGUN].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_PG:
+	  return cg.duelScores[1].weaponStats[WP_PLASMAGUN].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_BFG:
+	  return cg.duelScores[1].weaponStats[WP_BFG].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_CG:
+	  return cg.duelScores[1].weaponStats[WP_CHAINGUN].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_NG:
+	  return cg.duelScores[1].weaponStats[WP_NAILGUN].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_PL:
+	  return cg.duelScores[1].weaponStats[WP_PROX_LAUNCHER].atts;
+	  break;
+
+  case CG_2ND_PLYR_DMG_G:
+	  return cg.duelScores[1].weaponStats[WP_GAUNTLET].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_MG:
+	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_SG:
+	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_GL:
+	  return cg.duelScores[1].weaponStats[WP_GRENADE_LAUNCHER].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_RL:
+	  return cg.duelScores[1].weaponStats[WP_ROCKET_LAUNCHER].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_LG:
+	  return cg.duelScores[1].weaponStats[WP_LIGHTNING].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_RG:
+	  return cg.duelScores[1].weaponStats[WP_RAILGUN].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_PG:
+	  return cg.duelScores[1].weaponStats[WP_PLASMAGUN].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_BFG:
+	  return cg.duelScores[1].weaponStats[WP_BFG].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_CG:
+	  return cg.duelScores[1].weaponStats[WP_CHAINGUN].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_NG:
+	  return cg.duelScores[1].weaponStats[WP_NAILGUN].damage;
+	  break;
+
+  case CG_2ND_PLYR_DMG_PL:
+	  return cg.duelScores[1].weaponStats[WP_PROX_LAUNCHER].damage;
+	  break;
+
+  case CG_2ND_PLYR_ACC_MG:
+	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_SG:
+	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_GL:
+	  return cg.duelScores[1].weaponStats[WP_GRENADE_LAUNCHER].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_RL:
+	  return cg.duelScores[1].weaponStats[WP_ROCKET_LAUNCHER].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_LG:
+	  return cg.duelScores[1].weaponStats[WP_LIGHTNING].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_RG:
+	  return cg.duelScores[1].weaponStats[WP_RAILGUN].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_PG:
+	  return cg.duelScores[1].weaponStats[WP_PLASMAGUN].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_BFG:
+	  return cg.duelScores[1].weaponStats[WP_BFG].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_CG:
+	  return cg.duelScores[1].weaponStats[WP_CHAINGUN].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_NG:
+	  return cg.duelScores[1].weaponStats[WP_NAILGUN].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_PL:
+	  return cg.duelScores[1].weaponStats[WP_PROX_LAUNCHER].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_PICKUPS_RA:
+	  return cg.duelScores[1].redArmorPickups;
+	  break;
+
+  case CG_2ND_PLYR_PICKUPS_YA:
+	  return cg.duelScores[1].yellowArmorPickups;
+	  break;
+
+  case CG_2ND_PLYR_PICKUPS_GA:
+	  return cg.duelScores[1].greenArmorPickups;
+	  break;
+
+  case CG_2ND_PLYR_PICKUPS_MH:
+	  return cg.duelScores[1].megaHealthPickups;
+	  break;
+
+  case CG_2ND_PLYR_AVG_PICKUP_TIME_RA:
+	  return cg.duelScores[1].redArmorTime;
+	  break;
+
+  case CG_2ND_PLYR_AVG_PICKUP_TIME_YA:
+	  return cg.duelScores[1].yellowArmorTime;
+	  break;
+
+  case CG_2ND_PLYR_AVG_PICKUP_TIME_GA:
+	  return cg.duelScores[1].greenArmorTime;
+	  break;
+
+  case CG_2ND_PLYR_AVG_PICKUP_TIME_MH:
+	  return cg.duelScores[1].megaHealthTime;
+	  break;
+
+  case CG_1ST_PLYR_EXCELLENT:
+	  return cg.duelScores[0].awardExcellent;
+	  break;
+
+  case CG_1ST_PLYR_IMPRESSIVE:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[0].awardImpressive;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].impressiveCount;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_1ST_PLYR_HUMILIATION:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[0].awardHumiliation;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].gauntletCount;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_2ND_PLYR_EXCELLENT:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[1].awardExcellent;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].excellentCount;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_2ND_PLYR_IMPRESSIVE:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[1].awardImpressive;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].impressiveCount;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_2ND_PLYR_HUMILIATION:
+	  if (cg.duelScoresValid) {
+		  return cg.duelScores[1].awardHumiliation;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  return cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].gauntletCount;
+		  } else {
+			  return 0;
+		  }
+	  }
+	  break;
+
+  case CG_1ST_PLYR_READY:
+	  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+		  return cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer1);
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+  case CG_2ND_PLYR_READY:
+	  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+		  return cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer2);
+	  } else {
+		  return 0;
+	  }
+	  break;
+
+	  //FIXME
+	  //#define CG_SELECTED_PLYR_SCORE 291
+	  //#define CG_SELECTED_PLYR_DMG 292
+	  //#define CG_SELECTED_PLYR_ACC 293
+
+	  //#define CG_SELECTED_PLYR_PICKUPS_RA 296
+	  //#define CG_SELECTED_PLYR_PICKUPS_YA 297
+	  //#define CG_SELECTED_PLYR_PICKUPS_GA 298
+	  //#define CG_SELECTED_PLYR_PICKUPS_MH 299
+
+	  //#define CG_1ST_PLYR_PR 300  // no
+	  //#define CG_2ND_PLYR_PR 301  // no
+	  //#define CG_1ST_PLYR_TIER 302  // no
+	  //#define CG_2ND_PLYR_TIER 303  // no
+
+
+  case CG_RED_TEAM_PICKUPS_RA:
+	  //FIXME return -1 for invalid tdmScore ?
+	  return cg.tdmScore.rra;
+	  break;
+
+  case CG_RED_TEAM_PICKUPS_YA:
+	  return cg.tdmScore.rya;
+	  break;
+
+  case CG_RED_TEAM_PICKUPS_GA:
+	  return cg.tdmScore.rga;
+	  break;
+
+  case CG_RED_TEAM_PICKUPS_MH:
+	  return cg.tdmScore.rmh;
+	  break;
+
+  case CG_RED_TEAM_PICKUPS_QUAD:
+	  return cg.tdmScore.rquad;
+	  break;
+
+  case CG_RED_TEAM_PICKUPS_BS:
+	  return cg.tdmScore.rbs;
+	  break;
+
+  case CG_BLUE_TEAM_PICKUPS_RA:
+	  return cg.tdmScore.bra;
+	  break;
+
+  case CG_BLUE_TEAM_PICKUPS_YA:
+	  return cg.tdmScore.bya;
+	  break;
+
+  case CG_BLUE_TEAM_PICKUPS_GA:
+	  return cg.tdmScore.bga;
+	  break;
+
+  case CG_BLUE_TEAM_PICKUPS_MH:
+	  return cg.tdmScore.bmh;
+	  break;
+
+  case CG_BLUE_TEAM_PICKUPS_QUAD:
+	  return cg.tdmScore.bquad;
+	  break;
+
+  case CG_BLUE_TEAM_PICKUPS_BS:
+	  return cg.tdmScore.bbs;
+	  break;
+
+  case CG_RED_TEAM_TIMEHELD_QUAD:
+	  return cg.tdmScore.rquadTime;
+	  break;
+
+  case CG_RED_TEAM_TIMEHELD_BS:
+	  return cg.tdmScore.rbsTime;
+	  break;
+
+  case CG_BLUE_TEAM_TIMEHELD_QUAD:
+	  return cg.tdmScore.bquadTime;
+	  break;
+
+  case CG_BLUE_TEAM_TIMEHELD_BS:
+	  return cg.tdmScore.bbsTime;
+	  break;
+
+  //FIXME
+  //#define CG_RED_TEAM_PICKUPS_FLAG 321
+  //#define CG_RED_TEAM_PICKUPS_MEDKIT 322
+	  //#define CG_RED_TEAM_PICKUPS_REGEN 323
+	  //#define CG_RED_TEAM_PICKUPS_HASTE 324
+	  //#define CG_RED_TEAM_PICKUPS_INVIS 325
+	  //#define CG_BLUE_TEAM_PICKUPS_FLAG 326
+	  //#define CG_BLUE_TEAM_PICKUPS_MEDKIT 327
+	  //#define CG_BLUE_TEAM_PICKUPS_REGEN 328
+	  //#define CG_BLUE_TEAM_PICKUPS_HASTE 329
+	  //#define CG_BLUE_TEAM_PICKUPS_INVIS 330
+	  //#define CG_RED_TEAM_TIMEHELD_FLAG 331
+	  //#define CG_RED_TEAM_TIMEHELD_REGEN 332
+	  //#define CG_RED_TEAM_TIMEHELD_HASTE 333
+	  //#define CG_RED_TEAM_TIMEHELD_INVIS 334
+	  //#define CG_BLUE_TEAM_TIMEHELD_FLAG 335
+	  //#define CG_BLUE_TEAM_TIMEHELD_REGEN 336
+	  //#define CG_BLUE_TEAM_TIMEHELD_HASTE 337
+	  //#define CG_BLUE_TEAM_TIMEHELD_INVIS 338
+
+  case CG_RED_OWNED_FLAGS:
+	  return cgs.dominationRedPoints;
+	  break;
+
+  case CG_BLUE_OWNED_FLAGS:
+	  return cgs.dominationBluePoints;
+	  break;
+
+  case CG_TEAM_PLYR_COUNT: {
+	  //FIXME duplicate code
+	  int ourTeam;
+
+	  if (wolfcam_following) {
+		  ourTeam = cgs.clientinfo[wcg.clientNum].team;
+	  } else {
+		  ourTeam = cg.snap->ps.persistant[PERS_TEAM];
+	  }
+
+	  if (ourTeam == TEAM_BLUE) {
+		  return cgs.bluePlayersLeft;
+	  } else {
+		  return cgs.redPlayersLeft;
+	  }
+	  break;
+  }
+
+  case CG_ENEMY_PLYR_COUNT: {
+	  //FIXME duplicate code
+	  int ourTeam;
+
+	  if (wolfcam_following) {
+		  ourTeam = cgs.clientinfo[wcg.clientNum].team;
+	  } else {
+		  ourTeam = cg.snap->ps.persistant[PERS_TEAM];
+	  }
+
+	  if (ourTeam == TEAM_BLUE) {
+		  return cgs.redPlayersLeft;
+	  } else {
+		  return cgs.bluePlayersLeft;
+	  }
+	  break;
+  }
+
+//CG_ROUND ???
+
+  ////  wolfcam ownerdraws
+
+  case WCG_GAME_STATUS:
+	  if (cg.warmup) {
+		  return W_STATUS_WARMUP;
+	  } else if (cg.snap  &&  cg.snap->ps.pm_type == PM_INTERMISSION) {
+		  return W_STATUS_INTERMISSION;
+	  } else if (cg.snap) {
+		  return W_STATUS_PLAYING;
+	  } else {
+		  return W_STATUS_DISCONNECTED;
+	  }
+	  break;
+
+  case WCG_WEAPON_SELECTED:
+	  if (wolfcam_following) {
+		  return cg_entities[wcg.clientNum].currentState.weapon;
+	  } else {
+		  if (!cg.demoPlayback) {
+			  return cg.weaponSelect;
+		  } else {
+			  return cg.snap->ps.weapon;
+		  }
+	  }
+	  break;
+
+  case WCG_WEAPON_SELECT_TIME:
+	  if (wolfcam_following) {
+		  return wcg.weaponSelectTime;
+	  } else {
+		  return cg.weaponSelectTime;
+	  }
+	  break;
+
+  case WCG_NUMBER_OF_HELD_WEAPONS:
+	  return CG_NumHeldWeapons();
+	  break;
+
+  case WCG_WEAPON_HAVE_GAUNTLET:
+	  return CG_HaveWeapon(WP_GAUNTLET);
+	  break;
+
+  case WCG_WEAPON_HAVE_MACHINEGUN:
+	  return CG_HaveWeapon(WP_MACHINEGUN);
+	  break;
+
+  case WCG_WEAPON_HAVE_SHOTGUN:
+	  return CG_HaveWeapon(WP_SHOTGUN);
+	  break;
+
+  case WCG_WEAPON_HAVE_GRENADE_LAUNCHER:
+	  return CG_HaveWeapon(WP_GRENADE_LAUNCHER);
+	  break;
+
+  case WCG_WEAPON_HAVE_ROCKET_LAUNCHER:
+	  return CG_HaveWeapon(WP_ROCKET_LAUNCHER);
+	  break;
+
+  case WCG_WEAPON_HAVE_LIGHTNING:
+	  return CG_HaveWeapon(WP_LIGHTNING);
+	  break;
+
+  case WCG_WEAPON_HAVE_RAILGUN:
+	  return CG_HaveWeapon(WP_RAILGUN);
+	  break;
+
+  case WCG_WEAPON_HAVE_PLASMAGUN:
+	  return CG_HaveWeapon(WP_PLASMAGUN);
+	  break;
+
+  case WCG_WEAPON_HAVE_BFG:
+	  return CG_HaveWeapon(WP_BFG);
+	  break;
+
+  case WCG_WEAPON_HAVE_GRAPPLING_HOOK:
+	  return CG_HaveWeapon(WP_GRAPPLING_HOOK);
+	  break;
+
+  case WCG_WEAPON_HAVE_NAILGUN:
+	  return CG_HaveWeapon(WP_NAILGUN);
+	  break;
+
+  case WCG_WEAPON_HAVE_PROX_LAUNCHER:
+	  return CG_HaveWeapon(WP_PROX_LAUNCHER);
+	  break;
+
+  case WCG_WEAPON_HAVE_CHAINGUN:
+	  return CG_HaveWeapon(WP_CHAINGUN);
+	  break;
+
+  case WCG_WEAPON_AMMO_GAUTNLET:
+	  return CG_WeaponAmmo(WP_GAUNTLET);
+	  break;
+
+  case WCG_WEAPON_AMMO_MACHINEGUN:
+	  return CG_WeaponAmmo(WP_MACHINEGUN);
+	  break;
+
+  case WCG_WEAPON_AMMO_SHOTGUN:
+	  return CG_WeaponAmmo(WP_SHOTGUN);
+	  break;
+
+  case WCG_WEAPON_AMMO_GRENADE_LAUNCHER:
+	  return CG_WeaponAmmo(WP_GRENADE_LAUNCHER);
+	  break;
+
+  case WCG_WEAPON_AMMO_ROCKET_LAUNCHER:
+	  return CG_WeaponAmmo(WP_ROCKET_LAUNCHER);
+	  break;
+
+  case WCG_WEAPON_AMMO_LIGHTNING:
+	  return CG_WeaponAmmo(WP_LIGHTNING);
+	  break;
+
+  case WCG_WEAPON_AMMO_RAILGUN:
+	  return CG_WeaponAmmo(WP_RAILGUN);
+	  break;
+
+  case WCG_WEAPON_AMMO_PLASMAGUN:
+	  return CG_WeaponAmmo(WP_PLASMAGUN);
+	  break;
+
+  case WCG_WEAPON_AMMO_BFG:
+	  return CG_WeaponAmmo(WP_BFG);
+	  break;
+
+  case WCG_WEAPON_AMMO_GRAPPLING_HOOK:
+	  return CG_WeaponAmmo(WP_GRAPPLING_HOOK);
+	  break;
+
+  case WCG_WEAPON_AMMO_NAILGUN:
+	  return CG_WeaponAmmo(WP_NAILGUN);
+	  break;
+
+  case WCG_WEAPON_AMMO_PROX_LAUNCHER:
+	  return CG_WeaponAmmo(WP_PROX_LAUNCHER);
+	  break;
+
+  case WCG_WEAPON_AMMO_CHAINGUN:
+	  return CG_WeaponAmmo(WP_CHAINGUN);
+	  break;
+
   default:
 	  Com_Printf("CG_GetValue() unknown ownerDraw %d\n", ownerDraw);
     break;
@@ -1428,10 +2864,18 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 	}
 
 	if (flags & (CG_SHOW_BLUE_TEAM_HAS_REDFLAG | CG_SHOW_RED_TEAM_HAS_BLUEFLAG)) {
-		if (flags & CG_SHOW_BLUE_TEAM_HAS_REDFLAG && (cgs.redflag == FLAG_TAKEN || cgs.flagStatus == FLAG_TAKEN_RED)) {
-			return qtrue;
-		} else if (flags & CG_SHOW_RED_TEAM_HAS_BLUEFLAG && (cgs.blueflag == FLAG_TAKEN || cgs.flagStatus == FLAG_TAKEN_BLUE)) {
-			return qtrue;
+		if (cgs.gametype == GT_1FCTF) {
+			if (flags & CG_SHOW_BLUE_TEAM_HAS_REDFLAG  &&  cgs.flagStatus == FLAG_TAKEN_BLUE) {
+				return qtrue;
+			} else if (flags & CG_SHOW_RED_TEAM_HAS_BLUEFLAG  &&  cgs.flagStatus == FLAG_TAKEN_RED) {
+				return qtrue;
+			}
+		} else {
+			if (flags & CG_SHOW_BLUE_TEAM_HAS_REDFLAG  &&  cgs.redflag == FLAG_TAKEN) {
+				return qtrue;
+			} else if (flags & CG_SHOW_RED_TEAM_HAS_BLUEFLAG  &&  cgs.blueflag == FLAG_TAKEN) {
+				return qtrue;
+			}
 		}
 		return qfalse;
 	}
@@ -1786,7 +3230,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 
 
 
-static void CG_DrawPlayerHasFlag(rectDef_t *rect, qboolean force2D) {
+static void CG_DrawPlayerHasFlag(const rectDef_t *rect, qboolean force2D) {
 	int adj = (force2D) ? 0 : 2;
 
 	if (wolfcam_following) {
@@ -1802,15 +3246,15 @@ static void CG_DrawPlayerHasFlag(rectDef_t *rect, qboolean force2D) {
 	}
 }
 
-static void CG_DrawAreaSystemChat(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, fontInfo_t *font) {
+static void CG_DrawAreaSystemChat(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
 	CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, systemChat, 0, 0, 0, font);
 }
 
-static void CG_DrawAreaTeamChat(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, fontInfo_t *font) {
+static void CG_DrawAreaTeamChat(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
 	CG_Text_Paint(rect->x, rect->y + rect->h, scale, color,teamChat1, 0, 0, 0, font);
 }
 
-static void CG_DrawAreaChat(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, fontInfo_t *font) {
+static void CG_DrawAreaChat(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
 	CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, teamChat2, 0, 0, 0, font);
 }
 
@@ -1828,7 +3272,7 @@ const char *CG_GetKillerText(void) {
 }
 
 
-static void CG_DrawKiller (rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font, int align)
+static void CG_DrawKiller (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
 {
 	int w;
 	int h;
@@ -1873,7 +3317,7 @@ static void CG_DrawKiller (rectDef_t *rect, float scale, vec4_t color, qhandle_t
 }
 
 
-static void CG_DrawCapFragLimit(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font) {
+static void CG_DrawCapFragLimit(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
 	int limit;
 
 	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER) {
@@ -1895,7 +3339,7 @@ static void CG_DrawCapFragLimit(rectDef_t *rect, float scale, vec4_t color, qhan
 	CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", limit),0, 0, textStyle, font);
 }
 
-static void CG_Draw1stPlace(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font) {
+static void CG_Draw1stPlace(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
 #if 0
 	if (cgs.scores1 != SCORE_NOT_PRESENT) {
 		//Com_Printf("drawing scores1\n");
@@ -1910,7 +3354,7 @@ static void CG_Draw1stPlace(rectDef_t *rect, float scale, vec4_t color, qhandle_
 	}
 }
 
-static void CG_Draw2ndPlace(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font) {
+static void CG_Draw2ndPlace(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
 	//Com_Printf("Draw2ndPlace\n");
 	//FIXME non team games and show player's score???
 #if 0
@@ -1948,22 +3392,25 @@ const char *CG_GetGameStatusText (vec4_t color)
 	return s;
 }
 
-static void CG_DrawGameStatus (rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font, int align)
+static void CG_DrawGameStatus (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
 {
 	const char *s;
+	vec4_t statusColor;
 	int w;
+	rectDef_t newRect;
 
-	s = CG_GetGameStatusText(color);
+	newRect = *rect;
+	s = CG_GetGameStatusText(statusColor);
 	//CG_Text_Paint(rect->x, rect->y + rect->h, scale, colorWhite, s, 0, 0, textStyle, font);
-	rect->y += rect->h;
+	newRect.y += rect->h;
 	// quake live ignoring color
 	//CG_Text_Paint_Align(rect, scale, colorWhite, s, 0, 0, textStyle, font, align);
-	CG_Text_Paint_Align(rect, scale, color, s, 0, 0, textStyle, font, align);
+	CG_Text_Paint_Align(&newRect, scale, statusColor, s, 0, 0, textStyle, font, align);
 	//CG_Text_Paint_Align(rect, scale, color, s, 0, 0, textStyle, font, align);
 	if (cgs.gametype != GT_TOURNAMENT  &&  cgs.gametype != GT_TEAM) {
 		w = CG_Text_Width(s, scale, 0, font);
-		rect->x += w;
-		CG_Text_Paint_Align(rect, scale, colorWhite, va("       %s", CG_GetLocalTimeString()), 0, 0, textStyle, font, align);
+		newRect.x += w;
+		CG_Text_Paint_Align(&newRect, scale, colorWhite, va("       %s", CG_GetLocalTimeString()), 0, 0, textStyle, font, align);
 	}
 }
 
@@ -2000,7 +3447,7 @@ const char *CG_GameTypeString(void) {
 }
 
 #if 0
-static void CG_DrawGameType(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font ) {
+static void CG_DrawGameType(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font ) {
 	CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, CG_GameTypeString(), 0, 0, textStyle, font);
 }
 #endif
@@ -2030,11 +3477,11 @@ int CG_Text_Length (const char *s)
 }
 
 //FIXME style
-void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, vec4_t color, const char* text, float adjust, int limit, fontInfo_t *font)
+void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4_t color, const char* text, float adjust, int limit, const fontInfo_t *font)
 {
 	int len, count;
 	vec4_t newColor;
-	glyphInfo_t *glyph;
+	const glyphInfo_t *glyph;
 	float xscale, yscale;
 
 	xscale = 1.0;
@@ -2136,7 +3583,7 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, vec4_t col
 
 }
 
-void CG_Text_Paint_Limit_Bottom(float *maxX, float x, float y, float scale, vec4_t color, const char* text, float adjust, int limit, fontInfo_t *font)
+void CG_Text_Paint_Limit_Bottom(float *maxX, float x, float y, float scale, const vec4_t color, const char* text, float adjust, int limit, const fontInfo_t *font)
 {
 	int th;
 
@@ -2157,7 +3604,7 @@ void CG_Text_Paint_Limit_Bottom(float *maxX, float x, float y, float scale, vec4
 	CG_Text_Paint_Limit(maxX, x, y + th, scale, color, text, adjust, limit, font);
 }
 
-void CG_Text_Paint_Align (rectDef_t *rect, float scale, vec4_t color, const char *text, float adjust, int limit, int style, fontInfo_t *fontOrig, int align)
+void CG_Text_Paint_Align (const rectDef_t *rect, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, int align)
 {
 	int w;
 
@@ -2182,14 +3629,14 @@ void CG_Text_Paint_Align (rectDef_t *rect, float scale, vec4_t color, const char
 
 #define PIC_WIDTH 12
 
-void CG_DrawNewTeamInfo(rectDef_t *rect, float text_x, float text_y, float scale, vec4_t color, qhandle_t shader, fontInfo_t *font) {
+static void CG_DrawNewTeamInfo(const rectDef_t *rect, float text_x, float text_y, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
 	int xx;
 	float y;
 	int i, j, len, count;
 	const char *p;
 	vec4_t		hcolor;
 	float pwidth, lwidth, maxx, leftOver;
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 	gitem_t	*item;
 	qhandle_t h;
 
@@ -2301,7 +3748,7 @@ void CG_DrawNewTeamInfo(rectDef_t *rect, float text_x, float text_y, float scale
 }
 
 
-void CG_DrawTeamSpectators(rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, fontInfo_t *font) {
+static void CG_DrawTeamSpectators(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
 	float maxX;
 	int sw;
 
@@ -2404,12 +3851,12 @@ void CG_DrawTeamSpectators(rectDef_t *rect, float scale, vec4_t color, qhandle_t
 	}
 }
 
-void CG_DrawMedal(int ownerDraw, rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, fontInfo_t *font) {
-	score_t *score = &cg.scores[cg.selectedScore];
+static void CG_DrawMedal(int ownerDraw, const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
+	const score_t *score = &cg.scores[cg.selectedScore];
 	float value = 0;
 	//int tw;
 	int th;
-	char *text = NULL;
+	const char *text = NULL;
 	vec4_t colorNew;
 
 	Vector4Copy(color, colorNew);
@@ -2435,7 +3882,7 @@ void CG_DrawMedal(int ownerDraw, rectDef_t *rect, float scale, vec4_t color, qha
 			value = score->perfect;
 			break;
 		case CG_GAUNTLET:
-			value = score->guantletCount;
+			value = score->gauntletCount;
 			break;
 		case CG_CAPTURES:
 			value = score->captures;
@@ -2492,16 +3939,16 @@ static void CG_SetTeamColor (void)
 	if (cgs.clientinfo[clientNum].team == TEAM_RED) {
 		//VectorSet(color, 1, 0, 0);
 		//VectorCopy(colorRed, color);
-		SC_Vec3ColorFromCvar(color, cg_hudRedTeamColor);
+		SC_Vec3ColorFromCvar(color, &cg_hudRedTeamColor);
 	} else if (cgs.clientinfo[clientNum].team == TEAM_BLUE) {
 		//VectorSet(color, 0, 0, 1);
 		//VectorCopy(colorBlue, color);
-		SC_Vec3ColorFromCvar(color, cg_hudBlueTeamColor);
+		SC_Vec3ColorFromCvar(color, &cg_hudBlueTeamColor);
 	} else {
 		//VectorCopy(colorYellow, color);
 		//VectorSet(color, 0.95, 0.865, 0);
 		//VectorSet(color, 0.95, 0.86, 0.122);
-		SC_Vec3ColorFromCvar(color, cg_hudNoTeamColor);
+		SC_Vec3ColorFromCvar(color, &cg_hudNoTeamColor);
 	}
 
 	color[3] = 1.0;
@@ -2513,7 +3960,7 @@ static void CG_SetTeamColor (void)
 
 static void CG_OspCalcPlacements (void)
 {
-	clientInfo_t *ci;
+	const clientInfo_t *ci;
 	int i;
 
 	if (cgs.gametype != GT_TOURNAMENT) {
@@ -2567,7 +4014,7 @@ static void CG_OspCalcPlacements (void)
 
 }
 
-static void CG_Draw1stPlaceScore (rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font)
+static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font)
 {
 	char *s;
 	int spacing;
@@ -2683,7 +4130,7 @@ static void CG_Draw1stPlaceScore (rectDef_t *rect, float scale, vec4_t color, in
 	CG_Text_Paint(rect->x + rect->w - spacing, rect->y, scale, color, s, 0, 0, textStyle, font);
 }
 
-static void CG_Draw2ndPlaceScore (rectDef_t *rect, float scale, vec4_t color, int textStyle, fontInfo_t *font)
+static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font)
 {
 	char *s = NULL;
 	int rank;
@@ -2848,7 +4295,7 @@ static void CG_Draw2ndPlaceScore (rectDef_t *rect, float scale, vec4_t color, in
 }
 
 #if 0
-static void CG_DrawObit (rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font)
+static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font)
 {
 	int w;
 	int h;
@@ -2877,15 +4324,15 @@ static void CG_DrawObit (rectDef_t *rect, float scale, vec4_t color, qhandle_t s
 }
 #endif
 
-static void CG_DrawObit (rectDef_t *rect, float scale, vec4_t color, qhandle_t shader, int textStyle, fontInfo_t *font)
+static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font)
 {
-	char *text;
-	int *extString;
+	const char *text;
+	const int *extString;
 	char linebuffer[1024];
 	int numIcons;
 	int tw, th;
 	char *lb;
-	int *es;
+	const int *es;
 	vec4_t newColor;
 	int t;
 
@@ -2943,15 +4390,18 @@ void CG_DrawWeaponBar( void ) {
 	int		count;
 	int		x, y;
 	vec4_t color;
-	weaponInfo_t *wi;
+	const weaponInfo_t *wi;
 	int ammo;
-	char *textColor;
+	vec4_t textColor;
 	qboolean haveWeapon;
 	int weapons;
 	int elementWidth;
 	int currentWeapon;
-	fontInfo_t *font;
+	const fontInfo_t *font;
 	int maxWeapons;
+	int ammoWarning;
+	int style;
+	int ammoOffset;
 
 	if (cg_weaponBar.integer == 4  ||  cg_weaponBar.integer == 5) {
 		CG_DrawWeaponSelect();
@@ -3015,9 +4465,6 @@ void CG_DrawWeaponBar( void ) {
 	elementWidth = 54;
 	x = 320 - count * elementWidth / 2;
 
-	//y = 380;
-	//y = 414;
-	//y = 420;
 	y = 410;
 
 	if (cg_weaponBar.integer == 1) {
@@ -3054,8 +4501,6 @@ void CG_DrawWeaponBar( void ) {
 		}
 
 		// draw selection marker
-		//if ( i == cg.weaponSelect ) {
-		//if (i == cg.snap->ps.weapon) {
 		if (i == currentWeapon) {
 			qhandle_t weaplit;
 
@@ -3082,7 +4527,6 @@ void CG_DrawWeaponBar( void ) {
 		if (cg_weaponBar.integer == 1) {
 			CG_DrawPic( x, y, 16, 16, wi->weaponIcon );
 		} else if (cg_weaponBar.integer == 2) {
-			//CG_DrawPic(640 - 16 - 2, y, 16, 16, wi->weaponIcon);
 			CG_DrawPic(x + 40, y, 16, 16, wi->weaponIcon);
 		} else if (cg_weaponBar.integer == 3) {
 			CG_DrawPic(x + 0, y + 0, 16, 16, wi->weaponIcon);
@@ -3096,43 +4540,48 @@ void CG_DrawWeaponBar( void ) {
 			goto finishLoop;
 		}
 
-		// mg, lg, plasma  4
-		// chain gun 39
-
-		//FIXME use "low ammo warning" logic
 		ammo = cg.snap->ps.ammo[i];
-		textColor = S_COLOR_WHITE;
-		if (ammo == 0) {
-			textColor = S_COLOR_RED;
-		} else if (i == WP_CHAINGUN) {
-			if (ammo < 40) {
-				textColor = S_COLOR_YELLOW;
+		Vector4Copy(colorWhite, textColor);
+
+		ammoOffset = 0;
+		style = cg_lowAmmoWarningStyle.integer;
+		if (style == 0) {
+			style = 2;
+		} else if (style == 1) {
+			ammoOffset = 1;
+		}
+
+		if (cg_lowAmmoWeaponBarWarning.integer == 1) {
+			ammoWarning = CG_GetAmmoWarning(i, style, ammoOffset);
+			if (ammoWarning == AMMO_WARNING_EMPTY) {
+				Vector4Copy(colorRed, textColor);
 			}
-		} else if (i == WP_MACHINEGUN  ||  i == WP_LIGHTNING  ||  i == WP_PLASMAGUN) {
-			if (ammo < 30) {
-				textColor = S_COLOR_YELLOW;
+		} else if (cg_lowAmmoWeaponBarWarning.integer == 2) {
+			ammoWarning = CG_GetAmmoWarning(i, style, ammoOffset);
+			if (ammoWarning == AMMO_WARNING_EMPTY) {
+				Vector4Copy(colorRed, textColor);
+			} else if (ammoWarning == AMMO_WARNING_LOW) {
+				Vector4Set(textColor, 0.996, 0.78125, 0.348, 1);
 			}
-		} else {
-			if (ammo < 5) {
-				textColor = S_COLOR_YELLOW;
-			}
+		}
+
+		// bleh...
+		if (cg_lowAmmoWarningStyle.integer == 0  &&  i != currentWeapon) {
+			Vector4Copy(colorWhite, textColor);
 		}
 
 		if (ammo < 0) {
 			trap_R_SetColor(colorWhite);
-			//CG_DrawPic(x + 16, y + 12, 10, 10, cgs.media.infiniteAmmo);
 			CG_DrawPic(x + 18, y , 16, 16, cgs.media.infiniteAmmo);
 		} else if (cg_weaponBar.integer == 1  ||  cg_weaponBar.integer == 3) {
-			CG_Text_Paint(x + 16, y + 12, 0.25, colorWhite, va(" %s%d", textColor, ammo), 0, 0, 0, font);
+			CG_Text_Paint(x + 16, y + 12, 0.25, textColor, va(" %d",  ammo), 0, 0, 0, font);
 		} else if (cg_weaponBar.integer == 2) {
 			int textWidth;
-			char *s;
+			const char *s;
 
-			s = va(" %s%d", textColor, ammo);
+			s = va(" %d", ammo);
 			textWidth = CG_Text_Width(s, 0.25, 0, font);
-			//CG_Text_Paint(614 - textWidth, y + 12, 0.25, colorWhite, va(" %s%d", textColor, ammo), 0, 0, 0, &cgDC.Assets.textFont);
-			//CG_Text_Paint(x + 32 - textWidth, y + 12, 0.25, colorWhite, va("  %s%d", textColor, ammo), 0, 0, 0, font);
-			CG_Text_Paint(x + 38 - textWidth, y + 12, 0.25, colorWhite, va(" %s%d", textColor, ammo), 0, 0, 0, font);
+			CG_Text_Paint(x + 38 - textWidth, y + 12, 0.25, textColor, s, 0, 0, 0, font);
 		}
 
 	finishLoop:
@@ -3144,7 +4593,7 @@ void CG_DrawWeaponBar( void ) {
 	}
 }
 
-void CG_DrawAreaNewChat (odArgs_t *args)
+static void CG_DrawAreaNewChat (const odArgs_t *args)
 {
 	int i;
 	int n;
@@ -3156,7 +4605,9 @@ void CG_DrawAreaNewChat (odArgs_t *args)
 	int firstLine = -1;  // silence gcc warning
 
 	scale = args->scale;
-	scale = 0.25;  //FIXME  ??
+	//Com_Printf("areanewchat scale %f\n", scale);
+
+	//scale = 0.25;  //FIXME  ??
 	ctime = cg_chatTime.integer;
 	if (cg.forceDrawChat) {
 		lines = cg_chatHistoryLength.integer;
@@ -3178,8 +4629,20 @@ void CG_DrawAreaNewChat (odArgs_t *args)
 			break;
 		}
 		n = n % MAX_CHAT_LINES_MASK;
-		if (!cg.forceDrawChat  &&  cg.time - cg.chatAreaStringsTime[n] > ctime) {
-			break;
+		//FIXME hack to always show chat with scoreboard
+		if (!cg.scoreBoardShowing) {
+			if (!cg.forceDrawChat  &&  cg.time - cg.chatAreaStringsTime[n] > ctime) {
+				break;
+			}
+		} else {
+
+			//FIXME bah  ... quakelive
+			//if ((args->y + (args->h) - (height + 4) * count) <= (args->y - args->h)) {
+			//if (((height + 4) * count) >= args->h) {
+			//if (((height + 4) * count) >= (args->h / 2)) {
+			if (count > 2) {
+				break;
+			}
 		}
 
 		// don't wrap around
@@ -3198,7 +4661,7 @@ void CG_DrawAreaNewChat (odArgs_t *args)
 }
 
 #if 0  // broken
-int CG_NumOverTimes (void)
+static int CG_NumOverTimes (void)
 {
 	  int numOverTimes = 0;
 	  int overTimeAmount = 0;
@@ -3245,8 +4708,8 @@ int CG_GetCurrentTimeWithDirection (void)
 		  return msec;
 	  }
 
-	  if (cg.time < cgs.timeoutEndTime) {
-		  //Com_Printf("cgs.timeoutEndTime\n");
+	  if (CG_GameTimeout()) {
+		  //Com_Printf("cgs.timeoutEndTime %d\n", cgs.timeoutEndTime - cg.time);
 		  timePlayed = cgs.timeoutBeginTime - gameStartTime;
 		  cgtime = cgs.timeoutBeginTime;
 	  } else {
@@ -3368,7 +4831,7 @@ int CG_GetCurrentTimeWithDirection (void)
 const char *CG_GetLevelTimerString (void)
 {
 	static char buffer[MAX_STRING_CHARS];
-	char *s;
+	const char *s;
 	int hours, mins, seconds;
 	int msec;
 
@@ -3384,11 +4847,11 @@ const char *CG_GetLevelTimerString (void)
 
 	seconds = (msec / 1000);
 
-	if (cg.warmup  &&  cg_warmupTime.integer != 1) {
+	if (cg.warmup  &&  (cg_warmupTime.integer == 0  ||  cg_warmupTime.integer == 2)) {
 		hours = mins = seconds = 0;
 	}
 
-	if (cg.warmup  &&  cg_warmupTime.integer > 0) {
+	if (cg.warmup  &&  (cg_warmupTime.integer == 1  ||  cg_warmupTime.integer == 2)) {
 		if (hours) {
 			s = va("%i:%02i:%02i (warmup)", hours, mins, seconds);
 		} else {
@@ -3448,6 +4911,8 @@ double CG_GetServerTimeFromClockString (const char *timeString)
 	}
 
 	t = Q_ParseClockTime(timeString);
+
+	// no timeouts during warm up
 	if (wantWarmup) {
 		return (double)cg.warmupTimeStart + t;
 	}
@@ -3456,6 +4921,8 @@ double CG_GetServerTimeFromClockString (const char *timeString)
 		Com_Printf("CG_GetServerTimeFromClockString() demo doesn't contain a game\n");
 		return -1;
 	}
+
+	t = CG_AdjustTimeForTimeouts(t, qtrue);
 	//Com_Printf("%d  %d  %f\n", cgs.levelStartTime, trap_GetGameStartTime(), t);
 
 	return (double)trap_GetGameStartTime() + t;
@@ -3473,16 +4940,16 @@ int CG_GetGameStartTime (void)
 }
 #endif
 
-static void CG_DrawTeamMapPickupsTdm (rectDef_t *rect, float scale, int style, fontInfo_t *font, int team)
+static void CG_DrawTeamMapPickupsTdm (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, int team)
 {
 	float x;
 	float y;
-	tdmScore_t *sc;
+	const tdmScore_t *sc;
 	int ra, ya, ga, regen, haste, invis, mega, quad, bs, quadTime, bsTime, regenTime, hasteTime, invisTime;
 	float w, h;
 	float regScale;
 	float spacing;
-	char *s;
+	const char *s;
 	float textWidth;
 	//rectDef_t textRect;
 	float xspace;
@@ -3668,16 +5135,16 @@ static void CG_DrawTeamMapPickupsTdm (rectDef_t *rect, float scale, int style, f
 	}
 }
 
-static void CG_DrawTeamMapPickupsCtf (rectDef_t *rect, float scale, int style, fontInfo_t *font, int team)
+static void CG_DrawTeamMapPickupsCtf (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, int team)
 {
 	float x;
 	float y;
-	ctfScore_t *sc;
+	const ctfScore_t *sc;
 	int ra, ya, ga, regen, haste, invis, mega, medkit, flag, quad, bs, quadTime, bsTime, regenTime, hasteTime, invisTime, flagTime;
 	float w, h;
 	float regScale;
 	float spacing;
-	char *s;
+	const char *s;
 	float textWidth;
 	//rectDef_t textRect;
 	float xspace;
@@ -3896,7 +5363,7 @@ static void CG_DrawTeamMapPickupsCtf (rectDef_t *rect, float scale, int style, f
 	}
 }
 
-static void CG_DrawTeamMapPickups (rectDef_t *rect, float scale, int style, fontInfo_t *font, int team)
+static void CG_DrawTeamMapPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, int team)
 {
 	if (cgs.gametype == GT_DOMINATION) {
 		return;
@@ -3911,9 +5378,9 @@ static void CG_DrawTeamMapPickups (rectDef_t *rect, float scale, int style, font
 	}
 }
 
-static void CG_Draw1stPlayerPickups (rectDef_t *rect, float scale, int style, fontInfo_t *font)
+static void CG_Draw1stPlayerPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font)
 {
-	duelScore_t *ds;
+	const duelScore_t *ds;
 	float x, y, w, h;
 	const char *s;
 
@@ -3966,9 +5433,9 @@ static void CG_Draw1stPlayerPickups (rectDef_t *rect, float scale, int style, fo
 	}
 }
 
-static void CG_Draw2ndPlayerPickups (rectDef_t *rect, float scale, int style, fontInfo_t *font)
+static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font)
 {
-	duelScore_t *ds;
+	const duelScore_t *ds;
 	float x, y, w, h;
 	const char *s;
 	float textWidth;
@@ -4051,17 +5518,20 @@ static void CG_SetArmorColor (void)
 }
 
 //
-void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int fontIndex)
+void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex)
 {
 	rectDef_t rect;
 	int ival;
 	float s1, t1, s2, t2;
 	odArgs_t args;
 	int debug;
-	fontInfo_t *font;
+	const fontInfo_t *font;
 	const char *s;
 	int mins;
 	int secs;
+	const clientInfo_t *ci;
+	int clientNum;
+	vec4_t newColor;
 
   if ( cg_drawStatus.integer == 0 ) {
 		return;
@@ -4164,7 +5634,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
     break;
   case CG_SELECTEDPLAYER_NAME:  // 8
 	  CG_DrawSelectedPlayerName(&rect, scale, color, qfalse, textStyle, font);
-	//CG_Printf("draw selected player name\n");
     break;
   case CG_SELECTEDPLAYER_LOCATION:  // 9
 	  CG_DrawSelectedPlayerLocation(&rect, scale, color, textStyle, font);
@@ -4176,8 +5645,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
     CG_DrawSelectedPlayerPowerup(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
     break;
   case CG_PLAYER_HEAD:  // 3
-    CG_DrawPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
-    break;
+	  CG_DrawPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qtrue);
+	  break;
+  case WCG_REAL_PLAYER_HEAD:
+	  CG_DrawPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qfalse);
+	  break;
   case CG_PLAYER_ITEM:
     CG_DrawPlayerItem(&rect, scale, ownerDrawFlags & CG_SHOW_2DONLY);
     break;
@@ -4217,7 +5689,18 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_RED_FLAGNAME:
 	  CG_DrawRedFlagName(&rect, scale, color, textStyle, font);
     break;
+
+	/*
+#define CG_FLAGCARRIER_HEAD 13
+#define CG_FLAGCARRIER_NAME 14
+#define CG_FLAGCARRIER_LOCATION 15
+#define CG_FLAGCARRIER_STATUS 16
+#define CG_FLAGCARRIER_WEAPON 17
+#define CG_FLAGCARRIER_POWERUP 18
+	*/
+
   case CG_HARVESTER_SKULLS:
+	  //Com_Printf("text_x %f  text_y %f\n", text_x, text_y);
 	  CG_HarvesterSkulls(&rect, scale, color, qfalse, textStyle, font);
     break;
   case CG_HARVESTER_SKULLS2D:
@@ -4298,11 +5781,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 		////////////////////////////////////////////////////
 
-		//CG_FULLTEAMINFO 70
+		//CG_FULLTEAMINFO 70  // some weird heart thing
 
   case CG_LEVELTIMER:  { // 71
 #if 0
-	  char *s;
+	  const char *s;
 	  int hours, mins, seconds;
 	  int msec;
 
@@ -4337,7 +5820,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint(rect.x, rect.y, scale, color, CG_GetLevelTimerString(), 0, 0, textStyle, font);
 	  break;
   }
-	  // CG_PLAYER_SKILL 72
+	  // CG_PLAYER_SKILL 72  // doesn't appear to be used
 
   case CG_PLAYER_OBIT:  // 73
 	  CG_DrawObit(&rect, scale, color, shader, textStyle, font);
@@ -4452,8 +5935,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  trap_R_DrawStretchPic( rect.x, rect.y + rect.h * (1 - ival / 100.0), rect.w, rect.h * (ival / 100.0), s1, t1, s2, t2, shader );
 	  break;
   case CG_AREA_NEW_CHAT:  // 78
-	  //FIXME is this really the chat area?
-	  //CG_Text_Paint(rect.x, rect.y, scale, color, cg.lastChatString, 0, 0, textStyle, &cgDC.Assets.textFont);
 	  CG_DrawAreaNewChat(&args);
 	  break;
   case CG_TEAM_COLORIZED:  // 79
@@ -4485,7 +5966,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  CG_Text_Paint_Align(&rect, scale, color, va("%s", cgs.firstPlace), 0, 0, textStyle, font, align);
 		  rect.x += w;
 		  ourColor[3] = color[3];
-		  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS", 0, 0, textStyle, font, align);
+		  if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT  &&  cg.duelForfeit) {
+			  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS by forfeit", 0, 0, textStyle, font, align);
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS", 0, 0, textStyle, font, align);
+		  }
 	  } else {
 		  //FIXME color getting set?
 		  //Vector4Copy(color, ourColor);
@@ -4507,6 +5992,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  s = "First to reach the round limit";
 	  } else if (cgs.gametype == GT_FREEZETAG) {
 		  s = "Highest score within the time limit";
+	  } else if (cgs.gametype == GT_RED_ROVER  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {
+		  s = "Highest score at the end of the game";
 	  } else {
 		  s = "";
 	  }
@@ -4515,31 +6002,63 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_PLYR_END_GAME_SCORE:  // 86
 	  // chopping off color code like ql
 	  if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR) {
+		  int i;
+		  const score_t *sc;
+		  const ctfPlayerScore_t *cs;
+		  int assists = 0;
+		  int captures = 0;
+		  int defends = 0;
+
+		  if (cg.ctfScore.valid  &&  cg.ctfScore.version >= 1) {
+			  for (i = 0;  i < cg.ctfScore.numPlayerScores;  i++) {
+				  cs = &cg.ctfScore.playerScore[i];
+				  if (cs->clientNum == cg.snap->ps.clientNum) {
+					  assists = cs->awardAssist;
+					  captures = cs->captures;
+					  defends = cs->awardDefend;
+					  break;
+				  }
+			  }
+		  } else {
+			  for (i = 0;  i < cg.numScores;  i++) {
+				  sc = &cg.scores[i];
+				  if (sc->client == cg.snap->ps.clientNum) {
+					  assists = sc->assistCount;
+					  captures = sc->captures;
+					  defends = sc->defendCount;
+					  break;
+				  }
+			  }
+		  }
+
 		  s = CG_PlaceString(cg.snap->ps.persistant[PERS_RANK] + 1);
 		  if (s[0] == '^') {
 			  s += 2;
 		  }
 		  if (cgs.gametype == GT_FREEZETAG) {
-			  int i;
-			  score_t *sc;
-			  int assists = 0;
-
-			  for (i = 0;  i < cg.numScores;  i++) {
-				  sc = &cg.scores[i];
-				  if (sc->client == cg.snap->ps.clientNum) {
-					  assists = sc->assistCount;
-					  break;
-				  }
-			  }
 			  if (assists) {
-				  CG_Text_Paint_Align(&rect, scale, color, va("You had %d assists", assists), 0, 0, textStyle, font, align);
+				  CG_Text_Paint_Align(&rect, scale, color, va("You had %d assist%s", assists, assists == 1 ? "." : "s."), 0, 0, textStyle, font, align);
 			  } else {
-				  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+				  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 			  }
-		  } else if (cgs.gametype == GT_CA) {
-			  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+		  } else if (cgs.gametype == GT_CA) {  //FIXME in quakelive red rover too
+			  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {  //FIXME OBELISK like quakelive -- even if wrong
+			  if (captures) {
+				  if (cgs.gametype == GT_HARVESTER) {
+					  CG_Text_Paint_Align(&rect, scale, color, va("You had %d capture%s", captures, captures == 1 ? "." : "s."), 0, 0, textStyle, font, align);
+				  } else {
+					  CG_Text_Paint_Align(&rect, scale, color, va("You had %d flag capture%s", captures, captures == 1 ? "." : "s."), 0, 0, textStyle, font, align);
+				  }
+			  } else if (assists) {
+				  CG_Text_Paint_Align(&rect, scale, color, va("You had %d assist%s", assists, assists == 1 ? "." : "s."), 0, 0, textStyle, font, align);
+			  } else if (defends) {
+				  CG_Text_Paint_Align(&rect, scale, color, va("You had %d defend%s", defends, defends == 1 ? "." : "s."), 0, 0, textStyle, font, align);
+			  } else {
+				  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+			  }
 		  }	else {
-			  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+			  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d.", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 		  }
 	  }
 	  break;
@@ -4593,7 +6112,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_PLAYER_COUNTS:  {  // 91
 	  int i;
 	  int count;
-	  clientInfo_t *ci;
+	  const clientInfo_t *ci;
 
 	  //FIXME use cg.scores ?
 	  //FIXME don't do it every time
@@ -4618,7 +6137,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_RED_PLAYER_COUNT:  {  // 92
 	  int i;
 	  int count;
-	  clientInfo_t *ci;
+	  const clientInfo_t *ci;
 
 	  //FIXME use cg.scores?
 	  //FIXME don't do it every time
@@ -4645,7 +6164,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_BLUE_PLAYER_COUNT:  {  // 93
 	  int i;
 	  int count;
-	  clientInfo_t *ci;
+	  const clientInfo_t *ci;
 
 	  //FIXME use cg.scores?
 	  //FIXME don't do it every time
@@ -4701,8 +6220,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
 
-	  //+#define CG_NEXTMAP 99
-
   case CG_RED_TIMEOUT_COUNT:  // 100
 	  if (cgs.protocol == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("TO: %s", CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT)), 0, 0, textStyle, font, align);
@@ -4736,12 +6253,12 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  int speed;
 
 		  if (wcg.clientNum != cg.snap->ps.clientNum) {
-			  entityState_t *es;
+			  const entityState_t *es;
 
 			  es = &cg_entities[wcg.clientNum].currentState;
 			  speed = sqrt (es->pos.trDelta[0] * es->pos.trDelta[0] + es->pos.trDelta[1] * es->pos.trDelta[1]);
 		  } else {
-			  playerState_t *ps;
+			  const playerState_t *ps;
 
 			  //ps = &cg.predictedPlayerState;
 			  ps = &cg.snap->ps;
@@ -4762,104 +6279,285 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  //#define CG_1STPLACE_PLYR_MODEL_ACTIVE 108
 
-  case CG_1ST_PLYR:
-	  CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[cg.duelPlayer1].name, 0, 0, textStyle, font, align);
+  case CG_1ST_PLYR: {
+	  const clientInfo_t *ci;
+	  const char *s;
+
+	  if (!cg.duelScoresValid) {
+		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+			  break;
+		  } else {
+			  ci = &cgs.clientinfo[cg.duelPlayer1];
+		  }
+	  } else {
+		  ci = &cg.duelScores[0].ci;
+	  }
+
+	  if (*ci->clanTag) {
+		  s = va("%s ^7%s", ci->clanTag, ci->name);
+	  } else {
+		  s = ci->name;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  break;
+  }
   case CG_1ST_PLYR_SCORE:
-	  //CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.scores1), 0, 0, textStyle, font, align);
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.clientinfo[cg.duelPlayer1].score), 0, 0, textStyle, font, align);
+	  if (cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 1) {
+		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
+		  break;
+	  }
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].score), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.clientinfo[cg.duelPlayer1].score), 0, 0, textStyle, font, align);
+		  } else {
+			  break;
+		  }
+	  }
 	  break;
   case CG_1ST_PLYR_FRAGS:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].kills), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].kills), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].frags), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_1ST_PLYR_DEATHS:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].deaths), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].deaths), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].deaths), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_1ST_PLYR_DMG:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].damage), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].damage), 0, 0, textStyle, font, align);
+	  }
 	  break;
 
-	  //#define CG_1ST_PLYR_TIME 114
+  case CG_1ST_PLYR_TIME:  // not used?
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].time), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].time), 0, 0, textStyle, font, align);
+		  }
+	  }
+	  break;
 
   case CG_1ST_PLYR_PING: {
 	  int colorNum;
+	  int ping;
 
-	  if (cg.duelScores[0].ping < 41) {
+	  if (cg.duelScoresValid) {
+		  ping = cg.duelScores[0].ping;
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  ping = cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].ping;
+		  } else {
+			  break;
+		  }
+	  }
+
+	  if (ping < 41) {
 		  colorNum = 2;
-	  } else if (cg.duelScores[0].ping < 81) {
+	  } else if (ping < 81) {
 		  colorNum = 3;
 	  } else {
 		  colorNum = 1;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, va("^%d%d", colorNum, cg.duelScores[0].ping), 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, va("^%d%d", colorNum, ping), 0, 0, textStyle, font, align);
 	  break;
   }
   case CG_1ST_PLYR_WINS:  // 116
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d/%d", cgs.clientinfo[cg.duelPlayer1].wins, cgs.clientinfo[cg.duelPlayer1].losses), 0, 0, textStyle, font, align);
+	  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d/%d", cgs.clientinfo[cg.duelPlayer1].wins, cgs.clientinfo[cg.duelPlayer1].losses), 0, 0, textStyle, font, align);
+	  }
 	  break;
   case CG_1ST_PLYR_ACC:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.duelScores[0].accuracy), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.duelScores[0].accuracy), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].accuracy), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_1ST_PLYR_FLAG: {  // 118
-	  if (cgs.clientinfo[cg.duelPlayer1].countryFlag) {
-		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, cgs.clientinfo[cg.duelPlayer1].countryFlag);
+	  const clientInfo_t *ci;
+
+	  if (cg.duelScoresValid) {
+		  ci = &cg.duelScores[0].ci;
+	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+		  ci = &cgs.clientinfo[cg.duelPlayer1];
+	  } else {
+		  break;
+	  }
+
+	  if (ci->countryFlag) {
+		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, ci->countryFlag);
 	  }
 	  break;
   }
-  case CG_1ST_PLYR_FULLCLAN:  // 119
-	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.duelPlayer1), "xcn"), 0, 0, textStyle, font, align);
-	  break;
+  case CG_1ST_PLYR_FULLCLAN: { // 119
+	  const clientInfo_t *ci;
 
-	  //#define CG_1ST_PLYR_TIMEOUT_COUNT 120
+	  if (cg.duelScoresValid) {
+		  ci = &cg.duelScores[0].ci;
+	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+		  ci = &cgs.clientinfo[cg.duelPlayer1];
+	  } else {
+		  break;
+	  }
 
-  case CG_2ND_PLYR:
-	  CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[cg.duelPlayer2].name, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, ci->fullClanName, 0, 0, textStyle, font, align);
 	  break;
+  }
+	  //#define CG_1ST_PLYR_TIMEOUT_COUNT 120  // not used?
+
+  case CG_2ND_PLYR: {
+	  const clientInfo_t *ci;
+	  const char *s;
+
+	  if (!cg.duelScoresValid) {
+		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+			  break;
+		  } else {
+			  ci = &cgs.clientinfo[cg.duelPlayer2];
+		  }
+	  } else {
+		  ci = &cg.duelScores[1].ci;
+	  }
+
+	  if (*ci->clanTag) {
+		  s = va("%s ^7%s", ci->clanTag, ci->name);
+	  } else {
+		  s = ci->name;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  break;
+  }
   case CG_2ND_PLYR_SCORE:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.clientinfo[cg.duelPlayer2].score), 0, 0, textStyle, font, align);
+	  if (cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 2) {
+		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
+		  break;
+	  }
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].score), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.clientinfo[cg.duelPlayer2].score), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_2ND_PLYR_FRAGS:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].kills), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].kills), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].frags), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_2ND_PLYR_DEATHS:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].deaths), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].deaths), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].deaths), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_2ND_PLYR_DMG:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].damage), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].damage), 0, 0, textStyle, font, align);
+	  }
 	  break;
 
-  //#define CG_2ND_PLYR_TIME 126
+  case CG_2ND_PLYR_TIME:  // 126  not used?
+	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].time), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].time), 0, 0, textStyle, font, align);
+		  }
+	  }
 
   case CG_2ND_PLYR_PING: {
 	  int colorNum;
+	  int ping;
 
-	  if (cg.duelScores[1].ping < 41) {
+	  if (cg.duelScoresValid) {
+		  ping = cg.duelScores[1].ping;
+	  } else if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+		  ping = cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].ping;
+	  } else {
+		  break;
+	  }
+
+	  if (ping < 41) {
 		  colorNum = 2;
-	  } else if (cg.duelScores[1].ping < 81) {
+	  } else if (ping < 81) {
 		  colorNum = 3;
 	  } else {
 		  colorNum = 1;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, va("^%d%d", colorNum, cg.duelScores[1].ping), 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, va("^%d%d", colorNum, ping), 0, 0, textStyle, font, align);
 	  break;
   }
   case CG_2ND_PLYR_WINS:  // 128
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d/%d", cgs.clientinfo[cg.duelPlayer2].wins, cgs.clientinfo[cg.duelPlayer2].losses), 0, 0, textStyle, font, align);
+	  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d/%d", cgs.clientinfo[cg.duelPlayer2].wins, cgs.clientinfo[cg.duelPlayer2].losses), 0, 0, textStyle, font, align);
+	  }
 	  break;
   case CG_2ND_PLYR_ACC:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.duelScores[1].accuracy), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.duelScores[1].accuracy), 0, 0, textStyle, font, align);
+	  } else {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].accuracy), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_2ND_PLYR_FLAG: {  // 130
-	  if (cgs.clientinfo[cg.duelPlayer2].countryFlag) {
-		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, cgs.clientinfo[cg.duelPlayer2].countryFlag);
+	  const clientInfo_t *ci;
+
+	  if (cg.duelScoresValid) {
+		  ci = &cg.duelScores[1].ci;
+	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+		  ci = &cgs.clientinfo[cg.duelPlayer2];
+	  } else {
+		  break;
+	  }
+
+	  if (ci->countryFlag) {
+		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, ci->countryFlag);
 	  }
 	  break;
   }
-  case CG_2ND_PLYR_FULLCLAN:  // 131
-	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.duelPlayer2), "xcn"), 0, 0, textStyle, font, align);
+  case CG_2ND_PLYR_FULLCLAN: {  // 131
+	  const clientInfo_t *ci;
+
+	  if (cg.duelScoresValid) {
+		  ci = &cg.duelScores[1].ci;
+	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+		  ci = &cgs.clientinfo[cg.duelPlayer2];
+	  } else {
+		  break;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, ci->fullClanName, 0, 0, textStyle, font, align);
 	  break;
+  }
 
 	  //#define CG_2ND_PLYR_TIMEOUT_COUNT 132
 
@@ -4891,20 +6589,100 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, va("^%d(%d)", colorNum, cg.avgBluePing), 0, 0, textStyle, font, align);
 	  break;
   }
-	  //#define CG_NEXTMAP2 135
-	  //#define CG_NEXTMAP3 136
-	  //#define CG_NEXTMAP_SHOT 137
-	  //#define CG_NEXTMAP2_SHOT 138
-	  //#define CG_NEXTMAP3_SHOT 139
-	  //#define CG_NEXTMAP_NAME 140
-	  //#define CG_NEXTMAP2_NAME 141
-	  //#define CG_NEXTMAP3_NAME 142
-	  //#define CG_VOTECOUNT_MAP1 143
-	  //#define CG_VOTECOUNT_MAP2 144
-	  //#define CG_VOTECOUNT_MAP3 145
-	  //#define CG_VOTEMAP_TIMER 146
 
+	  //#define CG_VOTEMAP1 99  // never used?
+	  //#define CG_VOTEMAP2 135  // never used?
+	  //#define CG_VOTEMAP3 136  // never used?
 
+  case CG_VOTESHOT1: {
+	  qhandle_t shader = 0;
+	  const char *info;
+
+	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
+	  if (*info) {
+		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_0")));
+		  if (!shader) {
+			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_0")));
+		  }
+	  }
+	  if (!shader) {
+		  shader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
+	  }
+
+	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
+	  break;
+  }
+  case CG_VOTESHOT2: {
+	  qhandle_t shader = 0;
+	  const char *info;
+
+	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
+	  if (*info) {
+		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_1")));
+		  if (!shader) {
+			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_1")));
+			  //shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/overlay"));
+		  }
+	  }
+	  if (!shader) {
+		  shader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
+	  }
+
+	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
+	  break;
+  }
+  case CG_VOTESHOT3: {
+	  qhandle_t shader = 0;
+	  const char *info;
+
+	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
+	  if (*info) {
+		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_2")));
+		  if (!shader) {
+			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_2")));
+		  }
+	  }
+	  if (!shader) {
+		  shader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
+	  }
+
+	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
+	  break;
+  }
+
+  case CG_VOTENAME1:
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "title_0"), 0, 0, textStyle, font, align);
+	  break;
+  case CG_VOTENAME2:
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "title_1"), 0, 0, textStyle, font, align);
+	  break;
+  case CG_VOTENAME3:
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "title_2"), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_VOTECOUNT1:
+	  CG_Text_Paint_Align(&rect, scale, color, va("Votes: %s", Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_COUNT), "0")), 0, 0, textStyle, font, align);
+	  break;
+  case CG_VOTECOUNT2:
+	  CG_Text_Paint_Align(&rect, scale, color, va("Votes: %s", Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_COUNT), "1")), 0, 0, textStyle, font, align);
+	  break;
+  case CG_VOTECOUNT3:
+	  CG_Text_Paint_Align(&rect, scale, color, va("Votes: %s", Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_COUNT), "2")), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_VOTETIMER: {
+	  int t;
+
+	  //FIXME 20 sec fixed???
+	  t = (atoi(CG_ConfigString(CS_VOTE_TIME)) + 20000 - cg.time) / 1000;
+
+	  if (t > 0) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("Voting ends in %d seconds.", t), 0, 0, textStyle, font, align);
+	  } else {
+		  CG_Text_Paint_Align(&rect, scale, color, "Voting has ended.", 0, 0, textStyle, font, align);
+	  }
+	  break;
+  }
 
   case CG_BEST_ITEMCONTROL_PLYR:
 	  if (CG_CheckQlVersion(0, 1, 0, 495)) {
@@ -4969,6 +6747,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
   case CG_MATCH_DETAILS: {  // 151
 	  const char *detail;
+	  char mapname[MAX_QPATH];
 
 	  if (cg.warmup) {
 		  detail = "MATCH WARMUP";
@@ -4979,8 +6758,27 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  detail = "MATCH IN PROGRESS";
 		  }
 	  }
+
+#define DETAIL_LIMIT 53
+
 	  //FIXME or not:  using sv_location instead of gametype
-	  CG_Text_Paint_Align(&rect, scale, color, va("%s - %s %s - %s", detail, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_location"), CG_ConfigString(CS_MESSAGE)), 0, 0, textStyle, font, align);
+
+	  if (cgs.protocol == PROTOCOL_QL) {
+		  s = va("%s - %s %s - %s", detail, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_location"), CG_ConfigString(CS_MESSAGE));
+		  CG_LimitText((char *)s, DETAIL_LIMIT);
+		  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  } else {
+		  //CG_Text_Paint_Align(&rect, scale, color, va("%s - %s %s", detail, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_location")), 0, 0, textStyle, font, align);
+		  //FIXME store this
+		  mapname[0] = '\0';
+		  Q_strncpyz(mapname, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "mapname"), sizeof(mapname));
+		  s = va("%s - %s ^7- %s", detail, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), mapname);
+		  CG_LimitText((char *)s, DETAIL_LIMIT);
+		  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  }
+
+#undef DETAIL_LIMIT
+
 	  break;
   }
   case CG_1ST_PLYR_FRAGS_G:
@@ -5124,121 +6922,132 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_1ST_PLYR_ACC_MG:
 	  ival = WP_MACHINEGUN;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
   case CG_1ST_PLYR_ACC_SG:
 	  ival = WP_SHOTGUN;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_GL:
 	  ival = WP_GRENADE_LAUNCHER;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_RL:
 	  ival = WP_ROCKET_LAUNCHER;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_LG:
 	  ival = WP_LIGHTNING;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_RG:
 	  ival = WP_RAILGUN;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_PG:
 	  ival = WP_PLASMAGUN;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_BFG:
 	  ival = WP_BFG;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_CG:
 	  ival = WP_CHAINGUN;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_NG:
 	  ival = WP_NAILGUN;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_ACC_PL:
 	  ival = WP_PROX_LAUNCHER;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_1ST_PLYR_PICKUPS_RA:
@@ -5434,121 +7243,132 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_2ND_PLYR_ACC_MG:
 	  ival = WP_MACHINEGUN;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
   case CG_2ND_PLYR_ACC_SG:
 	  ival = WP_SHOTGUN;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_GL:
 	  ival = WP_GRENADE_LAUNCHER;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_RL:
 	  ival = WP_ROCKET_LAUNCHER;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_LG:
 	  ival = WP_LIGHTNING;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_RG:
 	  ival = WP_RAILGUN;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_PG:
 	  ival = WP_PLASMAGUN;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_BFG:
 	  ival = WP_BFG;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_CG:
 	  ival = WP_CHAINGUN;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_NG:
 	  ival = WP_NAILGUN;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_ACC_PL:
 	  ival = WP_PROX_LAUNCHER;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
-		  Vector4Set(color, 1, 1, 1, 1);
+		  Vector4Set(newColor, 1, 1, 1, 1);
 		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  } else {
+		  Vector4Copy(color, newColor);
 		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
 	  }
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_PICKUPS_RA:
@@ -5602,34 +7422,100 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 
   case CG_1ST_PLYR_EXCELLENT:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].awardExcellent), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  if (cgs.cpma  &&  cg.duelScores[0].awardExcellent == -1) {
+			  // pass
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].awardExcellent), 0, 0, textStyle, font, align);
+		  }
+	  } else if (!cgs.cpma  &&  cg.scoresValid) {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].excellentCount), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_1ST_PLYR_IMPRESSIVE:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].awardImpressive), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  if (cgs.cpma  &&  cg.duelScores[0].awardImpressive == -1) {
+			  // pass
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].awardImpressive), 0, 0, textStyle, font, align);
+		  }
+	  } else if (!cgs.cpma  &&  cg.scoresValid) {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].impressiveCount), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_1ST_PLYR_HUMILIATION:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].awardHumiliation), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  if (cgs.cpma  &&  cg.duelScores[0].awardHumiliation == -1) {
+			  // pass
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].awardHumiliation), 0, 0, textStyle, font, align);
+		  }
+	  } else if (!cgs.cpma  &&  cg.scoresValid) {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].gauntletCount), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
 
   case CG_2ND_PLYR_EXCELLENT:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].awardExcellent), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  if (cgs.cpma  &&  cg.duelScores[1].awardExcellent == -1) {
+			  // pass
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].awardExcellent), 0, 0, textStyle, font, align);
+		  }
+	  } else if (!cgs.cpma  &&  cg.scoresValid) {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].excellentCount), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_2ND_PLYR_IMPRESSIVE:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].awardImpressive), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  if (cgs.cpma  &&  cg.duelScores[1].awardImpressive == -1) {
+			  // pass
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].awardImpressive), 0, 0, textStyle, font, align);
+		  }
+	  } else if (!cgs.cpma  &&  cg.scoresValid) {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].impressiveCount), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
   case CG_2ND_PLYR_HUMILIATION:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].awardHumiliation), 0, 0, textStyle, font, align);
+	  if (cg.duelScoresValid) {
+		  if (cgs.cpma  &&  cg.duelScores[1].awardHumiliation == -1) {
+			  // pass
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].awardHumiliation), 0, 0, textStyle, font, align);
+		  }
+	  } else if (!cgs.cpma  &&  cg.scoresValid) {
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].gauntletCount), 0, 0, textStyle, font, align);
+		  }
+	  }
 	  break;
 
   case CG_1ST_PLYR_READY:  // 288
 	  if (cg.warmup) {
-		  if (cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer1)) {
+		  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer1)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_ready");
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_notready");
 		  }
 	  } else {
-		  if (cgs.clientinfo[cg.duelPlayer1].score > cgs.clientinfo[cg.duelPlayer2].score) {
+		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
+		  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_leads");
+		  } else if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_trails");
+		  } else if (cgs.clientinfo[cg.duelPlayer1].score > cgs.clientinfo[cg.duelPlayer2].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_leads");
 		  } else if (cgs.clientinfo[cg.duelPlayer1].score < cgs.clientinfo[cg.duelPlayer2].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_trails");
@@ -5637,18 +7523,26 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
 		  }
 	  }
+
+	  //CG_Text_Paint_Align(&rect, scale, color, "test1", 0, 0, textStyle, font, align);
 	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
 	  break;
 
   case CG_2ND_PLYR_READY:  // 289
 	  if (cg.warmup) {
-		  if (cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer2)) {
+		  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)  &&  cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer2)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_ready");
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_notready");
 		  }
 	  } else {
-		  if (cgs.clientinfo[cg.duelPlayer2].score > cgs.clientinfo[cg.duelPlayer1].score) {
+		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
+		  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer2)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_leads");
+		  } else if (!CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_trails");
+		  } else if (cgs.clientinfo[cg.duelPlayer2].score > cgs.clientinfo[cg.duelPlayer1].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_leads");
 		  } else if (cgs.clientinfo[cg.duelPlayer2].score < cgs.clientinfo[cg.duelPlayer1].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_trails");
@@ -5656,19 +7550,115 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
 		  }
 	  }
+
+	  //CG_Text_Paint_Align(&rect, scale, color, "test2", 0, 0, textStyle, font, align);
 	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
 	  break;
 
-	  //#define CG_SELECTED_PLYR_NAME 290
-	  //#define CG_SELECTED_PLYR_SCORE 291
-	  //#define CG_SELECTED_PLYR_DMG 292
-	  //#define CG_SELECTED_PLYR_ACC 293
-	  //#define CG_SELECTED_PLYR_FLAG 294
-	  //#define CG_SELECTED_PLYR_FULLCLAN 295
-	  //#define CG_SELECTED_PLYR_PICKUPS_RA 296
-	  //#define CG_SELECTED_PLYR_PICKUPS_YA 297
-	  //#define CG_SELECTED_PLYR_PICKUPS_GA 298
-	  //#define CG_SELECTED_PLYR_PICKUPS_MH 299
+  // CG_SELECTED_PLYR_*  just duel?
+
+  case CG_SELECTED_PLYR_NAME:
+	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (ci->clanTag) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%s ^7%s", ci->clanTag, ci->name), 0, 0, textStyle, font, align);
+	  } else {
+		  CG_Text_Paint_Align(&rect, scale, color, ci->name, 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+  case CG_SELECTED_PLYR_SCORE:
+	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", ci->score), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_SELECTED_PLYR_DMG:
+	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (clientNum == cg.duelPlayer1) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].damage), 0, 0, textStyle, font, align);
+	  } else if (clientNum == cg.duelPlayer2) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].damage), 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+  case CG_SELECTED_PLYR_ACC:
+	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (clientNum == cg.duelPlayer1) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].accuracy), 0, 0, textStyle, font, align);
+	  } else if (clientNum == cg.duelPlayer2) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].accuracy), 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+
+  case CG_SELECTED_PLYR_FLAG:
+	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (ci->countryFlag) {
+		  // CG_Text_Paint_Align(&rect, scale, color, va("%s ^7%s", ci->clanTag, ci->name), 0, 0, textStyle, font, align);
+		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, ci->countryFlag);
+	  }
+	  break;
+
+  case CG_SELECTED_PLYR_FULLCLAN:
+	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (clientNum == cg.duelPlayer1) {
+		  CG_Text_Paint_Align(&rect, scale, color, cg.duelScores[0].ci.fullClanName, 0, 0, textStyle, font, align);
+	  } else if (clientNum == cg.duelPlayer2) {
+		  CG_Text_Paint_Align(&rect, scale, color, cg.duelScores[1].ci.fullClanName, 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+
+  case CG_SELECTED_PLYR_PICKUPS_RA:
+	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (clientNum == cg.duelPlayer1) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].redArmorPickups), 0, 0, textStyle, font, align);
+	  } else if (clientNum == cg.duelPlayer2) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].redArmorPickups), 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+  case CG_SELECTED_PLYR_PICKUPS_YA:
+	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (clientNum == cg.duelPlayer1) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].yellowArmorPickups), 0, 0, textStyle, font, align);
+	  } else if (clientNum == cg.duelPlayer2) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].yellowArmorPickups), 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+  case CG_SELECTED_PLYR_PICKUPS_GA:
+	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (clientNum == cg.duelPlayer1) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].greenArmorPickups), 0, 0, textStyle, font, align);
+	  } else if (clientNum == cg.duelPlayer2) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].greenArmorPickups), 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+  case CG_SELECTED_PLYR_PICKUPS_MH:
+	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
+	  if (clientNum == cg.duelPlayer1) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].megaHealthPickups), 0, 0, textStyle, font, align);
+	  } else if (clientNum == cg.duelPlayer2) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].megaHealthPickups), 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+	  //CG_1ST_PLYR_PR 300  // not used?
+	  //CG_2ND_PLYR_PR 301  // not used?
+	  //CG_1ST_PLYR_TIER 302  // not used?
+	  //CG_2ND_PLYR_TIER 303  // not used?
+
+  case CG_SERVER_OWNER: {
+	  const char *ownerName = NULL;
+
+	  ownerName = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_owner");
+	  if (!ownerName  ||  !*ownerName) {
+		  ownerName = "Quake Live";
+	  }
+	  CG_Text_Paint_Align(&rect, scale, color, va("%s", ownerName), 0, 0, textStyle, font, align);
+	  break;
+  }
 
   case CG_RED_TEAM_PICKUPS_RA:
 	  if (cg.tdmScore.valid) {
@@ -5812,8 +7802,13 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_BLUE_OWNED_FLAGS:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.dominationBluePoints), 0, 0, textStyle, font, align);
 	  break;
-  case CG_ROUND:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.roundNum), 0, 0, textStyle, font, align);
+  case CG_ROUND: {
+	  if (cg.warmup) {
+		  CG_Text_Paint_Align(&rect, scale, color, "Warmup", 0, 0, textStyle, font, align);
+	  } else {
+		  CG_Text_Paint_Align(&rect, scale, color, va("Round %d", cgs.roundNum), 0, 0, textStyle, font, align);
+	  }
+  }
 	  break;
   case CG_TEAM_PLYR_COUNT: {
 	  int ourTeam;
@@ -5856,12 +7851,160 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  // UI_VOTESTRING 260
 	  // UI_SERVER_SETTINGS 580
 
+
+  // wolfcam ownerdraws
+
+  case WCG_GAME_STATUS:
+	  if (cg.warmup) {
+		  CG_Text_Paint_Align(&rect, scale, color, "Warmup", 0, 0, textStyle, font, align);
+	  } else if (cg.snap  &&  cg.snap->ps.pm_type == PM_INTERMISSION) {
+		  CG_Text_Paint_Align(&rect, scale, color, "Intermission", 0, 0, textStyle, font, align);
+	  } else if (cg.snap) {
+		  // playing
+		  CG_Text_Paint_Align(&rect, scale, color, "Game Active", 0, 0, textStyle, font, align);
+	  } else {
+		  CG_Text_Paint_Align(&rect, scale, color, "Not Connected", 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+  case WCG_WEAPON_SELECTED:  //FIXME duplicate code
+	  if (wolfcam_following) {
+		   ival = cg_entities[wcg.clientNum].currentState.weapon;
+	  } else {
+		  if (!cg.demoPlayback) {
+			  ival = cg.weaponSelect;
+		  } else {
+			  ival = cg.snap->ps.weapon;
+		  }
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", ival), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_SELECT_TIME:
+	  if (wolfcam_following) {
+		  ival = wcg.weaponSelectTime;
+	  } else {
+		  ival = cg.weaponSelectTime;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", ival), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_NUMBER_OF_HELD_WEAPONS:
+	  ival = CG_NumHeldWeapons();
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", ival), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_GAUNTLET:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_GAUNTLET)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_MACHINEGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_MACHINEGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_SHOTGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_SHOTGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_GRENADE_LAUNCHER:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_GRENADE_LAUNCHER)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_ROCKET_LAUNCHER:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_ROCKET_LAUNCHER)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_LIGHTNING:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_LIGHTNING)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_RAILGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_RAILGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_PLASMAGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_PLASMAGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_BFG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_BFG)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_GRAPPLING_HOOK:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_GRAPPLING_HOOK)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_NAILGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_NAILGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_PROX_LAUNCHER:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_PROX_LAUNCHER)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_HAVE_CHAINGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_HaveWeapon(WP_CHAINGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_GAUTNLET:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_GAUNTLET)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_MACHINEGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_MACHINEGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_SHOTGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_SHOTGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_GRENADE_LAUNCHER:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_GRENADE_LAUNCHER)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_ROCKET_LAUNCHER:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_ROCKET_LAUNCHER)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_LIGHTNING:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_LIGHTNING)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_RAILGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_RAILGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_PLASMAGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_PLASMAGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_BFG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_BFG)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_GRAPPLING_HOOK:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_GRAPPLING_HOOK)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_NAILGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_NAILGUN)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_PROX_LAUNCHER:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_PROX_LAUNCHER)), 0, 0, textStyle, font, align);
+	  break;
+
+  case WCG_WEAPON_AMMO_CHAINGUN:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_CHAINGUN)), 0, 0, textStyle, font, align);
+	  break;
+
   default:
 	  if (debug > 0) {
 		  //Com_Printf("CG_OwnerDraw() unknown ownerDraw %d\n", ownerDraw);
 		  //CG_Text_Paint(rect.x, rect.y + rect.h, scale, color, va("xxx %d  xxx", ownerDraw), 0, 0, textStyle, &cgDC.Assets.textFont);
 		  CG_Text_Paint_Align(&rect, scale, color, va("^3xxx %d  xxx", ownerDraw), 0, 0, textStyle, &cgDC.Assets.textFont, align);
-		  //CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.duelPlayer1), "xcn"), 0, 0, textStyle, font, align);
 		  Com_Printf("FIXME CG_OwnerDraw()  %d\n", ownerDraw);
 	  }
     break;
@@ -5973,10 +8116,12 @@ CG_HideTeamMenus
 ==================
 
 */
-void CG_HideTeamMenu( void ) {
+static void CG_HideTeamMenu( void ) {
   Menus_CloseByName("teamMenu");
   Menus_CloseByName("getMenu");
 }
+
+#if 0  // unused
 
 /*
 ==================
@@ -5984,12 +8129,11 @@ CG_ShowTeamMenus
 ==================
 
 */
-void CG_ShowTeamMenu( void ) {
+static void CG_ShowTeamMenu( void ) {
   Menus_OpenByName("teamMenu");
 }
 
-
-
+#endif
 
 /*
 ==================
@@ -6001,7 +8145,7 @@ CG_EventHandling
 
 */
 void CG_EventHandling(int type) {
-    CG_Printf ("^3CG_EventHandling: type==%d\n", type);
+    CG_Printf ("^3CG_EventHandling type: %d\n", type);
 
 	cgs.eventHandling = type;
 
@@ -6024,7 +8168,7 @@ void CG_EventHandling(int type) {
 	if (type == CGAME_EVENT_NONE) {
 		trap_Key_SetCatcher(trap_Key_GetCatcher() & ~KEYCATCH_CGAME);
 	} else {
-		Com_Printf("CG_EventHandline type: %d  not handled\n", type);
+		Com_Printf("CG_EventHandling type: %d  not handled\n", type);
 	}
 
 }
@@ -6105,7 +8249,9 @@ void CG_KeyEvent (int key, qboolean down)
 	}
 }
 
-int CG_ClientNumFromName(const char *p) {
+#if 0  // unused
+
+static int CG_ClientNumFromName(const char *p) {
   int i;
   for (i = 0; i < cgs.maxclients; i++) {
     if (cgs.clientinfo[i].infoValid && Q_stricmp(cgs.clientinfo[i].name, p) == 0) {
@@ -6114,6 +8260,8 @@ int CG_ClientNumFromName(const char *p) {
   }
   return -1;
 }
+
+#endif
 
 void CG_ShowResponseHead(void) {
   Menus_OpenByName("voiceMenu");
@@ -6140,24 +8288,23 @@ void CG_GetTeamColor(vec4_t *color) {
     (*color)[3] = 0.25f;
     (*color)[1] = (*color)[2] = 0.0f;
 #endif
-	SC_Vec3ColorFromCvar(*color, cg_hudRedTeamColor);
+	SC_Vec3ColorFromCvar(*color, &cg_hudRedTeamColor);
   } else if (team == TEAM_BLUE) {
 #if 0
     (*color)[0] = (*color)[1] = 0.0f;
     (*color)[2] = 1.0f;
     (*color)[3] = 0.25f;
 #endif
-	SC_Vec3ColorFromCvar(*color, cg_hudBlueTeamColor);
+	SC_Vec3ColorFromCvar(*color, &cg_hudBlueTeamColor);
   } else {
 #if 0
     (*color)[0] = (*color)[2] = 0.0f;
     (*color)[1] = 0.17f;
     (*color)[3] = 0.25f;
 #endif
-	SC_Vec3ColorFromCvar(*color, cg_hudNoTeamColor);
+	SC_Vec3ColorFromCvar(*color, &cg_hudNoTeamColor);
   }
 
   (*color)[3] = 1.0;
   //Com_Printf("CG_GetTeamColor()  %f %f %f %f\n", *color[0], *color[1], *color[2], *color[3]);
 }
-

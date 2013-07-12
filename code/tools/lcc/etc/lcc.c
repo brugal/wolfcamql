@@ -341,6 +341,7 @@ static int callsys(char **av) {
 			else
 				i++;
 		}
+		//FIXME free if not NULL?  cppcheck
 		argv[j] = NULL;
 		executable = strsave( argv[0] );
 		argv[0] = stringf( "\"%s\"", argv[0] );

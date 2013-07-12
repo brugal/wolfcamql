@@ -28,7 +28,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "ui_public.h"
 #include "../client/keycodes.h"
 #include "../game/bg_public.h"
+#include "ui_common.h"
 #include "ui_shared.h"
+
 
 // global display context
 
@@ -143,7 +145,6 @@ extern vmCvar_t ui_serverStatusTimeOut;
 #define	MAX_EDIT_LINE			256
 
 #define MAX_MENUDEPTH			8
-//#define MAX_MENUITEMS			96
 
 #define MTYPE_NULL				0
 #define MTYPE_SLIDER			1	
@@ -914,7 +915,7 @@ void UI_SPSkillMenu_Cache( void );
 // ui_syscalls.c
 //
 void			trap_Print( const char *string );
-void			trap_Error( const char *string );
+void			trap_Error( const char *string ) __attribute__ ((noreturn));
 int				trap_Milliseconds( void );
 void			trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );
 void			trap_Cvar_Update( vmCvar_t *vmCvar );
@@ -925,6 +926,8 @@ void			trap_Cvar_SetValue( const char *var_name, float value );
 void			trap_Cvar_Reset( const char *name );
 void			trap_Cvar_Create( const char *var_name, const char *var_value, int flags );
 void			trap_Cvar_InfoStringBuffer( int bit, char *buffer, int bufsize );
+qboolean trap_Cvar_Exists (const char *var_name);
+
 int				trap_Argc( void );
 void			trap_Argv( int n, char *buffer, int bufferLength );
 void			trap_Cmd_ExecuteText( int exec_when, const char *text );	// don't use EXEC_NOW!

@@ -229,7 +229,7 @@ typedef struct {
 	int			snapFlagServerBit;			// ^= SNAPFLAG_SERVERCOUNT every SV_SpawnServer()
 
 	client_t	*clients;					// [sv_maxclients->integer];
-	int			numSnapshotEntities;		// sv_maxclients->integer*PACKET_BACKUP*MAX_PACKET_ENTITIES
+	int      numSnapshotEntities;    // sv_maxclients->integer*PACKET_BACKUP*MAX_SNAPSHOT_ENTITIES
 	int			nextSnapshotEntities;		// next snapshotEntities to use
 	entityState_t	*snapshotEntities;		// [numSnapshotEntities]
 	int			nextHeartbeatTime;
@@ -306,7 +306,7 @@ extern cvar_t *sv_randomClientSlot;
 // sv_main.c
 //
 void SV_FinalMessage (char *message);
-void QDECL SV_SendServerCommand( client_t *cl, const char *fmt, ...);
+void QDECL SV_SendServerCommand( client_t *cl, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
 
 void SV_AddOperatorCommands (void);

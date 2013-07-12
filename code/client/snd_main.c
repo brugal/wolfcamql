@@ -40,6 +40,7 @@ cvar_t *s_showMiss;
 cvar_t *s_maxSoundRepeatTime;
 cvar_t *s_maxSoundInstances;
 cvar_t *s_qlAttenuate;
+cvar_t *s_debugMissingSounds;
 
 static soundInterface_t si;
 
@@ -87,7 +88,7 @@ static qboolean S_ValidSoundInterface( soundInterface_t *si )
 S_StartSound
 =================
 */
-void S_StartSound( vec3_t origin, int entnum, int entchannel, sfxHandle_t sfx )
+void S_StartSound( const vec3_t origin, int entnum, int entchannel, sfxHandle_t sfx )
 {
 	if( si.StartSound ) {
 		si.StartSound( origin, entnum, entchannel, sfx );
@@ -238,7 +239,7 @@ S_Respatialize
 =================
 */
 void S_Respatialize( int entityNum, const vec3_t origin,
-		vec3_t axis[3], int inwater )
+		const vec3_t axis[3], int inwater )
 {
 	if( si.Respatialize ) {
 		si.Respatialize( entityNum, origin, axis, inwater );
@@ -332,13 +333,21 @@ sfxHandle_t	S_RegisterSound( const char *sample, qboolean compressed )
 	if( si.RegisterSound ) {
 		slen = strlen(sample);
 		if (slen >= 5) {
-			//FIXME assumes extension
 			// first try ogg
-			strncpy(newName, sample, MAX_QPATH);
-			newName[slen - 1] = 'g';
-			newName[slen - 2] = 'g';
-			newName[slen - 3] = 'o';
-			s = si.RegisterSound(newName, compressed);
+			//strncpy(newName, sample, MAX_QPATH);
+			COM_StripExtension(sample, newName, sizeof(newName));
+			slen = strlen(newName);
+			if (slen + 5 >= sizeof(newName)) {
+				Com_Printf("^3%s() couldn't add ogg extension to '%s', name is too long\n", __FUNCTION__, sample);
+				s = 0;
+			} else {
+				newName[slen + 0] = '.';
+				newName[slen + 1] = 'o';
+				newName[slen + 2] = 'g';
+				newName[slen + 3] = 'g';
+				newName[slen + 4] = '\0';
+				s = si.RegisterSound(newName, compressed);
+			}
 			if (!s) {
 				s = si.RegisterSound(sample, compressed);
 			}
@@ -347,14 +356,6 @@ sfxHandle_t	S_RegisterSound( const char *sample, qboolean compressed )
 				Com_Printf("^1S_RegisterSound() couldn't open '%s'\n", sample);
 			}
 			return s;
-#if 0
-			s = si.RegisterSound(newName, compressed);
-			if (!s) {
-				return si.RegisterSound(sample, compressed);
-			} else {
-				return s;
-			}
-#endif
 		} else {
 			Com_Printf("^3FIXME S_RegisterSound() '%s'\n", sample);
 			return si.RegisterSound( sample, compressed );
@@ -473,23 +474,26 @@ S_Play_f
 */
 void S_Play_f( void ) {
 	int 		i;
+	int                     c;
 	sfxHandle_t	h;
-	char		name[256];
 
 	if( !si.RegisterSound || !si.StartLocalSound ) {
 		return;
 	}
 
-	i = 1;
-	while ( i<Cmd_Argc() ) {
-		Q_strncpyz( name, Cmd_Argv(i), sizeof(name) );
-		//h = si.RegisterSound( name, qfalse );
-		h = S_RegisterSound(name, qfalse);
+	c = Cmd_Argc();
+
+	if( c < 2 ) {
+		Com_Printf ("Usage: play <sound filename> [sound filename] [sound filename] ...\n");
+		return;
+	}
+
+	for( i = 1; i < c; i++ ) {
+		h = S_RegisterSound(Cmd_Argv(i), qfalse);
 
 		if( h ) {
 			si.StartLocalSound( h, CHAN_LOCAL_SOUND );
 		}
-		i++;
 	}
 }
 
@@ -512,7 +516,7 @@ void S_Music_f( void ) {
 	} else if ( c == 3 ) {
 		si.StartBackgroundTrack( Cmd_Argv(1), Cmd_Argv(2) );
 	} else {
-		Com_Printf ("music <musicfile> [loopfile]\n");
+		Com_Printf ("Usage: music <musicfile> [loopfile]\n");
 		return;
 	}
 
@@ -560,6 +564,7 @@ void S_Init( void )
 	s_maxSoundRepeatTime = Cvar_Get("s_maxSoundRepeatTime", "0", CVAR_ARCHIVE);
 	s_maxSoundInstances = Cvar_Get("s_maxSoundInstances", "96", CVAR_ARCHIVE);
 	s_qlAttenuate = Cvar_Get("s_qlAttenuate", "1", CVAR_ARCHIVE);
+	s_debugMissingSounds = Cvar_Get("s_debugMissingSounds", "0", CVAR_ARCHIVE);
 
 	cv = Cvar_Get( "s_initsound", "1", 0 );
 	if( !cv->integer ) {

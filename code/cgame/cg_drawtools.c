@@ -2,6 +2,11 @@
 //
 // cg_drawtools.c -- helper functions called by cg_draw, cg_scoreboard, cg_info, etc
 #include "cg_local.h"
+#include "../qcommon/q_shared.h"
+#include "cg_drawtools.h"
+#include "cg_draw.h"
+#include "cg_players.h"  // color from string
+#include "cg_syscalls.h"
 
 /*
 ================
@@ -50,12 +55,15 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 
 			newXScale = width43 / 640.0;
 
-			*x += (diff / 2.0);
+			//*x += (diff / 2.0);
 
 			*x *= newXScale;
 			*y *= cgs.screenYScale;
 			*w *= newXScale;
 			*h *= cgs.screenYScale;
+
+			*x += (diff / 2.0);
+
 			return;
 
 		} else if (cg_wideScreenScoreBoardHack.integer == 2) {
@@ -173,7 +181,7 @@ CG_DrawChar
 Coordinates and size in 640*480 virtual screen size
 ===============
 */
-void CG_DrawChar( int x, int y, int width, int height, int ch ) {
+static void CG_DrawChar( int x, int y, int width, int height, int ch ) {
 	int row, col;
 	float frow, fcol;
 	float size;
@@ -217,7 +225,7 @@ Coordinates are at 640 by 480 virtual resolution
 ==================
 */
 void CG_DrawStringExt( int x, int y, const char *string, const float *setColor, 
-					   qboolean forceColor, qboolean shadow, int charWidth, int charHeight, int maxChars, fontInfo_t *font ) {
+					   qboolean forceColor, qboolean shadow, int charWidth, int charHeight, int maxChars, const fontInfo_t *font ) {
 	vec4_t		color;
 	const char	*s;
 	int			xx;
@@ -232,7 +240,7 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 	if (cg_testQlFont.integer) {
 		float scale;
 		float pt;
-		fontInfo_t *subFont;
+		const fontInfo_t *subFont;
 
 		//CG_Text_Paint_Ext(x, y, 0.25, 0.25, color, string, 0, 0, 0, &cgs.media.qlfont24);
 		//CG_Text_Paint(x, y, 0.25, 0.25, (float *)color, string, 0, 0, 0, &cgs.media.qlfont24);
@@ -341,7 +349,7 @@ void CG_DrawBigString( int x, int y, const char *s, float alpha ) {
 	CG_DrawStringExt( x, y, s, color, qfalse, qtrue, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 0, &cgs.media.bigchar );
 }
 
-void CG_DrawBigStringColor( int x, int y, const char *s, vec4_t color ) {
+void CG_DrawBigStringColor( int x, int y, const char *s, const vec4_t color ) {
 	CG_DrawStringExt( x, y, s, color, qtrue, qtrue, BIGCHAR_WIDTH, BIGCHAR_HEIGHT, 0, &cgs.media.bigchar );
 }
 
@@ -353,7 +361,7 @@ void CG_DrawSmallString( int x, int y, const char *s, float alpha ) {
 	CG_DrawStringExt( x, y, s, color, qfalse, qfalse, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.smallchar );
 }
 
-void CG_DrawSmallStringColor( int x, int y, const char *s, vec4_t color ) {
+void CG_DrawSmallStringColor( int x, int y, const char *s, const vec4_t color ) {
 	CG_DrawStringExt( x, y, s, color, qtrue, qfalse, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.smallchar );
 }
 
@@ -364,13 +372,13 @@ CG_DrawStrlen
 Returns character count, skiping color escape codes
 =================
 */
-int CG_DrawStrlen( const char *str, fontInfo_t *font ) {
+int CG_DrawStrlen( const char *str, const fontInfo_t *font ) {
 	const char *s = str;
 	int count = 0;
 	int w;
 
 	if (cg_testQlFont.integer) {
-		//CG_Text_Width(const char *text, float scale, int limit, fontInfo_t *font)
+		//CG_Text_Width(const char *text, float scale, int limit, const fontInfo_t *font)
 		return CG_Text_Width(str, 0.25f, 0, &cgs.media.qlfont24) / BIGCHAR_WIDTH;
 	}
 
@@ -755,6 +763,7 @@ static int	propMap[128][3] = {
 {0, 0, -1}		// DEL
 };
 
+#if 0  // unused
 static int propMapB[26][3] = {
 {11, 12, 33},
 {49, 12, 31},
@@ -790,13 +799,15 @@ static int propMapB[26][3] = {
 #define PROPB_GAP_WIDTH		4
 #define PROPB_SPACE_WIDTH	12
 #define PROPB_HEIGHT		36
+#endif
 
+#if 0  // unused
 /*
 =================
 UI_DrawBannerString
 =================
 */
-static void UI_DrawBannerString2( int x, int y, const char* str, vec4_t color, qboolean forceColor )
+static void UI_DrawBannerString2( int x, int y, const char* str, const vec4_t color, qboolean forceColor )
 {
 	const char* s;
 	unsigned char	ch; // bk001204 : array subscript
@@ -839,7 +850,11 @@ static void UI_DrawBannerString2( int x, int y, const char* str, vec4_t color, q
 	trap_R_SetColor( NULL );
 }
 
-void UI_DrawBannerString( int x, int y, const char* str, int style, vec4_t color ) {
+#endif
+
+
+#if 0  // unused
+static void UI_DrawBannerString( int x, int y, const char* str, int style, const vec4_t color ) {
 	const char *	s;
 	int				ch;
 	int				width;
@@ -883,8 +898,9 @@ void UI_DrawBannerString( int x, int y, const char* str, int style, vec4_t color
 	UI_DrawBannerString2( x, y, str, color, qfalse );
 }
 
+#endif
 
-int UI_ProportionalStringWidth( const char* str ) {
+static int UI_ProportionalStringWidth( const char* str ) {
 	const char *	s;
 	int				ch;
 	int				charWidth;
@@ -918,7 +934,7 @@ int UI_ProportionalStringWidth( const char* str ) {
 	return width;
 }
 
-static void UI_DrawProportionalString2( int x, int y, const char* str, vec4_t color, qboolean forceColor, float sizeScale, qhandle_t charset )
+static void UI_DrawProportionalString2( int x, int y, const char* str, const vec4_t color, qboolean forceColor, float sizeScale, qhandle_t charset )
 {
 	const char* s;
 	unsigned char	ch; // bk001204 - unsigned
@@ -1004,7 +1020,7 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, vec4_t co
 UI_ProportionalSizeScale
 =================
 */
-float UI_ProportionalSizeScale( int style ) {
+static float UI_ProportionalSizeScale( int style ) {
 	if(  style & UI_SMALLFONT ) {
 		return 0.75;
 	}
@@ -1018,7 +1034,7 @@ float UI_ProportionalSizeScale( int style ) {
 UI_DrawProportionalString
 =================
 */
-void UI_DrawProportionalString( int x, int y, const char* str, int style, vec4_t color ) {
+void UI_DrawProportionalString( int x, int y, const char* str, int style, const vec4_t color ) {
 	vec4_t	drawcolor;
 	int		width;
 	float	sizeScale;
@@ -1076,7 +1092,7 @@ void UI_DrawProportionalString( int x, int y, const char* str, int style, vec4_t
 #endif // Q3STATIC
 
 //FIXME hack for info screen
-int UI_DrawProportionalString3 (int x, int y, const char* str, int style, vec4_t color)
+int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const vec4_t color)
 {
 	char buffer[MAX_STRING_CHARS];
 	int count;

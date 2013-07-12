@@ -117,7 +117,7 @@ int Pickup_Powerup( gentity_t *ent, gentity_t *other ) {
 
 //======================================================================
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 int Pickup_PersistantPowerup( gentity_t *ent, gentity_t *other ) {
 	int		clientNum;
 	char	userinfo[MAX_INFO_STRING];
@@ -280,7 +280,7 @@ int Pickup_Health (gentity_t *ent, gentity_t *other) {
 	int			quantity;
 
 	// small and mega healths will go over the max
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if( other->client && bg_itemlist[other->client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_GUARD ) {
 		max = other->client->ps.stats[STAT_MAX_HEALTH];
 	}
@@ -315,7 +315,7 @@ int Pickup_Health (gentity_t *ent, gentity_t *other) {
 //======================================================================
 
 int Pickup_Armor( gentity_t *ent, gentity_t *other ) {
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	int		upperBound;
 
 	other->client->ps.stats[STAT_ARMOR] += ent->item->quantity;
@@ -457,7 +457,7 @@ void Touch_Item (gentity_t *ent, gentity_t *other, trace_t *trace) {
 		respawn = Pickup_Powerup(ent, other);
 		predict = qfalse;
 		break;
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	case IT_PERSISTANT_POWERUP:
 		respawn = Pickup_PersistantPowerup(ent, other);
 		break;
@@ -902,7 +902,7 @@ void G_SpawnItem (gentity_t *ent, gitem_t *item) {
 		G_SpawnFloat( "noglobalsound", "0", &ent->speed);
 	}
 
-#if 1  //def MISSIONPACK
+#if 1  //def MPACK
 	if ( item->giType == IT_PERSISTANT_POWERUP ) {
 		ent->s.generic1 = ent->spawnflags;
 	}

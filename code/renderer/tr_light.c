@@ -133,13 +133,13 @@ static void R_SetupEntityLightingGrid( trRefEntity_t *ent ) {
 	vec3_t	direction;
 	float	totalFactor;
 
-	if ( ent->e.renderfx & RF_LIGHTING_ORIGIN ) {
+	if ( ent->ePtr->renderfx & RF_LIGHTING_ORIGIN ) {
 		// seperate lightOrigins are needed so an object that is
 		// sinking into the ground can still be lit, and so
 		// multi-part models can be lit identically
-		VectorCopy( ent->e.lightingOrigin, lightOrigin );
+		VectorCopy( ent->ePtr->lightingOrigin, lightOrigin );
 	} else {
-		VectorCopy( ent->e.origin, lightOrigin );
+		VectorCopy( ent->ePtr->origin, lightOrigin );
 	}
 
 	VectorSubtract( lightOrigin, tr.world->lightGridOrigin, lightOrigin );
@@ -250,7 +250,7 @@ LogLight
 static void LogLight( trRefEntity_t *ent ) {
 	int	max1, max2;
 
-	if ( !(ent->e.renderfx & RF_FIRST_PERSON ) ) {
+	if ( !(ent->ePtr->renderfx & RF_FIRST_PERSON ) ) {
 		return;
 	}
 
@@ -297,13 +297,13 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 	//
 	// trace a sample point down to find ambient light
 	//
-	if ( ent->e.renderfx & RF_LIGHTING_ORIGIN ) {
+	if ( ent->ePtr->renderfx & RF_LIGHTING_ORIGIN ) {
 		// seperate lightOrigins are needed so an object that is
 		// sinking into the ground can still be lit, and so
 		// multi-part models can be lit identically
-		VectorCopy( ent->e.lightingOrigin, lightOrigin );
+		VectorCopy( ent->ePtr->lightingOrigin, lightOrigin );
 	} else {
-		VectorCopy( ent->e.origin, lightOrigin );
+		VectorCopy( ent->ePtr->origin, lightOrigin );
 	}
 
 	// if NOWORLDMODEL, only use dynamic lights (menu system, etc)
@@ -368,9 +368,9 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 
 	// transform the direction to local space
 	VectorNormalize( lightDir );
-	ent->lightDir[0] = DotProduct( lightDir, ent->e.axis[0] );
-	ent->lightDir[1] = DotProduct( lightDir, ent->e.axis[1] );
-	ent->lightDir[2] = DotProduct( lightDir, ent->e.axis[2] );
+	ent->lightDir[0] = DotProduct( lightDir, ent->ePtr->axis[0] );
+	ent->lightDir[1] = DotProduct( lightDir, ent->ePtr->axis[1] );
+	ent->lightDir[2] = DotProduct( lightDir, ent->ePtr->axis[2] );
 }
 
 /*
@@ -378,7 +378,7 @@ void R_SetupEntityLighting( const trRefdef_t *refdef, trRefEntity_t *ent ) {
 R_LightForPoint
 =================
 */
-int R_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir )
+int R_LightForPoint( const vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir )
 {
 	trRefEntity_t ent;
 	
@@ -386,7 +386,7 @@ int R_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, ve
 	  return qfalse;
 
 	Com_Memset(&ent, 0, sizeof(ent));
-	VectorCopy( point, ent.e.origin );
+	VectorCopy( point, ent.ePtr->origin );
 	R_SetupEntityLightingGrid( &ent );
 	VectorCopy(ent.ambientLight, ambientLight);
 	VectorCopy(ent.directedLight, directedLight);

@@ -1,8 +1,22 @@
+#ifndef cg_public_h_included
+#define cg_public_h_included
+
 // Copyright (C) 1999-2000 Id Software, Inc.
 //
 
 
-#define MAX_DEMO_OBITS 1024
+#define MAX_DEMO_OBITS (1024 * 2)
+#define MAX_ITEM_PICKUPS (1024 * 4)
+#define MAX_TIMEOUTS (256)
+
+typedef struct {
+	int startTime;
+	int endTime;
+	int serverTime;  // time the timeout or timein command is issued, since it takes two config string changes in quake live for the start and end time this is used incase order doesn't matter
+	//int cpmaLevelTime;
+	//int cpmaTd;
+	//int cpmaTimein;
+} timeOut_t;
 
 typedef struct {
 	int firstServerTime;
@@ -215,6 +229,12 @@ typedef enum {
 	CG_GETITEMPICKUPNUMBER,
 	CG_GETITEMPICKUP,
 	CG_R_GETSINGLESHADER,
+	CG_CVAR_EXISTS,
+	CG_GET_DEMO_TIMEOUTS,
+	CG_GET_NUM_PLAYER_INFO,
+	CG_GET_EXTRA_PLAYER_INFO,
+	CG_GET_REAL_MAP_NAME,
+	CG_R_ADDREFENTITYPTRTOSCENE,
 
 } cgameImport_t;
 
@@ -271,3 +291,5 @@ typedef enum {
 } cgameExport_t;
 
 //----------------------------------------------
+
+#endif  // cg_public_h_included

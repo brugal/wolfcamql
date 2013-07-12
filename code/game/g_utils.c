@@ -417,6 +417,15 @@ gentity_t *G_Spawn( void ) {
 		}
 	}
 	if ( i == ENTITYNUM_MAX_NORMAL ) {
+		for (i = MAX_CLIENTS;  i < level.num_entities;  i++) {
+			e = &g_entities[i];
+			if (e->inuse) {
+				continue;
+			}
+			G_InitGentity(e);
+			return e;
+		}
+
 		for (i = 0; i < MAX_GENTITIES; i++) {
 			G_Printf("%4i: %s\n", i, g_entities[i].classname);
 		}

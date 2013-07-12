@@ -1,4 +1,10 @@
 #include "cg_local.h"
+
+#include "cg_event.h"
+#include "cg_main.h"
+#include "cg_syscalls.h"
+#include "wolfcam_event.h"
+
 #include "wolfcam_local.h"
 
 #if 0
@@ -22,7 +28,7 @@ static qboolean viewangles_have_changed (int clientNum, int snapshots)
 
     for (i = 1;  i <= snapshots;  i++) {
         //vec3_t a;
-        snapshot_t *s;
+        const snapshot_t *s;
         int num;
         qboolean foundEnt;
 
@@ -44,7 +50,7 @@ static qboolean viewangles_have_changed (int clientNum, int snapshots)
 
         foundEnt = qfalse;
         for (num = 0;  num < s->numEntities;  num++) {
-            entityState_t *es;
+            const entityState_t *es;
 
             es = &s->entities[num];
             if (es->number == clientNum) {
@@ -52,11 +58,11 @@ static qboolean viewangles_have_changed (int clientNum, int snapshots)
                 // do check
                 //CG_Printf ("found client\n");
                 if (es->apos.trBase[0] != angs[0]  ||  es->apos.trBase[1] != angs[1]) {
-                    CG_Printf ("viewangles changed: -%d  (%d)  %s  (%f %f)  (%f %f)\n", 
+                    CG_Printf ("viewangles changed: -%d  (%d)  %s  (%f %f)  (%f %f)\n",
                                i,
-                               clientNum, 
-                               cgs.clientinfo[clientNum].name, 
-                               es->apos.trBase[0], es->apos.trBase[1], 
+                               clientNum,
+                               cgs.clientinfo[clientNum].name,
+                               es->apos.trBase[0], es->apos.trBase[1],
                                angs[0], angs[1]);
                     return qtrue;
                 }
@@ -80,10 +86,10 @@ static qboolean viewangles_have_changed (int clientNum, int snapshots)
 int find_best_target (int attackerClientNum, qboolean useLerp, vec_t *distance, vec3_t offsets)
 {
     //clientInfo_t *tci;
-    centity_t *ac;
-    centity_t *tc;
-    entityState_t *aes;
-    entityState_t *tes;
+    const centity_t *ac;
+    const centity_t *tc;
+    const entityState_t *aes;
+    const entityState_t *tes;
     vec3_t avec;
     vec3_t tvec;
     vec3_t aangs;
@@ -182,9 +188,9 @@ int find_best_target (int attackerClientNum, qboolean useLerp, vec_t *distance, 
 }
 #endif
 
-void wolfcam_log_event (centity_t *cent, vec3_t position)
+void wolfcam_log_event (const centity_t *cent, const vec3_t position)
 {
-    entityState_t *es;
+    const entityState_t *es;
     int event;
     int clientNum;
     //clientInfo_t *ci;
@@ -279,7 +285,7 @@ void wolfcam_log_event (centity_t *cent, vec3_t position)
             wclients[clientNum].eventHealth = es->eventParm;
             wclients[clientNum].ev_pain_time = cg.time;
         } else {
-            Com_Printf("^3FIXME %d (pain %d)  %d  %s\n", cg.time, es->eventParm, clientNum, cgs.clientinfo[clientNum].name);
+            CG_Printf("^3FIXME %d (pain %d)  %d  %s\n", cg.time, es->eventParm, clientNum, cgs.clientinfo[clientNum].name);
         }
         break;
     default:
@@ -287,11 +293,11 @@ void wolfcam_log_event (centity_t *cent, vec3_t position)
     }
 }
 
-void Wolfcam_LogMissileHit (int weapon, vec3_t origin, vec3_t dir, int entityNum)
+void Wolfcam_LogMissileHit (int weapon, const vec3_t origin, const vec3_t dir, int entityNum)
 {
-    clientInfo_t *ci;
-    centity_t *cent;
-    entityState_t *es;
+    const clientInfo_t *ci;
+    const centity_t *cent;
+    const entityState_t *es;
     int i;
     int possibleClient = -1;
     vec3_t dirVec;

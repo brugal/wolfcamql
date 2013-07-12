@@ -158,7 +158,7 @@ static void RB_SurfaceSpriteFixed (void)
 	vec3_t dir;
 	vec3_t axis[3];
 
-	re = &backEnd.currentEntity->e;
+	re = backEnd.currentEntity->ePtr;
 	radius = re->radius;
 
 	VectorCopy(re->oldorigin, dir);
@@ -200,7 +200,7 @@ static void RB_SurfaceSpark (void)
 	vec3_t v;
 	vec3_t newForward;
 
-	re = &backEnd.currentEntity->e;
+	re = backEnd.currentEntity->ePtr;
 
 	// size
 	radius = re->radius;
@@ -251,12 +251,12 @@ static void RB_SurfaceSprite( void ) {
 	float ratio;
 	refEntity_t *re;
 
-	re = &backEnd.currentEntity->e;
+	re = backEnd.currentEntity->ePtr;
 
 	radius = re->radius;
 
 	// hack:  only used with name sprites to allow rectangular scaled image
-	if (backEnd.currentEntity->e.useScale) {
+	if (backEnd.currentEntity->ePtr->useScale) {
 		RE_GetShaderImageDimensions(re->customShader, &width, &height);
 		ratio = (float)width / (float)height;
 		VectorScale(backEnd.viewParms.or.axis[1], radius * ratio, left);
@@ -395,7 +395,7 @@ static void RB_SurfaceBeam( void )
 	vec3_t	start_points[NUM_BEAM_SEGS], end_points[NUM_BEAM_SEGS];
 	vec3_t oldorigin, origin;
 
-	e = &backEnd.currentEntity->e;
+	e = backEnd.currentEntity->ePtr;
 
 	oldorigin[0] = e->oldorigin[0];
 	oldorigin[1] = e->oldorigin[1];
@@ -450,7 +450,7 @@ static void RB_SurfaceBeamQ3mme (void)
 	vec3_t v;
 	vec3_t newForward;
 
-	re = &backEnd.currentEntity->e;
+	re = backEnd.currentEntity->ePtr;
 
 	if (re->rotation) {
 		repetitions = 180 / re->rotation;
@@ -529,34 +529,34 @@ static void DoRailCore( const vec3_t start, const vec3_t end, const vec3_t up, f
 	VectorMA( start, spanWidth, up, tess.xyz[tess.numVertexes] );
 	tess.texCoords[tess.numVertexes][0][0] = 0;
 	tess.texCoords[tess.numVertexes][0][1] = 0;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0] * 0.25;
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1] * 0.25;
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2] * 0.25;
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->ePtr->shaderRGBA[0] * 0.25;
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->ePtr->shaderRGBA[1] * 0.25;
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->ePtr->shaderRGBA[2] * 0.25;
 	tess.numVertexes++;
 
 	VectorMA( start, spanWidth2, up, tess.xyz[tess.numVertexes] );
 	tess.texCoords[tess.numVertexes][0][0] = 0;
 	tess.texCoords[tess.numVertexes][0][1] = 1;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->ePtr->shaderRGBA[0];
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->ePtr->shaderRGBA[1];
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->ePtr->shaderRGBA[2];
 	tess.numVertexes++;
 
 	VectorMA( end, spanWidth, up, tess.xyz[tess.numVertexes] );
 
 	tess.texCoords[tess.numVertexes][0][0] = t;
 	tess.texCoords[tess.numVertexes][0][1] = 0;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->ePtr->shaderRGBA[0];
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->ePtr->shaderRGBA[1];
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->ePtr->shaderRGBA[2];
 	tess.numVertexes++;
 
 	VectorMA( end, spanWidth2, up, tess.xyz[tess.numVertexes] );
 	tess.texCoords[tess.numVertexes][0][0] = t;
 	tess.texCoords[tess.numVertexes][0][1] = 1;
-	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
+	tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->ePtr->shaderRGBA[0];
+	tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->ePtr->shaderRGBA[1];
+	tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->ePtr->shaderRGBA[2];
 	tess.numVertexes++;
 
 	tess.indexes[tess.numIndexes++] = vbase;
@@ -610,9 +610,9 @@ static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, cons
 			VectorCopy( pos[j], tess.xyz[tess.numVertexes] );
 			tess.texCoords[tess.numVertexes][0][0] = ( j < 2 );
 			tess.texCoords[tess.numVertexes][0][1] = ( j && j != 3 );
-			tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->e.shaderRGBA[0];
-			tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->e.shaderRGBA[1];
-			tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->e.shaderRGBA[2];
+			tess.vertexColors[tess.numVertexes][0] = backEnd.currentEntity->ePtr->shaderRGBA[0];
+			tess.vertexColors[tess.numVertexes][1] = backEnd.currentEntity->ePtr->shaderRGBA[1];
+			tess.vertexColors[tess.numVertexes][2] = backEnd.currentEntity->ePtr->shaderRGBA[2];
 			tess.numVertexes++;
 
 			VectorAdd( pos[j], dir, pos[j] );
@@ -628,7 +628,7 @@ static void DoRailDiscs( int numSegs, const vec3_t start, const vec3_t dir, cons
 }
 
 /*
-** RB_SurfaceRailRinges
+** RB_SurfaceRailRings
 */
 static void RB_SurfaceRailRings( void ) {
 	refEntity_t *e;
@@ -638,7 +638,7 @@ static void RB_SurfaceRailRings( void ) {
 	vec3_t		right, up;
 	vec3_t		start, end;
 
-	e = &backEnd.currentEntity->e;
+	e = backEnd.currentEntity->ePtr;
 
 	VectorCopy( e->oldorigin, start );
 	VectorCopy( e->origin, end );
@@ -666,12 +666,25 @@ static void RB_SurfaceRailRingsQ3mme (void)
 	vec3_t right, up;
 	vec3_t start, end;
 
-	e = &backEnd.currentEntity->e;
+	e = backEnd.currentEntity->ePtr;
 
 	//Com_Printf("rend q3mme rail rings rotation %f  radius %f \n", e->rotation, e->radius);
 
-	VectorCopy(e->oldorigin, start);
-	VectorCopy(e->origin, end);
+	//VectorCopy(e->oldorigin, start);
+
+	//VectorMA(e->origin, 1, e->oldorigin, start);
+	//VectorCopy(e->origin, end);
+
+	// arggggg
+	//VectorCopy(e->origin, start);
+	//VectorMA(e->oldorigin, -1, start, end);
+	//VectorCopy(e->oldorigin, end);
+	//Com_Printf("e->oldorigin %f %f %f\n", e->oldorigin[0], e->oldorigin[1], e->oldorigin[2]);
+
+	//VectorCopy( e->oldorigin, start );
+
+	VectorCopy( e->origin, end );
+	VectorMA(e->origin, 1, e->oldorigin, start);
 
 	// compute variables
 	VectorSubtract(end, start, vec);
@@ -702,7 +715,7 @@ static void RB_SurfaceRailCore (qboolean useRadius, qboolean nudgeOrigin)
 	float size;
 	int i;
 
-	e = &backEnd.currentEntity->e;
+	e = backEnd.currentEntity->ePtr;
 
 	VectorCopy( e->oldorigin, start );
 
@@ -832,7 +845,7 @@ static void RB_SurfaceLightningBolt( void ) {
 	vec3_t		v1, v2;
 	int			i;
 
-	e = &backEnd.currentEntity->e;
+	e = backEnd.currentEntity->ePtr;
 
 	VectorCopy( e->oldorigin, end );
 	VectorCopy( e->origin, start );
@@ -850,6 +863,44 @@ static void RB_SurfaceLightningBolt( void ) {
 	VectorNormalize( right );
 
 	for ( i = 0 ; i < 4 ; i++ ) {
+		vec3_t	temp;
+
+		//DoRailCore( start, end, right, len, 8 );
+		DoRailCore( start, end, right, len, e->radius );
+		RotatePointAroundVector( temp, vec, right, 45 );
+		VectorCopy( temp, right );
+	}
+}
+
+static void RB_SurfaceGrapple( void ) {
+	refEntity_t *e;
+	int			len;
+	vec3_t		right;
+	vec3_t		vec;
+	vec3_t		start, end;
+	vec3_t		v1, v2;
+	int			i;
+
+	e = backEnd.currentEntity->ePtr;
+
+	VectorCopy( e->oldorigin, end );
+	VectorCopy( e->origin, start );
+
+	// compute variables
+	VectorSubtract( end, start, vec );
+	len = VectorNormalize( vec );
+
+	len *= e->width;  //0.5;
+
+	// compute side vector
+	VectorSubtract( start, backEnd.viewParms.or.origin, v1 );
+	VectorNormalize( v1 );
+	VectorSubtract( end, backEnd.viewParms.or.origin, v2 );
+	VectorNormalize( v2 );
+	CrossProduct( v1, v2, right );
+	VectorNormalize( right );
+
+	for ( i = 0 ; i < 1 ; i++ ) {
 		vec3_t	temp;
 
 		//DoRailCore( start, end, right, len, 8 );
@@ -1064,7 +1115,7 @@ static void LerpMeshVertexes_scalar(md3Surface_t *surf, float backlerp)
 	outNormal = tess.normal[tess.numVertexes];
 
 	newXyz = (short *)((byte *)surf + surf->ofsXyzNormals)
-		+ (backEnd.currentEntity->e.frame * surf->numVerts * 4);
+		+ (backEnd.currentEntity->ePtr->frame * surf->numVerts * 4);
 	newNormals = newXyz + 3;
 
 	newXyzScale = MD3_XYZ_SCALE * (1.0 - backlerp);
@@ -1103,7 +1154,7 @@ static void LerpMeshVertexes_scalar(md3Surface_t *surf, float backlerp)
 		// interpolate and copy the vertex and normal
 		//
 		oldXyz = (short *)((byte *)surf + surf->ofsXyzNormals)
-			+ (backEnd.currentEntity->e.oldframe * surf->numVerts * 4);
+			+ (backEnd.currentEntity->ePtr->oldframe * surf->numVerts * 4);
 		oldNormals = oldXyz + 3;
 
 		oldXyzScale = MD3_XYZ_SCALE * backlerp;
@@ -1175,10 +1226,10 @@ static void RB_SurfaceMesh(md3Surface_t *surface) {
 	int				Bob, Doug;
 	int				numVerts;
 
-	if (  backEnd.currentEntity->e.oldframe == backEnd.currentEntity->e.frame ) {
+	if (  backEnd.currentEntity->ePtr->oldframe == backEnd.currentEntity->ePtr->frame ) {
 		backlerp = 0;
 	} else  {
-		backlerp = backEnd.currentEntity->e.backlerp;
+		backlerp = backEnd.currentEntity->ePtr->backlerp;
 	}
 
 	RB_CHECKOVERFLOW( surface->numVerts, surface->numTriangles*3 );
@@ -1499,7 +1550,7 @@ Entities that have a single procedurally generated surface
 ====================
 */
 static void RB_SurfaceEntity( surfaceType_t *surfType ) {
-	switch( backEnd.currentEntity->e.reType ) {
+	switch( backEnd.currentEntity->ePtr->reType ) {
 	case RT_SPRITE:
 		RB_SurfaceSprite();
 		break;
@@ -1528,6 +1579,8 @@ static void RB_SurfaceEntity( surfaceType_t *surfType ) {
 	case RT_LIGHTNING:
 		RB_SurfaceLightningBolt();
 		break;
+	case RT_GRAPPLE:
+		RB_SurfaceGrapple();
 	default:
 		RB_SurfaceAxis();
 		break;

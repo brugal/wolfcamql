@@ -1,10 +1,14 @@
 #include "cg_local.h"
+
 #include "../client/keycodes.h"
+#include "cg_main.h"
+#include "cg_syscalls.h"
+#include "cg_view.h"
+#include "sc.h"
+#include "wolfcam_info.h"
+
 #include "wolfcam_local.h"
 
-//FIXME
-extern void CG_ScoresUp_f (void);
-extern void CG_ScoresDown_f (void);
 
 void Wolfcam_DemoKeyClick (int key, qboolean down)
 {
@@ -12,7 +16,7 @@ void Wolfcam_DemoKeyClick (int key, qboolean down)
     char binding[MAX_STRING_CHARS];
     char altBinding[MAX_STRING_CHARS];
     qboolean downPrev;
-    char *s;
+    const char *s;
     char token[MAX_TOKEN_CHARS];
     qboolean newLine;
     //int timing;
@@ -28,7 +32,7 @@ void Wolfcam_DemoKeyClick (int key, qboolean down)
 
     trap_Key_GetBinding(key, binding);
     if (SC_Cvar_Get_Int("debug_demokeyclick")) {
-        CG_Printf("(%d)  key %d:  %s\n", t, key, binding);
+        CG_Printf("(%d)  key %d: %s  %s\n", t, key, down ? "down" : "up", binding);
     }
 
     downPrev = cgs.fKeyPressed[key];
@@ -95,6 +99,7 @@ void Wolfcam_DemoKeyClick (int key, qboolean down)
         } else {
             cg.keyrollstopzero = 0;
         }
+#if 0
     } else if (0) {  //(!strcmp(binding, "+scores")) {
         if (down) {
             CG_ScoresDown_f();
@@ -109,6 +114,7 @@ void Wolfcam_DemoKeyClick (int key, qboolean down)
         } else {
             CG_ZoomUp_f();
         }
+#endif
     } else if (!Q_stricmpn(binding, "+vstr", strlen("+vstr") - 1)) {
         //Com_Printf("+vstr '%s'\n", binding);
         if (down  &&  !downPrev) {

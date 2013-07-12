@@ -157,3 +157,11 @@ xgibs
 	}
 }
 
+wc/wcrocketaim
+{
+        nopicmip
+        {
+                map gfx/wc/wcrocket.png
+                blendfunc blend
+        }
+}

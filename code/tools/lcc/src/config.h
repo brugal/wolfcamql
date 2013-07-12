@@ -95,7 +95,7 @@ extern Node             gen(Node);
 
 extern unsigned         emitbin(Node, int);
 
-#ifdef NDEBUG
+#ifdef NQDEBUG
 #define debug(x) (void)0
 #else
 #define debug(x) (void)(dflag&&((x),0))

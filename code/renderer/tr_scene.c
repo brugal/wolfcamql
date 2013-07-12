@@ -100,8 +100,8 @@ void R_AddPolygonSurfaces( void ) {
 	shader_t	*sh;
 	srfPoly_t	*poly;
 
-	tr.currentEntityNum = ENTITYNUM_WORLD;
-	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_ENTITYNUM_SHIFT;
+	tr.currentEntityNum = REFENTITYNUM_WORLD;
+	tr.shiftedEntityNum = tr.currentEntityNum << QSORT_REFENTITYNUM_SHIFT;
 
 	for ( i = 0, poly = tr.refdef.polys; i < tr.refdef.numPolys ; i++, poly++ ) {
 		sh = R_GetShaderByHandle( poly->hShader );
@@ -148,7 +148,7 @@ void RE_AddPolyToScene( qhandle_t hShader, int numVerts, const polyVert_t *verts
 		poly->hShader = hShader;
 		poly->numVerts = numVerts;
 		poly->verts = &backEndData[tr.smpFrame]->polyVerts[r_numpolyverts];
-		
+
 		Com_Memcpy( poly->verts, &verts[numVerts*j], numVerts * sizeof( *verts ) );
 
 		if ( glConfig.hardwareType == GLHW_RAGEPRO ) {
@@ -209,11 +209,12 @@ void RE_AddRefEntityToScene( const refEntity_t *ent ) {
 	if ( !tr.registered ) {
 		return;
 	}
-	if ( r_numentities >= MAX_ENTITIES ) {
-		//Com_Printf("RE_AddRefEntityToScene() r_numentities >= MAX_ENTITIES  %d >= %d\n", r_numentities, MAX_ENTITIES);
+
+	if ( r_numentities >= MAX_REFENTITIES ) {
+		//Com_Printf("RE_AddRefEntityToScene() r_numentities >= MAX_REFENTITIES  %d >= %d\n", r_numentities, MAX_REFENTITIES);
 		return;
 	}
-	//Com_Printf("AddRefEntityToScene r_numentities %d\n", r_numentities);
+
 	if (Q_floatIsNan(ent->origin[0])  ||  Q_floatIsNan(ent->origin[1])  ||  Q_floatIsNan(ent->origin[2])) {
 		static qboolean firstTime = qtrue;
 		if (firstTime) {
@@ -226,7 +227,48 @@ void RE_AddRefEntityToScene( const refEntity_t *ent ) {
 		ri.Error( ERR_DROP, "RE_AddRefEntityToScene: bad reType %i", ent->reType );
 	}
 
-	backEndData[tr.smpFrame]->entities[r_numentities].e = *ent;
+	//backEndData[tr.smpFrame]->entities[r_numentities].e = *ent;
+	backEndData[tr.smpFrame]->entities[r_numentities].ent = *ent;
+	//backEndData[tr.smpFrame]->entities[r_numentities].ePtr = ent;
+	backEndData[tr.smpFrame]->entities[r_numentities].ePtr = &backEndData[tr.smpFrame]->entities[r_numentities].ent;
+	backEndData[tr.smpFrame]->entities[r_numentities].lightingCalculated = qfalse;
+
+	r_numentities++;
+}
+
+void RE_AddRefEntityPtrToScene (refEntity_t *ent)
+{
+	//RE_AddRefEntityToScene(ent);
+	//return;
+
+	if ( !tr.registered ) {
+		return;
+	}
+
+	if ( r_numentities >= MAX_REFENTITIES ) {
+		//Com_Printf("%s() r_numentities >= MAX_REFENTITIES  %d >= %d\n", __FUNCTION__, r_numentities, MAX_REFENTITIES);
+		return;
+	}
+
+	if (Q_floatIsNan(ent->origin[0])  ||  Q_floatIsNan(ent->origin[1])  ||  Q_floatIsNan(ent->origin[2])) {
+		static qboolean firstTime = qtrue;
+		if (firstTime) {
+			firstTime = qfalse;
+			Com_DPrintf(S_COLOR_YELLOW "WARNING: %s passed a refEntity which has an origin with a NaN component\n", __FUNCTION__);
+		}
+		return;
+	}
+	if ( (int)ent->reType < 0 || ent->reType >= RT_MAX_REF_ENTITY_TYPE ) {
+		ri.Error( ERR_DROP, "%s: bad reType %i", __FUNCTION__, ent->reType );
+	}
+
+	//backEndData[tr.smpFrame]->entities[r_numentities].ent = *ent;
+
+	backEndData[tr.smpFrame]->entities[r_numentities].ePtr = ent;
+	//Com_Printf("%p\n", ent);
+
+	//backEndData[tr.smpFrame]->entities[r_numentities].ePtr = &backEndData[tr.smpFrame]->entities[r_numentities].ent;
+
 	backEndData[tr.smpFrame]->entities[r_numentities].lightingCalculated = qfalse;
 
 	r_numentities++;

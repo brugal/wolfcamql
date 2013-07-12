@@ -552,7 +552,7 @@ static void SVC_Status( netadr_t from ) {
 	char	infostring[MAX_INFO_STRING];
 
 	// ignore if we are in single player
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER ) {
+	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER || Cvar_VariableValue("ui_singlePlayerActive")) {
 		return;
 	}
 
@@ -569,6 +569,10 @@ static void SVC_Status( netadr_t from ) {
 		Com_DPrintf( "SVC_Status: rate limit exceeded, dropping request\n" );
 		return;
 	}
+
+	// A maximum challenge length of 128 should be more than plenty.
+	if(strlen(Cmd_Argv(1)) > 128)
+		return;
 
 	strcpy( infostring, Cvar_InfoString( CVAR_SERVERINFO ) );
 

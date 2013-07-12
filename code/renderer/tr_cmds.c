@@ -22,8 +22,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_local.h"
 #include "../client/cl_avi.h"
 
-volatile renderCommandList_t	*renderCommandList;
-
 volatile qboolean	renderThreadActive;
 
 
@@ -204,6 +202,7 @@ void *R_GetCommandBuffer( int bytes ) {
 			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
 		}
 		// if we run out of room, just start dropping commands
+		Com_Printf("^3R_GetCommandBuffer() command dropped\n");
 		return NULL;
 	}
 

@@ -649,6 +649,7 @@ void Sys_SendPacket( int length, const void *data, netadr_t to ) {
 	}
 
 	if( (ip_socket == INVALID_SOCKET && to.type == NA_IP) ||
+		(ip_socket == INVALID_SOCKET && to.type == NA_BROADCAST) ||
 		(ip6_socket == INVALID_SOCKET && to.type == NA_IP6) ||
 		(ip6_socket == INVALID_SOCKET && to.type == NA_MULTICAST6) )
 		return;
@@ -688,7 +689,7 @@ void Sys_SendPacket( int length, const void *data, netadr_t to ) {
 			return;
 		}
 
-		Com_Printf( "NET_SendPacket: %s\n", NET_ErrorString() );
+		Com_Printf( "Sys_SendPacket: %s\n", NET_ErrorString() );
 	}
 }
 
@@ -807,7 +808,7 @@ void Sys_ShowIP(void) {
 NET_IPSocket
 ====================
 */
-int NET_IPSocket( char *net_interface, int port, int *err ) {
+SOCKET NET_IPSocket( char *net_interface, int port, int *err ) {
 	SOCKET				newsocket;
 	struct sockaddr_in	address;
 	ioctlarg_t				_true = 1;
@@ -875,7 +876,7 @@ int NET_IPSocket( char *net_interface, int port, int *err ) {
 NET_IP6Socket
 ====================
 */
-int NET_IP6Socket( char *net_interface, int port, struct sockaddr_in6 *bindto, int *err ) {
+SOCKET NET_IP6Socket( char *net_interface, int port, struct sockaddr_in6 *bindto, int *err ) {
 	SOCKET				newsocket;
 	struct sockaddr_in6	address;
 	ioctlarg_t				_true = 1;

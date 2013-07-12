@@ -335,7 +335,7 @@ void ByteToDir( int b, vec3_t dir ) {
 
 
 unsigned ColorBytes3 (float r, float g, float b) {
-	unsigned	i;
+	unsigned	i = 0;
 
 	( (byte *)&i )[0] = r * 255;
 	( (byte *)&i )[1] = g * 255;
@@ -345,7 +345,7 @@ unsigned ColorBytes3 (float r, float g, float b) {
 }
 
 unsigned ColorBytes4 (float r, float g, float b, float a) {
-	unsigned	i;
+	unsigned	i = 0;
 
 	( (byte *)&i )[0] = r * 255;
 	( (byte *)&i )[1] = g * 255;
@@ -742,7 +742,7 @@ float AngleSubtract (float a1, float a2)
 }
 
 
-void AnglesSubtract( vec3_t v1, vec3_t v2, vec3_t v3 ) {
+void AnglesSubtract( const vec3_t v1, const vec3_t v2, vec3_t v3 ) {
 	v3[0] = AngleSubtract( v1[0], v2[0] );
 	v3[1] = AngleSubtract( v1[1], v2[1] );
 	v3[2] = AngleSubtract( v1[2], v2[2] );
@@ -974,6 +974,8 @@ qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
 	return qtrue;
 }
 
+#if 1  //def Q3_VM
+
 vec_t VectorNormalize( vec3_t v ) {
 	// NOTE: TTimo - Apple G4 altivec source uses double?
 	float	length, ilength;
@@ -992,6 +994,36 @@ vec_t VectorNormalize( vec3_t v ) {
 
 	return length;
 }
+
+#else
+
+vec_t VectorNormalize( vec3_t v ) {
+	// NOTE: TTimo - Apple G4 altivec source uses double?
+	float	length, ilength;
+	int c;
+
+	length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+	c = fpclassify(length);
+
+	//if (c == FP_NORMAL) {
+	if (c != FP_NAN) {
+		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		ilength = 1/(float)sqrt (length);
+		/* sqrt(length) = length * (1 / sqrt(length)) */
+		length *= ilength;
+		v[0] *= ilength;
+		v[1] *= ilength;
+		v[2] *= ilength;
+	} else {
+		Com_Printf("%s invalid length fp type %d  (%f %f %f)\n", __FUNCTION__, c, v[0], v[1], v[2]);
+		assert(0);
+	}
+
+	return length;
+}
+
+#endif
 
 vec_t VectorNormalize2( const vec3_t v, vec3_t out) {
 	float	length, ilength;
@@ -1199,6 +1231,65 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 	** normalize the result
 	*/
 	VectorNormalize( dst );
+}
+
+void VectorStartEndDir (const vec3_t start, const vec3_t end, vec3_t dir)
+{
+	VectorSubtract(end, start, dir);
+}
+
+qboolean VectorCheck (const vec3_t v)
+{
+	qboolean valid = qtrue;
+
+#ifdef Q3_VM
+
+	if (IS_NAN(v[0])) {
+		valid = qfalse;
+	} else if (IS_NAN(v[1])) {
+		valid = qfalse;
+	} else if (IS_NAN(v[2])) {
+		valid = qfalse;
+	}
+
+#else
+
+	if (isnan(v[0])) {
+		valid = qfalse;
+	} else if (isnan(v[1])) {
+		valid = qfalse;
+	} else if (isnan(v[2])) {
+		valid = qfalse;
+	}
+
+#endif
+
+	if (!valid) {
+		Crash();
+	}
+
+	return valid;
+}
+
+void VectorReflect (const vec3_t src, const vec3_t reflectNorm, vec3_t reflected)
+{
+	//vec3_t srcNorm;
+	vec3_t planeNorm;
+	float dot;
+
+	//VectorCheck(src);
+	//VectorCheck(reflectNorm);
+
+	//VectorCopy(src, srcNorm);
+	//VectorNormalize(srcNorm);
+
+	VectorCopy(reflectNorm, planeNorm);
+	VectorNormalize(planeNorm);
+
+	//dot = DotProduct(srcNorm, planeNorm);
+	dot = DotProduct(src, planeNorm);
+	//VectorMA(srcNorm, -2.0 * dot, planeNorm, reflected);
+	VectorMA(src, -2.0 * dot, planeNorm, reflected);
 }
 
 /*

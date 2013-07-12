@@ -136,7 +136,7 @@ Sys_Exit
 Single exit point (regular exit or in case of error)
 =================
 */
-void Sys_Exit( int ex )
+void __attribute__ ((noreturn)) Sys_Exit( int ex )
 {
 	CON_Shutdown( );
 
@@ -146,7 +146,7 @@ void Sys_Exit( int ex )
 
 	Sys_PlatformExit();
 
-#if 1  //def NDEBUG
+#ifdef NQDEBUG
 	exit( ex );
 #else
 	// Cause a backtrace on error exits

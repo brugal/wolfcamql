@@ -841,6 +841,7 @@ int PS_ReadPrimitive(script_t *script, token_t *token)
 	//primitive reading successfull
 	return 1;
 } //end of the function PS_ReadPrimitive
+
 //============================================================================
 //
 // Parameter:				-
@@ -900,7 +901,7 @@ int PS_ReadToken(script_t *script, token_t *token)
 	//if there is a name
 	else if ((*script->script_p >= 'a' && *script->script_p <= 'z') ||
 		(*script->script_p >= 'A' && *script->script_p <= 'Z') ||
-		*script->script_p == '_')
+		*script->script_p == '_'  ||  *script->script_p == '@')
 	{
 		if (!PS_ReadName(script, token)) return 0;
 	} //end if
@@ -915,6 +916,7 @@ int PS_ReadToken(script_t *script, token_t *token)
 	//successfully read a token
 	return 1;
 } //end of the function PS_ReadToken
+
 //============================================================================
 //
 // Parameter:				-
@@ -990,7 +992,7 @@ int PS_ExpectTokenType(script_t *script, int type, int subtype, token_t *token)
 		if (token->subtype != subtype)
 		{
 			ScriptError(script, "expected %s, found %s",
-							script->punctuations[subtype], token->string);
+							script->punctuations[subtype].p, token->string);
 			return 0;
 		} //end if
 	} //end else if
@@ -1158,7 +1160,7 @@ float ReadSignedFloat(script_t *script)
 	{
 		if(!PS_ExpectAnyToken(script, &token))
 		{
-			ScriptError(script, "Missing float value", token.string);
+			ScriptError(script, "Missing float value");
 			return 0;
 		}
 
@@ -1189,7 +1191,7 @@ signed long int ReadSignedInt(script_t *script)
 	{
 		if(!PS_ExpectAnyToken(script, &token))
 		{
-			ScriptError(script, "Missing integer value", token.string);
+			ScriptError(script, "Missing integer value");
 			return 0;
 		}
 
