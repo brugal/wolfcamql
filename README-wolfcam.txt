@@ -1239,6 +1239,7 @@ Available tokens:
 * cg_drawFriend 1  has wall hack effect like in ql, cg_drawFriend 2 to disable wall hack, 3 (default) to enable wall hack effect in freezetag.  2010-12-17:  In quakelive it seems it's only in offline bot matches that wall hack effect is disabled.
 * cg_drawFriendMinWidth  (like quake live)
 * cg_drawFriendMaxWidth  (like quake live)
+* cg_drawDeadFriendTime  (like quake live)
 
 * cg_drawFoe  draws icon over enemies heads.  2: with wall hack effect
 * cg_drawFoeMinWidth
@@ -1354,7 +1355,7 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
    cgamepostinit.cfg: all set up has been completed and all the game info and commands are available
 
 
-* exec files: will exec a per gametype config (duel.cfg, ffa.cfg, tdm.cfg, ca.cfg, ctf.cfg, 1fctf.cfg, obelisk.cfg, harvester.cfg, freezetag.cfg, domination.cfg, ad.cfg, rr.cfg, iffa.cfg, ictf.cfg, i* etc..)
+* exec files: will exec a per gametype config (duel.cfg, ffa.cfg, tdm.cfg, ca.cfg, ctf.cfg, 1fctf.cfg, obelisk.cfg, harvester.cfg, freezetag.cfg, domination.cfg, ad.cfg, rr.cfg, (cpma) ntf.cfg, (cpma) 2v2.cfg, (cpma) hm.cfg, iffa.cfg, ictf.cfg, i* etc..)
 
 * exec files: map autoexec:  (maps/campgrounds.cfg, maps/lostworld.cfg, etc...)
 
@@ -2042,6 +2043,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_drawBBox  draw bounding box around players (not the same as hitbox)
 
 * cg_drawTieredArmorAvailability  (same as quakelive)
+
+* cg_racePlayerShader to enable or disable the invisible/ghost shader on other players in ql race mode
 
 ----------
 

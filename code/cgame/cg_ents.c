@@ -18,6 +18,8 @@
 
 #include "wolfcam_local.h"
 
+static void CG_Item ( centity_t *cent );
+
 void CG_PrintEntityStatep (const entityState_t *ent)
 {
 	Com_Printf("number %d\n", ent->number);
@@ -575,6 +577,184 @@ static void CG_DominationControlPoint (centity_t *cent)
 	CG_AddRefEntity(&ent);
 }
 
+static void CG_DrawRaceFlagBase (centity_t *cent)
+{
+	refEntity_t ent;
+	vec3_t end;
+	trace_t trace;
+	vec3_t color;
+	float alpha;
+	int nextEnt;
+
+	VectorCopy(cent->lerpOrigin, end);
+	end[2] -= 1000;
+	CG_Trace(&trace, cent->lerpOrigin, NULL, NULL, end, -1, CONTENTS_SOLID);
+
+	memset(&ent, 0, sizeof(ent));
+	ent.reType = RT_MODEL;
+#if 0
+	VectorCopy(cent->lerpOrigin, ent.lightingOrigin);
+	VectorCopy(cent->lerpOrigin, ent.origin);
+#endif
+	VectorCopy(trace.endpos, ent.lightingOrigin);
+	VectorCopy(trace.endpos, ent.origin);
+	AnglesToAxis(cent->currentState.angles, ent.axis);
+
+	ent.hModel = cgs.media.dominationModel;
+
+	alpha = 0.8;
+
+	if (wolfcam_following) {
+		nextEnt = cg_entities[wcg.clientNum].pe.raceCheckPointNextEnt;
+	} else {
+		nextEnt = cg.predictedPlayerEntity.pe.raceCheckPointNextEnt;
+	}
+
+	if (cent->currentState.modelindex == cgs.endRaceFlagModel) {
+		VectorSet(color, 1, 0, 0);
+		ent.customSkin = cgs.media.dominationRedSkin;
+	} else if (cent->currentState.modelindex == cgs.startRaceFlagModel) {
+		//FIXME what if still at checkpoints
+		VectorSet(color, 0.65, 0.65, 0.65);
+		ent.customSkin = cgs.media.dominationNeutralSkin;
+	} else {  // check point
+		if (nextEnt == cent->currentState.number) {
+			VectorSet(color, 0.196, 0.4, 0.96);  // colorBlue
+			ent.customSkin = cgs.media.dominationBlueSkin;
+		} else {
+			VectorSet(color, 0.65, 0.65, 0.65);
+			ent.customSkin = cgs.media.dominationNeutralSkin;
+		}
+	}
+
+#if 0
+	if (altColor) {
+		ent.customSkin = cgs.media.dominationNeutralSkin;
+	} else if (team == TEAM_RED) {
+		ent.customSkin = cgs.media.dominationRedSkin;
+	}
+	else if (team == TEAM_BLUE) {
+		ent.customSkin = cgs.media.dominationBlueSkin;
+	}
+	else {
+		ent.customSkin = cgs.media.dominationNeutralSkin;
+	}
+#endif
+
+	ent.shaderRGBA[0] = 255 * color[0];
+	ent.shaderRGBA[1] = 255 * color[1];
+	ent.shaderRGBA[2] = 255 * color[2];
+	ent.shaderRGBA[3] = 255 * alpha;
+
+	CG_AddRefEntity(&ent);
+}
+
+static void CG_DrawRaceHelpIcon (centity_t *cent)
+{
+	refEntity_t ent;
+	vec4_t color;
+	float alpha;
+	int nextEnt;
+
+	if (cgs.gametype != GT_RACE) {
+		return;
+	}
+
+	if (cg_helpIconStyle.integer == 0) {
+		return;
+	}
+
+	if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR  &&  !wolfcam_following) {
+		return;
+	}
+
+	if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
+		return;
+	}
+
+	if (wolfcam_following) {
+		nextEnt = cg_entities[wcg.clientNum].pe.raceCheckPointNextEnt;
+	} else {
+		nextEnt = cg.predictedPlayerEntity.pe.raceCheckPointNextEnt;
+	}
+
+	if (nextEnt > 0  &&  nextEnt != cent->currentState.number) {
+		return;
+	}
+
+	//Com_Printf("nextEnt %d\n", nextEnt);
+
+	alpha = 0.8;
+
+	memset(&ent, 0, sizeof(ent));
+	VectorCopy(cent->lerpOrigin, ent.origin);
+	ent.origin[2] += 64 + 16;  //32;
+	ent.reType = RT_SPRITE;
+
+	if (nextEnt == 0  &&  cent->currentState.modelindex != cgs.startRaceFlagModel) {
+		return;
+	}
+
+	if (cent->currentState.modelindex == cgs.startRaceFlagModel) {
+		VectorSet(color, 0, 0.96, 0);
+		ent.customShader = cgs.media.raceStart;
+	} else if (cent->currentState.modelindex == cgs.endRaceFlagModel) {
+		VectorSet(color, 0.96, 0, 0);
+		ent.customShader = cgs.media.raceFinish;
+	} else {  // check point
+		VectorSet(color, 0.196, 0.4, 0.96);  // colorBlue
+		ent.customShader = cgs.media.raceCheckPoint;
+	}
+
+	ent.radius = 16;
+	if (cg_helpIconStyle.integer == 1) {
+		ent.radius = 16;
+	} else if (cg_helpIconStyle.integer == 2) {
+		ent.radius = 16;
+		ent.renderfx = RF_DEPTHHACK;
+	} else {
+		vec3_t org;
+		float dist;
+		float minWidth;
+		float maxWidth;
+		float radius;
+
+		ent.renderfx = RF_DEPTHHACK;
+		if (wolfcam_following) {
+			VectorCopy(cg_entities[wcg.clientNum].lerpOrigin, org);
+		} else if (cg.freecam) {
+			VectorCopy(cg.fpos, org);
+		} else {
+			VectorCopy(cg.refdef.vieworg, org);
+		}
+
+		minWidth = cg_helpIconMinWidth.value;
+		maxWidth = cg_helpIconMaxWidth.value;
+
+		radius = maxWidth / 2.0;
+		dist = ICON_SCALE_DISTANCE * (maxWidth / 16.0);
+
+		if (minWidth > 0.1) {
+			dist *= (16.0 / minWidth);
+		}
+
+		ent.radius = radius;
+
+		if (Distance(ent.origin, org) > dist  &&  minWidth > 0.1) {
+			ent.radius = radius * (Distance(ent.origin, org) / dist);
+		}
+	}
+
+	ent.origin[2] += ent.radius;
+
+	ent.shaderRGBA[0] = 255 * color[0];
+	ent.shaderRGBA[1] = 255 * color[1];
+	ent.shaderRGBA[2] = 255 * color[2];
+	ent.shaderRGBA[3] = 255 * alpha;
+	CG_AddRefEntity(&ent);
+
+}
+
 /*
 ==================
 CG_General
@@ -583,6 +763,7 @@ CG_General
 static void CG_General( centity_t *cent ) {
 	refEntity_t			ent;
 	const entityState_t		*s1;
+	float scale;
 
 	s1 = &cent->currentState;
 
@@ -590,6 +771,7 @@ static void CG_General( centity_t *cent ) {
 	if (!s1->modelindex) {
 		return;
 	}
+
 
 	if (cgs.gametype == GT_DOMINATION  &&  s1->modelindex == cgs.dominationControlPointModel) {
 		CG_DominationControlPoint(cent);
@@ -604,8 +786,8 @@ static void CG_General( centity_t *cent ) {
 	ent.oldframe = ent.frame;
 	ent.backlerp = 0;
 
-	VectorCopy( cent->lerpOrigin, ent.origin);
-	VectorCopy( cent->lerpOrigin, ent.oldorigin);
+	VectorCopy(cent->lerpOrigin, ent.origin);
+	VectorCopy(cent->lerpOrigin, ent.oldorigin);
 
 	ent.hModel = cgs.gameModels[s1->modelindex];
 
@@ -616,6 +798,68 @@ static void CG_General( centity_t *cent ) {
 
 	// convert angles to axis
 	AnglesToAxis( cent->lerpAngles, ent.axis );
+
+	if (cgs.gametype == GT_RACE) {
+		if (s1->modelindex == cgs.startRaceFlagModel  ||  s1->modelindex == cgs.endRaceFlagModel  ||  s1->modelindex == cgs.checkPointRaceFlagModel) {
+			int nextEnt;
+
+			CG_DrawRaceFlagBase(cent);
+			CG_DrawRaceHelpIcon(cent);
+
+			if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
+				return;
+			}
+
+			if (wolfcam_following) {
+				nextEnt = cg_entities[wcg.clientNum].pe.raceCheckPointNextEnt;
+			} else {
+				nextEnt = cg.predictedPlayerEntity.pe.raceCheckPointNextEnt;
+			}
+
+			// draw race flag
+
+			if (s1->modelindex == cgs.startRaceFlagModel) {
+				// always draw
+			} else if (nextEnt == 0) {
+				// draw all
+			} else {
+				if (nextEnt != cent->currentState.number  &&  s1->modelindex != cgs.startRaceFlagModel) {
+					return;
+				}
+				if (s1->modelindex == cgs.checkPointRaceFlagModel) {
+					ent.hModel = cgs.media.activeCheckPointRaceFlagModel;
+				}
+			}
+
+
+			//CG_Item(cent);
+
+			//FIXME duplicate code
+
+			// items bob up and down continuously
+			scale = 0.005 + cent->currentState.number * 0.00001;
+			if (cg_itemFx.integer & 0x1) {
+				cent->lerpOrigin[2] += 4 + cos( ( cg.time + 1000 ) *  scale ) * 4;
+			}
+
+			VectorCopy( cent->lerpOrigin, ent.origin);
+			VectorCopy( cent->lerpOrigin, ent.oldorigin);
+
+			// autorotate at one of two speeds
+			if (cg_itemFx.integer & 0x2) {
+				VectorCopy( cg.autoAngles, cent->lerpAngles );
+				AxisCopy( cg.autoAxis, ent.axis );
+			} else {
+				VectorCopy(cent->currentState.apos.trBase, cent->lerpAngles);
+				AnglesToAxis(cent->lerpAngles, ent.axis);
+			}
+
+			ent.nonNormalizedAxes = qfalse;
+			if (cg_itemsWh.integer) {
+				ent.renderfx |= RF_DEPTHHACK;
+			}
+		}
+	}
 
 	// add to refresh list
 	CG_AddRefEntity(&ent);
@@ -663,6 +907,10 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 	float alpha;
 	//vec3_t dir;
 	qhandle_t shader;
+
+	if (cgs.gametype == GT_RACE) {
+		return;
+	}
 
 	if (cg_helpIconStyle.integer == 0) {
 		return;
@@ -991,7 +1239,7 @@ static void CG_Item ( centity_t *cent ) {
 			}
 			team = cgs.clientinfo[clientNum].team;
 
-			if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
+			if ((cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0)  ||  cgs.gametype == GT_RACE) {
 				team = TEAM_FREE;
 			}
 
@@ -2439,9 +2687,6 @@ static void CG_TeamBase( centity_t *cent ) {
 	}
 	else if (cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_1FCTF) {
 		int team;
-
-		//Com_Printf("... base\n");
-		//return;
 
 		team = cent->currentState.modelindex;
 

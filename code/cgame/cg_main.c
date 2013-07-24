@@ -44,6 +44,10 @@ const char *gametypeConfigs[] = {
 	"domination.cfg",
 	"ad.cfg",
 	"rr.cfg",
+	"ntf.cfg",
+	"2v2.cfg",
+	"hm.cfg",
+	"race.cfg",
 };
 
 
@@ -1029,6 +1033,9 @@ vmCvar_t cg_spectatorListQue;
 vmCvar_t cg_rocketAimBot;
 vmCvar_t cg_drawTieredArmorAvailability;
 
+vmCvar_t cg_drawDeadFriendTime;
+vmCvar_t cg_racePlayerShader;
+
 // end cvar_t
 
 typedef struct {
@@ -1973,6 +1980,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cgr_selectedWeapon, "cgr_selectedWeapon", "0", CVAR_ROM },
 #endif
 
+	{ cvp(cg_drawDeadFriendTime), "3000", CVAR_ARCHIVE },
+	{ cvp(cg_racePlayerShader), "1", CVAR_ARCHIVE },
 };
 
 #undef cvp
@@ -2806,6 +2815,8 @@ nd_draw.ogg", qtrue);
 	cgs.media.nightmareSound = trap_S_RegisterSound("sound/misc/nightmare.ogg", qfalse);
 	cgs.media.survivorSound = trap_S_RegisterSound("sound/feedback/survivor_01.ogg", qfalse);
 
+	cgs.media.bellSound = trap_S_RegisterSound("sound/world/bell_01.ogg", qfalse);
+
 	// why did i put this here?
 	cgs.media.gametypeIcon[GT_FFA] = trap_R_RegisterShader("ui/assets/hud/ffa");
 	cgs.media.gametypeIcon[GT_TOURNAMENT] = trap_R_RegisterShader("ui/assets/hud/duel");
@@ -2818,6 +2829,7 @@ nd_draw.ogg", qtrue);
 	cgs.media.gametypeIcon[GT_DOMINATION] = trap_R_RegisterShader("ui/assets/hud/dom");
 	cgs.media.gametypeIcon[GT_CTFS] = trap_R_RegisterShader("ui/assets/hud/ad");
 	cgs.media.gametypeIcon[GT_RED_ROVER] = trap_R_RegisterShader("ui/assets/hud/rr");
+	cgs.media.gametypeIcon[GT_RACE] = trap_R_RegisterShader("ui/assets/hud/race");
 
 	cgs.media.infiniteAmmo = trap_R_RegisterShader("icons/infinite");
 	cgs.media.premiumIcon = trap_R_RegisterShader("ui/assets/score/premium_icon");
@@ -3122,8 +3134,20 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.dominationDefendCDist = trap_R_RegisterShaderNoMip("gfx/2d/dom_point/dom_def_c_dist");
 		cgs.media.dominationDefendDDist = trap_R_RegisterShaderNoMip("gfx/2d/dom_point/dom_def_d_dist");
 		cgs.media.dominationDefendEDist = trap_R_RegisterShaderNoMip("gfx/2d/dom_point/dom_def_e_dist");
+	}
 
-
+	if (cgs.gametype == GT_RACE) {
+		cgs.media.dominationModel = trap_R_RegisterModel("models/powerups/domination/dompoint.md3");
+		cgs.media.dominationRedSkin = trap_R_RegisterSkin("models/powerups/domination/domred.skin");
+		cgs.media.dominationBlueSkin = trap_R_RegisterSkin("models/powerups/domination/domblue.skin");
+		cgs.media.dominationNeutralSkin = trap_R_RegisterSkin("models/powerups/domination/domntrl.skin");
+		cgs.media.adCapture = trap_R_RegisterShaderNoMip("gfx/2d/ad/poi_capture");
+		cgs.media.raceStart = trap_R_RegisterShaderNoMip("gfx/2d/race/start");
+		cgs.media.raceCheckPoint = trap_R_RegisterShaderNoMip("gfx/2d/race/checkpoint");
+		cgs.media.raceFinish = trap_R_RegisterShaderNoMip("gfx/2d/race/finish");
+		cgs.media.raceNav = trap_R_RegisterShaderNoMip("gfx/misc/racenav");
+		cgs.media.raceWorldTimerHand = trap_R_RegisterShaderNoMip("gfx/2d/world_timer_hand");
+		cgs.media.activeCheckPointRaceFlagModel = trap_R_RegisterModel("models/flag3/b_flag3.md3");
 	}
 
 	cgs.media.harvesterCapture = trap_R_RegisterShaderNoMip("gfx/2d/har/poi_capture");
@@ -3137,13 +3161,16 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.teamStatusBar = trap_R_RegisterShader( "gfx/2d/colorbar.tga" );
 
-	if ( cgs.gametype >= GT_TEAM || cg_buildScript.integer ) {
+	if (CG_IsTeamGame(cgs.gametype)  ||  cg_buildScript.integer) {
 		//cgs.media.friendShader = trap_R_RegisterShader( "sprites/foe" );
 		cgs.media.friendShader = trap_R_RegisterShader( "wc/friend" );
 		if (!cgs.media.friendShader) {  // bug fix
 			Com_Printf("^1couldn't load wc/friend\n");
 			cgs.media.friendShader = trap_R_RegisterShader("sprites/foe");
 		}
+		cgs.media.friend2Shader = trap_R_RegisterShader("sprites/friend2");
+		cgs.media.friendHitShader = trap_R_RegisterShader("sprites/friend_hit");
+		cgs.media.friendDeadShader = trap_R_RegisterShader("sprites/friend_dead");
 		cgs.media.redQuadShader = trap_R_RegisterShader("powerups/blueflag" );
 
 #ifdef MISSIONPACK
@@ -3321,12 +3348,16 @@ static void CG_RegisterGraphics( void ) {
 			break;
 		}
 		cgs.gameModels[i] = trap_R_RegisterModel( modelName );
-		//CG_Printf("gameModels[%d]  %s\n", i, modelName);
-		if (1) {  //(cgs.gametype == GT_DOMINATION) {
-			if (!Q_stricmp(modelName, "models/flag3/d_flag3.md3")) {
-				cgs.dominationControlPointModel = i;
-				Com_Printf("control point model %d\n", i);
-			}
+		CG_Printf("gameModels[%d]  %s\n", i, modelName);
+
+		if (!Q_stricmp(modelName, "models/flag3/d_flag3.md3")) {
+			cgs.checkPointRaceFlagModel = i;
+			cgs.dominationControlPointModel = i;
+			//Com_Printf("control point model %d\n", i);
+		} else if (!Q_stricmp(modelName, "models/flag3/g_flag3.md3")) {
+			cgs.startRaceFlagModel = i;
+		} else if (!Q_stricmp(modelName, "models/flag3/f_flag3.md3")) {
+			cgs.endRaceFlagModel = i;
 		}
 	}
 
@@ -3378,6 +3409,7 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.pickup_iconinvis = trap_R_RegisterShader("pickup_INVIS");
 
 	cgs.media.ghostWeaponShader = trap_R_RegisterShader("ghostWeaponShader");
+	cgs.media.noPlayerClipShader = trap_R_RegisterShader("noPlayerClipShader");
 	cgs.media.rocketAimShader = trap_R_RegisterShader("wc/wcrocketaim");
 	cgs.media.bboxShader = trap_R_RegisterShader( "bbox" );
 	cgs.media.bboxShader_nocull = trap_R_RegisterShader( "bbox_nocull" );
@@ -5702,6 +5734,121 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 	return "";
 }
 
+static const char *CG_FeederItemTextRace (float feederID, int index, int column, qhandle_t *handle)
+{
+	//gitem_t *item;
+	int scoreIndex = 0;
+	const clientInfo_t *info = NULL;
+	int team = -1;
+	const score_t *sp = NULL;
+	char *s;
+	//int clientNum;
+	const char *clanTag;
+
+	*handle = -1;
+
+	if (feederID == FEEDER_REDTEAM_LIST) {
+		team = TEAM_RED;
+	} else if (feederID == FEEDER_BLUETEAM_LIST) {
+		team = TEAM_BLUE;
+	}
+
+	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
+	sp = &cg.scores[scoreIndex];
+
+	//Com_Printf("%d %d %s %d\n", index, sp->client, info->name, info->team);
+
+	if (info && info->infoValid) {
+		switch (column) {
+		case 0:
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
+			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
+				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
+			} else {  // default is cg_scoreBoardStyle.integer == 1
+				*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+				if (!*handle) {
+					//*handle = cgs.media.redCubeIcon;
+				}
+			}
+			return "";
+		case 1:
+			if (cg_scoreBoardStyle.integer == 0  &&  cgs.protocol == PROTOCOL_QL) {
+				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
+					*handle = cgs.media.premiumIcon;
+				}
+			}
+			if (info->handicap < 100) {
+				return va("^3%d%%", info->handicap);
+			}
+			return "";
+		case 2: {
+			qboolean ready = qfalse;
+
+			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
+				ready = qtrue;
+			}
+			if (cg.warmup) {
+				if (ready) {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
+				} else {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
+				}
+				return "";
+			}
+			if (info->team == TEAM_RED) {
+				*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
+			} else if (info->team == TEAM_BLUE) {
+				*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_blue");
+			}
+			return "";
+		}
+		case 3:
+			//*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
+			if (cg_scoreBoardStyle.integer == 0) {
+				//return info->name;
+				clanTag = info->clanTag;
+				if (*clanTag) {
+					s = va("^7%s ^7%s", clanTag, info->name);
+				} else {
+					s = va("%s", info->name);
+				}
+				return s;
+			} else {
+				clanTag = info->clanTag;
+				if (info->knowSkillRating) {
+					if (*clanTag) {
+						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
+					} else {
+						s = va("^3%3d   ^1%d  ^7%s", sp->accuracy, info->skillRating, info->name);
+					}
+					return s;
+				} else {
+					if (*clanTag) {
+						s = va("^3%3d   ^7%s ^7%s", sp->accuracy, clanTag, info->name);
+					} else {
+						s = va("^3%3d   ^7%s", sp->accuracy, info->name);
+					}
+					return s;
+				}
+			}
+			break;
+		case 4:
+			return CG_GetTimeString(sp->score);
+		case 5:
+			return va("%d", sp->time);
+		case 6:
+			return va("%d", sp->ping);
+		default:
+			return "xxx";
+		}
+
+		//return "xxx";
+	}
+
+	return "";
+}
+
 static const char *CG_FeederItemText (float feederID, int index, int column, qhandle_t *handle)
 {
 	//gitem_t *item;
@@ -5744,6 +5891,10 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 
 	if (cgs.gametype == GT_RED_ROVER) {  // no old scoreboard suitable
 		return CG_FeederItemTextRedRover(feederID, index, column, handle);
+	}
+
+	if (cgs.gametype == GT_RACE) {  //FIXME old scoreboard
+		return CG_FeederItemTextRace(feederID, index, column, handle);
 	}
 
 	// duel
@@ -6455,6 +6606,12 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 			"sound/movers/doors/dr1_end",
 			"sound/player/gurp1",
 			"sound/player/gurp2",
+
+			"sound/world/klaxon1.ogg",
+			"sound/world/klaxon2.ogg",
+			"sound/world/buzzer.ogg",
+			"sound/world/bell_01.ogg",
+			"sound/world/hockey_horn.ogg",
 		};
 
 		cg.numAllowedAmbientSounds = 0;
@@ -6720,6 +6877,9 @@ void CG_LoadDefaultMenus (void)
 	} else if (cgs.gametype == GT_RED_ROVER) {
 		CG_ParseMenu("ui/ingame_scoreboard_ffa.smenu");
 		CG_ParseMenu("ui/end_scoreboard_ffa.smenu");
+	} else if (cgs.gametype == GT_RACE) {
+		CG_ParseMenu("ui/ingame_scoreboard_race.smenu");
+		CG_ParseMenu("ui/end_scoreboard_race.smenu");
 	}
 }
 

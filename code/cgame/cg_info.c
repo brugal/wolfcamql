@@ -352,6 +352,14 @@ void CG_DrawInformation (qboolean loading)
 		} else {
 			s = "Red Rover";
 		}
+	} else if (cgs.gametype == GT_NTF) {
+		s = "Not Team Fortress";
+	} else if (cgs.gametype == GT_2V2) {
+		s = "Two vs Two";
+	} else if (cgs.gametype == GT_HM) {
+		s = "Hoonymode";
+	} else if (cgs.gametype == GT_RACE) {
+		s = "Race";
 	} else {
 		s = "Unknown Gametype";
 	}

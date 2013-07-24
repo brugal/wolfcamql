@@ -246,7 +246,7 @@ void CG_InitLocalEntities (void)
 	}
 #endif
 
-	Com_Printf("jitToken %f\n", sizeof(EffectScripts.jitToken) / (1024.0 * 1024.0));
+	//Com_Printf("jitToken %f\n", sizeof(EffectScripts.jitToken) / (1024.0 * 1024.0));
 }
 
 void CG_ShutdownLocalEnts (qboolean destructor)

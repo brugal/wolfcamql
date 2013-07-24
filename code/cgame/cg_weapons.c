@@ -2426,6 +2426,15 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 			gun.shaderRGBA[2] = 255;
 			gun.shaderRGBA[3] = 255;
 		}
+
+		if (!ps  &&  cgs.gametype == GT_RACE  &&  cg_racePlayerShader.integer) {
+			gun.customShader = cgs.media.noPlayerClipShader;
+			gun.shaderRGBA[0] = 255;
+			gun.shaderRGBA[1] = 255;
+			gun.shaderRGBA[2] = 255;
+			gun.shaderRGBA[3] = 255;
+		}
+
 		CG_AddWeaponWithPowerups( &gun, cent->currentState.powerups );
 	}
 
@@ -2455,6 +2464,15 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 			barrel.shaderRGBA[2] = 255;
 			barrel.shaderRGBA[3] = 255;
 		}
+
+		if (!ps  &&  cgs.gametype == GT_RACE  &&  cg_racePlayerShader.integer) {
+			gun.customShader = cgs.media.noPlayerClipShader;
+			gun.shaderRGBA[0] = 255;
+			gun.shaderRGBA[1] = 255;
+			gun.shaderRGBA[2] = 255;
+			gun.shaderRGBA[3] = 255;
+		}
+
 		CG_AddWeaponWithPowerups( &barrel, cent->currentState.powerups );
 	}
 
@@ -3652,7 +3670,7 @@ void CG_MissileHitPlayer( int weapon, const vec3_t origin, const vec3_t dir, int
 		VectorCopy(dir, ScriptVars.dir);
 		//Com_Printf("fx missile hit player %s\n", weapNamesCasual[weapon]);
 		VectorSet(ScriptVars.end, 0, 0, 0);
-		if (cg_entities[shooterClientNum].currentValid  ||  cg.snap->ps.clientNum == shooterClientNum) {
+		if (CG_ClientInSnapshot(shooterClientNum)) {
 			VectorSubtract(cg_entities[shooterClientNum].lerpOrigin, origin, ScriptVars.end);
 			//Com_Printf("^2%d valid end\n", shooterClientNum);
 		} else {
@@ -3667,7 +3685,7 @@ void CG_MissileHitPlayer( int weapon, const vec3_t origin, const vec3_t dir, int
 		VectorCopy(origin, ScriptVars.origin);
 		VectorCopy(dir, ScriptVars.dir);
 		VectorSet(ScriptVars.end, 0, 0, 0);
-		if (cg_entities[shooterClientNum].currentValid  ||  cg.snap->ps.clientNum == shooterClientNum) {
+		if (CG_ClientInSnapshot(shooterClientNum)) {
 			VectorSubtract(cg_entities[shooterClientNum].lerpOrigin, origin, ScriptVars.end);
 			//Com_Printf("^2%d valid end\n", shooterClientNum);
 		} else {

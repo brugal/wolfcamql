@@ -19,6 +19,7 @@
 #include "sc.h"
 #include "../../ui/wcmenudef.h"
 
+
 typedef struct {
 	float x;
 	float y;
@@ -535,22 +536,33 @@ static void CG_DrawSelectedPlayerWeapon( const rectDef_t *rect ) {
   }
 }
 
-static void CG_DrawPlayerScore( const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font ) {
-  char num[16];
-  int value = cg.snap->ps.persistant[PERS_SCORE];
+static void CG_DrawPlayerScore (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
+{
+	int scores = cg.snap->ps.persistant[PERS_SCORE];
 
-  if (wolfcam_following) {
-	  return;
-  }
+	if (wolfcam_following) {
+		return;
+	}
 
 	if (shader) {
 		trap_R_SetColor( color );
 		CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
 		trap_R_SetColor( NULL );
 	} else {
-		Com_sprintf (num, sizeof(num), "%i", value);
-		value = CG_Text_Width(num, scale, 0, font);
-		CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
+		if (cgs.gametype == GT_RACE) {
+			//FIXME wolfcam_following
+
+			// doesn't fit in PERS_SCORE ?
+			scores = cgs.clientinfo[cg.snap->ps.clientNum].score;
+
+			if (scores <= 0  ||  scores >= MAX_RACE_SCORE) {
+				CG_Text_Paint_Align(rect, scale, color, va("-"), 0, 0, textStyle, font, align);
+			} else {
+				CG_Text_Paint_Align(rect, scale, color, va("%is", (int)(round(scores / 1000.0))), 0, 0, textStyle, font, align);
+			}
+        } else {
+			CG_Text_Paint_Align(rect, scale, color, va("%i", scores), 0, 0, textStyle, font, align);
+        }
 	}
 }
 
@@ -913,7 +925,11 @@ static void CG_OneFlagStatus(const rectDef_t *rect) {
 
 		blueIsFirst = qfalse;
 
-		if (cgs.scores2 > cgs.scores1) {
+		if (CG_ScoresEqual(cgs.scores2, cgs.scores1)) {
+			if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE) {
+				blueIsFirst = qtrue;
+			}
+		} else if (cgs.scores2 > cgs.scores1) {
 			blueIsFirst = qtrue;
 		} else if (cgs.scores2 < cgs.scores1) {
 			blueIsFirst = qfalse;
@@ -1366,7 +1382,7 @@ float CG_GetValue(int ownerDraw) {
 
 	  if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER) {
 		  limit = cgs.roundlimit;
-	  } else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM) {
+	  } else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
 		  limit = cgs.timelimit;
 	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF) {
 		  if (cgs.capturelimit) {
@@ -2881,7 +2897,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 	}
 
 	if (flags & CG_SHOW_ANYTEAMGAME) {
-		if( cgs.gametype >= GT_TEAM) {
+		if (CG_IsTeamGame(cgs.gametype)) {
 			return qtrue;
 		} else {
 			return qfalse;
@@ -2889,7 +2905,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 	}
 
 	if (flags & CG_SHOW_ANYNONTEAMGAME) {
-		if( cgs.gametype < GT_TEAM) {
+		if (!CG_IsTeamGame(cgs.gametype)) {
 			return qtrue;
 		} else {
 			return qfalse;
@@ -3053,8 +3069,8 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			team = cg.snap->ps.persistant[PERS_TEAM];
 		}
 
-		if (cgs.gametype >= GT_TEAM  &&  cgs.gametype != GT_RED_ROVER) {
-			if (cgs.scores1 == cgs.scores2) {
+		if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
+			if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
 				return qfalse;
 			} else if (cgs.scores1 < cgs.scores2) {
 				if (team == TEAM_RED) {
@@ -3089,7 +3105,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			//return qfalse;
 		}
 
-		if (cgs.scores1 == cgs.scores2  &&  team == TEAM_RED) {
+		if (CG_ScoresEqual(cgs.scores1, cgs.scores2)  &&  team == TEAM_RED) {
 			return qtrue;
 		} else if (cgs.scores1 > cgs.scores2) {  //FIXME maybe just '>' ?
 			return qtrue;
@@ -3110,7 +3126,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			//return qfalse;
 		}
 
-		if (cgs.scores2 == cgs.scores1  &&  team == TEAM_BLUE) {
+		if (CG_ScoresEqual(cgs.scores2, cgs.scores1)  &&  team == TEAM_BLUE) {
 			return qtrue;
 		} else if (cgs.scores2 > cgs.scores1) {
 			return qtrue;
@@ -3135,8 +3151,8 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			team = cg.snap->ps.persistant[PERS_TEAM];
 		}
 
-		if (cgs.gametype >= GT_TEAM  &&  cgs.gametype != GT_RED_ROVER) {
-			if (cgs.scores1 == cgs.scores2) {
+		if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
+			if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
 				return qtrue;
 			} else if (cgs.scores1 < cgs.scores2) {
 				if (team == TEAM_RED) {
@@ -3322,7 +3338,7 @@ static void CG_DrawCapFragLimit(const rectDef_t *rect, float scale, const vec4_t
 
 	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER) {
 		limit = cgs.roundlimit;
-	} else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM) {
+	} else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
 		limit = cgs.timelimit;
 	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF) {
 		if (cgs.capturelimit) {
@@ -3339,33 +3355,57 @@ static void CG_DrawCapFragLimit(const rectDef_t *rect, float scale, const vec4_t
 	CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", limit),0, 0, textStyle, font);
 }
 
-static void CG_Draw1stPlace(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
-#if 0
-	if (cgs.scores1 != SCORE_NOT_PRESENT) {
-		//Com_Printf("drawing scores1\n");
-		CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", cgs.scores1),0, 0, textStyle, font);
-	}
-#endif
-	//Com_Printf("CG_Draw1stPlace\n");
-	if (cgs.scores1 >= cgs.scores2) {
-		CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", cgs.scores1),0, 0, textStyle, font);
+static void CG_Draw1stPlace (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
+{
+	int scores;
+
+	if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
+		scores = cgs.scores1;
+	} else if (cgs.scores1 > cgs.scores2) {
+		scores = cgs.scores1;
 	} else {
-		CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", cgs.scores2),0, 0, textStyle, font);
+		scores = cgs.scores2;
+	}
+
+	if (cgs.gametype == GT_RACE) {
+		if (scores < 0  ||  scores >= MAX_RACE_SCORE) {
+			CG_Text_Paint_Align(rect, scale, color, va("-"), 0, 0, textStyle, font, align);
+		} else {
+			CG_Text_Paint_Align(rect, scale, color, va("%is", (int)(round(scores / 1000.0))), 0, 0, textStyle, font, align);
+		}
+	} else {
+		CG_Text_Paint_Align(rect, scale, color, va("%i", scores), 0, 0, textStyle, font, align);
 	}
 }
 
-static void CG_Draw2ndPlace(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
-	//Com_Printf("Draw2ndPlace\n");
+static void CG_Draw2ndPlace (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
+{
+	int scores;
+
 	//FIXME non team games and show player's score???
-#if 0
-	if (cgs.scores2 != SCORE_NOT_PRESENT) {
-		CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", cgs.scores2),0, 0, textStyle, font);
+
+	if (!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER) {
+		if (CG_NumPlayers() < 2) {
+			return;
+		}
 	}
-#endif
-	if (cgs.scores1 < cgs.scores2) {
-		CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", cgs.scores1),0, 0, textStyle, font);
+
+	if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
+		scores = cgs.scores2;
+	} else if (cgs.scores1 < cgs.scores2) {
+		scores = cgs.scores1;
 	} else {
-		CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", cgs.scores2),0, 0, textStyle, font);
+		scores = cgs.scores2;
+	}
+
+	if (cgs.gametype == GT_RACE) {
+		if (scores < 0  ||  scores >= MAX_RACE_SCORE) {
+			CG_Text_Paint_Align(rect, scale, color, va("-"), 0, 0, textStyle, font, align);
+		} else {
+			CG_Text_Paint_Align(rect, scale, color, va("%is", (int)(round(scores / 1000.0))), 0, 0, textStyle, font, align);
+		}
+	} else {
+		CG_Text_Paint_Align(rect, scale, color, va("%i", scores), 0, 0, textStyle, font, align);
 	}
 }
 
@@ -3373,7 +3413,7 @@ const char *CG_GetGameStatusText (vec4_t color)
 {
 	const char *s = "";
 
-	if ( cgs.gametype < GT_TEAM) {
+	if (!CG_IsTeamGame(cgs.gametype)) {
 		//FIXME wolfcam
 		if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
 			s = va("%s ^7place with %i",CG_PlaceString( cg.snap->ps.persistant[PERS_RANK] + 1 ),cg.snap->ps.persistant[PERS_SCORE] );
@@ -3973,7 +4013,7 @@ static void CG_OspCalcPlacements (void)
 
 	//FIXME non duel games
 
-	if (cgs.scores1 == cg.snap->ps.persistant[PERS_SCORE]) {
+	if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
 		//FIXME should be storing clientNum
 		Q_strncpyz(cgs.firstPlace, cgs.clientinfo[cg.snap->ps.clientNum].name, sizeof(cgs.firstPlace));
 
@@ -3991,7 +4031,7 @@ static void CG_OspCalcPlacements (void)
 			Q_strncpyz(cgs.secondPlace, ci->name, sizeof(cgs.secondPlace));
 			break;
 		}
-	} else if (cgs.scores2 == cg.snap->ps.persistant[PERS_SCORE]) {
+	} else if (CG_ScoresEqual(cgs.scores2, cg.snap->ps.persistant[PERS_SCORE])) {
 		Q_strncpyz(cgs.secondPlace, cgs.clientinfo[cg.snap->ps.clientNum].name, sizeof(cgs.secondPlace));
 
 		for (i = 0;  i < MAX_CLIENTS;  i++) {
@@ -4024,6 +4064,9 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	int maxNameWidth;
 	char *endOfName;
 	qboolean nameTruncated;
+	char scoreString[128];
+	const char *tmpString;
+	int scoreStringLength;
 
 	if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
 		CG_OspCalcPlacements();
@@ -4036,29 +4079,15 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	}
 
 	if (cgs.cpma) {
-		if (cgs.gametype >= GT_TEAM) {
+		if (CG_IsTeamGame(cgs.gametype)) {
 
 		} else {
 
 		}
 	}
 
-	if (cgs.gametype >= GT_TEAM  &&  cgs.gametype != GT_RED_ROVER) {
-		if (cgs.scores1 > cgs.scores2) {
-			if (*cg_hudForceRedTeamClanTag.string) {
-				s = cg_hudForceRedTeamClanTag.string;
-			} else {
-				s = va("%s", cgs.redTeamClanTag);
-			}
-			score = cgs.scores1;
-		} else if (cgs.scores1 < cgs.scores2) {
-			if (*cg_hudForceBlueTeamClanTag.string) {
-				s = cg_hudForceBlueTeamClanTag.string;
-			} else {
-				s = va("%s", cgs.blueTeamClanTag);
-			}
-			score = cgs.scores2;
-		} else {  // same score for both teams
+	if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
+		if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
 			//FIXME free cam
 			if (team == TEAM_RED) {
 				if (*cg_hudForceRedTeamClanTag.string) {
@@ -4074,10 +4103,30 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 				}
 			}
 			score = cgs.scores1;
+		} else if (cgs.scores1 > cgs.scores2) {
+			if (*cg_hudForceRedTeamClanTag.string) {
+				s = cg_hudForceRedTeamClanTag.string;
+			} else {
+				s = va("%s", cgs.redTeamClanTag);
+			}
+			score = cgs.scores1;
+		} else if (cgs.scores1 < cgs.scores2) {
+			if (*cg_hudForceBlueTeamClanTag.string) {
+				s = cg_hudForceBlueTeamClanTag.string;
+			} else {
+				s = va("%s", cgs.blueTeamClanTag);
+			}
+			score = cgs.scores2;
+		} else {
+			CG_Printf("^3FIXME CG_Draw1stPlaceScore() warning shouldn't happen 1\n");
+			score = -100;  // gcc warning
+			s = va("FIXME");
 		}
+
 		teamSpacing = rect->h / 2;
 	} else {
-		if (cgs.scores1 == cg.snap->ps.persistant[PERS_SCORE]) {  //FIXME wolfcam
+		//if (cgs.scores1 == cg.snap->ps.persistant[PERS_SCORE]) {  //FIXME wolfcam
+		if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
 			const char *clanTag;
 
 			clanTag = cgs.clientinfo[cg.snap->ps.clientNum].clanTag;
@@ -4094,41 +4143,65 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	}
 
 	//FIXME "..." if not enough space
-	spacing = CG_Text_Width("00", scale, 0, font);
+	//spacing = CG_Text_Width("0", scale, 0, font);
+	spacing = 0;
 
 	if (score == SCORE_NOT_PRESENT) {
 		s = "1.";
 	}
 
+	if (cgs.gametype == GT_RACE) {
+		tmpString = CG_GetTimeString(score);
+		Com_sprintf(scoreString, sizeof(scoreString), "%s", tmpString);
+	} else {
+		if (score == SCORE_NOT_PRESENT) {
+			scoreString[0] = '\0';
+		} else {
+			Com_sprintf(scoreString, sizeof(scoreString), "%d", score);
+		}
+	}
+	scoreStringLength = CG_Text_Width(scoreString, scale, 0, font);
+
 	//FIXME stupid
 	//FIXME use '...' like ql
-	maxNameWidth = rect->w - spacing - 1;
+	//maxNameWidth = rect->w - spacing - 1 - CG_Text_Width(scoreString, scale, 0, font);
+	maxNameWidth = rect->w - spacing - scoreStringLength;
 	endOfName = s + strlen(s);
 	nameTruncated = qfalse;
-	while (maxNameWidth > 0  &&  CG_Text_Width(s, scale, 0, font) > maxNameWidth) {
+	while (maxNameWidth > 0  &&  (CG_Text_Width(s, scale, 0, font) + teamSpacing) > maxNameWidth) {
 		endOfName--;
-		*endOfName = '\0';
+		endOfName[0] = '\0';
 		nameTruncated = qtrue;
 	}
 	if (nameTruncated  &&  strlen(s) > 3) {
+ 		endOfName += 3;  // room for color code
+		endOfName[0] = '\0';
+
 		endOfName--;
-		*endOfName = '.';
+		endOfName[0] = '.';
 		endOfName--;
-		*endOfName = '.';
+		endOfName[0] = '.';
 		endOfName--;
-		*endOfName = '.';
+		endOfName[0] = '.';
+
+		endOfName--;
+		endOfName[0] = '7';
+		endOfName--;
+		endOfName[0] = '^';
+
+		// last character could be ^
+		endOfName--;
+		endOfName[0] = ' ';
 	}
 
 	//FIXME spacing for scores
 	CG_Text_Paint(rect->x + teamSpacing, rect->y, scale, color, s, 0, rect->w - teamSpacing - spacing - 6, textStyle, font);
 
-	s = va("%d  ", score);
-	if (score == SCORE_NOT_PRESENT) {
-		s = "";
-	}
-
-	CG_Text_Paint(rect->x + rect->w - spacing, rect->y, scale, color, s, 0, 0, textStyle, font);
+	//CG_Text_Paint(rect->x + rect->w - spacing - CG_Text_Width(scoreString, scale, 0, font), rect->y, scale, color, scoreString, 0, 0, textStyle, font);
+	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, color, scoreString, 0, 0, textStyle, font);
 }
+
+//FIXME duplicate with CG_Draw1stPlaceScore
 
 static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font)
 {
@@ -4145,9 +4218,18 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 	int maxNameWidth;
 	char *endOfName;
 	qboolean nameTruncated;
+	char scoreString[128];
+	const char *tmpString;
+	int scoreStringLength;
 
 	if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
 		CG_OspCalcPlacements();
+	}
+
+	if (!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER) {
+		if (CG_NumPlayers() < 2) {
+			return;
+		}
 	}
 
 	if (wolfcam_following) {
@@ -4160,29 +4242,15 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 	rank = cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG;
 	rank++;
 
-	if (cgs.gametype >= GT_TEAM  &&  cgs.gametype != GT_RED_ROVER) {
-		if (cgs.scores1 == cgs.scores2) {
+	if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
+		if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
 			rank = 1;
 		} else {
 			rank = 2;
 		}
 		teamSpacing = rect->h / 2;
 
-		if (cgs.scores1 < cgs.scores2) {
-			if (*cg_hudForceRedTeamClanTag.string) {
-				s = cg_hudForceRedTeamClanTag.string;
-			} else {
-				s = va("%s", cgs.redTeamClanTag);
-			}
-			score = cgs.scores1;
-		} else if (cgs.scores1 > cgs.scores2) {
-			if (*cg_hudForceBlueTeamClanTag.string) {
-				s = cg_hudForceBlueTeamClanTag.string;
-			} else {
-				s = va("%s", cgs.blueTeamClanTag);
-			}
-			score = cgs.scores2;
-		} else {  // same score
+		if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
 			if (team == TEAM_RED) {
 				if (*cg_hudForceBlueTeamClanTag.string) {
 					s = cg_hudForceBlueTeamClanTag.string;
@@ -4197,11 +4265,30 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 				}
 			}
 			score = cgs.scores1;
+		} else if (cgs.scores1 < cgs.scores2) {
+			if (*cg_hudForceRedTeamClanTag.string) {
+				s = cg_hudForceRedTeamClanTag.string;
+			} else {
+				s = va("%s", cgs.redTeamClanTag);
+			}
+			score = cgs.scores1;
+		} else if (cgs.scores1 > cgs.scores2) {
+			if (*cg_hudForceBlueTeamClanTag.string) {
+				s = cg_hudForceBlueTeamClanTag.string;
+			} else {
+				s = va("%s", cgs.blueTeamClanTag);
+			}
+			score = cgs.scores2;
+		} else {
+			CG_Printf("^3FIXME CG_Draw2ndPlaceScore() warning shouldn't happen 1\n");
+			score = -100;  // gcc warning
 		}
+
 		//score = cgs.scores2;
-	} else if (cgs.scores1 == cg.snap->ps.persistant[PERS_SCORE]) {
+		//} else if (cgs.scores1 == cg.snap->ps.persistant[PERS_SCORE]) {
+	} else if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
 		//FIXME wolfcam
-		if (cgs.scores2 == cgs.scores1) {
+		if (CG_ScoresEqual(cgs.scores2, cgs.scores1)) {
 			qboolean secondPlaceIsUs = qfalse;
 
 			//sname = CG_ConfigString(CS_SECONDPLACE);
@@ -4234,7 +4321,8 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 		} else {
 			//s = va("%d. %s   %d", cgs.scores2 == cgs.scores1 ? 1 : 2, CG_ConfigString(CS_SECONDPLACE), cgs.scores2);
 			//s = va("%d. %s", cgs.scores2 == cgs.scores1 ? 1 : 2, CG_ConfigString(CS_SECONDPLACE));
-			s = va("%d. %s", cgs.scores2 == cgs.scores1 ? 1 : 2, cgs.secondPlace);
+			//s = va("%d. %s", cgs.scores2 == cgs.scores1 ? 1 : 2, cgs.secondPlace);
+			s = va("%d. %s", CG_ScoresEqual(cgs.scores2, cgs.scores1) ? 1 : 2, cgs.secondPlace);
 		}
 		score = cgs.scores2;
 		teamSpacing = 0;
@@ -4259,39 +4347,61 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 		s = "2.";
 	}
 
-	spacing = CG_Text_Width("00", scale, 0, font);
+	if (cgs.gametype == GT_RACE) {
+		tmpString = CG_GetTimeString(score);
+		Com_sprintf(scoreString, sizeof(scoreString), "%s", tmpString);
+	} else {
+		if (score == SCORE_NOT_PRESENT) {
+			scoreString[0] = '\0';
+		} else {
+			Com_sprintf(scoreString, sizeof(scoreString), "%d", score);
+		}
+	}
+	scoreStringLength = CG_Text_Width(scoreString, scale, 0, font);
+
+	//spacing = CG_Text_Width("0", scale, 0, font);
+	spacing = 0;
 
 	//FIXME ... if not enough space
 	//FIXME size of score   -6
 
 	//FIXME stupid
 	//FIXME use '...' like ql
-	maxNameWidth = rect->w - spacing - 1;
+	//maxNameWidth = rect->w - spacing - 1 - CG_Text_Width(scoreString, scale, 0, font);
+	maxNameWidth = rect->w - spacing - scoreStringLength;
 	endOfName = s + strlen(s);
 	nameTruncated = qfalse;
-	while (maxNameWidth > 0  &&  CG_Text_Width(s, scale, 0, font) > maxNameWidth) {
+	while (maxNameWidth > 0  &&  (CG_Text_Width(s, scale, 0, font) + teamSpacing) > maxNameWidth) {
 		endOfName--;
-		*endOfName = '\0';
+		endOfName[0] = '\0';
 		nameTruncated = qtrue;
 	}
 	if (nameTruncated  &&  strlen(s) > 3) {
+ 		endOfName += 3;  // room for color code
+		endOfName[0] = '\0';
+
 		endOfName--;
-		*endOfName = '.';
+		endOfName[0] = '.';
 		endOfName--;
-		*endOfName = '.';
+		endOfName[0] = '.';
 		endOfName--;
-		*endOfName = '.';
+		endOfName[0] = '.';
+
+		endOfName--;
+		endOfName[0] = '7';
+		endOfName--;
+		endOfName[0] = '^';
+
+		// last character could be ^
+		endOfName--;
+		endOfName[0] = ' ';
 	}
 
 	//CG_Text_Paint(rect->x + teamSpacing, rect->y, scale, color, s, 0, rect->h - teamSpacing - spacing - 6, textStyle, font);
 	CG_Text_Paint(rect->x + teamSpacing, rect->y, scale, color, s, 0, rect->w - teamSpacing - spacing - 6, textStyle, font);
 
-	s = va("%d  ", score);
-	if (score == SCORE_NOT_PRESENT) {
-		s = "";
-	}
-
-	CG_Text_Paint(rect->x + rect->w - spacing, rect->y, scale, color, s, 0, 0, textStyle, font);
+	//CG_Text_Paint(rect->x + rect->w - spacing - CG_Text_Width(scoreString, scale, 0, font), rect->y, scale, color, scoreString, 0, 0, textStyle, font);
+	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, color, scoreString, 0, 0, textStyle, font);
 }
 
 #if 0
@@ -5654,7 +5764,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
     CG_DrawPlayerItem(&rect, scale, ownerDrawFlags & CG_SHOW_2DONLY);
     break;
   case CG_PLAYER_SCORE:
-	  CG_DrawPlayerScore(&rect, scale, color, shader, textStyle, font);
+	  CG_DrawPlayerScore(&rect, scale, color, shader, textStyle, font, align);
     break;
   case CG_PLAYER_HEALTH:  // 4
 	  CG_DrawPlayerHealth(&rect, scale, color, shader, textStyle, font);
@@ -5773,10 +5883,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_DrawCapFragLimit(&rect, scale, color, shader, textStyle, font);
 		break;
   case CG_1STPLACE:
-	  CG_Draw1stPlace(&rect, scale, color, shader, textStyle, font);
+	  CG_Draw1stPlace(&rect, scale, color, shader, textStyle, font, align);
 		break;
   case CG_2NDPLACE:  // 68
-	  CG_Draw2ndPlace(&rect, scale, color, shader, textStyle, font);
+	  CG_Draw2ndPlace(&rect, scale, color, shader, textStyle, font, align);
 		break;
 
 		////////////////////////////////////////////////////
@@ -5957,7 +6067,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_MATCH_WINNER:  {  // 84
 	  vec4_t ourColor = { 1, 1, 1, 1 };
 
-	  if (cgs.gametype < GT_TEAM  ||  cgs.gametype == GT_RED_ROVER) {
+	  if (!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER) {
 		  int w;
 
 		  //w = CG_Text_Width(CG_ConfigString(CS_FIRSTPLACE), scale, 0, font);
@@ -5975,7 +6085,9 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  //FIXME color getting set?
 		  //Vector4Copy(color, ourColor);
 		  ourColor[3] = color[3];
-		  if (cgs.scores1 > cgs.scores2) {
+		  if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
+			  CG_Text_Paint_Align(&rect, scale, ourColor, va("^4Blue Team ^7WINS by a score of %d to %d", cgs.scores2, cgs.scores1), 0, 0, textStyle, font, align);
+		  } else if (cgs.scores1 > cgs.scores2) {
 			  CG_Text_Paint_Align(&rect, scale, ourColor, va("^1Red Team ^7WINS by a score of %d to %d", cgs.scores1, cgs.scores2), 0, 0, textStyle, font, align);
 		  } else {
 			  //CG_Text_Paint_Align(&rect, scale, color, "Blue wins", 0, 0, textStyle, font, align);
@@ -5994,6 +6106,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  s = "Highest score within the time limit";
 	  } else if (cgs.gametype == GT_RED_ROVER  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {
 		  s = "Highest score at the end of the game";
+	  } else if (cgs.gametype == GT_RACE) {
+		  s = "Fastest race time within the time limit";
 	  } else {
 		  s = "";
 	  }
@@ -6043,6 +6157,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  }
 		  } else if (cgs.gametype == GT_CA) {  //FIXME in quakelive red rover too
 			  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+		  } else if (cgs.gametype == GT_RACE) {
+			  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a time of %s", s, CG_GetTimeString(cg.snap->ps.persistant[PERS_SCORE])), 0, 0, textStyle, font, align);
 		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {  //FIXME OBELISK like quakelive -- even if wrong
 			  if (captures) {
 				  if (cgs.gametype == GT_HARVESTER) {
@@ -7853,6 +7969,64 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 
   // wolfcam ownerdraws
+
+  case CG_RACE_STATUS: {
+	  int nextCheckPointEnt;
+
+	  if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
+		  break;
+	  }
+
+	  if (wolfcam_following) {
+		  //ourClientNum = wcg.clientNum;
+		  nextCheckPointEnt = cg_entities[wcg.clientNum].pe.raceCheckPointNextEnt;
+	  } else {
+		  // ourClientNum = cg.snap->ps.clientNum;
+		  nextCheckPointEnt = cg.predictedPlayerEntity.pe.raceCheckPointNextEnt;
+	  }
+
+	  if (nextCheckPointEnt > 0) {
+		  CG_Text_Paint_Align(&rect, scale, color, "^3CURRENT RUN", 0, 0, textStyle, font, align);
+	  } else {
+		  CG_Text_Paint_Align(&rect, scale, color, "^3LAST TIME", 0, 0, textStyle, font, align);
+	  }
+
+	  break;
+  }
+
+  case CG_RACE_TIMES: {
+	  int nextCheckPointEnt;
+	  int start;
+	  int end;
+	  const char *timeString;
+
+	  if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
+		  break;
+	  }
+
+	  if (wolfcam_following) {
+		  //ourClientNum = wcg.clientNum;
+		  nextCheckPointEnt = cg_entities[wcg.clientNum].pe.raceCheckPointNextEnt;
+		  start = cg_entities[wcg.clientNum].pe.raceStartTime;
+		  end = cg_entities[wcg.clientNum].pe.raceEndTime;
+	  } else {
+		  // ourClientNum = cg.snap->ps.clientNum;
+		  nextCheckPointEnt = cg.predictedPlayerEntity.pe.raceCheckPointNextEnt;
+		  start = cg.predictedPlayerEntity.pe.raceStartTime;
+		  end = cg.predictedPlayerEntity.pe.raceEndTime;
+	  }
+
+	  if (nextCheckPointEnt > 0) {
+		  timeString = CG_GetTimeString(cg.time - start);
+		  CG_Text_Paint_Align(&rect, scale, color, va("%s", timeString), 0, 0, textStyle, font, align);
+	  } else {
+		  timeString = CG_GetTimeString(end);
+		  //Com_Printf("tstring %d  start %d  end %d\n", end - start, start, end);
+		  CG_Text_Paint_Align(&rect, scale, color, va("%s", timeString), 0, 0, textStyle, font, align);
+	  }
+
+	  break;
+  }
 
   case WCG_GAME_STATUS:
 	  if (cg.warmup) {

@@ -2982,7 +2982,7 @@ static void CG_DrawClientItemTimer (void)
 	float iconY;
 	qboolean useTextColor;
 
-	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_DOMINATION  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER) {
+	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_DOMINATION  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER  ||  cgs.gametype == GT_RACE) {
 		return;
 	}
 
@@ -4227,6 +4227,7 @@ static float CG_DrawScores( float y ) {
 	float		y1;
 	const gitem_t*item;
 	int ourTeam;
+	char c;
 
 	if (cg_qlhud.integer) {  //  &&  !wolfcam_following) {  //FIXME
 		return y;
@@ -4241,18 +4242,27 @@ static float CG_DrawScores( float y ) {
 	s1 = cgs.scores1;
 	s2 = cgs.scores2;
 
+	if (cgs.gametype == GT_RACE) {
+		s1 = round(s1 / 1000.0);
+		s2 = round(s2 / 1000.0);
+		c = 's';
+	} else {
+		c = '\0';
+	}
+
 	y -=  BIGCHAR_HEIGHT + 8;
 
 	y1 = y;
 
 	// draw from the right side to left
-	if ( cgs.gametype >= GT_TEAM ) {
+	//if ( cgs.gametype >= GT_TEAM ) {
+	if (CG_IsTeamGame(cgs.gametype)) {
 		x = 640;
 		color[0] = 0.0f;
 		color[1] = 0.0f;
 		color[2] = 1.0f;
 		color[3] = 0.33f;
-		s = va( "%2i", s2 );
+		s = va( "%2i%c", s2, c );
 		w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 		x -= w;
 		CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
@@ -4276,7 +4286,7 @@ static float CG_DrawScores( float y ) {
 		color[1] = 0.0f;
 		color[2] = 0.0f;
 		color[3] = 0.33f;
-		s = va( "%2i", s1 );
+		s = va( "%2i%c", s1, c );
 		w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 		x -= w;
 		CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
@@ -4318,7 +4328,7 @@ static float CG_DrawScores( float y ) {
 			v = cgs.fraglimit;
 		}
 		if ( v ) {
-			s = va( "%2i", v );
+			s = va( "%2i%c", v, c );
 			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 			x -= w;
 			CG_DrawBigString( x + 4, y, s, 1.0F);
@@ -4328,18 +4338,23 @@ static float CG_DrawScores( float y ) {
 		qboolean	spectator;
 
 		x = 640;
-		score = cg.snap->ps.persistant[PERS_SCORE];
+		if (cgs.gametype == GT_RACE) {
+			score = cgs.clientinfo[cg.snap->ps.clientNum].score;
+			score = round(score / 1000.0);
+		} else {
+			score = cg.snap->ps.persistant[PERS_SCORE];
+		}
 		spectator = ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR );
 		if (wolfcam_following) {
 			spectator = 1;
 		}
 
 		// always show your score in the second box if not in first place
-		if ( s1 != score ) {
+		if (!CG_ScoresEqual(s1, s2)) {
 			s2 = score;
 		}
 		if ( s2 != SCORE_NOT_PRESENT ) {
-			s = va( "%2i", s2 );
+			s = va( "%2i%c", s2, c );
 			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 			x -= w;
 			if ( !spectator && score == s2 && score != s1 ) {
@@ -4361,7 +4376,7 @@ static float CG_DrawScores( float y ) {
 
 		// first place
 		if ( s1 != SCORE_NOT_PRESENT ) {
-			s = va( "%2i", s1 );
+			s = va( "%2i%c", s1, c );
 			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 			x -= w;
 			if ( !spectator && score == s1 ) {
@@ -4381,14 +4396,14 @@ static float CG_DrawScores( float y ) {
 			CG_DrawBigString( x + 4, y, s, 1.0F);
 		}
 
-		if (cgs.gametype != GT_TOURNAMENT) {
+		if (cgs.gametype != GT_TOURNAMENT  &&  cgs.gametype != GT_RACE) {
 			if ( cgs.fraglimit ) {
-				s = va( "%2i", cgs.fraglimit );
+				s = va( "%2i%c", cgs.fraglimit, c );
 				w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 				x -= w;
 				CG_DrawBigString( x + 4, y, s, 1.0F);
 			} else  if ( cgs.roundlimit ) {
-				s = va( "%2i", cgs.roundlimit );
+				s = va( "%2i%c", cgs.roundlimit, c );
 				w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 				x -= w;
 				CG_DrawBigString( x + 4, y, s, 1.0F);
@@ -7986,6 +8001,8 @@ static qboolean CG_DrawScoreboard (void)
 				cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ad");
 			} else if (cgs.gametype == GT_RED_ROVER  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endscore_menu_ffa");
+			} else if (cgs.gametype == GT_RACE  &&  !cg_scoreBoardOld.integer) {
+				cg.menuScoreboard = Menus_FindByName("endscore_menu_race");
 			} else {
 				if ( cgs.gametype >= GT_TEAM ) {
 					cg.menuScoreboard = Menus_FindByName("endteamscore_menu");
@@ -8022,6 +8039,8 @@ static qboolean CG_DrawScoreboard (void)
 				cg.menuScoreboard = Menus_FindByName("teamscore_menu_ad");
 			} else if (cgs.gametype == GT_RED_ROVER  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("score_menu_ffa");
+			} else if (cgs.gametype == GT_RACE  &&  !cg_scoreBoardOld.integer) {
+				cg.menuScoreboard = Menus_FindByName("score_menu_race");
 			} else {
 				if (cgs.gametype >= GT_TEAM) {
 					cg.menuScoreboard = Menus_FindByName("teamscore_menu");
@@ -8495,6 +8514,14 @@ static void CG_DrawWarmup( void ) {
 			s = "Domination";
 		} else if (cgs.gametype == GT_RED_ROVER) {
 			s = "Red Rover";
+		} else if (cgs.gametype == GT_NTF) {
+			s = "Not Team Fortress";
+		} else if (cgs.gametype == GT_2V2) {
+			s = "Two vs. Two";
+		} else if (cgs.gametype == GT_HM) {
+			s = "Hoonymode";
+		} else if (cgs.gametype == GT_RACE) {
+			s = "Race";
 		} else {
 			s = va("unknown: %d", cgs.gametype);
 		}

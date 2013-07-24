@@ -41,6 +41,7 @@ void CG_Abort (void);
 void CG_ScaleModel (refEntity_t *re, float size);
 
 const char *CG_GetLocalTimeString (void);
+const char *CG_GetTimeString (int ms);
 
 qboolean CG_CheckQlVersion (int n0, int n1, int n2, int n3);
 
@@ -49,5 +50,8 @@ qboolean CG_EntityFrozen (const centity_t *cent);
 qboolean CG_GameTimeout (void);
 
 void CG_Rocket_Aim (const centity_t *enemy, vec3_t epos);
+qboolean CG_ClientInSnapshot (int clientNum);
+int CG_NumPlayers (void);
+qboolean CG_ScoresEqual (int score1, int score2);
 
 #endif  // sc_h_included

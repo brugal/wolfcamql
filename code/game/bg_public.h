@@ -212,6 +212,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 // 712  infected:  500.000000
 
+#define CS_NUMBER_OF_RACE_CHECKPOINTS 713
 
 
 // unknown ones which haven't been seen in quake live, but kept for compiling
@@ -321,7 +322,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // 752 -> 759  mod + server message?
 
 
-#if 1
 typedef enum {
 	GT_FFA,				// free for all
 	GT_TOURNAMENT,		// one on one tournament
@@ -344,27 +344,10 @@ typedef enum {
 	GT_NTF,  // not team fortress
 	GT_2V2,
 	GT_HM,  // hoony mode
+	GT_RACE,
 	GT_MAX_GAME_TYPE,
 } gametype_t;
-#endif
 
-#if 0
-extern int GT_FFA;
-extern int GT_TOURNAMENT;
-extern int GT_SINGLE_PLAYER;
-extern int GT_TEAM;
-extern int GT_CA;
-extern int GT_CTF;
-extern int GT_1FCTF;
-extern int GT_OBELISK;
-extern int GT_HARVESTER;
-extern int GT_FREEZETAG;
-extern int GT_CTFS;
-extern int GT_DOMINATION;
-#endif
-
-//extern int GT_MAX_GAME_TYPE;
-//#define GT_MAX_GAME_TYPE 20  //FIXME
 
 typedef enum { GENDER_MALE, GENDER_FEMALE, GENDER_NEUTER } gender_t;
 
@@ -784,6 +767,10 @@ typedef enum {
 	EV_THAW_TICK = 88,
 	EV_HEADSHOT = 89,
 	EV_POI = 90,
+
+	EV_RACE_START = 93,
+	EV_RACE_CHECKPOINT = 94,
+	EV_RACE_END = 95,
 
 	// just to allow compiling  -- no it's used with predicted player state
 	EV_STEP_4 = 196,

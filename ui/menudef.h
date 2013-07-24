@@ -535,6 +535,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CG_TEAM_PLYR_COUNT 350
 #define CG_ENEMY_PLYR_COUNT 351
 #define CG_ROUND 352
+#define CG_RACE_STATUS 353
+#define CG_RACE_TIMES 354
+#define CG_SPEC_MESSAGES 355
 
 #define UI_OWNERDRAW_BASE 512
 #define UI_HANDICAP 513

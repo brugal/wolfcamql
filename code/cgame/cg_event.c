@@ -1365,7 +1365,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	const char		*s;
 	int				clientNum;
 	clientInfo_t *ci;  //FIXME should be const
-	//int ourClientNum;
+	int ourClientNum;
 	const char *eventName;
 	int id;
 	int i;
@@ -1400,7 +1400,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	}
 	ci = &cgs.clientinfo[ clientNum ];
 
-#if 0
+#if 1
 	if (wolfcam_following) {
 		ourClientNum = wcg.clientNum;
 	} else {
@@ -2153,6 +2153,12 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		DEBUGNAME("EV_MISSILE_HIT");
 		ByteToDir( es->eventParm, dir );
 		CG_MissileHitPlayer( es->weapon, position, dir, es->otherEntityNum, -1);
+#if 0
+		if (es->otherEntityNum >= 0  &&  es->otherEntityNum < MAX_CLIENTS) {
+			cgs.clientinfo[es->otherEntityNum].hitTime = cg.ftime;
+		}
+#endif
+
 		//Com_Printf("(es %d)  %d '%s' missile hit player %d '%s'\n", es->number, clientNum, cgs.clientinfo[clientNum].name, es->otherEntityNum, cgs.clientinfo[es->otherEntityNum].name);
 		//CG_PrintEntityStatep(es);
 
@@ -2343,7 +2349,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 				}
             }
         }
-        if ((cg_entities[es->otherEntityNum].currentValid  ||  cg.snap->ps.clientNum == es->otherEntityNum)  &&  (cg_entities[es->eventParm].currentValid  ||  cg.snap->ps.clientNum == es->eventParm))
+        if (CG_ClientInSnapshot(es->otherEntityNum)  &&  CG_ClientInSnapshot(es->eventParm))
         {
             vec3_t vec, enemyvec, angs;
             //entityState_t *e = &cg_entities[es->otherEntityNum].currentState;
@@ -2392,7 +2398,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			VectorCopy(es->pos.trBase, ScriptVars.origin);
 			VectorCopy(dir, ScriptVars.dir);
 			VectorSet(ScriptVars.end, 0, 0, 0);
-			if (cg_entities[es->otherEntityNum].currentValid  ||  cg.snap->ps.clientNum == es->otherEntityNum) {
+			if (CG_ClientInSnapshot(es->otherEntityNum)) {
 				VectorSubtract(cg_entities[es->otherEntityNum].lerpOrigin, es->pos.trBase, ScriptVars.end);
 			} else {
 				//Com_Printf("^1%d not valid end\n", es->otherEntityNum);
@@ -2413,7 +2419,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			VectorCopy(es->pos.trBase, ScriptVars.origin);
 			VectorCopy(dir, ScriptVars.dir);
 			VectorSet(ScriptVars.end, 0, 0, 0);
-			if (cg_entities[es->otherEntityNum].currentValid  ||  cg.snap->ps.clientNum == es->otherEntityNum) {
+			if (CG_ClientInSnapshot(es->otherEntityNum)) {
 				VectorSubtract(cg_entities[es->otherEntityNum].lerpOrigin, es->pos.trBase, ScriptVars.end);
 				//Com_Printf("^2%d valid end\n", es->otherEntityNum);
 			} else {
@@ -3065,6 +3071,18 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 	case EV_OBITUARY:
 		DEBUGNAME("EV_OBITUARY");
+		if (es->otherEntityNum < 0  ||  es->otherEntityNum >= MAX_CLIENTS) {
+			CG_Printf("^3EV_OBITUARY invalid client number %d\n", es->otherEntityNum);
+		} else {
+			playerEntity_t *pe;
+
+			if (es->otherEntityNum == cg.snap->ps.clientNum) {
+				pe = &cg.predictedPlayerEntity.pe;
+			} else {
+				pe = &cg_entities[es->otherEntityNum].pe;
+			}
+			pe->deathTime = cg.time;
+		}
 		CG_Obituary( es );
 		break;
 
@@ -3323,6 +3341,86 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		p->length = es->powerups;
 		p->team = es->generic1;
 		cg.numPoiPics++;
+		break;
+	}
+	case EV_RACE_START: {
+		if (es->clientNum < 0  ||  es->clientNum >= MAX_CLIENTS) {
+			CG_Printf("^3EV_RACE_START invalid client number %d\n", es->clientNum);
+			break;
+		}
+
+		if (es->clientNum == ourClientNum) {
+			trap_S_StartLocalSound(cgs.media.bellSound, CHAN_LOCAL_SOUND);
+		}
+
+		if (es->clientNum == cg.snap->ps.clientNum) {
+			cg.predictedPlayerEntity.pe.raceStartTime = es->time;
+			cg.predictedPlayerEntity.pe.raceCheckPointNum = 1;
+			cg.predictedPlayerEntity.pe.raceCheckPointNextEnt = es->otherEntityNum2;
+		} else {
+			cg_entities[es->clientNum].pe.raceStartTime = es->time;
+			cg_entities[es->clientNum].pe.raceCheckPointNum = 1;
+			cg_entities[es->clientNum].pe.raceCheckPointNextEnt = es->otherEntityNum2;
+		}
+		break;
+	}
+	case EV_RACE_CHECKPOINT: {
+		if (es->clientNum < 0  ||  es->clientNum >= MAX_CLIENTS) {
+			CG_Printf("^3EV_RACE_CHECKPOINT invalid client number %d\n", es->clientNum);
+			break;
+		}
+
+		if (es->clientNum == ourClientNum) {
+			int rem;
+
+			trap_S_StartLocalSound(cgs.media.bellSound, CHAN_LOCAL_SOUND);
+			//CG_CenterPrint("CheckPoint", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
+			//CG_CenterPrint(va("CheckPoint %d / %d\ntest", es->otherEntityNum, cgs.numberOfRaceCheckPoints), SCREEN_HEIGHT * 0.70, BIGCHAR_WIDTH );
+			rem = cgs.numberOfRaceCheckPoints - es->otherEntityNum - 1;  // don't include start
+			if (rem <= 3) {
+				CG_CenterPrint(va("Checkpoint\n%d remaining", rem), SCREEN_HEIGHT * 0.70, BIGCHAR_WIDTH );
+			} else {
+				//CG_CenterPrint(va("CheckPoint %d / %d", es->otherEntityNum, cgs.numberOfRaceCheckPoints), SCREEN_HEIGHT * 0.70, BIGCHAR_WIDTH );
+				CG_CenterPrint("Checkpoint", SCREEN_HEIGHT * 0.70, BIGCHAR_WIDTH );
+			}
+		}
+
+
+		if (es->clientNum == cg.snap->ps.clientNum) {
+			//cg.predictedPlayerEntity.pe.raceStartTime = es->time;
+			cg.predictedPlayerEntity.pe.raceCheckPointNum = es->otherEntityNum + 1;
+			cg.predictedPlayerEntity.pe.raceCheckPointNextEnt = es->otherEntityNum2;
+		} else {
+			//cg_entities[es->clientNum].pe.raceStartTime = es->time;
+			cg_entities[es->clientNum].pe.raceCheckPointNum = es->otherEntityNum + 1;
+			cg_entities[es->clientNum].pe.raceCheckPointNextEnt = es->otherEntityNum2;
+		}
+		break;
+	}
+	case EV_RACE_END: {
+		//Com_Printf("^3FIXME EV_RACE_END:\n");
+		if (es->clientNum < 0  ||  es->clientNum >= MAX_CLIENTS) {
+			CG_Printf("^3EV_RACE_END invalid client number %d\n", es->clientNum);
+			break;
+		}
+
+		if (es->clientNum == ourClientNum) {
+			trap_S_StartLocalSound(cgs.media.klaxon1, CHAN_LOCAL_SOUND);
+		}
+
+		if (es->clientNum == cg.snap->ps.clientNum) {
+			//cg.predictedPlayerEntity.pe.raceStartTime = es->time;
+			cg.predictedPlayerEntity.pe.raceCheckPointNum = 0;
+			cg.predictedPlayerEntity.pe.raceCheckPointNextEnt = 0;
+			cg.predictedPlayerEntity.pe.raceEndTime = es->time;
+		} else {
+			//cg_entities[es->clientNum].pe.raceStartTime = es->time;
+			cg_entities[es->clientNum].pe.raceCheckPointNum = 0;
+			cg_entities[es->clientNum].pe.raceCheckPointNextEnt = 0;
+			cg_entities[es->clientNum].pe.raceEndTime = es->time;
+		}
+
+		//CG_PrintEntityStatep(es);
 		break;
 	}
 	default: {

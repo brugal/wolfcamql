@@ -1,6 +1,7 @@
 
 #include "cg_local.h"
 
+#include "sc.h"
 #include "cg_main.h"
 //#include "cg_q3mme_scripts.h"
 //#include "cg_localents.h"
@@ -8,7 +9,6 @@
 #include "wolfcam_predict.h"
 
 #include "wolfcam_local.h"
-
 
 
 void SC_Lowercase (char *p)
@@ -349,10 +349,12 @@ qboolean CG_IsEnemy (const clientInfo_t *ci)
         return qfalse;
     }
 
-    if (cgs.gametype >= GT_TEAM  &&  ci->team != us->team) {
+    //if (cgs.gametype >= GT_TEAM  &&  ci->team != us->team) {
+	if (CG_IsTeamGame(cgs.gametype)  &&  ci->team != us->team) {
         //Com_Printf("us %s %d    them %s %d\n", us->name, us->team, ci->name, ci->team);
         return qtrue;
-    } else if (cgs.gametype < GT_TEAM) {
+		//} else if (cgs.gametype < GT_TEAM) {
+	} else if (!CG_IsTeamGame(cgs.gametype)) {
         return qtrue;
     }
 
@@ -860,6 +862,30 @@ const char *CG_GetLocalTimeString (void)
     return nowString;
 }
 
+const char *CG_GetTimeString (int ms)
+{
+	static char timeString[128];
+	int minutes;
+	int	seconds;
+	int frac;
+
+	if (cgs.gametype == GT_RACE) {
+		if (ms < 0  ||  ms >= MAX_RACE_SCORE) {
+			timeString[0] = '-';
+			timeString[1] = '\0';
+			return timeString;
+		}
+	}
+
+	frac = ms % 1000;
+	seconds = (ms / 1000) % 60;
+	minutes = (ms / 1000 / 60);
+
+	Com_sprintf(timeString, sizeof(timeString), "%d:%02d.%03d", minutes, seconds, frac);
+
+	return timeString;
+}
+
 // check version is at least this, or possibly not quakelive client
 qboolean CG_CheckQlVersion (int n0, int n1, int n2, int n3)
 {
@@ -1080,4 +1106,65 @@ void CG_Rocket_Aim (const centity_t *enemy, vec3_t epos)
 		//trap_Cvar_Set("cl_freezeDemo", "1");
 	}
 	return;
+}
+
+// also checks if client is valid
+qboolean CG_ClientInSnapshot (int clientNum)
+{
+	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		return qfalse;
+	}
+
+	if (!cg.snap) {
+		return qfalse;
+	}
+
+	if (clientNum == cg.snap->ps.clientNum) {
+		return qtrue;
+	}
+
+	if (cg_entities[clientNum].currentValid) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
+int CG_NumPlayers (void)
+{
+	int n;
+	int i;
+	const clientInfo_t *ci;
+
+	n = 0;
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		ci = &cgs.clientinfo[i];
+		if (!ci->infoValid) {
+			continue;
+		}
+		if (ci->team == TEAM_SPECTATOR) {
+			continue;
+		}
+		n++;
+	}
+
+	return n;
+}
+
+qboolean CG_ScoresEqual (int score1, int score2)
+{
+	if (cgs.gametype == GT_RACE) {
+		if (score1 >= 0x7fffffff) {
+			score1 = -1;
+		}
+		if (score2 >= 0x7fffffff) {
+			score2 = -1;
+		}
+	}
+
+	if (score1 == score2) {
+		return qtrue;
+	}
+
+	return qfalse;
 }

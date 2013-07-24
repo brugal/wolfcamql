@@ -677,7 +677,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	//memset(cgs.clientinfo, 0, sizeof(cgs.clientinfo));
 	//memset(cgs.clientinfoOrig, 0, sizeof(cgs.clientinfoOrig));
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
-		const char *clientInfo;
+		const char *clientString;
 		//clientInfo_t *ci;
 
 		//ci = &cgs.clientinfo[i];
@@ -687,8 +687,10 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		//ci->breathPuffTime = 0;
 		//cgs.newConnectedClient[i] = qfalse;
 
-		clientInfo = CG_ConfigString(CS_PLAYERS + i);
-		if (!clientInfo[0]) {
+		//cgs.clientinfo[i].hitTime = 0;
+
+		clientString = CG_ConfigString(CS_PLAYERS + i);
+		if (!clientString[0]) {
 			cgs.clientinfo[i].infoValid = qfalse;
 			cgs.clientinfo[i].override = qfalse;
 			continue;

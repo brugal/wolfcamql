@@ -681,6 +681,7 @@ CG_ParseTeamInfo
 static void CG_ParseTeamInfo( void ) {
 	int		i;
 	int		clientNum;
+	//int healthOld;
 
 	numSortedTeamPlayers = atoi( CG_Argv( 1 ) );
 	//Com_Printf("CG_ParseTeamInfo numSortedTeamPlayers %d\n", numSortedTeamPlayers);
@@ -695,7 +696,18 @@ static void CG_ParseTeamInfo( void ) {
 		//Com_Printf("%s\n", cgs.clientinfo[clientNum].name);
 
 		cgs.clientinfo[ clientNum ].location = atoi( CG_Argv( i * 6 + 3 ) );
+
+		//healthOld = cgs.clientinfo[clientNum].health;
+
 		cgs.clientinfo[ clientNum ].health = atoi( CG_Argv( i * 6 + 4 ) );
+
+#if 0
+		if (healthOld > cgs.clientinfo[clientNum].health) {
+			cgs.clientinfo[clientNum].hitTime = cg.ftime;
+			Com_Printf("player %d hit...\n", clientNum);
+		}
+#endif
+
 		cgs.clientinfo[ clientNum ].armor = atoi( CG_Argv( i * 6 + 5 ) );
 		cgs.clientinfo[ clientNum ].curWeapon = atoi( CG_Argv( i * 6 + 6 ) );
 		cgs.clientinfo[ clientNum ].powerups = atoi( CG_Argv( i * 6 + 7 ) );
@@ -703,6 +715,10 @@ static void CG_ParseTeamInfo( void ) {
 }
 
 /*
+  QuakeLive  0.1.0.790 linux-i386 Jul 17 2013 16:28:51
+  QuakeLive  0.1.0.785 linux-i386 Jul 15 2013 16:03:55
+      * race game type,
+      * team health/status icons
   QuakeLive  0.1.0.728 linux-i386 Feb 28 2013 13:20:49 (new scores)
   0.1.0.719 linux-i386 Feb 21 2013 11:37:37  (has new scores commands)
 
@@ -1031,9 +1047,20 @@ void CG_ParseServerinfo (qboolean firstCall)
 				break;
 			}
 		}
+	} else if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.gametype == 2) {
+			cgs.gametype = GT_RACE;
+		}
 	}
 
-	trap_Cvar_Set("cg_gametype", va("%i", cgs.gametype));
+	//FIXME
+	if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_RACE) {
+		// ql huds use the original integer value
+		trap_Cvar_Set("cg_gametype", "2");
+	} else {
+		trap_Cvar_Set("cg_gametype", va("%i", cgs.gametype));
+	}
+
 	trap_Cvar_Set("g_gametype", va("%i", cgs.gametype));
 
 	//FIXME q3 and ql differences
@@ -1146,6 +1173,21 @@ void CG_ParseServerinfo (qboolean firstCall)
 		}
 		CG_BuildSpectatorString();
 	}
+
+	if ((firstCall  ||  cgs.instaGib != instaGib)  &&  (cgs.gametype >= 0  &&  cgs.gametype < GT_MAX_GAME_TYPE)) {
+		cgs.instaGib = instaGib;
+		if (cgs.instaGib) {
+			gametypeConfig = va("i%s", gametypeConfigs[cgs.gametype]);
+		} else {
+			gametypeConfig = gametypeConfigs[cgs.gametype];
+		}
+		if (gametypeConfig) {
+			trap_SendConsoleCommand(va("exec %s\n", gametypeConfig));
+		} else {
+			Com_Printf("FIXME unknown gametype: %d\n", cgs.gametype);
+		}
+	}
+
 
 	if (cgs.protocol != PROTOCOL_QL) {
 		return;
@@ -1286,19 +1328,7 @@ void CG_ParseServerinfo (qboolean firstCall)
 		cgs.serverHeadModelOverride[0] = '\0';
 	}
 
-	if (firstCall  ||  cgs.instaGib != instaGib) {
-		cgs.instaGib = instaGib;
-		if (cgs.instaGib) {
-			gametypeConfig = va("i%s", gametypeConfigs[cgs.gametype]);
-		} else {
-			gametypeConfig = gametypeConfigs[cgs.gametype];
-		}
-		if (gametypeConfig) {
-			trap_SendConsoleCommand(va("exec %s\n", gametypeConfig));
-		} else {
-			Com_Printf("FIXME unknown gametype: %d\n", cgs.gametype);
-		}
-	}
+	cgs.numberOfRaceCheckPoints = atoi(CG_ConfigString(CS_NUMBER_OF_RACE_CHECKPOINTS));
 
 	//FIXME check for first call
 	cgs.timeoutBeginTime = atoi(CG_ConfigString(CS_TIMEOUT_BEGIN_TIME));
@@ -2180,6 +2210,8 @@ static void CG_ConfigStringModified( void ) {
 			cgs.armorTiered = qfalse;
 		}
 		trap_Cvar_Set("cg_armorTiered", val);
+	} else if (num == CS_NUMBER_OF_RACE_CHECKPOINTS) {
+		cgs.numberOfRaceCheckPoints = atoi(str);
 	} else {
 		CG_Printf("%d unknown config string modified  %d: %s\n", cg.time, num, str);
 	}
@@ -3939,6 +3971,72 @@ static void CG_ParseScores_Rr (void)
 	}
 }
 
+static void CG_ParseScores_Race (void)
+{
+	int		i;
+	int n;
+
+	// they forgot score->team ?
+
+	cg.scoresValid = qtrue;
+	cg.scoresVersion = 1;
+
+	cg.numScores = atoi(CG_Argv(1));
+
+	if (cg.numScores > MAX_CLIENTS) {
+		Com_Printf("^3CG_ParseScores_Race() numScores (%d) > MAX_CLIENTS (%d)\n", cg.numScores, MAX_CLIENTS);
+		cg.numScores = MAX_CLIENTS;
+	}
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		cgs.clientinfo[i].scoreValid = qfalse;
+		cg.clientHasScore[i] = qfalse;
+	}
+
+	i = 2;
+
+	//for (n = 0;  n < cg.numScores;  n++) {
+	for (n = 0;  *CG_Argv(i);  n++) {
+		score_t *s;
+		int clientNum;
+		clientInfo_t *ci;
+
+		clientNum = atoi(CG_Argv(i));  i++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Race() invalid client number %d\n", clientNum);
+			return;
+		}
+		s = &cg.scores[n];
+		ci = &cgs.clientinfo[clientNum];
+
+		s->client = clientNum;
+		s->team = ci->team;
+
+		// team?
+		i++;
+
+		s->score = atoi(CG_Argv(i));  i++;
+		ci->score = s->score;
+
+		ci->scoreValid = qtrue;
+		cg.clientHasScore[clientNum] = qtrue;
+
+		s->ping = atoi(CG_Argv(i));  i++;
+		s->time = atoi(CG_Argv(i));  i++;
+	}
+
+#if 1  //def MPACK
+	CG_SetScoreSelection(NULL);
+#endif
+
+	// check sizes
+	if (CG_Argc() != i) {
+		//FIXME quakelive sends spec scores as well and doesn't report them
+		// in number of scores send, can ignore?
+		//CG_Printf("^1CG_ParseScores_Race() argc (%d) != %d\n", CG_Argc(), i);
+	}
+}
+
 static void CG_ParseDScores (void)
 {
 	int i;
@@ -4034,6 +4132,30 @@ static void CG_ParseDScores (void)
 			//Q_strncpyz(cg.duelScores[1].name, cgs.clientinfo[cg.duelPlayer2].name, sizeof(cg.duelScores[1].name));
 			cg.duelScores[1].ci = cgs.clientinfo[cg.duelPlayer2];
 		}
+	}
+}
+
+static void CG_RaceInit (void)
+{
+	int i;
+	playerEntity_t *pe;
+
+	pe = &cg.predictedPlayerEntity.pe;
+
+	pe->raceStartTime = 0;
+	pe->raceCheckPointNum = 0;
+	pe->raceCheckPointNextEnt = 0;
+	pe->raceCheckPointTime = 0;
+	pe->raceEndTime = 0;
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		pe = &cg_entities[i].pe;
+
+		pe->raceStartTime = 0;
+		pe->raceCheckPointNum = 0;
+		pe->raceCheckPointNextEnt = 0;
+		pe->raceCheckPointTime = 0;
+		pe->raceEndTime = 0;
 	}
 }
 
@@ -4324,6 +4446,10 @@ static void CG_ServerCommand( void ) {
 			CG_ParseScores_Rr();
 			return;
 		}
+		if (!Q_stricmp(cmd, "scores_race")) {
+			CG_ParseScores_Race();
+			return;
+		}
 
 		if (!Q_stricmp(cmd, "dscores")) {
 			CG_ParseDScores();
@@ -4417,6 +4543,11 @@ static void CG_ServerCommand( void ) {
 #endif
 			//CG_Printf("%s\n", CG_Argv(1));
 			CG_ResetTimedItemPickupTimes();  //FIXME take out eventually
+			return;
+		}
+
+		if (!strcmp(cmd, "race_init")) {
+			CG_RaceInit();
 			return;
 		}
 	}

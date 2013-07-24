@@ -1186,11 +1186,58 @@ fx running before first frame??
 * doc mention how q3mme emitters are one script and they are split in wc depending on how many emitters they have
 * cg_marks --  part of fx entities
 
-* next:  'end' for impactflesh
+* fx impact flesh 'end' can check for duel setting to get position of other player
+
+* gametypeicon gametypeconfig ..  proper game name.. all together
+
+*  ffa tdm ca ft dom rr race oneflag har ad
+
+* new ql update 2013-07-16:
+   gfx/2d/race/checkpoint.png
+
+   sprites/flagcarrier_hit
+   gfx/2d/race/checkpoint
+
+   old:  gfx/2d/race/start  gfx/2d/race/finish  gfx/misc/racenav  gfx/2d/world_timer_hand
+
+   ui/end_scoreboard_race.smenu
+
+   ITEM_TYPE_BUTTON
+   ITEM_TYPE_BIND
+
+   CG_SPEC_MESSAGES
+
+   * GT_RACE >= GT_TEAM, other players not shown as enemies
+   * ca messages  --  double check
+   * race nav, world timer hand
+
+   **  (warmup) 3:54 CG_ParseScores_Race() argc (52) != 42  raceonlineg*dm_73  -- ql sends some extra scores, work around added
+
+   * race event sounds and cg_freecam_useTeamSettings
+   * checkpoint /start/finish times and rewinding
 
 
+* race: option to always print checkpoint number and remaining
+
+* check if honeymood team game /duel
+* multiple icons over player --  connection, dead, flag, etc..
+  ql difference --  dead icon supercedes talk icon
+* 'depthtest' shader parameter : sprites/friend2
+* teammate icons could use health colors  or custom colors
+* double check cg_scoreBoardOld for GT_RED_ROVER and GT_RACE
+* grep GT_TEAM *
+* double check 'teamSpacing' in CG_Draw[1st|2nd]PlaceScore
 
 ---------------------------
+
+* sound/misc/chaching.ogg
+  sound/misc/tim_pump.ogg
+  sound/misc/nightmare.ogg
+sound/world/klaxon1.ogg  finish
+sound/world/klaxon2.ogg
+sound/world/buzzer.ogg
+sound/world/bell_01.ogg  start and checkpoint
+sound/world/hockey_horn.ogg
 
 
 * q3mme render types

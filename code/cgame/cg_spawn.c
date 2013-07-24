@@ -148,7 +148,7 @@ qboolean CG_ParseSpawnVars( void ) {
     qboolean stopTimer;
     qboolean gotOrigin;
     int pointContents;
-    static char *gametypeNames[] = { "ffa", "tournament", "single", "team", /*FIXME clanarena*/ "ca",  "ctf", "oneflag", "obelisk", "harvester", "ft", "dom", "ad", "rr" };
+    static char *gametypeNames[] = { "ffa", "tournament", "single", "team", /*FIXME clanarena*/ "ca",  "ctf", "oneflag", "obelisk", "harvester", "ft", "dom", "ad", "rr", "race" };
 
     //Com_Printf("cgs.gametype : %d\n", cgs.gametype);
     cg.numSpawnVars = 0;
@@ -411,13 +411,26 @@ qboolean CG_ParseSpawnVars( void ) {
             wait = atoi(com_token);
         } else if (!Q_stricmp(keyname, "notteam")) {
             val = atoi(com_token);
-            if (val  &&  cgs.gametype >= GT_TEAM) {
+            //if (val  &&  cgs.gametype >= GT_TEAM) {
+            if (val  &&  CG_IsTeamGame(cgs.gametype)) {
                 skipItem = 1;
             }
         } else if (!Q_stricmp(keyname, "not_gametype")) {
             val = atoi(com_token);
-            if (cgs.gametype == val) {
-                skipItem = 1;
+            if (cgs.protocol == PROTOCOL_QL) {
+                if (cgs.gametype == GT_RACE) {
+                    if (val == 2) {
+                        skipItem = 1;
+                    }
+                } else {
+                    if (cgs.gametype == val) {
+                        skipItem = 1;
+                    }
+                }
+            } else {
+                if (cgs.gametype == val) {
+                    skipItem = 1;
+                }
             }
         } else if (!Q_stricmp(keyname, "gametype")) {
             //FIXME this is wrong, see g_spawn.c

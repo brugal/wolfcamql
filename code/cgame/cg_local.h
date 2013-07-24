@@ -118,6 +118,8 @@
 
 #define DUEL_PLAYER_INVALID -1
 
+#define MAX_RACE_SCORE 0x7fffffff
+
 
 typedef enum {
 	FOOTSTEP_NORMAL,
@@ -186,6 +188,14 @@ typedef struct {
 	qboolean		barrelSpinning;
 	int 			lgSoundTime;
 	int				muzzleFlashTime;
+
+	int raceStartTime;
+	int raceCheckPointNum;
+	int raceCheckPointNextEnt;
+	int raceCheckPointTime;
+	int raceEndTime;
+
+	int deathTime;
 } playerEntity_t;
 
 //=================================================
@@ -424,6 +434,8 @@ typedef struct {
 
 	int scoreIndexNum;
 	qboolean scoreValid;
+
+	//double hitTime;
 } clientInfo_t;
 
 
@@ -1541,6 +1553,12 @@ typedef struct {
 	qhandle_t adCapture;
 	qhandle_t adDefend;
 
+	qhandle_t raceStart;
+	qhandle_t raceCheckPoint;
+	qhandle_t raceFinish;
+	qhandle_t raceNav;
+	qhandle_t raceWorldTimerHand;
+
 	qhandle_t	armorModel;
 
 	// old q3 code and client item timer icons
@@ -1584,6 +1602,10 @@ typedef struct {
 	qhandle_t	lightningShader;
 
 	qhandle_t	friendShader;
+	qhandle_t friend2Shader;
+	qhandle_t friendHitShader;
+	qhandle_t friendDeadShader;
+
 	qhandle_t	frozenShader;
 	qhandle_t foeShader;
 	qhandle_t selfShader;
@@ -1935,6 +1957,7 @@ typedef struct {
 	sfxHandle_t thawTick;
 	sfxHandle_t nightmareSound;
 	sfxHandle_t survivorSound;
+	sfxHandle_t bellSound;
 
 	// don't actually load these
 	fontInfo_t	giantchar;
@@ -2023,9 +2046,12 @@ typedef struct {
 	qhandle_t flagCarrier;
 	qhandle_t flagCarrierNeutral;
 	qhandle_t ghostWeaponShader;
+	qhandle_t noPlayerClipShader;
 	qhandle_t rocketAimShader;
 	qhandle_t bboxShader;
 	qhandle_t bboxShader_nocull;
+
+	int activeCheckPointRaceFlagModel;
 
 } cgMedia_t;
 
@@ -2192,6 +2218,10 @@ typedef struct {
 	int cpmaLastTe;
 	int cpmaLastTd;
 
+	int startRaceFlagModel;
+	int endRaceFlagModel;
+	int checkPointRaceFlagModel;
+
 	int dominationControlPointModel;
 	int dominationRedPoints;
 	int dominationBluePoints;
@@ -2211,6 +2241,8 @@ typedef struct {
 	gitem_t *greenArmorItem;
 
 	qboolean armorTiered;
+
+	int numberOfRaceCheckPoints;
 } cgs_t;
 
 
@@ -3137,6 +3169,9 @@ extern vmCvar_t cg_spectatorListQue;
 
 extern vmCvar_t cg_rocketAimBot;
 extern vmCvar_t cg_drawTieredArmorAvailability;
+
+extern vmCvar_t cg_drawDeadFriendTime;
+extern vmCvar_t cg_racePlayerShader;
 
 // end cvar_t
 

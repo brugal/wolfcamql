@@ -3018,7 +3018,7 @@ CG_PlayerFloatSpriteExt
 Float a sprite over the player's head
 ===============
 */
-static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, int renderEffect) {
+static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, int renderEffect, byte *color) {
 	int				rf;
 	refEntity_t		ent;
 	float dist;
@@ -3055,6 +3055,18 @@ static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, in
 	ent.origin[2] += 48;
 
 	ent.radius = 10;
+
+	if (color) {
+		ent.shaderRGBA[0] = color[0];
+		ent.shaderRGBA[1] = color[1];
+		ent.shaderRGBA[2] = color[2];
+		ent.shaderRGBA[3] = color[3];
+	} else {
+		ent.shaderRGBA[0] = 255;
+		ent.shaderRGBA[1] = 255;
+		ent.shaderRGBA[2] = 255;
+		ent.shaderRGBA[3] = 255;
+	}
 
 	if (shader == cgs.media.friendShader  ||  shader == cgs.media.foeShader  ||  shader == cgs.media.selfShader) {
 		if (wolfcam_following) {
@@ -3103,10 +3115,7 @@ static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, in
 	ent.reType = RT_SPRITE;
 	ent.customShader = shader;
 	ent.renderfx = rf;
-	ent.shaderRGBA[0] = 255;
-	ent.shaderRGBA[1] = 255;
-	ent.shaderRGBA[2] = 255;
-	ent.shaderRGBA[3] = 255;
+
 	CG_AddRefEntity(&ent);
 }
 
@@ -3160,7 +3169,7 @@ static void CG_PlayerFloatSpriteNameExt (const centity_t *cent, qhandle_t shader
 
 static void CG_PlayerFloatSprite (const centity_t *cent, qhandle_t shader)
 {
-	CG_PlayerFloatSpriteExt(cent, shader, 0);
+	CG_PlayerFloatSpriteExt(cent, shader, 0, NULL);
 }
 
 void CG_FloatSprite (qhandle_t shader, const vec3_t origin, int renderfx, const byte *color, int radius)
@@ -3504,11 +3513,12 @@ static void CG_PlayerSprites( centity_t *cent ) {
 	if (cg_drawSelf.integer  &&  cent->currentState.number == cg.snap->ps.clientNum) {
 		//if (cg.freecam  ||  cg.renderingThirdPerson  ||  (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum)) {
 		if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
-			CG_PlayerFloatSpriteExt(cent, cgs.media.selfShader, cg_drawSelf.integer == 2 ? RF_DEPTHHACK : 0);
+			CG_PlayerFloatSpriteExt(cent, cgs.media.selfShader, cg_drawSelf.integer == 2 ? RF_DEPTHHACK : 0, NULL);
 		}
 	}
 
-	if (cgs.gametype == GT_FREEZETAG  ||  (cgs.gametype >= GT_TEAM  &&  !(cent->currentState.eFlags & EF_DEAD))) {
+	//if (cgs.gametype == GT_FREEZETAG  ||  (cgs.gametype >= GT_TEAM  &&  !(cent->currentState.eFlags & EF_DEAD))) {
+	if (CG_IsTeamGame(cgs.gametype)) {
 		qboolean depthHack;
 
 		depthHack = qfalse;
@@ -3531,37 +3541,70 @@ static void CG_PlayerSprites( centity_t *cent ) {
 				s = cgs.media.flagCarrier;
 			} else if (cent->currentState.powerups & (1 << PW_NEUTRALFLAG)) {
 				s = cgs.media.flagCarrierNeutral;
-			} else {
-				s = cgs.media.friendShader;
+			} else if (CG_IsTeammate(&cgs.clientinfo[cent->currentState.clientNum])) {
+				if (cent->currentState.eFlags & EF_DEAD) {
+					s = cgs.media.friendDeadShader;
+					if (cg_drawFriend.integer) {
+						int deathTime;
+
+						if (cent->currentState.clientNum == cg.snap->ps.clientNum) {
+							deathTime = cg.predictedPlayerEntity.pe.deathTime;
+						} else {
+							deathTime = cg_entities[cent->currentState.clientNum].pe.deathTime;
+						}
+						if (cg.time - deathTime <= cg_drawDeadFriendTime.integer) {
+							CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+						}
+					}
+					return;
+				} else {
+					s = cgs.media.friendShader;
+				}
 			}
 		}
 
-		if (wolfcam_following) {
-			if (team == cgs.clientinfo[wcg.clientNum].team) {
+		if (CG_IsTeamGame(cgs.gametype)) {
+			if (wolfcam_following) {
+				if (team == cgs.clientinfo[wcg.clientNum].team) {
+					if (cg_drawFriend.integer) {
+						if (0) { //(team != cg.snap->ps.persistant[PERS_TEAM]) {
+							s = cgs.media.friendShader;
+							CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+						} else {
+							if ((cg.ftime - cent->pe.painTime) < 2000.0) {
+								s = cgs.media.friendHitShader;
+							} else {
+								s = cgs.media.friendShader;
+							}
+							CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+						}
+						return;
+					}
+				}
+			} else if (cg.snap->ps.persistant[PERS_TEAM] == team) {
 				if (cg_drawFriend.integer) {
-					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0);
+					if ((cg.ftime - cent->pe.painTime) < 2000.0) {
+						s = cgs.media.friendHitShader;
+					} else {
+						s = cgs.media.friendShader;
+					}
+					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
 					return;
 				}
-			}
-		} else if (cg.snap->ps.persistant[PERS_TEAM] == team) {
-			if (cg_drawFriend.integer) {
-				CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0);
-				return;
 			}
 		}
 	}
 
 	if (!(cent->currentState.eFlags & EF_DEAD)  &&  CG_IsEnemy(&cgs.clientinfo[cent->currentState.clientNum])) {
 		if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE  &&  cg_allowServerOverride.integer) {
-			CG_PlayerFloatSpriteExt(cent, cgs.media.infectedFoeShader, RF_DEPTHHACK);
+			CG_PlayerFloatSpriteExt(cent, cgs.media.infectedFoeShader, RF_DEPTHHACK, NULL);
 		} else {
 			s = cgs.media.foeShader;
 			if (cg_drawFoe.integer) {
-				CG_PlayerFloatSpriteExt(cent, s, cg_drawFoe.integer == 2 ? RF_DEPTHHACK : 0);
+				CG_PlayerFloatSpriteExt(cent, s, cg_drawFoe.integer == 2 ? RF_DEPTHHACK : 0, NULL);
 			}
 		}
 	}
-
 }
 
 /*
@@ -4264,6 +4307,14 @@ static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, ref
 			head->customShader = cgs.media.gooShader;
 		}
 	}
+
+	if (cgs.gametype == GT_RACE  &&  !CG_IsUs(ci)) {
+		if (cg_racePlayerShader.integer) {
+			legs->customShader = cgs.media.noPlayerClipShader;
+			torso->customShader = cgs.media.noPlayerClipShader;
+			head->customShader = cgs.media.noPlayerClipShader;
+		}
+	}
 }
 
 #if 0
@@ -4943,6 +4994,8 @@ void CG_Player ( centity_t *cent ) {
 
 
 	CG_AddRefEntityWithPowerups( &legs, &cent->currentState, ci->team );
+	//CG_AddRefEntityWithPowerups( &legs, &cent->currentState, ci->team );
+
 	if (cg.ftime < cent->extraShaderEndTime  &&  cent->extraShader) {
 		legs.customShader = cent->extraShader;
 		CG_AddRefEntity(&legs);

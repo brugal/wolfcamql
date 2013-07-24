@@ -1,4 +1,20 @@
-10.1test1
+10.1  2013-07-23
+
+* support for new quake live update:
+    race gametype
+    hud align option for CG_PLAYER_SCORE, CG_1STPLACE, and CG_2NDPLACE
+    friend icon hit and death (cg_drawDeadFriendTime)
+
+    added cg_racePlayerShader to enable/disable invisible player shaders
+
+* hud:  don't draw second player name and score if only one player is in game
+* added additional allowed sounds with 'cg_ambientSounds 2'
+* removed "jitToken" spam when seeking
+* support for new quake live update:  team damage and death icons,
+* game type autoexec for quake3
+* game type autoexec for cpma ntf, 2v2, and hoonymode:  (ntf.cfg, 2v2.cfg, hm.cfg)
+* bug fix:  possible crash with unknown game type
+* fx:  quake3 support for checking if shooter is valid with impactFlesh scripts
 
 -----------------------------------
 
