@@ -638,6 +638,8 @@ int		FS_FOpenFileRead( const char *qpath, fileHandle_t *file, qboolean uniqueFIL
 // It is generally safe to always set uniqueFILE to true, because the majority of
 // file IO goes through FS_ReadFile, which Does The Right Thing already.
 
+qboolean FS_FileLoadInMemory (qhandle_t f);
+
 int		FS_FileIsInPAK(const char *filename, int *pChecksum );
 // returns 1 if a file is in the PAK file, otherwise -1
 

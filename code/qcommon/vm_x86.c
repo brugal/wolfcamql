@@ -384,7 +384,6 @@ Error handler for jump/call to invalid instruction number
 static void ErrJump(void)
 { 
 	Com_Error(ERR_DROP, "program tried to execute code outside VM");
-	exit(1);
 }
 
 /*

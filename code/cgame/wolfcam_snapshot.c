@@ -18,8 +18,6 @@ void Wolfcam_CheckNoMove (void)
 	int clientNum;
 	int i;
 	const centity_t *cent;
-	byte color[4] = { 0, 255, 0, 255 };
-	vec3_t origin;
 	const entityState_t *es;
 	entityState_t *nes;
 	const entityState_t *nnes;
@@ -88,12 +86,6 @@ void Wolfcam_CheckNoMove (void)
 				cg.noMove = qtrue;
 				wclients[clientNum].noMoveCount++;
 
-				if (cg_demoSmoothing.integer > 1) {
-					Com_Printf("smooth demo taker\n");
-					VectorCopy(cg.snap->ps.origin, origin);
-					origin[2] += 90;
-					CG_FloatNumber(clientNum, origin, RF_DEPTHHACK, color, 1.0);
-				}
 				if (cg.snap->ps.clientNum != cg.nextNextSnap->ps.clientNum) {
 					continue;
 				}
@@ -103,7 +95,7 @@ void Wolfcam_CheckNoMove (void)
 				if (nextNextReset) {
 					continue;
 				}
-				if (cg_demoSmoothing.integer) {
+				if (cg_demoSmoothing.integer == 1) {
 					cg.nextSnap->ps.origin[0] = cg.snap->ps.origin[0] + (cg.nextNextSnap->ps.origin[0] - cg.snap->ps.origin[0]) / 2;
 					cg.nextSnap->ps.origin[1] = cg.snap->ps.origin[1] + (cg.nextNextSnap->ps.origin[1] - cg.snap->ps.origin[1]) / 2;
 					cg.nextSnap->ps.origin[2] = cg.snap->ps.origin[2] + (cg.nextNextSnap->ps.origin[2] - cg.snap->ps.origin[2]) / 2;
@@ -173,13 +165,6 @@ void Wolfcam_CheckNoMove (void)
 
 				wclients[clientNum].noMoveCount++;
 
-				if (cg_demoSmoothing.integer > 1) {
-					Com_Printf("smooth %d  (eType %d) %f %s\n", clientNum, es->eType, VectorLength(nes->pos.trDelta), cgs.clientinfo[clientNum].name);
-					VectorCopy(es->pos.trBase, origin);
-					origin[2] += 90;
-					CG_FloatNumber(clientNum, origin, RF_DEPTHHACK, color, 1.0);
-				}
-
 				if (!inNextNextSnapshot) {
 					continue;
 				}
@@ -189,7 +174,7 @@ void Wolfcam_CheckNoMove (void)
 				if (nextNextReset) {
 					continue;
 				}
-				if (cg_demoSmoothing.integer) {
+				if (cg_demoSmoothing.integer == 1) {
 					nes->pos.trBase[0] = es->pos.trBase[0] + (nnes->pos.trBase[0] - es->pos.trBase[0]) / 2;
 					nes->pos.trBase[1] = es->pos.trBase[1] + (nnes->pos.trBase[1] - es->pos.trBase[1]) / 2;
 					nes->pos.trBase[2] = es->pos.trBase[2] + (nnes->pos.trBase[2] - es->pos.trBase[2]) / 2;

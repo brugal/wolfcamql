@@ -269,6 +269,7 @@ qboolean	CL_GetSnapshot( int snapshotNumber, snapshot_t *snapshot ) {
 
 //static entityState_t   tmpParseEntities[MAX_PARSE_ENTITIES];
 
+
 qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 {
 	clSnapshot_t	*clSnap;
@@ -277,6 +278,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	int origPosition;
 	int cmd;
 	char *s;
+	char buffer[16];
 	qboolean success = qfalse;
 	int r;
 	msg_t buf;
@@ -284,6 +286,8 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	int j;
 	int lastPacketTimeOrig;
 	int parseEntitiesNumOrig;
+	int currentSnapNum;
+	int serverMessageSequence;
 
 	clSnap = &csn;
 
@@ -292,8 +296,14 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	}
 
 	if (snapshotNumber <= cl.snap.messageNum) {
-		Com_Printf("FIXME CL_PeekSnapshot snapshotNumber <= cl.snap.messageNum  %d  %d\n", snapshotNumber, cl.snap.messageNum);
-		return qfalse;
+		//Com_Printf("FIXME CL_PeekSnapshot snapshotNumber <= cl.snap.messageNum  %d  %d\n", snapshotNumber, cl.snap.messageNum);
+		success = CL_GetSnapshot(snapshotNumber, snapshot);
+		if (!success) {
+			Com_Printf("^3CL_PeekSnapshot snapshot number outside of backup buffer\n");
+			return qfalse;
+		}
+		//Com_Printf("got old\n");
+		return qtrue;
 	}
 
 	if (snapshotNumber > cl.snap.messageNum + 1) {
@@ -306,9 +316,12 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	// CL_ReadDemoMessage()
 	origPosition = FS_FTell(clc.demoReadFile);
 
-	for (j = 0;  j < snapshotNumber - cl.snap.messageNum; j++) {
+	currentSnapNum = cl.snap.messageNum;
+
+	for (j = 0;  j < snapshotNumber - currentSnapNum; j++) {
 		// get the sequence number
-		r = FS_Read( &s, 4, clc.demoReadFile);
+		memset(buffer, 0, sizeof(buffer));
+		r = FS_Read( &buffer, 4, clc.demoReadFile);
 		if ( r != 4 ) {
 			Com_Printf("CL_PeekSnapshot couldn't read sequence number\n");
 			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
@@ -316,117 +329,119 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 			cl.parseEntitiesNum = parseEntitiesNumOrig;
 			return qfalse;
 		}
+		serverMessageSequence = LittleLong(*((int *)buffer));
 
-	// init the message
-	memset(&buf, 0, sizeof(msg_t));
-	MSG_Init(&buf, bufData, sizeof(bufData));
+		// init the message
+		memset(&buf, 0, sizeof(msg_t));
+		MSG_Init(&buf, bufData, sizeof(bufData));
 
-	// get the length
-	r = FS_Read (&buf.cursize, 4, clc.demoReadFile);
-	if ( r != 4 ) {
-		Com_Printf("CL_PeekSnapshot couldn't get length\n");
-		FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
-		clc.lastPacketTime = lastPacketTimeOrig;
-		cl.parseEntitiesNum = parseEntitiesNumOrig;
-		return qfalse;
-	}
-	buf.cursize = LittleLong( buf.cursize );
-	if ( buf.cursize == -1 ) {
-		Com_Printf("CL_PeekSnapshot buf.cursize == -1\n");
-		FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
-		clc.lastPacketTime = lastPacketTimeOrig;
-		cl.parseEntitiesNum = parseEntitiesNumOrig;
-		return qfalse;
-	}
-	if ( buf.cursize > buf.maxsize ) {
-		Com_Error (ERR_DROP, "CL_PeekSnapshot: demoMsglen > MAX_MSGLEN");
-	}
-	r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
-	if ( r != buf.cursize ) {
-		Com_Printf( "CL_PeekSnapshot Demo file was truncated.\n");
-		FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
-		clc.lastPacketTime = lastPacketTimeOrig;
-		cl.parseEntitiesNum = parseEntitiesNumOrig;
-		return qfalse;
-	}
-
-	clc.lastPacketTime = cls.realtime;
-	buf.readcount = 0;
-	//  CL_ParseServerMessage( &buf );
-	MSG_Bitstream(&buf);
-	// get the reliable sequence acknowledge number
-	//clc.reliableAcknowledge = MSG_ReadLong( msg );
-	MSG_ReadLong(&buf);
-
-	//
-	// parse the message
-	//
-	while ( 1 ) {
-		if ( buf.readcount > buf.cursize ) {
-			Com_Error (ERR_DROP,"CL_PeekSnapshot: read past end of server message");
-			break;
+		// get the length
+		r = FS_Read (&buf.cursize, 4, clc.demoReadFile);
+		if ( r != 4 ) {
+			Com_Printf("CL_PeekSnapshot couldn't get length\n");
+			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+			clc.lastPacketTime = lastPacketTimeOrig;
+			cl.parseEntitiesNum = parseEntitiesNumOrig;
+			return qfalse;
+		}
+		buf.cursize = LittleLong( buf.cursize );
+		if ( buf.cursize == -1 ) {
+			Com_Printf("CL_PeekSnapshot buf.cursize == -1\n");
+			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+			clc.lastPacketTime = lastPacketTimeOrig;
+			cl.parseEntitiesNum = parseEntitiesNumOrig;
+			return qfalse;
+		}
+		if ( buf.cursize > buf.maxsize ) {
+			Com_Error (ERR_DROP, "CL_PeekSnapshot: demoMsglen > MAX_MSGLEN");
+		}
+		r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
+		if ( r != buf.cursize ) {
+			Com_Printf( "CL_PeekSnapshot Demo file was truncated.\n");
+			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+			clc.lastPacketTime = lastPacketTimeOrig;
+			cl.parseEntitiesNum = parseEntitiesNumOrig;
+			return qfalse;
 		}
 
-		cmd = MSG_ReadByte(&buf);
+		clc.lastPacketTime = cls.realtime;
+		buf.readcount = 0;
+		//  CL_ParseServerMessage( &buf );
+		MSG_Bitstream(&buf);
+		// get the reliable sequence acknowledge number
+		//clc.reliableAcknowledge = MSG_ReadLong( msg );
+		MSG_ReadLong(&buf);
 
-		// See if this is an extension command after the EOF, which means we
-		//  got data that a legacy client should ignore.
-		if ((cmd == svc_EOF) && (MSG_LookaheadByte( &buf ) == svc_extension)) {
-			MSG_ReadByte( &buf );  // throw the svc_extension byte away.
-			cmd = MSG_ReadByte( &buf );  // something legacy clients can't do!
-			// sometimes you get a svc_extension at end of stream...dangling
-			//  bits in the huffman decoder giving a bogus value?
-			if (cmd == -1) {
-				cmd = svc_EOF;
+		//
+		// parse the message
+		//
+		while ( 1 ) {
+			if ( buf.readcount > buf.cursize ) {
+				Com_Error (ERR_DROP,"CL_PeekSnapshot: read past end of server message");
+				break;
 			}
-		}
 
-		if (cmd == svc_EOF) {
-			break;
-		}
-		success = qfalse;
+			cmd = MSG_ReadByte(&buf);
 
-		switch (cmd) {
-		default:
-			Com_Error (ERR_DROP,"CL_PeekSnapshot: Illegible server message");
-			break;
-		case svc_nop:
-			break;
-		case svc_serverCommand:
-			//CL_ParseCommandString( msg );
-			MSG_ReadLong(&buf);  // seq
-			s = MSG_ReadString(&buf);
-			break;
-		case svc_gamestate:
-			//CL_ParseGamestate( msg );
-			//MSG_ReadLong(msg);  // clc.serverCommandSequence
-			Com_Printf("FIXME CL_PeekSnapshot: gamestate\n");
-			goto alldone;
-			break;
-		case svc_snapshot:
-			CL_ParseSnapshot(&buf, &csn, qtrue);
-			if (csn.valid) {
-				success = qtrue;
+			// See if this is an extension command after the EOF, which means we
+			//  got data that a legacy client should ignore.
+			if ((cmd == svc_EOF) && (MSG_LookaheadByte( &buf ) == svc_extension)) {
+				MSG_ReadByte( &buf );  // throw the svc_extension byte away.
+				cmd = MSG_ReadByte( &buf );  // something legacy clients can't do!
+				// sometimes you get a svc_extension at end of stream...dangling
+				//  bits in the huffman decoder giving a bogus value?
+				if (cmd == -1) {
+					cmd = svc_EOF;
+				}
 			}
-			break;
-		case svc_download:
-			//CL_ParseDownload( msg );
-			Com_Printf("FIXME CL_PeekSnapshot: download\n");
-			goto alldone;
-			break;
-		case svc_voip:
+
+			if (cmd == svc_EOF) {
+				break;
+			}
+			success = qfalse;
+
+			switch (cmd) {
+			default:
+				Com_Error (ERR_DROP,"CL_PeekSnapshot: Illegible server message");
+				break;
+			case svc_nop:
+				break;
+			case svc_serverCommand:
+				//CL_ParseCommandString( msg );
+				MSG_ReadLong(&buf);  // seq
+				s = MSG_ReadString(&buf);
+				break;
+			case svc_gamestate:
+				//CL_ParseGamestate( msg );
+				//MSG_ReadLong(msg);  // clc.serverCommandSequence
+				Com_Printf("FIXME CL_PeekSnapshot: gamestate\n");
+				goto alldone;
+				break;
+			case svc_snapshot:
+				CL_ParseSnapshot(&buf, &csn, serverMessageSequence, qtrue);
+				if (csn.valid) {
+					success = qtrue;
+				}
+				break;
+			case svc_download:
+				//CL_ParseDownload( msg );
+				Com_Printf("FIXME CL_PeekSnapshot: download\n");
+				goto alldone;
+				break;
+			case svc_voip:
 #ifdef USE_VOIP
-			//CL_ParseVoip( msg );
-			Com_Printf("FIXME CL_PeekSnapshot: voip\n");
-			goto alldone;
+				//CL_ParseVoip( msg );
+				Com_Printf("FIXME CL_PeekSnapshot: voip\n");
+				goto alldone;
 #endif
-			break;
-		}
-	}
+				break;
+			}
+		}  // while (1)
 
  alldone:
 
 	if (!success) {
+		Com_Printf("^1CL_PeekSnapshot failed\n");
 		FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
 		clc.lastPacketTime = lastPacketTimeOrig;
 		cl.parseEntitiesNum = parseEntitiesNumOrig;
@@ -447,6 +462,8 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	}
 
 	// write the snapshot
+	snapshot->messageNum = serverMessageSequence;
+	//Com_Printf("peek got %d\n", snapshot->messageNum);
 	snapshot->snapFlags = clSnap->snapFlags;
 	snapshot->serverCommandSequence = clSnap->serverCommandNum;
 	snapshot->ping = clSnap->ping;
@@ -494,16 +511,6 @@ CL_AddCgameCommand
 void CL_AddCgameCommand( const char *cmdName ) {
 	Cmd_AddCommand( cmdName, NULL );
 }
-
-/*
-=====================
-CL_CgameError
-=====================
-*/
-void CL_CgameError( const char *string ) {
-	Com_Error( ERR_DROP, "%s", string );
-}
-
 
 /*
 =====================

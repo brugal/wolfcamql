@@ -374,7 +374,13 @@ cl.snap and saved in cl.snapshots[][].  If the snapshot is invalid
 for any reason, no changes to the state will be made at all.
 ================
 */
-void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
+
+//#define MAX_PEEK_SNAPSHOTS 64
+
+static clSnapshot_t PeekSnapshots[PACKET_BACKUP];
+
+void CL_ParseSnapshot (msg_t *msg, clSnapshot_t *sn, int serverMessageSequence, qboolean justPeek)
+{
 	int			len;
 	clSnapshot_t	*old;
 	clSnapshot_t	newSnap;
@@ -403,7 +409,7 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 	// change come into effect or the client hangs.
 	cl_paused->modified = 0;
 
-	newSnap.messageNum = clc.serverMessageSequence;
+	newSnap.messageNum = serverMessageSequence;  //clc.serverMessageSequence;
 
 	deltaNum = MSG_ReadByte( msg );
 	if ( !deltaNum ) {
@@ -423,12 +429,23 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 		clc.demowaiting = qfalse;	// we can start recording now
 		//Com_Printf("%d newSnap.deltaNum <= 0\n", clc.serverMessageSequence);
 	} else {
+		if (deltaNum >= PACKET_BACKUP) {
+			Com_Printf("^3CL_ParseSnapshot:  deltaNum %d invalid\n", deltaNum);
+		}
 		//Com_Printf("deltaNum: %d (us %d)  newSnap servertime %d\n", newSnap.deltaNum, clc.serverMessageSequence, newSnap.serverTime);
-		old = &cl.snapshots[0][newSnap.deltaNum & PACKET_MASK];
+		//FIXME &cl.snapshots[] and multiple demos
+		if (newSnap.deltaNum <= clc.serverMessageSequence) {
+			old = &cl.snapshots[0][newSnap.deltaNum & PACKET_MASK];
+		} else {
+			//Com_Printf("^1need delta from read ahead\n");
+			//FIXME  // cl.snapshots[][] take into account current demo used
+			//old = &cl.snapshots[0][newSnap.deltaNum & PACKET_MASK];
+			old = &PeekSnapshots[newSnap.deltaNum & PACKET_MASK];
+		}
 		if ( !old->valid ) {
 			// should never happen
 			if (1) {  //(!clc.demoplaying) {
-				//Com_Printf ("Delta from invalid frame (not supposed to happen!)  %d -> %d\n", newSnap.deltaNum, clc.serverMessageSequence);
+				Com_Printf ("Delta from invalid frame (not supposed to happen!)  %d -> %d\n", newSnap.deltaNum, clc.serverMessageSequence);
 				newSnap.valid = qfalse;
 			} else {
 				newSnap.valid = qtrue;
@@ -436,7 +453,8 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 		} else if ( old->messageNum != newSnap.deltaNum ) {
 			// The frame that the server did the delta from
 			// is too old, so we can't reconstruct it properly.
-			if (!clc.demoplaying) {
+			//if (!clc.demoplaying) {
+			if (1) {
 				Com_Printf ("Delta frame too old.\n");
 			} else {
 				// could be seeking in demo
@@ -480,6 +498,10 @@ void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek ) {
 		*sn = newSnap;
 	}
 	if (justPeek) {
+		if (newSnap.messageNum > clc.serverMessageSequence) {
+			//cl.snapshots[0][cl.snap.messageNum & PACKET_MASK] = cl.snap;
+			PeekSnapshots[newSnap.messageNum & PACKET_MASK] = newSnap;
+		}
 		return;
 	}
 	// if not valid, dump the entire thing now that it has
@@ -1192,7 +1214,6 @@ void CL_ParseVoip ( msg_t *msg ) {
 	}
 
 	for (i = 0; i < frames; i++) {
-		char encoded[256];
 		const int len = MSG_ReadByte(msg);
 		if (len < 0) {
 			Com_DPrintf("VoIP: Short packet!\n");
@@ -1593,7 +1614,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 			CL_ParseGamestate( msg );
 			break;
 		case svc_snapshot:
-			CL_ParseSnapshot( msg, NULL, qfalse );
+			CL_ParseSnapshot( msg, NULL, clc.serverMessageSequence, qfalse );
 			break;
 		case svc_download:
 			CL_ParseDownload( msg );

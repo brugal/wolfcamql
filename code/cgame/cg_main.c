@@ -841,6 +841,8 @@ vmCvar_t cg_lightningSize;
 vmCvar_t cg_drawEntNumbers;
 vmCvar_t cg_drawEventNumbers;
 vmCvar_t cg_demoSmoothing;
+vmCvar_t cg_demoSmoothingAngles;
+vmCvar_t cg_demoSmoothingTeleportCheck;
 vmCvar_t cg_drawCameraPath;
 
 vmCvar_t cg_drawCameraPointInfo;
@@ -1778,6 +1780,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawEntNumbers, "cg_drawEntNumbers", "0", CVAR_ARCHIVE },
 	{ &cg_drawEventNumbers, "cg_drawEventNumbers", "0", CVAR_ARCHIVE },
 	{ &cg_demoSmoothing, "cg_demoSmoothing", "1", CVAR_ARCHIVE },
+	{ cvp(cg_demoSmoothingAngles), "1", CVAR_ARCHIVE },
+	{ cvp(cg_demoSmoothingTeleportCheck), "1", CVAR_ARCHIVE },
 	{ &cg_drawCameraPath, "cg_drawCameraPath", "1", CVAR_ARCHIVE },
 
 	{ &cg_drawCameraPointInfo, "cg_drawCameraPointInfo", "1", CVAR_ARCHIVE },

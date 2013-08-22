@@ -719,6 +719,104 @@ float LerpAngle (float from, float to, float frac)
 	return a;
 }
 
+// can be used with playerState angles
+float LerpAngleNear (float from, float to, float frac)
+{
+	float a;
+	float dist;
+#if 0
+	static float fromOrig = 0;
+	static float toOrig = 0;
+	static int count = 0;
+#endif
+
+
+#if 0
+	count++;
+
+	if (from != fromOrig) {
+		Com_Printf("^5%d from %f  frac %f\n", count, from, frac);
+	}
+	if (to != toOrig) {
+		Com_Printf("^5%d to %f  frac %f\n", count, to, frac);
+	}
+
+
+	fromOrig = from;
+	toOrig = to;
+
+#endif
+
+	if (Q_floatIsNan(from)  ||  Q_floatIsNan(to)) {
+		Com_Printf("^3LerpAngleNear invalid angle: %f %f\n", from, to);
+		return from;
+	}
+
+	while (from > 180) {
+		from -= 360;
+	}
+	while (from < -180) {
+		from += 360;
+	}
+
+	while (to > 180) {
+		to -= 360;
+	}
+	while (to < -180) {
+		to += 360;
+	}
+
+	if (to < -180  ||  to > 180) {
+		Com_Printf("^3to wtf %f\n", to);
+	}
+	if (from < -180  ||  from > 180) {
+		Com_Printf("^3from wtf %f\n", from);
+	}
+
+	// angles are between -180 and 180
+
+	//           -90
+	// -180/180          0
+	//            90
+
+	if ((from <= 0  &&  to <= 0)  ||  (from >= 0  &&  to >= 0)) {
+		dist = to - from;
+	} else {  // different signs
+		float clockWiseDist = 0;
+		float counterDist = 0;
+
+		// try clockwise distance first
+		if (from >= 0) {
+			clockWiseDist = (180 - from);
+			clockWiseDist += (to + 180);
+
+			counterDist = from;
+			counterDist += -to;
+		} else {  // from < 0
+			clockWiseDist = -from;
+			clockWiseDist += to;
+
+			counterDist = -(-180 - from);
+			counterDist += (180 - to);
+		}
+
+		if (clockWiseDist > counterDist) {
+			dist = -counterDist;
+		} else {
+			dist = clockWiseDist;
+		}
+	}
+
+	//a = from + frac * (to - from);
+	a = from + frac * dist;
+
+	//Com_Printf("%f (orig %f)  -> %f (orig %f) frac %f  %f\n", from, fromOrig, to, toOrig, frac, a);
+
+	//a = 0;
+
+	return a;
+}
+
 
 /*
 =================

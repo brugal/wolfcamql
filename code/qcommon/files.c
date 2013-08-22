@@ -272,6 +272,10 @@ typedef struct {
 	qboolean	zipFile;
 	qboolean	streamed;
 	char		name[MAX_ZPATH];
+	qboolean memoryMapped;
+	long mapPos;
+	void *mapData;
+	int mapSize;
 } fileHandleData_t;
 
 static fileHandleData_t	fsh[MAX_FILE_HANDLES];
@@ -887,6 +891,11 @@ void FS_FCloseFile( fileHandle_t f ) {
 	if (fsh[f].handleFiles.file.o) {
 		fclose (fsh[f].handleFiles.file.o);
 	}
+
+	if (fsh[f].memoryMapped) {
+		free(fsh[f].mapData);
+	}
+
 	Com_Memset( &fsh[f], 0, sizeof( fsh[f] ) );
 }
 
@@ -1320,6 +1329,48 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 	}
 }
 
+qboolean FS_FileLoadInMemory (qhandle_t f)
+{
+	fileHandleData_t *fh;
+	size_t r;
+
+	if (!f) {
+		return qfalse;
+	}
+
+	fh = &fsh[f];
+
+	if (fh->zipFile) {
+		return qfalse;
+	}
+
+	fh->mapSize = FS_filelength(f);
+
+	fh->mapData = malloc(fh->mapSize);
+	if (!fh->mapData) {
+		Com_Printf("^1%s Error:  couldn't allocate memory for file %d\n", __FUNCTION__, f);
+		return qfalse;
+	}
+
+	//Com_Printf("got %.2f MB for file %d\n", (float)fh->fileSize / 1024.0 / 1024.0, f);
+
+	fh->mapPos = ftell(fh->handleFiles.file.o);
+	fseek(fh->handleFiles.file.o, 0, SEEK_SET);
+	r = fread(fh->mapData, 1, fh->mapSize, fh->handleFiles.file.o);
+	if (r != fh->mapSize) {
+		Com_Printf("^1%s Error:  couldn't load file %d into memory\n", __FUNCTION__, f);
+		free(fh->mapData);
+		fseek(fh->handleFiles.file.o, fh->mapPos, SEEK_SET);
+		return qfalse;
+	}
+
+	fseek(fh->handleFiles.file.o, fh->mapPos, SEEK_SET);
+
+	fh->memoryMapped = qtrue;
+
+	return qtrue;
+}
+
 
 /*
 =================
@@ -1347,6 +1398,40 @@ int FS_Read2( void *buffer, int len, fileHandle_t f ) {
 	}
 }
 
+static int FS_Feof (fileHandle_t f)
+{
+	if (fsh[f].memoryMapped) {
+		if (fsh[f].mapPos >= fsh[f].mapSize) {
+			return 1;
+		} else {
+			return 0;
+		}
+	} else {
+		return feof(fsh[f].handleFiles.file.o);
+	}
+}
+
+static size_t FS_ReadMapped (void *ptr, size_t size, size_t nmeb, fileHandle_t f)
+{
+	fileHandleData_t *fh;
+
+	fh = &fsh[f];
+
+	if (fh->mapPos >= fh->mapSize) {
+		return 0;
+	}
+
+	if ((fh->mapPos + (size * nmeb)) > fh->mapSize) {
+		memcpy(ptr, fh->mapData + fh->mapPos, fh->mapSize - fh->mapPos);
+		fh->mapPos = fh->mapSize;
+		return (fh->mapSize - fh->mapPos);
+	} else {
+		memcpy(ptr, fh->mapData + fh->mapPos, size * nmeb);
+		fh->mapPos += (size * nmeb);
+		return (size * nmeb);
+	}
+}
+
 int FS_Read( void *buffer, int len, fileHandle_t f ) {
 	int		block, remaining;
 	int		read;
@@ -1370,11 +1455,18 @@ int FS_Read( void *buffer, int len, fileHandle_t f ) {
 		tries = 0;
 		while (remaining) {
 			block = remaining;
-			read = fread (buf, 1, block, fsh[f].handleFiles.file.o);
+			if (!fsh[f].memoryMapped) {
+				read = fread (buf, 1, block, fsh[f].handleFiles.file.o);
+			} else {
+				read = FS_ReadMapped(buf, 1, block, f);
+			}
 			if (read == 0) {
-				if (!feof(fsh[f].handleFiles.file.o)) {
-					err = ferror(fsh[f].handleFiles.file.o);
-					Com_Printf("FS_Read():  fread() error %d, qhandle %d, file ptr %p\n", err, f, fsh[f].handleFiles.file.o);
+				if (!FS_Feof(f)) {
+					if (!fsh[f].memoryMapped) {
+						err = ferror(fsh[f].handleFiles.file.o);
+						Com_Printf("FS_Read():  fread() error %d, qhandle %d, file ptr %p\n", err, f, fsh[f].handleFiles.file.o);
+					}
+					//FIXME memory mapped
 				}
 
 				// we might have been trying to read from a CD, which
@@ -1517,6 +1609,29 @@ int FS_Seek( fileHandle_t f, long offset, int origin ) {
 				return -1;
 				break;
 		}
+	} else if (fsh[f].memoryMapped) {
+		switch (origin) {
+		case FS_SEEK_CUR:
+			fsh[f].mapPos += offset;
+			break;
+		case FS_SEEK_END:
+			fsh[f].mapPos = fsh[f].mapSize + offset;
+			break;
+		case FS_SEEK_SET:
+			fsh[f].mapPos = offset;
+			break;
+		default:
+			Com_Error(ERR_FATAL, "Bad origin in FS_Seek memory mapped");
+			break;
+		}
+
+		if (fsh[f].mapPos > fsh[f].mapSize) {
+			fsh[f].mapPos = fsh[f].mapSize;
+		} else if (fsh[f].mapPos < 0) {
+			fsh[f].mapPos = 0;
+		}
+
+		return 0;
 	} else {
 		FILE *file;
 		file = FS_FileForHandle(f);
@@ -3676,6 +3791,8 @@ int		FS_FTell( fileHandle_t f ) {
 	int pos;
 	if (fsh[f].zipFile == qtrue) {
 		pos = unztell(fsh[f].handleFiles.file.z);
+	} else if (fsh[f].memoryMapped) {
+		pos = fsh[f].mapPos;
 	} else {
 		pos = ftell(fsh[f].handleFiles.file.o);
 	}

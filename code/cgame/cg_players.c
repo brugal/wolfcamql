@@ -3497,29 +3497,17 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		return;
 	}
 
-
-
-#if 0
-	if ( !(cent->currentState.eFlags & EF_DEAD) &&
-		cg.snap->ps.persistant[PERS_TEAM] == team &&
-		cgs.gametype >= GT_TEAM) {
-		if (cg_drawFriend.integer) {
-			CG_PlayerFloatSprite( cent, cgs.media.friendShader );
-		}
-		return;
-	}
-#endif
-
 	if (cg_drawSelf.integer  &&  cent->currentState.number == cg.snap->ps.clientNum) {
 		//if (cg.freecam  ||  cg.renderingThirdPerson  ||  (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum)) {
 		if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
 			CG_PlayerFloatSpriteExt(cent, cgs.media.selfShader, cg_drawSelf.integer == 2 ? RF_DEPTHHACK : 0, NULL);
+			return;
 		}
 	}
 
-	//if (cgs.gametype == GT_FREEZETAG  ||  (cgs.gametype >= GT_TEAM  &&  !(cent->currentState.eFlags & EF_DEAD))) {
 	if (CG_IsTeamGame(cgs.gametype)) {
 		qboolean depthHack;
+		qboolean isTeammate;
 
 		depthHack = qfalse;
 		if (cgs.gametype == GT_FREEZETAG) {
@@ -3532,68 +3520,62 @@ static void CG_PlayerSprites( centity_t *cent ) {
 			}
 		}
 
-		if (CG_FreezeTagFrozen(cent->currentState.clientNum)) {
+		isTeammate = CG_IsTeammate(&cgs.clientinfo[cent->currentState.clientNum]);
+		if (CG_FreezeTagFrozen(cent->currentState.clientNum)  &&  isTeammate) {
 			s = cgs.media.frozenShader;
-		} else {
-			if (cent->currentState.powerups & (1 << PW_REDFLAG)) {
-				s = cgs.media.flagCarrier;
-			} else if (cent->currentState.powerups & (1 << PW_BLUEFLAG)) {
-				s = cgs.media.flagCarrier;
-			} else if (cent->currentState.powerups & (1 << PW_NEUTRALFLAG)) {
-				s = cgs.media.flagCarrierNeutral;
-			} else if (CG_IsTeammate(&cgs.clientinfo[cent->currentState.clientNum])) {
-				if (cent->currentState.eFlags & EF_DEAD) {
-					s = cgs.media.friendDeadShader;
-					if (cg_drawFriend.integer) {
-						int deathTime;
-
-						if (cent->currentState.clientNum == cg.snap->ps.clientNum) {
-							deathTime = cg.predictedPlayerEntity.pe.deathTime;
-						} else {
-							deathTime = cg_entities[cent->currentState.clientNum].pe.deathTime;
-						}
-						if (cg.time - deathTime <= cg_drawDeadFriendTime.integer) {
-							CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
-						}
-					}
-					return;
-				} else {
-					s = cgs.media.friendShader;
-				}
-			}
+			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+			return;
 		}
 
-		if (CG_IsTeamGame(cgs.gametype)) {
-			if (wolfcam_following) {
-				if (team == cgs.clientinfo[wcg.clientNum].team) {
-					if (cg_drawFriend.integer) {
-						if (0) { //(team != cg.snap->ps.persistant[PERS_TEAM]) {
-							s = cgs.media.friendShader;
-							CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
-						} else {
-							if ((cg.ftime - cent->pe.painTime) < 2000.0) {
-								s = cgs.media.friendHitShader;
-							} else {
-								s = cgs.media.friendShader;
-							}
-							CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
-						}
-						return;
-					}
-				}
-			} else if (cg.snap->ps.persistant[PERS_TEAM] == team) {
-				if (cg_drawFriend.integer) {
-					if ((cg.ftime - cent->pe.painTime) < 2000.0) {
-						s = cgs.media.friendHitShader;
-					} else {
-						s = cgs.media.friendShader;
-					}
+		if (isTeammate) {
+			if (cg_drawFriend.integer) {
+				if ((cg.ftime - cent->pe.painTime) < 2000.0) {
+					s = cgs.media.friendHitShader;
 					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
 					return;
 				}
 			}
 		}
-	}
+
+		if (cent->currentState.powerups & (1 << PW_REDFLAG)) {
+			s = cgs.media.flagCarrier;
+			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+			return;
+		} else if (cent->currentState.powerups & (1 << PW_BLUEFLAG)) {
+			s = cgs.media.flagCarrier;
+			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+			return;
+		} else if (cent->currentState.powerups & (1 << PW_NEUTRALFLAG)) {
+			s = cgs.media.flagCarrierNeutral;
+			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+			return;
+		}
+
+		if (isTeammate) {
+			if (cent->currentState.eFlags & EF_DEAD) {
+				s = cgs.media.friendDeadShader;
+				if (cg_drawFriend.integer) {
+					int deathTime;
+
+					if (cent->currentState.clientNum == cg.snap->ps.clientNum) {
+						deathTime = cg.predictedPlayerEntity.pe.deathTime;
+					} else {
+						deathTime = cg_entities[cent->currentState.clientNum].pe.deathTime;
+					}
+					if (cg.time - deathTime <= cg_drawDeadFriendTime.integer) {
+						CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+					}
+				}
+				return;
+			} else {
+				if (cg_drawFriend.integer) {
+					s = cgs.media.friendShader;
+					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+				}
+				return;
+			}
+		}
+	}  // end is team game
 
 	if (!(cent->currentState.eFlags & EF_DEAD)  &&  CG_IsEnemy(&cgs.clientinfo[cent->currentState.clientNum])) {
 		if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE  &&  cg_allowServerOverride.integer) {

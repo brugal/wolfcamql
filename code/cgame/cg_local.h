@@ -942,6 +942,9 @@ typedef struct {
 	qboolean nextNextSnapValid;
 	qboolean noMove;
 
+	snapshot_t smoothOldSnap;
+	snapshot_t smoothNewSnap;
+
 	snapshot_t	activeSnapshots[2];
 
 	double		frameInterpolation;	// (cg.ftime - (double)cg.snap->serverTime ) / (double)(cg.nextSnap->serverTime - cg.snap->serverTime)
@@ -2978,6 +2981,8 @@ extern vmCvar_t cg_lightningSize;
 extern vmCvar_t cg_drawEntNumbers;
 extern vmCvar_t cg_drawEventNumbers;
 extern vmCvar_t cg_demoSmoothing;
+extern vmCvar_t cg_demoSmoothingAngles;
+extern vmCvar_t cg_demoSmoothingTeleportCheck;
 extern vmCvar_t cg_drawCameraPath;
 
 extern vmCvar_t cg_drawCameraPointInfo;

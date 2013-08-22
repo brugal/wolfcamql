@@ -451,7 +451,9 @@ typedef struct {
 
 //FIXME can make dynamic to improve seek performance
 #define MAX_REWIND_BACKUPS 12   // 1000 ~ 175 megabytes, sizeof(rewindBackups_t) is 1.753348 mb
-extern rewindBackups_t rewindBackups[MAX_REWIND_BACKUPS];
+
+extern rewindBackups_t *rewindBackups;
+int maxRewindBackups;
 
 //=============================================================================
 
@@ -546,6 +548,7 @@ extern	cvar_t	*cl_voip;
 extern cvar_t	*cl_useq3gibs;
 extern cvar_t	*cl_consoleAsChat;
 extern cvar_t *cl_numberPadInput;
+extern cvar_t *cl_maxRewindBackups;
 
 extern double Overf;
 
@@ -741,7 +744,7 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us);
 //
 void CL_WriteDemoMessage ( msg_t *msg, int headerBytes );
 
-void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, qboolean justPeek );
+void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, int serverMessageSequence, qboolean justPeek );
 
 qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot);
 void CL_Pause_f (void);

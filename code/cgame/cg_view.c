@@ -789,6 +789,7 @@ CG_CalcViewValues
 Sets cg.refdef view values
 ===============
 */
+
 static int CG_CalcViewValues( void ) {
 	const playerState_t	*ps;
 
@@ -863,8 +864,107 @@ static int CG_CalcViewValues( void ) {
 		return CG_CalcFov();
 	}
 
-	VectorCopy( ps->origin, cg.refdef.vieworg );
-	VectorCopy( ps->viewangles, cg.refdefViewAngles );
+	if (cg.demoPlayback  &&  cg_demoSmoothing.integer >= 2) {
+		//FIXME not here, temporarily doing it because of the inconsistency
+		//  of cg.predictedPlayerEntity and cg_entities[cg.snap->clientNum].currentState
+		if (cg.snap  &&  cg.nextSnap) {
+			float f;
+			vec3_t origin;
+			vec3_t angles;
+			int currentNum;
+			static int oldCurrentNum = 0;
+			int nextNum;
+			qboolean r;
+			const snapshot_t *old;
+			const snapshot_t *new;
+
+			if (cg_demoSmoothing.integer == 2) {
+				old = cg.snap;
+				new = cg.nextSnap;
+			} else {
+				int smoothNum;
+
+				smoothNum = cg_demoSmoothing.integer;
+				if (smoothNum >= PACKET_BACKUP) {
+					smoothNum = PACKET_BACKUP - 1;
+				}
+
+				//FIXME store values and only get on snapshot transition
+				currentNum = cg.snap->messageNum - cg.snap->messageNum % (smoothNum -  1);
+				nextNum = currentNum + (smoothNum - 1);
+
+				//Com_Printf("current %d  next %d\n", currentNum, nextNum);
+
+				//FIXME check returns
+				r = CG_GetSnapshot(currentNum, &cg.smoothOldSnap);
+				if (!r) {
+					Com_Printf("^3smooth couldn't get old snapshot %d\n", currentNum);
+				}
+				if (cg.smoothOldSnap.messageNum != currentNum) {
+					Com_Printf("^3smooth got wrong old snap number %d != %d (want)\n", cg.smoothOldSnap.messageNum, currentNum);
+				}
+				r = CG_PeekSnapshot(nextNum, &cg.smoothNewSnap);
+				if (!r) {
+					Com_Printf("^3smooth couldn't get next snapshot %d\n", nextNum);
+				}
+				if (cg.smoothNewSnap.messageNum != nextNum) {
+					Com_Printf("^1smooth got wrong next snap number %d != %d (want)\n", cg.smoothNewSnap.messageNum, nextNum);
+				}
+
+				old = &cg.smoothOldSnap;
+				new = &cg.smoothNewSnap;
+
+				if (oldCurrentNum != currentNum) {
+				    //FIXME this is being done every drawn frame instead
+				    // of every snapshot transition frame
+				    //Com_Printf("^2transition yaw : (%d) %f -> (%d) %f\n", currentNum, old->ps.viewangles[YAW], nextNum, new->ps.viewangles[YAW]);
+				}
+				oldCurrentNum = currentNum;
+			}
+
+			//Com_Printf("old %d  new %d\n", old->ps.eFlags & EF_TELEPORT_BIT, new->ps.eFlags & EF_TELEPORT_BIT);
+
+				if (cg_demoSmoothingTeleportCheck.integer && (
+				        old->ps.clientNum != new->ps.clientNum  ||  ((old->ps.eFlags ^ new->ps.eFlags) & EF_TELEPORT_BIT)
+					  ||
+				        old->ps.persistant[PERS_SPAWN_COUNT] != new->ps.persistant[PERS_SPAWN_COUNT])
+				) {
+				//Com_Printf("^3teleport %f\n", cg.ftime);
+				// don't interp
+				f = 0;
+			} else {
+				f = (cg.ftime - (double)old->serverTime) / (double)(new->serverTime - old->serverTime);
+			}
+
+			//CG_Printf("cg.time %f  old %d  new %d\n", cg.ftime, old->serverTime, new->serverTime);
+			//CG_Printf("lll %d  f %f\n", cg.snap->serverTime, f);
+
+			origin[0] = old->ps.origin[0] + f * (new->ps.origin[0] - old->ps.origin[0]);
+			origin[1] = old->ps.origin[1] + f * (new->ps.origin[1] - old->ps.origin[1]);
+			origin[2] = old->ps.origin[2] + f * (new->ps.origin[2] - old->ps.origin[2]);
+
+			VectorCopy(origin, cg.refdef.vieworg);
+
+			if (cg_demoSmoothingAngles.integer) {
+				angles[0] = LerpAngleNear(old->ps.viewangles[0], new->ps.viewangles[0], f);
+				angles[1] = LerpAngleNear(old->ps.viewangles[1], new->ps.viewangles[1], f);
+				angles[2] = LerpAngleNear(old->ps.viewangles[2], new->ps.viewangles[2], f);
+				VectorCopy(angles, cg.refdefViewAngles);
+			} else {
+				VectorCopy(ps->viewangles, cg.refdefViewAngles);
+			}
+		} else {  // snaps invalid, possibly start of demo
+			VectorCopy( ps->origin, cg.refdef.vieworg );
+			VectorCopy( ps->viewangles, cg.refdefViewAngles );
+		}
+	} else {
+		VectorCopy( ps->origin, cg.refdef.vieworg );
+		VectorCopy( ps->viewangles, cg.refdefViewAngles );
+	}
+
+	//FIXME player shadow -- no, it has already been added
+	//VectorCopy(cg.refdef.vieworg, cg.predictedPlayerEntity.lerpOrigin);
+	//VectorCopy(cg.refdef.vieworg, cg_entities[cg.snap->ps.clientNum].lerpOrigin);
 
 	if (!cg.freezeEntity[cg.snap->ps.clientNum]) {
 		cg.bobcycle = ( ps->bobCycle & 128 ) >> 7;

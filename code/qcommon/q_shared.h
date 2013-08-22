@@ -703,6 +703,7 @@ qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
 
 float AngleMod (float a);
 float LerpAngle (float from, float to, float frac);
+float LerpAngleNear (float from, float to, float frac);
 float AngleSubtract (float a1, float a2);
 void AnglesSubtract (const vec3_t v1, const vec3_t v2, vec3_t v3);
 float AngleAdd (float a1, float a2);

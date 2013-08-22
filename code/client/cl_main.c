@@ -129,6 +129,7 @@ cvar_t	*cl_consoleKeys;
 cvar_t	*cl_useq3gibs;
 cvar_t	*cl_consoleAsChat;
 cvar_t *cl_numberPadInput;
+cvar_t *cl_maxRewindBackups;
 
 clientActive_t		cl;
 clientConnection_t	clc;
@@ -141,8 +142,8 @@ char                            cl_reconnectArgs[MAX_OSPATH];
 refexport_t	re;
 
 demoInfo_t di;
-rewindBackups_t rewindBackups[MAX_REWIND_BACKUPS];
-
+rewindBackups_t *rewindBackups;
+int maxRewindBackups;
 
 ping_t	cl_pinglist[MAX_PINGREQUESTS];
 
@@ -1081,10 +1082,10 @@ void CL_ReadDemoMessage (qboolean seeking)
 	//Com_Printf("snaps in demo: %d\n", di.snapsInDemo);
 
 
-	if ( !di.testParse  &&  di.snapCount < MAX_REWIND_BACKUPS  &&
+	if ( !di.testParse  &&  di.snapCount < maxRewindBackups  &&
 		 ((!di.gotFirstSnap  &&  !(cls.state >= CA_CONNECTED && cls.state < CA_PRIMED))
       ||
-		  (di.gotFirstSnap  &&  di.numSnaps % (di.snapsInDemo / MAX_REWIND_BACKUPS) == 0))) {
+		  (di.gotFirstSnap  &&  di.numSnaps % (di.snapsInDemo / maxRewindBackups) == 0))) {
 		if (!di.skipSnap) {
 			// first snap triggers loading screen when rewinding
 			di.skipSnap = qtrue;
@@ -1980,6 +1981,10 @@ static qhandle_t CL_OpenDemoFile (const char *arg)
 		}
 	}
 
+	if (file) {
+		FS_FileLoadInMemory(file);
+	}
+
 	return file;
 }
 
@@ -2372,7 +2377,7 @@ void CL_Disconnect( qboolean showMainMenu ) {
 			FS_FCloseFile(df->f);
 		}
 
-		for (i = 0;  i < MAX_REWIND_BACKUPS;  i++) {
+		for (i = 0;  i < maxRewindBackups;  i++) {
 			rewindBackups[i].valid = qfalse;
 		}
 
@@ -5083,6 +5088,20 @@ void CL_Init ( void ) {
 	cl_consoleAsChat = Cvar_Get("cl_consoleAsChat", "0", CVAR_ARCHIVE);
 	cl_numberPadInput = Cvar_Get("cl_numberPadInput", "0", CVAR_ARCHIVE);
 
+	cl_maxRewindBackups = Cvar_Get("cl_maxRewindBackups", "12", CVAR_ARCHIVE | CVAR_LATCH);
+
+	maxRewindBackups = cl_maxRewindBackups->integer;
+	if (maxRewindBackups <= 0) {
+		maxRewindBackups = MAX_REWIND_BACKUPS;
+	}
+
+	rewindBackups = malloc(sizeof(rewindBackups_t) * maxRewindBackups);
+	if (!rewindBackups) {
+		Com_Printf("ERROR:  CL_Init couldn't allocate %.2f MB for rewind backups\n", (sizeof(rewindBackups_t) * maxRewindBackups) / 1024.0 / 1024.0);
+		exit(1);
+	}
+	Com_Printf("allocated %.2f MB for rewind backups\n", (sizeof(rewindBackups_t) * maxRewindBackups) / 1024.0 / 1024.0);
+
 	//
 	// register our commands
 	//
@@ -5199,8 +5218,8 @@ void CL_Shutdown( void ) {
 	Com_Memset( &cls, 0, sizeof( cls ) );
 	Key_SetCatcher( 0 );
 
+	free(rewindBackups);
 	Com_Printf( "-----------------------\n" );
-
 }
 
 static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping) {

@@ -1,3 +1,41 @@
+10.2test3
+
+* cg_demoSmoothing expanded:
+
+    1:  Look ahead in the demo to see if there are sequential snapshots where
+        you have some type of velocity in both snapshots but your origin
+        hasn't changed.  That means the server hasn't gotten around to playing
+        the packets you sent, which will make demo playback jerky.  A cyan bar
+        will be drawn in the lagometer whenever this happens.  Applies to demo
+        pov as well as other players.
+    2:  Smooth demo taker's pov using current and next snapshots (quake3
+        default behavior is to just use the current snapshot origin and
+        angles without smoothing).
+    values higher than 2:  Skip this number of snapshots when smoothing.  The
+        higher the value the more robotic and unnatural movement will become.
+        Position will become more inaccurate and it's possible to clip through
+        walls and trigger other similar bugs.
+
+* cg_demoSmoothingAngles [0:  don't smooth view angles when using cg_demoSmoothing]
+* cg_demoSmoothingTeleportCheck [0:  always transition player position when using cg_demoSmoothing]
+
+* bug fix:  possible crash and memory corruption when looking ahead in demo
+
+---------------------------------
+10.2test2  2013-08-01
+
+* keep demo file in memory to avoid disk usage when rewinding and fast forwarding
+* bug fix:  last update disabled freezetag frozen teammate icon and flag carrier icons
+
+---------------------------------
+
+10.2test1  2013-07-25
+
+* cl_maxRewindBackups  Number of seek points to divide the demo into.  The higher, the more response fast forwarding and rewinding becomes.  Note that each backup point will require about 1.7MB .  The default is 12.
+* ioquake3 fixes
+
+----------------------------------
+
 10.1  2013-07-23
 
 * support for new quake live update:
@@ -10,7 +48,6 @@
 * hud:  don't draw second player name and score if only one player is in game
 * added additional allowed sounds with 'cg_ambientSounds 2'
 * removed "jitToken" spam when seeking
-* support for new quake live update:  team damage and death icons,
 * game type autoexec for quake3
 * game type autoexec for cpma ntf, 2v2, and hoonymode:  (ntf.cfg, 2v2.cfg, hm.cfg)
 * bug fix:  possible crash with unknown game type

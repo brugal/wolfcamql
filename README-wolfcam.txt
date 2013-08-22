@@ -1039,7 +1039,24 @@ Velocity:
 
 * cl_consoleAsChat 0  will let you issue console commands without having to add a '/' at the start
 
-* cg_demoSmoothing   I'm not a fan of this kind of stuff, but I had to include something since a lot of the servers have lag problems.  It doesn't smooth the entire demo, it only kicks in when you basically got screwed by the server (assuming you aren't deliberately lagging).  It looks ahead in the demo to see if there are sequential snapshots where you have some type of velocity in both snapshots but your origin hasn't changed.  That means the server hasn't gotten around to playing the packets you sent, which will make demo playback jerky.  A cyan bar will be drawn in the lagometer whenever this happens.  Applies to demo pov as well as other players.
+* cg_demoSmoothing
+
+    1:  Look ahead in the demo to see if there are sequential snapshots where
+        you have some type of velocity in both snapshots but your origin
+        hasn't changed.  That means the server hasn't gotten around to playing
+        the packets you sent, which will make demo playback jerky.  A cyan bar
+        will be drawn in the lagometer whenever this happens.  Applies to demo
+        pov as well as other players.
+    2:  Smooth demo taker's pov using current and next snapshots (quake3
+        default behavior is to just use the current snapshot origin and
+        angles without smoothing).
+    values higher than 2:  Skip this number of snapshots when smoothing.  The
+        higher the value the more robotic and unnatural movement will become.
+        Position will become more inaccurate and it's possible to clip through
+        walls and trigger other similar bugs.
+
+* cg_demoSmoothingAngles [0:  don't smooth view angles when using cg_demoSmoothing]
+* cg_demoSmoothingTeleportCheck [0:  always transition player position when using cg_demoSmoothing]
 
 --------------------------------------------------
 
@@ -2045,6 +2062,9 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_drawTieredArmorAvailability  (same as quakelive)
 
 * cg_racePlayerShader to enable or disable the invisible/ghost shader on other players in ql race mode
+
+* cl_maxRewindBackups  Number of seek points to divide the demo into.  The higher, the more response fast forwarding and rewinding becomes.  Note that each backup point will require about 1.7MB .  The default is 12.
+
 
 ----------
 

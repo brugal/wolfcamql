@@ -1227,6 +1227,24 @@ fx running before first frame??
 * double check cg_scoreBoardOld for GT_RED_ROVER and GT_RACE
 * grep GT_TEAM *
 * double check 'teamSpacing' in CG_Draw[1st|2nd]PlaceScore
+* demo smoothing -- angles short
+* demo smoothing -- player shadow
+* demo smoothing:
+
+10349 from 49.520874  frac 0.000572
+10349 to 48.971558  frac 0.000572
+10380 to 49.520874  frac 0.071429
+10412 to 50.070190  frac 0.144572
+10443 to 50.729370  frac 0.215429
+10474 to 51.943359  frac 0.286286
+10505 to 52.822266  frac 0.357143
+10537 to 53.811035  frac 0.430286
+10568 to 54.689941  frac 0.501143
+10599 to 55.678711  frac 0.572000
+10630 to 56.343384  frac 0.642857
+
+* cl.snapshots[0] and multiple demos
+* ^ fixes: re-enable some of the packet out of range messages
 
 ---------------------------
 

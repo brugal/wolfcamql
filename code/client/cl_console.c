@@ -187,8 +187,6 @@ void Con_Dump_f (void)
 	Q_strncpyz( filename, Cmd_Argv( 1 ), sizeof( filename ) );
 	COM_DefaultExtension( filename, sizeof( filename ), ".txt" );
 
-	Com_Printf ("Dumped console text to %s.\n", filename );
-
 	f = FS_FOpenFileWrite( filename );
 	if (!f)
 	{
@@ -216,6 +214,7 @@ void Con_Dump_f (void)
 	buffer = Hunk_AllocateTempMemory( bufferlen );
 	if (!buffer) {
 		Com_Printf("^3%s() couldn't allocate memory for line buffer\n", __FUNCTION__);
+		FS_FCloseFile(f);
 		return;
 	}
 
@@ -243,6 +242,8 @@ void Con_Dump_f (void)
 
 	Hunk_FreeTempMemory( buffer );
 	FS_FCloseFile( f );
+
+	Com_Printf ("Dumped console text to %s.\n", filename );
 }
 
 						

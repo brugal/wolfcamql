@@ -955,3 +955,17 @@ Remove unnecessary localhost check from reconnect command.
 2013-05-27-02 Allow drawing sun in OpenGL1 renderer
 
 2013-05-29-01 skip (rend2):  Suppress warning
+
+2013-05-30-01 skip (rend2):  fix some "\n"-related stuff
+2013-05-30-02 skip:  add some noreturn annotations
+2013-05-30-03 remove some redundant exit() calls
+2013-05-30-04 remove some unused stuff
+2013-05-30-05 make the fread() success-check code in Sys_RandomBytes() more secure
+2013-05-30-06 modified: when using the condump command, do not say "dumped console text" prem
+2013-05-30-07 reduce the amount of compiler warnings for variable shadowing
+2013-05-30-08 drop some useless return statements
+2013-05-30-09 clean up return statements a bit more
+2013-05-30-10 fix some OOB enumerator usages
+2013-05-30-11 Catch more bad shader syntax cases
+2013-05-30-12 Fix null model axis disappearing if sky is in view
+

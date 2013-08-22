@@ -1721,7 +1721,7 @@ static void ComputeStageIteratorFunc( void )
 	if ( shader.isSky )
 	{
 		shader.optimalStageIteratorFunc = RB_StageIteratorSky;
-		goto done;
+		return;
 	}
 
 	if ( r_ignoreFastPath->integer )
@@ -1747,7 +1747,7 @@ static void ComputeStageIteratorFunc( void )
 							if ( !shader.numDeforms )
 							{
 								shader.optimalStageIteratorFunc = RB_StageIteratorVertexLitTexture;
-								goto done;
+								return;
 							}
 						}
 					}
@@ -1773,16 +1773,12 @@ static void ComputeStageIteratorFunc( void )
 						if ( shader.multitextureEnv )
 						{
 							shader.optimalStageIteratorFunc = RB_StageIteratorLightmappedMultitexture;
-							goto done;
 						}
 					}
 				}
 			}
 		}
 	}
-
-done:
-	return;
 }
 
 typedef struct {
@@ -3157,7 +3153,7 @@ static void ScanAndLoadShaderFiles (void)
 			oldp = p;
 
 			token = COM_ParseExt(&p, qtrue);
-			if(token[0] != '{' && token[1] != '\0')
+			if(token[0] != '{' || token[1] != '\0')
 			{
 				ri.Printf(PRINT_WARNING, "WARNING: Bad shader file %s has incorrect syntax.\n", filename);
 				ri.FS_FreeFile(buffers[i]);
