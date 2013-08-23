@@ -898,17 +898,17 @@ static int CG_CalcViewValues( void ) {
 				//FIXME check returns
 				r = CG_GetSnapshot(currentNum, &cg.smoothOldSnap);
 				if (!r) {
-					Com_Printf("^3smooth couldn't get old snapshot %d\n", currentNum);
+					//Com_Printf("^3smooth couldn't get old snapshot %d\n", currentNum);
 				}
 				if (cg.smoothOldSnap.messageNum != currentNum) {
-					Com_Printf("^3smooth got wrong old snap number %d != %d (want)\n", cg.smoothOldSnap.messageNum, currentNum);
+					//Com_Printf("^3smooth got wrong old snap number %d != %d (want)\n", cg.smoothOldSnap.messageNum, currentNum);
 				}
 				r = CG_PeekSnapshot(nextNum, &cg.smoothNewSnap);
 				if (!r) {
-					Com_Printf("^3smooth couldn't get next snapshot %d\n", nextNum);
+					//Com_Printf("^3smooth couldn't get next snapshot %d\n", nextNum);
 				}
 				if (cg.smoothNewSnap.messageNum != nextNum) {
-					Com_Printf("^1smooth got wrong next snap number %d != %d (want)\n", cg.smoothNewSnap.messageNum, nextNum);
+					//Com_Printf("^1smooth got wrong next snap number %d != %d (want)\n", cg.smoothNewSnap.messageNum, nextNum);
 				}
 
 				old = &cg.smoothOldSnap;

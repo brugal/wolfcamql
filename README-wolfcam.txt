@@ -785,6 +785,9 @@ Fonts can also be used for hud config elements:
 
   WCG_WEAPON_SELECTED, WCG_WEAPON_SELECT_TIME, WCG_WEAPON_HAVE_MACHINEGUN, WCG_WEAPON_AMMO_MACHINEGUN, and others to allow creation of custom weapon bars.  See wolfcam-ql/ui/wcweaponbar.menu for an example.
 
+  WCG_KILL_COUNT  number of kills since last death or reset ("killcountreset"
+                  command)
+
 ----------------------------------------------------------------
 
 * cg_quadFireSound  to enable/disable the extra sound effect when a player with quad power-up fires their weapon
@@ -2001,6 +2004,9 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * cg_rocketAimbot  for the rocket aimbot  (2: autoaim in game)
 
 * cg_drawOrigin  draw origin, angles, and server time
+
+* /killcountreset to reset kill counts (number of kills since last death),
+                  kill count available for hud use with WCG_KILL_COUNT
 
 * some dubugging and informational commands:
 

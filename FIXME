@@ -1245,6 +1245,7 @@ fx running before first frame??
 
 * cl.snapshots[0] and multiple demos
 * ^ fixes: re-enable some of the packet out of range messages
+* smooth got wrong next snap number 53041 != 53040 (want)
 
 ---------------------------
 

@@ -148,7 +148,10 @@ static void CG_Obituary( const entityState_t *ent ) {
 				wclients[attacker].suicides++;
 			} else {
 				wclients[attacker].kills++;
+				wclients[attacker].killCount++;
+				//Com_Printf("%d %s killCount %d\n", attacker, cgs.clientinfo[attacker].name, wclients[attacker].killCount);
 			}
+			//FIXME huh?
 			wclients[attacker].killedOrDied = qtrue;
 			wclients[attacker].needToClearPerKillStats = qtrue;
 		}
@@ -160,6 +163,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 			wclients[target].lastDeathWeapon = CG_ModToWeapon(mod);
 			wclients[target].deaths++;
 			wclients[target].killedOrDied = qtrue;
+			wclients[target].killCount = 0;
 		}
 		cg.lastObituary.victimTeam = cgs.clientinfo[target].team;
 		cg.lastObituary.victimClientNum = target;

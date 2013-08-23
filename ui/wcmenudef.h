@@ -65,5 +65,6 @@
 #define WCG_WEAPON_AMMO_PROX_LAUNCHER 7030
 #define WCG_WEAPON_AMMO_CHAINGUN 7031
 
-
 #define WCG_REAL_PLAYER_HEAD 7032  // whatever the player has set, ignores using default red and blue skins for team games
+
+#define WCG_KILL_COUNT 7033

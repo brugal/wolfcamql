@@ -2592,6 +2592,14 @@ float CG_GetValue(int ownerDraw) {
 	  return CG_WeaponAmmo(WP_CHAINGUN);
 	  break;
 
+  case WCG_KILL_COUNT: {
+	  if (wolfcam_following) {
+		  return wclients[wcg.clientNum].killCount;
+	  } else {
+		  return wclients[cg.snap->ps.clientNum].killCount;
+	  }
+  }
+
   default:
 	  Com_Printf("CG_GetValue() unknown ownerDraw %d\n", ownerDraw);
     break;
@@ -8173,6 +8181,14 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case WCG_WEAPON_AMMO_CHAINGUN:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", CG_WeaponAmmo(WP_CHAINGUN)), 0, 0, textStyle, font, align);
 	  break;
+
+  case WCG_KILL_COUNT: {
+	  if (wolfcam_following) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", wclients[wcg.clientNum].killCount), 0, 0, textStyle, font, align);
+	  } else {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", wclients[cg.snap->ps.clientNum].killCount), 0, 0, textStyle, font, align);
+	  }
+  }
 
   default:
 	  if (debug > 0) {

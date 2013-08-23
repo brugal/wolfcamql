@@ -1,5 +1,6 @@
 10.2test3
 
+* WCG_KILL_COUNT hud element and /killcountreset command
 * cg_demoSmoothing expanded:
 
     1:  Look ahead in the demo to see if there are sequential snapshots where
@@ -18,7 +19,6 @@
 
 * cg_demoSmoothingAngles [0:  don't smooth view angles when using cg_demoSmoothing]
 * cg_demoSmoothingTeleportCheck [0:  always transition player position when using cg_demoSmoothing]
-
 * bug fix:  possible crash and memory corruption when looking ahead in demo
 
 ---------------------------------

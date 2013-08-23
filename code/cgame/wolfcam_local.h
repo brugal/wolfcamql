@@ -171,6 +171,8 @@ typedef struct {
 	int lastDeathWeapon;
 	qboolean killedOrDied;
 
+	int killCount;
+
 } wclient_t;
 
 typedef struct {

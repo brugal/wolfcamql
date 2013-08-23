@@ -6945,6 +6945,15 @@ static void CG_PrintTime_f (void)
 	Com_Printf("cgame: %d %f   server: %d\n", cg.time, cg.ftime, serverTime);
 }
 
+static void CG_KillCountReset_f (void)
+{
+	int i;
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		wclients[i].killCount = 0;
+	}
+}
+
 typedef struct {
 	const char *cmd;
 	void (*function)(void);
@@ -7125,6 +7134,7 @@ static consoleCommand_t	commands[] = {
 	{ "listeventfilter", CG_ListEventFilter_f },
 	{ "adddecal", CG_AddDecal_f },
 	{ "printtime", CG_PrintTime_f },
+	{ "killcountreset", CG_KillCountReset_f },
 };
 
 

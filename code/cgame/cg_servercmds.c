@@ -1349,6 +1349,7 @@ CG_ParseWarmup
 void CG_ParseWarmup( void ) {
 	const char	*info;
 	int			warmup;
+	int i;
 
 	if (cgs.cpma) {
 		info = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
@@ -1390,6 +1391,10 @@ void CG_ParseWarmup( void ) {
 		cg.lastObituary.time = 0;
 		cg.lastTeamChatBeepTime = 0;
 		cg.damageDoneTime = 0;
+
+		for (i = 0;  i < MAX_CLIENTS;  i++) {
+			wclients[i].killCount = 0;
+		}
 	}
 
 	//Com_Printf("parsewarmup %d  %d   %s\n", warmup, cg.warmup, info);
