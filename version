@@ -1,4 +1,4 @@
-10.2test3
+10.2  2013-08-23
 
 * WCG_KILL_COUNT hud element and /killcountreset command
 * cg_demoSmoothing expanded:
@@ -20,17 +20,8 @@
 * cg_demoSmoothingAngles [0:  don't smooth view angles when using cg_demoSmoothing]
 * cg_demoSmoothingTeleportCheck [0:  always transition player position when using cg_demoSmoothing]
 * bug fix:  possible crash and memory corruption when looking ahead in demo
-
----------------------------------
-10.2test2  2013-08-01
-
 * keep demo file in memory to avoid disk usage when rewinding and fast forwarding
 * bug fix:  last update disabled freezetag frozen teammate icon and flag carrier icons
-
----------------------------------
-
-10.2test1  2013-07-25
-
 * cl_maxRewindBackups  Number of seek points to divide the demo into.  The higher, the more response fast forwarding and rewinding becomes.  Note that each backup point will require about 1.7MB .  The default is 12.
 * ioquake3 fixes
 

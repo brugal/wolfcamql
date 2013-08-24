@@ -453,7 +453,7 @@ typedef struct {
 #define MAX_REWIND_BACKUPS 12   // 1000 ~ 175 megabytes, sizeof(rewindBackups_t) is 1.753348 mb
 
 extern rewindBackups_t *rewindBackups;
-int maxRewindBackups;
+extern int maxRewindBackups;
 
 //=============================================================================
 
