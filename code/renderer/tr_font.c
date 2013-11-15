@@ -198,7 +198,7 @@ void WriteTGA (char *filename, byte *data, int width, int height) {
 	Z_Free (buffer);
 }
 
-static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, int *yOut, int *maxHeight, FT_Face face, const unsigned char c, qboolean calcHeight) {
+static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int imageOutSize, int *xOut, int *yOut, int *maxHeight, FT_Face face, const unsigned char c, qboolean calcHeight) {
   int i;
   static glyphInfo_t glyph;
   unsigned char *src, *dst;
@@ -269,43 +269,68 @@ static glyphInfo_t *RE_ConstructGlyphInfo(unsigned char *imageOut, int *xOut, in
       return &glyph;
     }
 
-
     src = bitmap->buffer;
     dst = imageOut + (*yOut * 256) + *xOut;
+	if (dst - imageOut >= imageOutSize) {
+		Com_Printf("^1RE_ConstructGlyphInfo: initial overflow imageOut %d >= %d\n", dst - imageOut, imageOutSize);
+		*yOut = -1;
+		*xOut = -1;
 
-		if (bitmap->pixel_mode == ft_pixel_mode_mono) {
-			for (i = 0; i < glyph.height; i++) {
-				int j;
-				unsigned char *_src = src;
-				unsigned char *_dst = dst;
-				unsigned char mask = 0x80;
-				unsigned char val = *_src;
-				for (j = 0; j < glyph.pitch; j++) {
-					if (mask == 0x80) {
-						val = *_src++;
-					}
-					if (val & mask) {
-						*_dst = 0xff;
-					}
-					mask >>= 1;
-        
-					if ( mask == 0 ) {
-						mask = 0x80;
-					}
-					_dst++;
+		Z_Free(bitmap->buffer);
+		Z_Free(bitmap);
+		return &glyph;
+	}
+
+	if (bitmap->pixel_mode == ft_pixel_mode_mono) {
+		for (i = 0; i < glyph.height; i++) {
+			int j;
+			unsigned char *_src = src;
+			unsigned char *_dst = dst;
+			unsigned char mask = 0x80;
+			unsigned char val = *_src;
+			for (j = 0; j < glyph.pitch; j++) {
+				if (mask == 0x80) {
+					val = *_src++;
 				}
+				if (val & mask) {
+					*_dst = 0xff;
+				}
+				mask >>= 1;
 
-				src += glyph.pitch;
-				dst += 256;
-
+				if ( mask == 0 ) {
+					mask = 0x80;
+				}
+				_dst++;
 			}
-		} else {
+
+			src += glyph.pitch;
+			dst += 256;
+			if (dst - imageOut >= imageOutSize) {
+				Com_Printf("^1RE_ConstructGlyphInfo: pixel mode mono overflow imageOut %d >= %d\n", dst - imageOut, imageOutSize);
+				*yOut = -1;
+				*xOut = -1;
+
+				Z_Free(bitmap->buffer);
+				Z_Free(bitmap);
+				return &glyph;
+			}
+		}
+	} else {  // pixel mode != mono
 	    for (i = 0; i < glyph.height; i++) {
 		    Com_Memcpy(dst, src, glyph.pitch);
-			  src += glyph.pitch;
-				dst += 256;
+			src += glyph.pitch;
+			dst += 256;
+			if (dst - imageOut >= imageOutSize) {
+				Com_Printf("^1RE_ConstructGlyphInfo: pixel mode != mono overflow imageOut %d >= %d\n", dst - imageOut, imageOutSize);
+				*yOut = -1;
+				*xOut = -1;
+
+				Z_Free(bitmap->buffer);
+				Z_Free(bitmap);
+				return &glyph;
+			}
 	    }
-		}
+	}
 
     // we now have an 8 bit per pixel grey scale bitmap 
     // that is width wide and pf->ftSize->metrics.y_ppem tall
@@ -406,6 +431,8 @@ static void LoadQ3Font (const char *fontName, int pointSize, fontInfo_t *font)
 	Com_Memcpy(&registeredFont[registeredFontCount++], font, sizeof(fontInfo_t));
 	//Com_Printf("%s registered as %s\n", fontName, font->name);
 }
+
+#define FONT_OUT_BUFFER_SIZE (1024 * 1024 + 1)
 
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 #ifdef BUILD_FREETYPE
@@ -517,7 +544,8 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 		}
 	  Com_Memcpy(&registeredFont[registeredFontCount++], font, sizeof(fontInfo_t));
 	  //Com_Printf("%s %d registered as %s scale %f\n", fontName, pointSize, font->name, font->glyphScale);
-		return;
+	  ri.FS_FreeFile(faceData);
+	  return;
 	} else {
 		Com_Printf("wrong font dat size:  %d, expected %d\n", len, (int)sizeof(fontInfo_t));
 	}
@@ -581,19 +609,19 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
   // make a 256x256 image buffer, once it is full, register it, clean it and keep going 
   // until all glyphs are rendered
 
-  out = Z_Malloc(1024*1024  * 1);
+  out = Z_Malloc(FONT_OUT_BUFFER_SIZE);
   if (out == NULL) {
     ri.Printf(PRINT_ALL, "RE_RegisterFont: Z_Malloc failure during output image creation.\n");
 	font->name[0] = '\0';
     return;
   }
-  Com_Memset(out, 0, 1024*1024  * 1);
+  Com_Memset(out, 0, FONT_OUT_BUFFER_SIZE);
 
   maxHeight = 0;
 
   //FIXME what is the point of this?
   for (i = GLYPH_START; i < GLYPH_END; i++) {
-	  glyph = RE_ConstructGlyphInfo(out, &xOut, &yOut, &maxHeight, face, (unsigned char)i, qtrue);
+	  glyph = RE_ConstructGlyphInfo(out, FONT_OUT_BUFFER_SIZE, &xOut, &yOut, &maxHeight, face, (unsigned char)i, qtrue);
   }
 
   xOut = 0;
@@ -604,7 +632,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 
   while ( i <= GLYPH_END ) {
 
-    glyph = RE_ConstructGlyphInfo(out, &xOut, &yOut, &maxHeight, face, (unsigned char)i, qfalse);
+	  glyph = RE_ConstructGlyphInfo(out, FONT_OUT_BUFFER_SIZE, &xOut, &yOut, &maxHeight, face, (unsigned char)i, qfalse);
 
     if (xOut == -1 || yOut == -1 || i == GLYPH_END)  {
       // ran out of room
@@ -666,7 +694,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 				Q_strncpyz(font->glyphs[j].shaderName, name, sizeof(font->glyphs[j].shaderName));
       }
       lastStart = i;
-		  Com_Memset(out, 0, 1024*1024);
+		  Com_Memset(out, 0, FONT_OUT_BUFFER_SIZE - 1);
       xOut = 0;
       yOut = 0;
       Z_Free(imageBuff);

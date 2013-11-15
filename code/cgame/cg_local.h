@@ -119,7 +119,7 @@
 #define DUEL_PLAYER_INVALID -1
 
 #define MAX_RACE_SCORE 0x7fffffff
-
+#define CROSSHAIR_CLIENT_INVALID -1
 
 typedef enum {
 	FOOTSTEP_NORMAL,
@@ -3176,6 +3176,7 @@ extern vmCvar_t cg_rocketAimBot;
 extern vmCvar_t cg_drawTieredArmorAvailability;
 
 extern vmCvar_t cg_drawDeadFriendTime;
+extern vmCvar_t cg_drawHitFriendTime;
 extern vmCvar_t cg_racePlayerShader;
 
 // end cvar_t

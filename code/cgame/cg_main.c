@@ -1036,6 +1036,7 @@ vmCvar_t cg_rocketAimBot;
 vmCvar_t cg_drawTieredArmorAvailability;
 
 vmCvar_t cg_drawDeadFriendTime;
+vmCvar_t cg_drawHitFriendTime;
 vmCvar_t cg_racePlayerShader;
 
 // end cvar_t
@@ -1985,6 +1986,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 #endif
 
 	{ cvp(cg_drawDeadFriendTime), "3000", CVAR_ARCHIVE },
+	{ cvp(cg_drawHitFriendTime), "1500", CVAR_ARCHIVE },
 	{ cvp(cg_racePlayerShader), "1", CVAR_ARCHIVE },
 };
 
@@ -2242,9 +2244,11 @@ static void CG_TimeChange (int serverTime, int ioverf)
 	cg.atCameraPoint = qfalse;
 }
 
+//FIXME only used once in cg_servercmds.c
 int CG_CrosshairPlayer( void ) {
+	//FIXME 1000 fixed number
 	if ( cg.time > ( cg.crosshairClientTime + 1000 ) ) {
-		return -1;
+		return CROSSHAIR_CLIENT_INVALID;
 	}
 	return cg.crosshairClientNum;
 }

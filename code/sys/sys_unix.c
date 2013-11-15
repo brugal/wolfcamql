@@ -572,6 +572,7 @@ void Sys_ErrorDialog( const char *error )
 	const char *homepath = Cvar_VariableString( "fs_homepath" );
 	const char *gamedir = Cvar_VariableString( "fs_game" );
 	const char *fileName = "crashlog.txt";
+	char *dirpath = FS_BuildOSPath( homepath, gamedir, "");
 	char *ospath = FS_BuildOSPath( homepath, gamedir, fileName );
 
 	Sys_Print( va( "%s\n", error ) );
@@ -584,8 +585,15 @@ void Sys_ErrorDialog( const char *error )
 #endif
 
 	/* make sure the write path for the crashlog exists... */
-	if( FS_CreatePath( ospath ) ) {
-		Com_Printf( "ERROR: couldn't create path '%s' for crash log.\n", ospath );
+	if(!Sys_Mkdir(homepath))
+	{
+		Com_Printf( "ERROR: couldn't create path '%s' for crash log.\n", homepath);
+		return;
+	}
+
+	if(!Sys_Mkdir(dirpath))
+	{
+		Com_Printf("ERROR: couldn't create path '%s' for crash log.\n", dirpath);
 		return;
 	}
 

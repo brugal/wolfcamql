@@ -549,6 +549,7 @@ extern cvar_t	*cl_useq3gibs;
 extern cvar_t	*cl_consoleAsChat;
 extern cvar_t *cl_numberPadInput;
 extern cvar_t *cl_maxRewindBackups;
+extern cvar_t *cl_keepDemoFileInMemory;
 
 extern double Overf;
 

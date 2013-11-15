@@ -4897,6 +4897,8 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	if (draw) {
 		CG_AddLocalEntities();
 	}
+	//FIXME force
+	//CG_UpdateFxExternalForces();
 
 	CG_DumpEntities();
 

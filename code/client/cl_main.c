@@ -118,7 +118,6 @@ cvar_t	*cl_conXOffset;
 cvar_t	*cl_inGameVideo;
 
 cvar_t	*cl_serverStatusResendTime;
-cvar_t	*cl_trn;
 
 cvar_t	*cl_lanForcePackets;
 
@@ -130,6 +129,7 @@ cvar_t	*cl_useq3gibs;
 cvar_t	*cl_consoleAsChat;
 cvar_t *cl_numberPadInput;
 cvar_t *cl_maxRewindBackups;
+cvar_t *cl_keepDemoFileInMemory;
 
 clientActive_t		cl;
 clientConnection_t	clc;
@@ -1981,7 +1981,7 @@ static qhandle_t CL_OpenDemoFile (const char *arg)
 		}
 	}
 
-	if (file) {
+	if (file  &&  cl_keepDemoFileInMemory->integer) {
 		FS_FileLoadInMemory(file);
 	}
 
@@ -3404,6 +3404,9 @@ void CL_InitServerInfo( serverInfo_t *server, const netadr_t *address ) {
 	server->game[0] = '\0';
 	server->gameType = 0;
 	server->netType = 0;
+	server->punkbuster = 0;
+	server->g_humanplayers = 0;
+	server->g_needpass = 0;
 }
 
 #define MAX_SERVERSPERPACKET	256
@@ -5102,6 +5105,8 @@ void CL_Init ( void ) {
 	}
 	Com_Printf("allocated %.2f MB for rewind backups\n", (sizeof(rewindBackups_t) * maxRewindBackups) / 1024.0 / 1024.0);
 
+	cl_keepDemoFileInMemory = Cvar_Get("cl_keepDemoFileInMemory", "1", CVAR_ARCHIVE);
+
 	//
 	// register our commands
 	//
@@ -5343,20 +5348,7 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 
 	// add this to the list
 	cls.numlocalservers = i+1;
-	cls.localServers[i].adr = from;
-	cls.localServers[i].clients = 0;
-	cls.localServers[i].hostName[0] = '\0';
-	cls.localServers[i].mapName[0] = '\0';
-	cls.localServers[i].maxClients = 0;
-	cls.localServers[i].maxPing = 0;
-	cls.localServers[i].minPing = 0;
-	cls.localServers[i].ping = -1;
-	cls.localServers[i].game[0] = '\0';
-	cls.localServers[i].gameType = 0;
-	cls.localServers[i].netType = from.type;
-	cls.localServers[i].punkbuster = 0;
-	cls.localServers[i].g_humanplayers = 0;
-	cls.localServers[i].g_needpass = 0;
+	CL_InitServerInfo( &cls.localServers[i], &from );
 
 	Q_strncpyz( info, MSG_ReadString( msg ), MAX_INFO_STRING );
 	if (strlen(info)) {

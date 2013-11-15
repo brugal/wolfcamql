@@ -1,3 +1,17 @@
+10.3test1
+
+* cg_drawHitFriendTime  (same as quake live)
+* cl_keepDemoFileInMemory  to enable or disable completely loading the demo at the start of demo playback  (1 (default) for performance improvements while rewinding and fastforwading, 0 for demos that aren't completely saved yet)
+* 'clear' option for /clientoverride can also be followed by 'red', 'blue', 'enemy', 'mates', 'us', 'all', or a client number.  The default is 'all'.
+* removed console spamming with /clientoverride
+* hud scripting bug fix:  wrong precedence order for and/or (& |)
+* fx bug fix:  wrong precedence order for and/or (& |)
+* bug fix:  cg_deadBodyColor works with models set with /clientoverride
+* bug fix:  /clientoverride takes into account the new quakelive team games
+* bug fix:  possible incorrect client number for crosshair entity
+* ioquake3 fixes (ex: black connect screen with nvidia driver for Windows and Linux, ...)
+
+------------------------------------
 10.2  2013-08-23
 
 * WCG_KILL_COUNT hud element and /killcountreset command

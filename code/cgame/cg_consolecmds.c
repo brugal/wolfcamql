@@ -54,7 +54,7 @@ void CG_TargetCommand_f( void ) {
 	char	test[4];
 
 	targetNum = CG_CrosshairPlayer();
-	if (!targetNum ) {
+	if ( targetNum == CROSSHAIR_CLIENT_INVALID ) {
 		return;
 	}
 
@@ -5265,6 +5265,37 @@ void CG_ChangeConfigString (const char *buffer, int index)
 	}
 }
 
+static void CG_ClientOverrideClearClient (int clientNum)
+{
+	clientInfo_t *ci;
+
+	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^3%s invalid client number: %d\n", __func__, clientNum);
+	}
+
+	ci = &cgs.clientinfo[clientNum];
+
+	ci->override = qfalse;
+	ci->hasHeadColor = qfalse;
+	ci->hasTorsoColor = qfalse;
+	ci->hasLegsColor = qfalse;
+	ci->hasHeadSkin = qfalse;
+	ci->hasTorsoSkin = qfalse;
+	ci->hasLegsSkin = qfalse;
+
+	ci->hasModelScale = qfalse;
+	ci->hasLegsModelScale = qfalse;
+	ci->hasTorsoModelScale = qfalse;
+	ci->hasHeadModelScale = qfalse;
+	ci->hasHeadOffset = qfalse;
+	ci->hasModelAutoScale = qfalse;
+
+	if (!ci->infoValid) {
+		return;
+	}
+	CG_NewClientInfo(clientNum);
+}
+
 static char HeadSkinName[MAX_QPATH];
 static char TorsoSkinName[MAX_QPATH];
 static char LegsSkinName[MAX_QPATH];
@@ -5312,42 +5343,73 @@ static void CG_ClientOverride_f (void)
 
 	if (CG_Argc() > 1) {
 		if (!Q_stricmp("clear", CG_Argv(1))) {
-			int start;
-			int end;
+			int t;
 
 			trap_GetGameState(&cgs.gameState);
+
 			if (CG_Argc() > 2) {
-				start = atoi(CG_Argv(2));
-				end = start + 1;
-				if (start < 0  ||  start >= MAX_CLIENTS) {
-					Com_Printf("invalid client number\n");
-					return;
-				}
-			} else {
-				start = 0;
-				end = MAX_CLIENTS;
-			}
-			for (i = start;  i < end;  i++) {
-				cgs.clientinfo[i].override = qfalse;
-				cgs.clientinfo[i].hasHeadColor = qfalse;
-				cgs.clientinfo[i].hasTorsoColor = qfalse;
-				cgs.clientinfo[i].hasLegsColor = qfalse;
-				cgs.clientinfo[i].hasHeadSkin = qfalse;
-				cgs.clientinfo[i].hasTorsoSkin = qfalse;
-				cgs.clientinfo[i].hasLegsSkin = qfalse;
+				if (!Q_stricmp("red", CG_Argv(2))) {
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						clientInfoString = CG_ConfigString(CS_PLAYERS + i);
+						//FIXME option for this
+						if (!clientInfoString[0]) {
+							continue;
+						}
+						t = atoi(Info_ValueForKey(clientInfoString, "t"));
+						if (t == TEAM_RED) {
+							CG_ClientOverrideClearClient(i);
+						}
+					}
+				} else if (!Q_stricmp("blue", CG_Argv(2))) {
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						clientInfoString = CG_ConfigString(CS_PLAYERS + i);
+						//FIXME option for this
+						if (!clientInfoString[0]) {
+							continue;
+						}
+						t = atoi(Info_ValueForKey(clientInfoString, "t"));
+						if (t == TEAM_BLUE) {
+							CG_ClientOverrideClearClient(i);
+						}
+					}
+				} else if (!Q_stricmp("enemy", CG_Argv(2))) {
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						clientInfoString = CG_ConfigString(CS_PLAYERS + i);
+						//FIXME option for this
+						if (!clientInfoString[0]) {
+							continue;
+						}
+						t = atoi(Info_ValueForKey(clientInfoString, "t"));
+						if (CG_IsTeamGame(cgs.gametype)  &&  t != cg.snap->ps.persistant[PERS_TEAM]) {
+							CG_ClientOverrideClearClient(i);
+						}
+					}
+				} else if (!Q_stricmp("mates", CG_Argv(2))) {
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						clientInfoString = CG_ConfigString(CS_PLAYERS + i);
+						//FIXME option for this
+						if (!clientInfoString[0]) {
+							continue;
+						}
+						t = atoi(Info_ValueForKey(clientInfoString, "t"));
+						if (CG_IsTeamGame(cgs.gametype)  &&  t == cg.snap->ps.persistant[PERS_TEAM]) {
+							CG_ClientOverrideClearClient(i);
+						}
+					}
+				} else if (!Q_stricmp("us", CG_Argv(2))) {
+					CG_ClientOverrideClearClient(cg.snap->ps.clientNum);
+				} else if (!Q_stricmp("all", CG_Argv(2))) {
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						CG_ClientOverrideClearClient(i);
+					}
+				} else {  // client number
+					int cn;
 
-				cgs.clientinfo[i].hasModelScale = qfalse;
-				cgs.clientinfo[i].hasLegsModelScale = qfalse;
-				cgs.clientinfo[i].hasTorsoModelScale = qfalse;
-				cgs.clientinfo[i].hasHeadModelScale = qfalse;
-				cgs.clientinfo[i].hasHeadOffset = qfalse;
-				cgs.clientinfo[i].hasModelAutoScale = qfalse;
-
-				if (!cgs.clientinfo[i].infoValid) {
-					continue;
+					cn = atoi(CG_Argv(2));
+					CG_ClientOverrideClearClient(cn);
 				}
-				CG_NewClientInfo(i);
 			}
+
 			return;
 		}
 	}
@@ -5394,7 +5456,7 @@ static void CG_ClientOverride_f (void)
 		Q_strncpyz(key, CG_Argv(i), sizeof(key));
 		Q_strncpyz(value, CG_Argv(i + 1), sizeof(value));
 
-		Com_Printf("key: %s  value: %s\n", key, value);
+		//Com_Printf("key: %s  value: %s\n", key, value);
 
 		if (useTeam) {
 			start = 0;
@@ -5428,14 +5490,14 @@ static void CG_ClientOverride_f (void)
 				case T_ENEMY:
 					if (j == cg.snap->ps.clientNum) {
 						continue;
-					} else if (cgs.gametype >= GT_TEAM  &&  t == cg.snap->ps.persistant[PERS_TEAM]) {
+					} else if (CG_IsTeamGame(cgs.gametype)  &&  t == cg.snap->ps.persistant[PERS_TEAM]) {
 						continue;
 					}
 					break;
 				case T_FRIENDLY:
 					if (j == cg.snap->ps.clientNum) {
 						continue;
-					} else if (cgs.gametype >= GT_TEAM  &&  t != cg.snap->ps.persistant[PERS_TEAM]) {
+					} else if (CG_IsTeamGame(cgs.gametype)  &&  t != cg.snap->ps.persistant[PERS_TEAM]) {
 						continue;
 					}
 					break;

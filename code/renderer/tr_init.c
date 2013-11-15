@@ -2114,6 +2114,14 @@ void GL_SetDefaultState( void )
 	qglDisable( GL_CULL_FACE );
 	qglDisable( GL_BLEND );
 
+	/* ioquake3 remove:  2013-10-08-01  Revert "5097 - Menu corrupted on start (on IRIX)"
+
+Calling glClear( any bits ) in GL_SetDefaultState makes connect screen black using the proprietary NVidia driver on Windows and GNU/Linux.
+
+This reverts commit 9257327.
+
+    /////////////
+
 	qglColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 	qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 	qglClearDepth( 1.0 );
@@ -2122,6 +2130,7 @@ void GL_SetDefaultState( void )
 
 	qglDrawBuffer( GL_BACK );
 	qglClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_STENCIL_BUFFER_BIT );
+    */
 }
 
 /*

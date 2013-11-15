@@ -540,6 +540,11 @@ client options:
 
   example:  clientoverride 3 model ranger hmodel bones
 
+  'clear' option can also be followed by 'red', 'blue', 'enemy', 'mates', 'us', 'all', or a client number.  The default is 'all'.
+
+  example:  clientoverride clear mates
+
+
   To see what can be changed type /configstrings in the console and scroll up to the player list:
 
   529: n\WolfPlayer\t\1\model\sarge\hmodel\sarge\c1\5\c2\26\hc\100\w\0\l\0\tt\0\tl\0\rp\0\p\0\so\0\pq\0\cn\\su\0
@@ -647,9 +652,10 @@ Fonts can also be used for hud config elements:
     }
 
 * use math functions and variables to change user created variable values
+  (same as q3mme fx scripting)
 
     + - / * %
-    > < ! =         (to test equality)
+    > < != =        (to test equality)
     & |             (logical AND OR)
     sqrt, ceil, floor, sin, cos, wave, clip, acos, asin, atan, atan2, pow
     rand            (create a random value between 0.0 and 1.0)
@@ -1259,6 +1265,7 @@ Available tokens:
 * cg_drawFriend 1  has wall hack effect like in ql, cg_drawFriend 2 to disable wall hack, 3 (default) to enable wall hack effect in freezetag.  2010-12-17:  In quakelive it seems it's only in offline bot matches that wall hack effect is disabled.
 * cg_drawFriendMinWidth  (like quake live)
 * cg_drawFriendMaxWidth  (like quake live)
+* cg_drawHitFriendTime   (like quake live)
 * cg_drawDeadFriendTime  (like quake live)
 
 * cg_drawFoe  draws icon over enemies heads.  2: with wall hack effect
@@ -2070,6 +2077,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_racePlayerShader to enable or disable the invisible/ghost shader on other players in ql race mode
 
 * cl_maxRewindBackups  Number of seek points to divide the demo into.  The higher, the more response fast forwarding and rewinding becomes.  Note that each backup point will require about 1.7MB .  The default is 12.
+
+* cl_keepDemoFileInMemory  set to 1 can improve performance when rewinding and fastforwarding, set to 0 if you need to work with a demo file that is completed and not available to load completely at the start of demo play back (ex: streaming)
 
 
 ----------

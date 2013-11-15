@@ -840,7 +840,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cg.ctfScore.valid = qfalse;
 	cg.spectatorTime = 0;
 	cg.centerPrintTime = 0;
-	cg.crosshairClientTime = 0;
+	cg.crosshairClientTime = -(cg_drawCrosshairNamesTime.integer + 2000);  //FIXME 2000, 1000 fixed number
 	cg.powerupTime = 0;
 	cg.attackerTime = 0;
 	cg.voiceTime = 0;
@@ -1223,6 +1223,9 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 
 	cg.menuScoreboard = NULL;
 	//CG_ResetLagometer();
+
+	//FIXME force
+	//CG_ClearFxExternalForces();
 
 	//Com_Printf("teleport this: %d  next: %d\n", cg.thisFrameTeleport, cg.nextFrameTeleport);
 	if (SC_Cvar_Get_Int("debug_seek")) {

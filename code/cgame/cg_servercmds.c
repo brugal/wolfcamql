@@ -1374,7 +1374,8 @@ void CG_ParseWarmup( void ) {
 		cg.vibrateCameraValue = 0;
 		cg.vibrateCameraPhase = 0;
 
-		cg.crosshairClientTime = 0;
+		cg.crosshairClientTime = -(cg_drawCrosshairNamesTime.integer + 2000);  //FIXME 2000, 1000 fixed number
+		cg.crosshairClientNum = CROSSHAIR_CLIENT_INVALID;
 		cg.powerupTime = 0;
 		cg.attackerTime = 0;
 		cg.voiceTime = 0;
@@ -2331,7 +2332,7 @@ static void CG_MapRestart( void ) {
 	cg.vibrateCameraValue = 0;
 	cg.vibrateCameraPhase = 0;
 
-	cg.crosshairClientTime = 0;
+	cg.crosshairClientTime = -(cg_drawCrosshairNamesTime.integer + 2000);  //FIXME 2000, 1000 fixed number
 	cg.powerupTime = 0;
 	cg.attackerTime = 0;
 	cg.voiceTime = 0;

@@ -213,7 +213,7 @@ static qboolean	CG_ParseAnimationFile( const char *filename, clientInfo_t *ci ) 
 			text_p = prev;	// unget the token
 			break;
 		}
-		Com_Printf( "unknown token '%s' is %s\n", token, filename );
+		Com_Printf( "unknown token '%s' in %s\n", token, filename );
 	}
 
 	// read information for each frame
@@ -3529,7 +3529,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 
 		if (isTeammate) {
 			if (cg_drawFriend.integer) {
-				if ((cg.ftime - cent->pe.painTime) < 2000.0) {
+				if ((cg.ftime - cent->pe.painTime) < cg_drawHitFriendTime.integer) {
 					s = cgs.media.friendHitShader;
 					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
 					return;
@@ -4081,7 +4081,20 @@ static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, ref
 			if (ci->hasLegsColor) {
 				memcpy(legs->shaderRGBA, ci->legsColor, sizeof(legs->shaderRGBA));
 			}
-		return;
+
+			if (cg_entities[cent->currentState.clientNum].currentState.eFlags & EF_DEAD  ||  (cent->currentState.clientNum != cent->currentState.number &&  cent !=&cg.predictedPlayerEntity)) {
+				//Com_Printf("%s  %d %d\n", cgs.clientinfo[cent->currentState.clientNum].name, cent->currentState.clientNum, cent->currentState.number);
+				if (!CG_IsUs(ci)  &&  *cg_deadBodyColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_deadBodyColor);
+					head->shaderRGBA[3] = 255;
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_deadBodyColor);
+					torso->shaderRGBA[3] = 255;
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_deadBodyColor);
+					legs->shaderRGBA[3] = 255;
+				}
+			}
+
+			return;
 	}
 
 

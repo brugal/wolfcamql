@@ -6485,7 +6485,7 @@ char *Q_MathScript (char *script, float *val, int *error)
         }
     }
 
-    // < > ! = & |
+    // < > ! =    (= is ==  and  ! is !=, equal and not equal)
 
     for (i = 0;  i < numOps;  i += 2) {
         if (ops[i] == OP_NOP) {
@@ -6528,7 +6528,16 @@ char *Q_MathScript (char *script, float *val, int *error)
             numOps -= 4;
             i -= 2;
             continue;
-        } else if (ops[i] == OP_AND) {
+        }
+    }
+
+	// & |
+    for (i = 0;  i < numOps;  i += 2) {
+        if (ops[i] == OP_NOP) {
+            continue;
+        }
+
+        if (ops[i] == OP_AND) {
             //Com_Printf("(%d %d)  %f && %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
             ops[i - 1] = ops[i - 1] && ops[i + 3];
             for (j = i + 4;  j < numOps;  j++) {
@@ -6547,7 +6556,7 @@ char *Q_MathScript (char *script, float *val, int *error)
             i -= 2;
             continue;
         }
-    }
+	}
 
     // sanity check
     if (ops[0] != OP_VAL) {

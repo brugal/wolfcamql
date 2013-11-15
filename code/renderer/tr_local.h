@@ -58,10 +58,6 @@ long myftol( float f );
 // see QSORT_SHADERNUM_SHIFT
 #define	MAX_SHADERS				16384
 
-//#define MAX_SHADER_STATES 2048
-#define MAX_STATES_PER_SHADER 32
-#define MAX_STATE_NAME 32
-
 #define	MAX_DRAWIMAGES			2048
 #define	MAX_SKINS				1024
 
@@ -311,7 +307,6 @@ typedef struct {
 
 	int				videoMapHandle;
 	qboolean		isLightmap;
-	qboolean		vertexLightmap;
 	qboolean		isVideoMap;
 } textureBundle_t;
 
@@ -429,28 +424,12 @@ typedef struct shader_s {
   float clampTime;                                  // time this shader is clamped to
   float timeOffset;                                 // current time offset for this shader
 
-  int numStates;                                    // if non-zero this is a state shader
-  struct shader_s *currentShader;                   // current state if this is a state shader
-  struct shader_s *parentShader;                    // current state if this is a state shader
-  int currentState;                                 // current state index for cycle purposes
-  long expireTime;                                  // time in milliseconds this expires
-
   struct shader_s *gameRemappedShader;                  // current shader this one is remapped too
   struct shader_s *userRemappedShader;
   qboolean remappedShaderKeepLightmap;
 
-  int shaderStates[MAX_STATES_PER_SHADER];          // index to valid shader states
-
 	struct	shader_s	*next;
 } shader_t;
-
-typedef struct shaderState_s {
-  char shaderName[MAX_QPATH];     // name of shader this state belongs to
-  char name[MAX_STATE_NAME];      // name of this state
-  char stateShader[MAX_QPATH];    // shader this name invokes
-  int cycleTime;                  // time this cycle lasts, <= 0 is forever
-  shader_t *shader;
-} shaderState_t;
 
 
 // trRefdef_t holds everything that comes in refdef_t,

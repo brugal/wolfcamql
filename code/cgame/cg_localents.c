@@ -29,6 +29,13 @@ static localEntity_t tmpLocalEntity;
 
 int FxLoopSounds = FX_LOOP_SOUNDS_BASE;
 
+//FIXME force too many?
+//#define MAX_FX_EXTERNAL_FORCES 128
+//FIXME force cg_local.h
+
+//FIXME force linked list
+//static fxExternalForce_t FxExternalForces[MAX_FX_EXTERNAL_FORCES];
+//static int numFxExternalForces = 0;
 
 #define FRAME_COUNT_THREAD_SHUTDOWN -1000
 #define FRAME_COUNT_INITIAL 1
@@ -1669,6 +1676,76 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		float newZ;
 		float sinkTime;
 		vec3_t mins, maxs;
+		int i;
+
+#if 0  // force
+		// add external forces
+		//FIXME force
+		//for (i = 0;  i < numFxExternalForces;  i++) {
+		for (i = 0;  i < MAX_FX_EXTERNAL_FORCES;  i++) {
+			const fxExternalForce_t *force;
+			vec3_t dir;
+
+			force = &FxExternalForces[i];
+			if (!force->valid) {
+				continue;
+			}
+
+			if (force->radial) {
+				float dist;
+				float f;
+				float maxDist;
+				float power;
+				vec3_t forceOrigin;
+
+				VectorCopy(force->origin, forceOrigin);
+				forceOrigin[2] += 25 + 5 * random();
+
+				//VectorSubtract(ScriptVars.origin, force->origin, dir);
+				//VectorSubtract(force->origin, ScriptVars.origin, dir);
+				//dist = Distance(force->origin, ScriptVars.origin);
+
+				VectorSubtract(le->pos.trBase, forceOrigin, dir);
+				dist = Distance(le->pos.trBase, forceOrigin);
+
+				//dist = VectorNormalize(dir);
+				//VectorScale(dir, 20, dir);
+				//VectorScale(dir, force->power, dir);
+				//VectorScale(dir, 10, dir);
+				//f = 10.0f;
+				//f = 1.0f;
+				//fac = 1.0 - newLen / maxDist;
+				//newValue = ScriptVars.vibrate * fac;
+
+				power = 0.15f;
+				maxDist = 500.0f;
+				f = 1.0 - dist / maxDist;
+				if (f < 0.0) {
+					continue;
+				}
+
+				Com_Printf("dir: %f %f %f", dir[0], dir[1], dir[2]);
+
+				VectorScale(dir, power * f, dir);
+				le->trTimef = cg.ftime;
+
+				if (le->pos.trType == TR_STATIONARY) {
+					le->pos.trType = TR_LINEAR;
+					VectorCopy(dir, ScriptVars.velocity);
+				} else {
+
+					VectorAdd(dir, ScriptVars.velocity, ScriptVars.velocity);
+				}
+
+				VectorCopy(ScriptVars.velocity, le->sv.velocity);
+
+				continue;
+			}
+
+			//FIXME nonradial
+
+		}
+#endif
 
 		// assuming sink1 is removal time as percent of total time
 		// assuming sink2 is sink velocity
@@ -1722,11 +1799,80 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			break;
 		}
 
-		//Com_Printf("sink...\n");
 		return;  //FIXME run script?
 
 	} else if (ScriptVars.hasMoveBounce  ||  ScriptVars.hasMoveGravity) {
 		vec3_t oldVelocity;
+		int i;
+
+#if 0  // force
+		// add external forces
+		//FIXME force
+		//for (i = 0;  i < numFxExternalForces;  i++) {
+		for (i = 0;  i < MAX_FX_EXTERNAL_FORCES;  i++) {
+			const fxExternalForce_t *force;
+			vec3_t dir;
+
+			force = &FxExternalForces[i];
+			if (!force->valid) {
+				continue;
+			}
+
+			if (force->radial) {
+				float dist;
+				float f;
+				float maxDist;
+				float power;
+				vec3_t forceOrigin;
+
+				VectorCopy(force->origin, forceOrigin);
+				forceOrigin[2] += 25 + 5 * random();
+
+				//VectorSubtract(ScriptVars.origin, force->origin, dir);
+				//VectorSubtract(force->origin, ScriptVars.origin, dir);
+				//dist = Distance(force->origin, ScriptVars.origin);
+
+				VectorSubtract(le->pos.trBase, forceOrigin, dir);
+				dist = Distance(le->pos.trBase, forceOrigin);
+
+				//dist = VectorNormalize(dir);
+				//VectorScale(dir, 20, dir);
+				//VectorScale(dir, force->power, dir);
+				//VectorScale(dir, 10, dir);
+				//f = 10.0f;
+				//f = 1.0f;
+				//fac = 1.0 - newLen / maxDist;
+				//newValue = ScriptVars.vibrate * fac;
+
+				power = 0.15f;
+				maxDist = 500.0f;
+				f = 1.0 - dist / maxDist;
+				if (f < 0.0) {
+					continue;
+				}
+
+				Com_Printf("dir: %f %f %f", dir[0], dir[1], dir[2]);
+
+				VectorScale(dir, power * f, dir);
+				le->trTimef = cg.ftime;
+
+				if (le->pos.trType == TR_STATIONARY) {
+					le->pos.trType = TR_LINEAR;
+					VectorCopy(dir, ScriptVars.velocity);
+				} else {
+
+					VectorAdd(dir, ScriptVars.velocity, ScriptVars.velocity);
+				}
+
+				VectorCopy(ScriptVars.velocity, le->sv.velocity);
+
+				continue;
+			}
+
+			//FIXME nonradial
+
+		}
+#endif
 
 		//deltaTime = (cg.ftime - le->startTime) * 0.001;
 		deltaTime = (cg.ftime - le->trTimef) * 0.001;
@@ -1753,6 +1899,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			//VectorCopy(ScriptVars.velocity, le->sv.velocity);
 			//Com_P
 		}
+
 
 		//Com_Printf("vl %f distance %f time %f distance from orig %f\n", VectorLength(ScriptVars.velocity), Distance(ScriptVars.origin, newOrigin), deltaTime, Distance(le->pos.trBase, newOrigin));
 
@@ -1877,8 +2024,10 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			Com_Printf("'\n");
 		}
 #endif
-        //Com_Printf("radius: %f\n", re->radius);
+        //Com_Printf("^1radius: %f\n", re->radius);
 		CG_RunQ3mmeScript(le->emitterScript, le->emitterScriptEnd);
+		//FIXME q3mme compatability
+		//CG_RunQ3mmeScript(le->emitterScript, NULL);
 		EmitterScript = qfalse;
 		DistanceScript = qfalse;
 		le->lastRunTime = cg.ftime;
@@ -2579,7 +2728,7 @@ void CG_ListLocalEntities (void)
 			} else if (le->refEntity.reType == RT_RAIL_RINGS_Q3MME) {
 				Com_Printf("^3%5d ^7emitterId %f fxrailringsq3mme timeleft: %f (%f) '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->sv.shader);
 			} else {
-				Com_Printf("^3%5d ^7emitterId %f fxunknown timeleft: %f (%f) '%d reType'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->refEntity.reType);
+				Com_Printf("^3%5d ^7emitterId %f fxunknown timeleft: %f (%f) '%d reType' shader '%s'\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime, le->refEntity.reType, le->sv.shader);
 			}
 		} else if (le->fxType == LEFX_SCRIPT) {
 			Com_Printf("^3%5d ^7emitterId %f fxscript timeleft: %f (%f)\n", count, le->sv.emitterId, le->endTime - cg.ftime, le->endTime - le->startTime);
@@ -2640,3 +2789,51 @@ void CG_AddRefEntityFX (const refEntity_t *re)
 
 	//trap_R_AddRefEntityToScene(re);
 }
+
+#if 0  //FIXME force
+void CG_UpdateFxExternalForces (void)
+{
+	int i;
+
+	for (i = 0;  i < MAX_FX_EXTERNAL_FORCES;  i++) {
+		fxExternalForce_t *f;
+
+		f = &FxExternalForces[i];
+		if (!f->valid) {
+			continue;
+		}
+
+		if (f->startTime - cg.time >= f->duration) {
+			f->valid = qfalse;
+			continue;
+		}
+	}
+}
+
+//FIXME force
+void CG_AddFxExternalForce (fxExternalForce_t *force)
+{
+	int i;
+
+	for (i = 0;  i < MAX_FX_EXTERNAL_FORCES;  i++) {
+		fxExternalForce_t *f;
+
+		f = &FxExternalForces[i];
+		if (f->valid) {
+			continue;
+		}
+
+		memcpy(f, force, sizeof(fxExternalForce_t));
+	}
+}
+
+//FIXME force
+void CG_ClearFxExternalForces (void)
+{
+	int i;
+
+	for (i = 0;  i < MAX_FX_EXTERNAL_FORCES;  i++) {
+		FxExternalForces[i].valid = qfalse;
+	}
+}
+#endif

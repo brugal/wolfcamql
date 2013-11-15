@@ -1105,7 +1105,7 @@ void GLimp_EndFrame( void )
 		{
 			// SDL_WM_ToggleFullScreen didn't work, so do it the slow way
 			if( !sdlToggled )
-				Cbuf_AddText( "vid_restart" );
+				Cbuf_AddText( "vid_restart\n" );
 
 			IN_Restart( );
 		}

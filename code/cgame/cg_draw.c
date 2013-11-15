@@ -7294,7 +7294,6 @@ static void CG_ScanForCrosshairEntity( void ) {
 	//CG_Trace( &trace, start, vec3_origin, vec3_origin, end, skipNum, CONTENTS_SOLID|CONTENTS_BODY );
 	Wolfcam_WeaponTrace( &trace, start, vec3_origin, vec3_origin, end, skipNum, CONTENTS_SOLID|CONTENTS_BODY );
 	if ( trace.entityNum >= MAX_CLIENTS ) {
-		//cg.crosshairClientNum = -1;
 		return;
 	}
 
@@ -7309,15 +7308,19 @@ static void CG_ScanForCrosshairEntity( void ) {
 	}
 	content = CG_PointContents(cg_entities[trace.entityNum].lerpOrigin, 0);
 	if ( content & CONTENTS_FOG ) {
-		//cg.crosshairClientNum = -1;
+		//cg.crosshairClientNum = CROSSHAIR_CLIENT_INVALID;
 		return;
 	}
 	//CG_Printf("not in fog\n");
 #endif
 
+	if (trace.entityNum < 0  ||  trace.entityNum >= MAX_CLIENTS) {
+		return;
+	}
+
 	// if the player is invisible, don't show it
 	if ( cg_entities[ trace.entityNum ].currentState.powerups & ( 1 << PW_INVIS ) ) {
-		//cg.crosshairClientNum = -1;
+		//cg.crosshairClientNum = CROSSHAIR_CLIENT_INVALID;
 		return;
 	}
 
@@ -7351,6 +7354,9 @@ static void CG_DrawCrosshairNames( void ) {
 	}
 	if ( cg.renderingThirdPerson ) {
 		//return;
+	}
+	if (cg.crosshairClientNum < 0  ||  cg.crosshairClientNum >= MAX_CLIENTS) {
+		return;
 	}
 
 	if (*cg_drawCrosshairNamesFont.string) {
@@ -7435,6 +7441,9 @@ static void CG_DrawCrosshairTeammateHealth (void)
 	float alpha;
 
 	if (!cg_drawCrosshairTeammateHealth.integer) {
+		return;
+	}
+	if (cg.crosshairClientNum < 0  ||  cg.crosshairClientNum >= MAX_CLIENTS) {
 		return;
 	}
 

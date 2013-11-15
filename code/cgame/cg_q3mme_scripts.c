@@ -2661,7 +2661,7 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
         }
     }
 
-    // < > ! = & |
+    // < > ! =    (= is ==  and  ! is !=, equal and not equal)
 
     for (i = 0;  i < numOps;  i += 2) {
         if (ops[i] == OP_NOP) {
@@ -2704,7 +2704,16 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
             numOps -= 4;
             i -= 2;
             continue;
-        } else if (ops[i] == OP_AND) {
+        }
+    }
+
+	// & |
+    for (i = 0;  i < numOps;  i += 2) {
+        if (ops[i] == OP_NOP) {
+            continue;
+        }
+
+		if (ops[i] == OP_AND) {
             //Com_Printf("(%d %d)  %f && %f\n", recursiveCount, uniqueId, ops[i - 1], ops[i + 3]);
             ops[i - 1] = ops[i - 1] && ops[i + 3];
             for (j = i + 4;  j < numOps;  j++) {
@@ -3982,6 +3991,7 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 			return qtrue;
 		}
         if (script[0] == '\0') {  //(token[0] == '\0') {
+			//Com_Printf("^3done\n");
             break;
 			//Com_Printf("breaking\n");
         }
@@ -3991,6 +4001,8 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 				Com_Printf("script token: '%s'\n", token);
 			}
 		}
+
+		//Com_Printf("token: %s\n", token);
 
 		if (!tokenId) {
 			if (token[0] == '\0') {
@@ -4012,6 +4024,7 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 			Com_Printf("%lld  ->  %lld\n", endf - startf, QstrcmpCount);
 			QstrcmpCount = 0;
 #endif
+			//Com_Printf("^2emitter end\n");
 
             return qfalse;
         }
@@ -5235,6 +5248,10 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 			vec3_t dir;
 			vec3_t origOrigin;
 			int count;
+
+			//Com_Printf("running distance script:  distance %f\n", Distance(ScriptVars.lastDistancePosition, ScriptVars.origin));
+			//Com_Printf("%f %f %f\n", ScriptVars.lastDistancePosition[0], ScriptVars.lastDistancePosition[1], ScriptVars.lastDistancePosition[2]);
+			//Com_Printf("%f %f %f\n", ScriptVars.origin[0], ScriptVars.origin[1], ScriptVars.origin[2]);
 
             runBlock = qfalse;
             err = 0;

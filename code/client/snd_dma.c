@@ -290,6 +290,11 @@ static sfx_t *S_FindName( const char *name ) {
 		Com_Error (ERR_FATAL, "Sound name too long: %s", name);
 	}
 
+	if (name[0] == '*') {
+		Com_Printf( S_COLOR_YELLOW "WARNING: Tried to load player sound directly: %s\n", name );
+		return NULL;
+	}
+
 	hash = S_HashSFXName(name);
 
 	sfx = sfxHash[hash];

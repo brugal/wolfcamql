@@ -3516,6 +3516,24 @@ void CG_MissileHitWall( int weapon, int clientNum, const vec3_t origin, const ve
 
 			CG_ParticleExplosion( "explode1", sprOrg, sprVel, 1400, 20, 30 );
 		}
+
+#if 0  //FIXME force
+		//FIXME testing
+		{
+			fxExternalForce_t force;
+
+			memset(&force, 0, sizeof(force));
+
+			force.startTime = cg.time;
+			force.duration = 0;
+			VectorCopy(origin, force.origin);
+			force.radial = qtrue;
+			force.power = 100;
+			force.valid = qtrue;
+
+			CG_AddFxExternalForce(&force);
+		}
+#endif
 		break;
 	case WP_RAILGUN:
 		mod = cgs.media.ringFlashModel;

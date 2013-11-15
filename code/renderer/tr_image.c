@@ -1999,7 +1999,7 @@ RE_RegisterSkin
 
 ===============
 */
-qhandle_t RE_RegisterSkin( const char *vname ) {
+qhandle_t RE_RegisterSkin( const char *name ) {
 	qhandle_t	hSkin;
 	skin_t		*skin;
 	skinSurface_t	*surf;
@@ -2013,16 +2013,16 @@ qhandle_t RE_RegisterSkin( const char *vname ) {
 	char iname[MAX_QPATH];
 	char *p;
 
-	if ( !vname || !vname[0] ) {
+	if ( !name || !name[0] ) {
 		Com_Printf( "Empty name passed to RE_RegisterSkin\n" );
 		return 0;
 	}
 
-	if ( strlen( vname ) >= MAX_QPATH ) {
+	if ( strlen( name ) >= MAX_QPATH ) {
 		Com_Printf( "Skin name exceeds MAX_QPATH\n" );
 		return 0;
 	}
-	Q_strncpyz(iname, vname, sizeof(iname));
+	Q_strncpyz(iname, name, sizeof(iname));
 	p = iname;
 	while (*p) {
 		int c = *p;
@@ -2048,7 +2048,7 @@ qhandle_t RE_RegisterSkin( const char *vname ) {
 	//Com_Printf("^4going to allocate new skin %s\n", name);
 	// allocate a new skin
 	if ( tr.numSkins == MAX_SKINS ) {
-		ri.Printf( PRINT_WARNING, "WARNING: RE_RegisterSkin( '%s' ) MAX_SKINS hit\n", vname );
+		ri.Printf( PRINT_WARNING, "WARNING: RE_RegisterSkin( '%s' ) MAX_SKINS hit\n", name );
 		return 0;
 	}
 	tr.numSkins++;
@@ -2096,6 +2096,11 @@ qhandle_t RE_RegisterSkin( const char *vname ) {
 		
 		// parse the shader name
 		token = CommaParse( &text_p );
+
+		if ( skin->numSurfaces >= MD3_MAX_SURFACES ) {
+			ri.Printf( PRINT_WARNING, "WARNING: Ignoring surfaces in '%s', the max is %d surfaces!\n", name, MD3_MAX_SURFACES );
+			break;
+		}
 
 		surf = skin->surfaces[ skin->numSurfaces ] = ri.Hunk_Alloc( sizeof( *skin->surfaces[0] ), h_low );
 		Q_strncpyz( surf->name, surfName, sizeof( surf->name ) );

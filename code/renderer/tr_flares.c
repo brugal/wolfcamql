@@ -88,6 +88,19 @@ static int flareCoeff;
 
 /*
 ==================
+R_SetFlareCoeff
+==================
+*/
+static void R_SetFlareCoeff( void ) {
+
+	if(r_flareCoeff->value == 0.0f)
+		flareCoeff = atof(FLARE_STDCOEFF);
+	else
+		flareCoeff = r_flareCoeff->value;
+}
+
+/*
+==================
 R_ClearFlares
 ==================
 */
@@ -102,6 +115,8 @@ void R_ClearFlares( void ) {
 		r_flareStructs[i].next = r_inactiveFlares;
 		r_inactiveFlares = &r_flareStructs[i];
 	}
+
+	R_SetFlareCoeff();
 }
 
 
@@ -364,8 +379,8 @@ void RB_RenderFlare( flare_t *f ) {
 
 	VectorScale(f->color, f->drawIntensity * intensity, color);
 
-// Calculations for fogging
-	if(tr.world && f->fogNum < tr.world->numfogs)
+	// Calculations for fogging
+	if(tr.world && f->fogNum > 0 && f->fogNum < tr.world->numfogs)
 	{
 		tess.numVertexes = 1;
 		VectorCopy(f->origin, tess.xyz[0]);
@@ -462,11 +477,7 @@ void RB_RenderFlares (void) {
 
 	if(r_flareCoeff->modified)
 	{
-		if(r_flareCoeff->value == 0.0f)
-			flareCoeff = atof(FLARE_STDCOEFF);
-		else
-			flareCoeff = r_flareCoeff->value;
-			
+		R_SetFlareCoeff();
 		r_flareCoeff->modified = qfalse;
 	}
 

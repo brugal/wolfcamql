@@ -399,7 +399,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 
 	pStage = tess.xstages[stage];
 
-	if (pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap || pStage->bundle[0].vertexLightmap) {
+	if (pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap) {
 		isLightmap = qtrue;
 	}
 
@@ -454,7 +454,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 			if (!ost) {
 				break;
 			}
-			if (ost->bundle[0].isLightmap  ||  ost->bundle[1].isLightmap  ||  ost->bundle[0].vertexLightmap) {
+			if (ost->bundle[0].isLightmap  ||  ost->bundle[1].isLightmap) {
 				gotNewLightmap = qtrue;
 				break;
 			}
@@ -1247,12 +1247,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 			//
 			// set state
 			//
-			if ( pStage->bundle[0].vertexLightmap && ( (r_vertexLight->integer && !r_uiFullScreen->integer) || glConfig.hardwareType == GLHW_PERMEDIA2 ) && r_lightmap->integer) {
-				GL_Bind( tr.whiteImage );
-			}
-			else {
-				R_BindAnimatedImage( &pStage->bundle[0] );
-			}
+			R_BindAnimatedImage( &pStage->bundle[0] );
 
 			GL_State( pStage->stateBits );
 
@@ -1262,7 +1257,7 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 			R_DrawElements( input->numIndexes, input->indexes );
 		}
 		// allow skipping out to show just lightmaps during development
-		if ( r_lightmap->integer  && ( pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap || pStage->bundle[0].vertexLightmap ) )
+		if ( r_lightmap->integer  && ( pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap ) )
 		{
 			break;
 		}
@@ -1532,7 +1527,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 			if (!ost) {
 				break;
 			}
-			if (ost->bundle[0].isLightmap  ||  ost->bundle[1].isLightmap  ||  ost->bundle[0].vertexLightmap) {
+			if (ost->bundle[0].isLightmap  ||  ost->bundle[1].isLightmap) {
 				gotNewLightmap = qtrue;
 				break;
 			}
@@ -1661,4 +1656,3 @@ void RB_EndSurface( void ) {
 
 	GLimp_LogComment( "----------\n" );
 }
-

@@ -969,3 +969,151 @@ Remove unnecessary localhost check from reconnect command.
 2013-05-30-11 Catch more bad shader syntax cases
 2013-05-30-12 Fix null model axis disappearing if sky is in view
 
+2013-06-02-01 Fix setting COM_Parse current line number
+2013-06-02-02 Check for shaders without closing brace
+2013-06-02-03 Improve warning for shader missing opening brace
+
+2013-06-03-01 Make COM_ParseWarning report starting line number of multi-line tokens
+
+2013-06-04-01 skip: Allow recording VoIP in SP for demo commentaries
+2013-06-04-02 skip: Allow adjusting VoIP gain and mute during demo playback
+2013-06-04-03 skip: Allow adjusting VoIP gain and mute during SP demo playback
+
+2013-06-10-01 skip (legacy protocol):  Rate limit getchallenge
+
+2013-06-11-01 Don't try to fog flares with fogNum 0
+
+2013-06-18-01 Only allow model meshes to have SHADER_MAX_VERTEXES - 1 vertexes
+2013-06-18-02 skip:  Fix IQM tess buffer overflow
+
+2013-06-20-01 skip (rend2):  Fix r_speeds 4 in OpenGL2 renderer
+2013-06-20-02 skip (rend2):  Fix r_nocurves in OpenGL2 renderer
+2013-06-20-03 skip (rend2):  Fix r_mergeLightmaps 0 crashing OpenGL2 renderer
+
+2013-06-26-01 skip (done differently):  Prevent the skip of the glyph if it does not fit
+2013-06-26-02 skip (no code):  Merge pull request #5 from morturp/patch-1
+
+2013-07-04-01 Free Team Arena fonts/fontImage_X.dat buffer
+
+2013-07-07-01 skip (LEGACY_MASTER_GAMENAME):  Fix getting servers from and being listed on id's q3 master server
+
+2013-07-08-01 skip (rend2):  (bug #5984) Unload renderer lib
+
+2013-07-09-01 SDL Mouse Button clean up
+
+2013-07-11-01 Remove unused models from server_t
+
+2013-07-12-01 skip (xcode):  Initial Xcode workspace & project support (4.6.3).
+
+2013-07-17-01 skip (xcode):  Fix the speex Xcode project since it was missing its header search path.
+2013-07-17-02 skip (xcode):  Added "all game" and "all ioquake3" schemes to Xcode workspace so tha...
+2013-07-17-03 (need to check):  out seems to be unnecessarily large for one byte per pixel
+2013-07-17-04 skip (no code):  Merge pull request #6 from morturp/patch-2
+2013-07-17-05 skip (jenkins):  bug 5986 - Configure jenkins to spit out mac .app
+2013-07-17-06 skip:  fix bug in make-macosx-app.sh with older shells
+2013-07-17-07 skip:  make-macosx-app.sh using single '=' comparisons
+2013-07-17-08 skip:  make-macosx-app.sh should use /bin/bash and not /bin/sh
+2013-07-17-09 skip:  Updated Makefile to only build release OS X app bundles
+2013-07-17-10 skip:  make-macosx-app.sh supports systems without libtool
+2013-07-17-11 skip:  make-macosx-app.sh supports systems without libtool, part 2
+2013-07-17-12 skip:  make-macosx-app.sh doesn't trust the output of 'which', so check for ...
+
+2013-07-18-01 skip:  Another pass at the Mac OS X make scripts.
+2013-07-18-02 skip:  Fix make-macosx-app.sh to make bundle on non-Mac OS X platforms
+2013-07-18-03 skip:  Makefile builds fall back to traditional archiving when Mac OS X appl...
+
+2013-07-21-01 Fix Windows server history scrolling
+2013-07-21-02 skip (rend2):  Add assignment below declarations otherwise compiling fails with msvc
+
+2013-07-22-01 skip (check: no togglemenu command):  Fix bind commands getting run when closing UI
+
+2013-08-03-01 skip:  Fix creating symlinks in make-macosx-app.sh
+2013-08-03-02 Fix text getting appended to vid_restart in command buffer
+
+2013-08-04-01 skip:  Remove 5 unused variables from make-macosx scripts
+
+2013-08-16-01 skip (openal):  Fix OpenAL music stop issues using stream stop code
+2013-08-16-02 Fix "bind <key>" message for unbound keys
+
+2013-08-23-01 skip (rend2):  #6004: OpenGL2: Make any CGEN_LIGHTING_DIFFUSE stages use lightall sh...
+2013-08-23-02 skip (rend2):  #5999: OpenGL2: Don't use lightall shader with deforms or adjustColor...
+2013-08-23-03 skip (rend2):  Fix upside-down SSAO.
+
+2013-08-25-01 Fix recursive crash when home path cannot be created
+
+2013-09-01-01 Fix targetNum check in cgame's tcmd
+
+2013-09-04-01 Bug #6021 Fix misuse of Sys_Mkdir (Joerg Dietrich)
+2013-09-04-02 Fix warning message in animation.cfg parsing functions
+2013-09-04-03 Fix crash caused by too many surfaces in skin
+
+2013-09-08-01 Free bot client if cannot load bot
+
+2013-09-16-01 skip (rend2):  #5979: Cubemap support for opengl2
+2013-09-16-02 skip (rend2):  OpenGL2: Use RGBM instead of RGBE encoding for lightmaps.
+2013-09-16-03 skip (rend2):  OpenGL2: Fix inaccurate RGBM calculation.
+2013-09-16-04 skip (rend2):  OpenGL2: Speed up fog shader slightly.
+2013-09-16-05 skip (rend2):  OpenGL2: Some shader cleanup
+
+2013-09-17-01 skip (rend2):  OpenGL2: Fix for "unsupported framebuffer format" bug
+2013-09-17-02 skip (rend2):  OpenGL2: reduce varying usage in lightall shader.
+
+2013-09-19-01 Fix UI parse message for menu files
+
+2013-09-20-01 skip (rend2):  OpenGL2: Disable GL_ARB_seamless_cube_map by default, caused huge fra...
+
+2013-09-24-01 skip (rend2):  OpenGL2: Remove AGEN_FRESNEL(superceded by cubemap patch), and some s...
+
+2013-10-07-01 skip (rend2):  OpenGL2: default to RGBM lightmap, and add r_floatLightmap for old be...
+
+2013-10-08-01 Revert "5097 - Menu corrupted on start (on IRIX)"
+
+2013-10-09-01 skip part (openal):  Drop sounds starting with * before allocating sfx slot
+
+2013-10-10-01 skip (rend2):  OpenGL2: Fix TCGEN_ENVIRONMENT stages not rendering correctly.
+
+2013-10-14-01 skip (rend2):  OpenGL2: Clean up texmod calculations, and improve vertex animation h...
+2013-10-14-02 skip (rend2):  OpenGL2: Use an idea from ETXreal and separate world VBO into separat...
+
+2013-10-15-01 skip (rend2):  OpenGL2: Merge bsp surface structs into a single struct, and more cle...
+
+2013-10-28-01 Clear more variables in CL_InitServerInfo
+
+2013-10-29-01 skip (iqm):  Support IQMs with joints and no poses
+2013-10-29-02 skip (iqm):  Add support for IQM int blend indices and float blend weights
+2013-10-29-03 skip (iqm):  IQM int/float vertex arrays were already swapped
+2013-10-29-04 skip (iqm):  Fix IQM comments refering to IQM_BYTE instead of IQM_UBYTE
+2013-10-29-05 skip (iqm):  Initialize blendIndexesType and blendWeightsType
+2013-10-29-06 skip (rend2):  Merge last two commits into renderergl2
+
+2013-11-02-01 Remove unused shader state code from tr_local.h
+2013-11-02-02 Remove vertexLightmap from textureBundle_t, it's never qtrue
+2013-11-02-03 skip (check):  Fix video recording sync drift (patch refactored but original author...
+
+2013-11-03-01 skip (rend2):  OpenGL2: Reduce glsl shader count by using a uniform to disable textu...
+
+2013-11-04-01 skip (rend2):  OpenGL2: Revisit fragment tangent space calculation, and remove tange...
+2013-11-04-02 skip (rend2):  OpenGL2: Some small shader optimizations.
+
+2013-11-05-01 skip (rend2):  OpenGL2: Reimplement soft overbright to avoid a framebuffer blit.
+2013-11-05-02 skip (rend2):  OpenGL2: Prefer VBO/IBO sizes of around 4MB.
+
+2013-11-06-01 skip (not needed):  Fix running if built on OS X 10.9
+
+2013-11-07-01 skip (rend2):  OpenGL2: Small optimizations and comments in world VBO creation and s...
+
+2013-11-08-01 skip (rend2):  OpenGL2: Remove srfTriangle_t, and use glIndex_t instead.
+2013-11-08-02 Fix VM FOpenFile( FS_READ ) files seeking twice in FS_Seek
+2013-11-08-03 Remove unused variable baseOffset from fsh[]
+2013-11-08-04 Support FS_SEEK_END and negative offset for zipped files in FS_Seek
+2013-11-08-05 Remove old comment that FS_Seek doesn't work on zipped files
+2013-11-08-06 Remove function prototypes for non-existant Sys_* DLL functions
+2013-11-08-07 skip (rend2):  Merge branch 'glindex_size_fixes' of https://github.com/inolen/ioq3 i...
+
+2013-11-09-01 Fix flares being invisible after vid_restart
+
+2013-11-10-01 skip (openal):  Make OpenAL buffer management work on OS X
+2013-11-10-02 skip (openal):  Fix restoring loop sound position on OS X
+2013-11-10-03 skip (openal):  Fix cinematics often being silent on OS X
+2013-11-10-04 Remove unused cvar_t variable cl_trn
+2013-11-10-05 skip (rend2):  Fix comparing unsigned values to < 0 in gl2

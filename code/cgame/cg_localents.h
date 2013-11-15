@@ -119,6 +119,17 @@ typedef struct localEntity_s {
 
 } localEntity_t;
 
+typedef struct fxForce_s {
+	int startTime;
+	int duration;
+	vec3_t origin;
+	vec3_t dir;
+	qboolean radial;
+	float power;
+	qboolean valid;
+} fxExternalForce_t;
+
+
 //FIXME hack, loop sounds independent of an actual entity
 #define FX_LOOP_SOUNDS_BASE (MAX_LOOP_SOUNDS / 2  + 1)
 
@@ -151,5 +162,8 @@ void CG_RunFxAll (const char *name);
 
 void CG_GetStoredScriptVarsFromLE (const localEntity_t *le);
 void CG_ShutdownLocalEnts (qboolean destructor);
+void CG_UpdateFxExternalForces (void);
+void CG_AddFxExternalForce (fxExternalForce_t *force);
+void CG_ClearFxExternalForces (void);
 
 #endif  // cg_localents_h_included
