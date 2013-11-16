@@ -894,6 +894,8 @@ vmCvar_t cg_fxCompiled;
 #ifdef ENABLE_THREADS
  vmCvar_t cg_fxThreads;
 #endif
+vmCvar_t cg_fxq3mmeCompatibility;  //FIXME maybe not
+
 vmCvar_t cg_vibrate;
 vmCvar_t cg_vibrateTime;
 vmCvar_t cg_vibrateMaxDistance;
@@ -1834,6 +1836,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 #ifdef ENABLE_THREADS
 	{ cvp(cg_fxThreads), "1", CVAR_ARCHIVE },
 #endif
+	//{ cvp(cg_fxq3mmeCompatibility), "0", CVAR_ARCHIVE },
+
 	{ &cg_vibrate, "cg_vibrate", "0", CVAR_ARCHIVE },
 	{ &cg_vibrateTime, "cg_vibrateTime", "150.0", CVAR_ARCHIVE },
 	{ &cg_vibrateMaxDistance, "cg_vibrateMaxDistance", "800", CVAR_ARCHIVE },

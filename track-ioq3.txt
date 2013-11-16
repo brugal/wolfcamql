@@ -1117,3 +1117,5 @@ Remove unnecessary localhost check from reconnect command.
 2013-11-10-03 skip (openal):  Fix cinematics often being silent on OS X
 2013-11-10-04 Remove unused cvar_t variable cl_trn
 2013-11-10-05 skip (rend2):  Fix comparing unsigned values to < 0 in gl2
+
+2013-11-12-01 skip (rend2):  OpenGL2: Calculate bitangent in shader, and store normal/tangent as n...

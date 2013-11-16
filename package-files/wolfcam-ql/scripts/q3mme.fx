@@ -225,7 +225,8 @@ player/gibbed {
 		emitter 5 + rand*3 {
 			sink 0.9 50
 			moveBounce 800 0.6
-			anglesModel
+                        // wolfcam  this is called after impact and distance
+			//anglesModel
 			impact 50 {
                                 // wolfcam  need to add gib splat sounds yourself
                                 if rand < 0.5 {
@@ -260,6 +261,7 @@ player/gibbed {
 					sprite
 				}
 			}
+                        anglesModel  // wolfcam  moved down here
 		}
 	}
     } else {
@@ -298,7 +300,8 @@ player/gibbed {
 		emitter 1 + rand*0.5 {
 			sink 0.9 50
 			moveBounce 800 0.6
-			anglesModel
+                        // wolfcam  this is called after impact and distance
+			//anglesModel
 			impact 50 {
                                 if rand < 0.5 {
                                     t0 rand * 4
@@ -328,6 +331,7 @@ player/gibbed {
 					sprite
 				}
 			}
+                        anglesModel  // wolfcam  moved down here
 		}
       }
   }

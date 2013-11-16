@@ -3033,6 +3033,8 @@ extern vmCvar_t cg_fxLightningGunImpactFps;
 extern vmCvar_t cg_fxDebugEntities;
 extern vmCvar_t cg_fxCompiled;
 extern vmCvar_t cg_fxThreads;
+extern vmCvar_t cg_fxq3mmeCompatibility;  //FIXME maybe not
+
 extern vmCvar_t cg_vibrate;
 extern vmCvar_t cg_vibrateTime;
 extern vmCvar_t cg_vibrateMaxDistance;

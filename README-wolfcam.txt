@@ -237,6 +237,7 @@ q3mme fx scripting
      thresholds
 
   cg_fxCompiled  enable/disable performance optimization (2 or higher enables debugging output)
+
   cg_vibrate
   cg_vibrateForce
   cg_vibrateTime
@@ -521,6 +522,35 @@ aren't available.
 9) The maximum number of dynamic lights for both wolfcamql and q3mme is 32.
   You should restrict the use of 'Light' to flash effects, explosions, and
   possibly rocket projectiles.
+
+10) wolfcam incompatibility with q3mme fx:  In wolfcam scripting for an emitted entity stops once it has been added, so 'impact', 'distance', and 'interval' scripts need to come before 'sprite', 'model', and other rendering directives.
+    Ex:
+
+         emitter 10 {
+            ...
+            sprite  // in wolfcam scripting stops here
+            distance 50 {
+               // in wolfcam this is never run, it will run in q3mme
+            }
+            //sprite  // if it's added here in wolfcam it will now run
+         }
+
+    This is because in q3mme the the 'emitter' is the entity and 'sprite' is a directive to draw itself.  In wolfcam the 'sprite' is an entity separate from 'emitter'.  Ex:
+
+         emitter 10 {
+            ...
+            origin2 origin2 + 100
+            sprite
+            ...
+            origin2 origin2 + 100
+            sprite
+            ...
+            origin2 origin2 + 100
+            sprite
+            ...
+         }
+
+    In q3mme this is a 'particle' that will draw itself 3 times in 3 different places at the same time, in wolfcam this creates 3 different and independent 'sprite' particles.
 
 ---------------------------------------------------------------
 

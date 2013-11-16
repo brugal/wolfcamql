@@ -480,6 +480,15 @@ void CG_MakeLowPriorityEntity (localEntity_t *le)
 	Unlock_EntList();
 }
 
+static void R_AddRefEntityPtrToScene (refEntity_t *ent)
+{
+	if (cg_fxq3mmeCompatibility.integer) {
+		trap_R_AddRefEntityToScene(ent);
+	} else {
+		trap_R_AddRefEntityPtrToScene(ent);
+	}
+}
+
 /*
 ====================================================================================
 
@@ -877,7 +886,7 @@ static void CG_AddFragment( localEntity_t *le ) {
 				//Lock_EntList();
 				//CG_FreeLocalEntity(le);
 				//Unlock_EntList();
-				// already called trap_R_AddRefEntityPtrToScene()
+				// already called R_AddRefEntityPtrToScene()
 				le->endTime = 0;
 				//le->startTime = -1;
 				le->fxType = 0;
@@ -890,7 +899,7 @@ static void CG_AddFragment( localEntity_t *le ) {
 				//Lock_EntList();
 				//CG_FreeLocalEntity(le);
 				//Unlock_EntList();
-				// already called trap_R_AddRefEntityPtrToScene()
+				// already called R_AddRefEntityPtrToScene()
 				le->endTime = 0;
 				//le->startTime = -2;
 				le->fxType = 0;
@@ -1640,7 +1649,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 	CG_GetStoredScriptVarsFromLE(le);
 
 	// testing
-	//trap_R_AddRefEntityPtrToScene(&le->refEntity);
+	//R_AddRefEntityPtrToScene(&le->refEntity);
 	//return;
 
 	if (cg.renderingThirdPerson  ||  cg.freecam) {
@@ -1758,12 +1767,12 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			oldZ = re->origin[2];
 			re->origin[2] -= ScriptVars.sink2 * (1.0 - (float)tf / sinkTime);
 			newZ = re->origin[2];
-			trap_R_AddRefEntityPtrToScene(re);
+			R_AddRefEntityPtrToScene(re);
 			re->origin[2] = oldZ;
 		} else {
 			oldZ = re->origin[2];
 			newZ = re->origin[2];
-			trap_R_AddRefEntityPtrToScene(re);
+			R_AddRefEntityPtrToScene(re);
 		}
 
 		switch (re->reType) {
@@ -1774,7 +1783,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 				//Lock_EntList();
 				//CG_FreeLocalEntity(le);
 				//Unlock_EntList();
-				// already called trap_R_AddRefEntityPtrToScene()
+				// already called R_AddRefEntityPtrToScene()
 				le->endTime = 0;
 				//le->startTime = -3;
 				le->fxType = 0;
@@ -1788,7 +1797,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 				//Lock_EntList();
 				//CG_FreeLocalEntity(le);
 				//Unlock_EntList();
-				// already called trap_R_AddRefEntityPtrToScene()
+				// already called R_AddRefEntityPtrToScene()
 				le->endTime = 0;
 				//le->startTime = -4;
 				le->fxType = 0;
@@ -1988,7 +1997,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		//FIXME trace, stop, gravity, bounce, distance
 	}
 
-	//trap_R_AddRefEntityPtrToScene(&le->refEntity);
+	//R_AddRefEntityPtrToScene(&le->refEntity);
 
 	len = Distance(cg.refdef.vieworg, ScriptVars.origin);
 	if (len > 500) {
@@ -2006,7 +2015,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		ratio = re->radius / len;
 		if (ratio < cg_fxratio.value) {  //0.002) {
 			//Com_Printf("returning\n");
-			trap_R_AddRefEntityPtrToScene(re);
+			R_AddRefEntityPtrToScene(re);
 			return;
 		}
 	}
@@ -2025,9 +2034,13 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		}
 #endif
         //Com_Printf("^1radius: %f\n", re->radius);
-		CG_RunQ3mmeScript(le->emitterScript, le->emitterScriptEnd);
-		//FIXME q3mme compatability
-		//CG_RunQ3mmeScript(le->emitterScript, NULL);
+
+		if (cg_fxq3mmeCompatibility.integer) {
+			CG_RunQ3mmeScript(le->emitterScript, NULL);
+		} else {
+			CG_RunQ3mmeScript(le->emitterScript, le->emitterScriptEnd);
+		}
+
 		EmitterScript = qfalse;
 		DistanceScript = qfalse;
 		le->lastRunTime = cg.ftime;
@@ -2051,7 +2064,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			// use re->origin
 		}
 		//Com_Printf("width %f\n", re->width);
-		trap_R_AddRefEntityPtrToScene(re);
+		R_AddRefEntityPtrToScene(re);
 		return;
 	}
 
@@ -2207,7 +2220,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 	//Com_Printf("origin: %f %f %f\n", re->origin[0], re->origin[1], re->origin[2]);
     //Com_Printf("adding sprite SV %f  radius %f\n", ScriptVars.size, re->radius);
 
-	trap_R_AddRefEntityPtrToScene(re);
+	R_AddRefEntityPtrToScene(re);
 }
 
 static void CG_Run_FX_Emitted_Script (localEntity_t *le)
@@ -2408,11 +2421,11 @@ static void CG_AddLocalEntitiesExt (int threadNum)
 			//Lock_EntList();
 			//CG_FreeLocalEntity(le);
 			//Unlock_EntList();
-			//trap_R_AddRefEntityPtrToScene(&le->refEntity);
+			//R_AddRefEntityPtrToScene(&le->refEntity);
 			continue;
 		} else if (le->leFlags & LEF_ALREADY_ADDED_FX) {
 			Lock_SysCall();
-			trap_R_AddRefEntityPtrToScene(&le->refEntity);
+			R_AddRefEntityPtrToScene(&le->refEntity);
 			Unlock_SysCall();
 			continue;
 		}

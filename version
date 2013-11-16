@@ -1,4 +1,12 @@
-10.3test1
+10.3  2013-11-16
+
+* documentation note about q3mme fx incompatibility introduced in the last couple of releases:
+
+   In wolfcam scripting for an emitted entity stops once it has been added, so 'impact', 'distance', and 'interval' scripts need to come before 'sprite', 'model', and other rendering directives.
+
+   see README-wolfcam.txt for more information
+
+   sample q3mme.fx changed to match that (2 changes to the gibbed scripts)
 
 * cg_drawHitFriendTime  (same as quake live)
 * cl_keepDemoFileInMemory  to enable or disable completely loading the demo at the start of demo playback  (1 (default) for performance improvements while rewinding and fastforwading, 0 for demos that aren't completely saved yet)

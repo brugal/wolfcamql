@@ -1275,6 +1275,7 @@ http://www.quakelive.com/forum/showthread.php?33065-QLPP18-Follow-up-Update
      distance 50 {
 
   distance not called if it comes after
+
 * q3mme fx compatability broken in last 2 releases:  adding entities as
   pointers lets script code change values after they have been added:
 
@@ -1286,6 +1287,8 @@ http://www.quakelive.com/forum/showthread.php?33065-QLPP18-Follow-up-Update
        Light
 
   size changes the size of the 'Sprite' as well as Light
+
+* q3mme fx compatibility not enough with those two... have to make sprite, model, etc.. drawing directives and only the emitter is a particle entity with a script
 
 * check if mac spams about q_strncpyz() overlap
 * drawhitfriend change to 0 and 1500 while in freecam icon changes size
