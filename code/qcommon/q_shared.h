@@ -27,7 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // A user mod should never modify this file
 
 #define PROTOCOL_Q3 68
-#define PROTOCOL_QL 73
+//#define PROTOCOL_QL 73
+#define PROTOCOL_QL 90
 
 #ifdef STANDALONE
   #define PRODUCT_NAME			"iofoo3"
@@ -1213,6 +1214,14 @@ typedef struct playerState_s {
 	int			pmove_framecount;
 	int			jumppad_frame;
 	int			entityEventSequence;
+
+	// ql protocol 90
+	qboolean doubleJumped;
+	int jumpTime;
+	int unknown1;
+	int unknown2;
+	int unknown3;
+
 } playerState_t;
 
 
@@ -1327,6 +1336,11 @@ typedef struct entityState_s {
 	int		torsoAnim;		// mask off ANIM_TOGGLEBIT
 
 	int		generic1;
+
+	// ql protocol 90
+	int jumpTime;
+	qboolean doubleJumped;
+
 } entityState_t;
 
 typedef enum {

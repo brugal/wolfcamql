@@ -224,9 +224,12 @@ void CG_DrawInformation (qboolean loading)
 		//trap_R_SetColor(color);
 		CG_DrawPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, levelshot );
 
+		//FIXME new ql 2014-09-07 not found and spams "RE_RegisterShader(levelShotDetail) failed"
 		// blend a detail texture over it
 		detail = trap_R_RegisterShader( "levelShotDetail" );
-		trap_R_DrawStretchPic( 0, 0, cgs.glconfig.vidWidth, cgs.glconfig.vidHeight, 0, 0, 2.5, 2, detail );
+		if (detail) {
+			trap_R_DrawStretchPic( 0, 0, cgs.glconfig.vidWidth, cgs.glconfig.vidHeight, 0, 0, 2.5, 2, detail );
+		}
 
 		// draw the icons of things as they are loaded
 		CG_DrawLoadingIcons();

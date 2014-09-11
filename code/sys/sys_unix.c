@@ -20,6 +20,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#define __USE_GNU
+#define _GNU_SOURCE
+
+
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 #include "sys_local.h"
@@ -38,10 +42,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <libgen.h>
 #include <fcntl.h>
 #include <execinfo.h>
+
 //#define _GNU_SOURCE
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+//#ifndef _GNU_SOURCE
+//#define _GNU_SOURCE
+//#endif
+
 #include <dlfcn.h>
 
 //#ifdef __linux__
@@ -695,12 +701,19 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 #define _GNU_SOURCE
 #endif
 
+/*
+#ifndef __USE_GNU
+#define __USE_GNU
+#endif
+*/
+
 /* Bug in gcc prevents from using CPP_DEMANGLE in pure "C" */
 #if !defined(__cplusplus) && !defined(NO_CPP_DEMANGLE)
 #define NO_CPP_DEMANGLE
 #endif
 
 #include <ucontext.h>
+
 //#include <dlfcn.h>
 #ifndef NO_CPP_DEMANGLE
 #include <cxxabi.h>
@@ -718,11 +731,14 @@ using __cxxabiv1::__cxa_demangle;
 
 #if defined(REG_RIP)
 # define SIGSEGV_STACK_IA64
+#error lskdjflskdjflksdjf
 # define REGFORMAT "%016lx"
 #elif defined(REG_EIP)
+//#error ssss
 # define SIGSEGV_STACK_X86
 # define REGFORMAT "%08x"
 #else
+#error slkdjf
 # define SIGSEGV_STACK_GENERIC
 # define REGFORMAT "%x"
 #endif
@@ -847,10 +863,17 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 	}
 #else
 	sigsegv_outp("Stack trace (non-dedicated):");
+	//FIXME sz and strings not defined
+	{
+		int sz;
+		char **strings;
+
 	sz = backtrace(bt, 20);
 	strings = backtrace_symbols(bt, sz);
 	for(i = 0; i < sz; ++i)
 		sigsegv_outp("%s", strings[i]);
+	}
+
 #endif
 	sigsegv_outp("End of stack trace.");
 #else

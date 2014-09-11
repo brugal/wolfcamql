@@ -206,6 +206,9 @@ RE_AddRefEntityToScene
 =====================
 */
 void RE_AddRefEntityToScene( const refEntity_t *ent ) {
+
+	//Com_Printf("* ^3ent: %d -> %p\n", r_numentities, ent);
+
 	if ( !tr.registered ) {
 		return;
 	}
@@ -240,6 +243,8 @@ void RE_AddRefEntityPtrToScene (refEntity_t *ent)
 {
 	//RE_AddRefEntityToScene(ent);
 	//return;
+
+	//Com_Printf("* ^3ptr: %d -> %p\n", r_numentities, ent);
 
 	if ( !tr.registered ) {
 		return;

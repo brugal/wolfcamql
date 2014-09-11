@@ -283,7 +283,9 @@ static sfx_t *S_FindName( const char *name ) {
 		Com_Error (ERR_FATAL, "S_FindName: NULL");
 	}
 	if (!name[0]) {
-		Com_Error (ERR_FATAL, "S_FindName: empty name");
+		//Com_Error (ERR_FATAL, "S_FindName: empty name");
+		Com_Printf(S_COLOR_YELLOW "WARNING S_FindName: empty name\n");
+		return NULL;
 	}
 
 	if (strlen(name) >= MAX_QPATH) {
@@ -385,6 +387,10 @@ static sfxHandle_t	S_Base_RegisterSound( const char *name, qboolean compressed )
 	}
 
 	sfx = S_FindName( name );
+	if (!sfx) {
+		return 0;
+	}
+
 	if ( sfx->soundData ) {
 		if ( sfx->defaultSound ) {
 			//Com_Printf( S_COLOR_YELLOW "WARNING: could not find %s - using default\n", sfx->soundName );

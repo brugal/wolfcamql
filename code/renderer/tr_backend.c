@@ -1227,13 +1227,24 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			oldDlighted = dlighted;
 		}
 
+#if 0
+		if (backEnd.refdef.entities[entityNum].ePtr == NULL) {
+			Com_Printf("^1backend ent %d ePtr is NULL\n", entityNum);
+		}
+#endif
+
 		//
 		// change the modelview matrix if needed
 		//
-		if ( entityNum != oldEntityNum ) {
+		if ( entityNum != oldEntityNum) {
 			depthRange = isCrosshair = qfalse;
 
-			if ( entityNum != REFENTITYNUM_WORLD ) {
+			if ( entityNum != REFENTITYNUM_WORLD  &&  backEnd.refdef.entities[entityNum].ePtr == NULL) {
+				Com_Printf("^1%s refent ptr == NULL for entity %d\n", __FUNCTION__, entityNum);
+			}
+
+
+			if ( entityNum != REFENTITYNUM_WORLD  &&  backEnd.refdef.entities[entityNum].ePtr != NULL) {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
 				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->ePtr->shaderTime;
 				// we have to reset the shaderTime as well otherwise image animations start

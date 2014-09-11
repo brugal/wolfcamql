@@ -73,7 +73,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef BUILD_FREETYPE
 #include <ft2build.h>
-#include <freetype/ftoutln.h>
+//#include <freetype/ftoutln.h>
+//#include <freetype2/freetype/ftoutln.h>
+
+#if 1  //def 1  // BUILD_FREETYPE_OLD_INCLUDE
+#include <freetype2/freetype/ftoutln.h>
+#else
+#include <freetype2/ftoutln.h>
+#endif
+
 #include FT_FREETYPE_H
 #if 0
 #include <freetype2/freetype/config/ftconfig.h>
@@ -510,6 +518,9 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 	len = ri.FS_ReadFile(name, NULL);
 	//FIXME stupid shit, glyph->left integer
 	//if (len == sizeof(fontInfo_t) - GLYPHS_PER_FONT * sizeof(int)) {
+
+	//FIXME what if a ttf file is this length?
+
 	if (len == 20548) {
 		ri.FS_ReadFile(name, &faceData);
 		fdOffset = 0;
@@ -546,8 +557,11 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 	  //Com_Printf("%s %d registered as %s scale %f\n", fontName, pointSize, font->name, font->glyphScale);
 	  ri.FS_FreeFile(faceData);
 	  return;
+	} else if (len < 0) {
+		// couldn't open file, try ttf
 	} else {
-		Com_Printf("wrong font dat size:  %d, expected %d\n", len, (int)sizeof(fontInfo_t));
+		Com_Printf("^3WARNING RE_RegisterFont: wrong font dat size for '%s':  %d, expected %d\n", name, len, (int)sizeof(fontInfo_t));
+		return;
 	}
 
  try_ttf:
@@ -585,21 +599,21 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 
   len = ri.FS_ReadFile(fontName, &faceData);
   if (len <= 0) {
-    ri.Printf(PRINT_ALL, "RE_RegisterFont: Unable to read font file\n");
+	  ri.Printf(PRINT_ALL, "RE_RegisterFont: Unable to read font file '%s'\n", fontName);
 	font->name[0] = '\0';
     return;
   }
 
   // allocate on the stack first in case we fail
   if (FT_New_Memory_Face( ftLibrary, faceData, len, 0, &face )) {
-    ri.Printf(PRINT_ALL, "RE_RegisterFont: FreeType2, unable to allocate new face.\n");
+	  ri.Printf(PRINT_ALL, "RE_RegisterFont: FreeType2, unable to allocate new face for '%s'.\n", fontName);
 	font->name[0] = '\0';
     return;
   }
 
 
   if (FT_Set_Char_Size( face, pointSize << 6, pointSize << 6, dpi, dpi)) {
-    ri.Printf(PRINT_ALL, "RE_RegisterFont: FreeType2, Unable to set face char size.\n");
+	  ri.Printf(PRINT_ALL, "RE_RegisterFont: FreeType2, Unable to set face char size for '%s'.\n", fontName);
 	font->name[0] = '\0';
     return;
   }
@@ -611,7 +625,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 
   out = Z_Malloc(FONT_OUT_BUFFER_SIZE);
   if (out == NULL) {
-    ri.Printf(PRINT_ALL, "RE_RegisterFont: Z_Malloc failure during output image creation.\n");
+	  ri.Printf(PRINT_ALL, "RE_RegisterFont: Z_Malloc failure during output image creation for '%s'.\n", fontName);
 	font->name[0] = '\0';
     return;
   }
@@ -653,7 +667,7 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 		if (i == GLYPH_END) {
 			//Com_Printf("i == GLYPH_END\n");
 			if (xOut == -1  ||  yOut == -1) {
-				Com_Printf("FIXME last glyph being skipped\n");
+				Com_Printf("FIXME last glyph being skipped for '%s'\n", fontName);
 			}
 		}
 

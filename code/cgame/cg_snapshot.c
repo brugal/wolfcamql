@@ -41,34 +41,14 @@ void CG_ResetEntity( centity_t *cent ) {
 		cent->previousEvent = 0;
 	}
 
-	//Com_Printf("reset ent %d\n", cent - cg_entities);
-	cent->trailTime = cg.snap->serverTime;
-
-	cent->lastFlashIntervalTime = cg.ftime;
-	cent->lastFlashDistanceTime = cg.ftime;
-
-	cent->lastModelIntervalTime = cg.ftime;
-	cent->lastModelDistanceTime = cg.ftime;
-
-	cent->lastTrailIntervalTime = cg.ftime;
-	cent->lastTrailDistanceTime = cg.ftime;
-
-	cent->lastImpactIntervalTime = cg.ftime;
-	cent->lastImpactDistanceTime = cg.ftime;
-
-	VectorCopy(cent->currentState.pos.trBase, cent->lastFlashIntervalPosition);
-	VectorCopy(cent->currentState.pos.trBase, cent->lastFlashDistancePosition);
-	VectorCopy(cent->currentState.pos.trBase, cent->lastModelIntervalPosition);
-	VectorCopy(cent->currentState.pos.trBase, cent->lastModelDistancePosition);
-	VectorCopy(cent->currentState.pos.trBase, cent->lastTrailIntervalPosition);
-	VectorCopy(cent->currentState.pos.trBase, cent->lastTrailDistancePosition);
-	VectorCopy(cent->currentState.pos.trBase, cent->lastImpactIntervalPosition);
-	VectorCopy(cent->currentState.pos.trBase, cent->lastImpactDistancePosition);
 
 	//VectorCopy (cent->currentState.origin, cent->lerpOrigin);
 	//VectorCopy (cent->currentState.angles, cent->lerpAngles);
 	VectorCopy(cent->currentState.pos.trBase, cent->lerpOrigin);
 	VectorCopy(cent->currentState.pos.trBase, cent->lerpAngles);
+
+	CG_ResetFXIntervalAndDistance(cent);
+	cent->trailTime = cg.snap->serverTime;
 
 	CG_UpdatePositionData(cent, &cent->flightPositionData);
 	CG_UpdatePositionData(cent, &cent->hastePositionData);

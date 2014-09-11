@@ -203,6 +203,7 @@ Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
 LOKISETUPDIR=misc/setup
 NSISDIR=misc/nsis
 SDLHDIR=$(MOUNT_DIR)/SDL12
+VORBISHDIR=$(MOUNT_DIR)/vorbis
 LIBSDIR=$(MOUNT_DIR)/libs
 
 bin_path=$(shell which $(1) 2> /dev/null)
@@ -386,6 +387,8 @@ endif
 
   ifeq ($(USE_LOCAL_HEADERS),1)
     #CLIENT_CFLAGS += -I$(SDLHDIR)/include
+    #CLIENT_CFLAGS += -I$(VORBISHDIR)/include
+    #CLIENT_CFLAGS += -I$(SDLHDIR)/include
   endif
 
   ifeq ($(ARCH),i386)
@@ -513,7 +516,8 @@ ifeq ($(PLATFORM),mingw32)
     WINDRES=windres
   endif
 
-  #ARCH=x86
+  #FIXME adding to enable mingw32 compile using linux 32-bit
+  ARCH=x86
 
   # was -g
   # gdb.exe wants -gstabs ?
@@ -560,17 +564,18 @@ ifeq ($(PLATFORM),mingw32)
 #    -fstrength-reduce
 #  OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
+
   ifeq ($(ARCH),x64)
     OPTIMIZEVM = -DNQDEBUG -O3 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
-      -fstrength-reduce
+      -fstrength-reduce -m64
     OPTIMIZE = $(OPTIMIZEVM) --fast-math
     HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
     OPTIMIZEVM = -DNQDEBUG -O3 -march=i586 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
-      -fstrength-reduce
+      -fstrength-reduce -m32
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   endif
@@ -1021,7 +1026,8 @@ endef
 
 define DO_CPP
 $(echo_cmd) "CPP $<"
-$(Q)$(CPP) -Wall -o $@ -c $<
+#$(Q)$(CPP) -Wall -m32 -o $@ -c $<
+$(CPP) -Wall -m32 -o $@ -c $<
 endef
 
 define DO_SMP_CC

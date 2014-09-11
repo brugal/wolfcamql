@@ -137,7 +137,8 @@ void CL_ParsePacketEntities( msg_t *msg, const clSnapshot_t *oldframe, clSnapsho
 		}
 
 		if ( msg->readcount > msg->cursize ) {
-			Parse_Error (ERR_DROP,"CL_ParsePacketEntities: end of message");
+			Parse_Error (ERR_DROP,"CL_ParsePacketEntities: end of message: %d > %d  entity: %d", msg->readcount, msg->cursize, newnum);
+			//Com_Printf ("^3CL_ParsePacketEntities: end of message: %d > %d", msg->readcount, msg->cursize);
 			return;
 		}
 

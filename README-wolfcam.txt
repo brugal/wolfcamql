@@ -281,6 +281,8 @@ Some additions to q3mme fx scripting:
         'end' is the direction of the shooter if their position is valid,
               otherwise the length of this vector is 0
 
+* 'animFrame' variable added to control model animations, player/[legs|torso|head]/trail automatically set this from current player animation
+
 * additional commands for testing/debugging:
        'return'  to exit the current script
        'continue'  to skip the current block (skip to end brace)

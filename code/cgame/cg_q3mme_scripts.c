@@ -73,38 +73,6 @@ static int EmittedEntities = 0;
 
 //static qboolean WithinComment = qfalse;
 
-#if 0
-enum {
-	TOKEN_NOID = 0,
-	TOKEN_ORIGIN = 1,
-	TOKEN_ORIGIN0,
-	TOKEN_ORIGIN1,
-	TOKEN_ORIGIN2,
-
-	TOKEN_V1,
-	//FIXME rest
-
-	TOKEN_COLORFADE,
-	TOKEN_MOVEGRAVITY,
-
-	TOKEN_ADDSCALE,
-
-	TOKEN_LERP,
-	TOKEN_EMITTERID,
-
-	TOKEN_SPRITE,
-
-	TOKEN_MATH_MULT,
-
-	//
-	TOKEN_NUMBER,
-
-	//////////////////
-
-	TOKEN_FIXME,
-};
-#endif
-
 enum {
 	// runscript()
 
@@ -257,6 +225,7 @@ enum {
     TOKEN_RETURN,
     TOKEN_CONTINUE,
     TOKEN_COMMAND,
+	TOKEN_ANIMFRAME,
 
     ////////////
 
@@ -348,32 +317,6 @@ typedef struct {  // fxToken_s {
 	int id;
 } fxToken_t;
 
-#if 0
-static fxToken_t fxTokens[] = {
-	{ NULL, TOKEN_NOID },
-
-	{ "origin", TOKEN_ORIGIN },
-	{ "origin0", TOKEN_ORIGIN0 },
-	{ "origin1", TOKEN_ORIGIN1 },
-	{ "origin2", TOKEN_ORIGIN2 },
-
-	{ "v1", TOKEN_V1 },
-
-	{ "colorfade", TOKEN_COLORFADE },
-	{ "movegravity", TOKEN_MOVEGRAVITY },
-
-	{ "addscale", TOKEN_ADDSCALE },
-
-
-	{ "emitterid", TOKEN_EMITTERID },
-
-	{ "sprite", TOKEN_SPRITE },
-
-	{ "lerp", TOKEN_LERP },
-	{ "*", TOKEN_MATH_MULT },
-
-};
-#endif
 
 static fxToken_t fxTokens[] = {
     { NULL, TOKEN_NOID },
@@ -526,6 +469,7 @@ static fxToken_t fxTokens[] = {
     { "return", TOKEN_RETURN },
     { "continue", TOKEN_CONTINUE },
     { "command", TOKEN_COMMAND },
+	{ "animframe", TOKEN_ANIMFRAME },
 
 	// math
 
@@ -788,7 +732,8 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
     char token[MAX_QPATH];
     //char buffer[256];  //FIXME
     const char *p;
-    float ops[MAX_OPS];
+    //double ops[MAX_OPS];
+	float ops[MAX_OPS];
     int numOps;
     int i;
     int j;
@@ -915,63 +860,6 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
             }
         }
 
-
-#if 0
-		// tks math
-		if (tokenId) {
-			//Com_Printf("^5q3math tokenid %d\n", tokenId);
-			switch(tokenId) {
-			case TOKEN_ORIGIN:
-				goto origintoken;
-				break;
-			case TOKEN_ORIGIN0:
-				goto origin0token;
-				break;
-			case TOKEN_ORIGIN1:
-				goto origin1token;
-				break;
-			case TOKEN_ORIGIN2:
-				goto origin2token;
-				break;
-
-			case TOKEN_V1:
-				goto v1token;
-				break;
-
-			case TOKEN_LERP:
-				goto lerptoken;
-				break;
-
-			case TOKEN_COLORFADE:
-				goto colorfadetoken;
-				break;
-
-			case TOKEN_MOVEGRAVITY:
-				goto movegravitytoken;
-				break;
-
-			case TOKEN_EMITTERID:
-				goto emitteridtoken;
-				break;
-
-			case TOKEN_MATH_MULT:
-				goto mathmulttoken;
-				break;
-
-			case TOKEN_NUMBER:
-				ops[numOps] = OP_VAL;
-				numOps++;
-				ops[numOps] = tokenValue;
-				numOps++;
-				goto handledToken;
-				break;
-
-			default:
-				Com_Printf("^1CG_Q3mmeMathExt() unhandled token %d '%s'\n", tokenId, token);
-				break;
-			}
-		}
-#endif
 
 		if (tokenId) {
 			switch (tokenId) {
@@ -1334,6 +1222,9 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
 				break;
 			case TOKEN_SIZE:
 				goto sizetoken;
+				break;
+			case TOKEN_ANIMFRAME:
+				goto animframetoken;
 				break;
 
 			////////////////////
@@ -1931,14 +1822,14 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
         } else if (!Q_stricmpt(token, "time")) {
 		timetoken:
             ops[numOps] = OP_VAL;
-            ops[numOps + 1] = (cg.ftime - (float)cgs.levelStartTime) / 1000.0;
+            ops[numOps + 1] = (float)((cg.ftime - (float)cgs.levelStartTime) / 1000.0);
             //ops[numOps + 1] = (cg.time - (float)cgs.levelStartTime) / 1000.0;
             numOps += 2;
 			goto handledToken;
 		} else if (!Q_stricmpt(token, "cgtime")) {
 		cgtimetoken:
 			ops[numOps] = OP_VAL;
-			ops[numOps + 1] = cg.ftime;
+			ops[numOps + 1] = (float)cg.ftime;
 			numOps += 2;
 			goto handledToken;
         } else if (!Q_stricmpt(token, "loop")) {
@@ -2369,6 +2260,12 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
 		gametypetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = cgs.gametype;
+            numOps += 2;
+			goto handledToken;
+        } else if (!Q_stricmpt(token, "animframe")) {
+		animframetoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.animFrame;
             numOps += 2;
 			goto handledToken;
 
@@ -3625,7 +3522,12 @@ static void CG_FX_Model (fxModelType_t ftype)
 				AnglesToAxis(ScriptVars.angles, re->axis);
 			}
 		}
+	} else if (ftype == FX_MODEL_AXIS) {
+		VectorCopy(ScriptVars.axis[0], re->axis[0]);
+		VectorCopy(ScriptVars.axis[1], re->axis[1]);
+		VectorCopy(ScriptVars.axis[2], re->axis[2]);
 	}
+
 	//Com_Printf("rotation %f\n", re->rotation);
 
 	//RotateAroundDirection(re->axis, cg.time / 4);
@@ -3642,6 +3544,8 @@ static void CG_FX_Model (fxModelType_t ftype)
 		VectorScale(re->axis[2], re->radius, re->axis[2]);
 		re->nonNormalizedAxes = qtrue;
 	}
+
+	re->frame = ScriptVars.animFrame;
 
 	// add to refresh list, possibly with quad glow
 	//CG_AddRefEntityWithPowerups( &ent, s1, TEAM_FREE );  //FIXME missile?
@@ -4438,6 +4342,9 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 			break;
 		case TOKEN_COMMAND:
 			goto commandtoken;
+			break;
+		case TOKEN_ANIMFRAME:
+			goto animframetoken;
 			break;
 		default:
 			Com_Printf("^1CG_RunQ3mmeScript() unhandled token %d '%s'\n", tokenId, token);
@@ -6583,22 +6490,24 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 			char c;
 			int count;
 			char newToken[MAX_QPATH];
+			char outputToken[MAX_STRING_CHARS];
 
 			count = 0;
-			memset(token, 0, sizeof(token));
+			memset(outputToken, 0, sizeof(outputToken));
 
 			trap_autoWriteConfig(qfalse);
 			cg.configWriteDisabled = qtrue;
 
 			while (1) {
 				c = script[0];
+				//Com_Printf("^1script[0] '%c'\n", c);
 				if (c == '\n'  ||  c == '\f'  ||  c == '\r'  ||  c == '\0') {
 					if (count < (MAX_STRING_CHARS - 2)) {
-						token[count] = '\n';
+						outputToken[count] = '\n';
 						count++;
-						token[count] = '\0';
-						//Com_Printf("^3'%s'\n", token);
-						trap_SendConsoleCommandNow(token);
+						outputToken[count] = '\0';
+						//Com_Printf("^3'%s'\n", outputToken);
+						trap_SendConsoleCommandNow(outputToken);
 					} else {
 						Com_Printf("^1ERROR: 'command' string too long\n");
 					}
@@ -6617,25 +6526,45 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 								newToken[i] = '\0';
 								//CG_Q3mmeMath(newToken, &f, &err);
 								CG_Q3mmeMathExt(newToken, NULL, &f, &err, qfalse);
+								//Com_Printf("last token = '%c'\n", c);
 								//Com_Printf("'%s'  %f\n", newToken, f);
-								script--;
+								//script--;
 								break;
 							}
 							newToken[i] = c;
 							i++;
 						}
 
-						Com_sprintf(&token[count], (MAX_STRING_CHARS - 1) - count, "%f", f);
-						count = strlen(token);
+						//Com_Printf("*** old token '%s'\n", outputToken);
+						Com_sprintf(&outputToken[count], (MAX_STRING_CHARS - 1) - count, "%f", f);
+						//Com_Printf("*** new token '%s'\n", outputToken);
+						count = strlen(outputToken);
 						continue;
 					}
 				}
-				token[count] = c;
+
+				outputToken[count] = c;
 				count++;
 				script++;
+
+				//Com_Printf("xxxxx tk '%s'\n", outputToken);
 			}
+
+			// done
+
 			}
 			goto handledToken;
+        } else if (!Q_stricmpt(token, "animframe")) {
+		animframetoken:
+            //Com_Printf("script size\n");
+            err = 0;
+            script = CG_Q3mmeMath(script, &ScriptVars.animFrame, &err);
+            if (err) {
+                Com_Printf("^1math error\n");
+                return qtrue;
+            }
+			goto handledToken;
+
         } else if (token[0] != '\0'  &&  token[0] != '}') {
             Com_Printf("q3mme script unknown token: '%s'  tokenId %d  rest: '%s'\n", token, tokenId, script);
 			//Com_Printf("%d\n", trap_Milliseconds() - startTime);
@@ -7400,6 +7329,48 @@ static void CG_ResetFXScripting (void)
 	EmittedEntities = 0;
 }
 
+void CG_ResetFXIntervalAndDistance (centity_t *cent)
+{
+	VectorCopy(cent->lerpOrigin, cent->lastFlashDistancePosition);
+	VectorCopy(cent->lerpOrigin, cent->lastModelDistancePosition);
+	VectorCopy(cent->lerpOrigin, cent->lastTrailDistancePosition);
+	VectorCopy(cent->lerpOrigin, cent->lastImpactDistancePosition);
+	VectorCopy(cent->lerpOrigin, cent->lastLegsDistancePosition);
+	VectorCopy(cent->lerpOrigin, cent->lastTorsoDistancePosition);
+	VectorCopy(cent->lerpOrigin, cent->lastHeadDistancePosition);
+
+	VectorCopy(cent->lerpOrigin, cent->lastFlashIntervalPosition);
+	VectorCopy(cent->lerpOrigin, cent->lastModelIntervalPosition);
+	VectorCopy(cent->lerpOrigin, cent->lastTrailIntervalPosition);
+	VectorCopy(cent->lerpOrigin, cent->lastImpactIntervalPosition);
+	VectorCopy(cent->lerpOrigin, cent->lastLegsIntervalPosition);
+	VectorCopy(cent->lerpOrigin, cent->lastTorsoIntervalPosition);
+	VectorCopy(cent->lerpOrigin, cent->lastHeadIntervalPosition);
+
+	cent->trailTime = cg.ftime;  //cg.snap->serverTime;
+
+	cent->lastFlashIntervalTime = cg.ftime;
+	cent->lastFlashDistanceTime = cg.ftime;
+
+	cent->lastModelIntervalTime = cg.ftime;
+	cent->lastModelDistanceTime = cg.ftime;
+
+	cent->lastTrailIntervalTime = cg.ftime;
+	cent->lastTrailDistanceTime = cg.ftime;
+
+	cent->lastImpactIntervalTime = cg.ftime;
+	cent->lastImpactDistanceTime = cg.ftime;
+
+	cent->lastLegsIntervalTime = cg.ftime;
+	cent->lastLegsDistanceTime = cg.ftime;
+
+	cent->lastTorsoIntervalTime = cg.ftime;
+	cent->lastTorsoDistanceTime = cg.ftime;
+
+	cent->lastHeadIntervalTime = cg.ftime;
+	cent->lastHeadDistanceTime = cg.ftime;
+}
+
 void CG_ReloadQ3mmeScripts (const char *fileName)
 {
 	int i;
@@ -7418,30 +7389,7 @@ void CG_ReloadQ3mmeScripts (const char *fileName)
 			continue;
 		}
 
-		VectorCopy(cent->lerpOrigin, cent->lastFlashDistancePosition);
-		VectorCopy(cent->lerpOrigin, cent->lastModelDistancePosition);
-		VectorCopy(cent->lerpOrigin, cent->lastTrailDistancePosition);
-		VectorCopy(cent->lerpOrigin, cent->lastImpactDistancePosition);
-
-		VectorCopy(cent->lerpOrigin, cent->lastFlashIntervalPosition);
-		VectorCopy(cent->lerpOrigin, cent->lastModelIntervalPosition);
-		VectorCopy(cent->lerpOrigin, cent->lastTrailIntervalPosition);
-		VectorCopy(cent->lerpOrigin, cent->lastImpactIntervalPosition);
-
-		cent->trailTime = cg.ftime;  //cg.snap->serverTime;
-
-		cent->lastFlashIntervalTime = cg.ftime;
-		cent->lastFlashDistanceTime = cg.ftime;
-
-		cent->lastModelIntervalTime = cg.ftime;
-		cent->lastModelDistanceTime = cg.ftime;
-
-		cent->lastTrailIntervalTime = cg.ftime;
-		cent->lastTrailDistanceTime = cg.ftime;
-
-		cent->lastImpactIntervalTime = cg.ftime;
-		cent->lastImpactDistanceTime = cg.ftime;
-
+		CG_ResetFXIntervalAndDistance(cent);
 	}
 }
 
@@ -7509,23 +7457,6 @@ void CG_CopyPlayerDataToScriptData (centity_t *cent)
 #endif
 }
 
-#if 0
-void CG_CopyStaticScriptDataToCent (centity_t *cent)
-{
-	VectorCopy(ScriptVars.lastIntervalPosition, cent->lastModelIntervalPosition);
-	cent->lastModelIntervalTime = ScriptVars.lastIntervalTime;
-	VectorCopy(ScriptVars.lastDistancePosition, cent->lastModelDistancePosition);
-	cent->lastModelDistanceTime = ScriptVars.lastDistanceTime;
-}
-
-void CG_CopyStaticCentDataToScript (const centity_t *cent)
-{
-	VectorCopy(cent->lastModelIntervalPosition, ScriptVars.lastIntervalPosition);
-	ScriptVars.lastIntervalTime = cent->lastModelIntervalTime;
-	VectorCopy(cent->lastModelDistancePosition, ScriptVars.lastDistancePosition);
-	ScriptVars.lastDistanceTime = cent->lastModelDistanceTime;
-}
-#endif
 
 /////
 

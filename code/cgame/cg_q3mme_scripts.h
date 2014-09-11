@@ -80,6 +80,8 @@ typedef struct ScriptVars_s {
 	char loopSound[MAX_QPATH];
 	char sound[MAX_QPATH];
 
+	float animFrame;
+
 	centity_t *parentCent;
 	vec3_t parentOrigin;
 	vec3_t parentVelocity;
@@ -265,6 +267,7 @@ void CG_CopyStaticCentDataToScript (centity_t *cent);
 void CG_CopyPositionDataToCent (positionData_t *pd);
 void CG_CopyPositionDataToScript (const positionData_t *pd);
 void CG_UpdatePositionData (const centity_t *cent, positionData_t *pd);
+void CG_ResetFXIntervalAndDistance (centity_t *cent);
 
 void CG_FreeFxJitTokens (void);
 

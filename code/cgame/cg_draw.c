@@ -1490,8 +1490,12 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 #define IMGBUFFSIZE (48 * 64 * MAX_QPATH * 2)
 static ubyte imgBuff[IMGBUFFSIZE];
 static ubyte finalImgBuff[IMGBUFFSIZE];
-static ubyte fontImageData[256 * 256 * 4];
-static ubyte tmpBuff[48 * 48 * 4];
+
+#define FONT_DIMENSIONS 512
+#define TMPBUFF_SIZE (48 * 48 * 4)
+
+static ubyte fontImageData[FONT_DIMENSIONS * FONT_DIMENSIONS * 4];
+static ubyte tmpBuff[TMPBUFF_SIZE];
 static int fontImageWidth;
 static int fontImageHeight;
 
@@ -1613,6 +1617,11 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				continue;
 			} else {
 				trap_GetShaderImageDimensions(glyph->glyph, &fontImageWidth, &fontImageHeight);
+				if (fontImageWidth > FONT_DIMENSIONS  ||  fontImageHeight > FONT_DIMENSIONS) {
+					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font image dimensions are not supported: %d x %d\n", fontImageWidth, fontImageHeight);
+					return;
+				}
+
 				trap_GetShaderImageData(glyph->glyph, fontImageData);
 
 				// get sub image
@@ -1634,6 +1643,10 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 
 				for (i = 0;  i < glyph->imageHeight  &&  i < destHeight;  i++) {
 					memset(tmpBuff, 0, sizeof(tmpBuff));
+					if (TMPBUFF_SIZE < glyph->imageWidth * 4) {
+						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, tmp buffer is too small  %d < %d\n", TMPBUFF_SIZE, glyph->imageWidth * 4);
+						return;
+					}
 					memcpy(tmpBuff, fontImageData + n, glyph->imageWidth * 4);
 
 					for (k = 0;  k < glyph->imageWidth * 4;  k += 4) {

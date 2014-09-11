@@ -2845,30 +2845,8 @@ static void CG_AddCEntity( centity_t *cent ) {
 		if (cg.frametime > MAX_FRAMETIME) {
 			//Com_Printf("^3cg.frametime %d  resetting %d\n", cg.frametime, cent->currentState.number);
 		}
-		VectorCopy(cent->lerpOrigin, cent->lastFlashDistancePosition);
-		VectorCopy(cent->lerpOrigin, cent->lastModelDistancePosition);
-		VectorCopy(cent->lerpOrigin, cent->lastTrailDistancePosition);
-		VectorCopy(cent->lerpOrigin, cent->lastImpactDistancePosition);
 
-		VectorCopy(cent->lerpOrigin, cent->lastFlashIntervalPosition);
-		VectorCopy(cent->lerpOrigin, cent->lastModelIntervalPosition);
-		VectorCopy(cent->lerpOrigin, cent->lastTrailIntervalPosition);
-		VectorCopy(cent->lerpOrigin, cent->lastImpactIntervalPosition);
-
-		cent->trailTime = cg.ftime;  //cg.snap->serverTime;
-
-		cent->lastFlashIntervalTime = cg.ftime;
-		cent->lastFlashDistanceTime = cg.ftime;
-
-		cent->lastModelIntervalTime = cg.ftime;
-		cent->lastModelDistanceTime = cg.ftime;
-
-		cent->lastTrailIntervalTime = cg.ftime;
-		cent->lastTrailDistanceTime = cg.ftime;
-
-		cent->lastImpactIntervalTime = cg.ftime;
-		cent->lastImpactDistanceTime = cg.ftime;
-
+		CG_ResetFXIntervalAndDistance(cent);
 		cent->wasReset = qfalse;
 	}
 

@@ -373,6 +373,7 @@ static void CG_Obituary( const entityState_t *ent ) {
                 wclients[target].wstats[WP_CHAINGUN].deaths++;
 				icon = cg_weapons[WP_CHAINGUN].weaponIcon;
 				break;
+				//FIXME HMG
             default:
                 break;
             }
@@ -508,6 +509,10 @@ static void CG_Obituary( const entityState_t *ent ) {
 		case MOD_GRENADE:
 			message = "ate";
 			message2 = "'s grenade";
+			break;
+		case MOD_HMG:
+			message = "was ripped up by";
+			message2 = "'s HMG";
 			break;
 		case MOD_GRENADE_SPLASH:
 			message = "was shredded by";

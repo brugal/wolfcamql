@@ -1294,6 +1294,196 @@ http://www.quakelive.com/forum/showthread.php?33065-QLPP18-Follow-up-Update
 * drawhitfriend change to 0 and 1500 while in freecam icon changes size
 (paused)
 * drawhitfriend preventing dead friend icon.. check ql precedence
+* q3 single player demo treated as race type (see screenshots/shot0061.jpg)
+* q3 single player intermission missing score see trodas1.dm_68
+* crash:
+
+#5  0x08198e05 in RB_RenderDrawSurfList (drawSurfs=0xa2ed4020, numDrawSurfs=2542) at code/renderer/tr_backend.c:1238
+        useMergable = <optimized out>
+        dontMerge = <optimized out>
+        shader = 0xb26b7aa0
+        oldShader = 0xb26b7aa0
+        fogNum = 31
+        oldFogNum = 31
+        entityNum = 127
+        oldEntityNum = <optimized out>
+        dlighted = 2
+        oldDlighted = 2
+        depthRange = qfalse
+        oldDepthRange = qfalse
+        isCrosshair = qfalse
+        wasCrosshair = qfalse
+        i = 2494
+        drawSurf = 0xa2edb508
+        oldSort = 2818588670
+        originalTime = 3606.7002
+
+overlord\[pql.2\]00.06.818\(Nightmare.USA\).dm_73
+
+* drawSurfs use entityNum for sort value
+* shader sort spam
+* fx: interval sometimes called twice in the same frame?
+
+
+player/legs/trail {
+        interval 0.5 {
+        //distance 200 {
+                //shader                sprites/balloon3
+                shader models/players/doom/blue
+                echo cgtime
+                emitter 25 {
+                        size    1  //6 + 10 * wave( 0.5  * lerp )
+                        alphaFade       0
+                        //sprite        cullNear
+                        //model
+                        //model         "models/ammo/grenade1.md3"
+                        model "models/players/doom/lower.md3"
+                                // wolfcam need to do model rotation yourself
+                        if velocity {
+                             rotate time * 1000 / 4
+                        }
+                        anglesModel
+
+                }
+           }
+       }
+}
+
+* q3mme math unknown token/cvar 'origin03'
+next: '`οJ�
+           p_ο'
+head trail 0.0000001 0.0000002 0.0000003
+
+* fx:  when you press up against a wall some trail scripts in devmap will be called repeatedly (distance)
+
+player/legs/trail {
+        //interval 1.0 {
+        distance 200 {
+                shader models/players/doom/blue
+                command echo ^2legs trail %origin0 %origin1 %origin2 %cgtime
+                emitter 25 {
+                        size    1  //6 + 10 * wave( 0.5  * lerp )
+                        alphaFade       0
+                        model "models/players/doom/lower.md3"
+                                // wolfcam need to do model rotation yourself
+                        if velocity {
+                             //rotate time * 1000 / 4
+                        }
+                        anglesModel
+                }
+            }
+        }
+}
+
+* head/torso/legs scripts being called at different times??
+
+torso trail -297.7711180 -331.3654171 44.8667912 35600.000000e
+legs trail -296.5502620 -330.8210451 26.4838262 35614.000000e
+head trail -300.1015930 -331.7924501 61.8453252 35622.000000e
+
+* fx command echo:
+
+command echo ^2legs trail %origin0 %origin1 %origin2 %cgtime
+
+legs trail -296.5502620 -330.8210451 26.4838262 35614.000000e
+
+* fx torso/legs/head trails start initial game/frame from 0,0,0  -- skip first
+* check fx command:
+
+trap_autoWriteConfig(qfalse);
+            cg.configWriteDisabled = qtrue;
+
+* interval/distance for model and powerups being shared -- fix
+* player trails need CG_UpdatePositionData() ?
+* renderer/tr_model.c  LoadingModelName and threads
+* new quake live 2014-09-05
+   * spawn var "not_gametype" accepts string as well as int
+
+   * << Comment #3 @ 00:17 CDT, 28 August 2014 >>
+(Link, Reply)
+By frozen syncore 
+Protocol 90 added new stuff like { ESF( jumpTime ), 32 }, { ESF( doubleJumped ), 1 }, to entitystatefields/playerstatefields etc. Will probably be some time before it's updated. I think Maverick sent brugal a .dm_90 demo so maybe he can work on it and update soon
+
+* wrong font dat size:  -1, expected 20548
+  RE_RegisterFont: Unable to read font file
+
+* check sizes with imgbuff and finalimgbuf in cg_draw.c CG_DrawNameSprites
+* ttf file check is based on length, what if a ttf file without ttf extensions is len == 20548 ?
+
+* new ql 2014-09-10
+  ad reset match start
+0:00 14175 unknown config string modified  15: 000000000000000000000000000000000000000000000000000000000
+  no ad scoreboard
+
+  mod: 32
+
+  FIXME gametype : 'har 1f'  'har'
+FIXME gametype : 'har 1f'  '1f'
+FIXME gametype : '1f'  '1f'
+FIXME gametype : 'ob ctf 1f har'  'ob'
+FIXME gametype : 'ob ctf 1f har'  'ob'
+
+  ft:
+    CG_DrawTeamMapPickups() unsupported game type: 9
+
+  duel:
+    fixme ownerdrawflag2 0x00004000
+
+   
+  FIXME not done(new bg entities, option for old dm 73 protocol, 
+  levelshots new dir,
+  Bad item index 56 on entity: new bg items (stub in),
+  unknown event: 96 EV_DAMAGEPLUM,
+  pickup sounds for heavy mg and ammo pack,
+  ffa unknown config string modified  689: 12,
+  Com_Error(): couldn't open FFA-campgrounds-2014_09_07-01_08_50 file is there (dm_90 extension?),
+  heavy machine gun weapon flash,
+  heavy machine gun fx scripts,
+  scoreboards,
+  item timers,
+  powerup wall hack,
+  old hud and new machine gun,
+  heavy mg and kill stats,
+  heavy mg and weapon bar,
+ERROR: Could not open "sound/items/cl_doubler.wav"
+S_RegisterSound() couldn't open 'sound/items/cl_doubler.wav'
+ERROR: Could not open "sound/items/damage2.wav"
+S_RegisterSound() couldn't open 'sound/items/damage2.wav'
+ERROR: Could not open "sound/items/airout.wav"
+S_RegisterSound() couldn't open 'sound/items/airout.wav'
+FIXME S_RegisterSound() ''
+WARNING S_FindName: empty name
+
+RE_RegisterShaderNoMip(ui/assets/score/scoretr2.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/specflip.tga) failed
+WARNING: reused image textures/ad_content/ad2x1.jpg with mixed glWrapClampMode parm
+RE_RegisterShaderNoMip(ui/assets/score/navbarl.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/navbarm.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/navbarr.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/navlefty.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/navrighty.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/navright.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/navrightb.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/navrighty.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/bigred.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/bigred.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/bigred.tga) failed
+RE_RegisterShaderNoMip(ui/assets/score/biggreen.tga) failed
+
+RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
+WARNING: unknown parameter 'depthtest' in shader 'sprites/foe2'
+RE_RegisterShaderNoMip(sprites/foe2.png) failed
+RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
+RE_RegisterShaderNoMip(sprites/foe2.png) failed
+RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
+
+
+  /devmap campgrounds  fails  (need spawnpoint)
+
+
+  hmg wstats
+  hmg fx scripts
+  dm_73 support
 
 ---------------------------
 

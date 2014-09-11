@@ -4970,20 +4970,27 @@ void CG_Player ( centity_t *cent ) {
 		CG_ResetScriptVars();
 		CG_CopyPlayerDataToScriptData(cent);
 		//CG_CopyStaticCentDataToScript(cent);
+
+		ScriptVars.animFrame = legs.frame;
+
+		VectorCopy(legs.axis[0], ScriptVars.axis[0]);
+		VectorCopy(legs.axis[1], ScriptVars.axis[1]);
+		VectorCopy(legs.axis[2], ScriptVars.axis[2]);
+
 		VectorCopy(legs.origin, ScriptVars.origin);
 
-		VectorCopy(cent->lastFlashIntervalPosition, ScriptVars.lastIntervalPosition);
-        ScriptVars.lastIntervalTime = cent->lastFlashIntervalTime;
-        VectorCopy(cent->lastFlashDistancePosition, ScriptVars.lastDistancePosition);
-        ScriptVars.lastDistanceTime = cent->lastFlashDistanceTime;
+		VectorCopy(cent->lastLegsIntervalPosition, ScriptVars.lastIntervalPosition);
+        ScriptVars.lastIntervalTime = cent->lastLegsIntervalTime;
+        VectorCopy(cent->lastLegsDistancePosition, ScriptVars.lastDistancePosition);
+        ScriptVars.lastDistanceTime = cent->lastLegsDistanceTime;
 
 		CG_RunQ3mmeScript(EffectScripts.playerLegsTrail, NULL);
 		//CG_CopyStaticScriptDataToCent(cent);
 
-		VectorCopy(ScriptVars.lastIntervalPosition, cent->lastFlashIntervalPosition);
-        cent->lastFlashIntervalTime = ScriptVars.lastIntervalTime;
-        VectorCopy(ScriptVars.lastDistancePosition, cent->lastFlashDistancePosition);
-        cent->lastFlashDistanceTime = ScriptVars.lastDistanceTime;
+		VectorCopy(ScriptVars.lastIntervalPosition, cent->lastLegsIntervalPosition);
+        cent->lastLegsIntervalTime = ScriptVars.lastIntervalTime;
+        VectorCopy(ScriptVars.lastDistancePosition, cent->lastLegsDistancePosition);
+        cent->lastLegsDistanceTime = ScriptVars.lastDistanceTime;
 
 	}
 
@@ -5040,21 +5047,32 @@ void CG_Player ( centity_t *cent ) {
 		CG_ResetScriptVars();
 		CG_CopyPlayerDataToScriptData(cent);
 		//CG_CopyStaticCentDataToScript(cent);
+
+		//CG_Printf("torso size:  %f\n", scale);
+		//ScriptVars.size = scale;
+		ScriptVars.animFrame = torso.frame;
+
+		VectorCopy(torso.axis[0], ScriptVars.axis[0]);
+		VectorCopy(torso.axis[1], ScriptVars.axis[1]);
+		VectorCopy(torso.axis[2], ScriptVars.axis[2]);
+
 		VectorCopy(torso.origin, ScriptVars.origin);
 
-		VectorCopy(cent->lastImpactIntervalPosition, ScriptVars.lastIntervalPosition);
-        ScriptVars.lastIntervalTime = cent->lastImpactIntervalTime;
-        VectorCopy(cent->lastImpactDistancePosition, ScriptVars.lastDistancePosition);
-        ScriptVars.lastDistanceTime = cent->lastImpactDistanceTime;
+		//Com_Printf("torsotime %f\n", cent->lastTorsoIntervalTime);
+
+		VectorCopy(cent->lastTorsoIntervalPosition, ScriptVars.lastIntervalPosition);
+        ScriptVars.lastIntervalTime = cent->lastTorsoIntervalTime;
+        VectorCopy(cent->lastTorsoDistancePosition, ScriptVars.lastDistancePosition);
+        ScriptVars.lastDistanceTime = cent->lastTorsoDistanceTime;
 
 
 		CG_RunQ3mmeScript(EffectScripts.playerTorsoTrail, NULL);
 		//CG_CopyStaticScriptDataToCent(cent);
 
-		VectorCopy(ScriptVars.lastIntervalPosition, cent->lastImpactIntervalPosition);
-        cent->lastImpactIntervalTime = ScriptVars.lastIntervalTime;
-        VectorCopy(ScriptVars.lastDistancePosition, cent->lastImpactDistancePosition);
-        cent->lastImpactDistanceTime = ScriptVars.lastDistanceTime;
+		VectorCopy(ScriptVars.lastIntervalPosition, cent->lastTorsoIntervalPosition);
+        cent->lastTorsoIntervalTime = ScriptVars.lastIntervalTime;
+        VectorCopy(ScriptVars.lastDistancePosition, cent->lastTorsoDistancePosition);
+        cent->lastTorsoDistanceTime = ScriptVars.lastDistanceTime;
 
 	}
 
@@ -5401,22 +5419,31 @@ void CG_Player ( centity_t *cent ) {
 	if (*EffectScripts.playerHeadTrail) {
 		CG_ResetScriptVars();
 		CG_CopyPlayerDataToScriptData(cent);
+		//ScriptVars.shader = head.customShader;
+		ScriptVars.animFrame = head.frame;
+
+		VectorCopy(head.axis[0], ScriptVars.axis[0]);
+		VectorCopy(head.axis[1], ScriptVars.axis[1]);
+		VectorCopy(head.axis[2], ScriptVars.axis[2]);
+
 		//CG_CopyStaticCentDataToScript(cent);
 		VectorCopy(head.origin, ScriptVars.origin);
 
-		VectorCopy(cent->lastTrailIntervalPosition, ScriptVars.lastIntervalPosition);
-        ScriptVars.lastIntervalTime = cent->lastTrailIntervalTime;
-        VectorCopy(cent->lastTrailDistancePosition, ScriptVars.lastDistancePosition);
-        ScriptVars.lastDistanceTime = cent->lastTrailDistanceTime;
+		//Com_Printf("headtime %f\n", cent->lastHeadIntervalTime);
+
+		VectorCopy(cent->lastHeadIntervalPosition, ScriptVars.lastIntervalPosition);
+        ScriptVars.lastIntervalTime = cent->lastHeadIntervalTime;
+        VectorCopy(cent->lastHeadDistancePosition, ScriptVars.lastDistancePosition);
+        ScriptVars.lastDistanceTime = cent->lastHeadDistanceTime;
 
 
 		CG_RunQ3mmeScript(EffectScripts.playerHeadTrail, NULL);
 		//CG_CopyStaticScriptDataToCent(cent);
 
-		VectorCopy(ScriptVars.lastIntervalPosition, cent->lastTrailIntervalPosition);
-        cent->lastTrailIntervalTime = ScriptVars.lastIntervalTime;
-        VectorCopy(ScriptVars.lastDistancePosition, cent->lastTrailDistancePosition);
-        cent->lastTrailDistanceTime = ScriptVars.lastDistanceTime;
+		VectorCopy(ScriptVars.lastIntervalPosition, cent->lastHeadIntervalPosition);
+        cent->lastHeadIntervalTime = ScriptVars.lastIntervalTime;
+        VectorCopy(ScriptVars.lastDistancePosition, cent->lastHeadDistancePosition);
+        cent->lastHeadDistanceTime = ScriptVars.lastDistanceTime;
 	}
 
 	CG_AddRefEntityWithPowerups( &head, &cent->currentState, ci->team );

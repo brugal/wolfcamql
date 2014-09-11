@@ -242,7 +242,9 @@ typedef struct {
 
 extern mapNames_t MapNames[];
 
-#define	PROTOCOL_VERSION	73
+//#define	PROTOCOL_VERSION	73
+#define PROTOCOL_VERSION 90
+
 // 1.31 - 67
 
 // maintain a list of compatible protocols for demo playing

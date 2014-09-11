@@ -1876,6 +1876,7 @@ static void CL_ReadExtraDemoMessage (demoFile_t *df)
 		return;
 	}
 	buf.cursize = LittleLong( buf.cursize );
+
 	if ( buf.cursize == -1 ) {
 		//CL_DemoCompleted ();
 		Com_Printf("demoFile %d done\n", df->f);

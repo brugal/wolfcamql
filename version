@@ -1,3 +1,25 @@
+11.0test1
+
+* bug fix:  crash if font image data was bigger than 256x256
+* bug fix:  invalid value for apos.gravity in dm 73 entityState
+* preliminary support for new quake live network/demo protocol
+
+  Currently supports only new quake live demos (protocol 90).  Quake3 and
+  previous quake live demo playback will added later.
+
+  Older menu ownerdraws that are no longer defined can be found in
+  ui/wcmenudef.h
+
+* bug fix:  incorrect parsing of spawn variables in cgame if there was only one gametype listed in the map
+* bug fix:  spawn variables accept 'tdm' as team deathmatch name as well as 'team'
+* fx:  player[legs|torso|head] copy current axis values to script variables which can be uses with 'axismodel'
+* fx bug fix:  player[legs|torso|head]/trail was sharing interval and position data with player weapon flash and impacts
+* fx:  'animFrame' variable added to control model animations, player/[legs|torso|head]/trail automatically set this from current player animation
+* fx bug fix:  incorrect parsing of variables in 'command'
+* fx bug fix:  memory corruption if 'command' string was longer than 64 bytes
+* bug fix:  crash if surface entity reference invalid (seen with overload map)
+
+------------------------------------
 10.3  2013-11-16
 
 * documentation note about q3mme fx incompatibility introduced in the last couple of releases:

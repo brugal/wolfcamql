@@ -56,6 +56,7 @@ int CG_ModToWeapon (int mod)
 		return WP_NAILGUN;
 	case MOD_CHAINGUN:
 		return WP_CHAINGUN;
+		//FIXME MOD_HMG
 	default:
 		w = WP_NONE;
 	}
@@ -1481,6 +1482,16 @@ void CG_RegisterWeapon( int weaponNum ) {
 		weaponInfo->missileSound = trap_S_RegisterSound( "sound/weapons/rocket/rockfly.wav", qfalse );
 		break;
 
+	case WP_HEAVY_MACHINEGUN:
+		MAKERGB( weaponInfo->flashDlightColor, 1, 1, 0 );
+		weaponInfo->flashSound[0] = trap_S_RegisterSound( "sound/weapons/hmg/machgf1b.wav", qfalse );
+		weaponInfo->flashSound[1] = trap_S_RegisterSound( "sound/weapons/hmg/machgf2b.wav", qfalse );
+		weaponInfo->flashSound[2] = trap_S_RegisterSound( "sound/weapons/hmg/machgf3b.wav", qfalse );
+		weaponInfo->flashSound[3] = trap_S_RegisterSound( "sound/weapons/hmg/machgf4b.wav", qfalse );
+		weaponInfo->ejectBrassFunc = CG_MachineGunEjectBrass;
+		cgs.media.bulletExplosionShader = trap_R_RegisterShader( "bulletExplosion" );
+		break;
+
 	 default:
 		MAKERGB( weaponInfo->flashDlightColor, 1, 1, 1 );
 		weaponInfo->flashSound[0] = trap_S_RegisterSound( "sound/weapons/rocket/rocklf1a.wav", qfalse );
@@ -2524,6 +2535,12 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 	flash.renderfx = parent->renderfx;
 
 	flash.hModel = weapon->flashModel;
+	/*
+	if (weaponNum == WP_HEAVY_MACHINEGUN) {
+		flash.hModel = cg_weapons[WP_MACHINEGUN].flashModel;
+	}
+	*/
+
 	if (!flash.hModel) {
 		//Com_Printf("no flash model '%s'\n", weapNamesCasual[weaponNum]);
 		//FIXME fx
@@ -2561,6 +2578,14 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 		dlight[0] = weapon->flashDlightColor[0];
 		dlight[1] = weapon->flashDlightColor[1];
 		dlight[2] = weapon->flashDlightColor[2];
+
+
+		/*
+		flash.shaderRGBA[0] = 255;
+		flash.shaderRGBA[1] = 255;
+		flash.shaderRGBA[2] = 255;
+		flash.shaderRGBA[3] = 0;
+		*/
 
 		flashSize = 300 + (rand()&31);
 	}
@@ -3609,6 +3634,24 @@ void CG_MissileHitWall( int weapon, int clientNum, const vec3_t origin, const ve
 
 		radius = 8;
 		break;
+
+	case WP_HEAVY_MACHINEGUN:
+		mod = cgs.media.bulletFlashModel;
+		shader = cgs.media.bulletExplosionShader;
+		mark = cgs.media.bulletMarkShader;
+
+		r = rand() & 3;
+		if ( r == 0 ) {
+			sfx = cgs.media.sfx_ric1;
+		} else if ( r == 1 ) {
+			sfx = cgs.media.sfx_ric2;
+		} else {
+			sfx = cgs.media.sfx_ric3;
+		}
+
+		radius = 8;
+		break;
+
 	}
 
 	if (EffectScripts.weapons[weapon].hasImpactScript  &&  weapon == WP_LIGHTNING) {

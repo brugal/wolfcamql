@@ -6388,6 +6388,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	cg.demoPlayback = demoPlayback;
 	cgs.protocol = SC_Cvar_Get_Int("protocol");
+	Com_Printf("protocol: %d\n", cgs.protocol);
 	if (cgs.protocol >= 66  &&  cgs.protocol <= 71) {
 		cgs.protocol = PROTOCOL_Q3;
 	}

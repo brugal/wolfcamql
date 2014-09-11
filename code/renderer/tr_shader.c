@@ -1367,7 +1367,13 @@ void ParseSort( char **text ) {
 	} else if ( !Q_stricmp( token, "underwater" ) ) {
 		shader.sort = SS_UNDERWATER;
 	} else {
-		shader.sort = atof( token );
+		int val = atof(token);
+
+		shader.sort = val;
+
+		if (val > SS_NEAREST) {
+			Com_Printf("^3shader sort '%s' > SS_NEAREST for '%s'\n", token, shader.name);
+		}
 	}
 }
 

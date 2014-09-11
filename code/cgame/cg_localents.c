@@ -2180,6 +2180,10 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 				AnglesToAxis(ScriptVars.angles, re->axis);
 			}
 		}
+	} else if (re->reType == RT_MODEL_AXIS) {
+		VectorCopy(ScriptVars.axis[0], re->axis[0]);
+		VectorCopy(ScriptVars.axis[1], re->axis[1]);
+		VectorCopy(ScriptVars.axis[2], re->axis[2]);
 	}
 #endif
 

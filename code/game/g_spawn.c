@@ -481,8 +481,12 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 			gametypeName = gametypeNames[g_gametype.integer];
 
 			s = strstr( value, gametypeName );
+			if (!s  &&  g_gametype.integer == GT_TEAM) {
+				// try alternatenate quakelive name for 'team'
+				s = strstr(value, "tdm");
+			}
 			if( !s ) {
-				//G_Printf("^1unknown gametype string: '%s'\n", value);
+				G_Printf("^1unknown gametype string: '%s'\n", value);
 				ADJUST_AREAPORTAL();
 				G_FreeEntity( ent );
 				return;

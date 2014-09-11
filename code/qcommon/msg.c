@@ -258,6 +258,7 @@ int MSG_ReadBits( msg_t *msg, int bits ) {
 //			fclose(fp);
 		}
 		msg->readcount = (msg->bit>>3)+1;
+		//Com_Printf("^5msg->readcount %d\n", msg->readcount);
 	}
 	if ( sgn ) {
 		if ( value & ( 1 << ( bits - 1 ) ) ) {
@@ -803,6 +804,8 @@ typedef struct {
 // using the stringizing operator to save typing...
 #define	NETF(x) #x,(size_t)&((entityState_t*)0)->x
 
+// dm 90
+
 netField_t	entityStateFieldsQl[] =
 {
 { NETF(pos.trTime), 32 },
@@ -856,7 +859,7 @@ netField_t	entityStateFieldsQl[] =
 
 //#ifdef QUAKELIVE_PROTOCOL
 //FIXME is this new?  or did i screw up?
-{ NETF(apos.gravity), 0 },   ////
+{ NETF(apos.gravity), 32 },   ////
 //#endif
 { NETF(time2), 32 },
 //{ NETF(apos.gravity), 0 },
@@ -864,7 +867,72 @@ netField_t	entityStateFieldsQl[] =
 { NETF(angles2[0]), 0 },
 { NETF(angles2[2]), 0 },
 { NETF(constantLight), 32 },
-{ NETF(frame), 16 }
+{ NETF(frame), 16 },
+{ NETF(jumpTime), 32 },
+{ NETF(doubleJumped), 1 },
+};
+
+netField_t	entityStateFieldsQldm73[] =
+{
+{ NETF(pos.trTime), 32 },
+{ NETF(pos.trBase[0]), 0 },
+{ NETF(pos.trBase[1]), 0 },
+{ NETF(pos.trDelta[0]), 0 },
+{ NETF(pos.trDelta[1]), 0 },
+{ NETF(pos.trBase[2]), 0 },
+{ NETF(apos.trBase[1]), 0 },
+{ NETF(pos.trDelta[2]), 0 },
+{ NETF(apos.trBase[0]), 0 },
+//#ifdef QUAKELIVE_PROTOCOL
+{ NETF(pos.gravity), 32 },   ////
+//#endif
+{ NETF(event), 10 },
+{ NETF(angles2[1]), 0 },
+{ NETF(eType), 8 },
+{ NETF(torsoAnim), 8 },
+{ NETF(eventParm), 8 },
+{ NETF(legsAnim), 8 },
+{ NETF(groundEntityNum), GENTITYNUM_BITS },
+{ NETF(pos.trType), 8 },
+{ NETF(eFlags), 19 },
+{ NETF(otherEntityNum), GENTITYNUM_BITS },
+{ NETF(weapon), 8 },
+{ NETF(clientNum), 8 },
+{ NETF(angles[1]), 0 },
+{ NETF(pos.trDuration), 32 },
+{ NETF(apos.trType), 8 },
+{ NETF(origin[0]), 0 },
+{ NETF(origin[1]), 0 },
+{ NETF(origin[2]), 0 },
+{ NETF(solid), 24 },
+{ NETF(powerups), MAX_POWERUPS },
+{ NETF(modelindex), 8 },
+{ NETF(otherEntityNum2), GENTITYNUM_BITS },
+{ NETF(loopSound), 8 },
+{ NETF(generic1), 8 },
+{ NETF(origin2[2]), 0 },
+{ NETF(origin2[0]), 0 },
+{ NETF(origin2[1]), 0 },
+{ NETF(modelindex2), 8 },
+{ NETF(angles[0]), 0 },
+{ NETF(time), 32 },
+{ NETF(apos.trTime), 32 },
+{ NETF(apos.trDuration), 32 },
+{ NETF(apos.trBase[2]), 0 },
+{ NETF(apos.trDelta[0]), 0 },
+{ NETF(apos.trDelta[1]), 0 },
+{ NETF(apos.trDelta[2]), 0 },
+
+//#ifdef QUAKELIVE_PROTOCOL
+//FIXME is this new?  or did i screw up?
+{ NETF(apos.gravity), 32 },   ////
+//#endif
+{ NETF(time2), 32 },
+{ NETF(angles[2]), 0 },
+{ NETF(angles2[0]), 0 },
+{ NETF(angles2[2]), 0 },
+{ NETF(constantLight), 32 },
+{ NETF(frame), 16 },
 };
 
 netField_t	entityStateFieldsQ3[] =
@@ -928,7 +996,7 @@ netField_t	entityStateFieldsQ3[] =
 { NETF(angles2[0]), 0 },
 { NETF(angles2[2]), 0 },
 { NETF(constantLight), 32 },
-{ NETF(frame), 16 }
+{ NETF(frame), 16 },
 };
 
 
@@ -1129,12 +1197,14 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 		//Com_Printf("q3\n");
 	} else {
 		numFields = ARRAY_LEN(entityStateFieldsQl);
+		//Com_Printf("ql....\n");
 	}
 
 	lc = MSG_ReadByte(msg);
 
 	if (lc > numFields  ||  lc < 0) {
 		MSG_Error(ERR_DROP, "invalid entityState field count: %d, numFields %d", lc, numFields);
+		//Com_Printf("^3invalid entityState field count: %d, numFields %d", lc, numFields);
 		return;
 	}
 
@@ -1240,9 +1310,63 @@ plyer_state_t communication
 // using the stringizing operator to save typing...
 #define	PSF(x) #x,(size_t)&((playerState_t*)0)->x
 
-netField_t	playerStateFields[] = 
+netField_t	playerStateFields[] =
 {
-{ PSF(commandTime), 32 },				
+{ PSF(commandTime), 32 },
+{ PSF(origin[0]), 0 },
+{ PSF(origin[1]), 0 },
+{ PSF(bobCycle), 8 },
+{ PSF(velocity[0]), 0 },
+{ PSF(velocity[1]), 0 },
+{ PSF(viewangles[1]), 0 },
+{ PSF(viewangles[0]), 0 },
+{ PSF(weaponTime), -16 },
+{ PSF(origin[2]), 0 },
+{ PSF(velocity[2]), 0 },
+{ PSF(legsTimer), 8 },
+{ PSF(pm_time), -16 },
+{ PSF(eventSequence), 16 },
+{ PSF(torsoAnim), 8 },
+{ PSF(movementDir), 4 },
+{ PSF(events[0]), 8 },
+{ PSF(legsAnim), 8 },
+{ PSF(events[1]), 8 },
+{ PSF(pm_flags), 24 },
+{ PSF(groundEntityNum), GENTITYNUM_BITS },
+{ PSF(weaponstate), 4 },
+{ PSF(eFlags), 16 },
+{ PSF(externalEvent), 10 },
+{ PSF(gravity), 16 },
+{ PSF(speed), 16 },
+{ PSF(delta_angles[1]), 16 },
+{ PSF(externalEventParm), 8 },
+{ PSF(viewheight), -8 },
+{ PSF(damageEvent), 8 },
+{ PSF(damageYaw), 8 },
+{ PSF(damagePitch), 8 },
+{ PSF(damageCount), 8 },
+{ PSF(generic1), 8 },
+{ PSF(pm_type), 8 },
+{ PSF(delta_angles[0]), 16 },
+{ PSF(delta_angles[2]), 16 },
+{ PSF(torsoTimer), 12 },
+{ PSF(eventParms[0]), 8 },
+{ PSF(eventParms[1]), 8 },
+{ PSF(clientNum), 8 },
+{ PSF(weapon), 5 },
+{ PSF(viewangles[2]), 0 },
+{ PSF(grapplePoint[0]), 0 },
+{ PSF(grapplePoint[1]), 0 },
+{ PSF(grapplePoint[2]), 0 },
+{ PSF(jumppad_ent), 10 } , //GENTITYNUM_BITS },
+{ PSF(loopSound), 16 },
+{ PSF(jumpTime), 32 },
+{ PSF(doubleJumped), 1 },
+};
+
+netField_t	playerStateFieldsQldm73[] =
+{
+{ PSF(commandTime), 32 },
 { PSF(origin[0]), 0 },
 { PSF(origin[1]), 0 },
 { PSF(bobCycle), 8 },
@@ -1276,7 +1400,7 @@ netField_t	playerStateFields[] =
 { PSF(damagePitch), 8 },
 { PSF(damageCount), 8 },
 { PSF(generic1), 8 },
-{ PSF(pm_type), 8 },					
+{ PSF(pm_type), 8 },
 { PSF(delta_angles[0]), 16 },
 { PSF(delta_angles[2]), 16 },
 { PSF(torsoTimer), 12 },
@@ -1288,8 +1412,8 @@ netField_t	playerStateFields[] =
 { PSF(grapplePoint[0]), 0 },
 { PSF(grapplePoint[1]), 0 },
 { PSF(grapplePoint[2]), 0 },
-{ PSF(jumppad_ent), GENTITYNUM_BITS },
-{ PSF(loopSound), 16 }
+{ PSF(jumppad_ent), 10 } , //GENTITYNUM_BITS },
+{ PSF(loopSound), 16 },
 };
 
 /*
@@ -1490,7 +1614,7 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 	lc = MSG_ReadByte(msg);
 
 	if (lc > numFields  ||  lc < 0) {
-		MSG_Error(ERR_DROP, "invalid playerState field count");
+		MSG_Error(ERR_DROP, "invalid playerState field count:  %d : %d", lc, numFields);
 		return;
 	}
 

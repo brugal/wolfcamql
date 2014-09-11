@@ -226,7 +226,7 @@ typedef struct centity_s {
 
 #if 1  //FIXME switch to struct
 	// q3mme fx scripting
-	vec3_t lastFlashIntervalPosition;  // also player/legs
+	vec3_t lastFlashIntervalPosition;
 	double lastFlashIntervalTime;
 	vec3_t lastFlashDistancePosition;
 	double lastFlashDistanceTime;
@@ -236,15 +236,31 @@ typedef struct centity_s {
 	vec3_t lastModelDistancePosition;
 	double lastModelDistanceTime;
 
-	vec3_t lastTrailIntervalPosition;  // also player/head
+	vec3_t lastTrailIntervalPosition;
 	double lastTrailIntervalTime;
 	vec3_t lastTrailDistancePosition;
 	double lastTrailDistanceTime;
 
-	vec3_t lastImpactIntervalPosition;  // also player/torso
+	vec3_t lastImpactIntervalPosition;
 	double lastImpactIntervalTime;
 	vec3_t lastImpactDistancePosition;
 	double lastImpactDistanceTime;
+
+	vec3_t lastLegsIntervalPosition;
+	double lastLegsIntervalTime;
+	vec3_t lastLegsDistancePosition;
+	double lastLegsDistanceTime;
+
+	vec3_t lastTorsoIntervalPosition;
+	double lastTorsoIntervalTime;
+	vec3_t lastTorsoDistancePosition;
+	double lastTorsoDistanceTime;
+
+	vec3_t lastHeadIntervalPosition;
+	double lastHeadIntervalTime;
+	vec3_t lastHeadDistancePosition;
+	double lastHeadDistanceTime;
+
 #endif
 
 	positionData_t flashPositionData;

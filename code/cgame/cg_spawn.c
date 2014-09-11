@@ -442,11 +442,15 @@ qboolean CG_ParseSpawnVars( void ) {
 
             skipItem = 1;
             line = com_token;
-            while (*line) {
+            newLine = qfalse;
+            while (*line  &&  newLine == qfalse) {
                 int ln;
-                //Com_Printf("line: '%s'\n", line);
+                //Com_Printf("line1: '%s'\n", line);
                 //FIXME const
                 line = (char *)CG_GetTokenGameType(line, token, qfalse, &newLine);
+                //Com_Printf("newline: %d\n", newLine);
+                //Com_Printf("line2: '%s'\n", line);
+                //Com_Printf("    token: '%s'\n", token);
                 ln = strlen(token);
                 if (ln  &&  *token) {
                     if (token[ln - 1] == ',') {
@@ -460,7 +464,14 @@ qboolean CG_ParseSpawnVars( void ) {
                     }
                 }
                 if (!found) {
-                    Com_Printf("FIXME gametype : '%s'  '%s'\n", com_token, token);
+                    // try alternate quakelive name for 'team'
+                    if (!Q_stricmp(token, "tdm")) {
+                        if (cgs.gametype == GT_TEAM) {
+                            skipItem = 0;
+                        }
+                    } else {
+                        Com_Printf("FIXME gametype : '%s'  '%s'\n", com_token, token);
+                    }
                 } else if (!Q_stricmp(token, gametypeNames[cgs.gametype])) {
                     skipItem = 0;
                 }

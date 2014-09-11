@@ -630,7 +630,8 @@ typedef enum {
 	WP_CHAINGUN,
 #endif
 
-	//WP_14,
+	WP_HEAVY_MACHINEGUN,
+	//WP_15,
 	WP_NUM_WEAPONS
 } weapon_t;
 
@@ -1068,6 +1069,11 @@ typedef enum {
 	MOD_SWITCH_TEAMS,  // 29
 
 	MOD_THAW = 30,
+
+	// unknown 31
+
+	MOD_HMG = 32,
+
 } meansOfDeath_t;
 
 

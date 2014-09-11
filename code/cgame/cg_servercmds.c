@@ -715,6 +715,8 @@ static void CG_ParseTeamInfo( void ) {
 }
 
 /*
+  Quake Live  0.1.0.934 win-x86 Aug 26 2014 18:06:25 (new dm90 protocol)
+
   QuakeLive  0.1.0.790 linux-i386 Jul 17 2013 16:28:51
   QuakeLive  0.1.0.785 linux-i386 Jul 15 2013 16:03:55
       * race game type,
