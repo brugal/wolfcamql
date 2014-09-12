@@ -1995,9 +1995,9 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
       client override options:  "modelscale", "legsmodelscale", "torsomodelscale", "headmodelscale", "headoffset", "modelautoscale" (match this height)
 
-* some quake3 demo support by setting command line cvar protocol to 68
+* quake3 demo playback support
    ex:  copy map_cpm3a.pk3 into wolfcamql/wolfcam-ql/
-        wolfcamql.exe +set protocol 68 +demo ratelpajuo
+        wolfcamql.exe +demo ratelpajuo
 
 * cl_numberPadInput  to disable number pad functions and allow them as input
 

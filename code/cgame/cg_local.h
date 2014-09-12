@@ -97,6 +97,11 @@
 #define MAX_EVENT_FILTER 1024
 #define ICON_SCALE_DISTANCE 200.0
 
+// assumes 512x512 font image, and ... font widths
+#define FONT_DIMENSIONS 512  //256  // ql fonts now 512
+#define NAME_SPRITE_GLYPH_DIMENSION 96  //48
+#define NAME_SPRITE_SHADOW_OFFSET 16  //8
+
 
 ///////////////////////////////////////////////
 
@@ -1487,6 +1492,9 @@ typedef struct {
 
 	vec3_t lastImpactOrigin;
 	int numLocalEntities;
+
+	qboolean fontsLoaded;
+	qboolean menusLoaded;
 } cg_t;
 
 
@@ -2227,6 +2235,7 @@ typedef struct {
 	char serverHeadModelOverride[MAX_QPATH];
 	qboolean serverHaveCustomModelString;
 	qboolean serverAllowCustomHead;
+	int realProtocol;
 	int protocol;
 	qboolean cpma;
 	qboolean cpm;

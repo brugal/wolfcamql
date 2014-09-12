@@ -1433,7 +1433,7 @@ static void check_events (const entityState_t *es, int serverTime)
 		//	di.clientAlive[target] = qfalse;
 		//}
 		return;
-	} else if ((com_protocol->integer == PROTOCOL_QL  &&  (event == EV_ITEM_PICKUP_SPEC  ||  event == EV_ITEM_PICKUP))  ||  (com_protocol->integer == PROTOCOL_Q3  &&  event == EVQ3_ITEM_PICKUP)) {
+	} else if (((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)  &&  (event == EV_ITEM_PICKUP_SPEC  ||  event == EV_ITEM_PICKUP))  ||  (com_protocol->integer == PROTOCOL_Q3  &&  event == EVQ3_ITEM_PICKUP)) {
 		//Com_Printf("%d  pickup item %d\n", cl.snap.serverTime, es->eventParm);
 		if (di.numItemPickups >= MAX_ITEM_PICKUPS) {
 			Com_Printf("^3max pickups\n");
@@ -1441,7 +1441,7 @@ static void check_events (const entityState_t *es, int serverTime)
 		}
 
 		//Com_Printf("^3item pickup\n");
-		if (com_protocol->integer == PROTOCOL_QL) {
+		if (com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73) {
 			if (event == EV_ITEM_PICKUP_SPEC) {
 				index = es->modelindex;
 			} else {
@@ -1480,7 +1480,7 @@ static void check_events (const entityState_t *es, int serverTime)
 				ip->index = index;
 				ip->pickupTime = serverTime;
 				ip->spec = qfalse;
-				if (com_protocol->integer == PROTOCOL_QL  &&  event == EV_ITEM_PICKUP_SPEC) {
+				if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)  &&  event == EV_ITEM_PICKUP_SPEC) {
 					ip->spec = qtrue;
 					ip->specPickupTime = es->time;  // if es->time == 0 means item has respawned
 				}
@@ -1491,7 +1491,7 @@ static void check_events (const entityState_t *es, int serverTime)
 				//Com_Printf("^3%d %d %d  %s %s\n", di.numItemPickups, serverTime, index, item->pickup_name, event == EV_ITEM_PICKUP_SPEC ? "(spec)" : "");
 			}
 		}
-	} else if (com_protocol->integer == PROTOCOL_QL  &&  event == EV_GLOBAL_ITEM_PICKUP) {
+	} else if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)  &&  event == EV_GLOBAL_ITEM_PICKUP) {
 		if (di.numItemPickups >= MAX_ITEM_PICKUPS) {
 			Com_Printf("^3powerup max pickups\n");
 			return;
@@ -2424,6 +2424,8 @@ void CL_Disconnect( qboolean showMainMenu ) {
 
 	CL_UpdateGUID( NULL, 0 );
 	CL_ShutdownCGame();
+
+	Cvar_Set("protocol", va("%d", PROTOCOL_QL));
 }
 
 

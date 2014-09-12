@@ -2068,7 +2068,8 @@ static void CG_CreateNameSprites (void)
 		} else {
 			name = cgs.clientinfo[i].name;
 		}
-		CG_CreateNameSprite(0, 0, 1.0, colorWhite, name, 0, 0, 0, font, cgs.clientNameImage[i], 48 * MAX_QPATH, 48);
+		//CG_CreateNameSprite(0, 0, 1.0, colorWhite, name, 0, 0, 0, font, cgs.clientNameImage[i], NAME_SPRITE_GLYPH_DIMENSION * MAX_QPATH, NAME_SPRITE_GLYPH_DIMENSION + (NAME_SPRITE_SHADOW_OFFSET * 2));
+		CG_CreateNameSprite(0, 0, 1.0, colorWhite, name, 0, 0, 0, font, cgs.clientNameImage[i]);
 	}
 }
 
@@ -2931,6 +2932,8 @@ static void CG_RegisterFonts (void)
 	cgs.media.dominationPointStatusFontModificationCount = -100;
 
 	CG_CheckFontUpdates();
+
+	cg.fontsLoaded = qtrue;
 
 }
 
@@ -6357,6 +6360,10 @@ void CG_CreateScoresFromClientInfo (void)
 	}
 }
 
+//static byte tmpImgBuff[NAME_SPRITE_GLYPH_DIMENSION * (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2)     * MAX_QPATH * 2];
+static byte tmpImgBuff[64 * 64 * 4];
+
+
 /*
 =================
 CG_Init
@@ -6387,10 +6394,14 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	memset( cg_entities, 0, sizeof(cg_entities) );
 
 	cg.demoPlayback = demoPlayback;
-	cgs.protocol = SC_Cvar_Get_Int("protocol");
-	Com_Printf("protocol: %d\n", cgs.protocol);
-	if (cgs.protocol >= 66  &&  cgs.protocol <= 71) {
+	cgs.realProtocol = SC_Cvar_Get_Int("protocol");
+	Com_Printf("client set protocol: %d\n", cgs.realProtocol);
+	if (cgs.realProtocol >= 66  &&  cgs.realProtocol <= 71) {
 		cgs.protocol = PROTOCOL_Q3;
+	} else if (cgs.realProtocol == 73  ||  cgs.realProtocol == 90) {
+		cgs.protocol = PROTOCOL_QL;
+	} else {
+		cgs.protocol = PROTOCOL_QL;
 	}
 
 	//Com_Printf("^3ctfs  %d\n", GT_CTFS);
@@ -6494,9 +6505,20 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	cgs.media.charsetPropB		= trap_R_RegisterShaderNoMip( "menu/art/font2_prop.tga" );
 
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		int width, height;
+
 		// 48 * 48 * 32 * 4
 		//cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), (byte *)&cg, MAX_QPATH * 48, 48, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
-		cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), (byte *)&cg, 48 * MAX_QPATH, 48, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
+		//cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), (byte *)&cg, NAME_SPRITE_GLYPH_DIMENSION * MAX_QPATH, NAME_SPRITE_GLYPH_DIMENSION, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
+
+		//#define IMGBUFFSIZE (NAME_SPRITE_GLYPH_DIMENSION * (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2)     * MAX_QPATH * 2)
+
+		//NAME_SPRITE_GLYPH_DIMENSION * (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2)     * MAX_QPATH * 2
+
+		width = NAME_SPRITE_GLYPH_DIMENSION * MAX_QPATH * 2;
+		height = (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2);
+		//cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), tmpImgBuff, width, height, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
+		cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), tmpImgBuff, 64, 64, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
 		//cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), (byte *)&cg, 16, 16, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
 	}
 
@@ -6544,6 +6566,10 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		} else if (*Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "defrag_vers")) {
 			cgs.defrag = qtrue;
 		}
+	} else if (cgs.realProtocol == 73) {
+		memcpy(&bg_itemlist, &bg_itemlistQldm73, sizeof(gitem_t) * bg_numItemsCpma);
+		bg_numItems = bg_numItemsCpma;
+
 	}
 	if (cgs.defrag) {
 		Com_Printf("^5defrag\n");
@@ -6780,6 +6806,8 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	CG_LoadMenus(hudSet);
 #endif
+
+	cg.menusLoaded = qtrue;
 
 	cgs.lastConnectedDisconnectedPlayer = -1;
 	cgs.needToCheckSkillRating = qfalse;

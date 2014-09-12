@@ -1,0 +1,2 @@
+2014-09-11
+ogg and vorbis  ./configure CFLAGS="-arch i386"  --host=i386

@@ -1487,12 +1487,13 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
   }
 }
 
-#define IMGBUFFSIZE (48 * 64 * MAX_QPATH * 2)
+
+#define IMGBUFFSIZE (NAME_SPRITE_GLYPH_DIMENSION * (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2)     * MAX_QPATH * 2)
 static ubyte imgBuff[IMGBUFFSIZE];
 static ubyte finalImgBuff[IMGBUFFSIZE];
 
-#define FONT_DIMENSIONS 512
-#define TMPBUFF_SIZE (48 * 48 * 4)
+
+#define TMPBUFF_SIZE (NAME_SPRITE_GLYPH_DIMENSION * NAME_SPRITE_GLYPH_DIMENSION * 4)
 
 static ubyte fontImageData[FONT_DIMENSIONS * FONT_DIMENSIONS * 4];
 static ubyte tmpBuff[TMPBUFF_SIZE];
@@ -1501,7 +1502,7 @@ static int fontImageHeight;
 
 //FIXME xy scale factors
 //FIXME scaling is done when you add the sprite
-void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, qhandle_t h, int imageWidth, int imageHeight)
+void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, qhandle_t h)
 {
 	int len, count;
 	vec4_t newColor;
@@ -1522,6 +1523,39 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 	int destHeight;
 	int alpha;
 	int shadowOffset;
+	int randIntr;
+	int randIntg;
+	int randIntb;
+
+
+	//Com_Printf("replace shader %d for '%s'\n", h, text);
+
+#if 0
+	randIntr = rand() % 256;
+	randIntg = rand() % 256;
+	randIntb = rand() % 256;
+
+
+
+	for (i = 0;  i < NAME_SPRITE_GLYPH_DIMENSION * NAME_SPRITE_GLYPH_DIMENSION * MAX_QPATH * 2; i += 4) {
+		finalImgBuff[i + 0] = randIntr;
+		finalImgBuff[i + 1] = randIntg;
+		finalImgBuff[i + 2] = randIntb;
+		finalImgBuff[i + 3] = 255;
+	}
+
+    trap_ReplaceShaderImage(h, finalImgBuff, 64, 64);
+
+	return;
+#endif
+
+	if (!cg.menusLoaded) {
+		// user might change default fonts in menu
+		//Com_Printf("can't create name sprite yet, menus aren't loaded\n");
+		return;
+	}
+
+	//Com_Printf("name sprite: '%s'\n", fontOrig->name);
 
 	x = xf;
 	//y = yf;
@@ -1538,6 +1572,8 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 			font = &cgDC.Assets.bigFont;
 		}
 	}
+
+	//Com_Printf("new name sprite font %d: '%s'\n", font == &cgDC.Assets.textFont, font->name);
 
 	alpha = cg_drawPlayerNamesAlpha.integer;
 
@@ -1566,8 +1602,8 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 
 	//useScale = scale * font->glyphScale;
 	//useScale = 1;
-	destWidth = IMGBUFFSIZE / 64 / 4;
-	destHeight = 64;
+	destWidth = IMGBUFFSIZE / (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2) / 4;
+	destHeight = NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2;
 	memset(imgBuff, 0, sizeof(imgBuff));
 	memset(finalImgBuff, 0, sizeof(finalImgBuff));
 
@@ -1617,8 +1653,8 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				continue;
 			} else {
 				trap_GetShaderImageDimensions(glyph->glyph, &fontImageWidth, &fontImageHeight);
-				if (fontImageWidth > FONT_DIMENSIONS  ||  fontImageHeight > FONT_DIMENSIONS) {
-					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font image dimensions are not supported: %d x %d\n", fontImageWidth, fontImageHeight);
+				if (fontImageWidth != FONT_DIMENSIONS  ||  fontImageHeight != FONT_DIMENSIONS) {
+					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font image dimensions are not supported: %d x %d '%s'\n", fontImageWidth, fontImageHeight, font->name);
 					return;
 				}
 
@@ -1630,12 +1666,19 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				n = glyph->t * (float)(fontImageHeight);
 				suby = n;
 
-				if (glyph->imageWidth > 48  ||  glyph->imageHeight > 48) {
+				//Com_Printf("[%c] glpyh %d x %d\n", s[0], glyph->imageWidth, glyph->imageHeight);
+
+				if (glyph->imageWidth > NAME_SPRITE_GLYPH_DIMENSION  ||  glyph->imageHeight > NAME_SPRITE_GLYPH_DIMENSION) {
+					Com_Printf("^3WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: %d x %d '%s'\n", glyph->imageWidth, glyph->imageHeight, font->name);
 					break;
 				}
+				if (glyph->imageWidth < 0  ||  glyph->imageHeight < 0) {
+					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font glyph image dimensions are invalid: %d x %d '%s'\n", glyph->imageWidth, glyph->imageHeight, font->name);
+					return;
+				}
 
-				j = (destHeight - glyph->top - 16) * destWidth * 4;
-				if ((x + j) + 64 * 48 >= (IMGBUFFSIZE - (64 * 48) * 2)) {
+				j = (destHeight - glyph->top - (NAME_SPRITE_SHADOW_OFFSET * 2)) * destWidth * 4;
+				if ((x + j) + (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2) * NAME_SPRITE_GLYPH_DIMENSION >= (IMGBUFFSIZE - ((NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2) * NAME_SPRITE_GLYPH_DIMENSION) * 2)) {
 					break;
 				}
 
@@ -1644,7 +1687,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				for (i = 0;  i < glyph->imageHeight  &&  i < destHeight;  i++) {
 					memset(tmpBuff, 0, sizeof(tmpBuff));
 					if (TMPBUFF_SIZE < glyph->imageWidth * 4) {
-						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, tmp buffer is too small  %d < %d\n", TMPBUFF_SIZE, glyph->imageWidth * 4);
+						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, tmp buffer is too small  %d < %d '%s'\n", TMPBUFF_SIZE, glyph->imageWidth * 4, font->name);
 						return;
 					}
 					memcpy(tmpBuff, fontImageData + n, glyph->imageWidth * 4);
@@ -1661,6 +1704,10 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 						tmpBuff[k + 3] = alpha * alphaScale;
 					}
 
+					if (IMGBUFFSIZE - (x + j) < (glyph->imageWidth * 4)) {
+						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, img buffer is too small %d, %d, %d, %d %d '%s'\n", IMGBUFFSIZE, x, j, glyph->imageWidth * 4, glyph->top, font->name);
+						return;
+					}
 					memcpy(imgBuff + x + j, tmpBuff, glyph->imageWidth * 4);
 					j += destWidth * 4;
 					n += fontImageWidth * 4;
@@ -1674,7 +1721,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 		}
 
 		memset(finalImgBuff, 0, sizeof(finalImgBuff));
-		x += 8;  // to allow for shadow
+		x += NAME_SPRITE_SHADOW_OFFSET;  // to allow for shadow
 
 		for (i = 0;  i < destHeight;  i++) {
 			if (shadowOffset) {
@@ -1685,13 +1732,30 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 					nx = i * x + j;
 
 					// shadow first
+					if (sx + 4 >= IMGBUFFSIZE) {
+						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, final buffer is too small  %d < %d '%s'\n", IMGBUFFSIZE, sx + 4, font->name);
+						return;
+					}
+
 					finalImgBuff[sx + 0] = 0;
 					finalImgBuff[sx + 1] = 0;
 					finalImgBuff[sx + 2] = 0;
+
+					if (i * destWidth * 4 + j + 3 >= IMGBUFFSIZE) {
+						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, read buffer is too small  %d < %d '%s'\n", IMGBUFFSIZE, i * destWidth * 4 + j + 3, font->name);
+						return;
+					}
+
 					finalImgBuff[sx + 3] = imgBuff[i * destWidth * 4 + j + 3];
 
 					// now the actual image
 					if (imgBuff[i * destWidth * 4 + j + 3]) {
+
+						if (nx + 3 >= IMGBUFFSIZE) {
+							Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, final nx buffer is too small  %d < %d '%s'\n", IMGBUFFSIZE, i * destWidth * 4 + j + 3, font->name);
+							return;
+						}
+
 						finalImgBuff[nx + 0] = imgBuff[i * destWidth * 4 + j + 0];
 						finalImgBuff[nx + 1] = imgBuff[i * destWidth * 4 + j + 1];
 						finalImgBuff[nx + 2] = imgBuff[i * destWidth * 4 + j + 2];
@@ -1700,6 +1764,10 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 
 				}
 			} else {
+				if (i * x >= IMGBUFFSIZE) {
+					Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, final copy buffer is too small  %d < %d '%s'\n", IMGBUFFSIZE, i * x, font->name);
+					return;
+				}
 				memcpy(finalImgBuff + i * x, imgBuff + i * destWidth * 4, x);
 			}
 		}
@@ -6932,6 +7000,9 @@ void CG_CreateNewCrosshairs (void)
 	float b;
 	int alpha;
 	//int alphaThreshold;
+
+
+
 
 #if 0
 	if (SC_Cvar_Get_Int("r_texturebits") == 32) {

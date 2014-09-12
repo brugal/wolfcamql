@@ -730,7 +730,8 @@ static void CL_ParseServerInfo(void)
 	if (di.testParse) {  //  &&  com_protocol->integer == PROTOCOL_Q3) {
 		int p;
 
-		//FIXME actually get protocol here
+		//FIXME actually get protocol here  -- 2014-09-11 no, parsegamestate already happened and even playerState parsing, need protocol before this if you want to change dynamically
+
 		value = Info_ValueForKey(serverInfo, "protocol");
 		p = atoi(value);
 
@@ -746,7 +747,7 @@ static void CL_ParseServerInfo(void)
 		value = Info_ValueForKey(serverInfo, "com_protocol");  // fucking...
 		p = atoi(value);
 		if (p >= 66  &&  p <= 71) {
-			Com_Printf("^5protocol %d (%s)\n", PROTOCOL_Q3, value);
+			Com_Printf("^5parse protocol again %d (%s)\n", PROTOCOL_Q3, value);
 			di.protocol = PROTOCOL_Q3;
 		}
 #endif
@@ -776,6 +777,9 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 
 	// parse all the configstrings and baselines
 	//cl.gameState.dataCount = 1;	// leave a 0 at the beginning for uninitialized configstrings
+
+	//Com_Printf("parse gamestate...\n");
+
 	while ( 1 ) {
 		cmd = MSG_ReadByte( msg );
 
@@ -785,6 +789,8 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 
 		if ( cmd == svc_configstring ) {
 			//int		len;
+
+			//Com_Printf("config string...");
 
 			i = MSG_ReadShort( msg );
 			if ( i < 0 || i >= MAX_CONFIGSTRINGS ) {
@@ -856,6 +862,8 @@ void CL_ParseGamestate( msg_t *msg ) {
 		//Con_Close();
 	}
 
+	//Com_Printf("parse gamestate...\n");
+
 	clc.connectPacketCount = 0;
 
 	// wipe local client state
@@ -877,6 +885,11 @@ void CL_ParseGamestate( msg_t *msg ) {
 			int		len;
 
 			i = MSG_ReadShort( msg );
+
+			//FIXME parse protocol dynamically here
+
+			//Com_Printf("config string %d\n", i);
+
 			if ( i < 0 || i >= MAX_CONFIGSTRINGS ) {
 				Parse_Error(ERR_DROP, "CL_ParseGamestate configstring(%d) > MAX_CONFIGSTRINGS(%d)", i, MAX_CONFIGSTRINGS);
 				return;
@@ -887,6 +900,37 @@ void CL_ParseGamestate( msg_t *msg ) {
 			if ( len + 1 + cl.gameState.dataCount > MAX_GAMESTATE_CHARS ) {
 				Parse_Error( ERR_DROP, "CL_ParseGamestate MAX_GAMESTATE_CHARS(%d) exceeded", MAX_GAMESTATE_CHARS);
 				return;
+			}
+
+			// server info, get protocol here
+			if (i == 0) {
+				const char *value;
+				int p;
+
+				value = Info_ValueForKey(s, "protocol");
+				p = atoi(value);
+
+				Com_Printf("^5real gamestate protocol %d\n", p);
+
+				if (p >= 66  &&  p <= 71) {
+					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
+				} else if (p == 73) {  //FIXME define
+					Cvar_Set("protocol", "73");
+				} else if (p == PROTOCOL_QL) {
+					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
+				} else {
+					Com_Printf("^3unknown protocol %d, trying dm %d\n", p, PROTOCOL_QL);
+					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
+				}
+
+				// sometimes in quake the protocol is found in this key...
+				value = Info_ValueForKey(s, "com_protocol");  // fucking...
+				p = atoi(value);
+				if (p >= 66  &&  p <= 71) {
+					Com_Printf("^5real gamestate using com_protocol %d (%s)\n", PROTOCOL_Q3, value);
+					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
+				}
+
 			}
 
 			//Com_Printf("cs %d '%s'\n", i, s);
@@ -932,7 +976,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 			di.cpma = qfalse;
 		}
 
-		if (com_protocol->integer == PROTOCOL_QL) {
+		if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)) {
 			info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_WARMUP];
 			di.hasWarmup = atoi(Info_ValueForKey(info, "time"));
 		} else {

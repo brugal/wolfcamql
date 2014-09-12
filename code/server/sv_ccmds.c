@@ -159,10 +159,14 @@ static void SV_Map_f( void ) {
 	int i;
 	qboolean foundAlternateMap;
 
+#if 0
 	if (com_protocol->integer == PROTOCOL_Q3) {
 		Com_Printf("can't start server with protocol %d\n", PROTOCOL_Q3);
 		return;
 	}
+#endif
+
+	Cvar_Set("protocol", va("%i", PROTOCOL_QL));
 
 	map = Cmd_Argv(1);
 	if ( !map ) {

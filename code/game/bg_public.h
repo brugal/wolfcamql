@@ -1114,12 +1114,14 @@ typedef struct gitem_s {
 } gitem_t;
 
 // included in both the game dll and the client
-extern	gitem_t	bg_itemlist[];
+extern	gitem_t	bg_itemlist[];  // ql dm 90
 extern const gitem_t bg_itemlistQ3[];
 extern const gitem_t bg_itemlistCpma[];
+extern const gitem_t bg_itemlistQldm73[];
 extern	int		bg_numItems;
 extern	int		bg_numItemsQ3;
 extern	int		bg_numItemsCpma;
+extern int bg_numItemsQldm73;
 
 gitem_t	*BG_FindItem( const char *pickupName );
 gitem_t	*BG_FindItemForWeapon( const weapon_t weapon );

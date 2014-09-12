@@ -22,7 +22,8 @@ void CG_Text_PaintCharScale (float x, float y, float width, float height, float 
 void CG_Text_Paint(float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *font);
 void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const int *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, int textHeight, float iconScale);
 
-void CG_CreateNameSprite (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, qhandle_t h, int imageWidth, int imageHeight);
+//void CG_CreateNameSprite (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, qhandle_t h, int imageWidth, int imageHeight);
+void CG_CreateNameSprite (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, qhandle_t h);
 
 void CG_Text_Paint_Bottom (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *font);
 void CG_Text_Paint_old(float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex);

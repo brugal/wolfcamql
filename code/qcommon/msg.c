@@ -1028,6 +1028,8 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 	//numFields = ARRAY_LEN( entityStateFields );
 	if (com_protocol->integer == PROTOCOL_Q3) {
 		numFields = ARRAY_LEN(entityStateFieldsQ3);
+	} else if (com_protocol->integer == 73) {
+		numFields = ARRAY_LEN(entityStateFieldsQldm73);
 	} else {
 		numFields = ARRAY_LEN(entityStateFieldsQl);
 	}
@@ -1057,6 +1059,8 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 	// build the change vector as bytes so it is endien independent
 	if (com_protocol->integer == PROTOCOL_Q3) {
 		field = entityStateFieldsQ3;
+	} else if (com_protocol->integer == 73) {
+		field = entityStateFieldsQldm73;
 	} else {
 		field = entityStateFieldsQl;
 	}
@@ -1091,6 +1095,8 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 
 	if (com_protocol->integer == PROTOCOL_Q3) {
 		field = entityStateFieldsQ3;
+	} else if (com_protocol->integer == 73) {
+		field = entityStateFieldsQldm73;
 	} else {
 		field = entityStateFieldsQl;
 	}
@@ -1195,6 +1201,8 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 	if (com_protocol->integer == PROTOCOL_Q3) {
 		numFields = ARRAY_LEN(entityStateFieldsQ3);
 		//Com_Printf("q3\n");
+	} else if (com_protocol->integer == 73) {
+		numFields = ARRAY_LEN(entityStateFieldsQldm73);
 	} else {
 		numFields = ARRAY_LEN(entityStateFieldsQl);
 		//Com_Printf("ql....\n");
@@ -1223,6 +1231,8 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 
 	if (com_protocol->integer == PROTOCOL_Q3) {
 		field = entityStateFieldsQ3;
+	} else if (com_protocol->integer == 73) {
+		field = entityStateFieldsQldm73;
 	} else {
 		field = entityStateFieldsQl;
 	}
@@ -1274,6 +1284,8 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 
 	if (com_protocol->integer == PROTOCOL_Q3) {
 		field = &entityStateFieldsQ3[lc];
+	} else if (com_protocol->integer == 73) {
+		field = &entityStateFieldsQldm73[lc];
 	} else {
 		field = &entityStateFieldsQl[lc];
 	}
@@ -1310,6 +1322,7 @@ plyer_state_t communication
 // using the stringizing operator to save typing...
 #define	PSF(x) #x,(size_t)&((playerState_t*)0)->x
 
+// ql dm 90
 netField_t	playerStateFields[] =
 {
 { PSF(commandTime), 32 },
@@ -1364,7 +1377,7 @@ netField_t	playerStateFields[] =
 { PSF(doubleJumped), 1 },
 };
 
-netField_t	playerStateFieldsQldm73[] =
+netField_t	playerStateFieldsQ3[] =
 {
 { PSF(commandTime), 32 },
 { PSF(origin[0]), 0 },
@@ -1443,10 +1456,20 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 
 	c = msg->cursize;
 
-	numFields = ARRAY_LEN( playerStateFields );
+	if (com_protocol->integer == PROTOCOL_QL) {
+		numFields = ARRAY_LEN( playerStateFields );
+	} else {
+		numFields = ARRAY_LEN(playerStateFieldsQ3);
+	}
+
+	if (com_protocol->integer == PROTOCOL_QL) {
+		field = playerStateFields;
+	} else {
+		field = playerStateFieldsQ3;
+	}
 
 	lc = 0;
-	for ( i = 0, field = playerStateFields ; i < numFields ; i++, field++ ) {
+	for ( i = 0 ; i < numFields ; i++, field++ ) {
 		fromF = (int *)( (byte *)from + field->offset );
 		toF = (int *)( (byte *)to + field->offset );
 		if ( *fromF != *toF ) {
@@ -1458,7 +1481,13 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 
 	oldsize += numFields - lc;
 
-	for ( i = 0, field = playerStateFields ; i < lc ; i++, field++ ) {
+	if (com_protocol->integer == PROTOCOL_QL) {
+		field = playerStateFields;
+	} else {
+		field = playerStateFieldsQ3;
+	}
+
+	for ( i = 0 ; i < lc ; i++, field++ ) {
 		fromF = (int *)( (byte *)from + field->offset );
 		toF = (int *)( (byte *)to + field->offset );
 
@@ -1610,7 +1639,12 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 		print = 0;
 	}
 
-	numFields = ARRAY_LEN( playerStateFields );
+	if (com_protocol->integer == PROTOCOL_QL) {
+		numFields = ARRAY_LEN( playerStateFields );
+	} else {
+		numFields = ARRAY_LEN(playerStateFieldsQ3);
+	}
+
 	lc = MSG_ReadByte(msg);
 
 	if (lc > numFields  ||  lc < 0) {
@@ -1618,7 +1652,13 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 		return;
 	}
 
-	for ( i = 0, field = playerStateFields ; i < lc ; i++, field++ ) {
+	if (com_protocol->integer == PROTOCOL_QL) {
+		field = playerStateFields;
+	} else {
+		field = playerStateFieldsQ3;
+	}
+
+	for ( i = 0 ; i < lc ; i++, field++ ) {
 		fromF = (int *)( (byte *)from + field->offset );
 		toF = (int *)( (byte *)to + field->offset );
 
@@ -1653,7 +1693,15 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 			}
 		}
 	}
-	for ( i=lc,field = &playerStateFields[lc];i<numFields  &&  i >= 0; i++, field++) {
+
+	if (com_protocol->integer == PROTOCOL_QL) {
+		field = &playerStateFields[lc];
+	} else {
+		field = &playerStateFieldsQ3[lc];
+	}
+
+
+	for ( i=lc ; i<numFields  &&  i >= 0; i++, field++) {
 		fromF = (int *)( (byte *)from + field->offset );
 		toF = (int *)( (byte *)to + field->offset );
 		// no change

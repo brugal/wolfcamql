@@ -1,11 +1,12 @@
-11.0test1
 
+11.0test2
+
+* demo type automatically detected (new ql protocol 90, older ql 73, and quake 3), no need to use 'protocol' command line option
+* bug fix:  player names sprites created before correct fonts were loaded
+* bug fix:  crash creating player name sprites if font is invalid
 * bug fix:  crash if font image data was bigger than 256x256
 * bug fix:  invalid value for apos.gravity in dm 73 entityState
 * preliminary support for new quake live network/demo protocol
-
-  Currently supports only new quake live demos (protocol 90).  Quake3 and
-  previous quake live demo playback will added later.
 
   Older menu ownerdraws that are no longer defined can be found in
   ui/wcmenudef.h

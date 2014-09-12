@@ -3559,6 +3559,9 @@ void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 	}
 	qglBindTexture(GL_TEXTURE_2D, image->texnum);
 	qglGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	//FIXME
+	//qglBindTexture(GL_TEXTURE_2D, 0);
 }
 
 qhandle_t RE_GetSingleShader (void)

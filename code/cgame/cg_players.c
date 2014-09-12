@@ -1528,7 +1528,9 @@ void CG_NewClientInfo( int clientNum ) {
 			name = newInfo.name;
 		}
 		//Com_Printf("name: '%s'\n", name);
-		CG_CreateNameSprite(0, 0, 1.0, colorWhite, name, 0, 0, 0, font, cgs.clientNameImage[clientNum], 48 * MAX_QPATH, 48);
+		//CG_CreateNameSprite(0, 0, 1.0, colorWhite, name, 0, 0, 0, font, cgs.clientNameImage[clientNum], 48 * MAX_QPATH, 48);
+		//CG_CreateNameSprite(0, 0, 1.0, colorWhite, name, 0, 0, 0, font, cgs.clientNameImage[clientNum], NAME_SPRITE_GLYPH_DIMENSION * MAX_QPATH, NAME_SPRITE_GLYPH_DIMENSION + (NAME_SPRITE_SHADOW_OFFSET * 2));
+		CG_CreateNameSprite(0, 0, 1.0, colorWhite, name, 0, 0, 0, font, cgs.clientNameImage[clientNum]);
 	}
 
 	// colors
@@ -3369,6 +3371,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 
 	if (cg_drawPlayerNames.integer) {
 		CG_PlayerFloatSpriteNameExt(cent, cgs.clientNameImage[cent->currentState.clientNum], 0);
+		//Com_Printf("%d -> %d\n", cent->currentState.clientNum, cgs.clientNameImage[cent->currentState.clientNum]);
 	}
 
 	if (cg_rocketAimBot.integer) {
