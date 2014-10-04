@@ -1119,3 +1119,13 @@ Remove unnecessary localhost check from reconnect command.
 2013-11-10-05 skip (rend2):  Fix comparing unsigned values to < 0 in gl2
 
 2013-11-12-01 skip (rend2):  OpenGL2: Calculate bitangent in shader, and store normal/tangent as n...
+
+2013-11-17-01 skip:  Merge branch 'master' into sdl2
+
+2013-11-19-01 skip:  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> i...
+2013-11-19-02 skip:  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> i...
+2013-11-19-03 skip:  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
+
+2013-11-20-01 skip (rend2):  #6059: OpenGL2: Read depths from resolve fbo when msaa is on in RB_Te
+2013-11-20-02 skip (rend2):  OpenGL2: Use RGBA16F format for HDR.
+2013-11-20-03 End current draw surface before drawing cinematic

@@ -97,11 +97,6 @@
 #define MAX_EVENT_FILTER 1024
 #define ICON_SCALE_DISTANCE 200.0
 
-// assumes 512x512 font image, and ... font widths
-#define FONT_DIMENSIONS 512  //256  // ql fonts now 512
-#define NAME_SPRITE_GLYPH_DIMENSION 96  //48
-#define NAME_SPRITE_SHADOW_OFFSET 16  //8
-
 
 ///////////////////////////////////////////////
 
@@ -1498,6 +1493,10 @@ typedef struct {
 } cg_t;
 
 
+#define NUM_IMPRESSIVE_SOUNDS 3
+#define NUM_EXCELLENT_SOUNDS 3
+#define NUM_HUMILIATION_SOUNDS 3
+
 // all of the model, shader, and sound references that are
 // loaded at gamestate time are stored in cgMedia_t
 // Other media that can be tied to clients, weapons, or items are
@@ -1860,10 +1859,10 @@ typedef struct {
 	sfxHandle_t hitSoundHighArmor;
 	sfxHandle_t hitSoundLowArmor;
 	sfxHandle_t hitTeamSound;
-	sfxHandle_t impressiveSound;
-	sfxHandle_t excellentSound;
+	sfxHandle_t impressiveSound[NUM_IMPRESSIVE_SOUNDS];
+	sfxHandle_t excellentSound[NUM_EXCELLENT_SOUNDS];
 	sfxHandle_t deniedSound;
-	sfxHandle_t humiliationSound;
+	sfxHandle_t humiliationSound[NUM_HUMILIATION_SOUNDS];
 	sfxHandle_t assistSound;
 	sfxHandle_t defendSound;
 	sfxHandle_t firstImpressiveSound;
@@ -1994,7 +1993,7 @@ typedef struct {
 
 	fontInfo_t	qlfont12;
 	fontInfo_t	qlfont16;
-	fontInfo_t	qlfont20;
+	//fontInfo_t qlfont20;
 	fontInfo_t	qlfont24;
 	fontInfo_t	qlfont48;
 

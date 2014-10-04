@@ -416,19 +416,44 @@ qboolean CG_ParseSpawnVars( void ) {
                 skipItem = 1;
             }
         } else if (!Q_stricmp(keyname, "not_gametype")) {
-            val = atoi(com_token);
-            if (cgs.protocol == PROTOCOL_QL) {
-                if (cgs.gametype == GT_RACE) {
-                    if (val == 2) {
-                        skipItem = 1;
+            const char *value = com_token;
+            const char *gametypeName;
+            const char *s;
+
+            //FIXME could be more than one digit in the list ??
+
+            if (isdigit(com_token[0])) {
+                val = atoi(com_token);
+                if (cgs.protocol == PROTOCOL_QL) {
+                    if (cgs.gametype == GT_RACE) {
+                        if (val == 2) {
+                            skipItem = 1;
+                        }
+                    } else {
+                        if (cgs.gametype == val) {
+                            skipItem = 1;
+                        }
                     }
                 } else {
                     if (cgs.gametype == val) {
                         skipItem = 1;
                     }
                 }
-            } else {
-                if (cgs.gametype == val) {
+            } else {  // string value
+                //Com_Printf("^2gametype: %s\n", com_token);
+                gametypeName = gametypeNames[cgs.gametype];
+
+                s = strstr(value, gametypeName);
+                if (!s) {
+                    // try alternate quake live gametype names
+                    if (cgs.gametype == GT_TEAM) {
+                        s = strstr(value, "tdm");
+                    }
+                    if (cgs.gametype == GT_TOURNAMENT) {
+                        s = strstr(value, "duel");
+                    }
+                }
+                if (s) {
                     skipItem = 1;
                 }
             }
@@ -467,6 +492,10 @@ qboolean CG_ParseSpawnVars( void ) {
                     // try alternate quakelive name for 'team'
                     if (!Q_stricmp(token, "tdm")) {
                         if (cgs.gametype == GT_TEAM) {
+                            skipItem = 0;
+                        }
+                    } else if (!Q_stricmp(token, "duel")) {
+                        if (cgs.gametype == GT_TOURNAMENT) {
                             skipItem = 0;
                         }
                     } else {

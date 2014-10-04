@@ -591,8 +591,9 @@ gitem_t	bg_itemlist[] =
 /*QUAKED item_quad (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
-		"item_quad", 
-		"sound/items/quaddamage.wav",
+		"item_quad",
+		//"sound/items/quaddamage.wav",
+		"sound/vo/quad_damage.wav",
         { "models/powerups/instant/quad.md3", 
         "models/powerups/instant/quad_ring.md3",
 		0, 0 },
@@ -602,7 +603,7 @@ gitem_t	bg_itemlist[] =
 		IT_POWERUP,
 		PW_QUAD,
 /* precache */ "",
-/* sounds */ "sound/items/damage2.wav sound/items/damage3.wav"
+/* sounds */ "sound/items/damage3.wav"
 	},
 
 /*QUAKED item_enviro (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
@@ -619,14 +620,14 @@ gitem_t	bg_itemlist[] =
 		IT_POWERUP,
 		PW_BATTLESUIT,
 /* precache */ "",
-/* sounds */ "sound/items/airout.wav sound/items/protect3.wav"
+/* sounds */ "sound/items/protect3.wav"
 	},
 
 /*QUAKED item_haste (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
 		"item_haste",
-		"sound/items/haste.wav",
+		"sound/vo/haste.wav",
         { "models/powerups/instant/haste.md3", 
 		"models/powerups/instant/haste_ring.md3", 
 		0, 0 },
@@ -643,7 +644,7 @@ gitem_t	bg_itemlist[] =
 */
 	{
 		"item_invis",
-		"sound/items/invisibility.wav",
+		"sound/vo/invisibility.wav",
         { "models/powerups/instant/invis.md3", 
 		"models/powerups/instant/invis_ring.md3", 
 		0, 0 },
@@ -660,7 +661,7 @@ gitem_t	bg_itemlist[] =
 */
 	{
 		"item_regen",
-		"sound/items/regeneration.wav",
+		"sound/vo/regeneration.wav",
         { "models/powerups/instant/regen.md3", 
 		"models/powerups/instant/regen_ring.md3", 
 		0, 0 },
@@ -1542,7 +1543,8 @@ const gitem_t bg_itemlistQldm73[] =
 */
 	{
 		"item_quad", 
-		"sound/items/quaddamage.wav",
+		//"sound/items/quaddamage.wav",
+		"sound/vo/quad_damage.wav",
         { "models/powerups/instant/quad.md3", 
         "models/powerups/instant/quad_ring.md3",
 		0, 0 },
@@ -1552,7 +1554,7 @@ const gitem_t bg_itemlistQldm73[] =
 		IT_POWERUP,
 		PW_QUAD,
 /* precache */ "",
-/* sounds */ "sound/items/damage2.wav sound/items/damage3.wav"
+/* sounds */ "sound/items/damage3.wav"
 	},
 
 /*QUAKED item_enviro (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
@@ -1569,14 +1571,14 @@ const gitem_t bg_itemlistQldm73[] =
 		IT_POWERUP,
 		PW_BATTLESUIT,
 /* precache */ "",
-/* sounds */ "sound/items/airout.wav sound/items/protect3.wav"
+/* sounds */ "sound/items/protect3.wav"
 	},
 
 /*QUAKED item_haste (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
 		"item_haste",
-		"sound/items/haste.wav",
+		"sound/vo/haste.wav",
         { "models/powerups/instant/haste.md3", 
 		"models/powerups/instant/haste_ring.md3", 
 		0, 0 },
@@ -1593,7 +1595,7 @@ const gitem_t bg_itemlistQldm73[] =
 */
 	{
 		"item_invis",
-		"sound/items/invisibility.wav",
+		"sound/vo/invisibility.wav",
         { "models/powerups/instant/invis.md3", 
 		"models/powerups/instant/invis_ring.md3", 
 		0, 0 },
@@ -1610,7 +1612,7 @@ const gitem_t bg_itemlistQldm73[] =
 */
 	{
 		"item_regen",
-		"sound/items/regeneration.wav",
+		"sound/vo/regeneration.wav",
         { "models/powerups/instant/regen.md3", 
 		"models/powerups/instant/regen_ring.md3", 
 		0, 0 },
@@ -2438,7 +2440,8 @@ const gitem_t bg_itemlistQ3[] =
 */
 	{
 		"item_quad", 
-		"sound/items/quaddamage.wav",
+		//"sound/items/quaddamage.wav",
+		"sound/vo/quad_damage.wav",
         { "models/powerups/instant/quad.md3", 
         "models/powerups/instant/quad_ring.md3",
 		NULL, NULL },
@@ -2448,7 +2451,7 @@ const gitem_t bg_itemlistQ3[] =
 		IT_POWERUP,
 		PW_QUAD,
 /* precache */ "",
-/* sounds */ "sound/items/damage2.wav sound/items/damage3.wav"
+/* sounds */ "sound/items/damage3.wav"
 	},
 
 /*QUAKED item_enviro (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
@@ -2465,14 +2468,14 @@ const gitem_t bg_itemlistQ3[] =
 		IT_POWERUP,
 		PW_BATTLESUIT,
 /* precache */ "",
-/* sounds */ "sound/items/airout.wav sound/items/protect3.wav"
+/* sounds */ "sound/items/protect3.wav"
 	},
 
 /*QUAKED item_haste (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
 		"item_haste",
-		"sound/items/haste.wav",
+		"sound/vo/haste.wav",
         { "models/powerups/instant/haste.md3", 
 		"models/powerups/instant/haste_ring.md3", 
 		NULL, NULL },
@@ -2489,7 +2492,7 @@ const gitem_t bg_itemlistQ3[] =
 */
 	{
 		"item_invis",
-		"sound/items/invisibility.wav",
+		"sound/vo/invisibility.wav",
         { "models/powerups/instant/invis.md3", 
 		"models/powerups/instant/invis_ring.md3", 
 		NULL, NULL },
@@ -2506,7 +2509,7 @@ const gitem_t bg_itemlistQ3[] =
 */
 	{
 		"item_regen",
-		"sound/items/regeneration.wav",
+		"sound/vo/regeneration.wav",
         { "models/powerups/instant/regen.md3", 
 		"models/powerups/instant/regen_ring.md3", 
 		NULL, NULL },
@@ -3317,7 +3320,8 @@ const gitem_t bg_itemlistCpma[] =
 */
 	{
 		"item_quad", 
-		"sound/items/quaddamage.wav",
+		//"sound/items/quaddamage.wav",
+		"sound/vo/quad_damage.wav",
         { "models/powerups/instant/quad.md3", 
         "models/powerups/instant/quad_ring.md3",
 		NULL, NULL },
@@ -3327,7 +3331,7 @@ const gitem_t bg_itemlistCpma[] =
 		IT_POWERUP,
 		PW_QUAD,
 /* precache */ "",
-/* sounds */ "sound/items/damage2.wav sound/items/damage3.wav"
+/* sounds */ "sound/items/damage3.wav"
 	},
 
 /*QUAKED item_enviro (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
@@ -3344,14 +3348,14 @@ const gitem_t bg_itemlistCpma[] =
 		IT_POWERUP,
 		PW_BATTLESUIT,
 /* precache */ "",
-/* sounds */ "sound/items/airout.wav sound/items/protect3.wav"
+/* sounds */ "sound/items/protect3.wav"
 	},
 
 /*QUAKED item_haste (.3 .3 1) (-16 -16 -16) (16 16 16) suspended
 */
 	{
 		"item_haste",
-		"sound/items/haste.wav",
+		"sound/vo/haste.wav",
         { "models/powerups/instant/haste.md3", 
 		"models/powerups/instant/haste_ring.md3", 
 		NULL, NULL },
@@ -3368,7 +3372,7 @@ const gitem_t bg_itemlistCpma[] =
 */
 	{
 		"item_invis",
-		"sound/items/invisibility.wav",
+		"sound/vo/invisibility.wav",
         { "models/powerups/instant/invis.md3", 
 		"models/powerups/instant/invis_ring.md3", 
 		NULL, NULL },
@@ -3385,7 +3389,7 @@ const gitem_t bg_itemlistCpma[] =
 */
 	{
 		"item_regen",
-		"sound/items/regeneration.wav",
+		"sound/vo/regeneration.wav",
         { "models/powerups/instant/regen.md3", 
 		"models/powerups/instant/regen_ring.md3", 
 		NULL, NULL },

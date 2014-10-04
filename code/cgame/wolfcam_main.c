@@ -52,6 +52,7 @@ char *weapNamesCasual[] = {
     "Nail Gun",
     "Proximity Launcher",
     "Chain Gun",
+	"Heavy Machine Gun",
 	"Kamikaze",
 	"undefined",
 };

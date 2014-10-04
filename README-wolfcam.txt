@@ -2112,6 +2112,10 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * cl_keepDemoFileInMemory  set to 1 can improve performance when rewinding and fastforwarding, set to 0 if you need to work with a demo file that is completed and not available to load completely at the start of demo play back (ex: streaming)
 
+* cl_demoFileCheckSystem  check for demo file in the local file system as well as wolfcam and quake live directories.  (0:  no check,  1:  check local directory before wolfcam or quakelive directories, 2:  (default) check if not found in wolfcam or quake live directories)
+
+  ex:  wolfcamql.exe +set cl_demoFileCheckSystem 1 +demo c:\tmp\dem6.dm_90
+
 
 ----------
 

@@ -1514,6 +1514,7 @@ void CG_RegisterItemVisuals( int itemNum ) {
 	if ( itemNum < 0 || itemNum >= bg_numItems ) {
 		//CG_Error( "CG_RegisterItemVisuals: itemNum %d out of range [0-%d]", itemNum, bg_numItems-1 );
 		Com_Printf( "^1CG_RegisterItemVisuals: itemNum %d out of range [0-%d]\n", itemNum, bg_numItems-1 );
+		//CG_Abort();
 		return;
 	}
 

@@ -176,8 +176,8 @@ void R_ImageList_f( void ) {
 		image = tr.images[ i ];
 
 		texels += image->uploadWidth*image->uploadHeight;
-		ri.Printf (PRINT_ALL,  "%4i: %4i %4i  %s   %d   ",
-			i, image->uploadWidth, image->uploadHeight, yesno[image->mipmap], image->TMU );
+		ri.Printf (PRINT_ALL,  "%4i (texnum %d): %4i %4i  %s   %d   ",
+				   i, image->texnum, image->uploadWidth, image->uploadHeight, yesno[image->mipmap], image->TMU );
 		switch ( image->internalFormat ) {
 		case 1:
 			ri.Printf( PRINT_ALL, "I     " );
@@ -258,7 +258,7 @@ static void ResampleTexture( unsigned *in, int inwidth, int inheight, unsigned *
 	byte		*pix1, *pix2, *pix3, *pix4;
 
 	if (outwidth > 2048) {
-		ri.Error(ERR_DROP, "ResampleTexture(%d): max width (%d > 2048)  '%s'", CurrentBoundImage->texnum - 1024, outwidth, CurrentBoundImage->imgName);
+		ri.Error(ERR_DROP, "ResampleTexture(%d): max width (%d > 2048)  '%s'", CurrentBoundImage->texnum, outwidth, CurrentBoundImage->imgName);
 	}
 	fracstep = inwidth*0x10000/outwidth;
 
@@ -831,7 +831,11 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	}
 
 	image = tr.images[tr.numImages] = ri.Hunk_Alloc( sizeof( image_t ), h_low );
-	image->texnum = 1024 + tr.numImages;
+	// can't hardcode anymore since additional textures are being used
+	// with glGenTextures()
+	//image->texnum = 1024 + tr.numImages;
+
+	qglGenTextures(1, &image->texnum);
 	tr.numImages++;
 
 	image->mipmap = mipmap;

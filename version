@@ -1,12 +1,30 @@
 
-11.0test2
+11.0test3
 
+* cl_demoFileCheckSystem  check for demo file in the local file system as well as wolfcam and quake live directories.  (0:  no check,  1:  check local directory before wolfcam or quakelive directories, 2:  (default) check if not found in wolfcam or quake live directories)
+
+  ex:  wolfcamql.exe +set cl_demoFileCheckSystem 1 +demo c:\tmp\dem6.dm_90
+
+* bug fix:  map items incorrectly registered
+* bug fix:  cgame map entity checking accepts string values for "not_gametype" like quake live
+* bug fix:  /devmap and /map entity parsing accept string values for "not_gametype"
+* bug fix:  /devmap and /map entity parsing accept "duel" gametype as well as "tournament"
+* bug fix:  demo protocol wasn't being checked before the first demo packet was handled
+* bug fix:  cgame map entity parsing accepts "duel" as gametype as well as "tournament".  This could result in invalid items being used for item timers.
+* bug fix:  application would exit if baseq3 packs weren't installed and a demo or map is loaded
+* bug fix:  crash if r_singleShader is set and quakelive paks aren't installed
+* bug fix:  player name sprite wasn't created if glyph height was greater than 64
+* hud bug fix:  CG_SHOW_IF_SG_FIRED missing
+* support for new quakelive update Sep 11, 2014
+* bug fix:  spectators could show up as players in the scoreboard
+* bug fix:  some shaders were not uploaded with power of two dimensions
+* bug fix:  possible texture corruption (invalid texture numbers could be used)
 * demo type automatically detected (new ql protocol 90, older ql 73, and quake 3), no need to use 'protocol' command line option
 * bug fix:  player names sprites created before correct fonts were loaded
 * bug fix:  crash creating player name sprites if font is invalid
 * bug fix:  crash if font image data was bigger than 256x256
 * bug fix:  invalid value for apos.gravity in dm 73 entityState
-* preliminary support for new quake live network/demo protocol
+* preliminary support for quake live update Aug 27, 2014
 
   Older menu ownerdraws that are no longer defined can be found in
   ui/wcmenudef.h

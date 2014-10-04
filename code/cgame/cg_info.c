@@ -226,7 +226,7 @@ void CG_DrawInformation (qboolean loading)
 
 		//FIXME new ql 2014-09-07 not found and spams "RE_RegisterShader(levelShotDetail) failed"
 		// blend a detail texture over it
-		detail = trap_R_RegisterShader( "levelShotDetail" );
+		detail = trap_R_RegisterShader( "wc/levelShotDetail" );
 		if (detail) {
 			trap_R_DrawStretchPic( 0, 0, cgs.glconfig.vidWidth, cgs.glconfig.vidHeight, 0, 0, 2.5, 2, detail );
 		}
@@ -287,8 +287,12 @@ void CG_DrawInformation (qboolean loading)
 		// pure server
 		s = Info_ValueForKey( sysInfo, "sv_pure" );
 		if ( s[0] == '1' ) {
-			lines = UI_DrawProportionalString3( 320, y, "Pure Server",
-				UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );
+			lines = UI_DrawProportionalString3( 320, y, va("Pure Server protocol %d", SC_Cvar_Get_Int("real_protocol")),
+				UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorCyan );
+			y += PROP_HEIGHT * lines;
+		} else {
+			lines = UI_DrawProportionalString3( 320, y, va("Impure Server protocol %d", SC_Cvar_Get_Int("real_protocol")),
+				UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorRed );
 			y += PROP_HEIGHT * lines;
 		}
 

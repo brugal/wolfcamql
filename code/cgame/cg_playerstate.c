@@ -866,7 +866,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		if (ps->persistant[PERS_IMPRESSIVE_COUNT] == 1  &&  cg_audioAnnouncerRewardsFirst.integer) {
 			sfx = cgs.media.firstImpressiveSound;
 		} else {
-			sfx = cgs.media.impressiveSound;
+			sfx = cgs.media.impressiveSound[rand() % NUM_IMPRESSIVE_SOUNDS];
 		}
 #else
 		sfx = cgs.media.impressiveSound;
@@ -883,7 +883,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		if (ps->persistant[PERS_EXCELLENT_COUNT] == 1  &&  cg_audioAnnouncerRewardsFirst.integer) {
 			sfx = cgs.media.firstExcellentSound;
 		} else {
-			sfx = cgs.media.excellentSound;
+			sfx = cgs.media.excellentSound[rand() % NUM_EXCELLENT_SOUNDS];
 		}
 #else
 		sfx = cgs.media.excellentSound;
@@ -899,7 +899,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		if (ps->persistant[PERS_GAUNTLET_FRAG_COUNT] == 1  &&  cg_audioAnnouncerRewardsFirst.integer) {
 			sfx = cgs.media.firstHumiliationSound;
 		} else {
-			sfx = cgs.media.humiliationSound;
+			sfx = cgs.media.humiliationSound[rand() % NUM_HUMILIATION_SOUNDS];
 		}
 #else
 		sfx = cgs.media.humiliationSound;
@@ -936,7 +936,8 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		else if ((ps->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_GAUNTLETREWARD) >
 				(ops->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_GAUNTLETREWARD)) {
 			if (cg_audioAnnouncerRewards.integer) {
-				trap_S_StartLocalSound( cgs.media.humiliationSound, CHAN_ANNOUNCER );
+				//FIXME twice checked?  what about PERS_GAUNT_ frag?
+				trap_S_StartLocalSound(cgs.media.humiliationSound[rand() % NUM_HUMILIATION_SOUNDS], CHAN_ANNOUNCER);
 			}
 		}
 		else if ((ps->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_HOLYSHIT) >

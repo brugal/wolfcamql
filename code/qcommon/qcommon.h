@@ -249,7 +249,8 @@ extern mapNames_t MapNames[];
 
 // maintain a list of compatible protocols for demo playing
 // NOTE: that stuff only works with two digits protocols
-extern int demo_protocols[];
+#define NUM_DEMO_PROTOCOLS 5  //FIXME err....  ARRAY_LEN()
+extern int demo_protocols[NUM_DEMO_PROTOCOLS];
 
 #define	UPDATE_SERVER_NAME	"update.quake3arena.com"
 // override on command line, config files etc.

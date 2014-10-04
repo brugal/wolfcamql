@@ -305,7 +305,8 @@ endif
   endif
 
   ifeq ($(USE_FREETYPE),1)
-    CLIENT_CFLAGS += -DBUILD_FREETYPE -I/usr/include/freetype2
+    # add extra freetype directories since they changed header locations
+    CLIENT_CFLAGS += -DBUILD_FREETYPE -I/usr/include/freetype2 -I/usr/include/freetype2/freetype
   endif
 
   OPTIMIZEVM = -DNQDEBUG -O3 -funroll-loops -fno-omit-frame-pointer
@@ -553,7 +554,7 @@ ifeq ($(PLATFORM),mingw32)
   endif
 
   ifeq ($(USE_FREETYPE),1)
-    CLIENT_CFLAGS += -DBUILD_FREETYPE -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2
+    CLIENT_CFLAGS += -DBUILD_FREETYPE -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2/freetype -I$(MOUNT_DIR)/freetype2/include/freetype2
     #CLIENT_LIBS += -lfreetype2
     CLIENT_LIBS += $(LIBSDIR)/win32/libfreetype.a
     #CLIENT_LIBS += -L$(LIBSDIR) -lfreetype6

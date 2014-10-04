@@ -1488,6 +1488,14 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 }
 
 
+// assumes 512x512 font image, and ... font widths
+#define FONT_DIMENSIONS 512  //256  // ql fonts now 512
+
+//FIXME assuming worst case where dim == FONT_DIMENSIONS
+#define NAME_SPRITE_GLYPH_DIMENSION FONT_DIMENSIONS  // 96  //48
+#define NAME_SPRITE_SHADOW_OFFSET 16  //8
+
+
 #define IMGBUFFSIZE (NAME_SPRITE_GLYPH_DIMENSION * (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2)     * MAX_QPATH * 2)
 static ubyte imgBuff[IMGBUFFSIZE];
 static ubyte finalImgBuff[IMGBUFFSIZE];
@@ -1523,12 +1531,14 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 	int destHeight;
 	int alpha;
 	int shadowOffset;
-	int randIntr;
-	int randIntg;
-	int randIntb;
+	//int randIntr;
+	//int randIntg;
+	//int randIntb;
+
 
 
 	//Com_Printf("replace shader %d for '%s'\n", h, text);
+
 
 #if 0
 	randIntr = rand() % 256;
@@ -1537,7 +1547,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 
 
 
-	for (i = 0;  i < NAME_SPRITE_GLYPH_DIMENSION * NAME_SPRITE_GLYPH_DIMENSION * MAX_QPATH * 2; i += 4) {
+	for (i = 0;  i < NAME_SPRITE_GLYPH_DIMENSION * NAME_SPRITE_GLYPH_DIMENSION * MAX_QPATH * 1; i += 4) {
 		finalImgBuff[i + 0] = randIntr;
 		finalImgBuff[i + 1] = randIntg;
 		finalImgBuff[i + 2] = randIntb;
@@ -1669,7 +1679,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				//Com_Printf("[%c] glpyh %d x %d\n", s[0], glyph->imageWidth, glyph->imageHeight);
 
 				if (glyph->imageWidth > NAME_SPRITE_GLYPH_DIMENSION  ||  glyph->imageHeight > NAME_SPRITE_GLYPH_DIMENSION) {
-					Com_Printf("^3WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: %d x %d '%s'\n", glyph->imageWidth, glyph->imageHeight, font->name);
+					Com_Printf("^3WARNING: CG_CreateNameSprite() skipping glyph, '%c' dimensions are invalid: %d x %d '%s'\n", s[0], glyph->imageWidth, glyph->imageHeight, font->name);
 					break;
 				}
 				if (glyph->imageWidth < 0  ||  glyph->imageHeight < 0) {
@@ -7000,8 +7010,6 @@ void CG_CreateNewCrosshairs (void)
 	float b;
 	int alpha;
 	//int alphaThreshold;
-
-
 
 
 #if 0

@@ -4327,6 +4327,7 @@ void Item_ListBox_Paint(itemDef_t *item) {
 
 void Item_OwnerDraw_Paint(itemDef_t *item) {
 	//menuDef_t *parent;
+	int menuWidescreen = 0;
 
 	if (item == NULL) {
 		return;
@@ -4336,6 +4337,13 @@ void Item_OwnerDraw_Paint(itemDef_t *item) {
 	if (DC->ownerDrawItem) {
 		vec4_t color, lowLight;
 		menuDef_t *parent = (menuDef_t*)item->parent;
+
+		if (parent == NULL) {
+			Com_Printf("^3FIXME check ItemOwnerDraw_Paint parent is null\n");
+		} else {
+			menuWidescreen = parent->widescreen;
+		}
+
 		Fade(&item->window.flags, &item->window.foreColor[3], parent->fadeClamp, &item->window.nextTime, parent->fadeCycle, qtrue, parent->fadeAmount);
 		memcpy(&color, &item->window.foreColor, sizeof(color));
 		if (item->numColors > 0 && DC->getValue) {
@@ -4368,16 +4376,19 @@ void Item_OwnerDraw_Paint(itemDef_t *item) {
 		  Com_Memcpy(color, parent->disableColor, sizeof(vec4_t));
 		}
 
+		//FIXME ((menuDef_t*)(item->parent))->widescreen check if parent is null
+
 		if (item->text) {
+			//FIXME check widescreen here
 			Item_Text_Paint(item);
 				if (item->text[0]) {
 					// +8 is an offset kludge to properly align owner draw items that have text combined with them
-					DC->ownerDrawItem(item->textRect.x + item->textRect.w + 8, item->window.rect.y, item->window.rect.w, item->window.rect.h, 0, item->textaligny, item->window.ownerDraw, item->window.ownerDrawFlags, item->window.ownerDrawFlags2, item->alignment, item->special, item->textscale, color, item->window.background, item->textStyle, item->fontIndex );
+					DC->ownerDrawItem(item->textRect.x + item->textRect.w + 8, item->window.rect.y, item->window.rect.w, item->window.rect.h, 0, item->textaligny, item->window.ownerDraw, item->window.ownerDrawFlags, item->window.ownerDrawFlags2, item->alignment, item->special, item->textscale, color, item->window.background, item->textStyle, item->fontIndex, menuWidescreen, item->widescreen);
 				} else {
-					DC->ownerDrawItem(item->textRect.x + item->textRect.w, item->window.rect.y, item->window.rect.w, item->window.rect.h, 0, item->textaligny, item->window.ownerDraw, item->window.ownerDrawFlags, item->window.ownerDrawFlags2, item->alignment, item->special, item->textscale, color, item->window.background, item->textStyle, item->fontIndex );
+					DC->ownerDrawItem(item->textRect.x + item->textRect.w, item->window.rect.y, item->window.rect.w, item->window.rect.h, 0, item->textaligny, item->window.ownerDraw, item->window.ownerDrawFlags, item->window.ownerDrawFlags2, item->alignment, item->special, item->textscale, color, item->window.background, item->textStyle, item->fontIndex, menuWidescreen, item->widescreen);
 				}
 			} else {
-			DC->ownerDrawItem(item->window.rect.x, item->window.rect.y, item->window.rect.w, item->window.rect.h, item->textalignx, item->textaligny, item->window.ownerDraw, item->window.ownerDrawFlags, item->window.ownerDrawFlags2, item->alignment, item->special, item->textscale, color, item->window.background, item->textStyle, item->fontIndex );
+			DC->ownerDrawItem(item->window.rect.x, item->window.rect.y, item->window.rect.w, item->window.rect.h, item->textalignx, item->textaligny, item->window.ownerDraw, item->window.ownerDrawFlags, item->window.ownerDrawFlags2, item->alignment, item->special, item->textscale, color, item->window.background, item->textStyle, item->fontIndex, menuWidescreen, item->widescreen);
 		}
 	}
 }
@@ -6620,6 +6631,23 @@ qboolean ItemParse_printVal (itemDef_t *item, int handle)
 	return qtrue;
 }
 
+qboolean ItemParse_widescreen (itemDef_t *item, int handle)
+{
+	if (!PC_Int_Parse(handle, &item->widescreen)) {
+		return qfalse;
+	}
+
+	//Com_Printf("^3FIXME item parse widescreen %d\n", item->widescreen);
+	PC_SourceWarning(handle, "FIXME item parse widescreen %d", item->widescreen);
+
+	if (item->widescreen < 0  ||  item->widescreen > 3) {
+		PC_SourceError(handle, "invalid widescreen value %d", item->widescreen);
+		item->widescreen = 0;
+	}
+
+	return qtrue;
+}
+
 keywordHash_t itemParseKeywords[] = {
 	{"name", ItemParse_name, NULL},
 	{"text", ItemParse_text, NULL},
@@ -6696,6 +6724,7 @@ keywordHash_t itemParseKeywords[] = {
 	{"setvar", ItemParse_setVar, NULL},
 	{"run", ItemParse_run, NULL},
 	{"printval", ItemParse_printVal, NULL},
+	{ "widescreen", ItemParse_widescreen, NULL },
 	{NULL, 0, NULL}
 };
 
@@ -7223,6 +7252,28 @@ qboolean MenuParse_ownerdraw( itemDef_t *item, int handle ) {
 	return qtrue;
 }
 
+qboolean MenuParse_widescreen( itemDef_t *item, int handle ) {
+	menuDef_t *menu = (menuDef_t*)item;
+
+	if (!PC_Int_Parse(handle, &menu->widescreen)) {
+		return qfalse;
+	}
+
+	//FIXME
+	//Com_Printf("^3FIXME widescreen %d\n", menu->window.widescreen);
+	PC_SourceWarning(handle, "FIXME menu widescreen %d", menu->widescreen);
+
+	//Com_Printf("^1............\n");
+
+	if (menu->widescreen < 0  ||  menu->widescreen > 3) {
+		//Com_Printf("^1MenuParse invalid widescreen value: %d", menu->widescreen);
+		PC_SourceError(handle, "menu parse invalid widescreen value: %d\n", handle, menu->widescreen);
+		menu->widescreen = 0;
+	}
+
+	return qtrue;
+}
+
 
 // decoration
 qboolean MenuParse_popup( itemDef_t *item, int handle ) {
@@ -7324,6 +7375,7 @@ keywordHash_t menuParseKeywords[] = {
 	{"fadeCycle", MenuParse_fadeCycle, NULL},
 	{"fadeAmount", MenuParse_fadeAmount, NULL},
 	{"setvar", ItemParse_setVar, NULL},
+	{"widescreen", MenuParse_widescreen, NULL},
 	{NULL, 0, NULL}
 };
 

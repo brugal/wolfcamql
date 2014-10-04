@@ -211,6 +211,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define UI_SHOW_IF_LOADOUT_ENABLED 0x00002000
 #define UI_SHOW_IF_LOADOUT_DISABLED 0x00004000
+#define UI_SHOW_IF_NOT_INTERMISSION 0x00008000
 
 // owner draw types
 // ideally these should be done outside of this file but
@@ -923,6 +924,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CG_BLUE_TEAM_TIMEHELD_HASTE 329
 #define CG_BLUE_TEAM_TIMEHELD_INVIS 330
 
+#define CG_VOTEGAMETYPE1 331
+#define CG_VOTEGAMETYPE2 332
+#define CG_VOTEGAMETYPE3 333
 //////////////////////
 
 

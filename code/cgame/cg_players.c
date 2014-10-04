@@ -3156,10 +3156,16 @@ static void CG_PlayerFloatSpriteNameExt (const centity_t *cent, qhandle_t shader
 
 	memset( &ent, 0, sizeof( ent ) );
 	VectorCopy( cent->lerpOrigin, ent.origin );
+	ent.origin[2] += 20;  // 2014-09-21 new ql font scale
 	ent.origin[2] += cg_drawPlayerNamesY.integer;  //48;  //48
 	ent.reType = RT_SPRITE;
 	ent.customShader = shader;
-	ent.radius = 10.0 * 4.0 * (float)cg_drawPlayerNamesScale.value;
+
+	// assumes max glyph width/height could be the same size as the font image
+	// so need to add a factor or 512 / 64.0 to match old values with ql change
+	// 2014-08-27
+
+	ent.radius = 10.0 * 4.0 * 4.0 *  (float)cg_drawPlayerNamesScale.value;
 	ent.useScale = qtrue;
 	ent.renderfx = rf;
 	ent.shaderRGBA[0] = 255;

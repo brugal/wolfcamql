@@ -1521,6 +1521,147 @@ static void CG_AddScorePlum( localEntity_t *le ) {
 	}
 }
 
+static void CG_AddDamagePlum( localEntity_t *le ) {
+	refEntity_t	*re;
+	vec3_t		origin, delta, dir, vec, up = {0, 0, 1};
+	float		c, len;
+	int			i, score, digits[10], numdigits, negative;
+
+	// 2014-09-21 this is wallhacked as well
+
+	//FIXME need rgb fade
+
+	//FIXME probably just re-implemented rgb move fade or something
+
+	//FIXME
+	//return;
+
+	//FIXME color
+
+	re = &le->refEntity;
+
+	c = ( le->endTime - cg.ftime ) * le->lifeRate;
+
+	score = le->radius;
+	if (score < 0) {
+		re->shaderRGBA[0] = 0xff;
+		re->shaderRGBA[1] = 0x11;
+		re->shaderRGBA[2] = 0x11;
+	}
+	else {
+		re->shaderRGBA[0] = 0xff;
+		re->shaderRGBA[1] = 0xff;
+		re->shaderRGBA[2] = 0xff;
+		if (score >= 50) {
+			re->shaderRGBA[1] = 0;
+		} else if (score >= 20) {
+			re->shaderRGBA[0] = re->shaderRGBA[1] = 0;
+		} else if (score >= 10) {
+			re->shaderRGBA[2] = 0;
+		} else if (score >= 2) {
+			re->shaderRGBA[0] = re->shaderRGBA[2] = 0;
+		}
+
+	}
+
+
+	//FIXME
+	re->shaderRGBA[0] = 0xff;
+	re->shaderRGBA[1] = 0xff;
+	re->shaderRGBA[2] = 0xff;
+
+	// score
+	if (le->radius >= 80) {
+		re->shaderRGBA[0] = 0xff;
+		re->shaderRGBA[1] = 0x00;
+		re->shaderRGBA[2] = 0x00;
+	}
+
+
+	if (c < 0.25)
+		re->shaderRGBA[3] = 0xff * 4 * c;
+	else
+		re->shaderRGBA[3] = 0xff;
+
+	re->radius = NUMBER_SIZE / 2;
+
+	VectorCopy(le->pos.trBase, origin);
+	//origin[2] += 110 - c * 100;
+	origin[2] += 110;
+
+
+
+
+
+	//FIXME testing
+#if 0
+	le->pos.trDelta[0] = 0;
+	le->pos.trDelta[1] = 0;
+	le->pos.trDelta[2] = 1000;
+#endif
+
+	le->pos.gravity = 800;
+
+	VectorCopy(le->pos.trBase, origin);
+
+
+	//Com_Printf("delta %f %f %f\n", le->pos.trDelta[0], le->pos.trDelta[1], le->pos.trDelta[2]);
+	//Com_Printf("origin1 %f %f %f\n", origin[0], origin[1], origin[2]);
+	BG_EvaluateTrajectoryf( &le->pos, cg.time, origin, cg.foverf );
+
+	Com_Printf("origin2 %f %f %f\n", origin[0], origin[1], origin[2]);
+
+
+#if 1
+	VectorSubtract(cg.refdef.vieworg, origin, dir);
+	CrossProduct(dir, up, vec);
+	VectorNormalize(vec);
+
+	//VectorMA(origin, -10 + 20 * sin(c * 2 * M_PI), vec, origin);
+#endif
+
+
+	// if the view would be "inside" the sprite, kill the sprite
+	// so it doesn't add too much overdraw
+	VectorSubtract( origin, cg.refdef.vieworg, delta );
+	len = VectorLength( delta );
+	if ( len < 20  &&  !cg_allowLargeSprites.integer) {
+		if (!cg_allowSpritePassThrough.integer) {
+			Lock_EntList();
+			CG_FreeLocalEntity( le );
+			Unlock_EntList();
+		}
+		return;
+	}
+
+	//FIXME this spacing depends on re->radius
+
+	//FIXME uses qlfont
+
+	negative = qfalse;
+	if (score < 0) {
+		negative = qtrue;
+		score = -score;
+	}
+
+	for (numdigits = 0; !(numdigits && !score); numdigits++) {
+		digits[numdigits] = score % 10;
+		score = score / 10;
+	}
+
+	if (negative) {
+		digits[numdigits] = 10;
+		numdigits++;
+	}
+
+	for (i = 0; i < numdigits; i++) {
+		VectorMA(origin, (float) (((float) numdigits / 2) - i) * NUMBER_SIZE, vec, re->origin);
+		re->customShader = cgs.media.numberShaders[digits[numdigits-1-i]];
+		re->renderfx = RF_DEPTHHACK;
+		CG_AddRefEntity(re);
+	}
+}
+
 /*
 ===================
 CG_AddHeadShotPlum
@@ -2541,6 +2682,10 @@ static void CG_AddLocalEntitiesExt (int threadNum)
 
 		case LE_SCOREPLUM:
 			CG_AddScorePlum( le );
+			break;
+
+		case LE_DAMAGEPLUM:
+			CG_AddDamagePlum( le );
 			break;
 
 		case LE_HEADSHOTPLUM:

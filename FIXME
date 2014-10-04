@@ -1473,9 +1473,18 @@ RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
   hmg wstats
   hmg fx scripts
 
-  com_protocol changes needed in code/client/*
+  damageplum and fx scripts
+  obiturary icons
 
-* name sprites changing.. texture corruption, try Upload32 when changing shader images
+  18:25 Unknown event: 97
+
+
+  17:24 xxx renamed to xxx xxx
+WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 'fonts/fontImage_48.dat'
+
+  wcstats show hmg for dm 73 demos
+  null model in lava old dm13 demos -- no, /devmap lostworld
+  item pickup poi  (red armor campgrounds: weapon 14, legsAnim 143, torsoAnim 11)
 * get shader image data?
 
     //FIXME
@@ -1484,6 +1493,36 @@ RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
 * demo menu list just filter highest protocol
 * set protocol with disconnect as well
 * record sub demo and protocol check
+
+* ql update 2014-09-19  new announcer, vo/crash_new, 1fctf announcer sounds, 1ctf flag taken and return sounds, new in game reward medals:
+       Combokill, damage with one weapon, and follow up with a rail kill.
+    Rampage, gib three opponents, each within 3s of eachother.
+    MidAir, kill an airborne enemy with a projectile.
+    Revenge, kill a player who has killed you 3 or more times since you last killed them.
+    First Frag, awarded to the player who earns the first frag of the match in FFA or Duel.
+    FIXME CG_OwnerDraw()  331 332 332
+        CG_VOTEGAMETYPE1, ...
+
+    sound/items/damage2.wav sound/items/damage3.wav   damage2 taken out
+
+    RE_RegisterModel: failed to load models/powerups/holdable/medkit_sphere.md3
+
+    damage plum now transmits client number?
+
+* performance stutter now with name sprite creation and name change
+* option for ttf resolution size
+* delete shaders when something like r_singleShader changes?
+* recursive call in FS_Restart() when there is an error?
+* player sprite names tmp performance fix of skipping spectators
+* dm 66 67 protocols:
+   disconnect
+playdemo '2006-06-21-1.dm_66'
+opening demos/2006-06-21-1.dm_66
+real gamestate protocol 66
+demo parse protocol 68
+* dm 73 wtf*.dm_73
+  CG_RegisterItemVisuals: itemNum 54 out of range [0-52]
+
 
 ---------------------------
 

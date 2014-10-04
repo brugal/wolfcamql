@@ -812,7 +812,9 @@ static void CG_ParseVersion (const char *info)
 		cgs.qlversion[i] = atoi(buffer);
 	}
 
-	//Com_Printf("QuakeLive version:  %d  %d  %d  %d\n", cgs.qlversion[0], cgs.qlversion[1], cgs.qlversion[2], cgs.qlversion[3]);
+	if (cgs.qlversion[0] > 0  &&  cgs.qlversion[1] > 0  &&  cgs.qlversion[2] > 0  &&  cgs.qlversion[3] > 0) {
+		Com_Printf("demo recorded with QuakeLive version:  %d  %d  %d  %d\n", cgs.qlversion[0], cgs.qlversion[1], cgs.qlversion[2], cgs.qlversion[3]);
+	}
 }
 
 static void CG_LoadServerModelOverride (void)
@@ -3428,6 +3430,7 @@ static void CG_ParseScores_Duel (void)
 	int i;
 	int n;
 	int j;
+	int maxWeapons;
 
 	cg.duelScoresValid = qtrue;
 	cg.duelScoresServerTime = cg.snap->serverTime;
@@ -3486,7 +3489,13 @@ static void CG_ParseScores_Duel (void)
 		ds->megaHealthPickups = atoi(CG_Argv(n));  n++;
 		ds->megaHealthTime = atof(CG_Argv(n));  n++;
 
-		for (j = 1;  j < WP_NUM_WEAPONS;  j++) {
+		maxWeapons = WP_NUM_WEAPONS;
+		if (cgs.realProtocol != 90) {
+			// no hmg
+			maxWeapons--;
+		}
+
+		for (j = 1;  j < maxWeapons;  j++) {
 			duelWeaponStats_t *ws;
 
 			ws = &ds->weaponStats[j];
@@ -4050,6 +4059,7 @@ static void CG_ParseDScores (void)
 	int i;
 	int n;
 	int j;
+	int maxWeapons;
 	//FIXME hack
 	static int oldDuelPlayer1 = DUEL_PLAYER_INVALID;
 	static int oldDuelPlayer2 = DUEL_PLAYER_INVALID;
@@ -4114,7 +4124,13 @@ static void CG_ParseDScores (void)
 		ds->megaHealthPickups = atoi(CG_Argv(n));  n++;
 		ds->megaHealthTime = atof(CG_Argv(n));  n++;
 
-		for (j = 1;  j < WP_NUM_WEAPONS;  j++) {
+		maxWeapons = WP_NUM_WEAPONS;
+		if (cgs.realProtocol != 90) {
+			// no hmg
+			maxWeapons--;
+		}
+
+		for (j = 1;  j < maxWeapons;  j++) {
 			duelWeaponStats_t *ws;
 
 			ws = &ds->weaponStats[j];
@@ -4522,12 +4538,19 @@ static void CG_ServerCommand( void ) {
 
 		if (!strcmp(cmd, "acc")) {
 			int i;
+			int maxWeapons;
 
 			cg.serverAccuracyStatsTime = cg.time;
 			cg.serverAccuracyStatsClientNum = cg.snap->ps.clientNum;
 
+			maxWeapons = WP_NUM_WEAPONS;
+			if (cgs.realProtocol != 90) {
+				// no hmg
+				maxWeapons--;
+			}
+
 			//CG_Printf("acc: \n");
-			for (i = WP_NONE;  i < WP_NUM_WEAPONS;  i++) {
+			for (i = WP_NONE;  i < maxWeapons;  i++) {
 				//CG_Printf("  %s    %s\n", CG_Argv(i + 1), weapNames[i]);
 				cg.serverAccuracyStats[i] = atoi(CG_Argv(i + 1));
 			}

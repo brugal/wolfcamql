@@ -726,32 +726,6 @@ static void CL_ParseServerInfo(void)
 	Q_strncpyz(clc.sv_dlURL,
 		Info_ValueForKey(serverInfo, "sv_dlURL"),
 		sizeof(clc.sv_dlURL));
-
-	if (di.testParse) {  //  &&  com_protocol->integer == PROTOCOL_Q3) {
-		int p;
-
-		//FIXME actually get protocol here  -- 2014-09-11 no, parsegamestate already happened and even playerState parsing, need protocol before this if you want to change dynamically
-
-		value = Info_ValueForKey(serverInfo, "protocol");
-		p = atoi(value);
-
-		if (p >= 66  &&  p <= 71) {
-			Com_Printf("^5protocol %d (%s)\n", PROTOCOL_Q3, value);
-			di.protocol = PROTOCOL_Q3;
-		} else {
-			Com_Printf("^5protocol %d\n", PROTOCOL_QL);
-			di.protocol = PROTOCOL_QL;
-		}
-
-#if 1
-		value = Info_ValueForKey(serverInfo, "com_protocol");  // fucking...
-		p = atoi(value);
-		if (p >= 66  &&  p <= 71) {
-			Com_Printf("^5parse protocol again %d (%s)\n", PROTOCOL_Q3, value);
-			di.protocol = PROTOCOL_Q3;
-		}
-#endif
-	}
 }
 
 static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
@@ -911,6 +885,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 				p = atoi(value);
 
 				Com_Printf("^5real gamestate protocol %d\n", p);
+				Cvar_Set("real_protocol", value);
 
 				if (p >= 66  &&  p <= 71) {
 					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
@@ -921,6 +896,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 				} else {
 					Com_Printf("^3unknown protocol %d, trying dm %d\n", p, PROTOCOL_QL);
 					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
+
 				}
 
 				// sometimes in quake the protocol is found in this key...
@@ -929,6 +905,11 @@ void CL_ParseGamestate( msg_t *msg ) {
 				if (p >= 66  &&  p <= 71) {
 					Com_Printf("^5real gamestate using com_protocol %d (%s)\n", PROTOCOL_Q3, value);
 					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
+				}
+
+				if (di.testParse) {
+					di.protocol = atoi(com_protocol->string);
+					Com_Printf("^5demo parse protocol %d\n", di.protocol);
 				}
 
 			}

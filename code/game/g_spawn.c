@@ -404,7 +404,7 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	int			i;
 	gentity_t	*ent;
 	char		*s, *value, *gametypeName;
-	static char *gametypeNames[] = { "ffa", "tournament", "single", "team", "ca" /*FIXME "clanarena" */, "ctf", "oneflag", "obelisk", "harvester", "ft", "dom", "ad", "rr" };
+	static char *gametypeNames[] = { "ffa", "tournament", "single", "team", "ca" /*FIXME "clanarena" */, "ctf", "oneflag", "obelisk", "harvester", "ft", "dom", "ad", "rr", "race" };
 
 	// get the next free entity
 	ent = G_Spawn();
@@ -439,25 +439,41 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 		}
 	}
 
-#if 1
-	if (G_SpawnInt("not_gametype", "0", &i)) {
-		if (g_gametype.integer == i) {
-			ADJUST_AREAPORTAL();
-			G_FreeEntity(ent);
-			return;
-		}
-	}
-#endif
+	//FIXME this can also be a string in quake live
+	if (G_SpawnString("not_gametype", NULL, &value)) {
+		//FIXME did quakelive also use ints before ?
+		if (isdigit(value[0])) {
+			// old check using integer gametype values
+			if (g_gametype.integer == i) {
+				ADJUST_AREAPORTAL();
+				G_FreeEntity(ent);
+				return;
+			}
+		} else {
+			if (g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE) {
+				gametypeName = gametypeNames[g_gametype.integer];
 
-#if 0  //FIXME I was wrong
-	if (G_SpawnInt("gametype", "0", &i)) {
-		if (g_gametype.integer != i) {
-			ADJUST_AREAPORTAL();
-			G_FreeEntity(ent);
-			return;
+				s = strstr(value, gametypeName);
+				if (!s) {
+					// try alternate quake live gametype names
+					if (g_gametype.integer == GT_TEAM) {
+						s = strstr(value, "tdm");
+					}
+					if (g_gametype.integer == GT_TOURNAMENT) {
+						s = strstr(value, "duel");
+					}
+				}
+
+				if (s) {
+					//G_Printf("skipping item, not in gametype string: '%s'\n", value);
+					ADJUST_AREAPORTAL();
+					G_FreeEntity(ent);
+					return;
+				}
+			}
 		}
 	}
-#endif
+
 
 #if 1  //def MPACK
 	G_SpawnInt( "notta", "0", &i );
@@ -475,25 +491,34 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	}
 #endif
 
-#if 1
-	if( G_SpawnString( "gametype", NULL, &value ) ) {
-		if( g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE ) {
+
+	if (G_SpawnString("gametype", NULL, &value)) {
+		//Com_Printf("^5gametype: %s\n", value);
+
+		//FIXME gametype as int?  q3 mods?
+
+		if (g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE) {
 			gametypeName = gametypeNames[g_gametype.integer];
 
-			s = strstr( value, gametypeName );
-			if (!s  &&  g_gametype.integer == GT_TEAM) {
-				// try alternatenate quakelive name for 'team'
-				s = strstr(value, "tdm");
+			s = strstr(value, gametypeName);
+			if (!s) {
+				// try alternate quake live gametype names
+				if (g_gametype.integer == GT_TEAM) {
+					s = strstr(value, "tdm");
+				}
+				if (g_gametype.integer == GT_TOURNAMENT) {
+					s = strstr(value, "duel");
+				}
 			}
-			if( !s ) {
-				G_Printf("^1unknown gametype string: '%s'\n", value);
+
+			if (!s) {
+				//G_Printf("skipping item, not in gametype string: '%s'\n", value);
 				ADJUST_AREAPORTAL();
-				G_FreeEntity( ent );
+				G_FreeEntity(ent);
 				return;
 			}
 		}
 	}
-#endif
 
 	// move editor origin to pos
 	VectorCopy( ent->s.origin, ent->s.pos.trBase );

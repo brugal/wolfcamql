@@ -29,6 +29,7 @@ void CG_InvulnerabilityJuiced( const vec3_t org );
 #endif
 
 void CG_ScorePlum( int client, const vec3_t org, int score );
+void CG_DamagePlum(int client, const vec3_t org, int score, int dir);
 void CG_HeadShotPlum (const vec3_t org);
 
 localEntity_t *CG_MakeExplosion( const vec3_t origin, const vec3_t dir,

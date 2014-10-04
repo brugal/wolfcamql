@@ -18,3 +18,13 @@ wc/poster
                 alphaGen vertex
         }
 }
+
+wc/levelShotDetail
+{
+        nopicmip
+        {
+                map gfx/wc/detail2.tga
+                blendfunc GL_DST_COLOR GL_SRC_COLOR
+                rgbgen identity
+        }
+}

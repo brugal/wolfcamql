@@ -35,8 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../client/cl_console.h"
 #endif
 
-int demo_protocols[] =
-	{ 73 };  //{ 66, 67, 68, 0 };
+int demo_protocols[NUM_DEMO_PROTOCOLS] = { 66, 67, 68, 73, 90 };  // 69 ?  oa?
 
 #define MAX_NUM_ARGVS	50
 

@@ -64,6 +64,7 @@ void GL_Bind( image_t *image ) {
 		}
 		glState.currenttextures[glState.currenttmu] = texnum;
 		qglBindTexture (GL_TEXTURE_2D, texnum);
+		//Com_Printf("GL_Bind %d\n", texnum);
 	}
 }
 
@@ -120,12 +121,14 @@ void GL_BindMultitexture( image_t *image0, GLuint env0, image_t *image1, GLuint 
 		image1->frameUsed = tr.frameCount;
 		glState.currenttextures[1] = texnum1;
 		qglBindTexture( GL_TEXTURE_2D, texnum1 );
+		//Com_Printf("GL_BindMulti1 %d\n", texnum1);
 	}
 	if ( glState.currenttextures[0] != texnum0 ) {
 		GL_SelectTextureUnit( 0 );
 		image0->frameUsed = tr.frameCount;
 		glState.currenttextures[0] = texnum0;
 		qglBindTexture( GL_TEXTURE_2D, texnum0 );
+		//Com_Printf("GL_BindMulti0 %d\n", texnum0);
 	}
 }
 
@@ -1445,6 +1448,10 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 		return;
 	}
 	R_SyncRenderThread();
+
+	if (tess.numIndexes) {
+		RB_EndSurface();
+	}
 
 	// we definately want to sync every frame for the cinematics
 	qglFinish();

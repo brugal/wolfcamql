@@ -1709,6 +1709,10 @@ float CG_GetValue(int ownerDraw) {
 	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].kills;
 	  break;
 
+  case CG_1ST_PLYR_FRAGS_HMG:
+	  return cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].kills;
+	  break;
+
   case CG_1ST_PLYR_FRAGS_SG:
 	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].kills;
 	  break;
@@ -1753,6 +1757,10 @@ float CG_GetValue(int ownerDraw) {
 	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].hits;
 	  break;
 
+  case CG_1ST_PLYR_HITS_HMG:
+	  return cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].hits;
+	  break;
+
   case CG_1ST_PLYR_HITS_SG:
 	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].hits;
 	  break;
@@ -1795,6 +1803,10 @@ float CG_GetValue(int ownerDraw) {
 
   case CG_1ST_PLYR_SHOTS_MG:
 	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].atts;
+	  break;
+
+  case CG_1ST_PLYR_SHOTS_HMG:
+	  return cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].atts;
 	  break;
 
   case CG_1ST_PLYR_SHOTS_SG:
@@ -1845,6 +1857,10 @@ float CG_GetValue(int ownerDraw) {
 	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].damage;
 	  break;
 
+  case CG_1ST_PLYR_DMG_HMG:
+	  return cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].damage;
+	  break;
+
   case CG_1ST_PLYR_DMG_SG:
 	  return cg.duelScores[0].weaponStats[WP_SHOTGUN].damage;
 	  break;
@@ -1887,6 +1903,10 @@ float CG_GetValue(int ownerDraw) {
 
   case CG_1ST_PLYR_ACC_MG:
 	  return cg.duelScores[0].weaponStats[WP_MACHINEGUN].accuracy;
+	  break;
+
+  case CG_1ST_PLYR_ACC_HMG:
+	  return cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].accuracy;
 	  break;
 
   case CG_1ST_PLYR_ACC_SG:
@@ -1971,6 +1991,10 @@ float CG_GetValue(int ownerDraw) {
 	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].kills;
 	  break;
 
+  case CG_2ND_PLYR_FRAGS_HMG:
+	  return cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].kills;
+	  break;
+
   case CG_2ND_PLYR_FRAGS_SG:
 	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].kills;
 	  break;
@@ -2015,6 +2039,10 @@ float CG_GetValue(int ownerDraw) {
 	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].hits;
 	  break;
 
+  case CG_2ND_PLYR_HITS_HMG:
+	  return cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].hits;
+	  break;
+
   case CG_2ND_PLYR_HITS_SG:
 	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].hits;
 	  break;
@@ -2057,6 +2085,10 @@ float CG_GetValue(int ownerDraw) {
 
   case CG_2ND_PLYR_SHOTS_MG:
 	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].atts;
+	  break;
+
+  case CG_2ND_PLYR_SHOTS_HMG:
+	  return cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].atts;
 	  break;
 
   case CG_2ND_PLYR_SHOTS_SG:
@@ -2107,6 +2139,10 @@ float CG_GetValue(int ownerDraw) {
 	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].damage;
 	  break;
 
+  case CG_2ND_PLYR_DMG_HMG:
+	  return cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].damage;
+	  break;
+
   case CG_2ND_PLYR_DMG_SG:
 	  return cg.duelScores[1].weaponStats[WP_SHOTGUN].damage;
 	  break;
@@ -2149,6 +2185,10 @@ float CG_GetValue(int ownerDraw) {
 
   case CG_2ND_PLYR_ACC_MG:
 	  return cg.duelScores[1].weaponStats[WP_MACHINEGUN].accuracy;
+	  break;
+
+  case CG_2ND_PLYR_ACC_HMG:
+	  return cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].accuracy;
 	  break;
 
   case CG_2ND_PLYR_ACC_SG:
@@ -2720,6 +2760,15 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 
 	if (flags & CG_SHOW_IF_SG_FIRED) {
 		w = WP_SHOTGUN;
+		if (cg.duelScores[0].weaponStats[w].atts  ||  cg.duelScores[1].weaponStats[w].atts) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+
+	if (flags & CG_SHOW_IF_HMG_FIRED) {
+		w = WP_HEAVY_MACHINEGUN;
 		if (cg.duelScores[0].weaponStats[w].atts  ||  cg.duelScores[1].weaponStats[w].atts) {
 			return qtrue;
 		} else {
@@ -5636,7 +5685,7 @@ static void CG_SetArmorColor (void)
 }
 
 //
-void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex)
+void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen)
 {
 	rectDef_t rect;
 	int ival;
@@ -5650,6 +5699,14 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	const clientInfo_t *ci;
 	int clientNum;
 	vec4_t newColor;
+
+
+	//Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
+
+	if (menuWidescreen  ||  itemWidescreen) {
+		//Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
+	}
+
 
   if ( cg_drawStatus.integer == 0 ) {
 		return;
@@ -5964,6 +6021,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  CG_SetTeamColor();
 	  //CG_DrawPic(rect.x, rect.y, rect.w * (ival / 100.0), rect.h, shader);
+
 	  CG_AdjustFrom640( &rect.x, &rect.y, &rect.w, &rect.h );
 	  s1 = 0;
 	  t1 = 0;
@@ -6911,6 +6969,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_1ST_PLYR_FRAGS_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_MACHINEGUN].kills), 0, 0, textStyle, font, align);
 	  break;
+  case CG_1ST_PLYR_FRAGS_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].kills), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_1ST_PLYR_FRAGS_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_SHOTGUN].kills), 0, 0, textStyle, font, align);
 	  break;
@@ -6944,6 +7006,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_1ST_PLYR_HITS_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_MACHINEGUN].hits), 0, 0, textStyle, font, align);
 	  break;
+  case CG_1ST_PLYR_HITS_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].hits), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_1ST_PLYR_HITS_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_SHOTGUN].hits), 0, 0, textStyle, font, align);
 	  break;
@@ -6977,6 +7043,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_1ST_PLYR_SHOTS_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_MACHINEGUN].atts), 0, 0, textStyle, font, align);
 	  break;
+  case CG_1ST_PLYR_SHOTS_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].atts), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_1ST_PLYR_SHOTS_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_SHOTGUN].atts), 0, 0, textStyle, font, align);
 	  break;
@@ -7013,6 +7083,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_1ST_PLYR_DMG_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_MACHINEGUN].damage), 0, 0, textStyle, font, align);
 	  break;
+  case CG_1ST_PLYR_DMG_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_HEAVY_MACHINEGUN].damage), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_1ST_PLYR_DMG_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_SHOTGUN].damage), 0, 0, textStyle, font, align);
 	  break;
@@ -7054,6 +7128,18 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
+  case CG_1ST_PLYR_ACC_HMG:
+	  ival = WP_HEAVY_MACHINEGUN;
+	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
+		  Vector4Set(newColor, 1, 1, 1, 1);
+		  s = va("^7%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
+	  } else {
+		  Vector4Copy(color, newColor);
+		  s = va("%d%%", cg.duelScores[0].weaponStats[ival].accuracy);
+	  }
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
+	  break;
+
   case CG_1ST_PLYR_ACC_SG:
 	  ival = WP_SHOTGUN;
 	  if (cg.duelScores[0].weaponStats[ival].accuracy >= cg.duelScores[1].weaponStats[ival].accuracy) {
@@ -7232,6 +7318,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_2ND_PLYR_FRAGS_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_MACHINEGUN].kills), 0, 0, textStyle, font, align);
 	  break;
+  case CG_2ND_PLYR_FRAGS_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].kills), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_2ND_PLYR_FRAGS_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_SHOTGUN].kills), 0, 0, textStyle, font, align);
 	  break;
@@ -7265,6 +7355,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_2ND_PLYR_HITS_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_MACHINEGUN].hits), 0, 0, textStyle, font, align);
 	  break;
+  case CG_2ND_PLYR_HITS_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].hits), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_2ND_PLYR_HITS_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_SHOTGUN].hits), 0, 0, textStyle, font, align);
 	  break;
@@ -7298,6 +7392,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_2ND_PLYR_SHOTS_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_MACHINEGUN].atts), 0, 0, textStyle, font, align);
 	  break;
+  case CG_2ND_PLYR_SHOTS_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].atts), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_2ND_PLYR_SHOTS_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_SHOTGUN].atts), 0, 0, textStyle, font, align);
 	  break;
@@ -7334,6 +7432,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_2ND_PLYR_DMG_MG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_MACHINEGUN].damage), 0, 0, textStyle, font, align);
 	  break;
+  case CG_2ND_PLYR_DMG_HMG:
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_HEAVY_MACHINEGUN].damage), 0, 0, textStyle, font, align);
+	  break;
+
   case CG_2ND_PLYR_DMG_SG:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].weaponStats[WP_SHOTGUN].damage), 0, 0, textStyle, font, align);
 	  break;
@@ -7375,6 +7477,18 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
 	  break;
+  case CG_2ND_PLYR_ACC_HMG:
+	  ival = WP_HEAVY_MACHINEGUN;
+	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {
+		  Vector4Set(newColor, 1, 1, 1, 1);
+		  s = va("^7%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
+	  } else {
+		  Vector4Copy(color, newColor);
+		  s = va("%d%%", cg.duelScores[1].weaponStats[ival].accuracy);
+	  }
+	  CG_Text_Paint_Align(&rect, scale, newColor, s, 0, 0, textStyle, font, align);
+	  break;
+
   case CG_2ND_PLYR_ACC_SG:
 	  ival = WP_SHOTGUN;
 	  if (cg.duelScores[1].weaponStats[ival].accuracy >= cg.duelScores[0].weaponStats[ival].accuracy) {

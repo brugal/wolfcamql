@@ -449,6 +449,65 @@ void CG_ScorePlum( int client, const vec3_t org, int score ) {
 	AnglesToAxis( angles, re->axis );
 }
 
+void CG_DamagePlum (int client, const vec3_t org, int score, int dir) {
+	localEntity_t	*le;
+	refEntity_t		*re;
+	vec3_t			angles;
+	static vec3_t lastPos;
+
+	// only visualize for the client that scored
+	//FIXME cg_damagePlums
+	//FIXME option for damage plums for all
+	if (client != cg.predictedPlayerState.clientNum) {
+		//Com_Printf("^3FIXME not sclient for damageplum\n");
+		return;
+	}
+
+	le = CG_AllocLocalEntity();
+	le->leFlags = 0;
+	le->leType = LE_DAMAGEPLUM;
+	le->startTime = cg.time;
+	le->endTime = cg.time + 1000;  //4000;
+	le->lifeRate = 1.0 / ( le->endTime - le->startTime );
+
+
+	le->color[0] = le->color[1] = le->color[2] = le->color[3] = 1.0;
+	le->radius = score;
+
+
+	VectorCopy( org, le->pos.trBase );
+
+	//FIXME horrible, but this matters
+#if 0
+	if (org[2] >= lastPos[2] - 20 && org[2] <= lastPos[2] + 20) {
+		le->pos.trBase[2] -= 20;
+	}
+#endif
+
+	le->pos.trBase[0] += rand() % 40;
+	le->pos.trBase[1] += rand() % 40;
+
+	ByteToDir(dir, le->pos.trDelta);
+
+	VectorScale(le->pos.trDelta, -100, le->pos.trDelta);
+	le->pos.trDelta[2] = 300;
+
+	le->pos.trType = TR_GRAVITY;
+	le->pos.trTime = cg.time;
+
+	//CG_Printf( "DamagePlum origin %i %i %i -- %i\n", (int)org[0], (int)org[1], (int)org[2], (int)Distance(org, lastPos));
+	VectorCopy(org, lastPos);
+
+
+	re = &le->refEntity;
+
+	re->reType = RT_SPRITE;
+	re->radius = 16;
+
+	VectorClear(angles);
+	AnglesToAxis( angles, re->axis );
+}
+
 /*
 ==================
 CG_HeadShotPlum

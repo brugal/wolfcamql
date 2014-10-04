@@ -130,6 +130,7 @@ cvar_t	*cl_consoleAsChat;
 cvar_t *cl_numberPadInput;
 cvar_t *cl_maxRewindBackups;
 cvar_t *cl_keepDemoFileInMemory;
+cvar_t *cl_demoFileCheckSystem;
 
 clientActive_t		cl;
 clientConnection_t	clc;
@@ -1216,44 +1217,6 @@ keep_reading:
 
 /*
 ====================
-CL_WalkDemoExt
-====================
-*/
-static void CL_WalkDemoExt (const char *arg, char *name, int *demofile)
-{
-	int i = 0;
-	*demofile = 0;
-
-	Com_sprintf (name, MAX_OSPATH, "demos/%s.%s%d", arg, DEMOEXT, com_protocol->integer);
-
-	Com_Printf("demoext %d\n", com_protocol->integer);
-
-	FS_FOpenFileRead( name, demofile, qtrue );
-
-	if (*demofile)
-	{
-		Com_Printf("Demo file: %s\n", name);
-		return;
-	}
-
-	Com_Printf("Not found: %s\n", name);
-
-	while(0) {  //(demo_protocols[i])
-		Com_sprintf (name, MAX_OSPATH, "demos/%s.%s%d", arg, DEMOEXT, demo_protocols[i]);
-		FS_FOpenFileRead( name, demofile, qtrue );
-		if (*demofile)
-		{
-			Com_Printf("Demo file: %s\n", name);
-			break;
-		}
-		else
-			Com_Printf("Not found: %s\n", name);
-		i++;
-	}
-}
-
-/*
-====================
 CL_CompleteDemoName
 ====================
 */
@@ -1264,40 +1227,20 @@ static void CL_CompleteDemoName( char *args, int argNum )
 
 	if( argNum == 2 )
 	{
-		char demoExt[ 16 ];
-
 		//Field_Clear(&g_consoleField);
 
-		//Com_Printf("arg %s\n", args);
 		Q_strncpyz(origArgs, args, sizeof(origArgs));
 
-		Com_sprintf(demoExt, sizeof(demoExt), ".%s%d", DEMOEXT, com_protocol->integer);
 		//Com_Printf("^1wolfcam\n");
-		Field_CompleteFilename( "demos", demoExt, qtrue, qfalse, &foundMatch );
 
-
-#if 1
-		if (foundMatch) {
-			//Com_Printf("got match\n");
-		}
-
-		if (0) {  //(1) {  //(Q_stricmp(args, origArgs)) {
-			Com_Printf("^5(wolfcam demos)\n\n");
-			Com_Printf("args '%s'  origArgs '%s'\n", args, origArgs);
-		}
-
-		//Com_Printf("arg2 %s\n", args);
-		//strcpy(args, origArgs);
-
-		//Field_Clear(&g_consoleField);
+		// don't use extension since multiple protocols are supported
+		Field_CompleteFilename( "demos", "", qfalse, qfalse, &foundMatch );
 
 		//Com_Printf("^1ql\n");
-		Field_CompleteFilename("ql:demos", demoExt, qtrue, qtrue, &foundMatch);
 
-		if (0) {  //(Q_stricmp(args, origArgs)) {
-			Com_Printf("^5(quake live demos)\n\n");
-		}
-#endif
+		// don't use extension since multiple protocols are supported
+		Field_CompleteFilename("ql:demos", "", qfalse, qtrue, &foundMatch);
+
 	}
 }
 
@@ -1902,84 +1845,106 @@ static void CL_ReadExtraDemoMessage (demoFile_t *df)
 
 static qhandle_t CL_OpenDemoFile (const char *arg)
 {
-	char		name[MAX_OSPATH];
-	char		*ext_test;
-	int			protocol;
-	char		retry[MAX_OSPATH];
-	qhandle_t file;
+	char name[MAX_OSPATH];
+	char demoPathName[MAX_OSPATH];
+	qhandle_t file = 0;
+	int i;
 
 	if (!arg  ||  !*arg) {
 		return 0;
 	}
 
-	if (!Q_stricmpn(arg, "ql:", strlen("ql:"))) {
-		Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), arg + 3);
-		FS_FOpenSysFileRead(name, &file);
-	} else if (strstr(arg, "demos/") != arg) {
-		// check for an extension .DEMOEXT_?? (?? is protocol)
-		ext_test = strrchr(arg, '.');
+	//Com_Printf("playdemo '%s'\n", arg);
 
-		if(ext_test && !Q_stricmpn(ext_test + 1, DEMOEXT, ARRAY_LEN(DEMOEXT) - 1))
-		{
-			protocol = atoi(ext_test + ARRAY_LEN(DEMOEXT));
-
-#if 0
-			for(i = 0; demo_protocols[i]; i++)
-			{
-				if (demo_protocols[i] == protocol)
-					break;
-			}
-#endif
-			//if(demo_protocols[i] || protocol == com_protocol->integer)
-			if (protocol == com_protocol->integer) {
-				Com_sprintf (name, sizeof(name), "demos/%s", arg);
-				FS_FOpenFileRead( name, &file, qtrue );
-			} else {
-				int len;
-
-				Com_Printf("Protocol %d not supported for demos\n", protocol);
-				len = ext_test - arg;
-
-				if(len >= ARRAY_LEN(retry))
-					len = ARRAY_LEN(retry) - 1;
-
-				Q_strncpyz(retry, arg, len + 1);
-				retry[len] = '\0';
-				CL_WalkDemoExt( retry, name, &file );
-			}
-		} else {
-			CL_WalkDemoExt(arg, name, &file);
+	if (cl_demoFileCheckSystem->integer == 1) {
+		FS_FOpenSysFileRead(arg, &file);
+		if (file) {
+			goto done;
 		}
-	} else {  // arg is absolute path
-		FS_FOpenFileRead(arg, &file, qtrue);
 	}
 
-	if (!file) {
-		// check quakelive dir as last resort
-		Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s", Sys_QuakeLiveDir(), arg);
+	if (!Q_stricmpn(arg, "ql:", strlen("ql:"))) {
+		Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), arg + 3);
+		//Com_Printf("trying ql demo %s\n", name);
 		FS_FOpenSysFileRead(name, &file);
+
 		if (!file) {
-			Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.dm_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-			FS_FOpenSysFileRead(name, &file);
+			Com_Error(ERR_DROP, "couldn't open '%s' in quake live directory", arg + 3);
+			return 0;
+		} else {
+			goto done;
+		}
+	} else if (strstr(arg, "demos/") != arg) {  // name doesn't start with 'demos/'
+
+		Com_sprintf(demoPathName, sizeof(demoPathName), "demos/%s", arg);
+	} else {  // name starts with 'demos/'
+		Q_strncpyz(demoPathName, arg, sizeof(demoPathName));
+	}
+
+	// demoPathName starts with 'demos/'
+
+	//Com_Printf("opening %s\n", demoPathName);
+	FS_FOpenFileRead(demoPathName, &file, qtrue);
+
+	// check if demo name didn't have an extension
+	if (!file) {
+		for (i = 0;  i < ARRAY_LEN(demo_protocols)  &&  !file;  i++) {
+			Com_sprintf(name, sizeof(name), "%s.dm_%d", demoPathName, demo_protocols[i]);
+			FS_FOpenFileRead(name, &file, qtrue);
 			if (!file) {
-				Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.DM_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-				FS_FOpenSysFileRead(name, &file);
+				Com_sprintf(name, sizeof(name), "%s.DM_%d", demoPathName, demo_protocols[i]);
+				FS_FOpenFileRead(name, &file, qtrue);
 				if (!file) {
 					// :/
-					Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.dM_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-					FS_FOpenSysFileRead(name, &file);
+					Com_sprintf(name, sizeof(name), "%s.dM_%d", demoPathName, demo_protocols[i]);
+					FS_FOpenFileRead(name, &file, qtrue);
 					if (!file) {
 						// :{   :/
-						Com_sprintf(name, sizeof(name), "%s/home/baseq3/demos/%s.Dm_%d", Sys_QuakeLiveDir(), arg, com_protocol->integer);
-						FS_FOpenSysFileRead(name, &file);
-						if (!file) {
-							Com_Error(ERR_DROP, "couldn't open %s", arg);
-							return 0;
-						}
+						Com_sprintf(name, sizeof(name), "%s.Dm_%d", demoPathName, demo_protocols[i]);
+						FS_FOpenFileRead(name, &file, qtrue);
 					}
 				}
 			}
 		}
+	}
+
+	// check quakelive dir
+	if (!file) {
+		Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), demoPathName);
+		FS_FOpenSysFileRead(name, &file);
+
+		// check to see if name was given without protocol extension
+
+		for (i = 0;  i < ARRAY_LEN(demo_protocols)  &&  !file;  i++) {
+			Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s.dm_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+			FS_FOpenSysFileRead(name, &file);
+			if (!file) {
+				Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s.DM_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+				FS_FOpenSysFileRead(name, &file);
+				if (!file) {
+					// :/
+					Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s.dM_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+					FS_FOpenSysFileRead(name, &file);
+					if (!file) {
+						// :{   :/
+						Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s.Dm_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+						FS_FOpenSysFileRead(name, &file);
+					}
+				}
+			}
+		}  // end protocol list
+	}
+
+
+	if (!file  &&  cl_demoFileCheckSystem->integer == 2) {
+		FS_FOpenSysFileRead(arg, &file);
+	}
+
+done:
+
+	if (!file) {
+		Com_Error(ERR_DROP, "couldn't open demo %s", arg);
+		return 0;
 	}
 
 	if (file  &&  cl_keepDemoFileInMemory->integer) {
@@ -2004,13 +1969,13 @@ static char DemoNames[MAX_DEMO_FILES][MAX_OSPATH];
 
 void CL_PlayDemo_f (void)
 {
-	char		*arg;
+	const char *arg;
 	int i;
 	int n;
 
 	n = Cmd_Argc();
 
-	if (Cmd_Argc() < 2) {
+	if (n < 2) {
 		Com_Printf("demo <demoname1> <demoname2> ...\n");
 		return;
 	}
@@ -5109,6 +5074,7 @@ void CL_Init ( void ) {
 	Com_Printf("allocated %.2f MB for rewind backups\n", (sizeof(rewindBackups_t) * maxRewindBackups) / 1024.0 / 1024.0);
 
 	cl_keepDemoFileInMemory = Cvar_Get("cl_keepDemoFileInMemory", "1", CVAR_ARCHIVE);
+	cl_demoFileCheckSystem = Cvar_Get("cl_demoFileCheckSystem", "2", CVAR_ARCHIVE);
 
 	//
 	// register our commands

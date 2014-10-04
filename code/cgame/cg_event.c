@@ -319,6 +319,11 @@ static void CG_Obituary( const entityState_t *ent ) {
                 wclients[target].wstats[WP_MACHINEGUN].deaths++;
 				icon = cg_weapons[WP_MACHINEGUN].weaponIcon;
                 break;
+            case MOD_HMG:
+                wclients[attacker].wstats[WP_HEAVY_MACHINEGUN].kills++;
+                wclients[target].wstats[WP_HEAVY_MACHINEGUN].deaths++;
+				icon = cg_weapons[WP_HEAVY_MACHINEGUN].weaponIcon;
+                break;
             case MOD_SHOTGUN:
                 wclients[attacker].wstats[WP_SHOTGUN].kills++;
                 wclients[target].wstats[WP_SHOTGUN].deaths++;
@@ -1744,6 +1749,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 	case EV_ITEM_PICKUP:
 		DEBUGNAME("EV_ITEM_PICKUP");
+		//CG_PrintEntityStatep(es);
 		{
 			const gitem_t *item;
 			int		index;
@@ -2153,6 +2159,16 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	case EV_SCOREPLUM:
 		DEBUGNAME("EV_SCOREPLUM");
 		CG_ScorePlum( cent->currentState.otherEntityNum, cent->lerpOrigin, cent->currentState.time );
+		break;
+
+	case EV_DAMAGEPLUM:
+		DEBUGNAME("EV_DAMAGEPLUM");
+		//CG_PrintEntityStatep(&cent->currentState);
+		//FIXME generic possibly the random velocity
+		// time is the damage amount
+
+		CG_Printf("^3FIXME EV_DAMAGEPLUM\n");
+		//CG_DamagePlum(cent->currentState.clientNum, cent->lerpOrigin, cent->currentState.time, cent->currentState.generic1);
 		break;
 
 	//

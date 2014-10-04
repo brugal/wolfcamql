@@ -3067,10 +3067,23 @@ void	R_ShaderList_f (void) {
 		}
 
 		if ( shader->defaultShader ) {
-			ri.Printf (PRINT_ALL,  ": %s (DEFAULTED)\n", shader->name);
+			ri.Printf (PRINT_ALL,  ": %s (DEFAULTED)", shader->name);
 		} else {
-			ri.Printf (PRINT_ALL,  ": %s\n", shader->name);
+			ri.Printf (PRINT_ALL,  ": %s", shader->name);
 		}
+
+		if (shader->stages[0]  &&  shader->stages[0]->bundle[0].image[0]) {
+			ri.Printf(PRINT_ALL, " %d", shader->stages[0]->bundle[0].image[0]->texnum);
+		} else {
+			ri.Printf(PRINT_ALL, " .");
+		}
+
+		if (shader->stages[0]  &&  shader->stages[0]->bundle[0].image[1]) {
+			ri.Printf(PRINT_ALL, " %d", shader->stages[0]->bundle[0].image[1]->texnum);
+		}
+
+		ri.Printf(PRINT_ALL, "\n");
+
 		count++;
 	}
 	ri.Printf (PRINT_ALL, "%i total shaders\n", count);
@@ -3352,6 +3365,19 @@ void R_CreateSingleShader (void)
 			if (!hasLightmap) {
 				Com_Printf("^3WARNING single shader has no lightmap stage\n");
 				tr.singleShader = R_FindShader("wc/map/customlit", LIGHTMAP_NONE, qtrue);
+				if (!tr.singleShader  ||
+
+					!tr.singleShader->stages[0]  ||
+
+					!tr.singleShader->stages[0]->bundle[0].image[0]
+					) {
+					// ql packs might not be installed and customlit
+					// references textures/base_wall/concrete_dark.tga
+					Com_Printf("^1customlit doesn't have an image\n");
+					tr.singleShader = tr.defaultShader;
+					return;
+				}
+
 				tr.singleShader->stages[0]->bundle[0].image[0] = R_FindImageFile(r_singleShaderName->string, qtrue, qtrue, GL_REPEAT);
 				if (!tr.singleShader->stages[0]->bundle[0].image[0]) {
 					Com_Printf("^1couldn't create single shader\n");
@@ -3483,20 +3509,30 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 		R_SyncRenderThread();
 	}
 
-	qglBindTexture(GL_TEXTURE_2D, image->texnum);
+	//FIXME lightmaps?
+	GL_SelectTextureUnit(0);
+
+
+	GL_Bind(image);
+
+	//qglBindTexture(GL_TEXTURE_2D, image->texnum);
 
 	//FIXME 
-#if 1
+#if 0
 	//qglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	qglTexImage2D(GL_TEXTURE_2D, 0, image->internalFormat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 	//qglTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image->uploadWidth, image->uploadHeight, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	//qglTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 32, 32, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	image->uploadWidth = width;
 	image->uploadHeight = height;
 #endif
 
 
-#if 0
+	//return;
+
+#if 1
 	R_Upload32( (unsigned *)data, width, height,
 								image->mipmap,
 			  qfalse  /*FIXME allowPicmip*/,
@@ -3504,15 +3540,38 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 								&image->internalFormat,
 								&image->uploadWidth,
 								&image->uploadHeight );
+
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, image->wrapClampMode );
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, image->wrapClampMode );
+
+	GL_CheckErrors();
+
+	//qglFinish();
+
 #endif
 
 	//FIXME clamp
 #if 0
-	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
-	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
+	//qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
+	//qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, image->wrapClampMode);
+
+	// GL_CLAMP_TO_EDGE
+	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, image->wrapClampMode);
+
 #endif
 
 	qglBindTexture( GL_TEXTURE_2D, 0 );
+
+	GL_SelectTextureUnit(0);
+
+	qglBindTexture( GL_TEXTURE_2D, 0 );
+
+
+
+	GL_CheckErrors();
+
+	//qglFinish();
 
 }
 
@@ -3533,6 +3592,8 @@ qhandle_t RE_RegisterShaderFromData (const char *name, const ubyte *data, int wi
 	//FIXME
 	shader->stages[0]->stateBits &= ~GLS_DEPTHTEST_DISABLE;
 
+	GL_CheckErrors();
+
 	return h;
 }
 
@@ -3550,6 +3611,7 @@ void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 	shader_t *shader;
 	image_t *image;
 
+
 	shader = R_GetShaderByHandle(h);
 	//image = &shader->stages[0].bundle[0].image;
 	image = shader->stages[0]->bundle[0].image[0];
@@ -3561,7 +3623,9 @@ void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 	qglGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	//FIXME
-	//qglBindTexture(GL_TEXTURE_2D, 0);
+	qglBindTexture(GL_TEXTURE_2D, 0);
+
+	GL_CheckErrors();
 }
 
 qhandle_t RE_GetSingleShader (void)

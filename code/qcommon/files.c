@@ -1078,7 +1078,7 @@ Return qtrue if filename has a demo extension
 qboolean FS_IsDemoExt(const char *filename, int namelen)
 {
 	char *ext_test;
-	//int index
+	int index;
 	int protocol;
 
 	ext_test = strrchr(filename, '.');
@@ -1086,18 +1086,15 @@ qboolean FS_IsDemoExt(const char *filename, int namelen)
 	{
 		protocol = atoi(ext_test + ARRAY_LEN(DEMOEXT));
 
-		if(protocol == com_protocol->integer)
-			return qtrue;
-
-#if 0
-		for(index = 0; demo_protocols[index]; index++)
-		{
-			if(demo_protocols[index] == protocol)
+		for (index = 0;  index < ARRAY_LEN(demo_protocols);  index++) {
+			if (demo_protocols[index] == protocol) {
 				return qtrue;
+				Com_Printf("is demo true\n");
+			}
 		}
-#endif
 	}
 
+	Com_Printf("is demo false\n");
 	return qfalse;
 }
 
@@ -3710,11 +3707,13 @@ void FS_Restart( int checksumFeed ) {
 			Cvar_Set("fs_game", lastValidGame);
 			lastValidBase[0] = '\0';
 			lastValidGame[0] = '\0';
+			//FIXME wtf?  recursive call
 			FS_Restart(checksumFeed);
 			Com_Error( ERR_DROP, "Invalid game folder" );
 			return;
 		}
-		Com_Error( ERR_FATAL, "Couldn't load default.cfg" );
+		Com_Error( ERR_DROP, "Couldn't load default.cfg" );
+		//Com_Printf("^1Couldn't load default.cfg\n");
 	}
 
 	if ( Q_stricmp(fs_gamedirvar->string, lastValidGame) ) {

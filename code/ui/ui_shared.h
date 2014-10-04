@@ -148,7 +148,7 @@ typedef struct {
   vec4_t borderColor;             // border color
   vec4_t outlineColor;            // border color
   qhandle_t background;           // background asset
-	const char *backgroundName;
+  const char *backgroundName;
 } windowDef_t;
 
 typedef windowDef_t Window;
@@ -266,7 +266,8 @@ typedef struct itemDef_s {
 	float special;								 // used for feeder id's etc.. diff per type
   int cursorPos;                 // cursor position in characters
 	int precision;
-	void *typeData;								 // type specific data ptr's	
+	void *typeData;								 // type specific data ptr's
+	int widescreen;
 } itemDef_t;
 
 typedef struct {
@@ -287,6 +288,7 @@ typedef struct {
   vec4_t focusColor;								// focus color for items
   vec4_t disableColor;							// focus color for items
   itemDef_t *items[MAX_MENUITEMS];	// items this menu contains   
+	int widescreen;
 } menuDef_t;
 
 typedef struct {
@@ -354,7 +356,7 @@ typedef struct {
   void (*addRefEntityToScene) (const refEntity_t *re );
   void (*renderScene) ( const refdef_t *fd );
   void (*registerFont) (const char *pFontname, int pointSize, fontInfo_t *font);
-	void (*ownerDrawItem) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex);
+	void (*ownerDrawItem) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen);
 	//void (*ownerDrawItem2) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int fontIndex);
 	float (*getValue) (int ownerDraw);
 	qboolean (*ownerDrawVisible) (int flags, int flags2);

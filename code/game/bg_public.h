@@ -773,6 +773,9 @@ typedef enum {
 	EV_RACE_CHECKPOINT = 94,
 	EV_RACE_END = 95,
 
+	EV_DAMAGEPLUM = 96,
+	EV_AWARD = 97,
+
 	// just to allow compiling  -- no it's used with predicted player state
 	EV_STEP_4 = 196,
 	EV_STEP_8,

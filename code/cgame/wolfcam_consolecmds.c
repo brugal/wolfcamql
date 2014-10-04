@@ -487,6 +487,12 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
         print_ind_weap_stats (w);
     }
 
+    w = &ws[WP_HEAVY_MACHINEGUN];
+    if (w->kills  ||  w->deaths  ||  w->atts) {
+        Com_Printf ("  ^2hmg          ");
+        print_ind_weap_stats (w);
+    }
+
     {
         wweaponStats_t wtmp;
 
