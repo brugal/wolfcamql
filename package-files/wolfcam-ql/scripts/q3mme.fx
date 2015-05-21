@@ -352,7 +352,7 @@ player/gibbed {
 //      rendering the specific projectile
 
 // wolfcam: the other ql weapons also available as 'nailgun', 'prox',
-//   and 'chaingun'
+//   'chaingun', and 'hmg'
 // wolfcam: weapons also have, in addition to /impact scripts, /impactflesh
 //   scripts.  ex:  weapon/plasma/impactflesh
 //   inputs for 'impactflesh' are: origin, dir, and end

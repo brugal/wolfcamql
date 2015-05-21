@@ -325,26 +325,29 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 typedef enum {
 	GT_FFA,				// free for all
 	GT_TOURNAMENT,		// one on one tournament
-	GT_SINGLE_PLAYER,	// single player ffa
+	GT_RACE,  // ql replaced single player with race
 
 	//-- team games go after this --
 
 	GT_TEAM,			// team deathmatch
 	GT_CA,				// clan arena
-	GT_CTF,				// capture the flag
+
+	GT_CTF,				// capture the flag  5
 	GT_1FCTF,
 	GT_OBELISK,
 	GT_HARVESTER,
 	GT_FREEZETAG,
-	GT_DOMINATION,
+
+	GT_DOMINATION,  // 10
 	GT_CTFS,
 	GT_RED_ROVER,
 
 	// cpma
 	GT_NTF,  // not team fortress
 	GT_2V2,
-	GT_HM,  // hoony mode
-	GT_RACE,
+
+	GT_HM,  // hoony mode  15
+	GT_SINGLE_PLAYER,   // 16
 	GT_MAX_GAME_TYPE,
 } gametype_t;
 
@@ -611,6 +614,8 @@ typedef enum {
 	HIC_NUM_HOLDABLE
 } holdableCpma_t;
 
+// all possible weapons for any demo protocol type, real max is a separate int WP_NUM_WEAPONS
+
 typedef enum {
 	WP_NONE,
 
@@ -619,21 +624,25 @@ typedef enum {
 	WP_SHOTGUN,
 	WP_GRENADE_LAUNCHER,
 	WP_ROCKET_LAUNCHER,
-	WP_LIGHTNING,
+
+	WP_LIGHTNING,  // 6
 	WP_RAILGUN,
 	WP_PLASMAGUN,
 	WP_BFG,
-	WP_GRAPPLING_HOOK,
+	WP_GRAPPLING_HOOK,  // 10
+
 #if 1  //def MPACK
-	WP_NAILGUN,
+	WP_NAILGUN,  // 11
 	WP_PROX_LAUNCHER,
 	WP_CHAINGUN,
 #endif
 
-	WP_HEAVY_MACHINEGUN,
-	//WP_15,
-	WP_NUM_WEAPONS
+	WP_HEAVY_MACHINEGUN,  // 14
+
+	WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS  // 15
 } weapon_t;
+
+extern int WP_NUM_WEAPONS;
 
 
 // reward sounds (stored in ps->persistant[PERS_PLAYEREVENTS])

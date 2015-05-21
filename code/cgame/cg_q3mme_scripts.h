@@ -205,7 +205,7 @@ typedef struct jitFxToken_s {
 
 
 typedef struct effectScripts_s {
-	weaponEffects_t weapons[WP_NUM_WEAPONS];  //FIXME oops -- devmap with weapon not included
+	weaponEffects_t weapons[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];  //FIXME oops -- devmap with weapon not included
 
 	char playerTalk[MAX_FX_SCRIPT_SIZE];
 	char playerConnection[MAX_FX_SCRIPT_SIZE];
@@ -248,7 +248,7 @@ typedef struct effectScripts_s {
 
 	//FIXME hack
 	//jitFxToken_t jitToken[MAX_FX_SCRIPT_SIZE * MAX_FX_EXTRA + 7 * sizeof(int) * WP_NUM_WEAPONS];
-	jitFxToken_t *jitToken[MAX_FX_SCRIPT_SIZE * MAX_FX_EXTRA + 7 * sizeof(int) * WP_NUM_WEAPONS];
+	jitFxToken_t *jitToken[MAX_FX_SCRIPT_SIZE * MAX_FX_EXTRA + 7 * sizeof(int) * WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 } effectScripts_t;
 
 extern effectScripts_t EffectScripts;

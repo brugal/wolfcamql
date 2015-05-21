@@ -893,6 +893,9 @@ void CL_ParseGamestate( msg_t *msg ) {
 					Cvar_Set("protocol", "73");
 				} else if (p == PROTOCOL_QL) {
 					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
+				} else if (strlen(value) == 0) {
+					Com_Printf("^5protocol not set, setting to %d and then checking com_protocol\n", PROTOCOL_QL);
+					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
 				} else {
 					Com_Printf("^3unknown protocol %d, trying dm %d\n", p, PROTOCOL_QL);
 					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
@@ -904,6 +907,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 				p = atoi(value);
 				if (p >= 66  &&  p <= 71) {
 					Com_Printf("^5real gamestate using com_protocol %d (%s)\n", PROTOCOL_Q3, value);
+					Cvar_Set("real_protocol", value);
 					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
 				}
 

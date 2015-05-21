@@ -590,7 +590,7 @@ typedef struct {
 	int megaHealthPickups;
 	float megaHealthTime;
 
-	duelWeaponStats_t weaponStats[WP_NUM_WEAPONS];
+	duelWeaponStats_t weaponStats[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 } duelScore_t;
 
 typedef struct {

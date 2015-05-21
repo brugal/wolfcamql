@@ -33,21 +33,24 @@ static int forceModelModificationCount = -1;
 const char *gametypeConfigs[] = {
 	"ffa.cfg",
 	"duel.cfg",
-	"singleplayer.cfg",
+	"race.cfg",  // ql replace single player with race
 	"tdm.cfg",
 	"ca.cfg",
+
 	"ctf.cfg",
 	"1fctf.cfg",
 	"obelisk.cfg",
 	"harvester.cfg",
 	"freezetag.cfg",
+
 	"domination.cfg",
 	"ad.cfg",
 	"rr.cfg",
 	"ntf.cfg",
 	"2v2.cfg",
+
 	"hm.cfg",
-	"race.cfg",
+	"singleplayer.cfg",
 };
 
 
@@ -3002,7 +3005,8 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.botSkillShaders[3] = trap_R_RegisterShader( "menu/art/skill4.tga" );
 	cgs.media.botSkillShaders[4] = trap_R_RegisterShader( "menu/art/skill5.tga" );
 
-	cgs.media.viewBloodShader = trap_R_RegisterShader( "viewBloodBlend" );
+	// 2015-05-15 renamed viewDamageBlend instead of viewBloodBlend
+	cgs.media.viewBloodShader = trap_R_RegisterShader( "viewDamageBlend" );
 
 	cgs.media.deferShader = trap_R_RegisterShaderNoMip( "gfx/2d/defer.tga" );
 	cgs.media.unavailableShader = trap_R_RegisterShader("gfx/2d/unavailable");
@@ -3028,7 +3032,9 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.iceTrailShader = trap_R_RegisterShader("iceTrail");
 	}
 
-	cgs.media.bloodTrailShader = trap_R_RegisterShader( "bloodTrail" );
+	// removed in ql 2015-05-15
+	//cgs.media.bloodTrailShader = trap_R_RegisterShader( "bloodTrail" );
+	cgs.media.bloodTrailShader = trap_R_RegisterShader("wc/bloodTrail");
 	cgs.media.q3bloodTrailShader = trap_R_RegisterShader("q3bloodTrail");
 
 	cgs.media.lagometerShader = trap_R_RegisterShader("lagometer" );
@@ -3260,7 +3266,8 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.balloonShader = trap_R_RegisterShader( "sprites/balloon3" );
 
-	cgs.media.bloodExplosionShader = trap_R_RegisterShader( "bloodExplosion" );
+	//cgs.media.bloodExplosionShader = trap_R_RegisterShader( "bloodExplosion" );
+	cgs.media.bloodExplosionShader = trap_R_RegisterShader("wc/bloodExplosion");
 
 	cgs.media.bulletFlashModel = trap_R_RegisterModel("models/weaphits/bullet.md3");
 	cgs.media.ringFlashModel = trap_R_RegisterModel("models/weaphits/ring02.md3");
@@ -3354,7 +3361,8 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.iceMarkShader = trap_R_RegisterShader("iceMark");
 	}
 
-	cgs.media.bloodMarkShader = trap_R_RegisterShader( "bloodMark" );
+	//cgs.media.bloodMarkShader = trap_R_RegisterShader( "bloodMark" );
+	cgs.media.bloodMarkShader = trap_R_RegisterShader("wc/bloodMark");
 	cgs.media.q3bloodMarkShader = trap_R_RegisterShader("q3bloodMark");
 
 	// register the inline models
@@ -6453,6 +6461,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		// start as baseq3
 		memcpy(&bg_itemlist, &bg_itemlistQ3, sizeof(gitem_t) * bg_numItemsQ3);
 		bg_numItems = bg_numItemsQ3;
+		WP_NUM_WEAPONS = 11;
 
 #if 0
 		GT_FFA = 0;
@@ -6602,6 +6611,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	} else if (cgs.realProtocol == 73) {
 		memcpy(&bg_itemlist, &bg_itemlistQldm73, sizeof(gitem_t) * bg_numItemsQldm73);
 		bg_numItems = bg_numItemsQldm73;
+		WP_NUM_WEAPONS = 14;  // no hmg
 		//Com_Printf("^5setting item list to ql dm 73\n");
 
 	}

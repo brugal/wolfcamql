@@ -5701,13 +5701,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	vec4_t newColor;
 
 
-	//Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
-
-	if (menuWidescreen  ||  itemWidescreen) {
-		//Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
-	}
-
-
   if ( cg_drawStatus.integer == 0 ) {
 		return;
   }
@@ -5728,12 +5721,15 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   args.h = h;
   args.text_x = text_x;
   args.text_y = text_y;
+
+
   args.ownerDraw = ownerDraw;
   if (ownerDrawFlags) {
 	  args.ownerDrawFlags = ownerDrawFlags;
   } else {
 	  args.ownerDrawFlags = ownerDrawFlags2;
   }
+
   args.align = align;
   args.special = special;
   args.scale = scale;
@@ -5748,6 +5744,23 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   rect.y = y;
   rect.w = w;
   rect.h = h;
+
+  //Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
+
+  if (menuWidescreen  ||  itemWidescreen) {
+	  //Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
+	  //FIXME testing widescren
+
+	  int widescreenValue = menuWidescreen;
+	  if (widescreenValue == 0) {
+		  widescreenValue = itemWidescreen;
+	  }
+
+	  //rect.x += 300;
+	  //x += 300;
+  }
+
+
 
   {
 	  int mn, mx;
@@ -6471,6 +6484,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else {
 			  ci = &cgs.clientinfo[cg.duelPlayer1];
 		  }
+		  // Com_Printf("^3invalid duel scores......\n");
 	  } else {
 		  ci = &cg.duelScores[0].ci;
 	  }

@@ -2161,16 +2161,22 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		CG_ScorePlum( cent->currentState.otherEntityNum, cent->lerpOrigin, cent->currentState.time );
 		break;
 
-	case EV_DAMAGEPLUM:
+	case EV_DAMAGEPLUM: {
+		static qboolean warningGiven = qfalse;
+
 		DEBUGNAME("EV_DAMAGEPLUM");
 		//CG_PrintEntityStatep(&cent->currentState);
 		//FIXME generic possibly the random velocity
 		// time is the damage amount
 
-		CG_Printf("^3FIXME EV_DAMAGEPLUM\n");
+		if (!warningGiven) {
+			CG_Printf("^3FIXME EV_DAMAGEPLUM\n");
+			warningGiven = qtrue;
+		}
 		//CG_DamagePlum(cent->currentState.clientNum, cent->lerpOrigin, cent->currentState.time, cent->currentState.generic1);
 		break;
 
+	}
 	//
 	// missile impacts
 	//

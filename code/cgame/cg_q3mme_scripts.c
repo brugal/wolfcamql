@@ -7132,8 +7132,6 @@ static void CG_ParseQ3mmeEffect (const char *name, char *lastLine, fileHandle_t 
         wi->hasImpactFleshScript = qtrue;
         CG_SetQ3mmeFXScript(name, wi->impactFleshScript, sizeof(wi->impactFleshScript), handle, lastLine);
         return;
-
-
     } else if (!Q_stricmpt(name, "weapon/chaingun/fire")) {
         wi = &EffectScripts.weapons[WP_CHAINGUN];
         wi->hasFireScript = qtrue;
@@ -7196,6 +7194,37 @@ static void CG_ParseQ3mmeEffect (const char *name, char *lastLine, fileHandle_t 
         wi->hasImpactFleshScript = qtrue;
         CG_SetQ3mmeFXScript(name, wi->impactFleshScript, sizeof(wi->impactFleshScript), handle, lastLine);
         return;
+    } else if (!Q_stricmpt(name, "weapon/hmg/fire")) {
+        wi = &EffectScripts.weapons[WP_HEAVY_MACHINEGUN];
+        wi->hasFireScript = qtrue;
+        CG_SetQ3mmeFXScript(name, wi->fireScript, sizeof(wi->fireScript), handle, lastLine);
+        return;
+    } else if (!Q_stricmpt(name, "weapon/hmg/flash")) {
+        wi = &EffectScripts.weapons[WP_HEAVY_MACHINEGUN];
+        wi->hasFlashScript = qtrue;
+        CG_SetQ3mmeFXScript(name, wi->flashScript, sizeof(wi->flashScript), handle, lastLine);
+        return;
+    } else if (!Q_stricmpt(name, "weapon/hmg/projectile")) {
+        wi = &EffectScripts.weapons[WP_HEAVY_MACHINEGUN];
+        wi->hasProjectileScript = qtrue;
+        CG_SetQ3mmeFXScript(name, wi->projectileScript, sizeof(wi->projectileScript), handle, lastLine);
+        return;
+    } else if (!Q_stricmpt(name, "weapon/hmg/trail")) {
+        wi = &EffectScripts.weapons[WP_HEAVY_MACHINEGUN];
+        wi->hasTrailScript = qtrue;
+        CG_SetQ3mmeFXScript(name, wi->trailScript, sizeof(wi->trailScript), handle, lastLine);
+        return;
+    } else if (!Q_stricmpt(name, "weapon/hmg/impact")) {
+        wi = &EffectScripts.weapons[WP_HEAVY_MACHINEGUN];
+        wi->hasImpactScript = qtrue;
+        CG_SetQ3mmeFXScript(name, wi->impactScript, sizeof(wi->impactScript), handle, lastLine);
+        return;
+	} else if (!Q_stricmpt(name, "weapon/hmg/impactflesh")) {
+        wi = &EffectScripts.weapons[WP_HEAVY_MACHINEGUN];
+        wi->hasImpactFleshScript = qtrue;
+        CG_SetQ3mmeFXScript(name, wi->impactFleshScript, sizeof(wi->impactFleshScript), handle, lastLine);
+        return;
+
 
 
     } else if (EffectScripts.numExtra < MAX_FX_EXTRA) {

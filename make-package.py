@@ -10,7 +10,7 @@ f.close()
 packageDir = "package-release/wolfcamql%s" % VERSIONSTRING
 os.system("rm -r %s/" % packageDir)
 if not os.path.exists(packageDir):
-    os.mkdir(packageDir)
+    os.makedirs(packageDir)
 os.system("cp -a package-files/* %s/" % packageDir)
 os.system("cp COPYING.txt COPYING-backtrace.txt CREDITS-wolfcam.txt CREDITS-openarena.txt README-ioquake3.txt README-wolfcam.txt version %s/" % packageDir)
 os.system("cp code/libs/SDL.dll code/libs/backtrace.dll %s/" % packageDir)

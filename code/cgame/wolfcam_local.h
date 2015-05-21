@@ -161,9 +161,9 @@ typedef struct {
 	unsigned long int snapshotPingAccum;
 	int snapshotPingSamples;
 
-    wweaponStats_t wstats[WP_NUM_WEAPONS];
-	wweaponStats_t perKillwstats[WP_NUM_WEAPONS];
-	wweaponStats_t lastKillwstats[WP_NUM_WEAPONS];
+    wweaponStats_t wstats[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
+	wweaponStats_t perKillwstats[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
+	wweaponStats_t lastKillwstats[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 	qboolean needToClearPerKillStats;  // clear when fire is released so that the extra spam after a kill doesn't count towards next kill's accuracy
 	int fireWeaponPressedTime;
 	qboolean fireWeaponPressedClearedStats;
@@ -199,7 +199,7 @@ typedef struct {
 	int snapshotPingAccum;
 	int snapshotPingSamples;
 
-    wweaponStats_t wstats[WP_NUM_WEAPONS];
+    wweaponStats_t wstats[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 
 } woldclient_t;
 

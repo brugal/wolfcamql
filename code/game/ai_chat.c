@@ -283,6 +283,7 @@ char *BotWeaponNameForMeansOfDeath(int mod) {
 		case MOD_SHOTGUN: return "Shotgun";
 		case MOD_GAUNTLET: return "Gauntlet";
 		case MOD_MACHINEGUN: return "Machinegun";
+		case MOD_HMG: return "Heavy Machinegun";
 		case MOD_GRENADE:
 		case MOD_GRENADE_SPLASH: return "Grenade Launcher";
 		case MOD_ROCKET:

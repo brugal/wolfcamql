@@ -75,6 +75,7 @@ int PERS_GAUNTLET_FRAG_COUNT = 12;
 int PERS_CAPTURES = 13;
 int PERS_ATTACKEE_ARMOR = 14;
 
+int WP_NUM_WEAPONS = 15;  // quakelive dm_90 with hmg
 
 const vec3_t bg_playerMins = { -15, -15, -24 };
 const vec3_t bg_playerMaxs = { 15, 15, 32 };

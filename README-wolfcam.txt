@@ -346,7 +346,7 @@ Ex:
   The following syntax is invalid:
     pow(10, 2)  // invalid
 
-* additional vars that can be read: 'end' (vector) (can also be written), 'cgtime' server time, 'team', 'clientnum', 'enemy', 'teammate', 'ineyes' (is it first person view), 'surfacetype', 'gametype' (0: ffa, 1: duel, 2: single player, 3: tdm, 4: clan arena, 5: ctf, 9: freezetag)
+* additional vars that can be read: 'end' (vector) (can also be written), 'cgtime' server time, 'team', 'clientnum', 'enemy', 'teammate', 'ineyes' (is it first person view), 'surfacetype', 'gametype' (see cg_gametype description in ql hud extensions)
 
 * additional vars for reading and writing:  t0 up to t9  and v0 up to v9
 
@@ -825,6 +825,28 @@ Fonts can also be used for hud config elements:
 
   WCG_KILL_COUNT  number of kills since last death or reset ("killcountreset"
                   command)
+
+* cg_gametype variable checking corresponds to quake with additional support for quake3 and cpma gametypes:
+
+  0   ffa
+  1   duel
+  2   race
+  3   team death match
+  4   clan arena
+  5   ctf
+  6   one flag ctf
+  7   obelisk
+  8   harvester
+  9   freezetag
+  10  domination
+  11  capture strike (ctfs), attack / defend
+  12  red rover
+  13  cpma 'not team fortress'
+  14  cpma 2v2
+  15  cpma hoony mode
+  16  quake3 single player
+
+* ownerdraws removed in Aug 27, 2014 quakelive update can still be referenced by including ui/wcmenudef.h
 
 ----------------------------------------------------------------
 

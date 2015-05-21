@@ -312,7 +312,7 @@ struct gclient_s {
 #if 1  //def MPACK
 	gentity_t	*persistantPowerup;
 	int			portalID;
-	int			ammoTimes[WP_NUM_WEAPONS];
+	int			ammoTimes[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 	int			invulnerabilityTime;
 #endif
 

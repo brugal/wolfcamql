@@ -28,3 +28,36 @@ wc/levelShotDetail
                 rgbgen identity
         }
 }
+
+wc/bloodTrail {
+        nopicmip
+        entityMergable
+        {
+                clampmap gfx/damage/blood_spurt.tga
+                blendfunc blend
+                rgbgen vertex
+                alphagen vertex
+        }
+}
+
+wc/bloodExplosion {  // blood at point of impact
+    nopicmip
+    cull disable
+    {
+        map models/weaphits/blood201.tga
+        blendfunc blend
+        alphagen entity
+        rgbgen entity
+    }
+}
+
+wc/bloodMark {
+    nopicmip
+    polygonOffset
+    {
+        clampmap gfx/damage/blood_stain.tga
+        blendFunc blend
+        rgbgen identityLighting
+        alphagen vertex
+    }
+}

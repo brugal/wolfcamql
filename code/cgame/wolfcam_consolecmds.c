@@ -207,7 +207,7 @@ void Wolfcam_Server_Info_f (void)
 }
 
 // server totals
-static int totalKills[WP_NUM_WEAPONS];
+static int totalKills[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 static float totalWarp;
 //static int totalNoWarp;
 static int totalWarpSeverity;

@@ -92,8 +92,9 @@ char *Sys_DefaultHomePath(void)
 
 char *Sys_QuakeLiveDir (void)
 {
-	char *p;
+	const char *p;
 	const char *override = NULL;
+	const char *user = getenv("USER");
 
 	if (!*QuakeLivePath) {
 		override = Cvar_VariableString("fs_quakelivedir");
@@ -102,14 +103,20 @@ char *Sys_QuakeLiveDir (void)
 			//FS_ReplaceSeparators(QuakeLivePath);
 			return QuakeLivePath;
 		}
+
 		if ((p = getenv("HOME")) != NULL) {
+			if (user  &&  *user) {
+				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.wine/drive_c/users/%s/Application Data/id Software/quakelive/", p, user);
+			} else {
+				// try old quakelive native linux/mac support
 #ifdef MACOS_X
-			//FIXME not sure
-			// /Library/Application\ Support/Quakelive/
-			Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/Library/Application Support/Quakelive/", p);
+				//FIXME not sure
+				// /Library/Application\ Support/Quakelive/
+				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/Library/Application Support/Quakelive/", p);
 #else
-			Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.quakelive/quakelive/", p);
+				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.quakelive/quakelive/", p);
 #endif
+			}
 		}
 	}
 

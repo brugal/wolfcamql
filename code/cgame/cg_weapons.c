@@ -3071,7 +3071,7 @@ void CG_FireWeapon( centity_t *cent ) {
 		}
 	}
 
-	if ((ent->weapon == WP_MACHINEGUN  ||  ent->weapon == WP_CHAINGUN)  &&  EffectScripts.weapons[ent->weapon].hasTrailScript) {
+	if ((ent->weapon == WP_MACHINEGUN  ||  ent->weapon == WP_CHAINGUN  ||  ent->weapon == WP_HEAVY_MACHINEGUN)  &&  EffectScripts.weapons[ent->weapon].hasTrailScript) {
 		vec3_t start, end;
 		vec3_t forward;
 		trace_t tr;
@@ -4417,7 +4417,7 @@ void CG_Bullet( const vec3_t end, int sourceEntityNum, const vec3_t normal, qboo
 			// draw a tracer
 
 
-			if ((weapon == WP_MACHINEGUN  ||  weapon == WP_CHAINGUN)  &&  EffectScripts.weapons[weapon].hasTrailScript) {
+			if ((weapon == WP_MACHINEGUN  ||  weapon == WP_CHAINGUN  ||  weapon == WP_HEAVY_MACHINEGUN)  &&  EffectScripts.weapons[weapon].hasTrailScript) {
 				// pass
 			} else {
 				if ( random() < cg_tracerChance.value ) {

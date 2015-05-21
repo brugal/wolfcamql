@@ -157,6 +157,10 @@ void SnapVectorTowards( vec3_t v, vec3_t to ) {
 #define	MACHINEGUN_DAMAGE	7
 #define	MACHINEGUN_TEAM_DAMAGE	5		// wimpier MG in teamplay
 
+#define HEAVY_MACHINEGUN_SPREAD 200  //FIXME assuming same as mg
+#define HEAVY_MACHINEGUN_DAMAGE 8
+
+
 void Bullet_Fire (gentity_t *ent, float spread, int damage, int mod) {
 	trace_t		tr;
 	vec3_t		end;
@@ -863,6 +867,10 @@ void FireWeapon( gentity_t *ent ) {
 		} else {
 			Bullet_Fire( ent, MACHINEGUN_SPREAD, MACHINEGUN_TEAM_DAMAGE, MOD_MACHINEGUN );
 		}
+		break;
+	case WP_HEAVY_MACHINEGUN:
+		//FIXME != team game like machine gun
+		Bullet_Fire(ent, HEAVY_MACHINEGUN_SPREAD, HEAVY_MACHINEGUN_DAMAGE, MOD_HMG);
 		break;
 	case WP_GRENADE_LAUNCHER:
 		weapon_grenadelauncher_fire( ent );

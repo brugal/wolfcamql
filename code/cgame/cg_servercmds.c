@@ -1036,6 +1036,9 @@ void CG_ParseServerinfo (qboolean firstCall)
 			}
 		} else {
 			switch (cgs.gametype) {
+			case 2:
+				cgs.gametype = GT_SINGLE_PLAYER;
+				break;
 			case 4:
 				cgs.gametype = GT_CTF;
 				break;
@@ -1057,13 +1060,7 @@ void CG_ParseServerinfo (qboolean firstCall)
 		}
 	}
 
-	//FIXME
-	if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_RACE) {
-		// ql huds use the original integer value
-		trap_Cvar_Set("cg_gametype", "2");
-	} else {
-		trap_Cvar_Set("cg_gametype", va("%i", cgs.gametype));
-	}
+	trap_Cvar_Set("cg_gametype", va("%i", cgs.gametype));
 
 	trap_Cvar_Set("g_gametype", va("%i", cgs.gametype));
 
@@ -1177,6 +1174,9 @@ void CG_ParseServerinfo (qboolean firstCall)
 		}
 		CG_BuildSpectatorString();
 	}
+
+	//FIXME don't check for cgs.gametype < GT_MAX_GAME_TYPE since cpma gametype
+	// can be negative
 
 	if ((firstCall  ||  cgs.instaGib != instaGib)  &&  (cgs.gametype >= 0  &&  cgs.gametype < GT_MAX_GAME_TYPE)) {
 		cgs.instaGib = instaGib;
@@ -2993,8 +2993,11 @@ static qboolean CG_CpmaParseMstats (void)
 		cg.duelPlayer2 = clientNum;
 	}
 
+	//Com_Printf("duel player %d %s\n", duelPlayer, cgs.clientinfo[duelPlayer].name);
+	//Com_Printf("duel player %d %s\n", duelPlayer, cgs.clientinfo[clientNum].name);
+
 	ds = &cg.duelScores[duelPlayer];
-	ds->ci = cgs.clientinfo[duelPlayer];
+	ds->ci = cgs.clientinfo[clientNum];
 
 	totalHits = 0;
 	totalAtts = 0;

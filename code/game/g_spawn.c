@@ -458,9 +458,14 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 					// try alternate quake live gametype names
 					if (g_gametype.integer == GT_TEAM) {
 						s = strstr(value, "tdm");
-					}
-					if (g_gametype.integer == GT_TOURNAMENT) {
+					} else if (g_gametype.integer == GT_TOURNAMENT) {
 						s = strstr(value, "duel");
+					} else if (g_gametype.integer == GT_HARVESTER) {
+						s = strstr(value, "har");
+					} else if (g_gametype.integer == GT_1FCTF) {
+						s = strstr(value, "1f");
+					} else if (g_gametype.integer == GT_OBELISK) {
+						s = strstr(value, "ob");
 					}
 				}
 
@@ -505,9 +510,14 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 				// try alternate quake live gametype names
 				if (g_gametype.integer == GT_TEAM) {
 					s = strstr(value, "tdm");
-				}
-				if (g_gametype.integer == GT_TOURNAMENT) {
+				} else if (g_gametype.integer == GT_TOURNAMENT) {
 					s = strstr(value, "duel");
+				} else if (g_gametype.integer == GT_HARVESTER) {
+					s = strstr(value, "har");
+				} else if (g_gametype.integer == GT_1FCTF) {
+					s = strstr(value, "1f");
+				} else if (g_gametype.integer == GT_OBELISK) {
+					s = strstr(value, "ob");
 				}
 			}
 

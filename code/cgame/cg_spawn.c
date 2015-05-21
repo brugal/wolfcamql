@@ -448,9 +448,14 @@ qboolean CG_ParseSpawnVars( void ) {
                     // try alternate quake live gametype names
                     if (cgs.gametype == GT_TEAM) {
                         s = strstr(value, "tdm");
-                    }
-                    if (cgs.gametype == GT_TOURNAMENT) {
+                    } else if (cgs.gametype == GT_TOURNAMENT) {
                         s = strstr(value, "duel");
+                    } else if (cgs.gametype == GT_HARVESTER) {
+                        s = strstr(value, "har");
+                    } else if (cgs.gametype == GT_1FCTF) {
+                        s = strstr(value, "1f");
+                    } else if (cgs.gametype == GT_OBELISK) {
+                        s = strstr(value, "obj");
                     }
                 }
                 if (s) {
@@ -496,6 +501,18 @@ qboolean CG_ParseSpawnVars( void ) {
                         }
                     } else if (!Q_stricmp(token, "duel")) {
                         if (cgs.gametype == GT_TOURNAMENT) {
+                            skipItem = 0;
+                        }
+                    } else if (!Q_stricmp(token, "har")) {
+                        if (cgs.gametype == GT_HARVESTER) {
+                            skipItem = 0;
+                        }
+                    } else if (!Q_stricmp(token, "1f")) {
+                        if (cgs.gametype == GT_1FCTF) {
+                            skipItem = 0;
+                        }
+                    } else if (!Q_stricmp(token, "ob")) {
+                        if (cgs.gametype == GT_OBELISK) {
                             skipItem = 0;
                         }
                     } else {

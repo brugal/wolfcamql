@@ -1018,6 +1018,8 @@ void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fadeCycle)
   rectDef_t fillRect = w->rect;
 
 
+  //Com_Printf("window paint\n");
+  
   if (debugMode) {
     color[0] = color[1] = color[2] = color[3] = 1;
     DC->drawRect(w->rect.x, w->rect.y, w->rect.w, w->rect.h, 1, color);

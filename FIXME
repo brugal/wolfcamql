@@ -1294,7 +1294,6 @@ http://www.quakelive.com/forum/showthread.php?33065-QLPP18-Follow-up-Update
 * drawhitfriend change to 0 and 1500 while in freecam icon changes size
 (paused)
 * drawhitfriend preventing dead friend icon.. check ql precedence
-* q3 single player demo treated as race type (see screenshots/shot0061.jpg)
 * q3 single player intermission missing score see trodas1.dm_68
 * crash:
 
@@ -1514,15 +1513,17 @@ WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 
 * delete shaders when something like r_singleShader changes?
 * recursive call in FS_Restart() when there is an error?
 * player sprite names tmp performance fix of skipping spectators
-* dm 66 67 protocols:
-   disconnect
-playdemo '2006-06-21-1.dm_66'
-opening demos/2006-06-21-1.dm_66
-real gamestate protocol 66
-demo parse protocol 68
-* dm 73 wtf*.dm_73
-  CG_RegisterItemVisuals: itemNum 54 out of range [0-52]
-
+* check mac Sys_DefaultHomePath
+* check if disconnect is neccessary before demo playback
+* fx impact scripts for chaingun and hmg ?
+* q3 single player shows 'fragged teammate' message
+* don't check for cgs.gametype < GT_MAX_GAME_TYPE since cpma gametype can be negative
+* g_rankings.c missing ql weapons
+* hmg spread?
+* 103746-msk-pupz-vs-gaiia-MVD-cpm3a-2014_11_0.dm_68 final demo scoreboard shows wrong player as winner
+* no grab or console windows doesn't let me move window in windows 7 work
+* osx crash with courtyard demo
+* auto vstr for new ql weapon hmg  cg_weaponHeavyMachineGun
 
 ---------------------------
 

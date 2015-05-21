@@ -1671,6 +1671,9 @@ static void PM_Weapon( void ) {
 	case WP_MACHINEGUN:
 		addTime = 100;
 		break;
+	case WP_HEAVY_MACHINEGUN:
+		addTime = 75;
+		break;
 	case WP_GRENADE_LAUNCHER:
 		addTime = 800;
 		break;
