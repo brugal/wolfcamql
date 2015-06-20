@@ -1524,6 +1524,36 @@ WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 
 * no grab or console windows doesn't let me move window in windows 7 work
 * osx crash with courtyard demo
 * auto vstr for new ql weapon hmg  cg_weaponHeavyMachineGun
+* quakelive update apr 21, 2015
+    scoreboard extra columns
+    new voice overs
+    keys
+    new medals (accuracy, first frag, headshot, perfect, quad god)
+* ql widescreen:  MenuWidescren (remove) QLWidescreen global vars, DC->runCinematicFrame
+
+cursor for scoreboard:
+
+ if (cg.scoreBoardShowing) {
+         //FIXME widescreen
+                 CG_DrawPic(cgs.cursorX - 16, cgs.cursorY - 16, 32, 32, cgs.media.select\
+                 Cursor);
+                         //Com_Printf("yes\n");
+                             }
+
+
+name sprites?
+
+* more static functions in ui_/*
+* void *parent in itemDef_t  should be menuDef_t
+* team votes osp or cpma?
+* bug?  cg_drawWaitingForPlayersFont.string instead of cg_drawWarmupString?
+* cg_weaponHMG
+* order of cg_crosshair* vmCvar in cg_main.c
+* new ql command +pstats ?
+* widescreen support for main ui screen?  more space for filenames
+* ui loading screen draw players / icons goes offscreen
+* reset keyboard down and mouse down when demo ends so that it doesn't mess up ui gui?  example:  keeping tab pressed in demo to see scoreboard and then the demo ends
+* is cg_scoreBoardCursorAreaWideScreen needed or can it be handled from ui/* ?
 
 ---------------------------
 

@@ -1,7 +1,9 @@
 #ifndef cg_draw_h_included
 #define cg_draw_h_included
 
+#include "../game/bg_public.h"
 #include "../qcommon/q_shared.h"
+#include "../renderer/tr_types.h"  // stereoFrame_t
 #include "cg_public.h"
 
 extern	int sortedTeamPlayers[TEAM_MAXOVERLAY];

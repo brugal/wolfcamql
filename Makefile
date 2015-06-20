@@ -1918,6 +1918,7 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/baseq3/cgame/bg_lib.o \
   $(B)/baseq3/cgame/cg_consolecmds.o \
   $(B)/baseq3/cgame/cg_draw.o \
+  $(B)/baseq3/cgame/cg_drawdc.o \
   $(B)/baseq3/cgame/cg_drawtools.o \
   $(B)/baseq3/cgame/cg_effects.o \
   $(B)/baseq3/cgame/cg_ents.o \
@@ -1962,6 +1963,7 @@ Q3CGOBJ_ = \
   $(B)/baseq3/cgame/bg_lib.o \
   $(B)/baseq3/cgame/cg_consolecmds.o \
   $(B)/baseq3/cgame/cg_draw.o \
+  $(B)/baseq3/cgame/cg_drawdc.o \
   $(B)/baseq3/cgame/cg_drawtools.o \
   $(B)/baseq3/cgame/cg_effects.o \
   $(B)/baseq3/cgame/cg_ents.o \
@@ -2035,6 +2037,7 @@ MPCGOBJ_ = \
   $(B)/missionpack/cgame/cg_consolecmds.o \
   $(B)/missionpack/cgame/cg_newdraw.o \
   $(B)/missionpack/cgame/cg_draw.o \
+  $(B)/missionpack/cgame/cg_drawdc.o \
   $(B)/missionpack/cgame/cg_drawtools.o \
   $(B)/missionpack/cgame/cg_effects.o \
   $(B)/missionpack/cgame/cg_ents.o \

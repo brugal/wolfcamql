@@ -7,6 +7,7 @@
 #include "cg_drawtools.h"
 #include "cg_event.h"
 #include "cg_main.h"
+#include "cg_newdraw.h"  // QLWideScreen
 #include "cg_players.h"
 #include "cg_scoreboard.h"
 #include "cg_syscalls.h"
@@ -331,6 +332,8 @@ qboolean CG_DrawOldScoreboard( void ) {
 	int lineHeight;
 	int topBorderSize, bottomBorderSize;
 
+	QLWideScreen = 2;
+	
 	// don't draw amuthing if the menu or console is up
 	if ( cg_paused.integer ) {
 		cg.deferredPlayerLoading = 0;

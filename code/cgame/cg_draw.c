@@ -42,6 +42,14 @@ char systemChat[256];
 char teamChat1[256];
 char teamChat2[256];
 
+/*
+//FIXME hack for ql widescreen
+//FIXME needed?
+static int QLWideScreenOrig = 0;
+#define saveWidescreen(x) QLWideScreen = x
+#define resetWidescreen() QLWideScreen = QLWideScreenOrig
+*/
+
 //FIXME move
 #define MAX_HUD_ITEMS 100
 //static hudItem_t hudItems[MAX_HUD_ITEMS];
@@ -132,6 +140,8 @@ static void CG_DrawCameraPointInfo (void)
 		return;
 	}
 
+	QLWideScreen = 1;
+	
 	align = cg_drawCameraPointInfoAlign.integer;
 	scale = cg_drawCameraPointInfoScale.value;
 	style = cg_drawCameraPointInfoStyle.integer;
@@ -582,6 +592,8 @@ static float Wolfcam_DrawSpeed (float y)
 	align = cg_drawSpeedAlign.integer;
 	scale = cg_drawSpeedScale.value;
 	style = cg_drawSpeedStyle.integer;
+	QLWideScreen = cg_drawSpeedWideScreen.integer;
+	
 	if (*cg_drawSpeedFont.string) {
 		font = &cgs.media.speedFont;
 	} else {
@@ -680,6 +692,8 @@ static void CG_DrawJumpSpeeds (void)
 	align = cg_drawJumpSpeedsAlign.integer;
 	scale = cg_drawJumpSpeedsScale.value;
 	style = cg_drawJumpSpeedsStyle.integer;
+	QLWideScreen = cg_drawJumpSpeedsWideScreen.integer;
+	
 	if (*cg_drawJumpSpeedsFont.string) {
 		font = &cgs.media.jumpSpeedsFont;
 	} else {
@@ -743,6 +757,8 @@ static void CG_DrawJumpSpeedsTime (void)
 	align = cg_drawJumpSpeedsTimeAlign.integer;
 	scale = cg_drawJumpSpeedsTimeScale.value;
 	style = cg_drawJumpSpeedsTimeStyle.integer;
+	QLWideScreen = cg_drawJumpSpeedsTimeWideScreen.integer;
+	
 	if (*cg_drawJumpSpeedsTimeFont.string) {
 		font = &cgs.media.jumpSpeedsTimeFont;
 	} else {
@@ -784,6 +800,8 @@ static float Wolfcam_DrawMouseSpeed (float y)
     //vec3_t newAngles;
 	//int i;
 
+	//QLWideScreen
+	
 	return y;
 
 #if 0
@@ -877,6 +895,8 @@ static void Wolfcam_DrawFollowing (void)
 	align = cg_drawFollowingAlign.integer;
 	scale = cg_drawFollowingScale.value;
 	style = cg_drawFollowingStyle.integer;
+	QLWideScreen = cg_drawFollowingWideScreen.integer;
+	
 	if (*cg_drawFollowingFont.string) {
 		font = &cgs.media.followingFont;
 	} else {
@@ -2426,7 +2446,8 @@ static void CG_DrawStatusBar( void ) {
 	if ( cg_drawStatus.integer == 0 ) {
 		return;
 	}
-
+	QLWideScreen = 2;
+	
 	// draw the team background
 	if (wolfcam_following) {
 		CG_DrawTeamBackground(0, 420, 640, 60, 0.33f, cgs.clientinfo[wcg.clientNum].team);
@@ -2754,6 +2775,8 @@ static float CG_DrawAttacker( float y ) {
 	align = cg_drawAttackerAlign.integer;
 	scale = cg_drawAttackerScale.value;
 	style = cg_drawAttackerStyle.integer;
+	QLWideScreen = cg_drawAttackerWideScreen.integer;
+	
 	if (*cg_drawAttackerFont.string) {
 		font = &cgs.media.attackerFont;
 	} else {
@@ -2908,7 +2931,8 @@ static float CG_DrawSnapshot( float y ) {
 
 	scale = cg_drawSnapshotScale.value;
 	align = cg_drawSnapshotAlign.integer;
-
+	QLWideScreen = cg_drawSnapshotWideScreen.integer;
+	
 	s = va( "time:%d snap:%i cmd:%i", cg.snap->serverTime,
 		cg.latestSnapshotNum, cgs.serverCommandSequence );
 	//w = CG_DrawStrlen( s, &cgs.media.bigchar );
@@ -2970,7 +2994,8 @@ static float CG_DrawFPS( float y ) {
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-
+	QLWideScreen = cg_drawFPSWideScreen.integer;
+	
 	// don't use serverTime, because that will be drifting to
 	// correct for internet lag changes, timescales, timedemos, etc
 	t = trap_Milliseconds();
@@ -3083,6 +3108,8 @@ static void CG_DrawClientItemTimer (void)
 	scale = cg_drawClientItemTimerScale.value;
 	alpha = (float)cg_drawClientItemTimerAlpha.integer / 255.0;
 	textStyle = cg_drawClientItemTimerStyle.integer;
+	QLWideScreen = cg_drawClientItemTimerWideScreen.integer;
+	
 	if (*cg_drawClientItemTimerFont.string) {
 		font = &cgs.media.clientItemTimerFont;
 	} else {
@@ -3433,6 +3460,7 @@ static void CG_DrawClientItemTimer (void)
 
 static void CG_DrawFxDebugEntities (void)
 {
+	QLWideScreen = 1;
 	CG_DrawSmallString(5, 480 - 70, va("local entities: %d", cg.numLocalEntities), 6.0);
 }
 
@@ -3472,6 +3500,8 @@ static float CG_DrawOrigin (float y)
 	align = cg_drawOriginAlign.integer;
 	scale = cg_drawOriginScale.value;
 	style = cg_drawOriginStyle.integer;
+	QLWideScreen = cg_drawOriginWideScreen.integer;
+	
 	if (*cg_drawOriginFont.string) {
 		font = &cgs.media.originFont;
 	} else {
@@ -3539,8 +3569,8 @@ static float CG_DrawTimer( float y ) {
 		s = va( "%i:%i%i", mins, tens, seconds );
 	}
 
+	QLWideScreen = 3;
 	w = CG_DrawStrlen( s, &cgs.media.bigchar );
-
 	CG_DrawBigString( 635 - w, y + 2, s, 1.0F);
 
 	return y + BIGCHAR_HEIGHT + 4;
@@ -3790,7 +3820,8 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-
+	QLWideScreen = cg_drawTeamOverlayWideScreen.integer;
+	
 	align = cg_drawTeamOverlayAlign.integer;
 	//alpha = cg_drawTeamOverlayAlpha.value / 255.0;
 	alpha = 1.0;
@@ -4148,6 +4179,8 @@ static float CG_DrawPlayersLeft( float y ) {
 		return y;
 	}
 
+	QLWideScreen = 3;
+
 	s1 = cgs.redPlayersLeft;  //cgs.scores1;
 	s2 = cgs.bluePlayersLeft;  //cgs.scores2;
 
@@ -4324,6 +4357,8 @@ static float CG_DrawScores( float y ) {
 		return y;
 	}
 
+	QLWideScreen = 3;
+	
 	if (wolfcam_following) {
 		ourTeam = cgs.clientinfo[wcg.clientNum].team;
 	} else {
@@ -4534,6 +4569,8 @@ static float CG_DrawPowerups( float y ) {
 		return y;
 	}
 
+	QLWideScreen = 3;
+	
 	ps = &cg.snap->ps;
 	//ci = &cgs.clientinfo[ps->clientNum];
 
@@ -4699,6 +4736,8 @@ static int CG_DrawPickupItem (int y)
 	scale = cg_drawItemPickupsScale.value;
 	iconSize = cg_drawItemPickupsImageScale.value * (float)ICON_SIZE;
 	style = cg_drawItemPickupsStyle.integer;
+	QLWideScreen = cg_drawItemPickupsWideScreen.integer;
+	
 	if (*cg_drawItemPickupsFont.string) {
 		font = &cgs.media.itemPickupsFont;
 	} else {
@@ -4891,6 +4930,8 @@ static void CG_DrawTeamInfo( void ) {
 #define CHATLOC_Y 420 // bottom end
 #define CHATLOC_X 0
 
+	QLWideScreen = 1;
+	
 	if (cg_teamChatHeight.integer < TEAMCHAT_HEIGHT)
 		chatHeight = cg_teamChatHeight.integer;
 	else
@@ -4963,6 +5004,8 @@ static void CG_DrawHoldableItem( void ) {
 		return;
 	}
 
+	QLWideScreen = 3;
+	
 	value = cg.snap->ps.stats[STAT_HOLDABLE_ITEM];
 	if ( value ) {
 		CG_RegisterItemVisuals( value );
@@ -4982,6 +5025,8 @@ CG_DrawPersistantPowerup
 static void CG_DrawPersistantPowerup( void ) {
 	int		value;
 
+	QLWideScreen = 3;
+	
 	value = cg.snap->ps.stats[STAT_PERSISTANT_POWERUP];
 	if ( value ) {
 		CG_RegisterItemVisuals( value );
@@ -5095,7 +5140,8 @@ static void CG_DrawReward (void)
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-
+	QLWideScreen = cg_drawRewardsWideScreen.integer;
+	
 	imageScale = cg_drawRewardsImageScale.value;
 	imageWidth = (float)ICON_SIZE * imageScale;
 
@@ -5411,6 +5457,7 @@ static void CG_DrawDisconnect( void ) {
 
 	// also add text in center of screen
 	s = "Connection Interrupted"; // bk 010215 - FIXME
+	QLWideScreen = 2;
 	w = CG_DrawStrlen( s, &cgs.media.bigchar );
 	CG_DrawBigString( 320 - w/2, 100, s, 1.0F);
 
@@ -5432,7 +5479,8 @@ static void CG_DrawDisconnect( void ) {
 	if (cg_lagometerY.string != '\0') {
 		y = cg_lagometerY.integer;
 	}
-
+	QLWideScreen = cg_lagometerWideScreen.integer;
+	
 	CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader("disconnected"));
 }
 
@@ -5490,6 +5538,8 @@ static void CG_DrawLagometer( void ) {
 	fontAlign = cg_lagometerFontAlign.integer;
 	fontScale = cg_lagometerFontScale.value;
 	fontStyle = cg_lagometerFontStyle.integer;
+	QLWideScreen = cg_lagometerWideScreen.integer;
+	
 	if (*cg_lagometerFont.string) {
 		font = &cgs.media.lagometerFont;
 	} else {
@@ -5764,6 +5814,8 @@ void CG_CenterPrint( const char *str, int y, int charWidth ) {
 
 	Q_strncpyz( cg.centerPrint, str, sizeof(cg.centerPrint) );
 
+	QLWideScreen = cg_drawCenterPrintWideScreen.integer;
+	
 	if (cg_drawCenterPrintY.string[0] != '\0') {
 		y = cg_drawCenterPrintY.integer;
 	}
@@ -6619,6 +6671,8 @@ static void CG_DrawCenterString( void ) {
 		return;
 	}
 
+	QLWideScreen = cg_drawCenterPrintWideScreen.integer;
+	
 	//color = CG_FadeColor( cg.centerPrintTime, 1000 * cg_centertime.value );
 	if (cg_drawCenterPrintFade.integer) {
 		CG_FadeColorVec4(color, cg.centerPrintTime, cg_drawCenterPrintTime.integer, cg_drawCenterPrintFadeTime.integer);
@@ -6841,7 +6895,8 @@ static void CG_DrawFragMessage (void)
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-
+	QLWideScreen = cg_drawFragMessageWideScreen.integer;
+	
 	x = cg_drawFragMessageX.integer;
 	y = cg_drawFragMessageY.integer;
 	scale = cg_drawFragMessageScale.value;
@@ -6973,9 +7028,13 @@ static void Wolfcam_DrawCrosshair (void)
 
     x = cg_crosshairX.integer;
     y = cg_crosshairY.integer;
+	//QLWideScreen = cg_crosshairWideScreen.integer;
+	//FIXME change?
+	QLWideScreen = 0;
+
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
-	if (cg_wideScreen.integer == 3) {
+	if (cg_wideScreen.integer == 3  ||  cg_wideScreen.integer == 5) {
 		aspect = (float)cgs.glconfig.vidHeight / (float)cgs.glconfig.vidWidth;
 		w -= ((480.0 / 640.0) - aspect) * w;
 	}
@@ -7238,9 +7297,13 @@ static void CG_DrawCrosshair(void) {
 
 	x = cg_crosshairX.integer;
 	y = cg_crosshairY.integer;
+	//QLWideScreen = cg_crosshairWideScreen.integer;
+	//FIXME change?
+	QLWideScreen = 0;
+	
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
-	if (cg_wideScreen.integer == 3) {
+	if (cg_wideScreen.integer == 3  ||  cg_wideScreen.integer == 5) {
 		//aspect = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
 		//h += (aspect - (640.0 / 480.0)) * h;
 		aspect = (float)cgs.glconfig.vidHeight / (float)cgs.glconfig.vidWidth;
@@ -7456,7 +7519,8 @@ static void CG_DrawCrosshairNames( void ) {
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-
+	QLWideScreen = cg_drawCrosshairNamesWideScreen.integer;
+	
 	align = cg_drawCrosshairNamesAlign.integer;
 
 	// scan the known entities to see if the crosshair is sighted on one
@@ -7554,6 +7618,8 @@ static void CG_DrawCrosshairTeammateHealth (void)
 	}
 	ci = &cgs.clientinfo[cg.crosshairClientNum];
 
+	QLWideScreen = cg_drawCrosshairTeammateHealthWideScreen.integer;
+	
 	alpha = (float)cg_drawCrosshairTeammateHealthAlpha.integer / 255.0;
 
 	SC_Vec4ColorFromCvars(color, &cg_drawCrosshairTeammateHealthColor, &cg_drawCrosshairTeammateHealthAlpha);
@@ -7650,6 +7716,10 @@ static void CG_DrawKeyPress (void)
 	if (VectorLength(cg.snap->ps.velocity) == 0) {
 		return;
 	}
+
+	//FIXME widescreen
+	QLWideScreen = 2;
+	
 	//VectorCopy(cg.snap->ps.velocity, velocity);
 	VectorCopy(cg.prevSnap->ps.velocity, velocity);
 	VectorNormalize(velocity);
@@ -7778,6 +7848,8 @@ static void CG_DrawSpectator(void) {
 		return;
 	}
 
+	QLWideScreen = 2;
+	
 	CG_DrawBigString(320 - 9 * 8, 440, "SPECTATOR", 1.0F);
 	if ( cgs.gametype == GT_TOURNAMENT ) {
 		CG_DrawBigString(320 - 15 * 8, 460, "waiting to play", 1.0F);
@@ -7833,6 +7905,8 @@ static void CG_DrawVote(void) {
 	align = cg_drawVoteAlign.integer;
 	scale = cg_drawVoteScale.value;
 	style = cg_drawVoteStyle.integer;
+	QLWideScreen = cg_drawVoteWideScreen.integer;
+	
 	if (*cg_drawVoteFont.string) {
 		font = &cgs.media.voteFont;
 	} else {
@@ -7939,7 +8013,8 @@ static void CG_DrawTeamVote(void) {
 	} else {
 		y = 90;
 	}
-
+	QLWideScreen = cg_drawTeamVoteWideScreen.integer;
+	
 	CG_DrawSmallString(x, y, s, 1.0);
 }
 #endif
@@ -7986,6 +8061,8 @@ static void CG_DrawTeamVote(void) {
 	align = cg_drawTeamVoteAlign.integer;
 	scale = cg_drawTeamVoteScale.value;
 	style = cg_drawTeamVoteStyle.integer;
+	QLWideScreen = cg_drawTeamVoteWideScreen.integer;
+	
 	if (*cg_drawTeamVoteFont.string) {
 		font = &cgs.media.teamVoteFont;
 	} else {
@@ -8172,8 +8249,24 @@ static qboolean CG_DrawScoreboard (void)
 
 		return qtrue;
 	} else {
+		QLWideScreen = cg_scoreBoardOldWideScreen.integer;
 		return CG_DrawOldScoreboard();
 	}
+}
+
+static void CG_DrawScoreboardMenuCursor (void)
+{
+	float w = 32;
+	float h = 32;
+
+	float x = cgs.cursorX - 16;
+	float y = cgs.cursorY - 16;
+
+	// widescreen needs to match the setting in the scoreboard huds
+	//FIXME can this be handled in ui/* ?
+	QLWideScreen = cg_scoreBoardCursorAreaWideScreen.integer;
+
+	CG_DrawPic(x, y, w, h, cgs.media.selectCursor);
 }
 
 /*
@@ -8200,7 +8293,7 @@ static void CG_DrawIntermission( void ) {
 	CG_DrawEchoPopup();
 	CG_DrawErrorPopup();
 	if (cg.scoreBoardShowing) {
-		CG_DrawPic(cgs.cursorX - 16, cgs.cursorY - 16, 32, 32, cgs.media.selectCursor);
+		CG_DrawScoreboardMenuCursor();
 	}
 }
 
@@ -8238,6 +8331,8 @@ static qboolean CG_DrawFollow( void ) {
 	align = cg_drawFollowingAlign.integer;
 	scale = cg_drawFollowingScale.value;
 	style = cg_drawFollowingStyle.integer;
+	QLWideScreen = cg_drawFollowingWideScreen.integer;
+	
 	if (*cg_drawFollowingFont.string) {
 		font = &cgs.media.followingFont;
 	} else {
@@ -8308,6 +8403,8 @@ static void CG_DrawAmmoWarning( void ) {
 		return;
 	}
 
+	QLWideScreen = cg_drawAmmoWarningWideScreen.integer;
+	
 	scale = cg_drawAmmoWarningScale.value;
 	SC_Vec4ColorFromCvars(color, &cg_drawAmmoWarningColor, &cg_drawAmmoWarningAlpha);
 	align = cg_drawAmmoWarningAlign.integer;
@@ -8367,6 +8464,8 @@ static void CG_DrawProxWarning (void)
 	align = cg_drawProxWarningAlign.integer;
 	scale = cg_drawProxWarningScale.value;
 	style = cg_drawProxWarningStyle.integer;
+	QLWideScreen = cg_drawProxWarningWideScreen.integer;
+	
 	if (*cg_drawProxWarningFont.string) {
 		font = &cgs.media.proxWarningFont;
 	} else {
@@ -8502,6 +8601,8 @@ static void CG_DrawWarmup( void ) {
 		align = cg_drawWaitingForPlayersAlign.integer;
 		scale = cg_drawWaitingForPlayersScale.value;
 		style = cg_drawWaitingForPlayersStyle.integer;
+		QLWideScreen = cg_drawWaitingForPlayersWideScreen.integer;
+		
 		if (*cg_drawWaitingForPlayersFont.string) {
 			font = &cgs.media.waitingForPlayersFont;
 		} else {
@@ -8549,12 +8650,14 @@ static void CG_DrawWarmup( void ) {
 		return;
 	}
 
+	//FIXME is this a bug?  should be cg_drawWarmupString* ?
 	if (*cg_drawWaitingForPlayersFont.string) {
 		font = &cgs.media.waitingForPlayersFont;
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-
+	QLWideScreen = cg_drawWarmupStringWideScreen.integer;
+	
 	align = cg_drawWarmupStringAlign.integer;
 	SC_Vec4ColorFromCvars(color, &cg_drawWarmupStringColor, &cg_drawWarmupStringAlpha);
 
@@ -8778,7 +8881,8 @@ static void CG_DrawAccStats (void)
 	//CG_FillRect(100, 100, 48, 48, colorRed);
 	x = cg_accX.integer;  //450;  //20;
 	y = cg_accY.integer;  //100;
-
+	QLWideScreen = cg_accWideScreen.integer;
+	
 	windowWidth = 80;
 	windowHeight = WP_NUM_WEAPONS * yoffset + 10;
 
@@ -8837,6 +8941,10 @@ static void CG_DrawErrorPopup (void)
 		return;
 	}
 
+	//FIXME cvars to control
+
+	QLWideScreen = 1;
+	
 	scale = 0.3;  //cg.echoPopupScale;
 	x = 0;  //cg.echoPopupX;
 	y = 5;  //cg.echoPopupY;
@@ -8871,7 +8979,8 @@ static void CG_DrawEchoPopup (void)
 	scale = cg.echoPopupScale;
 	x = cg.echoPopupX;
 	y = cg.echoPopupY;
-
+	QLWideScreen = cg.echoPopupWideScreen;
+	
 	w = CG_Text_Width(cg.echoPopupString, scale, 0, &cgDC.Assets.textFont);
 	h = CG_Text_Height(cg.echoPopupString, scale, 0, &cgDC.Assets.textFont);
 
@@ -8919,6 +9028,7 @@ static void CG_DrawDominationPointStatus (void)
 	x = cg_drawDominationPointStatusX.integer;  //258;
 	y = cg_drawDominationPointStatusY.integer;  //365;
 	scale = cg_drawDominationPointStatusScale.value;
+	QLWideScreen = cg_drawDominationPointStatusWideScreen.integer;
 
 	textScale = 0.25 * scale;
 	if (*cg_drawDominationPointStatusFont.string) {
@@ -9056,6 +9166,8 @@ static void CG_DrawCtfsRoundScoreboard (void)
 	//align = ITEM_ALIGN_CENTER;
 	style = ITEM_TEXTSTYLE_SHADOWED;
 
+	QLWideScreen = 2;
+	
 	x = 200;
 	y = 152 + 20;
 
@@ -9169,6 +9281,7 @@ static void CG_Draw2D( void ) {
 	}
 
 	if (cg.testMenu) {
+		QLWideScreen = 2;
 		Menu_Paint(cg.testMenu, qtrue);
 		CG_DrawPic(cgs.cursorX - 16, cgs.cursorY - 16, 32, 32, cgs.media.selectCursor);
 		return;
@@ -9189,6 +9302,7 @@ static void CG_Draw2D( void ) {
 	}
 
 	if (cg_draw2D.integer == 2) {
+		QLWideScreen = 1;
 		CG_Text_Paint(2, 16, 0.2, colorRed, "Camera Edit Hud (cg_draw2d 1  to disable)", 0, 0, 1, &cgs.media.qlfont16);
 
 		CG_DrawFPS(10.0);
@@ -9422,6 +9536,7 @@ static void CG_Draw2D( void ) {
 		char buf[1024];
 
 		Q_strncpyz(buf, "01234567890abcdefghijklmnop\nqrstuvwxyzABCDEFGHIJKLMN\nOPQRSTUVWXYZ\n~!@#$%^&*()_-+=\\]}[{'\";:/?.>,<\n", sizeof(buf));
+		QLWideScreen = 2;
 	//FIXME testing
 		CG_CenterPrint( buf, SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
 		//CG_CenterPrint("qrstuvwxyzABCDEFGHIJK", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
@@ -9429,8 +9544,7 @@ static void CG_Draw2D( void ) {
 	}
 
 	if (cg.scoreBoardShowing) {
-		CG_DrawPic(cgs.cursorX - 16, cgs.cursorY - 16, 32, 32, cgs.media.selectCursor);
-		//Com_Printf("yes\n");
+		CG_DrawScoreboardMenuCursor();
 	}
 }
 

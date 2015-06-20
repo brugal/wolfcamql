@@ -2,6 +2,11 @@
 #define cg_newdraw_h_included
 
 #include "../qcommon/q_shared.h"
+#include "../ui/ui_shared.h"
+
+extern int MenuWidescreen;
+extern int QLWideScreen;
+extern rectDef_t MenuRect;
 
 void CG_InitTeamChat(void);
 void CG_SetPrintString(int type, const char *p);
@@ -26,7 +31,7 @@ int CG_GetCurrentTimeWithDirection (void);
 const char *CG_GetLevelTimerString (void);
 double CG_GetServerTimeFromClockString (const char *timeString);
 
-void CG_OwnerDraw(float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen);
+void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect);
 
 void CG_MouseEvent(int x, int y);
 void CG_EventHandling(int type);

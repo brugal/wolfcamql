@@ -5,8 +5,30 @@
 #include "../qcommon/q_shared.h"
 #include "cg_drawtools.h"
 #include "cg_draw.h"
+#include "cg_newdraw.h"
 #include "cg_players.h"  // color from string
 #include "cg_syscalls.h"
+
+// unused
+/*
+static void debug_rect (float x, float y, float width, float height, qboolean adjust, float r, float g, float b, float alpha)
+{
+	vec4_t color;
+
+	color[0] = r;
+	color[1] = g;
+	color[2] = b;
+	color[3] = alpha;
+
+	trap_R_SetColor(color);
+
+	if (adjust) {
+		CG_AdjustFrom640(&x, &y, &width, &height);
+	}
+	trap_R_DrawStretchPic(x, y, width, height, 0, 0, 0, 0, cgs.media.whiteShader);
+	trap_R_SetColor(NULL);
+}
+*/
 
 /*
 ================
@@ -19,6 +41,9 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 	float aspect;
 	qboolean square = qfalse;
 
+	float origWidth = *w;
+	float origX = *x;
+	
 	if (*w == *h) {
 		square = qtrue;
 	}
@@ -29,6 +54,141 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 		*x += 0.5 * ( cgs.glconfig.vidWidth - ( cgs.glconfig.vidHeight * 640 / 480 ) );
 	}
 #endif
+
+	// ql widescreen
+	if (cg_wideScreen.integer == 5) {
+		if (MenuWidescreen != QLWideScreen  &&  QLWideScreen != 0) {
+			//Com_Printf("^3m %d  i %d\n", MenuWidescreen, QLWideScreen);
+		}
+
+		if (1) {  //(MenuWidescreen  ||  QLWideScreen) {
+			//FIXME duplicate code
+			float width43;
+			float diff;
+			float newXScale;
+			rectDef_t menuRect;
+			float newX = 0;
+			
+			menuRect = MenuRect;
+			menuRect.x *= cgs.screenXScale;
+			menuRect.y *= cgs.screenYScale;
+			menuRect.w *= cgs.screenXScale;
+			menuRect.h *= cgs.screenYScale;
+
+			width43 = 4.0 * (cgs.glconfig.vidHeight / 3.0);
+			diff = (float)cgs.glconfig.vidWidth - width43;
+
+			newXScale = width43 / 640.0;
+
+
+			//*x *= newXScale;
+
+
+
+						//FIXME
+			if (QLWideScreen == 0) {
+				//FIXME
+
+				if (MenuWidescreen) {
+					Com_Printf("^3FIXME ql QLWideScreen 0  menu %d\n", MenuWidescreen);
+				}
+				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 1, 0, 0, 0.1);
+				*x *= cgs.screenXScale;
+				*y *= cgs.screenYScale;
+				*w *= cgs.screenXScale;
+				*h *= cgs.screenYScale;
+
+			} else if (QLWideScreen == 1) {
+				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 0, 0, 1, 0.1);
+				//*x *= cgs.screenXScale;
+				//*x = menuRect.x;
+
+				//*x = 0;  //FIXME testing
+				
+				*y *= cgs.screenYScale;
+				*w *= newXScale;
+				*h *= cgs.screenYScale;
+
+
+				*x *= newXScale;
+			} else if (QLWideScreen == 2) {
+				rectDef_t itemRect;
+
+				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 0, 1, 0, 0.1);
+
+				*y *= cgs.screenYScale;
+				*w *= newXScale;
+				*h *= cgs.screenYScale;
+
+
+				itemRect.x = *x - MenuRect.x;
+				//FIXME
+				//*x = 0;
+				//*x = 40;
+
+				//*x = (menuRect.x + (menuRect.w / 2) - (*w / 2));
+				
+				//*x += itemRect.x * cgs.screenXScale / 2;
+				//*x += itemRect.x * newXScale / 2;
+				//*x += itemRect.x;
+				//*x = 0;
+				//*x = menuRect.x;
+				//*y += 30;
+				//*x *= cgs.screenXScale;
+
+				//diff = (origWidth * cgs.screenXScale) - (origWidth * newXScale);
+				////*x *= cgs.screenXScale;
+
+				/* this is it */
+ 				*x *= newXScale;
+				*x += diff / 2;
+				
+				//*x += diff / 2;
+				//*x += diff;
+
+				if (origX <= 320) {
+					//*x += diff;
+					
+				} else {
+					//*x -= diff;
+				}
+				
+			} else if (QLWideScreen == 3) {
+				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 1, 0.5, 0.8, 0.1);
+
+				*y *= cgs.screenYScale;
+				*w *= newXScale;
+				*h *= cgs.screenYScale;
+
+
+				//*x += (diff / 2.0);
+				//*x = 6666;
+				//*x = (menuRect.x + menuRect.w) - *w;
+
+				//*x = 0;  //FIXME testing
+				
+				*x *= newXScale;
+				*x += diff;
+
+			} else {
+				*x *= cgs.screenXScale;
+				*y *= cgs.screenYScale;
+				*w *= cgs.screenXScale;
+				*h *= cgs.screenYScale;
+
+				Com_Printf("^3invalid widescreen value: %d\n", QLWideScreen);
+			}
+
+
+		} else {
+			*x *= cgs.screenXScale;
+			*y *= cgs.screenYScale;
+			*w *= cgs.screenXScale;
+			*h *= cgs.screenYScale;
+		}
+
+		return;
+	}
 
 #if 0
 	if (cg.scoreBoardShowing) {
@@ -822,16 +982,19 @@ static void UI_DrawBannerString2( int x, int y, const char* str, const vec4_t co
 
 	// draw the colored text
 	trap_R_SetColor( color );
-	
-	ax = x * cgs.screenXScale + cgs.screenXBias;
-	ay = y * cgs.screenYScale;
+
+	//ax = x * cgs.screenXScale;
+	//ay = y * cgs.screenYScale;
+	ax = x;
+	ay = y;
 
 	s = str;
 	while ( *s )
 	{
 		ch = *s & 127;
 		if ( ch == ' ' ) {
-			ax += ((float)PROPB_SPACE_WIDTH + (float)PROPB_GAP_WIDTH)* cgs.screenXScale;
+			//ax += ((float)PROPB_SPACE_WIDTH + (float)PROPB_GAP_WIDTH)* cgs.screenXScale;
+			ax += ((float)PROPB_SPACE_WIDTH + (float)PROPB_GAP_WIDTH);
 		}
 		else if ( ch >= 'A' && ch <= 'Z' ) {
 			ch -= 'A';
@@ -839,10 +1002,21 @@ static void UI_DrawBannerString2( int x, int y, const char* str, const vec4_t co
 			frow = (float)propMapB[ch][1] / 256.0f;
 			fwidth = (float)propMapB[ch][2] / 256.0f;
 			fheight = (float)PROPB_HEIGHT / 256.0f;
+
+			/*
 			aw = (float)propMapB[ch][2] * cgs.screenXScale;
 			ah = (float)PROPB_HEIGHT * cgs.screenYScale;
 			trap_R_DrawStretchPic( ax, ay, aw, ah, fcol, frow, fcol+fwidth, frow+fheight, cgs.media.charsetPropB );
+
 			ax += (aw + (float)PROPB_GAP_WIDTH * cgs.screenXScale);
+			*/
+			aw = (float)propMapB[ch][2];
+			ah = (float)PROPB_HEIGHT;
+			//trap_R_DrawStretchPic( ax, ay, aw, ah, fcol, frow, fcol+fwidth, frow+fheight, cgs.media.charsetPropB );
+			CG_DrawStretchPic(ax, ay, aw, ah, fcol, frow, fcol + fwidth, frow + fheight, cgs.media.charsetPropB);
+
+			ax += aw + (float)PROPB_GAP_WIDTH;
+
 		}
 		s++;
 	}
@@ -951,9 +1125,13 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 	// draw the colored text
 	trap_R_SetColor( color );
 
-	ax = x * cgs.screenXScale + cgs.screenXBias;
+	/*
+	ax = x * cgs.screenXScale;
 	ay = y * cgs.screenYScale;
-
+	*/
+	ax = x;
+	ay = y;
+	
 	s = str;
 	while ( *s )
 	{
@@ -1001,14 +1179,20 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 			frow = (float)propMap[ch][1] / 256.0f;
 			fwidth = (float)propMap[ch][2] / 256.0f;
 			fheight = (float)PROP_HEIGHT / 256.0f;
+			/*
 			aw = (float)propMap[ch][2] * cgs.screenXScale * sizeScale;
 			ah = (float)PROP_HEIGHT * cgs.screenYScale * sizeScale;
 			trap_R_DrawStretchPic( ax, ay, aw, ah, fcol, frow, fcol+fwidth, frow+fheight, charset );
+			*/
+			aw = (float)propMap[ch][2] * sizeScale;
+			ah = (float)PROP_HEIGHT * sizeScale;
+			CG_DrawStretchPic(ax, ay, aw, ah, fcol, frow, fcol + fwidth, frow + fheight, charset);
 		} else {
 			aw = 0;
 		}
 
-		ax += (aw + (float)PROP_GAP_WIDTH * cgs.screenXScale * sizeScale);
+		//ax += (aw + (float)PROP_GAP_WIDTH * cgs.screenXScale * sizeScale);
+		ax += (aw + (float)PROP_GAP_WIDTH * sizeScale);
 		s++;
 	}
 

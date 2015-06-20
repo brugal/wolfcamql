@@ -1290,6 +1290,7 @@ typedef struct {
 	char echoPopupString[MAX_STRING_CHARS];
 	int echoPopupX;
 	int echoPopupY;
+	int echoPopupWideScreen;
 	float echoPopupScale;
 
 	int errorPopupStartTime;
@@ -2091,7 +2092,7 @@ typedef struct {
 	glconfig_t		glconfig;			// rendering configuration
 	float			screenXScale;		// derived from glconfig
 	float			screenYScale;
-	float			screenXBias;
+	//float			screenXBias;
 
 	int firstServerMessageNum;
 	int				serverCommandSequence;	// reliable command stream counter
@@ -2343,6 +2344,7 @@ extern vmCvar_t cg_drawClientItemTimerIcon;
 extern vmCvar_t cg_drawClientItemTimerIconSize;
 extern vmCvar_t cg_drawClientItemTimerIconXoffset;
 extern vmCvar_t cg_drawClientItemTimerIconYoffset;
+extern vmCvar_t cg_drawClientItemTimerWideScreen;
 
 extern vmCvar_t cg_itemSpawnPrint;
 
@@ -2360,6 +2362,7 @@ extern vmCvar_t cg_drawFPSColor;
 extern vmCvar_t cg_drawFPSAlpha;
 //extern vmCvar_t cg_drawFPSFade;
 //extern vmCvar_t cg_drawFPSFadeTime;
+extern vmCvar_t cg_drawFPSWideScreen;
 
 extern	vmCvar_t		cg_drawSnapshot;
 extern	vmCvar_t		cg_drawSnapshotX;
@@ -2371,6 +2374,7 @@ extern vmCvar_t cg_drawSnapshotPointSize;
 extern vmCvar_t cg_drawSnapshotScale;
 extern vmCvar_t cg_drawSnapshotColor;
 extern vmCvar_t cg_drawSnapshotAlpha;
+extern vmCvar_t cg_drawSnapshotWideScreen;
 
 extern	vmCvar_t		cg_draw3dIcons;
 extern	vmCvar_t		cg_drawIcons;
@@ -2388,6 +2392,7 @@ extern vmCvar_t cg_drawAmmoWarningColor;
 extern vmCvar_t cg_drawAmmoWarningAlpha;
 //extern vmCvar_t cg_drawAmmoWarningFade;
 //extern vmCvar_t cg_drawAmmoWarningFadeTime;
+extern vmCvar_t cg_drawAmmoWarningWideScreen;
 
 extern vmCvar_t cg_lowAmmoWarningStyle;
 extern vmCvar_t cg_lowAmmoWarningPercentile;
@@ -2423,6 +2428,7 @@ extern vmCvar_t cg_drawCrosshairNamesColor;
 extern vmCvar_t cg_drawCrosshairNamesAlpha;
 extern vmCvar_t cg_drawCrosshairNamesFade;
 extern vmCvar_t cg_drawCrosshairNamesFadeTime;
+extern vmCvar_t cg_drawCrosshairNamesWideScreen;
 
 extern vmCvar_t cg_drawCrosshairTeammateHealth;
 extern vmCvar_t cg_drawCrosshairTeammateHealthX;
@@ -2437,6 +2443,7 @@ extern vmCvar_t cg_drawCrosshairTeammateHealthColor;
 extern vmCvar_t cg_drawCrosshairTeammateHealthAlpha;
 extern vmCvar_t cg_drawCrosshairTeammateHealthFade;
 extern vmCvar_t cg_drawCrosshairTeammateHealthFadeTime;
+extern vmCvar_t cg_drawCrosshairTeammateHealthWideScreen;
 
 extern vmCvar_t cg_drawRewards;
 extern vmCvar_t cg_drawRewardsMax;
@@ -2453,6 +2460,7 @@ extern vmCvar_t cg_drawRewardsColor;
 extern vmCvar_t cg_drawRewardsAlpha;
 extern vmCvar_t cg_drawRewardsFade;
 extern vmCvar_t cg_drawRewardsFadeTime;
+extern vmCvar_t cg_drawRewardsWideScreen;
 extern vmCvar_t cg_rewardsStack;
 
 extern	vmCvar_t		cg_drawTeamOverlay;
@@ -2465,6 +2473,7 @@ extern vmCvar_t cg_drawTeamOverlayAlign;
 //extern vmCvar_t cg_drawTeamOverlayAlignY;
 extern vmCvar_t cg_drawTeamOverlayScale;
 //extern vmCvar_t cg_drawTeamOverlayAlpha;
+extern vmCvar_t cg_drawTeamOverlayWideScreen;
 
 extern vmCvar_t cg_drawJumpSpeeds;
 extern vmCvar_t cg_drawJumpSpeedsNoText;
@@ -2478,6 +2487,7 @@ extern vmCvar_t cg_drawJumpSpeedsPointSize;
 extern vmCvar_t cg_drawJumpSpeedsScale;
 extern vmCvar_t cg_drawJumpSpeedsColor;
 extern vmCvar_t cg_drawJumpSpeedsAlpha;
+extern vmCvar_t cg_drawJumpSpeedsWideScreen;
 
 extern vmCvar_t cg_drawJumpSpeedsTime;
 extern vmCvar_t cg_drawJumpSpeedsTimeNoText;
@@ -2490,6 +2500,7 @@ extern vmCvar_t cg_drawJumpSpeedsTimePointSize;
 extern vmCvar_t cg_drawJumpSpeedsTimeScale;
 extern vmCvar_t cg_drawJumpSpeedsTimeColor;
 extern vmCvar_t cg_drawJumpSpeedsTimeAlpha;
+extern vmCvar_t cg_drawJumpSpeedsTimeWideScreen;
 
 extern	vmCvar_t		cg_crosshairX;
 extern	vmCvar_t		cg_crosshairY;
@@ -2502,6 +2513,7 @@ extern vmCvar_t cg_crosshairHitTime;
 extern vmCvar_t cg_crosshairBrightness;
 extern vmCvar_t cg_crosshairAlpha;
 extern vmCvar_t cg_crosshairAlphaAdjust;
+//extern vmCvar_t cg_crosshairWideScreen;
 
 extern	vmCvar_t		cg_drawStatus;
 extern	vmCvar_t		cg_drawTeamBackground;
@@ -2568,6 +2580,8 @@ extern	vmCvar_t		cg_stereoSeparation;
 extern	vmCvar_t		cg_lagometer;
 extern	vmCvar_t		cg_lagometerX;
 extern	vmCvar_t		cg_lagometerY;
+extern vmCvar_t cg_lagometerWideScreen;
+
 extern 	vmCvar_t 		cg_lagometerFlash;
 extern	vmCvar_t		cg_lagometerFlashValue;
 extern vmCvar_t cg_lagometerAlign;
@@ -2597,6 +2611,7 @@ extern vmCvar_t cg_drawAttackerColor;
 extern vmCvar_t cg_drawAttackerAlpha;
 extern vmCvar_t cg_drawAttackerFade;
 extern vmCvar_t cg_drawAttackerFadeTime;
+extern vmCvar_t cg_drawAttackerWideScreen;
 
 extern	vmCvar_t		cg_synchronousClients;
 extern	vmCvar_t		cg_teamChatTime;
@@ -2682,6 +2697,7 @@ extern vmCvar_t cg_drawSpeedPointSize;
 extern vmCvar_t cg_drawSpeedScale;
 extern vmCvar_t cg_drawSpeedColor;
 extern vmCvar_t cg_drawSpeedAlpha;
+extern vmCvar_t cg_drawSpeedWideScreen;
 
 extern vmCvar_t cg_drawOrigin;
 extern vmCvar_t cg_drawOriginX;
@@ -2693,6 +2709,7 @@ extern vmCvar_t cg_drawOriginPointSize;
 extern vmCvar_t cg_drawOriginScale;
 extern vmCvar_t cg_drawOriginColor;
 extern vmCvar_t cg_drawOriginAlpha;
+extern vmCvar_t cg_drawOriginWideScreen;
 
 extern vmCvar_t	cg_drawScores;
 extern vmCvar_t cg_drawPlayersLeft;
@@ -2713,6 +2730,7 @@ extern vmCvar_t cg_drawItemPickupsAlpha;
 extern vmCvar_t cg_drawItemPickupsFade;
 extern vmCvar_t cg_drawItemPickupsFadeTime;
 extern vmCvar_t cg_drawItemPickupsCount;
+extern vmCvar_t cg_drawItemPickupsWideScreen;
 
 extern vmCvar_t cg_drawFollowing;
 extern vmCvar_t cg_drawFollowingX;
@@ -2724,6 +2742,7 @@ extern vmCvar_t cg_drawFollowingPointSize;
 extern vmCvar_t cg_drawFollowingScale;
 extern vmCvar_t cg_drawFollowingColor;
 extern vmCvar_t cg_drawFollowingAlpha;
+extern vmCvar_t cg_drawFollowingWideScreen;
 
 extern vmCvar_t cg_testQlFont;
 //extern vmCvar_t cg_deathSparkRadius;
@@ -2735,6 +2754,7 @@ extern vmCvar_t cg_weaponBarX;
 extern vmCvar_t cg_weaponBarY;
 extern vmCvar_t cg_weaponBarFont;
 extern vmCvar_t cg_weaponBarPointSize;
+extern vmCvar_t cg_weaponBarWideScreen;
 
 extern vmCvar_t cg_drawFullWeaponBar;
 
@@ -2744,6 +2764,8 @@ extern vmCvar_t cg_scoreBoardWhenDead;
 extern vmCvar_t cg_scoreBoardAtIntermission;
 extern vmCvar_t cg_scoreBoardWarmup;
 extern vmCvar_t cg_scoreBoardOld;
+extern vmCvar_t cg_scoreBoardOldWideScreen;
+extern vmCvar_t cg_scoreBoardCursorAreaWideScreen;
 
 extern vmCvar_t cg_hitBeep;
 
@@ -2795,6 +2817,7 @@ extern vmCvar_t cg_drawCenterPrintColor;
 extern vmCvar_t cg_drawCenterPrintAlpha;
 extern vmCvar_t cg_drawCenterPrintFade;
 extern vmCvar_t cg_drawCenterPrintFadeTime;
+extern vmCvar_t cg_drawCenterPrintWideScreen;
 
 extern vmCvar_t cg_drawVote;
 extern vmCvar_t cg_drawVoteX;
@@ -2806,6 +2829,7 @@ extern vmCvar_t cg_drawVotePointSize;
 extern vmCvar_t cg_drawVoteScale;
 extern vmCvar_t cg_drawVoteColor;
 extern vmCvar_t cg_drawVoteAlpha;
+extern vmCvar_t cg_drawVoteWideScreen;
 
 extern vmCvar_t cg_drawTeamVote;
 extern vmCvar_t cg_drawTeamVoteX;
@@ -2817,6 +2841,7 @@ extern vmCvar_t cg_drawTeamVotePointSize;
 extern vmCvar_t cg_drawTeamVoteScale;
 extern vmCvar_t cg_drawTeamVoteColor;
 extern vmCvar_t cg_drawTeamVoteAlpha;
+extern vmCvar_t cg_drawTeamVoteWideScreen;
 
 extern vmCvar_t cg_drawWaitingForPlayers;
 extern vmCvar_t cg_drawWaitingForPlayersX;
@@ -2828,6 +2853,7 @@ extern vmCvar_t cg_drawWaitingForPlayersPointSize;
 extern vmCvar_t cg_drawWaitingForPlayersScale;
 extern vmCvar_t cg_drawWaitingForPlayersColor;
 extern vmCvar_t cg_drawWaitingForPlayersAlpha;
+extern vmCvar_t cg_drawWaitingForPlayersWideScreen;
 
 extern vmCvar_t cg_drawWarmupString;
 extern vmCvar_t cg_drawWarmupStringX;
@@ -2839,6 +2865,7 @@ extern vmCvar_t cg_drawWarmupStringPointSize;
 extern vmCvar_t cg_drawWarmupStringScale;
 extern vmCvar_t cg_drawWarmupStringColor;
 extern vmCvar_t cg_drawWarmupStringAlpha;
+extern vmCvar_t cg_drawWarmupStringWideScreen;
 
 extern vmCvar_t cg_ambientSounds;
 extern vmCvar_t cg_weather;
@@ -2903,6 +2930,7 @@ extern vmCvar_t cg_deadBodyColor;
 extern vmCvar_t cg_disallowEnemyModelForTeammates;
 
 extern vmCvar_t cg_crosshairColor;
+
 extern vmCvar_t cg_audioAnnouncer;
 extern vmCvar_t cg_audioAnnouncerRewards;
 extern vmCvar_t cg_audioAnnouncerRewardsFirst;
@@ -2930,12 +2958,17 @@ extern vmCvar_t cg_screenDamageAlpha_Self;
 extern vmCvar_t cg_screenDamage_Self;
 extern vmCvar_t cg_screenDamageAlpha;
 extern vmCvar_t cg_screenDamage;
+
 extern vmCvar_t cg_echoPopupTime;
 extern vmCvar_t cg_echoPopupX;
 extern vmCvar_t cg_echoPopupY;
 extern vmCvar_t cg_echoPopupScale;
+extern vmCvar_t cg_echoPopupWideScreen;
+
 extern vmCvar_t cg_accX;
 extern vmCvar_t cg_accY;
+extern vmCvar_t cg_accWideScreen;
+
 extern vmCvar_t cg_loadDefaultMenus;
 extern vmCvar_t cg_grenadeColor;
 extern vmCvar_t cg_grenadeColorAlpha;
@@ -2964,6 +2997,7 @@ extern vmCvar_t cg_drawFragMessageThawTokens;
 extern vmCvar_t cg_drawFragMessageFreezeTokens;
 extern vmCvar_t cg_drawFragMessageFreezeTeamTokens;
 extern vmCvar_t cg_drawFragMessageIconScale;
+extern vmCvar_t cg_drawFragMessageWideScreen;
 
 extern vmCvar_t cg_obituaryTokens;
 extern vmCvar_t cg_obituaryIconScale;
@@ -3020,6 +3054,7 @@ extern vmCvar_t cg_drawCameraPointInfoScale;
 extern vmCvar_t cg_drawCameraPointInfoColor;
 extern vmCvar_t cg_drawCameraPointInfoSelectedColor;
 extern vmCvar_t cg_drawCameraPointInfoAlpha;
+extern vmCvar_t cg_drawCameraPointInfoWideScreen;
 
 extern vmCvar_t cg_drawViewPointMark;
 
@@ -3142,6 +3177,7 @@ extern vmCvar_t cg_drawProxWarningPointSize;
 extern vmCvar_t cg_drawProxWarningScale;
 extern vmCvar_t cg_drawProxWarningColor;
 extern vmCvar_t cg_drawProxWarningAlpha;
+extern vmCvar_t cg_drawProxWarningWideScreen;
 
 extern vmCvar_t cg_customMirrorSurfaces;
 extern vmCvar_t cg_demoStepSmoothing;
@@ -3190,6 +3226,7 @@ extern vmCvar_t cg_drawDominationPointStatusAlpha;
 extern vmCvar_t cg_drawDominationPointStatusTextColor;
 extern vmCvar_t cg_drawDominationPointStatusTextAlpha;
 extern vmCvar_t cg_drawDominationPointStatusTextStyle;
+extern vmCvar_t cg_drawDominationPointStatusWideScreen;
 
 extern vmCvar_t cg_roundScoreBoard;
 extern vmCvar_t cg_headShots;

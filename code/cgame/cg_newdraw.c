@@ -4583,7 +4583,8 @@ void CG_DrawWeaponBar( void ) {
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-
+	QLWideScreen = cg_weaponBarWideScreen.integer;
+	
 	// don't display if dead
 	if (wolfcam_following) {
 		if (cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD) {
@@ -5684,8 +5685,13 @@ static void CG_SetArmorColor (void)
 	}
 }
 
+//FIXME hack
+int MenuWidescreen = 0;
+int QLWideScreen = 0;
+rectDef_t MenuRect;
+
 //
-void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen)
+void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect)
 {
 	rectDef_t rect;
 	int ival;
@@ -5701,6 +5707,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	vec4_t newColor;
 
 
+	//FIXME debugging
+	if (cg_wideScreen.integer == 6) {
+		return;
+	}
+	
   if ( cg_drawStatus.integer == 0 ) {
 		return;
   }
@@ -5745,6 +5756,29 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   rect.w = w;
   rect.h = h;
 
+  MenuWidescreen = menuWidescreen;
+  QLWideScreen = itemWidescreen;
+  MenuRect = menuRect;
+  
+  //FIXME debugging widescreen
+  //args.color[0] = 255;
+  //args.color[1] = 255;
+  //args.color[2] = 255;
+
+  if (menuWidescreen) {
+	  //args.color[0] = 0;
+	  //rect.x += 300;
+	  //x += 300;
+
+	  if (!itemWidescreen) {
+		  Com_Printf("^5... item %d  menu %d\n", itemWidescreen, menuWidescreen);
+	  }
+  }
+
+  if (itemWidescreen) {
+	  //args.color[1] = 0;
+  }
+  
   //Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
 
   if (menuWidescreen  ||  itemWidescreen) {
@@ -5779,7 +5813,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  //CG_Text_Paint(rect.x, rect.y, scale, color, va("xxx %d  xxx", ownerDraw), 0, 0, textStyle, &cgDC.Assets.textFont);
 	  CG_Text_Paint_Align(&rect, scale, color, va("xxx %d  xxx", ownerDraw), 0, 0, textStyle, &cgDC.Assets.textFont, align);
   }
+
   if (debug > 2) {
+	  MenuWidescreen = 0;
+	  QLWideScreen = 0;
 	  return;
   }
 
@@ -6035,12 +6072,13 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_SetTeamColor();
 	  //CG_DrawPic(rect.x, rect.y, rect.w * (ival / 100.0), rect.h, shader);
 
-	  CG_AdjustFrom640( &rect.x, &rect.y, &rect.w, &rect.h );
+	  //CG_AdjustFrom640( &rect.x, &rect.y, &rect.w, &rect.h );
 	  s1 = 0;
 	  t1 = 0;
 	  s2 = (ival / 100.0);
 	  t2 = 1;
-	  trap_R_DrawStretchPic( rect.x, rect.y, rect.w * (ival / 100.0), rect.h, s1, t1, s2, t2, shader );
+	  //trap_R_DrawStretchPic( rect.x, rect.y, rect.w * (ival / 100.0), rect.h, s1, t1, s2, t2, shader );
+	  CG_DrawStretchPic( rect.x, rect.y, rect.w * (ival / 100.0), rect.h, s1, t1, s2, t2, shader );
 	  break;
   case CG_PLAYER_HEALTH_BAR_200:  // 75
 	  ival = cg.snap->ps.stats[STAT_HEALTH];
@@ -8327,6 +8365,9 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
     break;
   }
+
+  MenuWidescreen = 0;
+  QLWideScreen = 0;
 }
 
 void CG_MouseEvent(int x, int y) {
@@ -8397,7 +8438,7 @@ void CG_MouseEvent(int x, int y) {
 		return;
 	}
 
-	cgs.cursorX+= x;
+	cgs.cursorX += x;
 	if (cgs.cursorX < 0)
 		cgs.cursorX = 0;
 	else if (cgs.cursorX > 640)

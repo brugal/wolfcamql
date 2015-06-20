@@ -1000,6 +1000,8 @@ void CG_EchoPopup (const char *s, int x, int y)
 		cg.echoPopupY = y;
 	}
 
+	cg.echoPopupWideScreen = cg_echoPopupWideScreen.integer;
+	
 	cg.echoPopupScale = cg_echoPopupScale.value;
 }
 

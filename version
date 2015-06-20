@@ -1,14 +1,15 @@
 
-11.0test4
+11.0test5
 
-* support for changed blood shaders in April quakelive update (view damage, trail, spurt, mark)
+* support for quake live update April 21, 2015
+    - scoreboard column changes (FIXME need to check them all)
+    - changed blood shaders (view damage, trail, spurt, mark)
 * don't spam console with messages about EV_DAMAGEPLUM not being implemented
 * hud:  quake3 single player gametype is cg_gametype 16
 * bug fix:  quake3 single player demos would show hud elements from quake live 'race' gametype
 * bug fix:  incorrect player shown in cpma duel scoreboard
 * bug fix:  additional quake live weapons registered even if protocol didn't support them
 * default quake live linux and mac os x directory changed to $HOME/.wine/drive_c/users/$USER/Application Data/id Software/quakelive
-* support for new announcer in September quake live update
 * cl_demoFileCheckSystem  check for demo file in the local file system as well as wolfcam and quake live directories.  (0:  no check,  1:  check local directory before wolfcam or quakelive directories, 2:  (default) check if not found in wolfcam or quake live directories)
 
   ex:  wolfcamql.exe +set cl_demoFileCheckSystem 1 +demo c:\tmp\dem6.dm_90
@@ -24,6 +25,7 @@
 * bug fix:  player name sprite wasn't created if glyph height was greater than 64
 * hud bug fix:  CG_SHOW_IF_SG_FIRED missing
 * support for new quakelive update Sep 11, 2014
+    - new announcer
 * bug fix:  spectators could show up as players in the scoreboard
 * bug fix:  some shaders were not uploaded with power of two dimensions
 * bug fix:  possible texture corruption (invalid texture numbers could be used)
@@ -34,11 +36,17 @@
 * bug fix:  invalid value for apos.gravity in dm 73 entityState
 * support for quake live update Aug 27, 2014
 
-  You have to use the latest quakelive pak*.pk3 files. This update changed the ordering/number of the menu definitions so using older quake live paks is going to lead to random items being drawn in the hud.
+  - You have to use the latest quakelive pak*.pk3 files. This update changed the ordering/number of the menu definitions so using older quake live paks is going to lead to random items being drawn in the hud.
 
-  This update also removed some menu ownerdraws.  These can still be used and are still defined in ui/wcmenudef.h
+  - This update also removed some menu ownerdraws.  These can still be used and are still defined in ui/wcmenudef.h
 
-  Heavy machine gun scripts:  weapon/hmg/*
+  - Heavy machine gun scripts:  weapon/hmg/*
+
+  - ql widescreen hud
+
+       Enabled with 'cg_wideScreen 5' which is now the default value.
+
+       Widescreen cvars for hud elements not controlled through menus: cg_drawSpeedWideScreen, cg_drawJumpSpeedWideScreen, cg_drawJumpSpeedsTimeWideScreen, cg_drawFollowingWideScreen, cg_drawAttackerWideScreen, cg_drawSnapshotWideScreen, cg_drawFPSWideScreen.integer, cg_drawClientItemTimerWideScreen, cg_drawOriginWideScreen, cg_drawItemPickupsWideScreen, cg_drawRewardsWideScreen, cg_lagometerWideScreen, cg_drawCenterPrintWideScreen, cg_drawFragMessageWideScreen, cg_drawCrosshairNamesWideScreen, cg_drawCrosshairTeammateHealthWideScreen, cg_drawVoteWideScreen, cg_drawTeamVoteWideScreen, cg_scoreBoardOldWideScreen, cg_drawFollowingWideScreen, cg_drawAmmoWarningWideScreen, cg_drawProxWarningWideScreen, cg_drawWaitingForPlayersWideScreen, cg_accWideScreen, cg_drawDominationPointStatusWideScreen, cg_weaponBarWideScreen, cg_drawWarmupStringWideScreen, cg_echoPopupWideScreen
 
 * bug fix:  incorrect parsing of spawn variables in cgame if there was only one gametype listed in the map
 * bug fix:  spawn variables accept 'tdm' as team deathmatch name as well as 'team'
@@ -48,6 +56,7 @@
 * fx bug fix:  incorrect parsing of variables in 'command'
 * fx bug fix:  memory corruption if 'command' string was longer than 64 bytes
 * bug fix:  crash if surface entity reference invalid (seen with overload map)
+* bug fix:  cgame information screen uses widescreen settings
 
 ------------------------------------
 10.3  2013-11-16

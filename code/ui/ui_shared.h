@@ -30,9 +30,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../../ui/menudef.h"
 #include "ui_common.h"
 
-#define MAX_MENUNAME 32
-#define MAX_ITEMTEXT 64
-#define MAX_ITEMACTION 64
+// never used
+//#define MAX_MENUNAME 32
+//#define MAX_ITEMTEXT 64
+//#define MAX_ITEMACTION 64
+
 #define MAX_MENUDEFFILE 4096
 #define MAX_MENUFILE 32768
 #define MAX_MENUS 128
@@ -79,9 +81,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #else
 #define STRING_POOL_SIZE 2 * 1024 * 1024  //384*1024
 #endif
-#define MAX_STRING_HANDLES 4096
 
-#define MAX_SCRIPT_ARGS 12
+// unused
+//#define MAX_STRING_HANDLES 4096
+//#define MAX_SCRIPT_ARGS 12
+
 #define MAX_EDITFIELD 256
 
 #define ART_FX_BASE			"menu/art/fx_base"
@@ -109,10 +113,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SLIDER_THUMB_HEIGHT 20.0
 #define	NUM_CROSSHAIRS			20
 
+// unused
+/*
 typedef struct {
   const char *command;
   const char *args[MAX_SCRIPT_ARGS];
 } scriptDef_t;
+*/
 
 
 typedef struct {
@@ -341,23 +348,23 @@ typedef struct {
 typedef struct {
   qhandle_t (*registerShaderNoMip) (const char *p);
   void (*setColor) (const vec4_t v);
-  void (*drawHandlePic) (float x, float y, float w, float h, qhandle_t asset);
-  void (*drawStretchPic) (float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader );
-	void (*drawText) (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex );
-	int (*textWidth) (const char *text, float scale, int limit, int fontIndex);
-	int (*textHeight) (const char *text, float scale, int limit, int fontIndex);
+	void (*drawHandlePic) (float x, float y, float w, float h, qhandle_t asset, int widescreen, rectDef_t menuRect);
+	void (*drawStretchPic) (float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader, int widescreen, rectDef_t menuRect);
+	void (*drawText) (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex, int widescreen, rectDef_t menuRect);
+	int (*textWidth) (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect);
+	int (*textHeight) (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect);
   qhandle_t (*registerModel) (const char *p);
   void (*modelBounds) (qhandle_t model, vec3_t min, vec3_t max);
-  void (*fillRect) ( float x, float y, float w, float h, const vec4_t color);
-  void (*drawRect) ( float x, float y, float w, float h, float size, const vec4_t color);
-  void (*drawSides) (float x, float y, float w, float h, float size);
-  void (*drawTopBottom) (float x, float y, float w, float h, float size);
+	void (*fillRect) (float x, float y, float w, float h, const vec4_t color, int widescreen, rectDef_t menuRect);
+	void (*drawRect) (float x, float y, float w, float h, float size, const vec4_t color, int widescreen, rectDef_t menuRect);
+	void (*drawSides) (float x, float y, float w, float h, float size, int widescreen, rectDef_t menuRect);
+	void (*drawTopBottom) (float x, float y, float w, float h, float size, int widescreen, rectDef_t menuRect);
   void (*clearScene) ( void );
   void (*addRefEntityToScene) (const refEntity_t *re );
   void (*renderScene) ( const refdef_t *fd );
   void (*registerFont) (const char *pFontname, int pointSize, fontInfo_t *font);
-	void (*ownerDrawItem) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen);
-	//void (*ownerDrawItem2) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int fontIndex);
+	void (*ownerDrawItem) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect);
+	//void (*ownerDrawItem2) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect);
 	float (*getValue) (int ownerDraw);
 	qboolean (*ownerDrawVisible) (int flags, int flags2);
   void (*runScript)(char **p);
@@ -366,7 +373,7 @@ typedef struct {
   float (*getCVarValue)(const char *cvar);
   void (*setCVar)(const char *cvar, const char *value);
 	qboolean (*cvarExists)(const char *var_name);
-	void (*drawTextWithCursor)(float x, float y, float scale, const vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style, int fontIndex);
+	void (*drawTextWithCursor)(float x, float y, float scale, const vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style, int fontIndex, int widescreen, rectDef_t menuRect);
   void (*setOverstrikeMode)(qboolean b);
   qboolean (*getOverstrikeMode)( void );
   void (*startLocalSound)( sfxHandle_t sfx, int channelNum );
@@ -382,13 +389,13 @@ typedef struct {
 	void (*Error)(int level, const char *error, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
 	void (*Print)(const char *msg, ...) __attribute__ ((format (printf, 1, 2)));
 	void (*Pause)(qboolean b);
-	int (*ownerDrawWidth)(int ownerDraw, float scale, int fontIndex);
+	int (*ownerDrawWidth)(int ownerDraw, float scale, int fontIndex, int widescreen, rectDef_t menuRect);
 	sfxHandle_t (*registerSound)(const char *name, qboolean compressed);
 	void (*startBackgroundTrack)( const char *intro, const char *loop);
 	void (*stopBackgroundTrack)( void );
-	int (*playCinematic)(const char *name, float x, float y, float w, float h);
+	int (*playCinematic)(const char *name, float x, float y, float w, float h, int widescreen, rectDef_t menuRect);
 	void (*stopCinematic)(int handle);
-	void (*drawCinematic)(int handle, float x, float y, float w, float h);
+	void (*drawCinematic)(int handle, float x, float y, float w, float h, int widescreen, rectDef_t menuRect);
 	void (*runCinematicFrame)(int handle);
 
   float			yscale;

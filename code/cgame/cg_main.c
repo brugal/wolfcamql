@@ -5,6 +5,7 @@
 
 #include "cg_consolecmds.h"
 #include "cg_draw.h"
+#include "cg_drawdc.h"
 #include "cg_drawtools.h"
 #include "cg_info.h"
 #include "cg_localents.h"
@@ -195,6 +196,7 @@ vmCvar_t cg_drawClientItemTimerIcon;
 vmCvar_t cg_drawClientItemTimerIconSize;
 vmCvar_t cg_drawClientItemTimerIconXoffset;
 vmCvar_t cg_drawClientItemTimerIconYoffset;
+vmCvar_t cg_drawClientItemTimerWideScreen;
 
 vmCvar_t cg_itemSpawnPrint;
 
@@ -212,6 +214,7 @@ vmCvar_t cg_drawFPSColor;
 vmCvar_t cg_drawFPSAlpha;
 //vmCvar_t cg_drawFPSFade;
 //vmCvar_t cg_drawFPSFadeTime;
+vmCvar_t cg_drawFPSWideScreen;
 
 vmCvar_t	cg_drawSnapshot;
 vmCvar_t    cg_drawSnapshotX;
@@ -223,6 +226,7 @@ vmCvar_t cg_drawSnapshotPointSize;
 vmCvar_t cg_drawSnapshotScale;
 vmCvar_t cg_drawSnapshotColor;
 vmCvar_t cg_drawSnapshotAlpha;
+vmCvar_t cg_drawSnapshotWideScreen;
 
 vmCvar_t	cg_draw3dIcons;
 vmCvar_t	cg_drawIcons;
@@ -240,6 +244,7 @@ vmCvar_t cg_drawAmmoWarningColor;
 vmCvar_t cg_drawAmmoWarningAlpha;
 //vmCvar_t cg_drawAmmoWarningFade;
 //vmCvar_t cg_drawAmmoWarningFadeTime;
+vmCvar_t cg_drawAmmoWarningWideScreen;
 
 vmCvar_t cg_lowAmmoWarningStyle;
 vmCvar_t cg_lowAmmoWarningPercentile;
@@ -275,6 +280,7 @@ vmCvar_t cg_drawCrosshairNamesColor;
 vmCvar_t cg_drawCrosshairNamesAlpha;
 vmCvar_t cg_drawCrosshairNamesFade;
 vmCvar_t cg_drawCrosshairNamesFadeTime;
+vmCvar_t cg_drawCrosshairNamesWideScreen;
 
 vmCvar_t cg_drawCrosshairTeammateHealth;
 vmCvar_t cg_drawCrosshairTeammateHealthX;
@@ -289,6 +295,7 @@ vmCvar_t cg_drawCrosshairTeammateHealthColor;
 vmCvar_t cg_drawCrosshairTeammateHealthAlpha;
 vmCvar_t cg_drawCrosshairTeammateHealthFade;
 vmCvar_t cg_drawCrosshairTeammateHealthFadeTime;
+vmCvar_t cg_drawCrosshairTeammateHealthWideScreen;
 
 vmCvar_t cg_drawRewards;
 vmCvar_t cg_drawRewardsMax;
@@ -306,6 +313,7 @@ vmCvar_t cg_drawRewardsAlpha;
 vmCvar_t cg_drawRewardsFade;
 vmCvar_t cg_drawRewardsFadeTime;
 vmCvar_t cg_rewardsStack;
+vmCvar_t cg_drawRewardsWideScreen;
 
 vmCvar_t	cg_crosshairSize;
 vmCvar_t cg_crosshairColor;
@@ -319,6 +327,7 @@ vmCvar_t cg_crosshairHitTime;
 vmCvar_t cg_crosshairBrightness;
 vmCvar_t cg_crosshairAlpha;
 vmCvar_t cg_crosshairAlphaAdjust;
+//vmCvar_t cg_crosshairWideScreen;
 
 vmCvar_t	cg_draw2D;
 vmCvar_t	cg_drawStatus;
@@ -387,6 +396,7 @@ vmCvar_t cg_lagometerAlpha;
 vmCvar_t cg_lagometerFontAlpha;
 vmCvar_t cg_lagometerAveragePing;
 vmCvar_t cg_lagometerSnapshotPing;
+vmCvar_t cg_lagometerWideScreen;
 
 vmCvar_t	cg_drawAttacker;
 vmCvar_t	cg_drawAttackerX;
@@ -402,6 +412,7 @@ vmCvar_t cg_drawAttackerColor;
 vmCvar_t cg_drawAttackerAlpha;
 vmCvar_t cg_drawAttackerFade;
 vmCvar_t cg_drawAttackerFadeTime;
+vmCvar_t cg_drawAttackerWideScreen;
 
 vmCvar_t	cg_synchronousClients;
 vmCvar_t 	cg_teamChatTime;
@@ -424,6 +435,7 @@ vmCvar_t cg_drawTeamOverlayPointSize;
 vmCvar_t cg_drawTeamOverlayAlign;
 vmCvar_t cg_drawTeamOverlayScale;
 //vmCvar_t cg_drawTeamOverlayAlpha;
+vmCvar_t cg_drawTeamOverlayWideScreen;
 
 vmCvar_t cg_drawJumpSpeeds;
 vmCvar_t cg_drawJumpSpeedsNoText;
@@ -437,6 +449,7 @@ vmCvar_t cg_drawJumpSpeedsPointSize;
 vmCvar_t cg_drawJumpSpeedsScale;
 vmCvar_t cg_drawJumpSpeedsColor;
 vmCvar_t cg_drawJumpSpeedsAlpha;
+vmCvar_t cg_drawJumpSpeedsWideScreen;
 
 vmCvar_t cg_drawJumpSpeedsTime;
 vmCvar_t cg_drawJumpSpeedsTimeNoText;
@@ -449,6 +462,7 @@ vmCvar_t cg_drawJumpSpeedsTimePointSize;
 vmCvar_t cg_drawJumpSpeedsTimeScale;
 vmCvar_t cg_drawJumpSpeedsTimeColor;
 vmCvar_t cg_drawJumpSpeedsTimeAlpha;
+vmCvar_t cg_drawJumpSpeedsTimeWideScreen;
 
 vmCvar_t	cg_drawFriend;
 vmCvar_t cg_drawFriendMinWidth;
@@ -527,6 +541,7 @@ vmCvar_t cg_drawSpeedPointSize;
 vmCvar_t cg_drawSpeedScale;
 vmCvar_t cg_drawSpeedColor;
 vmCvar_t cg_drawSpeedAlpha;
+vmCvar_t cg_drawSpeedWideScreen;
 
 vmCvar_t cg_drawOrigin;
 vmCvar_t cg_drawOriginX;
@@ -538,6 +553,7 @@ vmCvar_t cg_drawOriginPointSize;
 vmCvar_t cg_drawOriginScale;
 vmCvar_t cg_drawOriginColor;
 vmCvar_t cg_drawOriginAlpha;
+vmCvar_t cg_drawOriginWideScreen;
 
 vmCvar_t cg_drawScores;
 vmCvar_t cg_drawPlayersLeft;
@@ -558,6 +574,7 @@ vmCvar_t cg_drawItemPickupsAlpha;
 vmCvar_t cg_drawItemPickupsFade;
 vmCvar_t cg_drawItemPickupsFadeTime;
 vmCvar_t cg_drawItemPickupsCount;
+vmCvar_t cg_drawItemPickupsWideScreen;
 
 vmCvar_t cg_drawFollowing;
 vmCvar_t cg_drawFollowingX;
@@ -569,6 +586,7 @@ vmCvar_t cg_drawFollowingPointSize;
 vmCvar_t cg_drawFollowingScale;
 vmCvar_t cg_drawFollowingColor;
 vmCvar_t cg_drawFollowingAlpha;
+vmCvar_t cg_drawFollowingWideScreen;
 
 vmCvar_t cg_testQlFont;
 vmCvar_t cg_qlhud;
@@ -577,6 +595,7 @@ vmCvar_t cg_qlFontScaling;
 vmCvar_t cg_weaponBar;
 vmCvar_t cg_weaponBarX;
 vmCvar_t cg_weaponBarY;
+vmCvar_t cg_weaponBarWideScreen;
 vmCvar_t cg_weaponBarFont;
 vmCvar_t cg_weaponBarPointSize;
 vmCvar_t cg_drawFullWeaponBar;
@@ -586,6 +605,8 @@ vmCvar_t cg_scoreBoardWhenDead;
 vmCvar_t cg_scoreBoardAtIntermission;
 vmCvar_t cg_scoreBoardWarmup;
 vmCvar_t cg_scoreBoardOld;
+vmCvar_t cg_scoreBoardOldWideScreen;
+vmCvar_t cg_scoreBoardCursorAreaWideScreen;
 
 vmCvar_t cg_hitBeep;
 
@@ -637,6 +658,7 @@ vmCvar_t cg_drawCenterPrintColor;
 vmCvar_t cg_drawCenterPrintAlpha;
 vmCvar_t cg_drawCenterPrintFade;
 vmCvar_t cg_drawCenterPrintFadeTime;
+vmCvar_t cg_drawCenterPrintWideScreen;
 
 vmCvar_t cg_drawVote;
 vmCvar_t cg_drawVoteX;
@@ -648,6 +670,7 @@ vmCvar_t cg_drawVotePointSize;
 vmCvar_t cg_drawVoteScale;
 vmCvar_t cg_drawVoteColor;
 vmCvar_t cg_drawVoteAlpha;
+vmCvar_t cg_drawVoteWideScreen;
 
 vmCvar_t cg_drawTeamVote;
 vmCvar_t cg_drawTeamVoteX;
@@ -659,6 +682,7 @@ vmCvar_t cg_drawTeamVotePointSize;
 vmCvar_t cg_drawTeamVoteScale;
 vmCvar_t cg_drawTeamVoteColor;
 vmCvar_t cg_drawTeamVoteAlpha;
+vmCvar_t cg_drawTeamVoteWideScreen;
 
 vmCvar_t cg_drawWaitingForPlayers;
 vmCvar_t cg_drawWaitingForPlayersX;
@@ -670,6 +694,7 @@ vmCvar_t cg_drawWaitingForPlayersPointSize;
 vmCvar_t cg_drawWaitingForPlayersScale;
 vmCvar_t cg_drawWaitingForPlayersColor;
 vmCvar_t cg_drawWaitingForPlayersAlpha;
+vmCvar_t cg_drawWaitingForPlayersWideScreen;
 
 vmCvar_t cg_drawWarmupString;
 vmCvar_t cg_drawWarmupStringX;
@@ -681,6 +706,7 @@ vmCvar_t cg_drawWarmupStringPointSize;
 vmCvar_t cg_drawWarmupStringScale;
 vmCvar_t cg_drawWarmupStringColor;
 vmCvar_t cg_drawWarmupStringAlpha;
+vmCvar_t cg_drawWarmupStringWideScreen;
 
 vmCvar_t cg_ambientSounds;
 vmCvar_t cg_weather;
@@ -773,8 +799,12 @@ vmCvar_t cg_echoPopupTime;
 vmCvar_t cg_echoPopupX;
 vmCvar_t cg_echoPopupY;
 vmCvar_t cg_echoPopupScale;
+vmCvar_t cg_echoPopupWideScreen;
+
 vmCvar_t cg_accX;
 vmCvar_t cg_accY;
+vmCvar_t cg_accWideScreen;
+
 vmCvar_t cg_loadDefaultMenus;
 vmCvar_t cg_grenadeColor;
 vmCvar_t cg_grenadeColorAlpha;
@@ -803,6 +833,7 @@ vmCvar_t cg_drawFragMessageThawTokens;
 vmCvar_t cg_drawFragMessageFreezeTokens;
 vmCvar_t cg_drawFragMessageFreezeTeamTokens;
 vmCvar_t cg_drawFragMessageIconScale;
+vmCvar_t cg_drawFragMessageWideScreen;
 
 vmCvar_t cg_obituaryTokens;
 vmCvar_t cg_obituaryIconScale;
@@ -859,6 +890,7 @@ vmCvar_t cg_drawCameraPointInfoScale;
 vmCvar_t cg_drawCameraPointInfoColor;
 vmCvar_t cg_drawCameraPointInfoSelectedColor;
 vmCvar_t cg_drawCameraPointInfoAlpha;
+vmCvar_t cg_drawCameraPointInfoWideScreen;
 
 vmCvar_t cg_drawViewPointMark;
 
@@ -981,6 +1013,7 @@ vmCvar_t cg_drawProxWarningPointSize;
 vmCvar_t cg_drawProxWarningScale;
 vmCvar_t cg_drawProxWarningColor;
 vmCvar_t cg_drawProxWarningAlpha;
+vmCvar_t cg_drawProxWarningWideScreen;
 
 vmCvar_t cg_customMirrorSurfaces;
 vmCvar_t cg_demoStepSmoothing;
@@ -1029,6 +1062,7 @@ vmCvar_t cg_drawDominationPointStatusAlpha;
 vmCvar_t cg_drawDominationPointStatusTextColor;
 vmCvar_t cg_drawDominationPointStatusTextAlpha;
 vmCvar_t cg_drawDominationPointStatusTextStyle;
+vmCvar_t cg_drawDominationPointStatusWideScreen;
 
 vmCvar_t cg_roundScoreBoard;
 vmCvar_t cg_headShots;
@@ -1123,7 +1157,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_drawClientItemTimerIconSize), "20", CVAR_ARCHIVE },
 	{ cvp(cg_drawClientItemTimerIconXoffset), "-55", CVAR_ARCHIVE },
 	{ cvp(cg_drawClientItemTimerIconYoffset), "0", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawClientItemTimerWideScreen), "3", CVAR_ARCHIVE },
+	
 	{ &cg_itemSpawnPrint, "cg_itemSpawnPrint", "0", CVAR_ARCHIVE },
 
 	{ &cg_drawFPS, "cg_drawFPS", "1", CVAR_ARCHIVE },
@@ -1140,7 +1175,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFPSAlpha, "cg_drawFPSAlpha", "255", CVAR_ARCHIVE },
 	//	{ &cg_drawFPSFade, "cg_drawFPSFade", "1", CVAR_ARCHIVE },
 	//	{ &cg_drawFPSFadeTime, "cg_drawFPSFadeTime", "200", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawFPSWideScreen), "3", CVAR_ARCHIVE },
+	
 	{ &cg_drawSnapshot, "cg_drawSnapshot", "0", CVAR_ARCHIVE  },
 	{ &cg_drawSnapshotX, "cg_drawSnapshotX", "635", CVAR_ARCHIVE },
 	{ &cg_drawSnapshotY, "cg_drawSnapshotY", "", CVAR_ARCHIVE },
@@ -1151,6 +1187,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawSnapshotScale, "cg_drawSnapshotScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawSnapshotColor, "cg_drawSnapshotColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawSnapshotAlpha, "cg_drawSnapshotAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawSnapshotWideScreen), "3", CVAR_ARCHIVE },
 
 	{ &cg_draw3dIcons, "cg_draw3dIcons", "1", CVAR_ARCHIVE  },
 	{ &cg_drawIcons, "cg_drawIcons", "1", CVAR_ARCHIVE  },
@@ -1168,7 +1205,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawAmmoWarningAlpha, "cg_drawAmmoWarningAlpha", "255", CVAR_ARCHIVE },
 	//{ &cg_drawAmmoWarningFade, "cg_drawAmmoWarningFade", "1", CVAR_ARCHIVE },
 	//{ &cg_drawAmmoWarningFadeTime, "cg_drawAmmoWarningFadeTime", "200", CVAR_ARCHIVE },
-
+	{cvp(cg_drawAmmoWarningWideScreen), "2", CVAR_ARCHIVE},
+	
 	{ cvp(cg_lowAmmoWarningStyle), "1", CVAR_ARCHIVE },
 	{ cvp(cg_lowAmmoWarningPercentile), "0.20", CVAR_ARCHIVE },
 	{ cvp(cg_lowAmmoWarningSound), "1", CVAR_ARCHIVE },
@@ -1201,8 +1239,10 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawAttackerAlpha, "cg_drawAttackerAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_drawAttackerFade, "cg_drawAttackerFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawAttackerFadeTime, "cg_drawAttackerFadeTime", "10000", CVAR_ARCHIVE },
+	{ cvp(cg_drawAttackerWideScreen), "3", CVAR_ARCHIVE },
 
 	{ &cg_drawCrosshair, "cg_drawCrosshair", "5", CVAR_ARCHIVE },
+	//{ cvp(cg_crosshairWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_drawCrosshairNames, "cg_drawCrosshairNames", "1", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairNamesX, "cg_drawCrosshairNamesX", "320", CVAR_ARCHIVE },
@@ -1217,6 +1257,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCrosshairNamesAlpha, "cg_drawCrosshairNamesAlpha", "77", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairNamesFade, "cg_drawCrosshairNamesFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairNamesFadeTime, "cg_drawCrosshairNamesFadeTime", "1000", CVAR_ARCHIVE },
+	{ cvp(cg_drawCrosshairNamesWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_drawCrosshairTeammateHealth, "cg_drawCrosshairTeammateHealth", "1", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairTeammateHealthX, "cg_drawCrosshairTeammateHealthX", "320", CVAR_ARCHIVE },
@@ -1231,6 +1272,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCrosshairTeammateHealthAlpha, "cg_drawCrosshairTeammateHealthAlpha", "77", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairTeammateHealthFade, "cg_drawCrosshairTeammateHealthFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawCrosshairTeammateHealthFadeTime, "cg_drawCrosshairTeammateHealthFadeTime", "1000", CVAR_ARCHIVE },
+	{ cvp(cg_drawCrosshairTeammateHealthWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_drawRewards, "cg_drawRewards", "1", CVAR_ARCHIVE },
 	{ &cg_drawRewardsMax, "cg_drawRewardsMax", "10", CVAR_ARCHIVE },
@@ -1247,6 +1289,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawRewardsAlpha, "cg_drawRewardsAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_drawRewardsFade, "cg_drawRewardsFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawRewardsFadeTime, "cg_drawRewardsFadeTime", "200", CVAR_ARCHIVE },
+	{ cvp(cg_drawRewardsWideScreen), "2", CVAR_ARCHIVE },
+	
 	{ &cg_rewardsStack, "cg_rewardsStack", "1", CVAR_ARCHIVE },
 
 	{ &cg_crosshairSize, "cg_crosshairSize", "32", CVAR_ARCHIVE },
@@ -1291,6 +1335,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_lagometerFontAlpha, "cg_lagometerFontAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_lagometerAveragePing, "cg_lagometerAveragePing", "1", CVAR_ARCHIVE },
 	{ &cg_lagometerSnapshotPing, "cg_lagometerSnapshotPing", "1", CVAR_ARCHIVE },
+	{ cvp(cg_lagometerWideScreen), "3", CVAR_ARCHIVE },
 
 	{ &cg_railTrailTime, "cg_railTrailTime", "400", CVAR_ARCHIVE  },
 	{ &cg_railQL, "cg_railQL", "1", CVAR_ARCHIVE },
@@ -1348,6 +1393,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawTeamOverlayAlign, "cg_drawTeamOverlayAlign", "2", CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayScale, "cg_drawTeamOverlayScale", "0.4", CVAR_ARCHIVE },
 	//{ &cg_drawTeamOverlayAlpha, "cg_drawTeamOverlayAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawTeamOverlayWideScreen), "3", CVAR_ARCHIVE },
 
 	{ &cg_drawJumpSpeeds, "cg_drawJumpSpeeds", "0", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsNoText, "cg_drawJumpSpeedsNoText", "0", CVAR_ARCHIVE },
@@ -1361,7 +1407,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawJumpSpeedsScale, "cg_drawJumpSpeedsScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsColor, "cg_drawJumpSpeedsColor", "0xffff00", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsAlpha, "cg_drawJumpSpeedsAlpha", "255", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawJumpSpeedsWideScreen), "1", CVAR_ARCHIVE },
 
 	{ &cg_drawJumpSpeedsTime, "cg_drawJumpSpeedsTime", "0", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsTimeNoText, "cg_drawJumpSpeedsTimeNoText", "0", CVAR_ARCHIVE },
@@ -1374,6 +1420,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawJumpSpeedsTimeScale, "cg_drawJumpSpeedsTimeScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsTimeColor, "cg_drawJumpSpeedsTimeColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsTimeAlpha, "cg_drawJumpSpeedsTimeAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawJumpSpeedsTimeWideScreen), "1", CVAR_ARCHIVE },
 
 	{ &cg_stats, "cg_stats", "0", 0 },
 	{ &cg_drawFriend, "cg_drawFriend", "3", CVAR_ARCHIVE },
@@ -1456,7 +1503,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawSpeedScale, "cg_drawSpeedScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawSpeedColor, "cg_drawSpeedColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawSpeedAlpha, "cg_drawSpeedAlpha", "255", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawSpeedWideScreen), "3", CVAR_ARCHIVE },
+	
 	{ &cg_drawOrigin, "cg_drawOrigin", "0", CVAR_ARCHIVE },
 	{ &cg_drawOriginX, "cg_drawOriginX", "5", CVAR_ARCHIVE },
 	{ &cg_drawOriginY, "cg_drawOriginY", "420", CVAR_ARCHIVE },
@@ -1467,6 +1515,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawOriginScale, "cg_drawOriginScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawOriginColor, "cg_drawOriginColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawOriginAlpha, "cg_drawOriginAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawOriginWideScreen), "1", CVAR_ARCHIVE },
 
 	{ &cg_drawScores, "cg_drawScores", "1", CVAR_ARCHIVE },
 	{ &cg_drawPlayersLeft, "cg_drawPlayersLeft", "1", CVAR_ARCHIVE },
@@ -1487,7 +1536,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawItemPickupsFade, "cg_drawItemPickupsFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsFadeTime, "cg_drawItemPickupsFadeTime", "3000", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsCount, "cg_drawItemPickupsCount", "1", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawItemPickupsWideScreen), "1", CVAR_ARCHIVE },
+	
 	{ &cg_drawFollowing, "cg_drawFollowing", "1", CVAR_ARCHIVE },
 	{ &cg_drawFollowingX, "cg_drawFollowingX", "320", CVAR_ARCHIVE },
 	{ &cg_drawFollowingY, "cg_drawFollowingY", "50", CVAR_ARCHIVE },
@@ -1498,6 +1548,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFollowingScale, "cg_drawFollowingScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawFollowingColor, "cg_drawFollowingColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawFollowingAlpha, "cg_drawFollowingAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawFollowingWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_testQlFont, "cg_testQlFont", "0", CVAR_ARCHIVE },
 	//{ &cg_deathSparkRadius, "cg_deathSparkRadius", "8.0", CVAR_ARCHIVE },
@@ -1510,6 +1561,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_weaponBarY, "cg_weaponBarY", "", CVAR_ARCHIVE },
 	{ &cg_weaponBarFont, "cg_weaponBarFont", "", CVAR_ARCHIVE },
 	{ &cg_weaponBarPointSize, "cg_weaponBarPointSize", "24", CVAR_ARCHIVE },
+	{ cvp(cg_weaponBarWideScreen), "1", CVAR_ARCHIVE },
 
 	{ &cg_drawFullWeaponBar, "cg_drawFullWeaponBar", "1", CVAR_ARCHIVE },
 	{ &cg_scoreBoardStyle, "cg_scoreBoardStyle", "1", CVAR_ARCHIVE },
@@ -1518,6 +1570,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_scoreBoardAtIntermission, "cg_scoreBoardAtIntermission", "1", CVAR_ARCHIVE },
 	{ &cg_scoreBoardWarmup, "cg_scoreBoardWarmup", "1", CVAR_ARCHIVE },
 	{ &cg_scoreBoardOld, "cg_scoreBoardOld", "0", CVAR_ARCHIVE },
+	{ cvp(cg_scoreBoardOld), "2", CVAR_ARCHIVE },
+	{ cvp(cg_scoreBoardCursorAreaWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_hitBeep, "cg_hitBeep", "2", CVAR_ARCHIVE },
 
@@ -1569,6 +1623,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCenterPrintAlpha, "cg_drawCenterPrintAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_drawCenterPrintFade, "cg_drawCenterPrintFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawCenterPrintFadeTime, "cg_drawCenterPrintFadeTime", "200", CVAR_ARCHIVE },
+	{ cvp(cg_drawCenterPrintWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_drawVote, "cg_drawVote", "1", CVAR_ARCHIVE },
 	{ &cg_drawVoteX, "cg_drawVoteX", "0", CVAR_ARCHIVE },
@@ -1580,7 +1635,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawVoteScale, "cg_drawVoteScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawVoteColor, "cg_drawVoteColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawVoteAlpha, "cg_drawVoteAlpha", "255", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawVoteWideScreen), "1", CVAR_ARCHIVE },
+	
 	{ &cg_drawTeamVote, "cg_drawTeamVote", "1", CVAR_ARCHIVE },
 	{ &cg_drawTeamVoteX, "cg_drawTeamVoteX", "0", CVAR_ARCHIVE },
 	{ &cg_drawTeamVoteY, "cg_drawTeamVoteY", "300", CVAR_ARCHIVE },
@@ -1591,7 +1647,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawTeamVoteScale, "cg_drawTeamVoteScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawTeamVoteColor, "cg_drawTeamVoteColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawTeamVoteAlpha, "cg_drawTeamVoteAlpha", "255", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawTeamVoteWideScreen), "1", CVAR_ARCHIVE },
 
 	{ &cg_drawWaitingForPlayers, "cg_drawWaitingForPlayers", "1", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersX, "cg_drawWaitingForPlayersX", "320", CVAR_ARCHIVE },
@@ -1603,7 +1659,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawWaitingForPlayersScale, "cg_drawWaitingForPlayersScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersColor, "cg_drawWaitingForPlayersColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersAlpha, "cg_drawWaitingForPlayersAlpha", "255", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawWaitingForPlayersWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_drawWarmupString, "cg_drawWarmupString", "1", CVAR_ARCHIVE },
 	{ &cg_drawWarmupStringX, "cg_drawWarmupStringX", "320", CVAR_ARCHIVE },
@@ -1615,7 +1671,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawWarmupStringScale, "cg_drawWarmupStringScale", "0.6", CVAR_ARCHIVE },
 	{ &cg_drawWarmupStringColor, "cg_drawWarmupStringColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawWarmupStringAlpha, "cg_drawWarmupStringAlpha", "255", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawWarmupStringWideScreen), "2", CVAR_ARCHIVE },
+	
 	{ &cg_ambientSounds, "cg_ambientSounds", "2", CVAR_ARCHIVE },
 	{ &cg_weather, "cg_weather", "1", CVAR_ARCHIVE },
 	{ &wolfcam_hoverTime, "wolfcam_hoverTime", "2000", CVAR_ARCHIVE },
@@ -1714,12 +1771,17 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_screenDamage_Self, "cg_screenDamage_Self", "0x000000", CVAR_ARCHIVE },
 	{ &cg_screenDamageAlpha, "cg_screenDamageAlpha", "200", CVAR_ARCHIVE },
 	{ &cg_screenDamage, "cg_screenDamage", "0x700000", CVAR_ARCHIVE },
+
 	{ &cg_echoPopupTime, "cg_echoPopupTime", "1000", CVAR_ARCHIVE },
 	{ &cg_echoPopupX, "cg_echoPopupX", "30", CVAR_ARCHIVE },
 	{ &cg_echoPopupY, "cg_echoPopupY", "340", CVAR_ARCHIVE },
 	{ &cg_echoPopupScale, "cg_echoPopupScale", "0.3", CVAR_ARCHIVE },
+	{ cvp(cg_echoPopupWideScreen), "1", CVAR_ARCHIVE },
+
 	{ &cg_accX, "cg_accX", "450", CVAR_ARCHIVE },
 	{ &cg_accY, "cg_accY", "100", CVAR_ARCHIVE },
+	{ cvp(cg_accWideScreen), "3", CVAR_ARCHIVE },
+	
 	{ &cg_loadDefaultMenus, "cg_loadDefaultMenus", "1", CVAR_ARCHIVE },
 	{ &cg_grenadeColor, "cg_grenadeColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_grenadeColorAlpha, "cg_grenadeColorAlpha", "255", CVAR_ARCHIVE },
@@ -1749,7 +1811,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFragMessageFreezeTokens, "cg_drawFragMessageFreezeTokens", "You froze %v", CVAR_ARCHIVE },
 	{ &cg_drawFragMessageFreezeTeamTokens, "cg_drawFragMessageFreezeTeamTokens", "You froze %v, your teammate", CVAR_ARCHIVE },
 	{ &cg_drawFragMessageIconScale, "cg_drawFragMessageIconScale", "1.5", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawFragMessageWideScreen), "2", CVAR_ARCHIVE },
+	
 	{ &cg_obituaryTokens, "cg_obituaryTokens", "%k %i %v", CVAR_ARCHIVE },
 	{ &cg_obituaryIconScale, "cg_obituaryIconScale", "1.5", CVAR_ARCHIVE },
 	{ &cg_obituaryRedTeamColor, "cg_obituaryRedTeamColor", "0xf40000", CVAR_ARCHIVE },
@@ -1801,7 +1864,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCameraPointInfoColor, "cg_drawCameraPointInfoColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoSelectedColor, "cg_drawCameraPointInfoSelectedColor", "0xff5a5a", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoAlpha, "cg_drawCameraPointInfoAlpha", "255", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawCameraPointInfoWideScreen), "1", CVAR_ARCHIVE },
+	
 	{ &cg_drawViewPointMark, "cg_drawViewPointMark", "0", CVAR_ARCHIVE },
 	{ &cg_levelTimerDirection, "cg_levelTimerDirection", "0", CVAR_ARCHIVE },
 	//{ &cg_levelTimerStyle, "cg_levelTimerStyle", "0", CVAR_ARCHIVE },
@@ -1891,7 +1955,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_enableAtCommands, "cg_enableAtCommands", "1", CVAR_ARCHIVE },
 	{ &cg_quadKillCounter, "cg_quadKillCounter", "1", CVAR_ARCHIVE },
 	{ &cg_battleSuitKillCounter, "cg_battleSuitKillCounter", "1", CVAR_ARCHIVE },
-	{ &cg_wideScreen, "cg_wideScreen", "0", CVAR_ARCHIVE },
+	{ &cg_wideScreen, "cg_wideScreen", "5", CVAR_ARCHIVE },
 	{ &cg_wideScreenScoreBoardHack, "cg_wideScreenScoreBoardHack", "0", CVAR_ARCHIVE },
 	{ &cg_adShaderOverride, "cg_adShaderOverride", "0", CVAR_ARCHIVE },
 	{ &cg_firstPersonSwitchSound, "cg_firstPersonSwitchSound", "sound/wc/beep05", CVAR_ARCHIVE },
@@ -1906,6 +1970,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawProxWarningScale, "cg_drawProxWarningScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningColor, "cg_drawProxWarningColor", "0xfe0000", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningAlpha, "cg_drawProxWarningAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawProxWarningWideScreen), "2", CVAR_ARCHIVE },
+	
 	{ &cg_customMirrorSurfaces, "cg_customMirrorSurfaces", "0", CVAR_ARCHIVE },
 	{ &cg_demoStepSmoothing, "cg_demoStepSmoothing", "1", CVAR_ARCHIVE },
 	{ &cg_stepSmoothTime, "cg_stepSmoothTime", "100", CVAR_ARCHIVE },
@@ -1936,7 +2002,9 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_dominationPointEnemyAlpha, "cg_dominationPointEnemyAlpha", "", CVAR_ARCHIVE },
 	{ &cg_dominationPointNeutralColor, "cg_dominationPointNeutralColor", "", CVAR_ARCHIVE },
 	{ &cg_dominationPointNeutralAlpha, "cg_dominationPointNeutralAlpha", "", CVAR_ARCHIVE },
+
 	{ &cg_attackDefendVoiceStyle, "cg_attackDefendVoiceStyle", "1", CVAR_ARCHIVE },
+
 	{ &cg_drawDominationPointStatus, "cg_drawDominationPointStatus", "1", CVAR_ARCHIVE },
 	{ &cg_drawDominationPointStatusX, "cg_drawDominationPointStatusX", "258", CVAR_ARCHIVE },
 	{ &cg_drawDominationPointStatusY, "cg_drawDominationPointStatusY", "365", CVAR_ARCHIVE },
@@ -1950,7 +2018,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawDominationPointStatusTextColor, "cg_drawDominationPointStatusTextColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawDominationPointStatusTextAlpha, "cg_drawDominationPointStatusTextAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_drawDominationPointStatusTextStyle, "cg_drawDominationPointStatusTextStyle", "3", CVAR_ARCHIVE },
-
+	{ cvp(cg_drawDominationPointStatusWideScreen), "2" },
+	
 	{ &cg_roundScoreBoard, "cg_roundScoreBoard", "1", CVAR_ARCHIVE },
 	{ &cg_headShots, "cg_headShots", "1", CVAR_ARCHIVE },
 	{ cvp(cg_spectatorListSkillRating), "1", CVAR_ARCHIVE },
@@ -5650,14 +5719,17 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 			//return "nm4";
 			return "";
 		case 5:
-			return va("%d", sp->score);
+			//FIXME 2015-06-02 what is this?
+			return "";
 		case 6:
-			return va("%d", sp->frags);
+			return va("%d", sp->score);
 		case 7:
-			return va("%d", sp->deaths);
+			return va("%d", sp->frags);
 		case 8:
-			return va("%d", sp->time);
+			return va("%d", sp->deaths);
 		case 9:
+			return va("%d", sp->time);
+		case 10:
 			return va("%d", sp->ping);
 		default:
 			return "xxx";
@@ -5772,14 +5844,18 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 			//return "nm4";
 			return "";
 		case 5:
-			return va("%d", sp->score);
+			//FIXME 2015-06-04 don't know why this was added, maybe adding
+			// space for additional indicator for people with download content? steam players???
+			return "";
 		case 6:
-			return va("%d", sp->frags);
+			return va("%d", sp->score);
 		case 7:
-			return va("%d", sp->deaths);
+			return va("%d", sp->frags);
 		case 8:
-			return va("%d", sp->time);
+			return va("%d", sp->deaths);
 		case 9:
+			return va("%d", sp->time);
+		case 10:
 			return va("%d", sp->ping);
 		default:
 			return "xxx";
@@ -6170,73 +6246,8 @@ float CG_Cvar_Get (const char *cvar)
 #endif
 
 #if 1  //def MPACK
-static void CG_Text_PaintWithCursor(float x, float y, float scale, const vec4_t color, const char *text, int cursorPos, char cursor, int limit, int style, int fontIndex) {
-	 const fontInfo_t *font;
 
-	 if (fontIndex <= 0) {
-		 font = &cgDC.Assets.textFont;
-	 } else {
-		 font = &cgDC.Assets.extraFonts[fontIndex];
-	 }
 
-	 CG_Text_Paint(x, y, scale, color, text, 0, limit, style, font);
-
-	 Com_Printf("FIXME cursor\n");
-	 //FIXME cursor
-}
-
-static int CG_OwnerDrawWidth(int ownerDraw, float scale, int fontIndex) {
-	 const fontInfo_t *font;
-
-	 if (fontIndex <= 0) {
-		 font = &cgDC.Assets.textFont;
-	 } else {
-		 font = &cgDC.Assets.extraFonts[fontIndex];
-	 }
-
-	switch (ownerDraw) {
-	  case CG_GAME_TYPE:
-		  return CG_Text_Width(CG_GameTypeString(), scale, 0, font);
-      case CG_GAME_STATUS: {
-		  vec4_t color = { 1, 1, 1, 1 };
-
-		  return CG_Text_Width(CG_GetGameStatusText(color), scale, 0, font);
-			break;
-	  }
-	  case CG_KILLER:
-		  return CG_Text_Width(CG_GetKillerText(), scale, 0, font);
-			break;
-	  case CG_RED_NAME:
-		  //return CG_Text_Width(cg_redTeamName.string, scale, 0, font);
-		  return CG_Text_Width(cgs.redTeamName, scale, 0, font);
-			break;
-	  case CG_BLUE_NAME:
-		  //return CG_Text_Width(cg_blueTeamName.string, scale, 0, font);
-		  return CG_Text_Width(cgs.blueTeamName, scale, 0, font);
-			break;
-	default:
-		Com_Printf("CG_OwnerDrawWidth() unknown ownerDraw %d\n", ownerDraw);
-		break;
-	}
-	return 0;
-}
-
-static int CG_PlayCinematic(const char *name, float x, float y, float w, float h) {
-  return trap_CIN_PlayCinematic(name, x, y, w, h, CIN_loop);
-}
-
-static void CG_StopCinematic(int handle) {
-  trap_CIN_StopCinematic(handle);
-}
-
-static void CG_DrawCinematic(int handle, float x, float y, float w, float h) {
-  trap_CIN_SetExtents(handle, x, y, w, h);
-  trap_CIN_DrawCinematic(handle);
-}
-
-static void CG_RunCinematicFrame(int handle) {
-  trap_CIN_RunCinematic(handle);
-}
 
 /*
 =================
@@ -6251,17 +6262,21 @@ static void CG_InitDC (void)
 
 	cgDC.registerShaderNoMip = &trap_R_RegisterShaderNoMip;
 	cgDC.setColor = &trap_R_SetColor;
-	cgDC.drawHandlePic = &CG_DrawPic;
-	cgDC.drawStretchPic = &trap_R_DrawStretchPic;
-	cgDC.drawText = &CG_Text_Paint_old;
-	cgDC.textWidth = &CG_Text_Width_old;
-	cgDC.textHeight = &CG_Text_Height_old;
+
+	cgDC.drawHandlePic = &CG_DrawHandlePicDc;
+	cgDC.drawStretchPic = &CG_DrawStretchPicDc;
+	cgDC.drawText = &CG_DrawTextDc;
+	cgDC.textWidth = &CG_TextWidthDc;
+	cgDC.textHeight = &CG_TextHeightDc;
+
 	cgDC.registerModel = &trap_R_RegisterModel;
 	cgDC.modelBounds = &trap_R_ModelBounds;
-	cgDC.fillRect = &CG_FillRect;
-	cgDC.drawRect = &CG_DrawRect;
-	cgDC.drawSides = &CG_DrawSides;
-	cgDC.drawTopBottom = &CG_DrawTopBottom;
+
+	cgDC.fillRect = &CG_FillRectDc;
+	cgDC.drawRect = &CG_DrawRectDc;
+	cgDC.drawSides = &CG_DrawSidesDc;
+	cgDC.drawTopBottom = &CG_DrawTopBottomDc;
+
 	cgDC.clearScene = &trap_R_ClearScene;
 	cgDC.addRefEntityToScene = &CG_AddRefEntity;
 	cgDC.renderScene = &trap_R_RenderScene;
@@ -6275,7 +6290,9 @@ static void CG_InitDC (void)
 	cgDC.getCVarString = trap_Cvar_VariableStringBuffer;
 	cgDC.getCVarValue = CG_Cvar_Get;
 	cgDC.cvarExists = trap_Cvar_Exists;
-	cgDC.drawTextWithCursor = &CG_Text_PaintWithCursor;
+
+	cgDC.drawTextWithCursor = &CG_DrawTextWithCursorDc;
+
 	//cgDC.setOverstrikeMode = &trap_Key_SetOverstrikeMode;
 	//cgDC.getOverstrikeMode = &trap_Key_GetOverstrikeMode;
 	cgDC.startLocalSound = &trap_S_StartLocalSound;
@@ -6290,15 +6307,19 @@ static void CG_InitDC (void)
 	//cgDC.executeText = &trap_Cmd_ExecuteText;
 	cgDC.Error = &Com_Error;
 	cgDC.Print = &Com_Printf;
-	cgDC.ownerDrawWidth = &CG_OwnerDrawWidth;
+
+	cgDC.ownerDrawWidth = &CG_OwnerDrawWidthDc;
+
 	//cgDC.Pause = &CG_Pause;
 	cgDC.registerSound = &trap_S_RegisterSound;
 	cgDC.startBackgroundTrack = &trap_S_StartBackgroundTrack;
 	cgDC.stopBackgroundTrack = &trap_S_StopBackgroundTrack;
-	cgDC.playCinematic = &CG_PlayCinematic;
-	cgDC.stopCinematic = &CG_StopCinematic;
-	cgDC.drawCinematic = &CG_DrawCinematic;
-	cgDC.runCinematicFrame = &CG_RunCinematicFrame;
+	cgDC.playCinematic = &CG_PlayCinematicDc;
+	cgDC.stopCinematic = &CG_StopCinematicDc;
+
+	cgDC.drawCinematic = &CG_DrawCinematicDc;
+
+	cgDC.runCinematicFrame = &CG_RunCinematicFrameDc;
 
 	Init_Display(&cgDC);
 

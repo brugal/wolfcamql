@@ -1392,6 +1392,8 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
   setting cg_*Font (ex: cg_drawFpsFont) to "" will use whatever the default font set in hud config
   quakelive font available as "fontimage"
 
+  cg_*WideScreen cvars to control widescreen placement similar to quake live.  See the section for cg_wideScreen
+
 -----------------------------------------------------------
 
 * cg_scoreBoardStyle 0: like quakelive, 1 (default): switches the model icon for their best weapon icon, also prepends their accuracy before name,  2: switches model icon for country flags, also prepends their accuracy before name
@@ -1841,7 +1843,30 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * cg_forcePovModel  will use 'model' settings for 1st person pov
 * cg_wideScreen
 
-        0: original code, with images stretched or shrunk horizontally
+  Note:  Quake Live's August 27, 2014 update added support for widescreen
+         huds.  That is enabled with value 5 (default).  Quake Live's
+	 widescreen settings pretend the hud has a 4:3 (width / height) ratio
+	 simply based on the screen height and that elements can be drawn in
+	 one of three locations:
+
+                1                    2                       3
+
+         ______________        ______________        ______________
+	 |****        |        |    ****    |        |        ****|
+	 |****        |        |    ****    |        |        ****|
+	 |****        |        |    ****    |        |        ****|
+	 --------------        --------------        --------------
+
+         Imagine that the extra widescreen space were treated as black
+	 bars and that the hud was drawn three times.
+
+         The default widescreen value in menus appears to be '2' if it's never defined in a menuDef.
+
+	 Note: this type of widescreen implementation can create problems with the ingame mouse cursor.  An example is selectiong a name in the scoreboard.  Use cg_scoreBoardCursorAreaWideScreen to set it to the same value used for 'widescreen' in the hud menu file.
+
+  Values:
+
+        0: original code q3 (and older quake live versions), with images stretched or shrunk horizontally
 
         1: don't adjust values to 4/3 aspect ratio, it will use the exact values specified
 
@@ -1854,10 +1879,16 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
         3: only adjust the crosshair, similar to quake live
 
+	4: test setting using aspect ratio
+
+	5: Quake Live style widescreen.  See description above. (default)
+
 
   This isn't perfect as there are still some hard coded values assuming 4/3 aspect within the source code, but it should work well for movie configs to prevent stretching of the crosshair and text.
 
+
 * cg_wideScreenScoreBoardHack  (1: don't stretch but center on screen, 2:  ignore cg_wideScreen and stretch to fit)
+  This doesn't apply if 'cg_wideScreen 5' is used.
 
 * r_anaglyph2d to allow or prevent splitting colors for the hud portion
 
