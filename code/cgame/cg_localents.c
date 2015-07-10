@@ -12,10 +12,13 @@
 #include "cg_marks.h"
 #include "cg_predict.h"
 #include "cg_syscalls.h"
+
 #if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
   #include "cg_thread.h"
 #endif
+
 #include "sc.h"
+#include "wolfcam_local.h"
 
 //#define THREAD_DEBUG
 
@@ -452,7 +455,7 @@ static localEntity_t *CG_AllocLocalEntityExt (qboolean checkPause)
 ===================
 CG_AllocLocalEntity
 
-Will allways succeed, even if it requires freeing an old active entity
+Will always succeed, even if it requires freeing an old active entity
 ===================
 */
 
@@ -1448,6 +1451,7 @@ static void CG_AddScorePlum( localEntity_t *le ) {
 
 	c = ( le->endTime - cg.ftime ) * le->lifeRate;
 
+	//FIXME float to int
 	score = le->radius;
 	if (score < 0) {
 		re->shaderRGBA[0] = 0xff;
@@ -1521,106 +1525,222 @@ static void CG_AddScorePlum( localEntity_t *le ) {
 	}
 }
 
-static void CG_AddDamagePlum( localEntity_t *le ) {
+static void CG_AddDamagePlum (localEntity_t *le)
+{
 	refEntity_t	*re;
-	vec3_t		origin, delta, dir, vec, up = {0, 0, 1};
-	float		c, len;
+	vec3_t		origin, ourOrig, ourViewAngles, dir;
+	vec3_t forward, right, up = {0, 0, 1};
+	float		c;
 	int			i, score, digits[10], numdigits, negative;
+	trajectory_t trajectory;
+	int clientNum;
+	int weapon;
+	float xSkip;
+	float scale;
+	fontInfo_t *font;
+	int style;
+	float xscale;
+	float yscale;
+	float useScale;
 
-	// 2014-09-21 this is wallhacked as well
+	if (cg_damagePlumTarget.integer == 0) {
+		return;
+	}
 
-	//FIXME need rgb fade
+	weapon = le->angles.trDuration;
 
-	//FIXME probably just re-implemented rgb move fade or something
+	//FIXME grapple is listed as weapon 0
+	if (weapon < 0  ||  weapon >= WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS) {
+		CG_Printf("^3WARNING CG_AddDamagePlum() invalid weapon number '%d'\n", weapon);
+		return;
+	}
 
-	//FIXME
-	//return;
+	if (!cg.weaponDamagePlum[weapon]) {
+		return;
+	}
 
-	//FIXME color
+	clientNum = le->leFlags;
+
+	//FIXME has cg.refdefViewAngles already been set at this point?
+
+	if (wolfcam_following) {
+		if (wcg.clientNum != clientNum  &&  cg_damagePlumTarget.integer == 1) {
+			return;
+		}
+		VectorCopy(cg_entities[wcg.clientNum].lerpOrigin, ourOrig);
+		VectorCopy(cg_entities[wcg.clientNum].lerpAngles, ourViewAngles);
+	} else if (cg.freecam) {
+		if (clientNum != cg.predictedPlayerState.clientNum  &&  cg_damagePlumTarget.integer == 1) {
+			return;
+		}
+		VectorCopy(cg.fpos, ourOrig);
+		VectorCopy(cg.fang, ourViewAngles);
+	} else {
+		if (clientNum != cg.predictedPlayerState.clientNum  &&  cg_damagePlumTarget.integer == 1) {
+			return;
+		}
+		VectorCopy(cg.refdef.vieworg, ourOrig);
+		VectorCopy(cg.refdefViewAngles, ourViewAngles);
+	}
+
 
 	re = &le->refEntity;
+	c = (le->endTime - cg.ftime) * le->lifeRate;
 
-	c = ( le->endTime - cg.ftime ) * le->lifeRate;
+	score = le->angles.trTime;
 
-	score = le->radius;
-	if (score < 0) {
-		re->shaderRGBA[0] = 0xff;
-		re->shaderRGBA[1] = 0x11;
-		re->shaderRGBA[2] = 0x11;
-	}
-	else {
-		re->shaderRGBA[0] = 0xff;
-		re->shaderRGBA[1] = 0xff;
-		re->shaderRGBA[2] = 0xff;
-		if (score >= 50) {
-			re->shaderRGBA[1] = 0;
-		} else if (score >= 20) {
-			re->shaderRGBA[0] = re->shaderRGBA[1] = 0;
-		} else if (score >= 10) {
-			re->shaderRGBA[2] = 0;
-		} else if (score >= 2) {
-			re->shaderRGBA[0] = re->shaderRGBA[2] = 0;
-		}
-
-	}
-
-
-	//FIXME
 	re->shaderRGBA[0] = 0xff;
 	re->shaderRGBA[1] = 0xff;
 	re->shaderRGBA[2] = 0xff;
 
-	// score
-	if (le->radius >= 80) {
-		re->shaderRGBA[0] = 0xff;
-		re->shaderRGBA[1] = 0x00;
-		re->shaderRGBA[2] = 0x00;
+	if (cg_damagePlumColorStyle.integer == 2) {
+		// crosshair hit color
+		if (score <= 25) {
+			// light blue #38B0DE
+			re->shaderRGBA[0] = 0x38;
+			re->shaderRGBA[1] = 0xb0;
+			re->shaderRGBA[2] = 0xde;
+		} else if (score > 26  &&  score <= 50) {
+			// yellow
+			re->shaderRGBA[0] = 0xff;
+			re->shaderRGBA[1] = 0xff;
+			re->shaderRGBA[2] = 0x00;
+		} else if (score > 50  &&  score <= 75) {
+			// orange ff7f00
+			re->shaderRGBA[0] = 0xff;
+			re->shaderRGBA[1] = 0x7f;
+			re->shaderRGBA[2] = 0x00;
+		} else if (score >= 76) {
+			// red
+			re->shaderRGBA[0] = 0xff;
+			re->shaderRGBA[1] = 0x00;
+			re->shaderRGBA[2] = 0x00;
+		} else {
+			// light blue #38B0DE
+			re->shaderRGBA[0] = 0x38;
+			re->shaderRGBA[1] = 0xb0;
+			re->shaderRGBA[2] = 0xde;
+		}
+	} else if (cg_damagePlumColorStyle.integer == 3) {
+		// weapon color
+		switch (weapon) {
+		case WP_GAUNTLET:
+			// light blue
+			VectorSet(re->shaderRGBA, 0x38, 0xb0, 0xde);
+			break;
+		case WP_MACHINEGUN:
+			// yellow
+			VectorSet(re->shaderRGBA, 0xff, 0xff, 0x00);
+			break;
+		case WP_SHOTGUN:
+			// orange
+			VectorSet(re->shaderRGBA, 0xff, 0x7f, 0x00);
+			break;
+		case WP_GRENADE_LAUNCHER:
+			// dark green
+			VectorSet(re->shaderRGBA, 0x00, 0x7f, 0x00);
+			break;
+		case WP_ROCKET_LAUNCHER:
+			// red
+			VectorSet(re->shaderRGBA, 0xff, 0x00, 0x00);
+			break;
+		case WP_LIGHTNING:
+			// yellowish white
+			VectorSet(re->shaderRGBA, 0xff, 0xff, 0xaf);
+			break;
+		case WP_RAILGUN:
+			VectorSet(re->shaderRGBA, 0x00, 0xff, 0x00);
+			break;
+		case WP_PLASMAGUN:
+			// magenta
+			//VectorSet(re->shaderRGBA, 0xff, 0x00, 0xff);
+			//VectorSet(re->shaderRGBA, 0xaf, 0x7f, 0xaf);
+			VectorSet(re->shaderRGBA, 0xaf, 0x00, 0xaf);
+			break;
+		case WP_BFG:
+			// dark blue
+			//VectorSet(re->shaderRGBA, 0x00, 0x00, 0xff);
+			//VectorSet(re->shaderRGBA, 0x38, 0xb0, 0xde);
+			//VectorSet(re->shaderRGBA, 0x08, 0x80, 0xaf);
+			//VectorSet(re->shaderRGBA, 0x08, 0x80, 0xaf);
+			//VectorSet(re->shaderRGBA, 0x00, 0x7f, 0xff);
+			VectorSet(re->shaderRGBA, 0x00, 0x3f, 0xaf);
+			break;
+		case WP_GRAPPLING_HOOK:
+			//FIXME ql doesn't show hook damage plum
+			// purple
+			VectorSet(re->shaderRGBA, 0x55, 0xa8, 0x8b);
+			break;
+		case WP_NAILGUN:
+			// turquoise
+			//VectorSet(re->shaderRGBA, 0x00, 0xff, 0xaf);
+			VectorSet(re->shaderRGBA, 0x00, 0xaf, 0x7f);
+			break;
+		case WP_PROX_LAUNCHER:
+			// rose
+			//VectorSet(re->shaderRGBA, 0xef, 0x59, 0x7b);
+			VectorSet(re->shaderRGBA, 0xff, 0x00, 0x7f);
+			break;
+		case WP_CHAINGUN:
+			// light grey
+			VectorSet(re->shaderRGBA, 0xaf, 0xaf, 0xaf);
+			break;
+		case WP_HEAVY_MACHINEGUN:
+			// dark yellowish orange
+			//VectorSet(re->shaderRGBA, 0x7f, 0x7f, 0x0f);
+			VectorSet(re->shaderRGBA, 0xaf, 0xaf, 0x00);
+			break;
+		default:
+			// light blue
+			VectorSet(re->shaderRGBA, 0x38, 0xb0, 0xde);
+			break;
+		}
+	} else {  // based on score
+		if (score >= 100) {
+			re->shaderRGBA[0] = 0xff;
+			re->shaderRGBA[1] = 0x00;
+			re->shaderRGBA[2] = 0x00;
+		} else {
+			re->shaderRGBA[1] = re->shaderRGBA[2] = 255.0f - (255.0f * ((float)score / 100.0f)) ;
+		}
 	}
-
 
 	if (c < 0.25)
 		re->shaderRGBA[3] = 0xff * 4 * c;
 	else
 		re->shaderRGBA[3] = 0xff;
 
-	re->radius = NUMBER_SIZE / 2;
+	//re->radius = NUMBER_SIZE / 2;
 
 	VectorCopy(le->pos.trBase, origin);
+
 	//origin[2] += 110 - c * 100;
-	origin[2] += 110;
-
-
-
-
-
-	//FIXME testing
-#if 0
-	le->pos.trDelta[0] = 0;
-	le->pos.trDelta[1] = 0;
-	le->pos.trDelta[2] = 1000;
-#endif
-
-	le->pos.gravity = 800;
+	//origin[2] += 110;
 
 	VectorCopy(le->pos.trBase, origin);
 
+	// always keep sprite in front of us
+	VectorSubtract(ourOrig, origin, dir);
+	VectorNormalize(dir);
+	memcpy(&trajectory, &le->pos, sizeof(le->pos));
+	VectorMA(ourOrig, -200, dir, trajectory.trBase);
 
-	//Com_Printf("delta %f %f %f\n", le->pos.trDelta[0], le->pos.trDelta[1], le->pos.trDelta[2]);
-	//Com_Printf("origin1 %f %f %f\n", origin[0], origin[1], origin[2]);
-	BG_EvaluateTrajectoryf( &le->pos, cg.time, origin, cg.foverf );
+	// origin was changed before trajectory calculation so that far
+	// away plums appear to move the same distance
+	BG_EvaluateTrajectoryf(&trajectory, cg.time, origin, cg.foverf);
 
-	Com_Printf("origin2 %f %f %f\n", origin[0], origin[1], origin[2]);
+	// now change distance again so the previous movement doesn't change
+	// the scaling
+	VectorSubtract(ourOrig, origin, dir);
+	VectorNormalize(dir);
+	VectorMA(ourOrig, -1024, dir, origin);
+
+	// new 'right' to draw numbers
+	AngleVectors(ourViewAngles, NULL, right, NULL);
+	VectorNormalize(right);
 
 
-#if 1
-	VectorSubtract(cg.refdef.vieworg, origin, dir);
-	CrossProduct(dir, up, vec);
-	VectorNormalize(vec);
-
-	//VectorMA(origin, -10 + 20 * sin(c * 2 * M_PI), vec, origin);
-#endif
-
-
+#if 0
 	// if the view would be "inside" the sprite, kill the sprite
 	// so it doesn't add too much overdraw
 	VectorSubtract( origin, cg.refdef.vieworg, delta );
@@ -1633,13 +1753,14 @@ static void CG_AddDamagePlum( localEntity_t *le ) {
 		}
 		return;
 	}
+#endif
 
-	//FIXME this spacing depends on re->radius
-
-	//FIXME uses qlfont
+	// testing
+	//score = -89;
 
 	negative = qfalse;
 	if (score < 0) {
+		//Com_Printf("^3warning negative score with damage plums: %d\n", score);
 		negative = qtrue;
 		score = -score;
 	}
@@ -1650,14 +1771,159 @@ static void CG_AddDamagePlum( localEntity_t *le ) {
 	}
 
 	if (negative) {
+		//FIXME
+#if 0
+		// q3 digits
 		digits[numdigits] = 10;
+#endif
+		digits[numdigits] = -3;  // ascii 45
 		numdigits++;
 	}
 
-	for (i = 0; i < numdigits; i++) {
-		VectorMA(origin, (float) (((float) numdigits / 2) - i) * NUMBER_SIZE, vec, re->origin);
-		re->customShader = cgs.media.numberShaders[digits[numdigits-1-i]];
+
+	//font = &cgs.media.qlfont24;
+
+	if (*cg_damagePlumFont.string) {
+		font = &cgs.media.damagePlumFont;
+	} else {
+		//font = &cgDC.Assets.textFont;
+		font = &cgs.media.qlfont24;
+	}
+
+	//FIXME duplicate code CG_Text_Paint
+#if 0
+	if (cg_qlFontScaling.integer  &&  font == &cgDC.Assets.textFont) {
+		if (scale <= cg_smallFont.value) {
+			font = &cgDC.Assets.smallFont;
+		} else if (scale > cg_bigFont.value) {
+			font = &cgDC.Assets.bigFont;
+		}
+	}
+#endif
+
+	scale = cg_damagePlumScale.value;
+
+	xscale = 1.0f;
+	yscale = 1.0f;
+
+	//FIXME store this info
+	if (font->name[0] == 'q'  &&  font->name[1] == '3') {
+		if (!Q_stricmp(font->name, "q3tiny")) {
+			xscale = 0.5;
+			yscale = 0.5;
+		} else if (!Q_stricmp(font->name, "q3small")) {
+			xscale = 0.5;
+		} else if (!Q_stricmp(font->name, "q3giant")) {
+			xscale = 2.0;
+			yscale = 3.0;
+		}
+	}
+
+	useScale = scale * font->glyphScale;
+	style = cg_damagePlumFontStyle.integer;
+
+	if (*cg_damagePlumColor.string) {
+		SC_ByteVec3ColorFromCvar(re->shaderRGBA, &cg_damagePlumColor);
+	}
+	if (*cg_damagePlumAlpha.string) {
+		re->shaderRGBA[3] = (float)(re->shaderRGBA[3]) * ((float)cg_damagePlumAlpha.integer / 255.0f);
+	}
+
+	xSkip = 0.0f;
+
+	//FIXME might be centered
+	for (i = numdigits - 1;  i >= 0;  i--) {
+		const glyphInfo_t *glyph;
+		float yadj;
+
+#if 0
+		//TESTING
+		//VectorMA(origin, (float) (((float) numdigits / 2) - i) * NUMBER_SIZE, right, re->origin);
+		VectorMA(origin, xSkip, right, re->origin);
+		//origin[2] += 50;
+		re->origin[2] += 10;
+		//re->customShader = cgs.media.numberShaders[digits[numdigits-1-i]];
+		re->customShader = cgs.media.numberShaders[digits[i]];
 		re->renderfx = RF_DEPTHHACK;
+		re->stretch = qfalse;
+		CG_AddRefEntity(re);
+#endif
+
+		re->renderfx = RF_DEPTHHACK;
+		glyph = &font->glyphs[48 + digits[i]];
+		yadj = useScale * yscale * glyph->top;
+
+		VectorMA(origin, xSkip + (float)glyph->imageWidth / 2.0f * useScale * xscale, right, re->origin);
+		re->origin[2] += yadj;
+
+		//FIXME testing
+#if 0
+		re->stretch = qtrue;
+		re->s1 = 1;
+		re->t1 = 1;
+		re->s2 = 0;
+		re->t2 = 0;
+#endif
+
+		//FIXME yAdj
+		// test  cgs.media.qlfont16
+		//glyph = &cgs.media.qlfont16.glyphs[numdigits - 1 - i];
+		//glyph = &cgs.media.qlfont24.glyphs[48 + digits[numdigits-1-i]];
+
+		re->stretch = qtrue;
+#if 0
+		re->s1 = 0;  //glyph->s;
+		re->t1 = 0;  //glyph->t;
+		re->s2 = 1;  //glyph->s2;
+		re->t2 = 1;  //glyph->t2;
+#endif
+		re->s1 = glyph->s;
+		re->t1 = glyph->t;
+		re->s2 = glyph->s2;
+		re->t2 = glyph->t2;
+
+		//re->width = (float)glyph->imageWidth * font->glyphScale * scale;
+		//re->height = (float)glyph->imageHeight * font->glyphScale * scale;
+
+		re->width = (float)glyph->imageWidth / 2.0f * useScale * xscale;
+		re->height = (float)glyph->imageHeight / 2.0f * useScale * yscale;
+
+		re->customShader = glyph->glyph;
+		//re->customShader = trap_R_RegisterShaderNoMip("gfx/2d/bigchars.tga");
+
+		//Com_Printf("width %d  skip %d\n", glyph->imageWidth, glyph->xSkip);
+		
+		//xSkip += (float)glyph->xSkip / 8.0f;
+		//xSkip += (float)glyph->xSkip;
+		//xSkip += (float)glyph->xSkip / 8.0f * cgs.media.qlfont16.glyphScale;
+		//xSkip += (float)glyph->xSkip * cgs.media.qlfont16.glyphScale * scale;
+		//xSkip += (float)glyph->xSkip * font->glyphScale * scale;
+		//xSkip += (float)glyph->imageWidth * font->glyphScale * scale / 2.0f;
+		//xSkip += (float)glyph->imageWidth * cgs.media.qlfont24.glyphScale * scale;
+		//xSkip += 1.0f;  //FIXME why? based on distance?
+
+		xSkip += (float)glyph->xSkip * 1.0f * useScale * xscale;
+
+
+		if (style == ITEM_TEXTSTYLE_SHADOWED  ||  style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
+			//FIXME yadj
+			float ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+			byte origColor[4];
+			vec3_t origOrigin;
+
+			Vector4Copy(re->shaderRGBA, origColor);
+			VectorCopy(re->origin, origOrigin);
+
+			VectorSet(re->shaderRGBA, 0x00, 0x00, 0x00);
+
+			VectorMA(re->origin, ofs * useScale * xscale, right, re->origin);
+			re->origin[2] -= ofs * useScale * yscale;
+			CG_AddRefEntity(re);
+
+			Vector4Copy(origColor, re->shaderRGBA);
+			VectorCopy(origOrigin, re->origin);
+		}
+
 		CG_AddRefEntity(re);
 	}
 }

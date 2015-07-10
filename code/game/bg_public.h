@@ -489,7 +489,7 @@ extern int STAT_POWERUP_REMAINING;
 extern int STAT_UNKNOWN_12;
 extern int STAT_QUAD_KILL_COUNT;
 extern int STAT_ARMOR_TIER;
-extern int STAT_UNKNOWN_15;
+extern int STAT_MAP_KEYS;
 
 // hack to support mods
 
@@ -587,6 +587,7 @@ typedef enum {
 } powerup_t;
 
 #define PW_SPAWNPROTECTION 1  // hack
+#define PW_KEY 601  // hack to use PW_ for keys
 
 typedef enum {
 	HI_NONE,
@@ -1087,6 +1088,7 @@ typedef enum {
 	// unknown 31
 
 	MOD_HMG = 32,
+	MOD_RAILGUN_HEADSHOT = 33,
 
 } meansOfDeath_t;
 
@@ -1205,6 +1207,7 @@ void	BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
 qboolean	BG_PlayerTouchesItem( const playerState_t *ps, const entityState_t *item, int atTime );
 
+int BG_ModToWeapon (int mod);
 
 #define ARENAS_PER_TIER		4
 #define MAX_ARENAS			1024

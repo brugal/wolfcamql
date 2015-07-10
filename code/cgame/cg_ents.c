@@ -1113,6 +1113,248 @@ static void CG_TieredArmorAvailability (const centity_t *cent, const gitem_t *it
 	}
 }
 
+static void CG_DrawTimerPie (const centity_t *cent)
+{
+	const gitem_t *item;
+	const entityState_t *es;
+	refEntity_t ent;
+	int i;
+	int sliceSize;
+	int totalTime;
+	int currentSlice;
+	qhandle_t currentShader;
+	int num5Chunks;
+
+	if (cgs.protocol != PROTOCOL_QL) {
+		return;
+	}
+
+	if (cg_itemTimers.integer == 0) {
+		return;
+	}
+
+	es = &cent->currentState;
+	if (es->modelindex <= 0) {
+		return;
+	}
+
+
+	item = &bg_itemlist[es->modelindex];
+
+	// time:  time when it will respawn
+	// time2:  spawn length
+
+	if (es->time <= 0  ||  es->time2 <= 0) {
+		// will be zero with quad initial spawn
+		return;
+	}
+
+	//FIXME is it all powerups?  regen and flight not in shader list.
+	// 2015-07-09 regen is ok
+	if (! (
+		   item->giType == IT_POWERUP  ||  (item->giType == IT_ARMOR  &&  item->quantity > 5)  ||   (item->giType == IT_HEALTH  &&  item->quantity >= 100)  ||  (item->giType == IT_HOLDABLE  &&  item->giTag == HI_MEDKIT)
+		   )
+		) {
+		return;
+	}
+
+	// icon
+
+	memset(&ent, 0, sizeof(ent));
+	ent.reType = RT_SPRITE;
+	VectorCopy(cent->lerpOrigin, ent.origin);
+	ent.radius = 3.5 * cg_itemTimersScale.value;
+	if (ent.radius < 0) {
+		return;
+	}
+	if (cg_itemTimers.integer == 2) {
+		ent.renderfx |= RF_DEPTHHACK;
+	}
+
+	//FIXME ql uses different icons?
+	ent.customShader = cg_items[es->modelindex].icon;
+	ent.shaderRGBA[0] = 255;
+	ent.shaderRGBA[1] = 255;
+	ent.shaderRGBA[2] = 255;
+	ent.shaderRGBA[3] = cg_itemTimersAlpha.integer;
+
+	ent.origin[2] += cg_itemTimersOffset.value;
+
+	CG_AddRefEntity(&ent);
+
+	// slices
+	memset(&ent, 0, sizeof(ent));
+	ent.reType = RT_SPRITE;
+	VectorCopy(cent->lerpOrigin, ent.origin);
+	ent.radius = 14.0 * cg_itemTimersScale.value;
+	if (ent.radius < 0) {
+		return;
+	}
+	if (cg_itemTimers.integer == 2) {
+		ent.renderfx |= RF_DEPTHHACK;
+	}
+
+	ent.shaderRGBA[0] = 255;
+	ent.shaderRGBA[1] = 255;
+	ent.shaderRGBA[2] = 255;
+	ent.shaderRGBA[3] = cg_itemTimersAlpha.integer;
+
+	ent.origin[2] += cg_itemTimersOffset.value;
+
+	totalTime = es->time2;
+	// testing
+	//totalTime = 15000;
+
+	num5Chunks = (totalTime / 1000) / 5;
+
+#if 0
+	if (num5Chunks < 1) {
+		return;
+	}
+#endif
+
+	sliceSize = num5Chunks;
+
+	if (num5Chunks < 5) {  // less than 25 seconds
+		// this will not work based on chunks of 5 seconds
+		// just divide up into 5 chunks of whatever time
+		sliceSize = 5;
+		ent.customShader = cgs.media.wcTimerSlice5;
+		currentShader = cgs.media.wcTimerSlice5Current;
+		ent.shaderRGBA[0] = 200;
+		ent.shaderRGBA[1] = 150;
+		ent.shaderRGBA[2] = 50;
+		ent.shaderRGBA[3] = cg_itemTimersAlpha.integer;
+	} else if (num5Chunks == 5) {  // equal to 25 seconds
+		ent.customShader = cgs.media.timerSlice5;
+		currentShader = cgs.media.timerSlice5Current;
+	} else if (num5Chunks > 5  &&  num5Chunks <= 7) {
+		ent.customShader = cgs.media.timerSlice7;
+		currentShader = cgs.media.timerSlice7Current;
+	} else if (num5Chunks > 7  &&  num5Chunks <= 12) {
+		ent.customShader = cgs.media.timerSlice12;
+		currentShader = cgs.media.timerSlice12Current;
+	} else {
+		ent.customShader = cgs.media.timerSlice24;
+		currentShader = cgs.media.timerSlice24Current;
+	}
+
+
+	// totalTime checked for zero above
+	currentSlice = floor(((float)(cg.time - (es->time - totalTime)) / (float)(totalTime)) * (float)sliceSize);
+
+
+	//CG_Printf("current slice: %d  cgtime: %d  (%d : %d)\n", currentSlice, cg.time, es->time, es->time2);
+
+	// start at upper right
+	ent.rotation = +((360 / sliceSize) * (sliceSize / 2));
+	for (i = 0;  i < sliceSize;  i++) {
+		if (i == currentSlice) {
+			// hack for time less than 25sec
+			if (num5Chunks < 5) {
+				ent.shaderRGBA[2] = 200;
+			}
+			ent.customShader = currentShader;
+		}
+		CG_AddRefEntity(&ent);
+		if (i == currentSlice) {
+			break;
+		}
+		// rotate right
+		ent.rotation -= (360 / sliceSize);
+	}
+}
+
+static void CG_DrawPowerupRespawnPOI (const centity_t *cent)
+{
+	const gitem_t *item;
+	const entityState_t *es;
+	refEntity_t ent;
+	int timeLeft;
+	vec3_t org;
+	float minWidth, maxWidth, radius, dist;
+
+	if (cgs.protocol != PROTOCOL_QL) {
+		return;
+	}
+
+	if (cg_drawPowerupRespawn.integer == 0) {
+		return;
+	}
+
+	es = &cent->currentState;
+	if (es->modelindex <= 0) {
+		return;
+	}
+
+	item = &bg_itemlist[es->modelindex];
+
+	// time:  time when it will respawn
+	// time2:  spawn length
+
+	if (es->time <= 0  ||  es->time2 <= 0) {
+		// will be zero with quad initial spawn
+		return;
+	}
+
+	if (item->giType != IT_POWERUP) {
+		return;
+	}
+
+	timeLeft = es->time - cg.time;
+	if (timeLeft <= 0) {
+		return;
+	} else if (timeLeft > 10000) {
+		return;
+	}
+
+	memset(&ent, 0, sizeof(ent));
+	ent.reType = RT_SPRITE;
+	VectorCopy(cent->lerpOrigin, ent.origin);
+	ent.radius = 14.0 * cg_drawPowerupRespawnScale.value;
+	if (ent.radius < 0) {
+		return;
+	}
+
+	//FIXME duplicate code
+	// distance hack
+	if (wolfcam_following) {
+		VectorCopy(cg_entities[wcg.clientNum].lerpOrigin, org);
+	} else if (cg.freecam) {
+		VectorCopy(cg.fpos, org);
+	} else {
+		VectorCopy(cg.refdef.vieworg, org);
+	}
+
+	minWidth = 14.0 * cg_drawPowerupRespawnScale.value;
+	maxWidth = 14.0 * cg_drawPowerupRespawnScale.value;
+
+	radius = maxWidth / 2.0;
+	dist = ICON_SCALE_DISTANCE * (maxWidth / 16.0);
+
+	if (minWidth > 0.1) {
+		dist *= (16.0 / minWidth);
+	}
+
+	ent.radius = radius;
+
+	if (Distance(ent.origin, org) > dist  &&  minWidth > 0.1) {
+		ent.radius = radius * (Distance(ent.origin, org) / dist);
+	}
+
+	ent.renderfx |= RF_DEPTHHACK;
+
+	ent.customShader = cgs.media.powerupIncoming;
+	ent.shaderRGBA[0] = 255;
+	ent.shaderRGBA[1] = 255;
+	ent.shaderRGBA[2] = 255;
+	ent.shaderRGBA[3] = cg_drawPowerupRespawnAlpha.integer;
+
+	ent.origin[2] += cg_drawPowerupRespawnOffset.value;
+
+	CG_AddRefEntity(&ent);
+}
+
 /*
 ==================
 CG_Item
@@ -1134,8 +1376,10 @@ static void CG_Item ( centity_t *cent ) {
         //return;
 	}
 
-	// if set to invisible, skip
+	// if set to invisible, possibly skip
 	if ( !es->modelindex || ( es->eFlags & EF_NODRAW ) ) {
+		CG_DrawTimerPie(cent);
+		CG_DrawPowerupRespawnPOI(cent);
 		return;
 	}
 
@@ -2999,6 +3243,7 @@ void CG_AddPacketEntities( void ) {
 			VectorCopy(cg.mirrorSurfaces[i], ent.origin);
 			VectorCopy(cg.mirrorSurfaces[i], ent.oldorigin);
 			ent.reType = RT_PORTALSURFACE;
+			// EF_NODRAW ?
 			CG_AddRefEntity(&ent);
 		}
 	}

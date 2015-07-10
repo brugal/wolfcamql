@@ -424,7 +424,7 @@ void CopyToBodyQue( gentity_t *ent ) {
 		body->s.eFlags |= EF_KAMIKAZE;
 
 		// check if there is a kamikaze timer around for this owner
-		for (i = 0; i < MAX_GENTITIES; i++) {
+		for (i = 0; i < level.num_entities; i++) {
 			e = &g_entities[i];
 			if (!e->inuse)
 				continue;
@@ -629,7 +629,7 @@ static void ForceClientSkin( gclient_t *client, char *model, const char *skin ) 
 
 /*
 ===========
-ClientCheckName
+ClientCleanName
 ============
 */
 static void ClientCleanName(const char *in, char *out, int outSize)

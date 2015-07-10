@@ -608,7 +608,7 @@ void CL_StopRecord_f( void ) {
 CL_DemoFilename
 ==================
 */
-void CL_DemoFilename( int number, char *fileName ) {
+void CL_DemoFilename( int number, char *fileName, int fileNameSize ) {
 	int		a,b,c,d;
 
 	if(number < 0 || number > 9999)
@@ -622,7 +622,7 @@ void CL_DemoFilename( int number, char *fileName ) {
 	number -= c*10;
 	d = number;
 
-	Com_sprintf( fileName, MAX_OSPATH, "demo%i%i%i%i"
+	Com_sprintf( fileName, fileNameSize, "demo%i%i%i%i"
 		, a, b, c, d );
 }
 
@@ -682,7 +682,7 @@ void CL_Record_f( void ) {
 
 		// scan for a free demo name
 		for ( number = 0 ; number <= 9999 ; number++ ) {
-			CL_DemoFilename( number, demoName );
+			CL_DemoFilename( number, demoName, sizeof( demoName ) );
 			Com_sprintf (name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, com_protocol->integer );
 
 			if (!FS_FileExists(name))
@@ -2368,6 +2368,7 @@ void CL_Disconnect( qboolean showMainMenu ) {
 
 	// Remove pure paks
 	FS_PureServerSetLoadedPaks("", "");
+	FS_PureServerSetReferencedPaks( "", "" );
 
 	CL_ClearState ();
 
@@ -4147,6 +4148,7 @@ void CL_InitRef ( void ) {
 	ri.Cvar_Get = Cvar_Get;
 	ri.Cvar_Set = Cvar_Set;
 	ri.Cvar_CheckRange = Cvar_CheckRange;
+	ri.Cvar_SetDescription = Cvar_SetDescription;
 
 	// cinematic stuff
 
@@ -5322,7 +5324,7 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	Q_strncpyz( info, MSG_ReadString( msg ), MAX_INFO_STRING );
 	if (strlen(info)) {
 		if (info[strlen(info)-1] != '\n') {
-			strncat(info, "\n", sizeof(info) - 1);
+			Q_strcat(info, sizeof(info), "\n");
 		}
 		Com_Printf( "%s: %s", NET_AdrToStringwPort( from ), info );
 	}

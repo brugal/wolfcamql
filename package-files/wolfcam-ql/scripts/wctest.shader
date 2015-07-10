@@ -48,7 +48,8 @@ wc/friend
         nopicmip
         {
                 map sprites/friend.tga
-                blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+		blendfunc blend
+		rgbgen vertex
         }
 }
 

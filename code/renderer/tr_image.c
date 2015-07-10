@@ -502,7 +502,6 @@ Upload32
 
 ===============
 */
-extern qboolean charSet;
 void R_Upload32( unsigned *data, 
 						  int width, int height, 
 						  qboolean mipmap, 
@@ -977,6 +976,8 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode );
 	qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode );
 
+	// FIXME: this stops fog from setting border color?
+	glState.currenttextures[glState.currenttmu] = 0;
 	qglBindTexture( GL_TEXTURE_2D, 0 );
 
 	if ( image->TMU == 1 ) {
@@ -1927,12 +1928,15 @@ static char *CommaParse( char **data_p ) {
 		// skip double slash comments
 		if ( c == '/' && data[1] == '/' )
 		{
-			while (*data && *data != '\n')
+			data += 2;
+			while (*data && *data != '\n') {
 				data++;
+			}
 		}
 		// skip /* */ comments
 		else if ( c=='/' && data[1] == '*' ) 
 		{
+			data += 2;
 			while ( *data && ( *data != '*' || data[1] != '/' ) ) 
 			{
 				data++;
@@ -1965,7 +1969,7 @@ static char *CommaParse( char **data_p ) {
 				*data_p = ( char * ) data;
 				return com_token;
 			}
-			if (len < MAX_TOKEN_CHARS)
+			if (len < MAX_TOKEN_CHARS - 1)
 			{
 				com_token[len] = c;
 				len++;
@@ -1976,7 +1980,7 @@ static char *CommaParse( char **data_p ) {
 	// parse a regular word
 	do
 	{
-		if (len < MAX_TOKEN_CHARS)
+		if (len < MAX_TOKEN_CHARS - 1)
 		{
 			com_token[len] = c;
 			len++;
@@ -1985,11 +1989,6 @@ static char *CommaParse( char **data_p ) {
 		c = *data;
 	} while (c>32 && c != ',' );
 
-	if (len == MAX_TOKEN_CHARS)
-	{
-//		Com_Printf ("Token exceeded %i chars, discarded.\n", MAX_TOKEN_CHARS);
-		len = 0;
-	}
 	com_token[len] = 0;
 
 	*data_p = ( char * ) data;

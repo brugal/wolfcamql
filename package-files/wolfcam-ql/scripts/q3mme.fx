@@ -89,6 +89,16 @@ player/gauntlet {
         }
 }
 
+// new ql awards, also medalMidAir, medalRevenge, medalFirstFrag
+// input: origin, team, clientnum, enemy, teammate, ineyes
+player/medalComboKill {
+        if ineyes != 1 {
+        	size		10
+                shader		medal_combokill
+                Sprite
+        }
+}
+
 // connection sprite
 // input: origin, team, clientnum, enemy, teammate, ineyes
 player/connection {

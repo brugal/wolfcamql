@@ -6720,6 +6720,47 @@ static void CG_ParseQ3mmeEffect (const char *name, char *lastLine, fileHandle_t 
 	} else if (!Q_stricmpt(name, "player/gauntlet")) {
 		CG_SetQ3mmeFXScript(name, EffectScripts.playerGauntlet, sizeof(EffectScripts.playerGauntlet), handle, lastLine);
 		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalComboKill")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalComboKill, sizeof(EffectScripts.playerMedalComboKill), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalMidAir")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalMidAir, sizeof(EffectScripts.playerMedalMidAir), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalRevenge")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalRevenge, sizeof(EffectScripts.playerMedalRevenge), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalFirstFrag")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalFirstFrag, sizeof(EffectScripts.playerMedalFirstFrag), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalRampage")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalRampage, sizeof(EffectScripts.playerMedalRampage), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalPerforated")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalPerforated, sizeof(EffectScripts.playerMedalPerforated), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalAccuracy")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalAccuracy, sizeof(EffectScripts.playerMedalAccuracy), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalHeadshot")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalHeadshot, sizeof(EffectScripts.playerMedalHeadshot), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalPerfect")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalPerfect, sizeof(EffectScripts.playerMedalPerfect), handle, lastLine);
+		return;
+
+	} else if (!Q_stricmpt(name, "player/MedalQuadGod")) {  // new ql awards
+		CG_SetQ3mmeFXScript(name, EffectScripts.playerMedalQuadGod, sizeof(EffectScripts.playerMedalQuadGod), handle, lastLine);
+		return;
+
 	} else if (!Q_stricmpt(name, "player/connection")) {
 		CG_SetQ3mmeFXScript(name, EffectScripts.playerConnection, sizeof(EffectScripts.playerConnection), handle, lastLine);
 		return;

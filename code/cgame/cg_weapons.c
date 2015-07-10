@@ -23,45 +23,6 @@
 
 static qboolean CG_CalcMuzzlePoint( int entityNum, vec3_t muzzle );
 
-int CG_ModToWeapon (int mod)
-{
-	int w = WP_NONE;
-
-	switch (mod) {
-	case MOD_GRENADE:
-	case MOD_GRENADE_SPLASH:
-		return WP_GRENADE_LAUNCHER;
-	case MOD_ROCKET:
-	case MOD_ROCKET_SPLASH:
-		return WP_ROCKET_LAUNCHER;
-	case MOD_PLASMA:
-	case MOD_PLASMA_SPLASH:
-		return WP_PLASMAGUN;
-	case MOD_BFG:
-	case MOD_BFG_SPLASH:
-		return WP_BFG;
-	case MOD_PROXIMITY_MINE:
-		return WP_PROX_LAUNCHER;
-	case MOD_GAUNTLET:
-		return WP_GAUNTLET;
-	case MOD_MACHINEGUN:
-		return WP_MACHINEGUN;
-	case MOD_SHOTGUN:
-		return WP_SHOTGUN;
-	case MOD_RAILGUN:
-		return WP_RAILGUN;
-	case MOD_LIGHTNING:
-		return WP_LIGHTNING;
-	case MOD_NAIL:
-		return WP_NAILGUN;
-	case MOD_CHAINGUN:
-		return WP_CHAINGUN;
-		//FIXME MOD_HMG
-	default:
-		w = WP_NONE;
-	}
-	return w;
-}
 
 /*
 ==========================
@@ -1541,7 +1502,9 @@ void CG_RegisterItemVisuals( int itemNum ) {
 	}
 #endif
 
-	itemInfo->icon = trap_R_RegisterShader( item->icon );
+	// some quake live icons don't define a shader, make sure to nomip
+	// ex:  icons/iconh_borb
+	itemInfo->icon = trap_R_RegisterShaderNoMip( item->icon );
 
 	if ( item->giType == IT_WEAPON ) {
 		CG_RegisterWeapon( item->giTag );

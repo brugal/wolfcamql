@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // common.c -- misc functions used in client and server
 
+//#include <unistd.h>
+
 #include "q_shared.h"
 #include "qcommon.h"
 #include <setjmp.h>
@@ -1482,7 +1484,7 @@ void Com_TouchMemory( void ) {
 
 /*
 =================
-Com_InitZoneMemory
+Com_InitSmallZoneMemory
 =================
 */
 void Com_InitSmallZoneMemory( void ) {
@@ -1610,7 +1612,7 @@ void Hunk_SmallLog( void) {
 
 /*
 =================
-Com_InitZoneMemory
+Com_InitHunkMemory
 =================
 */
 void Com_InitHunkMemory( void ) {
@@ -1628,6 +1630,7 @@ void Com_InitHunkMemory( void ) {
 
 	// allocate the stack based hunk allocator
 	cv = Cvar_Get( "com_hunkMegs", DEF_COMHUNKMEGS_S, CVAR_LATCH | CVAR_ARCHIVE );
+	Cvar_SetDescription(cv, "The size of the hunk memory segment");
 
 	// if we are not dedicated min allocation is 56, otherwise min is 1
 	if (com_dedicated && com_dedicated->integer) {
@@ -3311,9 +3314,27 @@ void Com_Frame( void ) {
 		// The existing Sys_Sleep implementations aren't really
 		// precise enough to be of use beyond 100fps
 		// FIXME: implement a more precise sleep (RDTSC or something)
+#if 1
 		if( timeRemaining >= 10 )
 			Sys_Sleep( timeRemaining );
+#endif
 
+		// testing
+#if 0
+		if (timeRemaining > 1) {
+			static int count = 0;
+
+			count++;
+			if (count % 100 == 0) {
+				Com_Printf("sleeping: %d\n", timeRemaining);
+			}
+			//NET_Sleep(timeRemaining * 1000 - 1);
+			{
+				struct timespec tm;
+				usleep(timeRemaining - 1);
+			}
+		}
+#endif
 		com_frameTime = Com_EventLoop();
 		if ( lastTime > com_frameTime ) {
 			lastTime = com_frameTime;		// possible on first frame
@@ -3781,7 +3802,7 @@ void Field_AutoComplete( field_t *field )
 ==================
 Com_RandomBytes
 
-fills string array with len radom bytes, peferably from the OS randomizer
+fills string array with len random bytes, peferably from the OS randomizer
 ==================
 */
 void Com_RandomBytes( byte *string, int len )

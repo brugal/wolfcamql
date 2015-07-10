@@ -55,7 +55,7 @@ int STAT_POWERUP_REMAINING = 11;
 int STAT_UNKNOWN_12 = 12;
 int STAT_QUAD_KILL_COUNT = 13;
 int STAT_ARMOR_TIER = 14;
-int STAT_UNKNOWN_15 = 15;
+int STAT_MAP_KEYS = 15;
 
 //int WP_MAX = WP_NUM_WEAPONS;
 
@@ -1044,6 +1044,47 @@ Only in One Flag CTF games
 		""  //FIXME
 	},
 
+	// keys
+	{
+		"item_key_silver",
+		"sound/items/key_silver.wav",
+		{ "models/powerups/keys/key_silver.md3", 0, 0, 0 },
+		"icons/key_silver",
+		"Silver Key",
+		0,  //FIXME
+		IT_PERSISTANT_POWERUP,
+		PW_KEY, //FIXME  PW_QUAD  .. PW_SILVER_KEY
+		"",  //FIXME
+		""  //FIXME
+	},
+
+	{
+		"item_key_gold",
+		"sound/items/key_gold.wav",
+		{ "models/powerups/keys/key_gold.md3", 0, 0, 0 },
+		"icons/key_gold",
+		"Gold Key",
+		0,  //FIXME
+		IT_PERSISTANT_POWERUP,
+		PW_KEY, //FIXME  PW_QUAD  .. PW_SILVER_KEY
+		"",  //FIXME
+		""  //FIXME
+	},
+
+	{
+		"item_key_master",
+		"sound/items/key_master.wav",
+		{ "models/powerups/keys/key_master.md3", 0, 0, 0 },
+		"icons/key_master",
+		"Master Key",
+		0,  //FIXME
+		IT_PERSISTANT_POWERUP,
+		PW_KEY, //FIXME  PW_QUAD  .. PW_SILVER_KEY
+		"",  //FIXME
+		""  //FIXME
+	},
+
+	
 	// end of list marker
 	{NULL}
 };
@@ -4556,4 +4597,45 @@ void BG_PlayerStateToEntityStateExtraPolate( playerState_t *ps, entityState_t *s
 
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
+}
+
+int BG_ModToWeapon (int mod)
+{
+	int w = WP_NONE;
+
+	switch (mod) {
+	case MOD_GRENADE:
+	case MOD_GRENADE_SPLASH:
+		return WP_GRENADE_LAUNCHER;
+	case MOD_ROCKET:
+	case MOD_ROCKET_SPLASH:
+		return WP_ROCKET_LAUNCHER;
+	case MOD_PLASMA:
+	case MOD_PLASMA_SPLASH:
+		return WP_PLASMAGUN;
+	case MOD_BFG:
+	case MOD_BFG_SPLASH:
+		return WP_BFG;
+	case MOD_PROXIMITY_MINE:
+		return WP_PROX_LAUNCHER;
+	case MOD_GAUNTLET:
+		return WP_GAUNTLET;
+	case MOD_MACHINEGUN:
+		return WP_MACHINEGUN;
+	case MOD_SHOTGUN:
+		return WP_SHOTGUN;
+	case MOD_RAILGUN:
+	case MOD_RAILGUN_HEADSHOT:
+		return WP_RAILGUN;
+	case MOD_LIGHTNING:
+		return WP_LIGHTNING;
+	case MOD_NAIL:
+		return WP_NAILGUN;
+	case MOD_CHAINGUN:
+		return WP_CHAINGUN;
+		//FIXME MOD_HMG
+	default:
+		w = WP_NONE;
+	}
+	return w;
 }

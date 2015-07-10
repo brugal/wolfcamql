@@ -295,7 +295,7 @@ static void CG_OffsetThirdPersonView( void ) {
 			VectorCopy( trace.endpos, view );
 			view[2] += (1.0 - trace.fraction) * 32;
 			// try another trace to this position, because a tunnel may have the ceiling
-			// close enogh that this is poking out
+			// close enough that this is poking out
 
 			CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, MASK_SOLID );
 			VectorCopy( trace.endpos, view );
@@ -1116,12 +1116,14 @@ static void CG_DrawAdvertisements (void)
 	//int lightmap;
 	const char *shaderName;
 	qboolean shaderOverride;
+	qboolean turn90 = qfalse;
 
 	if (!cgs.adsLoaded) {
 		trap_Get_Advertisements(&cgs.numAds, cgs.adverts, cgs.adShaders);
 		cgs.adsLoaded = qtrue;
 		Com_Printf("ads: %d\n", cgs.numAds);
 		for (i = 0;  i < cgs.numAds;  i++) {
+			//FIXME not using ad shaders?
 			Com_Printf("ad %d: '%s'\n", i + 1, cgs.adShaders[i]);
 #if 0
 			//CG_Printf("%d : %f\n", i + 1, cgs.adverts[i * 16  + 15]);
@@ -1133,6 +1135,7 @@ static void CG_DrawAdvertisements (void)
 			}
 #endif
 			if (strstr(cgs.adShaders[i], "trans")) {
+				// ex: beyondreality
 				cgs.transAds[i] = qtrue;
 			}
 		}
@@ -1150,8 +1153,6 @@ static void CG_DrawAdvertisements (void)
 	} else {
 		useSingleShader = qfalse;
 	}
-
-	//useSingleShader = qtrue;
 
 	for (i = 0;  i < cgs.numAds;  i++) {
 		qhandle_t shader;
@@ -1172,49 +1173,21 @@ static void CG_DrawAdvertisements (void)
 			shaderName = "";
 		}
 
-		if (!useSingleShader  &&  !shaderOverride) {
-			// set the polygon's texture coordinates
-			verts[0].st[0] = 1;
-			verts[0].st[1] = 1;
-			verts[1].st[0] = 1;
-			verts[1].st[1] = 0;  //1;
-			verts[2].st[0] = 0;  //1;
-			verts[2].st[1] = 0;  //1;
-			verts[3].st[0] = 0;  //1;
-			verts[3].st[1] = 1;
+		verts[3].xyz[0] = vt[i * 16 + 0];
+		verts[3].xyz[1] = vt[i * 16 + 1];
+		verts[3].xyz[2] = vt[i * 16 + 2];
 
-			verts[0].xyz[0] = vt[i * 16 + 0];
-			verts[0].xyz[1] = vt[i * 16 + 1];
-			verts[0].xyz[2] = vt[i * 16 + 2];
+		verts[2].xyz[0] = vt[i * 16 + 3];
+		verts[2].xyz[1] = vt[i * 16 + 4];
+		verts[2].xyz[2] = vt[i * 16 + 5];
 
-			verts[1].xyz[0] = vt[i * 16 + 3];
-			verts[1].xyz[1] = vt[i * 16 + 4];
-			verts[1].xyz[2] = vt[i * 16 + 5];
+		verts[1].xyz[0] = vt[i * 16 + 6];
+		verts[1].xyz[1] = vt[i * 16 + 7];
+		verts[1].xyz[2] = vt[i * 16 + 8];
 
-			verts[2].xyz[0] = vt[i * 16 + 6];
-			verts[2].xyz[1] = vt[i * 16 + 7];
-			verts[2].xyz[2] = vt[i * 16 + 8];
-
-			verts[3].xyz[0] = vt[i * 16 + 9];
-			verts[3].xyz[1] = vt[i * 16 + 10];
-			verts[3].xyz[2] = vt[i * 16 + 11];
-		} else {
-			verts[3].xyz[0] = vt[i * 16 + 0];
-			verts[3].xyz[1] = vt[i * 16 + 1];
-			verts[3].xyz[2] = vt[i * 16 + 2];
-
-			verts[2].xyz[0] = vt[i * 16 + 3];
-			verts[2].xyz[1] = vt[i * 16 + 4];
-			verts[2].xyz[2] = vt[i * 16 + 5];
-
-			verts[1].xyz[0] = vt[i * 16 + 6];
-			verts[1].xyz[1] = vt[i * 16 + 7];
-			verts[1].xyz[2] = vt[i * 16 + 8];
-
-			verts[0].xyz[0] = vt[i * 16 + 9];
-			verts[0].xyz[1] = vt[i * 16 + 10];
-			verts[0].xyz[2] = vt[i * 16 + 11];
-		}
+		verts[0].xyz[0] = vt[i * 16 + 9];
+		verts[0].xyz[1] = vt[i * 16 + 10];
+		verts[0].xyz[2] = vt[i * 16 + 11];
 
 		//normal[0] = vt[i * 16 + 12];
 		//normal[1] = vt[i * 16 + 13];
@@ -1222,19 +1195,6 @@ static void CG_DrawAdvertisements (void)
 
 		//lightmap = vt[i * 16 + 14];
 		//cellId = vt[i * 16 + 15];
-
-		//FIXME no clue what I'm doing
-		if (verts[0].xyz[2] > verts[1].xyz[2]) {
-			//Com_Printf("fixme: flip ad %i\n", i + 1);
-			verts[0].st[0] = 0;
-			verts[0].st[1] = 0;
-			verts[1].st[0] = 0;
-			verts[1].st[1] = 1;  //1;
-			verts[2].st[0] = 1;  //1;
-			verts[2].st[1] = 1;  //1;
-			verts[3].st[0] = 1;  //1;
-			verts[3].st[1] = 0;
-		}
 
 		width = Distance(verts[3].xyz, verts[0].xyz);
 		height = Distance(verts[3].xyz, verts[2].xyz);
@@ -1245,6 +1205,8 @@ static void CG_DrawAdvertisements (void)
 
 		//FIXME lookup when the 2x1 will fail to scale down (how close to 1.0? )
 		// qzdm18  128x120
+
+		//scale = 0.5f;
 
 		if (scale < 0.3f) {  // 0.5
 			shader = cgs.media.adboxblack;
@@ -1266,19 +1228,11 @@ static void CG_DrawAdvertisements (void)
 			scaleGuess = 1;
 			//Com_Printf("using 1x1\n");
 		} else if (scale > 0.25) {
+			// ex: blackcathedral
 			shader = cgs.media.adbox2x1;
-			verts[0].st[0] = 0;
-            verts[0].st[1] = 1;
-
-            verts[1].st[0] = 1;
-            verts[1].st[1] = 1;
-
-            verts[2].st[0] = 1;
-            verts[2].st[1] = 0;
-
-            verts[3].st[0] = 0;
-            verts[3].st[1] = 0;
 			scaleGuess = 2;
+			//Com_Printf("add scale > 0.25  &&  scale < 0.75\n");
+			turn90 = qtrue;
 		} else {
 			shader = cgs.media.adboxblack;
 			scaleGuess = 0;
@@ -1294,6 +1248,10 @@ static void CG_DrawAdvertisements (void)
 			}
 		}
 
+		// testing
+		//FIXME why are they greyish?  lightmap?
+		//shader = trap_R_RegisterShader(cgs.adShaders[i]);
+
 		if (shaderOverride) {
 		//if (*shaderName) {
 			shader = trap_R_RegisterShader(shaderName);
@@ -1302,59 +1260,78 @@ static void CG_DrawAdvertisements (void)
 			}
 		}
 
-		if (useSingleShader  ||  shaderOverride) {
-			if (useSingleShader) {
-				shader = trap_R_GetSingleShader();
-			}
+		if (useSingleShader) {
+			shader = trap_R_GetSingleShader();
+		}
 
-			verts[0].modulate[0] = 255;
-			verts[0].modulate[1] = 255;
-			verts[0].modulate[2] = 255;
-			verts[0].modulate[3] = 255;
+		verts[0].modulate[0] = 255;
+		verts[0].modulate[1] = 255;
+		verts[0].modulate[2] = 255;
+		verts[0].modulate[3] = 255;
 
-			verts[1].modulate[0] = 255;
-			verts[1].modulate[1] = 255;
-			verts[1].modulate[2] = 255;
-			verts[1].modulate[3] = 255;
+		verts[1].modulate[0] = 255;
+		verts[1].modulate[1] = 255;
+		verts[1].modulate[2] = 255;
+		verts[1].modulate[3] = 255;
 
-			verts[2].modulate[0] = 255;
-			verts[2].modulate[1] = 255;
-			verts[2].modulate[2] = 255;
-			verts[2].modulate[3] = 255;
+		verts[2].modulate[0] = 255;
+		verts[2].modulate[1] = 255;
+		verts[2].modulate[2] = 255;
+		verts[2].modulate[3] = 255;
 
-			verts[3].modulate[0] = 255;
-			verts[3].modulate[1] = 255;
-			verts[3].modulate[2] = 255;
-			verts[3].modulate[3] = 255;
+		verts[3].modulate[0] = 255;
+		verts[3].modulate[1] = 255;
+		verts[3].modulate[2] = 255;
+		verts[3].modulate[3] = 255;
 
-			verts[0].st[0] = 0;  //0;  //0;
-            verts[0].st[1] = 1;  //0;  //1;
+		verts[0].st[0] = 0;  //0;  //0;
+		verts[0].st[1] = 1;  //0;  //1;
 
-            verts[1].st[0] = 0;  //1;  //1;
-            verts[1].st[1] = 0;  //0;  //1;
+		verts[1].st[0] = 0;  //1;  //1;
+		verts[1].st[1] = 0;  //0;  //1;
 
-            verts[2].st[0] = 1;  //1;  //1;
-            verts[2].st[1] = 0;  //1;  //0;
+		verts[2].st[0] = 1;  //1;  //1;
+		verts[2].st[1] = 0;  //1;  //0;
 
-            verts[3].st[0] = 1;  //0;  //0;
-            verts[3].st[1] = 1;  //1;  //0;
+		verts[3].st[0] = 1;  //0;  //0;
+		verts[3].st[1] = 1;  //1;  //0;
 
-			//FIXME no clue what I'm doing
-			if (verts[0].xyz[2] > verts[1].xyz[2]) {
-				//Com_Printf("ss fixme: flip ad %i\n", i + 1);
-				verts[0].st[0] = 1;
-				verts[0].st[1] = 0;
+		//FIXME maybe yes for useSingleShader?
+		if (!shaderOverride  &&  !useSingleShader) {
+			if (turn90) {
+				verts[0].st[0] = 0;  //1;  //0;
+				verts[0].st[1] = 0;  //1;  //1;
 
-				verts[1].st[0] = 1;
-				verts[1].st[1] = 1;  //1;
+				verts[1].st[0] = 1;  //0;  //1;
+				verts[1].st[1] = 0;  //1;  //1;
 
-				verts[2].st[0] = 0;  //1;
-				verts[2].st[1] = 1;  //1;
+				verts[2].st[0] = 1;  //0;  //1;
+				verts[2].st[1] = 1;  //0;  //0;
 
-				verts[3].st[0] = 0;  //1;
-				verts[3].st[1] = 0;
+				verts[3].st[0] = 0;  //1;  //0;
+				verts[3].st[1] = 1;  //0;  //0;
+
 			}
 		}
+
+				//FIXME no clue what I'm doing
+		if (verts[0].xyz[2] > verts[1].xyz[2]) {
+			// ex:  ad 3 blackcathedral
+			//Com_Printf("flip ad %i\n", i + 1);
+			verts[0].st[0] = 1;
+			verts[0].st[1] = 0;
+
+			verts[1].st[0] = 1;
+			verts[1].st[1] = 1;  //1;
+
+			verts[2].st[0] = 0;  //1;
+			verts[2].st[1] = 1;  //1;
+
+			verts[3].st[0] = 0;  //1;
+			verts[3].st[1] = 0;
+		}
+
+
 
 		//Com_Printf("advert: %d\n", (int)cellId);
 
@@ -1368,7 +1345,7 @@ static void CG_DrawAdvertisements (void)
 		//trap_R_AddPolyToScene(shader, 4, verts, lightmap);  //lightmap);  //lightmap);
 		trap_R_AddPolyToScene(shader, 4, verts, 0);  //lightmap);  //lightmap);
 
-		if (SC_Cvar_Get_Int("debug_ads")) {
+		if (cg_debugAds.integer) {
 			byte cl[4];
 
 			cl[0] = 0;
@@ -4730,10 +4707,11 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 			&cg_weaponNailGun,
 			&cg_weaponProximityLauncher,
 			&cg_weaponChainGun,
+			&cg_weaponHeavyMachineGun,
 		};
 
 		//Com_Printf("oldweapon %d  newWeapon %d\n", cg.lastWeapon, currentWeapon);
-		if (currentWeapon > WP_CHAINGUN  ||  currentWeapon <= WP_NONE) {
+		if (currentWeapon > WP_HEAVY_MACHINEGUN  ||  currentWeapon <= WP_NONE) {
 			if (*cg_weaponNone.string) {
 				trap_SendConsoleCommand(va("%s\n", cg_weaponNone.string));
 			}

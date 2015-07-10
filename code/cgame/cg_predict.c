@@ -311,6 +311,12 @@ static void CG_TouchItem( centity_t *cent ) {
 	if ( !cg_predictItems.integer ) {
 		return;
 	}
+
+	// hack for ql timer pies which send items with EF_NODRAW
+	if (cent->currentState.eFlags & EF_NODRAW) {
+		return;
+	}
+
 	if ( !BG_PlayerTouchesItem( &cg.predictedPlayerState, &cent->currentState, cg.time ) ) {
 		return;
 	}

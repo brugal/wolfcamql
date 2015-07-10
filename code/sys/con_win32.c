@@ -206,11 +206,13 @@ static void CON_Show( void )
 	// build a space-padded CHAR_INFO array
 	for( i = 0; i < MAX_EDIT_LINE; i++ )
 	{
-		if( Q_IsColorString( qconsole_line + i ) )
-			attrib = CON_ColorCharToAttrib( *( qconsole_line + i + 1 ) );
-
 		if( i < qconsole_linelen )
+		{
+			if( i + 1 < qconsole_linelen && Q_IsColorString( qconsole_line + i ) )
+				attrib = CON_ColorCharToAttrib( *( qconsole_line + i + 1 ) );
+
 			line[ i ].Char.AsciiChar = qconsole_line[ i ];
+		}
 		else
 			line[ i ].Char.AsciiChar = ' ';
 

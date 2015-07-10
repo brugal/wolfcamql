@@ -418,7 +418,8 @@ extern	vec4_t		colorDkGrey;
 #define COLOR_CYAN	'5'
 #define COLOR_MAGENTA	'6'
 #define COLOR_WHITE	'7'
-#define ColorIndex(c)	(((c) - '0') & 0x07)
+#define ColorIndexForNumber(c) ((c) & 0x07)
+#define ColorIndex(c) (ColorIndexForNumber((c) - '0'))
 
 #define S_COLOR_BLACK	"^0"
 #define S_COLOR_RED	"^1"
@@ -577,7 +578,7 @@ typedef struct {
 #define Vector4Set(v, x, y, z, a)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z), (v)[3]=(a))
 #define Byte4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 #define	SnapVector(v) {v[0]=((int)(v[0]));v[1]=((int)(v[1]));v[2]=((int)(v[2]));}
-// just in case you do't want to use the macros
+// just in case you don't want to use the macros
 vec_t _DotProduct( const vec3_t v1, const vec3_t v2 );
 void _VectorSubtract( const vec3_t veca, const vec3_t vecb, vec3_t out );
 void _VectorAdd( const vec3_t veca, const vec3_t vecb, vec3_t out );
@@ -951,6 +952,7 @@ struct cvar_s {
 	qboolean	integral;
 	float			min;
 	float			max;
+	char			*description;
 
 	cvar_t *next;
 	cvar_t *prev;

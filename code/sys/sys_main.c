@@ -144,6 +144,8 @@ void __attribute__ ((noreturn)) Sys_Exit( int ex )
 	SDL_Quit( );
 #endif
 
+	NET_Shutdown( );
+
 	Sys_PlatformExit();
 
 #ifdef NQDEBUG

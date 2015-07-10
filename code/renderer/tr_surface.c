@@ -261,6 +261,9 @@ static void RB_SurfaceSprite( void ) {
 		ratio = (float)width / (float)height;
 		VectorScale(backEnd.viewParms.or.axis[1], radius * ratio, left);
 		VectorScale(backEnd.viewParms.or.axis[2], radius, up);
+	} else if (re->stretch) {
+		VectorScale(backEnd.viewParms.or.axis[1], re->width, left);
+		VectorScale(backEnd.viewParms.or.axis[2], re->height, up);
 	} else if (re->rotation == 0) {
 		VectorScale(backEnd.viewParms.or.axis[1], radius, left);
 		VectorScale(backEnd.viewParms.or.axis[2], radius, up);
@@ -283,7 +286,11 @@ static void RB_SurfaceSprite( void ) {
 		VectorSubtract(vec3_origin, left, left);
 	}
 
-	RB_AddQuadStamp(re->origin, left, up, re->shaderRGBA);
+	if (re->stretch) {
+		RB_AddQuadStampExt(re->origin, left, up, re->shaderRGBA, re->s1, re->t1, re->s2, re->t2);
+	} else {
+		RB_AddQuadStamp(re->origin, left, up, re->shaderRGBA);
+	}
 }
 
 
@@ -520,6 +527,8 @@ static void DoRailCore( const vec3_t start, const vec3_t end, const vec3_t up, f
 	float		spanWidth2;
 	int			vbase;
 	float		t = len / 256.0f;
+
+	RB_CHECKOVERFLOW( 4, 6 );
 
 	vbase = tess.numVertexes;
 

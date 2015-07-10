@@ -36,7 +36,7 @@ static void CG_DrawLoadingIcons( void ) {
 		if (!loadingPlayerIcons[n]) {
 			continue;
 		}
-		x = 16 + n * 78;
+		x = 16 + n % 8 * 78;
 		y = 324-40;
 		//CG_DrawPic( x, y, 64, 64, loadingPlayerIcons[n] );
 		CG_DrawPic( x, 480 - 32 - 32, 32, 32, loadingPlayerIcons[n] );

@@ -1279,10 +1279,19 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 				//yadj = 0;
 				//yadj = -yadj;
 				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
-					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					float ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					float xofs = ofs;
+					float yofs = ofs;
+
+					xofs *= useScale * xscale;
+					yofs *= useScale * yscale;
+					
 					colorBlack[3] = newColor[3];
 					trap_R_SetColor( colorBlack );
-					CG_Text_PaintCharScale(x + ofs /*+ glyph->left * useScale*/, y - yadj + ofs,
+					//FIXME ofs should use scale value
+					CG_Text_PaintCharScale(
+										   x + xofs ,
+										   y - yadj + yofs,
 														glyph->imageWidth,
 														glyph->imageHeight,
 														useScale * xscale,
@@ -1464,11 +1473,17 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 				//yadj = 0;
 				//yadj = -yadj;
 				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
-					int ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					float ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
+					float xofs = ofs;
+					float yofs = ofs;
+
+					xofs *= useScale * xscale;
+					yofs *= useScale * yscale;
+
 					colorBlack[3] = newColor[3];  //FIXME wtf?????
 					trap_R_SetColor( colorBlack );
 					//trap_R_SetColor(colorWhite);
-					CG_Text_PaintCharScale(x + ofs /*+ glyph->left * useScale*/, y - yadj + ofs,
+					CG_Text_PaintCharScale(x + xofs, y - yadj + yofs,
 					//CG_Text_PaintCharScale(x - xadj + ofs, y - yadj + ofs,
 					//CG_Text_PaintCharScale(x + ofs, y - yadj + 14,
 														glyph->imageWidth,
@@ -7520,7 +7535,7 @@ static void CG_DrawCrosshairNames( void ) {
 		font = &cgDC.Assets.textFont;
 	}
 	QLWideScreen = cg_drawCrosshairNamesWideScreen.integer;
-	
+
 	align = cg_drawCrosshairNamesAlign.integer;
 
 	// scan the known entities to see if the crosshair is sighted on one
@@ -7605,6 +7620,7 @@ static void CG_DrawCrosshairTeammateHealth (void)
 
 	// server didn't send team info
 	if (numSortedTeamPlayers <= 0) {
+		//Com_Printf("no team info\n");
 		return;
 	}
 
@@ -7614,8 +7630,12 @@ static void CG_DrawCrosshairTeammateHealth (void)
 
 	//FIXME freecam
 	if (!CG_IsTeammate(&cgs.clientinfo[cg.crosshairClientNum])) {
+		//Com_Printf("not teammate\n");
 		return;
 	}
+
+	//Com_Printf("yes.... %d\n", cg.crosshairClientNum);
+	
 	ci = &cgs.clientinfo[cg.crosshairClientNum];
 
 	QLWideScreen = cg_drawCrosshairTeammateHealthWideScreen.integer;
@@ -7879,7 +7899,8 @@ static void CG_VoteAnnouncements (void)
 CG_DrawVote
 =================
 */
-static void CG_DrawVote(void) {
+static void CG_DrawVote (void)
+{
 	const char	*s;
 	int		sec;
 	vec4_t color;
@@ -7906,7 +7927,7 @@ static void CG_DrawVote(void) {
 	scale = cg_drawVoteScale.value;
 	style = cg_drawVoteStyle.integer;
 	QLWideScreen = cg_drawVoteWideScreen.integer;
-	
+
 	if (*cg_drawVoteFont.string) {
 		font = &cgs.media.voteFont;
 	} else {
@@ -7915,7 +7936,7 @@ static void CG_DrawVote(void) {
 	x = cg_drawVoteX.integer;
 	y = cg_drawVoteY.integer;
 
-	s = va("VOTE(%i):%s yes:%i no:%i", sec, cgs.voteString, cgs.voteYes, cgs.voteNo);
+	s = va("VOTE(%is):%s  yes:%i no:%i", sec, cgs.voteString, cgs.voteYes, cgs.voteNo);
 
 	w = CG_Text_Width(s, scale, 0, font);
 	if (align == 1) {
@@ -8000,7 +8021,7 @@ static void CG_DrawTeamVote(void) {
 	if ( sec < 0 ) {
 		sec = 0;
 	}
-	s = va("TEAMVOTE(%i):%s yes:%i no:%i", sec, cgs.teamVoteString[cs_offset],
+	s = va("TEAMVOTE(%is):%s  yes:%i no:%i", sec, cgs.teamVoteString[cs_offset],
 							cgs.teamVoteYes[cs_offset], cgs.teamVoteNo[cs_offset] );
 
 	if (cg_drawTeamVoteX.string[0] != '\0') {
@@ -8020,7 +8041,8 @@ static void CG_DrawTeamVote(void) {
 #endif
 
 
-static void CG_DrawTeamVote(void) {
+static void CG_DrawTeamVote (void)
+{
 	const char *s;
 	int		sec, cs_offset;
 	int x, y, w;
@@ -8062,7 +8084,7 @@ static void CG_DrawTeamVote(void) {
 	scale = cg_drawTeamVoteScale.value;
 	style = cg_drawTeamVoteStyle.integer;
 	QLWideScreen = cg_drawTeamVoteWideScreen.integer;
-	
+
 	if (*cg_drawTeamVoteFont.string) {
 		font = &cgs.media.teamVoteFont;
 	} else {
@@ -8071,7 +8093,7 @@ static void CG_DrawTeamVote(void) {
 	x = cg_drawTeamVoteX.integer;
 	y = cg_drawTeamVoteY.integer;
 
-	s = va("TEAMVOTE(%i):%s yes:%i no:%i", sec, cgs.teamVoteString[cs_offset], cgs.teamVoteYes[cs_offset], cgs.teamVoteNo[cs_offset]);
+	s = va("TEAMVOTE(%is):%s  yes:%i no:%i", sec, cgs.teamVoteString[cs_offset], cgs.teamVoteYes[cs_offset], cgs.teamVoteNo[cs_offset]);
 
 	w = CG_Text_Width(s, scale, 0, font);
 	if (align == 1) {

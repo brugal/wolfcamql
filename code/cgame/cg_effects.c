@@ -449,63 +449,61 @@ void CG_ScorePlum( int client, const vec3_t org, int score ) {
 	AnglesToAxis( angles, re->axis );
 }
 
-void CG_DamagePlum (int client, const vec3_t org, int score, int dir) {
+void CG_DamagePlum (int client, const vec3_t org, int score, int weapon)
+{
 	localEntity_t	*le;
 	refEntity_t		*re;
 	vec3_t			angles;
-	static vec3_t lastPos;
-
-	// only visualize for the client that scored
-	//FIXME cg_damagePlums
-	//FIXME option for damage plums for all
-	if (client != cg.predictedPlayerState.clientNum) {
-		//Com_Printf("^3FIXME not sclient for damageplum\n");
-		return;
-	}
 
 	le = CG_AllocLocalEntity();
-	le->leFlags = 0;
+	le->leFlags = client;
 	le->leType = LE_DAMAGEPLUM;
 	le->startTime = cg.time;
-	le->endTime = cg.time + 1000;  //4000;
-	le->lifeRate = 1.0 / ( le->endTime - le->startTime );
+	le->endTime = cg.time + cg_damagePlumTime.integer;
+	le->lifeRate = 1.0 / (le->endTime - le->startTime);
 
 
 	le->color[0] = le->color[1] = le->color[2] = le->color[3] = 1.0;
-	le->radius = score;
+
+	// don't use floats to store int
+	//le->radius = score;
+	//le->bounceFactor = weapon;
+	le->angles.trTime = score;
+	le->angles.trDuration = weapon;
 
 
-	VectorCopy( org, le->pos.trBase );
+	VectorCopy(org, le->pos.trBase);
 
-	//FIXME horrible, but this matters
-#if 0
-	if (org[2] >= lastPos[2] - 20 && org[2] <= lastPos[2] + 20) {
-		le->pos.trBase[2] -= 20;
-	}
-#endif
+	le->pos.trDelta[0] += crandom() * cg_damagePlumRandomVelocity.integer;
+	le->pos.trDelta[1] += crandom() * cg_damagePlumRandomVelocity.integer;
+	
+	//Com_Printf("^2dir: %d\n", dir);
+	//VectorScale(le->pos.trDelta, -100, le->pos.trDelta);
+	
+	//le->pos.trDelta[2] = 300;
+	//le->pos.trDelta[2] += rand() % 200;
 
-	le->pos.trBase[0] += rand() % 40;
-	le->pos.trBase[1] += rand() % 40;
 
-	ByteToDir(dir, le->pos.trDelta);
+	//le->pos.trDelta[2] = 150;  //FIXME maybe random?
+	//le->pos.gravity = 400;
 
-	VectorScale(le->pos.trDelta, -100, le->pos.trDelta);
-	le->pos.trDelta[2] = 300;
-
+	le->pos.trDelta[2] = cg_damagePlumBounce.integer;  //120;
+	le->pos.gravity = cg_damagePlumGravity.integer;  //250;
+	
 	le->pos.trType = TR_GRAVITY;
 	le->pos.trTime = cg.time;
 
 	//CG_Printf( "DamagePlum origin %i %i %i -- %i\n", (int)org[0], (int)org[1], (int)org[2], (int)Distance(org, lastPos));
-	VectorCopy(org, lastPos);
+	//VectorCopy(org, lastPos);
 
 
 	re = &le->refEntity;
 
 	re->reType = RT_SPRITE;
-	re->radius = 16;
+	//re->radius = 16;
 
 	VectorClear(angles);
-	AnglesToAxis( angles, re->axis );
+	AnglesToAxis(angles, re->axis);
 }
 
 /*

@@ -1,7 +1,7 @@
 adbox1x1
 {
 	nopicmip
-	cull back
+
 	{
 		map textures/ad_content/ad1x1.jpg
 	}
@@ -11,14 +11,14 @@ adbox1x1xxxxxxx
 {
         qer_editorimage textures/ad_content/ad1x1.jpg
         nopicmip
-	cull back
-        
+
         {
                 map textures/ad_content/ad1x1.jpg
-        }       
+        }
+
         {
                 map $lightmap
-            rgbGen identity
+            	rgbGen identity
                 blendfunc gl_dst_color gl_zero
         }
 
@@ -26,16 +26,15 @@ adbox1x1xxxxxxx
                 map $lightmap
                 tcgen environment
                 tcmod scale .5 .5
-            rgbGen wave sin .15 0 0 0
+            	rgbGen wave sin .15 0 0 0
                 blendfunc add
         }
-
 }
 
 adbox2x1
 {
 	nopicmip
-	cull back
+
 	{
 		map textures/ad_content/ad2x1.tga
 	}
@@ -44,8 +43,8 @@ adbox2x1
 adbox2x1_trans
 {
 	nopicmip
-	cull back
 	surfaceparm nonsolid
+
 	{
 		map textures/ad_content/ad2x1.tga
                 blendfunc add
@@ -56,7 +55,7 @@ adbox2x1_trans
 adbox4x1
 {
 	nopicmip
-	cull back
+
 	{
 		map textures/ad_content/ad4x1.tga
 	}
@@ -65,7 +64,7 @@ adbox4x1
 adbox8x1
 {
 	nopicmip
-	cull back
+
 	{
 		map textures/ad_content/ad8x1.tga
 	}
@@ -74,7 +73,7 @@ adbox8x1
 adboxblack
 {
 	nopicmip
-	cull back
+
 	{
 		map gfx/colors/black.jpg
 	}
@@ -84,7 +83,6 @@ adboxblack
 adbox_nocull
 {
 	nopicmip
-	cull back
 
 	{
 		//map gfx/misc/bbox.tga

@@ -259,6 +259,15 @@ static void CG_TransitionSnapshot( void ) {
 			//Com_Printf("missile %d pos.trTime %d  server time %d  %d  %s\n", cg.snap->entities[i].number, cg.snap->entities[i].pos.trTime, cg.snap->serverTime, cg.snap->serverTime - cg.snap->entities[i].pos.trTime, weapNames[cg.snap->entities[i].weapon]);
 		}
 
+		if (cgs.protocol == PROTOCOL_QL  &&  cg.snap->entities[i].eType == ET_ITEM) {
+			const entityState_t *es = &cg.snap->entities[i];
+			// check if we can update client item timers with ingame timer
+			// pie info
+			if (es->time > 0  &&  es->time2 > 0) {
+				//FIXME
+			}
+		}
+
         if (cg.snap->entities[i].number < MAX_CLIENTS) {
             memcpy (&wclients[cg.snap->entities[i].number].oldState, &cg_entities[cg.snap->entities[i].number].currentState, sizeof (entityState_t));
 #if 0

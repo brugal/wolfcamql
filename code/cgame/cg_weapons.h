@@ -1,7 +1,6 @@
 #ifndef cg_weapons_h_included
 #define cg_weapons_h_included
 
-int CG_ModToWeapon (int mod);
 void CG_SimpleRailTrail (const vec3_t start, const vec3_t end, float railTime, const byte color[4]);
 void CG_RailTrail( const clientInfo_t *ci, const vec3_t start, const vec3_t end );
 void CG_GrappleTrail( centity_t *ent, const weaponInfo_t *wi );

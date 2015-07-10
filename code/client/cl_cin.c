@@ -1170,7 +1170,7 @@ redump:
 				readQuadInfo( framedata );
 				setupQuad( 0, 0 );
 				// we need to use CL_ScaledMilliseconds because of the smp mode calls from the renderer
-				cinTable[currentHandle].startTime = cinTable[currentHandle].lastTime = CL_ScaledMilliseconds()*com_timescale->value;
+				cinTable[currentHandle].startTime = cinTable[currentHandle].lastTime = CL_ScaledMilliseconds();
 			}
 			if (cinTable[currentHandle].numQuads != 1) cinTable[currentHandle].numQuads = 0;
 			break;
@@ -1238,7 +1238,7 @@ redump:
 static void RoQ_init( void )
 {
 	// we need to use CL_ScaledMilliseconds because of the smp mode calls from the renderer
-	cinTable[currentHandle].startTime = cinTable[currentHandle].lastTime = CL_ScaledMilliseconds()*com_timescale->value;
+	cinTable[currentHandle].startTime = cinTable[currentHandle].lastTime = CL_ScaledMilliseconds();
 
 	cinTable[currentHandle].RoQPlayed = 24;
 
@@ -1373,7 +1373,7 @@ e_status CIN_RunCinematic (int handle)
 	if (cl_freezeDemo->integer) {
 		thisTime = 0;
 	} else {
-		thisTime = CL_ScaledMilliseconds()*com_timescale->value;
+		thisTime = CL_ScaledMilliseconds();
 	}
 
 	if (cinTable[currentHandle].shader && (abs(thisTime - cinTable[currentHandle].lastTime))>100) {
@@ -1495,7 +1495,9 @@ int CIN_PlayCinematic( const char *arg, int x, int y, int w, int h, int systemBi
 		
 		Con_Close();
 
-		s_rawend[0] = s_soundtime;
+		if (!cinTable[currentHandle].silent) {
+			s_rawend[0] = s_soundtime;
+		}
 
 		return currentHandle;
 	}

@@ -1129,3 +1129,343 @@ Remove unnecessary localhost check from reconnect command.
 2013-11-20-01 skip (rend2):  #6059: OpenGL2: Read depths from resolve fbo when msaa is on in RB_Te
 2013-11-20-02 skip (rend2):  OpenGL2: Use RGBA16F format for HDR.
 2013-11-20-03 End current draw surface before drawing cinematic
+
+2013-11-21-01 Fix signal 6 in S_Base_StartBackgroundTrack on OS X 10.9
+2013-11-21-02 Make kamikaze timer loops use level.num_entities instead of MAX_GENTITIES
+2013-11-22-01 skip:  Update and rename README to README.md
+2013-11-23-01 skip:  Improve github interperation of README.md
+2013-11-23-02 skip:  Add header for standalone game licensing
+
+2013-11-25-01 skip (rend2):  Silence warnings about unused static functions in opengl2
+2013-11-25-02 skip:  Updating the tracking code properly.
+2013-11-26-01 skip:  Merge branch 'master' into sdl2
+2013-11-26-02 skip:  Readd backspace char event for UI VM text fields
+2013-11-29-01 skip:  #6069: Remove md4 model support.
+2013-11-30-01 skip:  OpenGL2: Remove redundant GLS_* enum.
+2013-11-30-02 skip (result of removing md4):  Remove R_AddAnimSurfaces and R_MakeAnimModel prototypes
+2013-12-01-01 skip (rend2):  Fix glsl DEFORM_BULGE calculation
+2013-12-01-02 skip (rend2):  Merge pull request #21 from cmf028/master
+2013-12-02-01 skip (have /listcvarchanges):  Add cvar_modified command
+2013-12-07-01 Fix white flash levelshot bug in OpenGL1
+2013-12-07-02 r_noborder changes require a restart
+2013-12-07-03 Add latch to r_centerWindow and r_allowResize
+2013-12-07-04 skip:  Support spatialized raw streams in base sound, e.g. for VoIP
+2013-12-07-05 Have ui_test cmd in missionpack ui return qtrue
+
+2013-12-08-01 skip:  Fix checking if MP dylibs exist in make-macosx-app.sh
+2013-12-09-01 skip:  Fix some file paths for msvc 2008
+2013-12-09-02 skip (rend2):  OpenGL2: Support GL_ARB_vertex_type_2_10_10_10_rev for normals/tangents/lightdirs
+2013-12-09-03 skip:  Fix crash in OpenAL when no input devices are available
+2013-12-13-01 skip (rend2):  OpenGL2: Small glsl shader optimizations, fixes, and cleanup.
+
+2013-12-15-01 check:  Fix playback of stereo sounds in Base sound system
+
+2013-12-16-01 skip (rend2):  Don't forget to install the renderer2 binary if USE_RENDERER_DLOPEN=0
+2013-12-17-01 skip (rend2):  #6077: OpenGL2: Add r_ignoreDstAlpha.
+
+2014-01-10-01 Fix PNG tRNS length checks
+2014-01-10-02 skip (rend2):  Make GL2 MDR code use R_VboPackNormal for normal
+
+2014-01-11-01 Remove extra client_t::csUpdated[] slot
+2014-01-11-02 skip (rend2):  fixed formatting of a few GLSL float constants
+
+2014-01-12-01 Fix music studder in base sound when starting silent cinematics
+2014-01-12-02 Fix demoName Com_sprintf size larger than buffer
+2014-01-12-03 skip (rend2):  Fix GL2 deluxemap 0,0,0 to 127,127,127
+2014-01-12-04 Don't read clc.voipIncomingSequence until range checked sender
+2014-01-12-05 Remove unused code path from S_Base_StartBackgroundTrack
+2014-01-12-06 skip:  Merge pull request #26 from andreyv/master
+2014-01-12-06 skip (rend2):   Don't create images/framebuffers that won't be used, and add checks before use.
+
+2014-01-14-01 skip (rend2):  don't call va each frame in GLSL_VertexAttribPointers
+
+2014-01-16-01 skip (rend2):  Fix OpenGL2 non-HDR map surface over brighting
+
+2014-01-23-01 don't clear screen during CA_LOADING and CA_PRIMED
+
+2014-01-25-01 Check for buffer overflow for rail/lightning surfaces
+
+2014-01-27-01 skip:  Fix check for jpeg_mem_ to work with libjpeg-turbo
+2014-01-27-02 skip:  Merge pull request #34 from robo9k/issue/libjpeg-turbo
+2014-01-27-03 Try default OpenAL driver if user set one fails to load
+
+2014-02-01-01 restart the renderer after the hunk mark has been set
+2014-02-01-02 skip:  Merge pull request #33 from inolen/widescreen_clear_fix
+2014-02-01-03 skip:  Merge pull request #35 from inolen/no_renderer_restart
+
+2014-02-07-01 skip:  Upgrade opus 1.0.2 -> 1.1
+2014-02-07-02 skip:  Upgrade opusfile 0.2 to 0.5
+2014-02-07-03 skip:  Upgrade libogg 1.3.0 to 1.3.1
+2014-02-07-04 skip:  When cross compiling on mingw32, make sure it finds a CC
+2014-02-07-05 skip:  Merge branch 'features/upgrade-opusfile-0.5'
+2014-02-07-06 skip:  Merge branch 'features/upgrade-opus-1.1'
+2014-02-07-07 skip:  Merge pull request #41 from xhairball/fixes/check-cc-w
+
+2014-02-08-01 skip:  Merge branch 'master' into sdl2
+2014-02-08-02 skip:  Add vorbis 1.3.4 build support
+2014-02-08-03 skip:  Upgrade from libcurl 7.15.5 (2006-08-07) to 7.35.0 (2014-01-29)
+2014-02-08-04 skip:  Remove unnecessary NEED_VORBIS since you have USE_CODEC_VORBIS
+2014-02-08-05 Clear referenced paks when disconnecting
+
+2014-02-09-01 skip:  Merge branch 'master' into features/upgrade-curl-7.35.0
+2014-02-09-02 skip (need other patches):  Fix sending pk3 download error messages to clients
+2014-02-10-01 skip:  Add support for x86_64 cross compiling in Travis CI
+
+2014-02-13-01 skip:  Merge pull request #45 from xhairball/features/upgrade-curl-7.35.0
+2014-02-13-02 skip (rend2):  OpenGL2: Set RGBM to use a multiplier of 1, and only use it with HDR
+
+2014-02-14-01 skip (rend2):  OpenGL2: Fix bug in ColorToRGBM().
+2014-02-14-02 skip (rend2):  OpenGL2: Oops, set lightmap alpha to 1.
+2014-02-14-03 skip:  Rebuilt Windows libcurl-7.35.0 static libraries
+
+2014-02-15-01 skip (rend2):  OpenGL2: Fix rendering when r_hdr = 0 and r_floatLightmap = 1
+
+2014-02-18-01 skip:  Merge branch 'master' into sdl2
+2014-02-20-01 skip (rend2):  OpenGL2: Remove and force r_softOverbright.
+
+2014-02-22-01 skip:  Replace deprecated alDopplerVelocity with alSpeedOfSound per OpenAL
+2014-02-22-02 skip:  Remove references to alDopplerVelocity
+2014-02-22-03 skip (rend2):  OpenGL2: Fix pshadows for MDR models
+2014-02-22-04  Fix colored name padding and allow IPv6 address to fit in output of 'status' command
+2014-02-22-05  Release netowrk bindings on shutdown
+
+2014-03-02-01 Fix native trap_BotMutateGoalFuzzyLogic
+2014-03-02-02 Fix s_alDopplerSpeed default value
+
+2014-03-03-01 skip (rend2):  OpenGL2: Minor GLSL shader improvements.
+
+2014-03-04-01 skip (rend2):  OpenGL2: Add normalScale and parallaxDepth stage keywords and helper
+2014-03-04-02 skip (rend2):  OpenGL2: Set default normal/specular in RE_RegisterShaderFromImage
+2014-03-04-03 skip:  Merge pull request #57 from MAN-AT-ARMS/specularScale
+
+2014-03-07-01 skip (rend2):  Don't wash out HDR vertex lite surfaces in OpenGL2
+
+2014-03-08-01 skip:  Merge branch 'master' into sdl2
+2014-03-08-02 skip:  Update SDL2 to 2.0.2
+
+2014-03-09-01 skip:  Update SDL 1.2.15 to Revision 8040
+
+2014-03-10-01 skip (rend2):  Fix error handling in R_ParseSpawnVars
+2014-03-10-02 skip (rend2):  Don't say cubemap is outside lightgrid 6 times
+2014-03-10-03 skip (not needed - double check):  Fix R_GetEntityToken ending prematurely
+2014-03-10-04  Fix typo in animMap and videoMap warnings
+
+2014-03-11-01  Parse q3map_sunExt in OpenGL1 too
+2014-03-11-02  Don't mix sfx with NULL soundData
+2014-03-11-03 skip (reverted in ioq3):  DMA 44100Hz needs more memory for sound buffers
+
+2014-03-12-01  Bunch of comment fixes
+2014-03-12-02 part (last typo: structures):  Merge pull request #60 from smokin-guns/master
+
+2014-03-15-01 skip (not needed):  Don't crash when fail to create SDL window
+
+2014-03-16-01 skip (rend2):  OpenGL2: Parallax corrected cubemap (cheaper trick)
+
+2014-03-17-01 skip (not needed):  Fix multisampling on X11
+2014-03-18-02 skip (diff sdl):  Fix ctrl-c etc codes for edit fields
+2014-03-18-03 skip (never applied):  Revert "DMA 44100Hz needs more memory for sound buffers"
+2014-03-18-04 skip (no FS_FOpenFileReadDir):  Fix FS_FOpenFileReadDir non-zero file handle when file not found in pk3
+
+2014-03-19-01 skip (rend2):  #6095: OpenGL2: Use areamask and leaf cluster for PVS when VIS is
+
+2014-03-24-01 skip:  Merge pull request #59 from MAN-AT-ARMS/sdl_1215_hg
+2014-03-24-02 skip:  Merge pull request #55 from MAN-AT-ARMS/status_command
+2014-03-24-03 skip:  Merge pull request #44 from xhairball/features/add-vorbis-1.3.4
+2014-03-24-04 skip:  Merge pull request #56 from MAN-AT-ARMS/net_stop
+2014-03-24-05  Remove unused extern qboolean charSet
+2014-03-24-06 skip+check:  Remove -falign-loops and -falign-jumps from Makefile
+2014-03-24-07  Fix compiling game VM with OBSTACLEDEBUG defined
+2014-03-24-08 skip:  Merge branch 'master' (early part) into sdl2
+2014-03-24-09 skip:  Skip merging sdl1.2 commit into sdl2
+2014-03-24-10 skip:  Merge branch 'master' into sdl2
+2014-03-24-11 skip:  Update SDL2 to 2.0.3
+2014-03-24-12 skip:  Merge pull request #65 from MAN-AT-ARMS/sdl2_203
+2014-03-24-13 skip:  Add misc/msvc12/ to support Microsoft Visual Studio 2012 Express Edition
+2014-03-24-14 skip:  Merge pull request #63 from kungfooman/visualstudio
+
+2014-04-07-01 skip:  Add MSVC SDL 1.2.15 Revision 8040 import libs
+
+2014-04-16-01 skip (rend2):  OpenGL2: Remove sRGB support, replace with gamma cvars.
+2014-04-16-02 skip:  Rebuilt MSVC SDL 1.2.15 Revision 8040 import libs
+
+2014-04-22-01 skip (rend2):  OpenGL2: Remove misleading documentation for gamma cvars.
+
+2014-05-01-01 Fix cg.skulltrails out of bounds access in Team Arena Harvester mode
+
+2014-05-06-01 skip + check:  Make R_LerpTag return qfalse if MDR tag does not exist
+
+2014-05-07-01 skip:  Switched runtime library to Multithreaded DLL to fix build on VS2012.
+2014-05-07-02 skip:  Merge pull request #69 from RobertoEstrada/master
+
+2014-05-12-01 skip:  Don't install libvorbis-dev on Travis
+2014-05-12-02 skip:  Merge branch 'features/add-x86_64-travis-ci-support' of github.com:xh
+
+2014-05-18-01 Fix always switching back to mgun in Q3 controls menu
+2014-05-18-02 Fix Gauntlet barrel axis in UI
+
+2014-05-19-01 skip (sdl2):  Disable key repeat if key catcher is 0
+2014-05-19-02 skip:  Try to fix Travis CI MinGW builds
+
+2014-05-25-01 skip (changed in newer patch):  Fix potential out of bounds access caused by CM_GridPlane
+2014-05-25-02 skip (rend2):  Don't use memset with non-zero value to fill ints
+2014-05-25-03 Fix potential buffer overflow in PS_ReadPrimitive
+2014-05-25-04 Fix unchecked buffer size issues in l_script.c and l_precomp.c
+2014-05-25-05 Fix max bans range check in SV_AddBanToList
+2014-05-25-06 skip (rend2):  Have OpenGL2 "map $lightmap" check for NULL tr.lightmaps too
+2014-05-25-07 Fix potential buffer overflow caused by long tcMod args
+2014-05-25-08 Fix OOB access in CM_EdgePlaneNum without erroring in CM_GridPlane
+
+2014-05-27-01 Fix potential OOB in Windows Dedicated TTY CON_Show
+2014-05-27-02 skip (rend2):  OpenGL2: Reimplement MD3 tangent space calculation.
+2014-05-27-03 skip (rend2):  OpenGL2: Really obvious optimization to previous commit.
+
+2014-05-29-01 Fix an invalid null deref check in the slider code.
+
+2014-06-03-01 skip:  Merge branch 'master' (early part 1) into sdl2
+2014-06-03-02 skip:  Skip merging a SDL 1.2 commit into sdl2
+2014-06-03-03 skip:  Merge branch 'master' (early part 2) into sdl2
+2014-06-03-04 skip:  Skip merging a SDL 1.2 commit into sdl2
+2014-06-03-05 skip:  Merge branch 'master' into sdl2
+
+2014-06-10-01 skip (rend2):  OpenGL2 don't try to dlight surfaces that had all dlights culled
+
+2014-06-17-01 Fix SkipRestOfLine going past end of string
+
+2014-06-19-01 Remove unused array joy_pressed
+
+2014-07-03-01 Remove unused cvar in_joystickDebug
+2014-07-03-02 Fix overstrike/insert logic being reversed in q3_ui
+
+2014-07-12-01 skip (reverted later):  Don't draw client console buffer past top of screen
+
+2014-07-13-01 skip (revert last commit):  Restore drawing a cut off client console line in 1920x1080
+
+2014-07-15-01 Fix fast-math optimize flag for MinGW x86_64 build
+
+2014-07-20-01 skip:  -ffast-math for msvc
+2014-07-20-02 skip:  Merge branch 'pkg-config' of github.com:smcv/ioq3 into master
+2014-07-20-03 skip:  Fix up vorbis handling in Makefile
+2014-07-20-04 skip:  Allow overriding external opus libs/cflags in Makefile
+2014-07-20-05 skip:  Fix compiling on Linux Mint
+2014-07-20-06 skip:  Allow user override of cURL, OpenAL, and SDL libs/cflags
+
+2014-07-22-01 skip (rend2):  OpenGL2: Replace R_MipMapsRGB() with faster version.
+
+2014-07-26-01 skip (rend2):  Don't load external GLSL files by default
+2014-07-26-02  Don't use -mwindows with Clang on Windows
+
+2014-07-31-01  guard against out-of-bounds jump table targets
+
+2014-08-01-01 skip (rend2):  OpenGL2: Add fourth cascade for sun shadows, and adjust sun shadow cv
+
+2014-08-02-01 skip (rend2):  OpenGL2: Remove R_MipMap() and R_MipMap2(), and fix gamma conversion
+2014-08-02-02 skip (rend2):  OpenGL2: Fix a glsl compile error on old hardware with r_shadowFilter 0.
+
+2014-08-25-01 skip:  Fix assorted warnings
+2014-08-25-02 skip:  Merge branch 'master' into sdl2
+2014-08-25-03 skip:  Fix OSX build
+
+2014-08-26-01 skip:  Add SDL libraries to the builds
+2014-08-26-02 skip:  added systemd unit for easier server-deployment
+2014-08-26-03 skip:  removed a few defaults to make it completely usable out of the box
+2014-08-26-04 skip (already there?):  Fix binding KP_NUMLOCK
+
+2014-08-27-01 skip (sdl2):  Get clipboard data from SDL
+2014-08-27-02 skip:  Bullshit change to test jenkins configuration
+2014-08-27-03 skip (vorbis):  Fix some warnings
+2014-08-27-04 skip (vorbis):  There have been 0 days since the last compiler warning
+2014-08-27-05 skip:  removed absolute path to binary, removed sv_pure parameter
+2014-08-27-06 skip:  Add cppcheck stage to jenkins script
+2014-08-27-07 skip:  Link instead of copy
+2014-08-27-08 skip:  Show environment variables from jenkins
+2014-08-27-09 skip:  Use scan-build when invoking clang
+2014-08-27-10 skip:  Merge pull request #80 from dictvm/master
+2014-08-27-11 skip:  Moved the systemd to /misc/linux
+2014-08-27-12 skip:  Remove unused functions from null_main.c and null_input.c
+2014-08-27-13 Fix incorrect strncat usage in CL_ServerInfoPacket
+2014-08-27-14 skip:  Fix incorrect rgbGen const reading uninitialized memory
+2014-08-27-15 skip (rend2):  Remove a numIboIndexes=0 that is not read from GL2 tr_bsp.c
+
+2014-08-28-01 skip:  Only run scan-build on one of the clang builds
+2014-08-28-02 Don't scale cinematic time by timescale twice
+2014-08-28-03 Add ColorIndexForNumber macro replacing '& 0x07'
+2014-08-28-04 skip (sdl2):  SDL 2 scroll/caps/num lock keys send KEYUP event when key is released
+2014-08-28-05 Port COM_ParseExt fixes to CommaParse
+
+2014-08-29-01 Use ColorIndexForNumber in Con_DrawSolidConsole
+2014-08-29-02 skip (rend2):  Fix 6155: OpenGL2: some shader stages remains visible through fog vol
+
+2014-08-30-01 (only part):  Fix a few warnings
+
+2014-09-01-01 (only part):  Fix cgame warnings
+2014-09-01-02 (only part):  Fix ui warnings
+2014-09-01-03 (only part):  Fix game warnings
+2014-09-01-04 skip:  Fix client warnings
+2014-09-01-05 skip (reverted later):  Suppress warning of (deliberate) null pointer deference
+2014-09-01-06 skip:  Fix renderergl1 warnings
+2014-09-01-07 skip (rend2):  Fix renderergl2 warnings
+2014-09-01-08 skip:  Fix more warnings
+2014-09-01-09 skip (reversion):  Actually, that's not suppressing, that's changing behaviour
+2014-09-01-10 skip:  Coverity travis integration experiment
+2014-09-01-11 skip:  Fix .travis.yml indentation
+
+2014-09-05-01 skip (rend2):  Add USE_RENDERER_DLOPEN note to README
+2014-09-05-02 skip:  Fix screwed up whitespace in README
+
+2014-09-09-01 skip (not implemented):  Fix possible division by zero in S_PaintChannelFrom16_altivec
+2014-09-09-02 skip:  Merge pull request #81 from MAN-AT-ARMS/sndmix_altivec
+2014-09-09-03 Change default value for s_alDopplerSpeed
+2014-09-09-04 skip:  Fix building with curl on Linux PPC and Sparc
+2014-09-09-05 skip:  Merge pull request #85 from MAN-AT-ARMS/curl_fixes
+2014-09-09-06 skip:  Merge pull request #84 from MAN-AT-ARMS/openal_speedsound
+2014-09-09-07 skip:  Merge pull request #29 from inolen/shader_tidying
+
+2014-09-11-01 skip (sdl2):  Fix binding 'context menu' key using SDL2
+2014-09-11-02 skip (sdl2):  Fix Windows key bind name on non-Mac using SDL2
+
+2014-09-20-01 skip:  Don't add duplicate resolutions to r_availableModes
+
+2014-09-26-01 Use correct type for thinktime
+2014-09-26-02 Add facility to describe cvars
+
+2014-09-27-01 Add function for clearing global shader instead of duplicating the code
+
+2014-09-29-01 skip (rend2):  Remove r_softOverbright from opengl2-readme.txt
+2014-09-29-02 skip (rend2):  OpenGL2: Don't segfault if r_ext_multitexture is disabled
+
+2014-10-03-01 skip (not implemented):  Add mingw prefix for cygwin32 and mingw32
+
+2014-10-07-01 skip (rend2):  OpenGL2: Better BSP surface merging.
+
+2014-10-13-01 skip (rend2):  Correct too many parameters in q3gl2_sun description in docs.
+
+2014-10-14-01 skip (rend2):  OpenGL2: VBO cleanup.
+2014-10-14-02 skip (rend2):  OpenGL2: Vertex array object support.
+2014-10-14-03 skip (rend2):  OpenGL2: Reduce redundant GL calls.
+
+2014-10-15-01 skip (rend2):  OpenGL2: Fix invalid texture parameter.
+2014-10-15-02 skip (rend2):  OpenGL2: Interleave vertex data for static MD3s.
+2014-10-15-03 skip (rend2):  OpenGL2: Fix missing surfaces with r_mergeMultidraws 2.
+2014-10-15-04 skip (rend2):  Fix a bug in previous commit.
+
+2014-10-16-01 skip (rend2):  OpenGL2: Bit of multidraw optimization.
+
+2014-10-23-01 skip (rend2):  OpenGL2: Fix corrupt models.
+
+2014-10-27-01 skip (rend2):  OpenGL2: Speed up tonemap shader.
+
+2014-10-28-01 skip (rend2):  OpenGL2: Change normal/tangent vertex encoding.
+
+2014-10-27-01 Add missing EV_USE_ITEM15 cases
+2014-10-27-02 skip (not implemented):  Fix pid file ignoring user set fs_homepath
+
+2014-10-29-01 Always use GL_Cull to change cull state
+
+2014-11-03-01 skip (rend2):  OpenGL2: Support half floats for texcoords and vertex colors.
+
+2014-11-04-01 skip (rend2):  Remove accidentally added increment.
+
+2014-11-07-01 skip (sdl2):  Clear window buffer when it's created
+
+2014-11-11-01 skip (rend2):  OpenGL2: remove lightmap support from generic glsl shader.
+2014-11-11-02 skip (rend2):  OpenGL2: Add support for parallax occlusion mapping.

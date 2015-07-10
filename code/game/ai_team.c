@@ -161,7 +161,7 @@ int BotSortTeamMatesByBaseTravelTime(bot_state_t *bs, int *teammates, int maxtea
 		//skip spectators
 		if (atoi(Info_ValueForKey(buf, "t")) == TEAM_SPECTATOR) continue;
 		//
-		if (BotSameTeam(bs, i)) {
+		if (BotSameTeam(bs, i) && goal) {
 			//
 			traveltime = BotClientTravelTimeToGoal(i, goal);
 			//

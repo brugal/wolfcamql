@@ -516,10 +516,11 @@ void CG_CheckChangedPredictableEvents( const playerState_t *ps ) {
 
 /*
 ==================
-pushReward
+CG_PushReward
 ==================
 */
-static void pushReward(sfxHandle_t sfx, qhandle_t shader, int rewardCount) {
+void CG_PushReward (sfxHandle_t sfx, qhandle_t shader, int rewardCount)
+{
 	int i;
 
 	if (cg_rewardsStack.integer == 0  &&  (cg.time - cg.rewardTime) < cg_drawRewardsTime.integer) {  // uhmm, nice name
@@ -537,6 +538,8 @@ static void pushReward(sfxHandle_t sfx, qhandle_t shader, int rewardCount) {
 		cg.rewardSound[cg.rewardStack] = sfx;
 		cg.rewardShader[cg.rewardStack] = shader;
 		cg.rewardCount[cg.rewardStack] = rewardCount;
+	} else {
+		//FIXME replace older reward?
 	}
 }
 
@@ -645,6 +648,14 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		}
 		goto timelimit_warnings;
 	}
+
+	//FIXME not here
+#if 0
+	// key pickups
+	if (ps->stats[STAT_MAP_KEYS] > ops->stats[STAT_MAP_KEYS]) {
+		Com_Printf("new key state: %d\n", ps->stats[STAT_MAP_KEYS]);
+	}
+#endif
 
 	// hit changes
 	if ( ps->persistant[PERS_HITS] > ops->persistant[PERS_HITS] ) {
@@ -855,7 +866,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 #endif
 
 	if (ps->persistant[PERS_CAPTURES] > ops->persistant[PERS_CAPTURES]) {
-		pushReward(cgs.media.captureAwardSound, cgs.media.medalCapture, ps->persistant[PERS_CAPTURES]);
+		CG_PushReward(cgs.media.captureAwardSound, cgs.media.medalCapture, ps->persistant[PERS_CAPTURES]);
 		reward = qtrue;
 		//Com_Printf("capture\n");
 	}
@@ -872,7 +883,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		sfx = cgs.media.impressiveSound;
 #endif
 		//Com_Printf("impres %d  %d\n", ops->persistant[PERS_IMPRESSIVE_COUNT], ps->persistant[PERS_IMPRESSIVE_COUNT]);
-		pushReward(sfx, cgs.media.medalImpressive, ps->persistant[PERS_IMPRESSIVE_COUNT]);
+		CG_PushReward(sfx, cgs.media.medalImpressive, ps->persistant[PERS_IMPRESSIVE_COUNT]);
 		reward = qtrue;
 		//Com_Printf("impressive\n");
 	}
@@ -888,7 +899,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 #else
 		sfx = cgs.media.excellentSound;
 #endif
-		pushReward(sfx, cgs.media.medalExcellent, ps->persistant[PERS_EXCELLENT_COUNT]);
+		CG_PushReward(sfx, cgs.media.medalExcellent, ps->persistant[PERS_EXCELLENT_COUNT]);
 		reward = qtrue;
 		//Com_Printf("excellent %d\n", ps->persistant[PERS_ATTACKEE_ARMOR]);
 	}
@@ -904,21 +915,21 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 #else
 		sfx = cgs.media.humiliationSound;
 #endif
-		pushReward(sfx, cgs.media.medalGauntlet, ps->persistant[PERS_GAUNTLET_FRAG_COUNT]);
+		CG_PushReward(sfx, cgs.media.medalGauntlet, ps->persistant[PERS_GAUNTLET_FRAG_COUNT]);
 		reward = qtrue;
 		//Com_Printf("gauntlet frag\n");
 	}
 	if (ps->persistant[PERS_DEFEND_COUNT] > ops->persistant[PERS_DEFEND_COUNT]) {
 		//cg.rewardDefend = qtrue;
 
-		pushReward(cgs.media.defendSound, cgs.media.medalDefend, ps->persistant[PERS_DEFEND_COUNT]);
+		CG_PushReward(cgs.media.defendSound, cgs.media.medalDefend, ps->persistant[PERS_DEFEND_COUNT]);
 		reward = qtrue;
 		//Com_Printf("defend\n");
 	}
 	if (ps->persistant[PERS_ASSIST_COUNT] > ops->persistant[PERS_ASSIST_COUNT]) {
 		//cg.rewardAssist = qtrue;
 
-		pushReward(cgs.media.assistSound, cgs.media.medalAssist, ps->persistant[PERS_ASSIST_COUNT]);
+		CG_PushReward(cgs.media.assistSound, cgs.media.medalAssist, ps->persistant[PERS_ASSIST_COUNT]);
 		reward = qtrue;
 		//Com_Printf("assist\n");
 	}
@@ -1180,9 +1191,12 @@ static void test_persStats (const playerState_t *ps)
 		Com_Printf("^3FIXME stats unknown 14 %d\n", ps->stats[STAT_UNKNOWN_14]);
 	}
 #endif
+
+#if 0  // new ql map keys
 	if (ps->stats[STAT_UNKNOWN_15]) {
 		Com_Printf("^3FIXME stats unknown 15 %d\n", ps->stats[STAT_UNKNOWN_15]);
 	}
+#endif
 	}
 }
 

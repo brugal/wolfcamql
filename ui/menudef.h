@@ -94,6 +94,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define FEEDER_ENDSCOREBOARD				0x10			// premium scoreboard with country flags and quit players
 #define FEEDER_REDTEAM_STATS				0x11			// premium stats
 #define FEEDER_BLUETEAM_STATS				0x12			// premium stats
+#define FEEDER_BAN_LIST						0x13			// list of players banned on the server
 
 // changed with ql update 2014-08
 // display flags
@@ -212,6 +213,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define UI_SHOW_IF_LOADOUT_ENABLED 0x00002000
 #define UI_SHOW_IF_LOADOUT_DISABLED 0x00004000
 #define UI_SHOW_IF_NOT_INTERMISSION 0x00008000
+#define UI_SHOW_IF_WARMUP 0x00010000
+#define UI_SHOW_IF_NOT_WARMUP 0x00020000
 
 // owner draw types
 // ideally these should be done outside of this file but
@@ -927,6 +930,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CG_VOTEGAMETYPE1 331
 #define CG_VOTEGAMETYPE2 332
 #define CG_VOTEGAMETYPE3 333
+#define CG_OVERTIME 334
+#define CG_PLAYER_HASKEY 335
+#define CG_STARTING_WEAPONS 336
+
 //////////////////////
 
 
@@ -1001,6 +1008,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define UI_BLUETEAMMODEL 556
 #define UI_SERVER_OWNER 557
 #define UI_SERVER_SETTINGS 558
+#define UI_STARTING_WEAPONS 559
 
 #define VOICECHAT_GETFLAG			"getflag"				// command someone to get the flag
 #define VOICECHAT_OFFENSE			"offense"				// command someone to go on offense

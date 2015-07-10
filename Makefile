@@ -570,7 +570,7 @@ ifeq ($(PLATFORM),mingw32)
     OPTIMIZEVM = -DNQDEBUG -O3 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
       -fstrength-reduce -m64
-    OPTIMIZE = $(OPTIMIZEVM) --fast-math
+    OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
@@ -590,7 +590,10 @@ ifeq ($(PLATFORM),mingw32)
   BINEXT=.exe
 
   LIBS= -lws2_32 -lwinmm -static-libgcc -static-libstdc++
-  CLIENT_LDFLAGS = -mwindows
+  # clang 3.4 doesn't support this
+  ifneq ("$(CC)", $(findstring "$(CC)", "clang" "clang++"))
+    CLIENT_LDFLAGS += -mwindows
+  endif
   CLIENT_LIBS += -lgdi32 -lole32 -lopengl32
 
   ifeq ($(USE_CURL),1)

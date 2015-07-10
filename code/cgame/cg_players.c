@@ -111,7 +111,7 @@ CLIENT INFO
 ======================
 CG_ParseAnimationFile
 
-Read a configuration file containing animation coutns and rates
+Read a configuration file containing animation counts and rates
 models/players/visor/animation.cfg, etc
 ======================
 */
@@ -1619,6 +1619,9 @@ void CG_NewClientInfo( int clientNum ) {
 	v = Info_ValueForKey( configstring, "pq" );
 	newInfo.quePosition = atoi(v);
 
+	v = Info_ValueForKey(configstring, "su");
+	newInfo.premiumSubscriber = atoi(v);
+
 	v = Info_ValueForKey( configstring, "g_redteam" );
 	Q_strncpyz(newInfo.redTeam, v, MAX_TEAMNAME);
 
@@ -2756,6 +2759,11 @@ static void CG_PlayerTokens( const centity_t *cent, int renderfx ) {
 	refEntity_t	ent;
 	vec3_t		dir, origin;
 	skulltrail_t *trail;
+
+	if (cent->currentState.number >= MAX_CLIENTS) {
+		return;
+	}
+
 	trail = &cg.skulltrails[cent->currentState.number];
 	tokens = cent->currentState.generic1;
 	if ( !tokens ) {
@@ -3020,7 +3028,7 @@ CG_PlayerFloatSpriteExt
 Float a sprite over the player's head
 ===============
 */
-static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, int renderEffect, byte *color) {
+static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, int renderEffect, byte color[4]) {
 	int				rf;
 	refEntity_t		ent;
 	float dist;
@@ -3333,7 +3341,7 @@ void CG_FloatEntNumbers (void)
 		if (!cent->currentValid  &&  n != cg.snap->ps.clientNum) {
 			continue;
 		}
-		if (cent->currentState.eFlags & EF_NODRAW) {
+		if (cent->currentState.eFlags & EF_NODRAW  &&  cg_drawEntNumbers.integer < 3) {
 			continue;
 		}
 
@@ -3358,7 +3366,11 @@ void CG_FloatEntNumbers (void)
 			origin[2] += 50;
 		}
 
-		CG_FloatNumber(n, origin, RF_DEPTHHACK, color, 1.0);
+		if (cg_drawEntNumbers.integer > 1) {
+			CG_FloatNumber(n, origin, RF_DEPTHHACK, color, 1.0);
+		} else {
+			CG_FloatNumber(n, origin, 0, color, 1.0);
+		}
 	}
 }
 
@@ -3372,8 +3384,11 @@ Float sprites over the player's head
 static void CG_PlayerSprites( centity_t *cent ) {
 	int		team;
 	qhandle_t s;
+	const clientInfo_t *ci;
 
-	team = cgs.clientinfo[ cent->currentState.clientNum ].team;
+	ci = &cgs.clientinfo[cent->currentState.clientNum];
+
+	team = ci->team;
 
 	if (cg_drawPlayerNames.integer) {
 		CG_PlayerFloatSpriteNameExt(cent, cgs.clientNameImage[cent->currentState.clientNum], 0);
@@ -3432,6 +3447,94 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		}
 		CG_PlayerFloatSprite( cent, cgs.media.balloonShader );
 		return;
+	}
+
+	// check new ql rewards first
+	//FIXME what is the order now?
+	//FIXME dead players?
+	// cent->currentState.eFlags & EF_DEAD
+
+	if (qtrue) {  //(!(cent->currentState.eFlags & EF_DEAD)) {  // don't draw for dead ppl
+		//FIXME time
+		if (cg.time <= ci->clientRewards.startTime) {  // demo seeking
+			// pass
+		} else if (cg.time - ci->clientRewards.startTime <= 1500) {
+			// check fx
+			if (ci->clientRewards.shader == cgs.media.medalComboKill  &&  *EffectScripts.playerMedalComboKill) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalComboKill, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalMidAir  &&  *EffectScripts.playerMedalMidAir) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalMidAir, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalRevenge  &&  *EffectScripts.playerMedalRevenge) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalRevenge, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalFirstFrag  &&  *EffectScripts.playerMedalFirstFrag) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalFirstFrag, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalRampage  &&  *EffectScripts.playerMedalRampage) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalRampage, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalPerforated  &&  *EffectScripts.playerMedalPerforated) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalPerforated, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalAccuracy  &&  *EffectScripts.playerMedalAccuracy) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalAccuracy, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalHeadshot  &&  *EffectScripts.playerMedalHeadshot) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalHeadshot, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalPerfect  &&  *EffectScripts.playerMedalPerfect) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalPerfect, NULL);
+				return;
+			}
+			if (ci->clientRewards.shader == cgs.media.medalQuadGod  &&  *EffectScripts.playerMedalQuadGod) {
+				CG_ResetScriptVars();
+				CG_CopyPlayerDataToScriptData(cent);
+				ScriptVars.origin[2] += 48;
+				CG_RunQ3mmeScript(EffectScripts.playerMedalQuadGod, NULL);
+				return;
+			}
+
+			// no fx
+			CG_PlayerFloatSprite(cent, ci->clientRewards.shader);
+			return;
+		}
 	}
 
 	if ( cent->currentState.eFlags & EF_AWARD_IMPRESSIVE ) {
@@ -3529,7 +3632,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 			}
 		}
 
-		isTeammate = CG_IsTeammate(&cgs.clientinfo[cent->currentState.clientNum]);
+		isTeammate = CG_IsTeammate(ci);
 		if (CG_FreezeTagFrozen(cent->currentState.clientNum)  &&  isTeammate) {
 			s = cgs.media.frozenShader;
 			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
@@ -3578,13 +3681,40 @@ static void CG_PlayerSprites( centity_t *cent ) {
 				return;
 			} else {
 				if (cg_drawFriend.integer) {
+					byte bcolor[4];
+
 					s = cgs.media.friendShader;
-					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+					// other q3 mods might not have team info available
+					if (cg_drawFriendStyle.integer == 1  &&  ci->hasTeamInfo) {
+						//vec4_t fcolor;
+						//FIXME armor?
+						//CG_GetColorForHealth(ci->health, ci->armor, fcolor);
+						//CG_GetColorForHealth(ci->health, 0, fcolor);
+						Vector4Set(bcolor, 255, 255, 0, 255);
+						if (ci->health < 30) {
+							//FIXME what about friend hit shader which is red?
+							bcolor[1] = bcolor[2] = 0;  // red
+						} else if (ci->health < 66) {
+							bcolor[1] = 126;  // orange
+						} else if (ci->health < 100) {
+							bcolor[1] = 255;  // yellow
+						} else {  // ci->health >= 100
+							bcolor[2] = 125;  // light yellow
+						}
+
+						//Com_Printf("^3color: %d %d %d\n", bcolor[0], bcolor[1], bcolor[2]);
+					} else {
+						bcolor[0] = 255;
+						bcolor[1] = 255;
+						bcolor[2] = 0;
+						bcolor[3] = 255;
+					}
+					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, bcolor);
 				}
 				return;
 			}
 		}
-	}  // end is team game
+	}  // end 'is team game'
 
 	if (!(cent->currentState.eFlags & EF_DEAD)  &&  CG_IsEnemy(&cgs.clientinfo[cent->currentState.clientNum])) {
 		if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE  &&  cg_allowServerOverride.integer) {

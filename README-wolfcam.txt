@@ -908,7 +908,7 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
 * cg_muzzleFlash same as quakelive
 
-* auto vstr for weapons:  cg_weaponDefault, cg_weaponNone, cg_weaponGauntlet, cg_weaponMachineGun, cg_weaponShotgun, cg_weaponGrenadeLauncher, cg_weaponRocketLauncher, cg_weaponLightningGun, cg_weaponRailGun, cg_weaponPlasmaGun, cg_weaponBFG, cg_weaponGrapplingHook, cg_weaponNailGun, cg_weaponProximityLauncher, cg_weaponChainGun
+* auto vstr for weapons:  cg_weaponDefault, cg_weaponNone, cg_weaponGauntlet, cg_weaponMachineGun, cg_weaponShotgun, cg_weaponGrenadeLauncher, cg_weaponRocketLauncher, cg_weaponLightningGun, cg_weaponRailGun, cg_weaponPlasmaGun, cg_weaponBFG, cg_weaponGrapplingHook, cg_weaponNailGun, cg_weaponProximityLauncher, cg_weaponChainGun, cg_weaponHeavyMachineGun
 
   ex:  set cg_weaponRailGun "cg_fov 90; cg_drawCrosshair 1"
        set cg_weaponDefault "cg_fov 110; cg_drawCrosshair 4"
@@ -1141,7 +1141,7 @@ Velocity:
 
 * binds attached to F1 -> F12 can be used even when the console is open
 
-* cg_drawEntNumbers  1: draw the entity numbers above everything so you can easily id something like a rocket or grenade and then use /view <num> to lock the view onto it  2: with wall hack
+* cg_drawEntNumbers  1: draw the entity numbers above everything so you can easily id something like a rocket or grenade and then use /view <num> to lock the view onto it  2: with wall hack  3: with wall hack and also shows invisible entities
 
 * cg_drawEventNumbers  draw floating id number of events
   note:  explosions are EV_MISSILE_MISS  (miss player), check console
@@ -1317,6 +1317,7 @@ Available tokens:
 * cg_fadeStyle  (0:  fade before drawing hud, 1: fade after drawing hud)
 
 * cg_drawFriend 1  has wall hack effect like in ql, cg_drawFriend 2 to disable wall hack, 3 (default) to enable wall hack effect in freezetag.  2010-12-17:  In quakelive it seems it's only in offline bot matches that wall hack effect is disabled.
+* cg_drawFriendStyle  1 (default) friend icon color based on health, 2 yellow icon
 * cg_drawFriendMinWidth  (like quake live)
 * cg_drawFriendMaxWidth  (like quake live)
 * cg_drawHitFriendTime   (like quake live)
@@ -1849,7 +1850,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 	 simply based on the screen height and that elements can be drawn in
 	 one of three locations:
 
-                1                    2                       3
+               1                     2                     3
 
          ______________        ______________        ______________
 	 |****        |        |    ****    |        |        ****|
@@ -1892,6 +1893,20 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * r_anaglyph2d to allow or prevent splitting colors for the hud portion
 
+* cg_damagePlum  same as quakelive (string listing weapons that will show damage plums)  Also allows 'none' as token for kills without weapon numbers.  Ex:  "none g mg sg gl rl lg rg pg bfg gh cg ng pl hmg"
+* cg_damagePlumColorStyle  same as quake live (1: colored from white to red based on damage, 2:  crosshair hit colors for different damage amounts, 3:  colored based on weapon)
+* cg_damagePlumTarget (0: none, 1: (default) only for the viewed player, 2: all players)
+* cg_damagePlumTime  how long the damage plums last before they fade away
+* cg_damagePlumBounce  initial upward velocity
+* cg_damagePlumGravity  downward pull velocity
+* cg_damagePlumRandomVelocity  random range for extra left/right + forward/back velocity
+* cg_damagePlumFont
+* cg_damagePlumFontStyle
+* cg_damagePlumPointSize
+* cg_damagePlumScale
+* cg_damagePlumColor  if this is set it will override colors from cg_damagePlumColorStyle
+* cg_damagePlumAlpha
+
 * cg_drawFPS (2: higher precision and use given time in cgame not real time -- for debugging,  3:  use current frame value not average of last four)
 * cg_autoWriteConfig (0: don't automatically write q3config.cfg when a cvar changes (can be useful for testing configs), 1:  always write q3config.cfg when a cvar changes, 2:  (default) don't write q3config.cfg if a cvar is changed from fx scripting code or with /cvarinterp to prevent hard disk thrashing)
 
@@ -1906,8 +1921,9 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
   }
 
   Then 'set cg_adShader3 myad1' will replace the 3rd map ad with your custom pic.
-  You can use /devamp somemap  and then /gotoad [ad number]  to find how they are numbered.
+  You can use /devamp somemap  and then /gotoad [ad number]  to find how they are numbered.  cg_debugAds can also be used to locate advertisements.
 
+* cg_debugAds  adds depth hacked in game numbers to locate specific ads
 * cg_decal[num] to add custom decals/posters
   format is:  place to add decal, some point in front of the decal, orientation/angle, red, green, blue, alpha, size, shader name
 
@@ -2169,6 +2185,14 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   ex:  wolfcamql.exe +set cl_demoFileCheckSystem 1 +demo c:\tmp\dem6.dm_90
 
+* cg_itemTimers  in world quake live item timers (0: not visible, 1: visible, 2: visible with depth hack)
+* cg_itemTimersScale  size scale of in world timers
+* cg_itemTimersOffset  vertical displacement of in world timers
+* cg_itemTimersAlpha  transparency of in world timers
+* cg_drawPowerupRespawn  ingame indicator shown 10 seconds before powerup respawns
+* cg_drawPowerupRespawnScale  size of sprite
+* cg_drawPowerupRespawnOffset  vertical offset of the sprite
+* cg_drawPowerupRespawnAlpha  transparency of powerup indicator sprite
 
 ----------
 

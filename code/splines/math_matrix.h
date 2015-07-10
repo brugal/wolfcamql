@@ -84,7 +84,7 @@ ID_INLINE mat3_t::mat3_t() {
 }
 
 ID_INLINE mat3_t::mat3_t( float src[ 3 ][ 3 ] ) {
-	memcpy( mat, src, sizeof( src ) );
+	memcpy( mat, src, sizeof(float) * 3 * 3 );
 }
 
 ID_INLINE mat3_t::mat3_t( idVec3_t const &x, idVec3_t const &y, idVec3_t const &z ) {

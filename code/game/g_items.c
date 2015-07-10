@@ -348,6 +348,10 @@ RespawnItem
 ===============
 */
 void RespawnItem( gentity_t *ent ) {
+	if (!ent) {
+		Com_Printf("^1ERROR RespawnItem ent == null\n");
+		return;
+	}
 	// randomly select from teamed entities
 	if (ent->team) {
 		gentity_t	*master;
@@ -375,6 +379,7 @@ void RespawnItem( gentity_t *ent ) {
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->s.eFlags &= ~EF_NODRAW;
 	ent->r.svFlags &= ~SVF_NOCLIENT;
+
 	trap_LinkEntity (ent);
 
 	if ( ent->item->giType == IT_POWERUP ) {
@@ -476,6 +481,10 @@ void Touch_Item (gentity_t *ent, gentity_t *other, trace_t *trace) {
 		return;
 	}
 
+	// for ql timer pies
+	ent->s.time = level.time + respawn * 1000;
+	ent->s.time2 = respawn * 1000;
+
 	// play the normal pickup sound
 	if (predict) {
 		G_AddPredictableEvent( other, EV_ITEM_PICKUP, ent->s.modelindex );
@@ -536,7 +545,14 @@ void Touch_Item (gentity_t *ent, gentity_t *other, trace_t *trace) {
 	// picked up items still stay around, they just don't
 	// draw anything.  This allows respawnable items
 	// to be placed on movers.
-	ent->r.svFlags |= SVF_NOCLIENT;
+
+	// ql timer pies..  send no draw items to client
+
+	// commenting this creates double pickup sounds if cg_predict.c isn't changed
+	// ent->r.svFlags |= SVF_NOCLIENT;
+	if (ent->item->giType == IT_POWERUP) {
+		ent->r.svFlags |= SVF_BROADCAST;
+	}
 	ent->s.eFlags |= EF_NODRAW;
 	ent->r.contents = 0;
 
@@ -664,7 +680,7 @@ void FinishSpawningItem( gentity_t *ent ) {
 
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->touch = Touch_Item;
-	// useing an item causes it to respawn
+	// using an item causes it to respawn
 	ent->use = Use_Item;
 
 	if ( ent->spawnflags & 1 ) {

@@ -625,8 +625,16 @@ static void CG_ParseTdmStats (void)
 		return;
 	}
 
-	ts = &cg.tdmStats[clientNum];
+	//FIXME for freezetag not clientNum, it's index into cg.scores
+	// no, always index into scores
+	if (0) {  //(cgs.gametype == GT_FREEZETAG) {
+		ts = &cg.tdmStats[cg.scores[clientNum].client];
+	} else {  //FIXME double check
+		ts = &cg.tdmStats[clientNum];
+	}
+
 	ts->valid = qtrue;
+	// this isn't real clientNum, it's index into cg.scores
 	ts->clientNum = clientNum;
 	ts->selfKill = atoi(CG_Argv(2));
 	ts->tks = atoi(CG_Argv(3));
@@ -711,6 +719,7 @@ static void CG_ParseTeamInfo( void ) {
 		cgs.clientinfo[ clientNum ].armor = atoi( CG_Argv( i * 6 + 5 ) );
 		cgs.clientinfo[ clientNum ].curWeapon = atoi( CG_Argv( i * 6 + 6 ) );
 		cgs.clientinfo[ clientNum ].powerups = atoi( CG_Argv( i * 6 + 7 ) );
+		cgs.clientinfo[clientNum].hasTeamInfo = qtrue;
 	}
 }
 
@@ -3584,14 +3593,23 @@ static void CG_ParseScores_Tdm (void)
 
 	memset(&cg.tdmScore.playerScore, 0, sizeof(cg.tdmScore.playerScore));
 
+	// need cg.scores index for endgame stats
+	cg.numScores = 0;
+	cg.scoresValid = qtrue;
+
 	while (1) {
 		tdmPlayerScore_t *ts;
 		int clientNum;
 		int team;
+		score_t *oldScore;
 
 		if (!*CG_Argv(i)) {
 			break;
 		}
+
+		oldScore = &cg.scores[cg.numScores];
+		cg.numScores++;
+
 		clientNum = atoi(CG_Argv(i));  i++;
 		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
 			CG_Printf("^1CG_ParseScores_Tdm() invalid client number %d\n", clientNum);
@@ -3612,18 +3630,30 @@ static void CG_ParseScores_Tdm (void)
 		}
 
 		ts->clientNum = clientNum;
+		oldScore->client = clientNum;
 		ts->team = team;
+		oldScore->team = team;
 		ts->subscriber = atoi(CG_Argv(i));  i++;
 		ts->score = atoi(CG_Argv(i));  i++;
+		oldScore->score = ts->score;
 		ts->ping = atoi(CG_Argv(i));  i++;
+		oldScore->ping = ts->ping;
 		ts->time = atoi(CG_Argv(i));  i++;
+		oldScore->time = ts->time;
 		ts->kills = atoi(CG_Argv(i));  i++;
+		oldScore->frags = ts->kills;
 		ts->deaths = atoi(CG_Argv(i));  i++;
+		oldScore->deaths = ts->deaths;
 		ts->accuracy = atoi(CG_Argv(i));  i++;
+		oldScore->accuracy = ts->accuracy;
 		ts->bestWeapon = atoi(CG_Argv(i));  i++;
+		oldScore->bestWeapon = ts->bestWeapon;
 		ts->awardImpressive = atoi(CG_Argv(i));  i++;
+		oldScore->impressiveCount = ts->awardImpressive;
 		ts->awardExcellent = atoi(CG_Argv(i));  i++;
+		oldScore->excellentCount = ts->awardExcellent;
 		ts->awardHumiliation = atoi(CG_Argv(i));  i++;
+		oldScore->gauntletCount = ts->awardHumiliation;
 		ts->tks = atoi(CG_Argv(i));  i++;
 		ts->tkd = atoi(CG_Argv(i));  i++;
 		ts->damageDone = atoi(CG_Argv(i));  i++;
@@ -3686,12 +3716,20 @@ static void CG_ParseScores_Ca (void)
 		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
 	}
 
+	// need score indexes for endgame stats
+	cg.numScores = 0;
+	cg.scoresValid = qtrue;
+
 	while (1) {
 		int clientNum;
+		score_t *oldScore;
 
 		if (!*CG_Argv(i)) {
 			break;
 		}
+
+		oldScore = &cg.scores[cg.numScores];
+		cg.numScores++;
 
 		clientNum = atoi(CG_Argv(i));  i++;
 		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
@@ -3702,22 +3740,40 @@ static void CG_ParseScores_Ca (void)
 		ts = &cg.tdmScore.playerScore[clientNum];
 		ts->valid = qtrue;
 		ts->clientNum = clientNum;
+		oldScore->client = clientNum;
+
 		ts->team = atoi(CG_Argv(i));  i++;
+		oldScore->team = ts->team;
+
 		ts->subscriber = atoi(CG_Argv(i));  i++;
 		ts->score = atoi(CG_Argv(i));  i++;
+		oldScore->score = ts->score;
 		ts->ping = atoi(CG_Argv(i));  i++;
+		oldScore->ping = ts->ping;
 		ts->time = atoi(CG_Argv(i));  i++;
+		oldScore->time = ts->time;
 		ts->kills = atoi(CG_Argv(i));  i++;
+		oldScore->frags = ts->kills;
 		ts->deaths = atoi(CG_Argv(i));  i++;
+		oldScore->deaths = ts->deaths;
 		ts->accuracy = atoi(CG_Argv(i));  i++;
+		//oldScore->bestWeaponAccuracy = ts->accuracy;
+		oldScore->accuracy = ts->accuracy;
 		ts->bestWeapon = atoi(CG_Argv(i));  i++;
+		oldScore->bestWeapon = ts->bestWeapon;
 		ts->bestWeaponAccuracy = atoi(CG_Argv(i));  i++;
+		oldScore->bestWeaponAccuracy = ts->bestWeaponAccuracy;
 		ts->damageDone = atoi(CG_Argv(i));  i++;
 		ts->awardImpressive = atoi(CG_Argv(i));  i++;
+		oldScore->impressiveCount = ts->awardImpressive;
 		ts->awardExcellent = atoi(CG_Argv(i));  i++;
+		oldScore->excellentCount = ts->awardExcellent;
 		ts->awardHumiliation = atoi(CG_Argv(i));  i++;
+		oldScore->gauntletCount = ts->awardHumiliation;
 		ts->perfect = atoi(CG_Argv(i));  i++;
+		oldScore->perfect = ts->perfect;
 		ts->alive = atoi(CG_Argv(i));  i++;
+		oldScore->alive = ts->alive;
 
 		if (ts->team == TEAM_RED) {
 			redCount++;
@@ -3814,13 +3870,22 @@ static void CG_ParseScores_Ctf (void)
 		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
 	}
 
+	// need score index for endgame stats
+	cg.numScores = 0;
+	cg.scoresValid = qtrue;
+
 	while (1) {
 		ctfPlayerScore_t *s;
 		int clientNum;
+		score_t *oldScore;
 
 		if (!*CG_Argv(i)) {
 			break;
 		}
+
+		oldScore = &cg.scores[cg.numScores];
+		cg.numScores++;
+
 		clientNum = atoi(CG_Argv(i));  i++;
 		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
 			CG_Printf("^1CG_ParseScores_Ctf() invalid client number %d\n", clientNum);
@@ -3829,7 +3894,10 @@ static void CG_ParseScores_Ctf (void)
 
 		s = &cg.ctfScore.playerScore[clientNum];
 		s->clientNum = clientNum;
+		oldScore->client = clientNum;
+
 		s->team = atoi(CG_Argv(i));  i++;
+		oldScore->team = s->team;
 
 		if (s->team == TEAM_RED  ||  s->team == TEAM_BLUE) {
 			s->valid = qtrue;
@@ -3839,21 +3907,37 @@ static void CG_ParseScores_Ctf (void)
 
 		s->subscriber = atoi(CG_Argv(i));  i++;
 		s->score = atoi(CG_Argv(i));  i++;
+		oldScore->score = s->score;
 		s->ping = atoi(CG_Argv(i));  i++;
+		oldScore->ping = s->ping;
 		s->time = atoi(CG_Argv(i));  i++;
+		oldScore->time = s->time;
 		s->kills = atoi(CG_Argv(i));  i++;
+		oldScore->frags = s->kills;
 		s->deaths = atoi(CG_Argv(i));  i++;
+		oldScore->deaths = s->deaths;
 		s->powerups = atoi(CG_Argv(i));  i++;
+		oldScore->powerups = s->powerups;
 		s->accuracy = atoi(CG_Argv(i));  i++;
+		oldScore->accuracy = s->accuracy;
 		s->bestWeapon = atoi(CG_Argv(i));  i++;
+		oldScore->bestWeapon = s->bestWeapon;
 		s->awardImpressive = atoi(CG_Argv(i));  i++;
+		oldScore->impressiveCount = s->awardImpressive;
 		s->awardExcellent = atoi(CG_Argv(i));  i++;
+		oldScore->excellentCount = s->awardExcellent;
 		s->awardHumiliation = atoi(CG_Argv(i));  i++;
+		oldScore->gauntletCount = s->awardHumiliation;
 		s->awardDefend = atoi(CG_Argv(i));  i++;
+		oldScore->defendCount = s->awardDefend;
 		s->awardAssist = atoi(CG_Argv(i));  i++;
+		oldScore->assistCount = s->awardAssist;
 		s->captures = atoi(CG_Argv(i));  i++;
+		oldScore->captures = s->captures;
 		s->perfect = atoi(CG_Argv(i));  i++;
+		oldScore->perfect = s->perfect;
 		s->alive = atoi(CG_Argv(i));  i++;
+		oldScore->alive = s->alive;
 
 		if (s->team == TEAM_RED) {
 			redCount++;
@@ -3993,7 +4077,7 @@ static void CG_ParseScores_Rr (void)
 
 static void CG_ParseScores_Race (void)
 {
-	int		i;
+	int i;
 	int n;
 
 	// they forgot score->team ?
@@ -4054,6 +4138,175 @@ static void CG_ParseScores_Race (void)
 		//FIXME quakelive sends spec scores as well and doesn't report them
 		// in number of scores send, can ignore?
 		//CG_Printf("^1CG_ParseScores_Race() argc (%d) != %d\n", CG_Argc(), i);
+	}
+}
+
+static void CG_ParseScores_Ft (void)
+{
+	int i;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+
+	//memset(&cg.tdmScore, 0, sizeof(cg.tdmScore));
+
+	cg.tdmScore.valid = qtrue;
+	cg.tdmScore.version = 3;
+
+	cg.tdmScore.rra = atoi(CG_Argv(1));
+	cg.tdmScore.rya = atoi(CG_Argv(2));
+	cg.tdmScore.rga = atoi(CG_Argv(3));
+	cg.tdmScore.rmh = atoi(CG_Argv(4));
+	cg.tdmScore.rquad = atoi(CG_Argv(5));
+	cg.tdmScore.rbs = atoi(CG_Argv(6));
+	cg.tdmScore.rregen = atoi(CG_Argv(7));
+	cg.tdmScore.rhaste = atoi(CG_Argv(8));
+	cg.tdmScore.rinvis = atoi(CG_Argv(9));
+
+	cg.tdmScore.rquadTime = atoi(CG_Argv(10));
+	cg.tdmScore.rbsTime = atoi(CG_Argv(11));
+	cg.tdmScore.rregenTime = atoi(CG_Argv(12));
+	cg.tdmScore.rhasteTime = atoi(CG_Argv(13));
+	cg.tdmScore.rinvisTime = atoi(CG_Argv(14));
+
+	cg.tdmScore.bra = atoi(CG_Argv(15));
+	cg.tdmScore.bya = atoi(CG_Argv(16));
+	cg.tdmScore.bga = atoi(CG_Argv(17));
+	cg.tdmScore.bmh = atoi(CG_Argv(18));
+	cg.tdmScore.bquad = atoi(CG_Argv(19));
+	cg.tdmScore.bbs = atoi(CG_Argv(20));
+	cg.tdmScore.bregen = atoi(CG_Argv(21));
+	cg.tdmScore.bhaste = atoi(CG_Argv(22));
+	cg.tdmScore.binvis = atoi(CG_Argv(23));
+
+	cg.tdmScore.bquadTime = atoi(CG_Argv(24));
+	cg.tdmScore.bbsTime = atoi(CG_Argv(25));
+	cg.tdmScore.bregenTime = atoi(CG_Argv(26));
+	cg.tdmScore.bhasteTime = atoi(CG_Argv(27));
+	cg.tdmScore.binvisTime = atoi(CG_Argv(28));
+
+	cg.tdmScore.numPlayerScores = atoi(CG_Argv(29));
+
+	i = 30;
+
+	// can't use version check because some servers (sampler?) are running
+	// old server binaries with new cgame dlls
+
+	// 16
+	//if (CG_CheckQlVersion(0, 1, 0, 728)) {
+	if (1) {  //(CG_Argc() > (cg.tdmScore.numPlayerScores * 16 + 31)) {
+		cg.teamScores[0] = atoi(CG_Argv(i));  i++;
+		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
+	}
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+
+	memset(&cg.tdmScore.playerScore, 0, sizeof(cg.tdmScore.playerScore));
+
+	cg.numScores = 0;
+
+	// 19 per player?
+	while (1) {
+		tdmPlayerScore_t *ts;
+		int clientNum;
+		int team;
+		score_t *oldScore;
+
+		if (!*CG_Argv(i)) {
+			break;
+		}
+
+		// end game scoreboard stats uses index into cg.scores instead of
+		// client number
+		oldScore = &cg.scores[cg.numScores];
+		cg.numScores++;
+
+		clientNum = atoi(CG_Argv(i));  i++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Ft() invalid client number %d\n", clientNum);
+			return;
+		}
+
+		oldScore->client = clientNum;
+
+		team = atoi(CG_Argv(i));  i++;
+
+		//Com_Printf("client %d  team %d\n", clientNum, team);
+
+		ts = &cg.tdmScore.playerScore[clientNum];
+
+		if (team == TEAM_RED  ||  team == TEAM_BLUE) {
+			ts->valid = qtrue;
+		} else {
+			//FIXME maybe??
+			ts->valid = qfalse;
+		}
+
+		ts->clientNum = clientNum;  // 32
+		ts->team = team;  // 33
+		oldScore->team = team;
+		ts->subscriber = atoi(CG_Argv(i));  i++;  // 34  //FIXME no, or unused
+		ts->score = atoi(CG_Argv(i));  i++;  // 35
+		oldScore->score = ts->score;
+		ts->ping = atoi(CG_Argv(i));  i++;  // 36
+		oldScore->ping = ts->ping;
+		ts->time = atoi(CG_Argv(i));  i++;  // 37
+		oldScore->time = ts->time;
+		ts->kills = atoi(CG_Argv(i));  i++;  // 38
+		oldScore->frags = ts->kills;
+		ts->deaths = atoi(CG_Argv(i));  i++;  // 39
+		oldScore->deaths = ts->deaths;
+		ts->accuracy = atoi(CG_Argv(i));  i++;  // 40
+		oldScore->accuracy = ts->accuracy;
+		ts->bestWeapon = atoi(CG_Argv(i));  i++;  // 41
+		oldScore->bestWeapon = ts->bestWeapon;
+		ts->awardImpressive = atoi(CG_Argv(i));  i++;  // 42
+		oldScore->impressiveCount = ts->awardImpressive;
+		ts->awardExcellent = atoi(CG_Argv(i));  i++;  // 43
+		oldScore->excellentCount = ts->awardExcellent;
+		ts->awardHumiliation = atoi(CG_Argv(i));  i++;  // 44
+		oldScore->gauntletCount = ts->awardHumiliation;
+		ts->thaws = atoi(CG_Argv(i));  i++;  // 45
+		ts->tkd = atoi(CG_Argv(i));  i++;  // 46
+
+		//Com_Printf("cn %d  new1  %d  '%s'\n", clientNum, atoi(CG_Argv(i)), cgs.clientinfo[clientNum].name);
+		i++;  //FIXME unknown?
+		ts->damageDone = atoi(CG_Argv(i));  i++;  // 47, looks like 48
+
+		ts->alive = atoi(CG_Argv(i));  i++;
+		oldScore->alive = ts->alive;
+		//Com_Printf("cn %d  new2  %d\n", clientNum, atoi(CG_Argv(i)));
+		//i++;  //FIXME ?
+
+		//FIXME one of the missing ones is sp->alive
+		//FIXME the other is thaws
+
+		if (ts->team == TEAM_RED) {
+			redCount++;
+			redTotalPing += ts->ping;
+		} else if (ts->team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += ts->ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseScores_Ft() argc (%d) != %d\n", CG_Argc(), i);
 	}
 }
 
@@ -4477,6 +4730,10 @@ static void CG_ServerCommand( void ) {
 			CG_ParseScores_Race();
 			return;
 		}
+		if (!Q_stricmp(cmd, "scores_ft")) {
+			CG_ParseScores_Ft();
+			return;
+		}
 
 		if (!Q_stricmp(cmd, "dscores")) {
 			CG_ParseDScores();
@@ -4529,7 +4786,8 @@ static void CG_ServerCommand( void ) {
 			return;
 		}
 
-		if (!strcmp(cmd, "adscores")) {
+		// 2015-07-06 renamed scores_ad
+		if (!strcmp(cmd, "adscores")  ||  !strcmp(cmd, "scores_ad")) {
 			CG_ParseCtfsRoundScores();
 			return;
 		}

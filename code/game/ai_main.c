@@ -1180,6 +1180,11 @@ int BotAISetupClient(int client, struct bot_settings_s *settings, qboolean resta
 	if (!botstates[client]) botstates[client] = G_Alloc(sizeof(bot_state_t));
 	bs = botstates[client];
 
+	if (!bs) {
+		BotAI_Print(PRT_FATAL, "BotAISetupClient: G_Alloc() failed\n");
+		return qfalse;
+	}
+
 	if (bs && bs->inuse) {
 		BotAI_Print(PRT_FATAL, "BotAISetupClient: client %d already setup\n", client);
 		return qfalse;
@@ -1286,7 +1291,7 @@ int BotAIShutdownClient(int client, qboolean restart) {
 	}
 
 	trap_BotFreeMoveState(bs->ms);
-	//free the goal state`			
+	//free the goal state
 	trap_BotFreeGoalState(bs->gs);
 	//free the chat file
 	trap_BotFreeChatState(bs->cs);

@@ -731,7 +731,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			token = COM_ParseExt( text, qfalse );
 			if ( !token[0] )
 			{
-				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for 'animMmap' keyword in shader '%s'\n", shader.name );
+				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for 'animMap' keyword in shader '%s'\n", shader.name );
 				return qfalse;
 			}
 			stage->bundle[0].imageAnimationSpeed = atof( token );
@@ -761,7 +761,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			token = COM_ParseExt( text, qfalse );
 			if ( !token[0] )
 			{
-				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for 'videoMmap' keyword in shader '%s'\n", shader.name );
+				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for 'videoMap' keyword in shader '%s'\n", shader.name );
 				return qfalse;
 			}
 			stage->bundle[0].videoMapHandle = ri.CIN_PlayCinematic( token, 0, 0, 256, 256, (CIN_loop | CIN_silent | CIN_shader));
@@ -1043,8 +1043,8 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				token = COM_ParseExt( text, qfalse );
 				if ( token[0] == 0 )
 					break;
-				strcat( buffer, token );
-				strcat( buffer, " " );
+				Q_strcat( buffer, sizeof (buffer), token );
+				Q_strcat( buffer, sizeof (buffer), " " );
 			}
 
 			ParseTexMod( buffer, stage );
@@ -1526,7 +1526,7 @@ static qboolean ParseShader( char **text )
 		//}
 
 		// sun parms
-		else if ( !Q_stricmp( token, "q3map_sun" ) ) {
+		else if ( !Q_stricmp( token, "q3map_sun" ) || !Q_stricmp( token, "q3map_sunExt" ) ) {
 			float	a, b;
 
 			//Com_Printf("sunlight\n");
@@ -1555,6 +1555,9 @@ static qboolean ParseShader( char **text )
 			tr.sunDirection[0] = cos( a ) * cos( b );
 			tr.sunDirection[1] = sin( a ) * cos( b );
 			tr.sunDirection[2] = sin( b );
+
+			SkipRestOfLine( text );
+			continue;
 		}
 		else if ( !Q_stricmp( token, "deformVertexes" ) ) {
 			ParseDeform( text );
@@ -2227,6 +2230,27 @@ static void VertexLightingCollapse( void ) {
 }
 
 /*
+===============
+InitShader
+===============
+*/
+
+static void InitShader( const char *name, int lightmapIndex ) {
+	int i;
+
+	// clear the global shader
+	Com_Memset( &shader, 0, sizeof( shader ) );
+	Com_Memset( &stages, 0, sizeof( stages ) );
+
+	Q_strncpyz( shader.name, name, sizeof( shader.name ) );
+	shader.lightmapIndex = lightmapIndex;
+
+	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
+		stages[i].bundle[0].texMods = texMods[i];
+	}
+}
+
+/*
 =========================
 FinishShader
 
@@ -2560,7 +2584,7 @@ extern char LoadingModelName[MAX_QPATH];
 
 shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImage ) {
 	char		strippedName[MAX_QPATH];
-	int			i, hash;
+	int			hash;
 	char		*shaderText;
 	image_t		*image;
 	shader_t	*sh;
@@ -2651,14 +2675,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		R_SyncRenderThread();
 	}
 
-	// clear the global shader
-	Com_Memset( &shader, 0, sizeof( shader ) );
-	Com_Memset( &stages, 0, sizeof( stages ) );
-	Q_strncpyz(shader.name, strippedName, sizeof(shader.name));
-	shader.lightmapIndex = lightmapIndex;
-	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
-		stages[i].bundle[0].texMods = texMods[i];
-	}
+	InitShader( strippedName, lightmapIndex );
 
 	// FIXME: set these "need" values apropriately
 	shader.needsNormal = qtrue;
@@ -2785,7 +2802,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 
 
 qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_t *image, qboolean mipRawImage) {
-	int			i, hash;
+	int			hash;
 	shader_t	*sh;
 
 	hash = generateHashValue(name, FILE_HASH_SIZE);
@@ -2819,14 +2836,7 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 		R_SyncRenderThread();
 	}
 
-	// clear the global shader
-	Com_Memset( &shader, 0, sizeof( shader ) );
-	Com_Memset( &stages, 0, sizeof( stages ) );
-	Q_strncpyz(shader.name, name, sizeof(shader.name));
-	shader.lightmapIndex = lightmapIndex;
-	for ( i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
-		stages[i].bundle[0].texMods = texMods[i];
-	}
+	InitShader( name, lightmapIndex );
 
 	// FIXME: set these "need" values apropriately
 	shader.needsNormal = qtrue;
@@ -3304,12 +3314,7 @@ static void CreateInternalShaders( void ) {
 	tr.numShaders = 0;
 
 	// init the default shader
-	Com_Memset( &shader, 0, sizeof( shader ) );
-	Com_Memset( &stages, 0, sizeof( stages ) );
-
-	Q_strncpyz( shader.name, "<default>", sizeof( shader.name ) );
-
-	shader.lightmapIndex = LIGHTMAP_NONE;
+	InitShader( "<default>", LIGHTMAP_NONE );
 	stages[0].bundle[0].image[0] = tr.defaultImage;
 	stages[0].active = qtrue;
 	stages[0].stateBits = GLS_DEFAULT;

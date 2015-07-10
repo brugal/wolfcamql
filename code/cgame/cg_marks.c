@@ -53,7 +53,7 @@ CG_FreeMarkPoly
 ==================
 */
 static void CG_FreeMarkPoly( markPoly_t *le ) {
-	if ( !le->prevMark ) {
+	if ( !le->prevMark  ||  !le->nextMark ) {
 		CG_Error( "CG_FreeMarkPoly: not active" );
 	}
 

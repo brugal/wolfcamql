@@ -308,6 +308,12 @@ typedef struct centity_s {
 
 } centity_t;
 
+typedef struct {
+	int startTime;
+	qhandle_t shader;
+	sfxHandle_t sfx;
+} clientRewards_t;
+
 
 //======================================================================
 
@@ -452,6 +458,10 @@ typedef struct {
 	qboolean scoreValid;
 
 	//double hitTime;
+
+	qboolean hasTeamInfo;
+	clientRewards_t clientRewards;
+
 } clientInfo_t;
 
 
@@ -612,6 +622,7 @@ typedef struct {
 	qboolean perfect;
 	int tks;
 	int tkd;
+	int thaws;
 	int damageDone;
 	qboolean alive;
 } tdmPlayerScore_t;
@@ -1491,12 +1502,17 @@ typedef struct {
 
 	qboolean fontsLoaded;
 	qboolean menusLoaded;
+
+	qboolean weaponDamagePlum[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
+	int damagePlumModificationCount;
 } cg_t;
 
 
 #define NUM_IMPRESSIVE_SOUNDS 3
 #define NUM_EXCELLENT_SOUNDS 3
 #define NUM_HUMILIATION_SOUNDS 3
+
+#define NUM_REWARD_VARIATIONS 3
 
 // all of the model, shader, and sound references that are
 // loaded at gamestate time are stored in cgMedia_t
@@ -1754,6 +1770,21 @@ typedef struct {
 	qhandle_t	medalAssist;
 	qhandle_t	medalCapture;
 	qhandle_t headShotIcon;
+
+	// new ql awards
+	qhandle_t medalComboKill;
+	qhandle_t medalDamage;
+	qhandle_t medalFirstFrag;
+	qhandle_t medalAccuracy;
+	qhandle_t medalPerfect;
+	qhandle_t medalPerforated;
+	qhandle_t medalQuadGod;
+	qhandle_t medalRampage;
+	qhandle_t medalRevenge;
+	qhandle_t medalHeadshot;
+	qhandle_t medalTiming;
+	qhandle_t medalMidAir;
+
 	qhandle_t	adbox1x1;
 	qhandle_t	adbox2x1;
 	qhandle_t	adbox2x1_trans;
@@ -1869,6 +1900,20 @@ typedef struct {
 	sfxHandle_t firstImpressiveSound;
 	sfxHandle_t firstExcellentSound;
 	sfxHandle_t firstHumiliationSound;
+
+	// new ql rewards
+	sfxHandle_t comboKillRewardSound[NUM_REWARD_VARIATIONS];
+	sfxHandle_t damageRewardSound;
+	sfxHandle_t firstFragRewardSound;
+	sfxHandle_t accuracyRewardSound;
+	sfxHandle_t perfectRewardSound;
+	sfxHandle_t perforatedRewardSound;
+	sfxHandle_t quadGodRewardSound;
+	sfxHandle_t rampageRewardSound[NUM_REWARD_VARIATIONS];
+	sfxHandle_t revengeRewardSound[NUM_REWARD_VARIATIONS];
+	sfxHandle_t timingRewardSound;
+	sfxHandle_t midAirRewardSound[NUM_REWARD_VARIATIONS];
+	sfxHandle_t headshotRewardSound;
 
 	sfxHandle_t takenLeadSound;
 	sfxHandle_t tiedLeadSound;
@@ -2061,6 +2106,8 @@ typedef struct {
 	int proxWarningFontModificationCount;
 	fontInfo_t dominationPointStatusFont;
 	int dominationPointStatusFontModificationCount;
+	fontInfo_t damagePlumFont;
+	int damagePlumFontModificationCount;
 
 	qhandle_t	gametypeIcon[GT_MAX_GAME_TYPE];
 	qhandle_t singleShader;
@@ -2077,6 +2124,22 @@ typedef struct {
 	qhandle_t rocketAimShader;
 	qhandle_t bboxShader;
 	qhandle_t bboxShader_nocull;
+
+	qhandle_t silverKeyIcon;
+	qhandle_t goldKeyIcon;
+	qhandle_t masterKeyIcon;
+
+	qhandle_t timerSlice5;
+	qhandle_t timerSlice5Current;
+	qhandle_t timerSlice7;
+	qhandle_t timerSlice7Current;
+	qhandle_t timerSlice12;
+	qhandle_t timerSlice12Current;
+	qhandle_t timerSlice24;
+	qhandle_t timerSlice24Current;
+	qhandle_t wcTimerSlice5;
+	qhandle_t wcTimerSlice5Current;
+	qhandle_t powerupIncoming;
 
 	int activeCheckPointRaceFlagModel;
 
@@ -2271,6 +2334,9 @@ typedef struct {
 	qboolean armorTiered;
 
 	int numberOfRaceCheckPoints;
+
+	int numOverTimes;
+
 } cgs_t;
 
 
@@ -2347,6 +2413,11 @@ extern vmCvar_t cg_drawClientItemTimerIconYoffset;
 extern vmCvar_t cg_drawClientItemTimerWideScreen;
 
 extern vmCvar_t cg_itemSpawnPrint;
+
+extern vmCvar_t cg_itemTimers;
+extern vmCvar_t cg_itemTimersScale;
+extern vmCvar_t cg_itemTimersOffset;
+extern vmCvar_t cg_itemTimersAlpha;
 
 extern vmCvar_t cg_drawFPS;
 extern vmCvar_t cg_drawFPSNoText;
@@ -2625,6 +2696,7 @@ extern	vmCvar_t		cg_blood;
 extern	vmCvar_t		cg_predictItems;
 extern	vmCvar_t		cg_deferPlayers;
 extern	vmCvar_t		cg_drawFriend;
+extern vmCvar_t cg_drawFriendStyle;
 extern vmCvar_t cg_drawFriendMinWidth;
 extern vmCvar_t cg_drawFriendMaxWidth;
 extern vmCvar_t cg_drawFoe;
@@ -2639,6 +2711,20 @@ extern	vmCvar_t		cg_noVoiceChats;
 extern	vmCvar_t		cg_noVoiceText;
 #endif
 extern  vmCvar_t		cg_scorePlums;
+
+extern vmCvar_t cg_damagePlum;
+extern vmCvar_t cg_damagePlumColorStyle;
+extern vmCvar_t cg_damagePlumTarget;
+extern vmCvar_t cg_damagePlumTime;
+extern vmCvar_t cg_damagePlumBounce;
+extern vmCvar_t cg_damagePlumGravity;
+extern vmCvar_t cg_damagePlumRandomVelocity;
+extern vmCvar_t cg_damagePlumFont;
+extern vmCvar_t cg_damagePlumFontStyle;
+extern vmCvar_t cg_damagePlumPointSize;
+extern vmCvar_t cg_damagePlumScale;
+extern vmCvar_t cg_damagePlumColor;
+extern vmCvar_t cg_damagePlumAlpha;
 
 extern	vmCvar_t		cg_smoothClients;
 extern	vmCvar_t		pmove_fixed;
@@ -2714,6 +2800,12 @@ extern vmCvar_t cg_drawOriginWideScreen;
 extern vmCvar_t	cg_drawScores;
 extern vmCvar_t cg_drawPlayersLeft;
 extern vmCvar_t cg_drawPowerups;
+
+extern vmCvar_t cg_drawPowerupRespawn;
+extern vmCvar_t cg_drawPowerupRespawnScale;
+extern vmCvar_t cg_drawPowerupRespawnOffset;
+extern vmCvar_t cg_drawPowerupRespawnAlpha;
+//FIXME time option
 
 extern vmCvar_t cg_drawItemPickups;
 extern vmCvar_t cg_drawItemPickupsX;
@@ -3080,6 +3172,7 @@ extern vmCvar_t cg_weaponGrapplingHook;
 extern vmCvar_t cg_weaponNailGun;
 extern vmCvar_t cg_weaponProximityLauncher;
 extern vmCvar_t cg_weaponChainGun;
+extern vmCvar_t cg_weaponHeavyMachineGun;
 
 extern vmCvar_t cg_spawnArmorTime;
 extern vmCvar_t cg_fxfile;
@@ -3163,6 +3256,7 @@ extern vmCvar_t cg_whShader;
 
 extern vmCvar_t cg_playerShader;
 extern vmCvar_t cg_adShaderOverride;
+extern vmCvar_t cg_debugAds;
 
 extern vmCvar_t cg_firstPersonSwitchSound;
 extern vmCvar_t cg_proxMineTick;

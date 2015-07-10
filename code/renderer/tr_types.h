@@ -100,6 +100,7 @@ the bits are allocated as follows:
 
 #define	RF_SHADOW_PLANE		0x0100		// use refEntity->shadowPlane
 #define	RF_WRAP_FRAMES		0x0200		// mod the model frames by the maxframes to allow continuous
+// animation without needing to know the frame count
 
 // refdef flags
 #define RDF_NOWORLDMODEL	0x0001		// used for player configuration screen
@@ -174,7 +175,12 @@ typedef struct {
 	float		rotation;
 	qboolean	useScale;
 	float width;
-	//float height;
+	float height;
+
+	// stretch sprites
+	//FIXME uses other variables that aren't used
+	qboolean stretch;
+	float s1, t1, s2, t2;
 } refEntity_t;
 
 

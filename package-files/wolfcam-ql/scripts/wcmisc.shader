@@ -61,3 +61,27 @@ wc/bloodMark {
         alphagen vertex
     }
 }
+
+wc/slice5
+{
+	nopicmip
+	novlcollapse
+	{
+		map gfx/2d/timer/slice_5.tga
+		blendfunc blend
+		rgbgen vertex
+		alphagen vertex
+	}
+}
+
+wc/slice5Current
+{
+	nopicmip
+	novlcollapse
+	{
+		map gfx/2d/timer/slice_5.tga
+		blendfunc blend
+		rgbgen vertex
+		alphaGen wave sin 1 .5 0 5
+	}
+}

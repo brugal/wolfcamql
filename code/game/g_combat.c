@@ -245,7 +245,7 @@ void GibEntity( gentity_t *self, int killer ) {
 	//if this entity still has kamikaze
 	if (self->s.eFlags & EF_KAMIKAZE) {
 		// check if there is a kamikaze timer around for this owner
-		for (i = 0; i < MAX_GENTITIES; i++) {
+		for (i = 0; i < level.num_entities; i++) {
 			ent = &g_entities[i];
 			if (!ent->inuse)
 				continue;
@@ -793,7 +793,7 @@ int G_InvulnerabilityEffect( gentity_t *targ, vec3_t dir, vec3_t point, vec3_t i
 #endif
 /*
 ============
-T_Damage
+G_Damage
 
 targ		entity that is being damaged
 inflictor	entity that is causing the damage
@@ -1036,6 +1036,20 @@ void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker,
 		// set the last client who damaged the target
 		targ->client->lasthurt_client = attacker->s.number;
 		targ->client->lasthurt_mod = mod;
+	}
+
+	if (take) {
+		gentity_t *tent;
+
+		// EV_DAMAGEPLUM
+		if (targ->client  &&  attacker->client) {
+			tent = G_TempEntity(targ->r.currentOrigin, EV_DAMAGEPLUM);
+			tent->s.clientNum = attacker->s.number;
+			tent->s.generic1 = BG_ModToWeapon(mod);
+			tent->s.time = take;
+
+			//G_Printf("^2 damage plum %d\n", tent->s.clientNum);
+		}
 	}
 
 	// do the damage

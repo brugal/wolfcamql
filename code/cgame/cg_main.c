@@ -200,6 +200,11 @@ vmCvar_t cg_drawClientItemTimerWideScreen;
 
 vmCvar_t cg_itemSpawnPrint;
 
+vmCvar_t cg_itemTimers;
+vmCvar_t cg_itemTimersScale;
+vmCvar_t cg_itemTimersOffset;
+vmCvar_t cg_itemTimersAlpha;
+
 vmCvar_t	cg_drawFPS;
 vmCvar_t cg_drawFPSNoText;
 vmCvar_t	cg_drawFPSX;
@@ -465,6 +470,7 @@ vmCvar_t cg_drawJumpSpeedsTimeAlpha;
 vmCvar_t cg_drawJumpSpeedsTimeWideScreen;
 
 vmCvar_t	cg_drawFriend;
+vmCvar_t cg_drawFriendStyle;
 vmCvar_t cg_drawFriendMinWidth;
 vmCvar_t cg_drawFriendMaxWidth;
 vmCvar_t cg_drawFoe;
@@ -481,6 +487,21 @@ vmCvar_t	cg_noVoiceText;
 vmCvar_t	cg_hudFiles;
 //vmCvar_t	wolfcam_hudFiles;
 vmCvar_t 	cg_scorePlums;
+
+vmCvar_t cg_damagePlum;
+vmCvar_t cg_damagePlumColorStyle;
+vmCvar_t cg_damagePlumTarget;
+vmCvar_t cg_damagePlumTime;
+vmCvar_t cg_damagePlumBounce;
+vmCvar_t cg_damagePlumGravity;
+vmCvar_t cg_damagePlumRandomVelocity;
+vmCvar_t cg_damagePlumFont;
+vmCvar_t cg_damagePlumFontStyle;
+vmCvar_t cg_damagePlumPointSize;
+vmCvar_t cg_damagePlumScale;
+vmCvar_t cg_damagePlumColor;
+vmCvar_t cg_damagePlumAlpha;
+
 
 vmCvar_t 	cg_smoothClients;
 vmCvar_t	pmove_fixed;
@@ -558,6 +579,11 @@ vmCvar_t cg_drawOriginWideScreen;
 vmCvar_t cg_drawScores;
 vmCvar_t cg_drawPlayersLeft;
 vmCvar_t cg_drawPowerups;
+
+vmCvar_t cg_drawPowerupRespawn;
+vmCvar_t cg_drawPowerupRespawnScale;
+vmCvar_t cg_drawPowerupRespawnOffset;
+vmCvar_t cg_drawPowerupRespawnAlpha;
 
 vmCvar_t cg_drawItemPickups;
 vmCvar_t cg_drawItemPickupsX;
@@ -915,6 +941,7 @@ vmCvar_t cg_weaponGrapplingHook;
 vmCvar_t cg_weaponNailGun;
 vmCvar_t cg_weaponProximityLauncher;
 vmCvar_t cg_weaponChainGun;
+vmCvar_t cg_weaponHeavyMachineGun;
 
 vmCvar_t cg_spawnArmorTime;
 vmCvar_t cg_fxfile;
@@ -999,6 +1026,7 @@ vmCvar_t cg_whShader;
 
 vmCvar_t cg_playerShader;
 vmCvar_t cg_adShaderOverride;
+vmCvar_t cg_debugAds;
 
 vmCvar_t cg_firstPersonSwitchSound;
 vmCvar_t cg_proxMineTick;
@@ -1158,8 +1186,13 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_drawClientItemTimerIconXoffset), "-55", CVAR_ARCHIVE },
 	{ cvp(cg_drawClientItemTimerIconYoffset), "0", CVAR_ARCHIVE },
 	{ cvp(cg_drawClientItemTimerWideScreen), "3", CVAR_ARCHIVE },
-	
+
 	{ &cg_itemSpawnPrint, "cg_itemSpawnPrint", "0", CVAR_ARCHIVE },
+
+	{ cvp(cg_itemTimers), "1", CVAR_ARCHIVE },
+	{ cvp(cg_itemTimersScale), "1.3", CVAR_ARCHIVE },
+	{ cvp(cg_itemTimersOffset), "8.0", CVAR_ARCHIVE },
+	{ cvp(cg_itemTimersAlpha), "255", CVAR_ARCHIVE },
 
 	{ &cg_drawFPS, "cg_drawFPS", "1", CVAR_ARCHIVE },
 	{ &cg_drawFPSNoText, "cg_drawFPSNoText", "0", CVAR_ARCHIVE },
@@ -1424,6 +1457,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 	{ &cg_stats, "cg_stats", "0", 0 },
 	{ &cg_drawFriend, "cg_drawFriend", "3", CVAR_ARCHIVE },
+	{ cvp(cg_drawFriendStyle), "1", CVAR_ARCHIVE },
 	{ &cg_drawFriendMinWidth, "cg_drawFriendMinWidth", "4.0", CVAR_ARCHIVE },
 	{ &cg_drawFriendMaxWidth, "cg_drawFriendMaxWidth", "24.0", CVAR_ARCHIVE },
 	{ &cg_drawFoe, "cg_drawFoe", "0", CVAR_ARCHIVE },
@@ -1463,6 +1497,21 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_timescaleFadeSpeed, "cg_timescaleFadeSpeed", "0", 0},
 	{ &cg_timescale, "timescale", "1", 0},
 	{ &cg_scorePlums, "cg_scorePlums", "1", CVAR_USERINFO | CVAR_ARCHIVE},
+
+	{ cvp(cg_damagePlum), "none g mg sg gl rl lg rg pg bfg gh cg ng pl hmg", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumColorStyle), "1", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumTarget), "1", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumTime), "1000", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumBounce), "120", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumGravity), "250", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumRandomVelocity), "70", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumFont), "", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumFontStyle), "0", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumPointSize), "24", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumScale), "1.0", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumColor), "", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumAlpha), "255", CVAR_ARCHIVE },
+
 	{ &cg_smoothClients, "cg_smoothClients", "0", CVAR_USERINFO | CVAR_ARCHIVE},
 	{ &cg_cameraMode, "com_cameraMode", "0", CVAR_CHEAT},
 
@@ -1520,6 +1569,11 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawScores, "cg_drawScores", "1", CVAR_ARCHIVE },
 	{ &cg_drawPlayersLeft, "cg_drawPlayersLeft", "1", CVAR_ARCHIVE },
 	{ &cg_drawPowerups, "cg_drawPowerups", "1", CVAR_ARCHIVE },
+
+	{ cvp(cg_drawPowerupRespawn), "1", CVAR_ARCHIVE },
+	{ cvp(cg_drawPowerupRespawnScale), "1.0", CVAR_ARCHIVE },
+	{ cvp(cg_drawPowerupRespawnOffset), "90.0", CVAR_ARCHIVE },
+	{ cvp(cg_drawPowerupRespawnAlpha), "255", CVAR_ARCHIVE },
 
 	{ &cg_drawItemPickups, "cg_drawItemPickups", "3", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsX, "cg_drawItemPickupsX", "8", CVAR_ARCHIVE },
@@ -1633,7 +1687,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawVoteFont, "cg_drawVoteFont", "", CVAR_ARCHIVE },
 	{ &cg_drawVotePointSize, "cg_drawVotePointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawVoteScale, "cg_drawVoteScale", "0.25", CVAR_ARCHIVE },
-	{ &cg_drawVoteColor, "cg_drawVoteColor", "0xffffff", CVAR_ARCHIVE },
+	{ &cg_drawVoteColor, "cg_drawVoteColor", "0xffff00", CVAR_ARCHIVE },
 	{ &cg_drawVoteAlpha, "cg_drawVoteAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawVoteWideScreen), "1", CVAR_ARCHIVE },
 	
@@ -1645,7 +1699,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawTeamVoteFont, "cg_drawTeamVoteFont", "", CVAR_ARCHIVE },
 	{ &cg_drawTeamVotePointSize, "cg_drawTeamVotePointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawTeamVoteScale, "cg_drawTeamVoteScale", "0.25", CVAR_ARCHIVE },
-	{ &cg_drawTeamVoteColor, "cg_drawTeamVoteColor", "0xffffff", CVAR_ARCHIVE },
+	{ &cg_drawTeamVoteColor, "cg_drawTeamVoteColor", "0x00ffff", CVAR_ARCHIVE },
 	{ &cg_drawTeamVoteAlpha, "cg_drawTeamVoteAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawTeamVoteWideScreen), "1", CVAR_ARCHIVE },
 
@@ -1889,6 +1943,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_weaponNailGun, "cg_weaponNailGun", "", CVAR_ARCHIVE },
 	{ &cg_weaponProximityLauncher, "cg_weaponProximityLauncher", "", CVAR_ARCHIVE },
 	{ &cg_weaponChainGun, "cg_weaponChainGun", "", CVAR_ARCHIVE },
+	{ cvp(cg_weaponHeavyMachineGun), "", CVAR_ARCHIVE },
 
 	{ &cg_spawnArmorTime, "cg_spawnArmorTime", "500", CVAR_ARCHIVE },
 	{ &cg_fxfile, "cg_fxfile", "", CVAR_ARCHIVE },
@@ -1957,7 +2012,10 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_battleSuitKillCounter, "cg_battleSuitKillCounter", "1", CVAR_ARCHIVE },
 	{ &cg_wideScreen, "cg_wideScreen", "5", CVAR_ARCHIVE },
 	{ &cg_wideScreenScoreBoardHack, "cg_wideScreenScoreBoardHack", "0", CVAR_ARCHIVE },
+
 	{ &cg_adShaderOverride, "cg_adShaderOverride", "0", CVAR_ARCHIVE },
+	{ cvp(cg_debugAds), "0", CVAR_ARCHIVE },
+
 	{ &cg_firstPersonSwitchSound, "cg_firstPersonSwitchSound", "sound/wc/beep05", CVAR_ARCHIVE },
 	{ &cg_proxMineTick, "cg_proxMineTick", "1", CVAR_ARCHIVE },
 	{ &cg_drawProxWarning, "cg_drawProxWarning", "1", CVAR_ARCHIVE },
@@ -2218,6 +2276,62 @@ void CG_UpdateCvars( void ) {
 			break;
 		}
 	}
+
+	if (cg.damagePlumModificationCount != cg_damagePlum.modificationCount) {
+		qboolean newLine;
+		char token[MAX_TOKEN_CHARS];
+		const char *s;
+
+		//Com_Printf("^2updating damage plum settings (%d != %d)\n", cg.damagePlumModificationCount, cg_damagePlum.modificationCount);
+
+		for (i = 0;  i < WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS;  i++) {
+			cg.weaponDamagePlum[i] = qfalse;
+		}
+
+		s = cg_damagePlum.string;
+		while (qtrue) {
+			if (!s  ||  !*s) {
+				break;
+			}
+
+			s = CG_GetToken(s, token, qfalse, &newLine);
+			//CG_Printf("token: '%s'\n", token);
+			if (!Q_stricmp(token, "none")) {
+				cg.weaponDamagePlum[WP_NONE] = qtrue;
+			} else if (!Q_stricmp(token, "g")) {
+				cg.weaponDamagePlum[WP_GAUNTLET] = qtrue;
+			} else if (!Q_stricmp(token, "mg")) {
+				cg.weaponDamagePlum[WP_MACHINEGUN] = qtrue;
+			} else if (!Q_stricmp(token, "sg")) {
+				cg.weaponDamagePlum[WP_SHOTGUN] = qtrue;
+			} else if (!Q_stricmp(token, "gl")) {
+				cg.weaponDamagePlum[WP_GRENADE_LAUNCHER] = qtrue;
+			} else if (!Q_stricmp(token, "rl")) {
+				cg.weaponDamagePlum[WP_ROCKET_LAUNCHER] = qtrue;
+			} else if (!Q_stricmp(token, "lg")) {
+				cg.weaponDamagePlum[WP_LIGHTNING] = qtrue;
+			} else if (!Q_stricmp(token, "rg")) {
+				cg.weaponDamagePlum[WP_RAILGUN] = qtrue;
+			} else if (!Q_stricmp(token, "pg")) {
+				cg.weaponDamagePlum[WP_PLASMAGUN] = qtrue;
+			} else if (!Q_stricmp(token, "bfg")) {
+				cg.weaponDamagePlum[WP_BFG] = qtrue;
+			} else if (!Q_stricmp(token, "gh")) {
+				cg.weaponDamagePlum[WP_GRAPPLING_HOOK] = qtrue;
+			} else if (!Q_stricmp(token, "cg")) {
+				cg.weaponDamagePlum[WP_CHAINGUN] = qtrue;
+			} else if (!Q_stricmp(token, "ng")) {
+				cg.weaponDamagePlum[WP_NAILGUN] = qtrue;
+			} else if (!Q_stricmp(token, "pl")) {
+				cg.weaponDamagePlum[WP_PROX_LAUNCHER] = qtrue;
+			} else if (!Q_stricmp(token, "hmg")) {
+				cg.weaponDamagePlum[WP_HEAVY_MACHINEGUN] = qtrue;
+			} else {
+				Com_Printf("^3WARNING:  unknown token '%s' in cg_damagePlum\n", token);
+			}
+		}
+		cg.damagePlumModificationCount = cg_damagePlum.modificationCount;
+	}
 }
 
 static qboolean CG_CheckIndividualFontUpdate (fontInfo_t *font, int pointSize, const vmCvar_t *cv, int *modCount)
@@ -2288,6 +2402,7 @@ void CG_CheckFontUpdates (void)
 	CG_CheckIndividualFontUpdate(&cgs.media.jumpSpeedsTimeFont, cg_drawJumpSpeedsTimePointSize.integer, &cg_drawJumpSpeedsTimeFont, &cgs.media.jumpSpeedsTimeFontModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.proxWarningFont, cg_drawProxWarningPointSize.integer, &cg_drawProxWarningFont, &cgs.media.proxWarningFontModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.dominationPointStatusFont, cg_drawDominationPointStatusPointSize.integer, &cg_drawDominationPointStatusFont, &cgs.media.dominationPointStatusFontModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.damagePlumFont, cg_damagePlumPointSize.integer, &cg_damagePlumFont, &cgs.media.damagePlumFontModificationCount);
 }
 
 static void CG_TimeChange (int serverTime, int ioverf)
@@ -2779,6 +2894,35 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.firstHumiliationSound = trap_S_RegisterSound( "sound/vo/first_gauntlet.wav", qtrue );
 #endif
 
+	// new ql rewards
+	cgs.media.comboKillRewardSound[0] = trap_S_RegisterSound("sound/vo/combokill1.ogg", qfalse);
+	cgs.media.comboKillRewardSound[1] = trap_S_RegisterSound("sound/vo/combokill2.ogg", qfalse);
+	cgs.media.comboKillRewardSound[2] = trap_S_RegisterSound("sound/vo/combokill3.ogg", qfalse);
+
+	cgs.media.damageRewardSound = trap_S_RegisterSound("sound/vo/damage.ogg", qfalse);
+	cgs.media.firstFragRewardSound = trap_S_RegisterSound("sound/vo/first_frag.ogg", qfalse);
+	cgs.media.accuracyRewardSound = trap_S_RegisterSound("sound/vo/accuracy.ogg", qfalse);
+	cgs.media.perfectRewardSound = trap_S_RegisterSound("sound/vo/perfect.ogg", qfalse);
+	cgs.media.perforatedRewardSound = trap_S_RegisterSound("sound/vo/perforated.ogg", qfalse);
+	cgs.media.quadGodRewardSound = trap_S_RegisterSound("sound/vo/quad_god.ogg", qfalse);
+
+	cgs.media.rampageRewardSound[0] = trap_S_RegisterSound("sound/vo/rampage1.ogg", qfalse);
+	cgs.media.rampageRewardSound[1] = trap_S_RegisterSound("sound/vo/rampage2.ogg", qfalse);
+	cgs.media.rampageRewardSound[2] = trap_S_RegisterSound("sound/vo/rampage3.ogg", qfalse);
+
+	cgs.media.revengeRewardSound[0] = trap_S_RegisterSound("sound/vo/revenge1.ogg", qfalse);
+	cgs.media.revengeRewardSound[1] = trap_S_RegisterSound("sound/vo/revenge2.ogg", qfalse);
+	cgs.media.revengeRewardSound[2] = trap_S_RegisterSound("sound/vo/revenge3.ogg", qfalse);
+
+	//FIXME no sound?
+	cgs.media.timingRewardSound = 0;
+
+	cgs.media.midAirRewardSound[0] = trap_S_RegisterSound("sound/vo/midair1.ogg", qfalse);
+	cgs.media.midAirRewardSound[1] = trap_S_RegisterSound("sound/vo/midair2.ogg", qfalse);
+	cgs.media.midAirRewardSound[2] = trap_S_RegisterSound("sound/vo/midair3.ogg", qfalse);
+
+	cgs.media.headshotRewardSound = trap_S_RegisterSound("sound/vo/headshot.ogg", qfalse);
+
 	cgs.media.takenLeadSound = trap_S_RegisterSound( "sound/vo/lead_taken.wav", qtrue);
 	cgs.media.tiedLeadSound = trap_S_RegisterSound( "sound/vo/lead_tied.wav", qtrue);
 	cgs.media.lostLeadSound = trap_S_RegisterSound( "sound/vo/lead_lost.wav", qtrue);
@@ -2916,27 +3060,6 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.survivorSound = trap_S_RegisterSound("sound/feedback/survivor_01.ogg", qfalse);
 
 	cgs.media.bellSound = trap_S_RegisterSound("sound/world/bell_01.ogg", qfalse);
-
-	// why did i put this here?
-	cgs.media.gametypeIcon[GT_FFA] = trap_R_RegisterShader("ui/assets/hud/ffa");
-	cgs.media.gametypeIcon[GT_TOURNAMENT] = trap_R_RegisterShader("ui/assets/hud/duel");
-	cgs.media.gametypeIcon[GT_TEAM] = trap_R_RegisterShader("ui/assets/hud/tdm");
-	cgs.media.gametypeIcon[GT_CA] = trap_R_RegisterShader("ui/assets/hud/ca");
-	cgs.media.gametypeIcon[GT_CTF] = trap_R_RegisterShader("ui/assets/hud/ctf");
-	cgs.media.gametypeIcon[GT_FREEZETAG] = trap_R_RegisterShader("ui/assets/hud/ft");
-	cgs.media.gametypeIcon[GT_1FCTF] = trap_R_RegisterShader("ui/assets/hud/1f");
-	cgs.media.gametypeIcon[GT_HARVESTER] = trap_R_RegisterShader("ui/assets/hud/har");
-	cgs.media.gametypeIcon[GT_DOMINATION] = trap_R_RegisterShader("ui/assets/hud/dom");
-	cgs.media.gametypeIcon[GT_CTFS] = trap_R_RegisterShader("ui/assets/hud/ad");
-	cgs.media.gametypeIcon[GT_RED_ROVER] = trap_R_RegisterShader("ui/assets/hud/rr");
-	cgs.media.gametypeIcon[GT_RACE] = trap_R_RegisterShader("ui/assets/hud/race");
-
-	cgs.media.infiniteAmmo = trap_R_RegisterShader("icons/infinite");
-	cgs.media.premiumIcon = trap_R_RegisterShader("ui/assets/score/premium_icon");
-	cgs.media.defragItemShader = trap_R_RegisterShader("wc/defragItemShader");
-	cgs.media.weaplit = trap_R_RegisterShader("ui/assets/hud/weaplit2");
-	cgs.media.flagCarrier = trap_R_RegisterShader("sprites/flagcarrier");
-	cgs.media.flagCarrierNeutral = trap_R_RegisterShader("sprites/neutralflagcarrier");
 
 #ifdef MISSIONPACK
 	trap_S_RegisterSound("sound/player/james/death1.wav", qfalse );
@@ -3371,10 +3494,27 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.medalImpressive = trap_R_RegisterShaderNoMip( "medal_impressive" );
 	cgs.media.medalExcellent = trap_R_RegisterShaderNoMip( "medal_excellent" );
 	cgs.media.medalGauntlet = trap_R_RegisterShaderNoMip( "medal_gauntlet" );
-	cgs.media.medalDefend = trap_R_RegisterShaderNoMip( "medal_defend" );
+	cgs.media.medalDefend = trap_R_RegisterShaderNoMip( "medal_defense" );
 	cgs.media.medalAssist = trap_R_RegisterShaderNoMip( "medal_assist" );
 	cgs.media.medalCapture = trap_R_RegisterShaderNoMip( "medal_capture" );
 	cgs.media.headShotIcon = trap_R_RegisterShaderNoMip("icons/headshot");
+
+	// new ql rewards
+	cgs.media.medalComboKill = trap_R_RegisterShaderNoMip("medal_combokill");
+	cgs.media.medalDamage = trap_R_RegisterShaderNoMip("medal_damage");
+	cgs.media.medalFirstFrag = trap_R_RegisterShaderNoMip("medal_firstfrag");
+	cgs.media.medalAccuracy = trap_R_RegisterShaderNoMip("medal_accuracy");
+	cgs.media.medalPerfect = trap_R_RegisterShaderNoMip("medal_perfect");
+	cgs.media.medalPerforated = trap_R_RegisterShaderNoMip("medal_perforated");
+	cgs.media.medalQuadGod = trap_R_RegisterShaderNoMip("medal_quadgod");
+	cgs.media.medalRampage = trap_R_RegisterShaderNoMip("medal_rampage");
+	cgs.media.medalRevenge = trap_R_RegisterShaderNoMip("medal_revenge");
+	cgs.media.medalHeadshot = trap_R_RegisterShaderNoMip("medal_headshot");
+
+	// not seen?
+	cgs.media.medalTiming = trap_R_RegisterShaderNoMip("medal_timing");
+	cgs.media.medalMidAir = trap_R_RegisterShaderNoMip("medal_midair");
+
 
 	cgs.media.adbox1x1 = trap_R_RegisterShader("adbox1x1");
     cgs.media.adbox2x1 = trap_R_RegisterShader("adbox2x1");
@@ -3524,6 +3664,43 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.bboxShader = trap_R_RegisterShader( "bbox" );
 	cgs.media.bboxShader_nocull = trap_R_RegisterShader( "bbox_nocull" );
 
+	cgs.media.gametypeIcon[GT_FFA] = trap_R_RegisterShader("ui/assets/hud/ffa");
+	cgs.media.gametypeIcon[GT_TOURNAMENT] = trap_R_RegisterShader("ui/assets/hud/duel");
+	cgs.media.gametypeIcon[GT_TEAM] = trap_R_RegisterShader("ui/assets/hud/tdm");
+	cgs.media.gametypeIcon[GT_CA] = trap_R_RegisterShader("ui/assets/hud/ca");
+	cgs.media.gametypeIcon[GT_CTF] = trap_R_RegisterShader("ui/assets/hud/ctf");
+	cgs.media.gametypeIcon[GT_FREEZETAG] = trap_R_RegisterShader("ui/assets/hud/ft");
+	cgs.media.gametypeIcon[GT_1FCTF] = trap_R_RegisterShader("ui/assets/hud/1f");
+	cgs.media.gametypeIcon[GT_HARVESTER] = trap_R_RegisterShader("ui/assets/hud/har");
+	cgs.media.gametypeIcon[GT_DOMINATION] = trap_R_RegisterShader("ui/assets/hud/dom");
+	cgs.media.gametypeIcon[GT_CTFS] = trap_R_RegisterShader("ui/assets/hud/ad");
+	cgs.media.gametypeIcon[GT_RED_ROVER] = trap_R_RegisterShader("ui/assets/hud/rr");
+	cgs.media.gametypeIcon[GT_RACE] = trap_R_RegisterShader("ui/assets/hud/race");
+
+	cgs.media.infiniteAmmo = trap_R_RegisterShader("icons/infinite");
+	cgs.media.premiumIcon = trap_R_RegisterShader("ui/assets/score/premium_icon");
+	cgs.media.defragItemShader = trap_R_RegisterShader("wc/defragItemShader");
+	cgs.media.weaplit = trap_R_RegisterShader("ui/assets/hud/weaplit2");
+	cgs.media.flagCarrier = trap_R_RegisterShader("sprites/flagcarrier");
+	cgs.media.flagCarrierNeutral = trap_R_RegisterShader("sprites/neutralflagcarrier");
+
+	cgs.media.silverKeyIcon = trap_R_RegisterShaderNoMip("icons/key_silver");
+	cgs.media.goldKeyIcon = trap_R_RegisterShaderNoMip("icons/key_gold");
+	cgs.media.masterKeyIcon = trap_R_RegisterShaderNoMip("icons/key_master");
+
+	cgs.media.timerSlice5 = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice5");
+	cgs.media.timerSlice5Current = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice5_current");
+	cgs.media.timerSlice7 = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice7");
+	cgs.media.timerSlice7Current = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice7_current");
+	cgs.media.timerSlice12 = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice12");
+	cgs.media.timerSlice12Current = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice12_current");
+	cgs.media.timerSlice24 = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice24");
+	cgs.media.timerSlice24Current = trap_R_RegisterShaderNoMip("gfx/2d/timer/slice24_current");
+	cgs.media.wcTimerSlice5 = trap_R_RegisterShaderNoMip("wc/slice5");
+	cgs.media.wcTimerSlice5Current = trap_R_RegisterShaderNoMip("wc/slice5Current");
+	cgs.media.powerupIncoming = trap_R_RegisterShader("gfx/2d/powerup/incoming");
+
+	//FIXME why here?
 	CG_ClearParticles ();
 /*
 	for (i=1; i<MAX_PARTICLES_AREAS; i++)
@@ -4491,16 +4668,16 @@ static qboolean CG_OwnerDrawHandleKey (int ownerDraw, int flags, int flags2, flo
 }
 
 
-static int CG_FeederCount(float feederID) {
+static int CG_FeederCount (float feederID) {
 	int i, count;
 	count = 0;
-	if (feederID == FEEDER_REDTEAM_LIST) {
+	if (feederID == FEEDER_REDTEAM_LIST  ||  feederID == FEEDER_REDTEAM_STATS) {
 		for (i = 0; i < cg.numScores; i++) {
 			if (cg.scores[i].team == TEAM_RED) {
 				count++;
 			}
 		}
-	} else if (feederID == FEEDER_BLUETEAM_LIST) {
+	} else if (feederID == FEEDER_BLUETEAM_LIST  ||  feederID == FEEDER_BLUETEAM_STATS) {
 		for (i = 0; i < cg.numScores; i++) {
 			if (cg.scores[i].team == TEAM_BLUE) {
 				count++;
@@ -4515,54 +4692,11 @@ static int CG_FeederCount(float feederID) {
 			//Com_Printf("feeder count: %d\n", count);
 			count++;
 		}
-	} else if (feederID == FEEDER_REDTEAM_STATS) {
-		for (i = 0;  i < MAX_CLIENTS;  i++) {
-			if (cgs.gametype == GT_TEAM) {
-				if (!cg.tdmStats[i].valid) {
-					continue;
-				}
-				if (cgs.clientinfo[i].team == TEAM_RED) {
-					//count++;
-				}
-			} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_DOMINATION) {
-				if (!cg.ctfStats[i].valid) {
-					continue;
-				}
-			} else if (cgs.gametype == GT_CA) {
-				if (!cg.caStats[i].valid) {
-					continue;
-				}
-			} else {
-				continue;
-			}
-			if (cgs.clientinfo[i].infoValid  &&  cgs.clientinfo[i].team == TEAM_RED) {
-				count++;
-			}
-		}
-	} else if (feederID == FEEDER_BLUETEAM_STATS) {
-		for (i = 0;  i < MAX_CLIENTS;  i++) {
-			if (cgs.gametype == GT_TEAM) {
-				if (!cg.tdmStats[i].valid) {
-					continue;
-				}
-			} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_DOMINATION) {
-				if (!cg.ctfStats[i].valid) {
-					continue;
-				}
-			} else if (cgs.gametype == GT_CA) {
-				if (!cg.caStats[i].valid) {
-					continue;
-				}
-			} else {
-				continue;
-			}
-			if (cgs.clientinfo[i].infoValid  &&  cgs.clientinfo[i].team == TEAM_BLUE) {
-				count++;
-			}
-		}
 	} else {
 		Com_Printf("CG_FeederCount()  unknown feeder id 0x%x\n", (int)feederID);
 	}
+
+	//Com_Printf("feeder %f count %d\n", feederID, count);
 
 	return count;
 }
@@ -4596,7 +4730,7 @@ void CG_SetScoreSelection (menuDef_t *menu)
 	}
 
 
-	if ( cgs.gametype >= GT_TEAM ) {
+	if ( cgs.gametype >= GT_TEAM ) {  //FIXME team game
 		feeder = FEEDER_REDTEAM_LIST;
 		i = red;
 
@@ -4611,7 +4745,7 @@ void CG_SetScoreSelection (menuDef_t *menu)
 }
 
 // FIXME: might need to cache this info
-static clientInfo_t * CG_InfoFromScoreIndex(int index, int team, int *scoreIndex) {
+static clientInfo_t * CG_InfoFromScoreIndex (int index, int team, int *scoreIndex) {
 	int i, count;
 
 	if (cgs.gametype >= GT_TEAM  ||  cgs.gametype == GT_FFA) {
@@ -4649,583 +4783,6 @@ void CG_LimitText (char *s, int len)
 	}
 }
 
-#define CA_TEXT_LIMIT 12
-
-static const char *CG_FeederItemTextCa (float feederID, int index, int column, qhandle_t *handle)
-{
-	int scoreIndex = 0;
-	const clientInfo_t *info = NULL;
-	int team = -1;
-	const score_t *sp = NULL;
-	char *s;
-	const char *clanTag;
-	int n;
-	const tdmPlayerScore_t *ts;
-
-	*handle = -1;
-
-	if (feederID == FEEDER_REDTEAM_LIST) {
-		team = TEAM_RED;
-	} else if (feederID == FEEDER_BLUETEAM_LIST) {
-		team = TEAM_BLUE;
-	} else {
-		Com_Printf("CG_FeederItemTextCa() unknown feeder id 0x%x\n", (int)feederID);
-		return "";
-	}
-
-	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
-
-	sp = &cg.scores[scoreIndex];
-	ts = &cg.tdmScore.playerScore[sp->client];
-
-	if (info && info->infoValid) {
-		switch (column) {
-		case 0:
-			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
-			return "";
-		case 1: {
-			if (ts->subscriber  &&  cg_scoreBoardStyle.integer == 0) {
-				*handle = cgs.media.premiumIcon;
-			}
-			return "";
-		}
-		case 2:
-			if (info->handicap < 100) {
-				return va("%d%%", info->handicap);
-			}
-			return "";
-
-		case 3: {
-			qboolean ready = qfalse;
-			qboolean alive;
-
-			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
-				ready = qtrue;
-			}
-			if (cg.warmup) {
-				if (ready) {
-					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
-				} else {
-					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
-				}
-				return "";
-			}
-
-			if (cg.tdmScore.version >= 3) {
-				alive = ts->alive;
-			} else {
-				alive = sp->alive;
-			}
-
-			if (alive) {
-				if (sp->team == TEAM_RED) {
-					*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
-				} else {
-					*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_blue");
-				}
-				return "";
-			}
-
-			return "";
-		}
-		case 4:
-			if (cgs.clientinfoOrig[sp->client].countryFlag) {
-				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
-			}
-			break;
-		case 5:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
-				clanTag = info->clanTag;
-				if (*clanTag) {
-					s = va("^7%s ^7%s", clanTag, info->name);
-				} else {
-					s = va("%s", info->name);
-				}
-				CG_LimitText(s, CA_TEXT_LIMIT);
-				return s;
-			} else {
-				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
-					if (*clanTag) {
-						s = va("^1%d  ^7%s ^7%s", info->skillRating, clanTag, info->name);
-					} else {
-						s = va("^1%d  ^7%s", info->skillRating, info->name);
-					}
-					CG_LimitText(s, CA_TEXT_LIMIT);
-					return s;
-				} else {
-					if (*clanTag) {
-						s = va("^7%s ^7%s", clanTag, info->name);
-					} else {
-						s = va("^7%s", info->name);
-					}
-					CG_LimitText(s, CA_TEXT_LIMIT);
-					return s;
-				}
-			}
-			break;
-		case 6: {
-			int score;
-
-			if (cg.tdmScore.version >= 3) {
-				score = ts->score;
-			} else {
-				score = sp->score;
-			}
-
-			return va("%d", score);
-		}
-		case 7:  // net
-			if (cgs.cpma) {
-				s = va("%d", sp->net);
-				return s;
-			}
-			if (cg.tdmScore.version >= 3) {
-				return va("%d/%d", ts->kills, ts->deaths);
-			} else {
-				return va("%d/%d", sp->frags, sp->deaths);
-			}
-		case 8:
-			if (cg.tdmScore.valid  &&  ts->valid) {
-				n = ts->damageDone;
-				if (n >= 1000) {
-					s = va("%.1fk", (float)n / 1000.0);
-				} else {
-					s = va("%d", n);
-				}
-				return s;
-			} else {
-				return "-";
-			}
-			break;
-		case 9:
-			if (cg.tdmScore.valid  &&  ts->valid  &&  ts->damageDone == 0) {
-				return "";
-			}
-
-			if (cg.tdmScore.version >= 3) {
-				*handle = cg_weapons[ts->bestWeapon].weaponIcon;
-			} else {
-				*handle = cg_weapons[sp->bestWeapon].weaponIcon;
-			}
-			return "";
-		case 10:
-			if (!cg.tdmScore.valid  ||  !ts->valid) {
-				return va("%d%%", sp->accuracy);
-			}
-
-			if (ts->damageDone == 0) {
-				return "";
-			}
-
-			if (cg.tdmScore.version >= 3) {
-				return va("%d%%", ts->bestWeaponAccuracy);
-			} else {
-				return va("%d%%", ts->accuracy);
-			}
-		case 11:
-			if (cg.tdmScore.version >= 3) {
-				return va("%d", ts->ping);
-			} else {
-				return va("%d", sp->ping);
-			}
-		default:
-			//Com_Printf("wtf tdmcolumn %d\n", column);
-			break;
-		}
-	}
-
-	return "";
-}
-
-#define TDM_TEXT_LIMIT 20
-
-static const char *CG_FeederItemTextTdm (float feederID, int index, int column, qhandle_t *handle)
-{
-	int scoreIndex = 0;
-	const clientInfo_t *info = NULL;
-	int team = -1;
-	const score_t *sp = NULL;
-	char *s;
-	const char *clanTag;
-	int n;
-	const tdmPlayerScore_t *ts;
-
-	*handle = -1;
-
-	if (feederID == FEEDER_REDTEAM_LIST) {
-		team = TEAM_RED;
-	} else if (feederID == FEEDER_BLUETEAM_LIST) {
-		team = TEAM_BLUE;
-	} else {
-		Com_Printf("CG_FeederItemTextTdm() unknown feeder id 0x%x\n", (int)feederID);
-		return "";
-	}
-
-	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
-
-	sp = &cg.scores[scoreIndex];
-	ts = &cg.tdmScore.playerScore[sp->client];
-
-	if (info && info->infoValid) {
-		switch (column) {
-		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
-				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
-			} else {  // default is cg_scoreBoardStyle.integer == 1
-				int bestWeapon;
-
-				if (cg.tdmScore.version >= 3) {
-					bestWeapon = ts->bestWeapon;
-				} else {
-					bestWeapon = sp->bestWeapon;
-				}
-
-				*handle = cg_weapons[bestWeapon].weaponIcon;
-				if (!*handle) {
-					//*handle = cgs.media.redCubeIcon;
-				}
-			}
-			return "";
-		case 1: {
-			int subscriber;
-
-			if (cg.tdmScore.version >= 3) {
-				subscriber = ts->subscriber;
-			} else {
-				subscriber = info->premiumSubscriber;
-			}
-			//if (cg.tdmScore.playerScore[sp->client].subscriber  &&  cg_scoreBoardStyle.integer == 0) {
-			if (subscriber  &&  cg_scoreBoardStyle.integer == 0) {
-				*handle = cgs.media.premiumIcon;
-			}
-			return "";
-		}
-		case 2:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
-			}
-			return "";
-
-		case 3: {
-			qboolean ready = qfalse;
-
-			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
-				ready = qtrue;
-			}
-			if (cg.warmup) {
-				if (ready) {
-					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
-				} else {
-					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
-				}
-			}
-
-			return "";
-		}
-		case 4:
-			if (cgs.clientinfoOrig[sp->client].countryFlag) {
-				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
-			}
-			break;
-		case 5:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
-				clanTag = info->clanTag;
-				if (*clanTag) {
-					s = va("^7%s ^7%s", clanTag, info->name);
-				} else {
-					s = va("%s", info->name);
-				}
-				CG_LimitText(s, TDM_TEXT_LIMIT);
-				return s;
-			} else {
-				int accuracy;
-
-				switch (cg.tdmScore.version) {
-				case 3:
-					accuracy = ts->accuracy;
-					break;
-				default:
-					accuracy = sp->accuracy;
-					break;
-				}
-
-				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
-					if (*clanTag) {
-						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
-					} else {
-						s = va("^3%3d   ^1%d  ^7%s", accuracy, info->skillRating, info->name);
-					}
-					CG_LimitText(s, TDM_TEXT_LIMIT);
-					return s;
-				} else {
-					if (*clanTag) {
-						s = va("^3%3d   ^7%s ^7%s", accuracy, clanTag, info->name);
-					} else {
-						s = va("^3%3d   ^7%s", accuracy, info->name);
-					}
-					CG_LimitText(s, TDM_TEXT_LIMIT);
-					return s;
-				}
-			}
-			break;
-		case 6: {
-			int score;
-
-			if (cg.tdmScore.version >= 3) {
-				score = ts->score;
-			} else {
-				score = sp->score;
-			}
-
-			return va("%d", score);
-		}
-		case 7:  // net
-			if (cgs.cpma) {
-				s = va("%d", sp->net);
-				return s;
-			}
-			switch (cg.tdmScore.version) {
-			case 1:
-			case 2:
-				s = va("%d", sp->frags - sp->deaths - ts->tks + ts->tkd);
-				break;
-			case 3:
-				s = va("%d", ts->kills - ts->deaths - ts->tks + ts->tkd);
-				break;
-			default:
-				s = va("%d", sp->frags - sp->deaths);
-				break;
-			}
-			return s;
-		case 8:
-			if (cg.tdmScore.valid  &&  ts->valid) {
-				n = ts->damageDone;
-				if (n >= 1000) {
-					s = va("%.1fk", (float)n / 1000.0);
-				} else {
-					s = va("%d", n);
-				}
-				return s;
-			} else {
-				return "-";
-			}
-			break;
-		case 9: {
-			int ping;
-
-			if (cg.tdmScore.version >= 3) {
-				ping = ts->ping;
-			} else {
-				ping = sp->ping;
-			}
-			return va("%d", ping);
-		}
-		default:
-			//Com_Printf("wtf tdmcolumn %d\n", column);
-			break;
-		}
-	}
-
-	return "";
-}
-
-#define CTF_TEXT_LIMIT 15
-
-static const char *CG_FeederItemTextCtf (float feederID, int index, int column, qhandle_t *handle)
-{
-	int scoreIndex = 0;
-	const clientInfo_t *info = NULL;
-	int team = -1;
-	const score_t *sp = NULL;
-	char *s;
-	const char *clanTag;
-	const ctfPlayerScore_t *ts;
-	int clientTeam;
-	int version;
-
-	*handle = -1;
-
-	if (feederID == FEEDER_REDTEAM_LIST) {
-		team = TEAM_RED;
-	} else if (feederID == FEEDER_BLUETEAM_LIST) {
-		team = TEAM_BLUE;
-	} else {
-		Com_Printf("CG_FeederItemTextCtf() unknown feeder id 0x%x\n", (int)feederID);
-		return "";
-	}
-
-	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
-
-	sp = &cg.scores[scoreIndex];
-	ts = &cg.ctfScore.playerScore[sp->client];
-
-	version = cg.ctfScore.version;
-	if (version >= 1) {
-		clientTeam = ts->team;
-	} else {
-		clientTeam = sp->team;
-	}
-
-	if (clientTeam != team) {
-		return "";
-	}
-
-	if (info && info->infoValid) {
-		switch (column) {
-		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
-				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
-			} else {  // default is cg_scoreBoardStyle.integer == 1
-				if (version >= 1) {
-					*handle = cg_weapons[ts->bestWeapon].weaponIcon;
-				} else {
-					*handle = cg_weapons[sp->bestWeapon].weaponIcon;
-				}
-				if (!*handle) {
-					//*handle = cgs.media.redCubeIcon;
-				}
-			}
-			return "";
-		case 1: {
-			//if (cg.ctfScore.playerScore[sp->client].subscriber  &&  cg_scoreBoardStyle.integer == 0) {
-			if (info->premiumSubscriber  &&  cg_scoreBoardStyle.integer == 0) {
-				*handle = cgs.media.premiumIcon;
-			}
-			return "";
-		}
-		case 2:
-			if (info->handicap < 100) {
-				return va("%d%%", info->handicap);
-			}
-			return "";
-		case 3: {
-			qboolean ready = qfalse;
-			int powerups;
-
-			if (version >= 1) {
-				powerups = ts->powerups;
-			} else {
-				powerups = sp->powerups;
-			}
-
-			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
-				ready = qtrue;
-			}
-			if (cg.warmup  ||  cg.snap->ps.pm_type == PM_INTERMISSION) {
-				if (ready) {
-					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
-				} else {
-					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
-				}
-				return "";
-			} else if (powerups & ( 1 << PW_REDFLAG )) {
-					*handle = cgs.media.pickup_iconredflag;
-			} else if (powerups & ( 1 << PW_BLUEFLAG )) {
-					*handle = cgs.media.pickup_iconblueflag;
-			}
-
-			return "";
-		}
-		case 4:
-			if (cgs.clientinfoOrig[sp->client].countryFlag) {
-				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
-			}
-			break;
-		case 5:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
-				clanTag = info->clanTag;
-				if (*clanTag) {
-					s = va("^7%s ^7%s", clanTag, info->name);
-					//Com_Printf("'%s'\n", s);
-				} else {
-					s = va("%s", info->name);
-				}
-				CG_LimitText(s, CTF_TEXT_LIMIT);
-				return s;
-			} else {
-				int accuracy;
-
-				if (version >= 1) {
-					accuracy = ts->accuracy;
-				} else {
-					accuracy = sp->accuracy;
-				}
-
-				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
-					if (*clanTag) {
-						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
-					} else {
-						s = va("^3%3d   ^1%d  ^7%s", accuracy, info->skillRating, info->name);
-					}
-					CG_LimitText(s, CTF_TEXT_LIMIT);
-					return s;
-				} else {
-					if (*clanTag) {
-						s = va("^3%3d   ^7%s ^7%s", accuracy, clanTag, info->name);
-					} else {
-						s = va("^3%3d   ^7%s", accuracy, info->name);
-					}
-					CG_LimitText(s, CTF_TEXT_LIMIT);
-					return s;
-				}
-			}
-			break;
-		case 6:
-			if (version >= 1) {
-				return va("%d", ts->score);
-			} else {
-				return va("%d", sp->score);
-			}
-		case 7:  // net
-			if (cgs.cpma) {
-				if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
-					return "-";
-				}
-				return va("%d", sp->net);
-			}
-			if (version >= 1) {
-				return va("%d/%d", ts->kills, ts->deaths);
-			} else {
-				return va("%d/%d", sp->frags, sp->deaths);
-			}
-		case 8:
-			if (version >= 1) {
-				return va("%d", ts->captures);
-			} else {
-				return va("%d", sp->captures);
-			}
-		case 9:
-			if (cgs.cpma) {
-				return "-";
-			}
-			if (version >= 1) {
-				return va("%d", ts->awardAssist);
-			} else {
-				return va("%d", sp->assistCount);
-			}
-		case 10:
-			if (version >= 1) {
-				return va("%d", ts->awardDefend);
-			} else {
-				return va("%d", sp->defendCount);
-			}
-		case 11:
-			if (version >= 1) {
-				return va("%d", ts->ping);
-			} else {
-				return va("%d", sp->ping);
-			}
-		default:
-			//Com_Printf("wtf ctfcolumn %d\n", column);
-			break;
-		}
-	}
-
-	return "";
-}
 
 static const char *CG_FeederItemTextCaStats (float feederID, int index, int column, qhandle_t *handle)
 {
@@ -5479,16 +5036,167 @@ static const char *CG_FeederItemTextCtfStats (float feederID, int index, int col
 	return "";
 }
 
-static const char *CG_FeederItemTextFreezetag (float feederID, int index, int column, qhandle_t *handle)
+static const char *CG_FeederItemTextFreezetagStats (float feederID, int index, int column, qhandle_t *handle)
 {
-	//gitem_t *item;
 	int scoreIndex = 0;
 	const clientInfo_t *info = NULL;
 	int team = -1;
 	const score_t *sp = NULL;
 	char *s;
-	//int clientNum;
 	const char *clanTag;
+	const tdmStats_t *ts;
+	const tdmPlayerScore_t *fts;
+	//int j;
+
+	*handle = -1;
+
+	if (feederID == FEEDER_REDTEAM_STATS) {
+		team = TEAM_RED;
+	} else if (feederID == FEEDER_BLUETEAM_STATS) {
+		team = TEAM_BLUE;
+	} else {
+		Com_Printf("CG_FeederItemTextFreezetagStats() unknown feeder id 0x%x\n", (int)feederID);
+		return "";
+	}
+
+	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
+
+	sp = &cg.scores[scoreIndex];
+	//ts = &cg.tdmStats[sp->client];
+	//ts = &cg.tdmStats[sp->client];
+	//ts = &cg.tdmStats[index];
+	//ts = &cg.tdmStats[sp->client];
+	ts = &cg.tdmStats[scoreIndex];
+	fts = &cg.tdmScore.playerScore[sp->client];
+
+
+	if (sp->team != team) {
+		return "";
+	}
+
+	if (info && info->infoValid) {
+		switch (column) {
+		case 0:
+			clanTag = info->clanTag;
+			if (*clanTag) {
+				s = va("^7%s ^7%s", clanTag, info->name);
+			} else {
+				s = va("%s", info->name);
+			}
+			return s;
+		case 1: {
+			int score;
+
+			if (cg.tdmScore.valid) {
+				score = fts->score;
+			} else {
+				score = sp->score;
+			}
+			return va("^3%d", score);
+		}
+		case 2: {
+			int frags;
+
+			if (cg.tdmScore.valid) {
+				frags = fts->kills;
+			} else {
+				frags = sp->frags;
+			}
+			return va("%d", frags);
+		}
+		case 3: {
+			int deaths;
+
+			if (cg.tdmScore.valid) {
+				deaths = fts->deaths - ts->selfKill - ts->tkd;
+			} else {
+				deaths = sp->deaths - ts->selfKill - ts->tkd;
+			}
+			//return va("%d", sp->deaths - ts->selfKill - ts->tks);
+			//return va("%d", sp->deaths - ts->selfKill - ts->tkd);
+			return va("%d", deaths);
+		}
+		case 4:
+			return va("%d", ts->selfKill);
+		case 5:
+			return va("%d", ts->tks);
+		case 6:
+			return va("%d", ts->tkd);
+		case 7: {
+			int net;
+
+			if (cg.tdmScore.valid) {
+				net = fts->kills - fts->deaths - ts->tks + ts->tkd;
+			} else {
+				net = sp->frags - sp->deaths - ts->tks + ts->tkd;
+			}
+			//return va("%d", sp->frags - sp->deaths - ts->tks + ts->tkd);
+			return va("%d", net);
+		}
+		case 8:
+			if (cg.tdmScore.valid) {  // assumes stats were also sent
+				return va("%d", ts->damageDone);
+			}
+			// older demos
+			return va("-");
+		case 9:
+			if (cg.tdmScore.valid) {  // assumes stats were also sent
+				return va("%d", ts->damageReceived);
+			}
+			// older demos
+			return va("-");
+		case 10: {
+			int accuracy;
+
+			if (cg.tdmScore.valid) {
+				accuracy = fts->accuracy;
+			} else {
+				accuracy = sp->accuracy;
+			}
+			return va("%d%%", accuracy);
+		}
+		case 11:
+			return va("%d", ts->ra);
+		case 12:
+			return va("%d", ts->ya);
+		case 13:
+			return va("%d", ts->ga);
+		case 14:
+			return va("%d", ts->mh);
+		case 15:
+			return va("%d", ts->quad);
+		case 16:
+			return va("%d", ts->bs);
+		case 17: {
+			int time;
+
+			if (cg.tdmScore.valid) {
+				time = fts->time;
+			} else {
+				time = sp->time;
+			}
+			return va("%d", time);
+		}
+		default:
+			break;
+		}
+	}
+
+	return "";
+}
+
+#define CA_TEXT_LIMIT 12
+
+static const char *CG_FeederItemTextCa (float feederID, int index, int column, qhandle_t *handle)
+{
+	int scoreIndex = 0;
+	const clientInfo_t *info = NULL;
+	int team = -1;
+	const score_t *sp = NULL;
+	char *s;
+	const char *clanTag;
+	int n;
+	const tdmPlayerScore_t *ts;
 
 	*handle = -1;
 
@@ -5496,38 +5204,37 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 		team = TEAM_RED;
 	} else if (feederID == FEEDER_BLUETEAM_LIST) {
 		team = TEAM_BLUE;
+	} else {
+		Com_Printf("CG_FeederItemTextCa() unknown feeder id 0x%x\n", (int)feederID);
+		return "";
 	}
 
 	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
-	sp = &cg.scores[scoreIndex];
 
-	//Com_Printf("%d %d %s %d\n", index, sp->client, info->name, info->team);
+	sp = &cg.scores[scoreIndex];
+	ts = &cg.tdmScore.playerScore[sp->client];
 
 	if (info && info->infoValid) {
 		switch (column) {
 		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
-				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
-			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
-				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
-			} else {  // default is cg_scoreBoardStyle.integer == 1
-				*handle = cg_weapons[sp->bestWeapon].weaponIcon;
-				if (!*handle) {
-					//*handle = cgs.media.redCubeIcon;
-				}
-			}
+			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			return "";
-#if 0
 		case 1:
-			if (cg_scoreBoardStyle.integer == 0  &&  cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocol == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
 			return "";
-#endif
-		case 2: {
+		case 2:
+			if (info->handicap < 100) {
+				return va("^3%d%%", info->handicap);
+			}
+			return "";
+
+		case 3: {
 			qboolean ready = qfalse;
+			qboolean alive;
 
 			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
 				ready = qtrue;
@@ -5541,7 +5248,602 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 				return "";
 			}
 
-			if (sp->alive) {
+			if (cg.tdmScore.version >= 3) {
+				alive = ts->alive;
+			} else {
+				alive = sp->alive;
+			}
+
+			if (alive) {
+				if (sp->team == TEAM_RED) {
+					*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
+				} else {
+					*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_blue");
+				}
+				return "";
+			}
+
+			return "";
+		}
+		case 4:
+			if (cgs.clientinfoOrig[sp->client].countryFlag) {
+				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
+			}
+			break;
+		case 5:
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
+				clanTag = info->clanTag;
+				if (*clanTag) {
+					s = va("^7%s ^7%s", clanTag, info->name);
+				} else {
+					s = va("%s", info->name);
+				}
+				CG_LimitText(s, CA_TEXT_LIMIT);
+				return s;
+			} else {
+				clanTag = info->clanTag;
+				if (info->knowSkillRating) {
+					if (*clanTag) {
+						s = va("^1%d  ^7%s ^7%s", info->skillRating, clanTag, info->name);
+					} else {
+						s = va("^1%d  ^7%s", info->skillRating, info->name);
+					}
+					CG_LimitText(s, CA_TEXT_LIMIT);
+					return s;
+				} else {
+					if (*clanTag) {
+						s = va("^7%s ^7%s", clanTag, info->name);
+					} else {
+						s = va("^7%s", info->name);
+					}
+					CG_LimitText(s, CA_TEXT_LIMIT);
+					return s;
+				}
+			}
+			break;
+		case 6: {
+			int score;
+
+			if (cg.tdmScore.version >= 3) {
+				score = ts->score;
+			} else {
+				score = sp->score;
+			}
+
+			return va("%d", score);
+		}
+		case 7:  // net
+			if (cgs.cpma) {
+				s = va("%d", sp->net);
+				return s;
+			}
+			if (cg.tdmScore.version >= 3) {
+				return va("%d/%d", ts->kills, ts->deaths);
+			} else {
+				return va("%d/%d", sp->frags, sp->deaths);
+			}
+		case 8:
+			if (cg.tdmScore.valid  &&  ts->valid) {
+				n = ts->damageDone;
+				if (n >= 1000) {
+					s = va("%.1fk", (float)n / 1000.0);
+				} else {
+					s = va("%d", n);
+				}
+				return s;
+			} else {
+				return "-";
+			}
+			break;
+		case 9:
+			if (cg.tdmScore.valid  &&  ts->valid  &&  ts->damageDone == 0) {
+				return "";
+			}
+
+			if (cg.tdmScore.version >= 3) {
+				*handle = cg_weapons[ts->bestWeapon].weaponIcon;
+			} else {
+				*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+			}
+			return "";
+		case 10:
+			if (!cg.tdmScore.valid  ||  !ts->valid) {
+				return va("%d%%", sp->accuracy);
+			}
+
+			if (ts->damageDone == 0) {
+				return "";
+			}
+
+			if (cg.tdmScore.version >= 3) {
+				return va("%d%%", ts->bestWeaponAccuracy);
+			} else {
+				return va("%d%%", ts->accuracy);
+			}
+		case 11:
+			if (cg.tdmScore.version >= 3) {
+				return va("%d", ts->ping);
+			} else {
+				return va("%d", sp->ping);
+			}
+		default:
+			//Com_Printf("wtf tdmcolumn %d\n", column);
+			break;
+		}
+	}
+
+	return "";
+}
+
+#define TDM_TEXT_LIMIT 20
+
+static const char *CG_FeederItemTextTdm (float feederID, int index, int column, qhandle_t *handle)
+{
+	int scoreIndex = 0;
+	const clientInfo_t *info = NULL;
+	int team = -1;
+	const score_t *sp = NULL;
+	char *s;
+	const char *clanTag;
+	int n;
+	const tdmPlayerScore_t *ts;
+
+	*handle = -1;
+
+	if (feederID == FEEDER_REDTEAM_LIST) {
+		team = TEAM_RED;
+	} else if (feederID == FEEDER_BLUETEAM_LIST) {
+		team = TEAM_BLUE;
+	} else {
+		Com_Printf("CG_FeederItemTextTdm() unknown feeder id 0x%x\n", (int)feederID);
+		return "";
+	}
+
+	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
+
+	sp = &cg.scores[scoreIndex];
+	ts = &cg.tdmScore.playerScore[sp->client];
+
+	if (info && info->infoValid) {
+		switch (column) {
+		case 0:
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
+			} else {  // default is cg_scoreBoardStyle.integer == 1
+				int bestWeapon;
+
+				if (cg.tdmScore.version >= 3) {
+					bestWeapon = ts->bestWeapon;
+				} else {
+					bestWeapon = sp->bestWeapon;
+				}
+
+				*handle = cg_weapons[bestWeapon].weaponIcon;
+				if (!*handle) {
+					//*handle = cgs.media.redCubeIcon;
+				}
+			}
+			return "";
+		case 1:
+			if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
+					*handle = cgs.media.premiumIcon;
+				}
+			}
+			return "";
+		case 2:
+			if (info->handicap < 100) {
+				return va("^3%d%%", info->handicap);
+			}
+			return "";
+
+		case 3: {
+			qboolean ready = qfalse;
+
+			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
+				ready = qtrue;
+			}
+			if (cg.warmup) {
+				if (ready) {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
+				} else {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
+				}
+			}
+
+			return "";
+		}
+		case 4:
+			if (cgs.clientinfoOrig[sp->client].countryFlag) {
+				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
+			}
+			break;
+		case 5:
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
+				clanTag = info->clanTag;
+				if (*clanTag) {
+					s = va("^7%s ^7%s", clanTag, info->name);
+				} else {
+					s = va("%s", info->name);
+				}
+				CG_LimitText(s, TDM_TEXT_LIMIT);
+				return s;
+			} else {
+				int accuracy;
+
+				switch (cg.tdmScore.version) {
+				case 3:
+					accuracy = ts->accuracy;
+					break;
+				default:
+					accuracy = sp->accuracy;
+					break;
+				}
+
+				clanTag = info->clanTag;
+				if (info->knowSkillRating) {
+					if (*clanTag) {
+						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
+					} else {
+						s = va("^3%3d   ^1%d  ^7%s", accuracy, info->skillRating, info->name);
+					}
+					CG_LimitText(s, TDM_TEXT_LIMIT);
+					return s;
+				} else {
+					if (*clanTag) {
+						s = va("^3%3d   ^7%s ^7%s", accuracy, clanTag, info->name);
+					} else {
+						s = va("^3%3d   ^7%s", accuracy, info->name);
+					}
+					CG_LimitText(s, TDM_TEXT_LIMIT);
+					return s;
+				}
+			}
+			break;
+		case 6: {
+			int score;
+
+			if (cg.tdmScore.version >= 3) {
+				score = ts->score;
+			} else {
+				score = sp->score;
+			}
+
+			return va("%d", score);
+		}
+		case 7:  // net
+			if (cgs.cpma) {
+				s = va("%d", sp->net);
+				return s;
+			}
+			switch (cg.tdmScore.version) {
+			case 1:
+			case 2:
+				s = va("%d", sp->frags - sp->deaths - ts->tks + ts->tkd);
+				break;
+			case 3:
+				s = va("%d", ts->kills - ts->deaths - ts->tks + ts->tkd);
+				break;
+			default:
+				s = va("%d", sp->frags - sp->deaths);
+				break;
+			}
+			return s;
+		case 8:
+			if (cg.tdmScore.valid  &&  ts->valid) {
+				n = ts->damageDone;
+				if (n >= 1000) {
+					s = va("%.1fk", (float)n / 1000.0);
+				} else {
+					s = va("%d", n);
+				}
+				return s;
+			} else {
+				return "-";
+			}
+			break;
+		case 9: {
+			int ping;
+
+			if (cg.tdmScore.version >= 3) {
+				ping = ts->ping;
+			} else {
+				ping = sp->ping;
+			}
+			return va("%d", ping);
+		}
+		default:
+			//Com_Printf("wtf tdmcolumn %d\n", column);
+			break;
+		}
+	}
+
+	return "";
+}
+
+#define CTF_TEXT_LIMIT 15
+
+static const char *CG_FeederItemTextCtf (float feederID, int index, int column, qhandle_t *handle)
+{
+	int scoreIndex = 0;
+	const clientInfo_t *info = NULL;
+	int team = -1;
+	const score_t *sp = NULL;
+	char *s;
+	const char *clanTag;
+	const ctfPlayerScore_t *ts;
+	int clientTeam;
+	int version;
+
+	*handle = -1;
+
+	if (feederID == FEEDER_REDTEAM_LIST) {
+		team = TEAM_RED;
+	} else if (feederID == FEEDER_BLUETEAM_LIST) {
+		team = TEAM_BLUE;
+	} else {
+		Com_Printf("CG_FeederItemTextCtf() unknown feeder id 0x%x\n", (int)feederID);
+		return "";
+	}
+
+	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
+
+	sp = &cg.scores[scoreIndex];
+	ts = &cg.ctfScore.playerScore[sp->client];
+
+	version = cg.ctfScore.version;
+	if (version >= 1) {
+		clientTeam = ts->team;
+	} else {
+		clientTeam = sp->team;
+	}
+
+	if (clientTeam != team) {
+		return "";
+	}
+
+	if (info && info->infoValid) {
+		switch (column) {
+		case 0:
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
+			} else {  // default is cg_scoreBoardStyle.integer == 1
+				if (version >= 1) {
+					*handle = cg_weapons[ts->bestWeapon].weaponIcon;
+				} else {
+					*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+				}
+				if (!*handle) {
+					//*handle = cgs.media.redCubeIcon;
+				}
+			}
+			return "";
+		case 1:
+			if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
+					*handle = cgs.media.premiumIcon;
+				}
+			}
+			return "";
+		case 2:
+			if (info->handicap < 100) {
+				return va("^3%d%%", info->handicap);
+			}
+			return "";
+		case 3: {
+			qboolean ready = qfalse;
+			int powerups;
+
+			if (version >= 1) {
+				powerups = ts->powerups;
+			} else {
+				powerups = sp->powerups;
+			}
+
+			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
+				ready = qtrue;
+			}
+			if (cg.warmup  ||  cg.snap->ps.pm_type == PM_INTERMISSION) {
+				if (ready) {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
+				} else {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
+				}
+				return "";
+			} else if (powerups & ( 1 << PW_REDFLAG )) {
+					*handle = cgs.media.pickup_iconredflag;
+			} else if (powerups & ( 1 << PW_BLUEFLAG )) {
+					*handle = cgs.media.pickup_iconblueflag;
+			}
+
+			return "";
+		}
+		case 4:
+			if (cgs.clientinfoOrig[sp->client].countryFlag) {
+				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
+			}
+			break;
+		case 5:
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
+				clanTag = info->clanTag;
+				if (*clanTag) {
+					s = va("^7%s ^7%s", clanTag, info->name);
+					//Com_Printf("'%s'\n", s);
+				} else {
+					s = va("%s", info->name);
+				}
+				CG_LimitText(s, CTF_TEXT_LIMIT);
+				return s;
+			} else {
+				int accuracy;
+
+				if (version >= 1) {
+					accuracy = ts->accuracy;
+				} else {
+					accuracy = sp->accuracy;
+				}
+
+				clanTag = info->clanTag;
+				if (info->knowSkillRating) {
+					if (*clanTag) {
+						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
+					} else {
+						s = va("^3%3d   ^1%d  ^7%s", accuracy, info->skillRating, info->name);
+					}
+					CG_LimitText(s, CTF_TEXT_LIMIT);
+					return s;
+				} else {
+					if (*clanTag) {
+						s = va("^3%3d   ^7%s ^7%s", accuracy, clanTag, info->name);
+					} else {
+						s = va("^3%3d   ^7%s", accuracy, info->name);
+					}
+					CG_LimitText(s, CTF_TEXT_LIMIT);
+					return s;
+				}
+			}
+			break;
+		case 6:
+			if (version >= 1) {
+				return va("%d", ts->score);
+			} else {
+				return va("%d", sp->score);
+			}
+		case 7:  // net
+			if (cgs.cpma) {
+				if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+					return "-";
+				}
+				return va("%d", sp->net);
+			}
+			if (version >= 1) {
+				return va("%d/%d", ts->kills, ts->deaths);
+			} else {
+				return va("%d/%d", sp->frags, sp->deaths);
+			}
+		case 8:
+			if (version >= 1) {
+				return va("%d", ts->captures);
+			} else {
+				return va("%d", sp->captures);
+			}
+		case 9:
+			if (cgs.cpma) {
+				return "-";
+			}
+			if (version >= 1) {
+				return va("%d", ts->awardAssist);
+			} else {
+				return va("%d", sp->assistCount);
+			}
+		case 10:
+			if (version >= 1) {
+				return va("%d", ts->awardDefend);
+			} else {
+				return va("%d", sp->defendCount);
+			}
+		case 11:
+			if (version >= 1) {
+				return va("%d", ts->ping);
+			} else {
+				return va("%d", sp->ping);
+			}
+		default:
+			//Com_Printf("wtf ctfcolumn %d\n", column);
+			break;
+		}
+	}
+
+	return "";
+}
+ 
+static const char *CG_FeederItemTextFreezetag (float feederID, int index, int column, qhandle_t *handle)
+{
+	//gitem_t *item;
+	int scoreIndex = 0;
+	const clientInfo_t *info = NULL;
+	int team = -1;
+	const score_t *sp = NULL;
+	char *s;
+	//int clientNum;
+	const char *clanTag;
+	const tdmPlayerScore_t *ts;
+
+	*handle = -1;
+
+	if (feederID == FEEDER_REDTEAM_LIST) {
+		team = TEAM_RED;
+	} else if (feederID == FEEDER_BLUETEAM_LIST) {
+		team = TEAM_BLUE;
+	}
+
+	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
+	sp = &cg.scores[scoreIndex];
+	ts = &cg.tdmScore.playerScore[sp->client];
+
+	//Com_Printf("%d %d %s %d\n", index, sp->client, info->name, info->team);
+
+	//return va("-%d-", column);
+	//return va("^3f_%d_", column);
+
+	if (info && info->infoValid) {
+		switch (column) {
+		case 0:
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
+			} else {  // default is cg_scoreBoardStyle.integer == 1
+				int bestWeapon;
+
+				if (cg.tdmScore.valid) {
+					bestWeapon = ts->bestWeapon;
+				} else {
+					bestWeapon = sp->bestWeapon;
+				}
+
+				*handle = cg_weapons[bestWeapon].weaponIcon;
+				if (!*handle) {
+					//*handle = cgs.media.redCubeIcon;
+				}
+			}
+			return "";
+
+		case 1:
+			if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
+					*handle = cgs.media.premiumIcon;
+				}
+			}
+			return "";
+
+		case 2:
+			if (info->handicap < 100) {
+				return va("^3%d%%", info->handicap);
+			}
+			return "";
+
+		case 3: {
+			qboolean ready = qfalse;
+			int alive;
+
+			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
+				ready = qtrue;
+			}
+			if (cg.warmup) {
+				if (ready) {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
+				} else {
+					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
+				}
+				return "";
+			}
+
+			if (cg.tdmScore.valid) {
+				alive = ts->alive;
+			} else {
+				alive = sp->alive;
+			}
+
+			if (alive) {
 				if (sp->team == TEAM_RED) {
 					*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 				} else {
@@ -5551,12 +5853,13 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 			}
 			return "";
 		}
-		case 1:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+		case 4:
+			if (cgs.clientinfoOrig[sp->client].countryFlag) {
+				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
 			}
 			return "";
-		case 3:
+
+		case 5:
 			//*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 			if (cg_scoreBoardStyle.integer == 0) {
 				//return info->name;
@@ -5566,40 +5869,94 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 				} else {
 					s = va("%s", info->name);
 				}
+				//FIXME check if has limit like tdm
+				// CG_LimitText(s, TDM_TEXT_LIMIT);
 				return s;
 			} else {
+				int accuracy;
+
+				if (cg.tdmScore.valid) {
+					accuracy = ts->accuracy;
+				} else {
+					accuracy = sp->accuracy;
+				}
+
 				clanTag = info->clanTag;
 				if (info->knowSkillRating) {
 					if (*clanTag) {
-						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
+						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
-						s = va("^3%3d   ^1%d  ^7%s", sp->accuracy, info->skillRating, info->name);
+						s = va("^3%3d   ^1%d  ^7%s", accuracy, info->skillRating, info->name);
 					}
+
+					//FIXME check if has limit like tdm
+					// CG_LimitText(s, TDM_TEXT_LIMIT);
 					return s;
 				} else {
 					if (*clanTag) {
-						s = va("^3%3d   ^7%s ^7%s", sp->accuracy, clanTag, info->name);
+						s = va("^3%3d   ^7%s ^7%s", accuracy, clanTag, info->name);
 					} else {
-						s = va("^3%3d   ^7%s", sp->accuracy, info->name);
+						s = va("^3%3d   ^7%s", accuracy, info->name);
 					}
+					//FIXME check if has limit like tdm
+					// CG_LimitText(s, TDM_TEXT_LIMIT);
 					return s;
 				}
 			}
 			break;
-		case 4:
-			return va("%d", sp->score);
-		case 5:
-			return va("%d", sp->frags);
-		case 6:  // thaws
+
+		case 6: {
+			int score;
+
+			if (cg.tdmScore.valid) {
+				score = ts->score;
+			} else {
+				score = sp->score;
+			}
+
+			return va("%d", score);
+		}
+		case 7: {
+			int frags;
+			int deaths;
+
+			if (cg.tdmScore.valid) {
+				frags = ts->kills;
+				deaths = ts->deaths;
+			} else {
+				frags = sp->frags;
+				deaths = sp->deaths;
+			}
+
+			// 2015-07-03 this is now kill / death
+			//return va("%d", sp->frags);
+			return va("%d/%d", frags, deaths);
+		}
+		case 8: {  // thaws
+			int thaws;
+
+			if (cg.tdmScore.valid) {
+				thaws = ts->thaws;
+			} else {
+				thaws = sp->assistCount;
+			}
+
 			//return va("%d", sp->deaths);
 			//Com_Printf("%s scoreflags %d  defendCount %d  assistCount %d  captures %d\n", info->name, sp->scoreFlags, sp->defendCount, sp->assistCount, sp->captures);
-			return va("%d", sp->assistCount);
-		case 7:
-			return va("%d", sp->deaths);
-		case 8:
-			return va("%d", sp->ping);
+			return va("%d", thaws);
+		}
+		case 9: {
+			int ping;
+
+			if (cg.tdmScore.valid) {
+				ping = ts->ping;
+			} else {
+				ping = sp->ping;
+			}
+			return va("%d", ping);
+		}
 		default:
-			return "xxx";
+			return va("^3f_%d_", column);
 		}
 	}
 
@@ -5659,16 +6016,19 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 			}
 			return "";
 		case 1:
-			if (cg_scoreBoardStyle.integer == 0  &&  cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocol == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
+			return "";
+
+		case 2:
 			if (info->handicap < 100) {
 				return va("^3%d%%", info->handicap);
 			}
 			return "";
-		case 2: {
+		case 3: {
 			qboolean ready = qfalse;
 
 			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
@@ -5685,7 +6045,7 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 
 			return "";
 		}
-		case 3:
+		case 4:
 			//*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 			if (cg_scoreBoardStyle.integer == 0) {
 				//return info->name;
@@ -5715,11 +6075,8 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 				}
 			}
 			break;
-		case 4:
-			//return "nm4";
-			return "";
 		case 5:
-			//FIXME 2015-06-02 what is this?
+			//FIXME 2015-07-07 what is this?  was this supposed to be country flag?
 			return "";
 		case 6:
 			return va("%d", sp->score);
@@ -5780,16 +6137,18 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 			}
 			return "";
 		case 1:
-			if (cg_scoreBoardStyle.integer == 0  &&  cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocol == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
+			return "";
+		case 2:
 			if (info->handicap < 100) {
 				return va("^3%d%%", info->handicap);
 			}
 			return "";
-		case 2: {
+		case 3: {
 			qboolean ready = qfalse;
 
 			if ( cg.snap->ps.stats[ STAT_CLIENTS_READY ] & ( 1 << sp->client ) ) {
@@ -5810,7 +6169,7 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 			}
 			return "";
 		}
-		case 3:
+		case 4:
 			//*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 			if (cg_scoreBoardStyle.integer == 0) {
 				//return info->name;
@@ -5840,12 +6199,10 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 				}
 			}
 			break;
-		case 4:
-			//return "nm4";
-			return "";
 		case 5:
 			//FIXME 2015-06-04 don't know why this was added, maybe adding
 			// space for additional indicator for people with download content? steam players???
+			// 2015-07-07 missing country flag
 			return "";
 		case 6:
 			return va("%d", sp->score);
@@ -5910,11 +6267,12 @@ static const char *CG_FeederItemTextRace (float feederID, int index, int column,
 			}
 			return "";
 		case 1:
-			if (cg_scoreBoardStyle.integer == 0  &&  cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocol == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
+			//FIXME own column?
 			if (info->handicap < 100) {
 				return va("^3%d%%", info->handicap);
 			}
@@ -5997,6 +6355,8 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 	//int clientNum;
 	const char *clanTag;
 
+	//Com_Printf("feederID: %f\n", feederID);
+
 	if (cgs.gametype == GT_CA  &&  !cg_scoreBoardOld.integer) {
 		if (feederID == FEEDER_REDTEAM_STATS  ||  feederID == FEEDER_BLUETEAM_STATS) {
 			return CG_FeederItemTextCaStats(feederID, index, column, handle);
@@ -6019,7 +6379,13 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 		}
 	}
 	if (cgs.gametype == GT_FREEZETAG  &&  !cg_scoreBoardOld.integer) {
-		return CG_FeederItemTextFreezetag(feederID, index, column, handle);
+		if (feederID == FEEDER_REDTEAM_STATS  ||  feederID == FEEDER_BLUETEAM_STATS) {
+			//Com_Printf("freezetag stats\n");
+			return CG_FeederItemTextFreezetagStats(feederID, index, column, handle);
+		} else {
+			//Com_Printf("freezetag item text\n");
+			return CG_FeederItemTextFreezetag(feederID, index, column, handle);
+		}
 	}
 
 	if (cgs.gametype == GT_FFA  &&  !cg_scoreBoardOld.integer) {
@@ -6069,7 +6435,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 			}
 			return "";
 		case 1:
-			if (cg_scoreBoardStyle.integer == 0  &&  cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocol == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
@@ -6215,8 +6581,8 @@ static qhandle_t CG_FeederItemImage(float feederID, int index) {
 	return 0;
 }
 
-static void CG_FeederSelection(float feederID, int index) {
-	if ( cgs.gametype >= GT_TEAM ) {
+static void CG_FeederSelection (float feederID, int index) {
+	if ( cgs.gametype >= GT_TEAM ) {  //FIXME team game
 		int i, count;
 		int team = (feederID == FEEDER_REDTEAM_LIST) ? TEAM_RED : TEAM_BLUE;
 		count = 0;

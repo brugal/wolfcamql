@@ -214,6 +214,19 @@ typedef struct effectScripts_s {
 	char playerHolyshit[MAX_FX_SCRIPT_SIZE];
 	char playerAccuracy[MAX_FX_SCRIPT_SIZE];
 	char playerGauntlet[MAX_FX_SCRIPT_SIZE];
+
+	// new ql awards
+	char playerMedalComboKill[MAX_FX_SCRIPT_SIZE];
+	char playerMedalMidAir[MAX_FX_SCRIPT_SIZE];
+	char playerMedalRevenge[MAX_FX_SCRIPT_SIZE];
+	char playerMedalFirstFrag[MAX_FX_SCRIPT_SIZE];
+	char playerMedalRampage[MAX_FX_SCRIPT_SIZE];
+	char playerMedalPerforated[MAX_FX_SCRIPT_SIZE];
+	char playerMedalAccuracy[MAX_FX_SCRIPT_SIZE];
+	char playerMedalHeadshot[MAX_FX_SCRIPT_SIZE];
+	char playerMedalPerfect[MAX_FX_SCRIPT_SIZE];
+	char playerMedalQuadGod[MAX_FX_SCRIPT_SIZE];
+
 	char playerHaste[MAX_FX_SCRIPT_SIZE];
 	char playerDefend[MAX_FX_SCRIPT_SIZE];
 	char playerAssist[MAX_FX_SCRIPT_SIZE];

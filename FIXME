@@ -1415,24 +1415,15 @@ FIXME gametype : '1f'  '1f'
 FIXME gametype : 'ob ctf 1f har'  'ob'
 FIXME gametype : 'ob ctf 1f har'  'ob'
 
-  ft:
-    CG_DrawTeamMapPickups() unsupported game type: 9
 
   duel:
     fixme ownerdrawflag2 0x00004000
 
   levelshots shader
-  unknown event: 96 EV_DAMAGEPLUM,
   ffa unknown config string modified  689: 12,
   Com_Error(): couldn't open FFA-campgrounds-2014_09_07-01_08_50 file is there (dm_90 extension?  -- yes),
-  heavy machine gun weapon flash,
-  heavy machine gun fx scripts,
-  scoreboards,
   item timers,
   powerup wall hack,
-  old hud and new machine gun,
-  heavy mg and kill stats,
-  heavy mg and weapon bar,
 ERROR: Could not open "sound/items/cl_doubler.wav"
 S_RegisterSound() couldn't open 'sound/items/cl_doubler.wav'
 ERROR: Could not open "sound/items/damage2.wav"
@@ -1469,9 +1460,6 @@ RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
   /devmap campgrounds  fails  (need spawnpoint)
 
 
-  hmg wstats
-  hmg fx scripts
-
   damageplum and fx scripts
   obiturary icons
 
@@ -1481,7 +1469,6 @@ RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
   17:24 xxx renamed to xxx xxx
 WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 'fonts/fontImage_48.dat'
 
-  wcstats show hmg for dm 73 demos
   null model in lava old dm13 demos -- no, /devmap lostworld
   item pickup poi  (red armor campgrounds: weapon 14, legsAnim 143, torsoAnim 11)
 * get shader image data?
@@ -1493,20 +1480,15 @@ WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 
 * set protocol with disconnect as well
 * record sub demo and protocol check
 
-* ql update 2014-09-19  new announcer, vo/crash_new, 1fctf announcer sounds, 1ctf flag taken and return sounds, new in game reward medals:
-       Combokill, damage with one weapon, and follow up with a rail kill.
-    Rampage, gib three opponents, each within 3s of eachother.
-    MidAir, kill an airborne enemy with a projectile.
-    Revenge, kill a player who has killed you 3 or more times since you last killed them.
-    First Frag, awarded to the player who earns the first frag of the match in FFA or Duel.
+* ql update 2014-09-19  vo/crash_new, 1fctf announcer sounds, 1ctf flag taken and return sounds, new in game reward medals:
+
+
     FIXME CG_OwnerDraw()  331 332 332
         CG_VOTEGAMETYPE1, ...
 
     sound/items/damage2.wav sound/items/damage3.wav   damage2 taken out
 
     RE_RegisterModel: failed to load models/powerups/holdable/medkit_sphere.md3
-
-    damage plum now transmits client number?
 
 * performance stutter now with name sprite creation and name change
 * option for ttf resolution size
@@ -1523,12 +1505,8 @@ WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 
 * 103746-msk-pupz-vs-gaiia-MVD-cpm3a-2014_11_0.dm_68 final demo scoreboard shows wrong player as winner
 * no grab or console windows doesn't let me move window in windows 7 work
 * osx crash with courtyard demo
-* auto vstr for new ql weapon hmg  cg_weaponHeavyMachineGun
 * quakelive update apr 21, 2015
-    scoreboard extra columns
     new voice overs
-    keys
-    new medals (accuracy, first frag, headshot, perfect, quad god)
 * ql widescreen:  MenuWidescren (remove) QLWidescreen global vars, DC->runCinematicFrame
 
 cursor for scoreboard:
@@ -1547,13 +1525,109 @@ name sprites?
 * void *parent in itemDef_t  should be menuDef_t
 * team votes osp or cpma?
 * bug?  cg_drawWaitingForPlayersFont.string instead of cg_drawWarmupString?
-* cg_weaponHMG
 * order of cg_crosshair* vmCvar in cg_main.c
 * new ql command +pstats ?
 * widescreen support for main ui screen?  more space for filenames
-* ui loading screen draw players / icons goes offscreen
 * reset keyboard down and mouse down when demo ends so that it doesn't mess up ui gui?  example:  keeping tab pressed in demo to see scoreboard and then the demo ends
 * is cg_scoreBoardCursorAreaWideScreen needed or can it be handled from ui/* ?
+  yes ui -- ingame menus work with widescreen 2 and have cursor full screen
+* dec 2014 update:
+   double stack obituary for players killed at same time
+   Show all obituaries for 1.5s, instead of cutting them short when a new one occurs on a following frame.
+   Added Win/Loss music at the endgame scoreboard (Win/Loss background music controlled with s_musicVolume).
+   Added premium icons to the FFA and RR scoreboards.
+* CG_ScorePlum() converts 'score' from float to int
+* wcweaponbar.menu shows only one weapon with wolfcam_following
+* q3 digit font
+* CG_FloatTextString
+* new menudef.h   FEEDER_BAN_LIST UI_SHOW_IF_WARMUP UI_SHOW_IF_NOT_WARMUP CG_STARTING_WEAPONS UI_STARTING_WEAPONS
+
+
+
+
+
+-------------------------------------------------
+
+* 2015-07-01 what's left:
+
+  x August 27, 2014
+
+   - Added Power-up POIs, that indicate when an available power-up is available in the arena.
+   - Added flagstand POIs in CTF.
+   - Quad firing sound reduced on high rate of fire weapons: mg, pg, cg, hmg.
+   - Prevent broken shader image on crosshair '30', '60', '90', which would equate to crosshair "none" as the cycle repeats.
+   - The PQL ruleset has been renamed 'Turbo'.
+
+ x September 11, 2014
+   - Added Infected VO when you're turned!
+   - Added Go! VO on Race countdown
+   - Added Bite! VO on Infected countdown
+   - Simplified flag VO (your/enemy instead of red/blue, and reduced amount of VO in places).
+   - Fixed 5:4 aspect ratio, and added support for vertical displays.
+   - Added cg_itemTimers to disable timer pies.
+   - Added cg_flagPOIs to disable flag POIs.
+   - Added Your Team Scores / Enemy Scores in place of Red/Blue unless you're spec.
+   - Removed red/blue scores and rank change (lead taken / lead loss) from Attack & Defend, because these events only occur at the time of other VO playing (flag taken, round over, etc).
+
+ x December 2, 2014
+   - Updated VO for the "Fight!", "two frags left", and "one frag left" voice-overs.
+   - Updated "lead taken" and "lead lost" VO behavior.
+   - Removed "Teams are Tied" VO to reduce VO clutter.
+   - Double stack obituaries for players killed at the same time.
+   - Show all obituaries for 1.5s, instead of cutting them short when a new one occurs on a following frame.
+   - Added Win/Loss music at the endgame scoreboard (Win/Loss background music controlled with s_musicVolume).
+
+ x April 21, 2015
+   - Single State (Unary) Switches - Buttons and triggers now exist that allow you to activate a door or platform causing the mover to move once and remain in place for the remainder of the map
+   - Alternative Announcer Voices:
+       To change the announcer voice, choose between three announcers within the Game Settings Advanced Sound menu, and apply audio changes.
+
+       Added Vadrigar (Classic) Announcer VO option
+       Added Daemia (Female) Announcer VO option
+   - Added s_killbeepVolume since some of those sounds are too quiet.
+   - Added Battlesuit VO
+   - Replaced cg_playTeamVO with cg_announcerLastStandingVO, cg_announcerLeadsVO, and cg_announcerTiesVO.
+   - Added CVAR_REPLICATED to archived sound cvars.
+   - Specified a sort order on liquids/glass/flares/lightbeams shaders; Simple items and similar transparent objects should correctly sort over them now (in most cases).
+
+
+
+
+
+
+* double check advert shaders now  -- blackcathedral ad orientation, did devilish
+
+* with nocull change might be able to use id's shaders -- lightmap
+* double check that default widescreen is 2
+* overtime check in a separate function
+* /devmap coldcathode missing texture
+* missing scores_ffa (doesn't appear to be used)
+* spectator scrolling and widescreen?  overwrites
+* check if CG_SetScoreSelection(NULL) is needed
+* spec score values from scores_* data
+* scoreboard column order based on obscuring for handicap, model/weap icon, and premium
+* font looks weird in scoreboard, wrong point size?
+* R_LoadShaders()
+WARNING: invalid cull parm 'front' in shader 'textures/ct_ragnarok/dragonhead'
+WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' (99, -2)
+  ragnarok
+* old demos don't work with new endgame stats
+* "Overtime" shown right after game ends
+* need changes for clientinfo score valid and new scores?
+* mouse no grab and menu items
+* "Overtime" and non ql demos
+* ctf end scoreboard shows flag caps instead of score
+* draw following and race covers 'current time' in hud
+* race  'race_info' raceon.dm_90
+* teammate crosshair health not very visible
+* friend icon color red and friend hit shader is also red
+* cvar descriptions (SHIFT tab to show for list?)
+* 'out of ammo' shown when frozen in freezetag
+* quad kill counter very small (widescreen)
+* ctfs-as-ffa.dm_90 broken friend icons
+* timer pie info for client item timer
+* timer pie check flight
+* quad respawn sound in freecam wrong distance
 
 ---------------------------
 

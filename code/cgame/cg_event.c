@@ -11,6 +11,7 @@
 #include "cg_main.h"
 #include "cg_newdraw.h"
 #include "cg_players.h"
+#include "cg_playerstate.h"
 #include "cg_predict.h"
 //#include "cg_servercmds.h"  // CG_VoiceChatLocal()
 #include "cg_syscalls.h"
@@ -142,7 +143,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 	cg.lastObituary.victimClientNum = target;
 
     if (attacker >= 0  &&  attacker <= MAX_CLIENTS) {
-		wclients[attacker].lastKillWeapon = CG_ModToWeapon(mod);
+		wclients[attacker].lastKillWeapon = BG_ModToWeapon(mod);
 		if (mod != MOD_THAW) {
 			if (attacker == target) {
 				wclients[attacker].suicides++;
@@ -160,7 +161,7 @@ static void CG_Obituary( const entityState_t *ent ) {
     }
     if (target >= 0  &&  target <= MAX_CLIENTS) {
 		if (mod != MOD_THAW) {
-			wclients[target].lastDeathWeapon = CG_ModToWeapon(mod);
+			wclients[target].lastDeathWeapon = BG_ModToWeapon(mod);
 			wclients[target].deaths++;
 			wclients[target].killedOrDied = qtrue;
 			wclients[target].killCount = 0;
@@ -203,7 +204,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 	// check for single client messages
 
 	icon = cgs.media.redCubeIcon;
-	cg.lastObituary.weapon = CG_ModToWeapon(mod);
+	cg.lastObituary.weapon = BG_ModToWeapon(mod);
 
 	switch( mod ) {
 	case MOD_SUICIDE:
@@ -348,6 +349,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 				icon = cg_weapons[WP_PLASMAGUN].weaponIcon;
                 break;
             case MOD_RAILGUN:
+			case MOD_RAILGUN_HEADSHOT:
                 wclients[attacker].wstats[WP_RAILGUN].kills++;
                 wclients[target].wstats[WP_RAILGUN].deaths++;
 				icon = cg_weapons[WP_RAILGUN].weaponIcon;
@@ -438,7 +440,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 		cg.lastFragKiller = attacker;
 		Q_strncpyz(cg.lastFragVictimName, cgs.clientinfo[target].name, sizeof(cg.lastFragVictimName));
 		Q_strncpyz(cg.lastFragVictimWhiteName, cgs.clientinfo[target].whiteName, sizeof(cg.lastFragVictimWhiteName));
-		cg.lastFragWeapon = CG_ModToWeapon(mod);
+		cg.lastFragWeapon = BG_ModToWeapon(mod);
 		cg.lastFragMod = mod;
 		cg.lastFragVictimTeam = cgs.clientinfo[target].team;
 
@@ -462,7 +464,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 			cg.lastFragKiller = attacker;
 			Q_strncpyz(cg.lastFragVictimName, cgs.clientinfo[target].name, sizeof(cg.lastFragVictimName));
 			Q_strncpyz(cg.lastFragVictimWhiteName, cgs.clientinfo[target].whiteName, sizeof(cg.lastFragVictimWhiteName));
-			cg.lastFragWeapon = CG_ModToWeapon(mod);
+			cg.lastFragWeapon = BG_ModToWeapon(mod);
 			cg.lastFragMod = mod;
 			cg.lastFragVictimTeam = cgs.clientinfo[target].team;
         }
@@ -542,6 +544,9 @@ static void CG_Obituary( const entityState_t *ent ) {
 		case MOD_RAILGUN:
 			message = "was railed by";
 			break;
+		case MOD_RAILGUN_HEADSHOT:
+			message = "was railed in the head by";
+			break;
 		case MOD_LIGHTNING:
 			message = "was electrocuted by";
 			break;
@@ -579,7 +584,8 @@ static void CG_Obituary( const entityState_t *ent ) {
 			break;
 		default:
 			message = "was killed by";
-			Com_Printf("mod: %d\n", mod);
+			CG_Printf("^3unknown mod: %d\n", mod);
+			//CG_PrintEntityStatep(ent);
 			break;
 		}
 
@@ -1804,6 +1810,11 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					case PW_ARMORREGEN:
 						trap_S_StartSound (NULL, clientNum, CHAN_AUTO,	cgs.media.armorRegenSound );
 						break;
+					case PW_KEY:
+						trap_S_StartSound(NULL, clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, qfalse));
+						break;
+					default:
+						break;
 					}
 #endif
 				} else {
@@ -2006,6 +2017,13 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		}
 		CG_UseItem( cent );
 		break;
+	case EV_USE_ITEM15:
+		DEBUGNAME("EV_USE_ITEM15");
+		if (es->number >= MAX_CLIENTS) {
+			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
+		}
+		CG_UseItem( cent );
+		break;
 
 	//=================================================================
 
@@ -2162,21 +2180,15 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		break;
 
 	case EV_DAMAGEPLUM: {
-		static qboolean warningGiven = qfalse;
-
 		DEBUGNAME("EV_DAMAGEPLUM");
-		//CG_PrintEntityStatep(&cent->currentState);
-		//FIXME generic possibly the random velocity
+		// generic1 is the weapon number
 		// time is the damage amount
 
-		if (!warningGiven) {
-			CG_Printf("^3FIXME EV_DAMAGEPLUM\n");
-			warningGiven = qtrue;
-		}
-		//CG_DamagePlum(cent->currentState.clientNum, cent->lerpOrigin, cent->currentState.time, cent->currentState.generic1);
+		CG_DamagePlum(cent->currentState.clientNum, cent->lerpOrigin, cent->currentState.time, cent->currentState.generic1);
 		break;
 
 	}
+
 	//
 	// missile impacts
 	//
@@ -3375,6 +3387,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		break;
 	}
 	case EV_RACE_START: {
+		DEBUGNAME("EV_RACE_START");
 		if (es->clientNum < 0  ||  es->clientNum >= MAX_CLIENTS) {
 			CG_Printf("^3EV_RACE_START invalid client number %d\n", es->clientNum);
 			break;
@@ -3396,6 +3409,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		break;
 	}
 	case EV_RACE_CHECKPOINT: {
+		DEBUGNAME("EV_RACE_CHECKPOINT");
 		if (es->clientNum < 0  ||  es->clientNum >= MAX_CLIENTS) {
 			CG_Printf("^3EV_RACE_CHECKPOINT invalid client number %d\n", es->clientNum);
 			break;
@@ -3429,6 +3443,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		break;
 	}
 	case EV_RACE_END: {
+		DEBUGNAME("EV_RACE_END");
 		//Com_Printf("^3FIXME EV_RACE_END:\n");
 		if (es->clientNum < 0  ||  es->clientNum >= MAX_CLIENTS) {
 			CG_Printf("^3EV_RACE_END invalid client number %d\n", es->clientNum);
@@ -3452,6 +3467,103 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		}
 
 		//CG_PrintEntityStatep(es);
+		break;
+	}
+
+	case EV_AWARD: {
+		qhandle_t shader = 0;
+		sfxHandle_t sfx;
+		clientInfo_t *ci;
+
+		DEBUGNAME("EV_AWARD");
+
+		// clientNum:  clientNum
+		// modelindex2:  count
+		// generic1:  award type
+
+		if (es->clientNum < 0  ||  es->clientNum >= MAX_CLIENTS) {
+			CG_Printf("^3WARNING EV_AWARD invalid client number %d\n", es->clientNum);
+			break;
+		}
+
+		ci = &cgs.clientinfo[es->clientNum];
+
+		// multi sound:  comboKill, rampage, revenge, midair
+
+		switch (es->generic1) {
+			/*FIXME
+
+			// damage  -- not seen?
+			// timing  -- not seen?
+
+			*/
+
+		case 0:  // combo kill*
+			shader = cgs.media.medalComboKill;
+			sfx = cgs.media.comboKillRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			break;
+		case 1:  // rampage*
+			shader = cgs.media.medalRampage;
+			sfx = cgs.media.rampageRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			break;
+		case 2:  // mid air*
+			shader = cgs.media.medalMidAir;
+			sfx = cgs.media.midAirRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			break;
+		case 3:  // revenge*
+			shader = cgs.media.medalRevenge;
+			sfx = cgs.media.revengeRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			break;
+		case 4:  // perforated
+			shader = cgs.media.medalPerforated;
+			sfx = cgs.media.perforatedRewardSound;
+			break;
+		case 5:  // headshot
+			shader = cgs.media.medalHeadshot;
+			sfx = cgs.media.headshotRewardSound;
+			break;
+		case 6:  // accuracy
+			shader = cgs.media.medalAccuracy;
+			sfx = cgs.media.accuracyRewardSound;
+			break;
+		case 7:  // quad god
+			shader = cgs.media.medalQuadGod;
+			sfx = cgs.media.quadGodRewardSound;
+			break;
+		case 8:  // first frag
+			shader = cgs.media.medalFirstFrag;
+			sfx = cgs.media.firstFragRewardSound;
+			break;
+		case 9:  // perfect
+			shader = cgs.media.medalPerfect;
+			sfx = cgs.media.perfectRewardSound;
+			break;
+
+		default:
+			Com_Printf("^3FIXME EV_AWARD\n");
+			CG_PrintEntityStatep(&cent->currentState);
+			CG_Printf("^3unknown EV_AWARD index %d\n", es->generic1);
+			shader = 0;
+			break;
+		}
+
+		if (es->clientNum == ourClientNum) {
+			if (shader) {
+				CG_PushReward(sfx, shader, es->modelindex2);
+			}
+		} else {
+			// not main client
+			// debugging
+			//CG_Printf("^2EV_AWARD for non ps (%d) client %d\n", cg.snap->ps.clientNum, es->clientNum);
+			//CG_PrintEntityStatep(&cent->currentState);
+		}
+
+		if (shader) {
+			ci->clientRewards.startTime = cg.time;
+			ci->clientRewards.shader = shader;
+			ci->clientRewards.sfx = sfx;
+		}
+
 		break;
 	}
 	default: {

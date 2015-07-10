@@ -618,6 +618,12 @@ void SkipRestOfLine ( char **data ) {
 	int		c;
 
 	p = *data;
+
+	if ( !*p ) {
+		Com_Printf("^3WARNING SkipRestOfLine *p == null\n");
+		return;
+	}
+
 	while ( (c = *p++) != 0 ) {
 		if ( c == '\n' ) {
 			com_lines++;

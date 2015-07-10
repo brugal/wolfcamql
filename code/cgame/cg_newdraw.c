@@ -4918,6 +4918,9 @@ int CG_GetCurrentTimeWithDirection (void)
 		  }
 	  }
 
+	  //FIXME not here, what if this function isn't called
+	  cgs.numOverTimes = numOverTimes;
+
     //
     if (cg_levelTimerDirection.integer == 0) {
 		if (numOverTimes) {
@@ -5537,7 +5540,7 @@ static void CG_DrawTeamMapPickups (const rectDef_t *rect, float scale, int style
 		return;
 	}
 
-	if (cgs.gametype == GT_TEAM) {
+	if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_FREEZETAG) {
 		CG_DrawTeamMapPickupsTdm(rect, scale, style, font, team);
 	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER) {
 		CG_DrawTeamMapPickupsCtf(rect, scale, style, font, team);
@@ -6279,7 +6282,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {  //FIXME OBELISK like quakelive -- even if wrong
 			  if (captures) {
 				  if (cgs.gametype == GT_HARVESTER) {
-					  CG_Text_Paint_Align(&rect, scale, color, va("You had %d capture%s", captures, captures == 1 ? "." : "s."), 0, 0, textStyle, font, align);
+					  CG_Text_Paint_Align(&rect, scale, color, va("You captured %d skull%s", captures, captures == 1 ? "." : "s."), 0, 0, textStyle, font, align);
 				  } else {
 					  CG_Text_Paint_Align(&rect, scale, color, va("You had %d flag capture%s", captures, captures == 1 ? "." : "s."), 0, 0, textStyle, font, align);
 				  }
@@ -8197,6 +8200,46 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  timeString = CG_GetTimeString(end);
 		  //Com_Printf("tstring %d  start %d  end %d\n", end - start, start, end);
 		  CG_Text_Paint_Align(&rect, scale, color, va("%s", timeString), 0, 0, textStyle, font, align);
+	  }
+
+	  break;
+  }
+
+  case CG_OVERTIME: {
+	  if (!cg.warmup  &&  cgs.numOverTimes  &&  !(cg.snap->ps.pm_type == PM_INTERMISSION)) {
+		  CG_Text_Paint_Align(&rect, scale, color, "Overtime", 0, 0, textStyle, font, align);
+	  }
+	  break;
+  }
+
+  case CG_PLAYER_HASKEY: {
+	  //CG_Text_Paint_Align(&rect, scale, color, "key", 0, 0, textStyle, font, align);
+	  if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
+		  // pass
+	  } else {
+		  qhandle_t shader;
+		  int spacing = 0;
+
+
+		  //FIXME other keys besides gold, don't know what it will look like
+
+		  if (cg.snap->ps.stats[STAT_MAP_KEYS] & 0x1) {
+			  shader = cgs.media.silverKeyIcon;
+			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, shader);
+			  spacing += 10;
+		  }
+
+		  if (cg.snap->ps.stats[STAT_MAP_KEYS] & 0x2) {
+			  shader = cgs.media.goldKeyIcon;
+			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, shader);
+			  spacing += 10;
+		  }
+
+		  if (cg.snap->ps.stats[STAT_MAP_KEYS] & 0x4) {
+			  shader = cgs.media.masterKeyIcon;
+			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, shader);
+			  spacing += 10;
+		  }
 	  }
 
 	  break;

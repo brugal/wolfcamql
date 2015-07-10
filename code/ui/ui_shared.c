@@ -286,6 +286,7 @@ void String_Init(void) {
 	}
 }
 
+#if 0  // unused
 /*
 =================
 PC_SourceWarning
@@ -307,6 +308,7 @@ static void PC_SourceWarning(int handle, char *format, ...) {
 
 	Com_Printf(S_COLOR_YELLOW "WARNING: %s, line %d: %s\n", filename, line, string);
 }
+#endif
 
 /*
 =================
@@ -549,6 +551,11 @@ qboolean PC_Int_Parse (int handle, int *i)
 	pc_token_t token;
 	char *p;
 	char buf[MAX_TOKENLENGTH];
+
+	if (!i) {
+		Com_Printf("^1ERROR PC_Int_Parse i == null\n");
+		return qfalse;
+	}
 
 	if (UseScriptBuffer) {
 		return Int_Parse(&ScriptBuffer, i);
@@ -1954,7 +1961,7 @@ static float Item_Slider_ThumbPosition(itemDef_t *item) {
 		x = item->window.rect.x;
 	}
 
-	if (editDef == NULL && item->cvar) {
+	if (!editDef || !item->cvar) {
 		return x;
 	}
 
@@ -4786,6 +4793,11 @@ menuDef_t *Menus_ActivateByName(const char *p) {
 
 
 void Item_Init(itemDef_t *item) {
+	if (item == NULL) {
+		Com_Printf("^1ERROR Item_Init item == null\n");
+		return;
+	}
+
 	memset(item, 0, sizeof(itemDef_t));
 	item->textscale = 0.22f;  // 0.55f
 	Window_Init(&item->window);
@@ -7418,6 +7430,10 @@ static qboolean MenuParse_itemDef( itemDef_t *item, int handle ) {
 	menuDef_t *menu = (menuDef_t*)item;
 	if (menu->itemCount < MAX_MENUITEMS) {
 		menu->items[menu->itemCount] = UI_Alloc(sizeof(itemDef_t));
+		if (!menu->items[menu->itemCount]) {
+			Com_Printf("^1ERROR:  UI_Alloc() failed for MenuParse_itemDef\n");
+			return qfalse;
+		}
 		Item_Init(menu->items[menu->itemCount]);
 		//FIXME widescreen hack
 		menu->items[menu->itemCount]->widescreen = menu->widescreen;
