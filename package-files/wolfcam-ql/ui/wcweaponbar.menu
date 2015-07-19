@@ -4,8 +4,10 @@
 // weapon bar
 
 menuDef {
+	name "wcmenubar"
 	visible 1
 	rect 50 100 40 50
+	widescreen 1
 
 	itemDef {
 		// initialize some variables

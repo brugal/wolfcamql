@@ -18,5 +18,6 @@ void CG_ExecuteNewServerCommands( int latestSequence );
 
 void CG_CpmaParseScores (void);
 void CG_CpmaParseGameState (qboolean initial);
+void CG_PlayWinLossMusic (void);
 
 #endif  // cg_servercmds_h_included

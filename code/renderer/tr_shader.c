@@ -650,6 +650,7 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 {
 	char *token;
 	int depthMaskBits = GLS_DEPTHMASK_TRUE, blendSrcBits = 0, blendDstBits = 0, atestBits = 0, depthFuncBits = 0;
+	int depthTestBits = 0;
 	qboolean depthMaskExplicit = qfalse;
 
 	stage->active = qtrue;
@@ -1061,6 +1062,16 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 
 			continue;
 		}
+		else if (!Q_stricmp(token, "depthtest")) {
+			token = COM_ParseExt(text, qfalse);
+			if (token[0] == 0) {
+				ri.Printf( PRINT_WARNING, "WARNING: missing depthtest parm in shader '%s'\n", shader.name );
+				continue;
+			}
+			if (!Q_stricmp(token, "disable")) {
+				depthTestBits = GLS_DEPTHTEST_DISABLE;
+			}
+		}
 		else
 		{
 			ri.Printf( PRINT_WARNING, "WARNING: unknown parameter '%s' in shader '%s'\n", token, shader.name );
@@ -1107,7 +1118,8 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 	stage->stateBits = depthMaskBits | 
 		               blendSrcBits | blendDstBits | 
 					   atestBits | 
-					   depthFuncBits;
+					   depthFuncBits |
+		               depthTestBits;
 
 	return qtrue;
 }

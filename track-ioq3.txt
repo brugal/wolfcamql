@@ -1469,3 +1469,50 @@ Remove unnecessary localhost check from reconnect command.
 
 2014-11-11-01 skip (rend2):  OpenGL2: remove lightmap support from generic glsl shader.
 2014-11-11-02 skip (rend2):  OpenGL2: Add support for parallax occlusion mapping.
+
+2014-11-14-01 skip (rend2):  OpenGL2: Bit more parallax optimization.
+
+2014-11-16-01 Correct a few OpenGL variable types
+2014-11-16-02 Remove unfinished OpenGL display list code
+2014-11-16-03 skip + check:  Don't set fog image border color
+2014-11-16-04 Fix stencil shadows not drawing if has 500 or more vertexes
+
+2014-11-21-01 skip (rend2):  OpenGL2: Ensure tess VAO is bound before using it.
+
+2014-12-01-01 skip (rend2):  OpenGL2: Fix face culling.
+2014-12-01-02 skip + check:  Fix saving/loading glyph 255 in RegisterFont
+2014-12-01-03 Fix negative glyph index in Team Arena text functions
+
+2014-12-04-01 Fix bot's teamleader name field being too short
+
+2014-12-06-01 Fix compile error with ml64 assembler
+
+2014-12-10-01 Fix weapon barrel angle on Gauntlet and BFG items in Team Arena
+2014-12-10-02 skip (implemented):  Add weapon barrel to gauntlet/mg/bfg items in baseq3 too
+
+2014-12-19-01 skip (sdl2):  Fix reading 4 byte UTF-8 text input
+2014-12-19-02 Don't use dead view angles after stop following a dead player
+2014-12-19-03 When player stops following a player, keep view angles
+
+2014-12-26-01 Renaming outp to outbufp because outp() is an existing function
+2014-12-26-02 Windows header files for q3lcc
+
+2014-12-27-01 Fix cg.intermissionStarted only being enabled at first intermission
+
+2014-12-28-01 skip (different):  Fix warning
+2014-12-28-02 skip (different):  Unfix warning
+2014-12-28-03 skip:  Merge pull request #94 from wombat23/asmfix
+2014-12-28-04 Include stdint.h instead of inttypes.h in libmumblelink.c
+2014-12-28-05 skip:  Make travis do all the builds again
+
+2014-12-29-01 Fix case where interval overflows (thanks jackeri)
+
+2014-01-06-01 q3lcc option -lcppdir and -lrccdir
+
+2014-01-07-01 Stop LCC from warning about null pointer conversion to function pointer
+2014-01-07-02* Ensure that mbstowcs does not overflow its buffer
+2014-01-07-03* skip (sdl2):  Don't crash if more than 128 modes are available
+2014-01-07-04 skip:  Merge pull request #104 from smcv/mbstowcs
+2014-01-07-05 skip:  Merge pull request #97 from Pan7/outp
+2014-01-07-06 skip:  Merge pull request #98 from Pan7/lcc
+

@@ -2299,6 +2299,19 @@ static void S_AL_SoundInfo( void )
 #endif
 }
 
+static void S_AL_PrintSfxFilename (sfxHandle_t sfx)
+{
+	const alSfx_t *s;
+
+	if (sfx >= numSfx  ||  sfx < 0) {
+		Com_Printf("^3S_PrintSfxFilename() invalid handle: %d\n", sfx);
+	}
+
+	s = &knownSfx[sfx];
+
+	Com_Printf("'%s'\n", s->filename);
+}
+
 /*
 =================
 S_AL_Shutdown
@@ -2569,6 +2582,7 @@ qboolean S_AL_Init( soundInterface_t *si )
 	si->ClearSoundBuffer = S_AL_ClearSoundBuffer;
 	si->SoundInfo = S_AL_SoundInfo;
 	si->SoundList = S_AL_SoundList;
+	si->PrintSfxFilename = S_AL_PrintSfxFilename;
 
 #ifdef USE_VOIP
 	si->StartCapture = S_AL_StartCapture;

@@ -25,6 +25,8 @@
 #define MAX_TIMED_ITEMS 16   //FIXME
 #define MAX_CHAT_LINES  100
 #define MAX_CHAT_LINES_MASK (MAX_CHAT_LINES - 1)
+#define MAX_OBITUARIES 100
+#define MAX_OBITUARIES_MASK (MAX_OBITUARIES - 1)
 #define MAX_SPAWN_POINTS 128  //FIXME from g_client.c
 #define MAX_MIRROR_SURFACES MAX_GENTITIES
 #define DEFAULT_RECORD_PATHNAME "path"
@@ -196,6 +198,7 @@ typedef struct {
 	int raceEndTime;
 
 	int deathTime;
+	int lastQuadSoundTime;
 } playerEntity_t;
 
 //=================================================
@@ -1219,7 +1222,8 @@ typedef struct {
 	int				lastChatBeepTime;
 	int				lastTeamChatBeepTime;
 
-	obituary_t		lastObituary;
+	obituary_t		obituaries[MAX_OBITUARIES];
+	int obituaryIndex;
 
 	// chat area has additional info besides just chat:  'player connected', etc..
 	char			chatAreaStrings[MAX_CHAT_LINES][MAX_STRING_CHARS];
@@ -1505,6 +1509,8 @@ typedef struct {
 
 	qboolean weaponDamagePlum[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 	int damagePlumModificationCount;
+
+	int infectedSnapshotTime;
 } cg_t;
 
 
@@ -1941,6 +1947,8 @@ typedef struct {
 	sfxHandle_t redLeadsSound;
 	sfxHandle_t blueLeadsSound;
 	sfxHandle_t teamsTiedSound;
+	sfxHandle_t yourTeamScoredSound;
+	sfxHandle_t enemyTeamScoredSound;
 	sfxHandle_t redWinsSound;
 	sfxHandle_t blueWinsSound;
 	sfxHandle_t redWinsRoundSound;
@@ -1953,11 +1961,16 @@ typedef struct {
 	sfxHandle_t	captureOpponentSound;
 	sfxHandle_t	returnYourTeamSound;
 	sfxHandle_t	returnOpponentSound;
-	sfxHandle_t	takenYourTeamSound;
-	sfxHandle_t	takenOpponentSound;
+
+	// unused
+	//sfxHandle_t	takenYourTeamSound;
+	//sfxHandle_t	takenOpponentSound;
 
 	sfxHandle_t redFlagReturnedSound;
 	sfxHandle_t blueFlagReturnedSound;
+	sfxHandle_t yourFlagReturnedSound;
+	sfxHandle_t enemyFlagReturnedSound;
+
 #if 1  //def MPACK
 	sfxHandle_t neutralFlagReturnedSound;
 #endif
@@ -1991,6 +2004,8 @@ typedef struct {
 	sfxHandle_t	count2Sound;
 	sfxHandle_t	count1Sound;
 	sfxHandle_t	countFightSound;
+	sfxHandle_t countGoSound;
+	sfxHandle_t countBiteSound;
 	sfxHandle_t	countPrepareSound;
 
 #if 1  //def MPACK
@@ -2030,6 +2045,7 @@ typedef struct {
 	sfxHandle_t nightmareSound;
 	sfxHandle_t survivorSound;
 	sfxHandle_t bellSound;
+	sfxHandle_t infectedSound;
 
 	// don't actually load these
 	fontInfo_t	giantchar;
@@ -2119,6 +2135,7 @@ typedef struct {
 	qhandle_t weaplit;
 	qhandle_t flagCarrier;
 	qhandle_t flagCarrierNeutral;
+	qhandle_t flagCarrierHit;
 	qhandle_t ghostWeaponShader;
 	qhandle_t noPlayerClipShader;
 	qhandle_t rocketAimShader;
@@ -2139,9 +2156,22 @@ typedef struct {
 	qhandle_t timerSlice24Current;
 	qhandle_t wcTimerSlice5;
 	qhandle_t wcTimerSlice5Current;
+
 	qhandle_t powerupIncoming;
+	qhandle_t regenAvailable;
+	qhandle_t quadAvailable;
+	qhandle_t invisAvailable;
+	qhandle_t hasteAvailable;
+	qhandle_t bsAvailable;
 
 	int activeCheckPointRaceFlagModel;
+
+	// announcer
+	sfxHandle_t quadPickupVo;
+	sfxHandle_t battleSuitPickupVo;
+	sfxHandle_t hastePickupVo;
+	sfxHandle_t invisibilityPickupVo;
+	sfxHandle_t regenPickupVo;
 
 } cgMedia_t;
 
@@ -2695,6 +2725,7 @@ extern	vmCvar_t		cg_paused;
 extern	vmCvar_t		cg_blood;
 extern	vmCvar_t		cg_predictItems;
 extern	vmCvar_t		cg_deferPlayers;
+
 extern	vmCvar_t		cg_drawFriend;
 extern vmCvar_t cg_drawFriendStyle;
 extern vmCvar_t cg_drawFriendMinWidth;
@@ -2702,9 +2733,15 @@ extern vmCvar_t cg_drawFriendMaxWidth;
 extern vmCvar_t cg_drawFoe;
 extern vmCvar_t cg_drawFoeMinWidth;
 extern vmCvar_t cg_drawFoeMaxWidth;
+
 extern vmCvar_t cg_drawSelf;
 extern vmCvar_t cg_drawSelfMinWidth;
 extern vmCvar_t cg_drawSelfMaxWidth;
+extern vmCvar_t cg_drawInfected;
+
+extern vmCvar_t cg_drawFlagCarrier;
+extern vmCvar_t cg_drawHitFlagCarrierTime;
+
 extern	vmCvar_t		cg_teamChatsOnly;
 #ifdef MISSIONPACK
 extern	vmCvar_t		cg_noVoiceChats;
@@ -2806,6 +2843,13 @@ extern vmCvar_t cg_drawPowerupRespawnScale;
 extern vmCvar_t cg_drawPowerupRespawnOffset;
 extern vmCvar_t cg_drawPowerupRespawnAlpha;
 //FIXME time option
+
+extern vmCvar_t cg_drawPowerupAvailable;
+extern vmCvar_t cg_drawPowerupAvailableScale;
+extern vmCvar_t cg_drawPowerupAvailableOffset;
+extern vmCvar_t cg_drawPowerupAvailableAlpha;
+extern vmCvar_t cg_drawPowerupAvailableFadeStart;
+extern vmCvar_t cg_drawPowerupAvailableFadeEnd;
 
 extern vmCvar_t cg_drawItemPickups;
 extern vmCvar_t cg_drawItemPickupsX;
@@ -3097,6 +3141,7 @@ extern vmCvar_t cg_obituaryRedTeamColor;
 extern vmCvar_t cg_obituaryBlueTeamColor;
 extern vmCvar_t cg_obituaryTime;
 extern vmCvar_t cg_obituaryFadeTime;
+extern vmCvar_t cg_obituaryStack;
 
 extern vmCvar_t cg_fragTokenAccuracyStyle;
 
@@ -3295,10 +3340,13 @@ extern vmCvar_t cg_allowServerOverride;
 extern vmCvar_t cg_powerupLight;
 extern vmCvar_t cg_buzzerSound;
 extern vmCvar_t cg_flagStyle;
+
+extern vmCvar_t cg_helpIcon;
 extern vmCvar_t cg_helpIconStyle;
 extern vmCvar_t cg_helpIconMinWidth;
 extern vmCvar_t cg_helpIconMaxWidth;
 //extern vmCvar_t cg_helpIconAlpha;
+
 extern vmCvar_t cg_dominationPointTeamColor;
 extern vmCvar_t cg_dominationPointTeamAlpha;
 extern vmCvar_t cg_dominationPointEnemyColor;
@@ -3335,6 +3383,10 @@ extern vmCvar_t cg_drawTieredArmorAvailability;
 extern vmCvar_t cg_drawDeadFriendTime;
 extern vmCvar_t cg_drawHitFriendTime;
 extern vmCvar_t cg_racePlayerShader;
+extern vmCvar_t cg_quadSoundRate;
+extern vmCvar_t cg_cpmaSound;
+extern vmCvar_t cg_drawFightMessage;
+extern vmCvar_t cg_winLossMusic;
 
 // end cvar_t
 

@@ -1,6 +1,10 @@
 #ifndef cg_syscalls_h_included
 #define cg_syscalls_h_included
 
+#include "../renderer/tr_types.h"  // refEntity_t
+#include "cg_camera.h"  // cameraPoint_t
+#include "cg_public.h"  // snapshot_t, itemPickup_t, timeOut_t
+
 //
 // system traps
 // These functions are how the cgame communicates with the main game system
@@ -100,6 +104,8 @@ void		trap_S_Respatialize( int entityNum, const vec3_t origin, vec3_t axis[3], i
 sfxHandle_t	trap_S_RegisterSound( const char *sample, qboolean compressed );		// returns buzz if not found
 void		trap_S_StartBackgroundTrack( const char *intro, const char *loop );	// empty name stops music
 void	trap_S_StopBackgroundTrack( void );
+void trap_S_PrintSfxFilename (sfxHandle_t sfx);
+
 int trap_RealTime (qtime_t *qtime, qboolean now, int convertTime);
 
 void		trap_R_LoadWorldMap( const char *mapname );

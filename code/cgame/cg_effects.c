@@ -9,7 +9,8 @@
 #include "cg_freeze.h"
 #include "cg_localents.h"
 #include "cg_main.h"
-#include "cg_syscalls.h"
+#include "cg_sound.h"
+#include "cg_syscalls.h"  // trap_R_RegisterShader
 #include "sc.h"
 
 #include "wolfcam_local.h"
@@ -324,7 +325,7 @@ void CG_ObeliskPain( const vec3_t org ) {
 	} else {
 		sfx = cgs.media.obeliskHitSound3;
 	}
-	trap_S_StartSound ( org, ENTITYNUM_NONE, CHAN_BODY, sfx );
+	CG_StartSound ( org, ENTITYNUM_NONE, CHAN_BODY, sfx );
 }
 
 
@@ -366,7 +367,7 @@ void CG_InvulnerabilityImpact( const vec3_t org, const vec3_t angles ) {
 	} else {
 		sfx = cgs.media.invulnerabilityImpactSound3;
 	}
-	trap_S_StartSound (org, ENTITYNUM_NONE, CHAN_BODY, sfx );
+	CG_StartSound (org, ENTITYNUM_NONE, CHAN_BODY, sfx );
 }
 
 /*
@@ -399,7 +400,7 @@ void CG_InvulnerabilityJuiced( const vec3_t org ) {
 	VectorClear(angles);
 	AnglesToAxis( angles, re->axis );
 
-	trap_S_StartSound (org, ENTITYNUM_NONE, CHAN_BODY, cgs.media.invulnerabilityJuicedSound );
+	CG_StartSound (org, ENTITYNUM_NONE, CHAN_BODY, cgs.media.invulnerabilityJuicedSound );
 }
 
 #endif  // if 1  MPACK

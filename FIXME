@@ -1222,7 +1222,6 @@ fx running before first frame??
 * check if honeymood team game /duel
 * multiple icons over player --  connection, dead, flag, etc..
   ql difference --  dead icon supercedes talk icon
-* 'depthtest' shader parameter : sprites/friend2
 * teammate icons could use health colors  or custom colors
 * double check cg_scoreBoardOld for GT_RED_ROVER and GT_RACE
 * grep GT_TEAM *
@@ -1405,9 +1404,6 @@ trap_autoWriteConfig(qfalse);
 * new ql 2014-09-10
   ad reset match start
 0:00 14175 unknown config string modified  15: 000000000000000000000000000000000000000000000000000000000
-  no AttackDefend  scoreboard
-
-  what is MOD_* 31?
 
   FIXME gametype : 'har 1f'  'har'
 FIXME gametype : 'har 1f'  '1f'
@@ -1421,9 +1417,6 @@ FIXME gametype : 'ob ctf 1f har'  'ob'
 
   levelshots shader
   ffa unknown config string modified  689: 12,
-  Com_Error(): couldn't open FFA-campgrounds-2014_09_07-01_08_50 file is there (dm_90 extension?  -- yes),
-  item timers,
-  powerup wall hack,
 ERROR: Could not open "sound/items/cl_doubler.wav"
 S_RegisterSound() couldn't open 'sound/items/cl_doubler.wav'
 ERROR: Could not open "sound/items/damage2.wav"
@@ -1433,35 +1426,8 @@ S_RegisterSound() couldn't open 'sound/items/airout.wav'
 FIXME S_RegisterSound() ''
 WARNING S_FindName: empty name
 
-RE_RegisterShaderNoMip(ui/assets/score/scoretr2.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/specflip.tga) failed
-WARNING: reused image textures/ad_content/ad2x1.jpg with mixed glWrapClampMode parm
-RE_RegisterShaderNoMip(ui/assets/score/navbarl.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/navbarm.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/navbarr.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/navlefty.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/navrighty.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/navright.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/navrightb.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/navrighty.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/bigred.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/bigred.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/bigred.tga) failed
-RE_RegisterShaderNoMip(ui/assets/score/biggreen.tga) failed
-
-RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
-WARNING: unknown parameter 'depthtest' in shader 'sprites/foe2'
-RE_RegisterShaderNoMip(sprites/foe2.png) failed
-RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
-RE_RegisterShaderNoMip(sprites/foe2.png) failed
-RE_RegisterShaderNoMip(ui/assets/3_cursor2) failed
-
-
-  /devmap campgrounds  fails  (need spawnpoint)
-
 
   damageplum and fx scripts
-  obiturary icons
 
   18:25 Unknown event: 97
 
@@ -1543,58 +1509,6 @@ name sprites?
 * new menudef.h   FEEDER_BAN_LIST UI_SHOW_IF_WARMUP UI_SHOW_IF_NOT_WARMUP CG_STARTING_WEAPONS UI_STARTING_WEAPONS
 
 
-
-
-
--------------------------------------------------
-
-* 2015-07-01 what's left:
-
-  x August 27, 2014
-
-   - Added Power-up POIs, that indicate when an available power-up is available in the arena.
-   - Added flagstand POIs in CTF.
-   - Quad firing sound reduced on high rate of fire weapons: mg, pg, cg, hmg.
-   - Prevent broken shader image on crosshair '30', '60', '90', which would equate to crosshair "none" as the cycle repeats.
-   - The PQL ruleset has been renamed 'Turbo'.
-
- x September 11, 2014
-   - Added Infected VO when you're turned!
-   - Added Go! VO on Race countdown
-   - Added Bite! VO on Infected countdown
-   - Simplified flag VO (your/enemy instead of red/blue, and reduced amount of VO in places).
-   - Fixed 5:4 aspect ratio, and added support for vertical displays.
-   - Added cg_itemTimers to disable timer pies.
-   - Added cg_flagPOIs to disable flag POIs.
-   - Added Your Team Scores / Enemy Scores in place of Red/Blue unless you're spec.
-   - Removed red/blue scores and rank change (lead taken / lead loss) from Attack & Defend, because these events only occur at the time of other VO playing (flag taken, round over, etc).
-
- x December 2, 2014
-   - Updated VO for the "Fight!", "two frags left", and "one frag left" voice-overs.
-   - Updated "lead taken" and "lead lost" VO behavior.
-   - Removed "Teams are Tied" VO to reduce VO clutter.
-   - Double stack obituaries for players killed at the same time.
-   - Show all obituaries for 1.5s, instead of cutting them short when a new one occurs on a following frame.
-   - Added Win/Loss music at the endgame scoreboard (Win/Loss background music controlled with s_musicVolume).
-
- x April 21, 2015
-   - Single State (Unary) Switches - Buttons and triggers now exist that allow you to activate a door or platform causing the mover to move once and remain in place for the remainder of the map
-   - Alternative Announcer Voices:
-       To change the announcer voice, choose between three announcers within the Game Settings Advanced Sound menu, and apply audio changes.
-
-       Added Vadrigar (Classic) Announcer VO option
-       Added Daemia (Female) Announcer VO option
-   - Added s_killbeepVolume since some of those sounds are too quiet.
-   - Added Battlesuit VO
-   - Replaced cg_playTeamVO with cg_announcerLastStandingVO, cg_announcerLeadsVO, and cg_announcerTiesVO.
-   - Added CVAR_REPLICATED to archived sound cvars.
-   - Specified a sort order on liquids/glass/flares/lightbeams shaders; Simple items and similar transparent objects should correctly sort over them now (in most cases).
-
-
-
-
-
-
 * double check advert shaders now  -- blackcathedral ad orientation, did devilish
 
 * with nocull change might be able to use id's shaders -- lightmap
@@ -1622,12 +1536,48 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
 * teammate crosshair health not very visible
 * friend icon color red and friend hit shader is also red
 * cvar descriptions (SHIFT tab to show for list?)
-* 'out of ammo' shown when frozen in freezetag
 * quad kill counter very small (widescreen)
 * ctfs-as-ffa.dm_90 broken friend icons
 * timer pie info for client item timer
 * timer pie check flight
 * quad respawn sound in freecam wrong distance
+* from April 21, 2015 update:  /devmap   - Single State (Unary) Switches - Buttons and triggers now exist that allow you to activate a door or platform causing the mover to move once and remain in place for the remainder of the map
+* friend icon death shader has depth hack
+* cg_freecam_useTeamSettings and previous icons added
+* cg_helpIconStyle  and previous icons added
+* check base help icons in games besides ctf to see if they have to be added with flag item instead of base, is base item broadcast to all clients?
+* ql grapple 'hum' sound
+* /devmap give all grapple
+* q3 font proportional option
+* cpma mvd 50478-czm-viju-hub.dm_68  viju wins at end scoreboard
+* recording string and widescreen
+* /devmap still getting double pickup sounds, like that before?
+* giant water bubble trails in new ql
+* mod 31 seems to be lightning discharge.  demo?
+* ql events:  EV_NEW_HIGH_SCORE  EV_MISSILE_MISS_DMGTHROUGH   EV_SHOTGUN_KILL
+* infected.. 321 'bite' !  sound
+* avi not writing max rate size   afd->maxRecordSize, also in main header maxRecordSize, maxRecordSize also missing from "strh"
+* race unknown event 99
+* race scoreboard showing demo taker in 1st and 2nd scorebox
+* fixme FIGHT/GO/RUN/ETC text drawn in two different places
+* new icon for powerup available not listed by ql (ex:  flight)
+* need compressed for register sound?
+* /devmap and timer pies -- don't add for all items, missing shader, or maybe add shader and test
+* /devmap powerup available needs to be broadcast
+* spec demo doesn't show ql hud
+* 44100 sound
+* check CG_StartSound(NULL, MAX_GENTITIES - 1,  cg_view for railgun freecam hack
+* something is still calling sound/feedback/fight.wav ?  2015-07-06-demos/CTF  q3wcp9 cpma
+* still using red/blue flag returned?
+* flag capture/return sounds (not vo) for specs?
+* ctft1.dm_90  2:22  do not pickup icon
+* frag message shadowed
+* chat/status/  font shadowed  	CG_AREA_NEW_CHAT in ql doesn't set textStyle in menu it seems to be hardcoded in cgame
+* team overlay font shadowed
+* "sound/teamplay/flagcapture_yourteam.wav"  same cgs.media.captureAwardSound cgs.media.captureYourTeamSound
+* is '& MAX_SNAPSHOT_MASK' wrong?
+* check from ql update april 21 2015:     - Specified a sort order on liquids/glass/flares/lightbeams shaders; Simple items and similar transparent objects should correctly sort over them now (in most cases).
+* check from ql update april 21 2015:     - Added CVAR_REPLICATED to archived sound cvars.
 
 ---------------------------
 

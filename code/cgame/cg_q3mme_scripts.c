@@ -6,6 +6,7 @@
 #include "cg_mem.h"
 #include "cg_predict.h"
 #include "cg_q3mme_scripts.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "sc.h"
 
@@ -3728,11 +3729,11 @@ static void CG_FX_Sound (int channel)
 		if (*ScriptVars.sound) {
 			sfx = trap_S_RegisterSound(ScriptVars.sound, qfalse);
 			if (channel == CHAN_WEAPON) {
-				trap_S_StartSound(NULL, ScriptVars.clientNum, CHAN_WEAPON, sfx);
+				CG_StartSound(NULL, ScriptVars.clientNum, CHAN_WEAPON, sfx);
 			} else if (channel == CHAN_LOCAL) {
-				trap_S_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
 			} else {
-				trap_S_StartSound(ScriptVars.origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx);
+				CG_StartSound(ScriptVars.origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx);
 			}
 		}
 	}
@@ -3787,12 +3788,12 @@ static void CG_FX_LoopSound (void)
 		lsound = trap_S_RegisterSound(ScriptVars.loopSound, qfalse);
 		if (lsound) {
 			if (0) {  //(ScriptVars.parentCent) {
-				trap_S_AddLoopingSound(ScriptVars.parentCent->currentState.number, ScriptVars.origin, ScriptVars.velocity, lsound);
+				CG_AddLoopingSound(ScriptVars.parentCent->currentState.number, ScriptVars.origin, ScriptVars.velocity, lsound);
 			} else {
 				if (FxLoopSounds >= MAX_LOOP_SOUNDS) {
 					CG_Printf("^3fx:  max loop sounds added\n");
 				} else {
-					trap_S_AddLoopingSound(FxLoopSounds, ScriptVars.origin, ScriptVars.velocity, lsound);
+					CG_AddLoopingSound(FxLoopSounds, ScriptVars.origin, ScriptVars.velocity, lsound);
 					FxLoopSounds++;
 				}
 			}

@@ -9,10 +9,12 @@
 
 #include "cg_draw.h"  // reset lagometer
 #include "cg_event.h"
+#include "cg_freeze.h"
 #include "cg_main.h"
 #include "cg_playerstate.h"
 #include "cg_predict.h"
 #include "cg_servercmds.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "cg_view.h"
 #include "cg_weapons.h"
@@ -285,6 +287,10 @@ static void CG_CheckAmmo( void ) {
 		//return;
 	}
 
+	if (cgs.gametype == GT_FREEZETAG  &&  CG_FreezeTagFrozen(cg.snap->ps.clientNum)) {
+		return;
+	}
+
 	if (cg.snap->ps.ammo[cg.snap->ps.weapon] < 0) {
 		return;
 	}
@@ -300,11 +306,11 @@ static void CG_CheckAmmo( void ) {
 			return;
 		} else if (cg_lowAmmoWarningSound.integer == 1) {  // only out of ammo
 			if (cg.lowAmmoWarning != previous  &&  cg.lowAmmoWarning == AMMO_WARNING_EMPTY) {
-				trap_S_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
 			}
 		} else {  // both out of ammo and low ammo
 			if (cg.lowAmmoWarning != previous) {
-				trap_S_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
 			}
 		}
 	}
@@ -672,11 +678,11 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 
 #ifdef MISSIONPACK
 		if (armor > 50 ) {
-			trap_S_StartLocalSound( cgs.media.hitSoundHighArmor, CHAN_LOCAL_SOUND );
+			CG_StartLocalSound( cgs.media.hitSoundHighArmor, CHAN_LOCAL_SOUND );
 		} else if (armor || health > 100) {
-			trap_S_StartLocalSound( cgs.media.hitSoundLowArmor, CHAN_LOCAL_SOUND );
+			CG_StartLocalSound( cgs.media.hitSoundLowArmor, CHAN_LOCAL_SOUND );
 		} else {
-			trap_S_StartLocalSound( cgs.media.hitSound, CHAN_LOCAL_SOUND );
+			CG_StartLocalSound( cgs.media.hitSound, CHAN_LOCAL_SOUND );
 		}
 #else
 		//Com_Printf("eflags: 0x%x\n", ps->eFlags);
@@ -745,7 +751,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 
         if ((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))  &&  !cg.freecam  &&  !cg.cameraMode) {
 			if (cg_hitBeep.integer == 1) {
-				trap_S_StartLocalSound( cgs.media.hitSound, CHAN_LOCAL_SOUND );
+				CG_StartLocalSound( cgs.media.hitSound, CHAN_LOCAL_SOUND );
 			} else if (cg_hitBeep.integer == 2) {
 				int n;
 				qhandle_t sh;
@@ -781,9 +787,9 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 					sh = cgs.media.hitSound0;
 					break;
 				}
-				//trap_S_StartLocalSound(sh, CHAN_LOCAL_SOUND);
-				trap_S_StartLocalSound(sh, CHAN_LOCAL_SOUND);
-				//trap_S_StartSound( NULL, cg.snap->ps.clientNum, CHAN_ITEM, sh);
+				//CG_StartLocalSound(sh, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound(sh, CHAN_LOCAL_SOUND);
+				//CG_StartSound( NULL, cg.snap->ps.clientNum, CHAN_ITEM, sh);
 				//Com_Printf("%f hitbeep\n", cg.ftime);
 			} else if (cg_hitBeep.integer == 3) {
 				int n;
@@ -820,14 +826,14 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 					sh = cgs.media.hitSound0;
 					break;
 				}
-				trap_S_StartLocalSound(sh, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound(sh, CHAN_LOCAL_SOUND);
 			}
 		}
 #endif
 	} else if ( ps->persistant[PERS_HITS] < ops->persistant[PERS_HITS] ) {
         if ((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))  &&  !cg.freecam  &&  !cg.cameraMode) {
 			if (cg_hitBeep.integer  &&  cgs.protocol == PROTOCOL_QL) {
-				trap_S_StartLocalSound( cgs.media.hitTeamSound, CHAN_LOCAL_SOUND );
+				CG_StartLocalSound( cgs.media.hitTeamSound, CHAN_LOCAL_SOUND );
 			}
 		}
 	}
@@ -941,21 +947,21 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		if ((ps->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_DENIEDREWARD) !=
 				(ops->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_DENIEDREWARD)) {
 			if (cg_audioAnnouncerRewards.integer) {
-				trap_S_StartLocalSound( cgs.media.deniedSound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.deniedSound, CHAN_ANNOUNCER );
 			}
 		}
 		else if ((ps->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_GAUNTLETREWARD) >
 				(ops->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_GAUNTLETREWARD)) {
 			if (cg_audioAnnouncerRewards.integer) {
 				//FIXME twice checked?  what about PERS_GAUNT_ frag?
-				trap_S_StartLocalSound(cgs.media.humiliationSound[rand() % NUM_HUMILIATION_SOUNDS], CHAN_ANNOUNCER);
+				CG_StartLocalSound(cgs.media.humiliationSound[rand() % NUM_HUMILIATION_SOUNDS], CHAN_ANNOUNCER);
 			}
 		}
 		else if ((ps->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_HOLYSHIT) >
 				(ops->persistant[PERS_PLAYEREVENTS] & PLAYEREVENT_HOLYSHIT)) {
 			//Com_Printf("^5yes.......\n");
 			if (cg_audioAnnouncerRewards.integer) {
-				trap_S_StartLocalSound( cgs.media.holyShitSound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.holyShitSound, CHAN_ANNOUNCER );
 			}
 		}
 		reward = qtrue;
@@ -968,7 +974,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 			(ps->powerups[PW_NEUTRALFLAG] != ops->powerups[PW_NEUTRALFLAG] && ps->powerups[PW_NEUTRALFLAG]) )
 		{
 			if (cg_audioAnnouncerFlagStatus.integer) {
-				trap_S_StartLocalSound( cgs.media.youHaveFlagSound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.youHaveFlagSound, CHAN_ANNOUNCER );
 			}
 		}
 	}
@@ -1000,18 +1006,18 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		msec = cg.time - cgs.levelStartTime;
 		if ( !( cg.timelimitWarnings & 4 ) && msec > ( cgs.timelimit * 60 + 2 ) * 1000 ) {
 			cg.timelimitWarnings |= 1 | 2 | 4;
-			//trap_S_StartLocalSound( cgs.media.suddenDeathSound, CHAN_ANNOUNCER );
+			//CG_StartLocalSound( cgs.media.suddenDeathSound, CHAN_ANNOUNCER );
 		}
 		else if ( !( cg.timelimitWarnings & 2 ) && msec > (cgs.timelimit - 1) * 60 * 1000 ) {
 			cg.timelimitWarnings |= 1 | 2;
 			if (cg_audioAnnouncerTimeLimit.integer) {
-				trap_S_StartLocalSound( cgs.media.oneMinuteSound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.oneMinuteSound, CHAN_ANNOUNCER );
 			}
 		}
 		else if ( cgs.timelimit > 5 && !( cg.timelimitWarnings & 1 ) && msec > (cgs.timelimit - 5) * 60 * 1000 ) {
 			cg.timelimitWarnings |= 1;
 			if (cg_audioAnnouncerTimeLimit.integer) {
-				trap_S_StartLocalSound( cgs.media.fiveMinuteSound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.fiveMinuteSound, CHAN_ANNOUNCER );
 			}
 		}
 	}

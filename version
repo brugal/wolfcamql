@@ -1,5 +1,5 @@
 
-11.0test6
+11.0test7
 
 * hud:  quake3 single player gametype is cg_gametype 16
 * bug fix:  quake3 single player demos would show hud elements from quake live 'race' gametype
@@ -61,6 +61,10 @@
   - score command changes
   - in-world timers for major items  (cg_itemTimers, cg_itemTimersScale, cg_itemTimersOffset, cg_itemTimersAlpha)
   - powerup respawn poi 10 seconds before powerup respawns (cg_drawPowerupRespawn, cg_drawPowerupRespawnScale, cg_drawPowerupRespawnOffset, cg_drawPowerupRespawnAlpha)
+  - powerup available ingame icons (cg_drawPowerupAvailable, cg_drawPowerupAvailableScale, cg_drawPowerupAvailableOffset, cg_drawPowerupAvailableAlpha, cg_drawPowerupAvailableFadeStart, cg_drawPowerupAvailableFadeEnd)
+  - flagstand help icons in ctf
+  - quad sound limited with rapid fire weapons:  mg, hmg, pg, cg.  (cg_quadSoundRate)
+  - fix broken shader image when crosshair was a multiple of 30
 
 * support for quakelive update Sep 11, 2014
   - new announcer
@@ -69,10 +73,17 @@
   - revenge award (fx script is player/medalRevenge)
   - first frag award (fx script is player/medalFirstFrag)
   - rampage award (fx script is player/medalRampage)
+  - infected vo when you are turned
+  - 'Go!' vo on Race countdown
+  - 'Bite!' vo on Infected countdown
+  - your/enemy team scores vo replaces red/blue scores unless you are a spectator
+   - removed red/blue scores and rank change (lead taken / lead loss) from Attack & Defend, because these events only occur at the time of other VO playing (flag taken, round over, etc)
 
 * support for quake live update December 2, 2014
   - overtime indicator on the HUD
   - perforated award (fx script is player/medalPerforated)
+  - stacked obituaries in hud:  maximum number to show controlled with cg_obituaryStack
+  - win/loss music at intermission:  controlled with cg_winLossMusic
 
 * support for quake live update April 21, 2015
   - scoreboard column changes
@@ -82,6 +93,9 @@
   - headshot award (fx script is player/medalHeadshot)
   - perfect award (fx script is player/medalPerfect)
   - quad god award (fx script is player/medalQuadGod)
+  - alternative announcer voices:  selectable with cg_audioAnnouncer 1, 2, 3 (1:  Vadrigar (Classic), 2:  Daemia (Female), 3:  new announcer)
+  - battlesuit vo
+  - s_killbeepVolume
 
 * bug fix:  cgame information screen uses widescreen settings
 * bug fix:  cgame loading screen would draw player icons past the screen dimensions
@@ -97,6 +111,31 @@
 * cg_drawFriendStyle  1 (default) friend icon color based on health, 2 yellow icon
 * cg_drawEntNumbers 2 will also draw numbers for invisible entities
 * bug fix:  cg_drawEntNumbers 1  used depth hack
+* debuggin command /printentitydistance
+* bug fix:  flag base help icons would use item style bobbing up and down
+* bug fix:  only 19 crosshair shaders available instead of 29
+* crosshair size calculation changed to match quake live
+* cg_debugEvents > 1 also prints entity information
+* cg_drawInfected  to draw 'bite' sprite over player's head in infected game type
+* cg_helpIcon to enable/disable help poi icons
+* bug fix:  avi video opendml header had an extra 4 bytes
+* bug fix:  avi video missing suggested buffer size for audio
+* bug fix:  avi video wrong value written for audio and video length
+* bug fix:  missing allocation check for video buffers
+* video:  warning for uncompressed or huffyuv videos that use a width value that isn't divisible by four
+* video:  adjust audio sample rate to improve compatability with other software
+* cpma pro-sound algorithm  cg_cpmaSound (0: disabled,  1: (default) use with cpma demos,  2:  use with all demos,  3:  for debugging, use with all demos and print skipped sounds)
+* bug fix:  missing flag carrier hit icon
+* bug fix:  flag carrier icon wasn't being drawn before reward icons
+* cg_drawFlagCarrier  to control flag carrier icons (0: disabled, 1: (default) show only for team flag, 2:  show for both teams)
+* cg_drawHitFlagCarrierTime  to control the time the hit icon is displayed
+* bug fix:  ammo warning being drawn below reward icons
+* ammo warning font, style, and size defaults changed to match quake live
+* cg_drawFightMessage  to enable or disable the starting "FIGHT!" screen messages
+* bug fix:  don't draw ammo warning message or sound if frozen in freezetag
+* fs_extraGames*  similar to q3mme's fs_extraGames (see documentation)
+* bug fix:  powerup pickup announcer didn't check for cg_audioAnnouncer 0
+* cg_killBeep default changed to 7 to match quake live
 
 ------------------------------------
 10.3  2013-11-16

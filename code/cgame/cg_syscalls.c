@@ -223,6 +223,11 @@ void	trap_S_StartBackgroundTrack( const char *intro, const char *loop ) {
 	syscall( CG_S_STARTBACKGROUNDTRACK, intro, loop );
 }
 
+void trap_S_PrintSfxFilename (sfxHandle_t sfx)
+{
+	syscall(CG_S_PRINTSFXFILENAME, sfx);
+}
+
 void	trap_R_LoadWorldMap( const char *mapname ) {
 	syscall( CG_R_LOADWORLDMAP, mapname );
 }

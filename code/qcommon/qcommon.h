@@ -1105,6 +1105,7 @@ qboolean Sys_LowPhysicalMemory( void );
 void Sys_SetEnv(const char *name, const char *value);
 void Sys_OpenQuakeLiveDirectory (void);
 void Sys_OpenWolfcamDirectory (void);
+int Sys_DirnameCmp (const char *pathName1, const char *pathName2);
 
 /* This is based on the Adaptive Huffman algorithm described in Sayood's Data
  * Compression book.  The ranks are not actually stored, but implicitly defined

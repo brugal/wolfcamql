@@ -16,6 +16,7 @@
 #include "cg_predict.h"
 #include "cg_servercmds.h"  // CG_PlayBufferedVoiceChats()
 #include "cg_snapshot.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "cg_view.h"
 #include "cg_weapons.h"
@@ -1045,7 +1046,7 @@ static void CG_PowerupTimerSounds( void ) {
 			continue;
 		}
 		if ( ( t - cg.time ) / POWERUP_BLINK_TIME != ( t - cg.oldTime ) / POWERUP_BLINK_TIME ) {
-			trap_S_StartSound( NULL, cg.snap->ps.clientNum, CHAN_ITEM, cgs.media.wearOffSound );
+			CG_StartSound( NULL, cg.snap->ps.clientNum, CHAN_ITEM, cgs.media.wearOffSound );
 		}
 	}
 }
@@ -1073,7 +1074,7 @@ CG_PlayBufferedSounds
 static void CG_PlayBufferedSounds( void ) {
 	if ( cg.soundTime < cg.time ) {
 		if (cg.soundBufferOut != cg.soundBufferIn && cg.soundBuffer[cg.soundBufferOut]) {
-			trap_S_StartLocalSound(cg.soundBuffer[cg.soundBufferOut], CHAN_ANNOUNCER);
+			CG_StartLocalSound(cg.soundBuffer[cg.soundBufferOut], CHAN_ANNOUNCER);
 			cg.soundBuffer[cg.soundBufferOut] = 0;
 			cg.soundBufferOut = (cg.soundBufferOut + 1) % MAX_SOUNDBUFFER;
 			cg.soundTime = cg.time + 750;
@@ -3581,7 +3582,8 @@ static void CG_FreeCam (void)
 			VectorMA(muzzle, 8, right, muzzle);
 			//CG_SimpleRailTrail(muzzle, end, color);
 			CG_SimpleRailTrail(muzzle, tr.endpos, cg_railTrailTime.value, color);
-			trap_S_StartSound(NULL, MAX_GENTITIES - 1, CHAN_WEAPON, cg_weapons[WP_RAILGUN].flashSound[0]);
+			// entity number is a hack
+			CG_StartSound(NULL, MAX_GENTITIES - 1, CHAN_WEAPON, cg_weapons[WP_RAILGUN].flashSound[0]);
 			if (tr.entityNum < MAX_CLIENTS  &&  tr.entityNum >= 0) {
 				CG_GibPlayer(&cg_entities[tr.entityNum]);
 			} else {
@@ -3921,6 +3923,10 @@ static void CG_DrawPoiPics (void)
 	int team;
 	refEntity_t ent;
 
+	if (cg_helpIcon.integer == 0) {
+		return;
+	}
+
 	if (wolfcam_following) {
 		team = cgs.clientinfo[wcg.clientNum].team;
 	} else {
@@ -3940,7 +3946,17 @@ static void CG_DrawPoiPics (void)
 				VectorCopy(p->origin, ent.origin);
 				ent.origin[2] += 48;
 				ent.reType = RT_SPRITE;
-				ent.customShader = cgs.media.flagCarrierNeutral;  //shader;
+				if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED) {
+					ent.customShader = cgs.media.infectedFoeShader;
+				} else {
+					if (cgs.gametype == GT_1FCTF) {
+						ent.customShader = cgs.media.flagCarrierNeutral;
+					} else {
+						//ent.customShader = cgs.media.flagCarrier;
+						//CG_Printf("^3using flag carrier shader...\n");
+						ent.customShader = cgs.media.flagCarrierNeutral;
+					}
+				}
 				ent.radius = 16;
 				if (cg_helpIconStyle.integer == 1) {
 					ent.radius = 16;
@@ -3992,9 +4008,20 @@ static void CG_DrawPoiPics (void)
 
 				ent.origin[2] += ent.radius;
 
-				ent.shaderRGBA[0] = 255;
-				ent.shaderRGBA[1] = 255;
-				ent.shaderRGBA[2] = 255;
+				if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED) {
+					ent.shaderRGBA[0] = 255;
+					ent.shaderRGBA[1] = 255;
+					ent.shaderRGBA[2] = 255;
+				} else {
+					ent.shaderRGBA[0] = 255;
+					ent.shaderRGBA[1] = 255;
+					if (cgs.gametype == GT_1FCTF) {
+						ent.shaderRGBA[2] = 255;
+					} else {
+						ent.shaderRGBA[2] = 255;
+						//CG_Printf("^3yellow\n");
+					}
+				}
 				if ((p->startTime + p->length) - cg.time <= 1000) {
 					ent.shaderRGBA[3] = 255.0 * ((p->startTime + p->length) - cg.time) / 1000.0;
 				} else {
@@ -4455,7 +4482,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 				if (play) {
 					sfx = trap_S_RegisterSound(cg_firstPersonSwitchSound.string, qfalse);
-					trap_S_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
+					CG_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
 				}
 			}
 			trap_SendConsoleCommand("exec wolfcamfirstpersonswitch.cfg\n");
@@ -4523,7 +4550,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 				sfxHandle_t sfx;
 
 				sfx = trap_S_RegisterSound(cg_firstPersonSwitchSound.string, qfalse);
-				trap_S_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
 			}
 			trap_SendConsoleCommand("exec firstpersonswitch.cfg\n");
 		}
@@ -4756,12 +4783,12 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	// update audio positions
     if (wolfcam_following) {
         if (wcg.playHitSound  &&  cg_hitBeep.integer  &&  wcg.clientNum != cg.snap->ps.clientNum) {
-            trap_S_StartLocalSound (cgs.media.hitSound, CHAN_LOCAL_SOUND);
+            CG_StartLocalSound (cgs.media.hitSound, CHAN_LOCAL_SOUND);
             wcg.playHitSound = qfalse;
 			wcg.playTeamHitSound = qfalse;
         } else if (wcg.playTeamHitSound  &&  cg_hitBeep.integer  &&  wcg.clientNum != cg.snap->ps.clientNum) {
 			if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG) {
-				trap_S_StartLocalSound (cgs.media.hitTeamSound, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound (cgs.media.hitTeamSound, CHAN_LOCAL_SOUND);
 			}
             wcg.playHitSound = qfalse;
 			wcg.playTeamHitSound = qfalse;

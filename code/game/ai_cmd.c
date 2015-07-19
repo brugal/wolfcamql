@@ -1528,7 +1528,7 @@ void BotMatch_WhereAreYou(bot_state_t *bs, bot_match_t *match) {
 		"Quad Damage",
 		"Regeneration",
 		"Battle Suit",
-		"Speed",
+		"Haste",
 		"Invisibility",
 		"Flight",
 		"Armor",

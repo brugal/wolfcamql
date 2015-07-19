@@ -1058,3 +1058,12 @@ void Sys_OpenWolfcamDirectory (void)
 	system(va("xdg-open \"%s\"&", path));
 #endif
 }
+
+int Sys_DirnameCmp (const char *pathName1, const char *pathName2)
+{
+#ifdef MACOS_X
+	return Q_stricmp(pathName1, pathName2);
+#else
+	return strcmp(pathName1, pathName2);
+#endif
+}

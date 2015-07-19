@@ -61,6 +61,17 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 			//Com_Printf("^3m %d  i %d\n", MenuWidescreen, QLWideScreen);
 		}
 
+		if ((float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight < 1.25f) {
+			// stretched vertically, just use original scaling
+			*x *= cgs.screenXScale;
+			*y *= cgs.screenYScale;
+			*w *= cgs.screenXScale;
+			*h *= cgs.screenYScale;
+
+			return;
+		}
+
+		
 		if (1) {  //(MenuWidescreen  ||  QLWideScreen) {
 			//FIXME duplicate code
 			float width43;
@@ -188,7 +199,7 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 		}
 
 		return;
-	}
+	}  // not ql wide screen
 
 #if 0
 	if (cg.scoreBoardShowing) {

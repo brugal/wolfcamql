@@ -217,7 +217,7 @@ static void CG_spWin_f( void) {
 	if (cg_audioAnnouncerWin.integer) {
 		CG_AddBufferedSound(cgs.media.winnerSound);
 	}
-	//trap_S_StartLocalSound(cgs.media.winnerSound, CHAN_ANNOUNCER);
+	//CG_StartLocalSound(cgs.media.winnerSound, CHAN_ANNOUNCER);
 	CG_CenterPrint("YOU WIN!", SCREEN_HEIGHT * .30, 0);
 }
 
@@ -230,7 +230,7 @@ static void CG_spLose_f( void) {
 	if (cg_audioAnnouncerWin.integer) {
 		CG_AddBufferedSound(cgs.media.loserSound);
 	}
-	//trap_S_StartLocalSound(cgs.media.loserSound, CHAN_ANNOUNCER);
+	//CG_StartLocalSound(cgs.media.loserSound, CHAN_ANNOUNCER);
 	CG_CenterPrint("YOU LOSE...", SCREEN_HEIGHT * .30, 0);
 }
 #endif
@@ -2160,7 +2160,7 @@ static void CG_AddCameraPoint_f (void)
 		}
 
 		if (badOrigin  ||  badAngles) {
-			trap_S_StartLocalSound(cgs.media.klaxon2, CHAN_LOCAL_SOUND);
+			CG_StartLocalSound(cgs.media.klaxon2, CHAN_LOCAL_SOUND);
 			if (badOrigin  &&  badAngles) {
 				CG_ErrorPopup("origin and angles");
 			} else if (badOrigin) {
@@ -7018,6 +7018,44 @@ static void CG_KillCountReset_f (void)
 	}
 }
 
+static void CG_PrintEntityDistance_f (void)
+{
+	vec3_t org1, org2;
+	int num;
+
+	if (CG_Argc() < 2) {
+		Com_Printf("usage:  adddecal <shader>\n");
+		Com_Printf("ex:  /adddecal wc/poster");
+
+		Com_Printf("usage:  printentitydistance [entity 1] [entity 2]\n");
+		Com_Printf(" or     printentitydistance [entity]\n");
+		Com_Printf("\n");
+		Com_Printf("The second one prints the distance from the current view origin\n");
+		return;
+	} else if (CG_Argc() < 3) {
+		VectorCopy(cg.refdef.vieworg, org1);
+	} else {  // 2 entes given
+		num = atoi(CG_Argv(2));
+		if (num < 0  ||  num >= MAX_GENTITIES) {
+			Com_Printf("^3invalid entity number\n");
+			return;
+		}
+		VectorCopy(cg_entities[num].lerpOrigin, org1);
+	}
+
+	num = atoi(CG_Argv(1));
+	if (num < 0  ||  num >= MAX_GENTITIES) {
+		Com_Printf("^3invalid entity number\n");
+		return;
+	}
+
+	VectorCopy(cg_entities[num].lerpOrigin, org2);
+
+	Com_Printf("distance:  %f\n", Distance(org1, org2));
+	Com_Printf("  org1:  %f %f %f\n", org1[0], org1[1], org1[2]);
+	Com_Printf("  org2:  %f %f %f\n", org2[0], org2[1], org2[2]);
+}
+
 typedef struct {
 	const char *cmd;
 	void (*function)(void);
@@ -7199,6 +7237,7 @@ static consoleCommand_t	commands[] = {
 	{ "adddecal", CG_AddDecal_f },
 	{ "printtime", CG_PrintTime_f },
 	{ "killcountreset", CG_KillCountReset_f },
+	{ "printentitydistance", CG_PrintEntityDistance_f },
 };
 
 

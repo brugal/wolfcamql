@@ -374,7 +374,7 @@ void Wolfcam_LogMissileHit (int weapon, const vec3_t origin, const vec3_t dir, i
             //Com_Printf("missile hit\n");
             if (cgs.gametype >= GT_TEAM) {
                 if (cgs.clientinfo[wcg.clientNum].team != cgs.clientinfo[entityNum].team) {
-                    //trap_S_StartLocalSound (cgs.media.hitSound, CHAN_LOCAL_SOUND);
+                    //CG_StartLocalSound (cgs.media.hitSound, CHAN_LOCAL_SOUND);
                     wcg.playHitSound = qtrue;
                 } else {
                     wcg.playTeamHitSound = qtrue;

@@ -3595,8 +3595,6 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 	}
 
   if (text) {
-	    // TTimo: FIXME
-	    //    const unsigned char *s = text; // bk001206 - unsigned
 	    const char *s = text;
 	    float max = *maxX;
 		float useScale;
@@ -3620,7 +3618,7 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 		}
 		count = 0;
 		while (s && *s && count < len) {
-			glyph = &font->glyphs[(int)*s]; // TTimo: FIXME: getting nasty warnings without the cast, hopefully this doesn't break the VM build
+			glyph = &font->glyphs[*s & 255];
 			if ( Q_IsColorString( s ) ) {
 				if (cgs.cpma) {
 					CG_CpmaColorFromString(s + 1, newColor);
@@ -4461,36 +4459,6 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, color, scoreString, 0, 0, textStyle, font);
 }
 
-#if 0
-static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font)
-{
-	int w;
-	int h;
-	int h2;
-	int picWidth;
-	int picHeight;
-	int spacing;
-	float picScale;
-
-	if (cg.time - cg.lastObituary.time > 2000) {  //FIXME cvar
-		return;
-	}
-
-	CG_Text_Paint(rect->x, rect->y, scale, color, cg.lastObituary.killer, 0, 0, textStyle, font);
-	w = CG_Text_Width(cg.lastObituary.killer, scale, 0, font);
-	h = CG_Text_Height(cg.lastObituary.killer, scale, 0, font);
-	h2 = CG_Text_Height(cg.lastObituary.victim, scale, 0, font);
-
-	picScale = 1.5;  //1.3;
-	picWidth = h2 * picScale;
-	picHeight = picWidth;
-	spacing = 4;
-
-	CG_DrawPic(rect->x + w + spacing, rect->y - h2 - (picHeight - h2) / 2, picWidth, picHeight, cg.lastObituary.icon);
-	CG_Text_Paint(rect->x + w + spacing + picWidth + spacing, rect->y, scale, color, cg.lastObituary.victim, 0, 0, textStyle, font);
-}
-#endif
-
 static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font)
 {
 	const char *text;
@@ -4502,48 +4470,83 @@ static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color,
 	const int *es;
 	vec4_t newColor;
 	int t;
+	const obituary_t *obituary;
+	float yOffset;
+	int i;
+	int stack;
 
-	if (cg.time - cg.lastObituary.time > cg_obituaryTime.integer) {  //FIXME cvar
-		return;
+	stack = cg_obituaryStack.integer;
+	if (stack < 0) {
+		stack = 0;
+	}
+	if (stack > MAX_OBITUARIES) {
+		stack = MAX_OBITUARIES;
 	}
 
-	extString = CG_CreateFragString(qfalse);
-	lb = linebuffer;
-	es = extString;
-	numIcons = 0;
-	while (*es) {
-		if (*es >= 0  &&  *es <= 255) {
-			*lb = (char)*es;
-			lb++;
-			es++;
+	yOffset = 0;
+
+	for (i = -(stack - 1);  i <= 0;  i++) {
+		if ((cg.obituaryIndex + i - 1) < 0) {
 			continue;
 		}
-		if (*es == 256) {
-			numIcons++;
+		obituary = &cg.obituaries[(cg.obituaryIndex + i - 1) % MAX_OBITUARIES_MASK];
+
+		if (obituary->time == 0) {
+			//Com_Printf("%d  invalid time 0:  %d\n", cg.obituaryIndex, i);
+			continue;
 		}
-		//lb++;
-		es += 2;
+		if (cg.time - obituary->time > cg_obituaryTime.integer) {
+			//Com_Printf("%d  time passed:  %d  %d  cg.time: %d\n", cg.obituaryIndex, i, obituary->time, cg.time);
+			continue;
+		}
+
+		//Com_Printf("%d  drawing obit  %d  %d\n", cg.obituaryIndex, i, obituary->time);
+		//Com_Printf("%d\n", (cg.obituaryIndex + i - 1) % MAX_OBITUARIES_MASK);
+
+		extString = CG_CreateFragString(qfalse, i);
+		lb = linebuffer;
+		es = extString;
+		numIcons = 0;
+		while (*es) {
+			if (*es >= 0  &&  *es <= 255) {
+				*lb = (char)*es;
+				lb++;
+				es++;
+				continue;
+			}
+			if (*es == 256) {
+				numIcons++;
+			}
+			//lb++;
+			es += 2;
+		}
+		*lb = '\0';
+		text = linebuffer;
+
+		Vector4Copy(color, newColor);
+		t = cg.time - obituary->time;
+
+		if (t > (cg_obituaryTime.integer - cg_obituaryFadeTime.integer)) {
+			float fade;
+
+			t -= (cg_obituaryTime.integer - cg_obituaryFadeTime.integer);
+			fade = (float)(cg_obituaryFadeTime.integer - t) / (float)(cg_obituaryFadeTime.integer);
+			newColor[3] *= fade;
+		}
+
+		tw = CG_Text_Width(text, scale, 0, font);
+		th = CG_Text_Height(text, scale, 0, font);
+
+		tw += ((float)th * cg_obituaryIconScale.value) * (float)numIcons;
+
+		CG_Text_Pic_Paint(rect->x, rect->y - yOffset, scale, newColor, extString, 0, 0, cg_drawFragMessageStyle.integer, font, th, cg_obituaryIconScale.value);
+		if (cg_obituaryIconScale.value > 1.0f) {
+			yOffset -= (th * cg_obituaryIconScale.value);
+		} else {
+			yOffset -= th;
+		}
+		yOffset -= 2.0f;
 	}
-	*lb = '\0';
-	text = linebuffer;
-
-	Vector4Copy(color, newColor);
-	t = cg.time - cg.lastObituary.time;
-
-	if (t > (cg_obituaryTime.integer - cg_obituaryFadeTime.integer)) {
-		float fade;
-
-		t -= (cg_obituaryTime.integer - cg_obituaryFadeTime.integer);
-		fade = (float)(cg_obituaryFadeTime.integer - t) / (float)(cg_obituaryFadeTime.integer);
-		newColor[3] *= fade;
-	}
-
-	tw = CG_Text_Width(text, scale, 0, font);
-	th = CG_Text_Height(text, scale, 0, font);
-
-	tw += ((float)th * cg_obituaryIconScale.value) * (float)numIcons;
-
-	CG_Text_Pic_Paint(rect->x, rect->y, scale, newColor, extString, 0, 0, cg_drawFragMessageStyle.integer, font, th, cg_obituaryIconScale.value);
 }
 
 /*
@@ -5714,7 +5717,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	if (cg_wideScreen.integer == 6) {
 		return;
 	}
-	
+
   if ( cg_drawStatus.integer == 0 ) {
 		return;
   }
@@ -8213,7 +8216,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
 
   case CG_PLAYER_HASKEY: {
-	  //CG_Text_Paint_Align(&rect, scale, color, "key", 0, 0, textStyle, font, align);
+	  if (cgs.protocol != PROTOCOL_QL) {
+		  break;
+	  }
+
 	  if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
 		  // pass
 	  } else {

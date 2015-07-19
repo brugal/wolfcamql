@@ -868,7 +868,8 @@ Fonts can also be used for hud config elements:
 * s_qlAttenuate  (0: q3 style -- use smaller distance for sound volume calculation and always play at full volume sounds within 80 game units, 1: default calculate sound volumes like quake live)
 * s_debugMissingSounds
 
-* cg_audioAnnouncer "1"
+* cg_audioAnnouncer  (0:  disable audio announcer, 1:  Vadrigar (Classic), 2:  Daemia (Female), 3:  new ql announcer)
+
 
 ------------------------------------------------------------
 
@@ -1099,6 +1100,7 @@ Velocity:
 * con_lineWidth  max number of characters in console line
 
 * cg_obituaryFadeTime  milliseconds until obituary lines fade completely
+* cg_obituaryStack  number of last obituaries to draw on screen
 
 * cl_consoleAsChat 0  will let you issue console commands without having to add a '/' at the start
 
@@ -1330,6 +1332,11 @@ Available tokens:
 * cg_drawSelf similar to cg_drawFriend and cg_drawFoe.  It draws a white triangle over the demo taker.  Useful if you use /follow
 * cg_drawSelfMinWidth
 * cg_drawSelfMaxWidth
+
+* cg_drawFlagCarrier  to control flag carrier icons (0: disabled, 1: (default) show only for team flag, 2:  show for both teams)
+* cg_drawHitFlagCarrierTime  to control the time the hit icon is displayed
+
+* cg_drawInfected  to draw 'bite' sprite over player's head in infected game type
 
 * echopopup and echopopupcvar commands to print something on the screen.  echopopupcvar <cvar> will print both the name and value.  Position and time are controlled by cg_echoPopupX, cg_echoPopupY, cg_echoPopupTime.
 
@@ -2084,6 +2091,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * cg_dominationPointTeamColor, cg_dominationPointTeamAlpha, cg_dominationPointEnemyColor, cg_dominationPointEnemyAlpha, cg_dominationPointNeutralColor, cg_dominationPointNeutralAlpha
 
+* cg_helpIcon to enable/disable help poi icons
 * cg_helpIconStyle  (3: like quakelive -- wall hack effect and use cg_helpIconMinWidth and cg_helpIconMaxWidth, 2:  only wall hack effect,  1:  wall hack effect off,  0:  no icon)
 * cg_helpIconMinWidth
 * cg_helpIconMaxWidth
@@ -2126,6 +2134,8 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
   /printviewparms
   /printdatadir
   /listentities
+
+  cg_debugEvents > 1 also prints entity information
 
 * some server debugging and test commands (/devmap <map>) :
 
@@ -2189,10 +2199,37 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_itemTimersScale  size scale of in world timers
 * cg_itemTimersOffset  vertical displacement of in world timers
 * cg_itemTimersAlpha  transparency of in world timers
+
 * cg_drawPowerupRespawn  ingame indicator shown 10 seconds before powerup respawns
 * cg_drawPowerupRespawnScale  size of sprite
 * cg_drawPowerupRespawnOffset  vertical offset of the sprite
 * cg_drawPowerupRespawnAlpha  transparency of powerup indicator sprite
+
+* cg_drawPowerupAvailable  ingame indicator icon showing available powerup
+* cg_drawPowerupAvailableScale  size of sprite
+* cg_drawPowerupAvailableOffset  vertical offset of the sprite
+* cg_drawPowerupAvailableAlpha  transparency of sprite
+* cg_drawPowerupAvailableFadeStart  distance from player at which the sprite begins fading
+* cg_drawPowerupAvailableFadeEnd  distance from player at which sprite disappears
+
+* debug command /printentitydistance   can given 2 entity numbers or just 1 to calculate the distance from current view origin
+* cg_quadSoundRate  limits rate of quad sound in milliseconds for rapid fire weapons (mg, hmg, pg, cg).   Default is 1000.
+
+* cpma pro-sound algorithm  cg_cpmaSound (0: disabled,  1: (default) use with cpma demos,  2:  use with all demos,  3:  for debugging, use with all demos and print skipped sounds)
+
+    A sound is only played if it is in a player's potentially visible set and it is less than 1280.0f units away.  Exceptions are broadcast and speaker sounds.  Also, there is an exception for mvd spec coaches (not implemented yet).
+
+* cg_drawFightMessage  to enable or disable the starting "FIGHT!" screen messages
+* fs_extraGames*  similar to q3mme's fs_extraGames
+
+  This allows searching for pk3s and files from a different directory.  The names specified are sub folders of fs_basepath and fs_homepath.
+
+  fs_basepath is the installation directory (ex:  C:\stuff\programs\wolfcamql) and fs_homepath is the home directory where screenshots, videos, demos, etc. are stored (ex: C:\Users\user1\AppData\Roaming\wolfcamql).
+
+  It's not a space separated list like q3mme.  The engine will search for a variable named fs_extraGames1.  If that is found it will keep checking (ex: fs_extraGames2) until it finds one that isn't defined.
+
+  Ex:  wolfcamql +set fs_extraGames1 "Temp pk3s" +set fs_extraGames1 "myExplosions" ...
+
 
 ----------
 

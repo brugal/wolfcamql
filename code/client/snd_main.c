@@ -34,6 +34,7 @@ cvar_t *s_backend;
 cvar_t *s_muteWhenMinimized;
 cvar_t *s_muteWhenUnfocused;
 cvar_t *s_announcerVolume;
+cvar_t *s_killBeepVolume;
 cvar_t *s_useTimescale;
 cvar_t *s_forceScale;
 cvar_t *s_showMiss;
@@ -365,6 +366,11 @@ sfxHandle_t	S_RegisterSound( const char *sample, qboolean compressed )
 	}
 }
 
+void S_PrintSfxFilename (sfxHandle_t sfx)
+{
+	si.PrintSfxFilename(sfx);
+}
+
 /*
 =================
 S_ClearSoundBuffer
@@ -558,6 +564,7 @@ void S_Init( void )
 	s_muteWhenMinimized = Cvar_Get( "s_muteWhenMinimized", "0", CVAR_ARCHIVE );
 	s_muteWhenUnfocused = Cvar_Get( "s_muteWhenUnfocused", "0", CVAR_ARCHIVE );
 	s_announcerVolume = Cvar_Get("s_announcerVolume", "1.0", CVAR_ARCHIVE);
+	s_killBeepVolume = Cvar_Get("s_killBeepVolume", "1.0", CVAR_ARCHIVE);
 	s_useTimescale = Cvar_Get("s_useTimescale", "0", CVAR_ARCHIVE);
 	s_forceScale = Cvar_Get("s_forceScale", "0.0", CVAR_ARCHIVE);
 	s_showMiss = Cvar_Get("s_showMiss", "0", CVAR_ARCHIVE);

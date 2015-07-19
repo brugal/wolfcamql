@@ -227,9 +227,11 @@ void GL_State( unsigned long stateBits )
 		}
 	}
 
+#if 0  // debugging
 	if (Cvar_FindVar("debug_depthfunc")) {
 		qglDepthFunc(GL_NEVER + Cvar_VariableIntegerValue("debug_depthfunc"));
 	}
+#endif
 
 	//
 	// check blend bits
@@ -529,7 +531,7 @@ void RB_BeginDrawingView (void) {
 	// clip to the plane of the portal
 	if ( backEnd.viewParms.isPortal ) {
 		float	plane[4];
-		double	plane2[4];
+		GLdouble plane2[4];
 
 		plane[0] = backEnd.viewParms.portalPlane.normal[0];
 		plane[1] = backEnd.viewParms.portalPlane.normal[1];

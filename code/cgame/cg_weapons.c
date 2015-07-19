@@ -12,6 +12,7 @@
 #include "cg_marks.h"
 #include "cg_players.h"
 #include "cg_predict.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "cg_weapons.h"
 #include "sc.h"
@@ -2108,7 +2109,7 @@ static float	CG_MachinegunSpinAngle( centity_t *cent ) {
 		cent->pe.barrelSpinning = !!(cent->currentState.eFlags & EF_FIRING);
 #if 1  //def MPACK
 		if ( cent->currentState.weapon == WP_CHAINGUN && !cent->pe.barrelSpinning ) {
-			trap_S_StartSound( NULL, cent->currentState.number, CHAN_WEAPON, trap_S_RegisterSound( "sound/weapons/vulcan/wvulwind.wav", qfalse ) );
+			CG_StartSound( NULL, cent->currentState.number, CHAN_WEAPON, trap_S_RegisterSound( "sound/weapons/vulcan/wvulwind.wav", qfalse ) );
 		}
 #endif
 	}
@@ -2368,14 +2369,14 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 			if (1) {  //(cent->currentState.weapon == WP_LIGHTNING) {
 				//Com_Printf("lg fire %d  %d\n", cent->currentState.number, cg.time);
 				//cent->pe.lightningFiring = qtrue;
-				trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->firingSound );
+				CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->firingSound );
 			} else {
 				//cent->pe.lightningFiring = qtrue;
-				trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->firingSound );
+				CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->firingSound );
 			}
 		} else if ( weapon->readySound ) {
 			//Com_Printf("weapon ready cn %d  wp %d\n", cent->currentState.number, weapon->readySound);
-			trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->readySound );
+			CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->readySound );
 		}
 #endif
 
@@ -3040,7 +3041,7 @@ void CG_FireWeapon( centity_t *cent ) {
 		trace_t tr;
 
 		if (!player) {
-			CG_Printf("^3FIXME CG_FireWeapon() mg or cg with trail script and not a player fired weapon...  need angles for muzzle point\n");
+			CG_Printf("^3FIXME CG_FireWeapon() mg or cg with trail script and non-player fired weapon...  need angles for muzzle point\n");
 		}
 
 		// see if player origin is even available
@@ -3119,7 +3120,15 @@ void CG_FireWeapon( centity_t *cent ) {
 
 	// play quad sound if needed
 	if (cg_quadFireSound.integer  &&   cent->currentState.powerups & ( 1 << PW_QUAD )) {
-		trap_S_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.media.quadSound );
+		// limit quad sound for rapid fire weapons
+		if (ent->weapon == WP_MACHINEGUN  ||  ent->weapon == WP_HEAVY_MACHINEGUN  ||  ent->weapon == WP_CHAINGUN  ||  ent->weapon == WP_PLASMAGUN) {
+			if (cg.time - cent->pe.lastQuadSoundTime >= cg_quadSoundRate.integer) {
+				CG_StartSound(NULL, cent->currentState.number, CHAN_ITEM, cgs.media.quadSound);
+				cent->pe.lastQuadSoundTime = cg.time;
+			}
+		} else {
+			CG_StartSound(NULL, cent->currentState.number, CHAN_ITEM, cgs.media.quadSound);
+		}
 	}
 
 	//FIXME duplicate code
@@ -3199,19 +3208,19 @@ void CG_FireWeapon( centity_t *cent ) {
 		{
 			if (cent->currentState.weapon == WP_LIGHTNING) {
 				if (!player) {
-					CG_Printf("^3FIXME CG_WeaponFire() lg flash not a player\n");
+					CG_Printf("^3FIXME CG_WeaponFire() lg flash for non-player\n");
 				}
 				cent->pe.lgSoundTime = cg.time;
 			}
-			trap_S_StartSound( NULL, ent->number, CHAN_WEAPON, weap->flashSound[c] );
-			//trap_S_StartSound(cent->lerpOrigin, ent->number, CHAN_WEAPON, weap->flashSound[c]);
+			CG_StartSound( NULL, ent->number, CHAN_WEAPON, weap->flashSound[c] );
+			//CG_StartSound(cent->lerpOrigin, ent->number, CHAN_WEAPON, weap->flashSound[c]);
 		}
 	}
 
 	// do brass ejection
 	if ( weap->ejectBrassFunc && cg_brassTime.integer > 0 ) {
 		if (!player) {
-			CG_Printf("^3FIXME CG_WeaponFire()  brass function and not a player..  need angles\n");
+			CG_Printf("^3FIXME CG_WeaponFire()  brass function for non-player..  need angles\n");
 		}
 		weap->ejectBrassFunc( cent );
 	}
@@ -3625,10 +3634,10 @@ void CG_MissileHitWall( int weapon, int clientNum, const vec3_t origin, const ve
 	if ( sfx ) {
 		if (weapon == WP_LIGHTNING  ||  weapon == WP_NONE) {   // WP_NONE quakelive bug?
 			//Com_Printf("lg %d\n", clientNum);
-			//trap_S_StartSound( origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx );
+			//CG_StartSound( origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx );
 		} else {
 			//Com_Printf("missile hit wall sound %d\n", weapon);
-			trap_S_StartSound( origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx );
+			CG_StartSound( origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx );
 		}
 	}
 
@@ -3787,7 +3796,7 @@ static void CG_ShotgunPellet (const vec3_t start, const vec3_t end, int skipNum)
         //wclients[skipNum].wstats[WP_SHOTGUN].hits++;
 		CG_MissileHitPlayer( WP_SHOTGUN, wtr.endpos, wtr.plane.normal, wtr.entityNum, skipNum );
         if (wolfcam_following  &&  skipNum == wcg.clientNum) {
-            //trap_S_StartLocalSound (cgs.media.hitSound, CHAN_LOCAL_SOUND);
+            //CG_StartLocalSound (cgs.media.hitSound, CHAN_LOCAL_SOUND);
             //wcg.playHitSound = qtrue;  // shotgun just too broken
         }
     }
@@ -4167,7 +4176,7 @@ static void CG_Tracer( const vec3_t source, const vec3_t dest ) {
 	midpoint[2] = ( start[2] + finish[2] ) * 0.5;
 
 	// add the tracer sound
-	trap_S_StartSound( midpoint, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.tracerSound );
+	CG_StartSound( midpoint, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.tracerSound );
 }
 
 void CG_GetWeaponFlashOrigin (int clientNum, vec3_t startPoint)

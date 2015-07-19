@@ -12,6 +12,7 @@
 #include "cg_marks.h"
 #include "cg_players.h"
 #include "cg_predict.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "cg_weapons.h"
 #include "sc.h"
@@ -2868,7 +2869,7 @@ static void CG_PlayerPowerups( centity_t *cent, const refEntity_t *torso ) {
 			}
 		} else {
 			CG_FlightTrail(cent);
-			trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.flightSound );
+			CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.flightSound );
 		}
 	} else {
 		CG_UpdatePositionData(cent, &cent->flightPositionData);
@@ -3028,7 +3029,7 @@ CG_PlayerFloatSpriteExt
 Float a sprite over the player's head
 ===============
 */
-static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, int renderEffect, byte color[4]) {
+static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, int renderEffect, byte color[4], int offset) {
 	int				rf;
 	refEntity_t		ent;
 	float dist;
@@ -3062,7 +3063,7 @@ static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, in
 
 	memset( &ent, 0, sizeof( ent ) );
 	VectorCopy( cent->lerpOrigin, ent.origin );
-	ent.origin[2] += 48;
+	ent.origin[2] += 48 + offset;
 
 	ent.radius = 10;
 
@@ -3185,7 +3186,7 @@ static void CG_PlayerFloatSpriteNameExt (const centity_t *cent, qhandle_t shader
 
 static void CG_PlayerFloatSprite (const centity_t *cent, qhandle_t shader)
 {
-	CG_PlayerFloatSpriteExt(cent, shader, 0, NULL);
+	CG_PlayerFloatSpriteExt(cent, shader, 0, NULL, 0);
 }
 
 void CG_FloatSprite (qhandle_t shader, const vec3_t origin, int renderfx, const byte *color, int radius)
@@ -3385,6 +3386,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 	int		team;
 	qhandle_t s;
 	const clientInfo_t *ci;
+	qboolean flagIconDrawn;
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
 
@@ -3425,27 +3427,96 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		}
 	}
 
-	if ( cent->currentState.eFlags & EF_CONNECTION ) {
+
+	// draw flag icons before anything else
+	flagIconDrawn = qfalse;
+	if ( (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS)
+         &&  cg_drawFlagCarrier.integer
+		 ) {
+		qboolean depthHack;
+		qboolean isTeammate;
+		byte color[4];
+
+		//FIXME cvar?
+		depthHack = qtrue;
+
+		isTeammate = CG_IsTeammate(ci);
+
+		s = 0;
+
+		if (cent->currentState.powerups & (1 << PW_REDFLAG)) {
+			if (isTeammate) {
+				s = cgs.media.flagCarrier;
+				Vector4Set(color, 255, 255, 0, 255);
+			} else {
+				if (cg_drawFlagCarrier.integer > 1) {
+					s = cgs.media.flagCarrier;
+					Vector4Set(color, 255, 255, 255, 255);
+				}
+			}
+		} else if (cent->currentState.powerups & (1 << PW_BLUEFLAG)) {
+			if (isTeammate) {
+				s = cgs.media.flagCarrier;
+				Vector4Set(color, 255, 255, 0, 255);
+			} else {
+				if (cg_drawFlagCarrier.integer > 1) {
+					s = cgs.media.flagCarrier;
+					Vector4Set(color, 255, 255, 255, 255);
+				}
+			}
+		} else if (cent->currentState.powerups & (1 << PW_NEUTRALFLAG)) {
+			s = cgs.media.flagCarrierNeutral;
+			Vector4Set(color, 255, 255, 255, 255);
+		}
+
+		if (s  &&  (cg.ftime - cent->pe.painTime) < cg_drawHitFlagCarrierTime.integer) {
+			s = cgs.media.flagCarrierHit;
+			Vector4Set(color, 255, 0, 0, 255);
+		}
+
+		if (s) {
+			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, color, 0);
+			flagIconDrawn = qtrue;
+		}
+	}
+
+	if (cent->currentState.eFlags & EF_CONNECTION) {
+		int offset = 0;
+
+		if (flagIconDrawn) {
+			offset += 32;
+		}
+
 		if (*EffectScripts.playerConnection) {
 			CG_ResetScriptVars();
 			CG_CopyPlayerDataToScriptData(cent);
-			ScriptVars.origin[2] += 48;
+			ScriptVars.origin[2] += 48 + offset;
 			CG_RunQ3mmeScript(EffectScripts.playerConnection, NULL);
 			return;
 		}
-		CG_PlayerFloatSprite( cent, cgs.media.connectionShader );
+		CG_PlayerFloatSpriteExt(cent, cgs.media.connectionShader, 0, NULL, offset);
 		return;
 	}
 
-	if ( cent->currentState.eFlags & EF_TALK ) {
+	if (cent->currentState.eFlags & EF_TALK) {
+		int offset = 0;
+
+		if (flagIconDrawn) {
+			offset += 32;
+		}
+
 		if (*EffectScripts.playerTalk) {
 			CG_ResetScriptVars();
 			CG_CopyPlayerDataToScriptData(cent);
-			ScriptVars.origin[2] += 48;
+			ScriptVars.origin[2] += 48 + offset;
 			CG_RunQ3mmeScript(EffectScripts.playerTalk, NULL);
 			return;
 		}
-		CG_PlayerFloatSprite( cent, cgs.media.balloonShader );
+		CG_PlayerFloatSpriteExt(cent, cgs.media.balloonShader, 0, NULL, offset);
+		return;
+	}
+
+	if (flagIconDrawn) {
 		return;
 	}
 
@@ -3612,7 +3683,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 	if (cg_drawSelf.integer  &&  cent->currentState.number == cg.snap->ps.clientNum) {
 		//if (cg.freecam  ||  cg.renderingThirdPerson  ||  (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum)) {
 		if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
-			CG_PlayerFloatSpriteExt(cent, cgs.media.selfShader, cg_drawSelf.integer == 2 ? RF_DEPTHHACK : 0, NULL);
+			CG_PlayerFloatSpriteExt(cent, cgs.media.selfShader, cg_drawSelf.integer == 2 ? RF_DEPTHHACK : 0, NULL, 0);
 			return;
 		}
 	}
@@ -3635,7 +3706,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		isTeammate = CG_IsTeammate(ci);
 		if (CG_FreezeTagFrozen(cent->currentState.clientNum)  &&  isTeammate) {
 			s = cgs.media.frozenShader;
-			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL, 0);
 			return;
 		}
 
@@ -3643,24 +3714,10 @@ static void CG_PlayerSprites( centity_t *cent ) {
 			if (cg_drawFriend.integer) {
 				if ((cg.ftime - cent->pe.painTime) < cg_drawHitFriendTime.integer) {
 					s = cgs.media.friendHitShader;
-					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL, 0);
 					return;
 				}
 			}
-		}
-
-		if (cent->currentState.powerups & (1 << PW_REDFLAG)) {
-			s = cgs.media.flagCarrier;
-			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
-			return;
-		} else if (cent->currentState.powerups & (1 << PW_BLUEFLAG)) {
-			s = cgs.media.flagCarrier;
-			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
-			return;
-		} else if (cent->currentState.powerups & (1 << PW_NEUTRALFLAG)) {
-			s = cgs.media.flagCarrierNeutral;
-			CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
-			return;
 		}
 
 		if (isTeammate) {
@@ -3675,7 +3732,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 						deathTime = cg_entities[cent->currentState.clientNum].pe.deathTime;
 					}
 					if (cg.time - deathTime <= cg_drawDeadFriendTime.integer) {
-						CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL);
+						CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, NULL, 0);
 					}
 				}
 				return;
@@ -3702,14 +3759,14 @@ static void CG_PlayerSprites( centity_t *cent ) {
 							bcolor[2] = 125;  // light yellow
 						}
 
-						//Com_Printf("^3color: %d %d %d\n", bcolor[0], bcolor[1], bcolor[2]);
+						//Com_Printf("^3color: %d %d %d   health: %d\n", bcolor[0], bcolor[1], bcolor[2], ci->health);
 					} else {
 						bcolor[0] = 255;
 						bcolor[1] = 255;
 						bcolor[2] = 0;
 						bcolor[3] = 255;
 					}
-					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, bcolor);
+					CG_PlayerFloatSpriteExt(cent, s, depthHack ? RF_DEPTHHACK : 0, bcolor, 0);
 				}
 				return;
 			}
@@ -3718,11 +3775,13 @@ static void CG_PlayerSprites( centity_t *cent ) {
 
 	if (!(cent->currentState.eFlags & EF_DEAD)  &&  CG_IsEnemy(&cgs.clientinfo[cent->currentState.clientNum])) {
 		if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE  &&  cg_allowServerOverride.integer) {
-			CG_PlayerFloatSpriteExt(cent, cgs.media.infectedFoeShader, RF_DEPTHHACK, NULL);
+			if (cg_drawInfected.integer) {
+				CG_PlayerFloatSpriteExt(cent, cgs.media.infectedFoeShader, RF_DEPTHHACK, NULL, 0);
+			}
 		} else {
 			s = cgs.media.foeShader;
 			if (cg_drawFoe.integer) {
-				CG_PlayerFloatSpriteExt(cent, s, cg_drawFoe.integer == 2 ? RF_DEPTHHACK : 0, NULL);
+				CG_PlayerFloatSpriteExt(cent, s, cg_drawFoe.integer == 2 ? RF_DEPTHHACK : 0, NULL, 0);
 			}
 		}
 	}
@@ -5000,7 +5059,7 @@ void CG_Player ( centity_t *cent ) {
 
 	if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
 		if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-			trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.nightmareSound);
+			CG_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.nightmareSound);
 		}
 	}
 

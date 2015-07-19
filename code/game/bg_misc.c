@@ -593,7 +593,6 @@ gitem_t	bg_itemlist[] =
 */
 	{
 		"item_quad",
-		//"sound/items/quaddamage.wav",
 		"sound/vo/quad_damage.wav",
         { "models/powerups/instant/quad.md3", 
         "models/powerups/instant/quad_ring.md3",
@@ -611,7 +610,7 @@ gitem_t	bg_itemlist[] =
 */
 	{
 		"item_enviro",
-		"sound/items/protect.wav",
+		"sound/vo/battlesuit.ogg",
         { "models/powerups/instant/enviro.md3", 
 		"models/powerups/instant/enviro_ring.md3", 
 		0, 0 },
@@ -633,7 +632,7 @@ gitem_t	bg_itemlist[] =
 		"models/powerups/instant/haste_ring.md3", 
 		0, 0 },
 /* icon */		"icons/haste",
-/* pickup */	"Speed",
+/* pickup */	"Haste",
 		30,
 		IT_POWERUP,
 		PW_HASTE,
@@ -1603,7 +1602,7 @@ const gitem_t bg_itemlistQldm73[] =
 */
 	{
 		"item_enviro",
-		"sound/items/protect.wav",
+		"sound/vo/battlesuit.ogg",
         { "models/powerups/instant/enviro.md3", 
 		"models/powerups/instant/enviro_ring.md3", 
 		0, 0 },
@@ -1625,7 +1624,7 @@ const gitem_t bg_itemlistQldm73[] =
 		"models/powerups/instant/haste_ring.md3", 
 		0, 0 },
 /* icon */		"icons/haste",
-/* pickup */	"Speed",
+/* pickup */	"Haste",
 		30,
 		IT_POWERUP,
 		PW_HASTE,
@@ -2500,7 +2499,7 @@ const gitem_t bg_itemlistQ3[] =
 */
 	{
 		"item_enviro",
-		"sound/items/protect.wav",
+		"sound/vo/battlesuit.ogg",
         { "models/powerups/instant/enviro.md3", 
 		"models/powerups/instant/enviro_ring.md3", 
 		NULL, NULL },
@@ -2522,7 +2521,7 @@ const gitem_t bg_itemlistQ3[] =
 		"models/powerups/instant/haste_ring.md3", 
 		NULL, NULL },
 /* icon */		"icons/haste",
-/* pickup */	"Speed",
+/* pickup */	"Haste",
 		30,
 		IT_POWERUP,
 		PW_HASTE,
@@ -3380,7 +3379,7 @@ const gitem_t bg_itemlistCpma[] =
 */
 	{
 		"item_enviro",
-		"sound/items/protect.wav",
+		"sound/vo/battlesuit.ogg",
         { "models/powerups/instant/enviro.md3", 
 		"models/powerups/instant/enviro_ring.md3", 
 		NULL, NULL },
@@ -3402,7 +3401,7 @@ const gitem_t bg_itemlistCpma[] =
 		"models/powerups/instant/haste_ring.md3", 
 		NULL, NULL },
 /* icon */		"icons/haste",
-/* pickup */	"Speed",
+/* pickup */	"Haste",
 		30,
 		IT_POWERUP,
 		PW_HASTE,
@@ -4628,6 +4627,7 @@ int BG_ModToWeapon (int mod)
 	case MOD_RAILGUN_HEADSHOT:
 		return WP_RAILGUN;
 	case MOD_LIGHTNING:
+	case MOD_LIGHTNING_DISCHARGE:
 		return WP_LIGHTNING;
 	case MOD_NAIL:
 		return WP_NAILGUN;

@@ -138,3 +138,4 @@ equ trap_GetNumPlayerInfos -141
 equ trap_GetExtraPlayerInfo -142
 equ trap_GetRealMapName -143
 equ trap_R_AddRefEntityPtrToScene -144
+equ trap_S_PrintSfxFilename -145

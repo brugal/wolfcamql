@@ -447,6 +447,19 @@ static void S_memoryLoad(sfx_t	*sfx) {
 	sfx->inMemory = qtrue;
 }
 
+static void S_Base_PrintSfxFilename (sfxHandle_t sfx)
+{
+	const sfx_t *s;
+
+	if (sfx >= s_numSfx  ||  sfx < 0) {
+		Com_Printf("^3S_PrintSfxFilename() invalid handle: %d\n", sfx);
+	}
+
+	s = &s_knownSfx[sfx];
+
+	Com_Printf("'%s'\n", s->soundName);
+}
+
 //=============================================================================
 
 /*
@@ -1727,6 +1740,7 @@ qboolean S_Base_Init( soundInterface_t *si ) {
 	si->ClearSoundBuffer = S_Base_ClearSoundBuffer;
 	si->SoundInfo = S_Base_SoundInfo;
 	si->SoundList = S_Base_SoundList;
+	si->PrintSfxFilename = S_Base_PrintSfxFilename;
 
 #ifdef USE_VOIP
 	si->StartCapture = S_Base_StartCapture;

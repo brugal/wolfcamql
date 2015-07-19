@@ -13,6 +13,7 @@
 #include "cg_marks.h"
 #include "cg_players.h"
 #include "cg_servercmds.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "sc.h"
 #include "wolfcam_servercmds.h"
@@ -1402,7 +1403,9 @@ void CG_ParseWarmup( void ) {
 		cg.damageTime = 0;
 		cg.lastChatBeepTime = 0;
 		cg.lastFragTime = 0;
-		cg.lastObituary.time = 0;
+		memset(&cg.obituaries, 0, sizeof(cg.obituaries));
+		cg.obituaryIndex = 0;
+
 		cg.lastTeamChatBeepTime = 0;
 		cg.damageDoneTime = 0;
 
@@ -1493,11 +1496,37 @@ void CG_ShaderStateChanged(void) {
 	}
 }
 
+void CG_PlayWinLossMusic (void)
+{
+	int rank;
+
+	if (cg_winLossMusic.integer == 0) {
+		return;
+	}
+
+	//FIXME check cpma and other q3 protocols
+	if (cgs.cpma) {
+		return;
+	}
+
+	rank = cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG;
+	//Com_Printf("rank: %d\n", rank);
+
+	if (rank == 0) {
+		trap_S_StartBackgroundTrack("music/win.ogg", "music/win.ogg");
+	} else {
+		trap_S_StartBackgroundTrack("music/loss.ogg", "music/loss.ogg");
+	}
+}
+
 void CG_InterMissionHit (void)
 {
 	if (cg_buzzerSound.integer) {
-		trap_S_StartLocalSound(cgs.media.buzzer, CHAN_LOCAL_SOUND);
+		CG_StartLocalSound(cgs.media.buzzer, CHAN_LOCAL_SOUND);
 	}
+
+	CG_PlayWinLossMusic();
+
 
 #if 0
 	if (cgs.cpma) {
@@ -1512,15 +1541,15 @@ void CG_InterMissionHit (void)
 		if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
 			//if (cgs.scores1 == cgs.roundlimit) {
 			if (cgs.scores1 > cgs.scores2) {
-				trap_S_StartLocalSound(cgs.media.redWinsSound, CHAN_ANNOUNCER);
+				CG_StartLocalSound(cgs.media.redWinsSound, CHAN_ANNOUNCER);
 			} else {
-				trap_S_StartLocalSound(cgs.media.blueWinsSound, CHAN_ANNOUNCER);
+				CG_StartLocalSound(cgs.media.blueWinsSound, CHAN_ANNOUNCER);
 			}
 		} else if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 			if (cgs.scores1 > cgs.scores2) {
-				trap_S_StartLocalSound(cgs.media.redWinsSound, CHAN_ANNOUNCER);
+				CG_StartLocalSound(cgs.media.redWinsSound, CHAN_ANNOUNCER);
 			} else {
-				trap_S_StartLocalSound(cgs.media.blueWinsSound, CHAN_ANNOUNCER);
+				CG_StartLocalSound(cgs.media.blueWinsSound, CHAN_ANNOUNCER);
 			}
 		}
 	}
@@ -1690,6 +1719,8 @@ void CG_CpmaParseScores (void)
 			cgs.scores1 = cgs.scores2;
 			cgs.scores2 = i;
 		}
+
+		//FIXME firstPlace not working with mvd demos:  50478-czm-viju-hub.dm_68
 		if (cgs.gametype == GT_TOURNAMENT  &&  cg.nextSnap) {
 			if (cgs.scores1 == cg.nextSnap->ps.persistant[PERS_SCORE]) {
 				Q_strncpyz(cgs.firstPlace, cgs.clientinfo[cg.nextSnap->ps.clientNum].name, sizeof(cgs.firstPlace));
@@ -1819,7 +1850,7 @@ te + ts + td == serverTime
 		if (x) {
 			if (x != cgs.voteTime  &&  !initial) {
 				if (cg_audioAnnouncerVote.integer) {
-					trap_S_StartLocalSound(cgs.media.voteNow, CHAN_ANNOUNCER);
+					CG_StartLocalSound(cgs.media.voteNow, CHAN_ANNOUNCER);
 				}
 			}
 			cgs.voteModified = qtrue;
@@ -1836,21 +1867,21 @@ te + ts + td == serverTime
 			cgs.timeoutEndTime = ts + td + te + (320 * 1000);
 			cgs.timeoutBeginTime = ts + td + te;
 			if (!initial) {
-				trap_S_StartLocalSound(cgs.media.klaxon1, CHAN_LOCAL_SOUND);
+				CG_StartLocalSound(cgs.media.klaxon1, CHAN_LOCAL_SOUND);
 				CG_ResetTimedItemPickupTimes();  //FIXME take out eventually
 			}
 		} else if (te  &&  td != cgs.cpmaLastTd) {  // timein called
 			cgs.timeoutBeginTime = ts + td + te;
 			// for cpma compat:
 			if (!initial) {
-				//trap_S_StartLocalSound(cgs.media.countPrepareSound, CHAN_LOCAL_SOUND);
+				//CG_StartLocalSound(cgs.media.countPrepareSound, CHAN_LOCAL_SOUND);
 			}
 		} else if (!te  &&  cgs.cpmaLastTe) {  // timeout over
 			cgs.timeoutEndTime = 0;
 			cgs.timeoutBeginTime = 0;
 			// for cpma compat:
 			if (!initial) {
-				//trap_S_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
+				//CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
 			}
 		}
 
@@ -1982,7 +2013,7 @@ static void CG_ConfigStringModified( void ) {
 		Q_strncpyz( cgs.voteString, str, sizeof( cgs.voteString ) );
 #if 1  //def MPACK
 		if (*cgs.voteString  &&  cg_audioAnnouncerVote.integer) {
-			trap_S_StartLocalSound( cgs.media.voteNow, CHAN_ANNOUNCER );
+			CG_StartLocalSound( cgs.media.voteNow, CHAN_ANNOUNCER );
 		}
 #endif //MPACK
 		//Com_Printf("vote string: %s\n", cgs.voteString);
@@ -2000,7 +2031,7 @@ static void CG_ConfigStringModified( void ) {
 #if 1 //def MPACK
 		//FIXME wc and if you are not on the same team??
 		if (*str  &&  cg_audioAnnouncerTeamVote.integer) {
-			trap_S_StartLocalSound( cgs.media.voteNow, CHAN_ANNOUNCER );
+			CG_StartLocalSound( cgs.media.voteNow, CHAN_ANNOUNCER );
 		}
 #endif
 	} else if ( num == CS_INTERMISSION ) {
@@ -2110,7 +2141,7 @@ static void CG_ConfigStringModified( void ) {
 		val = atoi(str);
 		//Com_Printf("%d CS_ROUND_TIME %d\n", cg.time, val);
 		if (val > 0  &&  !cgs.roundStarted) {
-			//trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
+			//CG_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 			cgs.roundStarted = qtrue;
 			trap_SendConsoleCommand("exec roundstart.cfg\n");
 		} else if (val < 0) {
@@ -2360,7 +2391,9 @@ static void CG_MapRestart( void ) {
 	cg.damageTime = 0;
 	cg.lastChatBeepTime = 0;
 	cg.lastFragTime = 0;
-	cg.lastObituary.time = 0;
+	memset(&cg.obituaries, 0, sizeof(cg.obituaries));
+	cg.obituaryIndex = 0;
+
 	cg.lastTeamChatBeepTime = 0;
 	cg.damageDoneTime = 0;
 
@@ -2389,10 +2422,69 @@ static void CG_MapRestart( void ) {
 	// play the "fight" sound if this is a restart without warmup
 	if ( cg.warmup == 0   &&  cgs.gametype != GT_FREEZETAG /* && cgs.gametype == GT_TOURNAMENT */) {
 		if (cg_audioAnnouncerWarmup.integer) {
-			trap_S_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
+			if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
+				int ourClientNum;
+
+				if (wolfcam_following) {
+					ourClientNum = wcg.clientNum;
+				} else {
+					ourClientNum = cg.snap->ps.clientNum;
+				}
+				if (cgs.clientinfo[ourClientNum].team == TEAM_RED) {
+					CG_StartLocalSound(cgs.media.countBiteSound, CHAN_ANNOUNCER);
+				} else {
+					CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
+				}
+			} else if (cgs.gametype == GT_RACE) {
+				CG_StartLocalSound(cgs.media.countGoSound, CHAN_ANNOUNCER);
+			} else {
+				CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
+			}
 		}
-		//CG_CenterPrint( "FIGHT!", 120, GIANTCHAR_WIDTH*2 );
-		CG_CenterPrint("FIGHT!", 120, BIGCHAR_WIDTH);
+
+		if (cg_drawFightMessage.integer) {
+			if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
+				int ourClientNum;
+
+				if (wolfcam_following) {
+					ourClientNum = wcg.clientNum;
+				} else {
+					ourClientNum = cg.snap->ps.clientNum;
+				}
+				if (cgs.clientinfo[ourClientNum].team == TEAM_RED) {
+					CG_CenterPrint("BITE!", 120, BIGCHAR_WIDTH);
+				} else {
+					CG_CenterPrint("FIGHT!", 120, BIGCHAR_WIDTH);
+				}
+			} else if (cgs.gametype == GT_RACE) {
+				CG_CenterPrint("GO!", 120, BIGCHAR_WIDTH);
+			} else if (cgs.gametype == GT_CTFS) {
+				//FIXME not here
+#if 0
+				int ourTeam;
+
+				if (wolfcam_following) {
+					ourTeam = cgs.clientinfo[wcg.clientNum].team;
+				} else {
+					ourTeam = cgs.clientinfo[cg.snap->ps.clientNum].team;
+				}
+				if ((ourTeam == TEAM_RED  ||  ourTeam == TEAM_BLUE)  &&  cg_attackDefendVoiceStyle.integer == 1) {
+					if ((cgs.roundTurn % 2 == 0  &&  ourTeam == TEAM_RED)  ||  (cgs.roundTurn % 2 != 0  &&  ourTeam == TEAM_BLUE)) {
+						CG_CenterPrint("ATTACK THE FLAG!", 120, BIGCHAR_WIDTH);
+					} else {
+						CG_CenterPrint("DEFEND THE FLAG!", 120, BIGCHAR_WIDTH);
+					}
+				} else {
+					CG_CenterPrint("FIGHT!", 120, BIGCHAR_WIDTH);
+				}
+#endif
+			} else {
+				CG_CenterPrint("FIGHT!", 120, BIGCHAR_WIDTH);
+			}
+		} else {  // no fight screen message
+			//FIXME is this needed?
+			CG_CenterPrint("", 120, BIGCHAR_WIDTH);
+		}
 	}
 #ifdef MISSIONPACK
 	if (cg_singlePlayerActive.integer) {
@@ -2751,7 +2843,7 @@ static void CG_PlayVoiceChat( const bufferedVoiceChat_t *vchat ) {
 	}
 
 	if ( !cg_noVoiceChats.integer ) {
-		trap_S_StartLocalSound( vchat->snd, CHAN_VOICE);
+		CG_StartLocalSound( vchat->snd, CHAN_VOICE);
 		if (vchat->clientNum != cg.snap->ps.clientNum) {
 			int orderTask = CG_ValidOrder(vchat->cmd);
 			if (orderTask > 0) {
@@ -4520,13 +4612,13 @@ static void CG_ServerCommand( void ) {
 									// votes passing or failing
 
 		if (!Q_stricmpn(cmd, "vote failed", 11)  &&  cg_audioAnnouncerVote.integer) {
-			trap_S_StartLocalSound( cgs.media.voteFailed, CHAN_ANNOUNCER );
+			CG_StartLocalSound( cgs.media.voteFailed, CHAN_ANNOUNCER );
 		} else if (!Q_stricmpn(cmd, "team vote failed", 16)  &&  cg_audioAnnouncerTeamVote.integer) {
-			trap_S_StartLocalSound( cgs.media.voteFailed, CHAN_ANNOUNCER );
+			CG_StartLocalSound( cgs.media.voteFailed, CHAN_ANNOUNCER );
 		} else if (!Q_stricmpn(cmd, "vote passed", 11)  &&  cg_audioAnnouncerVote.integer) {
-			trap_S_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
+			CG_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
 		} else if (!Q_stricmpn(cmd, "team vote passed", 16)  &&  cg_audioAnnouncerTeamVote.integer) {
-			trap_S_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
+			CG_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
 		} else if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT  &&  !Q_stricmpn(cmd, "Game has been forfeited", 23)) {
 			//FIXME bad hack
 			Com_Printf("^5forfeit...\n");
@@ -4547,7 +4639,7 @@ static void CG_ServerCommand( void ) {
 		if ( !cg_teamChatsOnly.integer ) {
 			if (cg_chatBeep.integer) {
 				if (cg.time - cg.lastChatBeepTime >= (cg_chatBeepMaxTime.value * 1000)) {
-					trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+					CG_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 					cg.lastChatBeepTime = cg.time;
 				}
 			}
@@ -4566,13 +4658,13 @@ static void CG_ServerCommand( void ) {
 			// it's a spec demo, team is other specs
 			if (cg_chatBeep.integer) {
 				if (cg.time - cg.lastChatBeepTime >= (cg_chatBeepMaxTime.value * 1000)) {
-					trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+					CG_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 					cg.lastChatBeepTime = cg.time;
 				}
 			}
 		} else if (cg_teamChatBeep.integer) {
 			if (cg.time - cg.lastTeamChatBeepTime >= (cg_teamChatBeepMaxTime.value * 1000)) {
-				trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+				CG_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 				cg.lastTeamChatBeepTime = cg.time;
 			}
 		}
@@ -4693,7 +4785,7 @@ static void CG_ServerCommand( void ) {
 			if ( !cg_teamChatsOnly.integer ) {
 				if (cg_chatBeep.integer) {
 					if (cg.time - cg.lastChatBeepTime >= (cg_chatBeepMaxTime.value * 1000)) {
-						trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+						CG_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 						cg.lastChatBeepTime = cg.time;
 					}
 				}
@@ -4821,7 +4913,7 @@ static void CG_ServerCommand( void ) {
 		if (!strcmp(cmd, "pcp")) {  // pause center print??, player called pause?
 			// timeout
 			//CG_AddBufferedSound(cgs.media.klaxon1);
-			trap_S_StartLocalSound( cgs.media.klaxon1, CHAN_LOCAL_SOUND );
+			CG_StartLocalSound( cgs.media.klaxon1, CHAN_LOCAL_SOUND );
 			if (cg_serverCenterPrint.integer) {
 				CG_CenterPrint(CG_Argv(1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 			}

@@ -993,3 +993,8 @@ void Sys_OpenWolfcamDirectory (void)
 	CloseHandle(pi.hProcess);
 	CloseHandle(pi.hThread);
 }
+
+int Sys_DirnameCmp (const char *pathName1, const char *pathName2)
+{
+	return Q_stricmp(pathName1, pathName2);
+}

@@ -11,6 +11,7 @@
 #include "cg_marks.h"
 #include "cg_players.h"
 #include "cg_predict.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "cg_weapons.h"
 #include "sc.h"
@@ -194,8 +195,8 @@ static void CG_EntityEffects( const centity_t *cent ) {
 	if (cent->currentState.loopSound == cg.proxTickSoundIndex) {
 		//Com_Printf("prox\n");
 		if (cg_proxMineTick.integer) {
-			trap_S_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound]);
-			//trap_S_AddRealLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound]);
+			CG_AddLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound]);
+			//CG_AddRealLoopingSound(cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[cent->currentState.loopSound]);
 		}
 	} else if (cent->currentState.loopSound) {
 
@@ -207,7 +208,7 @@ static void CG_EntityEffects( const centity_t *cent ) {
 			if (cg_ambientSounds.integer == 1  ||  (cg_ambientSounds.integer == 2  &&  CG_AllowedAmbientSound(cgs.gameSounds[cent->currentState.loopSound]))) {
 				//Com_Printf("loop not speaker playing %d\n", cent->currentState.loopSound);
 				//Com_Printf("%s  %d %d\n", CG_ConfigString( CS_SOUNDS+cent->currentState.loopSound - 1 ), cent->currentState.eType, cent->currentState.weapon);
-				trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[ cent->currentState.loopSound] );
+				CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[ cent->currentState.loopSound] );
 			} else {
 				//trap_S_StopLoopingSound(cent->currentState.number);
 			}
@@ -222,7 +223,7 @@ static void CG_EntityEffects( const centity_t *cent ) {
 
 			if (cg_ambientSounds.integer == 1  ||  (cg_ambientSounds.integer == 2  &&  CG_AllowedAmbientSound(cgs.gameSounds[cent->currentState.loopSound]))) {
 				//Com_Printf("playing speaker sound %f %f %f\n", cent->lerpOrigin[0], cent->lerpOrigin[1], cent->lerpOrigin[2]);
-				trap_S_AddRealLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[ cent->currentState.loopSound ] );
+				CG_AddRealLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.gameSounds[ cent->currentState.loopSound ] );
 				//Com_Printf("^3real: %s  %d %d\n", CG_ConfigString( CS_SOUNDS+cent->currentState.loopSound - 1 ), cent->currentState.eType, cent->currentState.weapon);
 			} else {
 				//trap_S_StopLoopingSound(cent->currentState.number);
@@ -889,7 +890,7 @@ static void CG_Speaker( centity_t *cent ) {
 	if (cg_ambientSounds.integer == 1  ||  cg_ambientSounds.integer == 3  ||  (cg_ambientSounds.integer == 2  &&  CG_AllowedAmbientSound(cgs.gameSounds[n]))) {
 		//Com_Printf("CG_Speaker()  %d speaker %d  %s\n", cent->currentState.number, n, CG_ConfigString(CS_SOUNDS + n - 1));
 
-		trap_S_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.gameSounds[n] );
+		CG_StartSound (NULL, cent->currentState.number, CHAN_ITEM, cgs.gameSounds[n] );
 	}
 
 	//	ent->s.frame = ent->wait * 10;
@@ -916,7 +917,7 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 		return;
 	}
 
-	if (cgs.gametype != GT_CTFS) {  //  &&  cgs.gametype != GT_1FCTF) {
+	if (cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_CTF) {  //  &&  cgs.gametype != GT_1FCTF) {
 		return;
 	}
 
@@ -930,6 +931,7 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 		ourClientNum = cg.snap->ps.clientNum;
 	}
 
+	//FIXME cg_freecam_useTeamSettings
 	//pcent = &cg_entities[ourClientNum];
 	ourTeam = cgs.clientinfo[ourClientNum].team;
 	//Com_Printf("our team: %d\n", ourTeam);
@@ -951,6 +953,13 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 				shader = cgs.media.adAttack;
 				//Com_Printf("attack.... %d\n", cgs.media.adAttack);
 			}
+		} else if (cgs.gametype == GT_CTF) {
+			//FIXME flag status
+			if (ourTeam == TEAM_RED) {
+				shader = cgs.media.adDefend;
+			} else {
+				shader = cgs.media.adCapture;
+			}
 		}
 	} else if (item->giTag == PW_BLUEFLAG) {
 		VectorSet(color, 0, 0.5, 1);
@@ -966,13 +975,22 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 				}
 				shader = cgs.media.adDefend;
 			}
+		} else if (cgs.gametype == GT_CTF) {
+			//FIXME flag status
+			if (ourTeam == TEAM_BLUE) {
+				shader = cgs.media.adDefend;
+			} else {
+				shader = cgs.media.adCapture;
+			}
 		}
 	} else {
 		VectorSet(color, 0.65, 0.65, 0.65);
 	}
 
 	memset(&ent, 0, sizeof(ent));
-	VectorCopy(cent->lerpOrigin, ent.origin);
+	// don't use cent->lerpOrigin so icon doesn't bob
+	VectorCopy(cent->currentState.pos.trBase, ent.origin);
+
 	ent.origin[2] += 64 + 16;  //32;
 	ent.reType = RT_SPRITE;
 	//ent.customShader = cgs.media.harvesterCapture;
@@ -1355,6 +1373,142 @@ static void CG_DrawPowerupRespawnPOI (const centity_t *cent)
 	CG_AddRefEntity(&ent);
 }
 
+static void CG_DrawPowerupAvailable (const centity_t *cent)
+{
+	const gitem_t *item;
+	const entityState_t *es;
+	refEntity_t ent;
+	vec3_t org;
+	float minWidth, maxWidth, radius, dist;
+	qhandle_t shader;
+	float fadeStart;
+	float fadeEnd;
+	float frac;
+	float total;
+
+	if (cgs.protocol != PROTOCOL_QL) {
+		return;
+	}
+
+	if (cg_drawPowerupAvailable.integer == 0) {
+		return;
+	}
+
+	es = &cent->currentState;
+	if (es->modelindex <= 0) {
+		return;
+	}
+	if (es->eFlags & EF_NODRAW) {
+		return;
+	}
+
+	item = &bg_itemlist[es->modelindex];
+
+	if (item->giType != IT_POWERUP) {
+		return;
+	}
+
+	memset(&ent, 0, sizeof(ent));
+	ent.reType = RT_SPRITE;
+	VectorCopy(cent->lerpOrigin, ent.origin);
+	ent.radius = 14.0 * cg_drawPowerupAvailableScale.value;
+	if (ent.radius < 0) {
+		return;
+	}
+
+	//FIXME duplicate code
+	// distance hack
+	if (wolfcam_following) {
+		VectorCopy(cg_entities[wcg.clientNum].lerpOrigin, org);
+	} else if (cg.freecam) {
+		VectorCopy(cg.fpos, org);
+	} else {
+		VectorCopy(cg.refdef.vieworg, org);
+	}
+
+	minWidth = 14.0 * cg_drawPowerupAvailableScale.value;
+	maxWidth = 14.0 * cg_drawPowerupAvailableScale.value;
+
+	radius = maxWidth / 2.0;
+	dist = ICON_SCALE_DISTANCE * (maxWidth / 16.0);
+
+	if (minWidth > 0.1) {
+		dist *= (16.0 / minWidth);
+	}
+
+	ent.radius = radius;
+
+	if (Distance(ent.origin, org) > dist  &&  minWidth > 0.1) {
+		ent.radius = radius * (Distance(ent.origin, org) / dist);
+	}
+
+	// now distance fade if too close
+	fadeStart = cg_drawPowerupAvailableFadeStart.value;
+	fadeEnd = cg_drawPowerupAvailableFadeEnd.value;
+
+	dist = Distance(ent.origin, org);
+	if (dist < fadeEnd) {
+		return;
+	}
+	if (dist < fadeStart) {
+		total = fadeStart - fadeEnd;
+		if (total > 0.0f) {
+			frac = (fadeStart - dist) / total;
+		} else {
+			// invalid values for fadeStart and/or fadeEnd, ignoring
+			frac = 0.0f;
+		}
+		ent.shaderRGBA[3] = 255 - (255.0f * frac);
+	} else {
+		ent.shaderRGBA[3] = 255;
+	}
+
+	ent.renderfx |= RF_DEPTHHACK;
+
+	switch (item->giTag) {
+	case PW_QUAD:
+		shader = cgs.media.quadAvailable;
+		break;
+	case PW_BATTLESUIT:
+		shader = cgs.media.bsAvailable;
+		break;
+	case PW_HASTE:
+		shader = cgs.media.hasteAvailable;
+		break;
+	case PW_INVIS:
+		shader = cgs.media.invisAvailable;
+		break;
+	case PW_REGEN:
+		shader = cgs.media.regenAvailable;
+		break;
+	case PW_FLIGHT:
+		//FIXME not in ql, draw something
+		// 2015-07-16 no, looks bad in demos, will make it look like
+		// the powerup is right in front of you, draw own icon or skip
+		//shader = cg_items[es->modelindex].icon;
+
+		return;
+		break;
+
+	default:
+		// icon shader looks bad
+		//shader = cg_items[es->modelindex].icon;
+
+		return;
+		break;
+	}
+
+	ent.customShader = shader;
+	ent.shaderRGBA[0] = 255;
+	ent.shaderRGBA[1] = 255;
+	ent.shaderRGBA[2] = 255;
+	ent.shaderRGBA[3] *= (cg_drawPowerupAvailableAlpha.value / 255.0f);
+
+	ent.origin[2] += cg_drawPowerupAvailableOffset.value;
+
+	CG_AddRefEntity(&ent);
+}
+
 /*
 ==================
 CG_Item
@@ -1376,10 +1530,16 @@ static void CG_Item ( centity_t *cent ) {
         //return;
 	}
 
-	// if set to invisible, possibly skip
-	if ( !es->modelindex || ( es->eFlags & EF_NODRAW ) ) {
+	// ql ingame icons
+	if (es->eFlags & EF_NODRAW) {
 		CG_DrawTimerPie(cent);
 		CG_DrawPowerupRespawnPOI(cent);
+	} else {
+		CG_DrawPowerupAvailable(cent);
+	}
+
+	// if set to invisible, skip
+	if ( !es->modelindex || ( es->eFlags & EF_NODRAW ) ) {
 		return;
 	}
 
@@ -1577,7 +1737,7 @@ static void CG_Item ( centity_t *cent ) {
 		VectorScale( ent.axis[2], 1.5, ent.axis[2] );
 		ent.nonNormalizedAxes = qtrue;
 #ifdef MISSIONPACK  //FIXME check a demo
-		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.weaponHoverSound );
+		CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cgs.media.weaponHoverSound );
 #endif
 	}
 
@@ -1610,6 +1770,7 @@ static void CG_Item ( centity_t *cent ) {
 #if 1  //def MPACK
 	if ( item->giType == IT_WEAPON && wi->barrelModel ) {
 		refEntity_t	barrel;
+		vec3_t angles;
 
 		memset( &barrel, 0, sizeof( barrel ) );
 
@@ -1619,9 +1780,13 @@ static void CG_Item ( centity_t *cent ) {
 		barrel.shadowPlane = ent.shadowPlane;
 		barrel.renderfx = ent.renderfx;
 
+		angles[YAW] = 0;
+		angles[PITCH] = 0;
+		angles[ROLL] = 0;
+		AnglesToAxis( angles, barrel.axis );
+
 		CG_PositionRotatedEntityOnTag( &barrel, &ent, wi->weaponModel, "tag_barrel" );
 
-		AxisCopy( ent.axis, barrel.axis );
 		barrel.nonNormalizedAxes = ent.nonNormalizedAxes;
 
 		if (cg_itemsWh.integer) {
@@ -1913,7 +2078,7 @@ static void CG_Missile( centity_t *cent ) {
 		BG_EvaluateTrajectoryDeltaf (&cent->currentState.pos, cgtime, velocity, cg.foverf);
 		//Com_Printf("missile velocity %f\n", VectorLength(velocity));
 
-		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, velocity, weapon->missileSound );
+		CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, velocity, weapon->missileSound );
 	}
 
 #if 0  // test flare
@@ -2063,7 +2228,7 @@ static void CG_Grapple( centity_t *cent ) {
 #if 0 // FIXME add grapple pull sound here..?
 	// add missile sound
 	if ( weapon->missileSound ) {
-		trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->missileSound );
+		CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->missileSound );
 	}
 #endif
 
@@ -2833,6 +2998,9 @@ static void CG_TeamBase( centity_t *cent ) {
 			model.hModel = cgs.media.neutralFlagBaseModel;
 		}
 		CG_AddRefEntity(&model);
+		// base help icons can't be rendered here since base isn't
+		// broadcast to all clients, need to add with flag item
+		//CG_DrawCtfHelpIcons(cent);
 	}
 #if 1  //def MPACK
 	else if ( cgs.gametype == GT_OBELISK ) {
@@ -2887,7 +3055,7 @@ static void CG_TeamBase( centity_t *cent ) {
 			// show the target
 			if (t > h) {
 				if ( !cent->pe.muzzleFlashTime ) {
-					trap_S_StartSound (cent->lerpOrigin, ENTITYNUM_NONE, CHAN_BODY,  cgs.media.obeliskRespawnSound);
+					CG_StartSound (cent->lerpOrigin, ENTITYNUM_NONE, CHAN_BODY,  cgs.media.obeliskRespawnSound);
 					cent->pe.muzzleFlashTime = 1;
 				}
 				VectorCopy(cent->currentState.angles, angles);

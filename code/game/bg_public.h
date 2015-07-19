@@ -787,6 +787,7 @@ typedef enum {
 
 	EV_DAMAGEPLUM = 96,
 	EV_AWARD = 97,
+	EV_INFECTED = 98,
 
 	// just to allow compiling  -- no it's used with predicted player state
 	EV_STEP_4 = 196,
@@ -1085,8 +1086,7 @@ typedef enum {
 
 	MOD_THAW = 30,
 
-	// unknown 31
-
+	MOD_LIGHTNING_DISCHARGE = 31,  // demo?
 	MOD_HMG = 32,
 	MOD_RAILGUN_HEADSHOT = 33,
 

@@ -1,7 +1,7 @@
 #include "cg_local.h"
 
 #include "cg_main.h"
-#include "cg_syscalls.h"
+#include "cg_sound.h"
 #include "cg_weapons.h"
 #include "sc.h"
 #include "wolfcam_weapons.h"
@@ -86,7 +86,7 @@ void Wolfcam_AddViewWeapon (void)
             VectorMA( origin, -8, cg.refdef.viewaxis[2], origin );
             CG_LightningBolt( &cg_entities[es->number], origin );
         }
-        //trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->firingSound );
-        trap_S_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cg_weapons[es->weapon].firingSound );
+        //CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, weapon->firingSound );
+        CG_AddLoopingSound( cent->currentState.number, cent->lerpOrigin, vec3_origin, cg_weapons[es->weapon].firingSound );
     }
 }

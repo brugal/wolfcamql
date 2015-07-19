@@ -246,6 +246,8 @@ static	cvar_t		*fs_basegame;
 static	cvar_t		*fs_gamedirvar;
 static	searchpath_t	*fs_searchpaths;
 static cvar_t *fs_quakelivedir;
+// fs_extraGames* can be defined on the command line
+
 static	int			fs_readCount;			// total bytes read
 static	int			fs_loadCount;			// total files read
 static	int			fs_loadStack;			// total files in memory
@@ -3096,6 +3098,7 @@ FS_Startup
 static void FS_Startup( const char *gameName )
 {
 	const char *homePath;
+	int i;
 
 	Com_Printf( "----- FS_Startup -----\n" );
 
@@ -3139,6 +3142,45 @@ static void FS_Startup( const char *gameName )
 		if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string,fs_basepath->string)) {
 			FS_AddGameDirectory(fs_homepath->string, fs_basegame->string);
 		}
+	}
+
+#if 0
+	// read the fs_extrapath* directories after baseq3
+	i = 1;
+	while (qtrue) {
+		cvar_t *cv;
+
+		cv = Cvar_FindVar(va("fs_extraBasePath%d", i));
+		if (!cv) {
+			break;
+		}
+
+		Com_Printf("Adding fs_extraBasePath%d : '%s'\n", i, cv->string);
+		FS_AddGameDirectory(cv->string, "");
+		i++;
+	}
+#endif
+
+	// read the fs_extraGames directories after baseq3
+	i = 1;
+	while (qtrue) {
+		cvar_t *cv;
+
+		cv = Cvar_FindVar(va("fs_extraGames%d", i));
+		if (!cv) {
+			break;
+		}
+
+		Com_Printf("Set fs_extraGames%d : '%s'\n", i, cv->string);
+
+		if (fs_basepath->string[0]) {
+			FS_AddGameDirectory(fs_basepath->string, cv->string);
+		}
+		if (fs_homepath->string[0]  &&  Sys_DirnameCmp(fs_homepath->string, fs_basepath->string)) {
+			FS_AddGameDirectory(fs_homepath->string, cv->string);
+		}
+
+		i++;
 	}
 
 	// check for additional game folder for mods

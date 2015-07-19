@@ -11,7 +11,8 @@
 #include "cg_main.h"
 #include "cg_marks.h"
 #include "cg_predict.h"
-#include "cg_syscalls.h"
+#include "cg_sound.h"
+#include "cg_syscalls.h"  // trap_S_RegisterSound
 
 #if !defined(Q3_VM)  &&  defined(ENABLE_THREADS)
   #include "cg_thread.h"
@@ -800,7 +801,7 @@ static void CG_FragmentBounceSound( localEntity_t *le, const trace_t *trace ) {
 					s = cgs.media.gibBounce3Sound;
 				}
 			}
-			trap_S_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
+			CG_StartSound( trace->endpos, ENTITYNUM_WORLD, CHAN_AUTO, s );
 		}
 	} else if ( le->leBounceSoundType == LEBS_BRASS ) {
 
@@ -1257,8 +1258,8 @@ static void CG_AddKamikaze( localEntity_t *le ) {
 	if (tf > (double)KAMI_SHOCKWAVE_STARTTIME && tf < (double)KAMI_SHOCKWAVE_ENDTIME) {
 
 		if (!(le->leFlags & LEF_SOUND1)) {
-//			trap_S_StartSound (re->origin, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.kamikazeExplodeSound );
-			trap_S_StartLocalSound(cgs.media.kamikazeExplodeSound, CHAN_AUTO);
+//			CG_StartSound (re->origin, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.kamikazeExplodeSound );
+			CG_StartLocalSound(cgs.media.kamikazeExplodeSound, CHAN_AUTO);
 			le->leFlags |= LEF_SOUND1;
 		}
 		// 1st kamikaze shockwave
@@ -1303,8 +1304,8 @@ static void CG_AddKamikaze( localEntity_t *le ) {
 		}
 		else {
 			if (!(le->leFlags & LEF_SOUND2)) {
-//				trap_S_StartSound (re->origin, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.kamikazeImplodeSound );
-				trap_S_StartLocalSound(cgs.media.kamikazeImplodeSound, CHAN_AUTO);
+//				CG_StartSound (re->origin, ENTITYNUM_WORLD, CHAN_AUTO, cgs.media.kamikazeImplodeSound );
+				CG_StartLocalSound(cgs.media.kamikazeImplodeSound, CHAN_AUTO);
 				le->leFlags |= LEF_SOUND2;
 			}
 			c = (float)(KAMI_IMPLODE_ENDTIME - tf) / (float) (KAMI_IMPLODE_ENDTIME - KAMI_IMPLODE_STARTTIME);
@@ -2716,7 +2717,7 @@ static void CG_Add_FX_Emitted_Sound (localEntity_t *le)
 	}
 	if (*ScriptVars.sound) {
 		sfx = trap_S_RegisterSound(ScriptVars.sound, qfalse);
-		trap_S_StartSound(ScriptVars.origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx);
+		CG_StartSound(ScriptVars.origin, ENTITYNUM_WORLD, CHAN_AUTO, sfx);
 	}
 }
 
@@ -2746,12 +2747,12 @@ static void CG_Add_FX_Emitted_LoopSound (localEntity_t *le)
 	if (lsound) {
 		//FIXME duplicate code
 		if (0) {  //(ScriptVars.parentCent) {
-			trap_S_AddLoopingSound(ScriptVars.parentCent->currentState.number, ScriptVars.origin, ScriptVars.velocity, lsound);
+			CG_AddLoopingSound(ScriptVars.parentCent->currentState.number, ScriptVars.origin, ScriptVars.velocity, lsound);
 		} else {
 			if (FxLoopSounds >= MAX_LOOP_SOUNDS) {
 				CG_Printf("^3fx:  (emitted) max loop sounds added\n");
 			} else {
-				trap_S_AddLoopingSound(FxLoopSounds, ScriptVars.origin, ScriptVars.velocity, lsound);
+				CG_AddLoopingSound(FxLoopSounds, ScriptVars.origin, ScriptVars.velocity, lsound);
 				FxLoopSounds++;
 			}
 		}

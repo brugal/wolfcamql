@@ -935,6 +935,9 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	case CG_S_STARTBACKGROUNDTRACK:
 		S_StartBackgroundTrack( VMA(1), VMA(2) );
 		return 0;
+	case CG_S_PRINTSFXFILENAME:
+		S_PrintSfxFilename(args[1]);
+		return 0;
 	case CG_R_LOADWORLDMAP: {
 		int v;
 		int gm;

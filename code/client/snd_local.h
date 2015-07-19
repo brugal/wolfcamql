@@ -147,6 +147,8 @@ typedef struct
 	void (*ClearSoundBuffer)( void );
 	void (*SoundInfo)( void );
 	void (*SoundList)( void );
+	void (*PrintSfxFilename)(sfxHandle_t sfx);
+
 #ifdef USE_VOIP
 	void (*StartCapture)( void );
 	int (*AvailableCaptureSamples)( void );
@@ -205,6 +207,7 @@ extern cvar_t *s_doppler;
 extern cvar_t *s_testsound;
 extern cvar_t *cl_aviNoAudioHWOutput;
 extern cvar_t *s_announcerVolume;
+extern cvar_t *s_killBeepVolume;
 extern cvar_t *s_useTimescale;
 extern cvar_t *s_forceScale;
 extern cvar_t *s_showMiss;

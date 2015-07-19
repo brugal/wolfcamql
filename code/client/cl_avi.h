@@ -85,7 +85,6 @@ typedef struct aviFileData_s
   audioFormat_t a;
     int           numAudioFrames;  // just for first riff
     int64_t numAudioFramesHeaderOffset;
-    int audioDataLength;
 
     int64_t mainHeaderNumVideoFramesHeaderOffset;
     int64_t mainHeaderMaxRecordSizeHeaderOffset;

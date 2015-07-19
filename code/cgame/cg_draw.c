@@ -16,6 +16,7 @@
 #include "cg_players.h"  // color from string
 #include "cg_predict.h"
 #include "cg_scoreboard.h"
+#include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "cg_view.h"
 #include "cg_weapons.h"
@@ -989,8 +990,6 @@ static int CG_Text_Width_orig (const char *text, float scale, int limit, const f
 	float out;
 	const glyphInfo_t *glyph;
 	float useScale;
-// FIXME: see ui_main.c, same problem
-//	const unsigned char *s = text;
 	const char *s = text;
 	const fontInfo_t *font;
 
@@ -1025,7 +1024,7 @@ static int CG_Text_Width_orig (const char *text, float scale, int limit, const f
 				}
 				continue;
 			} else {
-				glyph = &font->glyphs[(int)*s]; // TTimo: FIXME: getting nasty warnings without the cast, hopefully this doesn't break the VM build
+				glyph = &font->glyphs[*s & 255];
 				out += glyph->xSkip;
 				s++;
 				count++;
@@ -1083,8 +1082,6 @@ static int CG_Text_Height_orig (const char *text, float scale, int limit, const 
 	float max;
 	const glyphInfo_t *glyph;
 	float useScale;
-// TTimo: FIXME
-//	const unsigned char *s = text;
 	const char *s = text;
 	//fontInfo_t *font = &cgDC.Assets.textFont;
 	const fontInfo_t *font;
@@ -1120,7 +1117,7 @@ static int CG_Text_Height_orig (const char *text, float scale, int limit, const 
 				}
 				continue;
 			} else {
-				glyph = &font->glyphs[(int)*s]; // TTimo: FIXME: getting nasty warnings without the cast, hopefully this doesn't break the VM build
+				glyph = &font->glyphs[*s & 255];
 	      if (max < glyph->height) {
 		      max = glyph->height;
 			  }
@@ -1230,8 +1227,6 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 	useScale = scale * font->glyphScale;
 
   if (text) {
-// TTimo: FIXME
-//		const unsigned char *s = text;
 		const char *s = text;
 		trap_R_SetColor( color );
 		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
@@ -1241,7 +1236,7 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 		}
 		count = 0;
 		while (s && *s && count < len) {
-			glyph = &font->glyphs[(int)*s]; // TTimo: FIXME: getting nasty warnings without the cast, hopefully this doesn't break the VM build
+			glyph = &font->glyphs[*s & 255];
       //int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
       //float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
 			if ( Q_IsColorString( s ) ) {
@@ -1285,7 +1280,23 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 
 					xofs *= useScale * xscale;
 					yofs *= useScale * yscale;
-					
+
+					if (style == ITEM_TEXTSTYLE_SHADOWED) {
+						if (xofs < 1.0f) {
+							xofs = 1.0f;
+						}
+						if (yofs < 1.0f) {
+							yofs = 1.0f;
+						}
+					} else if (style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
+						if (xofs < 2.0f) {
+							xofs = 2.0f;
+						}
+						if (yofs < 2.0f) {
+							yofs = 2.0f;
+						}
+					}
+
 					colorBlack[3] = newColor[3];
 					trap_R_SetColor( colorBlack );
 					//FIXME ofs should use scale value
@@ -1366,9 +1377,6 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 	useScale = scale * font->glyphScale;
 
   if (text) {
-// TTimo: FIXME
-//		const unsigned char *s = text;
-	  //const char *s = text;
 		const int *s = text;
 		trap_R_SetColor( color );
 		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
@@ -1432,7 +1440,7 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 				continue;
 			}
 
-			glyph = &font->glyphs[(int)*s]; // TTimo: FIXME: getting nasty warnings without the cast, hopefully this doesn't break the VM build
+			glyph = &font->glyphs[*s & 255];
       //int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
       //float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
 			if ( Q_IsColorString( s ) ) {
@@ -1653,8 +1661,6 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 	memset(finalImgBuff, 0, sizeof(finalImgBuff));
 
 	if (text) {
-		// TTimo: FIXME
-		//const unsigned char *s = text;
 		const char *s = text;
 
 		if (*cg_drawPlayerNamesColor.string) {
@@ -1669,7 +1675,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 		}
 		count = 0;
 		while (s && *s && count < len) {
-			glyph = &font->glyphs[(int)*s];  // TTimo: FIXME: getting nasty warnings without the cast, hopefully this doesn't break the VM build
+			glyph = &font->glyphs[*s & 255];
 
 			if ( Q_IsColorString( s ) ) {
 				if (!*cg_drawPlayerNamesColor.string) {
@@ -5065,7 +5071,7 @@ static void CG_RewardAnnouncements (void)
 			cg.rewardTime = cg.time;
 			cg.rewardStack--;
 			if (cg_audioAnnouncerRewards.integer) {
-				trap_S_StartLocalSound(cg.rewardSound[0], CHAN_ANNOUNCER);
+				CG_StartLocalSound(cg.rewardSound[0], CHAN_ANNOUNCER);
 			}
 		} else {
 			return;
@@ -5134,7 +5140,7 @@ static void CG_DrawReward (void)
 			//color = CG_FadeColor( cg.rewardTime, REWARD_TIME );
 			//CG_FadeColor(color, cg.rewardTime, cg_drawRewardsFadeTime.integer);
 			CG_FadeColorVec4(color, cg.rewardTime, cg_drawRewardsTime.integer, cg_drawRewardsFadeTime.integer);
-			trap_S_StartLocalSound(cg.rewardSound[0], CHAN_ANNOUNCER);
+			CG_StartLocalSound(cg.rewardSound[0], CHAN_ANNOUNCER);
 		} else {
 			return;
 		}
@@ -5889,7 +5895,7 @@ static void CG_RoundAnnouncements (void)
 
 		if (!cgs.thirtySecondWarningPlayed  &&  cgs.roundStarted  &&  cgs.roundtimelimit  &&  cgs.roundtimelimit - (ival / 1000) <= 30) {
 			if (cg_audioAnnouncerTimeLimit.integer) {
-				trap_S_StartLocalSound(cgs.media.thirtySecondWarningSound, CHAN_ANNOUNCER);
+				CG_StartLocalSound(cgs.media.thirtySecondWarningSound, CHAN_ANNOUNCER);
 			}
 			cgs.thirtySecondWarningPlayed = qtrue;
 		}
@@ -5905,16 +5911,31 @@ static void CG_RoundAnnouncements (void)
 
 					if (ourTeam == TEAM_RED  ||  ourTeam == TEAM_BLUE) {
 						if ((cgs.roundTurn % 2 == 0  &&  ourTeam == TEAM_RED)  ||  (cgs.roundTurn % 2 != 0  &&  ourTeam == TEAM_BLUE)) {
-							trap_S_StartLocalSound(cgs.media.attackFlagSound, CHAN_ANNOUNCER);
+							CG_StartLocalSound(cgs.media.attackFlagSound, CHAN_ANNOUNCER);
 						} else {
-							trap_S_StartLocalSound(cgs.media.defendFlagSound, CHAN_ANNOUNCER);
+							CG_StartLocalSound(cgs.media.defendFlagSound, CHAN_ANNOUNCER);
 						}
 					}
 				} else {
 					if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
-						trap_S_StartLocalSound(cgs.media.kamikazeRespawnSound, CHAN_LOCAL);
+						int ourClientNum;
+
+						CG_StartLocalSound(cgs.media.kamikazeRespawnSound, CHAN_LOCAL);
+
+						if (wolfcam_following) {
+							ourClientNum = wcg.clientNum;
+						} else {
+							ourClientNum = cg.snap->ps.clientNum;
+						}
+						if (cgs.clientinfo[ourClientNum].team == TEAM_RED) {
+							CG_StartLocalSound(cgs.media.countBiteSound, CHAN_ANNOUNCER);
+						} else {
+							CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
+						}
+					} else if (cgs.gametype == GT_RACE) {
+						CG_StartLocalSound(cgs.media.countGoSound, CHAN_ANNOUNCER);
 					} else {
-						trap_S_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
+						CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
 					}
 				}
 			}
@@ -5931,27 +5952,27 @@ static void CG_RoundAnnouncements (void)
 			if (timeLeft == 5  &&  cgs.countDownSoundPlayed != 5) {
 				if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER) {
 					if (cg_audioAnnouncerRound.integer) {
-						trap_S_StartLocalSound(cgs.media.roundBeginsInSound, CHAN_ANNOUNCER);
+						CG_StartLocalSound(cgs.media.roundBeginsInSound, CHAN_ANNOUNCER);
 					}
 				} else if (cgs.gametype == GT_FREEZETAG) {
 					if (cg_audioAnnouncerRound.integer) {
-						trap_S_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
+						CG_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
 					}
 				}
 				cgs.countDownSoundPlayed = 5;
 			} else if (timeLeft == 3  &&  cgs.countDownSoundPlayed != 3) {
 				if (cg_audioAnnouncerRound.integer) {
-					trap_S_StartLocalSound( cgs.media.count3Sound, CHAN_ANNOUNCER);
+					CG_StartLocalSound( cgs.media.count3Sound, CHAN_ANNOUNCER);
 				}
 				cgs.countDownSoundPlayed = 3;
 			} else if (timeLeft == 2  &&  cgs.countDownSoundPlayed != 2) {
 				if (cg_audioAnnouncerRound.integer) {
-					trap_S_StartLocalSound(cgs.media.count2Sound, CHAN_ANNOUNCER);
+					CG_StartLocalSound(cgs.media.count2Sound, CHAN_ANNOUNCER);
 				}
 				cgs.countDownSoundPlayed = 2;
 			} else if (timeLeft == 1  &&  cgs.countDownSoundPlayed != 1) {
 				if (cg_audioAnnouncerRound.integer) {
-					trap_S_StartLocalSound(cgs.media.count1Sound, CHAN_ANNOUNCER);
+					CG_StartLocalSound(cgs.media.count1Sound, CHAN_ANNOUNCER);
 				}
 				cgs.countDownSoundPlayed = 1;
 			} else if (cgs.countDownSoundPlayed == 1  &&  cgs.roundStarted) {
@@ -6005,24 +6026,46 @@ static void CG_DrawCenter (void)
 		//Com_Printf("played %d  started %d\n", cgs.countDownSoundPlayed, cgs.roundStarted);
 		if (cgs.countDownSoundPlayed == 0  &&  cgs.roundStarted) {
 			//Com_Printf("one ..\n");
-			if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
-				//FIXME here??
-				int clientNum;
+			if (cg_drawFightMessage.integer) {
+				if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
+					//FIXME here??
+					int clientNum;
 
-				if (wolfcam_following) {
-					clientNum = wcg.clientNum;
+					if (wolfcam_following) {
+						clientNum = wcg.clientNum;
+					} else {
+						clientNum = cg.snap->ps.clientNum;
+					}
+
+					if (cgs.clientinfo[clientNum].team == TEAM_RED) {
+						CG_CenterPrint("BITE!", 120, BIGCHAR_WIDTH);
+					} else if (cgs.clientinfo[clientNum].team == TEAM_BLUE) {
+						CG_CenterPrint("RUN!", 120, BIGCHAR_WIDTH);
+					}
+				} else if (cgs.gametype == GT_CTFS) {
+					int ourTeam;
+
+					if (wolfcam_following) {
+						ourTeam = cgs.clientinfo[wcg.clientNum].team;
+					} else {
+						ourTeam = cgs.clientinfo[cg.snap->ps.clientNum].team;
+					}
+					if ((ourTeam == TEAM_RED  ||  ourTeam == TEAM_BLUE)  &&  cg_attackDefendVoiceStyle.integer == 1) {
+						if ((cgs.roundTurn % 2 == 0  &&  ourTeam == TEAM_RED)  ||  (cgs.roundTurn % 2 != 0  &&  ourTeam == TEAM_BLUE)) {
+							CG_CenterPrint("ATTACK THE FLAG!", 120, BIGCHAR_WIDTH);
+						} else {
+							CG_CenterPrint("DEFEND THE FLAG!", 120, BIGCHAR_WIDTH);
+						}
+					} else {
+						CG_CenterPrint("FIGHT!", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
+					}
 				} else {
-					clientNum = cg.snap->ps.clientNum;
+					CG_CenterPrint("FIGHT!", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 				}
-
-				if (cgs.clientinfo[clientNum].team == TEAM_RED) {
-					CG_CenterPrint("BITE!", 120, BIGCHAR_WIDTH);
-				} else if (cgs.clientinfo[clientNum].team == TEAM_BLUE) {
-					CG_CenterPrint("RUN!", 120, BIGCHAR_WIDTH);
-				}
-			} else {
+			} else {  // no fight screen message
 				CG_CenterPrint("", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 			}
+
 			cgs.countDownSoundPlayed = -999;
 		} else  if (!cgs.roundStarted  &&  cgs.roundBeginTime > 0) {
 			timeLeft = (cgs.roundBeginTime - cg.time) / 1000;
@@ -6051,7 +6094,7 @@ static void CG_DrawCenter (void)
 }
 
 // handles both frag and obituary
-int *CG_CreateFragString (qboolean lastFrag)
+int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 {
 	static int extString[MAX_STRING_CHARS];
 	int i, j, k;
@@ -6061,6 +6104,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 	float acc;
 	const wweaponStats_t *ws;
 	int ourClientNum;
+	const obituary_t *obituary;
 
 	if (wolfcam_following) {
 		ourClientNum = wcg.clientNum;
@@ -6090,6 +6134,9 @@ int *CG_CreateFragString (qboolean lastFrag)
 	} else {
 		tokenString = cg_obituaryTokens.string;
 	}
+
+	i = (cg.obituaryIndex + indexNum - 1) % MAX_OBITUARIES_MASK;
+	obituary = &cg.obituaries[i];
 
 	i = 0;
 	j = 0;
@@ -6131,7 +6178,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				s = cg.lastFragVictimName;
 			} else {
-				s = cg.lastObituary.victim;
+				s = obituary->victim;
 			}
 			while (*s) {
 				extString[j] = s[0];
@@ -6142,7 +6189,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				s = cg.lastFragVictimWhiteName;
 			} else {
-				s = cg.lastObituary.victimWhiteName;
+				s = obituary->victimWhiteName;
 			}
 			while (*s) {
 				extString[j] = s[0];
@@ -6153,10 +6200,10 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				s = cgs.clientinfo[ourClientNum].name;
 			} else {
-				if (cg.lastObituary.killerClientNum == cg.lastObituary.victimClientNum) {
+				if (obituary->killerClientNum == obituary->victimClientNum) {
 					s = "";
 				} else {
-					s = cg.lastObituary.killer;
+					s = obituary->killer;
 				}
 			}
 			while (*s) {
@@ -6168,10 +6215,10 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				s = cgs.clientinfo[ourClientNum].whiteName;
 			} else {
-				if (cg.lastObituary.killerClientNum == cg.lastObituary.victimClientNum) {
+				if (obituary->killerClientNum == obituary->victimClientNum) {
 					s = "";
 				} else {
-					s = cg.lastObituary.killerWhiteName;
+					s = obituary->killerWhiteName;
 				}
 			}
 			while (*s) {
@@ -6183,7 +6230,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				s = cg.lastFragq3obitString;
 			} else {
-				s = cg.lastObituary.q3obitString;
+				s = obituary->q3obitString;
 			}
 			while (*s) {
 				extString[j] = s[0];
@@ -6196,7 +6243,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				s = weapNamesCasual[cg.lastFragWeapon];
 			} else {
-				s = weapNamesCasual[cg.lastObituary.weapon];
+				s = weapNamesCasual[obituary->weapon];
 			}
 			while (*s) {
 				extString[j] = s[0];
@@ -6209,7 +6256,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				icon = cg_weapons[cg.lastFragWeapon].weaponIcon;
 			} else {
-				icon = cg.lastObituary.icon;
+				icon = obituary->icon;
 			}
 			extString[j] = 256;  //FIXME define
 			j++;
@@ -6220,7 +6267,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				ws = wclients[ourClientNum].lastKillwstats;
 			} else {
-				ws = wclients[cg.lastObituary.killerClientNum].lastKillwstats;
+				ws = wclients[obituary->killerClientNum].lastKillwstats;
 			}
 			hits = 0;
 			atts = 0;
@@ -6265,8 +6312,8 @@ int *CG_CreateFragString (qboolean lastFrag)
 				ws = wclients[ourClientNum].lastKillwstats;
 				weapon = wclients[ourClientNum].lastKillWeapon;
 			} else {
-				ws = wclients[cg.lastObituary.killerClientNum].lastKillwstats;
-				weapon = cg.lastObituary.weapon;
+				ws = wclients[obituary->killerClientNum].lastKillwstats;
+				weapon = obituary->weapon;
 			}
 			hits = 0;
 			atts = 0;
@@ -6304,7 +6351,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				ws = wclients[cg.lastFragVictim].lastKillwstats;
 			} else {
-				ws = wclients[cg.lastObituary.victimClientNum].lastKillwstats;
+				ws = wclients[obituary->victimClientNum].lastKillwstats;
 			}
 			hits = 0;
 			atts = 0;
@@ -6347,9 +6394,9 @@ int *CG_CreateFragString (qboolean lastFrag)
 				ws = wclients[cg.lastFragVictim].lastKillwstats;
 				weapon = wclients[cg.lastFragVictim].lastKillWeapon;
 			} else {
-				ws = wclients[cg.lastObituary.victimClientNum].lastKillwstats;
-				//weapon = cg.lastObituary.weapon;
-				weapon = wclients[cg.lastObituary.victimClientNum].lastKillWeapon;  //FIXME don't think this works
+				ws = wclients[obituary->victimClientNum].lastKillwstats;
+				//weapon = obituary->weapon;
+				weapon = wclients[obituary->victimClientNum].lastKillWeapon;  //FIXME don't think this works
 			}
 			hits = 0;
 			atts = 0;
@@ -6397,7 +6444,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				team = cg.lastFragVictimTeam;
 			} else {
-				team = cg.lastObituary.victimTeam;
+				team = obituary->victimTeam;
 			}
 
 			extString[j] = 257;
@@ -6423,7 +6470,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				team = cgs.clientinfo[ourClientNum].team;
 			} else {
-				team = cg.lastObituary.killerTeam;
+				team = obituary->killerTeam;
 			}
 
 			extString[j] = 257;
@@ -6452,8 +6499,8 @@ int *CG_CreateFragString (qboolean lastFrag)
 					//suicide = qtrue;
 				}
 			} else {
-				team = cg.lastObituary.victimTeam;
-				if (cg.lastObituary.victimClientNum == cg.lastObituary.killerClientNum) {
+				team = obituary->victimTeam;
+				if (obituary->victimClientNum == obituary->killerClientNum) {
 					//suicide = qtrue;
 				}
 			}
@@ -6494,8 +6541,8 @@ int *CG_CreateFragString (qboolean lastFrag)
 					suicide = qtrue;
 				}
 			} else {
-				team = cg.lastObituary.killerTeam;
-				if (cg.lastObituary.victimClientNum == cg.lastObituary.killerClientNum) {
+				team = obituary->killerTeam;
+				if (obituary->victimClientNum == obituary->killerClientNum) {
 					suicide = qtrue;
 				}
 			}
@@ -6526,7 +6573,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				clientNum = cg.lastFragVictim;
 			} else {
-				clientNum = cg.lastObituary.victimClientNum;
+				clientNum = obituary->victimClientNum;
 			}
 
 			if (clientNum >= 0  ||  clientNum < MAX_CLIENTS) {
@@ -6545,7 +6592,7 @@ int *CG_CreateFragString (qboolean lastFrag)
 			if (lastFrag) {
 				clientNum = cg.lastFragKiller;
 			} else {
-				clientNum = cg.lastObituary.killerClientNum;
+				clientNum = obituary->killerClientNum;
 			}
 
 			if (clientNum >= 0  ||  clientNum < MAX_CLIENTS) {
@@ -6565,8 +6612,8 @@ int *CG_CreateFragString (qboolean lastFrag)
 					s = "";
 				}
 			} else {
-				if (*cgs.clientinfo[cg.lastObituary.victimClientNum].clanTag) {
-					s = va("%s ", cgs.clientinfo[cg.lastObituary.victimClientNum].clanTag);
+				if (*cgs.clientinfo[obituary->victimClientNum].clanTag) {
+					s = va("%s ", cgs.clientinfo[obituary->victimClientNum].clanTag);
 				} else {
 					s = "";
 				}
@@ -6584,8 +6631,8 @@ int *CG_CreateFragString (qboolean lastFrag)
 					s = "";
 				}
 			} else {
-				if (*cgs.clientinfo[cg.lastObituary.victimClientNum].whiteClanTag) {
-					s = va("%s ", cgs.clientinfo[cg.lastObituary.victimClientNum].whiteClanTag);
+				if (*cgs.clientinfo[obituary->victimClientNum].whiteClanTag) {
+					s = va("%s ", cgs.clientinfo[obituary->victimClientNum].whiteClanTag);
 				} else {
 					s = "";
 				}
@@ -6603,11 +6650,11 @@ int *CG_CreateFragString (qboolean lastFrag)
 					s = "";
 				}
 			} else {
-				if (cg.lastObituary.killerClientNum == cg.lastObituary.victimClientNum) {
+				if (obituary->killerClientNum == obituary->victimClientNum) {
 					s = "";
 				} else {
-					if (*cgs.clientinfo[cg.lastObituary.killerClientNum].clanTag) {
-						s = va("%s ", cgs.clientinfo[cg.lastObituary.killerClientNum].clanTag);
+					if (*cgs.clientinfo[obituary->killerClientNum].clanTag) {
+						s = va("%s ", cgs.clientinfo[obituary->killerClientNum].clanTag);
 					} else {
 						s = "";
 					}
@@ -6626,11 +6673,11 @@ int *CG_CreateFragString (qboolean lastFrag)
 					s = "";
 				}
 			} else {
-				if (cg.lastObituary.killerClientNum == cg.lastObituary.victimClientNum) {
+				if (obituary->killerClientNum == obituary->victimClientNum) {
 					s = "";
 				} else {
-					if (*cgs.clientinfo[cg.lastObituary.killerClientNum].whiteClanTag) {
-						s = va("%s ", cgs.clientinfo[cg.lastObituary.killerClientNum].whiteClanTag);
+					if (*cgs.clientinfo[obituary->killerClientNum].whiteClanTag) {
+						s = va("%s ", cgs.clientinfo[obituary->killerClientNum].whiteClanTag);
 					} else {
 						s = "";
 					}
@@ -6763,7 +6810,7 @@ static void CG_DrawCenterString( void ) {
 
 				//Q_strncpyz(linebuffer, "frag", sizeof(linebuffer));
 				//Q_strncpyz(linebuffer, CG_CreateFragString(), sizeof(linebuffer));
-				extString = CG_CreateFragString(qtrue);
+				extString = CG_CreateFragString(qtrue, 0);
 				lb = linebuffer;
 				es = extString;
 				numIcons = 0;
@@ -6926,7 +6973,7 @@ static void CG_DrawFragMessage (void)
 
 				//Q_strncpyz(linebuffer, "frag", sizeof(linebuffer));
 				//Q_strncpyz(linebuffer, CG_CreateFragString(), sizeof(linebuffer));
-				extString = CG_CreateFragString(qtrue);
+				extString = CG_CreateFragString(qtrue, 0);
 				lb = linebuffer;
 				es = extString;
 				numIcons = 0;
@@ -7039,7 +7086,7 @@ static void Wolfcam_DrawCrosshair (void)
     if (cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD)
         return;
 
-    w = h = cg_crosshairSize.value;
+	w = h = cg_crosshairSize.value;
 
     x = cg_crosshairX.integer;
     y = cg_crosshairY.integer;
@@ -7049,16 +7096,25 @@ static void Wolfcam_DrawCrosshair (void)
 
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
-	if (cg_wideScreen.integer == 3  ||  cg_wideScreen.integer == 5) {
+	if (cg_wideScreen.integer == 3) {
+		//FIXME this is broken
 		aspect = (float)cgs.glconfig.vidHeight / (float)cgs.glconfig.vidWidth;
 		w -= ((480.0 / 640.0) - aspect) * w;
+	} else {  // use ql widescreen
+		h = cg_crosshairSize.value * cgs.screenXScale;
 	}
 
     ca = cg_drawCrosshair.integer;
-    if (ca < 0) {
-        ca = 0;
+    if (ca <= 0) {
+		return;
     }
-    hShader = cgs.media.crosshairShader[ ca % NUM_CROSSHAIRS ];
+	ca = ca % NUM_CROSSHAIRS;
+	if (ca == 0) {
+		return;
+	}
+	// indexed at 1
+    hShader = cgs.media.crosshairShader[ca];
+
 #if 0
 	if (cg_crosshairColor.string[0] != '\0') {
 		trap_R_SetColor(cg.crosshairColor);
@@ -7315,21 +7371,27 @@ static void CG_DrawCrosshair(void) {
 	//QLWideScreen = cg_crosshairWideScreen.integer;
 	//FIXME change?
 	QLWideScreen = 0;
-	
+
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
-	if (cg_wideScreen.integer == 3  ||  cg_wideScreen.integer == 5) {
-		//aspect = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
-		//h += (aspect - (640.0 / 480.0)) * h;
+	if (cg_wideScreen.integer == 3) {
+		//FIXME this is broken
 		aspect = (float)cgs.glconfig.vidHeight / (float)cgs.glconfig.vidWidth;
 		w -= ((480.0 / 640.0) - aspect) * w;
+	} else {  // use ql widescreen
+		h = cg_crosshairSize.value * cgs.screenXScale;
 	}
 
 	ca = cg_drawCrosshair.integer;
-	if (ca < 0) {
-		ca = 0;
+	if (ca <= 0) {
+		return;
 	}
-	hShader = cgs.media.crosshairShader[ ca % NUM_CROSSHAIRS ];
+	ca = ca % NUM_CROSSHAIRS;
+	if (ca == 0) {
+		return;
+	}
+	// indexed at 1
+	hShader = cgs.media.crosshairShader[ca];
 
 	if (cg_crosshairHitStyle.integer == 1) {
 		if (cg.time - cg.damageDoneTime < cg_crosshairHitTime.integer) {
@@ -7889,7 +7951,7 @@ static void CG_VoteAnnouncements (void)
 	if ( cgs.voteModified ) {
 		cgs.voteModified = qfalse;
 		if (cg_audioAnnouncerVote.integer) {
-			trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+			CG_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 		}
 	}
 }
@@ -7977,7 +8039,7 @@ static void CG_TeamVoteAnnouncements (void)
 	if ( cgs.teamVoteModified[cs_offset] ) {
 		cgs.teamVoteModified[cs_offset] = qfalse;
 		if (cg_audioAnnouncerTeamVote.integer) {
-			trap_S_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
+			CG_StartLocalSound( cgs.media.talkSound, CHAN_LOCAL_SOUND );
 		}
 	}
 
@@ -8407,9 +8469,17 @@ static void CG_DrawAmmoWarning( void ) {
 		return;
 	}
 
+	if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
+		return;
+	}
+
 	//FIXME what if the person you are speccing is low on ammo
 	if (cg.snap->ps.pm_type == PM_SPECTATOR  &&  cgs.gametype == GT_CA  && cg.snap->ps.clientNum == cg.clientNum)
 		return;
+
+	if (cgs.gametype == GT_FREEZETAG  &&  CG_FreezeTagFrozen(cg.snap->ps.clientNum)) {
+		return;
+	}
 
 	if (cg.snap->ps.weapon == WP_GAUNTLET) {
 		return;
@@ -8461,8 +8531,6 @@ CG_DrawProxWarning
 */
 static void CG_DrawProxWarning (void)
 {
-	//char s[32];
-	//int w;
 	vec4_t color;
 	int style, align;
 	float scale;
@@ -8487,7 +8555,7 @@ static void CG_DrawProxWarning (void)
 	scale = cg_drawProxWarningScale.value;
 	style = cg_drawProxWarningStyle.integer;
 	QLWideScreen = cg_drawProxWarningWideScreen.integer;
-	
+
 	if (*cg_drawProxWarningFont.string) {
 		font = &cgs.media.proxWarningFont;
 	} else {
@@ -8511,9 +8579,6 @@ static void CG_DrawProxWarning (void)
 		x -= w;
 	}
 	CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
-
-	//w = CG_DrawStrlen( s, &cgs.media.bigchar );
-	//CG_DrawBigStringColor( 320 - w / 2, 64 + BIGCHAR_HEIGHT, s, g_color_table[ColorIndex(COLOR_RED)] );
 }
 #endif
 
@@ -8571,19 +8636,19 @@ static void CG_WarmupAnnouncements (void)
 			switch ( sec ) {
 			case 8:
 				if ((cgs.gametype >= GT_TEAM && cgs.gametype <= GT_HARVESTER)  ||  cgs.gametype == GT_FREEZETAG) {
-					trap_S_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
+					CG_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
 				} else {
-					trap_S_StartLocalSound(cgs.media.countPrepareSound, CHAN_ANNOUNCER);
+					CG_StartLocalSound(cgs.media.countPrepareSound, CHAN_ANNOUNCER);
 				}
 				break;
 			case 0:
-				trap_S_StartLocalSound( cgs.media.count1Sound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.count1Sound, CHAN_ANNOUNCER );
 				break;
 			case 1:
-				trap_S_StartLocalSound( cgs.media.count2Sound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.count2Sound, CHAN_ANNOUNCER );
 				break;
 			case 2:
-				trap_S_StartLocalSound( cgs.media.count3Sound, CHAN_ANNOUNCER );
+				CG_StartLocalSound( cgs.media.count3Sound, CHAN_ANNOUNCER );
 				break;
 			default:
 				break;
@@ -9443,8 +9508,6 @@ static void CG_Draw2D( void ) {
 			CG_DrawStatusBar();
 #endif
 
-			CG_DrawAmmoWarning();
-
 #if 1  //def MPACK
 			CG_DrawProxWarning();
 #endif
@@ -9465,6 +9528,8 @@ static void CG_Draw2D( void ) {
 #endif
 			CG_RewardAnnouncements();
 			CG_DrawReward();
+			// draw this last so it's not obscured
+			CG_DrawAmmoWarning();
 		}
 
 		if ( cgs.gametype >= GT_TEAM ) {

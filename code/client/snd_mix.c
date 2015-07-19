@@ -836,6 +836,11 @@ void S_PaintChannels( int endtime ) {
 
 				ch->leftvol = (float)ch->leftvol * s_announcerVolume->value;
 				ch->rightvol = (float)ch->rightvol * s_announcerVolume->value;
+			} else if (ch->entchannel == CHAN_KILLBEEP_SOUND) {
+				ch->leftvol = ch->rightvol = 127;
+
+				ch->leftvol = (float)ch->leftvol * s_killBeepVolume->value;
+				ch->rightvol = (float)ch->rightvol * s_killBeepVolume->value;
 			} else if (ch->entchannel == CHAN_LOCAL_SOUND) {
 				ch->leftvol = ch->rightvol = 127;
 			}
@@ -906,7 +911,7 @@ void S_PaintChannels( int endtime ) {
 			// the sample is hit
 			do {
 
-				//Com_Printf("looped %d\n", i);
+				//Com_Printf("looped %d '%s' volL: %d  volR: %d\n", i, sc->soundName, ch->leftvol, ch->rightvol);
 
 				sampleOffset = (ltime % sc->soundLength);
 

@@ -412,17 +412,22 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
             WRITE_4BYTES( 0 );                  //dwPriority
             WRITE_4BYTES( 0 );                  //dwInitialFrame
 
-            WRITE_4BYTES( afd->a.sampleSize );   //dwTimescale
-            WRITE_4BYTES( afd->a.sampleSize *
-                afd->a.rate );                   //dwDataRate
+            // http://www.alexander-noe.com/video/documentation/avi.pdf
+            //
+            // "dwScale and dwRate should be mutually prime. Tests have shown
+            // that for example 10,000,000/400,000 instead of 25/1 results
+            // in files that don't work on some hardware mpeg4 players"
+            WRITE_4BYTES( 1 );  //dwTimescale
+            WRITE_4BYTES( afd->a.rate );  //dwDataRate
+
+
             WRITE_4BYTES( 0 );                  //dwStartTime
             afd->numAudioFramesHeaderOffset = bufIndex;
-            //WRITE_4BYTES( afd->a.totalBytes / afd->a.sampleSize );             //dwDataLength
-            WRITE_4BYTES(afd->audioDataLength);  // dwDataLength
+            WRITE_4BYTES(0);  // dwDataLength, filled in later
 
-            WRITE_4BYTES( 0 );                  //dwSuggestedBufferSize
+            WRITE_4BYTES( PCM_BUFFER_SIZE );    //dwSuggestedBufferSize
             WRITE_4BYTES( -1 );                 //dwQuality
-            WRITE_4BYTES( afd->a.sampleSize );   //dwSampleSize
+            WRITE_4BYTES( afd->a.sampleSize );  //dwSampleSize
             WRITE_2BYTES( 0 );                  //rcFrame
             WRITE_2BYTES( 0 );                  //rcFrame
             WRITE_2BYTES( 0 );                  //rcFrame
@@ -433,8 +438,7 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
             WRITE_2BYTES( afd->a.format );       //wFormatTag
             WRITE_2BYTES( afd->a.channels );     //nChannels
             WRITE_4BYTES( afd->a.rate );         //nSamplesPerSec
-            WRITE_4BYTES( afd->a.sampleSize *
-                afd->a.rate );                   //nAvgBytesPerSec
+            WRITE_4BYTES( afd->a.sampleSize * afd->a.rate );  //nAvgBytesPerSec
             WRITE_2BYTES( afd->a.sampleSize );   //nBlockAlign
             WRITE_2BYTES( afd->a.bits );         //wBitsPerSample
             WRITE_2BYTES( 0 );                  //cbSize
@@ -473,14 +477,13 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
             START_CHUNK(afd, "dmlh");
             afd->odmlDmlhHeaderOffset = bufIndex;
             WRITE_4BYTES(afd->odmlNumVideoFrames);  // filled in later
-            //FIXME no clue what this is for
-            for (i = 0;  i < 248;  i+= 4) {
+            // reserved
+            for (i = 0;  i < 244;  i+= 4) {
                 WRITE_4BYTES(0);
             }
             END_CHUNK(afd);
             END_CHUNK(afd);
         }
-
         START_CHUNK(afd, "LIST"); {
             WRITE_STRING("INFO");
             START_CHUNK(afd, "ISFT"); {
@@ -490,7 +493,6 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
             END_CHUNK(afd);
         }
         END_CHUNK(afd);
-
       }
       END_CHUNK(afd);
 
@@ -511,7 +513,8 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
 static void CL_InitIndexes (const aviFileData_t *afd)
 {
   // 0
-  fwriteString("00ix", afd->idxVF);
+  //fwriteString("00ix", afd->idxVF);
+  fwriteString("ix00", afd->idxVF);
     //fwriteString("ix00", afd->idxVF);
   // 4
   fwrite4(0, afd->idxVF);  // size filled in later
@@ -527,13 +530,14 @@ static void CL_InitIndexes (const aviFileData_t *afd)
   fwriteString("00dc", afd->idxVF);  // dwChunkId
   //fwrite4(0, afd->idxVF);  // chunk ID, don't know
   // 20
-  fwrite8(0, afd->idxVF);  // qwBaseOffset -- movi list
+  fwrite8(0, afd->idxVF);  // qwBaseOffset -- from movi list, skips chunk header
   // 28
   fwrite4(0, afd->idxVF);  // dwReserved[3]  must be 0
   // 32
 
 
-  fwriteString("01ix", afd->idxAF);
+  //fwriteString("01ix", afd->idxAF);
+  fwriteString("ix01", afd->idxAF);
   //fwriteString("ix01", afd->idxAF);
   fwrite4(0, afd->idxAF);  // size filled in later
   fwrite2(2, afd->idxAF);  // wLongsPerEntry
@@ -541,7 +545,7 @@ static void CL_InitIndexes (const aviFileData_t *afd)
   fwrite1(1, afd->idxAF);  // bIndexType, 1: index of chunks
   fwrite4(0, afd->idxAF);  // nEntriesInUse
   fwriteString("01wb", afd->idxAF);  // dwChunkId
-  fwrite8(0, afd->idxAF);  // qwBaseOffset -- movi list
+  fwrite8(0, afd->idxAF);  // qwBaseOffset -- from movi list, skips chunk header
   fwrite4(0, afd->idxAF);  // dwReserved[3]  must be 0
 }
 
@@ -710,9 +714,26 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
       afd->codec = CODEC_UNCOMPRESSED;
   }
 
+  if (!us  &&  (afd->width % 4) != 0) {
+      switch (afd->codec) {
+      case CODEC_MJPEG:
+          // pass, any width ok for mjpeg
+          break;
+      default:
+          Com_Printf(S_COLOR_YELLOW "WARNING:  width is not divisible by 4 and might result in problems with other video software\n");
+          break;
+      }
+  }
+
   if (!us) {
       afd->cBuffer = malloc(afd->width * afd->height * 4 + 18);
+      if (!afd->cBuffer) {
+          Com_Error(ERR_DROP, "%s couldn't allocate memory for cBuffer", __FUNCTION__);
+      }
       afd->eBuffer = malloc(afd->width * afd->height * 4 + 18);
+      if (!afd->eBuffer) {
+          Com_Error(ERR_DROP, "%s couldn't allocate memory for eBuffer", __FUNCTION__);
+      }
   }
 
   afd->a.rate = dma.speed;
@@ -945,7 +966,7 @@ static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuff
       afd->numIndices++;
   }
 
-  //fwrite4(newChunkOffset, afd->idxVF);  //FIXME + 8
+  // +8  points directly to data and skips header
   fwrite4((int)((currentFileSize + 8) - afd->moviDataOffset), afd->idxVF);
   //fwrite4((size + paddingSize) | 0x80000000L, afd->idxVF);  // 0x80000000 == key frame
   //fwrite4((size ) | 0x80000000L, afd->idxVF);  // 0x80000000 == key frame
@@ -1113,7 +1134,7 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
         afd->numIndices++;
     }
 
-    //fwrite4(newChunkOffset, afd->idxAF);  //FIXME + 8
+    // +8  points directly to data and skips header
     fwrite4((currentFileSize + 8) - afd->moviDataOffset, afd->idxAF);
     //fwrite4(bytesInBuffer | 0x80000000L, afd->idxAF);  // 0x80000000 == key frame
     fwrite4(bytesInBuffer, afd->idxAF);
@@ -1421,9 +1442,6 @@ static void CL_WriteIndexes (aviFileData_t *afd)
       //Com_Printf("riff1 afd->fileSize1 %d  afd->moviSize1 %d\n", afd->fileSize1, afd->moviSize1);
       //Com_Printf("close riff 1\n");
 
-      if (afd->audio) {
-          afd->audioDataLength = afd->a.totalBytes / afd->a.sampleSize;  //FIXME check if only for std riff 1 index
-      }
       FS_HomeRemove(va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
   }
 }
@@ -1500,20 +1518,26 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
   //fwrite4(afd->fileSize1 - 8, afd->f);
 
   FS_Seek(afd->f, afd->mainHeaderNumVideoFramesHeaderOffset, FS_SEEK_SET);
+  // not the total frames in file, only in the standard first riff
   fwrite4(afd->numVideoFrames, afd->f);
 
   FS_Seek(afd->f, afd->mainHeaderMaxRecordSizeHeaderOffset, FS_SEEK_SET);
   fwrite4(afd->maxRecordSize, afd->f);
 
   FS_Seek(afd->f, afd->numVideoFramesHeaderOffset, FS_SEEK_SET);
-  fwrite4(afd->numVideoFrames, afd->f);
+  // even though opendml has header information for total number of video
+  // frames, other applications set this to the total as well
+  // 2015-07-15  if this isn't set to the real length programs like Windows
+  // Media Player, Windows dir list, and Adobe Premiere will believe that the
+  // file is too short.
+  fwrite4(afd->odmlNumVideoFrames, afd->f);
 
   FS_Seek(afd->f, afd->videoHeaderMaxRecordSizeHeaderOffset, FS_SEEK_SET);
   fwrite4(afd->maxRecordSize, afd->f);
 
   if (afd->audio) {
       FS_Seek(afd->f, afd->numAudioFramesHeaderOffset, FS_SEEK_SET);
-      fwrite4(afd->audioDataLength, afd->f);
+      fwrite4(afd->a.totalBytes / afd->a.sampleSize, afd->f);
   }
 
 

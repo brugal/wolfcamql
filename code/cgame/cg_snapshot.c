@@ -190,6 +190,8 @@ static void CG_TransitionSnapshot( void ) {
 		CG_Error( "CG_TransitionSnapshot: NULL cg.nextSnap" );
 	}
 
+	cg.infectedSnapshotTime = 0;
+
 	if (cg.demoPlayback) {
 #if 0
 		trap_GetCurrentSnapshotNumber(&n, &t);
@@ -654,6 +656,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 
 	cg.thisFrameTeleport = qfalse;
 	cg.nextFrameTeleport = qfalse;
+	cg.infectedSnapshotTime = 0;
 
 	memset(cgs.teamChatMsgTimes, 0, sizeof(cgs.teamChatMsgTimes));
 	cgs.orderTime = 0;
@@ -850,7 +853,8 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cg.pingCalculateTime = 0;
 	cg.lastChatBeepTime = 0;
 	cg.lastFragTime = 0;
-	cg.lastObituary.time = 0;
+	memset(&cg.obituaries, 0, sizeof(cg.obituaries));
+	cg.obituaryIndex = 0;
 	cg.lastTeamChatBeepTime = 0;
 	memset(cg.chatAreaStringsTime, 0, sizeof(cg.chatAreaStringsTime));
 	cg.chatAreaStringsIndex = 0;
@@ -1142,6 +1146,13 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	//
 	// sound warnings, count downs, etc.
 	//
+
+	if (cg.snap  &&  cg.snap->ps.pm_type == PM_INTERMISSION) {
+		CG_PlayWinLossMusic();
+	} else {
+		CG_StartMusic();
+	}
+
 	cgs.thirtySecondWarningPlayed = qfalse;
 	if (cgs.roundStarted  &&  cgs.protocol == PROTOCOL_QL) {
 		ival = cg.time - atoi(CG_ConfigString(CS_ROUND_TIME));
@@ -1173,15 +1184,15 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 
 		if ( !( cg.timelimitWarnings & 4 ) && msec > ( cgs.timelimit * 60 + 2 ) * 1000 ) {
 			cg.timelimitWarnings |= 1 | 2 | 4;
-			//trap_S_StartLocalSound( cgs.media.suddenDeathSound, CHAN_ANNOUNCER );
+			//CG_StartLocalSound( cgs.media.suddenDeathSound, CHAN_ANNOUNCER );
 		}
 		else if ( !( cg.timelimitWarnings & 2 ) && msec > (cgs.timelimit - 1) * 60 * 1000 ) {
 			cg.timelimitWarnings |= 1 | 2;
-			//trap_S_StartLocalSound( cgs.media.oneMinuteSound, CHAN_ANNOUNCER );
+			//CG_StartLocalSound( cgs.media.oneMinuteSound, CHAN_ANNOUNCER );
 		}
 		else if ( cgs.timelimit > 5 && !( cg.timelimitWarnings & 1 ) && msec > (cgs.timelimit - 5) * 60 * 1000 ) {
 			cg.timelimitWarnings |= 1;
-			//trap_S_StartLocalSound( cgs.media.fiveMinuteSound, CHAN_ANNOUNCER );
+			//CG_StartLocalSound( cgs.media.fiveMinuteSound, CHAN_ANNOUNCER );
 		}
 	}
 
