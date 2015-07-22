@@ -14,6 +14,7 @@
 #include "cg_marks.h"
 #include "cg_players.h"  // CG_Q3ColorFromString()
 #include "cg_predict.h"
+#include "cg_q3mme_camera.h"
 #include "cg_servercmds.h"  // CG_PlayBufferedVoiceChats()
 #include "cg_snapshot.h"
 #include "cg_sound.h"
@@ -2102,6 +2103,42 @@ static qboolean CG_PlayCamera (void)
 	vec3_t velocityOrig;
 	qboolean cameraDebugPath = qfalse;
 
+#if 0  // works
+	//FIXME testing q3mme camera
+	if (!cg.cameraPlaying) {
+		return qfalse;
+	} else if (cg.cameraQ3mme) {
+		int time;
+		float timeFraction;
+
+		//time = floor(cg.time);
+		//timeFraction = cg.time - time;
+		time = cg.time;
+		timeFraction = (float)cg.foverf;
+
+		//cameraOriginAt( time, timeFraction, demo.camera.origin );
+		//cameraAnglesAt( time, timeFraction, demo.camera.angles );
+		demo.camera.smoothPos = posBezier;
+		demo.camera.smoothAngles = angleQuat;
+
+		cameraOriginAt(time, timeFraction, cg.refdef.vieworg);
+		cameraAnglesAt(time, timeFraction, cg.refdefViewAngles);
+		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
+		//Com_Printf("angles: %f %f %f\n", cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2]);
+#if 0  //FIXME q3mme camera
+		if (!cameraFovAt( time, timeFraction, &demo.camera.fov ))
+			demo.camera.fov = 0;
+#endif
+
+		Com_Printf("q3mme camera...\n");
+		return qtrue;
+	} else {
+		// pass .. wolfcamql camera
+	}
+#endif
+
+	//Com_Printf("wolfcamql camera...\n");
+
 	if (cg.numCameraPoints < 2) {
 		cg.cameraPlaying = qfalse;
 		cg.cameraPlayedLastFrame = qfalse;
@@ -2970,6 +3007,8 @@ static qboolean CG_PlayCamera (void)
 		return qfalse;
 	}
 
+	//FIXME testing q3mme camera just angles
+	//cameraAnglesAt(floor(cg.time), cg.time - floor(cg.time), cg.refdefViewAngles);
 	VectorCopy(cg.refdefViewAngles, cp->lastAngles);
 	AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
 
@@ -3163,6 +3202,7 @@ static qboolean CG_PlayCamera (void)
 		ent.shaderRGBA[0] = 255;
 		ent.shaderRGBA[1] = 255;
 		ent.shaderRGBA[2] = 255;
+		ent.shaderRGBA[3] = 100;
 		ent.renderfx = RF_DEPTHHACK;
 
 		CG_AddRefEntity(&ent);
@@ -3180,6 +3220,108 @@ static qboolean CG_PlayCamera (void)
 		VectorCopy(velocityOrig, cg.freecamPlayerState.velocity);
 
 		cg.freecamSet = qtrue;
+	}
+
+	if (cg.cameraQ3mme) {
+		int time;
+		float timeFraction;
+
+		//time = floor(cg.time);
+		//timeFraction = cg.time - time;
+		time = cg.time;
+		timeFraction = (float)cg.foverf;
+
+		//cameraOriginAt( time, timeFraction, demo.camera.origin );
+		//cameraAnglesAt( time, timeFraction, demo.camera.angles );
+		demo.camera.smoothPos = posBezier;
+		demo.camera.smoothAngles = angleQuat;
+
+		cameraOriginAt(time, timeFraction, cg.refdef.vieworg);
+		cameraAnglesAt(time, timeFraction, cg.refdefViewAngles);
+		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
+		//Com_Printf("angles: %f %f %f\n", cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2]);
+#if 0  //FIXME q3mme camera
+		if (!cameraFovAt( time, timeFraction, &demo.camera.fov ))
+			demo.camera.fov = 0;
+#endif
+
+		Com_Printf("q3mme camera...\n");
+
+		trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
+
+
+		if (cg_cameraUpdateFreeCam.integer  &&  !cg_cameraDebugPath.integer) {
+			cg.fMoveTime = 0;  //cg.realTime;  //cg.time;
+			//cg.fMoveTime = cg.realTime - 10;
+			//cg.mousex = cg.mousey = 0;
+			VectorCopy(cg.refdef.vieworg, cg.fpos);
+			cg.fpos[2] -= DEFAULT_VIEWHEIGHT;
+			VectorCopy(cg.refdefViewAngles, cg.fang);
+			cg.freecamSet = qtrue;
+			//Com_Printf("xxx %f %f %f\n", cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);
+			if (cg.ftime >= lastPoint->cgtime) {
+				VectorClear(cg.freecamPlayerState.velocity);
+			} else if (cg.ftime > cg.positionSetTime) {
+				for (i = 0;  i < 3;  i++) {
+					cg.freecamPlayerState.velocity[i] = (cg.refdef.vieworg[i] - cg.cameraLastOrigin[i]) / ((cg.ftime - cg.positionSetTime) / 1000.0);
+				}
+			} else if (cg.ftime < cg.positionSetTime) {
+				VectorSet(cg.freecamPlayerState.velocity, 0, 0, 0);
+			}
+		}
+
+		if (cg.ftime >= lastPoint->cgtime) {
+			VectorClear(cg.cameraVelocity);
+		} else if (cg.ftime > cg.positionSetTime) {
+			for (i = 0;  i < 3;  i++) {
+				cg.cameraVelocity[i] = (cg.refdef.vieworg[i] - cg.cameraLastOrigin[i]) / ((cg.ftime - cg.positionSetTime) / 1000.0);
+			}
+		} else if (cg.ftime < cg.positionSetTime) {
+			VectorSet(cg.cameraVelocity, 0, 0, 0);
+		}
+
+		if (cg.ftime != cg.positionSetTime) {
+			cg.positionSetTime = cg.ftime;
+			VectorCopy(cg.refdef.vieworg, cg.cameraLastOrigin);
+		}
+
+		if (cameraDebugPath) {  //cg_cameraDebugPath.integer) {  //(1) {
+			refEntity_t ent;
+			byte color[4] = { 255, 0, 0, 255 };
+
+			memset(&ent, 0, sizeof(ent));
+			VectorCopy(cg.refdef.vieworg, ent.origin);
+			ent.reType = RT_MODEL;
+			ent.hModel = cgs.media.teleportEffectModel;
+			//ent.hModel = trap_R_RegisterModel("models/powerups/health/large_sphere.md3");
+			//ent.hModel = trap_R_RegisterModel("models/powerups/health/mega_sphere.md3");
+			AxisClear(ent.axis);
+			//ent.origin[2] += 16;
+			ent.radius = 300;
+			ent.customShader = 0;
+			ent.shaderRGBA[0] = 255;
+			ent.shaderRGBA[1] = 0;
+			ent.shaderRGBA[2] = 0;
+			ent.shaderRGBA[3] = 255;
+			ent.renderfx = RF_DEPTHHACK;
+
+			CG_AddRefEntity(&ent);
+
+			AngleVectors(cg.refdefViewAngles, dir, NULL, NULL);
+			VectorCopy(ent.origin, origin);
+			VectorMA(origin, 300, dir, origin);
+			CG_SimpleRailTrail(ent.origin, origin, cg_railTrailTime.value, color);
+
+			VectorCopy(refOriginOrig, cg.refdef.vieworg);
+			VectorCopy(refAnglesOrig, cg.refdefViewAngles);
+			AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
+			cg.refdef.fov_x = refFovxOrig;
+			cg.refdef.fov_y = refFovyOrig;
+			VectorCopy(velocityOrig, cg.freecamPlayerState.velocity);
+
+			cg.freecamSet = qtrue;
+		}
+		return qtrue;
 	}
 
 	return qtrue;
@@ -3923,7 +4065,7 @@ static void CG_DrawPoiPics (void)
 	int team;
 	refEntity_t ent;
 
-	if (cg_helpIcon.integer == 0) {
+	if (cg_helpIconStyle.integer  ||  cg_helpIcon.integer == 0) {
 		return;
 	}
 

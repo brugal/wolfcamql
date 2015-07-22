@@ -429,7 +429,7 @@ static void CG_DominationControlPoint (centity_t *cent)
 			}
 		}
 
-		if (cg_helpIconStyle.integer > 0) {  //(team == 0  ||  team != ourTeam) {
+		if (cg_helpIconStyle.integer > 0  &&  cg_helpIcon.integer != 0) {  //(team == 0  ||  team != ourTeam) {
 			// capture
 			//CG_PlayerFloatSprite(cent, cgs.media.dominationCapA);
 			memset(&ent, 0, sizeof(ent));
@@ -495,6 +495,8 @@ static void CG_DominationControlPoint (centity_t *cent)
 			ent.shaderRGBA[2] = 255 * color[2];
 			ent.shaderRGBA[3] = 255 * alpha;
 			CG_AddRefEntity(&ent);
+		} else {  // no sprite
+			// pass
 		}
 	}
 
@@ -661,7 +663,7 @@ static void CG_DrawRaceHelpIcon (centity_t *cent)
 		return;
 	}
 
-	if (cg_helpIconStyle.integer == 0) {
+	if (cg_helpIconStyle.integer == 0  ||  cg_helpIcon.integer == 0) {
 		return;
 	}
 
@@ -913,7 +915,7 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 		return;
 	}
 
-	if (cg_helpIconStyle.integer == 0) {
+	if (cg_helpIconStyle.integer == 0  ||  cg_helpIcon.integer == 0) {
 		return;
 	}
 
@@ -2729,7 +2731,7 @@ static void CG_DrawHarversterHelpIcons (const centity_t *cent)
 		return;
 	}
 
-	if (cg_helpIconStyle.integer == 0) {
+	if (cg_helpIconStyle.integer == 0  ||  cg_helpIcon.integer == 0) {
 		return;
 	}
 
@@ -2845,7 +2847,7 @@ static void CG_Draw1FctfHelpIcons (const centity_t *cent)
 		return;
 	}
 
-	if (cg_helpIconStyle.integer == 0) {
+	if (cg_helpIconStyle.integer == 0  ||  cg_helpIcon.integer == 0) {
 		return;
 	}
 

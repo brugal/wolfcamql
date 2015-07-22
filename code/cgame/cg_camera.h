@@ -1,6 +1,8 @@
 #ifndef camera_h_included
 #define camera_h_included
 
+#include "../qcommon/q_shared.h"
+
 #define WOLFCAM_CAMERA_VERSION 8
 #define MAX_CAMERAPOINTS 256
 #define MAX_SPLINEPOINTS (1024 * 10)  //(1024 * 1024 * 3)

@@ -1578,6 +1578,17 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
 * is '& MAX_SNAPSHOT_MASK' wrong?
 * check from ql update april 21 2015:     - Specified a sort order on liquids/glass/flares/lightbeams shaders; Simple items and similar transparent objects should correctly sort over them now (in most cases).
 * check from ql update april 21 2015:     - Added CVAR_REPLICATED to archived sound cvars.
+* timer pies even if not transmitted
+* unary switch /devmap
+* png option for saving depth buffer
+* individual help icon settings:
+
+  - domination point cap / defend / distress icon
+  - race (bases)
+  - flag (cap defend) (ctf and ctfs)
+  - harvester  capture
+  - 1fctf (cap attack)
+
 
 ---------------------------
 

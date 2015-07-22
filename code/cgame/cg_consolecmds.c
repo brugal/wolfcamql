@@ -16,6 +16,7 @@
 #include "cg_newdraw.h"
 #include "cg_players.h"
 #include "cg_playerstate.h"
+#include "cg_q3mme_camera.h"
 #include "cg_q3mme_scripts.h"
 #include "cg_syscalls.h"
 #include "cg_view.h"
@@ -1945,6 +1946,7 @@ static void CG_DrawRawPath_f (void)
 	trap_FS_FCloseFile(f);
 }
 
+
 static cameraPoint_t LastAddedCameraPoint;
 
 static void CG_AddCameraPoint_f (void)
@@ -2177,6 +2179,27 @@ static void CG_AddCameraPoint_f (void)
 	//Com_Printf("add camera point selected : %d\n", cg.selectedCameraPointMin);
 }
 
+static void CG_AddQ3mmeCameraPoint_f (void)
+{
+	demoCameraPoint_t *point;
+	//point = cameraPointAdd( demo.play.time, demo.camera.flags );
+	point = cameraPointAdd(cg.time, CAM_ORIGIN | CAM_ANGLES | CAM_FOV | CAM_TIME);
+	if (point) {
+		//VectorCopy( demo.viewOrigin, point->origin );
+		//VectorCopy( demo.viewAngles, point->angles );
+		//point->fov = demo.viewFov - cg_fov.value;
+		VectorCopy(cg.refdef.vieworg, point->origin);
+		VectorCopy(cg.refdefViewAngles, point->angles);
+		point->fov = 0;
+		Com_Printf("^6added q3mme camera point\n");
+		// just to view the path and points
+		CG_AddCameraPoint_f();
+	} else {
+		Com_Printf("^1couldn't add q3mme camera point\n");
+	}
+
+}
+
 static void CG_ClearCameraPoints_f (void)
 {
 	cg.cameraPlaying = qfalse;
@@ -2209,6 +2232,7 @@ static void CG_PlayCamera_f (void)
 		trap_SendConsoleCommand(va("seekservertime %f\n", cg.cameraPoints[0].cgtime - extraTime));
 	}
 
+	cg.cameraQ3mme = qfalse;
 	cg.cameraPlaying = qtrue;
 	cg.cameraPlayedLastFrame = qfalse;
 
@@ -7056,6 +7080,40 @@ static void CG_PrintEntityDistance_f (void)
 	Com_Printf("  org2:  %f %f %f\n", org2[0], org2[1], org2[2]);
 }
 
+
+static void CG_PlayQ3mmeCamera_f (void)
+{
+	double extraTime;
+
+	if (cg.playPath) {
+		Com_Printf("can't play camera, path is playing\n");
+		return;
+	}
+
+#if 0
+	if (cg.numCameraPoints < 2) {
+		Com_Printf("can't play camera, need at least 2 camera points\n");
+		return;
+	}
+#endif
+	if (cg_cameraQue.integer) {
+		extraTime = 1000.0 * cg_cameraRewindTime.value;
+		if (extraTime < 0) {
+			extraTime = 0;
+		}
+		trap_SendConsoleCommand(va("seekservertime %f\n", cg.cameraPoints[0].cgtime - extraTime));
+	}
+
+	cg.cameraQ3mme = qtrue;
+	cg.cameraPlaying = qtrue;
+	cg.cameraPlayedLastFrame = qfalse;
+
+	cg.currentCameraPoint = 0;
+	//cg.cameraWaitToSync = qfalse;  //FIXME stupid
+	cg.playCameraCommandIssued = qtrue;
+
+}
+
 typedef struct {
 	const char *cmd;
 	void (*function)(void);
@@ -7238,6 +7296,8 @@ static consoleCommand_t	commands[] = {
 	{ "printtime", CG_PrintTime_f },
 	{ "killcountreset", CG_KillCountReset_f },
 	{ "printentitydistance", CG_PrintEntityDistance_f },
+	//{ "addq3mmecamerapoint", CG_AddQ3mmeCameraPoint_f },
+	//{ "playq3mmecamera", CG_PlayQ3mmeCamera_f },
 };
 
 

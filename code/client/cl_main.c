@@ -4218,6 +4218,7 @@ void CL_Video_f( void )
   qboolean wav;
   qboolean tga;
   qboolean jpg;
+  qboolean png;
   qboolean noSoundAvi;
 
   if (!clc.demoplaying) {
@@ -4229,6 +4230,7 @@ void CL_Video_f( void )
   wav = qfalse;
   tga = qfalse;
   jpg = qfalse;
+  png = qfalse;
   noSoundAvi = qfalse;
   filename[0] = '\0';
   SplitVideo = qfalse;
@@ -4246,6 +4248,8 @@ void CL_Video_f( void )
 		  jpg = qtrue;
 	  } else if (!Q_stricmp(Cmd_Argv(i), "jpeg")) {
 		  jpg = qtrue;
+	  } else if (!Q_stricmp(Cmd_Argv(i), "png")) {
+		  png = qtrue;
 	  } else if (!Q_stricmp(Cmd_Argv(i), "split")  &&  Cvar_VariableIntegerValue("test3d")) {
 		  //FIXME no -- still other stuff
 		  SplitVideo = qtrue;
@@ -4259,11 +4263,11 @@ void CL_Video_f( void )
 	  SplitVideo = qtrue;
   }
 
-  if (!avi  &&  !tga  &&  !jpg) {
+  if (!avi  &&  !tga  &&  !jpg  &&  !png) {
 	  avi = qtrue;
   }
 
-  if (avi  &&  (tga | jpg)) {
+  if (avi  &&  (tga | jpg | png)) {
 	  Com_Printf("^1can't record video and screenshots at the same time\n");
 	  return;
   }
@@ -4296,10 +4300,10 @@ void CL_Video_f( void )
 	  }
 
 	  if (SplitVideo  &&  r_anaglyphMode->integer == 19) {
-		  CL_OpenAVIForWriting(&afdDepthLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, qtrue, qtrue, qtrue);
-		  CL_OpenAVIForWriting(&afdDepthRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, qtrue, qtrue, qfalse);
+		  CL_OpenAVIForWriting(&afdDepthLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qtrue, qtrue);
+		  CL_OpenAVIForWriting(&afdDepthRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qtrue, qfalse);
 	  } else {
-		  CL_OpenAVIForWriting(&afdDepth, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, qtrue, qfalse, qfalse);
+		  CL_OpenAVIForWriting(&afdDepth, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qfalse, qfalse);
 	  }
   }
 
@@ -4308,11 +4312,11 @@ void CL_Video_f( void )
 	  if (!ExtraVideoBuffer) {
 		  Com_Error(ERR_DROP, "Couldn't allocate memory for extra video buffer");
 	  }
-	  CL_OpenAVIForWriting(&afdLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, qfalse, qtrue, qtrue);
-	  CL_OpenAVIForWriting(&afdRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, qfalse, qtrue, qfalse);
+	  CL_OpenAVIForWriting(&afdLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qfalse, qtrue, qtrue);
+	  CL_OpenAVIForWriting(&afdRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qfalse, qtrue, qfalse);
   }
   //Com_Printf("^2video cl_aviFrameRate %d\n", cl_aviFrameRate->integer);
-  CL_OpenAVIForWriting(&afdMain, filename, qfalse, avi, noSoundAvi, wav, tga, jpg, qfalse, qfalse, qfalse);
+  CL_OpenAVIForWriting(&afdMain, filename, qfalse, avi, noSoundAvi, wav, tga, jpg, png, qfalse, qfalse, qfalse);
 }
 
 /*

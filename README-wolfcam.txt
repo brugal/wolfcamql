@@ -185,12 +185,14 @@ cl_aviCodec  uncompressed, mjpeg, huffyuv
 
 cl_aviAllowLargeFiles 1  to allow opendml avi files (up to about 500 gigabytes)
 
-/video [avi, avins, tga, jpg, wav, name <file basename>]
+/video [avi, avins, tga, jpg, png, wav, name <file basename>]
   All files stored in video/
 
   ex:  /video tga wav    to dump tga screen-shots and a wav sound recording
   ex:  /video avins wav name myNewVideo     avi file with no sound and a wav file
-  <see r_jpegCompressionQuality>
+
+  r_jpegCompressionQuality   controls jpeg compression quality
+  r_pngZlibCompression  choose between high speed or higher compression size
 
 cl_aviFetchMode GL_RGB (default switched from ioquake3 GL_RGBA default)
 
@@ -860,7 +862,6 @@ Fonts can also be used for hud config elements:
 
 * s_useTimescale  adjust audio pitch according to timescale
 * s_forceScale  force audio to scale pitch
-* s_announcerVolume
 * s_showMiss  debug cvar to show skipped sounds (1:  skipped because of max repeat rate, 2: also show if it was skipped because of max number of sounds being played, >2:  show if sound channel couldn't be allocated)
 * s_show  >2 will only output when a sound is played
 * s_maxSoundRepeatTime  skip playing a sound if it is repeated this often in milliseconds  (default is 0 to match quakelive, q3 is 50)  Noticeable with lg hit beeps
@@ -873,13 +874,15 @@ Fonts can also be used for hud config elements:
 
 ------------------------------------------------------------
 
-Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_audioAnnouncerRound  ("round begins in ...  fight!", "blue wins the round", ...), cg_audioAnnouncerWarmup ("3 2 1 fight!", ...) , cg_audioAnnouncerVote, cg_audioAnnouncerTeamVote, cg_audioAnnouncerFlagStatus, cg_audioAnnouncerLead  ("taken the lead", "tied", ...), cg_audioAnnouncerTimeLimit  (time-limit warnings), cg_audioAnnouncerFragLimit  (frag-limit warnings), cg_audioAnnouncerWin, cg_audioAnnouncerScore ("red scores", ...), cg_audioAnnouncerLastStanding, cg_audioAnnouncerDominationPoint
+Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_audioAnnouncerRound  ("round begins in ...  fight!", "blue wins the round", ...), cg_audioAnnouncerWarmup ("3 2 1 fight!", ...) , cg_audioAnnouncerVote, cg_audioAnnouncerTeamVote, cg_audioAnnouncerFlagStatus, cg_audioAnnouncerLead  ("taken the lead", "tied", ...), cg_audioAnnouncerTimeLimit  (time-limit warnings), cg_audioAnnouncerFragLimit  (frag-limit warnings), cg_audioAnnouncerWin, cg_audioAnnouncerScore ("red scores", ...), cg_audioAnnouncerLastStanding, cg_audioAnnouncerDominationPoint, cg_audioAnnouncerPowerup (powerup pickup)
 
 * cg_audioAnnouncerRoundReward  to enable/disable end of round 'perfect' or 'denied' announcements
 
 * cg_audioAnnouncerRewardsFirst  enable first reward having a unique voice over
 
 * cg_attackDefendVoiceStyle (0: 'fight!',  1: like quake live -- 'attack/defend the flag')
+
+* s_announcerVolume
 
 ------------------------------------------------------------
 
@@ -2091,7 +2094,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * cg_dominationPointTeamColor, cg_dominationPointTeamAlpha, cg_dominationPointEnemyColor, cg_dominationPointEnemyAlpha, cg_dominationPointNeutralColor, cg_dominationPointNeutralAlpha
 
-* cg_helpIcon to enable/disable help poi icons
+* cg_helpIcon to enable/disable ingame help icons
 * cg_helpIconStyle  (3: like quakelive -- wall hack effect and use cg_helpIconMinWidth and cg_helpIconMaxWidth, 2:  only wall hack effect,  1:  wall hack effect off,  0:  no icon)
 * cg_helpIconMinWidth
 * cg_helpIconMaxWidth
@@ -2230,6 +2233,10 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   Ex:  wolfcamql +set fs_extraGames1 "Temp pk3s" +set fs_extraGames1 "myExplosions" ...
 
+* /screenshotPNG for png screenshots
+* r_pngZlibCompression  (0:  no compression,  1: (default) enables high speed zlib compression), 9:  best space compression, -1:  default zlib compression)
+
+* ability to filter out reward types to disable both the announcment and the display icon:  cg_rewardCapture, cg_rewardImpressive, cg_rewardExcellent, cg_rewardHumiliation, cg_rewardDefend, cg_rewardAssist, cg_rewardComboKill, cg_rewardRampage, cg_rewardMidAir, cg_rewardRevenge, cg_rewardPerforated, cg_rewardHeadshot, cg_rewardAccuracy, cg_rewardQuadGod, cg_rewardFirstFrag, cg_rewardPerfect
 
 ----------
 

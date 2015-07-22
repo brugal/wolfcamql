@@ -871,12 +871,12 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 	cg.rewardAssist = qfalse;
 #endif
 
-	if (ps->persistant[PERS_CAPTURES] > ops->persistant[PERS_CAPTURES]) {
+	if (ps->persistant[PERS_CAPTURES] > ops->persistant[PERS_CAPTURES]  &&  cg_rewardCapture.integer) {
 		CG_PushReward(cgs.media.captureAwardSound, cgs.media.medalCapture, ps->persistant[PERS_CAPTURES]);
 		reward = qtrue;
 		//Com_Printf("capture\n");
 	}
-	if (ps->persistant[PERS_IMPRESSIVE_COUNT] > ops->persistant[PERS_IMPRESSIVE_COUNT]) {
+	if (ps->persistant[PERS_IMPRESSIVE_COUNT] > ops->persistant[PERS_IMPRESSIVE_COUNT]  &&  cg_rewardImpressive.integer) {
 		//cg.rewardImpressive = qtrue;
 		//Com_Printf("^3impressive\n");
 #if 1  //def MPACK
@@ -893,7 +893,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		reward = qtrue;
 		//Com_Printf("impressive\n");
 	}
-	if (ps->persistant[PERS_EXCELLENT_COUNT] > ops->persistant[PERS_EXCELLENT_COUNT]) {
+	if (ps->persistant[PERS_EXCELLENT_COUNT] > ops->persistant[PERS_EXCELLENT_COUNT]  &&  cg_rewardExcellent.integer) {
 		//cg.rewardExcellent = qtrue;
 
 #if 1  //def MPACK
@@ -909,7 +909,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		reward = qtrue;
 		//Com_Printf("excellent %d\n", ps->persistant[PERS_ATTACKEE_ARMOR]);
 	}
-	if (ps->persistant[PERS_GAUNTLET_FRAG_COUNT] > ops->persistant[PERS_GAUNTLET_FRAG_COUNT]) {
+	if (ps->persistant[PERS_GAUNTLET_FRAG_COUNT] > ops->persistant[PERS_GAUNTLET_FRAG_COUNT]  &&  cg_rewardHumiliation.integer) {
 		//cg.rewardHumiliation = qtrue;
 
 #if 1  //def MPACK
@@ -925,14 +925,14 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		reward = qtrue;
 		//Com_Printf("gauntlet frag\n");
 	}
-	if (ps->persistant[PERS_DEFEND_COUNT] > ops->persistant[PERS_DEFEND_COUNT]) {
+	if (ps->persistant[PERS_DEFEND_COUNT] > ops->persistant[PERS_DEFEND_COUNT]  &&  cg_rewardDefend.integer) {
 		//cg.rewardDefend = qtrue;
 
 		CG_PushReward(cgs.media.defendSound, cgs.media.medalDefend, ps->persistant[PERS_DEFEND_COUNT]);
 		reward = qtrue;
 		//Com_Printf("defend\n");
 	}
-	if (ps->persistant[PERS_ASSIST_COUNT] > ops->persistant[PERS_ASSIST_COUNT]) {
+	if (ps->persistant[PERS_ASSIST_COUNT] > ops->persistant[PERS_ASSIST_COUNT]  &&  cg_rewardAssist.integer) {
 		//cg.rewardAssist = qtrue;
 
 		CG_PushReward(cgs.media.assistSound, cgs.media.medalAssist, ps->persistant[PERS_ASSIST_COUNT]);

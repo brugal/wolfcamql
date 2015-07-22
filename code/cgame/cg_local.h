@@ -1363,6 +1363,7 @@ typedef struct {
 	int selectedCameraPointField;
 
 	qboolean cameraPlaying;
+	qboolean cameraQ3mme;
 	qboolean cameraPlayedLastFrame;
 	int currentCameraPoint;
 	qboolean atCameraPoint;
@@ -2165,6 +2166,8 @@ typedef struct {
 	qhandle_t bsAvailable;
 
 	int activeCheckPointRaceFlagModel;
+
+	qhandle_t mme_additiveWhiteShader;
 
 	// announcer
 	sfxHandle_t quadPickupVo;
@@ -3083,6 +3086,7 @@ extern vmCvar_t cg_audioAnnouncerWin;
 extern vmCvar_t cg_audioAnnouncerScore;
 extern vmCvar_t cg_audioAnnouncerLastStanding;
 extern vmCvar_t cg_audioAnnouncerDominationPoint;
+extern vmCvar_t cg_audioAnnouncerPowerup;
 
 extern vmCvar_t wolfcam_drawFollowing;
 extern vmCvar_t wolfcam_drawFollowingOnlyName;
@@ -3262,6 +3266,7 @@ extern vmCvar_t cg_cameraUpdateFreeCam;
 extern vmCvar_t cg_cameraDefaultOriginType;
 extern vmCvar_t cg_cameraDebugPath;
 extern vmCvar_t cg_cameraSmoothFactor;
+extern vmCvar_t cg_q3mmeCameraSmoothPos;
 
 extern vmCvar_t cg_flightTrail;
 extern vmCvar_t cg_hasteTrail;
@@ -3387,6 +3392,23 @@ extern vmCvar_t cg_quadSoundRate;
 extern vmCvar_t cg_cpmaSound;
 extern vmCvar_t cg_drawFightMessage;
 extern vmCvar_t cg_winLossMusic;
+
+extern vmCvar_t cg_rewardCapture;
+extern vmCvar_t cg_rewardImpressive;
+extern vmCvar_t cg_rewardExcellent;
+extern vmCvar_t cg_rewardHumiliation;
+extern vmCvar_t cg_rewardDefend;
+extern vmCvar_t cg_rewardAssist;
+extern vmCvar_t cg_rewardComboKill;
+extern vmCvar_t cg_rewardRampage;
+extern vmCvar_t cg_rewardMidAir;
+extern vmCvar_t cg_rewardRevenge;
+extern vmCvar_t cg_rewardPerforated;
+extern vmCvar_t cg_rewardHeadshot;
+extern vmCvar_t cg_rewardAccuracy;
+extern vmCvar_t cg_rewardQuadGod;
+extern vmCvar_t cg_rewardFirstFrag;
+extern vmCvar_t cg_rewardPerfect;
 
 // end cvar_t
 

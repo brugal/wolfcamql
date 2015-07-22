@@ -119,14 +119,14 @@ void S_StartBackgroundTrack( const char *intro, const char *loop )
 	char introx[MAX_STRING_CHARS];
 	char loopx[MAX_STRING_CHARS];
 
-	Com_Printf("S_StartBackgroundTrack intro:'%s'  loop:'%s'\n", intro, loop);
+	//Com_Printf("S_StartBackgroundTrack intro:'%s'  loop:'%s'\n", intro, loop);
 
 	COM_StripExtension(intro, introx, sizeof(introx));
 	COM_StripExtension(loop, loopx, sizeof(loopx));
 
 	Q_strcat(introx, sizeof(introx), ".ogg");
 	Q_strcat(loopx, sizeof(loopx), ".ogg");
-	Com_Printf("intro:%s  loop:%s\n", introx, loopx);
+	//Com_Printf("intro:%s  loop:%s\n", introx, loopx);
 
 	if (!*intro  &&  !*loop) {
 		// request to stop background track
@@ -137,10 +137,10 @@ void S_StartBackgroundTrack( const char *intro, const char *loop )
 	if( si.StartBackgroundTrack ) {
 		//si.StartBackgroundTrack( intro, loop );
 		if (!*loop) {
-			Com_Printf("^2using intro as loop\n");
+			//Com_Printf("^2using intro as loop\n");
 			si.StartBackgroundTrack(introx, introx);
 		} else {
-			Com_Printf("^2loop and intro\n");
+			//Com_Printf("^2loop and intro\n");
 			si.StartBackgroundTrack( introx, loopx );
 		}
 	}

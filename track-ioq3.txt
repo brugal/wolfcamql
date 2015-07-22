@@ -1507,12 +1507,25 @@ Remove unnecessary localhost check from reconnect command.
 
 2014-12-29-01 Fix case where interval overflows (thanks jackeri)
 
-2014-01-06-01 q3lcc option -lcppdir and -lrccdir
+2015-01-06-01 q3lcc option -lcppdir and -lrccdir
 
-2014-01-07-01 Stop LCC from warning about null pointer conversion to function pointer
-2014-01-07-02* Ensure that mbstowcs does not overflow its buffer
-2014-01-07-03* skip (sdl2):  Don't crash if more than 128 modes are available
-2014-01-07-04 skip:  Merge pull request #104 from smcv/mbstowcs
-2014-01-07-05 skip:  Merge pull request #97 from Pan7/outp
-2014-01-07-06 skip:  Merge pull request #98 from Pan7/lcc
+2015-01-07-01 Stop LCC from warning about null pointer conversion to function pointer
+2015-01-07-02* Ensure that mbstowcs does not overflow its buffer
+2015-01-07-03* skip (sdl2):  Don't crash if more than 128 modes are available
+2015-01-07-04 skip:  Merge pull request #104 from smcv/mbstowcs
+2015-01-07-05 skip:  Merge pull request #97 from Pan7/outp
+2015-01-07-06 skip:  Merge pull request #98 from Pan7/lcc
+2015-01-07-07 Use MSVC mode marcos for creat in q3cpp on Windows
+2015-01-07-08 skip:  Merge pull request #100 from Pan7/q3lcc
+2015-01-07-09 skip:  Merge pull request #22 from zturtleman/cvar_modified
 
+2015-01-12-01 skip + check (Sys_SetFloatEnv not implemented):  Set float rounding mode on non-Windows platforms
+2015-01-12-02 Fix off-by-one range checks in Team Arena UI
+2015-01-12-03 Fix possible string buffer overflows in Team Arena UI
+2015-01-12-04 Fix handling too many characters or aliases in Team Arena UI
+2015-01-12-05 Fix (unused) "orders" menu script logic
+2015-01-12-06 Make Window_Paint check if w is NULL before dereference
+2015-01-12-07 Remove logically dead code from UI_GetServerStatusInfo
+2015-01-12-08 Fix parsing bots in arena info with trailing spaces
+2015-01-12-09 Fix possible levelPicNames buffer overflow in q3_ui
+2015-01-12-10 Make barrel/flash model name buffer safe

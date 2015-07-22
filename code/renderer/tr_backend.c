@@ -2175,6 +2175,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 				cmd.avi = afdLeft.avi;
 				cmd.tga = afdLeft.tga;
 				cmd.jpg = afdLeft.jpg;
+				cmd.png = afdLeft.png;
 				cmd.picCount = afdMain.picCount - 1;
 				Q_strncpyz(cmd.givenFileName, afdMain.givenFileName, MAX_QPATH);
 				RB_TakeVideoFrameCmd(&cmd, &shotDataLeft);

@@ -85,3 +85,13 @@ wc/slice5Current
 		alphaGen wave sin 1 .5 0 5
 	}
 }
+
+mme_additiveWhite
+{
+        {
+                map *white
+                blendfunc GL_SRC_ALPHA GL_ONE
+                rgbGen vertex
+                alphaGen vertex
+         }
+}

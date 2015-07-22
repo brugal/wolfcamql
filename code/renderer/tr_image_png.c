@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "tr_local.h"
 
 #include "../qcommon/puff.h"
+#include "../zlib/zlib.h"
 
 // we could limit the png size to a lower value here
 #ifndef INT_MAX
@@ -89,8 +90,8 @@ typedef uint32_t PNG_ChunkCRC;
 
 struct PNG_Chunk_IHDR
 {
-	uint32_t Width;
-	uint32_t Height;
+	unsigned long Width;  //uint32_t Width;
+	unsigned long Height;  //uint32_t Height;
 	uint8_t  BitDepth;
 	uint8_t  ColourType;
 	uint8_t  CompressionMethod;
@@ -2484,4 +2485,332 @@ void R_LoadPNG(const char *name, byte **pic, int *width, int *height)
 	 */
 
 	CloseBufferedFile(ThePNG);
+}
+
+// png saving from jedi academy gpl source code
+
+//typedef unsigned long ulong;
+//FIXME just refs below
+#define ulong uint32_t
+
+// Outputs a crc'd chunk of PNG data
+
+qboolean PNG_OutputChunk (fileHandle_t fp, ulong type, byte *data, ulong size)
+{
+	ulong crc, little, outcount;
+
+	// Output a standard PNG chunk - length, type, data, crc
+	little = BigLong(size);
+	outcount = FS_Write(&little, sizeof(little), fp);
+
+	little = BigLong(type);
+	crc = crc32(0, (byte *)&little, sizeof(little));
+	outcount += FS_Write(&little, sizeof(little), fp);
+
+	if(size)
+	{
+		crc = crc32(crc, data, size);
+		outcount += FS_Write(data, size, fp);
+	}
+
+	little = BigLong(crc);
+	outcount += FS_Write(&little, sizeof(little), fp);
+
+	if(outcount != (size + 12))
+	{
+		//png_error = PNG_ERROR_WRITE;
+		Com_Printf("^1error creating output chunk for png\n");
+		return qfalse;
+	}
+	return qtrue;
+}
+
+// Pack up the image data line by line
+
+//FIXME
+#define MAX_PNG_WIDTH (4096 * 4)
+#define MAX_PNG_DEPTH (4)
+
+// Filter values
+
+#define PNG_FILTER_VALUE_NONE   0
+#define PNG_FILTER_VALUE_SUB    1
+#define PNG_FILTER_VALUE_UP             2
+#define PNG_FILTER_VALUE_AVG    3
+#define PNG_FILTER_VALUE_PAETH  4
+#define PNG_FILTER_NUM                  5
+
+// Filter a row of data
+
+void PNG_Filter (byte *out, byte filter, const byte *in, const byte *lastline, ulong rowbytes, ulong bpp)
+{
+	ulong		i;
+
+	switch(filter)
+	{
+	case PNG_FILTER_VALUE_NONE:
+		memcpy(out, in, rowbytes);
+		break;
+	case PNG_FILTER_VALUE_SUB:
+		for(i = 0; i < bpp; i++)
+		{
+			*out++ = *in++;
+		}
+		for(i = bpp; i < rowbytes; i++)
+		{
+			*out++ = *in - *(in - bpp);
+			in++;
+		}
+		break;
+	case PNG_FILTER_VALUE_UP:
+		for(i = 0; i < rowbytes; i++)
+		{
+			if(lastline)
+			{
+				*out++ = *in++ - *lastline++;
+			}
+			else
+			{
+				*out++ = *in++;
+			}
+		}
+		break;
+	case PNG_FILTER_VALUE_AVG:
+		for(i = 0; i < bpp; i++)
+		{
+			if(lastline)
+			{
+				*out++ = *in++ - (*lastline++ >> 1);
+			}
+			else
+			{
+				*out++ = *in++;
+			}
+		}
+		for(i = bpp; i < rowbytes; i++)
+		{
+			if(lastline)
+			{
+				*out++ = *in - ((*lastline++ + *(in - bpp)) >> 1);
+			}
+			else
+			{
+				*out++ = *in - (*(in - bpp) >> 1);
+			}
+			in++;
+		}
+		break;
+	case PNG_FILTER_VALUE_PAETH: {
+		int			a, b, c;
+		int			pa, pb, pc, p;
+
+		for(i = 0; i < bpp; i++)
+		{
+			if(lastline)
+			{
+				*out++ = *in++ - *lastline++;
+			}
+			else
+			{
+				*out++ = *in++;
+			}
+		}
+		for(i = bpp; i < rowbytes; i++)
+		{
+			a = *(in - bpp);
+			c = 0;
+			b = 0;
+			if(lastline)
+			{
+				c = *(lastline - bpp);
+				b = *lastline++;
+			}
+
+			p = b - c;
+			pc = a - c;
+
+			pa = p < 0 ? -p : p;
+			pb = pc < 0 ? -pc : pc;
+			pc = (p + pc) < 0 ? -(p + pc) : p + pc;
+
+			p = (pa <= pb && pa <= pc) ? a : (pb <= pc) ? b : c;
+
+			*out++ = *in++ - p;
+		}
+		break;
+	}
+	}
+}
+
+qboolean PNG_Pack (byte *out, ulong *size, ulong maxsize, byte *data, int width, int height, int bytedepth)
+{
+	z_stream		zdata;
+	ulong			rowbytes;
+	ulong			y;
+	const byte		*lastline, *source;
+	// Storage for filter type and filtered row
+	byte			workline[(MAX_PNG_WIDTH * MAX_PNG_DEPTH) + 1];
+	int zlibCompression;
+
+	switch (r_pngZlibCompression->integer) {
+	case 0:
+		zlibCompression = Z_NO_COMPRESSION;
+		break;
+	case 1:
+		zlibCompression = Z_BEST_SPEED;
+		break;
+	case 9:
+		zlibCompression = Z_BEST_COMPRESSION;
+		break;
+	default:
+		zlibCompression = Z_DEFAULT_COMPRESSION;
+		break;
+	}
+
+	// Number of bytes per row
+	rowbytes = width * bytedepth;
+
+	memset(&zdata, 0, sizeof(z_stream));
+	if (deflateInit(&zdata, zlibCompression) != Z_OK) {
+		//png_error = PNG_ERROR_COMP;
+		Com_Printf("^1couldn't initialize zlib\n");
+		return qfalse;
+	}
+
+	zdata.next_out = out;
+	zdata.avail_out = maxsize;
+
+	lastline = NULL;
+	source = data + ((height - 1) * rowbytes);
+	for (y = 0;  y < height;  y++) {
+		// Refilter using the most compressable filter algo
+		// Assume paeth to speed things up
+		workline[0] = (byte)PNG_FILTER_VALUE_PAETH;
+		PNG_Filter(workline + 1, (byte)PNG_FILTER_VALUE_PAETH, source, lastline, rowbytes, bytedepth);
+
+		zdata.next_in = workline;
+		zdata.avail_in = rowbytes + 1;
+		if (deflate(&zdata, Z_SYNC_FLUSH) != Z_OK) {
+			Com_Printf("^1couldn't refilter data\n");
+			deflateEnd(&zdata);
+			//png_error = PNG_ERROR_COMP;
+			return qfalse;
+		}
+		lastline = source;
+		source -= rowbytes;
+	}
+	if (deflate(&zdata, Z_FINISH) != Z_STREAM_END) {
+		Com_Printf("^1couldn't finish data\n");
+		//png_error = PNG_ERROR_COMP;
+		return qfalse;
+	}
+	*size = zdata.total_out;
+	deflateEnd(&zdata);
+	return qtrue;
+}
+
+// Saves a PNG format compressed image
+
+//FIXME  PNG_ChunkType_*
+
+#if 0
+#define PNG_IHDR 'IHDR'
+#define PNG_IDAT                'IDAT'
+#define PNG_IEND                'IEND'
+#define PNG_tEXt                'tEXt'
+#endif
+
+qboolean SavePNG (const char *name, byte *data, int width, int height, int bytedepth)
+{
+	byte *work;
+	fileHandle_t fp;
+	int maxsize;
+	ulong size, outcount;
+	struct PNG_Chunk_IHDR header;
+
+	//png_error = PNG_ERROR_OK;
+
+	fp = FS_FOpenFileWrite(name);
+	if (!fp) {
+		Com_Printf("^1couldn't open png file for saving: '%s'\n", name);
+		//png_error = PNG_ERROR_CREATE_FAIL;
+		return qfalse;
+	}
+	// Write out the PNG signature
+	outcount = FS_Write(PNG_Signature, strlen(PNG_Signature), fp);
+	if (outcount != strlen(PNG_Signature)) {
+		FS_FCloseFile(fp);
+		Com_Printf("^1couldn't write png signature\n");
+		//png_error = PNG_ERROR_WRITE;
+		return qfalse;
+	}
+	// Create and output a valid header
+	//PNG_CreateHeader(&png_header, width, height, bytedepth);
+	header.Width = BigLong(width);
+	header.Height = BigLong(height);
+	header.BitDepth = 8;
+	// rgb is 2?  rgba is 6?
+	if (bytedepth == 3) {
+		header.ColourType = 2;
+	}
+	if (bytedepth == 4) {
+		header.ColourType = 6;
+	}
+
+	header.CompressionMethod = 0;  // compression type will be included in scanlines
+	header.FilterMethod = 0;
+	header.InterlaceMethod = 0;
+
+	if(!PNG_OutputChunk(fp, PNG_ChunkType_IHDR, (byte *)&header, PNG_Chunk_IHDR_Size)) {
+		Com_Printf("^1couldn't write png header\n");
+		FS_FCloseFile(fp);
+		return qfalse;
+	}
+
+	//Com_Printf("^2test done width: %lu   height: %lu\n", header.Width, header.Height);
+	//FS_FCloseFile(fp);
+	//return qtrue;
+
+#if 0
+	// Create and output the copyright info
+ 	if(!PNG_OutputChunk(fp, PNG_ChunkType_TEXT, (byte *)png_copyright, sizeof(png_copyright))) {
+		Com_Printf("^1couldn't write copyright info\n");
+		FS_FCloseFile(fp);
+		return qfalse;
+	}
+#endif
+
+	// Max size of compressed image (source size + 0.1% + 12)
+	maxsize = (width * height * bytedepth) + 4096;
+	work = (byte *)Z_Malloc(maxsize);
+
+	if (!work) {
+		Com_Printf("^1error: couldn't allocate buffer for png saving\n");
+		FS_FCloseFile(fp);
+		return qfalse;
+	}
+
+	// Pack up the image data
+	if (!PNG_Pack(work, &size, maxsize, data, width, height, bytedepth)) {
+		Com_Printf("^1couldn't pack png image data\n");
+		Z_Free(work);
+		FS_FCloseFile(fp);
+		return qfalse;
+	}
+	// Write out the compressed image data
+	if(!PNG_OutputChunk(fp, PNG_ChunkType_IDAT, (byte *)work, size)) {
+		Com_Printf("^1couldn't write compressed data\n");
+		Z_Free(work);
+		FS_FCloseFile(fp);
+		return qfalse;
+	}
+	Z_Free(work);
+	// Output terminating chunk
+	if(!PNG_OutputChunk(fp, PNG_ChunkType_IEND, NULL, 0)) {
+		Com_Printf("^1couldn't ouptut terminating marker\n");
+		FS_FCloseFile(fp);
+		return qfalse;
+	}
+	FS_FCloseFile(fp);
+	return qtrue;
 }

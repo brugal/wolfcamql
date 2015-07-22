@@ -1546,7 +1546,7 @@ static void S_Base_StartBackgroundTrack( const char *intro, const char *loop ){
 		loop = intro;
 	}
 	//Com_DPrintf( "S_StartBackgroundTrack( %s, %s )\n", intro, loop );
-	Com_Printf( "S_StartBackgroundTrack( %s, %s )\n", intro, loop );
+	//Com_Printf( "S_StartBackgroundTrack( %s, %s )\n", intro, loop );
 
 	if(!*intro)
 	{

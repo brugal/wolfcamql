@@ -184,6 +184,7 @@ cvar_t	*r_maxpolyverts;
 int		max_polyverts;
 
 cvar_t *r_jpegCompressionQuality;
+cvar_t *r_pngZlibCompression;
 cvar_t *r_forceMap;
 
 cvar_t *r_enablePostProcess;
@@ -1003,6 +1004,39 @@ void RB_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName 
 
 /*
 ==================
+RB_TakeScreenshotPNG
+==================
+*/
+void RB_TakeScreenshotPNG (int x, int y, int width, int height, char *fileName)
+{
+	byte		*buffer;
+
+	buffer = ri.Hunk_AllocateTempMemory(glConfig.vidWidth*glConfig.vidHeight*4);
+
+	if (!tr.usingFrameBufferObject) {
+		//qglReadBuffer(GL_FRONT);
+	}
+
+	qglReadPixels( x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
+
+	if (!tr.usingFrameBufferObject) {
+		//qglReadBuffer(GL_BACK);
+	}
+
+	// gamma correct
+	if ( glConfig.deviceSupportsGamma ) {
+		R_GammaCorrect( buffer, glConfig.vidWidth * glConfig.vidHeight * 4 );
+	}
+
+	ri.FS_WriteFile( fileName, buffer, 1 );		// create path
+	//SaveJPG( fileName, r_jpegCompressionQuality->integer, glConfig.vidWidth, glConfig.vidHeight, buffer);
+	SavePNG(fileName, buffer, glConfig.vidWidth, glConfig.vidHeight, 4);
+	ri.Hunk_FreeTempMemory( buffer );
+}
+
+
+/*
+==================
 RB_TakeScreenshotCmd
 ==================
 */
@@ -1011,10 +1045,13 @@ const void *RB_TakeScreenshotCmd( const void *data ) {
 
 	cmd = (const screenshotCommand_t *)data;
 
-	if (cmd->jpeg)
+	if (cmd->type == SCREENSHOT_JPEG) {
 		RB_TakeScreenshotJPEG( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
-	else
+	} else if (cmd->type == SCREENSHOT_PNG) {
+		RB_TakeScreenshotPNG(cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
+	} else {  // SCREENSHOT_TGA
 		RB_TakeScreenshot( cmd->x, cmd->y, cmd->width, cmd->height, cmd->fileName);
+	}
 
 	return (const void *)(cmd + 1);
 }
@@ -1024,7 +1061,7 @@ const void *RB_TakeScreenshotCmd( const void *data ) {
 R_TakeScreenshot
 ==================
 */
-void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean jpeg ) {
+void R_TakeScreenshot( int x, int y, int width, int height, char *name, int type ) {
 	static char	fileName[MAX_OSPATH]; // bad things if two screenshots per frame?
 	screenshotCommand_t	*cmd;
 
@@ -1040,7 +1077,7 @@ void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean
 	cmd->height = height;
 	Q_strncpyz( fileName, name, sizeof(fileName) );
 	cmd->fileName = fileName;
-	cmd->jpeg = jpeg;
+	cmd->type = type;
 }
 
 /*
@@ -1070,7 +1107,7 @@ void R_ScreenshotFilename( int lastNumber, char *fileName ) {
 
 /*
 ==================
-R_ScreenshotFilename
+R_ScreenshotFilenameJPEG
 ==================
 */
 void R_ScreenshotFilenameJPEG( int lastNumber, char *fileName ) {
@@ -1090,6 +1127,33 @@ void R_ScreenshotFilenameJPEG( int lastNumber, char *fileName ) {
 	d = lastNumber;
 
 	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.jpg"
+		, a, b, c, d );
+}
+
+//FIXME duplicate code screenshot filename jpeg
+/*
+==================
+R_ScreenshotFilenamePNG
+==================
+*/
+void R_ScreenshotFilenamePNG (int lastNumber, char *fileName)
+{
+	int		a,b,c,d;
+
+	if ( lastNumber < 0 || lastNumber > 9999 ) {
+		Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot9999.png" );
+		return;
+	}
+
+	a = lastNumber / 1000;
+	lastNumber -= a*1000;
+	b = lastNumber / 100;
+	lastNumber -= b*100;
+	c = lastNumber / 10;
+	lastNumber -= c*10;
+	d = lastNumber;
+
+	Com_sprintf( fileName, MAX_OSPATH, "screenshots/shot%i%i%i%i.png"
 		, a, b, c, d );
 }
 
@@ -1224,14 +1288,15 @@ void R_ScreenShot_f (void) {
 		lastNumber++;
 	}
 
-	R_TakeScreenshot( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, qfalse );
+	R_TakeScreenshot( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, SCREENSHOT_TGA );
 
 	if ( !silent ) {
 		ri.Printf (PRINT_ALL, "Wrote %s\n", checkname);
 	}
 }
 
-void R_ScreenShotJPEG_f (void) {
+void R_ScreenShotJPEG_f (void)
+{
 	char		checkname[MAX_OSPATH];
 	static	int	lastNumber = -1;
 	qboolean	silent;
@@ -1277,7 +1342,62 @@ void R_ScreenShotJPEG_f (void) {
 		lastNumber++;
 	}
 
-	R_TakeScreenshot( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, qtrue );
+	R_TakeScreenshot( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, SCREENSHOT_JPEG );
+
+	if ( !silent ) {
+		ri.Printf (PRINT_ALL, "Wrote %s\n", checkname);
+	}
+}
+
+//FIXME duplicate code with jpeg screenshot
+void R_ScreenShotPNG_f (void)
+{
+	char		checkname[MAX_OSPATH];
+	static	int	lastNumber = -1;
+	qboolean	silent;
+
+	if ( !strcmp( ri.Cmd_Argv(1), "levelshot" ) ) {
+		R_LevelShot();
+		return;
+	}
+
+	if ( !strcmp( ri.Cmd_Argv(1), "silent" ) ) {
+		silent = qtrue;
+	} else {
+		silent = qfalse;
+	}
+
+	if ( ri.Cmd_Argc() == 2 && !silent ) {
+		// explicit filename
+		Com_sprintf( checkname, MAX_OSPATH, "screenshots/%s.png", ri.Cmd_Argv( 1 ) );
+	} else {
+		// scan for a free filename
+
+		// if we have saved a previous screenshot, don't scan
+		// again, because recording demo avis can involve
+		// thousands of shots
+		if ( lastNumber == -1 ) {
+			lastNumber = 0;
+		}
+		// scan for a free number
+		for ( ; lastNumber <= 9999 ; lastNumber++ ) {
+			R_ScreenshotFilenamePNG( lastNumber, checkname );
+
+      if (!ri.FS_FileExists( checkname ))
+      {
+        break; // file doesn't exist
+      }
+		}
+
+		if ( lastNumber == 10000 ) {
+			ri.Printf (PRINT_ALL, "ScreenShot: Couldn't create a file\n");
+			return;
+ 		}
+
+		lastNumber++;
+	}
+
+	R_TakeScreenshot( 0, 0, glConfig.vidWidth, glConfig.vidHeight, checkname, SCREENSHOT_PNG );
 
 	if ( !silent ) {
 		ri.Printf (PRINT_ALL, "Wrote %s\n", checkname);
@@ -1334,7 +1454,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	//outAlign = (__m64 *)((((int)(outAlloc))+7) & ~7);
 
 
-	if (cmd->jpg  ||  (cmd->avi  &&  cmd->motionJpeg)) {
+	if ((cmd->jpg  ||  cmd->png)  ||  (cmd->avi  &&  cmd->motionJpeg)) {
 		fetchBufferHasAlpha = qtrue;
 		fetchBufferNeedsBGRswap = qtrue;
 		glMode = GL_RGBA;
@@ -1344,7 +1464,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		//outAlign = (__m64 *)fetchBuffer;
 		//R_GammaCorrect(cmd->captureBuffer + 18, cmd->width * cmd->height * 4);
 		//memcpy(outAlign, fetchBuffer, shotData->pixelCount * 4);
-	} else {  //  not jpg
+	} else {  //  not jpg or png
 		sbuf = finalName;
 		Cvar_VariableStringBuffer("cl_aviFetchMode", sbuf, MAX_QPATH);
 		if (!Q_stricmp("gl_rgba", sbuf)) {
@@ -1572,10 +1692,15 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		goto done;
 	}
 
-	if (cmd->jpg) {
+	if (cmd->jpg  ||  cmd->png) {
 		byte *buffer;
 		int width, height;
 		int count;
+		const char *type = "png";
+
+		if (cmd->jpg) {
+			type = "jpg";
+		}
 
 		if (blurFrames > 1) {
 			count = cmd->picCount / blurFrames;
@@ -1585,16 +1710,20 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 		//FIXME hack
 		if (shotData == &shotDataLeft) {
-			Com_sprintf(finalName, MAX_QPATH, "videos/%s-left-%010d.jpg", cmd->givenFileName, count);
+			Com_sprintf(finalName, MAX_QPATH, "videos/%s-left-%010d.%s", cmd->givenFileName, count, type);
 		} else {
-			Com_sprintf(finalName, MAX_QPATH, "videos/%s-%010d.jpg", cmd->givenFileName, count);
+			Com_sprintf(finalName, MAX_QPATH, "videos/%s-%010d.%s", cmd->givenFileName, count, type);
 		}
 
 		width = cmd->width;
 		height = cmd->height;
 		buffer = cmd->captureBuffer + 18;
 		ri.FS_WriteFile(finalName, buffer, 1);  // create path
-		SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer);
+		if (cmd->jpg) {
+			SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer);
+		} else {  // png
+			SavePNG(finalName, buffer, width, height, (3 + fetchBufferHasAlpha));
+		}
 
 		if (shotData == &shotDataLeft) {
 			goto done;
@@ -1602,12 +1731,17 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 		if (SplitVideo) {
 			int c;
+			const char *type = "png";
 
 			/*  1: (r)  (gb), 2: (r)  (b), 3: (r)  (g), 4: (gb)  (r),
 				5: (b)  (r), 6: (g)  (r), 7: (gb) (r)  >7 (gb) (r)
 			*/
 			memcpy(ExtraVideoBuffer, buffer, width * height * 4);
-			Com_sprintf(finalName, MAX_QPATH, "videos/%s-left-%010d.jpg", cmd->givenFileName, count);
+
+			if (cmd->jpg) {
+				type = "jpg";
+			}
+			Com_sprintf(finalName, MAX_QPATH, "videos/%s-left-%010d.%s", cmd->givenFileName, count, type);
 
 			if (r_anaglyphMode->integer != 19) {
 				ri.FS_WriteFile(finalName, buffer, 1);  // create path
@@ -1650,10 +1784,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			}
 
 			if (r_anaglyphMode->integer != 19) {
-				SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer);
+				if (cmd->jpg) {
+					SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer);
+				} else {
+					SavePNG(finalName, buffer, width, height, (3 + fetchBufferHasAlpha));
+				}
 			}
 
-			Com_sprintf(finalName, MAX_QPATH, "videos/%s-right-%010d.jpg", cmd->givenFileName, count);
+			Com_sprintf(finalName, MAX_QPATH, "videos/%s-right-%010d.%s", cmd->givenFileName, count, type);
 			ri.FS_WriteFile(finalName, buffer, 1);  // create path
 
 			c = width * height * (3 + fetchBufferHasAlpha);
@@ -1686,7 +1824,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				break;
 			}
 
-			SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, ExtraVideoBuffer);
+			if (cmd->jpg) {
+				SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, ExtraVideoBuffer);
+			} else {  // png
+				SavePNG(finalName, ExtraVideoBuffer, width, height, (3 + fetchBufferHasAlpha));
+			}
 		}
 		goto done;
 	}
@@ -2009,25 +2151,34 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				buffer[16] = 24 + 8 * needAlpha;        // pixel size
 				//buffer[16] = 8;
 				ri.FS_WriteFile(finalName, cmd->encodeBuffer, cmd->width * cmd->height * (3 + needAlpha) + 18);
-			} else if (cmd->jpg) {
+			} else if (cmd->jpg  ||  cmd->png) {
+				const char *type = "png";
+
+				if (cmd->jpg) {
+					type = "jpg";
+				}
 				//Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.jpg", cmd->givenFileName, count);
 				if (shotData == &shotDataLeft) {
-					Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-left-%010d.jpg", cmd->givenFileName, count);
+					Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-left-%010d.%s", cmd->givenFileName, count, type);
 				} else {
 					if (SplitVideo  &&  r_anaglyphMode->integer == 19) {
-						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-right-%010d.jpg", cmd->givenFileName, count);
+						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-right-%010d.%s", cmd->givenFileName, count, type);
 					} else if (SplitVideo  &&  r_anaglyphMode->integer > 0) {
 						//FIXME
 						//Com_Printf("FIXME split and r_anaglyphMode != 19\n");
-						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.jpg", cmd->givenFileName, count);
+						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.%s", cmd->givenFileName, count, type);
 					} else {
-						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.jpg", cmd->givenFileName, count);
+						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.%s", cmd->givenFileName, count, type);
 					}
 				}
 
 				buffer = cmd->encodeBuffer + 18;
 				ri.FS_WriteFile(finalName, buffer, 1);  // create path
-				SaveJPG(finalName, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer);
+				if (cmd->jpg) {
+					SaveJPG(finalName, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer);
+				} else {
+					SavePNG(finalName, buffer, cmd->width, cmd->height, (3 + fetchBufferHasAlpha));
+				}
 			} else if (cmd->avi  &&  cmd->motionJpeg) {
 				//////////////////
 				frameSize = SaveJPGToBuffer(cmd->captureBuffer + 18, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->encodeBuffer + 18);
@@ -2453,6 +2604,7 @@ void R_Register( void )
 	r_maxpolys = ri.Cvar_Get( "r_maxpolys", va("%d", MAX_POLYS), 0);
 	r_maxpolyverts = ri.Cvar_Get( "r_maxpolyverts", va("%d", MAX_POLYVERTS), 0);
 	r_jpegCompressionQuality = ri.Cvar_Get("r_jpegCompressionQuality", "90", CVAR_ARCHIVE);
+	r_pngZlibCompression = ri.Cvar_Get("r_pngZlibCompression", "1", CVAR_ARCHIVE);
 	r_forceMap = ri.Cvar_Get("r_forceMap", "", CVAR_ARCHIVE);
 	r_enablePostProcess = ri.Cvar_Get("r_enablePostProcess", "1", CVAR_ARCHIVE | CVAR_LATCH);
 	r_enableColorCorrect = ri.Cvar_Get("r_enableColorCorrect", "1", CVAR_ARCHIVE | CVAR_LATCH);
@@ -2487,6 +2639,7 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "modelist", R_ModeList_f );
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
+	ri.Cmd_AddCommand("screenshotPNG", R_ScreenShotPNG_f);
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
 	ri.Cmd_AddCommand("createcolorskins", R_CreateColorSkins_f);
 	ri.Cmd_AddCommand("printviewparms", R_PrintViewParms_f);

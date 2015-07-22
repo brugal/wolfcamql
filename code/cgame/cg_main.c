@@ -824,6 +824,7 @@ vmCvar_t cg_audioAnnouncerWin;
 vmCvar_t cg_audioAnnouncerScore;
 vmCvar_t cg_audioAnnouncerLastStanding;
 vmCvar_t cg_audioAnnouncerDominationPoint;
+vmCvar_t cg_audioAnnouncerPowerup;
 
 vmCvar_t wolfcam_drawFollowing;
 vmCvar_t wolfcam_drawFollowingOnlyName;
@@ -1001,6 +1002,7 @@ vmCvar_t cg_cameraDefaultOriginType;
 vmCvar_t cg_cameraAddUsePreviousValues;
 vmCvar_t cg_cameraDebugPath;
 vmCvar_t cg_cameraSmoothFactor;
+vmCvar_t cg_q3mmeCameraSmoothPos;
 
 vmCvar_t cg_flightTrail;
 vmCvar_t cg_hasteTrail;
@@ -1126,6 +1128,23 @@ vmCvar_t cg_quadSoundRate;
 vmCvar_t cg_cpmaSound;
 vmCvar_t cg_drawFightMessage;
 vmCvar_t cg_winLossMusic;
+
+vmCvar_t cg_rewardCapture;
+vmCvar_t cg_rewardImpressive;
+vmCvar_t cg_rewardExcellent;
+vmCvar_t cg_rewardHumiliation;
+vmCvar_t cg_rewardDefend;
+vmCvar_t cg_rewardAssist;
+vmCvar_t cg_rewardComboKill;
+vmCvar_t cg_rewardRampage;
+vmCvar_t cg_rewardMidAir;
+vmCvar_t cg_rewardRevenge;
+vmCvar_t cg_rewardPerforated;
+vmCvar_t cg_rewardHeadshot;
+vmCvar_t cg_rewardAccuracy;
+vmCvar_t cg_rewardQuadGod;
+vmCvar_t cg_rewardFirstFrag;
+vmCvar_t cg_rewardPerfect;
 
 // end cvar_t
 
@@ -1846,6 +1865,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_audioAnnouncerScore, "cg_audioAnnouncerScore", "1", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerLastStanding, "cg_audioAnnouncerLastStanding", "0", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerDominationPoint, "cg_audioAnnouncerDominationPoint", "1", CVAR_ARCHIVE },
+	{ cvp(cg_audioAnnouncerPowerup), "1", CVAR_ARCHIVE },
 
 	{ &wolfcam_drawFollowing, "wolfcam_drawFollowing", "2", CVAR_ARCHIVE },
 	{ &wolfcam_drawFollowingOnlyName, "wolfcam_drawFollowingOnlyName", "0", CVAR_ARCHIVE },
@@ -2020,6 +2040,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_cameraDefaultOriginType, "cg_cameraDefaultOriginType", "curve", CVAR_ARCHIVE },
 	{ &cg_cameraDebugPath, "cg_cameraDebugPath", "0", CVAR_ARCHIVE },
 	{ &cg_cameraSmoothFactor, "cg_cameraSmoothFactor", "1.5", CVAR_ARCHIVE },
+	{ cvp(cg_q3mmeCameraSmoothPos), "0", CVAR_ARCHIVE },
+
 	{ &cg_flightTrail, "cg_flightTrail", "1", CVAR_ARCHIVE },
 	{ &cg_hasteTrail, "cg_hasteTrail", "1", CVAR_ARCHIVE },
 	{ &cg_noItemUseMessage, "cg_noItemUseMessage", "1", CVAR_ARCHIVE },
@@ -2163,6 +2185,23 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_cpmaSound), "1", CVAR_ARCHIVE },
 	{ cvp(cg_drawFightMessage), "1", CVAR_ARCHIVE },
 	{ cvp(cg_winLossMusic), "1", CVAR_ARCHIVE },
+
+	{ cvp(cg_rewardCapture), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardImpressive), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardExcellent), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardHumiliation), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardDefend), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardAssist), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardComboKill), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardRampage), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardMidAir), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardRevenge), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardPerforated), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardHeadshot), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardAccuracy), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardQuadGod), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardFirstFrag), "1", CVAR_ARCHIVE },
+	{ cvp(cg_rewardPerfect), "1", CVAR_ARCHIVE },
 
 };
 
@@ -3802,6 +3841,8 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.invisAvailable = trap_R_RegisterShaderNoMip("gfx/2d/powerup/invis");
 	cgs.media.hasteAvailable = trap_R_RegisterShaderNoMip("gfx/2d/powerup/haste");
 	cgs.media.bsAvailable = trap_R_RegisterShaderNoMip("gfx/2d/powerup/bs");
+
+	cgs.media.mme_additiveWhiteShader = trap_R_RegisterShader("mme_additiveWhite");
 
 	//FIXME why here?
 	CG_ClearParticles ();

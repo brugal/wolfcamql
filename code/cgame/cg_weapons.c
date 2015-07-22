@@ -1261,26 +1261,23 @@ void CG_RegisterWeapon( int weaponNum ) {
 		weaponInfo->ammoModel = trap_R_RegisterModel( ammo->world_model[0] );
 	}
 
-	strcpy( path, item->world_model[0] );
-	COM_StripExtension( path, path, sizeof(path) );
-	strcat( path, "_flash.md3" );
+	COM_StripExtension( item->world_model[0], path, sizeof(path) );
+	Q_strcat( path, sizeof(path), "_flash.md3" );
 	weaponInfo->flashModel = trap_R_RegisterModel( path );
 
-	strcpy( path, item->world_model[0] );
-	COM_StripExtension( path, path, sizeof(path) );
+	COM_StripExtension( item->world_model[0], path, sizeof(path) );
 	if (weaponNum == WP_MACHINEGUN) {
-		//strcat( path, "_barrel_1.md3" );  // testing
-		strcat( path, "_barrel.md3" );
+		//Q_strcat( path, sizeof(path), "_barrel_1.md3" );  // testing
+		Q_strcat( path, sizeof(path), "_barrel.md3" );
 	} else {
-		strcat( path, "_barrel.md3" );
+		Q_strcat( path, sizeof(path), "_barrel.md3" );
 	}
 	if (CG_FileExists(path)) {
 		weaponInfo->barrelModel = trap_R_RegisterModel( path );
 	}
 
-	strcpy( path, item->world_model[0] );
-	COM_StripExtension( path, path, sizeof(path) );
-	strcat( path, "_hand.md3" );
+	COM_StripExtension( item->world_model[0], path, sizeof(path) );
+	Q_strcat( path, sizeof(path), "_hand.md3" );
 	weaponInfo->handsModel = trap_R_RegisterModel( path );
 
 	if ( !weaponInfo->handsModel ) {

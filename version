@@ -1,5 +1,5 @@
 
-11.0test7
+11.0test9
 
 * hud:  quake3 single player gametype is cg_gametype 16
 * bug fix:  quake3 single player demos would show hud elements from quake live 'race' gametype
@@ -111,7 +111,7 @@
 * cg_drawFriendStyle  1 (default) friend icon color based on health, 2 yellow icon
 * cg_drawEntNumbers 2 will also draw numbers for invisible entities
 * bug fix:  cg_drawEntNumbers 1  used depth hack
-* debuggin command /printentitydistance
+* debugging command /printentitydistance
 * bug fix:  flag base help icons would use item style bobbing up and down
 * bug fix:  only 19 crosshair shaders available instead of 29
 * crosshair size calculation changed to match quake live
@@ -136,6 +136,11 @@
 * fs_extraGames*  similar to q3mme's fs_extraGames (see documentation)
 * bug fix:  powerup pickup announcer didn't check for cg_audioAnnouncer 0
 * cg_killBeep default changed to 7 to match quake live
+* cg_audioAnnouncerPowerup  to control audio message when powerup is picked up
+* bug fix:  powerup pickup announcer wasn't controlled by s_announcerVolume
+* png option for videos and screenshots:  /video png   /screenshotPNG  r_pngCompressionFast
+* bug fix:  inconsistent use of either 'cg_helpIcon 0' or 'cg_helpIconStyle 0' to disable ingame help icons.  Setting either to 0 will disable them.
+* ability to filter out reward types:  cg_rewardHumiliation, cg_rewardQuadGod, etc..  disables both announcement and icon display
 
 ------------------------------------
 10.3  2013-11-16

@@ -563,7 +563,7 @@ writing the actual data can begin
 // us:  called internally if odml isn't used and a series of avi files is
 // written for one recording
 
-qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean depth, qboolean split, qboolean left)
+qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean png, qboolean depth, qboolean split, qboolean left)
 {
     byte *cBuffer, *eBuffer;
     int size;
@@ -615,6 +615,7 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   afd->wav = wav;
   afd->tga = tga;
   afd->jpg = jpg;
+  afd->png = png;
   afd->noSoundAvi = noSoundAvi;
   if (noSoundAvi) {
       afd->avi = qtrue;
@@ -878,7 +879,7 @@ static qboolean CL_CheckRiffSize (aviFileData_t *afd, int bytesToAdd)
 
           // ...And open a new one
           //CL_OpenAVIForWriting( va( "%s_", afd->fileName ), qtrue );
-          CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->depth, afd->split, afd->left);
+          CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->png, afd->depth, afd->split, afd->left);
           return qtrue;
       } else {
           //FIXME
@@ -1163,11 +1164,11 @@ void CL_TakeVideoFrame (aviFileData_t *afd)
         return;
     }
 
-    if (!afd->avi  &&  !afd->tga  &&  !afd->jpg) {
+    if (!afd->avi  &&  !afd->tga  &&  !afd->jpg  &&  !afd->png) {
         return;
     }
 
-    re.TakeVideoFrame(afd, afd->width, afd->height, afd->cBuffer, afd->eBuffer, afd->codec == CODEC_MJPEG, afd->avi, afd->tga, afd->jpg, afd->picCount, afd->givenFileName);
+    re.TakeVideoFrame(afd, afd->width, afd->height, afd->cBuffer, afd->eBuffer, afd->codec == CODEC_MJPEG, afd->avi, afd->tga, afd->jpg, afd->png, afd->picCount, afd->givenFileName);
 
     afd->picCount++;
 }
@@ -1652,7 +1653,7 @@ static void CL_NewRiff (aviFileData_t *afd)
       //Com_Printf("MAX_OPENDML_INDEX_ENTRIES * 2 starting new file\n");
       CL_CloseAVI(afd, qtrue);
       //CL_OpenAVIForWriting(va("%s_", afd->fileName), qtrue);
-      CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->depth, afd->split, afd->left);
+      CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->png, afd->depth, afd->split, afd->left);
       return;
   }
 

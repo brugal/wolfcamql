@@ -2729,25 +2729,6 @@ static void CG_PlayerFlag( centity_t *cent, qhandle_t hSkin, const refEntity_t *
 	CG_AddRefEntity(&flag);
 }
 
-#if 0
-static void CG_DrawHarversterHelpIcons (const centity_t *cent)
-{
-	int ourTeam;
-
-
-	if (wolfcam_following  &&  wcg.clientNum != cent->currentState.clientNum) {
-		return;
-	}
-
-	if (wolfcam_following) {
-		ourTeam = cgs.clientinfo[wcg.clientNum].team;
-	} else {
-		ourTeam = cg.snap->ps.persistant[PERS_TEAM];
-	}
-
-}
-#endif
-
 #if 1  //def MPACK // bk001204
 /*
 ===============

@@ -1025,8 +1025,11 @@ static void Fade(int *flags, float *f, float clamp, int *nextTime, int offsetTim
 static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fadeCycle, int widescreen, rectDef_t menuRect) {
   //float bordersize = 0;
   vec4_t color;
-  rectDef_t fillRect = w->rect;
+  rectDef_t fillRect;
 
+  if ( w == NULL ) {
+	  return;
+  }
 
   //Com_Printf("window paint\n");
 
@@ -1035,9 +1038,11 @@ static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fad
     DC->drawRect(w->rect.x, w->rect.y, w->rect.w, w->rect.h, 1, color, widescreen, menuRect);
   }
 
-  if (w == NULL || (w->style == 0 && w->border == 0)) {
+  if (w->style == 0 && w->border == 0) {
     return;
   }
+
+  fillRect = w->rect;
 
   if (w->border != 0) {
     fillRect.x += w->borderSize;

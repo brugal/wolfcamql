@@ -38,6 +38,7 @@ typedef struct aviFileData_s
     qboolean wav;
     qboolean tga;
     qboolean jpg;
+    qboolean png;
     qboolean noSoundAvi;
     qboolean depth;
     qboolean split;

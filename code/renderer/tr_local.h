@@ -1175,6 +1175,7 @@ extern cvar_t *r_debugMarkSurface;
 extern cvar_t *r_ignoreNoMarks;
 extern cvar_t *r_fog;
 extern cvar_t *r_ignoreEntityMergable;
+extern cvar_t *r_pngZlibCompression;
 
 //====================================================================
 
@@ -1678,6 +1679,12 @@ typedef struct {
 	int		numDrawSurfs;
 } drawSurfsCommand_t;
 
+enum {
+	SCREENSHOT_TGA,
+	SCREENSHOT_JPEG,
+	SCREENSHOT_PNG
+};
+
 typedef struct {
 	int commandId;
 	int x;
@@ -1685,7 +1692,7 @@ typedef struct {
 	int width;
 	int height;
 	char *fileName;
-	qboolean jpeg;
+	int type;
 } screenshotCommand_t;
 
 typedef struct {
@@ -1698,6 +1705,7 @@ typedef struct {
 	qboolean avi;
 	qboolean tga;
 	qboolean jpg;
+	qboolean png;
 	qboolean saveDepth;
 	int picCount;
 	char givenFileName[MAX_QPATH];
@@ -1775,7 +1783,8 @@ void SaveJPG(char * filename, int quality, int image_width, int image_height, un
 int SaveJPGToBuffer( byte *buffer, int quality,
 		int image_width, int image_height,
 		byte *image_buffer );
-void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, int picCount, char *givenFileName);
+qboolean SavePNG (const char *name, byte *data, int width, int height, int bytedepth);
+void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, qboolean png, int picCount, char *givenFileName);
 void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);
 
 // font stuff
@@ -1795,7 +1804,7 @@ void R_Upload32( unsigned *data,
 			   int *pUploadWidth, int *pUploadHeight );
 void R_CreatePlayerColorSkinImages (qboolean force);
 void R_MME_Init (void);
-void R_TakeScreenshot( int x, int y, int width, int height, char *name, qboolean jpeg );
+void R_TakeScreenshot( int x, int y, int width, int height, char *name, int type );
 mnode_t *R_PointInLeaf (const vec3_t p);
 void R_CreateSingleShader (void);
 

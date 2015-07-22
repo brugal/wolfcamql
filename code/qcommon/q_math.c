@@ -817,6 +817,12 @@ float LerpAngleNear (float from, float to, float frac)
 	return a;
 }
 
+// q3mme camera
+void LerpAngles( const vec3_t from, const vec3_t to, vec3_t out, float lerp ) {
+	out[0] = LerpAngle( from[0], to[0], lerp );
+	out[1] = LerpAngle( from[1], to[1], lerp );
+	out[2] = LerpAngle( from[2], to[2], lerp );
+}
 
 /*
 =================

@@ -1788,6 +1788,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		{
 			const gitem_t *item;
 			int		index;
+			qboolean play;
 
 			if (cgs.cpma  ||  cgs.osp) {
 				clientNum = CG_CheckClientEventCpma(clientNum, es);
@@ -1825,19 +1826,32 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 				if ( item->giType == IT_POWERUP || item->giType == IT_TEAM) {
 					CG_StartSound (NULL, clientNum, CHAN_AUTO,	cgs.media.n_healthSound );
 				} else if (item->giType == IT_PERSISTANT_POWERUP) {
+					play = qtrue;
+					if (cg_audioAnnouncer.integer == 0  ||  cg_audioAnnouncerPowerup.integer == 0) {
+						play = qfalse;
+					}
+
 #if  1  //def MPACK
 					switch (item->giTag ) {
 					case PW_SCOUT:
-						CG_StartSound (NULL, clientNum, CHAN_AUTO,	cgs.media.scoutSound );
+						if (play) {
+							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.scoutSound );
+						}
 						break;
 					case PW_GUARD:
-						CG_StartSound (NULL, clientNum, CHAN_AUTO,	cgs.media.guardSound );
+						if (play) {
+							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.guardSound );
+						}
 						break;
 					case PW_DOUBLER:
-						CG_StartSound (NULL, clientNum, CHAN_AUTO,	cgs.media.doublerSound );
+						if (play) {
+							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.doublerSound );
+						}
 						break;
 					case PW_ARMORREGEN:
-						CG_StartSound (NULL, clientNum, CHAN_AUTO,	cgs.media.armorRegenSound );
+						if (play) {
+							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.armorRegenSound );
+						}
 						break;
 					case PW_KEY:
 						CG_StartSound(NULL, clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, qfalse));
@@ -1875,36 +1889,39 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			CG_TimedItemPickup(index, es->pos.trBase, clientNum, cg.time, qfalse);
 			// powerup pickups are global
 			play = qtrue;
-			if (cg_audioAnnouncer.integer == 0) {
+			if (cg_audioAnnouncer.integer == 0  ||  cg_audioAnnouncerPowerup.integer == 0) {
 				play = qfalse;
 			}
 
-			if (item->giTag == PW_QUAD) {
-				if (play) {
-					CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.media.quadPickupVo);
+			if (item->pickup_sound) {
+				if (item->giTag == PW_QUAD) {
+					if (play) {
+						CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_ANNOUNCER, cgs.media.quadPickupVo);
+					}
+				} else if (item->giTag == PW_BATTLESUIT) {
+					if (play) {
+						CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_ANNOUNCER, cgs.media.battleSuitPickupVo);
+					}
+				} else if (item->giTag == PW_HASTE) {
+					if (play) {
+						CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_ANNOUNCER, cgs.media.hastePickupVo);
+					}
+				} else if (item->giTag == PW_INVIS) {
+					if (play) {
+						CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_ANNOUNCER, cgs.media.invisibilityPickupVo);
+					}
+				} else if (item->giTag == PW_REGEN) {
+					if (play) {
+						CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_ANNOUNCER, cgs.media.regenPickupVo);
+					}
+				} else {
+					// check if it is an audio announcer
+					if (!Q_stricmpn(item->pickup_sound, "sound/vo", strlen("sound/vo"))) {
+						CG_Printf("^3FIXME powerup pickup vo played without announcer disabled check\n");
+					}
+					//CG_Printf("item: %s\n", item->pickup_name);
+					CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, qfalse));
 				}
-			} else if (item->giTag == PW_BATTLESUIT) {
-				if (play) {
-					CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.media.battleSuitPickupVo);
-				}
-			} else if (item->giTag == PW_HASTE) {
-				if (play) {
-					CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.media.hastePickupVo);
-				}
-			} else if (item->giTag == PW_INVIS) {
-				if (play) {
-					CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.media.invisibilityPickupVo);
-				}
-			} else if (item->giTag == PW_REGEN) {
-				if (play) {
-					CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, cgs.media.regenPickupVo);
-				}
-			} else {
-				// check if it is an audio announcer
-				if (!Q_stricmpn(item->pickup_sound, "sound/vo", strlen("sound/vo"))) {
-					CG_Printf("^3FIXME powerup pickup vo played without announcer disabled check\n");
-				}
-				CG_StartSound(NULL, cg.snap->ps.clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, qfalse));
 			}
 
 			// show icon and name on status bar
@@ -3619,44 +3636,64 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			*/
 
 		case 0:  // combo kill*
-			shader = cgs.media.medalComboKill;
-			sfx = cgs.media.comboKillRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			if (cg_rewardComboKill.integer) {
+				shader = cgs.media.medalComboKill;
+				sfx = cgs.media.comboKillRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			}
 			break;
 		case 1:  // rampage*
-			shader = cgs.media.medalRampage;
-			sfx = cgs.media.rampageRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			if (cg_rewardRampage.integer) {
+				shader = cgs.media.medalRampage;
+				sfx = cgs.media.rampageRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			}
 			break;
 		case 2:  // mid air*
-			shader = cgs.media.medalMidAir;
-			sfx = cgs.media.midAirRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			if (cg_rewardMidAir.integer) {
+				shader = cgs.media.medalMidAir;
+				sfx = cgs.media.midAirRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			}
 			break;
 		case 3:  // revenge*
-			shader = cgs.media.medalRevenge;
-			sfx = cgs.media.revengeRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			if (cg_rewardRevenge.integer) {
+				shader = cgs.media.medalRevenge;
+				sfx = cgs.media.revengeRewardSound[rand() % NUM_REWARD_VARIATIONS];
+			}
 			break;
 		case 4:  // perforated
-			shader = cgs.media.medalPerforated;
-			sfx = cgs.media.perforatedRewardSound;
+			if (cg_rewardPerforated.integer) {
+				shader = cgs.media.medalPerforated;
+				sfx = cgs.media.perforatedRewardSound;
+			}
 			break;
 		case 5:  // headshot
-			shader = cgs.media.medalHeadshot;
-			sfx = cgs.media.headshotRewardSound;
+			if (cg_rewardHeadshot.integer) {
+				shader = cgs.media.medalHeadshot;
+				sfx = cgs.media.headshotRewardSound;
+			}
 			break;
 		case 6:  // accuracy
-			shader = cgs.media.medalAccuracy;
-			sfx = cgs.media.accuracyRewardSound;
+			if (cg_rewardAccuracy.integer) {
+				shader = cgs.media.medalAccuracy;
+				sfx = cgs.media.accuracyRewardSound;
+			}
 			break;
 		case 7:  // quad god
-			shader = cgs.media.medalQuadGod;
-			sfx = cgs.media.quadGodRewardSound;
+			if (cg_rewardQuadGod.integer) {
+				shader = cgs.media.medalQuadGod;
+				sfx = cgs.media.quadGodRewardSound;
+			}
 			break;
 		case 8:  // first frag
-			shader = cgs.media.medalFirstFrag;
-			sfx = cgs.media.firstFragRewardSound;
+			if (cg_rewardFirstFrag.integer) {
+				shader = cgs.media.medalFirstFrag;
+				sfx = cgs.media.firstFragRewardSound;
+			}
 			break;
 		case 9:  // perfect
-			shader = cgs.media.medalPerfect;
-			sfx = cgs.media.perfectRewardSound;
+			if (cg_rewardPerfect.integer) {
+				shader = cgs.media.medalPerfect;
+				sfx = cgs.media.perfectRewardSound;
+			}
 			break;
 
 		default:

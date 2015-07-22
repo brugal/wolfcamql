@@ -39,7 +39,7 @@ ifndef BUILD_GAME_SO
   BUILD_GAME_SO    =
 endif
 ifndef BUILD_GAME_QVM
-  BUILD_GAME_QVM   =
+  BUILD_GAME_QVM   = 1
 endif
 ifndef BUILD_MISSIONPACK
   BUILD_MISSIONPACK=
@@ -1663,9 +1663,11 @@ ifeq ($(USE_INTERNAL_ZLIB),1)
 Q3OBJ += \
   $(B)/client/adler32.o \
   $(B)/client/crc32.o \
+  $(B)/client/deflate.o \
   $(B)/client/inffast.o \
   $(B)/client/inflate.o \
   $(B)/client/inftrees.o \
+  $(B)/client/trees.o \
   $(B)/client/zutil.o
 endif
 
@@ -1854,9 +1856,11 @@ ifeq ($(USE_INTERNAL_ZLIB),1)
 Q3DOBJ += \
   $(B)/ded/adler32.o \
   $(B)/ded/crc32.o \
+  $(B)/ded/deflate.o \
   $(B)/ded/inffast.o \
   $(B)/ded/inflate.o \
   $(B)/ded/inftrees.o \
+  $(B)/ded/trees.o \
   $(B)/ded/zutil.o
 endif
 
@@ -1935,6 +1939,8 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/baseq3/cgame/cg_players.o \
   $(B)/baseq3/cgame/cg_playerstate.o \
   $(B)/baseq3/cgame/cg_predict.o \
+  $(B)/baseq3/cgame/cg_q3mme_camera.o \
+  $(B)/baseq3/cgame/cg_q3mme_math.o \
   $(B)/baseq3/cgame/cg_q3mme_scripts.o \
   $(B)/baseq3/cgame/cg_scoreboard.o \
   $(B)/baseq3/cgame/cg_servercmds.o \
@@ -1981,6 +1987,8 @@ Q3CGOBJ_ = \
   $(B)/baseq3/cgame/cg_players.o \
   $(B)/baseq3/cgame/cg_playerstate.o \
   $(B)/baseq3/cgame/cg_predict.o \
+  $(B)/baseq3/cgame/cg_q3mme_camera.o \
+  $(B)/baseq3/cgame/cg_q3mme_math.o \
   $(B)/baseq3/cgame/cg_q3mme_scripts.o \
   $(B)/baseq3/cgame/cg_scoreboard.o \
   $(B)/baseq3/cgame/cg_servercmds.o \

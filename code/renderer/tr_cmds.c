@@ -567,7 +567,7 @@ void RE_EndFrame( int *frontEndMsec, int *backEndMsec ) {
 RE_TakeVideoFrame
 =============
 */
-void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, int picCount, char *givenFileName)
+void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, qboolean png, int picCount, char *givenFileName)
 {
 	videoFrameCommand_t	*cmd;
 
@@ -590,6 +590,7 @@ void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *capture
 	cmd->avi = avi;
 	cmd->tga = tga;
 	cmd->jpg = jpg;
+	cmd->png = png;
 	cmd->picCount = picCount;
 	Q_strncpyz(cmd->givenFileName, givenFileName, MAX_QPATH);
 }
