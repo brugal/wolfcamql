@@ -329,6 +329,10 @@ sfxHandle_t	S_RegisterSound( const char *sample, qboolean compressed )
 	char newName[MAX_QPATH];
 	int slen;
 
+	if (sample == NULL) {
+		Com_Printf("^1%s() sample == NULL (shouldn't happen)\n", __FUNCTION__);
+		return 0;
+	}
 	//Com_Printf("S_RegisterSound %s\n", sample);
 
 	if( si.RegisterSound ) {

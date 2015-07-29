@@ -911,8 +911,8 @@ void Sys_PlatformInit (qboolean useBacktrace)
 		if(sigaction(SIGTRAP, &action, NULL) < 0) {
 			Com_Printf("^1ERROR setting SIGTRAP handler\n");
 		}
-		if(sigaction(SIGIOT, &action, NULL) < 0) {
-			Com_Printf("^1ERROR setting SIGIOT handler\n");
+		if(sigaction(SIGABRT, &action, NULL) < 0) {
+			Com_Printf("^1ERROR setting SIGABRT handler\n");
 		}
 		if(sigaction(SIGBUS, &action, NULL) < 0) {
 			Com_Printf("^1ERROR setting SIGBUS handler\n");
@@ -933,7 +933,7 @@ void Sys_PlatformInit (qboolean useBacktrace)
 		signal(SIGHUP, Sys_SigHandler);
 		signal(SIGQUIT, Sys_SigHandler);
 		signal(SIGTRAP, Sys_SigHandler);
-		signal(SIGIOT, Sys_SigHandler);
+		signal(SIGABRT, Sys_SigHandler);
 		signal(SIGBUS, Sys_SigHandler);
 	}
 

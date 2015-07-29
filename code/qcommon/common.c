@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../client/cl_console.h"
 #endif
 
-int demo_protocols[NUM_DEMO_PROTOCOLS] = { 66, 67, 68, 69, 70, 71, 73, 90 };  // 69 ?  oa?
+int demo_protocols[NUM_DEMO_PROTOCOLS] = { 66, 67, 68, 69, 70, 71, 73, 90, 91 };  // 69 ?  oa?
 
 #define MAX_NUM_ARGVS	50
 
@@ -3814,5 +3814,5 @@ void Com_RandomBytes( byte *string, int len )
 
 	Com_Printf( "Com_RandomBytes: using weak randomization\n" );
 	for( i = 0; i < len; i++ )
-		string[i] = (unsigned char)( rand() % 255 );
+		string[i] = (unsigned char)( rand() % 256 );
 }

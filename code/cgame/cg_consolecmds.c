@@ -7298,6 +7298,7 @@ static consoleCommand_t	commands[] = {
 	{ "printentitydistance", CG_PrintEntityDistance_f },
 	//{ "addq3mmecamerapoint", CG_AddQ3mmeCameraPoint_f },
 	//{ "playq3mmecamera", CG_PlayQ3mmeCamera_f },
+	//{ "q3mmecamera", CG_Q3mmeDemoCameraCommand_f },
 };
 
 

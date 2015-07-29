@@ -1357,6 +1357,7 @@ typedef struct {
 	int numSplinePoints;
 
 	int numCameraPoints;
+        int numQ3mmeCameraPoints;
 	int selectedCameraPointMin;
 	int selectedCameraPointMax;
 

@@ -804,9 +804,86 @@ typedef struct {
 // using the stringizing operator to save typing...
 #define	NETF(x) #x,(size_t)&((entityState_t*)0)->x
 
-// dm 90
 
-netField_t	entityStateFieldsQl[] =
+netField_t	entityStateFieldsQldm91[] =
+{
+{ NETF(pos.trTime), 32 },
+{ NETF(pos.trBase[0]), 0 },
+{ NETF(pos.trBase[1]), 0 },
+{ NETF(pos.trDelta[0]), 0 },
+{ NETF(pos.trDelta[1]), 0 },
+{ NETF(pos.trBase[2]), 0 },
+{ NETF(apos.trBase[1]), 0 },
+{ NETF(pos.trDelta[2]), 0 },
+{ NETF(apos.trBase[0]), 0 },
+//#ifdef QUAKELIVE_PROTOCOL
+{ NETF(pos.gravity), 32 },   ////
+//#endif
+{ NETF(event), 10 },
+{ NETF(angles2[1]), 0 },
+{ NETF(eType), 8 },
+{ NETF(torsoAnim), 8 },
+{ NETF(eventParm), 8 },
+{ NETF(legsAnim), 8 },
+{ NETF(groundEntityNum), GENTITYNUM_BITS },
+{ NETF(pos.trType), 8 },
+{ NETF(eFlags), 19 },
+{ NETF(otherEntityNum), GENTITYNUM_BITS },
+{ NETF(weapon), 8 },
+{ NETF(clientNum), 8 },
+{ NETF(angles[1]), 0 },
+{ NETF(pos.trDuration), 32 },
+{ NETF(apos.trType), 8 },
+{ NETF(origin[0]), 0 },
+{ NETF(origin[1]), 0 },
+{ NETF(origin[2]), 0 },
+{ NETF(solid), 24 },
+{ NETF(powerups), MAX_POWERUPS },
+{ NETF(modelindex), 8 },
+{ NETF(otherEntityNum2), GENTITYNUM_BITS },
+{ NETF(loopSound), 8 },
+{ NETF(generic1), 8 },
+{ NETF(origin2[2]), 0 },
+{ NETF(origin2[0]), 0 },
+{ NETF(origin2[1]), 0 },
+{ NETF(modelindex2), 8 },
+{ NETF(angles[0]), 0 },
+{ NETF(time), 32 },
+{ NETF(apos.trTime), 32 },
+{ NETF(apos.trDuration), 32 },
+{ NETF(apos.trBase[2]), 0 },
+{ NETF(apos.trDelta[0]), 0 },
+{ NETF(apos.trDelta[1]), 0 },
+{ NETF(apos.trDelta[2]), 0 },
+
+//#ifdef QUAKELIVE_PROTOCOL
+//FIXME is this new?  or did i screw up?
+{ NETF(apos.gravity), 32 },   ////
+//#endif
+{ NETF(time2), 32 },
+//{ NETF(apos.gravity), 0 },
+{ NETF(angles[2]), 0 },
+{ NETF(angles2[0]), 0 },
+{ NETF(angles2[2]), 0 },
+{ NETF(constantLight), 32 },
+{ NETF(frame), 16 },
+{ NETF(jumpTime), 32 },
+{ NETF(unknown1), 32 },   // crouch time?
+{ NETF(unknown2), 16 },  // health
+// armor, location, ... command time
+
+//{ NETF(unknown3), 32 },  // ???
+{ NETF(unknown4), 16 },  // armor
+{ NETF(unknown5), 8 },  // location
+{ NETF(doubleJumped), 1 },
+//{ NETF(unknown6), 32 }, // ??
+
+
+
+};
+
+
+netField_t	entityStateFieldsQldm90[] =
 {
 { NETF(pos.trTime), 32 },
 { NETF(pos.trBase[0]), 0 },
@@ -1030,8 +1107,10 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 		numFields = ARRAY_LEN(entityStateFieldsQ3);
 	} else if (com_protocol->integer == 73) {
 		numFields = ARRAY_LEN(entityStateFieldsQldm73);
+	} else if (com_protocol->integer == 90) {
+		numFields = ARRAY_LEN(entityStateFieldsQldm90);
 	} else {
-		numFields = ARRAY_LEN(entityStateFieldsQl);
+		numFields = ARRAY_LEN(entityStateFieldsQldm91);
 	}
 
 	// all fields should be 32 bits to avoid any compiler packing issues
@@ -1061,8 +1140,10 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 		field = entityStateFieldsQ3;
 	} else if (com_protocol->integer == 73) {
 		field = entityStateFieldsQldm73;
+	} else if (com_protocol->integer == 90) {
+		field = entityStateFieldsQldm90;
 	} else {
-		field = entityStateFieldsQl;
+		field = entityStateFieldsQldm91;
 	}
 
 	for ( i = 0 ; i < numFields ; i++, field++ ) {
@@ -1097,8 +1178,10 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 		field = entityStateFieldsQ3;
 	} else if (com_protocol->integer == 73) {
 		field = entityStateFieldsQldm73;
+	} else if (com_protocol->integer == 90) {
+		field = entityStateFieldsQldm90;
 	} else {
-		field = entityStateFieldsQl;
+		field = entityStateFieldsQldm91;
 	}
 
 	for ( i = 0; i < lc ; i++, field++ ) {
@@ -1203,9 +1286,11 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 		//Com_Printf("q3\n");
 	} else if (com_protocol->integer == 73) {
 		numFields = ARRAY_LEN(entityStateFieldsQldm73);
-	} else {
-		numFields = ARRAY_LEN(entityStateFieldsQl);
+	} else if (com_protocol->integer == 90) {
+		numFields = ARRAY_LEN(entityStateFieldsQldm90);
 		//Com_Printf("ql....\n");
+	} else {
+		numFields = ARRAY_LEN(entityStateFieldsQldm91);
 	}
 
 	lc = MSG_ReadByte(msg);
@@ -1233,8 +1318,10 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 		field = entityStateFieldsQ3;
 	} else if (com_protocol->integer == 73) {
 		field = entityStateFieldsQldm73;
+	} else if (com_protocol->integer == 90) {
+		field = entityStateFieldsQldm90;
 	} else {
-		field = entityStateFieldsQl;
+		field = entityStateFieldsQldm91;
 	}
 
 	for ( i = 0; i < lc ; i++, field++ ) {
@@ -1286,8 +1373,10 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 		field = &entityStateFieldsQ3[lc];
 	} else if (com_protocol->integer == 73) {
 		field = &entityStateFieldsQldm73[lc];
+	} else if (com_protocol->integer == 90) {
+		field = &entityStateFieldsQldm90[lc];
 	} else {
-		field = &entityStateFieldsQl[lc];
+		field = &entityStateFieldsQldm91[lc];
 	}
 
 	for ( i = lc; i < numFields   &&  i >= 0; i++, field++ ) {
@@ -1322,8 +1411,90 @@ plyer_state_t communication
 // using the stringizing operator to save typing...
 #define	PSF(x) #x,(size_t)&((playerState_t*)0)->x
 
-// ql dm 90
-netField_t	playerStateFields[] =
+
+netField_t	playerStateFieldsQldm91[] =
+{
+{ PSF(commandTime), 32 },
+{ PSF(origin[0]), 0 },
+{ PSF(origin[1]), 0 },
+{ PSF(bobCycle), 8 },
+{ PSF(velocity[0]), 0 },
+{ PSF(velocity[1]), 0 },
+{ PSF(viewangles[1]), 0 },
+{ PSF(viewangles[0]), 0 },
+{ PSF(weaponTime), -16 },
+{ PSF(origin[2]), 0 },
+{ PSF(velocity[2]), 0 },
+{ PSF(legsTimer), 8 },
+{ PSF(pm_time), -16 },
+{ PSF(eventSequence), 16 },
+{ PSF(torsoAnim), 8 },
+{ PSF(movementDir), 4 },
+{ PSF(events[0]), 8 },
+{ PSF(legsAnim), 8 },
+{ PSF(events[1]), 8 },
+{ PSF(pm_flags), 24 },
+{ PSF(groundEntityNum), GENTITYNUM_BITS },
+{ PSF(weaponstate), 4 },
+{ PSF(eFlags), 16 },
+{ PSF(externalEvent), 10 },
+{ PSF(gravity), 16 },
+{ PSF(speed), 16 },
+{ PSF(delta_angles[1]), 16 },
+{ PSF(externalEventParm), 8 },
+{ PSF(viewheight), -8 },
+{ PSF(damageEvent), 8 },
+{ PSF(damageYaw), 8 },
+{ PSF(damagePitch), 8 },
+{ PSF(damageCount), 8 },
+{ PSF(generic1), 8 },
+{ PSF(pm_type), 8 },
+{ PSF(delta_angles[0]), 16 },
+{ PSF(delta_angles[2]), 16 },
+{ PSF(torsoTimer), 12 },
+{ PSF(eventParms[0]), 8 },
+{ PSF(eventParms[1]), 8 },
+{ PSF(clientNum), 8 },
+{ PSF(weapon), 5 },
+// weaponPrimary
+//{ PSF(unknown9), 5 },
+{ PSF(viewangles[2]), 0 },
+{ PSF(grapplePoint[0]), 0 },
+{ PSF(grapplePoint[1]), 0 },
+{ PSF(grapplePoint[2]), 0 },
+
+
+
+{ PSF(loopSound), 16 },
+{ PSF(jumppad_ent), 10 } , //GENTITYNUM_BITS },
+{ PSF(doubleJumped), 1 },
+{ PSF(jumpTime), 32 },
+//{ PSF(crouchTime), 32 },
+
+// crouchSlideTime
+// jumpTime:697465 crouchTime:697702 location:22 fov:93 forwardmove:127 rightmove:127 upmove:0  (1811 bits)
+
+
+{ PSF(unknown1), 1 },  // ??  skipped  crouchSlideTime?
+{ PSF(unknown2), 32 },  // crouchTime
+{ PSF(unknown3), 8 },  // ??
+{ PSF(unknown4), 8 },  // location
+
+// crouchSlide time
+//{ PSF(unknown11), 32 },
+
+{ PSF(unknown5), 8 },  // fov
+{ PSF(unknown6), 8 },  // forwardmove
+{ PSF(unknown7), 8 },  // rightmove
+
+{ PSF(unknown8), 8 },  // upmove
+
+//{ PSF(unknown9), 1 },  // 58
+//{ PSF(unknown10), 1 },
+
+};
+
+netField_t	playerStateFieldsQldm90[] =
 {
 { PSF(commandTime), 32 },
 { PSF(origin[0]), 0 },
@@ -1456,15 +1627,19 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 
 	c = msg->cursize;
 
-	if (com_protocol->integer == PROTOCOL_QL) {
-		numFields = ARRAY_LEN( playerStateFields );
-	} else {
+	if (com_protocol->integer == 90) {
+		numFields = ARRAY_LEN(playerStateFieldsQldm90);
+	} else if (com_protocol->integer == 91) {
+		numFields = ARRAY_LEN( playerStateFieldsQldm91);
+	} else {  // also qldm 73
 		numFields = ARRAY_LEN(playerStateFieldsQ3);
 	}
 
-	if (com_protocol->integer == PROTOCOL_QL) {
-		field = playerStateFields;
-	} else {
+	if (com_protocol->integer == 90) {
+		field = playerStateFieldsQldm90;
+	} else if (com_protocol->integer == 91) {
+		field = playerStateFieldsQldm91;
+	} else {  // also qldm 73
 		field = playerStateFieldsQ3;
 	}
 
@@ -1481,9 +1656,11 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 
 	oldsize += numFields - lc;
 
-	if (com_protocol->integer == PROTOCOL_QL) {
-		field = playerStateFields;
-	} else {
+	if (com_protocol->integer == 90) {
+		field = playerStateFieldsQldm90;
+	} else if (com_protocol->integer == 91) {
+		field = playerStateFieldsQldm91;
+	} else {  // also qldm 73
 		field = playerStateFieldsQ3;
 	}
 
@@ -1639,22 +1816,27 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 		print = 0;
 	}
 
-	if (com_protocol->integer == PROTOCOL_QL) {
-		numFields = ARRAY_LEN( playerStateFields );
-	} else {
+	if (com_protocol->integer == 90) {
+		numFields = ARRAY_LEN(playerStateFieldsQldm90);
+	} else if (com_protocol->integer == 91) {
+		numFields = ARRAY_LEN(playerStateFieldsQldm91);
+	} else {  // also qldm 73
 		numFields = ARRAY_LEN(playerStateFieldsQ3);
 	}
 
 	lc = MSG_ReadByte(msg);
 
 	if (lc > numFields  ||  lc < 0) {
+		Com_Printf("\n");
 		MSG_Error(ERR_DROP, "invalid playerState field count:  %d : %d", lc, numFields);
 		return;
 	}
 
-	if (com_protocol->integer == PROTOCOL_QL) {
-		field = playerStateFields;
-	} else {
+	if (com_protocol->integer == 90) {
+		field = playerStateFieldsQldm90;
+	} else if (com_protocol->integer == 91) {
+		field = playerStateFieldsQldm91;
+	} else {  // also qldm 73
 		field = playerStateFieldsQ3;
 	}
 
@@ -1694,9 +1876,11 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 		}
 	}
 
-	if (com_protocol->integer == PROTOCOL_QL) {
-		field = &playerStateFields[lc];
-	} else {
+	if (com_protocol->integer == 90) {
+		field = &playerStateFieldsQldm90[lc];
+	} else if (com_protocol->integer == 91) {
+		field = &playerStateFieldsQldm91[lc];
+	} else {  // also qldm 73
 		field = &playerStateFieldsQ3[lc];
 	}
 
@@ -1754,6 +1938,12 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 				}
 			}
 		}
+	}
+
+	//FIXME testing
+	if (com_protocol->integer == 91) {
+		//FIXME where do these go?
+		//MSG_ReadBits(msg, 7);
 	}
 
 	if ( print ) {

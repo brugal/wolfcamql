@@ -59,10 +59,22 @@ endif
 #############################################################################
 -include Makefile.local
 
+ifeq ($(COMPILE_PLATFORM),cygwin)
+	PLATFORM=mingw32
+endif
+
 ifndef PLATFORM
 PLATFORM=$(COMPILE_PLATFORM)
 endif
 export PLATFORM
+
+ifeq ($(PLATFORM),mingw32)
+  MINGW=1
+endif
+
+ifeq ($(PLATFORM),mingw64)
+  MINGW=1
+endif
 
 ifeq ($(COMPILE_ARCH),powerpc)
   COMPILE_ARCH=ppc
@@ -124,7 +136,7 @@ USE_CURL=1
 endif
 
 ifndef USE_CURL_DLOPEN
-  ifeq ($(PLATFORM),mingw32)
+  ifdef MINGW
     USE_CURL_DLOPEN=0
   else
     USE_CURL_DLOPEN=1
@@ -252,7 +264,7 @@ LIB=lib
 INSTALL=install
 MKDIR=mkdir
 
-ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu"))
+ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
 
   ifeq ($(ARCH),axp)
     ARCH=alpha
@@ -266,6 +278,10 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu"))
   else
   ifeq ($(ARCH),s390x)
     LIB=lib64
+  else
+  ifeq ($(ARCH),aarch64)
+    LIB=lib64
+  endif
   endif
   endif
   endif
@@ -505,7 +521,7 @@ else # ifeq darwin
 # SETUP AND BUILD -- MINGW32
 #############################################################################
 
-ifeq ($(PLATFORM),mingw32)
+ifdef MINGW
 
   # Some MinGW installations define CC to cc, but don't actually provide cc,
   # so explicitly use gcc instead (which is the only option anyway)
@@ -589,6 +605,11 @@ ifeq ($(PLATFORM),mingw32)
 
   BINEXT=.exe
 
+  ifeq ($(COMPILE_PLATFORM),cygwin)
+	TOOLS_BINEXT=.exe
+	TOOLS_CC=$(CC)
+  endif
+
   LIBS= -lws2_32 -lwinmm -static-libgcc -static-libstdc++
   # clang 3.4 doesn't support this
   ifneq ("$(CC)", $(findstring "$(CC)", "clang" "clang++"))
@@ -634,7 +655,7 @@ ifeq ($(PLATFORM),mingw32)
 
   BUILD_CLIENT_SMP = 0
 
-else # ifeq mingw32
+else # ifdef MINGW
 
 #############################################################################
 # SETUP AND BUILD -- FREEBSD
@@ -910,7 +931,7 @@ else # ifeq sunos
 
 endif #Linux
 endif #darwin
-endif #mingw32
+endif #MINGW
 endif #FreeBSD
 endif #OpenBSD
 endif #NetBSD
@@ -1539,11 +1560,11 @@ Q3OBJ = \
   $(B)/client/tr_flares.o \
   $(B)/client/tr_font.o \
   $(B)/client/tr_image.o \
-  $(B)/client/tr_image_png.o \
-  $(B)/client/tr_image_jpg.o \
   $(B)/client/tr_image_bmp.o \
-  $(B)/client/tr_image_tga.o \
+  $(B)/client/tr_image_jpg.o \
   $(B)/client/tr_image_pcx.o \
+  $(B)/client/tr_image_png.o \
+  $(B)/client/tr_image_tga.o \
   $(B)/client/tr_init.o \
   $(B)/client/tr_light.o \
   $(B)/client/tr_main.o \
@@ -1697,7 +1718,7 @@ ifeq ($(HAVE_VM_COMPILED),true)
   endif
 endif
 
-ifeq ($(PLATFORM),mingw32)
+ifdef MINGW
   Q3OBJ += \
     $(B)/client/win_resource.o \
     $(B)/client/sys_win32.o
@@ -1890,7 +1911,7 @@ ifeq ($(HAVE_VM_COMPILED),true)
   endif
 endif
 
-ifeq ($(PLATFORM),mingw32)
+ifdef MINGW
   Q3DOBJ += \
     $(B)/ded/win_resource.o \
     $(B)/ded/sys_win32.o \
@@ -1923,6 +1944,7 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/baseq3/cgame/bg_pmove.o \
   $(B)/baseq3/cgame/bg_slidemove.o \
   $(B)/baseq3/cgame/bg_lib.o \
+  $(B)/baseq3/cgame/bg_xmlparser.o \
   $(B)/baseq3/cgame/cg_consolecmds.o \
   $(B)/baseq3/cgame/cg_draw.o \
   $(B)/baseq3/cgame/cg_drawdc.o \
@@ -1970,6 +1992,7 @@ Q3CGOBJ_ = \
   $(B)/baseq3/cgame/bg_misc.o \
   $(B)/baseq3/cgame/bg_pmove.o \
   $(B)/baseq3/cgame/bg_slidemove.o \
+  $(B)/baseq3/cgame/bg_xmlparser.o \
   $(B)/baseq3/cgame/bg_lib.o \
   $(B)/baseq3/cgame/cg_consolecmds.o \
   $(B)/baseq3/cgame/cg_draw.o \
@@ -2046,6 +2069,7 @@ MPCGOBJ_ = \
   $(B)/missionpack/cgame/bg_misc.o \
   $(B)/missionpack/cgame/bg_pmove.o \
   $(B)/missionpack/cgame/bg_slidemove.o \
+  $(B)/missionpack/cgame/bg_xmlparser.o \
   $(B)/missionpack/cgame/bg_lib.o \
   $(B)/missionpack/cgame/cg_consolecmds.o \
   $(B)/missionpack/cgame/cg_newdraw.o \
@@ -2100,6 +2124,7 @@ Q3GOBJ_ = \
   $(B)/baseq3/game/ai_vcmd.o \
   $(B)/baseq3/game/bg_misc.o \
   $(B)/baseq3/game/bg_pmove.o \
+  $(B)/baseq3/game/bg_xmlparser.o \
   $(B)/baseq3/game/bg_slidemove.o \
   $(B)/baseq3/game/bg_lib.o \
   $(B)/baseq3/game/g_active.o \
@@ -2151,6 +2176,7 @@ MPGOBJ_ = \
   $(B)/missionpack/game/ai_vcmd.o \
   $(B)/missionpack/game/bg_misc.o \
   $(B)/missionpack/game/bg_pmove.o \
+  $(B)/missionpack/game/bg_xmlparser.o \
   $(B)/missionpack/game/bg_slidemove.o \
   $(B)/missionpack/game/bg_lib.o \
   $(B)/missionpack/game/g_active.o \
@@ -2498,7 +2524,7 @@ ifneq ($(BUILD_GAME_SO),0)
 endif
 
 clean: clean-debug clean-release
-ifeq ($(PLATFORM),mingw32)
+ifdef MINGW
 	@$(MAKE) -C $(NSISDIR) clean
 else
 	@$(MAKE) -C $(LOKISETUPDIR) clean
@@ -2534,7 +2560,7 @@ distclean: clean toolsclean
 	@rm -rf $(BUILD_DIR) mac-binaries/cgamei386.dylib mac-binaries/qagamei386.dylib mac-binaries/uii386.dylib mac-binaries/wolfcamqlmac
 
 installer: release
-ifeq ($(PLATFORM),mingw32)
+ifdef MINGW
 	@$(MAKE) VERSION=$(VERSION) -C $(NSISDIR) V=$(V)
 else
 	@$(MAKE) VERSION=$(VERSION) -C $(LOKISETUPDIR) V=$(V)

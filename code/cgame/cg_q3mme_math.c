@@ -692,7 +692,8 @@ void demoDrawGrid( const vec3_t input, const vec4_t color, const vec3_t offset, 
 
 
 	for ( i = 0; i < 3; i++ ) {
-		origin[i] = offset[i] + input[i] - fmod( input[i], step );
+		//origin[i] = offset[i] + input[i] - fmod( input[i], step );
+		origin[i] = offset[i] + input[i] - Q_fmodf( input[i], step );
 		min[i] = origin[i] - range;
 		max[i] = origin[i] + range;
 	}

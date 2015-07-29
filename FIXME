@@ -1589,6 +1589,9 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
   - harvester  capture
   - 1fctf (cap attack)
 
+* unsigned long Width;  //uint32_t Width;  in tr_image_png.c
+* double check di.protocol == PROTOCOL_QL is also for 73 and now 91  2015-07-28
+
 
 ---------------------------
 

@@ -1413,3 +1413,10 @@ int Q_floatIsNan (float x)
 
 	return (int)( (unsigned int)fi.ui >> 31 );
 }
+
+#ifdef Q3_VM
+float Q_fmodf (float x, float y)
+{
+	return (x - y * floor(x / y));
+}
+#endif

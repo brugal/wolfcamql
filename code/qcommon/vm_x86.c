@@ -439,23 +439,24 @@ static void DoSyscall(void)
 
 	if(syscallNum < 0)
 	{
-		int *data;
+		int *data, *ret;
 #if idx64
 		int index;
 		intptr_t args[MAX_VMSYSCALL_ARGS];
 #endif
 		
 		data = (int *) (savedVM->dataBase + programStack + 4);
+		ret = &opStackBase[opStackOfs + 1];
 
 #if idx64
 		args[0] = ~syscallNum;
 		for(index = 1; index < ARRAY_LEN(args); index++)
 			args[index] = data[index];
 			
-		opStackBase[opStackOfs + 1] = savedVM->systemCall(args);
+		*ret = savedVM->systemCall(args);
 #else
 		data[0] = ~syscallNum;
-		opStackBase[opStackOfs + 1] = savedVM->systemCall((intptr_t *) data);
+		*ret = savedVM->systemCall((intptr_t *) data);
 #endif
 	}
 	else

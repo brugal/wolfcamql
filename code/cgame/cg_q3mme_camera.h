@@ -12,6 +12,9 @@
 #define CAM_TIME        0x100
 
 
+//FIXME wolfcamql
+#define CG_DemosAddLog CG_Printf
+
 typedef struct demoCameraPoint_s {
 	struct			demoCameraPoint_s *next, *prev;
 	vec3_t			origin, angles;
@@ -21,6 +24,8 @@ typedef struct demoCameraPoint_s {
 } demoCameraPoint_t;
 
 typedef struct demoMain_s {
+	int serverTime;
+
     struct {
         int                     start, end;
         int                     target, flags;
@@ -34,6 +39,16 @@ typedef struct demoMain_s {
         angleInterpolate_t      smoothAngles;
     } camera;
 
+	struct {
+		int time;
+		float fraction;
+	} play;
+
+	vec3_t viewOrigin;
+	vec3_t viewAngles;
+	//vec3_t viewFov;
+	float viewFov;
+	
 } demoMain_t;
 
 extern demoMain_t demo;
@@ -45,5 +60,7 @@ extern demoMain_t demo;
 extern demoCameraPoint_t *cameraPointAdd( int time, int flags );
 extern qboolean cameraOriginAt( int time, float timeFraction, vec3_t origin );
 extern qboolean cameraAnglesAt( int time, float timeFraction, vec3_t angles);
+
+extern void CG_Q3mmeDemoCameraCommand_f (void);
 
 #endif  // cg_q3mme_camera_h_included

@@ -891,6 +891,8 @@ void CL_ParseGamestate( msg_t *msg ) {
 					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
 				} else if (p == 73) {  //FIXME define
 					Cvar_Set("protocol", "73");
+				} else if (p == 90) {
+					Cvar_Set("protocol", "90");
 				} else if (p == PROTOCOL_QL) {
 					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
 				} else if (strlen(value) == 0) {
@@ -961,7 +963,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 			di.cpma = qfalse;
 		}
 
-		if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)) {
+		if (com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73  ||  com_protocol->integer == 90) {
 			info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_WARMUP];
 			di.hasWarmup = atoi(Info_ValueForKey(info, "time"));
 		} else {
@@ -979,7 +981,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 		}
 
 		// check if demo starts in a timeout
-		if (di.protocol == PROTOCOL_QL) {
+		if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 			info = cl.gameState.stringData + cl.gameState.stringOffsets[CS_TIMEOUT_BEGIN_TIME];
 			if (Q_isdigit(info[0])) {
 				// cl.snap.serverTime is 0, but that's ok
@@ -1369,7 +1371,7 @@ void CL_ParseCommandString( msg_t *msg ) {
 #undef BUFFER_SIZE
 
 		// models used in demos
-		if (  (di.protocol == PROTOCOL_QL  &&  (csnum >= CS_PLAYERS  &&  csnum < (CS_PLAYERS + MAX_CLIENTS)))  ||
+		if (  ((di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90)  &&  (csnum >= CS_PLAYERS  &&  csnum < (CS_PLAYERS + MAX_CLIENTS)))  ||
 			  (di.protocol == PROTOCOL_Q3  &&  (csnum >= CSQ3_PLAYERS  &&  csnum < (CSQ3_PLAYERS + MAX_CLIENTS)))
 			) {
 			char *model;
@@ -1422,7 +1424,7 @@ void CL_ParseCommandString( msg_t *msg ) {
 		}
 
 		// timeouts
-		if (di.protocol == PROTOCOL_QL) {
+		if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 			if (!Q_stricmpn(s, "cs 669 ", strlen("cs 669 "))) {
 				//Com_Printf("^2%d  timeout start %s\n", cl.snap.serverTime, s);
 				s2 = s + strlen("cs 669 ") + 1;
@@ -1496,7 +1498,7 @@ void CL_ParseCommandString( msg_t *msg ) {
 		//Com_Printf("xx %s\n", s);
 		if (di.gameStartTime == -1) {
 			//Com_Printf("test %s\n", s);
-			if (di.protocol == PROTOCOL_QL) {
+			if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 				//Com_Printf("test parse command: '%s'\n", s);
 				if (!Q_stricmpn(s, "cs 0 ", strlen("cs 0 "))) {
 					//Com_Printf("xx: %s\n", s + strlen("cs 0 "));
@@ -1537,7 +1539,7 @@ void CL_ParseCommandString( msg_t *msg ) {
 				}
 			}
 		} else if (di.gameEndTime == -1) {
-			if (di.protocol == PROTOCOL_QL) {
+			if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 				if (!Q_stricmpn(s, "cs 14 ", strlen("cs 14 "))) {  // CS_INTERMISSION
 					//int n;
 

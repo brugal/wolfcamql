@@ -1286,7 +1286,7 @@ static void check_events (const entityState_t *es, int serverTime)
 		clientNum = 0;
 	}
 
-	if ((di.protocol == PROTOCOL_QL  &&  event == EV_OBITUARY)  ||  (di.protocol == PROTOCOL_Q3  &&  event == EVQ3_OBITUARY)) {
+	if (((di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90)  &&  event == EV_OBITUARY)  ||  (di.protocol == PROTOCOL_Q3  &&  event == EVQ3_OBITUARY)) {
 		int target, attacker, mod;
 
 		if (di.obitNum >= MAX_DEMO_OBITS) {
@@ -1376,7 +1376,7 @@ static void check_events (const entityState_t *es, int serverTime)
 		//	di.clientAlive[target] = qfalse;
 		//}
 		return;
-	} else if (((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)  &&  (event == EV_ITEM_PICKUP_SPEC  ||  event == EV_ITEM_PICKUP))  ||  (com_protocol->integer == PROTOCOL_Q3  &&  event == EVQ3_ITEM_PICKUP)) {
+	} else if (((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73  ||  com_protocol->integer == 90)  &&  (event == EV_ITEM_PICKUP_SPEC  ||  event == EV_ITEM_PICKUP))  ||  (com_protocol->integer == PROTOCOL_Q3  &&  event == EVQ3_ITEM_PICKUP)) {
 		//Com_Printf("%d  pickup item %d\n", cl.snap.serverTime, es->eventParm);
 		if (di.numItemPickups >= MAX_ITEM_PICKUPS) {
 			Com_Printf("^3max pickups\n");
@@ -1384,7 +1384,7 @@ static void check_events (const entityState_t *es, int serverTime)
 		}
 
 		//Com_Printf("^3item pickup\n");
-		if (com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73) {
+		if (com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73  ||  com_protocol->integer == 90) {
 			if (event == EV_ITEM_PICKUP_SPEC) {
 				index = es->modelindex;
 			} else {
@@ -1423,7 +1423,7 @@ static void check_events (const entityState_t *es, int serverTime)
 				ip->index = index;
 				ip->pickupTime = serverTime;
 				ip->spec = qfalse;
-				if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)  &&  event == EV_ITEM_PICKUP_SPEC) {
+				if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73  ||  com_protocol->integer == 90)  &&  event == EV_ITEM_PICKUP_SPEC) {
 					ip->spec = qtrue;
 					ip->specPickupTime = es->time;  // if es->time == 0 means item has respawned
 				}
@@ -1434,7 +1434,7 @@ static void check_events (const entityState_t *es, int serverTime)
 				//Com_Printf("^3%d %d %d  %s %s\n", di.numItemPickups, serverTime, index, item->pickup_name, event == EV_ITEM_PICKUP_SPEC ? "(spec)" : "");
 			}
 		}
-	} else if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73)  &&  event == EV_GLOBAL_ITEM_PICKUP) {
+	} else if ((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73  ||  com_protocol->integer == 90)  &&  event == EV_GLOBAL_ITEM_PICKUP) {
 		if (di.numItemPickups >= MAX_ITEM_PICKUPS) {
 			Com_Printf("^3powerup max pickups\n");
 			return;
@@ -1738,7 +1738,7 @@ static void parse_demo (void)
 	Msg_Abort = qfalse;
 
 	//FIXME quake live hack for timeouts
-	if (di.protocol == PROTOCOL_QL) {
+	if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 		for (i = 0;  i < di.numTimeouts;  i++) {
 			if (di.timeOuts[i].endTime) {
 				di.timeOuts[i].endTime += di.serverFrameTime;
@@ -3225,9 +3225,9 @@ Resend a connect message if the last one has timed out
 =================
 */
 void CL_CheckForResend( void ) {
-	int		port, i;
+	int		port;
 	char	info[MAX_INFO_STRING];
-	char	data[MAX_INFO_STRING];
+	char	data[MAX_INFO_STRING + 10];
 
 	// don't send anything if playing back a demo
 	if ( clc.demoplaying ) {
@@ -3270,19 +3270,8 @@ void CL_CheckForResend( void ) {
 		Info_SetValueForKey( info, "qport", va("%i", port ) );
 		Info_SetValueForKey( info, "challenge", va("%i", clc.challenge ) );
 
-		strcpy(data, "connect ");
-    // TTimo adding " " around the userinfo string to avoid truncated userinfo on the server
-    //   (Com_TokenizeString tokenizes around spaces)
-    data[8] = '"';
-
-		for(i=0;i<strlen(info);i++) {
-			data[9+i] = info[i];	// + (clc.challenge)&0x3;
-		}
-    data[9+i] = '"';
-		data[10+i] = 0;
-
-    // NOTE TTimo don't forget to set the right data length!
-		NET_OutOfBandData( NS_CLIENT, clc.serverAddress, (byte *) &data[0], i+10 );
+		Com_sprintf( data, sizeof(data), "connect \"%s\"", info );
+		NET_OutOfBandData( NS_CLIENT, clc.serverAddress, (byte *) data, strlen ( data ) );
 		// the most current userinfo has been sent, so watch for any
 		// newer changes to userinfo variables
 		cvar_modifiedFlags &= ~CVAR_USERINFO;

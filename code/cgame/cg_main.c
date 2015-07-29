@@ -6980,7 +6980,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	Com_Printf("client set protocol: %d\n", cgs.realProtocol);
 	if (cgs.realProtocol >= 66  &&  cgs.realProtocol <= 71) {
 		cgs.protocol = PROTOCOL_Q3;
-	} else if (cgs.realProtocol == 73  ||  cgs.realProtocol == 90) {
+	} else if (cgs.realProtocol == 73  ||  cgs.realProtocol == 90  ||  cgs.realProtocol == 91) {
 		cgs.protocol = PROTOCOL_QL;
 	} else {
 		cgs.protocol = PROTOCOL_QL;

@@ -2489,7 +2489,7 @@ static void CG_MapRestart( void ) {
 #ifdef MISSIONPACK
 	if (cg_singlePlayerActive.integer) {
 		trap_Cvar_Set("ui_matchStartTime", va("%i", cg.time));
-		if (cg_recordSPDemo.integer && cg_recordSPDemoName.string && *cg_recordSPDemoName.string) {
+		if (cg_recordSPDemo.integer && *cg_recordSPDemoName.string) {
 			trap_SendConsoleCommand(va("set g_synchronousclients 1 ; record %s \n", cg_recordSPDemoName.string));
 		}
 	}
@@ -2836,7 +2836,6 @@ CG_PlayVoiceChat
 =================
 */
 static void CG_PlayVoiceChat( const bufferedVoiceChat_t *vchat ) {
-#ifdef MISSIONPACK
 	// if we are going into the intermission, don't start any voices
 	if ( cg.intermissionStarted ) {
 		return;
@@ -2861,7 +2860,6 @@ static void CG_PlayVoiceChat( const bufferedVoiceChat_t *vchat ) {
 		CG_Printf( "%s\n", vchat->message );
 	}
 	voiceChatBuffer[cg.voiceChatBufferOut].snd = 0;
-#endif
 }
 
 /*
@@ -2870,7 +2868,6 @@ CG_PlayBufferedVoieChats
 =====================
 */
 void CG_PlayBufferedVoiceChats( void ) {
-#ifdef MISSIONPACK
 	if ( cg.voiceChatTime < cg.time ) {
 		if (cg.voiceChatBufferOut != cg.voiceChatBufferIn && voiceChatBuffer[cg.voiceChatBufferOut].snd) {
 			//
@@ -2880,7 +2877,6 @@ void CG_PlayBufferedVoiceChats( void ) {
 			cg.voiceChatTime = cg.time + 1000;
 		}
 	}
-#endif
 }
 
 /*
@@ -2889,7 +2885,6 @@ CG_AddBufferedVoiceChat
 =====================
 */
 static void CG_AddBufferedVoiceChat( const bufferedVoiceChat_t *vchat ) {
-#ifdef MISSIONPACK
 	// if we are going into the intermission, don't start any voices
 	if ( cg.intermissionStarted ) {
 		return;
@@ -2901,7 +2896,6 @@ static void CG_AddBufferedVoiceChat( const bufferedVoiceChat_t *vchat ) {
 		CG_PlayVoiceChat( &voiceChatBuffer[cg.voiceChatBufferOut] );
 		cg.voiceChatBufferOut++;
 	}
-#endif
 }
 
 /*
@@ -2910,7 +2904,6 @@ CG_VoiceChatLocal
 =================
 */
 void CG_VoiceChatLocal( int mode, qboolean voiceOnly, int clientNum, int color, const char *cmd ) {
-#ifdef MISSIONPACK
 	char *chat;
 	voiceChatList_t *voiceChatList;
 	clientInfo_t *ci;
@@ -2951,7 +2944,6 @@ void CG_VoiceChatLocal( int mode, qboolean voiceOnly, int clientNum, int color, 
 			CG_AddBufferedVoiceChat(&vchat);
 		}
 	}
-#endif
 }
 
 /*

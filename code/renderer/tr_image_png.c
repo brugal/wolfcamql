@@ -90,8 +90,8 @@ typedef uint32_t PNG_ChunkCRC;
 
 struct PNG_Chunk_IHDR
 {
-	unsigned long Width;  //uint32_t Width;
-	unsigned long Height;  //uint32_t Height;
+	uint32_t Width;
+	uint32_t Height;
 	uint8_t  BitDepth;
 	uint8_t  ColourType;
 	uint8_t  CompressionMethod;

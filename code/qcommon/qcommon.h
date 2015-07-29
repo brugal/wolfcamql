@@ -243,13 +243,14 @@ typedef struct {
 extern mapNames_t MapNames[];
 
 //#define	PROTOCOL_VERSION	73
-#define PROTOCOL_VERSION 90
+#define PROTOCOL_VERSION 90  // bump when new ql release supports 91
 
 // 1.31 - 67
 
 // maintain a list of compatible protocols for demo playing
 // NOTE: that stuff only works with two digits protocols
-#define NUM_DEMO_PROTOCOLS 8  //FIXME err....  ARRAY_LEN()
+// 66, 67, 68, 69, 70, 71, 73, 90, 91
+#define NUM_DEMO_PROTOCOLS 9  //FIXME err....  ARRAY_LEN()
 extern int demo_protocols[NUM_DEMO_PROTOCOLS];
 
 #define	UPDATE_SERVER_NAME	"update.quake3arena.com"

@@ -27,8 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // A user mod should never modify this file
 
 #define PROTOCOL_Q3 68
-//#define PROTOCOL_QL 73
-#define PROTOCOL_QL 90
+#define PROTOCOL_QL 91  // latest ql protocol
 
 #ifdef STANDALONE
   #define PRODUCT_NAME			"iofoo3"
@@ -734,6 +733,13 @@ void VectorStartEndDir (const vec3_t start, const vec3_t end, vec3_t dir);
 void VectorReflect (const vec3_t src, const vec3_t reflectNorm, vec3_t reflected);
 
 int Q_floatIsNan (float x);  //FIXME don't pass double
+
+#ifdef Q3_VM
+  float Q_fmodf (float x, float y);
+#else
+  #define Q_fmodf fmodf
+#endif
+
 void Q_SetColors (qboolean ql);
 void Q_SetColorTable (int n, float r, float g, float b, float a);
 
@@ -1225,7 +1231,15 @@ typedef struct playerState_s {
 	int unknown1;
 	int unknown2;
 	int unknown3;
-
+	int unknown4;
+	int unknown5;
+	int unknown6;
+	int unknown7;
+	int unknown8;
+	int unknown9;
+	int unknown10;
+	int unknown11;
+	
 } playerState_t;
 
 
@@ -1344,6 +1358,12 @@ typedef struct entityState_s {
 	// ql protocol 90
 	int jumpTime;
 	qboolean doubleJumped;
+
+	int unknown1;
+	int unknown2;
+	int unknown3;
+	int unknown4;
+	int unknown5;
 
 } entityState_t;
 

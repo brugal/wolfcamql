@@ -2817,6 +2817,11 @@ static float CG_DrawAttacker( float y ) {
 		return y;
 	}
 
+	if (!cgs.clientinfo[clientNum].infoValid) {
+		cg.attackerTime = 0;
+		return y;
+	}
+
 	if (!wolfcam_following) {
 		t = cg.time - cg.attackerTime;
 		//if ( t > ATTACKER_HEAD_TIME ) {  //FIXME
@@ -7129,6 +7134,8 @@ static void Wolfcam_DrawCrosshair (void)
     trap_R_DrawStretchPic( x + cg.refdef.x + 0.5 * (cg.refdef.width - w),
                            y + cg.refdef.y + 0.5 * (cg.refdef.height - h),
                            w, h, 0, 0, 1, 1, hShader );
+
+	trap_R_SetColor( NULL );
 }
 
 void CG_CreateNewCrosshairs (void)
@@ -7384,10 +7391,12 @@ static void CG_DrawCrosshair(void) {
 
 	ca = cg_drawCrosshair.integer;
 	if (ca <= 0) {
+		trap_R_SetColor(NULL);
 		return;
 	}
 	ca = ca % NUM_CROSSHAIRS;
 	if (ca == 0) {
+		trap_R_SetColor(NULL);
 		return;
 	}
 	// indexed at 1
@@ -7407,6 +7416,8 @@ static void CG_DrawCrosshair(void) {
 				//trap_R_SetColor(color);
 				//trap_R_DrawStretchPic( x + cg.refdef.x + 0.5 * (cg.refdef.width - w/3), y + cg.refdef.y + 0.5 * (cg.refdef.height - h/3), w/3, h/3, 0, 0, 1, 1, hShader );
 				// fuck this
+
+				trap_R_SetColor(NULL);
 				return;
 			} else if (cg.hitSound == 1) {
 				// yellow
@@ -7496,6 +7507,8 @@ static void CG_DrawCrosshair(void) {
 	trap_R_DrawStretchPic( x + cg.refdef.x + 0.5 * (cg.refdef.width - w),
 		y + cg.refdef.y + 0.5 * (cg.refdef.height - h),
 		w, h, 0, 0, 1, 1, hShader );
+
+	trap_R_SetColor(NULL);
 }
 
 /*

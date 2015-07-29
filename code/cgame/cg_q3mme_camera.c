@@ -3,6 +3,7 @@
 #include "cg_local.h"
 
 #include "cg_main.h"
+#include "cg_mem.h"
 #include "cg_q3mme_camera.h"
 
 
@@ -380,7 +381,7 @@ demoCameraPoint_t *cameraPointSynch( int time ) {
 }
 
 static demoCameraPoint_t *cameraPointAlloc(void) {
-	demoCameraPoint_t * point = (demoCameraPoint_t *)malloc(sizeof (demoCameraPoint_t));
+	demoCameraPoint_t * point = (demoCameraPoint_t *)CG_MallocMem(sizeof (demoCameraPoint_t));
 	if (!point)
 		CG_Error("Out of memory");
 	memset( point, 0, sizeof( demoCameraPoint_t ));
@@ -394,7 +395,7 @@ static void cameraPointFree(demoCameraPoint_t *point) {
 		demo.camera.points = point->next;
 	if (point->next ) 
 		point->next->prev = point->prev;
-	free( point );
+	CG_FreeMem(point);
 }
 
 demoCameraPoint_t *cameraPointAdd( int time, int flags ) {
@@ -407,6 +408,7 @@ demoCameraPoint_t *cameraPointAdd( int time, int flags ) {
 			demo.camera.points->prev = newPoint;
 		demo.camera.points = newPoint;
 		newPoint->prev = 0;
+		cg.numQ3mmeCameraPoints++;
 	} else if (point->time == time) {
 		newPoint = point;
 	} else {
@@ -416,6 +418,7 @@ demoCameraPoint_t *cameraPointAdd( int time, int flags ) {
 		if (point->next)
 			point->next->prev = newPoint;
 		point->next = newPoint;
+		cg.numQ3mmeCameraPoints++;
 	}
 	cameraPointReset( newPoint );
 	newPoint->time = time;
@@ -437,6 +440,7 @@ static qboolean cameraDel( int time ) {
 		cameraPointReset( point->next );
 
 	cameraPointFree( point );
+	cg.numQ3mmeCameraPoints--;
 	return qtrue;
 }
 
@@ -447,6 +451,7 @@ static void cameraClear( void ) {
 		cameraPointFree( point );
 		point = next;
 	}
+	cg.numQ3mmeCameraPoints = 0;
 }
 
 #if 0  // wolfcamql
@@ -856,9 +861,36 @@ static void cameraRotateAll( const vec3_t origin, const vec3_t angles ) {
 	}
 }
 
-#if 0  // wolfcamql
-void demoCameraCommand_f(void) {
+// from q3mm3:  game/bg_demos.c
+
+static void demoCommandValue( const char *cmd, float * oldVal ) {
+	if (!cmd[0])
+		return;
+	if (cmd[0] == 'a') {
+		*oldVal += atof(cmd + 1);
+	} else {
+		*oldVal = atof(cmd);
+	}
+}
+
+
+//void demoCameraCommand_f(void) {
+void CG_Q3mmeDemoCameraCommand_f (void)
+{
 	const char *cmd = CG_Argv(1);
+
+	VectorCopy(cg.refdef.vieworg, demo.viewOrigin);
+	VectorCopy(cg.refdefViewAngles, demo.viewAngles);
+	//FIXME wolfcamql
+	demo.viewFov = cg_fov.value;
+
+	//FIXME wolfcamql
+	demo.play.time = cg.time;
+	demo.play.fraction = (float)cg.foverf;
+
+	demo.camera.flags = CAM_ORIGIN | CAM_ANGLES | CAM_FOV | CAM_TIME;
+	demo.serverTime = cg.snap->serverTime;
+
 	if (!Q_stricmp(cmd, "smooth")) {
 		cameraSmooth( );
 	} else if (!Q_stricmp(cmd, "add")) {
@@ -867,7 +899,7 @@ void demoCameraCommand_f(void) {
 		if (point) {
 			VectorCopy( demo.viewOrigin, point->origin );
 			VectorCopy( demo.viewAngles, point->angles );
-			point->fov = demo.viewFov - cg_fov.value;
+			point->fov = (float)demo.viewFov - cg_fov.value;
 			CG_DemosAddLog( "Added a camera point");
 		} else {
 			CG_DemosAddLog( "Failed to add a camera point");
@@ -917,6 +949,8 @@ void demoCameraCommand_f(void) {
 		else 
 			CG_DemosAddLog("Camera view unlocked");
 	} else if (!Q_stricmp(cmd, "target")) {
+		Com_Printf("^3FIXME target not implemented\n");
+#if 0  // wolfcamql
 		if ( demo.camera.locked ) {
 			CG_DemosAddLog("Can't target while locked" );
 		}
@@ -939,12 +973,18 @@ void demoCameraCommand_f(void) {
 			VectorCopy( demo.viewAngles, demo.camera.angles );
 			CG_DemosAddLog("Camera view synched");
 		}
+#endif
 	} else if (!Q_stricmp(cmd, "shift")) {
+
+
+		Com_Printf("^3FIXME shift not implemented\n");
+#if 0  // wolfcamql
 		int shift = 1000 * atof(CG_Argv(2));
 		demo.camera.shiftWarn = 0;
 		if (cameraPointShift( shift )) {
 			CG_DemosAddLog( "Shifted %d.%03d seconds", shift / 1000, shift % 1000);
 		}
+#endif
 	} else if (!Q_stricmp(cmd, "clear")) {
 		cameraClear( );
 		CG_DemosAddLog( "Camera points cleared" );
@@ -960,7 +1000,7 @@ void demoCameraCommand_f(void) {
 		} else {
 			oldOrigin = demo.camera.origin;
 		}
-#if 0  // wolfcamql
+#if 1  // wolfcamql
 		demoCommandValue( CG_Argv(2), oldOrigin );
 		demoCommandValue( CG_Argv(3), oldOrigin+1 );
 		demoCommandValue( CG_Argv(4), oldOrigin+2 );
@@ -1090,8 +1130,6 @@ void demoCameraCommand_f(void) {
 		Com_Printf("camera rotate pitch yaw roll, Rotate entire camera track around current view position.\n" );
 	}
 }
-#endif
-
 
 
 #endif

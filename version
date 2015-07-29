@@ -1,5 +1,5 @@
 
-11.0test9
+11.0test10
 
 * hud:  quake3 single player gametype is cg_gametype 16
 * bug fix:  quake3 single player demos would show hud elements from quake live 'race' gametype
@@ -141,6 +141,9 @@
 * png option for videos and screenshots:  /video png   /screenshotPNG  r_pngCompressionFast
 * bug fix:  inconsistent use of either 'cg_helpIcon 0' or 'cg_helpIconStyle 0' to disable ingame help icons.  Setting either to 0 will disable them.
 * ability to filter out reward types:  cg_rewardHumiliation, cg_rewardQuadGod, etc..  disables both announcement and icon display
+*FIXME q3mme camera
+* preliminary support for demo protocol 91
+
 
 ------------------------------------
 10.3  2013-11-16
