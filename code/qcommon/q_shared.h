@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define PROTOCOL_Q3 68
 #define PROTOCOL_QL 91  // latest ql protocol
+#define SERVER_PROTOCOL 90  // devmap
 
 #ifdef STANDALONE
   #define PRODUCT_NAME			"iofoo3"
@@ -1228,6 +1229,18 @@ typedef struct playerState_s {
 	// ql protocol 90
 	qboolean doubleJumped;
 	int jumpTime;
+
+	// ql protocol 91
+	int crouchTime;
+	int crouchSlideTime;
+	int location;
+	int fov;
+	int forwardmove;
+	int rightmove;
+	int upmove;
+	int weaponPrimary;
+
+#if 0
 	int unknown1;
 	int unknown2;
 	int unknown3;
@@ -1239,7 +1252,7 @@ typedef struct playerState_s {
 	int unknown9;
 	int unknown10;
 	int unknown11;
-	
+#endif
 } playerState_t;
 
 
@@ -1359,11 +1372,18 @@ typedef struct entityState_s {
 	int jumpTime;
 	qboolean doubleJumped;
 
+	// ql protocol 91
+	int health;
+	int armor;
+	int location;
+
+#if 0
 	int unknown1;
 	int unknown2;
 	int unknown3;
 	int unknown4;
 	int unknown5;
+#endif
 
 } entityState_t;
 

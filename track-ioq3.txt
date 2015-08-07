@@ -1618,3 +1618,73 @@ Remove unnecessary localhost check from reconnect command.
 2015-06-30-02 skip:  Merge pull request #128 from tbm/master
 2015-06-30-03 Merge pull request #4 from smcv/hurd Add support for the GNU/Hurd architecture
 
+2015-07-04-01 Fix CG_WaterLevel() checks for waterlevel 2 and 3
+2015-07-04-02 Fix CGame CG_WaterLevel() comparisons
+2015-07-04-03 Apply greyscaling to fog blocks
+2015-07-04-04 Don't fog 3D crosshair sprite
+2015-07-04-05 Fix Windows file list extension check
+
+2015-07-06-01 skip:  server_compile.sh & start_server.sh for Linux ioq3 sysadmins
+2015-07-06-02 skip:  Fix server_compile.sh to exit after completed
+
+2015-07-09-01 skip (depends on previous skipped patch):  Remove unused fpucw from snapvector.asm
+2015-07-09-02 part (gl1):  Fix OpenGL2 ignoring last light grid point on each axis
+
+2015-07-12-01 Backport ignoring values outside lightgrid to OpenGL1
+2015-07-12-02 Fix range checks for numBorders in CM_AddFacetBevels
+2015-07-12-03 Make more vm_x86 macros use braces so they work with if blah run macro
+2015-07-12-04 Don't segfault in FS_CreatePath when there are no path seperators
+2015-07-12-05 skip (rend2):  Remove logically dead code in R_CheckFBO
+2015-07-12-06 Fix alloc size for default skin and single shader skin
+2015-07-12-07 skip (different):  Fix cgs.teamVoteString buffer overflow in CG_ConfigStringModified
+2015-07-12-08 skip (not really dead code):  Remove logically dead code from CL_GetServerStatus
+
+2015-07-13-01 Fix handling too many teams in Team Arena UI
+
+2015-07-14-01 Makefile: confine $(LIB) to the one platform that needs it, namely irix64
+2015-07-14-02 build: canonicalize all ARM variants to "arm", matching q_platform.h
+2015-07-14-03 build: define ARCH_STRING in Makefile on Linux and other GNU platforms
+
+2015-07-15-01 skip:  Merge pull request #129 from smcv/generic-platform
+
+2015-07-22-01 skip (code is different):  build: if tput fails, fall back to a reasonable text width
+2015-07-22-02 skip:  Merge pull request #131 from smcv/tput
+
+2015-07-24-01 SDL_Init zero check
+
+2015-07-25-01 skip:  Merge pull request #132 from Pan7/SDL_Init
+2015-07-25-02 skip (sdl2):  SDL_FALSE/TRUE for SDL_SetWindowGrab
+2015-07-25-03 skip (sdl2):  SDL_SetWindowGammaRamp check
+
+2015-07-26-01 skip (sdl2):  SDL_GetWindowDisplayIndex check
+2015-07-26-02 skip (sdl2):  SDL_CreateWindow NULL check
+2015-07-26-03 skip (sdl2):  Added SDL_GetError()
+2015-07-26-04 skip (sdl2):  Added SDL_GetError()
+2015-07-26-05 skip:  Merge pull request #133 from Pan7/SDL_bool
+2015-07-26-06 skip:  Merge pull request #134 from Pan7/GammaCheck
+2015-07-26-07 skip:  Merge pull request #135 from Pan7/SDL_Index
+2015-07-26-08 skip:  Merge pull request #136 from Pan7/SDL_NULL
+2015-07-26-09 skip (sdl2):  SDL_GetWindowDisplayIndex() check2
+2015-07-26-10 skip (sdl2):  SDL_GL_SetSwapInterval() check
+2015-07-26-11 skip:  Merge pull request #92 from Pan7/curl_error
+2015-07-26-12 skip:  Merge pull request #137 from Pan7/SDL_display
+2015-07-26-13 skip:  Merge pull request #138 from Pan7/SDL_Swap
+2015-07-26-14 skip (missing file):  Fix 'Invalid architecture' message in make-macosx-app.sh
+
+2015-07-27-01 qcurl_multi_remove_handle check
+2015-07-27-02 qcurl_multi_strerror not curl_multi_strerror
+
+2015-07-28-01 skip:  Merge pull request #140 from Pan7/qcurl_remove
+2015-07-28-01 qcurl_easy_setopt dev warning
+
+2015-07-29-01 qcurl_multi_cleanup check
+2015-07-29-02 skip:  Merge pull request #142 from Pan7/qcurl_warn
+2015-07-29-03 skip:  Merge pull request #143 from Pan7/qcurl_cleanup
+2015-07-29-04 Return the result from qcurl_easy_setopt_warn
+2015-07-29-05 Add missing qcurl handle cleanup
+2015-07-29-06 skip:  Merge pull request #144 from Pan7/qurl_handle2
+
+2015-07-30-01 Fix va_list warning
+2015-07-30-01 skip:  Merge pull request #145 from Pan7/va_list
+2015-07-30-02 Fix (unused) watertype checks in PM_WaterMove
+

@@ -1111,8 +1111,8 @@ void CG_GrappleTrail( centity_t *ent, const weaponInfo_t *wi ) {
 	clientInfo_t *ci;
 	int clientNum;
 	int cgtime;
-	centity_t *playerCent;
-	vec3_t end;
+	//centity_t *playerCent;
+	//vec3_t end;
 
 	//Com_Printf("%f grapple trail\n", cg.ftime);
 
@@ -1132,7 +1132,7 @@ void CG_GrappleTrail( centity_t *ent, const weaponInfo_t *wi ) {
 		clientNum = 0;
 	}
 	ci = &cgs.clientinfo[clientNum];
-	playerCent = &cg_entities[clientNum];
+	//playerCent = &cg_entities[clientNum];
 
 	memset( &beam, 0, sizeof( beam ) );
 	//FIXME adjust for muzzle position

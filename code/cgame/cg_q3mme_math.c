@@ -21,14 +21,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 //#include "../game/bg_demos.h"
-//#include "cg_demos.h" 
+//#include "cg_demos.h"
 //#include <malloc.h>
 
 
 #include "../qcommon/q_shared.h"
 
+
 #define __Q3_VM_Q3MME_MATH 1  // inlines only present here in qvm
 #include "cg_q3mme_math.h"
+
+#include "cg_local.h"  // cg., after cg_q3mme_math.h for qvm
 
 #include "cg_syscalls.h"
 

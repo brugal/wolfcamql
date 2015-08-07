@@ -2,6 +2,7 @@
 #define cg_q3mme_camera_h_included
 
 #include "../qcommon/q_shared.h"
+#include "../game/bg_xmlparser.h"
 #include "cg_local.h"
 #include "cg_q3mme_math.h"
 
@@ -11,9 +12,6 @@
 #define CAM_FOV         0x004
 #define CAM_TIME        0x100
 
-
-//FIXME wolfcamql
-#define CG_DemosAddLog CG_Printf
 
 typedef struct demoCameraPoint_s {
 	struct			demoCameraPoint_s *next, *prev;
@@ -27,12 +25,14 @@ typedef struct demoMain_s {
 	int serverTime;
 
     struct {
+		// selects start and end points for /q3mmecamera shift
         int                     start, end;
         int                     target, flags;
         int                     shiftWarn;
         float           timeShift;
         float           fov;
-        qboolean        locked;
+		// wolfcamql this is lke cg_cameraQue
+        // qboolean        locked;
         vec3_t          angles, origin, velocity;
         demoCameraPoint_t *points;
         posInterpolate_t        smoothPos;
@@ -48,7 +48,7 @@ typedef struct demoMain_s {
 	vec3_t viewAngles;
 	//vec3_t viewFov;
 	float viewFov;
-	
+
 } demoMain_t;
 
 extern demoMain_t demo;
@@ -57,10 +57,15 @@ extern demoMain_t demo;
 //qboolean cameraAnglesAt (int time, float timeFraction, vec3_t angles);
 //qboolean cameraFovAt (int time, float timeFraction, float *fov);
 
-extern demoCameraPoint_t *cameraPointAdd( int time, int flags );
-extern qboolean cameraOriginAt( int time, float timeFraction, vec3_t origin );
-extern qboolean cameraAnglesAt( int time, float timeFraction, vec3_t angles);
+extern demoCameraPoint_t *CG_Q3mmeCameraPointAdd (int time, int flags);
+extern qboolean CG_Q3mmeCameraOriginAt (int time, float timeFraction, vec3_t origin);
+extern qboolean CG_Q3mmeCameraAnglesAt (int time, float timeFraction, vec3_t angles);
+extern qboolean CG_Q3mmeCameraFovAt (int time, float timeFraction, float *fov);
+extern void CG_Q3mmeCameraDrawPath (demoCameraPoint_t *point, const vec4_t color);
+
 
 extern void CG_Q3mmeDemoCameraCommand_f (void);
+extern void CG_Q3mmeCameraSave (fileHandle_t fileHandle);
+extern qboolean CG_Q3mmeCameraParse (BG_XMLParse_t *parse, const struct BG_XMLParseBlock_s *fromBlock, void *data);
 
 #endif  // cg_q3mme_camera_h_included

@@ -716,7 +716,7 @@ CL_ParseServerInfo
 static void CL_ParseServerInfo(void)
 {
 	const char *serverInfo;
-	const char *value;
+	//const char *value;
 
 	serverInfo = cl.gameState.stringData
 		+ cl.gameState.stringOffsets[ CS_SERVERINFO ];
@@ -735,11 +735,11 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 	int				newnum;
 	entityState_t	nullstate;
 	int				cmd;
-	char			*s;
-	int serverCommandSequence;
+	//char			*s;
+	//int serverCommandSequence;
 	entityState_t tmpEntity;
-	int clientNum;
-	int checksumFeed;
+	//int clientNum;
+	//int checksumFeed;
 
 	//clc.connectPacketCount = 0;
 
@@ -747,7 +747,8 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 	//CL_ClearState();
 
 	// a gamestate always marks a server command sequence
-	serverCommandSequence = MSG_ReadLong( msg );
+	//serverCommandSequence = MSG_ReadLong( msg );
+	MSG_ReadLong(msg);
 
 	// parse all the configstrings and baselines
 	//cl.gameState.dataCount = 1;	// leave a 0 at the beginning for uninitialized configstrings
@@ -772,7 +773,8 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 				Com_Printf("^1CL_ParseExtraGamestate configstring(%d) > MAX_CONFIGSTRINGS(%d) demoFile %d\n", i, MAX_CONFIGSTRINGS, df->f);
 				return;
 			}
-			s = MSG_ReadBigString( msg );
+			//s = MSG_ReadBigString( msg );
+			MSG_ReadBigString(msg);
 			//len = strlen( s );
 
 #if 0
@@ -808,10 +810,13 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 	}
 
 	//clc.clientNum = MSG_ReadLong(msg);
-	clientNum = MSG_ReadLong(msg);
+	//clientNum = MSG_ReadLong(msg);
+	MSG_ReadLong(msg);
+
 	// read the checksum feed
 	//clc.checksumFeed = MSG_ReadLong( msg );
-	checksumFeed = MSG_ReadLong(msg);
+	//checksumFeed = MSG_ReadLong(msg);
+	MSG_ReadLong(msg);
 
 	// parse useful values out of CS_SERVERINFO
 	//CL_ParseServerInfo();
@@ -1665,7 +1670,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
 {
 	int			cmd;
-	int reliableAcknowledge;
+	//int reliableAcknowledge;
 
 	if ( cl_shownet->integer == 1 ) {
 		Com_Printf ("%i ",msg->cursize);
@@ -1676,7 +1681,8 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
 	MSG_Bitstream(msg);
 
 	// get the reliable sequence acknowledge number
-	reliableAcknowledge = MSG_ReadLong( msg );
+	//reliableAcknowledge = MSG_ReadLong( msg );
+	MSG_ReadLong(msg);
 
 #if 0
 	//

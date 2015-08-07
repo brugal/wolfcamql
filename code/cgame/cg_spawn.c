@@ -211,6 +211,10 @@ qboolean CG_ParseSpawnVars( void ) {
     blueSpawn = qfalse;
     initial = qfalse;
     deathmatch = qfalse;
+    portal = qfalse;
+    portalHasTarget = qfalse;
+    startTimer = qfalse;
+    stopTimer = qfalse;
     gotOrigin = qfalse;
 
     // get the rest

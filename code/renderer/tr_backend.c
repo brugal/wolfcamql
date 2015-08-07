@@ -597,7 +597,7 @@ static void RE_DrawPathLines (void)
 	for (i = 0;  i < *PLnumCameraPoints - 1;  i++) {
 		cp = &PLcameraPoints[i];
 		cpnext = &PLcameraPoints[i + 1];
-		if (cp->type == CAMERA_SPLINE) {
+		if (cp->type == CAMERA_SPLINE  ||  cp->type == CAMERA_SPLINE_BEZIER  ||  cp->type == CAMERA_SPLINE_CATMULLROM) {
 			qglColor3f(PLcolor[0], PLcolor[1], PLcolor[2]);
 			for (j = cp->splineStart;  j < PLcameraPoints[i + 1].splineStart;  j++) {
 				qglVertex3fv(PLsplinePoints[j]);

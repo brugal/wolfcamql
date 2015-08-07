@@ -1,7 +1,7 @@
 id software:  releasing quake3 source
 ioquake3
 Luigi Auriemma:  quake live pk3 decryption
-CaNaBiS, HMage, auri:  q3mme (blur code, and obviously inspiration)
+CaNaBiS, HMage, auri, ent:  q3mme (blur code, q3mme camera code, and obviously inspiration)
 Cloud Wu:  backtrace
 OpenArena:  some content
 Cyberstorm:  anim map change
@@ -19,7 +19,7 @@ Adam Pyle:  technical information regarding quake live
 
 Ed Bow:  qldt
 Jonathan Young:  quakelive offline
-Maverick and quake live developers for information regarding dm 90 protocol changes
+Maverick and quake live developers for information regarding dm90 and dm91 protocol changes
 
 Dmitry 'qrealka' Loginov:  cpma pro-sound description
 Ravensoft:  png output from Jedi Acadmey

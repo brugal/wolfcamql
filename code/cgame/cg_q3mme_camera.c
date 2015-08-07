@@ -1,19 +1,41 @@
-#if 1
-
 #include "cg_local.h"
 
 #include "cg_main.h"
 #include "cg_mem.h"
 #include "cg_q3mme_camera.h"
+#include "cg_syscalls.h"  // trap_Print, trap_FS_Write
+#include "../game/bg_xmlparser.h"
 
-
-//FIXME
 demoMain_t demo;
 
 // mov_smoothCamPos renamed to cg_q3mmeCameraSmoothPos
 
+static void CG_DemosAddLog (const char *fmt, ...)
+{
+	va_list args;
+	char text[MAX_PRINT_MSG];
 
-void cameraPointMatch( const demoCameraPoint_t *point, int mask, const demoCameraPoint_t *match[4] ) {
+	va_start(args, fmt);
+	Q_vsnprintf(text, sizeof(text), fmt, args);
+	va_end(args);
+
+	trap_Print(va("^6q3mme camera: ^7%s\n", text));
+}
+
+static void demoSaveLine (fileHandle_t fileHandle, const char *fmt, ...)
+{
+	va_list args;
+	char buf[1024];
+	int len;
+
+	va_start(args, fmt);
+	len = Q_vsnprintf(buf, sizeof(buf), fmt, args);
+	va_end(args);
+
+	trap_FS_Write(buf, len, fileHandle);
+}
+
+static void cameraPointMatch( const demoCameraPoint_t *point, int mask, const demoCameraPoint_t *match[4] ) {
 	const demoCameraPoint_t *p;
 
 	p = point;
@@ -49,7 +71,7 @@ void cameraPointMatch( const demoCameraPoint_t *point, int mask, const demoCamer
 	match[3] = p;
 }
 
-void cameraMatchAt( int time, int mask, const demoCameraPoint_t *match[4] ) {
+static void cameraMatchAt( int time, int mask, const demoCameraPoint_t *match[4] ) {
 	const demoCameraPoint_t *p;
 
 	p = demo.camera.points;
@@ -113,7 +135,7 @@ static float cameraPointLength( demoCameraPoint_t *point ) {
 		return point->len;
 
 	cameraPointMatch( point, CAM_ORIGIN, (const demoCameraPoint_t **)match );
-	
+
 	if (!cameraMatchOrigin( (const demoCameraPoint_t **)match, control )) {
 		point->len = 0;
 		return 0;
@@ -146,7 +168,7 @@ static float cameraPointLength( demoCameraPoint_t *point ) {
 	return point->len;
 }
 
-qboolean cameraOriginAt( int time, float timeFraction, vec3_t origin )
+qboolean CG_Q3mmeCameraOriginAt (int time, float timeFraction, vec3_t origin)
 {
 	demoCameraPoint_t	*match[4];
 	float				searchLen;
@@ -220,7 +242,7 @@ qboolean cameraOriginAt( int time, float timeFraction, vec3_t origin )
 	return qtrue;
 }
 
-qboolean cameraAnglesAt( int time, float timeFraction, vec3_t angles)
+qboolean CG_Q3mmeCameraAnglesAt (int time, float timeFraction, vec3_t angles)
 {
 	demoCameraPoint_t	*match[4];
 	float				lerp;
@@ -263,13 +285,14 @@ qboolean cameraAnglesAt( int time, float timeFraction, vec3_t angles)
 			VectorAddDelta( match[1]->angles, match[2]->angles, tempAngles );
 			QuatFromAnglesClosest( tempAngles, q2, q3 );
 		}
-		QuatSquad( lerp, q0, q1, q2, q3, qr );            
+		QuatSquad( lerp, q0, q1, q2, q3, qr );
 		QuatToAngles( qr, angles );
 	}
 	return qtrue;
 }
 
-static qboolean cameraFovAt( int time, float timeFraction, float *fov ) {
+qboolean CG_Q3mmeCameraFovAt (int time, float timeFraction, float *fov)
+{
 	demoCameraPoint_t	*match[4];
 	float				lerp;
 	float				f[4];
@@ -336,7 +359,8 @@ static void cameraPointReset( demoCameraPoint_t *point ) {
 
 }
 
-void cameraDrawPath( demoCameraPoint_t *point, const vec4_t color) {
+void CG_Q3mmeCameraDrawPath (demoCameraPoint_t *point, const vec4_t color)
+{
 	int i;
 	polyVert_t verts[4];
 	qboolean skipFirst = qtrue;
@@ -372,7 +396,7 @@ void cameraDrawPath( demoCameraPoint_t *point, const vec4_t color) {
 	}
 }
 
-demoCameraPoint_t *cameraPointSynch( int time ) {
+static demoCameraPoint_t *cameraPointSynch( int time ) {
 	demoCameraPoint_t *point = demo.camera.points;
 	if (!point)
 		return 0;
@@ -398,7 +422,8 @@ static void cameraPointFree(demoCameraPoint_t *point) {
 	CG_FreeMem(point);
 }
 
-demoCameraPoint_t *cameraPointAdd( int time, int flags ) {
+demoCameraPoint_t *CG_Q3mmeCameraPointAdd (int time, int flags)
+{
 	demoCameraPoint_t *point = cameraPointSynch( time );
 	demoCameraPoint_t *newPoint;
 	if (!point || point->time > time) {
@@ -454,7 +479,6 @@ static void cameraClear( void ) {
 	cg.numQ3mmeCameraPoints = 0;
 }
 
-#if 0  // wolfcamql
 static int cameraPointShift( int shift ) {
 	demoCameraPoint_t *startPoint, *endPoint;
 	if ( demo.camera.start != demo.camera.end ) {
@@ -518,22 +542,26 @@ static int cameraPointShift( int shift ) {
 	}
 	return shift;
 }
-#endif
 
+#if 0  // wolfcamql  unused
+static void cameraUpdate( int time, float timeFraction ) {
+	centity_t *targetCent;
 
-void cameraUpdate( int time, float timeFraction ) {
-	//FIXME wolfcamql  add
-	//centity_t *targetCent;
-
-	if (!demo.camera.locked || !demo.camera.points ) {
+	if (!cg_cameraQue.integer || !demo.camera.points ) {
 
 	} else {
-		cameraOriginAt( time, timeFraction, demo.camera.origin );
-		cameraAnglesAt( time, timeFraction, demo.camera.angles );
-		if (!cameraFovAt( time, timeFraction, &demo.camera.fov ))
+		CG_Q3mmeCameraOriginAt( time, timeFraction, demo.camera.origin );
+		CG_Q3mmeCameraAnglesAt( time, timeFraction, demo.camera.angles );
+		if (!CG_Q3mmeCameraFovAt( time, timeFraction, &demo.camera.fov )) {
 			demo.camera.fov = 0;
+		} else {
+			cg_fov.value = demo.camera.fov;
+			//FIXME trap_Cvar_Set?
+			trap_Cvar_Set("cg_fov", va("%f", cg_fov.value));
+		}
+
 	}
-#if 0  // wolfcamql
+
 	/* Optionally look at a target */
 	targetCent = demoTargetEntity( demo.camera.target );
 	if ( targetCent ) {
@@ -545,12 +573,12 @@ void cameraUpdate( int time, float timeFraction ) {
 		demo.camera.angles[PITCH] = targetAngles[PITCH];
 	} else {
 	}
-#endif
 }
+#endif
 
-#if 0  // wolfcamql
-void cameraMoveDirect(void) {
-	if (demo.camera.locked)
+#if 0  // wolfcamql  unused
+static void cameraMoveDirect(void) {
+	if (cg_cameraQue.integer)
 		return;
 	/* First clear some related values */
 	if (!(demo.oldcmd.buttons & BUTTON_ATTACK)) {
@@ -561,7 +589,7 @@ void cameraMoveDirect(void) {
 	demoMovePoint( demo.camera.origin, demo.camera.velocity, demo.camera.angles );
 }
 
-void cameraMove(void) {
+static void cameraMove(void) {
 	vec3_t moveAngles;
 	float *origin;
 	float *angles;
@@ -569,7 +597,7 @@ void cameraMove(void) {
 
 	demoCameraPoint_t *point;
 
-	if (!demo.camera.locked) {
+	if (!cg_cameraQue.integer) {
 		angles = demo.camera.angles;
 		VectorCopy( angles, moveAngles );
 		origin = demo.camera.origin;
@@ -579,7 +607,7 @@ void cameraMove(void) {
 		point = cameraPointSynch( demo.play.time );
 		if (!point || point->time != demo.play.time || demo.play.fraction )
 			return;
-		if (!cameraAnglesAt( point->time, 0, moveAngles ))
+		if (!CG_Q3mmeCameraAnglesAt( point->time, 0, moveAngles ))
 			return;
 		angles = point->angles;
 		origin = point->origin;
@@ -633,7 +661,6 @@ typedef struct  {
 	int		flags;
 } parseCameraPoint_t;
 
-#if 0  // wolfcamql
 static qboolean cameraParseTime( BG_XMLParse_t *parse,const char *line, void *data) {
 	parseCameraPoint_t *point= (parseCameraPoint_t *)data;
 
@@ -642,7 +669,8 @@ static qboolean cameraParseTime( BG_XMLParse_t *parse,const char *line, void *da
 	return qtrue;
 }
 static qboolean cameraParseTarget( BG_XMLParse_t *parse,const char *line, void *data) {
-	parseCameraPoint_t *point= (parseCameraPoint_t *)data;
+	//FIXME unused
+	//parseCameraPoint_t *point= (parseCameraPoint_t *)data;
 
 	demo.camera.target = atoi( line );
 	return qtrue;
@@ -686,14 +714,15 @@ static qboolean cameraParsePoint( BG_XMLParse_t *parse,const struct BG_XMLParseB
 	if (! (pointLoad.flags & CAM_TIME) ) 
 		return BG_XMLError(parse, "Camera point has no time");
 
-	point = cameraPointAdd( pointLoad.time, pointLoad.flags );
+	point = CG_Q3mmeCameraPointAdd( pointLoad.time, pointLoad.flags );
 	VectorCopy( pointLoad.origin, point->origin );
 	VectorCopy( pointLoad.angles, point->angles );
 	point->fov = pointLoad.fov;
 	return qtrue;
 }
 static qboolean cameraParseLocked( BG_XMLParse_t *parse,const char *line, void *data) {
-	demo.camera.locked = atoi( line );
+	//demo.camera.locked = atoi( line );
+	trap_Cvar_Set("cg_cameraQue", line);
 	return qtrue;
 }
 static qboolean cameraParseSmoothPos(BG_XMLParse_t *parse,const char *line, void *data) {
@@ -705,7 +734,8 @@ static qboolean cameraParseSmoothAngles(BG_XMLParse_t *parse,const char *line, v
 	return qtrue;
 }
 
-qboolean cameraParse( BG_XMLParse_t *parse, const struct BG_XMLParseBlock_s *fromBlock, void *data) {
+qboolean CG_Q3mmeCameraParse (BG_XMLParse_t *parse, const struct BG_XMLParseBlock_s *fromBlock, void *data)
+{
 	static BG_XMLParseBlock_t cameraParseBlock[] = {
 		{"point",	cameraParsePoint,	0 },
 		{"locked",	0,					cameraParseLocked },
@@ -721,17 +751,16 @@ qboolean cameraParse( BG_XMLParse_t *parse, const struct BG_XMLParseBlock_s *fro
 
 	return qtrue;
 }
-#endif
 
-#if 0  // wolfcamql
-void cameraSave( fileHandle_t fileHandle ) {
+void CG_Q3mmeCameraSave (fileHandle_t fileHandle)
+{
 	demoCameraPoint_t *point;
 
 	point = demo.camera.points;
 	demoSaveLine( fileHandle, "<camera>\n" );
 	demoSaveLine( fileHandle, "\t<smoothPos>%d</smoothPos>\n", demo.camera.smoothPos );
 	demoSaveLine( fileHandle, "\t<smoothAngles>%d</smoothAngles>\n", demo.camera.smoothAngles );
-	demoSaveLine( fileHandle, "\t<locked>%d</locked>\n", demo.camera.locked );
+	demoSaveLine( fileHandle, "\t<locked>%d</locked>\n", cg_cameraQue.integer );
 	demoSaveLine( fileHandle, "\t<target>%d</target>\n", demo.camera.target );
 	while (point) {
 		demoSaveLine( fileHandle, "\t<point>\n");
@@ -747,12 +776,11 @@ void cameraSave( fileHandle_t fileHandle ) {
 	}
 	demoSaveLine( fileHandle, "</camera>\n" );
 }
-#endif
 
-void cameraDraw( int time, float timeFraction ) {
+#if 0  // wolfcamql unused
+static void cameraDraw( int time, float timeFraction ) {
 	demoCameraPoint_t *point;
-	//FIXME wolfcamql  add
-	//centity_t *targetCent;
+	centity_t *targetCent;
 	vec3_t origin, angles, forward;
 	point = cameraPointSynch( time - 10000 );
 	if (!point)
@@ -761,17 +789,16 @@ void cameraDraw( int time, float timeFraction ) {
 		point = point->next;
 	while (point && point->time < (time + 10000)) {
 		/* Draw the splines */
-		cameraDrawPath( point, colorRed );
+		CG_Q3mmeCameraDrawPath( point, colorRed );
 		demoDrawCross( point->origin, colorRed );
 		point = point->next;
 	}
 	/* Draw current line */
-	if ( cameraOriginAt( time, timeFraction, origin) && cameraAnglesAt( time, timeFraction, angles )) {
+	if ( CG_Q3mmeCameraOriginAt( time, timeFraction, origin) && CG_Q3mmeCameraAnglesAt( time, timeFraction, angles )) {
 		AngleVectors( angles, forward, 0, 0);
 		VectorMA( origin, 80, forward, angles );
 		demoDrawLine( origin, angles, colorWhite );
 	}
-#if 0  // wolfcamql
 	/* Draw a box around an optional target */
 	targetCent = demoTargetEntity( demo.camera.target );
 	if (targetCent) {
@@ -779,10 +806,10 @@ void cameraDraw( int time, float timeFraction ) {
 		demoCentityBoxSize( targetCent, container );
 		demoDrawBox( targetCent->lerpOrigin, container, colorWhite );
 	}
-#endif
 }
+#endif
 
-void cameraSmooth( void ) {
+static void cameraSmooth( void ) {
 	demoCameraPoint_t *startPoint, *endPoint;
 	demoCameraPoint_t *point;
 
@@ -833,7 +860,7 @@ void cameraSmooth( void ) {
 
 static void cameraMoveAll( const vec3_t move ) {
 	demoCameraPoint_t *point;
-	
+
 	point = demo.camera.points;
 
 	while (point) {
@@ -861,7 +888,7 @@ static void cameraRotateAll( const vec3_t origin, const vec3_t angles ) {
 	}
 }
 
-// from q3mm3:  game/bg_demos.c
+// from q3mme:  game/bg_demos.c
 
 static void demoCommandValue( const char *cmd, float * oldVal ) {
 	if (!cmd[0])
@@ -888,14 +915,13 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 	demo.play.time = cg.time;
 	demo.play.fraction = (float)cg.foverf;
 
-	demo.camera.flags = CAM_ORIGIN | CAM_ANGLES | CAM_FOV | CAM_TIME;
 	demo.serverTime = cg.snap->serverTime;
 
 	if (!Q_stricmp(cmd, "smooth")) {
 		cameraSmooth( );
 	} else if (!Q_stricmp(cmd, "add")) {
 		demoCameraPoint_t *point;	
-		point = cameraPointAdd( demo.play.time, demo.camera.flags );
+		point = CG_Q3mmeCameraPointAdd( demo.play.time, demo.camera.flags );
 		if (point) {
 			VectorCopy( demo.viewOrigin, point->origin );
 			VectorCopy( demo.viewAngles, point->angles );
@@ -928,34 +954,73 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 			CG_DemosAddLog( "Camera selection end at %d.%03d", demo.camera.end / 1000, demo.camera.end % 1000 );
 	} else if (!Q_stricmp(cmd, "next")) { 
 		demoCameraPoint_t *point = cameraPointSynch( demo.play.time );
-		if (!point)
+		if (!point) {
+			Com_Printf("^3q3mmecamera next:  no point found\n");
 			return;
+		}
 		if (point->next)
 			point = point->next;
-		demo.play.time = point->time;
-		demo.play.fraction = 0;
+
+		//demo.play.time = point->time;
+		//demo.play.fraction = 0;
+		cg.cameraQ3mmePlaying = qfalse;
+		//cg.q3mmeCameraPlaying = qfalse;
+		cg.cameraPlayedLastFrame = qfalse;
+		VectorCopy(point->origin, cg.freecamPlayerState.origin);
+		VectorCopy(point->origin, cg.fpos);
+		VectorCopy(point->angles, cg.freecamPlayerState.viewangles);
+		VectorCopy(point->angles, cg.fang);
+		trap_Cvar_Set("cl_freezeDemo", "1");
+		trap_SendConsoleCommandNow(va("seekservertime %f\n", (float)point->time));
+		//FIXME bad hack
+		cg.atCameraPoint = qtrue;
+
 	} else if (!Q_stricmp(cmd, "prev")) {
 		demoCameraPoint_t *point = cameraPointSynch( demo.play.time );
-		if (!point)
+		if (!point) {
+			Com_Printf("^3q3mmecamera prev:  no point found\n");
 			return;
+		}
 		if (point->prev)
 			point = point->prev;
-		demo.play.time = point->time;
-		demo.play.fraction = 0;
+
+		//demo.play.time = point->time;
+		//demo.play.fraction = 0;
+
+		cg.cameraQ3mmePlaying = qfalse;
+		//cg.q3mmeCameraPlaying = qfalse;
+		cg.cameraPlayedLastFrame = qfalse;
+		VectorCopy(point->origin, cg.freecamPlayerState.origin);
+		VectorCopy(point->origin, cg.fpos);
+		VectorCopy(point->angles, cg.freecamPlayerState.viewangles);
+		VectorCopy(point->angles, cg.fang);
+		trap_Cvar_Set("cl_freezeDemo", "1");
+		trap_SendConsoleCommandNow(va("seekservertime %f\n", (float)point->time));
+		//FIXME bad hack
+		cg.atCameraPoint = qtrue;
+
 	} else if (!Q_stricmp(cmd, "lock")) {
-		demo.camera.locked = !demo.camera.locked;
-		if (demo.camera.locked) 
+		qboolean cameraLockedOld = cg_cameraQue.integer;
+		qboolean cameraLockedNew = !cameraLockedOld;
+		//demo.camera.locked = !demo.camera.locked;
+
+		trap_Cvar_Set("cg_cameraQue", va("%d", cameraLockedNew));
+
+		if (cameraLockedNew) {
 			CG_DemosAddLog("Camera view locked");
-		else 
+		} else {
 			CG_DemosAddLog("Camera view unlocked");
+		}
+
+		cg.cameraQ3mmePlaying = qfalse;
 	} else if (!Q_stricmp(cmd, "target")) {
-		Com_Printf("^3FIXME target not implemented\n");
+		//Com_Printf("^3FIXME target not implemented\n");
 #if 0  // wolfcamql
-		if ( demo.camera.locked ) {
+		if ( cg_cameraQue.integer ) {
 			CG_DemosAddLog("Can't target while locked" );
 		}
 		if ( demo.cmd.buttons & BUTTON_ATTACK ) {
-			if (demo.camera.target>=0) {			
+			if (demo.camera.target>=0) {
 				CG_DemosAddLog("Cleared target %d", demo.camera.target );
 				demo.camera.target = -1;
 			} else {
@@ -974,50 +1039,56 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 			CG_DemosAddLog("Camera view synched");
 		}
 #endif
+		if (CG_Argc() < 3) {
+			Com_Printf("current target: %d\n", demo.camera.target);
+		} else {
+			demo.camera.target = atoi(CG_Argv(2));
+			Com_Printf("target %d selected\n", demo.camera.target);
+		}
 	} else if (!Q_stricmp(cmd, "shift")) {
-
-
-		Com_Printf("^3FIXME shift not implemented\n");
-#if 0  // wolfcamql
 		int shift = 1000 * atof(CG_Argv(2));
 		demo.camera.shiftWarn = 0;
 		if (cameraPointShift( shift )) {
 			CG_DemosAddLog( "Shifted %d.%03d seconds", shift / 1000, shift % 1000);
 		}
-#endif
 	} else if (!Q_stricmp(cmd, "clear")) {
 		cameraClear( );
 		CG_DemosAddLog( "Camera points cleared" );
 	} else if (!Q_stricmp(cmd, "pos")) {
 		float *oldOrigin;
-		if (demo.camera.locked) {
+		//if (demo.camera.locked) {
+		if (cg_cameraQue.integer) {
 			demoCameraPoint_t *point = cameraPointSynch( demo.play.time );
-			if (!point || point->time != demo.play.time || demo.play.fraction ) {
+			//if (!point || point->time != demo.play.time || demo.play.fraction ) {
+			if (!point || point->time != cg.time) {
 				Com_Printf("Can't change position when not synched to a point\n");
 				return;
 			}
 			oldOrigin = point->origin;
 		} else {
-			oldOrigin = demo.camera.origin;
+			//oldOrigin = cg.fpos;  //demo.camera.origin;
+			oldOrigin = cg.freecamPlayerState.origin;
 		}
-#if 1  // wolfcamql
+		//Com_Printf("old origin:  %f %f %f\n", oldOrigin[0], oldOrigin[1], oldOrigin[2]);
 		demoCommandValue( CG_Argv(2), oldOrigin );
 		demoCommandValue( CG_Argv(3), oldOrigin+1 );
 		demoCommandValue( CG_Argv(4), oldOrigin+2 );
-#endif
-		//FIXME
-		Com_Printf("^3FIXME q3mme camera 'pos'\n");
+
+		//Com_Printf("new origin:  %f %f %f\n", oldOrigin[0], oldOrigin[1], oldOrigin[2]);
 	} else if (!Q_stricmp(cmd, "angles")) {
 		float *oldAngles;
-		if (demo.camera.locked) {
+		//if (demo.camera.locked) {
+		if (cg_cameraQue.integer) {
 			demoCameraPoint_t *point = cameraPointSynch( demo.play.time );
-			if (!point || point->time != demo.play.time || demo.play.fraction ) {
+			//if (!point || point->time != demo.play.time || demo.play.fraction ) {
+			if (!point || point->time != cg.ftime) {
 				Com_Printf("Can't change angles when not synched to a point\n");
 				return;
 			}
 			oldAngles = point->angles;
 		} else {
-			oldAngles = demo.camera.angles;
+			//oldAngles = demo.camera.angles;
+			oldAngles = cg.freecamPlayerState.viewangles;
 		}
 		demoCommandValue( CG_Argv(2), oldAngles );
 		demoCommandValue( CG_Argv(3), oldAngles+1 );
@@ -1026,15 +1097,26 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 
 	} else if (!Q_stricmp(cmd, "fov")) {
 		float *oldFov;
-		if (demo.camera.locked) {
+		//if (demo.camera.locked) {
+		if (cg_cameraQue.integer) {
 			demoCameraPoint_t *point = cameraPointSynch( demo.play.time );
-			if (!point || point->time != demo.play.time || demo.play.fraction ) {
+			//if (!point || point->time != demo.play.time || demo.play.fraction ) {
+			if (!point || point->time != cg.ftime) {
 				Com_Printf("Can't change fov when not synched to a point\n");
 				return;
 			}
 			oldFov = &point->fov;
 		} else {
-			oldFov = &demo.camera.fov;
+			//FIXME wolfcamql shouldn't really set cg_fov
+#if 0
+			//oldFov = &demo.camera.fov;
+			oldFov = &cg_fov.value;
+			// hack
+			demoCommandValue( CG_Argv(2), oldFov );
+			trap_Cvar_Set("cg_fov", va("%f", cg_fov.value));
+#endif
+			Com_Printf("Camera is unlocked, fov not set\n");
+			return;
 		}
 		demoCommandValue( CG_Argv(2), oldFov );
 	} else if (!Q_stricmp(cmd, "smoothPos")) {
@@ -1079,9 +1161,10 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 		}
 		Com_Printf( " interpolation\n" );
 	} else if (!Q_stricmp(cmd, "toggle")) {
-		if (demo.camera.locked) {
+		//if (demo.camera.locked) {
+		if (cg_cameraQue.integer) {
 			demoCameraPoint_t *point = cameraPointSynch( demo.play.time );
-			if (!point || point->time != demo.play.time || demo.play.fraction ) {
+			if (!point || point->time != cg.ftime) {
 				Com_Printf("Can't toggle flags when not synched to a point\n");
 				return;
 			}
@@ -1093,13 +1176,13 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 		vec3_t v;
 
 		if (!Q_stricmp(CG_Argv(2), "here" )) {
-			cameraOriginAt( demo.play.time, demo.play.fraction, v );
+			CG_Q3mmeCameraOriginAt( demo.play.time, demo.play.fraction, v );
 			VectorSubtract( demo.viewOrigin, v, v );
 		} else {
 			v[0] = atof( CG_Argv(2) );
 			v[1] = atof( CG_Argv(3) );
 			v[2] = atof( CG_Argv(4) );
-		}	
+		}
 		cameraMoveAll( v );
 		Com_Printf("moving all points %.2f %.2f %.2f\n", v[0], v[1], v[2] );
 	} else if (!Q_stricmp(cmd, "rotate")) {
@@ -1111,6 +1194,48 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 
 		cameraRotateAll( demo.viewOrigin, v );
 		Com_Printf("Rotate all points %.2f %.2f %.2f\n", v[0], v[1], v[2] );
+	} else if (!Q_stricmp(cmd, "flags")) {
+		if (cg_cameraQue.integer) {
+			int i;
+			demoCameraPoint_t *point = cameraPointSynch( demo.play.time );
+			if (!point || point->time != cg.ftime) {
+				Com_Printf("Can't change mask when not synched to a point\n");
+				return;
+			}
+			for (i = 2;  i < CG_Argc();  i++) {
+				if (!Q_stricmp(CG_Argv(i), "origin")) {
+					point->flags ^= CAM_ORIGIN;
+				} else if (!Q_stricmp(CG_Argv(i), "angles")) {
+					point->flags ^= CAM_ANGLES;
+				} else if (!Q_stricmp(CG_Argv(i), "fov")) {
+					point->flags ^= CAM_FOV;
+				} else if (!Q_stricmp(CG_Argv(i), "time")) {
+					point->flags ^= CAM_TIME;
+				} else {
+					Com_Printf("unknown flag type: '%s'\n", CG_Argv(i));
+				}
+			}
+
+			// print flag values
+			Com_Printf("flags: ");
+			if (point->flags & CAM_ORIGIN) {
+				Com_Printf("origin ");
+			}
+			if (point->flags & CAM_ANGLES) {
+				Com_Printf("angles ");
+			}
+			if (point->flags & CAM_FOV) {
+				Com_Printf("fov ");
+			}
+			if (point->flags & CAM_TIME) {
+				Com_Printf("time ");
+			}
+			Com_Printf("\n");
+
+		} else {
+			Com_Printf("Camera is unlocked, can't edit mask\n");
+			return;
+		}
 	} else {
 		Com_Printf("camera usage:\n" );
 		Com_Printf("camera add/del, add/del a camera point at current viewpoint and time.\n" );
@@ -1131,5 +1256,3 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 	}
 }
 
-
-#endif

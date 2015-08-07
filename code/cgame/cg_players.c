@@ -2993,7 +2993,7 @@ static void CG_PlayerPowerups( centity_t *cent, const refEntity_t *torso ) {
 		CG_UpdatePositionData(cent, &cent->hastePositionData);
 	}
 
-	if (powerups & PW_SPAWNPROTECTION) {  // 2010-08-08 new ql invuln
+	if (powerups & PWEX_SPAWNPROTECTION) {  // 2010-08-08 new ql invuln
 		//CG_PlayerFloatSprite(cent, cgs.media.connectionShader);
 		if (cg.time - cent->spawnArmorTime < cg_spawnArmorTime.integer) {
 			//CG_PlayerFloatSprite(cent, cgs.media.connectionShader);
@@ -3364,14 +3364,14 @@ Float sprites over the player's head
 ===============
 */
 static void CG_PlayerSprites( centity_t *cent ) {
-	int		team;
+	//int		team;
 	qhandle_t s;
 	const clientInfo_t *ci;
 	qboolean flagIconDrawn;
 
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
 
-	team = ci->team;
+	//team = ci->team;
 
 	if (cg_drawPlayerNames.integer) {
 		CG_PlayerFloatSpriteNameExt(cent, cgs.clientNameImage[cent->currentState.clientNum], 0);

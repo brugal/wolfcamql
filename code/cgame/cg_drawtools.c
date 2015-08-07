@@ -37,13 +37,11 @@ CG_AdjustFrom640
 Adjusted for resolution and screen aspect ratio
 ================
 */
-void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
+void CG_AdjustFrom640 (float *x, float *y, float *w, float *h)
+{
 	float aspect;
 	qboolean square = qfalse;
 
-	float origWidth = *w;
-	float origX = *x;
-	
 	if (*w == *h) {
 		square = qtrue;
 	}
@@ -57,9 +55,11 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 
 	// ql widescreen
 	if (cg_wideScreen.integer == 5) {
-		if (MenuWidescreen != QLWideScreen  &&  QLWideScreen != 0) {
-			//Com_Printf("^3m %d  i %d\n", MenuWidescreen, QLWideScreen);
-		}
+		float width43;
+		float diff;
+		float newXScale;
+		rectDef_t menuRect;
+
 
 		if ((float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight < 1.25f) {
 			// stretched vertically, just use original scaling
@@ -71,131 +71,65 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 			return;
 		}
 
-		
-		if (1) {  //(MenuWidescreen  ||  QLWideScreen) {
-			//FIXME duplicate code
-			float width43;
-			float diff;
-			float newXScale;
-			rectDef_t menuRect;
-			float newX = 0;
-			
-			menuRect = MenuRect;
-			menuRect.x *= cgs.screenXScale;
-			menuRect.y *= cgs.screenYScale;
-			menuRect.w *= cgs.screenXScale;
-			menuRect.h *= cgs.screenYScale;
+		//FIXME duplicate code
+		menuRect = MenuRect;
+		menuRect.x *= cgs.screenXScale;
+		menuRect.y *= cgs.screenYScale;
+		menuRect.w *= cgs.screenXScale;
+		menuRect.h *= cgs.screenYScale;
 
-			width43 = 4.0 * (cgs.glconfig.vidHeight / 3.0);
-			diff = (float)cgs.glconfig.vidWidth - width43;
+		width43 = 4.0 * (cgs.glconfig.vidHeight / 3.0);
+		diff = (float)cgs.glconfig.vidWidth - width43;
 
-			newXScale = width43 / 640.0;
+		newXScale = width43 / 640.0;
 
+		if (QLWideScreen == WIDESCREEN_NONE) {
+			//FIXME
 
-			//*x *= newXScale;
-
-
-
-						//FIXME
-			if (QLWideScreen == 0) {
-				//FIXME
-
-				if (MenuWidescreen) {
-					Com_Printf("^3FIXME ql QLWideScreen 0  menu %d\n", MenuWidescreen);
-				}
-				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 1, 0, 0, 0.1);
-				*x *= cgs.screenXScale;
-				*y *= cgs.screenYScale;
-				*w *= cgs.screenXScale;
-				*h *= cgs.screenYScale;
-
-			} else if (QLWideScreen == 1) {
-				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 0, 0, 1, 0.1);
-				//*x *= cgs.screenXScale;
-				//*x = menuRect.x;
-
-				//*x = 0;  //FIXME testing
-				
-				*y *= cgs.screenYScale;
-				*w *= newXScale;
-				*h *= cgs.screenYScale;
-
-
-				*x *= newXScale;
-			} else if (QLWideScreen == 2) {
-				rectDef_t itemRect;
-
-				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 0, 1, 0, 0.1);
-
-				*y *= cgs.screenYScale;
-				*w *= newXScale;
-				*h *= cgs.screenYScale;
-
-
-				itemRect.x = *x - MenuRect.x;
-				//FIXME
-				//*x = 0;
-				//*x = 40;
-
-				//*x = (menuRect.x + (menuRect.w / 2) - (*w / 2));
-				
-				//*x += itemRect.x * cgs.screenXScale / 2;
-				//*x += itemRect.x * newXScale / 2;
-				//*x += itemRect.x;
-				//*x = 0;
-				//*x = menuRect.x;
-				//*y += 30;
-				//*x *= cgs.screenXScale;
-
-				//diff = (origWidth * cgs.screenXScale) - (origWidth * newXScale);
-				////*x *= cgs.screenXScale;
-
-				/* this is it */
- 				*x *= newXScale;
-				*x += diff / 2;
-				
-				//*x += diff / 2;
-				//*x += diff;
-
-				if (origX <= 320) {
-					//*x += diff;
-					
-				} else {
-					//*x -= diff;
-				}
-				
-			} else if (QLWideScreen == 3) {
-				//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 1, 0.5, 0.8, 0.1);
-
-				*y *= cgs.screenYScale;
-				*w *= newXScale;
-				*h *= cgs.screenYScale;
-
-
-				//*x += (diff / 2.0);
-				//*x = 6666;
-				//*x = (menuRect.x + menuRect.w) - *w;
-
-				//*x = 0;  //FIXME testing
-				
-				*x *= newXScale;
-				*x += diff;
-
-			} else {
-				*x *= cgs.screenXScale;
-				*y *= cgs.screenYScale;
-				*w *= cgs.screenXScale;
-				*h *= cgs.screenYScale;
-
-				Com_Printf("^3invalid widescreen value: %d\n", QLWideScreen);
+			if (MenuWidescreen) {
+				Com_Printf("^3FIXME ql QLWideScreen 0  menu %d\n", MenuWidescreen);
 			}
+			//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 1, 0, 0, 0.1);
+			*x *= cgs.screenXScale;
+			*y *= cgs.screenYScale;
+			*w *= cgs.screenXScale;
+			*h *= cgs.screenYScale;
 
+		} else if (QLWideScreen == WIDESCREEN_LEFT) {
+			//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 0, 0, 1, 0.1);
+			*y *= cgs.screenYScale;
+			*w *= newXScale;
+			*h *= cgs.screenYScale;
+
+
+			*x *= newXScale;
+		} else if (QLWideScreen == WIDESCREEN_CENTER) {
+			//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 0, 1, 0, 0.1);
+
+			*y *= cgs.screenYScale;
+			*w *= newXScale;
+			*h *= cgs.screenYScale;
+
+			*x *= newXScale;
+			*x += diff / 2;
+
+		} else if (QLWideScreen == WIDESCREEN_RIGHT) {
+			//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 1, 0.5, 0.8, 0.1);
+
+			*y *= cgs.screenYScale;
+			*w *= newXScale;
+			*h *= cgs.screenYScale;
+
+			*x *= newXScale;
+			*x += diff;
 
 		} else {
 			*x *= cgs.screenXScale;
 			*y *= cgs.screenYScale;
 			*w *= cgs.screenXScale;
 			*h *= cgs.screenYScale;
+
+			Com_Printf("^3invalid widescreen value: %d\n", QLWideScreen);
 		}
 
 		return;
@@ -211,8 +145,6 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 	}
 #endif
 
-	// scale for screen sizes
-
 	if (cg.scoreBoardShowing) {
 		//Com_Printf("scoreboard\n");
 		if (cg_wideScreenScoreBoardHack.integer == 1) {
@@ -225,8 +157,6 @@ void CG_AdjustFrom640( float *x, float *y, float *w, float *h ) {
 			diff = (float)cgs.glconfig.vidWidth - width43;
 
 			newXScale = width43 / 640.0;
-
-			//*x += (diff / 2.0);
 
 			*x *= newXScale;
 			*y *= cgs.screenYScale;

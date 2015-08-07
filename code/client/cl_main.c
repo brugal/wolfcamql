@@ -1864,9 +1864,14 @@ static qhandle_t CL_OpenDemoFile (const char *arg)
 	}
 
 	if (!Q_stricmpn(arg, "ql:", strlen("ql:"))) {
-		Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), arg + 3);
-		//Com_Printf("trying ql demo %s\n", name);
+		// try steam quake live directory first
+		Com_sprintf(name, sizeof(name), "%s/baseq3/%s", Sys_QuakeLiveDir(), arg + 3);
 		FS_FOpenSysFileRead(name, &file);
+
+		if (!file) {  // try stand alone directory
+			Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), arg + 3);
+			FS_FOpenSysFileRead(name, &file);
+		}
 
 		if (!file) {
 			Com_Error(ERR_DROP, "couldn't open '%s' in quake live directory", arg + 3);
@@ -1908,10 +1913,43 @@ static qhandle_t CL_OpenDemoFile (const char *arg)
 		}
 	}
 
-	// check quakelive dir
+	// check steam quakelive dir
+	if (!file) {
+		Com_sprintf(name, sizeof(name), "%s/baseq3/%s", Sys_QuakeLiveDir(), demoPathName);
+		FS_FOpenSysFileRead(name, &file);
+		if (file) {
+			goto done;
+		}
+
+		// check to see if name was given without protocol extension
+
+		for (i = 0;  i < ARRAY_LEN(demo_protocols)  &&  !file;  i++) {
+			Com_sprintf(name, sizeof(name), "%s/baseq3/%s.dm_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+			FS_FOpenSysFileRead(name, &file);
+			if (!file) {
+				Com_sprintf(name, sizeof(name), "%s/baseq3/%s.DM_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+				FS_FOpenSysFileRead(name, &file);
+				if (!file) {
+					// :/
+					Com_sprintf(name, sizeof(name), "%s/baseq3/%s.dM_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+					FS_FOpenSysFileRead(name, &file);
+					if (!file) {
+						// :{   :/
+						Com_sprintf(name, sizeof(name), "%s/baseq3/%s.Dm_%d", Sys_QuakeLiveDir(), demoPathName, demo_protocols[i]);
+						FS_FOpenSysFileRead(name, &file);
+					}
+				}
+			}
+		}  // end protocol list
+	}
+
+	// check stand alone quakelive dir
 	if (!file) {
 		Com_sprintf(name, sizeof(name), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), demoPathName);
 		FS_FOpenSysFileRead(name, &file);
+		if (file) {
+			goto done;
+		}
 
 		// check to see if name was given without protocol extension
 
@@ -2391,7 +2429,7 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	CL_UpdateGUID( NULL, 0 );
 	CL_ShutdownCGame();
 
-	Cvar_Set("protocol", va("%d", PROTOCOL_QL));
+	Cvar_Set("protocol", va("%i", SERVER_PROTOCOL));
 }
 
 

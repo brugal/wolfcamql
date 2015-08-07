@@ -1232,7 +1232,8 @@ static qboolean IsVisible(int flags) {
   return (flags & WINDOW_VISIBLE && !(flags & WINDOW_FADINGOUT));
 }
 
-static qboolean Rect_ContainsPoint(rectDef_t *rect, float x, float y) {
+static qboolean Rect_ContainsPoint (const rectDef_t *rect, float x, float y)
+{
   if (rect) {
     if (x > rect->x && x < rect->x + rect->w && y > rect->y && y < rect->y + rect->h) {
       return qtrue;
@@ -1241,13 +1242,142 @@ static qboolean Rect_ContainsPoint(rectDef_t *rect, float x, float y) {
   return qfalse;
 }
 
+#if 0
+static qboolean Item_ContainsPoint (const itemDef_t *item, float x, float y)
+{
+	rectDef_t rect;
+	float aspect;
+	float width43;
+	float diff;
+	float diff640;
+	float newXScale;
+
+	if (!item) {
+		Com_Printf("^1Item_ContainsPoint item == NULL\n");
+		return qfalse;
+	}
+
+	memcpy(&rect, &item->window.rect, sizeof(rectDef_t));
+	//FIXME get cg_wideScreen value
+
+	//FIXME store calculations
+	aspect = (float)DC->glconfig.vidWidth / (float)DC->glconfig.vidHeight;
+
+	width43 = 4.0f * (DC->glconfig.vidHeight / 3.0);
+	diff = (float)DC->glconfig.vidWidth - width43;
+
+	diff640 = 640.0f * diff / (float)DC->glconfig.vidWidth;
+	newXScale = width43 / (float)DC->glconfig.vidWidth;
+
+	// already scaled to 640x480, reverse and apply new
+
+	if (item->widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f) {
+		//use regular scaling, don't alter rect values
+	} else if (item->widescreen == WIDESCREEN_LEFT) {
+		rect.w *= newXScale;
+	} else if (item->widescreen == WIDESCREEN_CENTER) {
+		rect.w *= newXScale;
+		rect.x *= newXScale;
+		rect.x += diff640 / 2;
+	} else if (item->widescreen == WIDESCREEN_RIGHT) {
+		rect.w *= newXScale;
+		rect.x += diff640;
+	}
+
+	return Rect_ContainsPoint(&rect, x, y);
+}
+#endif
+
+static qboolean Rect_ContainsWidescreenPoint (const rectDef_t *rectIn, float x, float y, int widescreen)
+{
+	rectDef_t rect;
+	float aspect;
+	float width43;
+	float diff;
+	float diff640;
+	float newXScale;
+
+	if (!rectIn) {
+		Com_Printf("^1Rect_ContainsWidescreenPoint item == NULL\n");
+		return qfalse;
+	}
+
+	memcpy(&rect, rectIn, sizeof(rectDef_t));
+
+	//FIXME store calculations
+	aspect = (float)DC->glconfig.vidWidth / (float)DC->glconfig.vidHeight;
+
+	width43 = 4.0f * (DC->glconfig.vidHeight / 3.0);
+	diff = (float)DC->glconfig.vidWidth - width43;
+
+	diff640 = 640.0f * diff / (float)DC->glconfig.vidWidth;
+	newXScale = width43 / (float)DC->glconfig.vidWidth;
+
+	// already scaled to 640x480, reverse and apply new
+
+	if (widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f  ||  DC->widescreen != 5) {
+		//use regular scaling, don't alter rect values
+	} else if (widescreen == WIDESCREEN_LEFT) {
+		rect.w *= newXScale;
+	} else if (widescreen == WIDESCREEN_CENTER) {
+		rect.w *= newXScale;
+		rect.x *= newXScale;
+		rect.x += diff640 / 2;
+	} else if (widescreen == WIDESCREEN_RIGHT) {
+		rect.w *= newXScale;
+		rect.x += diff640;
+	}
+
+	return Rect_ContainsPoint(&rect, x, y);
+}
+
+// assumes cursor is being drawn fullscreen (widescreen == WIDESCREEN_NONE),
+// and the item uses widescreen values so translate the realx value to
+// the one that would be scaled by widescreen
+static float CursorX_Widescreen (int widescreen)
+{
+	float aspect;
+	float width43;
+	float diff;
+	float diff640;
+	float newXScale;
+	float x;
+
+	x = DC->cursorx;
+
+	//FIXME store calculations
+	aspect = (float)DC->glconfig.vidWidth / (float)DC->glconfig.vidHeight;
+	width43 = 4.0 * (DC->glconfig.vidHeight / 3.0);
+	diff = (float)DC->glconfig.vidWidth - width43;
+
+	diff640 = 640.0f * diff / (float)DC->glconfig.vidWidth;
+	//newXScale = width43 / (float)DC->glconfig.vidWidth;
+
+	//newXScale = width43 / 640.0f;
+	newXScale = (float)DC->glconfig.vidWidth / 640.0f;
+
+	if (widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f) {
+		//use regular scaling, don't chage x
+	} else if (widescreen == WIDESCREEN_LEFT) {
+		x *= newXScale;
+	} else if (widescreen == WIDESCREEN_CENTER) {
+		x -= diff640 / 2;
+		x *= newXScale;
+	} else if (widescreen == WIDESCREEN_RIGHT) {
+		x -= diff640;
+		x *= newXScale;
+	}
+
+	return x;
+}
+
 static int Menu_ItemsMatchingGroup(menuDef_t *menu, const char *name) {
   int i;
   int count = 0;
   for (i = 0; i < menu->itemCount; i++) {
     if (Q_stricmp(menu->items[i]->window.name, name) == 0 || (menu->items[i]->window.group && Q_stricmp(menu->items[i]->window.group, name) == 0)) {
       count++;
-    } 
+    }
   }
   return count;
 }
@@ -1838,7 +1968,7 @@ static qboolean Item_SetFocus(itemDef_t *item, float x, float y) {
 		rectDef_t r;
 		r = item->textRect;
 		r.y -= r.h;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			item->window.flags |= WINDOW_HASFOCUS;
 			if (item->focusSound) {
 				sfx = &item->focusSound;
@@ -1933,8 +2063,10 @@ static int Item_ListBox_ThumbDrawPosition(itemDef_t *item) {
 		if (item->window.flags & WINDOW_HORIZONTAL) {
 			min = item->window.rect.x + SCROLLBAR_SIZE + 1;
 			max = item->window.rect.x + item->window.rect.w - 2*SCROLLBAR_SIZE - 1;
-			if (DC->cursorx >= min + SCROLLBAR_SIZE/2 && DC->cursorx <= max + SCROLLBAR_SIZE/2) {
-				return DC->cursorx - SCROLLBAR_SIZE/2;
+			//Com_Printf("checking cursor x\n");
+			//if (DC->cursorx >= min + SCROLLBAR_SIZE/2 && DC->cursorx <= max + SCROLLBAR_SIZE/2) {
+			if (CursorX_Widescreen(item->widescreen) >= min + SCROLLBAR_SIZE/2 && CursorX_Widescreen(item->widescreen) <= max + SCROLLBAR_SIZE/2) {
+				return CursorX_Widescreen(item->widescreen) - SCROLLBAR_SIZE/2;
 			}
 			else {
 				return Item_ListBox_ThumbPosition(item);
@@ -1992,12 +2124,17 @@ static float Item_Slider_ThumbPosition(itemDef_t *item) {
 static int Item_Slider_OverSlider(itemDef_t *item, float x, float y) {
 	rectDef_t r;
 
+	if (!item) {
+		Com_Printf("^1Item_SlideOverSlide item == NULL\n");
+		return 0;
+	}
+
 	r.x = Item_Slider_ThumbPosition(item) - (SLIDER_THUMB_WIDTH / 2);
 	r.y = item->window.rect.y - 2;
 	r.w = SLIDER_THUMB_WIDTH;
 	r.h = SLIDER_THUMB_HEIGHT;
 
-	if (Rect_ContainsPoint(&r, x, y)) {
+	if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 		return WINDOW_LB_THUMB;
 	}
 	return 0;
@@ -2009,6 +2146,10 @@ static int Item_ListBox_OverLB(itemDef_t *item, float x, float y) {
 	int thumbstart;
 	//int count;
 
+	if (!item) {
+		Com_Printf("^1Item_ListBox_OverLB item == NULL\n");
+	}
+
 	//count = DC->feederCount(item->special);
 	//listPtr = (listBoxDef_t*)item->typeData;
 	if (item->window.flags & WINDOW_HORIZONTAL) {
@@ -2016,54 +2157,54 @@ static int Item_ListBox_OverLB(itemDef_t *item, float x, float y) {
 		r.x = item->window.rect.x;
 		r.y = item->window.rect.y + item->window.rect.h - SCROLLBAR_SIZE;
 		r.h = r.w = SCROLLBAR_SIZE;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_LEFTARROW;
 		}
 		// check if on right arrow
 		r.x = item->window.rect.x + item->window.rect.w - SCROLLBAR_SIZE;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_RIGHTARROW;
 		}
 		// check if on thumb
 		thumbstart = Item_ListBox_ThumbPosition(item);
 		r.x = thumbstart;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_THUMB;
 		}
 		r.x = item->window.rect.x + SCROLLBAR_SIZE;
 		r.w = thumbstart - r.x;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_PGUP;
 		}
 		r.x = thumbstart + SCROLLBAR_SIZE;
 		r.w = item->window.rect.x + item->window.rect.w - SCROLLBAR_SIZE;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_PGDN;
 		}
 	} else {
 		r.x = item->window.rect.x + item->window.rect.w - SCROLLBAR_SIZE;
 		r.y = item->window.rect.y;
 		r.h = r.w = SCROLLBAR_SIZE;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_LEFTARROW;
 		}
 		r.y = item->window.rect.y + item->window.rect.h - SCROLLBAR_SIZE;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_RIGHTARROW;
 		}
 		thumbstart = Item_ListBox_ThumbPosition(item);
 		r.y = thumbstart;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_THUMB;
 		}
 		r.y = item->window.rect.y + SCROLLBAR_SIZE;
 		r.h = thumbstart - r.y;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_PGUP;
 		}
 		r.y = thumbstart + SCROLLBAR_SIZE;
 		r.h = item->window.rect.y + item->window.rect.h - SCROLLBAR_SIZE;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			return WINDOW_LB_PGDN;
 		}
 	}
@@ -2089,7 +2230,7 @@ static void Item_ListBox_MouseEnter(itemDef_t *item, float x, float y)
 				r.y = item->window.rect.y;
 				r.h = item->window.rect.h - SCROLLBAR_SIZE;
 				r.w = item->window.rect.w - listPtr->drawPadding;
-				if (Rect_ContainsPoint(&r, x, y)) {
+				if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 					listPtr->cursorPos =  (int)((x - r.x) / listPtr->elementWidth)  + listPtr->startPos;
 					if (listPtr->cursorPos >= listPtr->endPos) {
 						listPtr->cursorPos = listPtr->endPos;
@@ -2104,7 +2245,7 @@ static void Item_ListBox_MouseEnter(itemDef_t *item, float x, float y)
 		r.y = item->window.rect.y;
 		r.w = item->window.rect.w - SCROLLBAR_SIZE;
 		r.h = item->window.rect.h - listPtr->drawPadding;
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			listPtr->cursorPos =  (int)((y - 2 - r.y) / listPtr->elementHeight)  + listPtr->startPos;
 			if (listPtr->cursorPos > listPtr->endPos) {
 				listPtr->cursorPos = listPtr->endPos;
@@ -2129,7 +2270,7 @@ static void Item_MouseEnter(itemDef_t *item, float x, float y) {
 			return;
 		}
 
-		if (Rect_ContainsPoint(&r, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r, x, y, item->widescreen)) {
 			if (!(item->window.flags & WINDOW_MOUSEOVERTEXT)) {
 				Item_RunScript(item, item->mouseEnterText);
 				item->window.flags |= WINDOW_MOUSEOVERTEXT;
@@ -2174,9 +2315,9 @@ static void Item_MouseLeave(itemDef_t *item) {
 static itemDef_t *Menu_HitTest(menuDef_t *menu, float x, float y) {
   int i;
   for (i = 0; i < menu->itemCount; i++) {
-    if (Rect_ContainsPoint(&menu->items[i]->window.rect, x, y)) {
-      return menu->items[i];
-    }
+	  if (Rect_ContainsWidescreenPoint(&menu->items[i]->window.rect, x, y, menu->items[i]->widescreen)) {
+		  return menu->items[i];
+	  }
   }
   return NULL;
 }
@@ -2205,7 +2346,7 @@ static qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, 
 	int count = DC->feederCount(item->special);
 	int max, viewmax;
 
-	if (force || (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS)) {
+	if (force || (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && item->window.flags & WINDOW_HASFOCUS)) {
 		max = Item_ListBox_MaxScroll(item);
 		if (item->window.flags & WINDOW_HORIZONTAL) {
 			viewmax = (item->window.rect.w / listPtr->elementWidth);
@@ -2412,7 +2553,7 @@ static qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, 
 
 static qboolean Item_YesNo_HandleKey(itemDef_t *item, int key) {
 
-  if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
+	if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
 		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
 	    DC->setCVar(item->cvar, va("%i", !DC->getCVarValue(item->cvar)));
 		  return qtrue;
@@ -2486,7 +2627,7 @@ static const char *Item_Multi_Setting(itemDef_t *item) {
 static qboolean Item_Multi_HandleKey(itemDef_t *item, int key) {
 	multiDef_t *multiPtr = (multiDef_t*)item->typeData;
 	if (multiPtr) {
-	  if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
+		if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
 			if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
 				int current = Item_Multi_FindCvarByValue(item) + 1;
 				int max = Item_Multi_CountSettings(item);
@@ -2680,7 +2821,7 @@ static void Scroll_ListBox_ThumbFunc(void *p) {
 
 	listBoxDef_t *listPtr = (listBoxDef_t*)si->item->typeData;
 	if (si->item->window.flags & WINDOW_HORIZONTAL) {
-		if (DC->cursorx == si->xStart) {
+		if (CursorX_Widescreen(si->item->widescreen) == si->xStart) {
 			return;
 		}
 		r.x = si->item->window.rect.x + SCROLLBAR_SIZE + 1;
@@ -2689,7 +2830,7 @@ static void Scroll_ListBox_ThumbFunc(void *p) {
 		r.w = si->item->window.rect.w - (SCROLLBAR_SIZE*2) - 2;
 		max = Item_ListBox_MaxScroll(si->item);
 		//
-		pos = (DC->cursorx - r.x - SCROLLBAR_SIZE/2) * max / (r.w - SCROLLBAR_SIZE);
+		pos = (CursorX_Widescreen(si->item->widescreen) - r.x - SCROLLBAR_SIZE/2) * max / (r.w - SCROLLBAR_SIZE);
 		if (pos < 0) {
 			pos = 0;
 		}
@@ -2697,7 +2838,7 @@ static void Scroll_ListBox_ThumbFunc(void *p) {
 			pos = max;
 		}
 		listPtr->startPos = pos;
-		si->xStart = DC->cursorx;
+		si->xStart = CursorX_Widescreen(si->item->widescreen);
 	}
 	else if (DC->cursory != si->yStart) {
 
@@ -2745,7 +2886,7 @@ static void Scroll_Slider_ThumbFunc(void *p) {
 		x = si->item->window.rect.x;
 	}
 
-	cursorx = DC->cursorx;
+	cursorx = CursorX_Widescreen(si->item->widescreen);  //DC->cursorx;
 
 	if (cursorx < x) {
 		cursorx = x;
@@ -2781,7 +2922,7 @@ static void Item_StartCapture(itemDef_t *item, int key) {
 			} else if (flags & WINDOW_LB_THUMB) {
 				scrollInfo.scrollKey = key;
 				scrollInfo.item = item;
-				scrollInfo.xStart = DC->cursorx;
+				scrollInfo.xStart = CursorX_Widescreen(scrollInfo.item->widescreen);  //DC->cursorx;
 				scrollInfo.yStart = DC->cursory;
 				captureData = &scrollInfo;
 				captureFunc = &Scroll_ListBox_ThumbFunc;
@@ -2797,7 +2938,7 @@ static void Item_StartCapture(itemDef_t *item, int key) {
 			if (flags & WINDOW_LB_THUMB) {
 				scrollInfo.scrollKey = key;
 				scrollInfo.item = item;
-				scrollInfo.xStart = DC->cursorx;
+				scrollInfo.xStart = CursorX_Widescreen(scrollInfo.item->widescreen);  //DC->cursorx;
 				scrollInfo.yStart = DC->cursory;
 				captureData = &scrollInfo;
 				captureFunc = &Scroll_Slider_ThumbFunc;
@@ -2816,7 +2957,7 @@ static qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down) {
 	float x, value, width, work;
 
 	//DC->Print("slider handle key\n");
-	if (item->window.flags & WINDOW_HASFOCUS && item->cvar && Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory)) {
+	if (item->window.flags & WINDOW_HASFOCUS && item->cvar && Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen)) {
 		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
 			editFieldDef_t *editDef = item->typeData;
 			if (editDef) {
@@ -2835,8 +2976,8 @@ static qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down) {
 				//DC->Print("slider x: %f\n", testRect.x);
 				testRect.w = (SLIDER_WIDTH + (float)SLIDER_THUMB_WIDTH / 2);
 				//DC->Print("slider w: %f\n", testRect.w);
-				if (Rect_ContainsPoint(&testRect, DC->cursorx, DC->cursory)) {
-					work = DC->cursorx - x;
+				if (Rect_ContainsWidescreenPoint(&testRect, DC->cursorx, DC->cursory, item->widescreen)) {
+					work = CursorX_Widescreen(item->widescreen) - x;
 					value = work / width;
 					value *= (editDef->maxVal - editDef->minVal);
 					// vm fuckage
@@ -3121,7 +3262,7 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 	}
 
 	// see if the mouse is within the window bounds and if so is this a mouse click
-	if (down && !(menu->window.flags & WINDOW_POPUP) && !Rect_ContainsPoint(&menu->window.rect, DC->cursorx, DC->cursory)) {
+	if (down && !(menu->window.flags & WINDOW_POPUP) && !Rect_ContainsWidescreenPoint(&menu->window.rect, DC->cursorx, DC->cursory, menu->widescreen)) {
 		static qboolean inHandleKey = qfalse;
 		if (!inHandleKey && ( key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3 ) ) {
 			inHandleKey = qtrue;
@@ -3204,18 +3345,18 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 		case K_MOUSE2:
 			if (item) {
 				if (item->type == ITEM_TYPE_TEXT) {
-					if (Rect_ContainsPoint(Item_CorrectedTextRect(item), DC->cursorx, DC->cursory)) {
+					if (Rect_ContainsWidescreenPoint(Item_CorrectedTextRect(item), DC->cursorx, DC->cursory, item->widescreen)) {
 						Item_Action(item);
 					}
 				} else if (item->type == ITEM_TYPE_EDITFIELD || item->type == ITEM_TYPE_NUMERICFIELD) {
-					if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory)) {
+					if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen)) {
 						item->cursorPos = 0;
 						g_editingField = qtrue;
 						g_editItem = item;
 						DC->setOverstrikeMode(qtrue);
 					}
 				} else {
-					if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory)) {
+					if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen)) {
 						Item_Action(item);
 					}
 				}
@@ -4019,7 +4160,7 @@ static qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down) {
 	int			id;
 	int			i;
 
-	if (Rect_ContainsPoint(&item->window.rect, DC->cursorx, DC->cursory) && !g_waitingForKey)
+	if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && !g_waitingForKey)
 	{
 		if (down && (key == K_MOUSE1 || key == K_ENTER)) {
 			g_waitingForKey = qtrue;
@@ -4852,11 +4993,13 @@ void Menu_HandleMouseMove(menuDef_t *menu, float x, float y) {
 
 
 
-      if (Rect_ContainsPoint(&menu->items[i]->window.rect, x, y)) {
+			//if (Rect_ContainsPoint(&menu->items[i]->window.rect, x, y)) {
+			//if (Item_ContainsPoint(menu->items[i], x, y)) {
+			if (Rect_ContainsWidescreenPoint(&menu->items[i]->window.rect, x, y, menu->items[i]->widescreen)) {
 				if (pass == 1) {
 					overItem = menu->items[i];
 					if (overItem->type == ITEM_TYPE_TEXT && overItem->text) {
-						if (!Rect_ContainsPoint(Item_CorrectedTextRect(overItem), x, y)) {
+						if (!Rect_ContainsWidescreenPoint(Item_CorrectedTextRect(overItem), x, y, overItem->widescreen)) {
 							continue;
 						}
 					}
@@ -7758,7 +7901,7 @@ void *Display_CaptureItem(int x, int y) {
 	for (i = 0; i < menuCount; i++) {
 		// turn off focus each item
 		// menu->items[i].window.flags &= ~WINDOW_HASFOCUS;
-		if (Rect_ContainsPoint(&Menus[i].window.rect, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&Menus[i].window.rect, x, y, Menus[i].widescreen)) {
 			return &Menus[i];
 		}
 	}
@@ -7798,7 +7941,7 @@ int Display_CursorType(int x, int y) {
 		r2.x = Menus[i].window.rect.x - 3;
 		r2.y = Menus[i].window.rect.y - 3;
 		r2.w = r2.h = 7;
-		if (Rect_ContainsPoint(&r2, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&r2, x, y, Menus[i].widescreen)) {
 			return CURSOR_SIZER;
 		}
 	}
@@ -7859,7 +8002,7 @@ void Display_CacheAll(void) {
 
 static qboolean Menu_OverActiveItem(menuDef_t *menu, float x, float y) {
  	if (menu && menu->window.flags & (WINDOW_VISIBLE | WINDOW_FORCED)) {
-		if (Rect_ContainsPoint(&menu->window.rect, x, y)) {
+		if (Rect_ContainsWidescreenPoint(&menu->window.rect, x, y, menu->widescreen)) {
 			int i;
 			for (i = 0; i < menu->itemCount; i++) {
 				// turn off focus each item
@@ -7873,10 +8016,10 @@ static qboolean Menu_OverActiveItem(menuDef_t *menu, float x, float y) {
 					continue;
 				}
 
-				if (Rect_ContainsPoint(&menu->items[i]->window.rect, x, y)) {
+				if (Rect_ContainsWidescreenPoint(&menu->items[i]->window.rect, x, y, menu->items[i]->widescreen)) {
 					itemDef_t *overItem = menu->items[i];
 					if (overItem->type == ITEM_TYPE_TEXT && overItem->text) {
-						if (Rect_ContainsPoint(Item_CorrectedTextRect(overItem), x, y)) {
+						if (Rect_ContainsWidescreenPoint(Item_CorrectedTextRect(overItem), x, y, overItem->widescreen)) {
 							return qtrue;
 						} else {
 							continue;

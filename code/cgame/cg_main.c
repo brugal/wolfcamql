@@ -13,6 +13,7 @@
 #include "cg_marks.h"
 #include "cg_newdraw.h"
 #include "cg_players.h"
+#include "cg_q3mme_camera.h"
 #include "cg_q3mme_scripts.h"
 #include "cg_servercmds.h"
 #include "cg_snapshot.h"
@@ -645,7 +646,7 @@ vmCvar_t cg_scoreBoardAtIntermission;
 vmCvar_t cg_scoreBoardWarmup;
 vmCvar_t cg_scoreBoardOld;
 vmCvar_t cg_scoreBoardOldWideScreen;
-vmCvar_t cg_scoreBoardCursorAreaWideScreen;
+//vmCvar_t cg_scoreBoardCursorAreaWideScreen;
 
 vmCvar_t cg_hitBeep;
 
@@ -1676,7 +1677,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_scoreBoardWarmup, "cg_scoreBoardWarmup", "1", CVAR_ARCHIVE },
 	{ &cg_scoreBoardOld, "cg_scoreBoardOld", "0", CVAR_ARCHIVE },
 	{ cvp(cg_scoreBoardOld), "2", CVAR_ARCHIVE },
-	{ cvp(cg_scoreBoardCursorAreaWideScreen), "2", CVAR_ARCHIVE },
+	//{ cvp(cg_scoreBoardCursorAreaWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_hitBeep, "cg_hitBeep", "2", CVAR_ARCHIVE },
 
@@ -2037,7 +2038,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_cameraQue, "cg_cameraQue", "1", CVAR_ARCHIVE },
 	{ &cg_cameraUpdateFreeCam, "cg_cameraUpdateFreeCam", "1", CVAR_ARCHIVE },
 	{ &cg_cameraAddUsePreviousValues, "cg_cameraAddUsePreviousValues", "1", CVAR_ARCHIVE },
-	{ &cg_cameraDefaultOriginType, "cg_cameraDefaultOriginType", "curve", CVAR_ARCHIVE },
+	{ &cg_cameraDefaultOriginType, "cg_cameraDefaultOriginType", "splineBezier", CVAR_ARCHIVE },
 	{ &cg_cameraDebugPath, "cg_cameraDebugPath", "0", CVAR_ARCHIVE },
 	{ &cg_cameraSmoothFactor, "cg_cameraSmoothFactor", "1.5", CVAR_ARCHIVE },
 	{ cvp(cg_q3mmeCameraSmoothPos), "0", CVAR_ARCHIVE },
@@ -6988,6 +6989,27 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	//Com_Printf("^3ctfs  %d\n", GT_CTFS);
 
+	if (cgs.realProtocol == 91) {
+		PW_NONE = PW91_NONE;
+		//PW_SPAWNARMOR = PW91_SPAWNARMOR;
+		PW_QUAD = PW91_QUAD;
+		PW_BATTLESUIT = PW91_BATTLESUIT;
+		PW_HASTE = PW91_HASTE;
+		PW_INVIS = PW91_INVIS;
+		PW_REGEN = PW91_REGEN;
+		PW_FLIGHT = PW91_FLIGHT;
+		PW_REDFLAG = PW91_REDFLAG;
+		PW_BLUEFLAG = PW91_BLUEFLAG;
+		PW_NEUTRALFLAG = PW91_NEUTRALFLAG;
+		PW_INVULNERABILITY = PW91_INVULNERABILITY;
+		PW_SCOUT = PW91_SCOUT;
+		PW_GUARD = PW91_GUARD;
+		PW_DOUBLER = PW91_DOUBLER;
+		PW_ARMORREGEN = PW91_ARMORREGEN;
+		PW_FROZEN = PW91_FROZEN;
+		PW_NUM_POWERUPS = PW91_NUM_POWERUPS;
+	}
+
 	if (cgs.protocol == PROTOCOL_Q3) {  //FIXME hack
 		// start as baseq3
 		memcpy(&bg_itemlist, &bg_itemlistQ3, sizeof(gitem_t) * bg_numItemsQ3);
@@ -7109,7 +7131,8 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	trap_GetGlconfig( &cgs.glconfig );
 	cgs.screenXScale = cgs.glconfig.vidWidth / 640.0;
 	cgs.screenYScale = cgs.glconfig.vidHeight / 480.0;
-
+	memcpy(&cgDC.glconfig, &cgs.glconfig, sizeof(glconfig_t));
+	cgDC.widescreen = cg_wideScreen.integer;
 
 	trap_SendConsoleCommandNow("exec cgameinit.cfg\n");
 
@@ -7145,7 +7168,11 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		WP_NUM_WEAPONS = 14;  // no hmg
 		//Com_Printf("^5setting item list to ql dm 73\n");
 
+	} else if (cgs.realProtocol == 91) {
+		memcpy(&bg_itemlist, &bg_itemlistQldm91, sizeof(gitem_t) * bg_numItemsQldm91);
+		bg_numItems = bg_numItemsQldm91;
 	}
+
 	if (cgs.defrag) {
 		Com_Printf("^5defrag\n");
 	}
@@ -7444,6 +7471,12 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	if (cg.demoPlayback) {
 		trap_Get_Demo_Timeouts(&cgs.numTimeouts, cgs.timeOuts);
 	}
+
+	// q3mme camera
+	demo.camera.flags = CAM_ORIGIN | CAM_ANGLES;
+	demo.camera.smoothPos = posBezier;
+	demo.camera.smoothAngles = angleQuat;
+	demo.camera.target = -1;
 }
 
 void CG_LoadDefaultMenus (void)

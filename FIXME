@@ -1566,7 +1566,6 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
 * /devmap powerup available needs to be broadcast
 * spec demo doesn't show ql hud
 * 44100 sound
-* check CG_StartSound(NULL, MAX_GENTITIES - 1,  cg_view for railgun freecam hack
 * something is still calling sound/feedback/fight.wav ?  2015-07-06-demos/CTF  q3wcp9 cpma
 * still using red/blue flag returned?
 * flag capture/return sounds (not vo) for specs?
@@ -1589,9 +1588,41 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
   - harvester  capture
   - 1fctf (cap attack)
 
-* unsigned long Width;  //uint32_t Width;  in tr_image_png.c
 * double check di.protocol == PROTOCOL_QL is also for 73 and now 91  2015-07-28
+* protocol 91:  utf8, scoreboards
+* WARNING: unknown general shader parameter 'nodefault' in 'models/players/hunter/harpy_f'
+* dir demos/ doesn't list ql ones
+* ui_shared.c DC->cursorx -- horiz scrollbars
+* spline angles acceleration, initial velocities in CG_CameraUpdateInfo()
+* win32 console output also store output to file
 
+* hud support for q3mme camera
+* camera:  spline to interp what about roll?
+* check spline angles and use previous
+* camera masking like q3mme (done for q3mme types, need for others)
+* check if add q3mme camera point checks for time and bypasses q3mme checks (can q3mme add cam points at same time?)
+* q3mme and camera velocity and cg_drawSpeed
+* q3mme camera:  disable playing when new cam point added?
+* why does cg_cameraRewindTime depend on cg_cameraQue ?
+* camera:  spline type for offsets?
+* spamming errorpup in console when bad angle type is added in hud, find and test disabled spamming
+
+      bad camera point 0 viewpoint but not followed by either viewpoint pass or viewpoint
+
+* fix angle accel for spline
+* wolfcamql camera flags for other types besides q3mme ones
+* wolfcamql missing linear origin interpolation from q3mme
+
+* last todo:
+  - wolfcamql disable hud roll for angles spline
+  x  - q3mme camera hud
+  x  - maybe com_idlesleep
+  - maybe also write stdout.txt for console output
+  - q3mme camera commands (shift, smooth, etc..)  for wolfcamql camera
+
+* camera:  accel initial values and camera masking flags
+* check all uses of CursorX_Widescreen()
+* linear angle interpolation from q3mme
 
 ---------------------------
 

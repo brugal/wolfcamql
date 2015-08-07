@@ -38,6 +38,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <shlobj.h>
 #include <process.h>
 
+
 // Used to determine where to store user-specific files
 static char homePath[ MAX_OSPATH ] = { 0 };
 static char QuakeLivePath[MAX_OSPATH] = { 0 };
@@ -96,10 +97,16 @@ char *Sys_QuakeLiveDir (void)
 	FARPROC qSHGetFolderPath;
 	HMODULE shfolder;
 	const char *override = NULL;
-	//const char *win7vista = "LocalLow\\id Software\\quakelive\\home\\baseq3";
-	const char *win7Vista = "LocalLow\\id Software\\quakelive";
-	//const char *xp = "id Software\\quakelive\\home\\baseq3";
-	const char *xp = "id Software\\quakelive";
+	// "LocalLow\\id Software\\quakelive\\home\\baseq3";
+	// "id Software\\quakelive\\home\\baseq3";
+	const char *win7Vista = "LocalLow\\id Software\\quakelive\\home";
+	const char *xp = "id Software\\quakelive\\home";
+	const char *steamPath = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Quake Live";
+	const char *steamPath32bit = "C:\\Program Files\\Steam\\steamapps\\common\\Quake Live";
+	HANDLE hFind;
+	WIN32_FIND_DATA FindData;
+	char searchString[MAX_OSPATH];
+	int count;
 
 	if (!*QuakeLivePath) {
 		override = Cvar_VariableString("fs_quakelivedir");
@@ -108,6 +115,48 @@ char *Sys_QuakeLiveDir (void)
 			//FS_ReplaceSeparators(QuakeLivePath);
 			return QuakeLivePath;
 		}
+
+		// check steam first
+	    // C:\\Program Files (x86)\\Steam\\steamapps\\common\\Quake Live\\12345678901234567\\baseq3
+
+		count = 0;
+		while (count < 2) {
+			const char *spath = steamPath;
+
+			if (count == 1) {
+				spath = steamPath32bit;
+			}
+
+			Com_sprintf(searchString, sizeof(searchString), "%s\\*", spath);
+
+			//Com_Printf("searching for '%s'\n", searchString);
+			hFind = FindFirstFile(searchString, &FindData);
+			if (hFind != INVALID_HANDLE_VALUE) {
+
+				do {
+					if (FindData.cFileName[0] == '.') {  // skip .  and ..
+						continue;
+					}
+					Com_sprintf(searchString, sizeof(searchString), "%s\\%s\\baseq3", spath, FindData.cFileName);
+					//Com_Printf("checking '%s'\n", searchString);
+					if (Sys_FileIsDirectory(searchString)) {
+						// got it
+						//Com_Printf("found steam directory '%s'\n", FindData.cFileName);
+						Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s\\%s", spath, FindData.cFileName);
+						FindClose(hFind);
+						return QuakeLivePath;
+					} else {
+						//Com_Printf("found steam file '%s' but it is not a directory\n", FindData.cFileName);
+					}
+
+				} while(FindNextFile(hFind, &FindData));
+			}
+			FindClose(hFind);
+			//Com_Printf("(%s) didn't find steam directory...\n", count == 0 ? "64-bit" : "32-bit");
+			count++;
+		}  // while (count < 2)
+
+		// try old quake live stand alone directory
 		shfolder = LoadLibrary("shfolder.dll");
 
 		if(shfolder == NULL)
@@ -457,6 +506,7 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 	int			flag;
 	int			i;
 	qboolean wantDirs;
+	int extLen;
 
 	if (filter) {
 
@@ -497,6 +547,8 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 		flag = _A_SUBDIR;
 	}
 
+	extLen = strlen( extension );
+
 	Com_sprintf( search, sizeof(search), "%s\\*%s", directory, extension );
 
 	// search
@@ -510,6 +562,14 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 
 	do {
 		if ( (!wantsubs && flag ^ ( findinfo.attrib & _A_SUBDIR )) || (wantsubs && findinfo.attrib & _A_SUBDIR)  ||  wantDirs ) {
+			if (*extension) {
+				if ( strlen( findinfo.name ) < extLen ||
+					 Q_stricmp(
+							   findinfo.name + strlen( findinfo.name ) - extLen,
+							   extension ) ) {
+					continue; // didn't match
+				}
+			}
 			if ( nfiles == MAX_FOUND_FILES - 1 ) {
 				break;
 			}
@@ -698,6 +758,10 @@ void Sys_GLimpInit( void )
 #endif
 }
 
+static HANDLE HStdout = INVALID_HANDLE_VALUE;
+static CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
+static qboolean GotHandle = qfalse;
+
 /*
 ==============
 Sys_PlatformInit
@@ -705,7 +769,7 @@ Sys_PlatformInit
 Windows specific initialisation
 ==============
 */
-void Sys_PlatformInit (qboolean useBacktrace)
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 {
 	HMODULE bt;
 	OSVERSIONINFO vi;
@@ -717,6 +781,35 @@ void Sys_PlatformInit (qboolean useBacktrace)
 	const char *SDL_VIDEODRIVER;
 #endif
 
+	// sdl redirects output, steal it back
+	if (useConsoleOutput) {
+		BOOL b = AttachConsole(ATTACH_PARENT_PROCESS);
+		if (b) {
+			freopen("conin$", "r", stdin);
+			freopen("conout$", "w", stdout);
+			freopen("conout$", "w", stderr);
+
+			HStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+			if (HStdout != INVALID_HANDLE_VALUE) {
+
+				if (GetConsoleScreenBufferInfo(HStdout, &ScreenBufferInfo) != 0) {
+					SetConsoleTextAttribute(HStdout, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+					fputs("\r\n", stderr);
+					Com_Printf("win32:  using console output\n");
+					GotHandle = qtrue;
+				} else {
+					Com_Printf("win32:  couldn't get screen buffer information for console output, error %ld\n", GetLastError());
+					HStdout = INVALID_HANDLE_VALUE;
+					GotHandle = qfalse;
+				}
+			} else {
+				Com_Printf("win32:  couldn't get output handle for console output, error %ld\n", GetLastError());
+				GotHandle = qfalse;
+			}
+		} else {
+			Com_Printf("win32:  couldn't get parent console for console output, error %ld\n", GetLastError());
+		}
+	}
 	if (useBacktrace) {
 		bt = LoadLibraryA("backtrace.dll");
 		Com_Printf("backtrace: %d\n", (int)bt);
@@ -916,10 +1009,16 @@ Windows specific initialisation
 ==============
 */
 
+
 void Sys_PlatformExit (void)
 {
 	if (timerResolution)
 		timeEndPeriod(timerResolution);
+
+	if (GotHandle  &&  HStdout != INVALID_HANDLE_VALUE) {
+		SetConsoleTextAttribute(HStdout, ScreenBufferInfo.wAttributes);
+		fputs("\r\n", stderr);
+	}
 }
 
 /*
@@ -997,4 +1096,72 @@ void Sys_OpenWolfcamDirectory (void)
 int Sys_DirnameCmp (const char *pathName1, const char *pathName2)
 {
 	return Q_stricmp(pathName1, pathName2);
+}
+
+
+void Sys_AnsiColorPrint( const char *msg )
+{
+	static char buffer[ MAX_PRINT_MSG ];
+	int         length = 0;
+	static int  q3ToAnsi[ 8 ] =
+	{
+		FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,  // COLOR_BLACK, using bright white so it's visible
+		FOREGROUND_INTENSITY | FOREGROUND_RED,  // COLOR_RED
+		FOREGROUND_INTENSITY | FOREGROUND_GREEN,  // COLOR_GREEN
+		FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN,  // COLOR_YELLOW
+		FOREGROUND_INTENSITY | FOREGROUND_BLUE,  // COLOR_BLUE
+		FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_BLUE,  // COLOR_CYAN
+		FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE,  // COLOR_MAGENTA
+		//FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,  // COLOR_WHITE
+		FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,  // COLOR_WHITE, using default gray foreground color is ms-dos prompt
+	};
+
+	if (!GotHandle  ||  HStdout == INVALID_HANDLE_VALUE) {
+		fputs(msg, stderr);
+		return;
+	}
+
+	while( *msg )
+	{
+		if( Q_IsColorString( msg ) || *msg == '\n' )
+		{
+			// First empty the buffer
+			if( length > 0 )
+			{
+				buffer[ length ] = '\0';
+				fputs( buffer, stderr );
+				length = 0;
+			}
+
+			if( *msg == '\n' )
+			{
+				// Issue a reset and then the newline
+				SetConsoleTextAttribute(HStdout, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+				fputs("\r\n", stderr);
+				msg++;
+			}
+			else
+			{
+				// Print the color code
+				SetConsoleTextAttribute(HStdout, q3ToAnsi[ ColorIndex( *( msg + 1 ) ) ]);
+				msg += 2;
+			}
+		}
+		else
+		{
+			if( length >= MAX_PRINT_MSG - 1 )
+				break;
+
+			buffer[ length ] = *msg;
+			length++;
+			msg++;
+		}
+	}
+
+	// Empty anything still left in the buffer
+	if( length > 0 )
+	{
+		buffer[ length ] = '\0';
+		fputs( buffer, stderr );
+	}
 }

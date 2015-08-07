@@ -277,7 +277,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	int				i, count;
 	int origPosition;
 	int cmd;
-	char *s;
+	//char *s;
 	char buffer[16];
 	qboolean success = qfalse;
 	int r;
@@ -409,7 +409,8 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 			case svc_serverCommand:
 				//CL_ParseCommandString( msg );
 				MSG_ReadLong(&buf);  // seq
-				s = MSG_ReadString(&buf);
+				//s = MSG_ReadString(&buf);
+				MSG_ReadString(&buf);
 				break;
 			case svc_gamestate:
 				//CL_ParseGamestate( msg );

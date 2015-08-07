@@ -23,7 +23,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifndef cg_q3mme_math_h_included
 #define cg_q3mme_math_h_included
 
-#include "cg_local.h"
+//#include "cg_local.h"
+#include "../renderer/tr_types.h"  // polyVert_t
 
 typedef enum {
 	posLinear,

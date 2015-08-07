@@ -2,8 +2,9 @@
 #define camera_h_included
 
 #include "../qcommon/q_shared.h"
+#include "cg_q3mme_math.h"  // posInterpolate_t
 
-#define WOLFCAM_CAMERA_VERSION 8
+#define WOLFCAM_CAMERA_VERSION 9
 #define MAX_CAMERAPOINTS 256
 #define MAX_SPLINEPOINTS (1024 * 10)  //(1024 * 1024 * 3)
 #define DEFAULT_NUM_SPLINES 40
@@ -19,6 +20,7 @@ enum {
 	CEF_CAMERA_TYPE,
 	CEF_VIEW_TYPE,
 	CEF_ROLL_TYPE,
+	CEF_FLAGS,
 	CEF_NUMBER_OF_SPLINES,
 	CEF_VIEWPOINT_ORIGIN,
 	CEF_VIEW_ENT,
@@ -56,6 +58,8 @@ enum {
 	CAMERA_INTERP,
 	CAMERA_JUMP,
 	CAMERA_CURVE,
+	CAMERA_SPLINE_BEZIER,
+	CAMERA_SPLINE_CATMULLROM,
 	CAMERA_ENUM_END,
 };
 
@@ -68,6 +72,7 @@ enum {
 	CAMERA_ANGLES_VIEWPOINT_INTERP,
 	CAMERA_ANGLES_VIEWPOINT_PASS,
 	CAMERA_ANGLES_VIEWPOINT_FIXED,
+	CAMERA_ANGLES_SPLINE,
 	CAMERA_ANGLES_ENUM_END,
 };
 
@@ -83,6 +88,7 @@ enum {
 	CAMERA_FOV_INTERP,
 	CAMERA_FOV_FIXED,
 	CAMERA_FOV_PASS,
+	CAMERA_FOV_SPLINE,
 	CAMERA_FOV_ENUM_END,
 };
 
@@ -99,7 +105,7 @@ enum {
 	SPLINE_ENUM_END,
 };
 
-typedef struct {
+typedef struct cameraPoint_s {
 	int version;
 
 	vec3_t origin;
@@ -219,7 +225,15 @@ typedef struct {
 
 	int curveCount;
 
+	// for q3mme camera functions
+	struct cameraPoint_s *next, *prev;  // not stored in cam file
+	float len;  // dynamic variable, not stored in cam file
+	int flags;
 } cameraPoint_t;
 
+
+qboolean CG_CameraSplineAnglesAt (double ftime, vec3_t angles);
+qboolean CG_CameraSplineOriginAt (double ftime, posInterpolate_t posType, vec3_t origin);
+qboolean CG_CameraSplineFovAt (double ftime, float *fov);
 
 #endif  // camera_h_included

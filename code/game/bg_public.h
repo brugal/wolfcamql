@@ -563,31 +563,74 @@ extern int PERS_ATTACKEE_ARMOR;
 
 // NOTE: may not have more than 16
 typedef enum {
-	PW_NONE,
-	PW_QUAD,
-	PW_BATTLESUIT,
-	PW_HASTE,
-	PW_INVIS,
+	PWOLD_NONE,
+	PWOLD_QUAD,
+	PWOLD_BATTLESUIT,
+	PWOLD_HASTE,
+	PWOLD_INVIS,
 
-	PW_REGEN,
-	PW_FLIGHT,
-	PW_REDFLAG,
-	PW_BLUEFLAG,
-	PW_NEUTRALFLAG,
+	PWOLD_REGEN,
+	PWOLD_FLIGHT,
+	PWOLD_REDFLAG,
+	PWOLD_BLUEFLAG,
+	PWOLD_NEUTRALFLAG,
 
-	PW_INVULNERABILITY,
-	PW_SCOUT,
-	PW_GUARD,
-	PW_DOUBLER,
-	//PW_AMMOREGEN,
-	PW_ARMORREGEN,
+	PWOLD_INVULNERABILITY,
+	PWOLD_SCOUT,
+	PWOLD_GUARD,
+	PWOLD_DOUBLER,
+	PWOLD_ARMORREGEN,
 
-	PW_FROZEN,
-	PW_NUM_POWERUPS,
+	PWOLD_FROZEN,
+	PWOLD_NUM_POWERUPS,
 } powerup_t;
 
-#define PW_SPAWNPROTECTION 1  // hack
-#define PW_KEY 601  // hack to use PW_ for keys
+typedef enum {
+	PW91_NONE,
+	PW91_SPAWNARMOR = PW91_NONE,
+
+	PW91_REDFLAG,
+	PW91_BLUEFLAG,
+	PW91_NEUTRALFLAG,
+	PW91_QUAD,
+	PW91_BATTLESUIT,
+	PW91_HASTE,
+	PW91_INVIS,
+	PW91_REGEN,
+	PW91_FLIGHT,
+	PW91_INVULNERABILITY,
+
+	PW91_SCOUT,
+	PW91_GUARD,
+	PW91_DOUBLER,
+	PW91_ARMORREGEN,
+
+	PW91_FROZEN,
+
+	PW91_NUM_POWERUPS
+} powerupQldm91_t;
+
+#define PWEX_SPAWNPROTECTION 1  // hack
+#define PWEX_KEY 601  // hack to use PW_ for keys
+
+extern int PW_NONE;
+//extern int PW_SPAWNARMOR;
+extern int PW_QUAD;
+extern int PW_BATTLESUIT;
+extern int PW_HASTE;
+extern int PW_INVIS;
+extern int PW_REGEN;
+extern int PW_FLIGHT;
+extern int PW_REDFLAG;
+extern int PW_BLUEFLAG;
+extern int PW_NEUTRALFLAG;
+extern int PW_INVULNERABILITY;
+extern int PW_SCOUT;
+extern int PW_GUARD;
+extern int PW_DOUBLER;
+extern int PW_ARMORREGEN;
+extern int PW_FROZEN;
+extern int PW_NUM_POWERUPS;
 
 typedef enum {
 	HI_NONE,
@@ -1134,10 +1177,12 @@ extern	gitem_t	bg_itemlist[];  // ql dm 90
 extern const gitem_t bg_itemlistQ3[];
 extern const gitem_t bg_itemlistCpma[];
 extern const gitem_t bg_itemlistQldm73[];
+extern const gitem_t bg_itemlistQldm91[];
 extern	int		bg_numItems;
 extern	int		bg_numItemsQ3;
 extern	int		bg_numItemsCpma;
 extern int bg_numItemsQldm73;
+extern int bg_numItemsQldm91;
 
 gitem_t	*BG_FindItem( const char *pickupName );
 gitem_t	*BG_FindItemForWeapon( const weapon_t weapon );

@@ -166,7 +166,7 @@ static void SV_Map_f( void ) {
 	}
 #endif
 
-	Cvar_Set("protocol", va("%i", PROTOCOL_QL));
+	Cvar_Set("protocol", va("%i", SERVER_PROTOCOL));
 
 	map = Cmd_Argv(1);
 	if ( !map ) {

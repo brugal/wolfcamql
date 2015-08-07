@@ -51,9 +51,10 @@ char *Sys_StripAppBundle( char *pwd );
 
 void Sys_GLimpSafeInit( void );
 void Sys_GLimpInit( void );
-void Sys_PlatformInit (qboolean useBacktrace);
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput);
 void Sys_PlatformExit (void);
 void Sys_SigHandler( int signal );
 void Sys_ErrorDialog( const char *error );
 void Sys_AnsiColorPrint( const char *msg );
 void Sys_Backtrace_f (void);
+qboolean Sys_FileIsDirectory (char *path);

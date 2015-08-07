@@ -204,74 +204,7 @@ void Sys_Init(void)
 	Cvar_Set( "username", Sys_GetCurrentUser( ) );
 }
 
-/*
-=================
-Sys_AnsiColorPrint
 
-Transform Q3 colour codes to ANSI escape sequences
-=================
-*/
-void Sys_AnsiColorPrint( const char *msg )
-{
-	static char buffer[ MAX_PRINT_MSG ];
-	int         length = 0;
-	static int  q3ToAnsi[ 8 ] =
-	{
-		30, // COLOR_BLACK
-		31, // COLOR_RED
-		32, // COLOR_GREEN
-		33, // COLOR_YELLOW
-		34, // COLOR_BLUE
-		36, // COLOR_CYAN
-		35, // COLOR_MAGENTA
-		0   // COLOR_WHITE
-	};
-
-	while( *msg )
-	{
-		if( Q_IsColorString( msg ) || *msg == '\n' )
-		{
-			// First empty the buffer
-			if( length > 0 )
-			{
-				buffer[ length ] = '\0';
-				fputs( buffer, stderr );
-				length = 0;
-			}
-
-			if( *msg == '\n' )
-			{
-				// Issue a reset and then the newline
-				fputs( "\033[0m\n", stderr );
-				msg++;
-			}
-			else
-			{
-				// Print the color code
-				Com_sprintf( buffer, sizeof( buffer ), "\033[%dm",
-						q3ToAnsi[ ColorIndex( *( msg + 1 ) ) ] );
-				fputs( buffer, stderr );
-				msg += 2;
-			}
-		}
-		else
-		{
-			if( length >= MAX_PRINT_MSG - 1 )
-				break;
-
-			buffer[ length ] = *msg;
-			length++;
-			msg++;
-		}
-	}
-
-	// Empty anything still left in the buffer
-	if( length > 0 )
-	{
-		buffer[ length ] = '\0';
-		fputs( buffer, stderr );
-	}
-}
 
 /*
 =================
@@ -337,6 +270,22 @@ int Sys_FileTime( char *path )
 		return -1;
 
 	return buf.st_mtime;
+}
+
+qboolean Sys_FileIsDirectory (char *path)
+{
+	struct stat buf;
+
+	if (stat(path, &buf) != 0) {
+		Com_Printf("WARNING:  couldn't stat file '%s'\n", path);
+		return qfalse;
+	}
+
+	if (buf.st_mode & S_IFDIR) {
+		return qtrue;
+	}
+
+	return qfalse;
 }
 
 /*
@@ -511,6 +460,7 @@ int main( int argc, char **argv )
 	int   i;
 	char  commandLine[ MAX_STRING_CHARS ] = { 0 };
 	qboolean useBacktrace;
+	qboolean useConsoleOutput;
 
 #ifndef DEDICATED
 	// SDL version check
@@ -540,12 +490,16 @@ int main( int argc, char **argv )
 	StartTime = Sys_Milliseconds();
 
 	useBacktrace = qtrue;
+	useConsoleOutput = qfalse;
 	for (i = 1;  i < argc;  i++) {
 		if (!strcmp(argv[i], "--nobacktrace")) {
 			useBacktrace = qfalse;
+		} else if (!strcmp(argv[i], "--console-output")) {
+			useConsoleOutput = qtrue;
 		}
+
 	}
-	Sys_PlatformInit(useBacktrace);
+	Sys_PlatformInit(useBacktrace, useConsoleOutput);
 
 	// Set the initial time base
 	//Sys_Milliseconds( );

@@ -967,15 +967,16 @@ Edit all currently selected camera points
 <...> are required
 [...] are optional
 
-/ecam type <spline, interp, jump, curve>
-/ecam fov <current, interp, fixed, pass> [fov value]
+/ecam type <spline, interp, jump, curve, splineBezier, splineCatmullRom>
+/ecam fov <current, interp, fixed, pass, spline> [fov value]
 /ecam command <command to be executed when cam point is hit>
 /ecam numsplines <number of spline points to use for this key point (default is 40) >
-/ecam angles <interp, interpuseprevious, fixed, fixeduseprevious, viewpointinterp, viewpointfixed, viewpointpass, ent>
+/ecam angles <interp, spline, interpuseprevious, fixed, fixeduseprevious, viewpointinterp, viewpointfixed, viewpointpass, ent>
    the 'ent' option has additional parameter for the entity
    /ecam angles ent [entity number]
 /ecam offset <interp, fixed, pass> [x offset] [y offset] [z offset]
 /ecam roll <interp, fixed, pass> [roll value]
+/ecam flags [origin | angles | fov | time]
 /ecam initialVelocity <origin, angles, xoffset, yoffset, zoffset, fov, roll> <v
 alue, or 'reset' to reset to default fixed velocity>
 /ecam finalVelocity <origin, angles, xoffset, yoffset, zoffset, fov, roll> <value, or 'reset' to reset to default fixed velocity>
@@ -1025,10 +1026,18 @@ Origin types:
  jump:  don't move at all towards next camera point, simply appear at the next one
  spline:  a 'best fitting' curve is created for all the camera points.  One of the disadvantages is that you are not likely to pass through the exact origin that you selected for a particular camera point.
  curve:  every three points of this type define a quadratic curve.  You can think of the first and last being the 'start' and 'end' points with the middle one controlling the steepness of the curve.  This has the advantage over the spline type of being able to pass through exactly through the chosen origins for camera points.
+ splineBezier: (from q3mme, uses camera flags for masking)
+ splineCatmullRom:  (from q3mme, uses camera flags for masking)
+
+Angle types:
+ interp:  linear angle interpolation, roll is treated as a separate setting
+ spline:  (from q3mme, uses camera flags for masking), camera roll is included in this interpolation
 
 Velocity:
  //FIXME
 
+ Note that spline fov uses the final fov values (ex: go from 60 -> 120 fov) instead of offset values which q3mme uses (ex:  10 -> 30  means go from currentFov + 10  to currentFov + 30).
+ 
   cvar cg_draw2d 2  for use with camera editing
     default  bind BACKSPACE "toggle cg_draw2d 0 1 2"
 
@@ -1044,7 +1053,7 @@ Velocity:
 
   cg_cameraUpdateFreeCam  transfers origin and angles to freecam state
 
-  cg_cameraDebugPath  adds a model showing the camera path without updating freecam origin and angles,  use r_drawworld 0  and r_fastsky 1  for a clearer view
+  cg_cameraDebugPath  adds a model showing the camera path without updating freecam origin and angles.  Use r_drawworld 0  and r_fastsky 1  for a clearer view.  If both camera types are present (q3mme and wolfcamql) it will draw a model for each of them.
 
 --------------------------------------------------------------------------
 
@@ -1066,6 +1075,26 @@ Velocity:
   You can try playing the camera normally (without recording video) at whatever fps works well and use /recordpath command.  Then, when you record video, use /playpath command.
 
   You might need to copy wolfcamql.exe to et.exe and set camtrace's 'Enemy Territory' folder setting to point to wolfcamql's location.
+
+---------------------------------------------------------------------------
+
+* q3mme camera support:
+    /q3mmecamera  (same as q3mme /camera command)
+      added flags subcommand to print or set camera flag values:
+      /q3mmecamera flags [origin | angles | fov | time]
+
+      target sub command changed, you need to specify a target number (-1 means no target).  Ex:  /q3mmecamera target 9
+
+    additional commands:
+
+    /playq3mmecamera
+    /stopq3mmecamera
+    /saveq3mmecamera
+    /loadq3mmecamera
+
+    cg_q3mmeCameraSmoothPos is the same as mov_cameraSmoothPos in q3mme.
+
+    FIXME target (Note:  target selection isn't available)
 
 ---------------------------------------------------------------------------
 
@@ -1839,7 +1868,13 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * cg_killBeep   same as quake live
 
-* fs_quakelivedir  Default quake live install paths are checked in order to list demos, you can override with this cvar
+* fs_quakelivedir  Default quake live install paths are checked in order to list demos (steam and stand alone versions).  You can override with this cvar.  It should point to the directory that contains the 'baseq3' directory where demos are saved.  Ex:
+
+   # steam version
+   wolfcamql +set fs_quakelivedir "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Quake Live\\12345678901234567"
+
+   # stand alone version
+   wolfcamql +set fs_quakelivedir "C:\\Users\user1\\Application Data\\LocalLow\\id Software\\quakelive\\home"
 
 * r_dynamicLight  1 fixes square lights, 2 original q3 code (sometimes textures have light added to the wrong side), 3 testing only determine if lighting applies in one place in the source code
 
@@ -1872,8 +1907,6 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 	 bars and that the hud was drawn three times.
 
          The default widescreen value in menus appears to be '2' if it's never defined in a menuDef.
-
-	 Note: this type of widescreen implementation can create problems with the ingame mouse cursor.  An example is selectiong a name in the scoreboard.  Use cg_scoreBoardCursorAreaWideScreen to set it to the same value used for 'widescreen' in the hud menu file.
 
   Values:
 
@@ -2237,6 +2270,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_pngZlibCompression  (0:  no compression,  1: (default) enables high speed zlib compression), 9:  best space compression, -1:  default zlib compression)
 
 * ability to filter out reward types to disable both the announcment and the display icon:  cg_rewardCapture, cg_rewardImpressive, cg_rewardExcellent, cg_rewardHumiliation, cg_rewardDefend, cg_rewardAssist, cg_rewardComboKill, cg_rewardRampage, cg_rewardMidAir, cg_rewardRevenge, cg_rewardPerforated, cg_rewardHeadshot, cg_rewardAccuracy, cg_rewardQuadGod, cg_rewardFirstFrag, cg_rewardPerfect
+
+* windows version can echo console messages in the command prompt if --console-output is used in the command line.  This will also convert ansi colors.
 
 ----------
 

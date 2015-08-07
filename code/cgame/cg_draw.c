@@ -15,6 +15,7 @@
 #include "cg_main.h"
 #include "cg_players.h"  // color from string
 #include "cg_predict.h"
+#include "cg_q3mme_camera.h"
 #include "cg_scoreboard.h"
 #include "cg_sound.h"
 #include "cg_syscalls.h"
@@ -43,13 +44,6 @@ char systemChat[256];
 char teamChat1[256];
 char teamChat2[256];
 
-/*
-//FIXME hack for ql widescreen
-//FIXME needed?
-static int QLWideScreenOrig = 0;
-#define saveWidescreen(x) QLWideScreen = x
-#define resetWidescreen() QLWideScreen = QLWideScreenOrig
-*/
 
 //FIXME move
 #define MAX_HUD_ITEMS 100
@@ -141,8 +135,8 @@ static void CG_DrawCameraPointInfo (void)
 		return;
 	}
 
-	QLWideScreen = 1;
-	
+	QLWideScreen = WIDESCREEN_LEFT;
+
 	align = cg_drawCameraPointInfoAlign.integer;
 	scale = cg_drawCameraPointInfoScale.value;
 	style = cg_drawCameraPointInfoStyle.integer;
@@ -206,6 +200,7 @@ static void CG_DrawCameraPointInfo (void)
 	if (cpprev  &&  cg.selectedCameraPointMin != (cg.numCameraPoints - 1)) {
 		double a1, a2;
 
+		//FIXME does this apply to spline origins?
 		//if ((cp->originAvgVelocity * 2.0) > cpprev->originAvgVelocity) {
 		if ((cp->originImmediateInitialVelocity * cg_cameraSmoothFactor.value) < cpprev->originImmediateFinalVelocity) {
 			badOrigin = qtrue;
@@ -228,14 +223,14 @@ static void CG_DrawCameraPointInfo (void)
 		}
 	}
 
-	if (badOrigin) {
+	if (badOrigin  &&  (cp->type != CAMERA_SPLINE_BEZIER  ||  cp->type != CAMERA_SPLINE_CATMULLROM)) {
 		s = va("origin: %d  %d  %d  ^1(not smooth)", (int)cp->origin[0], (int)cp->origin[1], (int)cp->origin[2]);
 	} else {
 		s = va("origin: %d  %d  %d", (int)cp->origin[0], (int)cp->origin[1], (int)cp->origin[2]);
 	}
 	CG_SPrint(s);
 
-	if (badAngles) {
+	if (badAngles  &&  (cp->viewType != CAMERA_ANGLES_SPLINE)) {
 		s = va("angles: %d  %d  %d  ^1(not smooth)", (int)cp->angles[0], (int)cp->angles[1], (int)cp->angles[2]);
 	} else {
 		s = va("angles: %d  %d  %d", (int)cp->angles[0], (int)cp->angles[1], (int)cp->angles[2]);
@@ -250,6 +245,10 @@ static void CG_DrawCameraPointInfo (void)
 		s = va("camera type: jump");
 	} else if (cp->type == CAMERA_CURVE) {
 		s = va("camera type: curve");
+	} else if (cp->type == CAMERA_SPLINE_BEZIER) {
+		s = va("camera type: splineBezier");
+	} else if (cp->type == CAMERA_SPLINE_CATMULLROM) {
+		s = va("camera type: splineCatmullRom");
 	} else {
 		s = va("camera type: ???");
 	}
@@ -257,6 +256,8 @@ static void CG_DrawCameraPointInfo (void)
 
 	if (cp->viewType == CAMERA_ANGLES_INTERP) {
 		s = va("angles type: interp");
+	} else if (cp->viewType == CAMERA_ANGLES_SPLINE) {
+		s = va("angles type: spline");
 	} else if (cp->viewType == CAMERA_ANGLES_ENT) {
 		s = va("angles type: view entity");
 	} else if (cp->viewType == CAMERA_ANGLES_VIEWPOINT_INTERP) {
@@ -276,6 +277,7 @@ static void CG_DrawCameraPointInfo (void)
 	}
 	CG_SPrint(s);
 
+	//FIXME show disable for angles type spline
 	if (cp->rollType == CAMERA_ROLL_INTERP) {
 		s = va("camera roll: interp");
 	} else if (cp->rollType == CAMERA_ROLL_FIXED) {
@@ -286,6 +288,10 @@ static void CG_DrawCameraPointInfo (void)
 		s = va("camera roll: ???");
 	}
 	CG_SPrint(s);
+
+	// flags
+	CG_SPrint(va("flags: %s%s%s%s", cp->flags & CAM_ORIGIN ? "origin " : "", cp->flags & CAM_ANGLES ? "angles " : "", cp->flags & CAM_FOV ? "fov " : "", cp->flags & CAM_TIME ? "time " : ""));
+
 	CG_SPrint(va("number of splines: %d", cp->numSplines));
 	CG_SPrint(va("view point: %d  %d  %d", (int)cp->viewPointOrigin[0], (int)cp->viewPointOrigin[1], (int)cp->viewPointOrigin[2]));
 
@@ -321,6 +327,8 @@ static void CG_DrawCameraPointInfo (void)
 		CG_SPrint("fov type: fixed");
 	} else if (cp->fovType == CAMERA_FOV_PASS) {
 		CG_SPrint("fov type: pass");
+	} else if (cp->fovType == CAMERA_FOV_SPLINE) {
+		CG_SPrint("fov type: spline");
 	} else {
 		CG_SPrint("fov type:  ???");
 	}
@@ -2467,7 +2475,7 @@ static void CG_DrawStatusBar( void ) {
 	if ( cg_drawStatus.integer == 0 ) {
 		return;
 	}
-	QLWideScreen = 2;
+	QLWideScreen = WIDESCREEN_CENTER;
 	
 	// draw the team background
 	if (wolfcam_following) {
@@ -3486,7 +3494,7 @@ static void CG_DrawClientItemTimer (void)
 
 static void CG_DrawFxDebugEntities (void)
 {
-	QLWideScreen = 1;
+	QLWideScreen = WIDESCREEN_LEFT;
 	CG_DrawSmallString(5, 480 - 70, va("local entities: %d", cg.numLocalEntities), 6.0);
 }
 
@@ -3595,7 +3603,7 @@ static float CG_DrawTimer( float y ) {
 		s = va( "%i:%i%i", mins, tens, seconds );
 	}
 
-	QLWideScreen = 3;
+	QLWideScreen = WIDESCREEN_RIGHT;
 	w = CG_DrawStrlen( s, &cgs.media.bigchar );
 	CG_DrawBigString( 635 - w, y + 2, s, 1.0F);
 
@@ -4103,7 +4111,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 					item = BG_FindItemForPowerup( j );
 
 					// 2010-08-08 new ql, spawn protectin powerup
-					if (item &&  !(ci->powerups & PW_SPAWNPROTECTION)) {
+					if (item &&  !(ci->powerups & PWEX_SPAWNPROTECTION)) {
 						//CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, trap_R_RegisterShader( item->icon ) );
 						CG_DrawPic( xx, y - cwidth / 1, cwidth, cheight, trap_R_RegisterShader( item->icon ) );
 						if (right) {
@@ -4205,7 +4213,7 @@ static float CG_DrawPlayersLeft( float y ) {
 		return y;
 	}
 
-	QLWideScreen = 3;
+	QLWideScreen = WIDESCREEN_RIGHT;
 
 	s1 = cgs.redPlayersLeft;  //cgs.scores1;
 	s2 = cgs.bluePlayersLeft;  //cgs.scores2;
@@ -4383,7 +4391,7 @@ static float CG_DrawScores( float y ) {
 		return y;
 	}
 
-	QLWideScreen = 3;
+	QLWideScreen = WIDESCREEN_RIGHT;
 	
 	if (wolfcam_following) {
 		ourTeam = cgs.clientinfo[wcg.clientNum].team;
@@ -4595,7 +4603,7 @@ static float CG_DrawPowerups( float y ) {
 		return y;
 	}
 
-	QLWideScreen = 3;
+	QLWideScreen = WIDESCREEN_RIGHT;
 	
 	ps = &cg.snap->ps;
 	//ci = &cgs.clientinfo[ps->clientNum];
@@ -4638,7 +4646,7 @@ static float CG_DrawPowerups( float y ) {
 		item = BG_FindItemForPowerup( sorted[i] );
 
 		// item 0 is ql spawn protection
-		if (item  &&  sorted[i] != 0)  {  //!(ci->powerups & PW_SPAWNPROTECTION)) {
+		if (item  &&  sorted[i] != 0)  {  //!(ci->powerups & PWEX_SPAWNPROTECTION)) {
 
 		  color = 1;
 
@@ -4956,7 +4964,7 @@ static void CG_DrawTeamInfo( void ) {
 #define CHATLOC_Y 420 // bottom end
 #define CHATLOC_X 0
 
-	QLWideScreen = 1;
+	QLWideScreen = WIDESCREEN_LEFT;
 	
 	if (cg_teamChatHeight.integer < TEAMCHAT_HEIGHT)
 		chatHeight = cg_teamChatHeight.integer;
@@ -5030,7 +5038,7 @@ static void CG_DrawHoldableItem( void ) {
 		return;
 	}
 
-	QLWideScreen = 3;
+	QLWideScreen = WIDESCREEN_RIGHT;
 	
 	value = cg.snap->ps.stats[STAT_HOLDABLE_ITEM];
 	if ( value ) {
@@ -5051,7 +5059,7 @@ CG_DrawPersistantPowerup
 static void CG_DrawPersistantPowerup( void ) {
 	int		value;
 
-	QLWideScreen = 3;
+	QLWideScreen = WIDESCREEN_RIGHT;
 	
 	value = cg.snap->ps.stats[STAT_PERSISTANT_POWERUP];
 	if ( value ) {
@@ -5483,7 +5491,7 @@ static void CG_DrawDisconnect( void ) {
 
 	// also add text in center of screen
 	s = "Connection Interrupted"; // bk 010215 - FIXME
-	QLWideScreen = 2;
+	QLWideScreen = WIDESCREEN_CENTER;
 	w = CG_DrawStrlen( s, &cgs.media.bigchar );
 	CG_DrawBigString( 320 - w/2, 100, s, 1.0F);
 
@@ -7097,7 +7105,7 @@ static void Wolfcam_DrawCrosshair (void)
     y = cg_crosshairY.integer;
 	//QLWideScreen = cg_crosshairWideScreen.integer;
 	//FIXME change?
-	QLWideScreen = 0;
+	QLWideScreen = WIDESCREEN_NONE;
 
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
@@ -7377,7 +7385,7 @@ static void CG_DrawCrosshair(void) {
 	y = cg_crosshairY.integer;
 	//QLWideScreen = cg_crosshairWideScreen.integer;
 	//FIXME change?
-	QLWideScreen = 0;
+	QLWideScreen = WIDESCREEN_NONE;
 
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
@@ -7813,7 +7821,7 @@ static void CG_DrawKeyPress (void)
 	}
 
 	//FIXME widescreen
-	QLWideScreen = 2;
+	QLWideScreen = WIDESCREEN_CENTER;
 	
 	//VectorCopy(cg.snap->ps.velocity, velocity);
 	VectorCopy(cg.prevSnap->ps.velocity, velocity);
@@ -7943,7 +7951,7 @@ static void CG_DrawSpectator(void) {
 		return;
 	}
 
-	QLWideScreen = 2;
+	QLWideScreen = WIDESCREEN_CENTER;
 	
 	CG_DrawBigString(320 - 9 * 8, 440, "SPECTATOR", 1.0F);
 	if ( cgs.gametype == GT_TOURNAMENT ) {
@@ -8359,11 +8367,28 @@ static void CG_DrawScoreboardMenuCursor (void)
 	float x = cgs.cursorX - 16;
 	float y = cgs.cursorY - 16;
 
-	// widescreen needs to match the setting in the scoreboard huds
-	//FIXME can this be handled in ui/* ?
-	QLWideScreen = cg_scoreBoardCursorAreaWideScreen.integer;
+	QLWideScreen = WIDESCREEN_NONE;  //cg_scoreBoardCursorAreaWideScreen.integer;
+	// don't stretch the cursor in widescreen mode
+	if (cg_wideScreen.integer == 5) {
+		float aspect;
+		float width43;
+		float newXScale;
+
+		//FIXME duplicate code
+		//FIXME store calculations
+		aspect = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+		if (aspect > 1.25f) {
+			width43 = 4.0f * (cgs.glconfig.vidHeight / 3.0);
+			newXScale = width43 / (float)cgs.glconfig.vidWidth;
+			w *= newXScale;
+		}
+	}
 
 	CG_DrawPic(x, y, w, h, cgs.media.selectCursor);
+
+	// testing
+	//QLWideScreen = WIDESCREEN_CENTER;
+	//CG_DrawPic(x, y, w, h, cgs.media.plasmaBallShader);
 }
 
 /*
@@ -9043,7 +9068,7 @@ static void CG_DrawErrorPopup (void)
 
 	//FIXME cvars to control
 
-	QLWideScreen = 1;
+	QLWideScreen = WIDESCREEN_LEFT;
 	
 	scale = 0.3;  //cg.echoPopupScale;
 	x = 0;  //cg.echoPopupX;
@@ -9266,7 +9291,7 @@ static void CG_DrawCtfsRoundScoreboard (void)
 	//align = ITEM_ALIGN_CENTER;
 	style = ITEM_TEXTSTYLE_SHADOWED;
 
-	QLWideScreen = 2;
+	QLWideScreen = WIDESCREEN_CENTER;
 	
 	x = 200;
 	y = 152 + 20;
@@ -9381,7 +9406,7 @@ static void CG_Draw2D( void ) {
 	}
 
 	if (cg.testMenu) {
-		QLWideScreen = 2;
+		QLWideScreen = WIDESCREEN_CENTER;
 		Menu_Paint(cg.testMenu, qtrue);
 		CG_DrawPic(cgs.cursorX - 16, cgs.cursorY - 16, 32, 32, cgs.media.selectCursor);
 		return;
@@ -9402,8 +9427,32 @@ static void CG_Draw2D( void ) {
 	}
 
 	if (cg_draw2D.integer == 2) {
-		QLWideScreen = 1;
-		CG_Text_Paint(2, 16, 0.2, colorRed, "Camera Edit Hud (cg_draw2d 1  to disable)", 0, 0, 1, &cgs.media.qlfont16);
+		QLWideScreen = WIDESCREEN_LEFT;
+		CG_Text_Paint(2, 16, 0.2, colorRed, "Camera Edit Hud (set cg_draw2d 1  to disable)", 0, 0, 1, &cgs.media.qlfont16);
+
+
+		if (cg.numCameraPoints > 0) {
+			if (cg.cameraPlaying) {
+				CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^3locked ^5(camera is playing, use /stopcamera  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+			} else {
+				if (cg_cameraQue.integer) {
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^3locked ^5(set cg_cameraQue 0  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+				} else {
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^7unlocked ^5(set cg_cameraQue 1  to lock and follow camera view)", 0, 0, 1, &cgs.media.qlfont16);
+				}
+			}
+		} else if (demo.camera.points) {
+			// q3mme camera points present
+			if (cg.cameraQ3mmePlaying) {
+				CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^3locked ^6(camera is playing, use /stopq3mmecamera  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+			} else {
+				if (cg_cameraQue.integer) {
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^3locked ^6(set cg_cameraQue 0  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+				} else {
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^7unlocked ^6(set cg_cameraQue 1  to lock and follow camera view)", 0, 0, 1, &cgs.media.qlfont16);
+				}
+			}
+		}
 
 		CG_DrawFPS(10.0);
 		Wolfcam_DrawSpeed(30.0);
@@ -9636,7 +9685,7 @@ static void CG_Draw2D( void ) {
 		char buf[1024];
 
 		Q_strncpyz(buf, "01234567890abcdefghijklmnop\nqrstuvwxyzABCDEFGHIJKLMN\nOPQRSTUVWXYZ\n~!@#$%^&*()_-+=\\]}[{'\";:/?.>,<\n", sizeof(buf));
-		QLWideScreen = 2;
+		QLWideScreen = WIDESCREEN_CENTER;
 	//FIXME testing
 		CG_CenterPrint( buf, SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH );
 		//CG_CenterPrint("qrstuvwxyzABCDEFGHIJK", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);

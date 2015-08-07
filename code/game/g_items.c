@@ -127,8 +127,7 @@ int Pickup_PersistantPowerup( gentity_t *ent, gentity_t *other ) {
 	other->client->ps.stats[STAT_PERSISTANT_POWERUP] = ent->item - bg_itemlist;
 	other->client->persistantPowerup = ent;
 
-	switch( ent->item->giTag ) {
-	case PW_GUARD:
+	if (ent->item->giTag == PW_GUARD) {
 		clientNum = other->client->ps.clientNum;
 		trap_GetUserinfo( clientNum, userinfo, sizeof(userinfo) );
 		handicap = atof( Info_ValueForKey( userinfo, "handicap" ) );
@@ -142,10 +141,7 @@ int Pickup_PersistantPowerup( gentity_t *ent, gentity_t *other ) {
 		other->client->ps.stats[STAT_MAX_HEALTH] = max;
 		other->client->ps.stats[STAT_ARMOR] = max;
 		other->client->pers.maxHealth = max;
-
-		break;
-
-	case PW_SCOUT:
+	} else if (ent->item->giTag == PW_SCOUT) {
 		clientNum = other->client->ps.clientNum;
 		trap_GetUserinfo( clientNum, userinfo, sizeof(userinfo) );
 		handicap = atof( Info_ValueForKey( userinfo, "handicap" ) );
@@ -154,9 +150,7 @@ int Pickup_PersistantPowerup( gentity_t *ent, gentity_t *other ) {
 		}
 		other->client->pers.maxHealth = handicap;
 		other->client->ps.stats[STAT_ARMOR] = 0;
-		break;
-
-	case PW_DOUBLER:
+	} else if (ent->item->giTag == PW_DOUBLER) {
 		clientNum = other->client->ps.clientNum;
 		trap_GetUserinfo( clientNum, userinfo, sizeof(userinfo) );
 		handicap = atof( Info_ValueForKey( userinfo, "handicap" ) );
@@ -164,8 +158,7 @@ int Pickup_PersistantPowerup( gentity_t *ent, gentity_t *other ) {
 			handicap = 100.0f;
 		}
 		other->client->pers.maxHealth = handicap;
-		break;
-	case PW_ARMORREGEN:
+	} else if (ent->item->giTag == PW_ARMORREGEN) {
 		clientNum = other->client->ps.clientNum;
 		trap_GetUserinfo( clientNum, userinfo, sizeof(userinfo) );
 		handicap = atof( Info_ValueForKey( userinfo, "handicap" ) );
@@ -174,8 +167,7 @@ int Pickup_PersistantPowerup( gentity_t *ent, gentity_t *other ) {
 		}
 		other->client->pers.maxHealth = handicap;
 		memset(other->client->ammoTimes, 0, sizeof(other->client->ammoTimes));
-		break;
-	default:
+	} else {
 		clientNum = other->client->ps.clientNum;
 		trap_GetUserinfo( clientNum, userinfo, sizeof(userinfo) );
 		handicap = atof( Info_ValueForKey( userinfo, "handicap" ) );
@@ -183,7 +175,6 @@ int Pickup_PersistantPowerup( gentity_t *ent, gentity_t *other ) {
 			handicap = 100.0f;
 		}
 		other->client->pers.maxHealth = handicap;
-		break;
 	}
 
 	return -1;

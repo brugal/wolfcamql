@@ -1467,37 +1467,28 @@ static void CG_DrawPowerupAvailable (const centity_t *cent)
 
 	ent.renderfx |= RF_DEPTHHACK;
 
-	switch (item->giTag) {
-	case PW_QUAD:
+	if (item->giTag == PW_QUAD) {
 		shader = cgs.media.quadAvailable;
-		break;
-	case PW_BATTLESUIT:
+	} else if (item->giTag == PW_BATTLESUIT) {
 		shader = cgs.media.bsAvailable;
-		break;
-	case PW_HASTE:
+	} else if (item->giTag == PW_HASTE) {
 		shader = cgs.media.hasteAvailable;
-		break;
-	case PW_INVIS:
+	} else if (item->giTag == PW_INVIS) {
 		shader = cgs.media.invisAvailable;
-		break;
-	case PW_REGEN:
+	} else if (item->giTag == PW_REGEN) {
 		shader = cgs.media.regenAvailable;
-		break;
-	case PW_FLIGHT:
+	} else if (item->giTag == PW_FLIGHT) {
 		//FIXME not in ql, draw something
 		// 2015-07-16 no, looks bad in demos, will make it look like
 		// the powerup is right in front of you, draw own icon or skip
 		//shader = cg_items[es->modelindex].icon;
 
 		return;
-		break;
-
-	default:
+	} else {
 		// icon shader looks bad
 		//shader = cg_items[es->modelindex].icon;
 
 		return;
-		break;
 	}
 
 	ent.customShader = shader;

@@ -6,7 +6,7 @@
 
 COMPILE_PLATFORM=$(shell uname|sed -e s/_.*//|tr '[:upper:]' '[:lower:]'|sed -e 's/\//_/g')
 
-COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/i386/)
+COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/i386/ | sed -e 's/^arm.*/arm/')
 
 ifeq ($(COMPILE_PLATFORM),sunos)
   # Solaris uname and GNU uname differ
@@ -259,10 +259,12 @@ CGAME_LIBS = -lpthread
 #############################################################################
 
 ## Defaults
-LIB=lib
-
 INSTALL=install
 MKDIR=mkdir
+
+ifneq (,$(findstring "$(COMPILE_PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
+  TOOLS_CFLAGS += -DARCH_STRING=\"$(COMPILE_ARCH)\"
+endif
 
 ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
 
@@ -270,20 +272,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
     ARCH=alpha
   else
   ifeq ($(ARCH),x86_64)
-    LIB=lib64
     LDFLAGS += -m64
-  else
-  ifeq ($(ARCH),ppc64)
-    LIB=lib64
-  else
-  ifeq ($(ARCH),s390x)
-    LIB=lib64
-  else
-  ifeq ($(ARCH),aarch64)
-    LIB=lib64
-  endif
-  endif
-  endif
   endif
   endif
 
@@ -293,10 +282,10 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 
 ifdef CGAME_HARD_LINKED
   BASE_CFLAGS = -p -g -rdynamic -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
-    -pipe -DUSE_ICON -D_FILE_OFFSET_BITS=64 -msse $(CGAME_HARD_LINKED)
+    -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -D_FILE_OFFSET_BITS=64 -msse $(CGAME_HARD_LINKED)
 else
   BASE_CFLAGS = -g -rdynamic -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
-    -pipe -DUSE_ICON -D_FILE_OFFSET_BITS=64 -msse
+    -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -D_FILE_OFFSET_BITS=64 -msse
 endif
 
   CLIENT_CFLAGS = $(SDL_CFLAGS)
@@ -648,9 +637,10 @@ ifdef MINGW
     CLIENT_CFLAGS += -I$(SDLHDIR)/include
     CLIENT_LIBS += $(LIBSDIR)/win32/libSDLmain.a \
                       $(LIBSDIR)/win32/libSDL.dll.a
+    #CLIENT_LIBS += $(LIBSDIR)/win32/libSDL.dll.a
   else
     CLIENT_CFLAGS += $(SDL_CFLAGS)
-    CLIENT_LIBS += $(SDL_LIBS)
+    #CLIENT_LIBS += $(SDL_LIBS)
   endif
 
   BUILD_CLIENT_SMP = 0
@@ -831,7 +821,7 @@ else # ifeq netbsd
 #############################################################################
 
 ifeq ($(PLATFORM),irix64)
-
+  LIB=lib
   ARCH=mips
 
   CC = c99
@@ -1051,8 +1041,7 @@ endef
 
 define DO_CPP
 $(echo_cmd) "CPP $<"
-#$(Q)$(CPP) -Wall -m32 -o $@ -c $<
-$(CPP) -Wall -m32 -o $@ -c $<
+$(Q)$(CPP) -Wall -m32 -o $@ -c $<
 endef
 
 define DO_SMP_CC
@@ -1945,6 +1934,7 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/baseq3/cgame/bg_slidemove.o \
   $(B)/baseq3/cgame/bg_lib.o \
   $(B)/baseq3/cgame/bg_xmlparser.o \
+  $(B)/baseq3/cgame/cg_camera.o \
   $(B)/baseq3/cgame/cg_consolecmds.o \
   $(B)/baseq3/cgame/cg_draw.o \
   $(B)/baseq3/cgame/cg_drawdc.o \
@@ -1994,6 +1984,7 @@ Q3CGOBJ_ = \
   $(B)/baseq3/cgame/bg_slidemove.o \
   $(B)/baseq3/cgame/bg_xmlparser.o \
   $(B)/baseq3/cgame/bg_lib.o \
+  $(B)/baseq3/cgame/cg_camera.o \
   $(B)/baseq3/cgame/cg_consolecmds.o \
   $(B)/baseq3/cgame/cg_draw.o \
   $(B)/baseq3/cgame/cg_drawdc.o \

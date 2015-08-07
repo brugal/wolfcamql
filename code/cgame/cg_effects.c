@@ -654,7 +654,7 @@ void CG_ImpactSparks( int weapon, const vec3_t origin, const vec3_t dir, int ent
 	//Com_Printf("imp %d\n", entityNum);
 
 	//FIXME hack for 2010-08-08 new ql spawn invuln
-	if (cg_entities[entityNum].currentState.powerups & PW_SPAWNPROTECTION) {
+	if (cg_entities[entityNum].currentState.powerups & PWEX_SPAWNPROTECTION) {
 		//Com_Printf("invul %d  %s\n", entityNum, cgs.clientinfo[entityNum].name);
 		//CG_PlayerFloatSprite(&cg_entities[entityNum], cgs.media.connectionShader);
 		if (entityNum >= 0  &&  entityNum < MAX_CLIENTS) {

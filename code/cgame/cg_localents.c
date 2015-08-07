@@ -1530,7 +1530,9 @@ static void CG_AddDamagePlum (localEntity_t *le)
 {
 	refEntity_t	*re;
 	vec3_t		origin, ourOrig, ourViewAngles, dir;
-	vec3_t forward, right, up = {0, 0, 1};
+	//vec3_t forward;
+	vec3_t right;
+	//vec3_t up = {0, 0, 1};
 	float		c;
 	int			i, score, digits[10], numdigits, negative;
 	trajectory_t trajectory;
@@ -2093,7 +2095,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		float newZ;
 		float sinkTime;
 		vec3_t mins, maxs;
-		int i;
+		//int i;
 
 #if 0  // force
 		// add external forces
@@ -2220,7 +2222,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 
 	} else if (ScriptVars.hasMoveBounce  ||  ScriptVars.hasMoveGravity) {
 		vec3_t oldVelocity;
-		int i;
+		//int i;
 
 #if 0  // force
 		// add external forces

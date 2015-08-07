@@ -1352,25 +1352,27 @@ typedef struct {
 
 	//cameraPathKeyPoint_t cameraPoints[MAX_CAMERAPOINTS];
 	cameraPoint_t cameraPoints[MAX_CAMERAPOINTS];
+	cameraPoint_t *cameraPointsPointer;
 	vec3_t splinePoints[MAX_SPLINEPOINTS];
 	int	splinePointsCameraPoints[MAX_SPLINEPOINTS];
 	int numSplinePoints;
 
 	int numCameraPoints;
-        int numQ3mmeCameraPoints;
+	int numQ3mmeCameraPoints;
 	int selectedCameraPointMin;
 	int selectedCameraPointMax;
 
 	int selectedCameraPointField;
 
 	qboolean cameraPlaying;
-	qboolean cameraQ3mme;
+	qboolean cameraQ3mmePlaying;
 	qboolean cameraPlayedLastFrame;
 	int currentCameraPoint;
 	qboolean atCameraPoint;
 	qboolean cameraWaitToSync;
 	qboolean cameraJustStarted;
 	qboolean playCameraCommandIssued;
+	qboolean playQ3mmeCameraCommandIssued;
 	double cameraPointCommandTime;
 	vec3_t cameraLastOrigin;
 	vec3_t cameraVelocity;
@@ -2905,7 +2907,7 @@ extern vmCvar_t cg_scoreBoardAtIntermission;
 extern vmCvar_t cg_scoreBoardWarmup;
 extern vmCvar_t cg_scoreBoardOld;
 extern vmCvar_t cg_scoreBoardOldWideScreen;
-extern vmCvar_t cg_scoreBoardCursorAreaWideScreen;
+//extern vmCvar_t cg_scoreBoardCursorAreaWideScreen;
 
 extern vmCvar_t cg_hitBeep;
 

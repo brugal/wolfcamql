@@ -330,6 +330,8 @@ static void Demos_MenuInit (const char *dirName)
 	s_demos.list.itemnames			= (const char **)s_demos.demolist;
 	s_demos.list.columns			= 1;
 
+	//Com_Printf("numitems: %d\n", s_demos.list.numitems);
+
 	if (!s_demos.list.numitems) {
 		//strcpy( s_demos.names, "No Demos Found." );
 		Q_strncpyz(s_demos.names, "../", sizeof(s_demos.names));

@@ -21,7 +21,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #define __USE_GNU
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+  #define _GNU_SOURCE
+#endif
 
 
 #include "../qcommon/q_shared.h"
@@ -95,6 +97,10 @@ char *Sys_QuakeLiveDir (void)
 	const char *p;
 	const char *override = NULL;
 	const char *user = getenv("USER");
+	char searchPath[MAX_OSPATH];
+	char subPath[MAX_OSPATH];
+	DIR *d;
+	struct dirent *dir;
 
 	if (!*QuakeLivePath) {
 		override = Cvar_VariableString("fs_quakelivedir");
@@ -106,19 +112,57 @@ char *Sys_QuakeLiveDir (void)
 
 		if ((p = getenv("HOME")) != NULL) {
 			if (user  &&  *user) {
-				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.wine/drive_c/users/%s/Application Data/id Software/quakelive/", p, user);
+				struct stat st;
+				int count;
+
+				// check for quake live steam
+				count = 0;
+				while (count < 2) {
+					//const char *tag;
+
+					if (count == 0) {
+						Com_sprintf(searchPath, sizeof(searchPath), "%s/.wine/drive_c/Program Files (x86)/Steam/steamapps/common/Quake Live", p);
+						//tag = "64-bit";
+					} else {
+						Com_sprintf(searchPath, sizeof(searchPath), "%s/.wine/drive_c/Program Files/Steam/steamapps/common/Quake Live", p);
+						//tag = "32-bit";
+					}
+
+					d = opendir(searchPath);
+					if (d) {
+						while ((dir = readdir(d)) != NULL) {
+							//printf("%s:  '%s'\n", tag, dir->d_name);
+							if (dir->d_name[0] == '.') {
+								continue;
+							}
+							Com_sprintf(subPath, sizeof(subPath), "%s/%s/baseq3", searchPath, dir->d_name);
+							if (stat(subPath, &st) == 0) {
+								// got it
+								Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/%s", searchPath, dir->d_name);
+								goto done;
+							}
+						}
+					}
+
+					count++;
+				}  // while (count < 2)
+
+				// didn't find wine steam quake live, try wine stand alone
+				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.wine/drive_c/users/%s/Application Data/id Software/quakelive/home", p, user);
 			} else {
 				// try old quakelive native linux/mac support
 #ifdef MACOS_X
 				//FIXME not sure
 				// /Library/Application\ Support/Quakelive/
-				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/Library/Application Support/Quakelive/", p);
+				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/Library/Application Support/Quakelive/home/", p);
 #else
-				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.quakelive/quakelive/", p);
+				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.quakelive/quakelive/home", p);
 #endif
 			}
 		}
 	}
+
+done:
 
 	return QuakeLivePath;
 }
@@ -891,7 +935,7 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 
 #endif
 
-void Sys_PlatformInit (qboolean useBacktrace)
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 {
 	struct sigaction action;
 	const char *term = getenv("TERM");
@@ -1020,6 +1064,75 @@ void Sys_SetEnv(const char *name, const char *value)
 		setenv(name, value, 1);
 	else
 		unsetenv(name);
+}
+
+/*
+=================
+Sys_AnsiColorPrint
+
+Transform Q3 colour codes to ANSI escape sequences
+=================
+*/
+void Sys_AnsiColorPrint( const char *msg )
+{
+	static char buffer[ MAX_PRINT_MSG ];
+	int         length = 0;
+	static int  q3ToAnsi[ 8 ] =
+	{
+		30, // COLOR_BLACK
+		31, // COLOR_RED
+		32, // COLOR_GREEN
+		33, // COLOR_YELLOW
+		34, // COLOR_BLUE
+		36, // COLOR_CYAN
+		35, // COLOR_MAGENTA
+		0   // COLOR_WHITE
+	};
+
+	while( *msg )
+	{
+		if( Q_IsColorString( msg ) || *msg == '\n' )
+		{
+			// First empty the buffer
+			if( length > 0 )
+			{
+				buffer[ length ] = '\0';
+				fputs( buffer, stderr );
+				length = 0;
+			}
+
+			if( *msg == '\n' )
+			{
+				// Issue a reset and then the newline
+				fputs( "\033[0m\n", stderr );
+				msg++;
+			}
+			else
+			{
+				// Print the color code
+				Com_sprintf( buffer, sizeof( buffer ), "\033[%dm",
+						q3ToAnsi[ ColorIndex( *( msg + 1 ) ) ] );
+				fputs( buffer, stderr );
+				msg += 2;
+			}
+		}
+		else
+		{
+			if( length >= MAX_PRINT_MSG - 1 )
+				break;
+
+			buffer[ length ] = *msg;
+			length++;
+			msg++;
+		}
+	}
+
+	// Empty anything still left in the buffer
+	if( length > 0 )
+	{
+		buffer[ length ] = '\0';
+		fputs( buffer, stderr );
+	}
 }
 
 void Sys_Backtrace_f (void)

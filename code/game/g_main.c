@@ -418,6 +418,8 @@ G_InitGame
 */
 void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	int					i;
+	int protocol;
+	char buffer[256];
 
 	G_Printf ("------- Game Initialization -------\n");
 	G_Printf ("gamename: %s\n", GAMEVERSION);
@@ -431,6 +433,38 @@ void G_InitGame( int levelTime, int randomSeed, int restart ) {
 	G_ProcessIPBans();
 
 	G_InitMemory();
+
+	trap_Cvar_VariableStringBuffer("protocol", buffer, sizeof(buffer));
+	protocol = atoi(buffer);
+	G_Printf("protocol %d\n", protocol);
+
+	if (protocol == 91) {
+		// defaults to protocol 91
+		PW_NONE = PW91_NONE;
+		//PW_SPAWNARMOR = PW91_SPAWNARMOR;
+		PW_QUAD = PW91_QUAD;
+		PW_BATTLESUIT = PW91_BATTLESUIT;
+		PW_HASTE = PW91_HASTE;
+		PW_INVIS = PW91_INVIS;
+		PW_REGEN = PW91_REGEN;
+		PW_FLIGHT = PW91_FLIGHT;
+		PW_REDFLAG = PW91_REDFLAG;
+		PW_BLUEFLAG = PW91_BLUEFLAG;
+		PW_NEUTRALFLAG = PW91_NEUTRALFLAG;
+		PW_INVULNERABILITY = PW91_INVULNERABILITY;
+		PW_SCOUT = PW91_SCOUT;
+		PW_GUARD = PW91_GUARD;
+		PW_DOUBLER = PW91_DOUBLER;
+		PW_ARMORREGEN = PW91_ARMORREGEN;
+		PW_FROZEN = PW91_FROZEN;
+		PW_NUM_POWERUPS = PW91_NUM_POWERUPS;
+
+		memcpy(&bg_itemlist, &bg_itemlistQldm91, sizeof(gitem_t) * bg_numItemsQldm91);
+		bg_numItems = bg_numItemsQldm91;
+	} else {
+		//FIXME
+		G_Printf("^3FIXME: game unsupported protocol %d\n", protocol);
+	}
 
 	// set some level globals
 	memset( &level, 0, sizeof( level ) );

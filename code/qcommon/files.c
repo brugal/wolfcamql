@@ -507,7 +507,9 @@ qboolean FS_CreatePath (char *OSPath) {
 
 	// Skip creation of the root directory as it will always be there
 	ofs = strchr( path, PATH_SEP );
-	ofs++;
+	if ( ofs != NULL ) {
+		ofs++;
+	}
 
 	for (; ofs != NULL && *ofs ; ofs++) {
 		if (*ofs == PATH_SEP) {
@@ -2175,14 +2177,17 @@ char **FS_ListFilteredFiles( const char *path, const char *extension, char *filt
 		char *name;
 		char ospath[MAX_OSPATH];
 
-		//Com_Printf("want quake live dir\n");
-		Com_sprintf(ospath, sizeof(ospath), "%s/home/baseq3/%s", Sys_QuakeLiveDir(), path + 3);
+		// steam quakelive directory
+		Com_sprintf(ospath, sizeof(ospath), "%s/baseq3/%s", Sys_QuakeLiveDir(), path + 3);
 		FS_ReplaceSeparators(ospath);
+		//Com_Printf("dir listing: '%s'\n", ospath);
+
 		nfiles = 0;
-		sysFiles = Sys_ListFiles(ospath, extension, filter, &numSysFiles, qfalse );
+		sysFiles = Sys_ListFiles(ospath, extension, filter, &numSysFiles, qfalse);
 		for ( i = 0 ; i < numSysFiles ; i++ ) {
 			// unique the match
 			name = sysFiles[i];
+			//Com_Printf("adding '%s'\n", name);
 			nfiles = FS_AddFileToList( name, list, nfiles );
 		}
 		Sys_FreeFileList( sysFiles );

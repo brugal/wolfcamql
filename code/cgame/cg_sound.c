@@ -24,11 +24,6 @@ static qboolean CG_CheckCanPlaySound (const vec3_t origin, int entityNum, sfxHan
         }
 
         if (origin == NULL) {
-            if (entityNum == (MAX_GENTITIES - 1)) {
-                //FIXME hack for freecam rail
-                Com_Printf("^3FIXME cpma sound, hack for freecam rail\n");
-                return qtrue;
-            }
             if (entityNum == ENTITYNUM_WORLD) {
                 Com_Printf("^3WARNING cpma sound WORLD entity and null origin\n");
                 return qtrue;

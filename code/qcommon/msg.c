@@ -816,9 +816,7 @@ netField_t	entityStateFieldsQldm91[] =
 { NETF(apos.trBase[1]), 0 },
 { NETF(pos.trDelta[2]), 0 },
 { NETF(apos.trBase[0]), 0 },
-//#ifdef QUAKELIVE_PROTOCOL
-{ NETF(pos.gravity), 32 },   ////
-//#endif
+{ NETF(pos.gravity), 32 },
 { NETF(event), 10 },
 { NETF(angles2[1]), 0 },
 { NETF(eType), 8 },
@@ -855,29 +853,20 @@ netField_t	entityStateFieldsQldm91[] =
 { NETF(apos.trDelta[0]), 0 },
 { NETF(apos.trDelta[1]), 0 },
 { NETF(apos.trDelta[2]), 0 },
-
-//#ifdef QUAKELIVE_PROTOCOL
-//FIXME is this new?  or did i screw up?
-{ NETF(apos.gravity), 32 },   ////
-//#endif
+{ NETF(apos.gravity), 32 },
 { NETF(time2), 32 },
-//{ NETF(apos.gravity), 0 },
 { NETF(angles[2]), 0 },
 { NETF(angles2[0]), 0 },
 { NETF(angles2[2]), 0 },
 { NETF(constantLight), 32 },
 { NETF(frame), 16 },
 { NETF(jumpTime), 32 },
-{ NETF(unknown1), 32 },   // crouch time?
-{ NETF(unknown2), 16 },  // health
-// armor, location, ... command time
 
-//{ NETF(unknown3), 32 },  // ???
-{ NETF(unknown4), 16 },  // armor
-{ NETF(unknown5), 8 },  // location
 { NETF(doubleJumped), 1 },
-//{ NETF(unknown6), 32 }, // ??
 
+{ NETF(health), 16 },
+{ NETF(armor), 16 },
+{ NETF(location), 8 },  // location
 
 
 };
@@ -1456,41 +1445,26 @@ netField_t	playerStateFieldsQldm91[] =
 { PSF(eventParms[1]), 8 },
 { PSF(clientNum), 8 },
 { PSF(weapon), 5 },
-// weaponPrimary
-//{ PSF(unknown9), 5 },
+
+{ PSF(weaponPrimary), 8 },
 { PSF(viewangles[2]), 0 },
 { PSF(grapplePoint[0]), 0 },
 { PSF(grapplePoint[1]), 0 },
 { PSF(grapplePoint[2]), 0 },
 
-
-
+{ PSF(jumppad_ent), 10 } , // GENTITYNUM_BITS
 { PSF(loopSound), 16 },
-{ PSF(jumppad_ent), 10 } , //GENTITYNUM_BITS },
-{ PSF(doubleJumped), 1 },
+
 { PSF(jumpTime), 32 },
-//{ PSF(crouchTime), 32 },
+{ PSF(doubleJumped), 1 },
+{ PSF(crouchTime), 32 },
+{ PSF(crouchSlideTime), 32 },
 
-// crouchSlideTime
-// jumpTime:697465 crouchTime:697702 location:22 fov:93 forwardmove:127 rightmove:127 upmove:0  (1811 bits)
-
-
-{ PSF(unknown1), 1 },  // ??  skipped  crouchSlideTime?
-{ PSF(unknown2), 32 },  // crouchTime
-{ PSF(unknown3), 8 },  // ??
-{ PSF(unknown4), 8 },  // location
-
-// crouchSlide time
-//{ PSF(unknown11), 32 },
-
-{ PSF(unknown5), 8 },  // fov
-{ PSF(unknown6), 8 },  // forwardmove
-{ PSF(unknown7), 8 },  // rightmove
-
-{ PSF(unknown8), 8 },  // upmove
-
-//{ PSF(unknown9), 1 },  // 58
-//{ PSF(unknown10), 1 },
+{ PSF(location), 8 },
+{ PSF(fov), 8 },
+{ PSF(forwardmove), 8 },
+{ PSF(rightmove), 8 },
+{ PSF(upmove), 8 },
 
 };
 

@@ -1004,23 +1004,28 @@ Returns waterlevel for entity origin
 static int CG_WaterLevel(const centity_t *cent) {
 	vec3_t point;
 	int contents, sample1, sample2, anim, waterlevel;
+	int viewheight;
 
-	// get waterlevel, accounting for ducking
-	waterlevel = 0;
-	VectorCopy(cent->lerpOrigin, point);
-	point[2] += MINS_Z + 1;
 	anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
 
 	if (anim == LEGS_WALKCR || anim == LEGS_IDLECR) {
-		point[2] += CROUCH_VIEWHEIGHT;
+		viewheight = CROUCH_VIEWHEIGHT;
 	} else {
-		point[2] += DEFAULT_VIEWHEIGHT;
+		viewheight = DEFAULT_VIEWHEIGHT;
 	}
 
+	//
+	// get waterlevel, accounting for ducking
+	//
+	waterlevel = 0;
+
+	point[0] = cent->lerpOrigin[0];
+	point[1] = cent->lerpOrigin[1];
+	point[2] = cent->lerpOrigin[2] + MINS_Z + 1;
 	contents = CG_PointContents(point, -1);
 
 	if (contents & MASK_WATER) {
-		sample2 = point[2] - MINS_Z;
+		sample2 = viewheight - MINS_Z;
 		sample1 = sample2 / 2;
 		waterlevel = 1;
 		point[2] = cent->lerpOrigin[2] + MINS_Z + sample1;
@@ -1080,7 +1085,7 @@ void CG_PainEvent( centity_t *cent, int health ) {
 	}
 
 	// play a gurp sound instead of a normal pain sound
-	if (0) {  //(CG_WaterLevel(cent) >= 1) {
+	if (0) {  //(CG_WaterLevel(cent) == 3) {
 		if (rand()&1) {
 			CG_StartSound(NULL, cent->currentState.number, CHAN_VOICE, CG_CustomSound(cent->currentState.number, "sound/player/gurp1.wav"));
 		} else {
@@ -1831,35 +1836,25 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						play = qfalse;
 					}
 
-#if  1  //def MPACK
-					switch (item->giTag ) {
-					case PW_SCOUT:
+					if (item->giTag == PW_SCOUT) {
 						if (play) {
 							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.scoutSound );
 						}
-						break;
-					case PW_GUARD:
+					} else if (item->giTag == PW_GUARD) {
 						if (play) {
 							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.guardSound );
 						}
-						break;
-					case PW_DOUBLER:
+					} else if (item->giTag == PW_DOUBLER) {
 						if (play) {
 							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.doublerSound );
 						}
-						break;
-					case PW_ARMORREGEN:
+					} else if (item->giTag == PW_ARMORREGEN) {
 						if (play) {
 							CG_StartSound (NULL, clientNum, CHAN_ANNOUNCER,	cgs.media.armorRegenSound );
 						}
-						break;
-					case PW_KEY:
+					} else if (item->giTag == PWEX_KEY) {
 						CG_StartSound(NULL, clientNum, CHAN_AUTO, trap_S_RegisterSound(item->pickup_sound, qfalse));
-						break;
-					default:
-						break;
 					}
-#endif
 				} else {
 					CG_StartSound (NULL, clientNum, CHAN_AUTO,	trap_S_RegisterSound( item->pickup_sound, qfalse ) );
 				}
@@ -3239,7 +3234,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 		//CG_PrintEntityStatep(es);
 
-		if (cgs.protocol == PROTOCOL_Q3  &&  CG_WaterLevel(&cg_entities[clientNum])) {
+		if (cgs.protocol == PROTOCOL_Q3  &&  CG_WaterLevel(&cg_entities[clientNum]) == 3) {
 			CG_StartSound(NULL, clientNum, CHAN_VOICE, CG_CustomSound(clientNum, "*drown.wav"));
 		} else {
 			CG_StartSound( NULL, clientNum, CHAN_VOICE,

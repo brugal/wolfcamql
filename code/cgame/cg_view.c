@@ -4,6 +4,7 @@
 // for a 3D rendering
 #include "cg_local.h"
 
+#include "cg_camera.h"
 #include "cg_consolecmds.h"  // popup()
 #include "cg_draw.h"  // CG_Fade()
 #include "cg_effects.h"
@@ -2072,6 +2073,232 @@ static float LerpAngle2 (float from, float to, float frac)
 }
 #endif
 
+// from q3mme
+static centity_t *demoTargetEntity( int num ) {
+	if (num <0 || num >= (MAX_GENTITIES -1) )
+		return 0;
+	if (num == cg.snap->ps.clientNum)
+		return &cg.predictedPlayerEntity;
+	if (cg_entities[num].currentValid)
+		return &cg_entities[num];
+	return 0;
+}
+
+// from q3mme
+static void chaseEntityOrigin( centity_t *cent, vec3_t origin ) {
+	VectorCopy( cent->lerpOrigin, origin );
+	switch(cent->currentState.eType) {
+	case ET_PLAYER:
+		origin[2] += DEFAULT_VIEWHEIGHT;
+		break;
+	}
+}
+
+static qboolean CG_PlayQ3mmeCamera (void)
+{
+	//int i;
+	vec3_t refOriginOrig, refAnglesOrig;
+	float refFovxOrig;
+	float refFovyOrig;
+	vec3_t velocityOrig;
+	demoCameraPoint_t *last, *next;
+	//int time;
+	//float timeFraction;
+	qboolean cameraDebugPath;
+	float fov;
+	centity_t *targetCent;
+	
+	last = demo.camera.points;
+
+	if (!last) {
+		return qfalse;
+	}
+
+	while (last->next) {
+		next = last->next;
+		last = next;
+	}
+
+	if (cg_cameraDebugPath.integer) {
+		cameraDebugPath = qtrue;
+	} else {
+		cameraDebugPath = qfalse;
+	}
+
+	//Com_Printf("cg.cameraQ3mmePlaying %d\n", cg.cameraQ3mmePlaying);
+	
+	//FIXME right place for cameraque ?
+	//if (cg.cameraQ3mme  &&  cg_cameraQue.integer) {
+	if (cg.cameraQ3mmePlaying  ||  (cg_cameraQue.integer  &&  cg.time <= last->time)) {
+		int time;
+		float timeFraction;
+
+		// ahahhh, seek hasn't taken effect yet so this will always be set so cg.time might be greater
+
+		if (cg.playQ3mmeCameraCommandIssued) {
+#if 0
+			// race, they got deleted
+			if (!demo.camera.points) {
+				cg.playQ3mmeCameraCommandIssued = qfalse;
+				cg.cameraQ3mmePlaying = qfalse;
+				return qfalse;
+			}
+
+			if (cg.time > demo.camera.points->time) {
+				// still not synced
+				//Com_Printf("waiting to sync q3mme camera  %d  ->  %d\n", cg.time, demo.camera.points->time);
+				return qfalse;
+			} else {
+				// no synced
+				cg.playQ3mmeCameraCommandIssued = qfalse;
+			}
+#endif
+
+			//Com_Printf("waiting for seek\n");
+			cg.playQ3mmeCameraCommandIssued = qfalse;
+			return qfalse;
+		}
+		if (cg.time > last->time) {
+			//Com_Printf("q3mme camera cg.time > last->time\n");
+			cg.cameraQ3mmePlaying = qfalse;
+			return qfalse;
+		}
+
+		if (cameraDebugPath) {
+			VectorCopy(cg.refdef.vieworg, refOriginOrig);
+			VectorCopy(cg.refdefViewAngles, refAnglesOrig);
+			refFovxOrig = cg.refdef.fov_x;
+			refFovyOrig = cg.refdef.fov_y;
+			VectorCopy(cg.freecamPlayerState.velocity, velocityOrig);
+		}
+
+		//time = floor(cg.time);
+		//timeFraction = cg.time - time;
+		time = cg.time;
+		timeFraction = (float)cg.foverf;
+
+		CG_Q3mmeCameraOriginAt(time, timeFraction, cg.refdef.vieworg);
+		CG_Q3mmeCameraAnglesAt(time, timeFraction, cg.refdefViewAngles);
+
+		targetCent = demoTargetEntity(demo.camera.target);
+		if (targetCent) {
+			vec3_t targetOrigin, targetAngles;
+			chaseEntityOrigin(targetCent, targetOrigin);
+			VectorSubtract(targetOrigin, cg.refdef.vieworg, targetOrigin);
+			vectoangles(targetOrigin, targetAngles);
+			//demo.camera.angles[YAW] = targetAngles[YAW];
+			//demo.camera.angles[PITCH] = targetAngles[PITCH];
+			cg.refdefViewAngles[YAW] = targetAngles[YAW];
+			cg.refdefViewAngles[PITCH] = targetAngles[PITCH];
+		}
+
+		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
+		//Com_Printf("angles: %f %f %f\n", cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2]);
+
+		fov = cg_fov.value;
+		if (!CG_Q3mmeCameraFovAt(time, timeFraction, &demo.camera.fov)) {
+			demo.camera.fov = 0;
+		} else {
+			fov += demo.camera.fov;
+		}
+
+		cg.refdef.fov_x = fov;
+		if (cg.refdef.fov_x < 1) {
+			cg.refdef.fov_x = 1;
+		}
+
+		CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
+
+		//Com_Printf("q3mme camera %f %f %f\n", cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);
+
+		trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
+
+
+		if (cg_cameraUpdateFreeCam.integer  &&  !cg_cameraDebugPath.integer) {
+			cg.fMoveTime = 0;
+			VectorCopy(cg.refdef.vieworg, cg.fpos);
+			cg.fpos[2] -= DEFAULT_VIEWHEIGHT;
+			VectorCopy(cg.refdefViewAngles, cg.fang);
+			cg.freecamSet = qtrue;
+			//Com_Printf("xxx %f %f %f\n", cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);
+
+#if 0  //FIXME
+			if (cg.ftime >= lastPoint->cgtime) {
+				VectorClear(cg.freecamPlayerState.velocity);
+			} else if (cg.ftime > cg.positionSetTime) {
+				for (i = 0;  i < 3;  i++) {
+					cg.freecamPlayerState.velocity[i] = (cg.refdef.vieworg[i] - cg.cameraLastOrigin[i]) / ((cg.ftime - cg.positionSetTime) / 1000.0);
+				}
+			} else if (cg.ftime < cg.positionSetTime) {
+				VectorSet(cg.freecamPlayerState.velocity, 0, 0, 0);
+			}
+#endif
+		}
+
+#if 0  //FIXME
+		if (cg.ftime >= lastPoint->cgtime) {
+			VectorClear(cg.cameraVelocity);
+		} else if (cg.ftime > cg.positionSetTime) {
+			for (i = 0;  i < 3;  i++) {
+				cg.cameraVelocity[i] = (cg.refdef.vieworg[i] - cg.cameraLastOrigin[i]) / ((cg.ftime - cg.positionSetTime) / 1000.0);
+			}
+		} else if (cg.ftime < cg.positionSetTime) {
+			VectorSet(cg.cameraVelocity, 0, 0, 0);
+		}
+#endif
+
+#if 0  //FIXME
+		if (cg.ftime != cg.positionSetTime) {
+			cg.positionSetTime = cg.ftime;
+			VectorCopy(cg.refdef.vieworg, cg.cameraLastOrigin);
+		}
+#endif
+
+		if (cameraDebugPath) {
+			refEntity_t ent;
+			byte color[4] = { 255, 0, 0, 255 };
+			vec3_t dir;
+			vec3_t origin;
+
+			memset(&ent, 0, sizeof(ent));
+			VectorCopy(cg.refdef.vieworg, ent.origin);
+			ent.reType = RT_MODEL;
+			ent.hModel = cgs.media.teleportEffectModel;
+			//ent.hModel = trap_R_RegisterModel("models/powerups/health/large_sphere.md3");
+			//ent.hModel = trap_R_RegisterModel("models/powerups/health/mega_sphere.md3");
+			AxisClear(ent.axis);
+			//ent.origin[2] += 16;
+			ent.radius = 300;
+			ent.customShader = 0;
+			ent.shaderRGBA[0] = 255;
+			ent.shaderRGBA[1] = 0;
+			ent.shaderRGBA[2] = 0;
+			ent.shaderRGBA[3] = 255;
+			ent.renderfx = RF_DEPTHHACK;
+
+			CG_AddRefEntity(&ent);
+
+			AngleVectors(cg.refdefViewAngles, dir, NULL, NULL);
+			VectorCopy(ent.origin, origin);
+			VectorMA(origin, 300, dir, origin);
+			CG_SimpleRailTrail(ent.origin, origin, cg_railTrailTime.value, color);
+
+			VectorCopy(refOriginOrig, cg.refdef.vieworg);
+			VectorCopy(refAnglesOrig, cg.refdefViewAngles);
+			AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
+			cg.refdef.fov_x = refFovxOrig;
+			cg.refdef.fov_y = refFovyOrig;
+			VectorCopy(velocityOrig, cg.freecamPlayerState.velocity);
+
+			cg.freecamSet = qtrue;
+		}  // cameraDebugPath
+		return qtrue;
+	}  // q3mme camera playing
+
+	return qfalse;
+}
+
+
 static qboolean CG_PlayCamera (void)
 {
 	cameraPoint_t *cp;
@@ -2103,41 +2330,14 @@ static qboolean CG_PlayCamera (void)
 	vec3_t velocityOrig;
 	qboolean cameraDebugPath = qfalse;
 
-#if 0  // works
-	//FIXME testing q3mme camera
-	if (!cg.cameraPlaying) {
-		return qfalse;
-	} else if (cg.cameraQ3mme) {
-		int time;
-		float timeFraction;
+	CG_PlayQ3mmeCamera();
 
-		//time = floor(cg.time);
-		//timeFraction = cg.time - time;
-		time = cg.time;
-		timeFraction = (float)cg.foverf;
-
-		//cameraOriginAt( time, timeFraction, demo.camera.origin );
-		//cameraAnglesAt( time, timeFraction, demo.camera.angles );
-		demo.camera.smoothPos = posBezier;
-		demo.camera.smoothAngles = angleQuat;
-
-		cameraOriginAt(time, timeFraction, cg.refdef.vieworg);
-		cameraAnglesAt(time, timeFraction, cg.refdefViewAngles);
-		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
-		//Com_Printf("angles: %f %f %f\n", cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2]);
-#if 0  //FIXME q3mme camera
-		if (!cameraFovAt( time, timeFraction, &demo.camera.fov ))
-			demo.camera.fov = 0;
-#endif
-
-		Com_Printf("q3mme camera...\n");
+	if (cg.cameraQ3mmePlaying  &&  !cg_cameraDebugPath.integer) {
 		return qtrue;
 	} else {
-		// pass .. wolfcamql camera
+		// Keep going and also play regular camera if available.  This is
+		// to allow debugging of both at the same time.
 	}
-#endif
-
-	//Com_Printf("wolfcamql camera...\n");
 
 	if (cg.numCameraPoints < 2) {
 		cg.cameraPlaying = qfalse;
@@ -2165,7 +2365,13 @@ static qboolean CG_PlayCamera (void)
 		refFovyOrig = cg.refdef.fov_y;
 		VectorCopy(cg.freecamPlayerState.velocity, velocityOrig);
 	} else {
-		//refFovxOrig = 0;
+		// silence gcc warnings that they may be used unintialized, the
+		// warning seems invalid and is triggered by the long function
+		VectorSet(refOriginOrig, 0, 0, 0);
+		VectorSet(refAnglesOrig, 0, 0, 0);
+		refFovxOrig = 0;
+		refFovyOrig = 0;
+		VectorSet(velocityOrig, 0, 0, 0);
 	}
 
 //#if 1  // gcc warning
@@ -2360,12 +2566,20 @@ static qboolean CG_PlayCamera (void)
 
 		if (cpprev  &&  cpprev->type == CAMERA_SPLINE) {
 			VectorCopy(cg.splinePoints[cp->splineStart], o);
+		} else if (cpprev  &&  cpprev->type == CAMERA_SPLINE_BEZIER) {
+			CG_CameraSplineOriginAt(cp->cgtime, posBezier, o);
+		} else if (cpprev  &&  cpprev->type == CAMERA_SPLINE_CATMULLROM) {
+			CG_CameraSplineOriginAt(cp->cgtime, posCatmullRom, o);
 		} else {
 			VectorCopy(cp->origin, o);
 		}
 
 		if (cpnext->type == CAMERA_SPLINE) {
 			VectorCopy(cg.splinePoints[cpnext->splineStart], no);
+		} else if (cpnext->type == CAMERA_SPLINE_BEZIER) {
+			CG_CameraSplineOriginAt(cpnext->cgtime, posBezier, no);
+		} else if (cpnext->type == CAMERA_SPLINE_CATMULLROM) {
+			CG_CameraSplineOriginAt(cpnext->cgtime, posCatmullRom, no);
 		} else {
 			VectorCopy(cpnext->origin, no);
 		}
@@ -2438,6 +2652,38 @@ static qboolean CG_PlayCamera (void)
 		cg.refdef.vieworg[0] = o[0] + f * (no[0] - o[0]);
 		cg.refdef.vieworg[1] = o[1] + f * (no[1] - o[1]);
 		cg.refdef.vieworg[2] = o[2] + f * (no[2] - o[2]);
+	} else if (cp->type == CAMERA_SPLINE_BEZIER  ||  cp->type == CAMERA_SPLINE_CATMULLROM) {
+		posInterpolate_t posType;
+
+		posType = posBezier;
+		if (cp->type == CAMERA_SPLINE_CATMULLROM) {
+			posType = posCatmullRom;
+		}
+
+		if (cp->useOriginVelocity) {
+			totalDist = cp->originDistance;
+			totalTime = (double)(cpnext->cgtime - cp->cgtime) / 1000.0;
+			accel = (cp->originFinalVelocity - cp->originInitialVelocity) / totalTime;
+			t = (double)(cg.ftime - cp->cgtime) / 1000.0;
+			dist = (cp->originInitialVelocity * t) + 0.5 * accel * t * t;
+			f = dist / totalDist;
+			if (f > 1.0) {
+				f = 1;
+			}
+
+			//CG_CameraSplineOriginAt(cg.ftime, posBezier, cg.refdef.vieworg);
+			CG_CameraSplineOriginAt(cp->cgtime + f * (cpnext->cgtime - cp->cgtime), posType, cg.refdef.vieworg);
+		} else {
+			f = -1;
+#if 0
+			if (cg.ftime < cpnext->cgtime) {
+				snumf = (cg.ftime - cp->cgtime) / singleTime;
+			} else {
+				snumf = (cpnext->cgtime - cp->cgtime) / singleTime;
+			}
+#endif
+			CG_CameraSplineOriginAt(cg.ftime, posType, cg.refdef.vieworg);
+		}
 	} else if (cp->type == CAMERA_CURVE) {
 		f = (cg.ftime - cp->cgtime) / (cpnext->cgtime - cp->cgtime);
 		if (f > 1.0) {
@@ -2550,12 +2796,21 @@ static qboolean CG_PlayCamera (void)
 
 			if (cpprev  &&  cpprev->type == CAMERA_SPLINE) {
 				VectorCopy(cg.splinePoints[cp->splineStart], o);
+			} else if (cpprev  &&  cpprev->type == CAMERA_SPLINE_BEZIER) {
+				CG_CameraSplineOriginAt(cp->cgtime, posBezier, o);
+			} else if (cpprev  &&  cpprev->type == CAMERA_SPLINE_CATMULLROM) {
+				CG_CameraSplineOriginAt(cp->cgtime, posCatmullRom, o);
+
 			} else {
 				VectorCopy(cp->origin, o);
 			}
 
 			if (cpnext->type == CAMERA_SPLINE) {
 				VectorCopy(cg.splinePoints[cpnext->splineStart], no);
+			} else if (cpnext->type == CAMERA_SPLINE_BEZIER) {
+				CG_CameraSplineOriginAt(cpnext->cgtime, posBezier, no);
+			} else if (cpnext->type == CAMERA_SPLINE_CATMULLROM) {
+				CG_CameraSplineOriginAt(cpnext->cgtime, posCatmullRom, no);
 			} else {
 				VectorCopy(cpnext->origin, no);
 			}
@@ -2587,6 +2842,8 @@ static qboolean CG_PlayCamera (void)
 
 //#if 1  // gcc warning
 
+	// now angles
+
 	if (cp->viewType == CAMERA_ANGLES_INTERP  ||  cp->viewType == CAMERA_ANGLES_INTERP_USE_PREVIOUS) {
 
 		f = (cg.ftime - cp->cgtime) / (cpnext->cgtime - cp->cgtime);
@@ -2602,6 +2859,9 @@ static qboolean CG_PlayCamera (void)
 				return qfalse;
 			}
 			VectorCopy(cpprev->lastAngles, a);
+		} else if (cpprev  &&  cpprev->viewType == CAMERA_ANGLES_SPLINE) {
+			CG_CameraSplineAnglesAt(cp->cgtime, a);
+			//FIXME roll
 		} else {
 			VectorCopy(cp->angles, a);
 		}
@@ -2652,6 +2912,9 @@ static qboolean CG_PlayCamera (void)
 			VectorCopy(cpnext->viewPointOrigin, o);
 			VectorSubtract(o, cg.refdef.vieworg, dir);
 			vectoangles(dir, na);
+			pointNext = cpnext;
+		} else if (cpnext->viewType == CAMERA_ANGLES_SPLINE) {
+			CG_CameraSplineAnglesAt(cpnext->cgtime, na);
 			pointNext = cpnext;
 		} else {
 			CG_ErrorPopup("invalid view type state");
@@ -2901,6 +3164,25 @@ static qboolean CG_PlayCamera (void)
 	} else if (cp->viewType == CAMERA_ANGLES_VIEWPOINT_FIXED) {
 		VectorSubtract(cp->viewPointOrigin, cg.refdef.vieworg, dir);
 		vectoangles(dir, cg.refdefViewAngles);
+	} else if (cp->viewType == CAMERA_ANGLES_SPLINE) {
+		if (cp->useAnglesVelocity) {
+			CG_CameraSplineAnglesAt(cp->cgtime, a);
+			CG_CameraSplineAnglesAt(cpnext->cgtime, na);
+
+			totalDist = CameraAngleDistance(a, na);
+			totalTime = (double)(cpnext->cgtime - cp->cgtime) / 1000.0;
+			accel = (cp->anglesFinalVelocity - cp->anglesInitialVelocity) / totalTime;
+			t = (cg.ftime - cp->cgtime) / 1000.0;
+			dist = (cp->anglesInitialVelocity * t) + 0.5 * accel * t * t;
+			f = dist / totalDist;
+			if (f > 1.0) {
+				f = 1;
+			}
+
+			CG_CameraSplineAnglesAt(cp->cgtime + f * (cpnext->cgtime - cp->cgtime), cg.refdefViewAngles);
+		} else {
+			CG_CameraSplineAnglesAt(cg.ftime, cg.refdefViewAngles);
+		}
 	} else {
 		// unknown cp->viewType
 		CG_ErrorPopup(va("bad camera point %d  unknown view type", cg.currentCameraPoint));
@@ -2912,7 +3194,11 @@ static qboolean CG_PlayCamera (void)
 #if 1  // gcc warning  // up to here
 
 	// roll
-	if (cp->rollType == CAMERA_ROLL_INTERP) {
+
+	// skip roll for q3mme spline angles
+	if (cp->viewType == CAMERA_ANGLES_SPLINE) {
+		// pass
+	} else if (cp->rollType == CAMERA_ROLL_INTERP) {
 		//roll = nroll = 0;  // silence compiler warning
 		if (cpnext->rollType == CAMERA_ROLL_INTERP  ||  cpnext->rollType == CAMERA_ROLL_FIXED) {
 			//
@@ -3007,13 +3293,37 @@ static qboolean CG_PlayCamera (void)
 		return qfalse;
 	}
 
-	//FIXME testing q3mme camera just angles
-	//cameraAnglesAt(floor(cg.time), cg.time - floor(cg.time), cg.refdefViewAngles);
 	VectorCopy(cg.refdefViewAngles, cp->lastAngles);
 	AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
 
 	if (cp->fovType == CAMERA_FOV_USE_CURRENT) {
 		fov = cg_fov.value;
+	} else if (cp->fovType == CAMERA_FOV_SPLINE) {
+		float cfov;
+
+		if (cp->useFovVelocity) {
+			totalDist = cp->fovDistance;
+			totalTime = (double)(cpnext->cgtime - cp->cgtime) / 1000.0;
+			accel = (cp->fovFinalVelocity - cp->fovInitialVelocity) / totalTime;
+			t = (cg.ftime - cp->cgtime) / 1000.0;
+			dist = (cp->fovInitialVelocity * t) + 0.5 * accel * t * t;
+			f = dist / totalDist;
+			if (f > 1.0) {
+				f = 1;
+			}
+
+			if (!CG_CameraSplineFovAt(cp->cgtime + f * (cpnext->cgtime - cp->cgtime), &cfov)) {
+				fov = cg_fov.value;
+			} else {
+				fov = cfov;
+			}
+		} else {
+			if (!CG_CameraSplineFovAt(cg.ftime, &cfov)) {
+				fov = cg_fov.value;
+			} else {
+				fov = cfov;
+			}
+		}
 	} else if (cp->fovType == CAMERA_FOV_INTERP) {
 		if (cpnext->fovType == CAMERA_FOV_INTERP  ||  cpnext->fovType == CAMERA_FOV_FIXED) {
 			fov = cp->fov;
@@ -3222,107 +3532,6 @@ static qboolean CG_PlayCamera (void)
 		cg.freecamSet = qtrue;
 	}
 
-	if (cg.cameraQ3mme) {
-		int time;
-		float timeFraction;
-
-		//time = floor(cg.time);
-		//timeFraction = cg.time - time;
-		time = cg.time;
-		timeFraction = (float)cg.foverf;
-
-		//cameraOriginAt( time, timeFraction, demo.camera.origin );
-		//cameraAnglesAt( time, timeFraction, demo.camera.angles );
-		demo.camera.smoothPos = posBezier;
-		demo.camera.smoothAngles = angleQuat;
-
-		cameraOriginAt(time, timeFraction, cg.refdef.vieworg);
-		cameraAnglesAt(time, timeFraction, cg.refdefViewAngles);
-		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
-		//Com_Printf("angles: %f %f %f\n", cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2]);
-#if 0  //FIXME q3mme camera
-		if (!cameraFovAt( time, timeFraction, &demo.camera.fov ))
-			demo.camera.fov = 0;
-#endif
-
-		Com_Printf("q3mme camera...\n");
-
-		trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
-
-
-		if (cg_cameraUpdateFreeCam.integer  &&  !cg_cameraDebugPath.integer) {
-			cg.fMoveTime = 0;  //cg.realTime;  //cg.time;
-			//cg.fMoveTime = cg.realTime - 10;
-			//cg.mousex = cg.mousey = 0;
-			VectorCopy(cg.refdef.vieworg, cg.fpos);
-			cg.fpos[2] -= DEFAULT_VIEWHEIGHT;
-			VectorCopy(cg.refdefViewAngles, cg.fang);
-			cg.freecamSet = qtrue;
-			//Com_Printf("xxx %f %f %f\n", cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);
-			if (cg.ftime >= lastPoint->cgtime) {
-				VectorClear(cg.freecamPlayerState.velocity);
-			} else if (cg.ftime > cg.positionSetTime) {
-				for (i = 0;  i < 3;  i++) {
-					cg.freecamPlayerState.velocity[i] = (cg.refdef.vieworg[i] - cg.cameraLastOrigin[i]) / ((cg.ftime - cg.positionSetTime) / 1000.0);
-				}
-			} else if (cg.ftime < cg.positionSetTime) {
-				VectorSet(cg.freecamPlayerState.velocity, 0, 0, 0);
-			}
-		}
-
-		if (cg.ftime >= lastPoint->cgtime) {
-			VectorClear(cg.cameraVelocity);
-		} else if (cg.ftime > cg.positionSetTime) {
-			for (i = 0;  i < 3;  i++) {
-				cg.cameraVelocity[i] = (cg.refdef.vieworg[i] - cg.cameraLastOrigin[i]) / ((cg.ftime - cg.positionSetTime) / 1000.0);
-			}
-		} else if (cg.ftime < cg.positionSetTime) {
-			VectorSet(cg.cameraVelocity, 0, 0, 0);
-		}
-
-		if (cg.ftime != cg.positionSetTime) {
-			cg.positionSetTime = cg.ftime;
-			VectorCopy(cg.refdef.vieworg, cg.cameraLastOrigin);
-		}
-
-		if (cameraDebugPath) {  //cg_cameraDebugPath.integer) {  //(1) {
-			refEntity_t ent;
-			byte color[4] = { 255, 0, 0, 255 };
-
-			memset(&ent, 0, sizeof(ent));
-			VectorCopy(cg.refdef.vieworg, ent.origin);
-			ent.reType = RT_MODEL;
-			ent.hModel = cgs.media.teleportEffectModel;
-			//ent.hModel = trap_R_RegisterModel("models/powerups/health/large_sphere.md3");
-			//ent.hModel = trap_R_RegisterModel("models/powerups/health/mega_sphere.md3");
-			AxisClear(ent.axis);
-			//ent.origin[2] += 16;
-			ent.radius = 300;
-			ent.customShader = 0;
-			ent.shaderRGBA[0] = 255;
-			ent.shaderRGBA[1] = 0;
-			ent.shaderRGBA[2] = 0;
-			ent.shaderRGBA[3] = 255;
-			ent.renderfx = RF_DEPTHHACK;
-
-			CG_AddRefEntity(&ent);
-
-			AngleVectors(cg.refdefViewAngles, dir, NULL, NULL);
-			VectorCopy(ent.origin, origin);
-			VectorMA(origin, 300, dir, origin);
-			CG_SimpleRailTrail(ent.origin, origin, cg_railTrailTime.value, color);
-
-			VectorCopy(refOriginOrig, cg.refdef.vieworg);
-			VectorCopy(refAnglesOrig, cg.refdefViewAngles);
-			AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
-			cg.refdef.fov_x = refFovxOrig;
-			cg.refdef.fov_y = refFovyOrig;
-			VectorCopy(velocityOrig, cg.freecamPlayerState.velocity);
-
-			cg.freecamSet = qtrue;
-		}
-		return qtrue;
-	}
 
 	return qtrue;
 }
@@ -3724,8 +3933,7 @@ static void CG_FreeCam (void)
 			VectorMA(muzzle, 8, right, muzzle);
 			//CG_SimpleRailTrail(muzzle, end, color);
 			CG_SimpleRailTrail(muzzle, tr.endpos, cg_railTrailTime.value, color);
-			// entity number is a hack
-			CG_StartSound(NULL, MAX_GENTITIES - 1, CHAN_WEAPON, cg_weapons[WP_RAILGUN].flashSound[0]);
+			CG_StartSound(cg.refdef.vieworg, ENTITYNUM_WORLD, CHAN_WEAPON, cg_weapons[WP_RAILGUN].flashSound[0]);
 			if (tr.entityNum < MAX_CLIENTS  &&  tr.entityNum >= 0) {
 				CG_GibPlayer(&cg_entities[tr.entityNum]);
 			} else {
@@ -3847,6 +4055,23 @@ static void CG_DrawRawCameraPathKeyPoints (void)
 	}
 }
 
+static void	CG_Q3mmeDrawCross (const vec3_t origin, const vec4_t color)
+{
+	unsigned int i;
+	vec3_t start, end;
+	polyVert_t verts[4];
+
+	demoDrawSetupVerts( verts, color );
+	/* Create a few lines indicating the point */
+	for(i = 0; i < 3; i++) {
+		VectorCopy(origin, start);
+		VectorCopy(origin, end );
+		start[i] -= 10;
+		end[i] += 10;
+		demoDrawRawLine( start, end, 0.6f, verts );
+	}
+}
+
 static vec4_t SplineColor;
 static int SplineNumPoints;
 
@@ -3866,6 +4091,30 @@ static void CG_DrawSplinePoints (void)
 		SplineNumPoints = 0;
 		trap_SetPathLines(&cg.numCameraPoints, cg.cameraPoints, &SplineNumPoints, cg.splinePoints, SplineColor);
 		return;
+	}
+
+	//FIXME
+	// q3mme camera
+	if (cg.numQ3mmeCameraPoints > 0) {
+		demoCameraPoint_t *next, *point;
+		int count;
+		vec3_t origin;
+
+		MAKERGBA(color, 255, 165, 9, 255);
+		point = demo.camera.points;
+		count = 0;
+		while (point) {
+			next = point->next;
+
+			VectorCopy(point->origin, origin);
+			// draw cross like q3mme
+			CG_Q3mmeDrawCross(origin, colorWhite);
+			CG_Q3mmeCameraDrawPath(point, colorRed);
+			origin[2] += 4;
+			CG_FloatNumber(count, origin, RF_DEPTHHACK, color, 1.0);
+			point = next;
+			count++;
+		}
 	}
 
 	if (cg.numCameraPoints < 2) {
@@ -4439,6 +4688,8 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	cgs.screenXScale = cgs.glconfig.vidWidth / 640.0;
 	cgs.screenYScale = cgs.glconfig.vidHeight / 480.0;
 	//Com_Printf("w %d  h %d\n", cgs.glconfig.vidWidth, cgs.glconfig.vidHeight);
+	memcpy(&cgDC.glconfig, &cgs.glconfig, sizeof(glconfig_t));
+	cgDC.widescreen = cg_wideScreen.integer;
 
     //CG_Printf ("CG_DrawActiveFrame: serverTime:%d\n", serverTime);
 #if 0
@@ -4998,7 +5249,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		CG_VibrateCamera();
 	}
 
-	if (cg.cameraPlaying  ||  cg_cameraQue.integer) {
+	if (cg.cameraPlaying  ||  cg.cameraQ3mmePlaying  ||  cg_cameraQue.integer) {
 		CG_PlayCamera();
 		cg.refdef.time = cg.time;
 		if (cg.freecam) {
