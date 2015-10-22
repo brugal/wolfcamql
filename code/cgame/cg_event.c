@@ -2438,12 +2438,18 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		//CG_PrintEntityState(cent->currentState.number);
 		//FIXME fuck, chaingun
 		if (es->otherEntityNum >= 0  &&  es->otherEntityNum < MAX_CLIENTS) {
-			if (cg_entities[es->otherEntityNum].currentState.weapon == WP_MACHINEGUN) {
+			int weapon;
+
+			weapon = cg_entities[es->otherEntityNum].currentState.weapon;
+			if (weapon == WP_MACHINEGUN) {
 				wclients[es->otherEntityNum].wstats[WP_MACHINEGUN].hits++;
 				wclients[es->otherEntityNum].perKillwstats[WP_MACHINEGUN].hits++;
-			} else if (cg_entities[es->otherEntityNum].currentState.weapon == WP_CHAINGUN) {
+			} else if (weapon == WP_CHAINGUN) {
 				wclients[es->otherEntityNum].wstats[WP_CHAINGUN].hits++;
 				wclients[es->otherEntityNum].perKillwstats[WP_CHAINGUN].hits++;
+			} else if (weapon == WP_HEAVY_MACHINEGUN) {
+				wclients[es->otherEntityNum].wstats[WP_HEAVY_MACHINEGUN].hits++;
+				wclients[es->otherEntityNum].perKillwstats[WP_HEAVY_MACHINEGUN].hits++;
 			}
 		}
         if (wolfcam_following) {
@@ -3455,7 +3461,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	case EV_THAW_PLAYER: {
 		DEBUGNAME("EV_THAW_PLAYER");
 		if (es->number >= MAX_CLIENTS) {
-			if (!cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocol != PROTOCOL_QL) {
 				// can't get client number in ql
 				CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
 				//Com_Printf("158  %s\n", cgs.clientinfo[es->number - 158].name);
@@ -3474,7 +3480,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	case EV_THAW_TICK: {
 		DEBUGNAME("EV_THAW_TICK");
 		if (es->number >= MAX_CLIENTS) {
-			if (!cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocol != PROTOCOL_QL) {
 				// can't get client number in ql
 				CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
 			}

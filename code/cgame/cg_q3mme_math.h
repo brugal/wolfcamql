@@ -220,10 +220,12 @@ extern void AnglesNormalize180( vec3_t angles);
 #define VectorAddDelta(a,b,c)	((c)[0]=(b)[0]+((b)[0]-(a)[0]),(c)[1]=(b)[1]+((b)[1]-(a)[1]),(c)[2]=(b)[2]+((b)[2]-(a)[2]))
 #define VectorSubDelta(a,b,c)	((c)[0]=(a)[0]-((b)[0]-(a)[0]),(c)[1]=(a)[1]-((b)[1]-(a)[1]),(c)[2]=(a)[2]-((b)[2]-(a)[2]))
 
-qboolean CylinderTraceImpact( const vec3_t start, const vec3_t forward, const vec3_t container, vec3_t result );
-qboolean BoxTraceImpact(const vec3_t start, const vec3_t forward, const vec3_t container, vec3_t result );
+// unused
+//qboolean CylinderTraceImpact( const vec3_t start, const vec3_t forward, const vec3_t container, vec3_t result );
 
-void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up );
+//qboolean BoxTraceImpact(const vec3_t start, const vec3_t forward, const vec3_t container, vec3_t result );
+
+//void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up );
 
 float dsplineCalc(float x, vec3_t dx, vec3_t dy, float*deriv );
 

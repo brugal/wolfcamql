@@ -627,3 +627,29 @@ void trap_GetRealMapName (char *name, char *realName, size_t szRealName)
 {
 	syscall(CG_GET_REAL_MAP_NAME, name, realName, szRealName);
 }
+
+// ui
+qboolean trap_Key_GetOverstrikeMode (void)
+{
+	return syscall(CG_KEY_GETOVERSTRIKEMODE);
+}
+
+void trap_Key_SetOverstrikeMode (qboolean state)
+{
+	syscall(CG_KEY_SETOVERSTRIKEMODE, state);
+}
+
+void trap_Key_SetBinding (int keynum, const char *binding)
+{
+	syscall(CG_KEY_SETBINDING, keynum, binding);
+}
+
+void trap_Key_GetBindingBuf (int keynum, char *buf, int buflen)
+{
+	syscall(CG_KEY_GETBINDINGBUF, keynum, buf, buflen);
+}
+
+void trap_Key_KeynumToStringBuf (int keynum, char *buf, int buflen)
+{
+	syscall(CG_KEY_KEYNUMTOSTRINGBUF, keynum, buf, buflen);
+}

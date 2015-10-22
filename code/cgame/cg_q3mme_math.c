@@ -51,7 +51,7 @@ GetPerpendicularViewVector
   Used to find an "up" vector for drawing a sprite so that it always faces the view as best as possible
 =================
 */
-void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up )
+static void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up )
 {
 	vec3_t	v1, v2;
 
@@ -110,7 +110,7 @@ static void AxisToAngles( const vec3_t axis[3], vec3_t angles ) {
 }
 
 
-qboolean ID_INLINE BoxTraceTestResult( int axis, float dist, const vec3_t start, const vec3_t forward, const vec3_t mins, const vec3_t maxs, vec3_t result ) {
+static qboolean ID_INLINE BoxTraceTestResult( int axis, float dist, const vec3_t start, const vec3_t forward, const vec3_t mins, const vec3_t maxs, vec3_t result ) {
 	result[0] = start[0] + forward[0] * dist;
 	result[1] = start[1] + forward[1] * dist;
 	result[2] = start[2] + forward[2] * dist;
@@ -124,7 +124,7 @@ qboolean ID_INLINE BoxTraceTestResult( int axis, float dist, const vec3_t start,
 	return qtrue;
 }
 
-qboolean ID_INLINE BoxTraceTestSides( int axis, const vec3_t start, const vec3_t forward, const vec3_t mins, const vec3_t maxs, vec3_t result ) {
+static qboolean ID_INLINE BoxTraceTestSides( int axis, const vec3_t start, const vec3_t forward, const vec3_t mins, const vec3_t maxs, vec3_t result ) {
 	if (forward[axis] > 0 && start[axis] <= mins[axis]) {
 		float dist = ( mins[axis] - start[axis] ) / forward[axis];
 		if (BoxTraceTestResult(axis, dist, start, forward, mins, maxs, result))
@@ -138,6 +138,8 @@ qboolean ID_INLINE BoxTraceTestSides( int axis, const vec3_t start, const vec3_t
 	return qfalse;
 }
 
+// not used
+#if 0
 qboolean BoxTraceImpact(const vec3_t start, const vec3_t forward, const vec3_t container, vec3_t result ) {
 	vec3_t mins, maxs;
 
@@ -184,6 +186,7 @@ qboolean CylinderTraceImpact( const vec3_t start, const vec3_t forward, const ve
 	}
 	return qfalse;
 }
+#endif
 
 void QuatMultiply( const Quat_t q1, const Quat_t q2, Quat_t qr) {
 	qr[Qw] = q1[Qw]*q2[Qw] - q1[Qx]*q2[Qx] - q1[Qy]*q2[Qy] - q1[Qz]*q2[Qz];

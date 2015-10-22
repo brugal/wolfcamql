@@ -975,7 +975,7 @@ Edit all currently selected camera points
    the 'ent' option has additional parameter for the entity
    /ecam angles ent [entity number]
 /ecam offset <interp, fixed, pass> [x offset] [y offset] [z offset]
-/ecam roll <interp, fixed, pass> [roll value]
+/ecam roll <interp, fixed, pass, angles> [roll value]
 /ecam flags [origin | angles | fov | time]
 /ecam initialVelocity <origin, angles, xoffset, yoffset, zoffset, fov, roll> <v
 alue, or 'reset' to reset to default fixed velocity>
@@ -983,6 +983,7 @@ alue, or 'reset' to reset to default fixed velocity>
 /ecam rebase [origin | angles | dir | dirna | time | timen <server time>]
    edit camera times to start now or at the time given time, use current angles, origin, or direction as the new starting values
    note:  dirna updates the camera direction without altering camera angles
+/ecam shifttime <milliseconds>
 /ecam smooth velocity
    change camera times to have the final immediate velocity of a camera point
    match the initial immediate velocity of the next camera point
@@ -1005,6 +1006,8 @@ alue, or 'reset' to reset to default fixed velocity>
 * cg_cameraSmoothFactor (value between 1.0 and 2.0) used by /ecam smooth <type>
 * /ecam reset
   resets all adjusted velocities
+* /ecam smooth time
+   change camera times so that the points have the same average velocity
 * /ecam scale <speed up/down scale value>
     speed up or down the selected camera points by adjusting camera time (2.0: twice as fast, 0.5: half speed)
 
@@ -1030,19 +1033,27 @@ Origin types:
  splineCatmullRom:  (from q3mme, uses camera flags for masking)
 
 Angle types:
- interp:  linear angle interpolation, roll is treated as a separate setting
- spline:  (from q3mme, uses camera flags for masking), camera roll is included in this interpolation
+ interp:  linear angle interpolation
+ spline:  (from q3mme)
+
+Roll types:  There are options to treat roll as either part of the camera angles (ex:  airplane type movement) or as a camera tilting affect.
+
+ interp:  roll is considered as separate from camera angles and changes linearly
+ fixed:  roll is considered as separate from camera angles and stays at the current value
+ pass:  roll is considered as separate from camera angles and skips this camera point when calculating interpolation
+ angles:  roll is part of the camera angles and the setting is handled via the settings for camera angles
 
 Velocity:
  //FIXME
 
  Note that spline fov uses the final fov values (ex: go from 60 -> 120 fov) instead of offset values which q3mme uses (ex:  10 -> 30  means go from currentFov + 10  to currentFov + 30).
- 
+
   cvar cg_draw2d 2  for use with camera editing
     default  bind BACKSPACE "toggle cg_draw2d 0 1 2"
 
   cg_drawCameraPath
-  cg_drawCameraPointInfo[X, Y, Align, Style, Font, PointSize, Scale, Color, SelectedColor, Alpha]
+  cg_drawCameraPointInfo [0: disable camera point information, 1:  info for wolfcamql or q3mme camera points, 2:  info for wolfcamql camera points, 3:  info for q3mme camera points]
+  cg_drawCameraPointInfo[X, Y, Align, Style, Font, PointSize, Scale, Color, SelectedColor, Alpha, BackgroundColor, BackgroundAlpha]
 
   cg_cameraRewindTime default 0  when playing a camera script will seek to this many seconds before the start of the camera path in order to allow animations and local entities (rail trails, wall marks, blood, smoke, etc...) to sync up and/or appear.
 
@@ -1129,7 +1140,7 @@ Velocity:
 
 * con_scale  increase/decrease size of console font
 
-* con_lineWidth  max number of characters in console line
+* con_lineWidth  Maximum number of characters in console line.  Default is "" which matches screen width.
 
 * cg_obituaryFadeTime  milliseconds until obituary lines fade completely
 * cg_obituaryStack  number of last obituaries to draw on screen
@@ -2272,6 +2283,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * ability to filter out reward types to disable both the announcment and the display icon:  cg_rewardCapture, cg_rewardImpressive, cg_rewardExcellent, cg_rewardHumiliation, cg_rewardDefend, cg_rewardAssist, cg_rewardComboKill, cg_rewardRampage, cg_rewardMidAir, cg_rewardRevenge, cg_rewardPerforated, cg_rewardHeadshot, cg_rewardAccuracy, cg_rewardQuadGod, cg_rewardFirstFrag, cg_rewardPerfect
 
 * windows version can echo console messages in the command prompt if --console-output is used in the command line.  This will also convert ansi colors.
+
+* cg_useDemoFov  protocol 91 transmits player fov values and this can be used to view the demo using the players fov or to try and detect zoom changes.  Note that zoom isn't transmitted in the demo so it is detected using a fov change.  This will lead to a problem if the player uses a config that changes fov (ex:  per weapon).  Values (0:  ignore demo fov (default),  1:  use player's fov,  2:  detect zoom changes).
 
 ----------
 

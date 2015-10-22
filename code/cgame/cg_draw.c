@@ -44,11 +44,6 @@ char systemChat[256];
 char teamChat1[256];
 char teamChat2[256];
 
-
-//FIXME move
-#define MAX_HUD_ITEMS 100
-//static hudItem_t hudItems[MAX_HUD_ITEMS];
-
 static void CG_DrawEchoPopup (void);
 static void CG_DrawErrorPopup (void);
 static void CG_DrawAccStats (void);
@@ -64,8 +59,10 @@ static int SP_style;
 static const fontInfo_t *SP_font;
 static int SP_count;  //FIXME hack
 static vec4_t SP_selectedColor;
+static vec4_t SP_backgroundColor;
+static qboolean SP_drawSelected = qtrue;
 
-static void CG_SPrintInit (int x, int *y, int h, int align, float scale, const vec4_t color, int style, const fontInfo_t *font)
+static void CG_SPrintInit (int x, int *y, int h, int align, float scale, const vec4_t color, int style, const fontInfo_t *font, qboolean drawSelected)
 {
 	SP_x = x;
 	SP_y = y;
@@ -76,9 +73,16 @@ static void CG_SPrintInit (int x, int *y, int h, int align, float scale, const v
 	Vector4Copy(color, SP_color);
 	//Vector4Set(SP_selectedColor, 1, 0.35, 0.35, 1);
 	SC_Vec4ColorFromCvars(SP_selectedColor, &cg_drawCameraPointInfoSelectedColor, &cg_drawCameraPointInfoAlpha);
+	SC_Vec4ColorFromCvars(SP_backgroundColor, &cg_drawCameraPointInfoBackgroundColor, &cg_drawCameraPointInfoBackgroundAlpha);
 	SP_style = style;
 	SP_font = font;
 	SP_count = 0;
+
+	if (drawSelected) {
+		SP_drawSelected = qtrue;
+	} else {
+		SP_drawSelected = qfalse;
+	}
 }
 
 static void CG_SPrint (const char *s)
@@ -93,14 +97,20 @@ static void CG_SPrint (const char *s)
 	} else if (SP_align == 2) {
 		x -= w;
 	}
-	if (SP_count == cg.selectedCameraPointField) {
+
+	CG_FillRect(x, *SP_y, w, SP_h, SP_backgroundColor);
+
+	if (SP_count == cg.selectedCameraPointField  &&  SP_drawSelected) {
 		CG_Text_Paint_Bottom(x, *SP_y, SP_scale, SP_selectedColor, s, 0, 0, SP_style, SP_font);
 	} else {
 		CG_Text_Paint_Bottom(x, *SP_y, SP_scale, SP_color, s, 0, 0, SP_style, SP_font);
 	}
+
 	*SP_y += SP_h;
 	SP_count++;
 }
+
+static void CG_DrawQ3mmeCameraPointInfo (void);
 
 static void CG_DrawCameraPointInfo (void)
 {
@@ -112,20 +122,31 @@ static void CG_DrawCameraPointInfo (void)
 	const fontInfo_t *font;
 	const char *s;
 	const cameraPoint_t *cp;
-	const cameraPoint_t *cpnext;
-	const cameraPoint_t *cpprev;
-	//vec3_t anglesCurrent;
-	//vec3_t anglesNext;
-	//vec3_t anglesPrev;
+	const cameraPoint_t *cpOriginNext;
+	const cameraPoint_t *cpOriginPrev;
+	const cameraPoint_t *cpAnglesNext;
+	const cameraPoint_t *cpAnglesPrev;
+	const cameraPoint_t *cpFovNext;
+	const cameraPoint_t *cpFovPrev;
 	char buf[32];
 	qboolean badOrigin;
 	qboolean badAngles;
+	int currentPoint;
 
 	if (!cg_drawCameraPointInfo.integer) {
 		return;
 	}
 
+	if (cg_drawCameraPointInfo.integer == 3) {
+		CG_DrawQ3mmeCameraPointInfo();
+		return;
+	}
+
 	if (cg.numCameraPoints < 1) {
+		// 1: draw either if present
+		if (cg_drawCameraPointInfo.integer == 1) {
+			CG_DrawQ3mmeCameraPointInfo();
+		}
 		return;
 	}
 
@@ -149,47 +170,83 @@ static void CG_DrawCameraPointInfo (void)
 	x = cg_drawCameraPointInfoX.integer;
 	y = cg_drawCameraPointInfoY.integer;
 
-	h = CG_Text_Height("1!IPUTY|", scale, 0, font);  //FIXME store max height/point size
+	//FIXME store max height/point size
+	//h = CG_Text_Height("1!IPUTY|", scale, 0, font);
+	h = CG_Text_Height("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~`!@#$%^&*()-_=+[{]}\\|;:'\",./?", scale, 0, font);
+
 	cp = &cg.cameraPoints[cg.selectedCameraPointMin];
-	if (cg.numCameraPoints > 1  &&  (cg.selectedCameraPointMin + 1) < cg.numCameraPoints) {
-		cpnext = &cg.cameraPoints[cg.selectedCameraPointMin + 1];
-	} else {
-		cpnext = NULL;
+
+	cpOriginNext = cp->next;
+	while (cpOriginNext  &&  !(cpOriginNext->flags & CAM_ORIGIN)) {
+		cpOriginNext = cpOriginNext->next;
 	}
-	if (cg.selectedCameraPointMin > 0) {
-		cpprev = &cg.cameraPoints[cg.selectedCameraPointMin - 1];
-	} else {
-		cpprev = NULL;
+	cpOriginPrev = cp->prev;
+	while (cpOriginPrev  &&  !(cpOriginPrev->flags & CAM_ORIGIN)) {
+		cpOriginPrev = cpOriginPrev->prev;
 	}
 
-	CG_SPrintInit(x, &y, h, align, scale, color, style, font);
+	cpAnglesNext = cp->next;
+	while (cpAnglesNext  &&  !(cpAnglesNext->flags & CAM_ANGLES)) {
+		cpAnglesNext = cpAnglesNext->next;
+	}
+	cpAnglesPrev = cp->prev;
+	while (cpAnglesPrev  &&  !(cpAnglesPrev->flags & CAM_ANGLES)) {
+		cpAnglesPrev = cpAnglesPrev->prev;
+	}
 
-#if 0
+	cpFovNext = cp->next;
+	while (cpFovNext  &&  !(cpFovNext->flags & CAM_FOV)) {
+		cpFovNext = cpFovNext->next;
+	}
+	cpFovPrev = cp->prev;
+	while (cpFovPrev  &&  !(cpFovPrev->flags & CAM_FOV)) {
+		cpFovPrev = cpFovPrev->prev;
+	}
+
+	CG_SPrintInit(x, &y, h, align, scale, color, style, font, qtrue);
+
 	if (cg.selectedCameraPointMin == cg.selectedCameraPointMax) {
-		buf[0] = '\0';
+		Com_sprintf(buf, sizeof(buf), "  :  ^3%d", cg.selectedCameraPointMin);
 	} else {
-		Com_sprintf(buf, sizeof(buf), "  ->  %d/%d", cg.selectedCameraPointMax, cg.numCameraPoints - 1);
-	}
-#endif
-
-	if (cg.selectedCameraPointMin == cg.selectedCameraPointMax) {
-		Com_sprintf(buf, sizeof(buf), "  ->  ^3%d", cg.selectedCameraPointMin);
-	} else {
-		Com_sprintf(buf, sizeof(buf), "  ->  ^3%d/%d", cg.selectedCameraPointMin, cg.selectedCameraPointMax);
+		Com_sprintf(buf, sizeof(buf), "  :  ^3%d - %d", cg.selectedCameraPointMin, cg.selectedCameraPointMax);
 	}
 
-	if (cp->type == CAMERA_CURVE) {
+	if (cp->type == CAMERA_CURVE  &&  cp->flags & CAM_ORIGIN) {
 		if (cp->curveCount % 2 == 0) {
-			CG_SPrint(va("camera point %d (start/end curve)%s", cg.selectedCameraPointMin, buf));
+			CG_SPrint(va("camera point %d/%d (start/end curve)%s", cg.selectedCameraPointMin, cg.numCameraPoints - 1, buf));
 		} else {
-			CG_SPrint(va("camera point %d (mid point of curve)%s", cg.selectedCameraPointMin, buf));
+			CG_SPrint(va("camera point %d/%d (mid point of curve)%s", cg.selectedCameraPointMin, cg.numCameraPoints - 1, buf));
 		}
 	} else {
-		CG_SPrint(va("camera point %d%s", cg.selectedCameraPointMin, buf));
+		CG_SPrint(va("camera point %d/%d%s", cg.selectedCameraPointMin, cg.numCameraPoints - 1, buf));
 	}
-	CG_SPrint(va("current time: %f", cg.ftime));
-	if (cpnext) {
-		CG_SPrint(va("camera time: %f  %f sec", cp->cgtime, (cpnext->cgtime - cp->cgtime) / 1000.0));
+
+	// find current camera point
+	//FIXME epsilon
+	if (cg.ftime < cg.cameraPoints[0].cgtime) {
+		currentPoint = -1;
+	} else if (cg.ftime > cg.cameraPoints[cg.numCameraPoints - 1].cgtime) {
+		currentPoint = cg.numCameraPoints;
+	} else {  // within a camera point
+		for (currentPoint = 0;  currentPoint < cg.numCameraPoints;  currentPoint++) {
+			if (cg.ftime < cg.cameraPoints[currentPoint].cgtime) {
+				currentPoint--;
+				break;
+			}
+		}
+	}
+
+	// current camera point
+	if (currentPoint < 0) {
+		CG_SPrint(va("current time: %f ^5[ - 0]", cg.ftime));
+	} else if (currentPoint >= cg.numCameraPoints) {
+		CG_SPrint(va("current time: %f ^5[%d +]", cg.ftime, cg.numCameraPoints - 1));
+	} else {  // within camera point
+		CG_SPrint(va("current time: %f ^5[%d - %d]", cg.ftime, currentPoint, currentPoint + 1));
+	}
+
+	if (cp->next) {
+		CG_SPrint(va("camera time: %f  %f sec", cp->cgtime, (cp->next->cgtime - cp->cgtime) / 1000.0));
 	} else {
 		CG_SPrint(va("camera time: %f", cp->cgtime));
 	}
@@ -197,40 +254,26 @@ static void CG_DrawCameraPointInfo (void)
 	badOrigin = qfalse;
 	badAngles = qfalse;
 
-	if (cpprev  &&  cg.selectedCameraPointMin != (cg.numCameraPoints - 1)) {
-		double a1, a2;
-
-		//FIXME does this apply to spline origins?
-		//if ((cp->originAvgVelocity * 2.0) > cpprev->originAvgVelocity) {
-		if ((cp->originImmediateInitialVelocity * cg_cameraSmoothFactor.value) < cpprev->originImmediateFinalVelocity) {
+	if (cpOriginPrev  &&  cp->flags & CAM_ORIGIN  &&  cpOriginNext) {
+		if ((cp->originImmediateInitialVelocity * cg_cameraSmoothFactor.value) < cpOriginPrev->originImmediateFinalVelocity) {
 			badOrigin = qtrue;
 		}
+	}
 
-		if (cpprev->useAnglesVelocity) {
-			a1 = cpprev->anglesFinalVelocity;
-		} else {
-			a1 = cpprev->anglesAvgVelocity;
-		}
-		if (cp->useAnglesVelocity) {
-			a2 = cp->anglesInitialVelocity;
-		} else {
-			a2 = cp->anglesAvgVelocity;
-		}
-
-		//if ((cp->anglesAvgVelocity * 2.0) > cpprev->anglesAvgVelocity) {
-		if ((a2 * cg_cameraSmoothFactor.value) < a1) {
+	if (cpAnglesPrev  &&  cp->flags & CAM_ANGLES  &&  cpAnglesNext) {
+		if ((cp->anglesImmediateInitialVelocity * cg_cameraSmoothFactor.value) < cpAnglesPrev->anglesImmediateFinalVelocity) {
 			badAngles = qtrue;
 		}
 	}
 
-	if (badOrigin  &&  (cp->type != CAMERA_SPLINE_BEZIER  ||  cp->type != CAMERA_SPLINE_CATMULLROM)) {
+	if (badOrigin) {
 		s = va("origin: %d  %d  %d  ^1(not smooth)", (int)cp->origin[0], (int)cp->origin[1], (int)cp->origin[2]);
 	} else {
 		s = va("origin: %d  %d  %d", (int)cp->origin[0], (int)cp->origin[1], (int)cp->origin[2]);
 	}
 	CG_SPrint(s);
 
-	if (badAngles  &&  (cp->viewType != CAMERA_ANGLES_SPLINE)) {
+	if (badAngles) {
 		s = va("angles: %d  %d  %d  ^1(not smooth)", (int)cp->angles[0], (int)cp->angles[1], (int)cp->angles[2]);
 	} else {
 		s = va("angles: %d  %d  %d", (int)cp->angles[0], (int)cp->angles[1], (int)cp->angles[2]);
@@ -277,13 +320,15 @@ static void CG_DrawCameraPointInfo (void)
 	}
 	CG_SPrint(s);
 
-	//FIXME show disable for angles type spline
+	//FIXME show disabled for angles type spline
 	if (cp->rollType == CAMERA_ROLL_INTERP) {
 		s = va("camera roll: interp");
 	} else if (cp->rollType == CAMERA_ROLL_FIXED) {
 		s = va("camera roll: fixed");
 	} else if (cp->rollType == CAMERA_ROLL_PASS) {
 		s = va("camera roll: pass");
+	} else if (cp->rollType == CAMERA_ROLL_AS_ANGLES) {
+		s = va("camera roll: angles");
 	} else {
 		s = va("camera roll: ???");
 	}
@@ -333,252 +378,404 @@ static void CG_DrawCameraPointInfo (void)
 		CG_SPrint("fov type:  ???");
 	}
 
-	if (!cp->useOriginVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("initial velocity: %f  ^3%f^7", cp->originDistance / (cpnext->cgtime - cp->cgtime) * 1000.0, cp->originImmediateInitialVelocity));
+	if (cp->flags & CAM_ORIGIN) {
+		if (!cp->useOriginVelocity) {
+			if (cpOriginNext) {
+				CG_SPrint(va("initial velocity: %f(avg) (initial avg not set) ^3%f(imm)", cp->originDistance / (cpOriginNext->cgtime - cp->cgtime) * 1000.0, cp->originImmediateInitialVelocity));
+			} else {
+				CG_SPrint("initial velocity:");
+			}
 		} else {
-			CG_SPrint("initial velocity:");
+			CG_SPrint(va("initial velocity: %f(avg) %f(initial avg) ^3%f(imm)", cp->originDistance / (cpOriginNext->cgtime - cp->cgtime) * 1000.0, cp->originInitialVelocity, cp->originImmediateInitialVelocity));
 		}
-	} else {
-		CG_SPrint(va("initial velocity: %f  ^3%f^7", cp->originInitialVelocity, cp->originImmediateInitialVelocity));
-	}
 
-	if (!cp->useOriginVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("final velocity: %f  %f^7", cp->originDistance / (cpnext->cgtime - cp->cgtime) * 1000.0, cp->originImmediateFinalVelocity));
+		if (!cp->useOriginVelocity) {
+			if (cpOriginNext) {
+				CG_SPrint(va("final velocity: %f(avg) (final avg not set) %f(imm)", cp->originDistance / (cpOriginNext->cgtime - cp->cgtime) * 1000.0, cp->originImmediateFinalVelocity));
+			} else {
+				CG_SPrint("final velocity:");
+			}
 		} else {
-			CG_SPrint("final velocity:");
+			CG_SPrint(va("final velocity: %f(avg) %f(final avg) %f(imm)", cp->originDistance / (cpOriginNext->cgtime - cp->cgtime) * 1000.0, cp->originFinalVelocity, cp->originImmediateFinalVelocity));
 		}
-	} else {
-		CG_SPrint(va("final velocity: %f  %f^7", cp->originFinalVelocity, cp->originImmediateFinalVelocity));
-	}
 
-	if (cpprev) {
-		if (!cpprev->useOriginVelocity) {
-			CG_SPrint(va("prev final velocity: %f  ^3%f^7", cpprev->originDistance / (cp->cgtime - cpprev->cgtime) * 1000.0, cpprev->originImmediateFinalVelocity));
+		if (cpOriginPrev) {
+			if (!cpOriginPrev->useOriginVelocity) {
+				CG_SPrint(va("prev final velocity: %f(avg) (final avg not set) ^3%f(imm)", cpOriginPrev->originDistance / (cp->cgtime - cpOriginPrev->cgtime) * 1000.0, cpOriginPrev->originImmediateFinalVelocity));
+			} else {
+				CG_SPrint(va("prev final velocity: %f(avg) %f(final avg) ^3%f(imm)", cpOriginPrev->originDistance / (cp->cgtime - cpOriginPrev->cgtime) * 1000.0, cpOriginPrev->originFinalVelocity, cpOriginPrev->originImmediateFinalVelocity));
+			}
 		} else {
-			CG_SPrint(va("prev final velocity: %f ^3%f^7", cpprev->originFinalVelocity, cpprev->originImmediateFinalVelocity));
+			CG_SPrint(va("prev final velocity:"));
 		}
-	} else {
-		CG_SPrint(va("prev final velocity:"));
+	} else {  // !(cp->flags & CAM_ORIGIN)
+		CG_SPrint("initial velocity:");
+		CG_SPrint("final velocity:");
+		CG_SPrint("prev final velocity:");
 	}
 
 	// angles
 
-#if 0
-	//VectorCopy(cp->angles, anglesCurrent);
-	//anglesCurrent[ROLL] = 0;
-	if (cpprev) {
-		VectorCopy(cpprev->angles, anglesPrev);
-		anglesPrev[ROLL] = 0;
-	} else {
-		VectorClear(anglesPrev);
-	}
-	if (cpnext) {
-		VectorCopy(cpnext->angles, anglesNext);
-		anglesNext[ROLL] = 0;
-	} else {
-		VectorClear(anglesNext);
-	}
-#endif
-
-	if (!cp->useAnglesVelocity) {
-		if (cpnext) {
-			//CG_SPrint(va("angles initial velocity: ^3%f", AngleDistance(anglesNext, anglesCurrent) / (cpnext->cgtime - cp->cgtime) * 1000.0));
-			CG_SPrint(va("angles initial velocity: ^6%f", cp->anglesAvgVelocity));
+	if (cp->flags & CAM_ANGLES) {
+		if (!cp->useAnglesVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("angles initial velocity: %f(avg) (initial avg not set) ^6%f(imm)", cp->anglesAvgVelocity, cp->anglesImmediateInitialVelocity));
+			} else {
+				CG_SPrint("angles initial velocity:");
+			}
 		} else {
-			CG_SPrint("angles initial velocity:");
+			CG_SPrint(va("angles initial velocity: %f(avg) %f(initial avg) ^6%f(imm)", cp->anglesAvgVelocity, cp->anglesInitialVelocity, cp->anglesImmediateInitialVelocity));
 		}
-	} else {
-		CG_SPrint(va("angles initial velocity: ^6%f", cp->anglesInitialVelocity));
-	}
 
-	if (!cp->useAnglesVelocity) {
-		if (cpnext) {
-			//CG_SPrint(va("angles final velocity: %f", Distance(anglesNext, anglesCurrent) / (cpnext->cgtime - cp->cgtime) * 1000.0));
-			//CG_SPrint(va("angles final velocity: %f", AngleDistance(anglesNext, anglesCurrent) / (cpnext->cgtime - cp->cgtime) * 1000.0));
-			CG_SPrint(va("angles final velocity: %f", cp->anglesAvgVelocity));
+		if (!cp->useAnglesVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("angles final velocity: %f(avg) (final avg not set) %f(imm)", cp->anglesAvgVelocity, cp->anglesImmediateFinalVelocity));
+			} else {
+				CG_SPrint("angles final velocity:");
+			}
 		} else {
-			CG_SPrint("angles final velocity:");
+			CG_SPrint(va("angles final velocity: %f(avg) %f(final avg) %f(imm)", cp->anglesAvgVelocity, cp->anglesFinalVelocity, cp->anglesImmediateFinalVelocity));
 		}
-	} else {
-		CG_SPrint(va("angles final velocity: %f", cp->anglesFinalVelocity));
-	}
 
-	if (cpprev) {
-		if (!cpprev->useAnglesVelocity) {
-			//CG_SPrint(va("angles prev final velocity: ^3%f", Distance(anglesCurrent, anglesPrev) / (cp->cgtime - cpprev->cgtime) * 1000.0));
-			//CG_SPrint(va("angles prev final velocity: ^3%f", AngleDistance(anglesCurrent, anglesPrev) / (cp->cgtime - cpprev->cgtime) * 1000.0));
-			CG_SPrint(va("angles prev final velocity: ^6%f", cpprev->anglesAvgVelocity));
+		if (cpAnglesPrev) {
+			if (!cpAnglesPrev->useAnglesVelocity) {
+				CG_SPrint(va("angles prev final velocity: %f(avg) (final avg not set) ^6%f(imm)", cpAnglesPrev->anglesAvgVelocity, cpAnglesPrev->anglesImmediateFinalVelocity));
+			} else {
+				CG_SPrint(va("angles prev final velocity: %f(avg) %f(final avg) ^6%f(imm)", cpAnglesPrev->anglesAvgVelocity, cpAnglesPrev->anglesFinalVelocity, cpAnglesPrev->anglesImmediateFinalVelocity));
+			}
 		} else {
-			CG_SPrint(va("angles prev final velocity: ^6%f", cpprev->anglesFinalVelocity));
+			CG_SPrint(va("angles prev final velocity:"));
 		}
-	} else {
-		CG_SPrint(va("angles prev final velocity:"));
+	} else {  // !(cp->flags & CAM_ANGLES)
+		CG_SPrint("angles initial velocity:");
+		CG_SPrint("angles final velocity:");
+		CG_SPrint("angles prev final velocity:");
 	}
 
 	// xoffset
 
-	if (!cp->useXoffsetVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("xoffset initial velocity: %f", fabs(cpnext->xoffset - cp->xoffset) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+	if (cp->flags & CAM_ANGLES) {
+		if (!cp->useXoffsetVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("xoffset initial velocity: %f", fabs(cpAnglesNext->xoffset - cp->xoffset) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("xoffset initial velocity:");
+			}
 		} else {
-			CG_SPrint("xoffset initial velocity:");
+			CG_SPrint(va("xoffset initial velocity: %f", cp->xoffsetInitialVelocity));
 		}
-	} else {
-		CG_SPrint(va("xoffset initial velocity: %f", cp->xoffsetInitialVelocity));
-	}
 
-	if (!cp->useXoffsetVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("xoffset final velocity: %f", fabs(cpnext->xoffset - cp->xoffset) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+		if (!cp->useXoffsetVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("xoffset final velocity: %f", fabs(cpAnglesNext->xoffset - cp->xoffset) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("xoffset final velocity:");
+			}
 		} else {
-			CG_SPrint("xoffset final velocity:");
+			CG_SPrint(va("xoffset final velocity: %f", cp->xoffsetFinalVelocity));
 		}
-	} else {
-		CG_SPrint(va("xoffset final velocity: %f", cp->xoffsetFinalVelocity));
-	}
 
-	if (cpprev) {
-		if (!cpprev->useXoffsetVelocity) {
-			CG_SPrint(va("xoffset prev final velocity: %f", fabs(cp->xoffset - cpprev->xoffset) / (cp->cgtime - cpprev->cgtime) * 1000.0));
+		if (cpAnglesPrev) {
+			if (!cpAnglesPrev->useXoffsetVelocity) {
+				CG_SPrint(va("xoffset prev final velocity: %f", fabs(cp->xoffset - cpAnglesPrev->xoffset) / (cp->cgtime - cpAnglesPrev->cgtime) * 1000.0));
+			} else {
+				CG_SPrint(va("xoffset prev final velocity: %f", cpAnglesPrev->xoffsetFinalVelocity));
+			}
 		} else {
-			CG_SPrint(va("xoffset prev final velocity: %f", cpprev->xoffsetFinalVelocity));
+			CG_SPrint(va("xoffset prev final velocity:"));
 		}
-	} else {
-		CG_SPrint(va("xoffset prev final velocity:"));
+	} else {  // !(cp->flags & CAM_ANGLES)
+		CG_SPrint("xoffset initial velocity:");
+		CG_SPrint("xoffset final velocity:");
+		CG_SPrint("xoffset prev final velocity:");
 	}
 
 	// yoffset
 
-	if (!cp->useYoffsetVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("yoffset initial velocity: %f", fabs(cpnext->yoffset - cp->yoffset) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+	if (cp->flags & CAM_ANGLES) {
+		if (!cp->useYoffsetVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("yoffset initial velocity: %f", fabs(cpAnglesNext->yoffset - cp->yoffset) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("yoffset initial velocity:");
+			}
 		} else {
-			CG_SPrint("yoffset initial velocity:");
+			CG_SPrint(va("yoffset initial velocity: %f", cp->yoffsetInitialVelocity));
 		}
-	} else {
-		CG_SPrint(va("yoffset initial velocity: %f", cp->yoffsetInitialVelocity));
-	}
 
-	if (!cp->useYoffsetVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("yoffset final velocity: %f", fabs(cpnext->yoffset - cp->yoffset) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+		if (!cp->useYoffsetVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("yoffset final velocity: %f", fabs(cpAnglesNext->yoffset - cp->yoffset) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("yoffset final velocity:");
+			}
 		} else {
-			CG_SPrint("yoffset final velocity:");
+			CG_SPrint(va("yoffset final velocity: %f", cp->yoffsetFinalVelocity));
 		}
-	} else {
-		CG_SPrint(va("yoffset final velocity: %f", cp->yoffsetFinalVelocity));
-	}
 
-	if (cpprev) {
-		if (!cpprev->useYoffsetVelocity) {
-			CG_SPrint(va("yoffset prev final velocity: %f", fabs(cp->yoffset - cpprev->yoffset) / (cp->cgtime - cpprev->cgtime) * 1000.0));
+		if (cpAnglesPrev) {
+			if (!cpAnglesPrev->useYoffsetVelocity) {
+				CG_SPrint(va("yoffset prev final velocity: %f", fabs(cp->yoffset - cpAnglesPrev->yoffset) / (cp->cgtime - cpAnglesPrev->cgtime) * 1000.0));
+			} else {
+				CG_SPrint(va("yoffset prev final velocity: %f", cpAnglesPrev->yoffsetFinalVelocity));
+			}
 		} else {
-			CG_SPrint(va("yoffset prev final velocity: %f", cpprev->yoffsetFinalVelocity));
+			CG_SPrint(va("yoffset prev final velocity:"));
 		}
-	} else {
-		CG_SPrint(va("yoffset prev final velocity:"));
+	} else {  // !(cp->flags & CAM_ANGLES)
+		CG_SPrint("yoffset initial velocity:");
+		CG_SPrint("yoffset final velocity:");
+		CG_SPrint("yoffset prev final velocity:");
 	}
 
 	// zoffset
 
-	if (!cp->useZoffsetVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("zoffset initial velocity: %f", fabs(cpnext->zoffset - cp->zoffset) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+	if (cp->flags & CAM_ANGLES) {
+		if (!cp->useZoffsetVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("zoffset initial velocity: %f", fabs(cpAnglesNext->zoffset - cp->zoffset) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("zoffset initial velocity:");
+			}
 		} else {
-			CG_SPrint("zoffset initial velocity:");
+			CG_SPrint(va("zoffset initial velocity: %f", cp->zoffsetInitialVelocity));
 		}
-	} else {
-		CG_SPrint(va("zoffset initial velocity: %f", cp->zoffsetInitialVelocity));
-	}
 
-	if (!cp->useZoffsetVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("zoffset final velocity: %f", fabs(cpnext->zoffset - cp->zoffset) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+		if (!cp->useZoffsetVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("zoffset final velocity: %f", fabs(cpAnglesNext->zoffset - cp->zoffset) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("zoffset final velocity:");
+			}
 		} else {
-			CG_SPrint("zoffset final velocity:");
+			CG_SPrint(va("zoffset final velocity: %f", cp->zoffsetFinalVelocity));
 		}
-	} else {
-		CG_SPrint(va("zoffset final velocity: %f", cp->zoffsetFinalVelocity));
-	}
 
-	if (cpprev) {
-		if (!cpprev->useZoffsetVelocity) {
-			CG_SPrint(va("zoffset prev final velocity: %f", fabs(cp->zoffset - cpprev->zoffset) / (cp->cgtime - cpprev->cgtime) * 1000.0));
+		if (cpAnglesPrev) {
+			if (!cpAnglesPrev->useZoffsetVelocity) {
+				CG_SPrint(va("zoffset prev final velocity: %f", fabs(cp->zoffset - cpAnglesPrev->zoffset) / (cp->cgtime - cpAnglesPrev->cgtime) * 1000.0));
+			} else {
+				CG_SPrint(va("zoffset prev final velocity: %f", cpAnglesPrev->zoffsetFinalVelocity));
+			}
 		} else {
-			CG_SPrint(va("zoffset prev final velocity: %f", cpprev->zoffsetFinalVelocity));
+			CG_SPrint(va("zoffset prev final velocity:"));
 		}
-	} else {
-		CG_SPrint(va("zoffset prev final velocity:"));
+	} else {  // !(cp->flags & CAM_ANGLES)
+		CG_SPrint("zoffset initial velocity:");
+		CG_SPrint("zoffset final velocity:");
+		CG_SPrint("zoffset prev final velocity:");
 	}
 
 	// fov
-
-	if (!cp->useFovVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("fov initial velocity: %f", fabs(cpnext->fov - cp->fov) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+	if (cp->flags & CAM_FOV) {
+		if (!cp->useFovVelocity) {
+			if (cpFovNext) {
+				CG_SPrint(va("fov initial velocity: %f", fabs(cpFovNext->fov - cp->fov) / (cpFovNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("fov initial velocity:");
+			}
 		} else {
-			CG_SPrint("fov initial velocity:");
+			CG_SPrint(va("fov initial velocity: %f", cp->fovInitialVelocity));
 		}
-	} else {
-		CG_SPrint(va("fov initial velocity: %f", cp->fovInitialVelocity));
-	}
 
-	if (!cp->useFovVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("fov final velocity: %f", fabs(cpnext->fov - cp->fov) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+		if (!cp->useFovVelocity) {
+			if (cpFovNext) {
+				CG_SPrint(va("fov final velocity: %f", fabs(cpFovNext->fov - cp->fov) / (cpFovNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("fov final velocity:");
+			}
 		} else {
-			CG_SPrint("fov final velocity:");
+			CG_SPrint(va("fov final velocity: %f", cp->fovFinalVelocity));
 		}
-	} else {
-		CG_SPrint(va("fov final velocity: %f", cp->fovFinalVelocity));
-	}
 
-	if (cpprev) {
-		if (!cpprev->useFovVelocity) {
-			CG_SPrint(va("fov prev final velocity: %f", fabs(cp->fov - cpprev->fov) / (cp->cgtime - cpprev->cgtime) * 1000.0));
+		if (cpFovPrev) {
+			if (!cpFovPrev->useFovVelocity) {
+				CG_SPrint(va("fov prev final velocity: %f", fabs(cp->fov - cpFovPrev->fov) / (cp->cgtime - cpFovPrev->cgtime) * 1000.0));
+			} else {
+				CG_SPrint(va("fov prev final velocity: %f", cpFovPrev->fovFinalVelocity));
+			}
 		} else {
-			CG_SPrint(va("fov prev final velocity: %f", cpprev->fovFinalVelocity));
+			CG_SPrint(va("fov prev final velocity:"));
 		}
-	} else {
-		CG_SPrint(va("fov prev final velocity:"));
+	} else {  // !(cp->flags & CAM_FOV)
+		CG_SPrint("fov initial velocity:");
+		CG_SPrint("fov final velocity:");
+		CG_SPrint("fov prev final velocity:");
 	}
 
 	// roll
 
-	if (!cp->useRollVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("roll initial velocity: %f", fabs(AngleSubtract(cpnext->angles[ROLL], cp->angles[ROLL])) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+	if (cp->flags & CAM_ANGLES) {
+		if (!cp->useRollVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("roll initial velocity: %f", fabs(AngleSubtract(cpAnglesNext->angles[ROLL], cp->angles[ROLL])) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("roll initial velocity:");
+			}
 		} else {
-			CG_SPrint("roll initial velocity:");
+			CG_SPrint(va("roll initial velocity: %f", cp->rollInitialVelocity));
 		}
-	} else {
-		CG_SPrint(va("roll initial velocity: %f", cp->rollInitialVelocity));
-	}
 
-	if (!cp->useRollVelocity) {
-		if (cpnext) {
-			CG_SPrint(va("roll final velocity: %f", fabs(AngleSubtract(cpnext->angles[ROLL], cp->angles[ROLL])) / (cpnext->cgtime - cp->cgtime) * 1000.0));
+		if (!cp->useRollVelocity) {
+			if (cpAnglesNext) {
+				CG_SPrint(va("roll final velocity: %f", fabs(AngleSubtract(cpAnglesNext->angles[ROLL], cp->angles[ROLL])) / (cpAnglesNext->cgtime - cp->cgtime) * 1000.0));
+			} else {
+				CG_SPrint("roll final velocity:");
+			}
 		} else {
-			CG_SPrint("roll final velocity:");
+			CG_SPrint(va("roll final velocity: %f", cp->rollFinalVelocity));
 		}
-	} else {
-		CG_SPrint(va("roll final velocity: %f", cp->rollFinalVelocity));
-	}
 
-	if (cpprev) {
-		if (!cpprev->useRollVelocity) {
-			CG_SPrint(va("roll prev final velocity: %f", fabs(AngleSubtract(cp->angles[ROLL], cpprev->angles[ROLL])) / (cp->cgtime - cpprev->cgtime) * 1000.0));
+		if (cpAnglesPrev) {
+			if (!cpAnglesPrev->useRollVelocity) {
+				CG_SPrint(va("roll prev final velocity: %f", fabs(AngleSubtract(cp->angles[ROLL], cpAnglesPrev->angles[ROLL])) / (cp->cgtime - cpAnglesPrev->cgtime) * 1000.0));
+			} else {
+				CG_SPrint(va("roll prev final velocity: %f", cpAnglesPrev->rollFinalVelocity));
+			}
 		} else {
-			CG_SPrint(va("roll prev final velocity: %f", cpprev->rollFinalVelocity));
+			CG_SPrint(va("roll prev final velocity:"));
 		}
-	} else {
-		CG_SPrint(va("roll prev final velocity:"));
+	} else {  // !(cp->flags & CAM_ANGLES)
+		CG_SPrint("roll initial velocity:");
+		CG_SPrint("roll final velocity:");
+		CG_SPrint("roll prev final velocity:");
 	}
 
 	CG_SPrint(va("command: %s", cp->command));
 	CG_SPrint(va("distance: %f", cp->originDistance));
+}
+
+static void CG_DrawQ3mmeCameraPointInfo (void)
+{
+	vec4_t color;
+	int x, y;
+	int h;
+	int style, align;
+	float scale;
+	const fontInfo_t *font;
+	const demoCameraPoint_t *cp;
+	const demoCameraPoint_t *currentCameraPoint;
+	const demoCameraPoint_t *cameraPointFirst;
+	const demoCameraPoint_t *cameraPointLast;
+	int numCameraPoints;
+	int currentPointNum;
+	const char *smoothPos;
+
+	if (!cg_drawCameraPointInfo.integer) {
+		return;
+	}
+
+	if (!demo.camera.points) {
+		return;
+	}
+
+	SC_Vec4ColorFromCvars(color, &cg_drawCameraPointInfoColor, &cg_drawCameraPointInfoAlpha);
+
+	if (color[3] <= 0.0) {
+		return;
+	}
+
+	QLWideScreen = WIDESCREEN_LEFT;
+
+	align = cg_drawCameraPointInfoAlign.integer;
+	scale = cg_drawCameraPointInfoScale.value;
+	style = cg_drawCameraPointInfoStyle.integer;
+	if (*cg_drawCameraPointInfoFont.string) {
+		font = &cgs.media.cameraPointInfoFont;
+	} else {
+		font = &cgDC.Assets.textFont;
+	}
+
+	x = cg_drawCameraPointInfoX.integer;
+	y = cg_drawCameraPointInfoY.integer;
+
+	//FIXME store max height/point size
+	//h = CG_Text_Height("1!IPUTY|", scale, 0, font);
+	h = CG_Text_Height("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~`!@#$%^&*()-_=+[{]}\\|;:'\",./?", scale, 0, font);
+
+	cameraPointFirst = demo.camera.points;
+	cameraPointLast = demo.camera.points;
+
+	numCameraPoints = 1;
+	cp = demo.camera.points;
+	currentCameraPoint = cp;
+	currentPointNum = 0;
+
+	while (cp  &&  cp->next) {
+		if (cp->next->time <= cg.time) {
+			currentCameraPoint = cp->next;
+			currentPointNum = numCameraPoints;
+		} else {
+
+		}
+		cp = cp->next;
+		numCameraPoints++;
+	}
+
+	cameraPointLast = cp;
+
+	CG_SPrintInit(x, &y, h, align, scale, color, style, font, qfalse);
+
+	CG_SPrint(va("camera points: %d", numCameraPoints));
+
+	// current camera point
+	if (cg.time < cameraPointFirst->time) {
+		CG_SPrint(va("current time: %f ^5[ - 0]", cg.ftime));
+		cp = cameraPointFirst;
+	} else if (cg.time == cameraPointFirst->time) {
+		CG_SPrint(va("current time: %f ^5[0]", cg.ftime));
+		cp = cameraPointFirst;
+	} else if (cg.time > cameraPointLast->time) {
+		CG_SPrint(va("current time: %f ^5[%d +]", cg.ftime, numCameraPoints - 1));
+		cp = cameraPointLast;
+	} else if (cg.time == cameraPointLast->time) {
+		CG_SPrint(va("current time: %f ^5[%d]", cg.ftime, numCameraPoints - 1));
+		cp = cameraPointLast;
+	} else if (cg.time == currentCameraPoint->time) {
+		CG_SPrint(va("current time: %f ^5[%d]", cg.ftime, currentPointNum));
+		cp = currentCameraPoint;
+	} else {  // within camera point
+		CG_SPrint(va("current time: %f ^5[%d - %d]", cg.ftime, currentPointNum, currentPointNum + 1));
+		cp = currentCameraPoint;
+	}
+
+	if (cp->next) {
+		CG_SPrint(va("camera time: %d  %f sec", cp->time, (float)(cp->next->time - cp->time) / 1000.0));
+	} else {
+		CG_SPrint(va("camera time: %d", cp->time));
+	}
+
+	CG_SPrint(va("origin: %f  %f  %f", cp->origin[0], cp->origin[1], cp->origin[2]));
+	CG_SPrint(va("angles: %f  %f  %f", cp->angles[0], cp->angles[1], cp->angles[2]));
+	CG_SPrint(va("fov: %f", cp->fov));
+	CG_SPrint(va("flags: %s%s%s%s",
+				 cp->flags & CAM_ORIGIN ? "origin " : "",
+				 cp->flags & CAM_ANGLES ? "angles " : "",
+				 cp->flags & CAM_FOV ? "fov " : "",
+				 cp->flags & CAM_TIME ? "time " : ""));
+
+	if (cp == cameraPointLast) {
+		CG_SPrint(va("length:"));
+	} else {
+		CG_SPrint(va("length: %f", cp->len));
+	}
+	CG_SPrint(va("target: %d%s", demo.camera.target, demo.camera.target == -1 ? " (not set)" : ""));
+
+	switch (demo.camera.smoothPos) {
+	case posLinear:
+		smoothPos = "linear";
+		break;
+	case posCatmullRom:
+		smoothPos = "catmull-rom";
+		break;
+	case posBezier:
+		smoothPos = "bezier";
+		break;
+	default:
+		smoothPos = "unknown";
+		break;
+	}
+	CG_SPrint(va("smooth position: %s", smoothPos));
 }
 
 static float Wolfcam_DrawSpeed (float y)
@@ -602,7 +799,7 @@ static float Wolfcam_DrawSpeed (float y)
 	scale = cg_drawSpeedScale.value;
 	style = cg_drawSpeedStyle.integer;
 	QLWideScreen = cg_drawSpeedWideScreen.integer;
-	
+
 	if (*cg_drawSpeedFont.string) {
 		font = &cgs.media.speedFont;
 	} else {
@@ -702,7 +899,7 @@ static void CG_DrawJumpSpeeds (void)
 	scale = cg_drawJumpSpeedsScale.value;
 	style = cg_drawJumpSpeedsStyle.integer;
 	QLWideScreen = cg_drawJumpSpeedsWideScreen.integer;
-	
+
 	if (*cg_drawJumpSpeedsFont.string) {
 		font = &cgs.media.jumpSpeedsFont;
 	} else {
@@ -767,7 +964,7 @@ static void CG_DrawJumpSpeedsTime (void)
 	scale = cg_drawJumpSpeedsTimeScale.value;
 	style = cg_drawJumpSpeedsTimeStyle.integer;
 	QLWideScreen = cg_drawJumpSpeedsTimeWideScreen.integer;
-	
+
 	if (*cg_drawJumpSpeedsTimeFont.string) {
 		font = &cgs.media.jumpSpeedsTimeFont;
 	} else {
@@ -810,7 +1007,7 @@ static float Wolfcam_DrawMouseSpeed (float y)
 	//int i;
 
 	//QLWideScreen
-	
+
 	return y;
 
 #if 0
@@ -905,7 +1102,7 @@ static void Wolfcam_DrawFollowing (void)
 	scale = cg_drawFollowingScale.value;
 	style = cg_drawFollowingStyle.integer;
 	QLWideScreen = cg_drawFollowingWideScreen.integer;
-	
+
 	if (*cg_drawFollowingFont.string) {
 		font = &cgs.media.followingFont;
 	} else {
@@ -1713,6 +1910,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 			} else {
 				trap_GetShaderImageDimensions(glyph->glyph, &fontImageWidth, &fontImageHeight);
 				if (fontImageWidth != FONT_DIMENSIONS  ||  fontImageHeight != FONT_DIMENSIONS) {
+				//if (fontImageWidth > FONT_DIMENSIONS  ||  fontImageHeight > FONT_DIMENSIONS) {
 					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font image dimensions are not supported: %d x %d '%s'\n", fontImageWidth, fontImageHeight, font->name);
 					return;
 				}
@@ -2088,7 +2286,7 @@ void CG_DrawFlagModel( float x, float y, float w, float h, int team, qboolean fo
 
 		// calculate distance so the flag nearly fills the box
 		// assume heads are taller than wide
-		len = 0.5 * ( maxs[2] - mins[2] );		
+		len = 0.5 * ( maxs[2] - mins[2] );
 		origin[0] = len / 0.268;	// len / tan( fov/2 )
 
 		angles[YAW] = 60 * sin( cg.time / 2000.0 );;
@@ -2250,7 +2448,7 @@ CG_DrawStatusBar
 */
 #ifndef MISSIONPACK
 #if 0
-static void Wolfcam_DrawStatusBar (void) 
+static void Wolfcam_DrawStatusBar (void)
 {
 	int			color;
 	const centity_t	*cent;
@@ -2262,7 +2460,7 @@ static void Wolfcam_DrawStatusBar (void)
 #ifdef MISSIONPACK
 	qhandle_t	handle;
 #endif
-	static float colors[4][4] = { 
+	static float colors[4][4] = {
 //		{ 0.2, 1.0, 0.2, 1.0 } , { 1.0, 0.2, 0.2, 1.0 }, {0.5, 0.5, 0.5, 1} };
 		{ 1.0f, 0.69f, 0.0f, 1.0f },    // normal
 		{ 1.0f, 0.2f, 0.2f, 1.0f },     // low health
@@ -2360,7 +2558,7 @@ static void Wolfcam_DrawStatusBar (void)
 				}
 			}
 			trap_R_SetColor( colors[color] );
-			
+
 			CG_DrawField (0, 432, 3, value);
 			trap_R_SetColor( NULL );
 
@@ -2465,7 +2663,7 @@ static void CG_DrawStatusBar( void ) {
 #ifdef MISSIONPACK
 	qhandle_t	handle;
 #endif
-	const static float colors[4][4] = { 
+	const static float colors[4][4] = {
 //		{ 0.2, 1.0, 0.2, 1.0 } , { 1.0, 0.2, 0.2, 1.0 }, {0.5, 0.5, 0.5, 1} };
 		{ 1.0f, 0.69f, 0.0f, 1.0f },    // normal
 		{ 1.0f, 0.2f, 0.2f, 1.0f },     // low health
@@ -2476,7 +2674,7 @@ static void CG_DrawStatusBar( void ) {
 		return;
 	}
 	QLWideScreen = WIDESCREEN_CENTER;
-	
+
 	// draw the team background
 	if (wolfcam_following) {
 		CG_DrawTeamBackground(0, 420, 640, 60, 0.33f, cgs.clientinfo[wcg.clientNum].team);
@@ -2557,7 +2755,7 @@ static void CG_DrawStatusBar( void ) {
 				}
 			}
 			trap_R_SetColor( colors[color] );
-			
+
 			CG_DrawField (0, 432, 3, value);
 			trap_R_SetColor( NULL );
 
@@ -2632,6 +2830,10 @@ static void CG_DrawStatusBar( void ) {
 	}
 #endif
 }
+# else // MISSIONPACK
+static void CG_DrawStatusBar (void)
+{
+}
 #endif
 
 /*
@@ -2699,7 +2901,7 @@ static int Wolfcam_DrawAttacker( float y ) {
 #endif  //FIXME wolfcam double check it
 
  L1:
-    
+
     if (attacker_num == -1)
         return -1; //y;
 
@@ -2805,7 +3007,7 @@ static float CG_DrawAttacker( float y ) {
 	scale = cg_drawAttackerScale.value;
 	style = cg_drawAttackerStyle.integer;
 	QLWideScreen = cg_drawAttackerWideScreen.integer;
-	
+
 	if (*cg_drawAttackerFont.string) {
 		font = &cgs.media.attackerFont;
 	} else {
@@ -2966,7 +3168,7 @@ static float CG_DrawSnapshot( float y ) {
 	scale = cg_drawSnapshotScale.value;
 	align = cg_drawSnapshotAlign.integer;
 	QLWideScreen = cg_drawSnapshotWideScreen.integer;
-	
+
 	s = va( "time:%d snap:%i cmd:%i", cg.snap->serverTime,
 		cg.latestSnapshotNum, cgs.serverCommandSequence );
 	//w = CG_DrawStrlen( s, &cgs.media.bigchar );
@@ -3029,7 +3231,7 @@ static float CG_DrawFPS( float y ) {
 		font = &cgDC.Assets.textFont;
 	}
 	QLWideScreen = cg_drawFPSWideScreen.integer;
-	
+
 	// don't use serverTime, because that will be drifting to
 	// correct for internet lag changes, timescales, timedemos, etc
 	t = trap_Milliseconds();
@@ -3143,7 +3345,7 @@ static void CG_DrawClientItemTimer (void)
 	alpha = (float)cg_drawClientItemTimerAlpha.integer / 255.0;
 	textStyle = cg_drawClientItemTimerStyle.integer;
 	QLWideScreen = cg_drawClientItemTimerWideScreen.integer;
-	
+
 	if (*cg_drawClientItemTimerFont.string) {
 		font = &cgs.media.clientItemTimerFont;
 	} else {
@@ -3535,7 +3737,7 @@ static float CG_DrawOrigin (float y)
 	scale = cg_drawOriginScale.value;
 	style = cg_drawOriginStyle.integer;
 	QLWideScreen = cg_drawOriginWideScreen.integer;
-	
+
 	if (*cg_drawOriginFont.string) {
 		font = &cgs.media.originFont;
 	} else {
@@ -3755,7 +3957,7 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 				if (len > lwidth)
 					len = lwidth;
 
-//				xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth + 
+//				xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth +
 //					((lwidth/2 - len/2) * TINYCHAR_WIDTH);
 				xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth;
 				CG_DrawStringExt( xx, y,
@@ -3767,7 +3969,7 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 
 			Com_sprintf (st, sizeof(st), "%3i %3i", ci->health,	ci->armor);
 
-			xx = x + TINYCHAR_WIDTH * 3 + 
+			xx = x + TINYCHAR_WIDTH * 3 +
 				TINYCHAR_WIDTH * pwidth + TINYCHAR_WIDTH * lwidth;
 
 			CG_DrawStringExt( xx, y,
@@ -3778,10 +3980,10 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 			xx += TINYCHAR_WIDTH * 3;
 
 			if ( cg_weapons[ci->curWeapon].weaponIcon ) {
-				CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 
+				CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT,
 					cg_weapons[ci->curWeapon].weaponIcon );
 			} else {
-				CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 
+				CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT,
 					cgs.media.deferShader );
 			}
 
@@ -3797,7 +3999,7 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 					item = BG_FindItemForPowerup( j );
 
 					if (item) {
-						CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 
+						CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT,
 						trap_R_RegisterShader( item->icon ) );
 						if (right) {
 							xx -= TINYCHAR_WIDTH;
@@ -3855,7 +4057,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 		font = &cgDC.Assets.textFont;
 	}
 	QLWideScreen = cg_drawTeamOverlayWideScreen.integer;
-	
+
 	align = cg_drawTeamOverlayAlign.integer;
 	//alpha = cg_drawTeamOverlayAlpha.value / 255.0;
 	alpha = 1.0;
@@ -4028,7 +4230,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 				if (len > lwidth)
 					len = lwidth;
 
-//				xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth + 
+//				xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth +
 //					((lwidth/2 - len/2) * TINYCHAR_WIDTH);
 				//xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth;
 				//xx = x + cwidth * 2 + cwidth * pwidth;
@@ -4333,7 +4535,7 @@ static float CG_DrawPlayersLeft( float y ) {
 				color[2] = 0.5f;
 				color[3] = 0.33f;
 				CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-			}	
+			}
 			CG_DrawBigString( x + 4, y, s, 1.0F);
 		}
 
@@ -4355,7 +4557,7 @@ static float CG_DrawPlayersLeft( float y ) {
 				color[2] = 0.5f;
 				color[3] = 0.33f;
 				CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-			}	
+			}
 			CG_DrawBigString( x + 4, y, s, 1.0F);
 		}
 
@@ -4392,7 +4594,7 @@ static float CG_DrawScores( float y ) {
 	}
 
 	QLWideScreen = WIDESCREEN_RIGHT;
-	
+
 	if (wolfcam_following) {
 		ourTeam = cgs.clientinfo[wcg.clientNum].team;
 	} else {
@@ -4604,7 +4806,7 @@ static float CG_DrawPowerups( float y ) {
 	}
 
 	QLWideScreen = WIDESCREEN_RIGHT;
-	
+
 	ps = &cg.snap->ps;
 	//ci = &cgs.clientinfo[ps->clientNum];
 
@@ -4667,7 +4869,7 @@ static float CG_DrawPowerups( float y ) {
 			  trap_R_SetColor( modulate );
 		  }
 
-		  if ( cg.powerupActive == sorted[i] && 
+		  if ( cg.powerupActive == sorted[i] &&
 			  cg.time - cg.powerupTime < PULSE_TIME ) {
 			  f = 1.0 - ( ( (float)cg.time - cg.powerupTime ) / PULSE_TIME );
 			  size = ICON_SIZE * ( 1.0 + ( PULSE_SCALE - 1.0 ) * f );
@@ -4676,7 +4878,7 @@ static float CG_DrawPowerups( float y ) {
 		  }
 
 		  //Com_Printf("%d  %s %d\n", trap_R_RegisterShader( item->icon ), item->pickup_name, sorted[i]);
-		  CG_DrawPic( 640 - size, y + ICON_SIZE / 2 - size / 2, 
+		  CG_DrawPic( 640 - size, y + ICON_SIZE / 2 - size / 2,
 			  size, size, trap_R_RegisterShader( item->icon ) );
     }
 	}
@@ -4771,7 +4973,7 @@ static int CG_DrawPickupItem (int y)
 	iconSize = cg_drawItemPickupsImageScale.value * (float)ICON_SIZE;
 	style = cg_drawItemPickupsStyle.integer;
 	QLWideScreen = cg_drawItemPickupsWideScreen.integer;
-	
+
 	if (*cg_drawItemPickupsFont.string) {
 		font = &cgs.media.itemPickupsFont;
 	} else {
@@ -4965,7 +5167,7 @@ static void CG_DrawTeamInfo( void ) {
 #define CHATLOC_X 0
 
 	QLWideScreen = WIDESCREEN_LEFT;
-	
+
 	if (cg_teamChatHeight.integer < TEAMCHAT_HEIGHT)
 		chatHeight = cg_teamChatHeight.integer;
 	else
@@ -5016,8 +5218,8 @@ static void CG_DrawTeamInfo( void ) {
 		hcolor[3] = 1.0f;
 
 		for (i = cgs.teamChatPos - 1; i >= cgs.teamLastChatPos; i--) {
-			CG_DrawStringExt( CHATLOC_X + TINYCHAR_WIDTH, 
-				CHATLOC_Y - (cgs.teamChatPos - i)*TINYCHAR_HEIGHT, 
+			CG_DrawStringExt( CHATLOC_X + TINYCHAR_WIDTH,
+				CHATLOC_Y - (cgs.teamChatPos - i)*TINYCHAR_HEIGHT,
 				cgs.teamChatMsgs[i % chatHeight], hcolor, qfalse, qfalse,
 							  TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0, &cgs.media.tinychar );
 		}
@@ -5031,7 +5233,7 @@ CG_DrawHoldableItem
 ===================
 */
 #ifndef MISSIONPACK
-static void CG_DrawHoldableItem( void ) { 
+static void CG_DrawHoldableItem( void ) {
 	int		value;
 
 	if (cg_qlhud.integer) {
@@ -5039,7 +5241,7 @@ static void CG_DrawHoldableItem( void ) {
 	}
 
 	QLWideScreen = WIDESCREEN_RIGHT;
-	
+
 	value = cg.snap->ps.stats[STAT_HOLDABLE_ITEM];
 	if ( value ) {
 		CG_RegisterItemVisuals( value );
@@ -5060,7 +5262,7 @@ static void CG_DrawPersistantPowerup( void ) {
 	int		value;
 
 	QLWideScreen = WIDESCREEN_RIGHT;
-	
+
 	value = cg.snap->ps.stats[STAT_PERSISTANT_POWERUP];
 	if ( value ) {
 		CG_RegisterItemVisuals( value );
@@ -5175,7 +5377,7 @@ static void CG_DrawReward (void)
 		font = &cgDC.Assets.textFont;
 	}
 	QLWideScreen = cg_drawRewardsWideScreen.integer;
-	
+
 	imageScale = cg_drawRewardsImageScale.value;
 	imageWidth = (float)ICON_SIZE * imageScale;
 
@@ -5514,7 +5716,7 @@ static void CG_DrawDisconnect( void ) {
 		y = cg_lagometerY.integer;
 	}
 	QLWideScreen = cg_lagometerWideScreen.integer;
-	
+
 	CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader("disconnected"));
 }
 
@@ -5573,7 +5775,7 @@ static void CG_DrawLagometer( void ) {
 	fontScale = cg_lagometerFontScale.value;
 	fontStyle = cg_lagometerFontStyle.integer;
 	QLWideScreen = cg_lagometerWideScreen.integer;
-	
+
 	if (*cg_lagometerFont.string) {
 		font = &cgs.media.lagometerFont;
 	} else {
@@ -5849,7 +6051,7 @@ void CG_CenterPrint( const char *str, int y, int charWidth ) {
 	Q_strncpyz( cg.centerPrint, str, sizeof(cg.centerPrint) );
 
 	QLWideScreen = cg_drawCenterPrintWideScreen.integer;
-	
+
 	if (cg_drawCenterPrintY.string[0] != '\0') {
 		y = cg_drawCenterPrintY.integer;
 	}
@@ -6747,7 +6949,7 @@ static void CG_DrawCenterString( void ) {
 	}
 
 	QLWideScreen = cg_drawCenterPrintWideScreen.integer;
-	
+
 	//color = CG_FadeColor( cg.centerPrintTime, 1000 * cg_centertime.value );
 	if (cg_drawCenterPrintFade.integer) {
 		CG_FadeColorVec4(color, cg.centerPrintTime, cg_drawCenterPrintTime.integer, cg_drawCenterPrintFadeTime.integer);
@@ -6971,7 +7173,7 @@ static void CG_DrawFragMessage (void)
 		font = &cgDC.Assets.textFont;
 	}
 	QLWideScreen = cg_drawFragMessageWideScreen.integer;
-	
+
 	x = cg_drawFragMessageX.integer;
 	y = cg_drawFragMessageY.integer;
 	scale = cg_drawFragMessageScale.value;
@@ -7660,7 +7862,7 @@ static void CG_DrawCrosshairNames( void ) {
 	}
 
 #ifdef MISSIONPACK
-	color[3] *= 0.5f;
+	//color[3] *= 0.5f;
 	w = CG_Text_Width(name, 0.3f, 0, &cgDC.Assets.textFont);
 	CG_Text_Paint( 320 - w / 2, 190, 0.3f, color, name, 0, 0, ITEM_TEXTSTYLE_SHADOWED, font);
 #else
@@ -7718,11 +7920,11 @@ static void CG_DrawCrosshairTeammateHealth (void)
 	}
 
 	//Com_Printf("yes.... %d\n", cg.crosshairClientNum);
-	
+
 	ci = &cgs.clientinfo[cg.crosshairClientNum];
 
 	QLWideScreen = cg_drawCrosshairTeammateHealthWideScreen.integer;
-	
+
 	alpha = (float)cg_drawCrosshairTeammateHealthAlpha.integer / 255.0;
 
 	SC_Vec4ColorFromCvars(color, &cg_drawCrosshairTeammateHealthColor, &cg_drawCrosshairTeammateHealthAlpha);
@@ -7822,7 +8024,7 @@ static void CG_DrawKeyPress (void)
 
 	//FIXME widescreen
 	QLWideScreen = WIDESCREEN_CENTER;
-	
+
 	//VectorCopy(cg.snap->ps.velocity, velocity);
 	VectorCopy(cg.prevSnap->ps.velocity, velocity);
 	VectorNormalize(velocity);
@@ -7952,7 +8154,7 @@ static void CG_DrawSpectator(void) {
 	}
 
 	QLWideScreen = WIDESCREEN_CENTER;
-	
+
 	CG_DrawBigString(320 - 9 * 8, 440, "SPECTATOR", 1.0F);
 	if ( cgs.gametype == GT_TOURNAMENT ) {
 		CG_DrawBigString(320 - 15 * 8, 460, "waiting to play", 1.0F);
@@ -8118,7 +8320,7 @@ static void CG_DrawTeamVote(void) {
 		y = 90;
 	}
 	QLWideScreen = cg_drawTeamVoteWideScreen.integer;
-	
+
 	CG_DrawSmallString(x, y, s, 1.0);
 }
 #endif
@@ -8344,6 +8546,7 @@ static qboolean CG_DrawScoreboard (void)
 				CG_SetScoreSelection(cg.menuScoreboard);
 				firstTime = qfalse;
 			}
+			Menu_HandleCapture();
 			Menu_Paint(cg.menuScoreboard, qtrue);
 		}
 
@@ -8454,7 +8657,7 @@ static qboolean CG_DrawFollow( void ) {
 	scale = cg_drawFollowingScale.value;
 	style = cg_drawFollowingStyle.integer;
 	QLWideScreen = cg_drawFollowingWideScreen.integer;
-	
+
 	if (*cg_drawFollowingFont.string) {
 		font = &cgs.media.followingFont;
 	} else {
@@ -8534,7 +8737,7 @@ static void CG_DrawAmmoWarning( void ) {
 	}
 
 	QLWideScreen = cg_drawAmmoWarningWideScreen.integer;
-	
+
 	scale = cg_drawAmmoWarningScale.value;
 	SC_Vec4ColorFromCvars(color, &cg_drawAmmoWarningColor, &cg_drawAmmoWarningAlpha);
 	align = cg_drawAmmoWarningAlign.integer;
@@ -8727,7 +8930,7 @@ static void CG_DrawWarmup( void ) {
 		scale = cg_drawWaitingForPlayersScale.value;
 		style = cg_drawWaitingForPlayersStyle.integer;
 		QLWideScreen = cg_drawWaitingForPlayersWideScreen.integer;
-		
+
 		if (*cg_drawWaitingForPlayersFont.string) {
 			font = &cgs.media.waitingForPlayersFont;
 		} else {
@@ -8782,7 +8985,7 @@ static void CG_DrawWarmup( void ) {
 		font = &cgDC.Assets.textFont;
 	}
 	QLWideScreen = cg_drawWarmupStringWideScreen.integer;
-	
+
 	align = cg_drawWarmupStringAlign.integer;
 	SC_Vec4ColorFromCvars(color, &cg_drawWarmupStringColor, &cg_drawWarmupStringAlpha);
 
@@ -8884,7 +9087,7 @@ static void CG_DrawWarmup( void ) {
 		} else {
 			y = 25;
 		}
-		CG_DrawStringExt( 320 - w * cw/2, 25,s, colorWhite, 
+		CG_DrawStringExt( 320 - w * cw/2, 25,s, colorWhite,
 						  qfalse, qtrue, cw, (int)(cw * 1.1f), 0, &cgs.media.giantchar );
 #endif
 	}
@@ -9007,7 +9210,7 @@ static void CG_DrawAccStats (void)
 	x = cg_accX.integer;  //450;  //20;
 	y = cg_accY.integer;  //100;
 	QLWideScreen = cg_accWideScreen.integer;
-	
+
 	windowWidth = 80;
 	windowHeight = WP_NUM_WEAPONS * yoffset + 10;
 
@@ -9069,7 +9272,7 @@ static void CG_DrawErrorPopup (void)
 	//FIXME cvars to control
 
 	QLWideScreen = WIDESCREEN_LEFT;
-	
+
 	scale = 0.3;  //cg.echoPopupScale;
 	x = 0;  //cg.echoPopupX;
 	y = 5;  //cg.echoPopupY;
@@ -9105,7 +9308,7 @@ static void CG_DrawEchoPopup (void)
 	x = cg.echoPopupX;
 	y = cg.echoPopupY;
 	QLWideScreen = cg.echoPopupWideScreen;
-	
+
 	w = CG_Text_Width(cg.echoPopupString, scale, 0, &cgDC.Assets.textFont);
 	h = CG_Text_Height(cg.echoPopupString, scale, 0, &cgDC.Assets.textFont);
 
@@ -9292,7 +9495,7 @@ static void CG_DrawCtfsRoundScoreboard (void)
 	style = ITEM_TEXTSTYLE_SHADOWED;
 
 	QLWideScreen = WIDESCREEN_CENTER;
-	
+
 	x = 200;
 	y = 152 + 20;
 
@@ -9385,6 +9588,7 @@ static void CG_DrawCtfsRoundScoreboard (void)
 	CG_FillRect(rect.x, rect.y, 16, 12, color);
 }
 
+
 /*
 =================
 CG_Draw2D
@@ -9406,9 +9610,12 @@ static void CG_Draw2D( void ) {
 	}
 
 	if (cg.testMenu) {
-		QLWideScreen = WIDESCREEN_CENTER;
+		//QLWideScreen = WIDESCREEN_CENTER;
+		Menu_HandleCapture();
+		//Menu_PaintAll();
 		Menu_Paint(cg.testMenu, qtrue);
-		CG_DrawPic(cgs.cursorX - 16, cgs.cursorY - 16, 32, 32, cgs.media.selectCursor);
+		//CG_DrawPic(cgs.cursorX - 16, cgs.cursorY - 16, 32, 32, cgs.media.selectCursor);
+		CG_DrawScoreboardMenuCursor();
 		return;
 	}
 
@@ -9426,30 +9633,38 @@ static void CG_Draw2D( void ) {
 		return;
 	}
 
-	if (cg_draw2D.integer == 2) {
+	if (cg_draw2D.integer == 2  ||  cg_draw2D.integer == 3) {
+		const fontInfo_t *font;
+
+		if (*cg_drawCameraPointInfoFont.string) {
+			font = &cgs.media.cameraPointInfoFont;
+		} else {
+			font = &cgDC.Assets.textFont;
+		}
+
 		QLWideScreen = WIDESCREEN_LEFT;
-		CG_Text_Paint(2, 16, 0.2, colorRed, "Camera Edit Hud (set cg_draw2d 1  to disable)", 0, 0, 1, &cgs.media.qlfont16);
+		CG_Text_Paint(2, 16, 0.2, colorRed, "Camera Edit Hud (set cg_draw2d 1  to disable)", 0, 0, 1, font);
 
 
 		if (cg.numCameraPoints > 0) {
 			if (cg.cameraPlaying) {
-				CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^3locked ^5(camera is playing, use /stopcamera  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+				CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^3locked ^5(camera is playing, use /stopcamera  to allow changing origin and angles)", 0, 0, 1, font);
 			} else {
 				if (cg_cameraQue.integer) {
-					CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^3locked ^5(set cg_cameraQue 0  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^3locked ^5(set cg_cameraQue 0  to allow changing origin and angles)", 0, 0, 1, font);
 				} else {
-					CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^7unlocked ^5(set cg_cameraQue 1  to lock and follow camera view)", 0, 0, 1, &cgs.media.qlfont16);
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^5Camera view is ^7unlocked ^5(set cg_cameraQue 1  to lock and follow camera view)", 0, 0, 1, font);
 				}
 			}
 		} else if (demo.camera.points) {
 			// q3mme camera points present
 			if (cg.cameraQ3mmePlaying) {
-				CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^3locked ^6(camera is playing, use /stopq3mmecamera  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+				CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^3locked ^6(camera is playing, use /stopq3mmecamera  to allow changing origin and angles)", 0, 0, 1, font);
 			} else {
 				if (cg_cameraQue.integer) {
-					CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^3locked ^6(set cg_cameraQue 0  to allow changing origin and angles)", 0, 0, 1, &cgs.media.qlfont16);
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^3locked ^6(set cg_cameraQue 0  to allow changing origin and angles)", 0, 0, 1, font);
 				} else {
-					CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^7unlocked ^6(set cg_cameraQue 1  to lock and follow camera view)", 0, 0, 1, &cgs.media.qlfont16);
+					CG_Text_Paint(2, 32, 0.2, colorWhite, "^6Q3mme Camera view is ^7unlocked ^6(set cg_cameraQue 1  to lock and follow camera view)", 0, 0, 1, font);
 				}
 			}
 		}

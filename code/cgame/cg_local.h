@@ -1515,6 +1515,7 @@ typedef struct {
 	int damagePlumModificationCount;
 
 	int infectedSnapshotTime;
+	int demoFov;
 } cg_t;
 
 
@@ -2314,6 +2315,7 @@ typedef struct {
 	char adShaders[MAX_MAP_ADVERTISEMENTS][MAX_QPATH];
 
 	qboolean isQuakeLiveDemo;
+	qboolean isQuakeLiveBetaDemo;
 	int				qlversion[4];
 
 	qboolean gotFirstSnap;
@@ -3199,6 +3201,8 @@ extern vmCvar_t cg_drawCameraPointInfoColor;
 extern vmCvar_t cg_drawCameraPointInfoSelectedColor;
 extern vmCvar_t cg_drawCameraPointInfoAlpha;
 extern vmCvar_t cg_drawCameraPointInfoWideScreen;
+extern vmCvar_t cg_drawCameraPointInfoBackgroundColor;
+extern vmCvar_t cg_drawCameraPointInfoBackgroundAlpha;
 
 extern vmCvar_t cg_drawViewPointMark;
 
@@ -3412,6 +3416,8 @@ extern vmCvar_t cg_rewardAccuracy;
 extern vmCvar_t cg_rewardQuadGod;
 extern vmCvar_t cg_rewardFirstFrag;
 extern vmCvar_t cg_rewardPerfect;
+
+extern vmCvar_t cg_useDemoFov;
 
 // end cvar_t
 

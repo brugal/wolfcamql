@@ -4,11 +4,16 @@
 #include "../qcommon/q_shared.h"
 #include "cg_q3mme_math.h"  // posInterpolate_t
 
-#define WOLFCAM_CAMERA_VERSION 9
-#define MAX_CAMERAPOINTS 256
-#define MAX_SPLINEPOINTS (1024 * 10)  //(1024 * 1024 * 3)
+#define WOLFCAM_CAMERA_VERSION 10
+#define MAX_CAMERAPOINTS 512
+#define MAX_SPLINEPOINTS (MAX_CAMERAPOINTS * 40) //FIXME define default 40 spline points per camera point
 #define DEFAULT_NUM_SPLINES 40
 
+// q3mme: cg_demos.h
+#define CAM_ORIGIN      0x001
+#define CAM_ANGLES      0x002
+#define CAM_FOV         0x004
+#define CAM_TIME        0x100
 
 // camera edit fields
 enum {
@@ -80,6 +85,7 @@ enum {
 	CAMERA_ROLL_INTERP,
 	CAMERA_ROLL_FIXED,
 	CAMERA_ROLL_PASS,
+	CAMERA_ROLL_AS_ANGLES,
 	CAMERA_ROLL_ENUM_END,
 };
 
@@ -130,8 +136,10 @@ typedef struct cameraPoint_s {
 
 	double fov;
 	int fovType;
-	double timescale;
-	qboolean timescaleInterp;
+
+	// never implemented but saved in camera version files < 10
+	// double timescale;
+	// qboolean timescaleInterp;
 
 	qboolean useOriginVelocity;
 	double originInitialVelocity;
@@ -142,6 +150,8 @@ typedef struct cameraPoint_s {
 	qboolean useAnglesVelocity;
 	double anglesInitialVelocity;
 	double anglesFinalVelocity;
+	double anglesImmediateInitialVelocity;
+	double anglesImmediateFinalVelocity;
 
 	qboolean useXoffsetVelocity;
 	double xoffsetInitialVelocity;
@@ -169,7 +179,7 @@ typedef struct cameraPoint_s {
 	int splineStart;
 	vec3_t lastAngles;
 
-	double originDistance;
+	double originDistance;  // this is the total distance until the next camera point that has flag CAM_ORIGIN, this isn't valid for the points that don't have the flag
 	double originAvgVelocity;
 	double originAccel;
 	double originThrust;
@@ -235,5 +245,9 @@ typedef struct cameraPoint_s {
 qboolean CG_CameraSplineAnglesAt (double ftime, vec3_t angles);
 qboolean CG_CameraSplineOriginAt (double ftime, posInterpolate_t posType, vec3_t origin);
 qboolean CG_CameraSplineFovAt (double ftime, float *fov);
+
+float CG_CameraAngleLongestDistanceNoRoll (const vec3_t a0, const vec3_t a1);
+float CG_CameraAngleLongestDistanceWithRoll (const vec3_t a0, const vec3_t a1);
+void CG_CameraResetInternalLengths (void);
 
 #endif  // camera_h_included

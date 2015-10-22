@@ -657,7 +657,11 @@ static int CG_CalcFov( void ) {
 		if (*cg_fovIntermission.string) {
 			fov_x = cg_fovIntermission.value;
 		} else {
-			fov_x = cg_fov.value;
+			if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+				fov_x = cg.demoFov;
+			} else {
+				fov_x = cg_fov.value;
+			}
 		}
 	} else {
 		// user selectable
@@ -666,7 +670,12 @@ static int CG_CalcFov( void ) {
 			Com_Printf("DF_FIXED_FOV\n");
 			fov_x = 90;
 		} else {
-			fov_x = cg_fov.value;
+			if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+				fov_x = cg.demoFov;
+			} else {
+				fov_x = cg_fov.value;
+			}
+
 			if ( fov_x < 1 ) {
 				fov_x = 1;
 			} else if ( fov_x > 160 ) {
@@ -1891,7 +1900,12 @@ static void CG_PlayPath (void)
 		cg.refdefViewAngles[2] = LerpAngle(a[2], na[2], f);
 		//Com_Printf("^4%f  (%f %f %f)\n", f, cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2]);
 		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
-		cg.refdef.fov_x = cg_fov.value;
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			cg.refdef.fov_x = cg.demoFov;
+		} else {
+			cg.refdef.fov_x = cg_fov.value;
+		}
+
 		if ( cg.refdef.fov_x < 1 ) {
 			cg.refdef.fov_x = 1;
 		}
@@ -1915,7 +1929,6 @@ static void CG_PlayPath (void)
 		vec3_t a, na;
 		int i;
 		const char *s = NULL;
-		//int x;
 		int skipNum;
 
 		if (cg.paused) {
@@ -1999,7 +2012,12 @@ static void CG_PlayPath (void)
 
 
 		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
-		cg.refdef.fov_x = cg_fov.value;
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			cg.refdef.fov_x = cg.demoFov;
+		} else {
+			cg.refdef.fov_x = cg_fov.value;
+		}
+
 		if ( cg.refdef.fov_x < 1 ) {
 			cg.refdef.fov_x = 1;
 		}
@@ -2047,7 +2065,7 @@ static float LerpAngle2 (float from, float to, float frac)
 	//f = AngleNormalize180(from);
 	//t = AngleNormalize180(to);
 
-	//d = CameraAngleDistance(from, to);
+	//d = CG_CameraAngleLongestDistanceNoRoll(from, to);
 	d = fabs(AngleSubtract(from, to));
 	Com_Printf("lerpangle2:  %f\n", d);
 
@@ -2195,7 +2213,12 @@ static qboolean CG_PlayQ3mmeCamera (void)
 		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
 		//Com_Printf("angles: %f %f %f\n", cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2]);
 
-		fov = cg_fov.value;
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			fov = cg.demoFov;
+		} else {
+			fov = cg_fov.value;
+		}
+
 		if (!CG_Q3mmeCameraFovAt(time, timeFraction, &demo.camera.fov)) {
 			demo.camera.fov = 0;
 		} else {
@@ -2305,6 +2328,9 @@ static qboolean CG_PlayCamera (void)
 	const cameraPoint_t *cpnext;
 	const cameraPoint_t *cpprev;
 	const cameraPoint_t *lastPoint;
+	const cameraPoint_t *cpOrig;
+	const cameraPoint_t *cpnextOrig;
+	const cameraPoint_t *cpprevOrig;
 	double f;
 	vec3_t o, a, no, na;
 	//int x;
@@ -2329,6 +2355,7 @@ static qboolean CG_PlayCamera (void)
 	float refFovyOrig;
 	vec3_t velocityOrig;
 	qboolean cameraDebugPath = qfalse;
+	qboolean returnValue = qtrue;
 
 	CG_PlayQ3mmeCamera();
 
@@ -2556,6 +2583,37 @@ static qboolean CG_PlayCamera (void)
 
 //#if 1  // gcc warning
 
+	// origin
+
+	// save these for later (angles, fov, roll, etc..)
+	cpOrig = cp;
+	cpnextOrig = cpnext;
+	cpprevOrig = cpprev;
+
+	// masking
+	while (cp  &&  !(cp->flags & CAM_ORIGIN)) {
+		cp = cp->prev;
+	}
+	while (cpprev  &&  !(cpprev->flags & CAM_ORIGIN)) {
+		cpprev = cpprev->prev;
+	}
+	while (cpnext  &&  !(cpnext->flags & CAM_ORIGIN)) {
+		cpnext = cpnext->next;
+	}
+
+	if (cp == NULL) {
+		//Com_Printf("couldn't find cp\n");
+		goto handleCameraAngles;
+	}
+
+	// only one camera point with origin
+	if (cpnext == NULL) {
+		//Com_Printf("couldn't find cpnext\n");
+		VectorCopy(cp->origin, cg.refdef.vieworg);
+		goto handleCameraAngles;
+	}
+
+	// cp and cpnext need to be valid at this point
 	if (cp->type == CAMERA_JUMP) {
 		VectorCopy(cp->origin, cg.refdef.vieworg);
 	} else if (cp->type == CAMERA_INTERP) {
@@ -2694,13 +2752,16 @@ static qboolean CG_PlayCamera (void)
 			const cameraPoint_t *p1, *p2, *p3, *cpnextnext, *prev;
 
 			cpnextnext = NULL;
-			if (cg.currentCameraPoint + 2 < cg.numCameraPoints) {
-				cpnextnext = &cg.cameraPoints[cg.currentCameraPoint + 2];
+			if (cpnext) {
+				cpnextnext = cpnext->next;
+				while (cpnextnext != NULL  &&  !(cpnextnext->flags & CAM_ORIGIN)) {
+					cpnextnext = cpnextnext->next;
+				}
 			}
 
-			prev = NULL;
-			if (cg.currentCameraPoint >= 1) {
-				prev = &cg.cameraPoints[cg.currentCameraPoint - 1];
+			prev = cp->prev;
+			while (prev != NULL  &&  !(prev->flags & CAM_ORIGIN)) {
+				prev = prev->prev;
 			}
 
 			p1 = p2 = p3 = NULL;
@@ -2724,7 +2785,7 @@ static qboolean CG_PlayCamera (void)
 					long double tm;
 
 #if 0
-					// test quadradic
+					// test quadratic
 					tm = p1->cgtime / 1000.0;
 					r = a * tm * tm  +  b * tm  +  c;
 
@@ -2837,12 +2898,39 @@ static qboolean CG_PlayCamera (void)
 		CG_ErrorPopup(va("bad camera point %d unknown origin type", cg.currentCameraPoint));
 		cg.cameraPlaying = qfalse;
 		cg.cameraPlayedLastFrame = qfalse;
-		return qfalse;
+		returnValue = qfalse;
+		goto cameraFinish;
 	}
 
 //#if 1  // gcc warning
 
+handleCameraAngles:
 	// now angles
+
+	cp = (cameraPoint_t *)cpOrig;
+	cpnext = cpnextOrig;
+	cpprev = cpprevOrig;
+
+	// masking
+	while (cp  &&  !(cp->flags & CAM_ANGLES)) {
+		cp = cp->prev;
+	}
+	while (cpprev  &&  !(cpprev->flags & CAM_ANGLES)) {
+		cpprev = cpprev->prev;
+	}
+	while (cpnext  &&  !(cpnext->flags & CAM_ANGLES)) {
+		cpnext = cpnext->next;
+	}
+
+	if (cp == NULL) {
+		goto handleCameraFov;
+	}
+	if (cpnext == NULL) {
+		VectorCopy(cp->angles, cg.refdefViewAngles);
+		VectorCopy(cg.refdefViewAngles, cp->lastAngles);
+		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
+		goto handleCameraFov;
+	}
 
 	if (cp->viewType == CAMERA_ANGLES_INTERP  ||  cp->viewType == CAMERA_ANGLES_INTERP_USE_PREVIOUS) {
 
@@ -2856,7 +2944,8 @@ static qboolean CG_PlayCamera (void)
 				CG_ErrorPopup(va("bad camera point %d angles interp and use previous but no previous cam point", cg.currentCameraPoint));
 				cg.cameraPlaying = qfalse;
 				cg.cameraPlayedLastFrame = qfalse;
-				return qfalse;
+				returnValue = qfalse;
+				goto cameraFinish;
 			}
 			VectorCopy(cpprev->lastAngles, a);
 		} else if (cpprev  &&  cpprev->viewType == CAMERA_ANGLES_SPLINE) {
@@ -2875,7 +2964,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d angles interp but next cam point has angles interp and grab previous angles", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		} else if (cpnext->viewType == CAMERA_ANGLES_FIXED) {
 			VectorCopy(cpnext->angles, na);
 			pointNext = cpnext;
@@ -2883,13 +2973,15 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d angles interp but next cam point has angles fixed and use previous", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		} else if (cpnext->viewType == CAMERA_ANGLES_ENT) {
 			if (!cpnext->viewEntStartingOriginSet) {
 				CG_ErrorPopup(va("can't play camera point %d  angles interp and next is angles ent but the starting origin hasn't been set", cg.currentCameraPoint));
 				cg.cameraPlaying = qfalse;
 				cg.cameraPlayedLastFrame = qfalse;
-				return qfalse;
+				returnValue = qfalse;
+				goto cameraFinish;
 			}
 			VectorCopy(cpnext->viewEntStartingOrigin, o);
 			o[0] += cpnext->xoffset;
@@ -2907,7 +2999,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d angles interp but next cam is viewpoint pass", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		} else if (cpnext->viewType == CAMERA_ANGLES_VIEWPOINT_FIXED) {
 			VectorCopy(cpnext->viewPointOrigin, o);
 			VectorSubtract(o, cg.refdef.vieworg, dir);
@@ -2920,14 +3013,21 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup("invalid view type state");
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 
-		a[ROLL] = 0;
-		na[ROLL] = 0;
+		if (cp->rollType != CAMERA_ROLL_AS_ANGLES) {
+			a[ROLL] = 0;
+			na[ROLL] = 0;
+		}
 
 		if (cp->useAnglesVelocity) {
-			totalDist = CameraAngleDistance(a, na);
+			if (cp->rollType == CAMERA_ROLL_AS_ANGLES) {
+				totalDist = CG_CameraAngleLongestDistanceWithRoll(a, na);
+			} else {
+				totalDist = CG_CameraAngleLongestDistanceNoRoll(a, na);
+			}
 			totalTime = (double)(pointNext->cgtime - cp->cgtime) / 1000.0;
 			accel = (cp->anglesFinalVelocity - cp->anglesInitialVelocity) / totalTime;
 			t = (cg.ftime - cp->cgtime) / 1000.0;
@@ -2950,7 +3050,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d fixed angles and use previous but no previous cam point", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 	} else if (cp->viewType == CAMERA_ANGLES_ENT) {
 		int x, y, z;
@@ -2974,7 +3075,8 @@ static qboolean CG_PlayCamera (void)
 				CG_ErrorPopup(va("bad camera point %d ent with offset interp but next cam point isn't ent", cg.currentCameraPoint));
 				cg.cameraPlaying = qfalse;
 				cg.cameraPlayedLastFrame = qfalse;
-				return qfalse;
+				returnValue = qfalse;
+				goto cameraFinish;
 			}
 			if (cp->offsetPassStart > -1) {
 				c1 = &cg.cameraPoints[cp->offsetPassStart];
@@ -3013,7 +3115,8 @@ static qboolean CG_PlayCamera (void)
 				CG_ErrorPopup(va("bad camera point %d offset pass but no pass starting point", cg.currentCameraPoint));
 				cg.cameraPlaying = qfalse;
 				cg.cameraPlayedLastFrame = qfalse;
-				return qfalse;
+				returnValue = qfalse;
+				goto cameraFinish;
 			}
 			c1 = &cg.cameraPoints[cp->offsetPassStart];
 			c2 = &cg.cameraPoints[cp->offsetPassEnd];
@@ -3031,7 +3134,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup("invalid camera angles entity state");
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 
 		totalTime = (double)(c2->cgtime - c1->cgtime) / 1000.0;
@@ -3084,7 +3188,7 @@ static qboolean CG_PlayCamera (void)
 			}
 
 			if (cp->useAnglesVelocity) {
-				totalDist = CameraAngleDistance(o, no);
+				totalDist = CG_CameraAngleLongestDistanceNoRoll(o, no);
 				totalTime = (double)(cpnext->cgtime - cp->cgtime) / 1000.0;
 				accel = (cp->anglesFinalVelocity - cp->anglesInitialVelocity) / totalTime;
 				t = (cg.ftime - cp->cgtime) / 1000.0;
@@ -3098,7 +3202,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d viewpoint but not followed by either viewpoint pass or viewpoint", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		} else if (cp->viewPointPassStart > -1) {
 			VectorCopy(cg.cameraPoints[cp->viewPointPassEnd].viewPointOrigin, no);
 			f = (cg.ftime - cp->cgtime) / (cg.cameraPoints[cp->viewPointPassEnd].cgtime - cp->cgtime);
@@ -3107,7 +3212,7 @@ static qboolean CG_PlayCamera (void)
 			}
 
 			if (cp->useAnglesVelocity) {
-				totalDist = CameraAngleDistance(o, no);
+				totalDist = CG_CameraAngleLongestDistanceNoRoll(o, no);
 				totalTime = (double)(cg.cameraPoints[cp->viewPointPassEnd].cgtime - cp->cgtime) / 1000.0;
 				accel = (cp->anglesFinalVelocity - cp->anglesInitialVelocity) / totalTime;
 				t = (cg.ftime - cp->cgtime) / 1000.0;
@@ -3131,7 +3236,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d  viewpointpass with no viewpoint set previously", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 		c1 = &cg.cameraPoints[cp->viewPointPassStart];
 		c2 = &cg.cameraPoints[cp->viewPointPassEnd];
@@ -3144,7 +3250,7 @@ static qboolean CG_PlayCamera (void)
 		}
 
 		if (c1->useAnglesVelocity) {
-			totalDist = CameraAngleDistance(o, no);
+			totalDist = CG_CameraAngleLongestDistanceNoRoll(o, no);
 			totalTime = (double)(c2->cgtime - c1->cgtime) / 1000.0;
 			accel = (c1->anglesFinalVelocity - c1->anglesInitialVelocity) / totalTime;
 			t = (cg.ftime - c1->cgtime) / 1000.0;
@@ -3169,7 +3275,7 @@ static qboolean CG_PlayCamera (void)
 			CG_CameraSplineAnglesAt(cp->cgtime, a);
 			CG_CameraSplineAnglesAt(cpnext->cgtime, na);
 
-			totalDist = CameraAngleDistance(a, na);
+			totalDist = CG_CameraAngleLongestDistanceWithRoll(a, na);
 			totalTime = (double)(cpnext->cgtime - cp->cgtime) / 1000.0;
 			accel = (cp->anglesFinalVelocity - cp->anglesInitialVelocity) / totalTime;
 			t = (cg.ftime - cp->cgtime) / 1000.0;
@@ -3188,16 +3294,17 @@ static qboolean CG_PlayCamera (void)
 		CG_ErrorPopup(va("bad camera point %d  unknown view type", cg.currentCameraPoint));
 		cg.cameraPlaying = qfalse;
 		cg.cameraPlayedLastFrame = qfalse;
-		return qfalse;
+		returnValue = qfalse;
+		goto cameraFinish;
 	}
 
 #if 1  // gcc warning  // up to here
 
 	// roll
 
-	// skip roll for q3mme spline angles
-	if (cp->viewType == CAMERA_ANGLES_SPLINE) {
-		// pass
+
+	if (cp->rollType == CAMERA_ROLL_AS_ANGLES) {
+		// pass, already handled
 	} else if (cp->rollType == CAMERA_ROLL_INTERP) {
 		//roll = nroll = 0;  // silence compiler warning
 		if (cpnext->rollType == CAMERA_ROLL_INTERP  ||  cpnext->rollType == CAMERA_ROLL_FIXED) {
@@ -3226,7 +3333,8 @@ static qboolean CG_PlayCamera (void)
 				CG_ErrorPopup(va("bad camera point %d roll pass but no starting point", cg.currentCameraPoint));
 				cg.cameraPlaying = qfalse;
 				cg.cameraPlayedLastFrame = qfalse;
-				return qfalse;
+				returnValue = qfalse;
+				goto cameraFinish;
 			}
 			c1 = &cg.cameraPoints[cp->rollPassStart];
 			c2 = &cg.cameraPoints[cp->rollPassEnd];
@@ -3252,7 +3360,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup("invalid camera interp roll state");
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 		cg.refdefViewAngles[ROLL] = LerpAngle(roll, nroll, f);
 	} else if (cp->rollType == CAMERA_ROLL_FIXED) {
@@ -3262,7 +3371,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d camera roll pass and starting point < 0", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 		c1 = &cg.cameraPoints[cp->rollPassStart];
 		c2 = &cg.cameraPoints[cp->rollPassEnd];
@@ -3290,14 +3400,55 @@ static qboolean CG_PlayCamera (void)
 		CG_ErrorPopup(va("bad camera point %d unknown roll type", cg.currentCameraPoint));
 		cg.cameraPlaying = qfalse;
 		cg.cameraPlayedLastFrame = qfalse;
-		return qfalse;
+		returnValue = qfalse;
+		goto cameraFinish;
 	}
 
 	VectorCopy(cg.refdefViewAngles, cp->lastAngles);
 	AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
 
+handleCameraFov:
+
+	cp = (cameraPoint_t *)cpOrig;
+	cpnext = cpnextOrig;
+	cpprev = cpprevOrig;
+
+	// masking
+	while (cp  &&  !(cp->flags & CAM_FOV)) {
+		cp = cp->prev;
+	}
+	while (cpprev  &&  !(cpprev->flags & CAM_FOV)) {
+		cpprev = cpprev->prev;
+	}
+	while (cpnext  &&  !(cpnext->flags & CAM_FOV)) {
+		cpnext = cpnext->next;
+	}
+
+	if (cp == NULL) {
+		goto cameraFinish;
+	}
+	if (cpnext == NULL) {
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			fov = cg.demoFov;
+		} else {
+			fov = cg_fov.value;
+		}
+
+		cg.refdef.fov_x = fov;
+		if (cg.refdef.fov_x < 1) {
+			cg.refdef.fov_x = 1;
+		}
+
+		CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
+		goto cameraFinish;
+	}
+
 	if (cp->fovType == CAMERA_FOV_USE_CURRENT) {
-		fov = cg_fov.value;
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			fov = cg.demoFov;
+		} else {
+			fov = cg_fov.value;
+		}
 	} else if (cp->fovType == CAMERA_FOV_SPLINE) {
 		float cfov;
 
@@ -3313,13 +3464,21 @@ static qboolean CG_PlayCamera (void)
 			}
 
 			if (!CG_CameraSplineFovAt(cp->cgtime + f * (cpnext->cgtime - cp->cgtime), &cfov)) {
-				fov = cg_fov.value;
+				if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+					fov = cg.demoFov;
+				} else {
+					fov = cg_fov.value;
+				}
 			} else {
 				fov = cfov;
 			}
 		} else {
 			if (!CG_CameraSplineFovAt(cg.ftime, &cfov)) {
-				fov = cg_fov.value;
+				if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+					fov = cg.demoFov;
+				} else {
+					fov = cg_fov.value;
+				}
 			} else {
 				fov = cfov;
 			}
@@ -3346,7 +3505,11 @@ static qboolean CG_PlayCamera (void)
 			}
 		} else if (cpnext->fovType == CAMERA_FOV_USE_CURRENT) {
 			fov = cp->fov;
-			nfov = cg_fov.value;
+			if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+				nfov = cg.demoFov;
+			} else {
+				nfov = cg_fov.value;
+			}
 			f = (cg.ftime - cp->cgtime) / (cpnext->cgtime - cp->cgtime);
 			if (f > 1.0) {
 				f = 1;
@@ -3368,7 +3531,8 @@ static qboolean CG_PlayCamera (void)
 				CG_ErrorPopup(va("bad camera point %d fov pass and fovPassStart < 0", cg.currentCameraPoint));
 				cg.cameraPlaying = qfalse;
 				cg.cameraPlayedLastFrame = qfalse;
-				return qfalse;
+				returnValue = qfalse;
+				goto cameraFinish;
 			}
 			c1 = &cg.cameraPoints[cp->fovPassStart];
 			c2 = &cg.cameraPoints[cp->fovPassEnd];
@@ -3394,7 +3558,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup("invalid fov interp state");
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 		fov = fov + f * (nfov - fov);
 	} else if (cp->fovType == CAMERA_FOV_PASS) {
@@ -3402,7 +3567,8 @@ static qboolean CG_PlayCamera (void)
 			CG_ErrorPopup(va("bad camera point %d fov pass and no pass start", cg.currentCameraPoint));
 			cg.cameraPlaying = qfalse;
 			cg.cameraPlayedLastFrame = qfalse;
-			return qfalse;
+			returnValue = qfalse;
+			goto cameraFinish;
 		}
 		c1 = &cg.cameraPoints[cp->fovPassStart];
 		c2 = &cg.cameraPoints[cp->fovPassEnd];
@@ -3429,7 +3595,8 @@ static qboolean CG_PlayCamera (void)
 		CG_ErrorPopup(va("bad camera point %d unknown fov type", cg.currentCameraPoint));
 		cg.cameraPlaying = qfalse;
 		cg.cameraPlayedLastFrame = qfalse;
-		return qfalse;
+		returnValue = qfalse;
+		goto cameraFinish;
 	}
 
 	cg.refdef.fov_x = fov;
@@ -3438,6 +3605,10 @@ static qboolean CG_PlayCamera (void)
 	}
 
 	CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
+
+	returnValue = qtrue;
+
+cameraFinish:
 
 	cg.refdef.time = cg.time;
 	trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
@@ -3478,23 +3649,6 @@ static qboolean CG_PlayCamera (void)
 		VectorCopy(cg.refdef.vieworg, cg.cameraLastOrigin);
 	}
 
-#if 0   //FIXME pain in the ass
-	if (cp->timescaleInterp) {
-		if (cpnext->timescale < 0.0) {
-			ntscale = 1.0;  //SC_Cvar_Get_Float("timescale");
-		} else {
-			ntscale = cpnext->timescale;
-		}
-		tscale = cp->timescale + f * (ntscale - cp->timescale);
-	} else if (cp->timescale > 0.0) {
-		tscale = cp->timescale;
-	} else {
-		// do nothing
-		tscale = 1.0;  //SC_Cvar_Get_Float("timescale");
-	}
-    trap_Cvar_Set("com_timescaleAdjust", va("%f", tscale));
-#endif
-
 #endif  // gcc warning
 
 	if (cameraDebugPath) {  //cg_cameraDebugPath.integer) {  //(1) {
@@ -3533,7 +3687,7 @@ static qboolean CG_PlayCamera (void)
 	}
 
 
-	return qtrue;
+	return returnValue;
 }
 
 void CG_AdjustOriginToAvoidSolid (vec3_t origin, const centity_t *cent)
@@ -3613,7 +3767,12 @@ static void CG_FreeCam (void)
 		VectorCopy(cg.fang, cg.refdefViewAngles);
 		AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
 
-		cg.refdef.fov_x = cg_fov.value;
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			cg.refdef.fov_x = cg.demoFov;
+		} else {
+			cg.refdef.fov_x = cg_fov.value;
+		}
+
 		if ( cg.refdef.fov_x < 1 ) {
 			cg.refdef.fov_x = 1;
 		}
@@ -3894,7 +4053,12 @@ static void CG_FreeCam (void)
 
 
 	// finish:
-	cg.refdef.fov_x = cg_fov.value;
+	if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+		cg.refdef.fov_x = cg.demoFov;
+	} else {
+		cg.refdef.fov_x = cg_fov.value;
+	}
+
 	if ( cg.refdef.fov_x < 1 ) {
 		cg.refdef.fov_x = 1;
 	}
@@ -4086,6 +4250,7 @@ static void CG_DrawSplinePoints (void)
 	//centity_t cent;
 	//vec3_t lastDrawn;
 	//int lastCameraPoint;
+	const cameraPoint_t *cp;
 
 	if (!cg_drawCameraPath.integer) {
 		SplineNumPoints = 0;
@@ -4180,14 +4345,16 @@ static void CG_DrawSplinePoints (void)
 	MAKERGBA(color2, 255, 0, 255, 255);
 	MAKERGBA(selectedColor, 255, 255, 0, 255);
 	for (i = 0;  i < cg.numCameraPoints;  i++) {
-		if (cg.numCameraPoints > 1) {
-			CG_FloatNumber(i, cg.splinePoints[cg.cameraPoints[i].splineStart], RF_DEPTHHACK, color2, 1.0);
+		cp = &cg.cameraPoints[i];
+
+		if (cg.numCameraPoints > 1  &&  (cp->flags & CAM_ORIGIN)) {
+			CG_FloatNumber(i, cg.splinePoints[cp->splineStart], RF_DEPTHHACK, color2, 1.0);
 		}
 
 		if (i >= cg.selectedCameraPointMin  &&  i <= cg.selectedCameraPointMax) {
-			CG_FloatNumber(i, cg.cameraPoints[i].origin, RF_DEPTHHACK, selectedColor, 1.0);
+			CG_FloatNumber(i, cp->origin, RF_DEPTHHACK, selectedColor, 1.0);
 		} else {
-			CG_FloatNumber(i, cg.cameraPoints[i].origin, RF_DEPTHHACK, color, 1.0);
+			CG_FloatNumber(i, cp->origin, RF_DEPTHHACK, color, 1.0);
 		}
 
 	}
@@ -4556,6 +4723,7 @@ static void CG_CheckCvarChange (void)
 	qboolean val;
 	//FIXME
 	static float zoomTime = 0;
+	static float q3mmeCameraSmoothPos = 0;
 
 	if (zoomTime != cg_zoomTime.value) {
 		cg.zoomTime = 0;
@@ -4569,6 +4737,12 @@ static void CG_CheckCvarChange (void)
 	if (val != cg.qlColors) {
 		Q_SetColors(val);
 		cg.qlColors = val;
+	}
+
+	if (q3mmeCameraSmoothPos != cg_q3mmeCameraSmoothPos.value) {
+		CG_Q3mmeCameraResetInternalLengths();
+		CG_CameraResetInternalLengths();
+		q3mmeCameraSmoothPos = cg_q3mmeCameraSmoothPos.value;
 	}
 }
 

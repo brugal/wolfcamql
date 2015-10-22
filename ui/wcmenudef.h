@@ -21,6 +21,7 @@
 #define W_WEAPON_NAILGUN 11
 #define W_WEAPON_PROX_LAUNCHER 12
 #define W_WEAPON_CHAINGUN 13
+#define W_WEAPON_HEAVY_MACHINEGUN 14
 #define W_WEAPON_NUM_WEAPONS 14
 
 // weapon ammo special cases
@@ -69,6 +70,9 @@
 
 #define WCG_KILL_COUNT 7033
 
+// new ql hmg
+#define WCG_WEAPON_HAVE_HEAVY_MACHINEGUN 7034
+#define WCG_WEAPON_AMMO_HEAVY_MACHINEGUN 7035
 
 // older quakelive dm73 ownerdraws
 #define CG_SELECTEDPLAYER_ARMOR 66666

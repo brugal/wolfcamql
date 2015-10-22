@@ -933,6 +933,8 @@ vmCvar_t cg_drawCameraPointInfoColor;
 vmCvar_t cg_drawCameraPointInfoSelectedColor;
 vmCvar_t cg_drawCameraPointInfoAlpha;
 vmCvar_t cg_drawCameraPointInfoWideScreen;
+vmCvar_t cg_drawCameraPointInfoBackgroundColor;
+vmCvar_t cg_drawCameraPointInfoBackgroundAlpha;
 
 vmCvar_t cg_drawViewPointMark;
 
@@ -1147,6 +1149,8 @@ vmCvar_t cg_rewardQuadGod;
 vmCvar_t cg_rewardFirstFrag;
 vmCvar_t cg_rewardPerfect;
 
+vmCvar_t cg_useDemoFov;
+
 // end cvar_t
 
 typedef struct {
@@ -1165,7 +1169,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_ignore, "cg_ignore", "0", 0 },	// used for debugging
 	{ &cg_autoswitch, "cg_autoswitch", "0", CVAR_ARCHIVE },
 	{ &cg_drawGun, "cg_drawGun", "1", CVAR_ARCHIVE },
-	{ &cg_zoomFov, "cg_zoomfov", "22.5", CVAR_ARCHIVE },
+	{ &cg_zoomFov, "cg_zoomFov", "60", CVAR_ARCHIVE },
 	{ &cg_zoomTime, "cg_zoomTime", "150", CVAR_ARCHIVE },
 	{ &cg_zoomIgnoreTimescale, "cg_zoomIgnoreTimescale", "1", CVAR_ARCHIVE },
 	{ &cg_zoomBroken, "cg_zoomBroken", "1", CVAR_ARCHIVE },
@@ -1974,7 +1978,9 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCameraPointInfoSelectedColor, "cg_drawCameraPointInfoSelectedColor", "0xff5a5a", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoAlpha, "cg_drawCameraPointInfoAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawCameraPointInfoWideScreen), "1", CVAR_ARCHIVE },
-	
+	{ cvp(cg_drawCameraPointInfoBackgroundColor), "0x000000", CVAR_ARCHIVE },
+	{ cvp(cg_drawCameraPointInfoBackgroundAlpha), "0", CVAR_ARCHIVE },
+
 	{ &cg_drawViewPointMark, "cg_drawViewPointMark", "0", CVAR_ARCHIVE },
 	{ &cg_levelTimerDirection, "cg_levelTimerDirection", "0", CVAR_ARCHIVE },
 	//{ &cg_levelTimerStyle, "cg_levelTimerStyle", "0", CVAR_ARCHIVE },
@@ -2203,6 +2209,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_rewardQuadGod), "1", CVAR_ARCHIVE },
 	{ cvp(cg_rewardFirstFrag), "1", CVAR_ARCHIVE },
 	{ cvp(cg_rewardPerfect), "1", CVAR_ARCHIVE },
+
+	{ cvp(cg_useDemoFov), "0", CVAR_ARCHIVE },
 
 };
 
@@ -3236,6 +3244,7 @@ static void CG_RegisterFonts (void)
 	//trap_R_RegisterFont("fontimage", 20, &cgs.media.qlfont20);
 	trap_R_RegisterFont("fontimage", 24, &cgs.media.qlfont24);
 	trap_R_RegisterFont("fontimage", 48, &cgs.media.qlfont48);
+
 	//FIXME this shit
 	//trap_R_RegisterFont(cg_drawCenterPrintFont.string, 48, &cgs.media.centerPrintFont);
 	//trap_R_RegisterFont("q3font", 16, &cgs.media.q3font16);
@@ -4348,6 +4357,13 @@ const char *CG_ConfigString( int index ) {
 	n = index;
 	if (cgs.protocol == PROTOCOL_Q3) {
 		CG_ConfigStringIndexToQ3(&n);
+	}
+
+	if (cgs.realProtocol == 91) {
+		//FIXME bad hack for new protocol
+		if (n >= 679)  {  // 679 == CS_MAP_CREATOR
+			//n--;
+		}
 	}
 
 	return cgs.gameState.stringData + cgs.gameState.stringOffsets[n];
@@ -6804,24 +6820,29 @@ static void CG_InitDC (void)
 
 	cgDC.drawTextWithCursor = &CG_DrawTextWithCursorDc;
 
-	//cgDC.setOverstrikeMode = &trap_Key_SetOverstrikeMode;
-	//cgDC.getOverstrikeMode = &trap_Key_GetOverstrikeMode;
+	cgDC.setOverstrikeMode = &trap_Key_SetOverstrikeMode;
+	cgDC.getOverstrikeMode = &trap_Key_GetOverstrikeMode;
+
 	cgDC.startLocalSound = &trap_S_StartLocalSound;
 	cgDC.ownerDrawHandleKey = &CG_OwnerDrawHandleKey;
 	cgDC.feederCount = &CG_FeederCount;
 	cgDC.feederItemImage = &CG_FeederItemImage;
 	cgDC.feederItemText = &CG_FeederItemText;
 	cgDC.feederSelection = &CG_FeederSelection;
-	//cgDC.setBinding = &trap_Key_SetBinding;
-	//cgDC.getBindingBuf = &trap_Key_GetBindingBuf;
-	//cgDC.keynumToStringBuf = &trap_Key_KeynumToStringBuf;
+
+	cgDC.setBinding = &trap_Key_SetBinding;
+	cgDC.getBindingBuf = &trap_Key_GetBindingBuf;
+	cgDC.keynumToStringBuf = &trap_Key_KeynumToStringBuf;
 	//cgDC.executeText = &trap_Cmd_ExecuteText;
+	cgDC.executeText = CG_ExecuteTextDc;
+
 	cgDC.Error = &Com_Error;
 	cgDC.Print = &Com_Printf;
+	cgDC.Pause = &CG_PauseDc;
 
 	cgDC.ownerDrawWidth = &CG_OwnerDrawWidthDc;
 
-	//cgDC.Pause = &CG_Pause;
+
 	cgDC.registerSound = &trap_S_RegisterSound;
 	cgDC.startBackgroundTrack = &trap_S_StartBackgroundTrack;
 	cgDC.stopBackgroundTrack = &trap_S_StopBackgroundTrack;
@@ -7200,6 +7221,10 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	cgs.levelStartTime = atoi( s );
 
 	CG_ParseServerinfo(qtrue);
+	if (cgs.protocol == PROTOCOL_QL) {
+		Com_Printf("^5ql%s ^5version %d.%d.%d.%d\n", cgs.isQuakeLiveBetaDemo ? " ^6beta" : "", cgs.qlversion[0], cgs.qlversion[1], cgs.qlversion[2], cgs.qlversion[3]);
+	}
+
 	CG_ParseWarmup();
 	if (cg.warmup) {
 		if (cg.demoPlayback) {

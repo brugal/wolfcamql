@@ -306,6 +306,28 @@ menuDef {
 		}
        	}
 
+	itemDef {  // hmg
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_HEAVY_MACHINEGUN) {
+		       backcolor 0 0 0 0.3
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       if ((ownerdrawvalue WCG_WEAPON_SELECTED) = W_WEAPON_HEAVY_MACHINEGUN) {
+		          setvar @ftime (gametime - (ownerdrawvalue WCG_WEAPON_SELECT_TIME))
+		       	  if (@ftime < 2000) {
+			     setvar @colorVal (1.0 - (@ftime / 2000))
+			     backcolor @colorVal @colorVal 0 0.3
+			  }
+		          visible 1
+		       } else {
+		       	  visible 0
+		       }
+		    }
+		}
+       	}
+
 	///  weapon icons
 
 	itemDef {
@@ -497,6 +519,21 @@ menuDef {
 		    }
 		}
        	}
+
+	itemDef {  // hmg
+	  	run {
+		    visible 0
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_HEAVY_MACHINEGUN) {
+		       background "icons/weap_hmg"
+		       backcolor 0 0 1 1
+		       style WINDOW_STYLE_FILLED
+		       rect @weaponBarX @weaponBarY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
+
 
 	///  ammo
 
@@ -835,4 +872,28 @@ menuDef {
 		}
        	}
 
+	itemDef {  // hmg
+		visible 1
+	  	run {
+		    visible 0
+		    setvar @newY (@weaponBarY)
+		    if (ownerdrawvalue WCG_WEAPON_HAVE_HEAVY_MACHINEGUN) {
+		       style WINDOW_STYLE_EMPTY
+		       setvar @ammo (ownerdrawvalue WCG_WEAPON_AMMO_HEAVY_MACHINEGUN)
+		       if (@ammo = W_AMMO_UNKNOWN) {
+		       	  visible 0  // wolfcam following someone other than demo pov
+		       } else if (@ammo = W_AMMO_INFINITE) {
+		       	  background "icons/infinite"
+			  style WINDOW_STYLE_FILLED
+		       } else {
+		       	  textExt "%0d{@ammo}"
+		       	  textScale 0.25
+			  setvar @newY (@newY + 15)
+ 		       }
+		       rect @weaponBarX @newY @weaponBarW @weaponBarH
+		       setvar @weaponBarY (@weaponBarY + 20)
+		       visible 1
+		    }
+		}
+       	}
 }

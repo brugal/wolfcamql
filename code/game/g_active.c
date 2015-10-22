@@ -466,7 +466,7 @@ void ClientTimerActions( gentity_t *ent, int msec ) {
 		}
 	}
 #ifdef MISSIONPACK
-	if( bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_AMMOREGEN ) {
+	if( bg_itemlist[client->ps.stats[STAT_PERSISTANT_POWERUP]].giTag == PW_ARMORREGEN ) {
 		int w, max, inc, t, i;
     int weapList[]={WP_MACHINEGUN,WP_SHOTGUN,WP_GRENADE_LAUNCHER,WP_ROCKET_LAUNCHER,WP_LIGHTNING,WP_RAILGUN,WP_PLASMAGUN,WP_BFG,WP_NAILGUN,WP_PROX_LAUNCHER,WP_CHAINGUN};
     int weapCount = ARRAY_LEN(weapList);

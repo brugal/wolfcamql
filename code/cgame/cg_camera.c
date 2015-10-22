@@ -1,7 +1,19 @@
 #include "cg_camera.h"
 #include "cg_local.h"  // cg.
 //#include "cg_q3mme_math.h"
-#include "cg_q3mme_camera.h"  // CAM_ORIGIN, CAM_ANGLES
+#include "cg_q3mme_camera.h"  // CAM_ORIGIN, CAM_ANGLES, CAM_FOV
+
+void CG_CameraResetInternalLengths (void)
+{
+	cameraPoint_t *p;
+
+	p = cg.cameraPointsPointer;
+
+	while (p) {
+		p->len = -1;
+		p = p->next;
+	}
+}
 
 // from q3mme
 static void wolfcamCameraPointMatch (const cameraPoint_t *point, int mask, const cameraPoint_t *match[4])
@@ -55,14 +67,14 @@ static qboolean wolfcamCameraMatchOrigin (const cameraPoint_t *match[4], vec3_t 
 		VectorCopy( match[0]->origin, origin[0] );
 	else if (match[2])
 		VectorSubDelta( match[1]->origin, match[2]->origin, origin[0] );
-	else 
+	else
 		VectorCopy( match[1]->origin, origin[0] );
 
 	if (match[2]) {
 		VectorCopy( match[2]->origin, origin[2] );
 		if (match[3])
 			VectorCopy( match[3]->origin, origin[3] );
-		else 
+		else
 			VectorAddDelta( match[1]->origin, match[2]->origin, origin[3] );
 	} else if ( match[0] ) {
 		VectorAddDelta( match[0]->origin, match[1]->origin, origin[2] );
@@ -75,7 +87,6 @@ static qboolean wolfcamCameraMatchOrigin (const cameraPoint_t *match[4], vec3_t 
 }
 
 // from q3mme
-//static void cameraMatchAt( int time, int mask, const demoCameraPoint_t *match[4] ) {
 static void wolfcamCameraMatchAt (double ftime, int mask, const cameraPoint_t *match[4])
 {
 	const cameraPoint_t *p;
@@ -119,7 +130,6 @@ static float wolfcamCameraPointLength (posInterpolate_t posType, cameraPoint_t *
 		return point->len;
 	}
 
-	//cameraPointMatch( point, CAM_ORIGIN, (const demoCameraPoint_t **)match );
 	wolfcamCameraPointMatch(point, CAM_ORIGIN, (const cameraPoint_t **)match);
 
 
@@ -164,7 +174,6 @@ static float wolfcamCameraPointLength (posInterpolate_t posType, cameraPoint_t *
 }
 
 // from q3mme
-//qboolean CG_CameraSplineOriginAt (int time, float timeFraction, vec3_t origin)
 qboolean CG_CameraSplineOriginAt (double ftime, posInterpolate_t posType, vec3_t origin)
 {
 	cameraPoint_t *match[4];
@@ -175,7 +184,17 @@ qboolean CG_CameraSplineOriginAt (double ftime, posInterpolate_t posType, vec3_t
 	float len = 0, step = 0, addStep, distance, deltaDist = 0.01f;
 	int	i;
 
-	//cameraMatchAt( time, CAM_ORIGIN, (const demoCameraPoint_t **)match );
+	//int debugCount;
+	static float LastLen = 0;
+	static float LastStep = 0;
+	static double LastFtime = 0;
+	static vec3_t LastControl[4];
+	static float LastSearchLen;
+	static vec3_t LastOrigin;
+	static posInterpolate_t LastPosType;
+	static float LastQ3mmeSmoothPos;
+	static qboolean LastValuesSet = qfalse;
+
 	wolfcamCameraMatchAt(ftime, CAM_ORIGIN, (const cameraPoint_t **)match);
 
 	if (!match[1]) {
@@ -183,8 +202,6 @@ qboolean CG_CameraSplineOriginAt (double ftime, posInterpolate_t posType, vec3_t
 			return qfalse;
 		if (!match[3])
 			return qfalse;
-		//wolfcamCameraPointMatch(match[2], CAM_ORIGIN, (const demoCameraPoint_t **)match );
-		//FIXME mask
 		wolfcamCameraPointMatch(match[2], CAM_ORIGIN, (const cameraPoint_t **)match );
 		searchLen = 0;
 	} else if (!match[2]) {
@@ -222,14 +239,41 @@ qboolean CG_CameraSplineOriginAt (double ftime, posInterpolate_t posType, vec3_t
 	}
 #endif
 	if (posType == posLinear) {
-		Com_Printf("^1posLinear specified\n");
+		Com_Printf("^1ERROR:  posLinear specified\n");
 		posType = posBezier;
 	}
 
-	posGet( 0, posType, (const vec3_t *)control, origin );
-	if (cg_q3mmeCameraSmoothPos.value >= 1)
+	//Com_Printf("calc: %f -> %f (%f)\n", match[1] != NULL ? match[1]->cgtime : -1.0f, ftime, match[1] != NULL ? ftime - match[1]->cgtime : -1.0f);
+	//debugCount = 0;
+
+	// optimization to avoid starting from step == 0 every time
+	if (LastValuesSet  &&
+		VectorCompare(control[0], LastControl[0])  &&  VectorCompare(control[1], LastControl[1])  &&  VectorCompare(control[2], LastControl[2])  &&  VectorCompare(control[3], LastControl[3])  &&
+		ftime >= LastFtime  &&
+		searchLen > LastSearchLen  &&
+		LastPosType == posType  &&
+		cg_q3mmeCameraSmoothPos.value == LastQ3mmeSmoothPos) {
+
+		step = LastStep;
+		len = LastLen;
+		VectorCopy(LastOrigin, origin);
+		//Com_Printf("step %f  len %f\n", step, len);
+	} else {
+		step = 0;
+		len = 0;
+		posGet( 0, posType, (const vec3_t *)control, origin );
+	}
+
+	if (cg_q3mmeCameraSmoothPos.value >= 1) {
 		deltaDist = 0.01f / cg_q3mmeCameraSmoothPos.value;
+	}
+
+	// loop can be called thousands of times
 	while (step < 1) {
+		LastStep = step;
+		LastLen = len;
+		VectorCopy(origin, LastOrigin);
+
 		addStep = 1 - step;
 		if (addStep > 0.01f)
 			addStep = 0.01f;
@@ -241,13 +285,28 @@ qboolean CG_CameraSplineOriginAt (double ftime, posInterpolate_t posType, vec3_t
 			addStep *= 0.7f;
 		}
 		distance = sqrt( distance );
-		if (len + distance > searchLen)
+		if (len + distance > searchLen) {
 			break;
+		}
+
 		len += distance;
 		step += addStep;
 		VectorCopy( nextOrigin, origin );
 		//Com_Printf("nextorigin:  %f %f %f\n", nextOrigin[0], nextOrigin[1], nextOrigin[2]);
+		//Com_Printf("addStep:  %f\n", addStep);
+		//debugCount++;
 	}
+
+	LastFtime = ftime;
+	for (i = 0;  i < 4;  i++) {
+		VectorCopy(control[i], LastControl[i]);
+	}
+	LastSearchLen = searchLen;
+	LastPosType = posType;
+	LastQ3mmeSmoothPos = cg_q3mmeCameraSmoothPos.value;
+	LastValuesSet = qtrue;
+
+	//Com_Printf("    debugCount: %d\n", debugCount);
 	return qtrue;
 }
 
@@ -260,7 +319,6 @@ qboolean CG_CameraSplineAnglesAt (double ftime, vec3_t angles)
 	Quat_t q0, q1, q2, q3, qr;
     //double timeFraction;
 
-	//cameraMatchAt( time, CAM_ANGLES, (const demoCameraPoint_t **)match );
     wolfcamCameraMatchAt(ftime, CAM_ANGLES, (const cameraPoint_t **)match);
 
 	if (!match[1]) {
@@ -352,3 +410,43 @@ qboolean CG_CameraSplineFovAt (double ftime, float *fov)
 	return qtrue;
 }
 
+// longest distance for either yaw or pitch
+float CG_CameraAngleLongestDistanceNoRoll (const vec3_t a0, const vec3_t a1)
+{
+	float dist;
+	float d0, d1;
+
+	d0 = fabs(AngleSubtract(a0[YAW], a1[YAW]));
+	d1 = fabs(AngleSubtract(a0[PITCH], a1[PITCH]));
+
+	if (d0 > d1) {
+		dist = d0;
+	} else {
+		dist = d1;
+	}
+
+	return dist;
+}
+
+// longest distance for yaw, pitch, or roll
+float CG_CameraAngleLongestDistanceWithRoll (const vec3_t a0, const vec3_t a1)
+{
+	float dist;
+	float d0, d1, d2;
+
+	d0 = fabs(AngleSubtract(a0[YAW], a1[YAW]));
+	d1 = fabs(AngleSubtract(a0[PITCH], a1[PITCH]));
+	d2 = fabs(AngleSubtract(a0[ROLL], a1[ROLL]));
+
+	if (d0 > d1) {
+		dist = d0;
+	} else {
+		dist = d1;
+	}
+
+	if (d2 > dist) {
+		dist = d2;
+	}
+
+	return dist;
+}

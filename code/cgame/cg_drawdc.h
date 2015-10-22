@@ -21,5 +21,7 @@ int CG_PlayCinematicDc (const char *name, float x, float y, float w, float h, in
 void CG_StopCinematicDc (int handle);
 void CG_DrawCinematicDc (int handle, float x, float y, float w, float h, int widescreen, rectDef_t menuRect);
 void CG_RunCinematicFrameDc (int handle);
+void CG_PauseDc (qboolean pause);
+void CG_ExecuteTextDc (int exec_when, const char *text);
 
 #endif  // cg_drawdc_h_included

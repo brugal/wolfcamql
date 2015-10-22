@@ -1,5 +1,68 @@
+notes:
+
+* 2015-09-15  https://www.reddit.com/r/QuakeLive/comments/3fqt71/hud_programming_question_about_cg_red_clan_plyrs/
+
+"[-] SyncError 2 points 1 month ago
+Only six functions have the ability to return a float numerical value to the GetValue() function required by addColorRange: CG_PLAYER_ARMOR_VALUE, CG_PLAYER_AMMO_VALUE, CG_PLAYER_SCORE, CG_PLAYER_HEALTH, CG_RED_SCORE, and CG_BLUE_SCORE. All remaining OwnerDraws, which normally output string values, will return a -1 value within GetValue(), and hence do not support addColorRange.
+
+There is no current way for you to get CG_RED_CLAN_PLYRS / CG_BLUE_CLAN_PLYRS to work in the example HUD script, and probably no way to get the end result you want without code work on our end.
+"
 
 
+* 2015-04-27  SyncError:
+
+New Elder Key Items for Mappers
+
+    I have added the following three new items that mappers can utilize:
+
+    New Entities:
+
+        "Silver Key"
+        item_key_silver
+        Add 'spawnflags 16' to func_doors and func_buttons to lock them.
+
+        "Gold Key"
+        item_key_gold
+        Add 'spawnflags 32' to func_doors and func_buttons to lock them.
+
+        "Master Key"
+        item_key_master
+
+    Example Content:
+
+        Test Map: Key_Test w/ updated entities.def
+
+        The models for the silver and master key have not yet shipped (will be made available with the release of a map in the future), but are present in the key_test.pk3 for developing maps in the time being. Once again, model credits for the keys go to Jochum 'Hipshot' Skoglund (he did a beautiful job)!
+
+    Custom Hud Element:
+        Code:
+
+    	itemDef {
+		name "Key"
+		rect 70 0 24 24
+	     	visible 1
+		decoration
+		style WINDOW_STYLE_FILLED
+											      ownerdraw CG_PLAYER_HASKEY
+										    	  }
+
+    Key Item Behavior:
+
+        Keys spawn on match start.
+        Keys do not automatically respawn, unless a wait parameter is set.
+        Keys do not drop when the key holder dies.
+        Keys respawn immediately when the key holder dies.
+        Maps are not meant to have more than one of each key type.
+        Silver unlocks only Silver. Gold unlocks only gold. Master unlocks all.
+
+
+    If you all have any questions, just let me know!
+
+
+
+------------------------------------------------------------------
+
+changes:
 
 August 6th Changelog
 

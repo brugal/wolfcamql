@@ -2425,7 +2425,7 @@ static void CG_FlightTrail (centity_t *cent)
 		return;
 	}
 
-	if (!cent->currentState.groundEntityNum != ENTITYNUM_NONE) {
+	if (cent->currentState.groundEntityNum != ENTITYNUM_NONE) {
 		//return;
 	}
 

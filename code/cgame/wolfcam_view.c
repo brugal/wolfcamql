@@ -902,10 +902,18 @@ int Wolfcam_CalcFov (void)
 		if (*cg_fovIntermission.string) {
 			fov_x = cg_fovIntermission.value;
 		} else {
-			fov_x = cg_fov.value;
+			if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+				fov_x = cg.demoFov;
+			} else {
+				fov_x = cg_fov.value;
+			}
 		}
 	} else {
-		fov_x = cg_fov.value;
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			fov_x = cg.demoFov;
+		} else {
+			fov_x = cg_fov.value;
+		}
 
 		//if( !cg.renderingThirdPerson || developer.integer ) {  //FIXME wolfcam
         if ( !(es->eFlags & EF_DEAD) ) {  // ||  developer.integer) {

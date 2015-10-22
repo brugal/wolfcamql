@@ -604,6 +604,13 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
   }
 
   len = ri.FS_ReadFile(fontName, &faceData);
+
+  //FIXME hack for new ql testing pk3s
+  if (len <= 0) {
+	  //len = ri.FS_ReadFile("fonts/roboto-regular.ttf", &faceData);
+	  len = ri.FS_ReadFile("fonts/handelgothic.ttf", &faceData);
+  }
+
   if (len <= 0) {
 	  ri.Printf(PRINT_ALL, "RE_RegisterFont: Unable to read font file '%s'\n", fontName);
 	font->name[0] = '\0';
@@ -703,7 +710,9 @@ void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font) {
 
 	  Com_sprintf (name, sizeof(name), "fonts2/%s_%i_%i.tga", baseName, imageNumber++, pointSize);
 			if (r_saveFontData->integer) { 
-			  WriteTGA(name, imageBuff, 256, 256);
+				WriteTGA(name, imageBuff, 256, 256);
+				//FIXME FONT_DIMENSIONS defined
+				//WriteTGA(name, imageBuff, 512, 512);
 			}
 
     	//Com_sprintf (name, sizeof(name), "fonts/fontImage_%i_%i", imageNumber++, pointSize);

@@ -106,6 +106,17 @@ void CG_PrintPlayerState (void)
 	Com_Printf("pmove_framecount %d\n", ps->pmove_framecount);
 	Com_Printf("jumppad_frame %d\n", ps->jumppad_frame);
 	Com_Printf("entityEventSequence %d\n", ps->entityEventSequence);
+
+	Com_Printf("jumpTime %d\n", ps->jumpTime);
+	Com_Printf("doubleJumped %d\n", ps->doubleJumped);
+	Com_Printf("crouchTime %d\n", ps->crouchTime);
+	Com_Printf("crouchSlideTime %d\n", ps->crouchSlideTime);
+
+	Com_Printf("location %d\n", ps->location);
+	Com_Printf("fov %d\n", ps->fov);
+	Com_Printf("forwardmove %d\n", ps->forwardmove);
+	Com_Printf("rightmove %d\n", ps->rightmove);
+	Com_Printf("upmove %d\n", ps->upmove);
 }
 
 // ammoOffset hack for quakelive weapon bar not in sync with sound
@@ -676,7 +687,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		cg.damageDone = armor;  //FIXME fucked up -- cg_crosshairHitStyle 2 and fucking rail
 		//Com_Printf("hits: %d  armor: %d  health: %d\n",  ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS], armor, health);
 
-#ifdef MISSIONPACK
+#if 0  // MISSIONPACK
 		if (armor > 50 ) {
 			CG_StartLocalSound( cgs.media.hitSoundHighArmor, CHAN_LOCAL_SOUND );
 		} else if (armor || health > 100) {
@@ -1223,6 +1234,19 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 	//if (ps != cg.nextSnap) {
 	//	Com_Printf("wtf\n");
 	//}
+
+	if (cgs.realProtocol >= 91) {
+		cg.demoFov = ps->fov;
+
+		if (cg_useDemoFov.integer == 2) {
+			//Com_Printf("fov:  %d\n", ps->fov);
+			if (ps->fov < ops->fov) {
+				CG_ZoomDown_f();
+			} else if (ps->fov > ops->fov) {
+				CG_ZoomUp_f();
+			}
+		}
+	}
 
 	//FIXME ops ?
 	weapons = ps->stats[STAT_WEAPONS];

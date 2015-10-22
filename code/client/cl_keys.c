@@ -948,7 +948,7 @@ void Key_SetBinding( int keynum, const char *binding ) {
 	if ( keys[ keynum ].binding ) {
 		Z_Free( keys[ keynum ].binding );
 	}
-		
+
 	// allocate memory for new binding
 	keys[keynum].binding = CopyString( binding );
 
@@ -969,6 +969,33 @@ char *Key_GetBinding( int keynum ) {
 	}
 
 	return keys[ keynum ].binding;
+}
+
+
+/*
+====================
+Key_KeynumToStringBuf
+====================
+*/
+void Key_KeynumToStringBuf( int keynum, char *buf, int buflen ) {
+	Q_strncpyz( buf, Key_KeynumToString( keynum ), buflen );
+}
+
+/*
+====================
+Key_GetBindingBuf
+====================
+*/
+void Key_GetBindingBuf( int keynum, char *buf, int buflen ) {
+	char	*value;
+
+	value = Key_GetBinding( keynum );
+	if ( value ) {
+		Q_strncpyz( buf, value, buflen );
+	}
+	else {
+		*buf = 0;
+	}
 }
 
 void Cgame_Key_GetBinding (int keynum, char *buffer)

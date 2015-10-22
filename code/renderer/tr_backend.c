@@ -596,17 +596,35 @@ static void RE_DrawPathLines (void)
 
 	for (i = 0;  i < *PLnumCameraPoints - 1;  i++) {
 		cp = &PLcameraPoints[i];
-		cpnext = &PLcameraPoints[i + 1];
-		if (cp->type == CAMERA_SPLINE  ||  cp->type == CAMERA_SPLINE_BEZIER  ||  cp->type == CAMERA_SPLINE_CATMULLROM) {
+		if (!(cp->flags & CAM_ORIGIN)) {
+			continue;
+		}
+		cpnext = cp->next;
+		while (cpnext  &&  !(cpnext->flags & CAM_ORIGIN)) {
+			cpnext = cpnext->next;
+		}
+		if (!cpnext) {
+			continue;
+		}
+		if (cp->type == CAMERA_SPLINE  ||  cp->type == CAMERA_SPLINE_BEZIER  ||  cp->type == CAMERA_SPLINE_CATMULLROM  ||  (cp->type == CAMERA_CURVE  &&  cp->hasQuadratic)) {
 			qglColor3f(PLcolor[0], PLcolor[1], PLcolor[2]);
-			for (j = cp->splineStart;  j < PLcameraPoints[i + 1].splineStart;  j++) {
+			if (cp->type == CAMERA_CURVE) {
+				qglColor3f(1.0, 0.3, 0.3);
+			} else if (cp->type == CAMERA_SPLINE_BEZIER) {
+				qglColor3f(0.3, 1.0, 0.3);
+			} else if (cp->type == CAMERA_SPLINE_CATMULLROM) {
+				qglColor3f(0.3, 0.3, 1.0);
+			} else if (cp->type == CAMERA_SPLINE) {
+				qglColor3f(1.0, 0.7, 0.1);
+			}
+			for (j = cp->splineStart;  j < cpnext->splineStart;  j++) {
 				qglVertex3fv(PLsplinePoints[j]);
 				qglVertex3fv(PLsplinePoints[j + 1]);
 			}
 		} else if (cp->type == CAMERA_INTERP  ||  cp->type == CAMERA_CURVE) {  //FIXME curve
 			qglColor3f(0.5, 0.5, 1);
 			qglVertex3fv(cp->origin);
-			if (cpnext->type == 0) {
+			if (cpnext->type == CAMERA_SPLINE) {
 				qglVertex3fv(PLsplinePoints[cpnext->splineStart]);
 			} else {
 				qglVertex3fv(cpnext->origin);
@@ -619,6 +637,9 @@ static void RE_DrawPathLines (void)
 			vec3_t origin;
 
 			cp = &PLcameraPoints[i];
+			if (!(cp->flags & CAM_ORIGIN)) {
+				continue;
+			}
 			qglColor3f(PLcolor[0], PLcolor[1], PLcolor[2]);
 			VectorCopy(PLsplinePoints[cp->splineStart], origin);
 			origin[2] += 10;

@@ -109,6 +109,7 @@ void CG_DrawTextWithCursorDc (float x, float y, float scale, const vec4_t color,
 static int CG_OwnerDrawWidth (int ownerDraw, float scale, int fontIndex)
 {
 	 const fontInfo_t *font;
+	 const char *s;
 
 	 if (fontIndex <= 0) {
 		 font = &cgDC.Assets.textFont;
@@ -136,6 +137,14 @@ static int CG_OwnerDrawWidth (int ownerDraw, float scale, int fontIndex)
 		  //return CG_Text_Width(cg_blueTeamName.string, scale, 0, font);
 		  return CG_Text_Width(cgs.blueTeamName, scale, 0, font);
 			break;
+	case UI_KEYBINDSTATUS:
+		if (Display_KeyBindPending()) {
+			s = "Waiting for new key... Press ESCAPE to cancel";
+		} else {
+			s = "Press ENTER or CLICK to change, Press BACKSPACE to clear";
+		}
+		return CG_Text_Width(s, scale, 0, font);
+		break;
 	default:
 		Com_Printf("CG_OwnerDrawWidth() unknown ownerDraw %d\n", ownerDraw);
 		break;
@@ -184,4 +193,15 @@ void CG_DrawCinematicDc (int handle, float x, float y, float w, float h, int wid
 void CG_RunCinematicFrameDc (int handle)
 {
     trap_CIN_RunCinematic(handle);
+}
+
+void CG_PauseDc (qboolean pause)
+{
+	trap_Cvar_Set("cl_freezeDemo", pause ? "1" : "0");
+}
+
+void CG_ExecuteTextDc (int exec_when, const char *text)
+{
+	Com_Printf("^3FIXME ui execute text:  %d  '%s'\n", exec_when, text);
+	//trap_Cmd_ExecuteText(exec_when, text);
 }

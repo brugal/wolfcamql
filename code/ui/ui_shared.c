@@ -59,6 +59,7 @@ static scrollInfo_t scrollInfo;
 
 static void (*captureFunc) (void *p) = 0;
 static void *captureData = NULL;
+
 static itemDef_t *itemCapture = NULL;   // item that has the mouse captured ( if any )
 
 displayContextDef_t *DC = NULL;
@@ -92,6 +93,8 @@ static qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down);
 static itemDef_t *Menu_SetPrevCursorItem(menuDef_t *menu);
 static itemDef_t *Menu_SetNextCursorItem(menuDef_t *menu);
 static qboolean Menu_OverActiveItem(menuDef_t *menu, float x, float y);
+static qboolean Item_Slider_HandleKey (itemDef_t *item, int key, qboolean down);
+
 //char *Q_MathScript (char *script, float *val, int *error);
 
 static qboolean ItemParse_if (itemDef_t *item, int handle, char *token, qboolean forceSkip);
@@ -482,6 +485,7 @@ qboolean Color_Parse(char **p, vec4_t *c) {
 	for (i = 0; i < 4; i++) {
 		if (!Float_Parse(p, &f)) {
 			Com_Printf("^1Color_Parse() couldn't get token %d\n", i);
+			//Com_Printf("^3'%s'\n", *p);
 			return qfalse;
 		}
 		(*c)[i] = f;
@@ -1298,7 +1302,7 @@ static qboolean Rect_ContainsWidescreenPoint (const rectDef_t *rectIn, float x, 
 	float newXScale;
 
 	if (!rectIn) {
-		Com_Printf("^1Rect_ContainsWidescreenPoint item == NULL\n");
+		Com_Printf("^1Rect_ContainsWidescreenPoint rectIn == NULL\n");
 		return qfalse;
 	}
 
@@ -1332,14 +1336,13 @@ static qboolean Rect_ContainsWidescreenPoint (const rectDef_t *rectIn, float x, 
 }
 
 // assumes cursor is being drawn fullscreen (widescreen == WIDESCREEN_NONE),
-// and the item uses widescreen values so translate the realx value to
-// the one that would be scaled by widescreen
+// converts to the relative 640x480 coordinates of the widescreen hud
 static float CursorX_Widescreen (int widescreen)
 {
 	float aspect;
 	float width43;
 	float diff;
-	float diff640;
+	float realXScale;
 	float newXScale;
 	float x;
 
@@ -1347,25 +1350,31 @@ static float CursorX_Widescreen (int widescreen)
 
 	//FIXME store calculations
 	aspect = (float)DC->glconfig.vidWidth / (float)DC->glconfig.vidHeight;
-	width43 = 4.0 * (DC->glconfig.vidHeight / 3.0);
+	width43 = 4.0 * (DC->glconfig.vidHeight / 3.0f);
 	diff = (float)DC->glconfig.vidWidth - width43;
 
-	diff640 = 640.0f * diff / (float)DC->glconfig.vidWidth;
-	//newXScale = width43 / (float)DC->glconfig.vidWidth;
+	realXScale = (float)DC->glconfig.vidWidth / 640.0f;
+	newXScale = 640.0f / width43;
 
-	//newXScale = width43 / 640.0f;
-	newXScale = (float)DC->glconfig.vidWidth / 640.0f;
-
-	if (widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f) {
+	if (widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f  ||  DC->widescreen != 5) {
 		//use regular scaling, don't chage x
 	} else if (widescreen == WIDESCREEN_LEFT) {
+		x *= realXScale;
 		x *= newXScale;
 	} else if (widescreen == WIDESCREEN_CENTER) {
-		x -= diff640 / 2;
+		x *= realXScale;  // where we really are
+		x -= diff / 2;  // relative to widescreen box
 		x *= newXScale;
 	} else if (widescreen == WIDESCREEN_RIGHT) {
-		x -= diff640;
+		x *= realXScale;
+		x -= diff;
 		x *= newXScale;
+	}
+
+	if (x < 0.0f) {
+		x = 0.0f;
+	} else if (x > 640.0f) {
+		x = 640.0f;
 	}
 
 	return x;
@@ -1794,7 +1803,7 @@ static void Script_SetVar (itemDef_t *item, char **args)
 static void Script_Exec(itemDef_t *item, char **args) {
 	const char *val;
 	if (String_Parse(args, &val)) {
-		//Com_Printf("exec '%s'\n", val);
+		//Com_Printf("^3exec '%s'\n", val);
 		if (DC->executeText) {
 			DC->executeText(EXEC_APPEND, va("%s ; ", val));
 		}
@@ -2123,6 +2132,8 @@ static float Item_Slider_ThumbPosition(itemDef_t *item) {
 
 static int Item_Slider_OverSlider(itemDef_t *item, float x, float y) {
 	rectDef_t r;
+
+	//Com_Printf("slider over slider\n");
 
 	if (!item) {
 		Com_Printf("^1Item_SlideOverSlide item == NULL\n");
@@ -2819,6 +2830,8 @@ static void Scroll_ListBox_ThumbFunc(void *p) {
 	rectDef_t r;
 	int pos, max;
 
+	//Com_Printf("listbox thumbfunc...\n");
+
 	listBoxDef_t *listPtr = (listBoxDef_t*)si->item->typeData;
 	if (si->item->window.flags & WINDOW_HORIZONTAL) {
 		if (CursorX_Widescreen(si->item->widescreen) == si->xStart) {
@@ -2880,6 +2893,8 @@ static void Scroll_Slider_ThumbFunc(void *p) {
 	scrollInfo_t *si = (scrollInfo_t*)p;
 	editFieldDef_t *editDef = si->item->typeData;
 
+	//Com_Printf("slider thumb func\n");
+
 	if (si->item->text) {
 		x = si->item->textRect.x + si->item->textRect.w + 8;
 	} else {
@@ -2887,6 +2902,7 @@ static void Scroll_Slider_ThumbFunc(void *p) {
 	}
 
 	cursorx = CursorX_Widescreen(si->item->widescreen);  //DC->cursorx;
+	//cursorx = DC->cursorx;
 
 	if (cursorx < x) {
 		cursorx = x;
@@ -2897,6 +2913,9 @@ static void Scroll_Slider_ThumbFunc(void *p) {
 	value /= SLIDER_WIDTH;
 	value *= (editDef->maxVal - editDef->minVal);
 	value += editDef->minVal;
+
+	//Com_Printf("^5slider thumbfunc %f\n", value);
+
 	DC->setCVar(si->item->cvar, va("%f", value));
 }
 
@@ -2919,6 +2938,7 @@ static void Item_StartCapture(itemDef_t *item, int key) {
 				captureData = &scrollInfo;
 				captureFunc = &Scroll_ListBox_AutoFunc;
 				itemCapture = item;
+				//Com_Printf("got listbox autofunc %p\n", captureFunc);
 			} else if (flags & WINDOW_LB_THUMB) {
 				scrollInfo.scrollKey = key;
 				scrollInfo.item = item;
@@ -2927,6 +2947,7 @@ static void Item_StartCapture(itemDef_t *item, int key) {
 				captureData = &scrollInfo;
 				captureFunc = &Scroll_ListBox_ThumbFunc;
 				itemCapture = item;
+				//Com_Printf("got listbox thumbfunc %p\n", captureFunc);
 			}
 			break;
 		}
@@ -2934,7 +2955,9 @@ static void Item_StartCapture(itemDef_t *item, int key) {
 			Com_Printf("FIXME Item_StartCapture() ITEM_TYPE_SLIDER_COLOR\n");
 		case ITEM_TYPE_SLIDER:
 		{
+			//Com_Printf("slider start capture\n");
 			flags = Item_Slider_OverSlider(item, DC->cursorx, DC->cursory);
+			//Com_Printf("flags: %d\n", flags);
 			if (flags & WINDOW_LB_THUMB) {
 				scrollInfo.scrollKey = key;
 				scrollInfo.item = item;
@@ -2943,6 +2966,7 @@ static void Item_StartCapture(itemDef_t *item, int key) {
 				captureData = &scrollInfo;
 				captureFunc = &Scroll_Slider_ThumbFunc;
 				itemCapture = item;
+				//Com_Printf("got slider thumb %p\n", captureFunc);
 			}
 			break;
 		}
@@ -2978,18 +3002,21 @@ static qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down) {
 				//DC->Print("slider w: %f\n", testRect.w);
 				if (Rect_ContainsWidescreenPoint(&testRect, DC->cursorx, DC->cursory, item->widescreen)) {
 					work = CursorX_Widescreen(item->widescreen) - x;
+					//Com_Printf("x: %d  wsx: %f\n", DC->cursorx, CursorX_Widescreen(item->widescreen));
+					//Com_Printf("rescaled:  %f\n", CursorX_Widescreen(item->widescreen) / (DC->glconfig.vidWidth / 640.0));
 					value = work / width;
 					value *= (editDef->maxVal - editDef->minVal);
 					// vm fuckage
 					// value = (((float)(DC->cursorx - x)/ SLIDER_WIDTH) * (editDef->maxVal - editDef->minVal));
 					value += editDef->minVal;
+					//Com_Printf("slider setting value %f\n", value);
 					DC->setCVar(item->cvar, va("%f", value));
 					return qtrue;
 				}
 			}
 		}
 	}
-	DC->Print("slider handle key exit\n");
+	//DC->Print("slider handle key exit\n");
 	return qfalse;
 }
 
@@ -3001,6 +3028,7 @@ static qboolean Item_HandleKey(itemDef_t *item, int key, qboolean down) {
 		itemCapture = NULL;
 		captureFunc = 0;
 		captureData = NULL;
+		//Com_Printf("^2stop capture\n");
 	} else {
 		if ( down && ( key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3 ) ) {
 			Item_StartCapture(item, key);
@@ -3154,6 +3182,7 @@ void  Menus_Activate(menuDef_t *menu) {
 	if (menu->onOpen) {
 		itemDef_t item;
 		item.parent = menu;
+		//Com_Printf("^5onOpen\n");
 		Item_RunScript(&item, menu->onOpen);
 	}
 
@@ -4858,9 +4887,12 @@ static itemDef_t *Menu_GetFocusedItem(menuDef_t *menu) {
 
 menuDef_t *Menu_GetFocused(void) {
   int i;
+
   for (i = 0; i < menuCount; i++) {
-    if (Menus[i].window.flags & WINDOW_HASFOCUS && Menus[i].window.flags & WINDOW_VISIBLE) {
-      return &Menus[i];
+	  //Com_Printf("%d focus %d  visible %d   '%s'\n", i, Menus[i].window.flags & WINDOW_HASFOCUS, Menus[i].window.flags & WINDOW_VISIBLE, Menus[i].window.name);
+	  
+	  if (Menus[i].window.flags & WINDOW_HASFOCUS && Menus[i].window.flags & WINDOW_VISIBLE) {
+		  return &Menus[i];
     }
   }
   return NULL;
@@ -4919,21 +4951,32 @@ qboolean Menus_AnyFullScreenVisible(void) {
 menuDef_t *Menus_ActivateByName(const char *p) {
   int i;
   menuDef_t *m = NULL;
-	menuDef_t *focus = Menu_GetFocused();
+  //menuDef_t *focus = Menu_GetFocused();
+  menuDef_t *focus = NULL;
+
+  focus = Menu_GetFocused();
+
   for (i = 0; i < menuCount; i++) {
     if (Q_stricmp(Menus[i].window.name, p) == 0) {
 	    m = &Menus[i];
-			Menus_Activate(m);
-			if (openMenuCount < MAX_OPEN_MENUS && focus != NULL) {
-				menuStack[openMenuCount++] = focus;
+		Menus_Activate(m);
+		//focus = Menu_GetFocused();
+		if (openMenuCount < MAX_OPEN_MENUS && focus != NULL) {
+			menuStack[openMenuCount++] = focus;
+			//Com_Printf("^6activated '%s'\n", p);
+		} else {
+			if (focus == NULL) {
+				Com_Printf("^1ERROR: %s focus == NULL\n", __func__);
 			} else {
-				Com_Printf("^1ERROR:  MAX_OPEN_MENUS (%d)\n", MAX_OPEN_MENUS);
+				Com_Printf("^1ERROR:  %s MAX_OPEN_MENUS (%d)\n", __func__, MAX_OPEN_MENUS);
 			}
+		}
     } else {
       Menus[i].window.flags &= ~WINDOW_HASFOCUS;
     }
   }
-	Display_CloseCinematics();
+
+  Display_CloseCinematics();
   return m;
 }
 
@@ -5084,7 +5127,7 @@ static void Item_ValidateTypeData(itemDef_t *item) {
 	if (item->type == ITEM_TYPE_LISTBOX) {
 		item->typeData = UI_Alloc(sizeof(listBoxDef_t));
 		memset(item->typeData, 0, sizeof(listBoxDef_t));
-	} else if (item->type == ITEM_TYPE_EDITFIELD || item->type == ITEM_TYPE_NUMERICFIELD || item->type == ITEM_TYPE_YESNO || item->type == ITEM_TYPE_BIND || item->type == ITEM_TYPE_SLIDER   ||  item->type == ITEM_TYPE_SLIDER || item->type == ITEM_TYPE_TEXT) {  //FIXME check ITEM_TYPE_SLIDER_COLOR
+	} else if (item->type == ITEM_TYPE_EDITFIELD || item->type == ITEM_TYPE_NUMERICFIELD || item->type == ITEM_TYPE_YESNO || item->type == ITEM_TYPE_BIND || item->type == ITEM_TYPE_SLIDER   ||  item->type == ITEM_TYPE_SLIDER_COLOR || item->type == ITEM_TYPE_TEXT) {
 		item->typeData = UI_Alloc(sizeof(editFieldDef_t));
 		memset(item->typeData, 0, sizeof(editFieldDef_t));
 		if (item->type == ITEM_TYPE_EDITFIELD) {
@@ -5941,6 +5984,25 @@ static qboolean ItemParse_cvarFloat( itemDef_t *item, int handle ) {
 	return qfalse;
 }
 
+static qboolean ItemParse_cvarInt( itemDef_t *item, int handle ) {
+	editFieldDef_t *editPtr;
+
+	Item_ValidateTypeData(item);
+	if (!item->typeData) {
+		Com_Printf("^5parse int invalid type data\n");
+		return qfalse;
+	}
+	editPtr = (editFieldDef_t*)item->typeData;
+	//FIXME PC_Int_Parse() ?
+	if (PC_String_Parse(handle, &item->cvar) &&
+		PC_Float_Parse(handle, &editPtr->defVal) &&
+		PC_Float_Parse(handle, &editPtr->minVal) &&
+		PC_Float_Parse(handle, &editPtr->maxVal)) {
+		return qtrue;
+	}
+	return qfalse;
+}
+
 static qboolean ItemParse_cvarStrList( itemDef_t *item, int handle ) {
 	pc_token_t token;
 	multiDef_t *multiPtr;
@@ -6031,6 +6093,7 @@ static qboolean ItemParse_cvarFloatList( itemDef_t *item, int handle ) {
 
 		multiPtr->count++;
 		if (multiPtr->count >= MAX_MULTI_CVARS) {
+			Com_Printf("^3%s MAX_MULTI_CVARS\n", __func__);
 			return qfalse;
 		}
 
@@ -6953,6 +7016,7 @@ keywordHash_t itemParseKeywords[] = {
 	{"maxPaintChars", ItemParse_maxPaintChars, NULL},
 	{"focusSound", ItemParse_focusSound, NULL},
 	{"cvarFloat", ItemParse_cvarFloat, NULL},
+	{"cvarInt", ItemParse_cvarInt, NULL},
 	{"cvarStrList", ItemParse_cvarStrList, NULL},
 	{"cvarFloatList", ItemParse_cvarFloatList, NULL},
 	{"addColorRange", ItemParse_addColorRange, NULL},
@@ -7864,14 +7928,22 @@ int Menu_Count(void) {
 	return menuCount;
 }
 
-void Menu_PaintAll(void) {
-	int i;
+void Menu_HandleCapture (void)
+{
 	if (captureFunc) {
+		//Com_Printf("^6calling capture func %p\n", captureFunc);
 		captureFunc(captureData);
 	}
+}
+
+void Menu_PaintAll(void) {
+	int i;
+
+	Menu_HandleCapture();
 
 	for (i = 0; i < Menu_Count(); i++) {
 		Menu_Paint(&Menus[i], qfalse);
+		//Com_Printf("Menu_PaintAll %d  '%s'\n", i, Menus[i].window.name);
 	}
 
 	if (debugMode) {
@@ -7915,7 +7987,7 @@ qboolean Display_MouseMove(void *p, int x, int y) {
 	menuDef_t *menu = p;
 
 	if (menu == NULL) {
-    menu = Menu_GetFocused();
+		menu = Menu_GetFocused();
 		if (menu) {
 			if (menu->window.flags & WINDOW_POPUP) {
 				Menu_HandleMouseMove(menu, x, y);

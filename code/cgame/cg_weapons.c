@@ -2629,6 +2629,7 @@ void CG_AddViewWeapon( const playerState_t *ps ) {
 	vec3_t		angles;
 	const weaponInfo_t	*weapon;
 	float gunX;
+	int fov;
 
 	if ( ps->persistant[PERS_TEAM] == TEAM_SPECTATOR ) {
 		return;
@@ -2672,9 +2673,14 @@ void CG_AddViewWeapon( const playerState_t *ps ) {
 		gunX += 8.9;
 	}
 
+	if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+		fov = cg.demoFov;
+	} else {
+		fov = cg_fov.integer;
+	}
 	// drop gun lower at higher fov
-	if ( cg_fov.integer > 90 ) {
-		fovOffset = -0.2 * ( cg_fov.integer - 90 );
+	if ( fov > 90 ) {
+		fovOffset = -0.2 * ( fov - 90 );
 	} else {
 		fovOffset = 0;
 	}
@@ -4190,6 +4196,7 @@ void CG_GetWeaponFlashOrigin (int clientNum, vec3_t startPoint)
 	const clientInfo_t *ci;
 	const weaponInfo_t *weapon;
 	float gunX;
+	float fov;
 
 	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
 		return;
@@ -4213,10 +4220,16 @@ void CG_GetWeaponFlashOrigin (int clientNum, vec3_t startPoint)
 			//FIXME if view weapon gets added
 			return;
 		}
+
+		if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
+			fov = cg.demoFov;
+		} else {
+			fov = cg_fov.integer;
+		}
 		// from hand
 		// drop gun lower at higher fov
-        if ( cg_fov.integer > 90 ) {
-			fovOffset = -0.2 * ( cg_fov.integer - 90 );
+        if ( fov > 90 ) {
+			fovOffset = -0.2 * ( fov - 90 );
         } else {
 			fovOffset = 0;
         }

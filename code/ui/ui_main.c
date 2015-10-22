@@ -3393,7 +3393,7 @@ static void UI_RunMenuScript(char **args) {
 		} else if (Q_stricmp(name, "addFavorite") == 0) {
 			if (ui_netSource.integer != AS_FAVORITES) {
 				char name[MAX_NAME_LENGTH];
-				char addr[MAX_ADDRESS_LENGTH];
+				char addr[MAX_ADDRESSLENGTH];
 				int res;
 
 				trap_LAN_GetServerInfo(ui_netSource.integer, uiInfo.serverStatus.displayServers[uiInfo.serverStatus.currentServer], buff, MAX_STRING_CHARS);
@@ -3418,7 +3418,7 @@ static void UI_RunMenuScript(char **args) {
 			}
 		} else if (Q_stricmp(name, "deleteFavorite") == 0) {
 			if (ui_netSource.integer == AS_FAVORITES) {
-				char addr[MAX_ADDRESS_LENGTH];
+				char addr[MAX_ADDRESSLENGTH];
 				trap_LAN_GetServerInfo(ui_netSource.integer, uiInfo.serverStatus.displayServers[uiInfo.serverStatus.currentServer], buff, MAX_STRING_CHARS);
 				addr[0] = '\0';
 				Q_strncpyz(addr,   Info_ValueForKey(buff, "addr"), sizeof ( addr ) );
@@ -3428,7 +3428,7 @@ static void UI_RunMenuScript(char **args) {
 			}
 		} else if (Q_stricmp(name, "createFavorite") == 0) {
 			char name[MAX_NAME_LENGTH];
-			char addr[MAX_ADDRESS_LENGTH];
+			char addr[MAX_ADDRESSLENGTH];
 			int res;
 
 			name[0] = addr[0] = '\0';

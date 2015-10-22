@@ -528,7 +528,7 @@ ifdef MINGW
   # was -g
   # gdb.exe wants -gstabs ?
   #  -D__USE_MINGW_ANSI_STDIO
-  BASE_CFLAGS = -g -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
+  BASE_CFLAGS = -g -gdwarf-3 -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
     -DUSE_ICON -msse
 
   #CLIENT_CFLAGS = -D__MINGW32__
@@ -602,7 +602,7 @@ ifdef MINGW
   LIBS= -lws2_32 -lwinmm -static-libgcc -static-libstdc++
   # clang 3.4 doesn't support this
   ifneq ("$(CC)", $(findstring "$(CC)", "clang" "clang++"))
-    CLIENT_LDFLAGS += -mwindows
+    CLIENT_LDFLAGS += -mwindows -gdwarf-3
   endif
   CLIENT_LIBS += -lgdi32 -lole32 -lopengl32
 
@@ -1041,7 +1041,7 @@ endef
 
 define DO_CPP
 $(echo_cmd) "CPP $<"
-$(Q)$(CPP) -Wall -m32 -o $@ -c $<
+$(Q)$(CPP) -Wall $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -m32 -o $@ -c $<
 endef
 
 define DO_SMP_CC

@@ -37,10 +37,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define MAX_MENUDEFFILE 4096
 #define MAX_MENUFILE 32768
-#define MAX_MENUS 128
+#define MAX_MENUS 512  //128
 
 #define MAX_COLOR_RANGES 10
-#define MAX_OPEN_MENUS 16
+#define MAX_OPEN_MENUS 256  //16
 
 #define MAX_MENU_VARS 128
 #define MAX_MENU_VAR_NAME 64
@@ -455,6 +455,7 @@ char *Q_MathScript (char *script, float *val, int *error);  //FIXME not here
 
 int Menu_Count( void );
 void Menu_New(int handle);
+void Menu_HandleCapture (void);
 void Menu_PaintAll( void );
 menuDef_t *Menus_ActivateByName(const char *p);
 void Menu_Reset( void );

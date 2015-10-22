@@ -16,6 +16,5 @@ void CG_ChangeConfigString (const char *buffer, int index);
 
 void CG_StartidCamera (const char *name, qboolean startBlack);
 
-float CameraAngleDistance (const vec3_t a0, const vec3_t a1);
 
 #endif  // cg_consolecmds_h_included

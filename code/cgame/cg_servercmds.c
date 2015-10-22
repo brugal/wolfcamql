@@ -725,6 +725,12 @@ static void CG_ParseTeamInfo( void ) {
 }
 
 /*
+
+  beta testing:  \version\b1032 linux-i386 Jul 20 2015 05:19:10\
+                 \version\b1032 win-x86 Jul 20 2015 00:19:38\
+
+  Quake Live  0.1.0.1013 win-x86 Apr 28 2015 10:43:33
+
   Quake Live  0.1.0.934 win-x86 Aug 26 2014 18:06:25 (new dm90 protocol)
 
   QuakeLive  0.1.0.790 linux-i386 Jul 17 2013 16:28:51
@@ -766,11 +772,12 @@ static void CG_ParseTeamInfo( void ) {
   0.1.0.256  QuakeLive  0.1.0.256 linux-i386 Aug 10 2009 19:56:10
 */
 
+#define BUFFER_LENGTH 1024
 static void CG_ParseVersion (const char *info)
 {
 	const char *val;
 	const char *p;
-	char buffer[1024];
+	char buffer[BUFFER_LENGTH];
 	int bufferPos;
 	int i;
 
@@ -779,13 +786,27 @@ static void CG_ParseVersion (const char *info)
 	// vote failed
 	// quakelive  9
 
+	cgs.isQuakeLiveBetaDemo = qfalse;
+
 	if (cg.demoPlayback) {
-		if (!Q_stricmpn(val, "QuakeLive", strlen("QuakeLive"))) {
+		//FIXME other beta numbers
+		if (!Q_stricmpn(val, "b1032", strlen("b1032"))) {
+			cgs.isQuakeLiveDemo = qtrue;
+			cgs.isQuakeLiveBetaDemo = qtrue;
+			cgs.qlversion[0] = 1032;
+
+			//Com_Printf("^6quake live demo recorded with beta %d\n", cgs.qlversion[0]);
+			return;
+		}
+
+		if (!Q_stricmpn(val, "QuakeLive", strlen("QuakeLive"))  ||  !Q_stricmpn(val, "Quake Live", strlen("Quake Live"))) {
 			cgs.isQuakeLiveDemo = qtrue;
 		} else {
 			cgs.isQuakeLiveDemo = qfalse;
 		}
 	}
+
+	//Com_Printf("^5ql demo:  %d\n", cgs.isQuakeLiveDemo);
 
 	for (i = 0;  i < 4;  i++) {
 		cgs.qlversion[i] = 0;
@@ -795,6 +816,7 @@ static void CG_ParseVersion (const char *info)
 	p = val;
 	while (p[0] < '0'  ||  p[0] > '9') {
 		if (p[0] == '\0') {
+			//Com_Printf("^1couldn't detect quake live version number [initial digit]\n");
 			return;
 		}
 		p++;
@@ -802,11 +824,13 @@ static void CG_ParseVersion (const char *info)
 
 	for (i = 0;  i < 4;  i++) {
 		if (p[0] == '\0') {
+			//Com_Printf("^1couldn't parse quake live version string..\n");
 			return;
 		}
 		bufferPos = 0;
 		while (p[0] >= '0'  &&  p[0] <= '9') {
-			if (p[0] == '\0'  ||  bufferPos >= 1022) {
+			if (p[0] == '\0'  ||  bufferPos >= (BUFFER_LENGTH - 2)) {
+				//Com_Printf("^1couldn't parse quake live version string...\n");
 				return;
 			}
 			buffer[bufferPos] = p[0];
@@ -815,6 +839,7 @@ static void CG_ParseVersion (const char *info)
 		}
 
 		if (p[0] == '\0') {
+			//Com_Printf("^1couldn't parse quake live version string....\n");
 			return;
 		}
 		p++;  // skip '.'
@@ -822,10 +847,17 @@ static void CG_ParseVersion (const char *info)
 		cgs.qlversion[i] = atoi(buffer);
 	}
 
-	if (cgs.qlversion[0] > 0  &&  cgs.qlversion[1] > 0  &&  cgs.qlversion[2] > 0  &&  cgs.qlversion[3] > 0) {
-		Com_Printf("demo recorded with QuakeLive version:  %d  %d  %d  %d\n", cgs.qlversion[0], cgs.qlversion[1], cgs.qlversion[2], cgs.qlversion[3]);
+	if (cgs.isQuakeLiveDemo) {
+		if (cgs.qlversion[0] > 0  ||  cgs.qlversion[1] > 0  ||  cgs.qlversion[2] > 0  ||  cgs.qlversion[3] > 0) {
+			//Com_Printf("^5demo recorded with QuakeLive version:  %d.%d.%d.%d\n", cgs.qlversion[0], cgs.qlversion[1], cgs.qlversion[2], cgs.qlversion[3]);
+		}
+	} else {
+		//Com_Printf("^3quake live version wasn't parsed\n");
 	}
 }
+
+#undef BUFFER_LENGTH
+
 
 static void CG_LoadServerModelOverride (void)
 {
@@ -1215,26 +1247,29 @@ void CG_ParseServerinfo (qboolean firstCall)
 	if (firstCall) {
 		// not including ca or freezetag since the config strings are being
 		// filled with random player tags
-		if (*CG_ConfigString(CS_RED_TEAM_CLAN_TAG)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF)) {
+
+		// 2015-08-13 qcon protocol 91 demos don't have cs for team name
+
+		if (cgs.realProtocol < 91  && (*CG_ConfigString(CS_RED_TEAM_CLAN_TAG)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF))) {
 			Q_strncpyz(cgs.redTeamClanTag, CG_ConfigString(CS_RED_TEAM_CLAN_TAG), sizeof(cgs.redTeamClanTag));
 		} else {
 			Q_strncpyz(cgs.redTeamClanTag, "Red Team", sizeof(cgs.redTeamClanTag));
 		}
 
-		if (*CG_ConfigString(CS_RED_TEAM_CLAN_NAME)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF)) {
+		if (cgs.realProtocol < 91  &&  (*CG_ConfigString(CS_RED_TEAM_CLAN_NAME)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF))) {
 			Q_strncpyz(cgs.redTeamName, CG_ConfigString(CS_RED_TEAM_CLAN_NAME), sizeof(cgs.redTeamName));
 		} else {
 			Q_strncpyz(cgs.redTeamName, "Red Team", sizeof(cgs.redTeamName));
 		}
 		trap_Cvar_Set("g_redTeam", cgs.redTeamName);
 
-		if (*CG_ConfigString(CS_BLUE_TEAM_CLAN_TAG)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF)) {
+		if (cgs.realProtocol < 91  &&  (*CG_ConfigString(CS_BLUE_TEAM_CLAN_TAG)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF))) {
 			Q_strncpyz(cgs.blueTeamClanTag, CG_ConfigString(CS_BLUE_TEAM_CLAN_TAG), sizeof(cgs.blueTeamClanTag));
 		} else {
 			Q_strncpyz(cgs.blueTeamClanTag, "Blue Team", sizeof(cgs.blueTeamClanTag));
 		}
 
-		if (*CG_ConfigString(CS_BLUE_TEAM_CLAN_NAME)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF)) {
+		if (cgs.realProtocol < 91  && (*CG_ConfigString(CS_BLUE_TEAM_CLAN_NAME)  &&  (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF))) {
 			Q_strncpyz(cgs.blueTeamName, CG_ConfigString(CS_BLUE_TEAM_CLAN_NAME), sizeof(cgs.blueTeamName));
 		} else {
 			Q_strncpyz(cgs.blueTeamName, "Blue Team", sizeof(cgs.blueTeamName));
@@ -1976,6 +2011,13 @@ static void CG_ConfigStringModified( void ) {
 		}
 	}
 
+	if (cgs.realProtocol >= 91) {
+		//FIXME bad hack for new protocol
+		if (num >= 679)  {  // 679 == CS_MAP_CREATOR
+			//num--;
+		}
+	}
+
 	// do something with it if necessary
 	if ( num == CS_MUSIC ) {
 		CG_StartMusic();
@@ -2177,22 +2219,23 @@ static void CG_ConfigStringModified( void ) {
 	} else if (num == CS_MVP_OFFENSE) {
 	} else if (num == CS_MVP_DEFENSE) {
 	} else if (num == CS_MVP) {
-	} else if (num == CS_RED_TEAM_CLAN_NAME) {
+	} else if (num == CS_RED_TEAM_CLAN_NAME  &&  cgs.realProtocol < 91) {
+		// 2015-08-13 qcon protocol 91 don't have clan or team names
 		if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 			Q_strncpyz(cgs.redTeamName, CG_ConfigString(CS_RED_TEAM_CLAN_TAG), sizeof(cgs.redTeamName));
 		}
 		//CG_Printf("^5new red team name ^7'%s'\n", CG_ConfigString(CS_RED_TEAM_CLAN_NAME));
-	} else if (num == CS_BLUE_TEAM_CLAN_NAME) {
+	} else if (num == CS_BLUE_TEAM_CLAN_NAME  && cgs.realProtocol < 91) {
 		if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 			Q_strncpyz(cgs.blueTeamName, CG_ConfigString(CS_BLUE_TEAM_CLAN_TAG), sizeof(cgs.blueTeamName));
 		}
 		//CG_Printf("^5new blue team name ^7'%s'\n", CG_ConfigString(CS_BLUE_TEAM_CLAN_NAME));
-	} else if (num == CS_RED_TEAM_CLAN_TAG) {
+	} else if (num == CS_RED_TEAM_CLAN_TAG  &&  cgs.realProtocol < 91) {
 		if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 			Q_strncpyz(cgs.redTeamClanTag, CG_ConfigString(CS_RED_TEAM_CLAN_TAG), sizeof(cgs.redTeamClanTag));
 		}
 		//CG_Printf("^5new red clan tag ^7'%s'\n", CG_ConfigString(CS_RED_TEAM_CLAN_TAG));
-	} else if (num == CS_BLUE_TEAM_CLAN_TAG) {
+	} else if (num == CS_BLUE_TEAM_CLAN_TAG  &&  cgs.realProtocol < 91) {
 		if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 			Q_strncpyz(cgs.blueTeamClanTag, CG_ConfigString(CS_BLUE_TEAM_CLAN_TAG), sizeof(cgs.blueTeamClanTag));
 		}
@@ -2717,7 +2760,7 @@ static int CG_GetVoiceChat( const voiceChatList_t *voiceChatList, const char *id
 		if ( !Q_stricmp( id, voiceChatList->voiceChats[i].id ) ) {
 			rnd = random() * voiceChatList->voiceChats[i].numSounds;
 			*snd = voiceChatList->voiceChats[i].sounds[rnd];
-			*chat = voiceChatList->voiceChats[i].chats[rnd];
+			*chat = (char *)voiceChatList->voiceChats[i].chats[rnd];
 			return qtrue;
 		}
 	}
@@ -3533,7 +3576,7 @@ static void CG_ParseScores_Duel (void)
 
 	cg.numDuelScores = atoi(CG_Argv(1));
 	if (cg.numDuelScores > 2) {
-		Com_Printf("^3FIXME scores_duel num %d (more than 2)\n", cg.numDuelScores);
+		Com_Printf("^3FIXME CG_ParseScores_Duel scores_duel num %d (more than 2)\n", cg.numDuelScores);
 	}
 
 	n = 2;
@@ -3586,10 +3629,6 @@ static void CG_ParseScores_Duel (void)
 		ds->megaHealthTime = atof(CG_Argv(n));  n++;
 
 		maxWeapons = WP_NUM_WEAPONS;
-		if (cgs.realProtocol != 90) {
-			// no hmg
-			maxWeapons--;
-		}
 
 		for (j = 1;  j < maxWeapons;  j++) {
 			duelWeaponStats_t *ws;
@@ -3667,7 +3706,7 @@ static void CG_ParseScores_Tdm (void)
 
 	// 16
 	//if (CG_CheckQlVersion(0, 1, 0, 728)) {
-	if (CG_Argc() > (cg.tdmScore.numPlayerScores * 16 + 31)) {
+	if (CG_Argc() > (cg.tdmScore.numPlayerScores * 16 + 31)  ||  cgs.realProtocol >= 91) {
 		cg.teamScores[0] = atoi(CG_Argv(i));  i++;
 		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
 	}
@@ -3717,7 +3756,9 @@ static void CG_ParseScores_Tdm (void)
 		oldScore->client = clientNum;
 		ts->team = team;
 		oldScore->team = team;
-		ts->subscriber = atoi(CG_Argv(i));  i++;
+		if (cgs.realProtocol < 91) {
+			ts->subscriber = atoi(CG_Argv(i));  i++;
+		}
 		ts->score = atoi(CG_Argv(i));  i++;
 		oldScore->score = ts->score;
 		ts->ping = atoi(CG_Argv(i));  i++;
@@ -3949,7 +3990,7 @@ static void CG_ParseScores_Ctf (void)
 
 	// 19
 	//if (CG_CheckQlVersion(0, 1, 0, 728)) {
-	if (CG_Argc() > (cg.ctfScore.numPlayerScores * 19 + 36)) {
+	if (CG_Argc() > (cg.ctfScore.numPlayerScores * 19 + 36)  ||  cgs.realProtocol >= 91) {
 		cg.teamScores[0] = atoi(CG_Argv(i));  i++;
 		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
 	}
@@ -3989,7 +4030,9 @@ static void CG_ParseScores_Ctf (void)
 			s->valid = qfalse;  //FIXME  maybe??
 		}
 
-		s->subscriber = atoi(CG_Argv(i));  i++;
+		if (cgs.realProtocol < 91) {
+			s->subscriber = atoi(CG_Argv(i));  i++;
+		}
 		s->score = atoi(CG_Argv(i));  i++;
 		oldScore->score = s->score;
 		s->ping = atoi(CG_Argv(i));  i++;
@@ -4000,8 +4043,10 @@ static void CG_ParseScores_Ctf (void)
 		oldScore->frags = s->kills;
 		s->deaths = atoi(CG_Argv(i));  i++;
 		oldScore->deaths = s->deaths;
-		s->powerups = atoi(CG_Argv(i));  i++;
-		oldScore->powerups = s->powerups;
+		if (cgs.realProtocol < 91) {
+			s->powerups = atoi(CG_Argv(i));  i++;
+			oldScore->powerups = s->powerups;
+		}
 		s->accuracy = atoi(CG_Argv(i));  i++;
 		oldScore->accuracy = s->accuracy;
 		s->bestWeapon = atoi(CG_Argv(i));  i++;
@@ -4465,10 +4510,6 @@ static void CG_ParseDScores (void)
 		ds->megaHealthTime = atof(CG_Argv(n));  n++;
 
 		maxWeapons = WP_NUM_WEAPONS;
-		if (cgs.realProtocol != 90) {
-			// no hmg
-			maxWeapons--;
-		}
 
 		for (j = 1;  j < maxWeapons;  j++) {
 			duelWeaponStats_t *ws;
@@ -4889,10 +4930,6 @@ static void CG_ServerCommand( void ) {
 			cg.serverAccuracyStatsClientNum = cg.snap->ps.clientNum;
 
 			maxWeapons = WP_NUM_WEAPONS;
-			if (cgs.realProtocol != 90) {
-				// no hmg
-				maxWeapons--;
-			}
 
 			//CG_Printf("acc: \n");
 			for (i = WP_NONE;  i < maxWeapons;  i++) {

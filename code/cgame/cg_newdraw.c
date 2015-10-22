@@ -1433,7 +1433,7 @@ float CG_GetValue(int ownerDraw) {
   case CG_RED_PLAYER_COUNT:
 	  count = 0;
 	  for (i = 0;  i < MAX_CLIENTS;  i++) {
-		  if (!cgs.clientinfo[i].team != TEAM_RED) {
+		  if (cgs.clientinfo[i].team != TEAM_RED) {
 			  continue;
 		  }
 		  count++;
@@ -1444,7 +1444,7 @@ float CG_GetValue(int ownerDraw) {
   case CG_BLUE_PLAYER_COUNT:
 	  count = 0;
 	  for (i = 0;  i < MAX_CLIENTS;  i++) {
-		  if (!cgs.clientinfo[i].team != TEAM_BLUE) {
+		  if (cgs.clientinfo[i].team != TEAM_BLUE) {
 			  continue;
 		  }
 		  count++;
@@ -2580,6 +2580,10 @@ float CG_GetValue(int ownerDraw) {
 	  return CG_HaveWeapon(WP_CHAINGUN);
 	  break;
 
+  case WCG_WEAPON_HAVE_HEAVY_MACHINEGUN:
+	  return CG_HaveWeapon(WP_HEAVY_MACHINEGUN);
+	  break;
+
   case WCG_WEAPON_AMMO_GAUTNLET:
 	  return CG_WeaponAmmo(WP_GAUNTLET);
 	  break;
@@ -2630,6 +2634,10 @@ float CG_GetValue(int ownerDraw) {
 
   case WCG_WEAPON_AMMO_CHAINGUN:
 	  return CG_WeaponAmmo(WP_CHAINGUN);
+	  break;
+
+  case WCG_WEAPON_AMMO_HEAVY_MACHINEGUN:
+	  return CG_WeaponAmmo(WP_HEAVY_MACHINEGUN);
 	  break;
 
   case WCG_KILL_COUNT: {
@@ -8147,6 +8155,14 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  // UI_VOTESTRING 260
 	  // UI_SERVER_SETTINGS 580
 
+  case UI_KEYBINDSTATUS:  // 542
+	  if (Display_KeyBindPending()) {
+		  s = "Waiting for new key... Press ESCAPE to cancel";
+	  } else {
+		  s = "Press ENTER or CLICK to change, Press BACKSPACE to clear";
+	  }
+	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  break;
 
   // wolfcam ownerdraws
 
@@ -8483,7 +8499,7 @@ void CG_MouseEvent(int x, int y) {
 	}
 
 	//FIXME hack
-	if (!cg.scoreBoardShowing) {
+	if (!cg.scoreBoardShowing  &&  !cg.testMenu) {
 		return;
 	}
 
@@ -8635,7 +8651,7 @@ void CG_KeyEvent (int key, qboolean down)
   //}
 
 	//FIXME hack
-	if (!cg.scoreBoardShowing) {
+	if (!cg.scoreBoardShowing  &&  !cg.testMenu) {
 		return;
 	}
 

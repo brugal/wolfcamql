@@ -191,7 +191,7 @@ static void S_Base_SoundList( void ) {
 		Com_Printf("[%s] : %s", s, sfx->soundName);
 
 		if (sfx->inMemory) {
-			s = "resident ";
+			s = "resident";
 		} else {
 			s = "paged out";
 		}
@@ -1530,6 +1530,7 @@ static void S_OpenBackgroundStream( const char *filename ) {
 
 	if(s_backgroundStream->info.channels != 2 || s_backgroundStream->info.rate != 22050) {
 		Com_Printf(S_COLOR_YELLOW "WARNING: music file %s is not 22k stereo\n", filename );
+		Com_Printf(S_COLOR_YELLOW "channels %d  rate %d\n", s_backgroundStream->info.channels, s_backgroundStream->info.rate);
 	}
 }
 

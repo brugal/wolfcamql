@@ -939,25 +939,30 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define UI_OWNERDRAW_BASE 512
 #define UI_HANDICAP 513
-//#define UI_EFFECTS 514
+
+//#define UI_EFFECTS (6666 + 14)  //514
+
 #define UI_PLAYERMODEL 514
-//#define UI_CLANNAME 516
-//#define UI_CLANLOGO 517
+
+//#define UI_CLANNAME (6666 + 1)  //516  // for compiling
+//#define UI_CLANLOGO (6666 + 15)  //517
+
 #define UI_GAMETYPE 515
 #define UI_MAPPREVIEW 516
 #define UI_SKILL 517
-//#define UI_BLUETEAMNAME 521
-//#define UI_REDTEAMNAME 522
-//#define UI_BLUETEAM1 523
-//#define UI_BLUETEAM2 524
-//#define UI_BLUETEAM3 525
-//#define UI_BLUETEAM4 526
-//#define UI_BLUETEAM5 527
-//#define UI_REDTEAM1 528
-//#define UI_REDTEAM2 529
-//#define UI_REDTEAM3 530
-//#define UI_REDTEAM4 531
-//#define UI_REDTEAM5 532
+
+//#define UI_BLUETEAMNAME (6666 + 2)  //521  // for compiling
+//#define UI_REDTEAMNAME (6666 + 3)  // 522  // for compiling
+//#define UI_BLUETEAM1 (6666 + 4)  //523
+//#define UI_BLUETEAM2 (6666 + 5)  //524
+//#define UI_BLUETEAM3 (6666 + 6)  // 525
+//#define UI_BLUETEAM4 (6666 + 7)  //526
+//#define UI_BLUETEAM5 (6666 + 8)  //527
+//#define UI_REDTEAM1 (6666 + 9)  //528
+//#define UI_REDTEAM2 (6666 + 10)  //529
+//#define UI_REDTEAM3 (6666 + 11)  //530
+//#define UI_REDTEAM4 (6666 + 12)  //531
+//#define UI_REDTEAM5 (6666 + 13)  //532
 
 #define UI_NETSOURCE 518
 #define UI_NETMAPPREVIEW 519
@@ -968,12 +973,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define UI_TIERMAP2 524
 #define UI_TIERMAP3 525
 
-//#define UI_PLAYERLOGO 541
-//#define UI_OPPONENTLOGO 542
-//#define UI_PLAYERLOGO_METAL 543
-//#define UI_OPPONENTLOGO_METAL 544
-//#define UI_PLAYERLOGO_NAME 545
-//#define UI_OPPONENTLOGO_NAME 546
+#define UI_PLAYERLOGO (6666 + 16)  //541
+#define UI_OPPONENTLOGO (6666 + 17)  //542
+#define UI_PLAYERLOGO_METAL (6666 + 18)  //543
+#define UI_OPPONENTLOGO_METAL (6666 + 19)  //544
+#define UI_PLAYERLOGO_NAME (6666 + 20)  //545
+#define UI_OPPONENTLOGO_NAME (6666 + 21)  //546
 
 #define UI_TIER_MAPNAME 526
 #define UI_TIER_GAMETYPE 527

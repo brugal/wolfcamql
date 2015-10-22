@@ -139,3 +139,9 @@ equ trap_GetExtraPlayerInfo -142
 equ trap_GetRealMapName -143
 equ trap_R_AddRefEntityPtrToScene -144
 equ trap_S_PrintSfxFilename -145
+equ trap_Key_GetOverstrikeMode -146
+equ trap_Key_SetOverstrikeMode -147
+equ trap_Key_SetBinding -148
+equ trap_Key_GetBindingBuf -149
+equ trap_Key_KeynumToStringBuf -150
+

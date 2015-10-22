@@ -211,7 +211,7 @@ void CG_DrawInformation (qboolean loading)
 
 	if (loading) {
 		QLWideScreen = 0;
-		
+
 		s = Info_ValueForKey( info, "mapname" );
 		if (CG_FileExists(va("levelshots/%s.tga", s))  ||  CG_FileExists(va("levelshots/%s.jpg", s))) {
 			levelshot = trap_R_RegisterShaderNoMip( va( "levelshots/%s.tga", s ) );

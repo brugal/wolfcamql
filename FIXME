@@ -1589,17 +1589,15 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
   - 1fctf (cap attack)
 
 * double check di.protocol == PROTOCOL_QL is also for 73 and now 91  2015-07-28
-* protocol 91:  utf8, scoreboards
+* protocol 91:  utf8, scoreboards, config strings
 * WARNING: unknown general shader parameter 'nodefault' in 'models/players/hunter/harpy_f'
 * dir demos/ doesn't list ql ones
 * ui_shared.c DC->cursorx -- horiz scrollbars
 * spline angles acceleration, initial velocities in CG_CameraUpdateInfo()
 * win32 console output also store output to file
 
-* hud support for q3mme camera
 * camera:  spline to interp what about roll?
 * check spline angles and use previous
-* camera masking like q3mme (done for q3mme types, need for others)
 * check if add q3mme camera point checks for time and bypasses q3mme checks (can q3mme add cam points at same time?)
 * q3mme and camera velocity and cg_drawSpeed
 * q3mme camera:  disable playing when new cam point added?
@@ -1610,26 +1608,68 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
       bad camera point 0 viewpoint but not followed by either viewpoint pass or viewpoint
 
 * fix angle accel for spline
-* wolfcamql camera flags for other types besides q3mme ones
 * wolfcamql missing linear origin interpolation from q3mme
 
 * last todo:
-  - wolfcamql disable hud roll for angles spline
-  x  - q3mme camera hud
   x  - maybe com_idlesleep
   - maybe also write stdout.txt for console output
-  - q3mme camera commands (shift, smooth, etc..)  for wolfcamql camera
 
-* camera:  accel initial values and camera masking flags
 * check all uses of CursorX_Widescreen()
 * linear angle interpolation from q3mme
+* trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);   max gent - 1?
+* win32 console print (color is not ansi)  ! AnsiColorPrint
+* drawcamerapointinfont bad font height ocr.ttf (overlapping)
+* fake / own awards customizable
+* seeking cypher.dm_91  spam:
 
----------------------------
+  WARNING: music file music\KingDK-Limbus_Intro.ogg is not 22k stereo
+* don't restart music when seeking?
+* ui/ingame_options.menu  cvarInt
+* in_nograb 0  should still be able to use ui menus
+* adding ql beta version to  cg.qlversion[0] breaks CG_CheckQlVersion() checking
+* scoreboard player selected clicking:  can't go back and forth on same x line from team to team (can only switch once)
+* ui slider:  first click to capture thumb changes value
+* ui slider:  with mouse1 still down and thumb capture if you move out of the window and release the mouse button the thumb is still captured and will continue following mouse movement if you got back to the menu window
+* ui:  test ingame  _controls
+Float_Parse() couldn't get token
+Color_Parse() couldn't get token 3
 
+FIXME ui execute text:  2  'cmd team red ; '
+* ui:  type ITEM_TYPE_PRESET
+* bq3-no-mega-pickup-at-about5.dm_68  mega pickup up not shown with client item timer  -- 2015-08-21 ok, server mode overrides items
+* config strings as int (depending on protocol)  same as weapons and powerups
+* camera:
+  - doc
+  - switch between splinebezier / spline / splinecatmullrom
+  - get rid of view pass and use mask?
+  - CAMERA_JUMP is really CAMERA_FREEZE since it stays in place
+  - mask and spline point creation (updatecamerainfo())
+  - camera curve and masking -- detection of start/end/mid
+  - velocity and masking
+  - accel check spline angles skip
+  - masking/flags and hasQuadratic
+  - doc differences between cameras  (q3mme unlimited cam points, wolfcamql MAX_CAMERAPOINTS)
+
+* MAX_SPLINEPOINTS and MAX_CAMERAPOINTS  -- just allocate
+* camera angles spline use prev
+* updatecamerainfo() for velocities and cg_q3mmeCameraSmoothPos
+* doc note that cg_q3mmeCameraSmoothPos is used with splineBezier and splineCatmullRom
 
 * q3mme render types
 * project shadows from cgame
-
+* camera curve type keeps going past last point (curvekeepsgoing ratelpajuo)  -- is there a way to find shortest?
+* '/ecam smooth avgvelocity'  large delay
+* use registry entry to get Steam path?
+* 'error camera not waiting to sync and cg.ftime < cp->cgtime'
+* document MAX_SPLINEPOINTS as well?
+* q3mme camera:  draw box around target
+* with demo zoom slight zoom at start of match (assuming transition from zoom 90 intermission)
+* check with /ecam smooth * that flags are being used/checked
+* check CAM_TIME with q3mme camera
+* camera roll spline
+* adding camra point should still recheck roll/(other) pass and start -- 2015-10-18 not a problem currently since changing pass type automatically updates camera point info starting from point 0
+* backtrace.dll doesn't work with newer gcc which use dwarf 4
+* camera spline angles and origin use linear distance to calculate new times with acceleration
 
 
 ---------

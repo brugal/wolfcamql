@@ -275,7 +275,15 @@ void Con_CheckResize (void)
 	short	tbuf[CON_TEXTSIZE];
 
 	if (con_lineWidth) {
-		width = con_lineWidth->integer;  //(SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
+		if (*con_lineWidth->string) {
+			width = con_lineWidth->integer;  //(SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
+		} else {
+			width = (cls.glconfig.vidWidth / SMALLCHAR_WIDTH) - 2;
+		}
+
+		if (width <= 0) {
+			width = 1;
+		}
 	} else {
 		width = (SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
 	}
@@ -283,6 +291,7 @@ void Con_CheckResize (void)
 	if (width == con.linewidth)
 		return;
 
+	//FIXME this can't happen
 	if (width < 1)			// video hasn't been initialized yet
 	{
 		//width = DEFAULT_CONSOLE_WIDTH;
@@ -358,7 +367,7 @@ void Con_Init (void) {
 	con_fracSize = Cvar_Get ("con_fracSize", "0", CVAR_ARCHIVE);
 	con_rgb = Cvar_Get("con_rgb", "", CVAR_ARCHIVE);
 	con_scale = Cvar_Get("con_scale", "1.0", CVAR_ARCHIVE);
-	con_lineWidth = Cvar_Get("con_lineWidth", "78", CVAR_ARCHIVE);
+	con_lineWidth = Cvar_Get("con_lineWidth", "", CVAR_ARCHIVE);
 
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;

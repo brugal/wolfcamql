@@ -1,5 +1,5 @@
 
-11.0test11
+11.0test12
 
 * hud:  quake3 single player gametype is cg_gametype 16
 * bug fix:  quake3 single player demos would show hud elements from quake live 'race' gametype
@@ -46,6 +46,7 @@
   - new protocol 90
   - Heavy machine gun fx scripts:  weapon/hmg/*
   - Heavy machine gun auto vstr:  cg_weaponHeavyMachineGun
+  - Heavy maching gun additional hud ownerdraws:  WCG_WEAPON_HAVE_HEAVY_MACHINEGUN and WCG_WEAPON_AMMO_HEAVY_MACHINEGUN
 
   - ql widescreen hud
 
@@ -160,15 +161,38 @@
 
     cg_q3mmeCameraSmoothPos is the same as mov_cameraSmoothPos in q3mme.
 
-* preliminary support for demo protocol 91
+    cg_drawCameraPointInfo [0: disable camera point information, 1:  info for wolfcamql or q3mme camera points, 2:  info for wolfcamql camera points, 3:  info for q3mme camera points]
+
+* preliminary support for demo protocol 91  (missing utf8 support)
+  - cg_useDemoFov  protocol 91 transmits player fov values and this can be used to view the demo using the players fov or to try and detect zoom changes.  Note that zoom isn't transmitted in the demo so it is detected using a fov change.  This will lead to a problem if the player uses a config that changes fov (ex:  per weapon).  Values (0:  ignore demo fov (default),  1:  use player's fov,  2:  detect zoom changes).
+
 * r_mode default changed to 11  (856x480)
 * steam quake live directory also checked for demos
 * fs_quakelivedir changed to also support steam version and needs to point to the parent of the 'baseq3' directory.  Ex:  wolfcamql +set fs_quakelivedir "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Quake Live\\12345678901234567"
-* bug fix: last camera origin spline point was set incorrectly
+* camera bug fix: last origin spline point was set incorrectly
 * windows version can echo console messages in the command prompt if --console-output is used in the command line.  This will also output using q3 colors.
-* camera:  editing hud indicates if the camera view is locked
+* camera edit hud:  indicator if the camera view is locked
 * bug fix:  error popup message doesn't spam error sound if the same message is repeated
 * camera bug fix:  /ecam didn't report unknown camera types
+* bug fix:  ui menu capturing wasn't enabled when the scoreboard was drawn
+* bug fix:  crash due to missing ui functions
+* cg_zoomFov default changed to 60
+* bug fix:  incorrect text line height for camera edit hud
+* bug fix:  cg_cameraAddUsePreviousValues could use corrupted values
+* camera edit hud:  indicators for the total average, initial average, final average, and immediate velocities
+* camera edit hud:  cg_drawCameraPointInfoBackgroundColor and cg_drawCameraPointInfoBackgroundAlpha
+* camera edit hud:  added immediate and average angle velocities
+* bug fix:  camera status info wasn't using cg_drawCameraPointInfoFont
+* camera edit hud:  show total number of camera points
+* bug fix:  some /ecam subcommands missing help and/or error messages
+* camera edit hud:  show which camera point corresponds to current time
+* bug fix:  crash if con_lineWidth was less than or equal to zero
+* con_lineWidth ""  matches screen width.  "" is also the new default setting.
+* /ecam shifttime <milliseconds>  to shift camera times
+* raise maximum camera points from 256 to 512
+* /ecam smooth time  to change camera times so that the points have the same average velocity
+* option to treat camera angle roll as a separate tilting effect (roll type == interp | fixed | pass) or as part of the camera angles (roll type == angles).
+* camera bug fix:  camera error would ignore setting for cg_cameraDebugPath
 
 ------------------------------------
 10.3  2013-11-16

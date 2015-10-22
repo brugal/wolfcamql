@@ -1267,8 +1267,9 @@ static snapshot_t *CG_ReadNextSnapshot( void ) {
 
 	count = 0;
 
-	if (cgs.processedSnapshotNum >= cg.latestSnapshotNum  &&  !SC_Cvar_Get_Int("cl_freezeDemo")  &&  !SC_Cvar_Get_Float("timescale") > 1.0) {
-		CG_Printf("readnextsnapshot()  cgs.processedSnapshotNum >= cg.latestSnapshotNum  %d > %d\n", cgs.processedSnapshotNum, cg.latestSnapshotNum);
+	if (cgs.processedSnapshotNum >= cg.latestSnapshotNum  &&  !SC_Cvar_Get_Int("cl_freezeDemo")  &&  !(SC_Cvar_Get_Float("timescale") > 1.0)) {
+		// happens with listen server
+		//CG_Printf("readnextsnapshot()  cgs.processedSnapshotNum >= cg.latestSnapshotNum  %d > %d\n", cgs.processedSnapshotNum, cg.latestSnapshotNum);
 	}
 
 	while ( cgs.processedSnapshotNum < cg.latestSnapshotNum ) {

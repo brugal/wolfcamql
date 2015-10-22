@@ -66,6 +66,11 @@ void CG_PrintEntityStatep (const entityState_t *ent)
 	Com_Printf("legsAnim %d\n", ent->legsAnim);
 	Com_Printf("torsoAnim %d\n", ent->torsoAnim);
 	Com_Printf("generic1 %d\n", ent->generic1);
+	Com_Printf("jumpTime %d\n", ent->jumpTime);
+	Com_Printf("doubleJumped %d\n", ent->doubleJumped);
+	Com_Printf("health %d\n", ent->health);
+	Com_Printf("armor %d\n", ent->armor);
+	Com_Printf("location %d\n", ent->location);
 	Com_Printf("--------------------------\n");
 }
 

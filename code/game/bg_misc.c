@@ -3784,7 +3784,7 @@ Only in CTF games
 /* pickup */	"Ammo Regen",
 		30,
 		IT_PERSISTANT_POWERUP,
-		PWOLD_AMMOREGEN,
+		PWOLD_ARMORREGEN,
 /* precache */ "",
 /* sounds */ ""
 	},
@@ -4664,7 +4664,7 @@ Only in CTF games
 /* pickup */	"Ammo Regen",
 		30,
 		IT_PERSISTANT_POWERUP,
-		PWOLD_AMMOREGEN,
+		PWOLD_ARMORREGEN,
 /* precache */ "",
 /* sounds */ ""
 	},

@@ -63,7 +63,6 @@ cvar_t	*com_speeds;
 cvar_t	*com_developer;
 cvar_t	*com_dedicated;
 cvar_t	*com_timescale;
-//cvar_t  *com_timescaleAdjust;
 cvar_t *com_timescaleSafe;
 cvar_t	*com_fixedtime;
 cvar_t	*com_dropsim;		// 0.0 to 1.0, simulated packet drops
@@ -2973,7 +2972,6 @@ void Com_Init( char *commandLine ) {
 	com_logfile = Cvar_Get ("logfile", "0", CVAR_TEMP );
 
 	com_timescale = Cvar_Get ("timescale", "1", CVAR_CHEAT | CVAR_SYSTEMINFO );
-	//com_timescaleAdjust = Cvar_Get("com_timescaleAdjust", "1", CVAR_ROM);
 	com_timescaleSafe = Cvar_Get("com_timescaleSafe", "1", CVAR_ARCHIVE);
 	com_fixedtime = Cvar_Get ("fixedtime", "0", CVAR_CHEAT);
 	com_showtrace = Cvar_Get ("com_showtrace", "0", CVAR_CHEAT);

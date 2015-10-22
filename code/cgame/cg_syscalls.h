@@ -237,4 +237,11 @@ int trap_GetNumPlayerInfos (void);
 void trap_GetExtraPlayerInfo (int num, char *modelName);
 void trap_GetRealMapName (char *name, char *realName, size_t szRealName);
 
+// ui
+void trap_Key_SetOverstrikeMode (qboolean state);
+qboolean trap_Key_GetOverstrikeMode (void);
+void trap_Key_SetBinding (int keynum, const char *binding);
+void trap_Key_GetBindingBuf (int keynum, char *buf, int buflen);
+void trap_Key_KeynumToStringBuf (int keynum, char *buf, int buflen);
+
 #endif  // cg_syscalls_h_included

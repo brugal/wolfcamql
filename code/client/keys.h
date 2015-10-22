@@ -52,6 +52,9 @@ extern	int			chat_playerNum;
 void Key_WriteBindings( fileHandle_t f );
 void Key_SetBinding( int keynum, const char *binding );
 char *Key_GetBinding( int keynum );
+void Key_KeynumToStringBuf( int keynum, char *buf, int buflen );
+void Key_GetBindingBuf( int keynum, char *buf, int buflen );
+
 void Cgame_Key_GetBinding(int keynum, char *buffer);
 qboolean Key_IsDown( int keynum );
 qboolean Key_GetOverstrikeMode( void );
