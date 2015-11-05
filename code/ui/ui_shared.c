@@ -289,7 +289,7 @@ void String_Init(void) {
 	}
 }
 
-#if 0  // unused
+#if 1  // unused
 /*
 =================
 PC_SourceWarning
@@ -6203,8 +6203,33 @@ static qboolean ItemParse_font (itemDef_t *item, int handle) {
 	if (!PC_String_Parse(handle, &fontName)) {
 		return qfalse;
 	}
-	if (!PC_Int_Parse(handle, &pointSize)) {
-		return qfalse;
+
+	//Com_Printf("^4 fontName: '%s'\n", fontName);
+
+	// 2015-10-26 ql now added itemdef 'font' keyword which is an integer
+	if (strlen(fontName) == 1  &&  (fontName[0] == '0'  ||  fontName[0] == '1'  ||  fontName[0] == '2')) {
+		int fontId;
+
+		//PC_SourceWarning(handle, "font %s\n", fontName);
+		//FIXME pointSize
+		pointSize = 48;
+		fontId = atoi(fontName);
+		switch (fontId) {
+		case FONT_SANS:
+			fontName = "fonts/notosans-regular.ttf";
+			break;
+		case FONT_MONO:
+			fontName = "fonts/droidsansmono.ttf";
+			break;
+		default:
+		case FONT_DEFAULT:
+			fontName = "handelgothic.ttf";
+			break;
+		}
+	} else {  // wolfcamql font keyword (fontname : pointsize)
+		if (!PC_Int_Parse(handle, &pointSize)) {
+			return qfalse;
+		}
 	}
 
 	if (!Q_stricmp(fontName, "qlfont")) {

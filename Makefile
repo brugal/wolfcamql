@@ -367,6 +367,10 @@ endif
   #CLIENT_LIBS=-/usr/local/include $(SDL_LIBS) -lGL
   CLIENT_LIBS=$(SDL_LIBS) -lGL
 
+  ifeq ($(ARCH),x86_64)
+     CLIENT_LIBS=-L/usr/lib/x86_64-linux-gnu -lSDL -lGL
+  endif
+
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
       CLIENT_LIBS += -lopenal

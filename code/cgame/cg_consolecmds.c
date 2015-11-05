@@ -1236,8 +1236,12 @@ static void CG_ListEntities_f (void)
 			name = "";
 		}
 		if (ent->eType == ET_MISSILE) {
-			//weapname = weapNamesCasual[ent->weapon];
-			Q_strncpyz(weapname, weapNamesCasual[ent->weapon], sizeof(weapname));
+			if (ent->weapon >= 0  &&  ent->weapon <= MAX_WEAPONS) {
+				Q_strncpyz(weapname, weapNamesCasual[ent->weapon], sizeof(weapname));
+			} else {
+				Com_Printf("^1CG_ListEntities_f invalid weapon number %d\n", ent->weapon);
+				Q_strncpyz(weapname, va("%d", ent->weapon), sizeof(weapname));
+			}
 		} else {
 			Q_strncpyz(weapname, va("%d", ent->weapon), sizeof(weapname));
 		}

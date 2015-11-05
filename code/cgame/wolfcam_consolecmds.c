@@ -52,7 +52,7 @@ void Wolfcam_Players_f (void)
     const clientInfo_t *ci;
     char color;
 	const char *clanTag;
-
+	
     for (i = 0;  i < MAX_CLIENTS;  i++) {
         ci = &cgs.clientinfo[i];
         if (!ci->infoValid)
@@ -79,6 +79,13 @@ void Wolfcam_Players_f (void)
 		} else {
 			Com_Printf ("^%c X^7  %02d: %s", color, i, ci->name);
 		}
+
+		if (cgs.realProtocol > 91) {
+			if (ci->steamId[0] != '\0') {
+				Com_Printf("     ^5steamId: %s", ci->steamId);
+			}
+		}
+
 		if (i == cg.clientNum) {
 			Com_Printf("    ^3[demo taker]");
 		} else if (i == cg.snap->ps.clientNum) {

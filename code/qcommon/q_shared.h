@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define PROTOCOL_Q3 68
 #define PROTOCOL_QL 91  // latest ql protocol
-#define SERVER_PROTOCOL 90  // devmap
+#define SERVER_PROTOCOL 91  // devmap
 
 #ifdef STANDALONE
   #define PRODUCT_NAME			"iofoo3"

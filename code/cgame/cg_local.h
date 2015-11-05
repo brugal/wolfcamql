@@ -456,6 +456,7 @@ typedef struct {
 
 	qboolean premiumSubscriber;
 	float playerModelHeight;
+	char steamId[MAX_STRING_CHARS];
 
 	int scoreIndexNum;
 	qboolean scoreValid;
@@ -555,6 +556,7 @@ typedef struct {
 	int				bestWeapon;
 	int bestWeaponAccuracy;
 
+	int damageDone;
 	int net;
 
 	//qboolean		fake;  // filled in for demo playback
@@ -1516,6 +1518,9 @@ typedef struct {
 
 	int infectedSnapshotTime;
 	int demoFov;
+
+	// hack for area chat not using default font
+	fontInfo_t notosansFont;
 } cg_t;
 
 
@@ -2583,6 +2588,7 @@ extern vmCvar_t cg_drawTeamOverlayAlign;
 extern vmCvar_t cg_drawTeamOverlayScale;
 //extern vmCvar_t cg_drawTeamOverlayAlpha;
 extern vmCvar_t cg_drawTeamOverlayWideScreen;
+extern vmCvar_t cg_drawTeamOverlayLineOffset;
 
 extern vmCvar_t cg_drawJumpSpeeds;
 extern vmCvar_t cg_drawJumpSpeedsNoText;

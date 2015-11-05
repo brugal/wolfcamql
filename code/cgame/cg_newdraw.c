@@ -202,11 +202,13 @@ static void CG_DrawPlayerArmorIcon( const rectDef_t *rect, qboolean draw2D ) {
 
 }
 
-static void CG_DrawPlayerArmorValue(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
+static void CG_DrawPlayerArmorValue (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align, const rectDef_t *menuRect)
+{
 	char	num[16];
-  int value;
-  //centity_t	*cent;
+	int value;
+	//centity_t	*cent;
 	const playerState_t	*ps;
+	rectDef_t r;
 
 	if (wolfcam_following) {
 		//Com_Printf("wolfcam\n");
@@ -222,14 +224,36 @@ static void CG_DrawPlayerArmorValue(const rectDef_t *rect, float scale, const ve
 		value = ps->stats[STAT_ARMOR];
 	}
 
+	memcpy(&r, rect, sizeof(rectDef_t));
+
 	if (shader) {
     trap_R_SetColor( color );
 		CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
 	  trap_R_SetColor( NULL );
 	} else {
+		int height;
+
 		Com_sprintf (num, sizeof(num), "%i", value);
 		value = CG_Text_Width(num, scale, 0, font);
-		CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
+		//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
+		//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, colorBlack, num, 0, 0, textStyle, font);
+		//r.y += r.h;  //FIXME 2015-10-23 why?
+		height = CG_Text_Height(num, scale, 0, font);
+		//r.y += height;
+		//Com_Printf("^6height: %d  %f\n", height, rect->h);
+
+		//r.y = menuRect->y;
+		//r.h = menuRect->h;
+
+		r.y = rect->y;
+		r.h = rect->h;
+
+		//r.y += r.h;
+		r.y += height;
+
+		//r.y -= (r.h - height) / 2;
+		r.y += scale * 12.0f;
+		CG_Text_Paint_Align(&r, scale, color, num, 0, 0, textStyle, font, align);
 	}
 }
 
@@ -277,15 +301,19 @@ static void CG_DrawPlayerAmmoIcon( const rectDef_t *rect, qboolean draw2D ) {
   }
 }
 
-static void CG_DrawPlayerAmmoValue(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
+static void CG_DrawPlayerAmmoValue (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align, const rectDef_t *menuRect)
+{
 	char	num[16];
 	int value;
 	const centity_t	*cent;
 	const playerState_t	*ps;
+	rectDef_t r;
 
 	if (wolfcam_following) {
 		return;
 	}
+
+	memcpy(&r, rect, sizeof(rectDef_t));
 
 	cent = &cg_entities[cg.snap->ps.clientNum];
 	ps = &cg.snap->ps;
@@ -298,9 +326,29 @@ static void CG_DrawPlayerAmmoValue(const rectDef_t *rect, float scale, const vec
 				CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
 				trap_R_SetColor( NULL );
 			} else {
+				int height;
+
 				Com_sprintf (num, sizeof(num), "%i", value);
 				value = CG_Text_Width(num, scale, 0, font);
-				CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
+				//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
+
+				//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, colorBlack, num, 0, 0, textStyle, font);
+				//r.y += r.h;  //FIXME 2015-10-23 wtf?
+				height = CG_Text_Height(num, scale, 0, font);
+
+				//r.y = menuRect->y;
+				//r.h = menuRect->h;
+
+				r.y = rect->y;
+				r.h = rect->h;
+
+				//r.y += r.h;
+				r.y += height;
+				//r.y += (scale * scale) * 12.0f;
+				r.y += scale * 12.0f;
+				//r.y -= (r.h - height) / 2;
+
+				CG_Text_Paint_Align(&r, scale, color, num, 0, 0, textStyle, font, align);
 			}
 		} else {
 			//CG_DrawPic(rect->x, rect->y, rect->w, rect->h, cgs.media.infiniteAmmo);
@@ -690,10 +738,13 @@ static void CG_DrawSelectedPlayerHead( const rectDef_t *rect, qboolean draw2D, q
 }
 
 
-static void CG_DrawPlayerHealth(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font ) {
+static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align, const rectDef_t *menuRect)
+{
 	const playerState_t	*ps;
-  int value;
+	int value;
 	char	num[16];
+	rectDef_t r;
+	int height;
 
 	ps = &cg.snap->ps;
 
@@ -706,6 +757,10 @@ static void CG_DrawPlayerHealth(const rectDef_t *rect, float scale, const vec4_t
 		}
 	}
 
+	memcpy(&r, rect, sizeof(rectDef_t));
+
+	//CG_FillRect(rect->x, rect->y, rect->w, rect->h, colorYellow);
+	
 	if (shader) {
 		trap_R_SetColor( color );
 		CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
@@ -713,7 +768,26 @@ static void CG_DrawPlayerHealth(const rectDef_t *rect, float scale, const vec4_t
 	} else {
 		Com_sprintf (num, sizeof(num), "%i", value);
 		value = CG_Text_Width(num, scale, 0, font);
-		CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
+		//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
+		//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, colorBlack, num, 0, 0, textStyle, font);
+		//CG_Text_Paint_Align(rect, scale, color, num, 0, 0, textStyle, font, align);
+		//r.y += r.h;  //FIXME 2015-10-23 why?
+
+		//r.y = menuRect->y;
+		//r.h = menuRect->h;
+
+		r.y = rect->y;
+		r.h = rect->h;
+
+		height = CG_Text_Height(num, scale, 0, font);
+		
+		//r.y += r.h;
+		r.y += height;
+
+
+		//r.y -= (r.h - height) / 2;
+		r.y += scale * 12.0f;
+		CG_Text_Paint_Align(&r, scale, color, num, 0, 0, textStyle, font, align);
 	}
 }
 
@@ -2721,7 +2795,7 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	int cs;
 
 	if (flags & CG_SHOW_IF_PLYR1) {
-		if (CG_CheckQlVersion(0, 1, 0, 495)) {
+		if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
 			cs = CS_FIRST_PLACE_CLIENT_NUM2;
 		} else {
 			cs = CS_FIRST_PLACE_CLIENT_NUM;
@@ -2735,7 +2809,7 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_PLYR2) {
-		if (CG_CheckQlVersion(0, 1, 0, 495)) {
+		if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
 			cs = CS_SECOND_PLACE_CLIENT_NUM2;
 		} else {
 			cs = CS_SECOND_PLACE_CLIENT_NUM;
@@ -2899,6 +2973,53 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 		clientNum = cg.snap->ps.clientNum;  //FIXME wolfcam
 		team = cgs.clientinfo[clientNum].team;
 		if (team == TEAM_BLUE) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+
+	if (flags & CG_SHOW_IF_1ST_PLYR_FOLLOWED) {
+		if (cgs.realProtocol >= 91) {
+			if (atoi(CG_ConfigString(CS91_CLIENTNUM1STPLAYER)) == cg.snap->ps.clientNum) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
+		}
+
+		// other protocols
+
+		if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
+			cs = CS_FIRST_PLACE_CLIENT_NUM2;
+		} else {
+			cs = CS_FIRST_PLACE_CLIENT_NUM;
+		}
+
+		if (atoi(CG_ConfigString(cs)) == cg.snap->ps.clientNum) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+
+	if (flags & CG_SHOW_IF_2ND_PLYR_FOLLOWED) {
+		if (cgs.realProtocol >= 91) {
+			if (atoi(CG_ConfigString(CS91_CLIENTNUM2NDPLAYER)) == cg.snap->ps.clientNum) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
+		}
+
+		// other protocols
+		if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
+			cs = CS_SECOND_PLACE_CLIENT_NUM2;
+		} else {
+			cs = CS_SECOND_PLACE_CLIENT_NUM;
+		}
+
+		if (atoi(CG_ConfigString(cs)) == cg.snap->ps.clientNum) {
 			return qtrue;
 		} else {
 			return qfalse;
@@ -3398,7 +3519,7 @@ static void CG_DrawKiller (const rectDef_t *rect, float scale, const vec4_t colo
 }
 
 
-static void CG_DrawCapFragLimit(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font) {
+static void CG_DrawCapFragLimit (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align, const rectDef_t *menuRect) {
 	int limit;
 
 	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER) {
@@ -3417,7 +3538,9 @@ static void CG_DrawCapFragLimit(const rectDef_t *rect, float scale, const vec4_t
 		limit = cgs.fraglimit;
 	}
 
-	CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", limit),0, 0, textStyle, font);
+	//FIXME menurect offset like ammo, armor, and health?
+	//CG_Text_Paint(rect->x, rect->y, scale, color, va("%2i", limit),0, 0, textStyle, font);
+	CG_Text_Paint_Align(rect, scale, color, va("%2i", limit), 0, 0, textStyle, font, align);
 }
 
 static void CG_Draw1stPlace (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
@@ -4798,6 +4921,8 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 		lines = MAX_CHAT_LINES - 1;
 	}
 
+	//Com_Printf("areanewchat font: %p\n", args->font);
+
 	//FIXME text max height
 	height = CG_Text_Height("T", scale, 0, args->font);
 
@@ -5842,7 +5967,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
     CG_DrawPlayerArmorIcon(&rect, qtrue);
     break;
   case CG_PLAYER_ARMOR_VALUE: // 2
-	  CG_DrawPlayerArmorValue(&rect, scale, color, shader, textStyle, font);
+	  CG_DrawPlayerArmorValue(&rect, scale, color, shader, textStyle, font, align, &menuRect);
     break;
   case CG_PLAYER_AMMO_ICON:  // 5
     CG_DrawPlayerAmmoIcon(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
@@ -5851,7 +5976,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
     CG_DrawPlayerAmmoIcon(&rect, qtrue);
     break;
   case CG_PLAYER_AMMO_VALUE:  // 6
-	  CG_DrawPlayerAmmoValue(&rect, scale, color, shader, textStyle, font);
+	  CG_DrawPlayerAmmoValue(&rect, scale, color, shader, textStyle, font, align, &menuRect);
     break;
   case CG_SELECTEDPLAYER_HEAD:  // 7
     CG_DrawSelectedPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qfalse);
@@ -5896,7 +6021,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_DrawPlayerScore(&rect, scale, color, shader, textStyle, font, align);
     break;
   case CG_PLAYER_HEALTH:  // 4
-	  CG_DrawPlayerHealth(&rect, scale, color, shader, textStyle, font);
+	  CG_DrawPlayerHealth(&rect, scale, color, shader, textStyle, font, align, &menuRect);
     break;
   case CG_RED_SCORE:
 	  CG_DrawRedScore(&rect, scale, color, shader, textStyle, font, align);
@@ -6009,7 +6134,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		}
 		break;
   case CG_CAPFRAGLIMIT:
-	  CG_DrawCapFragLimit(&rect, scale, color, shader, textStyle, font);
+	  CG_DrawCapFragLimit(&rect, scale, color, shader, textStyle, font, align, &menuRect);
 		break;
   case CG_1STPLACE:
 	  CG_Draw1stPlace(&rect, scale, color, shader, textStyle, font, align);
@@ -6176,6 +6301,12 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  trap_R_DrawStretchPic( rect.x, rect.y + rect.h * (1 - ival / 100.0), rect.w, rect.h * (ival / 100.0), s1, t1, s2, t2, shader );
 	  break;
   case CG_AREA_NEW_CHAT:  // 78
+	  // hack for new ql which uses notosans-regular in area chat but doesn't set anything in the menu file
+	  if (fontIndex <= 0) {
+		  // not &cgDC.Assets.textFont
+		  args.font = &cg.notosansFont;
+	  }
+
 	  CG_DrawAreaNewChat(&args);
 	  break;
   case CG_TEAM_COLORIZED:  // 79
@@ -6314,19 +6445,34 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  //CG_Text_Paint(rect.x, rect.y, scale, color, va("%s       %s  ^2sv_skillRating %d", CG_ConfigString(CS_MESSAGE), CG_GetLocalTimeString(), atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO),"sv_skillrating"))), 0, 0, textStyle, font);
 		  //FIXME don't do this here
 		  if (cgs.protocol == PROTOCOL_QL) {
-			  CG_Text_Paint(rect.x, rect.y, scale, color, va("%s       ^2sv_skillRating %d", CG_ConfigString(CS_MESSAGE), atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO),"sv_skillrating"))), 0, 0, textStyle, font);
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("%s  ^2skr: %d", CG_ConfigString(CS_MESSAGE), atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO),"sv_skillrating"))), 0, 0, textStyle, font);
+			  //CG_Text_Paint_Align(&rect, scale, color, va("%s", CG_ConfigString(CS_MESSAGE)),  0, 0, textStyle, font, ITEM_ALIGN_LEFT);
 		  }
 	  } else {
 		  CG_Text_Paint(rect.x, rect.y, scale, color, CG_ConfigString(CS_MESSAGE), 0, 0, textStyle, font);
 	  }
 	  break;
   }
-  case CG_PLYR_BEST_WEAPON_NAME:  // 88
+  case CG_PLYR_BEST_WEAPON_NAME: {  // 88
+	  int w;
+
 	  //FIXME shouldn't this be selected player?
 	  //CG_Text_Paint(rect.x, rect.y, scale, color, weapNamesCasual[cg.scores[cg.snap->ps.clientNum].bestWeapon], 0, 0, textStyle, font);
-	  CG_Text_Paint(rect.x, rect.y, scale, color, weapNamesCasual[cg.scores[cg.selectedScore].bestWeapon], 0, 0, textStyle, font);
+
+	  if (cg.selectedScore < 0  ||  cg.selectedScore > MAX_CLIENTS) {
+		  Com_Printf("^1CG_PLYR_BEST_WEAPON_NAME invalid client number %d\n", cg.selectedScore);
+		  break;
+	  }
+
+	  w = cg.scores[cg.selectedScore].bestWeapon;
+	  if (w < 0  ||  w > MAX_WEAPONS) {
+		  Com_Printf("^1CG_PLYR_BEST_WEAPON_NAME invalid weapon number %d\n", w);
+		  break;
+	  }
+	  CG_Text_Paint(rect.x, rect.y, scale, color, weapNamesCasual[w], 0, 0, textStyle, font);
 	  //CG_DrawPic(rect.x, rect.y, rect.w, rect.h, cg_weapons[cg.scores[cg.snap->ps.clientNum].bestWeapon].weaponIcon);
 	  break;
+  }
   case CG_SELECTED_PLYR_TEAM_COLOR:  {  // 89  //FIXME selectedScore
 	  int team;
 
@@ -6933,24 +7079,76 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
 
   case CG_BEST_ITEMCONTROL_PLYR:
-	  if (CG_CheckQlVersion(0, 1, 0, 495)) {
+	  // 2015-11-04 current menu files only have room for avatar
+	  if (qtrue) {
+		  break;
+	  }
+
+	  if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
 		  //CG_Text_Paint_Align(&rect, scale, colorWhite, CG_ConfigString(CS_BEST_ITEM_CONTROL2), 0, 0, textStyle, font, align);
-		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_BEST_ITEM_CONTROL2), 0, 0, textStyle, font, align);
-	  } else {
+		  if (cgs.realProtocol >= 91) {
+			  int n;
+
+			  n = atoi(CG_ConfigString(CS_BEST_ITEM_CONTROL2));
+			  if (n >= 0  &&  n <= MAX_CLIENTS) {
+				  //CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[n].name, 0, 0, textStyle, font, align);
+				  //FIXME steam avatar is shown
+			  } else {
+				  Com_Printf("^3CG_BEST_ITEMCONTROL_PLYR invalid player number %d\n", n);
+			  }
+
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_BEST_ITEM_CONTROL2), 0, 0, textStyle, font, align);
+		  }
+	  } else if (cgs.protocol == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_BEST_ITEM_CONTROL), 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_MOST_ACCURATE_PLYR:
-	  if (CG_CheckQlVersion(0, 1, 0, 495)) {
-		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_ACCURATE2), 0, 0, textStyle, font, align);
-	  } else {
+	  // 2015-11-04 current menu files only have room for avatar
+	  if (qtrue) {
+		  break;
+	  }
+
+	  if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
+		  if (cgs.realProtocol >= 91) {
+			  int n;
+
+			  n = atoi(CG_ConfigString(CS_MOST_ACCURATE2));
+			  if (n >= 0  &&  n <= MAX_CLIENTS) {
+				  //CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[n].name, 0, 0, textStyle, font, align);
+				  //FIXME steam avatar is shown
+			  } else {
+				  Com_Printf("^3CG_MOST_ACCURATE_PLYR invalid player number %d\n", n);
+			  }
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_ACCURATE2), 0, 0, textStyle, font, align);
+		  }
+	  } else if (cgs.protocol == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_ACCURATE), 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_MOST_DAMAGEDEALT_PLYR:
-	  if (CG_CheckQlVersion(0, 1, 0, 495)) {
-		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_DAMAGE_DEALT2), 0, 0, textStyle, font, align);
-	  } else {
+	  // 2015-11-04 current menu files only have room for avatar
+	  if (qtrue) {
+		  break;
+	  }
+
+	  if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
+		  if (cgs.realProtocol >= 91) {
+			  int n;
+
+			  n = atoi(CG_ConfigString(CS_MOST_DAMAGE_DEALT2));
+			  if (n >= 0  &&  n <= MAX_CLIENTS) {
+				  //CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[n].name, 0, 0, textStyle, font, align);
+				  //FIXME steam avatar is shown
+			  } else {
+				  Com_Printf("^3CG_MOST_DAMAGEDEALT_PLYR invalid player number %d\n", n);
+			  }
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_DAMAGE_DEALT2), 0, 0, textStyle, font, align);
+		  }
+	  } else if (cgs.protocol == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_DAMAGE_DEALT), 0, 0, textStyle, font, align);
 	  }
 	  break;
@@ -8092,13 +8290,64 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Draw2ndPlayerPickups(&rect, scale, textStyle, font);
 	  break;
   case CG_MOST_VALUABLE_OFFENSIVE_PLYR:
-	  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP_OFFENSE), 0, 0, textStyle, font, align);
+	  // 2015-11-04 current menu files only have room for avatar
+	  if (qtrue) {
+		  break;
+	  }
+
+	  if (cgs.realProtocol >= 91) {
+		  int n;
+
+		  n = atoi(CG_ConfigString(CS_MVP_OFFENSE));
+		  if (n >= 0  &&  n <= MAX_CLIENTS) {
+			  //CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[n].name, 0, 0, textStyle, font, align);
+			  //FIXME steam avatar is shown
+		  } else {
+			  Com_Printf("^3CG_MOST_VALUABLE_OFFENSIVE_PLYR invalid player number %d\n", n);
+		  }
+	  } else if (cgs.protocol == PROTOCOL_QL) {
+		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP_OFFENSE), 0, 0, textStyle, font, align);
+	  }
 	  break;
   case CG_MOST_VALUABLE_DEFENSIVE_PLYR:
-	  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP_DEFENSE), 0, 0, textStyle, font, align);
+	  // 2015-11-04 current menu files only have room for avatar
+	  if (qtrue) {
+		  break;
+	  }
+
+	  if (cgs.realProtocol >= 91) {
+		  int n;
+
+		  n = atoi(CG_ConfigString(CS_MVP_DEFENSE));
+		  if (n >= 0  &&  n <= MAX_CLIENTS) {
+			  //CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[n].name, 0, 0, textStyle, font, align);
+			  //FIXME steam avatar is shown
+		  } else {
+			  Com_Printf("^3CG_MOST_VALUABLE_DEFENSIVE_PLYR invalid player number %d\n", n);
+		  }
+	  } else if (cgs.protocol == PROTOCOL_QL) {
+		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP_DEFENSE), 0, 0, textStyle, font, align);
+	  }
 	  break;
   case CG_MOST_VALUABLE_PLYR:
-	  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP), 0, 0, textStyle, font, align);
+	  // 2015-11-04 current menu files only have room for avatar
+	  if (qtrue) {
+		  break;
+	  }
+
+	  if (cgs.realProtocol >= 91) {
+		  int n;
+
+		  n = atoi(CG_ConfigString(CS_MVP));
+		  if (n >= 0  &&  n <= MAX_CLIENTS) {
+			  //CG_Text_Paint_Align(&rect, scale, color, cgs.clientinfo[n].name, 0, 0, textStyle, font, align);
+			  //FIXME steam avatar is shown
+		  } else {
+			  Com_Printf("^3CG_MOST_VALUABLE_PLYR invalid player number %d\n", n);
+		  }
+	  } else {
+		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP), 0, 0, textStyle, font, align);
+	  }
 	  break;
   case CG_RED_OWNED_FLAGS:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.dominationRedPoints), 0, 0, textStyle, font, align);
@@ -8266,6 +8515,20 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  break;
   }
+
+  case CG_1ST_PLYR_AVATAR:
+	  //FIXME
+	  break;
+
+  case CG_2ND_PLYR_AVATAR:
+	  //FIXME
+	  break;
+
+  case CG_MATCH_STATE:
+	  //FIXME like CG_MATCH_STATUS?
+	  //Com_Printf("^3FIXME CG_MATCH_STATE\n");
+	  //CG_Text_Paint_Align(&rect, scale, color, "^2CG_MATCH_STATE", 0, 0, textStyle, font, align);
+	  break;
 
   case WCG_GAME_STATUS:
 	  if (cg.warmup) {

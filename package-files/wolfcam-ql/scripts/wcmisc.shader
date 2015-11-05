@@ -40,6 +40,17 @@ wc/bloodTrail {
         }
 }
 
+wc/bloodTrailAlt {
+        nopicmip
+        entityMergable
+        {
+                clampmap gfx/wc/blood_spurt.tga
+                blendfunc blend
+                rgbgen vertex
+                alphagen vertex
+        }
+}
+
 wc/bloodExplosion {  // blood at point of impact
     nopicmip
     cull disable
@@ -51,11 +62,33 @@ wc/bloodExplosion {  // blood at point of impact
     }
 }
 
+wc/bloodExplosionAlt {  // blood at point of impact
+    nopicmip
+    cull disable
+    {
+	animmap 5 gfx/wc/blood201.tga gfx/wc/blood202.tga gfx/wc/blood203.tga gfx/wc/blood204.tga gfx/wc/blood205.tga
+        blendfunc blend
+        alphagen entity
+        rgbgen entity
+    }
+}
+
 wc/bloodMark {
     nopicmip
     polygonOffset
     {
         clampmap gfx/damage/blood_stain.tga
+        blendFunc blend
+        rgbgen identityLighting
+        alphagen vertex
+    }
+}
+
+wc/bloodMarkAlt {
+    nopicmip
+    polygonOffset
+    {
+        clampmap gfx/wc/blood_stain.tga
         blendFunc blend
         rgbgen identityLighting
         alphagen vertex

@@ -1668,9 +1668,27 @@ FIXME ui execute text:  2  'cmd team red ; '
 * check CAM_TIME with q3mme camera
 * camera roll spline
 * adding camra point should still recheck roll/(other) pass and start -- 2015-10-18 not a problem currently since changing pass type automatically updates camera point info starting from point 0
-* backtrace.dll doesn't work with newer gcc which use dwarf 4
 * camera spline angles and origin use linear distance to calculate new times with acceleration
-
+* drawplayernames font weirdness (scale and Y) when it isn't default font
+* text_paint with NULL color crash
+* item pickup count wrong with /devmap  -- it's predicted item pickups
+* new ql testing:  CG_MATCH_STATE, new spec hud, teammate overhead icon with info
+* q3 blood explosion shaders
+* better bloodexplosion shader fallback
+* powerups shown in ffa scoreboard (and others?)
+* check font used in scoreboard spec list
+* CG_DamageFeedback  control  -- cg_kickScale
+* quakecon 2015 demos ctf showing player names (not client num) for mvp config strings
+* not showing info in team overlay
+* caim ca demo long name in scoreboard -- use limit
+* ctf1.dm_91 zoom up and down at start of match with usedemozoom
+* check if ql let's you set zoom to 0
+* check teleport if zoomed in
+* hud WCG_ ql version and protocol/mod (q3, cpma, ...)
+* right align with var width font not stable
+* remove old area draw chat hack so it doesn't overdraw
+* team overlay text style
+* team overlay order (name, armor, powerup, etc..)
 
 ---------
 

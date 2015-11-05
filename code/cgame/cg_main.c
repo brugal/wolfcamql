@@ -443,6 +443,7 @@ vmCvar_t cg_drawTeamOverlayAlign;
 vmCvar_t cg_drawTeamOverlayScale;
 //vmCvar_t cg_drawTeamOverlayAlpha;
 vmCvar_t cg_drawTeamOverlayWideScreen;
+vmCvar_t cg_drawTeamOverlayLineOffset;
 
 vmCvar_t cg_drawJumpSpeeds;
 vmCvar_t cg_drawJumpSpeedsNoText;
@@ -1245,9 +1246,9 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFPSY, "cg_drawFPSY", "", CVAR_ARCHIVE },
 	{ &cg_drawFPSAlign, "cg_drawFPSAlign", "2", CVAR_ARCHIVE },
 	{ &cg_drawFPSStyle, "cg_drawFPSStyle", "3", CVAR_ARCHIVE },
-	{ &cg_drawFPSFont, "cg_drawFPSFont", "q3big", CVAR_ARCHIVE },
+	{ &cg_drawFPSFont, "cg_drawFPSFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawFPSPointSize, "cg_drawFPSPointSize", "24", CVAR_ARCHIVE },
-	{ &cg_drawFPSScale, "cg_drawFPSScale", "0.4", CVAR_ARCHIVE },
+	{ &cg_drawFPSScale, "cg_drawFPSScale", "0.24", CVAR_ARCHIVE },
 	//	{ &cg_drawFPSTime, "cg_drawFPSTime", "", CVAR_ARCHIVE },
 	{ &cg_drawFPSColor, "cg_drawFPSColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawFPSAlpha, "cg_drawFPSAlpha", "255", CVAR_ARCHIVE },
@@ -1466,12 +1467,13 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawTeamOverlayX, "cg_drawTeamOverlayX", "640", CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayY, "cg_drawTeamOverlayY", "", CVAR_ARCHIVE },
 	{ &cg_teamOverlayUserinfo, "teamoverlay", "1", CVAR_ROM | CVAR_USERINFO },
-	{ &cg_drawTeamOverlayFont, "cg_drawTeamOverlayFont", "q3tiny", CVAR_ARCHIVE },
+	{ &cg_drawTeamOverlayFont, "cg_drawTeamOverlayFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayPointSize, "cg_drawTeamOverlayPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayAlign, "cg_drawTeamOverlayAlign", "2", CVAR_ARCHIVE },
-	{ &cg_drawTeamOverlayScale, "cg_drawTeamOverlayScale", "0.4", CVAR_ARCHIVE },
+	{ &cg_drawTeamOverlayScale, "cg_drawTeamOverlayScale", "0.2", CVAR_ARCHIVE },
 	//{ &cg_drawTeamOverlayAlpha, "cg_drawTeamOverlayAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawTeamOverlayWideScreen), "3", CVAR_ARCHIVE },
+	{ cvp(cg_drawTeamOverlayLineOffset), "0.4", CVAR_ARCHIVE },
 
 	{ &cg_drawJumpSpeeds, "cg_drawJumpSpeeds", "0", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsNoText, "cg_drawJumpSpeedsNoText", "0", CVAR_ARCHIVE },
@@ -1596,9 +1598,9 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawSpeedNoText, "cg_drawSpeedNoText", "0", CVAR_ARCHIVE },
 	{ &cg_drawSpeedAlign, "cg_drawSpeedAlign", "2", CVAR_ARCHIVE },
 	{ &cg_drawSpeedStyle, "cg_drawSpeedStyle", "3", CVAR_ARCHIVE },
-	{ &cg_drawSpeedFont, "cg_drawSpeedFont", "q3big", CVAR_ARCHIVE },
+	{ &cg_drawSpeedFont, "cg_drawSpeedFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawSpeedPointSize, "cg_drawSpeedPointSize", "24", CVAR_ARCHIVE },
-	{ &cg_drawSpeedScale, "cg_drawSpeedScale", "0.4", CVAR_ARCHIVE },
+	{ &cg_drawSpeedScale, "cg_drawSpeedScale", "0.24", CVAR_ARCHIVE },
 	{ &cg_drawSpeedColor, "cg_drawSpeedColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawSpeedAlpha, "cg_drawSpeedAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawSpeedWideScreen), "3", CVAR_ARCHIVE },
@@ -1637,9 +1639,9 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawItemPickupsImageScale, "cg_drawItemPickupsImageScale", "0.5", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsAlign, "cg_drawItemPickupsAlign", "0", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsStyle, "cg_drawItemPickupsStyle", "0", CVAR_ARCHIVE },
-	{ &cg_drawItemPickupsFont, "cg_drawItemPickupsFont", "q3small", CVAR_ARCHIVE },
+	{ &cg_drawItemPickupsFont, "cg_drawItemPickupsFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsPointSize, "cg_drawItemPickupsPointSize", "24", CVAR_ARCHIVE },
-	{ &cg_drawItemPickupsScale, "cg_drawItemPickupsScale", "0.4", CVAR_ARCHIVE },
+	{ &cg_drawItemPickupsScale, "cg_drawItemPickupsScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsTime, "cg_drawItemPickupsTime", "3000", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsColor, "cg_drawItemPickupsColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsAlpha, "cg_drawItemPickupsAlpha", "255", CVAR_ARCHIVE },
@@ -1653,7 +1655,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFollowingY, "cg_drawFollowingY", "50", CVAR_ARCHIVE },
 	{ &cg_drawFollowingAlign, "cg_drawFollowingAlign", "1", CVAR_ARCHIVE },
 	{ &cg_drawFollowingStyle, "cg_drawFollowingStyle", "6", CVAR_ARCHIVE },
-	{ &cg_drawFollowingFont, "cg_drawFollowingFont", "q3big", CVAR_ARCHIVE },
+	{ &cg_drawFollowingFont, "cg_drawFollowingFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawFollowingPointSize, "cg_drawFollowingPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawFollowingScale, "cg_drawFollowingScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawFollowingColor, "cg_drawFollowingColor", "0xffffff", CVAR_ARCHIVE },
@@ -1764,7 +1766,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawWaitingForPlayersY, "cg_drawWaitingForPlayersY", "60", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersAlign, "cg_drawWaitingForPlayersAlign", "1", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersStyle, "cg_drawWaitingForPlayersStyle", "6", CVAR_ARCHIVE },
-	{ &cg_drawWaitingForPlayersFont, "cg_drawWaitingForPlayersFont", "", CVAR_ARCHIVE },
+	{ &cg_drawWaitingForPlayersFont, "cg_drawWaitingForPlayersFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersPointSize, "cg_drawWaitingForPlayersPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersScale, "cg_drawWaitingForPlayersScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersColor, "cg_drawWaitingForPlayersColor", "0xffffff", CVAR_ARCHIVE },
@@ -2086,7 +2088,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawProxWarningY, "cg_drawProxWarningY", "80", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningAlign, "cg_drawProxWarningAlign", "1", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningStyle, "cg_drawProxWarningStyle", "6", CVAR_ARCHIVE },
-	{ &cg_drawProxWarningFont, "cg_drawProxWarningFont", "q3big", CVAR_ARCHIVE },
+	{ &cg_drawProxWarningFont, "cg_drawProxWarningFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningPointSize, "cg_drawProxWarningPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningScale, "cg_drawProxWarningScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningColor, "cg_drawProxWarningColor", "0xfe0000", CVAR_ARCHIVE },
@@ -3177,7 +3179,7 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.kamikazeExplodeSound = trap_S_RegisterSound( "sound/items/kam_explode.wav", qfalse );
 	cgs.media.kamikazeImplodeSound = trap_S_RegisterSound( "sound/items/kam_implode.wav", qfalse );
 	cgs.media.kamikazeFarSound = trap_S_RegisterSound( "sound/items/kam_explode_far.wav", qfalse );
-	cgs.media.kamikazeRespawnSound = trap_S_RegisterSound( "sound/items/kamikazerespawn.ogg", qfalse );
+	cgs.media.kamikazeRespawnSound = trap_S_RegisterSound( "sound/items/kamikazerespawn.wav", qfalse );
 
 	//FIXME voice
 	cgs.media.youSuckSound = trap_S_RegisterSound( "sound/misc/yousuck.wav", qfalse );
@@ -3373,6 +3375,10 @@ static void CG_RegisterGraphics( void ) {
 	// removed in ql 2015-05-15
 	//cgs.media.bloodTrailShader = trap_R_RegisterShader( "bloodTrail" );
 	cgs.media.bloodTrailShader = trap_R_RegisterShader("wc/bloodTrail");
+	if (!cgs.media.bloodTrailShader) {
+		Com_Printf("trying alternate blood trail\n");
+		cgs.media.bloodTrailShader = trap_R_RegisterShader("wc/bloodTrailAlt");
+	}
 	cgs.media.q3bloodTrailShader = trap_R_RegisterShader("q3bloodTrail");
 
 	cgs.media.lagometerShader = trap_R_RegisterShader("lagometer" );
@@ -3420,8 +3426,36 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.redCubeIcon = trap_R_RegisterShader( "icons/skull_red" );
 	cgs.media.blueCubeIcon = trap_R_RegisterShader( "icons/skull_blue" );
 
+#if 0
 	cgs.media.redFlagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_red1" );
+	cgs.media.redFlagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
+	cgs.media.redFlagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_red3" );
 	cgs.media.blueFlagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_blu1" );
+	cgs.media.blueFlagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
+	cgs.media.blueFlagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_blu3" );
+
+	cgs.media.flagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral1" );
+	cgs.media.flagShader[1] = 0;  // unused
+	cgs.media.flagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
+	cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
+	cgs.media.flagShader[4] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral3" );
+
+#endif
+
+	// not checking gametype since it's also used in non ctf games (ex: red rover)
+	cgs.media.redFlagShader[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_at_base.png");
+	cgs.media.redFlagShader[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_taken.png");
+	cgs.media.redFlagShader[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_dropped.png");
+
+	cgs.media.blueFlagShader[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_at_base.png");
+	cgs.media.blueFlagShader[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_taken.png");
+	cgs.media.blueFlagShader[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_dropped.png");
+
+	cgs.media.flagShader[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_at_base");
+	cgs.media.flagShader[1] = 0;  // unused
+	cgs.media.flagShader[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_taken.png");
+	cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_taken.png");
+	cgs.media.flagShader[4] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_dropped.png");
 
 	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF || cgs.gametype == GT_HARVESTER || cgs.gametype == GT_CTFS   ||  cg_buildScript.integer) {
 #else
@@ -3437,11 +3471,6 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.redFlagModel2 = trap_R_RegisterModel("models/flag3/r_flag3.md3");
 		cgs.media.blueFlagModel2 = trap_R_RegisterModel("models/flag3/b_flag3.md3");
 
-		cgs.media.redFlagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
-		cgs.media.redFlagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_red3" );
-
-		cgs.media.blueFlagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
-		cgs.media.blueFlagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_blu3" );
 #if 1  //def MPACK
 		cgs.media.flagPoleModel = trap_R_RegisterModel( "models/flag2/flagpole.md3" );
 		cgs.media.flagFlapModel = trap_R_RegisterModel( "models/flag2/flagflap3.md3" );
@@ -3460,11 +3489,6 @@ static void CG_RegisterGraphics( void ) {
 #if 1  //def MPACK
 	if ( cgs.gametype == GT_1FCTF || cg_buildScript.integer ) {
 
-		cgs.media.flagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral1" );
-		cgs.media.flagShader[1] = 0;  // unused
-		cgs.media.flagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
-		cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
-		cgs.media.flagShader[4] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral3" );
 	}
 
 	if ( cgs.gametype == GT_OBELISK || cg_buildScript.integer ) {
@@ -3606,6 +3630,10 @@ static void CG_RegisterGraphics( void ) {
 
 	//cgs.media.bloodExplosionShader = trap_R_RegisterShader( "bloodExplosion" );
 	cgs.media.bloodExplosionShader = trap_R_RegisterShader("wc/bloodExplosion");
+	if (!cgs.media.bloodExplosionShader) {
+		Com_Printf("trying alternate blood explosion\n");
+		cgs.media.bloodExplosionShader = trap_R_RegisterShader("wc/bloodExplosionAlt");
+	}
 
 	cgs.media.bulletFlashModel = trap_R_RegisterModel("models/weaphits/bullet.md3");
 	cgs.media.ringFlashModel = trap_R_RegisterModel("models/weaphits/ring02.md3");
@@ -3717,6 +3745,10 @@ static void CG_RegisterGraphics( void ) {
 
 	//cgs.media.bloodMarkShader = trap_R_RegisterShader( "bloodMark" );
 	cgs.media.bloodMarkShader = trap_R_RegisterShader("wc/bloodMark");
+	if (!cgs.media.bloodMarkShader) {
+		Com_Printf("trying alternate blood mark\n");
+		cgs.media.bloodMarkShader = trap_R_RegisterShader("wc/bloodMarkAlt");
+	}
 	cgs.media.q3bloodMarkShader = trap_R_RegisterShader("q3bloodMark");
 
 	// register the inline models
@@ -3772,9 +3804,16 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.selectCursor = trap_R_RegisterShaderNoMip( "ui/assets/3_cursor3.png");
 	//cgs.media.selectCursor = cgs.media.cursor;  //trap_R_RegisterShaderNoMip( "ui/assets/3_cursor3.png");
 
+#if 0
 	cgs.media.flagShaders[0] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_in_base.tga");
 	cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_capture.tga");
 	cgs.media.flagShaders[2] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_missing.tga");
+#endif
+
+	cgs.media.flagShaders[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_at_base.png");
+	//cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_stolen.png");
+	cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_taken.png");
+	cgs.media.flagShaders[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_dropped.tga");  // orig flag_missing.tga  -- ?  question mark
 
 #if 0  // what's the point?
 	trap_R_RegisterModel( "models/players/james/lower.md3" );
@@ -3823,7 +3862,8 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.gametypeIcon[GT_RACE] = trap_R_RegisterShader("ui/assets/hud/race");
 
 	cgs.media.infiniteAmmo = trap_R_RegisterShader("icons/infinite");
-	cgs.media.premiumIcon = trap_R_RegisterShader("ui/assets/score/premium_icon");
+	//cgs.media.premiumIcon = trap_R_RegisterShader("ui/assets/score/premium_icon");
+	cgs.media.premiumIcon = trap_R_RegisterShaderNoMip("gfx/wc/premium_icon.png");
 	cgs.media.defragItemShader = trap_R_RegisterShader("wc/defragItemShader");
 	cgs.media.weaplit = trap_R_RegisterShader("ui/assets/hud/weaplit2");
 	cgs.media.flagCarrier = trap_R_RegisterShader("sprites/flagcarrier");
@@ -4337,6 +4377,82 @@ qboolean CG_ConfigStringIndexFromQ3 (int *index)
 	return qtrue;
 }
 
+static qboolean CG_ConfigStringIndexToQL91 (int *index)
+{
+	//Com_Printf("index %d\n", *index);
+
+	if (*index <= CS_SHADERSTATE) {  // 665
+		return qtrue;
+	}
+
+	if (*index >= CS_TIMEOUT_BEGIN_TIME  &&  *index <= CS_BLUE_TEAM_TIMEOUTS_LEFT) {
+		// same
+	} else if (*index == CS_MAP_CREATOR) {
+		*index = CS91_AUTHOR;
+	} else if (*index == CS_ORIGINAL_MAP_CREATOR) {
+		*index = CS91_AUTHOR2;
+	} else if (*index == CS_PMOVE_SETTINGS) {
+		*index = CS91_PMOVEINFO;
+	} else if (*index == CS_ARMOR_TIERED) {
+		*index = CS91_ARMORINFO;
+	} else if (*index == CS_WEAPON_SETTINGS2) {
+		*index = CS91_WEAPONINFO;
+	} else if (*index == CS_CUSTOM_PLAYER_MODELS2) {
+		*index = CS91_PLAYERINFO;
+	} else if (*index == CS_FIRST_PLACE_CLIENT_NUM2) {
+		*index = CS91_CLIENTNUM1STPLAYER;
+	} else if (*index == CS_SECOND_PLACE_CLIENT_NUM2) {
+		*index = CS91_CLIENTNUM2NDPLAYER;
+	} else if (*index == CS_FIRST_PLACE_SCORE2) {
+		*index = CS91_SCORE1STPLAYER;
+	} else if (*index == CS_SECOND_PLACE_SCORE2) {
+		*index = CS91_SCORE2NDPLAYER;
+	} else if (*index == CS_MOST_DAMAGE_DEALT2) {
+		*index = CS91_MOST_DAMAGEDEALT_PLYR;
+	} else if (*index == CS_MOST_ACCURATE2) {
+		*index = CS91_MOST_ACCURATE_PLYR;
+	} else if (*index == CS_BEST_ITEM_CONTROL2) {
+		*index = CS91_BEST_ITEMCONTROL_PLYR;
+	} else if (*index == CS_RED_TEAM_CLAN_NAME) {
+		*index = CS91_REDTEAMBASE;
+	} else if (*index == CS_BLUE_TEAM_CLAN_NAME) {
+		*index = CS91_BLUETEAMBASE;
+	} else if (*index == CS_RED_TEAM_CLAN_NAME) {
+		*index = CS91_REDTEAMBASE;  // no clan tags?
+	} else if (*index == CS_BLUE_TEAM_CLAN_TAG) {
+		*index = CS91_BLUETEAMBASE;
+	} else if (*index == CS_MVP_OFFENSE) {
+		*index = CS91_MOST_VALUABLE_OFFENSIVE_PLYR;
+	} else if (*index == CS_MVP_DEFENSE) {
+		*index = CS91_MOST_VALUABLE_DEFENSIVE_PLYR;
+	} else if (*index == CS_MVP) {
+		*index = CS91_MOST_VALUABLE_PLYR;
+	} else if (*index == CS_DOMINATION_RED_POINTS) {
+		*index = CS91_GENERIC_COUNT_RED;
+	} else if (*index == CS_DOMINATION_BLUE_POINTS) {
+		*index = CS91_GENERIC_COUNT_BLUE;
+	} else if (*index == CS_ROUND_WINNERS) {
+		*index = CS91_ROUND_WINNER;
+	} else if (*index == CS_CUSTOM_SERVER_SETTINGS) {
+		*index = CS91_CUSTOM_SETTINGS;
+	} else if (*index == CS_MAP_VOTE_INFO) {
+		*index = CS91_ROTATIONMAPS;
+	} else if (*index == CS_MAP_VOTE_COUNT) {
+		*index = CS91_ROTATIONVOTES;
+	} else if (*index == CS_DISABLE_MAP_VOTE) {
+		*index = CS91_DISABLE_VOTE_UI;
+	} else if (*index == CS_READY_UP_TIME) {
+		*index = CS91_ALLREADY_TIME;
+	} else if (*index == CS_NUMBER_OF_RACE_CHECKPOINTS) {
+		*index = CS91_RACE_POINTS;
+	} else {
+		Com_Printf("^1unknown ql string %d\n", *index);
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
 
 /*
 =================
@@ -4360,10 +4476,16 @@ const char *CG_ConfigString( int index ) {
 	}
 
 	if (cgs.realProtocol == 91) {
+		if (!CG_ConfigStringIndexToQL91(&n)) {
+			Com_Printf("^3couldn't get ql91 cs index %d\n", n);
+			return "";
+		}
+		/*
 		//FIXME bad hack for new protocol
 		if (n >= 679)  {  // 679 == CS_MAP_CREATOR
 			//n--;
 		}
+		*/
 	}
 
 	return cgs.gameState.stringData + cgs.gameState.stringOffsets[n];
@@ -4636,9 +4758,9 @@ void CG_ParseMenu (const char *menuFile)
 		Com_Printf("CG_ParseMenu() couldn't open %s\n", menuFile);
 		COM_StripExtension(menuFile, altName, sizeof(altName));
 		//Com_Printf("%s--\n", altName);
-		handle = trap_PC_LoadSource(va("%s.smenu", altName));
+		handle = trap_PC_LoadSource(va("%s.menu", altName));
 		if (!handle) {
-			Com_Printf("CG_ParseMenu() couldn't open %s.smenu\n", altName);
+			Com_Printf("CG_ParseMenu() couldn't open %s.menu\n", altName);
 			return;
 		} else {
 			fileName = altName;
@@ -6153,6 +6275,8 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 	info = CG_InfoFromScoreIndex(index, team, &scoreIndex);
 	sp = &cg.scores[scoreIndex];
 
+	//return va("^2%d", column);
+	
 	// no
 	/*
 	if (info->team != TEAM_FREE) {
@@ -6165,6 +6289,7 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 	if (info && info->infoValid) {
 		switch (column) {
 		case 0:
+#if 0
 			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
@@ -6175,6 +6300,9 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 					//*handle = cgs.media.redCubeIcon;
 				}
 			}
+#endif
+			//FIXME 2015-11-02 steam avatar
+			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			return "";
 		case 1:
 			if (cgs.protocol == PROTOCOL_QL) {
@@ -6202,11 +6330,18 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
 				}
 				return "";
+			} else {
+				if (sp->powerups) {
+
+					//FIXME testing
+					//return "^1YESSSS";
+				}
 			}
 
 			return "";
 		}
 		case 4:
+#if 0
 			//*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 			if (cg_scoreBoardStyle.integer == 0) {
 				//return info->name;
@@ -6236,18 +6371,61 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 				}
 			}
 			break;
+#endif
+			if (cgs.clientinfoOrig[sp->client].countryFlag) {
+				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
+			}
+			return "";
 		case 5:
+#if 0
 			//FIXME 2015-07-07 what is this?  was this supposed to be country flag?
 			return "";
+#endif
+			clanTag = info->clanTag;
+			if (*clanTag) {
+				s = va("^7%s ^7%s", clanTag, info->name);
+			} else {
+				s = va("%s", info->name);
+			}
+			return s;
 		case 6:
-			return va("%d", sp->score);
+			//FIXME 2015-11-02 what is this?
+			//return va("%d", sp->score);
+			return "";
 		case 7:
-			return va("%d", sp->frags);
+			return va("%d", sp->score);
 		case 8:
-			return va("%d", sp->deaths);
-		case 9:
-			return va("%d", sp->time);
+			//return va("%d", sp->deaths);
+			return va("%d/%d", sp->frags, sp->deaths);
+		case 9: {
+			int n;
+
+			//return va("%d", sp->time);
+			//return va("%.2f", sp->damage);
+#if 1
+			//n = ts->damageDone;
+			n = sp->damageDone;
+			if (n >= 1000) {
+				s = va("%.1fk", (float)n / 1000.0);
+			} else {
+				s = va("%d", n);
+			}
+			return s;
+#endif
+			//FIXME
+			//return "";
+
+		}
+			
 		case 10:
+			//return va("%d", sp->ping);
+			*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+			return "";
+		case 11:
+			return va("%d%%", sp->accuracy);
+		case 12:
+			return va("%d", sp->time);
+		case 13:
 			return va("%d", sp->ping);
 		default:
 			return "xxx";
@@ -6285,7 +6463,9 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 
 	if (info && info->infoValid) {
 		switch (column) {
+
 		case 0:
+#if 0
 			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
@@ -6296,6 +6476,9 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 					//*handle = cgs.media.redCubeIcon;
 				}
 			}
+#endif
+			//FIXME 2015-11-03 steam avatar
+			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			return "";
 		case 1:
 			if (cgs.protocol == PROTOCOL_QL) {
@@ -6331,6 +6514,7 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 			return "";
 		}
 		case 4:
+#if 0
 			//*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 			if (cg_scoreBoardStyle.integer == 0) {
 				//return info->name;
@@ -6360,20 +6544,52 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 				}
 			}
 			break;
+#endif
+			if (cgs.clientinfoOrig[sp->client].countryFlag) {
+				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
+			}
+			return "";
+
 		case 5:
+#if 0
 			//FIXME 2015-06-04 don't know why this was added, maybe adding
 			// space for additional indicator for people with download content? steam players???
 			// 2015-07-07 missing country flag
 			return "";
+#endif
+			clanTag = info->clanTag;
+			if (*clanTag) {
+				s = va("^7%s ^7%s", clanTag, info->name);
+			} else {
+				s = va("%s", info->name);
+			}
+			return s;
 		case 6:
-			return va("%d", sp->score);
+			//FIXME 2015-11-03 what is this?
+			//return va("%d", sp->score);
 		case 7:
-			return va("%d", sp->frags);
+			return va("%d", sp->score);
 		case 8:
-			return va("%d", sp->deaths);
-		case 9:
-			return va("%d", sp->time);
+			return va("%d/%d", sp->frags, sp->deaths);
+		case 9: {
+			int n;
+
+			n = sp->damageDone;
+			if (n >= 1000) {
+				s = va("%.1fk", (float)n / 1000.0);
+			} else {
+				s = va("%d", n);
+			}
+			return s;
+		}
 		case 10:
+			*handle = cg_weapons[sp->bestWeapon].weaponIcon;
+			return "";
+		case 11:
+			return va("%d%%", sp->accuracy);
+		case 12:
+			return va("%d", sp->time);
+		case 13:
 			return va("%d", sp->ping);
 		default:
 			return "xxx";
@@ -7502,6 +7718,9 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	demo.camera.smoothPos = posBezier;
 	demo.camera.smoothAngles = angleQuat;
 	demo.camera.target = -1;
+
+	// hack for ql area chat not using default font
+	trap_R_RegisterFont("fonts/notosans-regular.ttf", 16, &cg.notosansFont);
 }
 
 void CG_LoadDefaultMenus (void)
@@ -7512,53 +7731,53 @@ void CG_LoadDefaultMenus (void)
 
 	Com_Printf("loading default menus\n");
 
-	CG_ParseMenu("ui/intro.smenu");
-	CG_ParseMenu("ui/ingamescoreteam.smenu");
-	CG_ParseMenu("ui/ingamescorenoteam.smenu");
-	CG_ParseMenu("ui/endscoreteam.smenu");
-	CG_ParseMenu("ui/endscorenoteam.smenu");
-	CG_ParseMenu("ui/spectator.smenu");
-	CG_ParseMenu("ui/spectator_follow.smenu");
-	CG_ParseMenu("ui/comp_spectator.smenu");
-	CG_ParseMenu("ui/ingamestats.smenu");
+	CG_ParseMenu("ui/intro.menu");
+	CG_ParseMenu("ui/ingamescoreteam.menu");
+	CG_ParseMenu("ui/ingamescorenoteam.menu");
+	CG_ParseMenu("ui/endscoreteam.menu");
+	CG_ParseMenu("ui/endscorenoteam.menu");
+	CG_ParseMenu("ui/spectator.menu");
+	CG_ParseMenu("ui/spectator_follow.menu");
+	CG_ParseMenu("ui/comp_spectator.menu");
+	CG_ParseMenu("ui/ingamestats.menu");
 	//CG_Load_Menu("ui/hud.menu");
 
 	if (cgs.gametype == GT_FFA) {
-		CG_ParseMenu("ui/ingame_scoreboard_ffa.smenu");
-		CG_ParseMenu("ui/end_scoreboard_ffa.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_ffa.menu");
+		CG_ParseMenu("ui/end_scoreboard_ffa.menu");
 	} else if (cgs.gametype == GT_TOURNAMENT) {
-		CG_ParseMenu("ui/ingame_scoreboard_duel.smenu");
-		CG_ParseMenu("ui/end_scoreboard_duel.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_duel.menu");
+		CG_ParseMenu("ui/end_scoreboard_duel.menu");
 	} else if (cgs.gametype == GT_TEAM) {
-		CG_ParseMenu("ui/ingame_scoreboard_tdm.smenu");
-		CG_ParseMenu("ui/end_scoreboard_tdm.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_tdm.menu");
+		CG_ParseMenu("ui/end_scoreboard_tdm.menu");
 	} else if (cgs.gametype == GT_CA) {
-		CG_ParseMenu("ui/ingame_scoreboard_ca.smenu");
-		CG_ParseMenu("ui/end_scoreboard_ca.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_ca.menu");
+		CG_ParseMenu("ui/end_scoreboard_ca.menu");
 	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
-		CG_ParseMenu("ui/ingame_scoreboard_ctf.smenu");
-		CG_ParseMenu("ui/end_scoreboard_ctf.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_ctf.menu");
+		CG_ParseMenu("ui/end_scoreboard_ctf.menu");
 	} else if (cgs.gametype == GT_FREEZETAG) {
-		CG_ParseMenu("ui/ingame_scoreboard_ft.smenu");
-		CG_ParseMenu("ui/end_scoreboard_ft.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_ft.menu");
+		CG_ParseMenu("ui/end_scoreboard_ft.menu");
 	} else if (cgs.gametype == GT_1FCTF) {
-		CG_ParseMenu("ui/ingame_scoreboard_1fctf.smenu");
-		CG_ParseMenu("ui/end_scoreboard_1fctf.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_1fctf.menu");
+		CG_ParseMenu("ui/end_scoreboard_1fctf.menu");
 	} else if (cgs.gametype == GT_HARVESTER) {
-		CG_ParseMenu("ui/ingame_scoreboard_har.smenu");
-		CG_ParseMenu("ui/end_scoreboard_har.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_har.menu");
+		CG_ParseMenu("ui/end_scoreboard_har.menu");
 	} else if (cgs.gametype == GT_DOMINATION) {
-		CG_ParseMenu("ui/ingame_scoreboard_dom.smenu");
-		CG_ParseMenu("ui/end_scoreboard_dom.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_dom.menu");
+		CG_ParseMenu("ui/end_scoreboard_dom.menu");
 	} else if (cgs.gametype == GT_CTFS) {
-		CG_ParseMenu("ui/ingame_scoreboard_ad.smenu");
-		CG_ParseMenu("ui/end_scoreboard_ad.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_ad.menu");
+		CG_ParseMenu("ui/end_scoreboard_ad.menu");
 	} else if (cgs.gametype == GT_RED_ROVER) {
-		CG_ParseMenu("ui/ingame_scoreboard_ffa.smenu");
-		CG_ParseMenu("ui/end_scoreboard_ffa.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_ffa.menu");
+		CG_ParseMenu("ui/end_scoreboard_ffa.menu");
 	} else if (cgs.gametype == GT_RACE) {
-		CG_ParseMenu("ui/ingame_scoreboard_race.smenu");
-		CG_ParseMenu("ui/end_scoreboard_race.smenu");
+		CG_ParseMenu("ui/ingame_scoreboard_race.menu");
+		CG_ParseMenu("ui/end_scoreboard_race.menu");
 	}
 }
 

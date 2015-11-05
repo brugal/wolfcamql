@@ -782,7 +782,7 @@ using __cxxabiv1::__cxa_demangle;
 
 #if defined(REG_RIP)
 # define SIGSEGV_STACK_IA64
-#error lskdjflskdjflksdjf
+//#error lskdjflskdjflksdjf
 # define REGFORMAT "%016lx"
 #elif defined(REG_EIP)
 //#error ssss

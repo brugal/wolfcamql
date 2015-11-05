@@ -1447,6 +1447,7 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
 -----------------------------------------------------------
 
+* cg_drawTeamOverlayLineOffset  Specifies spacing between team overlay lines.  Value is percentage of line height.
 * cg_scoreBoardStyle 0: like quakelive, 1 (default): switches the model icon for their best weapon icon, also prepends their accuracy before name,  2: switches model icon for country flags, also prepends their accuracy before name
 
 * cg_shotgunImpactSparks

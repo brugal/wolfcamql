@@ -1629,6 +1629,13 @@ void CG_NewClientInfo( int clientNum ) {
 	v = Info_ValueForKey( configstring, "g_blueteam" );
 	Q_strncpyz(newInfo.blueTeam, v, MAX_TEAMNAME);
 
+	v = Info_ValueForKey(configstring, "st");
+	if (*v  &&  cgs.realProtocol >= 91) {
+		Q_strncpyz(newInfo.steamId, v, MAX_STRING_CHARS);
+	} else {
+		newInfo.steamId[0] = '\0';
+	}
+
 	v = Info_ValueForKey(configstring, "c");
 	if (*v  &&  cgs.protocol == PROTOCOL_QL) {
 		if (!Q_stricmp("n/a", v)) {

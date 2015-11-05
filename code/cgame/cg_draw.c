@@ -784,11 +784,13 @@ static float Wolfcam_DrawSpeed (float y)
     float speed;
     int c;
 	vec4_t color;
-	int x, w;
+	int x;
+	//int w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
 	int h;
+	rectDef_t rect;
 
 	if (!cg_drawSpeed.integer) {
 		return y;
@@ -855,19 +857,20 @@ static float Wolfcam_DrawSpeed (float y)
 	if (cg_drawSpeedNoText.integer) {
 		s = va("^%d%d", c, (int)speed);
 	} else {
-		s = va("^%d%d ^7UPS", c, (int)speed);
+		s = va("^%d%d^7ups", c, (int)speed);
 	}
 
-	w = CG_Text_Width(s, scale, 0, font);
+	//w = CG_Text_Width(s, scale, 0, font);
 	h = CG_Text_Height(s, scale, 0, font);
-	if (align == 1) {
-		x -= w / 2;
-	} else if (align == 2) {
-		x -= w;
-	}
-	CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
 
-	return y - 2 + h + 4;
+	memset(&rect, 0, sizeof(rectDef_t));
+	rect.x = x;
+	rect.y = y + h + (12.0f * scale);
+	//CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
+	CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, style, font, align);
+
+	//return y - 2 + h + 4;
+	return y + h + (12.0f * scale);
 }
 
 static void CG_DrawJumpSpeeds (void)
@@ -1909,8 +1912,8 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				continue;
 			} else {
 				trap_GetShaderImageDimensions(glyph->glyph, &fontImageWidth, &fontImageHeight);
-				if (fontImageWidth != FONT_DIMENSIONS  ||  fontImageHeight != FONT_DIMENSIONS) {
-				//if (fontImageWidth > FONT_DIMENSIONS  ||  fontImageHeight > FONT_DIMENSIONS) {
+				//if (fontImageWidth != FONT_DIMENSIONS  ||  fontImageHeight != FONT_DIMENSIONS) {
+				if (fontImageWidth > FONT_DIMENSIONS  ||  fontImageHeight > FONT_DIMENSIONS) {
 					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font image dimensions are not supported: %d x %d '%s'\n", fontImageWidth, fontImageHeight, font->name);
 					return;
 				}
@@ -2029,6 +2032,13 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 			}
 		}
 
+#if 0
+		// testing
+		for (i = 0;  i < (destWidth * destHeight * 4);  i += 4) {
+			finalImgBuff[i + 0] = 125;
+			finalImgBuff[i + 3] = 125;
+		}
+#endif
 		//Com_Printf("replacing shader %d\n", h);
 		trap_ReplaceShaderImage(h, finalImgBuff, x / 4, destHeight);
 	}
@@ -3209,8 +3219,8 @@ CG_DrawFPS
 #define	FPS_FRAMES	4
 static float CG_DrawFPS( float y ) {
 	char		*s;
-	int			w;
-	//int			h;
+	//int w;
+	int	h;
 	float		scale;
 	static int	previousTimes[FPS_FRAMES];
 	static int	index = 0;
@@ -3224,6 +3234,7 @@ static float CG_DrawFPS( float y ) {
 	int align;
 	vec4_t color;
 	const fontInfo_t *font;
+	rectDef_t rect;
 
 	if (*cg_drawFPSFont.string) {
 		font = &cgs.media.fpsFont;
@@ -3237,6 +3248,9 @@ static float CG_DrawFPS( float y ) {
 	t = trap_Milliseconds();
 	frameTime = t - previous;
 	previous = t;
+
+	h = 0;
+	scale = 0.0f;
 
 	previousTimes[index % FPS_FRAMES] = frameTime;
 	index++;
@@ -3275,19 +3289,20 @@ static float CG_DrawFPS( float y ) {
 		}
 
 		scale = cg_drawFPSScale.value;
-		w = CG_Text_Width(s, scale, 0, font);
-		//h = CG_Text_Height(s, scale, 0, font);
+		//w = CG_Text_Width(s, scale, 0, font);
+		h = CG_Text_Height(s, scale, 0, font);
 
 		align = cg_drawFPSAlign.integer;
 
 		x = cg_drawFPSX.integer;
 
+#if 0
 		if (align == 1) {
 			x -= w / 2;
 		} else if (align == 2) {
 			x -= w;
 		}
-
+#endif
 		if (cg_drawFPSY.string[0] != '\0') {
 			y = cg_drawFPSY.integer;
 		} else {
@@ -3296,13 +3311,16 @@ static float CG_DrawFPS( float y ) {
 
 		SC_Vec3ColorFromCvar(color, &cg_drawFPSColor);
 		color[3] = (float)cg_drawFPSAlpha.integer / 255.0;
-		CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, cg_drawFPSStyle.integer, font);
+		memset(&rect, 0, sizeof(rectDef_t));
+		rect.x = x;
+		rect.y = y + h + (12.0f *  scale);
+
+		CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, cg_drawFPSStyle.integer, font, align);
 	}
 
 	lastFtime = cg.ftime;
 
-	//FIXME
-	return y - 2 + BIGCHAR_HEIGHT + 4;
+	return y + h + (12.0f * scale);
 }
 
 
@@ -4040,6 +4058,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	int align;
 	int picy;
 	qboolean q3font = qfalse;
+	float lineOffset;
 
 	if ( !cg_drawTeamOverlay.integer ) {
 		return y;
@@ -4067,6 +4086,12 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	//FIXME fontPointSize.integer
 	//cheight = cg_drawTeamOverlayPointSize.value * font->glyphScale * scale;
 	cwidth = cheight;
+
+	if (cg_drawTeamOverlayLineOffset.value < 0.0f) {
+		lineOffset = 0;
+	} else {
+		lineOffset = cg_drawTeamOverlayLineOffset.value * cheight;
+	}
 
 	if (!Q_stricmp(font->name, "q3tiny")) {
 		picy = -cheight;
@@ -4131,6 +4156,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 
 	//h = plyrs * TINYCHAR_HEIGHT;
 	h = plyrs * cheight;
+	h += (plyrs - 1) * lineOffset;
 
 	x = cg_drawTeamOverlayX.integer;
 	if (*cg_drawTeamOverlayY.string) {
@@ -4144,17 +4170,19 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	}
 
 	if ( upper ) {
-		ret_y = y + h;
+		ret_y = y + h + (12.0 * scale);
 	} else {
 		//y -= h;
 		//ret_y = y;
-		ret_y = y - h;
+		ret_y = y - h - (12.0 * scale);
 	}
 
-	if (upper) {
-		y += cheight;
-	} else {
-		y -= cheight;
+	if (q3font) {
+		if (upper) {
+			y += cheight;
+		} else {
+			y -= cheight;
+		}
 	}
 
 	//FIXME
@@ -4174,9 +4202,18 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	trap_R_SetColor( hcolor );
 	if (q3font) {
 		if (upper) {
-			CG_DrawPic(x, y - cheight, w, h, cgs.media.teamStatusBar);
+			if (q3font) {
+				CG_DrawPic(x, y - cheight, w, h, cgs.media.teamStatusBar);
+			} else {
+				CG_DrawPic(x, y, w, h, cgs.media.teamStatusBar);
+			}
 		} else {
-			CG_DrawPic(x, y - h, w, h, cgs.media.teamStatusBar);
+			if (q3font) {
+				CG_DrawPic(x, y - h, w, h, cgs.media.teamStatusBar);
+			} else {
+				//FIXME double check
+				CG_DrawPic(x, y - h, w, h, cgs.media.teamStatusBar);
+			}
 		}
 	} else {
 		if (upper) {
@@ -4190,6 +4227,13 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	}
 	trap_R_SetColor( NULL );
 
+	if (!q3font) {
+		if (upper) {
+			y += 12.0f * scale;
+		} else {
+			y -= 12.0f * scale;
+		}
+	}
 
 	for (i = 0; i < count; i++) {
 		ci = cgs.clientinfo + sortedTeamPlayers[i];
@@ -4312,10 +4356,14 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 
 					item = BG_FindItemForPowerup( j );
 
-					// 2010-08-08 new ql, spawn protectin powerup
+					// 2010-08-08 new ql, spawn protection powerup
 					if (item &&  !(ci->powerups & PWEX_SPAWNPROTECTION)) {
 						//CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, trap_R_RegisterShader( item->icon ) );
-						CG_DrawPic( xx, y - cwidth / 1, cwidth, cheight, trap_R_RegisterShader( item->icon ) );
+						if (q3font) {
+							CG_DrawPic( xx, y - cwidth / 1, cwidth, cheight, trap_R_RegisterShader( item->icon ) );
+						} else {
+							CG_DrawPic(xx, y - (12.0f * scale), cwidth, cheight, trap_R_RegisterShader(item->icon));
+						}
 						if (right) {
 							//xx -= TINYCHAR_WIDTH;
 							xx -= cwidth;
@@ -4329,8 +4377,10 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 
 			if (upper) {
 				y += cheight;
+				y += lineOffset;
 			} else {
 				y -= cheight;
+				y -= lineOffset;
 			}
 		}
 	}
@@ -6456,9 +6506,19 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			//FIXME obits non weapons are going to print "none"
 			//s = cg.weaponNamesCvars[cg.lastFragWeapon].string;
 			if (lastFrag) {
+				if (cg.lastFragWeapon >= 0  &&  cg.lastFragWeapon <= MAX_WEAPONS) {
 				s = weapNamesCasual[cg.lastFragWeapon];
+				} else {
+					Com_Printf("^1CG_CreateFragString invalid last frag weapon %d\n", cg.lastFragWeapon);
+					s = "unknown weapon";
+				}
 			} else {
-				s = weapNamesCasual[obituary->weapon];
+				if (obituary->weapon >= 0  &&  obituary->weapon <= MAX_WEAPONS) {
+					s = weapNamesCasual[obituary->weapon];
+				} else {
+					Com_Printf("^1CG_CreateFragString invalid obituary weapon %d\n", obituary->weapon);
+					s = "unknown weapon";
+				}
 			}
 			while (*s) {
 				extString[j] = s[0];
@@ -8978,8 +9038,7 @@ static void CG_DrawWarmup( void ) {
 		return;
 	}
 
-	//FIXME is this a bug?  should be cg_drawWarmupString* ?
-	if (*cg_drawWaitingForPlayersFont.string) {
+	if (*cg_drawWarmupStringFont.string) {
 		font = &cgs.media.waitingForPlayersFont;
 	} else {
 		font = &cgDC.Assets.textFont;
@@ -9633,7 +9692,7 @@ static void CG_Draw2D( void ) {
 		return;
 	}
 
-	if (cg_draw2D.integer == 2  ||  cg_draw2D.integer == 3) {
+	if (cg_draw2D.integer == 2) {
 		const fontInfo_t *font;
 
 		if (*cg_drawCameraPointInfoFont.string) {

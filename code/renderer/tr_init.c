@@ -915,8 +915,8 @@ screenshots get written in fs_homepath + fs_gamedir
 vanilla q3 .. baseq3/screenshots/ *.tga
 team arena .. missionpack/screenshots/ *.tga
 
-two commands: "screenshot" and "screenshotJPEG"
-we use statics to store a count and start writing the first screenshot/screenshot????.tga (.jpg) available
+three commands: "screenshot", "screenshotJPEG", and "screenshotPNG"
+we use statics to store a count and start writing the first screenshot/screenshot????.tga (.jpg, etc.) available
 (with FS_FileExists / FS_FOpenFileWrite calls)
 FIXME: the statics don't get a reinit between fs_game changes
 
@@ -2773,6 +2773,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 
 	ri.Cmd_RemoveCommand ("modellist");
 	ri.Cmd_RemoveCommand ("screenshotJPEG");
+	ri.Cmd_RemoveCommand("screenshotPNG");
 	ri.Cmd_RemoveCommand ("screenshot");
 	ri.Cmd_RemoveCommand ("imagelist");
 	ri.Cmd_RemoveCommand ("shaderlist");

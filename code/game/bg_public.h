@@ -64,7 +64,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 
 // CS_SERVERINFO and CS_SYSTEMINFO are defined in q_shared.h
-#define	CS_MUSIC				2
+#define CS_MUSIC				2
 #define	CS_MESSAGE				3		// from the map worldspawn's message field
 #define	CS_MOTD					4		// g_motd string for server message of the day
 #define	CS_WARMUP				5		// server time when the match will be restarted
@@ -225,6 +225,58 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CS_TEAMVOTE_STRING		MAX_CONFIGSTRINGS - 35  //22  // was 14
 #define CS_BOTINFO				MAX_CONFIGSTRINGS - 33  //25
 
+// protocol 91 (everything the same up to CG_SHADERSTATE:665
+
+#define CS91_NEXTMAP  666
+#define CS91_PRACTICE 667
+#define CS91_FREECAM 668
+#define CS91_PAUSE_START_TIME 669  // non-zero means paused
+#define CS91_PAUSE_END_TIME  670 // 0 is paused and non-zero is timeout
+#define CS91_TIMEOUTS_RED 671
+#define CS91_TIMEOUTS_BLUE 672
+#define CS91_MODEL_OVERRIDE 673
+#define CS91_PLAYER_CYLINDERS 674
+#define CS91_DEBUGFLAGS 675
+#define CS91_ENABLEBREATH 676
+#define CS91_DMGTHROUGHDEPTH 677
+#define CS91_AUTHOR 678
+#define CS91_AUTHOR2 679
+#define CS91_ADVERT_DELAY 680
+#define CS91_PMOVEINFO 681
+#define CS91_ARMORINFO 682
+#define CS91_WEAPONINFO 683
+#define CS91_PLAYERINFO 684
+#define CS91_SCORE1STPLAYER 685  // score of duel player on left
+#define CS91_SCORE2NDPLAYER 686  // score of duel player on right
+#define CS91_CLIENTNUM1STPLAYER 687  // left
+#define CS91_CLIENTNUM2NDPLAYER 688
+#define CS91_NAME1STPLAYER 689
+#define CS91_NAME2NDPLAYER 690
+#define CS91_ATMOSEFFECT 691
+#define CS91_MOST_DAMAGEDEALT_PLYR 692
+#define CS91_MOST_ACCURATE_PLYR 693
+#define CS91_REDTEAMBASE 694
+#define CS91_BLUETEAMBASE 695
+#define CS91_BEST_ITEMCONTROL_PLYR 696
+#define CS91_MOST_VALUABLE_OFFENSIVE_PLYR 697
+#define CS91_MOST_VALUABLE_DEFENSIVE_PLYR 698
+#define CS91_MOST_VALUABLE_PLYR 699
+#define CS91_GENERIC_COUNT_RED 700
+#define CS91_GENERIC_COUNT_BLUE 701
+#define CS91_AD_SCORES 702
+#define CS91_ROUND_WINNER 703
+#define CS91_CUSTOM_SETTINGS 704
+#define CS91_ROTATIONMAPS 705
+#define CS91_ROTATIONVOTES 706
+#define CS91_DISABLE_VOTE_UI 707
+#define CS91_ALLREADY_TIME 708
+#define CS91_INFECTED_SURVIVOR_MINSPEED 709
+#define CS91_RACE_POINTS 710
+#define CS91_DISABLE_LOADOUT 711
+#define CS91_MATCH_GUID 712
+#define CS91_STARTING_WEAPONS 713
+#define CS91_STEAM_ID 714
+#define CS91_STEAM_WORKSHOP_IDS 715
 
 // quake live server custom settings
 /*

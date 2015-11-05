@@ -624,6 +624,10 @@ void CG_Bleed( const vec3_t origin, int entityNum ) {
 		return;
 	}
 
+	if (!cgs.media.bloodExplosionShader) {
+
+	}
+
 	ex = CG_AllocLocalEntity();
 	ex->leType = LE_EXPLOSION;
 

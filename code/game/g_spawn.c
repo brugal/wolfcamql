@@ -656,11 +656,11 @@ void SP_worldspawn( void ) {
 
 	G_SpawnString("author", "", &s);
 	if (s  &&  *s) {
-		trap_SetConfigstring(CS_MAP_CREATOR, s);
+		trap_SetConfigstring(CS91_AUTHOR, s);
 	}
 	G_SpawnString("author2", "", &s);
 	if (s  &&  *s) {
-		trap_SetConfigstring(CS_ORIGINAL_MAP_CREATOR, s);
+		trap_SetConfigstring(CS91_AUTHOR2, s);
 	}
 
 	trap_SetConfigstring( CS_MOTD, g_motd.string );		// message of the day

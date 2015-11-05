@@ -5052,6 +5052,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 					CG_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
 				}
 			}
+			CG_ZoomUp_f();
 			trap_SendConsoleCommand("exec wolfcamfirstpersonswitch.cfg\n");
 		}
 		wolfcamLastClientNum = wcg.clientNum;
@@ -5119,6 +5120,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 				sfx = trap_S_RegisterSound(cg_firstPersonSwitchSound.string, qfalse);
 				CG_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
 			}
+			CG_ZoomUp_f();
 			trap_SendConsoleCommand("exec firstpersonswitch.cfg\n");
 		}
 		lastTeam = team;

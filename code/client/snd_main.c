@@ -342,6 +342,7 @@ sfxHandle_t	S_RegisterSound( const char *sample, qboolean compressed )
 			//strncpy(newName, sample, MAX_QPATH);
 			COM_StripExtension(sample, newName, sizeof(newName));
 			slen = strlen(newName);
+			s = 0;
 			if (slen + 5 >= sizeof(newName)) {
 				Com_Printf("^3%s() couldn't add ogg extension to '%s', name is too long\n", __FUNCTION__, sample);
 				s = 0;
@@ -362,7 +363,7 @@ sfxHandle_t	S_RegisterSound( const char *sample, qboolean compressed )
 			}
 			return s;
 		} else {
-			Com_Printf("^3FIXME S_RegisterSound() '%s'\n", sample);
+			Com_Printf("^3FIXME S_RegisterSound() '%s' name is too short\n", sample);
 			return si.RegisterSound( sample, compressed );
 		}
 	} else {

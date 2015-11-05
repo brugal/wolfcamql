@@ -1,5 +1,12 @@
 notes:
 
+* 2015-10-26 http://esreality.com/post/2778933/custom-hud-fix-for-ql-beta/
+
+<< Comment #12 @ 06:59 CDT, 26 October 2015 >>
+(Link, Reply)
+By ql SyncError  - Reply to #7
+align is for ownerdraws, textalign is for "text"
+
 * 2015-09-15  https://www.reddit.com/r/QuakeLive/comments/3fqt71/hud_programming_question_about_cg_red_clan_plyrs/
 
 "[-] SyncError 2 points 1 month ago

@@ -58,7 +58,7 @@ wc/foe
         nomipmaps
         nopicmip
         {
-                map sprites/foe.tga
+                map gfx/wc/foe.png
                 blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         }
 }

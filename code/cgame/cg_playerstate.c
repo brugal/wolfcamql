@@ -359,6 +359,7 @@ static void CG_DamageFeedback( int yawByte, int pitchByte, int damage ) {
 	if (kick > 10)
 		kick = 10;
 
+	
 	// if yaw and pitch are both 255, make the damage always centered (falling, etc)
 	if ( yawByte == 255 && pitchByte == 255 ) {
 		cg.damageX = 0;
@@ -1238,11 +1239,20 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 	if (cgs.realProtocol >= 91) {
 		cg.demoFov = ps->fov;
 
-		if (cg_useDemoFov.integer == 2) {
+		if (cg_useDemoFov.integer == 2  &&  !wolfcam_following) {
 			//Com_Printf("fov:  %d\n", ps->fov);
-			if (ps->fov < ops->fov) {
-				CG_ZoomDown_f();
-			} else if (ps->fov > ops->fov) {
+			if (ps->clientNum == ops->clientNum) {
+				if (ps->pm_type != PM_INTERMISSION  &&  ops->pm_type != PM_INTERMISSION) {
+					if (ps->fov < ops->fov) {
+						//Com_Printf("^1zomm down %d %d  %d -> %d  tele: %d %d\n", ps->pm_type, ops->pm_type, ps->fov, ops->fov, ps->eFlags & EF_TELEPORT_BIT, ops->eFlags & EF_TELEPORT_BIT);
+						CG_ZoomDown_f();
+					} else if (ps->fov > ops->fov) {
+						//Com_Printf("^2zoom up\n");
+						CG_ZoomUp_f();
+					}
+				}
+			} else {
+				//Com_Printf("3zoom up\n");
 				CG_ZoomUp_f();
 			}
 		}

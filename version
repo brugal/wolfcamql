@@ -1,5 +1,5 @@
 
-11.0test12
+11.0test13
 
 * hud:  quake3 single player gametype is cg_gametype 16
 * bug fix:  quake3 single player demos would show hud elements from quake live 'race' gametype
@@ -165,6 +165,8 @@
 
 * preliminary support for demo protocol 91  (missing utf8 support)
   - cg_useDemoFov  protocol 91 transmits player fov values and this can be used to view the demo using the players fov or to try and detect zoom changes.  Note that zoom isn't transmitted in the demo so it is detected using a fov change.  This will lead to a problem if the player uses a config that changes fov (ex:  per weapon).  Values (0:  ignore demo fov (default),  1:  use player's fov,  2:  detect zoom changes).
+  - new steam paks
+  - removed ownerdraws available in ui/wcmenudef.h (CG_SERVER_OWNER, CG_1ST_PLYR_FULLCLAN, CG_2ND_PLYR_FULLCLAN, UI_SERVER_OWNER)
 
 * r_mode default changed to 11  (856x480)
 * steam quake live directory also checked for demos
@@ -193,6 +195,12 @@
 * /ecam smooth time  to change camera times so that the points have the same average velocity
 * option to treat camera angle roll as a separate tilting effect (roll type == interp | fixed | pass) or as part of the camera angles (roll type == angles).
 * camera bug fix:  camera error would ignore setting for cg_cameraDebugPath
+* bug fix:  cg_drawWarmupStringFont wasn't being used
+* bug fix:  crash if player score had an invalid number for best weapon
+* bug fix:  scoreboard player award (mvp, best item control, etc...) could show random values in older and non-ql demos
+* bug fix:  cg_drawFPS and cg_drawSpeed y offset didn't take into account font scale
+* bug fix:  cg_drawTeamOverlay y alignment was incorrect with non-q3 fonts
+* cg_drawTeamOverlayLineOffset  Specifies spacing between team overlay lines.  Value is percentage of line height.
 
 ------------------------------------
 10.3  2013-11-16

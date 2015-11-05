@@ -687,6 +687,51 @@ CG_ParseTeamInfo
 
 =================
 */
+static void CG_ParseTeamInfo_91 (void)
+{
+	int		i;
+	int j;
+	int		clientNum;
+	clientInfo_t *ci;
+	const entityState_t *es;
+	const playerState_t *ps;
+
+	numSortedTeamPlayers = atoi( CG_Argv( 1 ) );
+
+	for ( i = 0 ; i < numSortedTeamPlayers ; i++ ) {
+		clientNum = atoi( CG_Argv( i + 2 ) );
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseTeamInfo_91() invalid client number %d\n", clientNum);
+			return;
+		}
+		sortedTeamPlayers[i] = clientNum;
+		//Com_Printf("%s\n", cgs.clientinfo[clientNum].name);
+		ci = &cgs.clientinfo[clientNum];
+		if (clientNum == cg.snap->ps.clientNum) {
+			ps = &cg.snap->ps;
+			ci->location = ps->location;
+			ci->health = ps->stats[STAT_HEALTH];
+			ci->armor = ps->stats[STAT_ARMOR];
+			ci->curWeapon = ps->weapon;
+			ci->powerups = 0;
+			for (j = 0;  j < MAX_POWERUPS;  j++) {
+				if (ps->powerups[j]) {
+					ci->powerups |= 1 << j;
+				}
+			}
+		} else {
+			es = &cg_entities[clientNum].currentState;
+			ci->location = es->location;
+			ci->health = es->health;
+			ci->armor = es->armor;
+			ci->curWeapon = es->weapon;
+			ci->powerups = es->powerups;
+		}
+
+		ci->hasTeamInfo = qtrue;
+	}
+}
+
 static void CG_ParseTeamInfo( void ) {
 	int		i;
 	int		clientNum;
@@ -725,6 +770,8 @@ static void CG_ParseTeamInfo( void ) {
 }
 
 /*
+
+  1064 win-x86 Oct 30 2015 12:09:55
 
   beta testing:  \version\b1032 linux-i386 Jul 20 2015 05:19:10\
                  \version\b1032 win-x86 Jul 20 2015 00:19:38\
@@ -1337,7 +1384,7 @@ void CG_ParseServerinfo (qboolean firstCall)
 	}
 
 
-	if (CG_CheckQlVersion(0, 1, 0, 495)) {
+	if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
 		info = CG_ConfigString(CS_CUSTOM_PLAYER_MODELS2);
 	} else {
 		info = CG_ConfigString(CS_CUSTOM_PLAYER_MODELS);
@@ -1968,7 +2015,7 @@ static void CG_ConfigStringModified( void ) {
 	qboolean newcs;
 	int n;
 
-	if (CG_CheckQlVersion(0, 1, 0, 495)) {
+	if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
 		newcs = qtrue;
 	} else {
 		newcs = qfalse;
@@ -2011,13 +2058,15 @@ static void CG_ConfigStringModified( void ) {
 		}
 	}
 
+	/*
 	if (cgs.realProtocol >= 91) {
 		//FIXME bad hack for new protocol
 		if (num >= 679)  {  // 679 == CS_MAP_CREATOR
 			//num--;
 		}
 	}
-
+	*/
+	
 	// do something with it if necessary
 	if ( num == CS_MUSIC ) {
 		CG_StartMusic();
@@ -2219,8 +2268,10 @@ static void CG_ConfigStringModified( void ) {
 	} else if (num == CS_MVP_OFFENSE) {
 	} else if (num == CS_MVP_DEFENSE) {
 	} else if (num == CS_MVP) {
+	} else if (cgs.realProtocol >= 91  &&  (num == CS91_MOST_ACCURATE_PLYR  ||  num == CS91_MOST_DAMAGEDEALT_PLYR  ||  num == CS91_BEST_ITEMCONTROL_PLYR  ||  num == CS91_MOST_VALUABLE_OFFENSIVE_PLYR  ||  num == CS91_MOST_VALUABLE_DEFENSIVE_PLYR  ||  num == CS91_MOST_VALUABLE_PLYR  ||  num == CS91_BEST_ITEMCONTROL_PLYR)) {
+		// pass, handled in cg_newdraw.c
 	} else if (num == CS_RED_TEAM_CLAN_NAME  &&  cgs.realProtocol < 91) {
-		// 2015-08-13 qcon protocol 91 don't have clan or team names
+		// 2015-08-13 qcon protocol 91 doesn't have clan or team names
 		if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 			Q_strncpyz(cgs.redTeamName, CG_ConfigString(CS_RED_TEAM_CLAN_TAG), sizeof(cgs.redTeamName));
 		}
@@ -3564,6 +3615,139 @@ static void CG_FilterOspTeamChatLocation (const char *text)
 	return;
 }
 
+static void CG_ParseScores_Ffa (void)
+{
+	int		i;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+	int SCSIZE;
+
+	cg.scoresValid = qtrue;
+	cg.numScores = atoi( CG_Argv( 1 ) );
+	if ( cg.numScores > MAX_CLIENTS ) {
+		Com_Printf("^3CG_ParseScores_Ffa() cg.numScores (%d) > MAX_CLIENTS (%d)\n", cg.numScores, MAX_CLIENTS);
+		cg.numScores = MAX_CLIENTS;
+	}
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		cgs.clientinfo[i].scoreValid = qfalse;
+		cg.clientHasScore[i] = qfalse;
+	}
+
+	cg.teamScores[0] = atoi( CG_Argv( 2 ) );
+	cg.teamScores[1] = atoi( CG_Argv( 3 ) );
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+	//memset( cg.scores, 0, sizeof( cg.scores ) );
+
+	if (cgs.protocol == PROTOCOL_QL) {
+		SCSIZE = 18;
+	} else {
+		SCSIZE = 14;
+	}
+
+	for ( i = 0 ; i < cg.numScores ; i++ ) {
+		int clientNum;
+
+		clientNum = atoi( CG_Argv( i * SCSIZE + 4 ) );
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScores_Ffa() invalid client number %d\n", clientNum);
+		}
+		cg.scores[i].client = clientNum;
+		cg.scores[i].score = atoi( CG_Argv( i * SCSIZE + 5 ) );
+		cg.scores[i].ping = atoi( CG_Argv( i * SCSIZE + 6 ) );
+		cg.scores[i].time = atoi( CG_Argv( i * SCSIZE + 7 ) );
+		//cg.scores[i].scoreFlags = atoi( CG_Argv( i * SCSIZE + 8 ) );
+		//cg.scores[i].powerups = atoi( CG_Argv( i * SCSIZE + 9 ) );
+		cg.scores[i].accuracy = atoi(CG_Argv(i * SCSIZE + 8));
+		cg.scores[i].impressiveCount = atoi(CG_Argv(i * SCSIZE + 9));
+		cg.scores[i].excellentCount = atoi(CG_Argv(i * SCSIZE + 10));
+		cg.scores[i].gauntletCount = atoi(CG_Argv(i * SCSIZE + 11));
+		cg.scores[i].defendCount = atoi(CG_Argv(i * SCSIZE + 12));
+		cg.scores[i].assistCount = atoi(CG_Argv(i * SCSIZE + 13));
+		cg.scores[i].perfect = atoi(CG_Argv(i * SCSIZE + 14));
+		cg.scores[i].captures = atoi(CG_Argv(i * SCSIZE + 15));
+
+		cg.scores[i].alive = atoi(CG_Argv(i * SCSIZE + 16));
+		cg.scores[i].frags = atoi(CG_Argv(i * SCSIZE + 17));
+		cg.scores[i].deaths = atoi(CG_Argv(i * SCSIZE + 18));
+		cg.scores[i].bestWeapon = atoi(CG_Argv(i * SCSIZE + 19));
+
+		//FIXME check if 20 is powerups
+		cg.scores[i].powerups = atoi(CG_Argv(i * SCSIZE + 20));
+		cg.scores[i].damageDone = atoi(CG_Argv(i * SCSIZE + 21));
+
+		//Com_Printf("score %d %s\n", i, cgs.clientinfo[cg.scores[i].client].name);
+		//Com_Printf("sc %d (%d  %d)\n", i, cg.scores[i].scoreFlags, cg.scores[i].alive);
+		//Com_Printf("sc %d (%d  %d %d  -- %d %d)\n", i, cg.scores[i].scoreFlags, cg.scores[i].perfect, cg.scores[i].captures, cg.scores[i].frags, cg.scores[i].deaths);
+
+#if 0
+		Com_Printf("%d  %d  %d  %d\n",
+				   atoi(CG_Argv(i * SCSIZE + 18)),
+				   atoi(CG_Argv(i * SCSIZE + 19)),
+				   atoi(CG_Argv(i * SCSIZE + 20)),
+				   atoi(CG_Argv(i * SCSIZE + 21)));
+
+		Com_Printf("accuracy: %d\n", cg.scores[i].accuracy);
+#endif
+
+		if ( cg.scores[i].client < 0 || cg.scores[i].client >= MAX_CLIENTS ) {
+			Com_Printf("^3FIXME CG_ParseScores_Ffa() score->client invalid: %d\n", cg.scores[i].client);
+			cg.scores[i].client = 0;
+		}
+		cgs.clientinfo[ cg.scores[i].client ].score = cg.scores[i].score;
+		cgs.clientinfo[ cg.scores[i].client ].powerups = cg.scores[i].powerups;
+		cgs.clientinfo[cg.scores[i].client].scoreIndexNum = i;
+
+		cgs.clientinfo[cg.scores[i].client].scoreValid = qtrue;
+		cg.clientHasScore[cg.scores[i].client] = qtrue;
+
+		cg.scores[i].team = cgs.clientinfo[cg.scores[i].client].team;
+
+		//Com_Printf("^1sss  %s  score %d\n", cgs.clientinfo[cg.scores[i].client].name, cgs.clientinfo[cg.scores[i].client].score);
+
+		if (cg.scores[i].team == TEAM_RED) {
+			redCount++;
+			redTotalPing += cg.scores[i].ping;
+		} else if (cg.scores[i].team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += cg.scores[i].ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+	//Com_Printf("^5red ping %d  blue ping %d\n", cg.avgRedPing, cg.avgBluePing);
+
+#if 1  //def MPACK
+	CG_SetScoreSelection(NULL);
+#endif
+
+	if (cgs.gametype == GT_TOURNAMENT) {
+		CG_SetDuelPlayers();
+	}
+
+	// check sizes
+	if (CG_Argc() != (i * SCSIZE + 4)) {
+		CG_Printf("^1CG_ParseScores_Ffa() argc (%d) != %d\n", CG_Argc(), (i * SCSIZE + 4));
+	}
+
+//#undef SCSIZE
+}
+
 static void CG_ParseScores_Duel (void)
 {
 	int i;
@@ -3836,7 +4020,7 @@ static void CG_ParseScores_Ca (void)
 
 	// 17
 	//if (CG_CheckQlVersion(0, 1, 0, 728)) {
-	if (CG_Argc() > (cg.tdmScore.numPlayerScores * 17 + 3)) {
+	if (CG_Argc() > (cg.tdmScore.numPlayerScores * 17 + 3)  ||  cgs.realProtocol >= 91) {
 		cg.teamScores[0] = atoi(CG_Argv(i));  i++;
 		cg.teamScores[1] = atoi(CG_Argv(i));  i++;
 	}
@@ -3870,7 +4054,9 @@ static void CG_ParseScores_Ca (void)
 		ts->team = atoi(CG_Argv(i));  i++;
 		oldScore->team = ts->team;
 
-		ts->subscriber = atoi(CG_Argv(i));  i++;
+		if (cgs.realProtocol < 91) {
+			ts->subscriber = atoi(CG_Argv(i));  i++;
+		}
 		ts->score = atoi(CG_Argv(i));  i++;
 		oldScore->score = ts->score;
 		ts->ping = atoi(CG_Argv(i));  i++;
@@ -4158,8 +4344,10 @@ static void CG_ParseScores_Rr (void)
 		s->frags = atoi(CG_Argv(i));  i++;
 		s->deaths = atoi(CG_Argv(i));  i++;
 
-		s->powerups = atoi(CG_Argv(i));  i++;
-		ci->powerups = s->powerups;
+		if (cgs.realProtocol < 91) {
+			s->powerups = atoi(CG_Argv(i));  i++;
+			ci->powerups = s->powerups;
+		}
 
 		s->accuracy = atoi(CG_Argv(i));  i++;
 		s->bestWeapon = atoi(CG_Argv(i));  i++;
@@ -4173,6 +4361,10 @@ static void CG_ParseScores_Rr (void)
 		s->captures = atoi(CG_Argv(i));  i++;
 		s->alive = atoi(CG_Argv(i));  i++;
 
+		if (cgs.realProtocol >= 91) {
+			//FIXME check
+			s->damageDone = atoi(CG_Argv(i));  i++;
+		}
 		if (s->team == TEAM_RED) {
 			redCount++;
 			redTotalPing += s->ping;
@@ -4245,8 +4437,10 @@ static void CG_ParseScores_Race (void)
 		s->client = clientNum;
 		s->team = ci->team;
 
-		// team?
-		i++;
+		if (cgs.realProtocol < 91) {
+			// team?
+			i++;
+		}
 
 		s->score = atoi(CG_Argv(i));  i++;
 		ci->score = s->score;
@@ -4376,7 +4570,9 @@ static void CG_ParseScores_Ft (void)
 		ts->clientNum = clientNum;  // 32
 		ts->team = team;  // 33
 		oldScore->team = team;
-		ts->subscriber = atoi(CG_Argv(i));  i++;  // 34  //FIXME no, or unused
+		if (cgs.realProtocol < 91) {
+			ts->subscriber = atoi(CG_Argv(i));  i++;  // 34  //FIXME no, or unused
+		}
 		ts->score = atoi(CG_Argv(i));  i++;  // 35
 		oldScore->score = ts->score;
 		ts->ping = atoi(CG_Argv(i));  i++;  // 36
@@ -4741,7 +4937,11 @@ static void CG_ServerCommand( void ) {
 	}
 
 	if ( !strcmp( cmd, "tinfo" ) ) {
-		CG_ParseTeamInfo();
+		if (cgs.realProtocol >= 91) {
+			CG_ParseTeamInfo_91();
+		} else {
+			CG_ParseTeamInfo();
+		}
 		return;
 	}
 
@@ -4857,6 +5057,10 @@ static void CG_ServerCommand( void ) {
 		}
 		if (!Q_stricmp(cmd, "scores_ft")) {
 			CG_ParseScores_Ft();
+			return;
+		}
+		if (!Q_stricmp(cmd, "scores_ffa")) {
+			CG_ParseScores_Ffa();
 			return;
 		}
 
