@@ -632,6 +632,8 @@ vmCvar_t cg_drawFollowingWideScreen;
 vmCvar_t cg_testQlFont;
 vmCvar_t cg_qlhud;
 vmCvar_t cg_qlFontScaling;
+vmCvar_t cg_autoFontScaling;
+vmCvar_t cg_autoFontScalingThreshold;
 
 vmCvar_t cg_weaponBar;
 vmCvar_t cg_weaponBarX;
@@ -1248,7 +1250,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFPSStyle, "cg_drawFPSStyle", "3", CVAR_ARCHIVE },
 	{ &cg_drawFPSFont, "cg_drawFPSFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawFPSPointSize, "cg_drawFPSPointSize", "24", CVAR_ARCHIVE },
-	{ &cg_drawFPSScale, "cg_drawFPSScale", "0.24", CVAR_ARCHIVE },
+	{ &cg_drawFPSScale, "cg_drawFPSScale", "0.25", CVAR_ARCHIVE },
 	//	{ &cg_drawFPSTime, "cg_drawFPSTime", "", CVAR_ARCHIVE },
 	{ &cg_drawFPSColor, "cg_drawFPSColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawFPSAlpha, "cg_drawFPSAlpha", "255", CVAR_ARCHIVE },
@@ -1600,7 +1602,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawSpeedStyle, "cg_drawSpeedStyle", "3", CVAR_ARCHIVE },
 	{ &cg_drawSpeedFont, "cg_drawSpeedFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
 	{ &cg_drawSpeedPointSize, "cg_drawSpeedPointSize", "24", CVAR_ARCHIVE },
-	{ &cg_drawSpeedScale, "cg_drawSpeedScale", "0.24", CVAR_ARCHIVE },
+	{ &cg_drawSpeedScale, "cg_drawSpeedScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawSpeedColor, "cg_drawSpeedColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawSpeedAlpha, "cg_drawSpeedAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawSpeedWideScreen), "3", CVAR_ARCHIVE },
@@ -1667,6 +1669,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	//{ &cg_customHud, "cg_customHud", "", CVAR_ARCHIVE },
 	{ &cg_qlhud, "cg_qlhud", "1", CVAR_ARCHIVE },
 	{ &cg_qlFontScaling, "cg_qlFontScaling", "1", CVAR_ARCHIVE },
+	{ cvp(cg_autoFontScaling), "1", CVAR_ARCHIVE },
+	{ cvp(cg_autoFontScalingThreshold), "9", CVAR_ARCHIVE },
 
 	{ &cg_weaponBar, "cg_weaponBar", "1", CVAR_ARCHIVE },
 	{ &cg_weaponBarX, "cg_weaponBarX", "", CVAR_ARCHIVE },
@@ -2031,7 +2035,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_animationsIgnoreTimescale, "cg_animationsIgnoreTimescale", "0", CVAR_ARCHIVE },
 	{ &cg_animationsRate, "cg_animationsRate", "1", CVAR_ARCHIVE },
 	{ &cg_quadFireSound, "cg_quadFireSound", "1", CVAR_ARCHIVE },
-	{ &cg_kickScale, "cg_kickScale", "1.0", CVAR_ARCHIVE },
+	{ &cg_kickScale, "cg_kickScale", "0", CVAR_ARCHIVE },
 	{ &cg_gameType, "cg_gameType", "0", CVAR_ARCHIVE },
 	{ &cg_compMode, "cg_compMode", "0", CVAR_ARCHIVE },
 	{ &cg_drawSpecMessages, "cg_drawSpecMessages", "1", CVAR_ARCHIVE },
@@ -2554,7 +2558,7 @@ void CG_AddChatLine (const char *line)
 {
 	int i;
 
-	i = cg.chatAreaStringsIndex % MAX_CHAT_LINES_MASK;
+	i = cg.chatAreaStringsIndex % MAX_CHAT_LINES;
 
 	Q_strncpyz(cg.chatAreaStrings[i], line, sizeof(cg.chatAreaStrings[i]));
 	cg.chatAreaStringsTime[i] = cg.time;
@@ -2572,8 +2576,11 @@ void CG_PrintToScreen ( const char *msg, ... ) {
 
 	text[1023] = '\0';
 
+
 	for (i = 0;  i < 1024;  i++) {
-		if (text[i] >= ' '  &&  text[i] <= '~') {
+		// also allow utf8 characters
+		//if (text[i] >= ' '  &&  text[i] <= '~') {
+		if ((unsigned char)text[i] >= ' ') {
 			continue;
 		}
 
@@ -2583,6 +2590,8 @@ void CG_PrintToScreen ( const char *msg, ... ) {
 
 		text[i] = ' ';
 	}
+
+	//Com_Printf("^2last char:  %d 0x%x '%c'\n", text[i - 1], text[i - 1], text[i - 1]);
 
 	CG_AddChatLine(text);
 }
@@ -2767,6 +2776,7 @@ static void CG_RegisterItemSounds( int itemNum ) {
 	item = &bg_itemlist[ itemNum ];
 
 	if( item->pickup_sound ) {
+		//Com_Printf("xxx: item pickup:  %s\n", item->pickup_name);
 		trap_S_RegisterSound( item->pickup_sound, qfalse );
 	}
 
@@ -3026,6 +3036,8 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.selectSound = trap_S_RegisterSound( "sound/weapons/change.wav", qfalse );
 	cgs.media.wearOffSound = trap_S_RegisterSound( "sound/items/wearoff.wav", qfalse );
 	cgs.media.useNothingSound = trap_S_RegisterSound( "sound/items/use_nothing.wav", qfalse );
+
+	//FIXME check for gibs
 	cgs.media.gibSound = trap_S_RegisterSound( "sound/player/gibsplt1.wav", qfalse );
 	cgs.media.gibBounce1Sound = trap_S_RegisterSound( "sound/player/gibimp1.wav", qfalse );
 	cgs.media.gibBounce2Sound = trap_S_RegisterSound( "sound/player/gibimp2.wav", qfalse );
@@ -3567,7 +3579,6 @@ static void CG_RegisterGraphics( void ) {
 			Com_Printf("^1couldn't load wc/friend\n");
 			cgs.media.friendShader = trap_R_RegisterShader("sprites/foe");
 		}
-		cgs.media.friend2Shader = trap_R_RegisterShader("sprites/friend2");
 		cgs.media.friendHitShader = trap_R_RegisterShader("sprites/friend_hit");
 		cgs.media.friendDeadShader = trap_R_RegisterShader("sprites/friend_dead");
 		cgs.media.redQuadShader = trap_R_RegisterShader("powerups/blueflag" );
@@ -4593,6 +4604,7 @@ static qboolean CG_Asset_Parse(int handle) {
 			if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)) {
 				return qfalse;
 			}
+			//pointSize = 24;
 			cgDC.registerFont(tempStr, pointSize, &cgDC.Assets.textFont);
 			continue;
 		}
@@ -4603,6 +4615,7 @@ static qboolean CG_Asset_Parse(int handle) {
 			if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)) {
 				return qfalse;
 			}
+			//pointSize = 24;
 			cgDC.registerFont(tempStr, pointSize, &cgDC.Assets.smallFont);
 			continue;
 		}
@@ -4613,6 +4626,7 @@ static qboolean CG_Asset_Parse(int handle) {
 			if (!PC_String_Parse(handle, &tempStr) || !PC_Int_Parse(handle, &pointSize)) {
 				return qfalse;
 			}
+			//pointSize = 24;
 			cgDC.registerFont(tempStr, pointSize, &cgDC.Assets.bigFont);
 			continue;
 		}
@@ -5468,6 +5482,7 @@ static const char *CG_FeederItemTextFreezetagStats (float feederID, int index, i
 	return "";
 }
 
+// ca scoreboard
 #define CA_TEXT_LIMIT 12
 
 static const char *CG_FeederItemTextCa (float feederID, int index, int column, qhandle_t *handle)
@@ -7493,7 +7508,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 			"sound/world/klaxon2.ogg",
 			"sound/world/buzzer.ogg",
 			"sound/world/bell_01.ogg",
-			"sound/world/hockey_horn.ogg",
+			"sound/world/hockey_horn",
 		};
 
 		cg.numAllowedAmbientSounds = 0;

@@ -3343,3 +3343,74 @@ QUAKE LIVE Mini-Update: April 30, 2015
         Defaulted the spawn-as-spectator option off for Team Games.
 
 
+---------------------------------------
+
+December 17, 2015 :
+
+    We've just released an update to both the client and the server today. Servers and clients will both need to update as the changes are not compatible between versions, and older servers will be de-listed from the server list.
+
+- Sponge
+
+    Here's the list of changes:
+
+Client
+
+- set bot_minplayers to 0 in training to prevent bots from showing up in crash course
+- don't play sounds that are outside of the player's PVS even if they are included in the snapshot. this should remove extra sounds when spectating someone, and the ability to hear teammates but not enemies. behavior can be changed through s_pvs
+- tag search is now case-insensitive
+- leading and trailing whitespace is now stripped from tags in the browser
+- de-duplicate server tags in the browser
+- prevent stats from carrying over on aborted or training matches
+- automatically focus the text input on the password dialog box
+
+Server
+
+- include mappool_ffa.txt
+- include steam id in /status output
+- set sv_includeCurrentMapInVote to 1 to always place the current map in the 3 map vote
+- initialize steam gameserver after configs get read, should fix net_port issues with master server
+- factories support a "tags" array, which can contain up to 8 strings to automatically be added to the server's tags
+- add descriptive error messages when dropping a client due to a steam auth error
+
+Game:
+
+- fix resource hog achievement in non-team modes
+- make /players output line up better
+- fix duplicate steam ids being printed for spectating players in /players
+- added g_powerupRespawn to adjust default powerup respawn time
+- change demote/kick rules so you can't ever kick admins and mods, and can't demote people at or above your level
+- include missing AAS for mcsarges
+- support cg_drawProfileImages for Duel Scoreboard player avatar.
+- added cg_voiceChatIndicator
+- fix /ban being marked as temporary
+- added roundlimit to start and end game stats
+- restored spectator HUD in CA while dead
+- verify maps and factories exist before allowing callvotes through
+- remove g_forceNextMap, use an empty maplist to keep a server on the same map
+- removed chaingun ammo from thedukesgarden
+- nomipped certain elements in thedukesgarden
+- print steam ids for connecting players in the server's console
+- FLAG_STATUS stat event to determine when flags were picked up, dropped, returned
+- don't berate the player by telling them they lose when they were just a spectator
+- fixed a crash in freezetag when a frozen player issues droprune
+- fixed an issue where bot_minplayers could not kick bots with spaces in their name
+- redo spectator scroller so it doesn't scroll, just flips between pages of spectators
+- attempted fix at players not in first place getting "you win" announcements
+- fixed callvote teamsize validation in duel and race
+- fixed overflowing names on duel scoreboard
+
+December 17:
+
+We've had to re-ship the update to fix the broken lighting in Deep Inside, and default off the sound change since it appeared to be causing stuttering sound for some non-default sound configurations. Servers will have to be updated again, we're sorry for the inconvenience.
+
+- fixed lighting on deepinside
+- default s_pvs to 0, since it could still be useful for streamers
+- don't kick for steam auth error 6 (issuer cancelled auth ticket)
+- sv_fps wasn't fully set as CVAR_ROM, should be locked for real now
+- force center weapon bar for dead ca players
+- cg_voiceChatIndicator 2 to draw it on the left side in the event that you place your weaponbar on the right
+
+The update should come down automatically for everyone through Steam. 
+
+---------------------------------------
+

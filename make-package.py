@@ -12,7 +12,7 @@ os.system("rm -r %s/" % packageDir)
 if not os.path.exists(packageDir):
     os.makedirs(packageDir)
 os.system("cp -a package-files/* %s/" % packageDir)
-os.system("cp COPYING.txt COPYING-backtrace.txt CREDITS-wolfcam.txt CREDITS-openarena.txt README-ioquake3.txt README-wolfcam.txt version %s/" % packageDir)
+os.system("cp COPYING.txt COPYING-backtrace.txt CREDITS-wolfcam.txt CREDITS-openarena.txt README-ioquake3.txt README-wolfcam.txt version unifont-LICENSE.txt%s/" % packageDir)
 os.system("cp code/libs/SDL.dll code/libs/backtrace.dll %s/" % packageDir)
 os.system("cp build/release-linux-i386/ioquake3.i386 %s/wolfcamql.i386" % packageDir)
 os.system("cp -a build/release-linux-i386/baseq3/*.so %s/wolfcam-ql/" % packageDir)

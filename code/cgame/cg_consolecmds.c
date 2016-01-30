@@ -973,31 +973,6 @@ void CG_ErrorPopup (const char *s)
 	}
 }
 
-void CG_EchoPopup (const char *s, int x, int y)
-{
-	cg.echoPopupStartTime = cg.realTime;
-	cg.echoPopupTime = cg_echoPopupTime.integer;
-	cg.echoPopupString[0] = '\0';
-
-	Q_strncpyz(cg.echoPopupString, s, sizeof(cg.echoPopupString));
-
-	if (x < 0) {
-		cg.echoPopupX = cg_echoPopupX.integer;
-	} else {
-		cg.echoPopupX = x;
-	}
-
-	if (y < 0) {
-		cg.echoPopupY = cg_echoPopupY.integer;
-	} else {
-		cg.echoPopupY = y;
-	}
-
-	cg.echoPopupWideScreen = cg_echoPopupWideScreen.integer;
-	
-	cg.echoPopupScale = cg_echoPopupScale.value;
-}
-
 static void CG_EchoPopup_f (void)
 {
 	int i;
@@ -1020,6 +995,7 @@ static void CG_EchoPopup_f (void)
 
 	cg.echoPopupX = cg_echoPopupX.integer;
 	cg.echoPopupY = cg_echoPopupY.integer;
+	cg.echoPopupWideScreen = cg_echoPopupWideScreen.integer;
 	cg.echoPopupScale = cg_echoPopupScale.value;
 }
 
@@ -1037,24 +1013,12 @@ static void CG_EchoPopupCvar_f (void)
 	}
 
 	trap_Cvar_VariableStringBuffer(CG_Argv(1), buff, sizeof(buff));
-	trap_SendConsoleCommand(va("echopopup %s %s\n", CG_Argv(1), buff));
-}
-
-#if 0
-static void CG_EchoPopupt_f (void)
-{
-	if (CG_Argc() < 2) {
-		return;
+	if (CG_Argc() > 2  &&  !Q_stricmp("name", CG_Argv(2))) {
+		trap_SendConsoleCommand(va("echopopup %s %s\n", CG_Argv(1), buff));
+	} else {
+		trap_SendConsoleCommand(va("echopopup %s\n", buff));
 	}
 }
-
-static void CG_EchoPopuptxy_f (void)
-{
-	if (CG_Argc() < 2) {
-		return;
-	}
-}
-#endif
 
 static void CG_AccStatsUp_f (void)
 {
@@ -6870,7 +6834,7 @@ static void CG_PrintJumps_f (void)
 	}
 	wordCount = 0;
 	for (i = 0;  i < num;  i++) {
-		Com_Printf("%d ", cg.jumps[(cg.numJumps - num + i) & MAX_JUMPS_INFO_MASK].speed);
+		Com_Printf("%d ", cg.jumps[(cg.numJumps - num + i) % MAX_JUMPS_INFO].speed);
 		wordCount++;
 		if (wordCount >= 8) {
 			Com_Printf("\n");

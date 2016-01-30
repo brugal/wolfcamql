@@ -1836,7 +1836,7 @@ static void CG_AddDamagePlum (localEntity_t *le)
 
 	//FIXME might be centered
 	for (i = numdigits - 1;  i >= 0;  i--) {
-		const glyphInfo_t *glyph;
+		glyphInfo_t glyph;
 		float yadj;
 
 #if 0
@@ -1853,10 +1853,11 @@ static void CG_AddDamagePlum (localEntity_t *le)
 #endif
 
 		re->renderfx = RF_DEPTHHACK;
-		glyph = &font->glyphs[48 + digits[i]];
-		yadj = useScale * yscale * glyph->top;
+		//glyph = &font->glyphs[48 + digits[i]];
+		trap_R_GetGlyphInfo(font, 48 + digits[i], &glyph);
+		yadj = useScale * yscale * glyph.top;
 
-		VectorMA(origin, xSkip + (float)glyph->imageWidth / 2.0f * useScale * xscale, right, re->origin);
+		VectorMA(origin, xSkip + (float)glyph.imageWidth / 2.0f * useScale * xscale, right, re->origin);
 		re->origin[2] += yadj;
 
 		//FIXME testing
@@ -1880,18 +1881,18 @@ static void CG_AddDamagePlum (localEntity_t *le)
 		re->s2 = 1;  //glyph->s2;
 		re->t2 = 1;  //glyph->t2;
 #endif
-		re->s1 = glyph->s;
-		re->t1 = glyph->t;
-		re->s2 = glyph->s2;
-		re->t2 = glyph->t2;
+		re->s1 = glyph.s;
+		re->t1 = glyph.t;
+		re->s2 = glyph.s2;
+		re->t2 = glyph.t2;
 
 		//re->width = (float)glyph->imageWidth * font->glyphScale * scale;
 		//re->height = (float)glyph->imageHeight * font->glyphScale * scale;
 
-		re->width = (float)glyph->imageWidth / 2.0f * useScale * xscale;
-		re->height = (float)glyph->imageHeight / 2.0f * useScale * yscale;
+		re->width = (float)glyph.imageWidth / 2.0f * useScale * xscale;
+		re->height = (float)glyph.imageHeight / 2.0f * useScale * yscale;
 
-		re->customShader = glyph->glyph;
+		re->customShader = glyph.glyph;
 		//re->customShader = trap_R_RegisterShaderNoMip("gfx/2d/bigchars.tga");
 
 		//Com_Printf("width %d  skip %d\n", glyph->imageWidth, glyph->xSkip);
@@ -1905,7 +1906,7 @@ static void CG_AddDamagePlum (localEntity_t *le)
 		//xSkip += (float)glyph->imageWidth * cgs.media.qlfont24.glyphScale * scale;
 		//xSkip += 1.0f;  //FIXME why? based on distance?
 
-		xSkip += (float)glyph->xSkip * 1.0f * useScale * xscale;
+		xSkip += (float)glyph.xSkip * 1.0f * useScale * xscale;
 
 
 		if (style == ITEM_TEXTSTYLE_SHADOWED  ||  style == ITEM_TEXTSTYLE_SHADOWEDMORE) {

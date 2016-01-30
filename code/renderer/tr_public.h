@@ -100,6 +100,7 @@ typedef struct {
 	void    (*A3D_RenderGeometry) (void *pVoidA3D, void *pVoidGeom, void *pVoidMat, void *pVoidGeomStatus);
 #endif
 	void	(*RegisterFont)(const char *fontName, int pointSize, fontInfo_t *font);
+	qboolean (*GetGlyphInfo) (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
 	void (*RemapShader)(const char *oldShader, const char *newShader, const char *offsetTime, qboolean keepLightmap, qboolean userSet);
 	void (*ClearRemappedShader)(const char *shaderName);
 	qboolean (*GetEntityToken)( char *buffer, int size );

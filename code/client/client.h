@@ -354,6 +354,7 @@ typedef struct {
 	qhandle_t	charSetShader;
 	qhandle_t	whiteShader;
 	qhandle_t	consoleShader;
+	fontInfo_t consoleFont;
 } clientStatic_t;
 
 extern	clientStatic_t		cls;
@@ -551,6 +552,8 @@ extern cvar_t *cl_numberPadInput;
 extern cvar_t *cl_maxRewindBackups;
 extern cvar_t *cl_keepDemoFileInMemory;
 extern cvar_t *cl_demoFileCheckSystem;
+extern cvar_t *cl_demoFile;
+extern cvar_t *cl_demoFileBaseName;
 
 
 extern double Overf;
@@ -643,9 +646,10 @@ qboolean CL_UpdateVisiblePings_f( int source );
 //
 // console
 //
-void Con_DrawCharacter (int cx, int line, int num);
 
-void Con_CheckResize (void);
+// not used outside of cl_console.c
+//void Con_CheckResize (void);
+
 void Con_Init (void);
 void Con_Clear_f (void);
 void Con_ToggleConsole_f (void);
@@ -683,7 +687,7 @@ void	SCR_DrawBigStringColor( int x, int y, const char *s, vec4_t color, qboolean
 void	SCR_DrawSmallStringExt( float x, float y, float cwidth, float cheight, const char *string, float *setColor, qboolean forceColor, qboolean noColorEscape );
 void	SCR_DrawSmallChar( int x, int y, int ch );
 void SCR_DrawSmallCharExt( float x, float y, float width, float height, int ch );
-void SCR_DrawChar (int x, int y, float size, int ch);
+//void SCR_DrawChar (int x, int y, float size, int ch);
 void SCR_Text_Paint (float x, float y, float scale, vec4_t color, const char *text, float adjust, int limit, int style, fontInfo_t *fontOrig);
 
 //

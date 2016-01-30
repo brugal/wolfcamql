@@ -344,7 +344,11 @@ void MSG_WriteString( msg_t *sb, const char *s ) {
 
 		// get rid of 0x80+ and '%' chars, because old clients don't like them
 		for ( i = 0 ; i < l ; i++ ) {
-			if ( ((byte *)string)[i] > 127 || string[i] == '%' ) {
+			// utf8
+			if (com_protocol->integer < 91  &&  ((byte *)string)[i] > 127) {
+				string[i] = '.';
+			}
+			if (string[i] == '%') {
 				string[i] = '.';
 			}
 		}
@@ -370,7 +374,11 @@ void MSG_WriteBigString( msg_t *sb, const char *s ) {
 
 		// get rid of 0x80+ and '%' chars, because old clients don't like them
 		for ( i = 0 ; i < l ; i++ ) {
-			if ( ((byte *)string)[i] > 127 || string[i] == '%' ) {
+			// utf8
+			if (com_protocol->integer < 91  &&  ((byte *)string)[i] > 127) {
+				string[i] = '.';
+			}
+			if (string[i] == '%') {
 				string[i] = '.';
 			}
 		}
@@ -482,9 +490,13 @@ char *MSG_ReadString( msg_t *msg ) {
 		if ( c == '%' ) {
 			c = '.';
 		}
-		// don't allow higher ascii values
-		if ( c > 127 ) {
-			c = '.';
+
+		// utf8
+		if (com_protocol->integer < 91) {
+			// don't allow higher ascii values
+			if ( c > 127 ) {
+				c = '.';
+			}
 		}
 
 		string[l] = c;
@@ -510,11 +522,15 @@ char *MSG_ReadBigString( msg_t *msg ) {
 		if ( c == '%' ) {
 			c = '.';
 		}
+
+		// allow utf 8
+#if 0
 		// don't allow higher ascii values
 		if ( c > 127 ) {
 			c = '.';
 		}
-
+#endif
+		
 		string[l] = c;
 		l++;
 	} while (l < sizeof(string)-1);
@@ -538,11 +554,15 @@ char *MSG_ReadStringLine( msg_t *msg ) {
 		if ( c == '%' ) {
 			c = '.';
 		}
-		// don't allow higher ascii values
-		if ( c > 127 ) {
-			c = '.';
-		}
 
+		// utf8
+		if (com_protocol->integer < 91) {
+			// don't allow higher ascii values
+			if ( c > 127 ) {
+				c = '.';
+			}
+		}
+		
 		string[l] = c;
 		l++;
 	} while (l < sizeof(string)-1);

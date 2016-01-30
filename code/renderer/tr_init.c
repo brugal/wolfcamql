@@ -175,6 +175,11 @@ cvar_t	*r_debugLight;
 cvar_t	*r_debugSort;
 cvar_t	*r_printShaders;
 cvar_t	*r_saveFontData;
+cvar_t *r_debugFonts;
+cvar_t *r_defaultQlFontFallbacks;
+cvar_t *r_defaultMSFontFallbacks;
+cvar_t *r_defaultSystemFontFallbacks;
+cvar_t *r_defaultUnifontFallbacks;
 
 cvar_t	*r_marksOnTriangleMeshes;
 
@@ -2557,6 +2562,11 @@ void R_Register( void )
 	r_debugSort = ri.Cvar_Get( "r_debugSort", "0", CVAR_CHEAT );
 	r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
 	r_saveFontData = ri.Cvar_Get( "r_saveFontData", "0", 0 );
+	r_debugFonts = ri.Cvar_Get("r_debugFonts", "0", CVAR_ARCHIVE);
+	r_defaultQlFontFallbacks = ri.Cvar_Get("r_defaultQlFontFallbacks", "1", CVAR_ARCHIVE);
+	r_defaultMSFontFallbacks = ri.Cvar_Get("r_defaultMSFontFallbacks", "1", CVAR_ARCHIVE);
+	r_defaultSystemFontFallbacks = ri.Cvar_Get("r_defaultSystemFontFallbacks", "1", CVAR_ARCHIVE);
+	r_defaultUnifontFallbacks = ri.Cvar_Get("r_defaultUnifontFallbacks", "1", CVAR_ARCHIVE);
 
 	r_nocurves = ri.Cvar_Get ("r_nocurves", "0", CVAR_CHEAT );
 	r_drawworld = ri.Cvar_Get ("r_drawworld", "1", CVAR_CHEAT );
@@ -2637,6 +2647,7 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 	ri.Cmd_AddCommand( "modellist", R_Modellist_f );
 	ri.Cmd_AddCommand( "modelist", R_ModeList_f );
+	ri.Cmd_AddCommand("fontlist", R_FontList_f);
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand("screenshotPNG", R_ScreenShotPNG_f);
@@ -2780,6 +2791,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand ("skinlist");
 	ri.Cmd_RemoveCommand ("gfxinfo");
 	ri.Cmd_RemoveCommand( "modelist" );
+	ri.Cmd_RemoveCommand("fontlist");
 	ri.Cmd_RemoveCommand( "shaderstate" );
 	ri.Cmd_RemoveCommand("createcolorskins");
 	ri.Cmd_RemoveCommand("printviewparms");
@@ -2880,6 +2892,7 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.UploadCinematic = RE_UploadCinematic;
 
 	re.RegisterFont = RE_RegisterFont;
+	re.GetGlyphInfo = RE_GetGlyphInfo;
 	re.RemapShader = R_RemapShader;
 	re.ClearRemappedShader = R_ClearRemappedShader;
 	re.GetEntityToken = R_GetEntityToken;

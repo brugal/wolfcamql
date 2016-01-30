@@ -32,7 +32,7 @@ static qboolean viewangles_have_changed (int clientNum, int snapshots)
         int num;
         qboolean foundEnt;
 
-        s = &wcg.snaps[(wcg.curSnapshotNumber - i) & MAX_SNAPSHOT_MASK];
+        s = &wcg.snaps[(wcg.curSnapshotNumber - i) % MAX_SNAPSHOT_BACKUP];
 
         if (s->ps.clientNum == clientNum) {
             if (s->ps.viewangles[0] != angs[0]  ||  s->ps.viewangles[1] != angs[1]) {

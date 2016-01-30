@@ -136,7 +136,7 @@ static void CG_SetInitialSnapshot( snapshot_t *snap ) {
 
 	cg.snap = snap;
 
-    memcpy (&wcg.snaps[wcg.curSnapshotNumber & MAX_SNAPSHOT_MASK], snap, sizeof(snapshot_t));
+    memcpy (&wcg.snaps[wcg.curSnapshotNumber % MAX_SNAPSHOT_BACKUP], snap, sizeof(snapshot_t));
     wcg.curSnapshotNumber++;
 
 	BG_PlayerStateToEntityState( &snap->ps, &cg_entities[ snap->ps.clientNum ].currentState, qfalse );
@@ -352,7 +352,7 @@ static void CG_SetNextSnap( snapshot_t *snap ) {
 	cg.numProjectiles = 0;
 
     if (cg.snap) {
-        memcpy(&wcg.snaps[wcg.curSnapshotNumber & MAX_SNAPSHOT_MASK], cg.snap, sizeof(snapshot_t));
+        memcpy(&wcg.snaps[wcg.curSnapshotNumber % MAX_SNAPSHOT_BACKUP], cg.snap, sizeof(snapshot_t));
         wcg.curSnapshotNumber++;
 
 		for (i = 0;  i < cg.snap->numEntities;  i++) {
@@ -390,13 +390,13 @@ static void CG_SetNextSnap( snapshot_t *snap ) {
     if (cg.snap) {
 		int oldTime;
 
-		oldTime = wcg.snaps[(wcg.curSnapshotNumber - 1) & MAX_SNAPSHOT_MASK].serverTime;
+		oldTime = wcg.snaps[(wcg.curSnapshotNumber - 1) % MAX_SNAPSHOT_BACKUP].serverTime;
 		if (cg.snap->serverTime - oldTime > 33) {
 			//CG_Printf ("%d\n", cg.snap->serverTime - oldTime);
 		}
         //memcpy (&wcg.oldSnap, cg.snap, sizeof (snapshot_t));
         //wcg.oldSnapValid = qtrue;
-        //memcpy (&wcg.snaps[wcg.curSnapshotNumber & MAX_SNAPSHOT_MASK], cg.snap, sizeof(snapshot_t));
+        //memcpy (&wcg.snaps[wcg.curSnapshotNumber % MAX_SNAPSHOT_BACKUP], cg.snap, sizeof(snapshot_t));
         //wcg.curSnapshotNumber++;
         //CG_Printf ("snapshot: %d\n", wcg.curSnapshotNumber);
     } else {
@@ -900,7 +900,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		if (snapNum < cgs.firstServerMessageNum) {
 			break;
 		}
-		snap = &wcg.snaps[wcg.curSnapshotNumber & MAX_SNAPSHOT_MASK];
+		snap = &wcg.snaps[wcg.curSnapshotNumber % MAX_SNAPSHOT_BACKUP];
 		ret = CG_GetSnapshot(snapNum, snap);
 		cgs.processedSnapshotNum = snapNum;
 		if (ret) {
@@ -914,18 +914,18 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 			lastPing = snap->ping;
 
 			// offline demos with snaps having same server time  //FIXME problem with demosmoothing
-			if (cg_checkForOfflineDemo.integer == 0  ||  wcg.snaps[wcg.curSnapshotNumber & MAX_SNAPSHOT_MASK].serverTime > lastSnapServerTime) {
-				lastSnapServerTime = wcg.snaps[wcg.curSnapshotNumber & MAX_SNAPSHOT_MASK].serverTime;
+			if (cg_checkForOfflineDemo.integer == 0  ||  wcg.snaps[wcg.curSnapshotNumber % MAX_SNAPSHOT_BACKUP].serverTime > lastSnapServerTime) {
+				lastSnapServerTime = wcg.snaps[wcg.curSnapshotNumber % MAX_SNAPSHOT_BACKUP].serverTime;
 				if (i < 0) {  // last one not saved, since CG_SetNextSnap() does it
 					wcg.curSnapshotNumber++;
 				}
 
 				if (!cg.snap) {
-					cg.snap = &wcg.snaps[(wcg.curSnapshotNumber - 1) & MAX_SNAPSHOT_MASK];
+					cg.snap = &wcg.snaps[(wcg.curSnapshotNumber - 1) % MAX_SNAPSHOT_BACKUP];
 				} else if (!cg.nextSnap) {
-					cg.nextSnap = &wcg.snaps[(wcg.curSnapshotNumber - 1) & MAX_SNAPSHOT_MASK];
+					cg.nextSnap = &wcg.snaps[(wcg.curSnapshotNumber - 1) % MAX_SNAPSHOT_BACKUP];
 				} else if (!cg.nextNextSnap) {
-					cg.nextNextSnap = &wcg.snaps[(wcg.curSnapshotNumber - 1) & MAX_SNAPSHOT_MASK];
+					cg.nextNextSnap = &wcg.snaps[(wcg.curSnapshotNumber - 1) % MAX_SNAPSHOT_BACKUP];
 					checkNoMove = qtrue;
 					cg.nextNextSnapValid = qtrue;
 				} else {
@@ -934,7 +934,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 
 					cg.snap = cg.nextSnap;
 					cg.nextSnap = cg.nextNextSnap;
-					cg.nextNextSnap = &wcg.snaps[(wcg.curSnapshotNumber - 1) & MAX_SNAPSHOT_MASK];
+					cg.nextNextSnap = &wcg.snaps[(wcg.curSnapshotNumber - 1) % MAX_SNAPSHOT_BACKUP];
 				}
 
 				if (checkNoMove) {
@@ -1017,7 +1017,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		}
 
 		// don't do it if setting next snap in this function
-		//memcpy(&wcg.snaps[wcg.curSnapshotNumber & MAX_SNAPSHOT_MASK], cg.snap, sizeof(snapshot_t));
+		//memcpy(&wcg.snaps[wcg.curSnapshotNumber % MAX_SNAPSHOT_BACKUP], cg.snap, sizeof(snapshot_t));
         //wcg.curSnapshotNumber++;
 
 		// --- CG_SetInitialSnapshot() ---

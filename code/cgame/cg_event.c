@@ -142,7 +142,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 
 	//Com_Printf("^3 adding obit %d  %d\n", cg.obituaryIndex, cg.time);
 
-	index = cg.obituaryIndex % MAX_OBITUARIES_MASK;
+	index = cg.obituaryIndex % MAX_OBITUARIES;
 	lastObituary = &cg.obituaries[index];
 	cg.obituaryIndex++;
 
@@ -151,7 +151,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 	lastObituary->victimClientNum = target;
 
 #if 0
-	Com_Printf("^3 in CG_Obituary(), cg.obituaryIndex %d  time: %d\n", cg.obituaryIndex, cg.obituaries[(cg.obituaryIndex - 1) % MAX_OBITUARIES_MASK].time);
+	Com_Printf("^3 in CG_Obituary(), cg.obituaryIndex %d  time: %d\n", cg.obituaryIndex, cg.obituaries[(cg.obituaryIndex - 1) % MAX_OBITUARIES].time);
     Com_Printf("last obit time: %d  \n", lastObituary->time);
 	Com_Printf("^3 in wtf  ... CG_Obituary(), cg.obituaryIndex %d  time: %d\n", cg.obituaryIndex, cg.obituaries[cg.obituaryIndex - 1].time);
 #endif
@@ -1709,8 +1709,8 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 				cg.jumpsNeedClearing = qfalse;
 				//CG_Printf("cleared jump info %d\n", cg.time);
 			}
-			cg.jumps[cg.numJumps & MAX_JUMPS_INFO_MASK].time = cg.snap->serverTime;
-			cg.jumps[cg.numJumps & MAX_JUMPS_INFO_MASK].speed = sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]);
+			cg.jumps[cg.numJumps % MAX_JUMPS_INFO].time = cg.snap->serverTime;
+			cg.jumps[cg.numJumps % MAX_JUMPS_INFO].speed = sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]);
 			//Com_Printf("jump %d\n", cg.jumps[cg.numJumps].speed);
 			if (cg.numJumps == 0) {
 				cg.jumpsFirstTime = cg.snap->serverTime;
@@ -2858,9 +2858,9 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						CG_AddBufferedSound( cgs.media.returnOpponentSound );
 					//
 					if (cg_audioAnnouncerFlagStatus.integer) {
-						if (team == TEAM_RED) {
+						if (team == TEAM_BLUE) {
 							CG_AddBufferedSound(cgs.media.yourFlagReturnedSound);
-						} else if (team == TEAM_BLUE) {
+						} else if (team == TEAM_RED) {
 							CG_AddBufferedSound(cgs.media.enemyFlagReturnedSound);
 						} else {
 							CG_AddBufferedSound( cgs.media.blueFlagReturnedSound );
@@ -2874,9 +2874,9 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						CG_AddBufferedSound( cgs.media.returnOpponentSound );
 					//
 					if (cg_audioAnnouncerFlagStatus.integer) {
-						if (team == TEAM_BLUE) {
+						if (team == TEAM_RED) {
 							CG_AddBufferedSound(cgs.media.yourFlagReturnedSound);
-						} else if (team == TEAM_RED) {
+						} else if (team == TEAM_BLUE) {
 							CG_AddBufferedSound(cgs.media.enemyFlagReturnedSound);
 						} else {
 							CG_AddBufferedSound( cgs.media.redFlagReturnedSound );
@@ -3264,7 +3264,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			pe->deathTime = cg.time;
 		}
 		CG_Obituary( es );
-		//Com_Printf("^3 after CG_Obituary(), cg.obituaryIndex %d  time: %d\n", cg.obituaryIndex, cg.obituaries[(cg.obituaryIndex - 1) % MAX_OBITUARIES_MASK].time);
+		//Com_Printf("^3 after CG_Obituary(), cg.obituaryIndex %d  time: %d\n", cg.obituaryIndex, cg.obituaries[(cg.obituaryIndex - 1) % MAX_OBITUARIES].time);
 		break;
 
 	case EV_DROWN:

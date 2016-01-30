@@ -1574,7 +1574,6 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
 * chat/status/  font shadowed  	CG_AREA_NEW_CHAT in ql doesn't set textStyle in menu it seems to be hardcoded in cgame
 * team overlay font shadowed
 * "sound/teamplay/flagcapture_yourteam.wav"  same cgs.media.captureAwardSound cgs.media.captureYourTeamSound
-* is '& MAX_SNAPSHOT_MASK' wrong?
 * check from ql update april 21 2015:     - Specified a sort order on liquids/glass/flares/lightbeams shaders; Simple items and similar transparent objects should correctly sort over them now (in most cases).
 * check from ql update april 21 2015:     - Added CVAR_REPLICATED to archived sound cvars.
 * timer pies even if not transmitted
@@ -1689,6 +1688,33 @@ FIXME ui execute text:  2  'cmd team red ; '
 * remove old area draw chat hack so it doesn't overdraw
 * team overlay text style
 * team overlay order (name, armor, powerup, etc..)
+* register sound:  sound/world/hockey_horn.ogg fails even though hockey_horn.wav is there..  fallback for .wav ?
+* home locate older foe2.[png|tga|jpg] used in menus for notification?
+* user might have non standard steam folder location
+* zoom-spec.dm_91  spec during ca free cam doesn't unzoom when 1st person view is back
+* out of ammo  vs  player follow  (see if out of ammo is in same place as ql)
+* mvp awards highlight in score listings (extra outside filled box?)
+* scoreboard set selection so you can see who's being followed
+* protocol 91 team info status only being updated with tinfo command, see if it should be updated with real values in team overlay cg_draw.c
+* utf8:  fallbacks depending on type (sans, serif, ..), fallbacks for q3fonts need adjusted baseline
+* don't expose fontInfo_t private data
+* ill.dm_91 3:20  ca demo zoomed in at round start
+* utf8:  q3font bolding and offset, disable default ql font fallbacks, unifont, console font, ui loading screen fonts, insert unicode in console
+* option to include demo file folder as pk3 search path
+* option to treat only one command line arg as demo file
+* test default 0 char fallback if no fallbacks defined
+* cl_scrn initialized before render but it uses drawing functions and crashes if registerfont is called in Init()
+* utf8 console:  xskip 0 for diacritics and combining marks?
+* glyph left for non bitmap fonts
+* r_defaultFont
+* font:  "K/D" x spacing ql does kerning for 'K' -> '/'
+* scaleFont() corruption -- see screenshots without post processing and missing images  -- that's with multiple calls to syncrenderthread() in tr_font.c double check
+* note high dpi scaling with windows 10/8 :  https://support.microsoft.com/en-us/kb/2907016  --  maybe declare dpi aware
+* check if cg_qlFontScaling is needed anymore
+* check freetype prefered point sizes for scaling
+* mmod demo cuc.o.dm_91  8:25 scoreboard showing '0' before name
+* check cg_autoFontScaling threshold 1 and 0
+
 
 ---------
 

@@ -24,9 +24,7 @@
 #define MAX_RAWCAMERAPOINTS 32768  //4192
 #define MAX_TIMED_ITEMS 16   //FIXME
 #define MAX_CHAT_LINES  100
-#define MAX_CHAT_LINES_MASK (MAX_CHAT_LINES - 1)
 #define MAX_OBITUARIES 100
-#define MAX_OBITUARIES_MASK (MAX_OBITUARIES - 1)
 #define MAX_SPAWN_POINTS 128  //FIXME from g_client.c
 #define MAX_MIRROR_SURFACES MAX_GENTITIES
 #define DEFAULT_RECORD_PATHNAME "path"
@@ -871,7 +869,6 @@ typedef struct {
 } filterTypes_t;
 
 #define MAX_JUMPS_INFO 256
-#define MAX_JUMPS_INFO_MASK (MAX_JUMPS_INFO - 1)
 
 typedef struct {
 	int speed;
@@ -1661,7 +1658,6 @@ typedef struct {
 	qhandle_t	lightningShader;
 
 	qhandle_t	friendShader;
-	qhandle_t friend2Shader;
 	qhandle_t friendHitShader;
 	qhandle_t friendDeadShader;
 
@@ -2898,6 +2894,8 @@ extern vmCvar_t cg_testQlFont;
 //extern vmCvar_t cg_deathSparkRadius;
 extern vmCvar_t cg_qlhud;
 extern vmCvar_t cg_qlFontScaling;
+extern vmCvar_t cg_autoFontScaling;
+extern vmCvar_t cg_autoFontScalingThreshold;
 
 extern vmCvar_t cg_weaponBar;
 extern vmCvar_t cg_weaponBarX;

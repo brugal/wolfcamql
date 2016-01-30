@@ -243,5 +243,6 @@ qboolean trap_Key_GetOverstrikeMode (void);
 void trap_Key_SetBinding (int keynum, const char *binding);
 void trap_Key_GetBindingBuf (int keynum, char *buf, int buflen);
 void trap_Key_KeynumToStringBuf (int keynum, char *buf, int buflen);
+qboolean trap_R_GetGlyphInfo (const fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
 
 #endif  // cg_syscalls_h_included

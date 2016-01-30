@@ -1148,6 +1148,11 @@ extern	cvar_t	*r_debugSort;
 
 extern	cvar_t	*r_printShaders;
 extern	cvar_t	*r_saveFontData;
+extern cvar_t *r_debugFonts;
+extern cvar_t *r_defaultQlFontFallbacks;
+extern cvar_t *r_defaultMSFontFallbacks;
+extern cvar_t *r_defaultSystemFontFallbacks;
+extern cvar_t *r_defaultUnifontFallbacks;
 
 extern cvar_t	*r_marksOnTriangleMeshes;
 
@@ -1324,6 +1329,7 @@ void    R_RemapShader(const char *oldShader, const char *newShader, const char *
 void R_ClearRemappedShader (const char *shaderName);
 void R_ClearAllRemappedShaders_f (void);
 qhandle_t RE_GetSingleShader (void);
+void R_FontList_f (void);
 
 /*
 ====================================================================
@@ -1791,6 +1797,7 @@ void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);
 void R_InitFreeType( void );
 void R_DoneFreeType( void );
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
+qboolean RE_GetGlyphInfo (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
 void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int height);
 qhandle_t RE_RegisterShaderFromData (const char *name, const ubyte *data, int width, int height, qboolean mipmap, qboolean allowPicmip, int wrapClampMode, int lightmapIndex);
 void RE_GetShaderImageDimensions (qhandle_t h, int *width, int *height);

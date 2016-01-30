@@ -617,6 +617,7 @@ char	**FS_ListFiles( const char *directory, const char *extension, int *numfiles
 void	FS_FreeFileList( char **list );
 
 qboolean FS_FileExists( const char *file );
+const char *FS_FindSystemFile (const char *file);
 qboolean FS_VirtualFileExists (const char *file);
 
 qboolean FS_CreatePath (char *OSPath);
@@ -731,6 +732,7 @@ void	FS_FilenameCompletion( const char *dir, const char *ext,
 							   qboolean stripExt, void(*callback)(const char *s), qboolean allowNonPureFilesOnDisk );
 void FS_SortFileList(char **filelist, int numfiles);
 void FS_ReplaceSeparators (char *path);
+char *FS_BaseName (const char *path);
 
 /*
 ==============================================================

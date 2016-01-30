@@ -664,6 +664,7 @@ Fonts can also be used for hud config elements:
         font "q3small" 48
         }
 
+
 * /loadhud ui/somehud.cfg  to avoid having to set cg_hudfiles
 
 * cg_hudRedTeamColor  cg_hudBlueTeamColor  cg_hudNoTeamColor  for use with hud element CG_TEAM_COLOR
@@ -1325,8 +1326,6 @@ Available tokens:
 
 * command /clearfragmessage
 
-* cg_qlFontScaling  [1: like ql, use alternate ql font when text becomes small, 2: always use 24 point ql font (old behavior)]
-
 
 ----------------------------------------------------
 
@@ -1381,7 +1380,7 @@ Available tokens:
 
 * cg_drawInfected  to draw 'bite' sprite over player's head in infected game type
 
-* echopopup and echopopupcvar commands to print something on the screen.  echopopupcvar <cvar> will print both the name and value.  Position and time are controlled by cg_echoPopupX, cg_echoPopupY, cg_echoPopupTime.
+* echopopup and echopopupcvar commands to print something on the screen.  /echopopupcvar <cvar> will only print the value.  Add 'name' if you want to print the cvar name as well.  Ex:  /echopopup cg_teamModel name.  Position, time, and widescreen setting are controlled by cg_echoPopupX, cg_echoPopupY, cg_echoPopupTime, and cg_echoPopupWidescreen.
 
 * +acc command to show both server side and client side weapon stats window.  Bound to CTRL by default.  Position controlled with cg_accX and cg_accY
 
@@ -1421,6 +1420,24 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 -----------------------------------------------------------
 
 * libfreetype2 font support for cvars that display text in the hud
+* /fontlist command
+* utf8 support
+
+  - r_debugFonts (0:  (default) no information, 1:  show missing glyphs,  2:  show font fallback checks, 3:  show all glyph loading)
+  - font fallbacks:
+      First the fonts included with quakelive are added to the font fallback list (notosans-regular.ttf and droidsansfallbackfull.ttf).  This can be enabled/disabled with r_defaultQlFontFallbacks.
+
+      User set fonts are then added to the list.  These are specified as r_fallbackFont[number] (ex:  r_fallbackFont1, r_fallbackFont2, etc.).  If the cvar doesn't exist or is empty processing stops.
+
+      Default Microsoft fonts (l_10646.ttf, segoeui.ttf, and arialuni.ttf)  are loaded from wolfcam's 'font' directory (either in base installation or application data directory).  These are the defaults used by quakelive and it lets non-Windows users have the same fallbacks by simply copying the fonts over.  This can be enabled/disabled with r_defaultMSFontFallbacks.
+
+      System fonts are added for Windows users.  These are the same MS fonts listed above.  This can be enabled/disabled with r_defaultSystemFontFallbacks.
+
+      GNU Unifonts are used as the final fallbacks.  This can be enabled/disabled with r_defaultUnifontFallbakcs.
+
+* cg_qlFontScaling  [1: like ql, use alternate ql font when text becomes small, 2: always use 24 point ql font (old behavior)]
+
+* cg_autoFontScaling and cg_autoFontScalingThreshold (minimum pointsize) to automatically increase and decrease font point sizes when scaling.  Doesn't apply to bitmap fonts.
 
 * xy, font, align, etc.  cvars for all the stuff not covered by hud configs:  cg_clientItemTimerX,
   cg_clientItemTimerY, cg_drawFPSX, cg_drawFPSY, cg_drawSnapshotX,
@@ -2243,6 +2260,11 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   ex:  wolfcamql.exe +set cl_demoFileCheckSystem 1 +demo c:\tmp\dem6.dm_90
 
+* cl_demoFile and cl_demoFileBaseName  have the file name for the current or last played demo file.
+
+  ex:  to show current demo name with a keybind:
+     bind F6 echopopupcvar cl_demoFileBaseName
+
 * cg_itemTimers  in world quake live item timers (0: not visible, 1: visible, 2: visible with depth hack)
 * cg_itemTimersScale  size scale of in world timers
 * cg_itemTimersOffset  vertical displacement of in world timers
@@ -2278,6 +2300,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   Ex:  wolfcamql +set fs_extraGames1 "Temp pk3s" +set fs_extraGames1 "myExplosions" ...
 
+* fs_searchWorkshops (0: don't use steam workshop pk3s,  1: (default) load extra pk3s referenced in demos from steam workshop directories)
 * /screenshotPNG for png screenshots
 * r_pngZlibCompression  (0:  no compression,  1: (default) enables high speed zlib compression), 9:  best space compression, -1:  default zlib compression)
 

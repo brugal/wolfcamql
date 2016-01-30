@@ -771,6 +771,7 @@ static void CG_ParseTeamInfo( void ) {
 
 /*
 
+  1064 win-x86 Nov 10 2015 10:16:14
   1064 win-x86 Oct 30 2015 12:09:55
 
   beta testing:  \version\b1032 linux-i386 Jul 20 2015 05:19:10\
@@ -3097,8 +3098,10 @@ static void CG_RemoveChatEscapeChar( char *text ) {
 	//Com_Printf("%s\n", text);
 	l = 0;
 	for ( i = 0; text[i]; i++ ) {
-		if (text[i] == '\x19')
+		if (text[i] == '\x19') {
+			//Com_Printf("^2removed x19\n");
 			continue;
+		}
 		text[l++] = text[i];
 	}
 	text[l] = '\0';

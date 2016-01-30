@@ -927,7 +927,7 @@ static void CG_DrawJumpSpeeds (void)
 	}
 
 	for ( ;  i < cg.numJumps;  i++) {
-		Q_strcat(buffer, sizeof(buffer), va("%d ", cg.jumps[i & MAX_JUMPS_INFO_MASK].speed));
+		Q_strcat(buffer, sizeof(buffer), va("%d ", cg.jumps[i % MAX_JUMPS_INFO].speed));
 	}
 
 	s = buffer;
@@ -982,7 +982,7 @@ static void CG_DrawJumpSpeedsTime (void)
 		Q_strncpyz(buffer, "jump time: ", sizeof(buffer));
 	}
 
-	Q_strcat(buffer, sizeof(buffer), va("%f", (float)(cg.jumps[(cg.numJumps - 1) & MAX_JUMPS_INFO_MASK].time - cg.jumpsFirstTime) / 1000.0));
+	Q_strcat(buffer, sizeof(buffer), va("%f", (float)(cg.jumps[(cg.numJumps - 1) % MAX_JUMPS_INFO].time - cg.jumpsFirstTime) / 1000.0));
 
 	if (!cg_drawJumpSpeedsTimeNoText.integer) {
 		Q_strcat(buffer, sizeof(buffer), " seconds");
@@ -1037,8 +1037,8 @@ static float Wolfcam_DrawMouseSpeed (float y)
 
 #if 0
 	for (i = 30;  i > 0;  i--) {
-		VectorCopy (wcg.snaps[(wcg.curSnapshotNumber - i - 1) & MAX_SNAPSHOT_MASK].ps.viewangles, oldAngles);
-		VectorCopy (wcg.snaps[(wcg.curSnapshotNumber - i) & MAX_SNAPSHOT_MASK].ps.viewangles, newAngles);
+		VectorCopy (wcg.snaps[(wcg.curSnapshotNumber - i - 1) % MAX_SNAPSHOT_BACKUP].ps.viewangles, oldAngles);
+		VectorCopy (wcg.snaps[(wcg.curSnapshotNumber - i) % MAX_SNAPSHOT_BACKUP].ps.viewangles, newAngles);
 		sy += newAngles[0] - oldAngles[0];
 		sx += newAngles[1] - oldAngles[1];
 	}
@@ -1046,7 +1046,7 @@ static float Wolfcam_DrawMouseSpeed (float y)
 	sx /= 30.0;
 #endif
 
-	VectorCopy (wcg.snaps[(wcg.curSnapshotNumber - 2) & MAX_SNAPSHOT_MASK].ps.viewangles, oldAngles);
+	VectorCopy (wcg.snaps[(wcg.curSnapshotNumber - 2) % MAX_SNAPSHOT_BACKUP].ps.viewangles, oldAngles);
     VectorCopy (cg.snap->ps.viewangles, newAngles);
 
 
@@ -1194,9 +1194,9 @@ static void Wolfcam_DrawFollowing (void)
 
 static int CG_Text_Width_orig (const char *text, float scale, int limit, const fontInfo_t *fontOrig)
 {
-  int count,len;
+	int count,len;
 	float out;
-	const glyphInfo_t *glyph;
+	glyphInfo_t glyph;
 	float useScale;
 	const char *s = text;
 	const fontInfo_t *font;
@@ -1211,13 +1211,14 @@ static int CG_Text_Width_orig (const char *text, float scale, int limit, const f
 		}
 	}
 
-  useScale = scale * font->glyphScale;
-  out = 0;
-  if (text) {
-    len = strlen(text);
+	useScale = scale * font->glyphScale;
+	out = 0;
+	if (text) {
+		len = strlen(text);
 		if (limit > 0 && len > limit) {
 			len = limit;
 		}
+
 		count = 0;
 		while (s && *s && count < len) {
 			if ( Q_IsColorString(s) ) {
@@ -1232,14 +1233,33 @@ static int CG_Text_Width_orig (const char *text, float scale, int limit, const f
 				}
 				continue;
 			} else {
-				glyph = &font->glyphs[*s & 255];
-				out += glyph->xSkip;
+				int cp;
+				int bytes;
+				qboolean error;
+
+				bytes = 0;
+				cp = Q_GetCpFromUtf8(s, &bytes, &error);
+				s += (bytes - 1);
+
+				if (bytes > 1) {
+					//Com_Printf("^2text_width cp unicode: %d\n", cp);
+				}
+				if (error) {
+					const char *s1 = text;
+					Com_Printf("text_width error: '%s'\n", text);
+					while (s1[0] != '\0') {
+						Com_Printf("char: %u\n", s1[0] & 255);
+						s1++;
+					}
+				}
+				trap_R_GetGlyphInfo(font, cp, &glyph);
+				out += glyph.xSkip;
 				s++;
 				count++;
 			}
-    }
-  }
-  return out * useScale;
+		}
+	}
+	return out * useScale;
 }
 
 int CG_Text_Width (const char *text, float scale, int limit, const fontInfo_t *font)
@@ -1288,7 +1308,7 @@ static int CG_Text_Height_orig (const char *text, float scale, int limit, const 
 {
   int len, count;
 	float max;
-	const glyphInfo_t *glyph;
+	glyphInfo_t glyph;
 	float useScale;
 	const char *s = text;
 	//fontInfo_t *font = &cgDC.Assets.textFont;
@@ -1325,10 +1345,25 @@ static int CG_Text_Height_orig (const char *text, float scale, int limit, const 
 				}
 				continue;
 			} else {
-				glyph = &font->glyphs[*s & 255];
-	      if (max < glyph->height) {
-		      max = glyph->height;
-			  }
+				int cp;
+				int bytes;
+				qboolean error;
+
+				bytes = 0;
+				cp = Q_GetCpFromUtf8(s, &bytes, &error);
+				s += (bytes - 1);
+				if (error) {
+					const char *s1 = text;
+					Com_Printf("text_width error: '%s'\n", text);
+					while (s1[0] != '\0') {
+						Com_Printf("char: %u\n", s1[0] & 255);
+						s1++;
+					}
+				}
+				trap_R_GetGlyphInfo(font, cp, &glyph);
+				if (max < glyph.height) {
+					max = glyph.height;
+				}
 				s++;
 				count++;
 			}
@@ -1396,12 +1431,83 @@ void CG_Text_PaintCharScale (float x, float y, float width, float height, float 
   trap_R_DrawStretchPic( x, y, w, h, s, t, s2, t2, hShader );
 }
 
+
+static const fontInfo_t *scaleFont (const fontInfo_t *font, float *scale, float *useScale)
+{
+	static fontInfo_t scaledFont;
+	int threshold;
+
+	if (!cg_autoFontScaling.integer) {
+		return font;
+	}
+
+	if (font->bitmapFont) {
+		return font;
+	}
+
+	//FIXME based on point size
+	//if (*useScale > 1.1f  ||  *useScale < 0.9f) {
+	if (*useScale <= 0.5f  ||  *useScale >= 2.0) {
+		//float newScale;
+		int newPointSize;
+		int oldPointSize;
+
+		//Com_Printf("trying new scaled font: %f (%f) '%s' '%s'\n", *useScale, *scale, font->registerName, font->name);
+		Com_Memset(&scaledFont, 0, sizeof(fontInfo_t));
+		oldPointSize = font->pointSize;
+		newPointSize = font->pointSize * *useScale;
+
+		//newPointSize = font->pointSize / 4;
+		// set to 6, 12, 24, 48, 96, or 192
+		if (newPointSize < 12) {
+			newPointSize = 6;
+		} else if (newPointSize < 24) {
+			newPointSize = 12;
+		} else if (newPointSize < 48) {
+			newPointSize = 24;
+		} else if (newPointSize < 96) {
+			newPointSize = 48;
+		} else if (newPointSize < 192) {
+			newPointSize = 96;
+		} else {  // don't go higher
+			newPointSize = 192;
+		}
+
+		threshold = cg_autoFontScalingThreshold.integer;
+		if (threshold < 1) {
+			threshold = 10;
+		}
+
+		if (newPointSize < threshold) {
+			newPointSize = threshold;
+		}
+
+		trap_R_RegisterFont(font->qlDefaultFont ? "fonts/handelgothic.ttf" : font->registerName, newPointSize, &scaledFont);
+		if (scaledFont.name[0] == '\0') {
+			Com_Printf("^3couldn't register new scaled point size for '%s' '%s' qlDefaultFont: %d\n", font->registerName, font->name, font->qlDefaultFont);
+		} else {
+			//float origGlyphScale;
+
+			//origGlyphScale = font->glyphScale;
+			// got it
+		    font = &scaledFont;
+			//useScale /= ((float)newPointSize / (float)oldPointSize);
+
+			//useScale = scale * font->glyphScale;
+			*useScale *= ((float)oldPointSize / (float)newPointSize);
+			//useScale = scale * ((float)oldPointSize / (float)newPointSize) * origGlyphScale;
+		}
+	}
+
+	return font;
+}
+
 //FIXME xy scale factors
 void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig)
 {
 	int len, count;
 	vec4_t newColor;
-	const glyphInfo_t *glyph;
+	glyphInfo_t glyph;
 	float useScale;
 	const fontInfo_t *font;
 	float xscale;
@@ -1434,6 +1540,11 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 
 	useScale = scale * font->glyphScale;
 
+	//FIXME eliminate font->glyphScale hack
+
+	font = scaleFont(font, &scale, &useScale);
+
+
   if (text) {
 		const char *s = text;
 		trap_R_SetColor( color );
@@ -1444,9 +1555,30 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 		}
 		count = 0;
 		while (s && *s && count < len) {
-			glyph = &font->glyphs[*s & 255];
-      //int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
-      //float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
+			int cp;
+			int bytes;
+			qboolean error;
+
+			bytes = 0;
+			cp = Q_GetCpFromUtf8(s, &bytes, &error);
+			s += (bytes - 1);
+			if (bytes > 1) {
+				//Com_Printf("^2cp unicode: %d\n", cp);
+			}
+			//Com_Printf("^2cp: %lu\n", cp);
+			if (error) {
+				const char *s1 = text;
+				Com_Printf("error: '%s'\n", text);
+				while (s1[0] != '\0') {
+					Com_Printf("char: %u\n", s1[0] & 255);
+					s1++;
+				}
+			}
+			//FIXME do below
+			trap_R_GetGlyphInfo(font, cp, &glyph);
+
+			//int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
+			//float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
 			if ( Q_IsColorString( s ) ) {
 				if (cgs.cpma) {
 					CG_CpmaColorFromString(s + 1, newColor);
@@ -1477,8 +1609,8 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 				}
 				continue;
 			} else {
-				float yadj = useScale * yscale * glyph->top;
-				//float yadj = useScale *  glyph->top;
+				float yadj = useScale * yscale * glyph.top;
+				//float yadj = useScale *  glyph.top;
 				//yadj = 0;
 				//yadj = -yadj;
 				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
@@ -1511,32 +1643,32 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 					CG_Text_PaintCharScale(
 										   x + xofs ,
 										   y - yadj + yofs,
-														glyph->imageWidth,
-														glyph->imageHeight,
+														glyph.imageWidth,
+														glyph.imageHeight,
 														useScale * xscale,
 														useScale * yscale,
-														glyph->s,
-														glyph->t,
-														glyph->s2,
-														glyph->t2,
-														glyph->glyph);
+														glyph.s,
+														glyph.t,
+														glyph.s2,
+														glyph.t2,
+														glyph.glyph);
 					colorBlack[3] = 1.0;
 					trap_R_SetColor( newColor );
 				}
 #if 1
-				CG_Text_PaintCharScale(x /*+ glyph->left * useScale */, y - yadj,
-													glyph->imageWidth,
-													glyph->imageHeight,
+				CG_Text_PaintCharScale(x /*+ glyph.left * useScale */, y - yadj,
+													glyph.imageWidth,
+													glyph.imageHeight,
 													useScale * xscale,
 													useScale * yscale,
-													glyph->s,
-													glyph->t,
-													glyph->s2,
-													glyph->t2,
-													glyph->glyph);
+													glyph.s,
+													glyph.t,
+													glyph.s2,
+													glyph.t2,
+													glyph.glyph);
 				// CG_DrawPic(x, y - yadj, scale * cgDC.Assets.textFont.glyphs[text[i]].imageWidth, scale * cgDC.Assets.textFont.glyphs[text[i]].imageHeight, cgDC.Assets.textFont.glyphs[text[i]].glyph);
 #endif
-				x += (glyph->xSkip * useScale * xscale) + adjust;
+				x += (glyph.xSkip * useScale * xscale) + adjust;
 				//Com_Printf("%c  xSkip %d\n", s[0], glyph->xSkip);
 				//x += (glyph->imageWidth * useScale) + adjust;
 				s++;
@@ -1552,7 +1684,7 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 {
 	int len, count;
 	vec4_t newColor;
-	const glyphInfo_t *glyph;
+	glyphInfo_t glyph;
 	float useScale;
 	const fontInfo_t *font;
 	float xscale;
@@ -1584,8 +1716,14 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 
 	useScale = scale * font->glyphScale;
 
-  if (text) {
+	font = scaleFont(font, &scale, &useScale);
+
+	if (text) {
 		const int *s = text;
+		int cp;
+		int bytes;
+		qboolean error;
+
 		trap_R_SetColor( color );
 		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
 		//len = strlen(text);
@@ -1646,11 +1784,42 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 				}
 				s += 2;
 				continue;
+			} // *s < 0  ||  *s > 255
+
+			{
+				char stmp[5] = "\0\0\0\0\0";
+
+				stmp[0] = s[0] & 255;
+				if (s[1] != 0) {
+					stmp[1] = s[1] & 255;
+					if (s[2] != 0) {
+						stmp[2] = s[2] & 255;
+						if (s[3] != 0) {
+							stmp[3] = s[3] & 255;
+						}
+					}
+				}
+
+#if 0
+				//FIXME testing
+				stmp[0] = s[0] & 255;
+				stmp[1] = s[1] & 255;
+				stmp[2] = s[2] & 255;
+				stmp[3] = s[3] & 255;
+#endif
+
+				//Com_Printf("^2xxxxxxx '%s' 0x%x 0x%x 0x%x 0x%x\n", stmp, s[0], s[1], s[2], s[3]);
+				bytes = 0;
+				cp = Q_GetCpFromUtf8(stmp, &bytes, &error);
+				if (bytes > 1) {
+					//Com_Printf("^5got cp %d 0x%x '%s'\n", cp, cp, stmp);
+				}
 			}
 
-			glyph = &font->glyphs[*s & 255];
-      //int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
-      //float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
+			trap_R_GetGlyphInfo(font, cp, &glyph);
+
+			//int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
+			//float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
 			if ( Q_IsColorString( s ) ) {
 				if (cgs.cpma) {
 					CG_CpmaColorFromString((char *)(s + 1), newColor);
@@ -1680,9 +1849,9 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					count += 2;
 				}
 				continue;
-			} else {
+			} else {   // not Q_IsColorString()
 				//float yadj = useScale *  glyph->top;
-				float yadj = useScale * yscale * glyph->top;
+				float yadj = useScale * yscale * glyph.top;
 				//float xadj = useScale * xscale;  // * glyph->left;
 
 				//Com_Printf("top %d\n", glyph->top);
@@ -1702,40 +1871,42 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					CG_Text_PaintCharScale(x + xofs, y - yadj + yofs,
 					//CG_Text_PaintCharScale(x - xadj + ofs, y - yadj + ofs,
 					//CG_Text_PaintCharScale(x + ofs, y - yadj + 14,
-														glyph->imageWidth,
-														glyph->imageHeight,
+														glyph.imageWidth,
+														glyph.imageHeight,
 														useScale * xscale,
 														useScale * yscale,
-														glyph->s,
-														glyph->t,
-														glyph->s2,
-														glyph->t2,
-														glyph->glyph);
+														glyph.s,
+														glyph.t,
+														glyph.s2,
+														glyph.t2,
+														glyph.glyph);
 					colorBlack[3] = 1.0;
 					trap_R_SetColor( newColor );
 				}
 #if 1
 				CG_Text_PaintCharScale(x /*+ glyph->left * useScale */, y - yadj,
-													glyph->imageWidth,
-													glyph->imageHeight,
+													glyph.imageWidth,
+													glyph.imageHeight,
 													useScale * xscale,
 													useScale * yscale,
-													glyph->s,
-													glyph->t,
-													glyph->s2,
-													glyph->t2,
-													glyph->glyph);
+													glyph.s,
+													glyph.t,
+													glyph.s2,
+													glyph.t2,
+													glyph.glyph);
 				// CG_DrawPic(x, y - yadj, scale * cgDC.Assets.textFont.glyphs[text[i]].imageWidth, scale * cgDC.Assets.textFont.glyphs[text[i]].imageHeight, cgDC.Assets.textFont.glyphs[text[i]].glyph);
 #endif
-				x += (glyph->xSkip * useScale * xscale) + adjust;
+				x += (glyph.xSkip * useScale * xscale) + adjust;
 				//Com_Printf("%c  xSkip %d\n", s[0], glyph->xSkip);
 				//x += (glyph->imageWidth * useScale) + adjust;
 				s++;
+				s += (bytes - 1);
 				count++;
 			}
-    }
-	  trap_R_SetColor( NULL );
-  }
+		}
+
+		trap_R_SetColor( NULL );
+	}
 }
 
 
@@ -1765,7 +1936,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 {
 	int len, count;
 	vec4_t newColor;
-	const glyphInfo_t *glyph;
+	glyphInfo_t glyph;
 	//float useScale;
 	const fontInfo_t *font;
 	//float xscale;
@@ -1883,7 +2054,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 		}
 		count = 0;
 		while (s && *s && count < len) {
-			glyph = &font->glyphs[*s & 255];
+			trap_R_GetGlyphInfo(font, *s & 255, &glyph);
 
 			if ( Q_IsColorString( s ) ) {
 				if (!*cg_drawPlayerNamesColor.string) {
@@ -1911,48 +2082,48 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				}
 				continue;
 			} else {
-				trap_GetShaderImageDimensions(glyph->glyph, &fontImageWidth, &fontImageHeight);
+				trap_GetShaderImageDimensions(glyph.glyph, &fontImageWidth, &fontImageHeight);
 				//if (fontImageWidth != FONT_DIMENSIONS  ||  fontImageHeight != FONT_DIMENSIONS) {
 				if (fontImageWidth > FONT_DIMENSIONS  ||  fontImageHeight > FONT_DIMENSIONS) {
 					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font image dimensions are not supported: %d x %d '%s'\n", fontImageWidth, fontImageHeight, font->name);
 					return;
 				}
 
-				trap_GetShaderImageData(glyph->glyph, fontImageData);
+				trap_GetShaderImageData(glyph.glyph, fontImageData);
 
 				// get sub image
-				n = glyph->s * (float)(fontImageWidth);
+				n = glyph.s * (float)(fontImageWidth);
 				subx = n;
-				n = glyph->t * (float)(fontImageHeight);
+				n = glyph.t * (float)(fontImageHeight);
 				suby = n;
 
 				//Com_Printf("[%c] glpyh %d x %d\n", s[0], glyph->imageWidth, glyph->imageHeight);
 
-				if (glyph->imageWidth > NAME_SPRITE_GLYPH_DIMENSION  ||  glyph->imageHeight > NAME_SPRITE_GLYPH_DIMENSION) {
-					Com_Printf("^3WARNING: CG_CreateNameSprite() skipping glyph, '%c' dimensions are invalid: %d x %d '%s'\n", s[0], glyph->imageWidth, glyph->imageHeight, font->name);
+				if (glyph.imageWidth > NAME_SPRITE_GLYPH_DIMENSION  ||  glyph.imageHeight > NAME_SPRITE_GLYPH_DIMENSION) {
+					Com_Printf("^3WARNING: CG_CreateNameSprite() skipping glyph, '%c' dimensions are invalid: %d x %d '%s'\n", s[0], glyph.imageWidth, glyph.imageHeight, font->name);
 					break;
 				}
-				if (glyph->imageWidth < 0  ||  glyph->imageHeight < 0) {
-					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font glyph image dimensions are invalid: %d x %d '%s'\n", glyph->imageWidth, glyph->imageHeight, font->name);
+				if (glyph.imageWidth < 0  ||  glyph.imageHeight < 0) {
+					Com_Printf("^3WARNING: CG_CreateNameSprite() disabling name sprites, font glyph image dimensions are invalid: %d x %d '%s'\n", glyph.imageWidth, glyph.imageHeight, font->name);
 					return;
 				}
 
-				j = (destHeight - glyph->top - (NAME_SPRITE_SHADOW_OFFSET * 2)) * destWidth * 4;
+				j = (destHeight - glyph.top - (NAME_SPRITE_SHADOW_OFFSET * 2)) * destWidth * 4;
 				if ((x + j) + (NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2) * NAME_SPRITE_GLYPH_DIMENSION >= (IMGBUFFSIZE - ((NAME_SPRITE_GLYPH_DIMENSION + NAME_SPRITE_SHADOW_OFFSET * 2) * NAME_SPRITE_GLYPH_DIMENSION) * 2)) {
 					break;
 				}
 
 				n = (suby * fontImageWidth * 4) + (subx * 4);
 
-				for (i = 0;  i < glyph->imageHeight  &&  i < destHeight;  i++) {
+				for (i = 0;  i < glyph.imageHeight  &&  i < destHeight;  i++) {
 					memset(tmpBuff, 0, sizeof(tmpBuff));
-					if (TMPBUFF_SIZE < glyph->imageWidth * 4) {
-						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, tmp buffer is too small  %d < %d '%s'\n", TMPBUFF_SIZE, glyph->imageWidth * 4, font->name);
+					if (TMPBUFF_SIZE < glyph.imageWidth * 4) {
+						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, tmp buffer is too small  %d < %d '%s'\n", TMPBUFF_SIZE, glyph.imageWidth * 4, font->name);
 						return;
 					}
-					memcpy(tmpBuff, fontImageData + n, glyph->imageWidth * 4);
+					memcpy(tmpBuff, fontImageData + n, glyph.imageWidth * 4);
 
-					for (k = 0;  k < glyph->imageWidth * 4;  k += 4) {
+					for (k = 0;  k < glyph.imageWidth * 4;  k += 4) {
 						float whiteScale;
 						float alphaScale;
 
@@ -1964,16 +2135,16 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 						tmpBuff[k + 3] = alpha * alphaScale;
 					}
 
-					if (IMGBUFFSIZE - (x + j) < (glyph->imageWidth * 4)) {
-						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, img buffer is too small %d, %d, %d, %d %d '%s'\n", IMGBUFFSIZE, x, j, glyph->imageWidth * 4, glyph->top, font->name);
+					if (IMGBUFFSIZE - (x + j) < (glyph.imageWidth * 4)) {
+						Com_Printf("^3WARNING:  CG_CreateNameSprite() disabling name sprites, img buffer is too small %d, %d, %d, %d %d '%s'\n", IMGBUFFSIZE, x, j, glyph.imageWidth * 4, glyph.top, font->name);
 						return;
 					}
-					memcpy(imgBuff + x + j, tmpBuff, glyph->imageWidth * 4);
+					memcpy(imgBuff + x + j, tmpBuff, glyph.imageWidth * 4);
 					j += destWidth * 4;
 					n += fontImageWidth * 4;
 				}
 
-				x += glyph->xSkip * 4;
+				x += glyph.xSkip * 4;
 
 				s++;
 				count++;
@@ -6400,7 +6571,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 		tokenString = cg_obituaryTokens.string;
 	}
 
-	i = (cg.obituaryIndex + indexNum - 1) % MAX_OBITUARIES_MASK;
+	i = (cg.obituaryIndex + indexNum - 1) % MAX_OBITUARIES;
 	obituary = &cg.obituaries[i];
 
 	i = 0;
@@ -6427,7 +6598,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 		}
 
 		if (c != '%') {
-			extString[j] = tokenString[i];
+			extString[j] = (unsigned char)tokenString[i];
 			i++;
 			j++;
 			continue;
@@ -6446,7 +6617,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				s = obituary->victim;
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6457,7 +6628,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				s = obituary->victimWhiteName;
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6472,7 +6643,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6487,7 +6658,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6498,7 +6669,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				s = obituary->q3obitString;
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6521,7 +6692,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6575,7 +6746,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 
 			//Com_Printf("acc: %s\n", s);
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6617,7 +6788,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6657,7 +6828,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			}
 			//Com_Printf("acc: %s\n", s);
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6700,7 +6871,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6894,7 +7065,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6913,7 +7084,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6936,7 +7107,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6959,7 +7130,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = s[0];
+				extString[j] = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -8733,6 +8904,11 @@ static qboolean CG_DrawFollow( void ) {
 		s = cgs.clientinfo[cg.snap->ps.clientNum].name;
 	}
 
+	// testing utf8
+	//s = "Τη γλώσσα μου έδωσαν ελληνική";
+	//s = "Τη γλώσσα";  // μου έδωσαν ελληνική";
+	//s = "ABCD₪ Τη γλώσσαEFGHI";
+
 	w = CG_Text_Width(s, scale, 0, font);
 	//h = CG_Text_Height(s, scale, 0, font);
 	if (align == 1) {
@@ -8740,6 +8916,7 @@ static qboolean CG_DrawFollow( void ) {
 	} else if (align == 2) {
 		x -= w;
 	}
+
 	CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
 
 	return qtrue;

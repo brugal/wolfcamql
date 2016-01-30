@@ -144,4 +144,4 @@ equ trap_Key_SetOverstrikeMode -147
 equ trap_Key_SetBinding -148
 equ trap_Key_GetBindingBuf -149
 equ trap_Key_KeynumToStringBuf -150
-
+equ trap_R_GetGlyphInfo -151

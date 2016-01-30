@@ -80,9 +80,22 @@ void Wolfcam_Players_f (void)
 			Com_Printf ("^%c X^7  %02d: %s", color, i, ci->name);
 		}
 
-		if (cgs.realProtocol > 91) {
+#if 0
+		//FIXME testing utf8
+		{
+			const char *s = ci->name;
+			Com_Printf("\nutf8 values: ");
+			while (*s) {
+				Com_Printf("[%d '%c'] ", s[0] & 255, s[0] & 255);
+				s++;
+			}
+			Com_Printf("\n");
+		}
+#endif
+
+		if (cgs.realProtocol >= 91) {
 			if (ci->steamId[0] != '\0') {
-				Com_Printf("     ^5steamId: %s", ci->steamId);
+				Com_Printf("     ^5steamId: %s^7", ci->steamId);
 			}
 		}
 

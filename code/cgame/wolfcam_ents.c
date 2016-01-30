@@ -468,9 +468,9 @@ qboolean Wolfcam_InterpolateEntityPosition (centity_t *cent)
 			wcg.centityAdded[number] = qtrue;
 			return qfalse;
 		}
-		snapOld = &wcg.snaps[(wcg.curSnapshotNumber - s1 - 1) & MAX_SNAPSHOT_MASK];
-		snapPrev = &wcg.snaps[(wcg.curSnapshotNumber - s1) & MAX_SNAPSHOT_MASK];
-		snapNext = &wcg.snaps[(wcg.curSnapshotNumber - s2) & MAX_SNAPSHOT_MASK];
+		snapOld = &wcg.snaps[(wcg.curSnapshotNumber - s1 - 1) % MAX_SNAPSHOT_BACKUP];
+		snapPrev = &wcg.snaps[(wcg.curSnapshotNumber - s1) % MAX_SNAPSHOT_BACKUP];
+		snapNext = &wcg.snaps[(wcg.curSnapshotNumber - s2) % MAX_SNAPSHOT_BACKUP];
 	}
 
 	wcg.snapOld = snapOld;

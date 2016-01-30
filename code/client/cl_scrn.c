@@ -120,7 +120,7 @@ void SCR_DrawPic( float x, float y, float width, float height, qhandle_t hShader
 ** SCR_DrawChar
 ** chars are drawn at 640*480 virtual screen size
 */
-void SCR_DrawChar (int x, int y, float size, int ch)
+static void SCR_DrawChar (int x, int y, float size, int ch)
 {
 	int row, col;
 	float frow, fcol;
@@ -160,59 +160,108 @@ void SCR_DrawChar (int x, int y, float size, int ch)
 ** small chars are drawn at native screen resolution
 */
 void SCR_DrawSmallChar( int x, int y, int ch ) {
-	int row, col;
-	float frow, fcol;
-	float size;
+	//int row, col;
+	//float frow, fcol;
+	//float size;
+	glyphInfo_t glyph;
 
-	ch &= 255;
+	//return;
 
+#if 1
+	//printf("xxx: %d 0x%x '%c'\n", ch, ch, ch);
+
+	//ch &= 255;
+
+	re.GetGlyphInfo(&cls.consoleFont, ch, &glyph);
+#endif
+
+	// not with utf8
+	/*
 	if ( ch == ' ' ) {
 		return;
 	}
-
+	*/
+	
 	if ( y < -SMALLCHAR_HEIGHT ) {
 		return;
 	}
 
+	/*
 	row = ch>>4;
 	col = ch&15;
 
 	frow = row*0.0625;
 	fcol = col*0.0625;
 	size = 0.0625;
-
+	*/
+#if 0
 	re.DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
 					   fcol, frow, 
 					   fcol + size, frow + size, 
 					   cls.charSetShader );
+#endif
+
+#if 1
+	re.DrawStretchPic(x, y - glyph.top, SMALLCHAR_WIDTH, /* SMALLCHAR_HEIGHT */ glyph.height < SMALLCHAR_HEIGHT ? glyph.height : SMALLCHAR_HEIGHT,
+					  glyph.s, glyph.t,
+					  glyph.s2, glyph.t2,
+					  glyph.glyph);
+#endif
 }
 
 void SCR_DrawSmallCharExt( float x, float y, float width, float height, int ch ) {
-	int row, col;
-	float frow, fcol;
-	float size;
+	//int row, col;
+	//float frow, fcol;
+	//float size;
+	glyphInfo_t glyph;
 
+#if 1
+	/*
+	if (ch > 128) {
+		printf("drawsmallcharext drawing glyph %d 0x%x\n", ch, ch);
+	}
+	*/
+	re.GetGlyphInfo(&cls.consoleFont, ch, &glyph);
+#endif
+	
 	ch &= 255;
 
+	// not with utf8
+	/*
 	if ( ch == ' ' ) {
 		return;
 	}
-
+	*/
+	
 	if ( y < -height ) {
 		return;
 	}
 
+	/*
+	
 	row = ch>>4;
 	col = ch&15;
 
 	frow = row*0.0625;
 	fcol = col*0.0625;
 	size = 0.0625;
+	*/
+	
+	//printf("zzz: %d 0x%x '%c'\n", ch, ch, ch);
 
+#if 0
 	re.DrawStretchPic( x, y, width, height,
 					   fcol, frow, 
 					   fcol + size, frow + size, 
 					   cls.charSetShader );
+#endif
+
+#if 1
+	re.DrawStretchPic(x, y - glyph.top, width, /* height */ glyph.height < height ? glyph.height : height,
+					  glyph.s, glyph.t,
+					  glyph.s2, glyph.t2,
+					  glyph.glyph);
+#endif
 }
 
 
@@ -492,6 +541,7 @@ void SCR_DrawDebugGraph (void)
 SCR_Init
 ==================
 */
+
 void SCR_Init( void ) {
 	cl_timegraph = Cvar_Get ("timegraph", "0", CVAR_CHEAT);
 	cl_debuggraph = Cvar_Get ("debuggraph", "0", CVAR_CHEAT);

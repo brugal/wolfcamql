@@ -1625,3 +1625,67 @@ void Q_PrintSubString (const char *start, const char *end)
 		p++;
 	}
 }
+
+//FIXME check for invalid unicode code points, invalid utf8 strings
+//FIXME invalid unicode sequences should parse whatever is available?
+// assumes null terminated input string
+
+int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
+{
+	unsigned char c;
+	int b0, b1, b2, b3;
+
+	*error = qfalse;
+
+	c = s[0];
+	if (c <= 0x7f) {  // 1 byte 0xxxxxxx
+		*bytes = 1;
+		return c;
+	} else if ((c & 0xe0) == 0xc0) {  // 2 bytes 110xxxxx 10xxxxxx
+		if (qfalse) {  //(s[1] == '\0') {  // not enough bytes to read
+			Com_Printf("^3Q_GetCpFromUtf8 two byte utf8 sequenced terminated, %d\n", c);
+			*bytes = 1;
+			//FIXME return a standard invalid char
+			*error = qtrue;
+			return c;
+		}
+		*bytes = 2;
+		b0 = c;
+		b1 = s[1];
+		return ( ((b0 & 0x1f) << 6) | (b1 & 0x3f) );
+	} else if ((c & 0xf0) == 0xe0) {  // 3 bytes 1110xxxx 10xxxxxx 10xxxxxx
+		if (qfalse) {  //(s[1] == '\0'  ||  s[2] == '\0') {
+			Com_Printf("^3Q_GetCpFromUtf8  three byte utf8 sequenced terminated, %d\n", c);
+			//Com_Printf("%s\n", s);
+			*bytes = 1;
+			//FIXME return a standard invalid char
+			*error = qtrue;
+			return c;
+		}
+		*bytes = 3;
+		b0 = c;
+		b1 = s[1];
+		b2 = s[2];
+		return ( ((b0 & 0xf) << 12) | ((b1 & 0x3f) << 6) | (b2 & 0x3f));
+	} else if ((c & 0xf8) == 0xf0) {  // 4 bytes 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+		if (qfalse) {  //(s[1] == '\0'  ||  s[2] == '\0'  ||  s[3] == '\0') {
+			Com_Printf("^3Q_GetCpFromUtf8  four byte utf8 sequenced terminated, %d\n", c);
+			*bytes = 1;
+			//FIXME return a standard invalid char
+			*error = qtrue;
+			return c;
+		}
+		*bytes = 4;
+		b0 = c;
+		b1 = s[1];
+		b2 = s[2];
+		b3 = s[3];
+		return ( ((b0 & 0x7) << 18) | ((b1 & 0x3f) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3f));
+	}
+
+	// invalid number of bytes
+	Com_Printf("^3Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character %d\n", c);
+	*error = qtrue;
+	*bytes = 1;
+	return c;
+}

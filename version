@@ -163,10 +163,25 @@
 
     cg_drawCameraPointInfo [0: disable camera point information, 1:  info for wolfcamql or q3mme camera points, 2:  info for wolfcamql camera points, 3:  info for q3mme camera points]
 
-* preliminary support for demo protocol 91  (missing utf8 support)
+* support for demo protocol 91
   - cg_useDemoFov  protocol 91 transmits player fov values and this can be used to view the demo using the players fov or to try and detect zoom changes.  Note that zoom isn't transmitted in the demo so it is detected using a fov change.  This will lead to a problem if the player uses a config that changes fov (ex:  per weapon).  Values (0:  ignore demo fov (default),  1:  use player's fov,  2:  detect zoom changes).
   - new steam paks
   - removed ownerdraws available in ui/wcmenudef.h (CG_SERVER_OWNER, CG_1ST_PLYR_FULLCLAN, CG_2ND_PLYR_FULLCLAN, UI_SERVER_OWNER)
+  - steam ids shown with /players command
+  - utf8 support (FIXME missing console and info/loading screen support)
+  - r_debugFonts (0:  (default) no information, 1:  show missing glyphs,  2:  show font fallback checks, 3:  show all glyph loading)
+  - font fallbacks:
+      First the fonts included with quakelive are added to the font fallback list (notosans-regular.ttf and droidsansfallbackfull.ttf).  This can be enabled/disabled with r_defaultQlFontFallbacks.
+
+      User set fonts are then added to the list.  These are specified as r_fallbackFont[number] (ex:  r_fallbackFont1, r_fallbackFont2, etc.).  If the cvar doesn't exist or is empty processing stops.
+
+      Default Microsoft fonts (l_10646.ttf, segoeui.ttf, and arialuni.ttf)  are loaded from wolfcam's 'font' directory (either in base installation or application data directory).  These are the defaults used by quakelive and it lets non-Windows users have the same fallbacks by simply copying the fonts over.  This can be enabled/disabled with r_defaultMSFontFallbacks.
+
+      System fonts are added for Windows users.  These are the same MS fonts listed above.  This can be enabled/disabled with r_defaultSystemFontFallbacks.
+
+      GNU Unifonts are used as the final fallbacks.  This can be enabled/disabled with r_defaultUnifontFallbakcs.
+
+  - fs_searchWorkshops (0: don't use steam workshop pk3s,  1: (default) load extra pk3s referenced in demos from steam workshop directories)
 
 * r_mode default changed to 11  (856x480)
 * steam quake live directory also checked for demos
@@ -201,6 +216,16 @@
 * bug fix:  cg_drawFPS and cg_drawSpeed y offset didn't take into account font scale
 * bug fix:  cg_drawTeamOverlay y alignment was incorrect with non-q3 fonts
 * cg_drawTeamOverlayLineOffset  Specifies spacing between team overlay lines.  Value is percentage of line height.
+* cg_kickScale default changed to 0
+* current or last played demo file name stored in cl_demoFile and cl_demoFileBaseName cvars.  Default 'F6' key now has 'echopopupcvar cl_demoFileBaseName'
+* echopopupcvar command no longer prints cvar name.  Add 'name' as an extra argument if you want to also print the name.  Ex:  /echopopupcvar cg_teamModel name
+* enabled use of non-outline fonts
+* bug fix:  font face data wasn't uninitialized
+* /fontlist command
+* bug fix:  console word length count could read past end of buffer
+* maximum number of fonts raised to 256
+* cg_drawSpeedScale and cg_drawFPSScale default changed to 0.25
+* cg_autoFontScaling and cg_autoFontScalingThreshold (minimum pointsize) to automatically increase and decrease font point sizes when scaling.  Doesn't apply to bitmap fonts.
 
 ------------------------------------
 10.3  2013-11-16

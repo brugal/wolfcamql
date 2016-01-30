@@ -219,7 +219,7 @@ typedef int		clipHandle_t;
 #define STRARRAY_LEN(x)                      (ARRAY_LEN(x) - 1)
 
 #define SUBTIME_RESOLUTION ((double)1000000.0)
-#define MAX_FONTS 66
+#define MAX_FONTS 256
 
 // angle indexes
 #define	PITCH				0		// up / down
@@ -1422,13 +1422,47 @@ typedef struct {
   float s2;
   float t2;
   qhandle_t glyph;  // handle to the shader with the glyph
-  char shaderName[32];
+  char shaderName[32];  //FIXME waste of space
 } glyphInfo_t;
 
+typedef struct extraGlyphInfo_s {
+	int charValue;
+	
+  int height;       // number of scan lines
+  int top;          // top of glyph in buffer
+  int bottom;       // bottom of glyph in buffer
+  int pitch;        // width for copying
+	//FIXME font.dat
+	//int left;		    // xMin
+  int xSkip;        // x adjustment
+  int imageWidth;   // width of actual image
+  int imageHeight;  // height of actual image
+  float s;          // x offset in image where glyph starts
+  float t;          // y offset in image where glyph starts
+  float s2;
+  float t2;
+  qhandle_t glyph;  // handle to the shader with the glyph
+  char shaderName[32];  //FIXME waste of space
+
+	struct extraGlyphInfo_s *prev, *next;
+} extraGlyphInfo_t;
+
+//FIXME don't expose this outside of tr_font.c
 typedef struct {
-  glyphInfo_t glyphs [GLYPHS_PER_FONT];
-  float glyphScale;
-  char name[MAX_QPATH];
+	int fontId;
+	int pointSize;
+	qboolean q3Font;
+	qboolean bitmapFont;  // else .ttf
+	qboolean qlDefaultFont;  // name not recognized and fell back to default ql ttf font
+
+	glyphInfo_t baseGlyphs[GLYPHS_PER_FONT];  // 0 -> 255
+	// unicode support, linked list of glyphs > 255
+	extraGlyphInfo_t *extraGlyphs;
+	float glyphScale;
+	char name[MAX_QPATH];
+	char registerName[MAX_QPATH];  // name passed in when font is first registered, above 'name' is an internal name used for matching
+	void *fontFace;
+	void *faceData;
 } fontInfo_t;
 
 #define Square(x) ((x)*(x))
@@ -1492,6 +1526,7 @@ typedef enum _flag_status {
 
 #define CDKEY_LEN 16
 #define CDCHKSUM_LEN 2
+#define QUAKELIVE_STEAM_APP_ID 282440
 
 #define LERP( a, b, w ) ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )
@@ -1500,5 +1535,6 @@ typedef enum _flag_status {
 void Crash (void);
 qboolean VectorCheck (const vec3_t v);
 void Q_PrintSubString (const char *start, const char *end);
+int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error);
 
 #endif	// __Q_SHARED_H

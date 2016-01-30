@@ -131,6 +131,8 @@ cvar_t *cl_numberPadInput;
 cvar_t *cl_maxRewindBackups;
 cvar_t *cl_keepDemoFileInMemory;
 cvar_t *cl_demoFileCheckSystem;
+cvar_t *cl_demoFile;
+cvar_t *cl_demoFileBaseName;
 
 clientActive_t		cl;
 clientConnection_t	clc;
@@ -1859,6 +1861,7 @@ static qhandle_t CL_OpenDemoFile (const char *arg)
 	if (cl_demoFileCheckSystem->integer == 1) {
 		FS_FOpenSysFileRead(arg, &file);
 		if (file) {
+			Q_strncpyz(name, arg, sizeof(name));
 			goto done;
 		}
 	}
@@ -1890,6 +1893,10 @@ static qhandle_t CL_OpenDemoFile (const char *arg)
 
 	//Com_Printf("opening %s\n", demoPathName);
 	FS_FOpenFileRead(demoPathName, &file, qtrue);
+	if (file) {
+		Q_strncpyz(name, arg, sizeof(name));
+		goto done;
+	}
 
 	// check if demo name didn't have an extension
 	if (!file) {
@@ -1976,6 +1983,7 @@ static qhandle_t CL_OpenDemoFile (const char *arg)
 
 	if (!file  &&  cl_demoFileCheckSystem->integer == 2) {
 		FS_FOpenSysFileRead(arg, &file);
+		Q_strncpyz(name, arg, sizeof(name));
 	}
 
 done:
@@ -1984,6 +1992,10 @@ done:
 		Com_Error(ERR_DROP, "couldn't open demo %s", arg);
 		return 0;
 	}
+
+	// we have a valid demo file
+	Cvar_Set("cl_demoFile", name);
+	Cvar_Set("cl_demoFileBaseName", FS_BaseName(name));
 
 	if (file  &&  cl_keepDemoFileInMemory->integer) {
 		FS_FileLoadInMemory(file);
@@ -2021,6 +2033,7 @@ void CL_PlayDemo_f (void)
 	// make sure a local server is killed
 	// 2 means don't force disconnect of local client
 	Cvar_Set( "sv_killserver", "2" );
+	Cvar_Set("cl_workshopids", "");
 
 	for (i = 1;  i < n  &&  i <= MAX_DEMO_FILES;  i++) {
 		arg = Cmd_Argv(i);
@@ -4073,6 +4086,8 @@ void CL_InitRenderer ( void ) {
 	cls.consoleShader = re.RegisterShader("wc/console");
 	g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
 	g_consoleField.widthInChars = g_console_field_width;
+
+	re.RegisterFont("q3big", 16, &cls.consoleFont);
 	cl.draw = qtrue;
 }
 
@@ -5108,6 +5123,8 @@ void CL_Init ( void ) {
 
 	cl_keepDemoFileInMemory = Cvar_Get("cl_keepDemoFileInMemory", "1", CVAR_ARCHIVE);
 	cl_demoFileCheckSystem = Cvar_Get("cl_demoFileCheckSystem", "2", CVAR_ARCHIVE);
+	cl_demoFile = Cvar_Get("cl_demoFile", "", CVAR_ROM);
+	cl_demoFileBaseName = Cvar_Get("cl_demoFileBaseName", "", CVAR_ROM);
 
 	//
 	// register our commands

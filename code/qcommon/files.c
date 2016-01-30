@@ -235,6 +235,7 @@ typedef struct searchpath_s {
 static	char		fs_gamedir[MAX_OSPATH];	// this will be a single file name with no separators
 static	cvar_t		*fs_debug;
 static	cvar_t		*fs_homepath;
+static cvar_t *fs_searchWorkshops;
 
 #ifdef MACOS_X
 // Also search the .app bundle for .pk3 files
@@ -685,6 +686,29 @@ qboolean FS_SV_FileExists( const char *file )
 	return qfalse;
 }
 
+
+// find system file that might be relative to search path.  Ex: "gfx/image/test.png"
+const char *FS_FindSystemFile (const char *file)
+{
+	FILE *f;
+	char *testpath;
+
+	testpath = FS_BuildOSPath(fs_homepath->string, fs_gamedir, file);
+	f = Sys_FOpen(testpath, "rb");
+	if (f) {
+		fclose(f);
+		return testpath;
+	}
+
+	testpath = FS_BuildOSPath(fs_basepath->string, fs_gamedir, file);
+	f = Sys_FOpen(testpath, "rb");
+	if (f) {
+		fclose(f);
+		return testpath;
+	}
+
+	return file;
+}
 
 /*
 ===========
@@ -1704,7 +1728,7 @@ int	FS_FileIsInPAK(const char *filename, int *pChecksum ) {
 	}
 
 	if ( !filename ) {
-		Com_Error( ERR_FATAL, "FS_FOpenFileRead: NULL 'filename' parameter passed" );
+		Com_Error( ERR_FATAL, "FS_FileIsInPAK: NULL 'filename' parameter passed" );
 	}
 
 	// qpaths are not supposed to have a leading slash
@@ -3113,6 +3137,7 @@ static void FS_Startup( const char *gameName )
 	fs_basepath = Cvar_Get ("fs_basepath", Sys_DefaultInstallPath(), CVAR_INIT|CVAR_PROTECTED );
 	fs_basegame = Cvar_Get ("fs_basegame", "", CVAR_INIT );
 	fs_quakelivedir = Cvar_Get("fs_quakelivedir", "", CVAR_INIT);
+	fs_searchWorkshops = Cvar_Get("fs_searchWorkshops", "1", CVAR_ARCHIVE);
 	homePath = Sys_DefaultHomePath();
 	if (!homePath || !homePath[0]) {
 		homePath = fs_basepath->string;
@@ -3186,6 +3211,51 @@ static void FS_Startup( const char *gameName )
 		}
 
 		i++;
+	}
+
+	// steam workshop paks
+
+	if (fs_searchWorkshops->integer) {
+		cvar_t *cv;
+		int count;
+		char buffer[1024];
+		const char *s;
+
+		cv = Cvar_Get("cl_workshopids", "", 0);
+		s = cv->string;
+
+		count = 0;
+		while (qtrue) {
+
+			if (*s == '\0'  ||  *s == ' ') {
+				if (count > 0) {
+					if (count >= (1024 - 1)) {
+						Com_Printf("^1FS_Startup:  couldn't close workshop id string\n");
+						break;
+					}
+					buffer[count] = '\0';
+					//FIXME resolve '../'
+					FS_AddGameDirectory(va("%s/../../../workshop/content/%d", Sys_QuakeLiveDir(), QUAKELIVE_STEAM_APP_ID), buffer);
+					count = 0;
+				} else {
+					// buffer is empty, skip spaces
+				}
+
+				if (*s == '\0') {
+					break;
+				}
+				s++;
+				continue;
+			}
+
+			if (count >= 1024) {
+				Com_Printf("^1FS_Startup:  workshop id exceeded buffer size\n");
+				break;
+			}
+			buffer[count] = *s;
+			count++;
+			s++;
+		}
 	}
 
 	// check for additional game folder for mods
@@ -3895,4 +3965,28 @@ void	FS_FilenameCompletion( const char *dir, const char *ext,
 		callback( filename );
 	}
 	FS_FreeFileList( filenames );
+}
+
+char *FS_BaseName (const char *path)
+{
+	static char baseName[MAX_OSPATH];
+	int i;
+	int plen;
+	qboolean isWindows = qfalse;
+
+#ifdef _WIN32
+	isWindows = qtrue;
+#endif
+
+	Q_strncpyz(baseName, path, sizeof(baseName));
+
+	plen = strlen(path);
+	for (i = plen - 1;  i >= 0;  i--) {
+		if (path[i] == '/'  ||  (isWindows  &&  path[i] == '\\')) {
+			Q_strncpyz(baseName, path + i + 1, sizeof(baseName));
+			break;
+		}
+	}
+
+	return baseName;
 }

@@ -923,6 +923,14 @@ void CL_ParseGamestate( msg_t *msg ) {
 					Com_Printf("^5demo parse protocol %d\n", di.protocol);
 				}
 
+			} else if (i == CS91_STEAM_WORKSHOP_IDS  &&  !di.testParse) {
+				int protocol;
+
+				protocol = Cvar_VariableIntegerValue("real_protocol");
+				if (protocol >= 91) {
+					Com_Printf("^2workshop ids:  '%s'\n", s);
+					Cvar_Set("cl_workshopids", s);
+				}
 			}
 
 			//Com_Printf("cs %d '%s'\n", i, s);

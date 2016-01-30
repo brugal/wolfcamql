@@ -27,6 +27,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 int g_console_field_width = 78;
 
+typedef struct {
+	char color;
+	int codePoint;
+	char utf8Bytes[4];
+	int numUtf8Bytes;
+} consoleChar_t;
+
 
 #define	NUM_CON_TIMES 4
 
@@ -34,7 +41,9 @@ int g_console_field_width = 78;
 typedef struct {
 	qboolean	initialized;
 
-	short	text[CON_TEXTSIZE];
+	//short	text[CON_TEXTSIZE];
+	consoleChar_t text[CON_TEXTSIZE];
+
 	int		current;		// line where next message will be printed
 	int		x;				// offset in current line for next print
 	int		display;		// bottom of console displays this line
@@ -54,15 +63,15 @@ typedef struct {
 	vec4_t	color;
 } console_t;
 
-console_t	con;
+static console_t	con;
 
-cvar_t		*con_conspeed;
-cvar_t		*con_notifytime;
-cvar_t		*con_transparency;
-cvar_t		*con_fracSize;
-cvar_t *con_rgb;
-cvar_t *con_scale;
-cvar_t *con_lineWidth;
+static cvar_t		*con_conspeed;
+static cvar_t		*con_notifytime;
+static cvar_t		*con_transparency;
+static cvar_t *con_fracSize;
+static cvar_t *con_rgb;
+static cvar_t *con_scale;
+static cvar_t *con_lineWidth;
 
 #define	DEFAULT_CONSOLE_WIDTH	78
 
@@ -155,13 +164,20 @@ void Con_Clear_f (void) {
 	int		i;
 
 	for ( i = 0 ; i < CON_TEXTSIZE ; i++ ) {
-		con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+		//con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+		con.text[i].color = (ColorIndex(COLOR_WHITE));
+		con.text[i].codePoint = ' ';
+		con.text[i].utf8Bytes[0] = ' ';
+		con.text[i].utf8Bytes[1] = '\0';
+		con.text[i].utf8Bytes[2] = '\0';
+		con.text[i].utf8Bytes[3] = '\0';
+		con.text[i].numUtf8Bytes = 1;
 	}
 
 	Con_Bottom();		// go to end
 }
 
-						
+
 /*
 ================
 Con_Dump_f
@@ -172,7 +188,8 @@ Save the console contents out to a file
 void Con_Dump_f (void)
 {
 	int		l, x, i;
-	short	*line;
+	//short	*line;
+	consoleChar_t *line;
 	fileHandle_t	f;
 	int		bufferlen;
 	char	*buffer;
@@ -199,16 +216,18 @@ void Con_Dump_f (void)
 	{
 		line = con.text + (l%con.totallines)*con.linewidth;
 		for (x=0 ; x<con.linewidth ; x++)
-			if ((line[x] & 0xff) != ' ')
+			//if ((line[x] & 0xff) != ' ') {
+			if (line[x].codePoint != ' ') {
 				break;
+			}
 		if (x != con.linewidth)
 			break;
 	}
 
 #ifdef _WIN32
-	bufferlen = con.linewidth + 3 * sizeof ( char );
+	bufferlen = (con.linewidth * 4  + 3) * sizeof ( char );
 #else
-	bufferlen = con.linewidth + 2 * sizeof ( char );
+	bufferlen = (con.linewidth * 4  + 2) * sizeof ( char );
 #endif
 
 	buffer = Hunk_AllocateTempMemory( bufferlen );
@@ -222,9 +241,17 @@ void Con_Dump_f (void)
 	buffer[bufferlen-1] = 0;
 	for ( ; l <= con.current ; l++)
 	{
+		int bi;  // buffer index
+
 		line = con.text + (l%con.totallines)*con.linewidth;
-		for(i=0; i<con.linewidth; i++)
-			buffer[i] = line[i] & 0xff;
+		for (i = 0, bi = 0;  i < con.linewidth;  i++) {
+			int n;
+			//buffer[i] = line[i] & 0xff;
+			for (n = 0;  n < line[i].numUtf8Bytes;  n++) {
+				buffer[bi] = line[i].utf8Bytes[n];
+				bi++;
+			}
+		}
 		for (x=con.linewidth-1 ; x>=0 ; x--)
 		{
 			if (buffer[x] == ' ')
@@ -246,7 +273,7 @@ void Con_Dump_f (void)
 	Com_Printf ("Dumped console text to %s.\n", filename );
 }
 
-						
+
 /*
 ================
 Con_ClearNotify
@@ -269,10 +296,13 @@ Con_CheckResize
 If the line width has changed, reformat the buffer.
 ================
 */
-void Con_CheckResize (void)
+static consoleChar_t tbuf[CON_TEXTSIZE];
+
+static void Con_CheckResize (void)
 {
 	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
-	short	tbuf[CON_TEXTSIZE];
+	//short	tbuf[CON_TEXTSIZE];
+	//consoleChar_t tbuf[CON_TEXTSIZE];
 
 	if (con_lineWidth) {
 		if (*con_lineWidth->string) {
@@ -298,9 +328,16 @@ void Con_CheckResize (void)
 		width = con_lineWidth->integer;
 		con.linewidth = width;
 		con.totallines = CON_TEXTSIZE / con.linewidth;
-		for(i=0; i<CON_TEXTSIZE; i++)
-
-			con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+		for(i=0; i<CON_TEXTSIZE; i++) {
+			//con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+			con.text[i].color = ColorIndex(COLOR_WHITE);
+			con.text[i].codePoint = ' ';
+			con.text[i].utf8Bytes[0] = ' ';
+			con.text[i].utf8Bytes[1] = '\0';
+			con.text[i].utf8Bytes[2] = '\0';
+			con.text[i].utf8Bytes[3] = '\0';
+			con.text[i].numUtf8Bytes = 1;
+		}
 	}
 	else
 	{
@@ -318,10 +355,17 @@ void Con_CheckResize (void)
 		if (con.linewidth < numchars)
 			numchars = con.linewidth;
 
-		Com_Memcpy (tbuf, con.text, CON_TEXTSIZE * sizeof(short));
-		for(i=0; i<CON_TEXTSIZE; i++)
-
-			con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+		Com_Memcpy (tbuf, con.text, CON_TEXTSIZE * sizeof(consoleChar_t));
+		for(i=0; i<CON_TEXTSIZE; i++) {
+			//con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+			con.text[i].color = ColorIndex(COLOR_WHITE);
+			con.text[i].codePoint = ' ';
+			con.text[i].utf8Bytes[0] = ' ';
+			con.text[i].utf8Bytes[1] = '\0';
+			con.text[i].utf8Bytes[2] = '\0';
+			con.text[i].utf8Bytes[3] = '\0';
+			con.text[i].numUtf8Bytes = 1;
+		}
 
 
 		for (i=0 ; i<numlines ; i++)
@@ -393,7 +437,7 @@ void Con_Init (void) {
 Con_Linefeed
 ===============
 */
-void Con_Linefeed (qboolean skipnotify)
+static void Con_Linefeed (qboolean skipnotify)
 {
 	int		i;
 
@@ -410,8 +454,20 @@ void Con_Linefeed (qboolean skipnotify)
 	if (con.display == con.current)
 		con.display++;
 	con.current++;
-	for(i=0; i<con.linewidth; i++)
-		con.text[(con.current%con.totallines)*con.linewidth+i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+	for (i = 0;  i < con.linewidth;  i++) {
+		consoleChar_t *c;
+
+		//con.text[(con.current%con.totallines)*con.linewidth+i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
+
+		c = &con.text[(con.current%con.totallines)*con.linewidth+i];
+		c->color = ColorIndex(COLOR_WHITE);
+		c->codePoint = ' ';
+		c->utf8Bytes[0] = ' ';
+		c->utf8Bytes[1] = '\0';
+		c->utf8Bytes[2] = '\0';
+		c->utf8Bytes[3] = '\0';
+		c->numUtf8Bytes = 1;
+	}
 }
 
 /*
@@ -430,6 +486,7 @@ void CL_ConsolePrint (const char *txt)
 	unsigned short  color;
 	qboolean skipnotify = qfalse;		// NERVE - SMF
 	int prev;							// NERVE - SMF
+	const char *sp;
 
 	// TTimo - prefix for text that shows up in console but not in notify
 	// backported from RTCW
@@ -437,15 +494,16 @@ void CL_ConsolePrint (const char *txt)
 		skipnotify = qtrue;
 		txt += 12;
 	}
-	
+
 	// for some demos we don't want to ever show anything on the console
 	//if ( !force  &&  cl_noprint && cl_noprint->integer > 1) {
 	//	return;
 	//}
-	
+
+	//return;
 	if (!con.initialized) {
-		con.color[0] = 
-		con.color[1] = 
+		con.color[0] =
+		con.color[1] =
 		con.color[2] =
 		con.color[3] = 1.0f;
 		con.linewidth = -1;
@@ -456,29 +514,72 @@ void CL_ConsolePrint (const char *txt)
 	color = ColorIndex(COLOR_WHITE);
 
 	while ( (c = *((unsigned char *) txt)) != 0 ) {
+		int codePoint;
+		int numUtf8Bytes;
+		qboolean error;
+		char bytes[4];
+		int bc;
+
 		if ( Q_IsColorString( txt ) ) {
 			color = ColorIndex( *(txt+1) );
 			txt += 2;
 			continue;
 		}
-
+#if 1
+		codePoint = Q_GetCpFromUtf8((const char *)txt, &numUtf8Bytes, &error);
+		bytes[0] = bytes[1] = bytes[2] = bytes[3] = '\0';
+		for (bc = 0;  bc < numUtf8Bytes;  bc++) {
+			bytes[bc] = txt[bc];
+		}
+#endif
+		//codePoint = txt[0];
+		//bytes[0] = txt[0];
+		//numUtf8Bytes = 1;
+		
 		// count word length
+		l = 0;
+#if 1
+		sp = txt;
 		for (l=0 ; l< con.linewidth ; l++) {
-			if ( txt[l] <= ' ') {
+			int cp;
+			int nbytes;
+			qboolean err;
+
+			// don't read past buffer
+			if (sp[0] == '\0') {
+				break;
+			}
+
+			nbytes = 0;
+			err = qfalse;
+			cp = Q_GetCpFromUtf8((const char *)sp, &nbytes, &err);
+			sp += nbytes;
+
+#if 0
+			if (err) {
+				Com_Printf("error with string '%s'\n", txt);
+				//Com_Printf("l: %d  sp: '%s'\n", l, sp - numUtf8Bytes);
+				exit(1);
+			}
+#endif
+			//if ( txt[l] <= ' ') {
+			if (cp == ' ') {
 				break;
 			}
 
 		}
-
+#endif
+		
 		// word wrap
 		if (l != con.linewidth && (con.x + l >= con.linewidth) ) {
 			Con_Linefeed(skipnotify);
 
 		}
 
-		txt++;
+		//txt++;
+		txt += numUtf8Bytes;
 
-		switch (c)
+		switch (codePoint)
 		{
 		case '\n':
 			Con_Linefeed (skipnotify);
@@ -486,15 +587,46 @@ void CL_ConsolePrint (const char *txt)
 		case '\r':
 			con.x = 0;
 			break;
-		default:	// display character and advance
+		default: {	// display character and advance
+			consoleChar_t *cc;
 			y = con.current % con.totallines;
-			con.text[y*con.linewidth+con.x] = (color << 8) | c;
+			//con.text[y*con.linewidth+con.x] = (color << 8) | c;
+			cc = &con.text[y*con.linewidth+con.x];
+			cc->color = color;
+			cc->codePoint = codePoint;
+			cc->utf8Bytes[0] = bytes[0];
+			cc->utf8Bytes[1] = bytes[1];
+			cc->utf8Bytes[2] = bytes[2];
+			cc->utf8Bytes[3] = bytes[3];
+			cc->numUtf8Bytes = numUtf8Bytes;
+
+			// testing
+			//cc->codePoint = 'x';
+			//cc->utf8Bytes[0] = 'x';
+			//cc->numUtf8Bytes = 1;
+			// numUtf8bytes = 1
+
+			// testing
+#if 0
+			if (numUtf8Bytes > 1) {
+				char tmpBuffer[5];
+
+				tmpBuffer[0] = cc->utf8Bytes[0];
+				tmpBuffer[1] = cc->utf8Bytes[1];
+				tmpBuffer[2] = cc->utf8Bytes[2];
+				tmpBuffer[3] = cc->utf8Bytes[3];
+				tmpBuffer[4] = '\0';
+				printf("got codepoint %d 0x%x '%s'\n", codePoint, codePoint, tmpBuffer);
+			}
+#endif
 			con.x++;
 			if (con.x >= con.linewidth) {
 				Con_Linefeed(skipnotify);
 				con.x = 0;
 			}
 			break;
+		}
+
 		}
 	}
 
@@ -531,7 +663,7 @@ Con_DrawInput
 Draw the editline after a ] prompt
 ================
 */
-void Con_DrawInput (void) {
+static void Con_DrawInput (void) {
 	float y;
 	float cwidth;
 	float cheight;
@@ -567,7 +699,8 @@ Draws the last few lines of output transparently over the game top
 void Con_DrawNotify (void)
 {
 	int		x, v;
-	short	*text;
+	//short	*text;
+	consoleChar_t *text;
 	int		i;
 	int		time;
 	int		skip;
@@ -599,14 +732,20 @@ void Con_DrawNotify (void)
 		}
 
 		for (x = 0 ; x < con.linewidth ; x++) {
-			if ( ( text[x] & 0xff ) == ' ' ) {
+			//if ( ( text[x] & 0xff ) == ' ' ) {
+			if (text[x].codePoint == ' ') {
 				continue;
 			}
-			if ( ColorIndexForNumber( text[x]>>8 ) != currentColor ) {
-				currentColor = ColorIndexForNumber( text[x]>>8 );
+			//if ( ColorIndexForNumber( text[x]>>8 ) != currentColor ) {
+			if (ColorIndexForNumber(text[x].color) != currentColor) {
+				//currentColor = ColorIndexForNumber( text[x]>>8 );
+				currentColor = ColorIndexForNumber(text[x].color);
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x] & 0xff );
+			//SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x] & 0xff );
+			//FIXME utf8
+			//SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x].codePoint & 0xff);
+			SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x].codePoint);
 		}
 
 		v += SMALLCHAR_HEIGHT;
@@ -646,13 +785,14 @@ Con_DrawSolidConsole
 Draws the console with the solid background
 ================
 */
-void Con_DrawSolidConsole( float frac ) {
+static void Con_DrawSolidConsole( float frac ) {
 	int i;
 	//float x;
 	int x;
 	float y;
 	int				rows;
-	short			*text;
+	//short			*text;
+	consoleChar_t *text;
 	int				row;
 	int				lines;
 //	qhandle_t		conShader;
@@ -763,15 +903,20 @@ void Con_DrawSolidConsole( float frac ) {
 		text = con.text + (row % con.totallines)*con.linewidth;
 
 		for (x=0 ; x<con.linewidth ; x++) {
-			if ( ( text[x] & 0xff ) == ' ' ) {
+			//if ( ( text[x] & 0xff ) == ' ' ) {
+			if (text[x].codePoint == ' ') {
 				continue;
 			}
 
-			if ( ColorIndexForNumber( text[x]>>8 ) != currentColor ) {
-				currentColor = ColorIndexForNumber( text[x]>>8 );
+			//if ( ColorIndexForNumber( text[x]>>8 ) != currentColor ) {
+			if (ColorIndexForNumber(text[x].color) != currentColor) {
+				//currentColor = ColorIndexForNumber( text[x]>>8 );
+				currentColor = ColorIndexForNumber(text[x].color);
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallCharExt(  con.xadjust + (x+1)*cwidth, y, cwidth, cheight, text[x] & 0xff );
+			//SCR_DrawSmallCharExt(  con.xadjust + (x+1)*cwidth, y, cwidth, cheight, text[x] & 0xff );
+			//SCR_DrawSmallCharExt(  con.xadjust + (x+1)*cwidth, y, cwidth, cheight, text[x].codePoint & 0xff );
+			SCR_DrawSmallCharExt(  con.xadjust + (x+1)*cwidth, y, cwidth, cheight, text[x].codePoint );
 		}
 	}
 

@@ -3696,6 +3696,12 @@ int CG_Text_Length (const char *s)
 				s += 2;
 			}
 		} else {
+			int bytes;
+			qboolean error;
+
+			Q_GetCpFromUtf8(s, &bytes, &error);
+			s += (bytes - 1);
+
 			count++;
 			s++;
 		}
@@ -3709,7 +3715,7 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 {
 	int len, count;
 	vec4_t newColor;
-	const glyphInfo_t *glyph;
+	glyphInfo_t glyph;
 	float xscale, yscale;
 
 	xscale = 1.0;
@@ -3725,7 +3731,7 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 		yscale = 3.0;
 	}
 
-  if (text) {
+	if (text) {
 	    const char *s = text;
 	    float max = *maxX;
 		float useScale;
@@ -3749,7 +3755,15 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 		}
 		count = 0;
 		while (s && *s && count < len) {
-			glyph = &font->glyphs[*s & 255];
+			int cp;
+			int bytes;
+			qboolean error;
+
+			bytes = 0;
+			cp = Q_GetCpFromUtf8(s, &bytes, &error);
+
+			trap_R_GetGlyphInfo(font, cp, &glyph);
+
 			if ( Q_IsColorString( s ) ) {
 				if (cgs.cpma) {
 					CG_CpmaColorFromString(s + 1, newColor);
@@ -3779,33 +3793,35 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 				}
 				continue;
 			} else {
-	      float yadj = useScale * glyph->top;
-		  //if (CG_Text_Width(s, useScale, 1, font) + x > max) {
-		  if (CG_Text_Width(s, scale, 1, font) + x > max) {
-			  //Com_Printf("maxx %f  %s\n", max, text);
+				float yadj = useScale * glyph.top;
+
+				//if (CG_Text_Width(s, useScale, 1, font) + x > max) {
+				if (CG_Text_Width(s, scale, 1, font) + x > max) {
+					//Com_Printf("maxx %f  %s\n", max, text);
 					*maxX = 0;
 					break;
 				}
-		  //Com_Printf("print x %f\n", x);
-		    CG_Text_PaintCharScale(x, y - yadj,
-			                    glyph->imageWidth,
-				                  glyph->imageHeight,
-					                useScale * xscale,
-								   useScale * yscale,
-						              glyph->s,
-							            glyph->t,
-								          glyph->s2,
-									        glyph->t2,
-										      glyph->glyph);
-	      x += (glyph->xSkip * useScale * xscale) + adjust;
+				//Com_Printf("print x %f\n", x);
+				CG_Text_PaintCharScale(x, y - yadj,
+									   glyph.imageWidth,
+									   glyph.imageHeight,
+									   useScale * xscale,
+									   useScale * yscale,
+									   glyph.s,
+									   glyph.t,
+									   glyph.s2,
+									   glyph.t2,
+									   glyph.glyph);
+				x += (glyph.xSkip * useScale * xscale) + adjust;
 				*maxX = x;
 				count++;
 				s++;
-	    }
+				s += (bytes - 1);  // utf8
+			}
 		}
 		//Com_Printf("count %d  len %d\n", count, len);
-	  trap_R_SetColor( NULL );
-  }
+		trap_R_SetColor( NULL );
+	}
 
 }
 
@@ -3977,6 +3993,8 @@ static void CG_DrawNewTeamInfo(const rectDef_t *rect, float text_x, float text_y
 static void CG_DrawTeamSpectators(const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
 	float maxX;
 	int sw;
+	int numUtf8Bytes;
+	qboolean error;
 
 	if (!cg.spectatorLen) {
 		return;
@@ -4022,7 +4040,11 @@ static void CG_DrawTeamSpectators(const rectDef_t *rect, float scale, const vec4
 							if (cg.spectatorOffset + 2 < strlen(cg.spectatorList)) {
 								cg.spectatorOffset += 2;
 							} else {
-								cg.spectatorOffset++;
+								//cg.spectatorOffset++;
+								//FIXME check overflow
+								Q_GetCpFromUtf8(&cg.spectatorList[cg.spectatorOffset], &numUtf8Bytes, &error);
+								//FIXME check overflow
+								cg.spectatorOffset += numUtf8Bytes;
 							}
 						} else {
 							break;
@@ -4030,7 +4052,12 @@ static void CG_DrawTeamSpectators(const rectDef_t *rect, float scale, const vec4
 					}
 					cg.spectatorOffsetWidth = CG_Text_Width(&cg.spectatorList[cg.spectatorOffset], scale, 1, font);
 					cg.spectatorPaintX += cg.spectatorOffsetWidth;
-					cg.spectatorOffset++;
+					//cg.spectatorOffset++;
+					//FIXME check overflow
+					Q_GetCpFromUtf8(&cg.spectatorList[cg.spectatorOffset], &numUtf8Bytes, &error);
+					//FIXME check overflow
+					cg.spectatorOffset += numUtf8Bytes;
+
 				} else {
 					cg.spectatorOffsetWidth--;
 					cg.spectatorPaintX--;
@@ -4620,7 +4647,7 @@ static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color,
 		if ((cg.obituaryIndex + i - 1) < 0) {
 			continue;
 		}
-		obituary = &cg.obituaries[(cg.obituaryIndex + i - 1) % MAX_OBITUARIES_MASK];
+		obituary = &cg.obituaries[(cg.obituaryIndex + i - 1) % MAX_OBITUARIES];
 
 		if (obituary->time == 0) {
 			//Com_Printf("%d  invalid time 0:  %d\n", cg.obituaryIndex, i);
@@ -4632,7 +4659,7 @@ static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color,
 		}
 
 		//Com_Printf("%d  drawing obit  %d  %d\n", cg.obituaryIndex, i, obituary->time);
-		//Com_Printf("%d\n", (cg.obituaryIndex + i - 1) % MAX_OBITUARIES_MASK);
+		//Com_Printf("%d\n", (cg.obituaryIndex + i - 1) % MAX_OBITUARIES);
 
 		extString = CG_CreateFragString(qfalse, i);
 		lb = linebuffer;
@@ -4932,7 +4959,7 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 		if (n < 0) {
 			break;
 		}
-		n = n % MAX_CHAT_LINES_MASK;
+		n = n % MAX_CHAT_LINES;
 		//FIXME hack to always show chat with scoreboard
 		if (!cg.scoreBoardShowing) {
 			if (!cg.forceDrawChat  &&  cg.time - cg.chatAreaStringsTime[n] > ctime) {
@@ -6995,7 +7022,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
 	  if (*info) {
 		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_0")));
-		  if (!shader) {
+		  if (CG_FileExists(va("levelshots/preview/%s", Info_ValueForKey(info, "map_0")))) {
 			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_0")));
 		  }
 	  }
@@ -7013,7 +7040,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
 	  if (*info) {
 		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_1")));
-		  if (!shader) {
+		  if (CG_FileExists(va("levelshots/preview/%s", Info_ValueForKey(info, "map_1")))) {
 			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_1")));
 			  //shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/overlay"));
 		  }
@@ -7032,7 +7059,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
 	  if (*info) {
 		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_2")));
-		  if (!shader) {
+		  if (CG_FileExists(va("levelshots/preview/%s", Info_ValueForKey(info, "map_2")))) {
 			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_2")));
 		  }
 	  }

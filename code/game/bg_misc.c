@@ -1007,10 +1007,9 @@ Only in One Flag CTF games
 	},
 #endif
 
-#if 1
 	{
 		"item_spawnarmor",
-		"",  //FIXME
+		NULL,
 		{ 0, 0, 0, 0 },
 		"icons/spawnarmor",
 		"Spawn Armor",
@@ -1020,7 +1019,6 @@ Only in One Flag CTF games
 		"",
 		""
 	},
-#endif
 
 	{
 		"weap_hmg",
@@ -1091,13 +1089,13 @@ Only in One Flag CTF games
 
 	{
 		"item_key_master",
-		"sound/items/key_master.wav",
+		NULL,
 		{ "models/powerups/keys/key_master.md3", 0, 0, 0 },
 		"icons/key_master",
 		"Master Key",
 		0,  //FIXME
 		IT_PERSISTANT_POWERUP,
-		PWEX_KEY, //FIXME  PW_QUAD  .. PW_SILVER_KEY
+		PWEX_KEY,
 		"",  //FIXME
 		""  //FIXME
 	},
@@ -1107,7 +1105,6 @@ Only in One Flag CTF games
 	{NULL}
 };
 
-//FIXME 2015-07-30  just using qldm90 list since ql with protocol 91 isn't released yet, just need to update powerup indexes
 const gitem_t bg_itemlistQldm91[] =
 {
 	{
@@ -1999,10 +1996,9 @@ Only in One Flag CTF games
 	},
 #endif
 
-#if 1
 	{
 		"item_spawnarmor",
-		"",  //FIXME
+		NULL,
 		{ 0, 0, 0, 0 },
 		"icons/spawnarmor",
 		"Spawn Armor",
@@ -2012,7 +2008,6 @@ Only in One Flag CTF games
 		"",
 		""
 	},
-#endif
 
 	{
 		"weap_hmg",
@@ -2083,18 +2078,18 @@ Only in One Flag CTF games
 
 	{
 		"item_key_master",
-		"sound/items/key_master.wav",
+		NULL,
 		{ "models/powerups/keys/key_master.md3", 0, 0, 0 },
 		"icons/key_master",
 		"Master Key",
 		0,  //FIXME
 		IT_PERSISTANT_POWERUP,
-		PWEX_KEY, //FIXME  PW91_QUAD  .. PW_SILVER_KEY
+		PWEX_KEY,
 		"",  //FIXME
 		""  //FIXME
 	},
 
-	
+
 	// end of list marker
 	{NULL}
 };
@@ -2994,7 +2989,7 @@ Only in One Flag CTF games
 #if 0
 	{
 		"item_spawnarmor",
-		"",
+		NULL,
 		{ 0, 0, 0, 0 },
 		"icons/spawnarmor",
 		"Spawn Armor",

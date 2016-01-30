@@ -4535,7 +4535,10 @@ void Item_ListBox_Paint(itemDef_t *item) {
 							DC->drawHandlePic(x + 4 + listPtr->columnInfo[j].pos, y - 1 + listPtr->elementHeight / 2, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage, item->widescreen, menuRect);
 						} else if (text) {
 							//DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
+							// scoreboard text
 							DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight, item->textscale, listPtr->elementColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
+							//Com_Printf("feeder: text scale %f\n", item->textscale);
+							// 0.16
 							//Com_Printf("max: %d\n", listPtr->columnInfo[j].maxChars);
 						}
 					}
