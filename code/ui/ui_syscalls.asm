@@ -101,4 +101,5 @@ equ	ceil						-109
 equ acos -110
 equ trap_OpenQuakeLiveDirectory -111
 equ trap_OpenWolfcamDirectory -112
-equ trap_Cvar_Exists -113
+equ trap_DrawConsoleLinesOver -113
+equ trap_Cvar_Exists -114

@@ -295,7 +295,8 @@ void String_Init(void) {
 PC_SourceWarning
 =================
 */
-static void PC_SourceWarning(int handle, char *format, ...) {
+static NO_WARNING_UNUSED_FUNCTION __attribute__((format(printf, 2, 3))) void PC_SourceWarning (int handle, char *format, ...)
+{
 	int line;
 	char filename[128];
 	va_list argptr;
@@ -318,7 +319,8 @@ static void PC_SourceWarning(int handle, char *format, ...) {
 PC_SourceError
 =================
 */
-static void PC_SourceError(int handle, char *format, ...) {
+static __attribute__((format(printf, 2, 3))) void PC_SourceError (int handle, char *format, ...)
+{
 	int line;
 	char filename[128];
 	va_list argptr;
@@ -1198,7 +1200,7 @@ static void Menu_UpdatePosition(menuDef_t *menu) {
   }
 }
 
-void Menu_PostParse(menuDef_t *menu) {
+static void Menu_PostParse(menuDef_t *menu) {
 	if (menu == NULL) {
 		return;
 	}
@@ -2663,12 +2665,14 @@ static qboolean Item_Multi_HandleKey(itemDef_t *item, int key) {
   return qfalse;
 }
 
+//FIXME utf8
 static qboolean Item_TextField_HandleKey(itemDef_t *item, int key) {
 	char buff[1024];
 	int len;
 	itemDef_t *newItem = NULL;
 	editFieldDef_t *editPtr = (editFieldDef_t*)item->typeData;
 
+	//Com_Printf("item key:  %d '%c'\n", key, key);
 	if (item->cvar) {
 
 		memset(buff, 0, sizeof(buff));
@@ -3248,6 +3252,7 @@ static rectDef_t *Item_CorrectedTextRect(itemDef_t *item) {
 	return &rect;
 }
 
+//FIXME utf8
 void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 	//int i;
 	itemDef_t *item = NULL;
@@ -3447,7 +3452,7 @@ static void Rect_ToWindowCoords(rectDef_t *rect, windowDef_t *window) {
 }
 #endif
 
-static void Item_SetTextExtents(itemDef_t *item, int *width, int *height, const char *text) {
+static void Item_SetTextExtents(itemDef_t *item, float *width, float *height, const char *text) {
 	const char *textPtr = (text) ? text : item->text;
 	rectDef_t menuRect;
 
@@ -3464,10 +3469,8 @@ static void Item_SetTextExtents(itemDef_t *item, int *width, int *height, const 
 
 	// keeps us from computing the widths and heights more than once
 	if (*width == 0 || (item->type == ITEM_TYPE_OWNERDRAW && item->textalignment == ITEM_ALIGN_CENTER)) {
-		//int originalWidth = DC->textWidth(item->text, item->textscale, 0);
-		//int originalWidth = DC->textWidth(item->text, item->textscale, 0, &DC->Assets.extrafonts[item->font]);
 		//FIXME widescreen?
-		int originalWidth = DC->textWidth(item->text, item->textscale, 0, item->fontIndex, item->widescreen, menuRect);
+		float originalWidth = DC->textWidth(item->text, item->textscale, 0, item->fontIndex, item->widescreen, menuRect);
 
 		if (item->type == ITEM_TYPE_OWNERDRAW && (item->textalignment == ITEM_ALIGN_CENTER || item->textalignment == ITEM_ALIGN_RIGHT)) {
 			originalWidth += DC->ownerDrawWidth(item->window.ownerDraw, item->textscale, item->fontIndex, item->widescreen, menuRect);
@@ -3528,7 +3531,9 @@ static void Item_Text_AutoWrapped_Paint (itemDef_t *item)
 	char text[1024];
 	const char *p, *textPtr, *newLinePtr;
 	char buff[1024];
-	int width, height, len, textWidth, newLine, newLineWidth;
+	int len, newLine;
+	float width, height, newLineWidth;
+	float textWidth;
 	float y;
 	vec4_t color;
 	rectDef_t menuRect;
@@ -3565,6 +3570,10 @@ static void Item_Text_AutoWrapped_Paint (itemDef_t *item)
 	newLineWidth = 0;
 	p = textPtr;
 	while (p) {
+		int numUtf8Bytes;
+		qboolean error;
+		int n;
+
 		if (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\0') {
 			newLine = len;
 			newLinePtr = p+1;
@@ -3597,7 +3606,13 @@ static void Item_Text_AutoWrapped_Paint (itemDef_t *item)
 			newLineWidth = 0;
 			continue;
 		}
-		buff[len++] = *p++;
+
+		Q_GetCpFromUtf8(p, &numUtf8Bytes, &error);
+		for (n = 0;  n < numUtf8Bytes;  n++) {
+			buff[len + n] = p[n];
+		}
+		len += numUtf8Bytes;
+		p += numUtf8Bytes;
 		buff[len] = '\0';
 	}
 }
@@ -3606,7 +3621,7 @@ static void Item_Text_Wrapped_Paint(itemDef_t *item) {
 	char text[1024];
 	const char *p, *start, *textPtr;
 	char buff[1024];
-	int width, height;
+	float width, height;
 	float x, y;
 	vec4_t color;
 	rectDef_t menuRect;
@@ -3654,7 +3669,7 @@ static void Item_Text_Wrapped_Paint(itemDef_t *item) {
 static void Item_Text_Paint(itemDef_t *item) {
 	char text[1024];
 	const char *textPtr;
-	int height, width;
+	float height, width;
 	vec4_t color;
 	rectDef_t menuRect;
 
@@ -6219,14 +6234,14 @@ static qboolean ItemParse_font (itemDef_t *item, int handle) {
 		fontId = atoi(fontName);
 		switch (fontId) {
 		case FONT_SANS:
-			fontName = "fonts/notosans-regular.ttf";
+			fontName = DEFAULT_SANS_FONT;
 			break;
 		case FONT_MONO:
-			fontName = "fonts/droidsansmono.ttf";
+			fontName = DEFAULT_MONO_FONT;
 			break;
 		default:
 		case FONT_DEFAULT:
-			fontName = "handelgothic.ttf";
+			fontName = DEFAULT_FONT;
 			break;
 		}
 	} else {  // wolfcamql font keyword (fontname : pointsize)
@@ -6275,6 +6290,7 @@ static qboolean ItemParse_precision( itemDef_t *item, int handle ) {
 	return qtrue;
 }
 
+//FIXME utf8  --  2016-02-22 ok used with predefined math tokens
 static char *Q_GetToken (char *inputString, char *token, qboolean isFilename, qboolean *newLine)
 {
     char *p;
@@ -6314,6 +6330,7 @@ static char *Q_GetToken (char *inputString, char *token, qboolean isFilename, qb
             *newLine = qtrue;
             break;
         }
+		//FIXME utf8  --  2016-02-22 ok used with predefined math tokens
         if (c != '\t'  &&  (c < ' '  ||  c > '~')) {
             *newLine = qtrue;
             if (gotFirstToken) {
@@ -6342,6 +6359,7 @@ static char *Q_GetToken (char *inputString, char *token, qboolean isFilename, qb
             }
         }
 
+		//FIXME utf8  --  2016-02-22 ok used with predefined math tokens
         if (c < '!'  ||  c > '~') {
             break;
         }
@@ -7605,7 +7623,7 @@ static qboolean MenuParse_widescreen( itemDef_t *item, int handle ) {
 
 	if (menu->widescreen < 0  ||  menu->widescreen > 3) {
 		//Com_Printf("^1MenuParse invalid widescreen value: %d", menu->widescreen);
-		PC_SourceError(handle, "menu parse invalid widescreen value: %d\n", handle, menu->widescreen);
+		PC_SourceError(handle, "menu parse invalid widescreen value: %d\n", menu->widescreen);
 		menu->widescreen = 0;
 	}
 

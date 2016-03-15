@@ -318,9 +318,11 @@ void Field_VariableSizeDraw (field_t *edit, float x, float y, int width, int siz
 	int		cursorChar;
 	char	str[MAX_STRING_CHARS];
 	int		i;
+	int nc;
+	char *p;
 
 	drawLen = edit->widthInChars - 1; // - 1 so there is always a space for the cursor
-	len = strlen( edit->buffer );
+	len = Field_Strlen(edit);
 
 	// guarantee that cursor will be visible
 	if ( len <= drawLen ) {
@@ -344,8 +346,27 @@ void Field_VariableSizeDraw (field_t *edit, float x, float y, int width, int siz
 		Com_Error( ERR_DROP, "drawLen >= MAX_STRING_CHARS" );
 	}
 
-	Com_Memcpy( str, edit->buffer + prestep, drawLen );
-	str[ drawLen ] = 0;
+	Field_ToStr(str, edit, prestep, drawLen);
+
+	//FIXME separate function
+	{
+		char *p = str;
+		int count = 0;
+
+		while (*p) {
+			int numUtf8Bytes;
+			qboolean error;
+
+			if (count == drawLen) {
+				*p = '\0';
+				break;
+			}
+
+			Q_GetCpFromUtf8(p, &numUtf8Bytes, &error);
+			p += numUtf8Bytes;
+			count++;
+		}
+	}
 
 	// draw it
 	if ( size == SMALLCHAR_WIDTH ) {
@@ -353,7 +374,9 @@ void Field_VariableSizeDraw (field_t *edit, float x, float y, int width, int siz
 
 		color[0] = color[1] = color[2] = color[3] = 1.0;
 		SCR_DrawSmallStringExt( x, y, cwidth, cheight, str, color, qfalse, noColorEscape );
+
 	} else {
+		//FIXME utf8
 		// draw big string with drop shadow
 		SCR_DrawBigString( x, y, str, 1.0, noColorEscape );
 	}
@@ -372,7 +395,20 @@ void Field_VariableSizeDraw (field_t *edit, float x, float y, int width, int siz
 			cursorChar = 10;
 		}
 
-		i = drawLen - strlen( str );
+		nc = 0;
+		p = str;
+		while (*p) {
+			int numUtf8Bytes;
+			qboolean error;
+
+			Q_GetCpFromUtf8(p, &numUtf8Bytes, &error);
+			p += numUtf8Bytes;
+			nc++;
+		}
+
+		i = drawLen - nc;
+
+		//printf("edit->cursor:%d  prestep: %d  i: %d  drawLen: %d  nc: %d\n", edit->cursor, prestep, i, drawLen, nc);
 
 		if ( size == SMALLCHAR_WIDTH ) {
 			SCR_DrawSmallCharExt( x + (float)( edit->cursor - prestep - i ) * cwidth, y, cwidth, cheight, cursorChar );
@@ -401,8 +437,8 @@ Field_Paste
 ================
 */
 void Field_Paste( field_t *edit ) {
-	char	*cbd;
-	int		pasteLen, i;
+	char *cbd;
+	const char *p;
 
 	cbd = Sys_GetClipboardData();
 
@@ -411,9 +447,16 @@ void Field_Paste( field_t *edit ) {
 	}
 
 	// send as if typed, so insert / overstrike works properly
-	pasteLen = strlen( cbd );
-	for ( i = 0 ; i < pasteLen ; i++ ) {
-		Field_CharEvent( edit, cbd[i] );
+	p = cbd;
+	while (*p) {
+		int numUtf8Bytes;
+		qboolean error;
+		int codePoint;
+
+		// Field_CharEvent() limits the size to one console line
+		codePoint = Q_GetCpFromUtf8(p, &numUtf8Bytes, &error);
+		p += numUtf8Bytes;
+		Field_CharEvent(edit, codePoint);
 	}
 
 	Z_Free( cbd );
@@ -439,13 +482,12 @@ void Field_KeyDownEvent( field_t *edit, int key ) {
 	}
 
 	key = tolower( key );
-	len = strlen( edit->buffer );
+	len = Field_Strlen(edit);
 
 	switch ( key ) {
 		case K_DEL:
 			if ( edit->cursor < len ) {
-				memmove( edit->buffer + edit->cursor, 
-					edit->buffer + edit->cursor + 1, len - edit->cursor );
+				memmove(&edit->xbuffer[edit->cursor], &edit->xbuffer[edit->cursor + 1], (len - edit->cursor) * sizeof(fieldChar_t));
 			}
 			break;
 
@@ -532,6 +574,8 @@ Field_CharEvent
 */
 void Field_CharEvent( field_t *edit, int ch ) {
 	int		len;
+	fieldChar_t *fc;
+	qboolean error;
 
 	if ( ch == 'v' - 'a' + 1 ) {	// ctrl-v is paste
 		Field_Paste( edit );
@@ -543,12 +587,11 @@ void Field_CharEvent( field_t *edit, int ch ) {
 		return;
 	}
 
-	len = strlen( edit->buffer );
+	len = Field_Strlen(edit);
 
 	if ( ch == 'h' - 'a' + 1 )	{	// ctrl-h is backspace
 		if ( edit->cursor > 0 ) {
-			memmove( edit->buffer + edit->cursor - 1, 
-				edit->buffer + edit->cursor, len + 1 - edit->cursor );
+			memmove(&edit->xbuffer[edit->cursor - 1], &edit->xbuffer[edit->cursor], (len + 1 - edit->cursor) * sizeof(fieldChar_t));
 			edit->cursor--;
 			if ( edit->cursor < edit->scroll )
 			{
@@ -577,20 +620,23 @@ void Field_CharEvent( field_t *edit, int ch ) {
 		return;
 	}
 
-	if ( key_overstrikeMode ) {	
+	if ( key_overstrikeMode ) {
 		// - 2 to leave room for the leading slash and trailing \0
 		if ( edit->cursor == MAX_EDIT_LINE - 2 )
 			return;
-		edit->buffer[edit->cursor] = ch;
+		fc = &edit->xbuffer[edit->cursor];
+		fc->codePoint = ch;
+		Q_GetUtf8FromCp(ch, fc->utf8Bytes, &fc->numUtf8Bytes, &error);
 		edit->cursor++;
 	} else {	// insert mode
 		// - 2 to leave room for the leading slash and trailing  \0
 		if ( len == MAX_EDIT_LINE - 2 ) {
 			return; // all full
 		}
-		memmove( edit->buffer + edit->cursor + 1, 
-			edit->buffer + edit->cursor, len + 1 - edit->cursor );
-		edit->buffer[edit->cursor] = ch;
+		memmove(&edit->xbuffer[edit->cursor + 1], &edit->xbuffer[edit->cursor], (len + 1 - edit->cursor) * sizeof(fieldChar_t));
+		fc = &edit->xbuffer[edit->cursor];
+		fc->codePoint = ch;
+		Q_GetUtf8FromCp(ch, fc->utf8Bytes, &fc->numUtf8Bytes, &error);
 		edit->cursor++;
 	}
 
@@ -600,7 +646,8 @@ void Field_CharEvent( field_t *edit, int ch ) {
 	}
 
 	if ( edit->cursor == len + 1) {
-		edit->buffer[edit->cursor] = 0;
+		fc = &edit->xbuffer[edit->cursor];
+		fc->codePoint = 0;
 	}
 }
 
@@ -621,7 +668,59 @@ Handles history and console scrollback
 */
 void Console_Key (int key)
 {
-	char	temp[MAX_EDIT_LINE-1];
+	//printf("console key: %d\n", key);
+
+	// insert ut8 hex code into console
+	//FIXME selectable keys
+	if ((key == K_INS  &&  keys[K_CTRL].down)  ||
+		(key == K_TAB  &&  keys[K_CTRL].down)
+		) {
+		char numberString[MAX_EDIT_LINE * 4];  // max 4 utf8 bytes
+		qboolean gotX;
+		int count;
+		int bc;
+
+		gotX = qfalse;
+		count = 0;
+		bc = g_consoleField.cursor - 1;
+
+		while (bc >= 0) {
+			fieldChar_t *fc;
+
+			fc = &g_consoleField.xbuffer[bc];
+			if (fc->codePoint == 'x'  ||  fc->codePoint == 'X') {
+				gotX = qtrue;
+				break;
+			}
+			bc--;
+			count++;
+		}
+
+		// bc at 'x'
+
+		if (gotX) {
+			int hexValue;
+			int i;
+
+			numberString[0] = '0';
+			numberString[1] = 'x';
+			Com_sprintf(numberString, sizeof(numberString), "0x%s", Field_AsStr(&g_consoleField, bc + 1, count));
+			//printf("number string:  '%s'\n", numberString);
+			hexValue = Com_HexStrToInt(numberString);
+			//printf("codePoint: 0x%x   %d\n", hexValue, hexValue);
+
+			for (i = 0;  i <= count;  i++) {
+				Field_CharEvent(&g_consoleField, 0x8);  // backspace
+			}
+
+			if (hexValue > 0x20) {  // don't allow control characters
+				Field_CharEvent(&g_consoleField, hexValue);
+			}
+			return;
+		}
+
+		return;
+	}
 
 	// ctrl-L clears screen
 	if ( key == 'l' && keys[K_CTRL].down ) {
@@ -629,38 +728,40 @@ void Console_Key (int key)
 		return;
 	}
 
+
 	// enter finishes the line
 	if ( key == K_ENTER || key == K_KP_ENTER ) {
 		// if not in the game explicitly prepend a slash if needed
 		if ( cls.state != CA_ACTIVE &&
-			 g_consoleField.buffer[0] &&
-			 g_consoleField.buffer[0] != '\\' &&
-			 g_consoleField.buffer[0] != '/' ) {
-			Q_strncpyz( temp, g_consoleField.buffer, sizeof( temp ) );
-			Com_sprintf( g_consoleField.buffer, sizeof( g_consoleField.buffer ), "\\%s", temp );
+			 g_consoleField.xbuffer[0].codePoint != 0  &&
+			 g_consoleField.xbuffer[0].codePoint != '\\' &&
+			 g_consoleField.xbuffer[0].codePoint != '/' ) {
+
+			Field_Insert(&g_consoleField, 0, '\\');
 			g_consoleField.cursor++;
 		}
 
-		Com_Printf ( "]%s\n", g_consoleField.buffer );
+		Com_Printf("]%s\n", Field_AsStr(&g_consoleField, 0, 0));
 
 		// leading slash is an explicit command
-		if ( g_consoleField.buffer[0] == '\\' || g_consoleField.buffer[0] == '/' ) {
-			Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
+		if ( g_consoleField.xbuffer[0].codePoint == '\\' || g_consoleField.xbuffer[0].codePoint == '/' ) {
+			// valid command
+			Cbuf_AddText(Field_AsStr(&g_consoleField, 1, 0));
 			Cbuf_AddText ("\n");
 		} else {
 			// other text will be chat messages
-			if ( !g_consoleField.buffer[0] ) {
+			if ( !g_consoleField.xbuffer[0].codePoint ) {
 				return;	// empty lines just scroll the console without adding to history
 			} else {
 				if (!cl_consoleAsChat->integer) {
-					Q_strncpyz( temp, g_consoleField.buffer, sizeof( temp ) );
-					Com_sprintf( g_consoleField.buffer, sizeof( g_consoleField.buffer ), "\\%s", temp );
+					Field_Insert(&g_consoleField, 0, '\\');
 					g_consoleField.cursor++;
-					Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
+					// valid command
+					Cbuf_AddText(Field_AsStr(&g_consoleField, 1, 0));
 					Cbuf_AddText ("\n");
 				} else {
 					Cbuf_AddText ("cmd say ");
-					Cbuf_AddText( g_consoleField.buffer );
+					Cbuf_AddText(Field_AsStr(&g_consoleField, 0, 0));
 					Cbuf_AddText ("\n");
 				}
 			}
@@ -721,13 +822,31 @@ void Console_Key (int key)
 	}
 
 	// console scrolling
-	if ( key == K_PGUP ) {
-		Con_PageUp();
+	if (key == K_PGUP) {
+		if (keys[K_CTRL].down  ||  keys[K_SHIFT].down) {
+			int i;
+
+			for (i = 0;  i < 10;  i++) {
+				Con_PageUp();
+			}
+		} else {
+			Con_PageUp();
+		}
+
 		return;
 	}
 
-	if ( key == K_PGDN) {
-		Con_PageDown();
+	if (key == K_PGDN) {
+		if (keys[K_CTRL].down  ||  keys[K_SHIFT].down) {
+			int i;
+
+			for (i = 0;  i < 10;  i++) {
+				Con_PageDown();
+			}
+		} else {
+			Con_PageDown();
+		}
+
 		return;
 	}
 
@@ -788,16 +907,16 @@ void Message_Key( int key ) {
 
 	if ( key == K_ENTER || key == K_KP_ENTER )
 	{
-		if ( chatField.buffer[0] && cls.state == CA_ACTIVE ) {
+		if ( chatField.xbuffer[0].codePoint && cls.state == CA_ACTIVE ) {
 			if (chat_playerNum != -1 )
 
-				Com_sprintf( buffer, sizeof( buffer ), "tell %i \"%s\"\n", chat_playerNum, chatField.buffer );
+				Com_sprintf( buffer, sizeof( buffer ), "tell %i \"%s\"\n", chat_playerNum, Field_AsStr(&chatField, 0, 0));
 
 			else if (chat_team)
 
-				Com_sprintf( buffer, sizeof( buffer ), "say_team \"%s\"\n", chatField.buffer );
+				Com_sprintf( buffer, sizeof( buffer ), "say_team \"%s\"\n", Field_AsStr(&chatField, 0, 0));
 			else
-				Com_sprintf( buffer, sizeof( buffer ), "say \"%s\"\n", chatField.buffer );
+				Com_sprintf( buffer, sizeof( buffer ), "say \"%s\"\n", Field_AsStr(&chatField, 0, 0));
 
 
 
@@ -852,7 +971,7 @@ to be configured even if they don't have defined names.
 */
 int Key_StringToKeynum( const char *str ) {
 	keyname_t	*kn;
-	
+
 	if ( !str || !str[0] ) {
 		return -1;
 	}
@@ -1012,7 +1131,7 @@ void Cgame_Key_GetBinding (int keynum, char *buffer)
 	}
 }
 
-/* 
+/*
 ===================
 Key_GetKey
 ===================
@@ -1303,7 +1422,7 @@ void CL_KeyDownEvent( int key, unsigned time )
 
 	// keys can still be used for bound actions
 	if ( ( key < 128 || key == K_MOUSE1 ) &&
-		( clc.demoplaying || cls.state == CA_CINEMATIC ) && Key_GetCatcher( ) == 0 ) {
+		 ( (clc.demoplaying  &&  cls.state != CA_DOWNLOADINGWORKSHOPS) || cls.state == CA_CINEMATIC ) && Key_GetCatcher( ) == 0 ) {
 
 		if (Cvar_VariableValue ("com_cameraMode") == 0) {
 			Cvar_Set ("nextdemo","");
@@ -1331,7 +1450,6 @@ void CL_KeyDownEvent( int key, unsigned time )
 				VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_INGAME );
 			}
 			else if ( cls.state != CA_DISCONNECTED ) {
-				//Com_Printf("...\n");
 				CL_Disconnect_f();
 				S_StopAllSounds();
 				VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_MAIN );
@@ -1477,6 +1595,7 @@ Called by the system for both key up and key down events
 ===================
 */
 void CL_KeyEvent (int key, qboolean down, unsigned time) {
+	//Com_Printf("CL_KeyEvent: %d '%c'   %d %d\n", key, key, down, time);
 	if( down )
 		CL_KeyDownEvent( key, time );
 	else
@@ -1618,9 +1737,7 @@ void CL_LoadConsoleHistory( void )
 				Com_DPrintf( S_COLOR_YELLOW "WARNING: probable corrupt history\n" );
 				break;
 			}
-			Com_Memcpy( historyEditLines[ i ].buffer,
-					text_p, numChars );
-			historyEditLines[ i ].buffer[ numChars ] = '\0';
+			Field_SetBuffer(&historyEditLines[i], text_p, numChars, 0);
 			text_p += numChars;
 
 			numLines++;
@@ -1658,9 +1775,12 @@ void CL_SaveConsoleHistory( void )
 	i = ( nextHistoryLine - 1 ) % COMMAND_HISTORY;
 	do
 	{
-		if( historyEditLines[ i ].buffer[ 0 ] )
+		if( historyEditLines[ i ].xbuffer[ 0 ].codePoint )
 		{
-			lineLength = strlen( historyEditLines[ i ].buffer );
+			const char *fieldAsStr;
+
+			fieldAsStr = Field_AsStr(&historyEditLines[i], 0, 0);
+			lineLength = strlen(fieldAsStr);
 			saveBufferLength = strlen( consoleSaveBuffer );
 
 			//ICK
@@ -1673,7 +1793,8 @@ void CL_SaveConsoleHistory( void )
 						historyEditLines[ i ].cursor,
 						historyEditLines[ i ].scroll,
 						lineLength,
-						historyEditLines[ i ].buffer ) );
+						fieldAsStr)
+							);
 			}
 			else
 				break;

@@ -52,7 +52,7 @@ void Wolfcam_Players_f (void)
     const clientInfo_t *ci;
     char color;
 	const char *clanTag;
-	
+
     for (i = 0;  i < MAX_CLIENTS;  i++) {
         ci = &cgs.clientinfo[i];
         if (!ci->infoValid)
@@ -101,7 +101,7 @@ void Wolfcam_Players_f (void)
 
 		if (i == cg.clientNum) {
 			Com_Printf("    ^3[demo taker]");
-		} else if (i == cg.snap->ps.clientNum) {
+		} else if (cg.snap  &&  i == cg.snap->ps.clientNum) {  // test for cg.snap since this can be called from loading screen
 			Com_Printf("    ^6[demo taker following this pov]");
 		}
 		Com_Printf("\n");
@@ -397,6 +397,10 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
     const wweaponStats_t *w;
     const wweaponStats_t *ws;  //[WP_NUM_WEAPONS];
 
+	if (!cg.snap) {
+		return;
+	}
+
     if (oldclient) {
         const woldclient_t *wc = &woldclients[clientNum];
 
@@ -579,6 +583,11 @@ void Wolfcam_Weapon_Stats_f (void)
 {
     int clientNum;
 
+	if (!cg.snap) {
+		Com_Printf("information not available yet\n");
+		return;
+	}
+
     if (trap_Argc() < 2) {
         if (wolfcam_following)
             clientNum = wcg.clientNum;
@@ -607,6 +616,11 @@ void Wolfcam_Weapon_Statsall_f (void)
 	//wclient_t *wc;
 	//wweaponStats_t *ws;
 	//float f;
+
+	if (!cg.snap) {
+		Com_Printf("information not available yet\n");
+		return;
+	}
 
 #if 0
 	memset(totalKills, 0, sizeof(totalKills));

@@ -76,6 +76,8 @@ static int lastMode = -999;
 static int lastFullscreen = -999;
 static int lastBpp = -999;
 
+static const char *ExtensionString = NULL;
+
 cvar_t *r_allowSoftwareGL; // Don't abort out if a hardware visual can't be obtained
 cvar_t *r_allowResize; // make window resizable
 cvar_t *r_centerWindow;
@@ -154,6 +156,7 @@ void GLimp_Shutdown( void )
 
 	Com_Memset( &glConfig, 0, sizeof( glConfig ) );
 	Com_Memset( &glState, 0, sizeof( glState ) );
+	ExtensionString = NULL;
 }
 
 /*
@@ -618,9 +621,20 @@ static qboolean GLimp_StartDriverAndSetMode(int mode, qboolean fullscreen, qbool
 	return qtrue;
 }
 
-static qboolean GLimp_HaveExtension(const char *ext)
+static qboolean GLimp_HaveExtension (const char *ext)
 {
-	const char *ptr = Q_stristr( glConfig.extensions_string, ext );
+	const char *ptr;
+
+	if (ExtensionString == NULL) {
+		Com_Printf("^1GLimp_HaveExtension:  ExtensionString == NULL\n");
+		return qfalse;
+	}
+	if (ext == NULL) {
+		Com_Printf("^1GLimp_HaveExtension:  ext == NULL\n");
+		return qfalse;
+	}
+
+	ptr = Q_stristr(ExtensionString, ext);
 	if (ptr == NULL)
 		return qfalse;
 	ptr += strlen(ext);
@@ -952,7 +966,17 @@ of OpenGL
 void GLimp_Init( void )
 {
 	r_allowSoftwareGL = ri.Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
+
+#if defined( _WIN32)
+	r_sdlDriver = ri.Cvar_Get( "r_sdlDriver", "directx", CVAR_ROM );
+#elif defined(__linux__)
+	r_sdlDriver = ri.Cvar_Get( "r_sdlDriver", "x11", CVAR_ROM );
+#elif defined(__APPLE__)
+	r_sdlDriver = ri.Cvar_Get( "r_sdlDriver", "Quartz", CVAR_ROM );
+#else
 	r_sdlDriver = ri.Cvar_Get( "r_sdlDriver", "", CVAR_ROM );
+#endif
+
 	r_allowResize = ri.Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_centerWindow = ri.Cvar_Get( "r_centerWindow", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_visibleWindowWidth = ri.Cvar_Get("r_visibleWindowWidth", "", CVAR_ARCHIVE | CVAR_LATCH);
@@ -1019,7 +1043,8 @@ success:
 	if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
 		glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
 	Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
-	Q_strncpyz( glConfig.extensions_string, (char *) qglGetString (GL_EXTENSIONS), sizeof( glConfig.extensions_string ) );
+	ExtensionString = (const char *)qglGetString(GL_EXTENSIONS);
+	Q_strncpyz( glConfig.extensions_string, ExtensionString, sizeof( glConfig.extensions_string ) );
 
 	// initialize extensions
 	GLimp_InitExtensions( );

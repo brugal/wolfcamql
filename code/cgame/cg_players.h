@@ -14,8 +14,9 @@ qboolean CG_FindClientHeadFile (char *filename, int length, const clientInfo_t *
 qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelName, const char *skinName, const char *headModelName, const char *headSkinName, const char *teamName, qboolean dontForceTeamSkin );
 
 void CG_Q3ColorFromString (const char *v, vec3_t color);
+void CG_CpmaColorFromPicString (const floatint_t *v, vec3_t color);
 void CG_CpmaColorFromString (const char *v, vec3_t color);
-void CG_OspColorFromIntString (const int *v, vec3_t color);
+void CG_OspColorFromPicString (const floatint_t *v, vec3_t color);
 void CG_OspColorFromString (const char *v, vec3_t color);
 
 void CG_LoadClientInfo (clientInfo_t *ci, int clientNum, qboolean dontForceTeamSkin);

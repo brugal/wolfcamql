@@ -176,6 +176,15 @@ ifndef DEBUG_CFLAGS
 DEBUG_CFLAGS=-g -O0
 endif
 
+
+EXTRA_C_WARNINGS = -Wimplicit -Wstrict-prototypes
+
+#EXTRA_C_WARNINGS += -Wformat=2 -Wno-format-zero-length -Wformat-security -Wno-format-nonliteral
+#EXTRA_C_WARNINGS += -Wstrict-aliasing=2 -Wmissing-format-attribute
+#EXTRA_C_WARNINGS += -Wdisabled-optimization
+#EXTRA_C_WARNINGS += -Werror-implicit-function-declaration
+
+
 ifdef CLANG
 CFLAGS=-Qunused-arguments
 CC=clang
@@ -281,10 +290,10 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   endif
 
 ifdef CGAME_HARD_LINKED
-  BASE_CFLAGS = -p -g -rdynamic -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
+  BASE_CFLAGS = -p -g -rdynamic -Wall -fno-strict-aliasing \
     -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -D_FILE_OFFSET_BITS=64 -msse $(CGAME_HARD_LINKED)
 else
-  BASE_CFLAGS = -g -rdynamic -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
+  BASE_CFLAGS = -g -rdynamic -Wall -fno-strict-aliasing \
     -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -D_FILE_OFFSET_BITS=64 -msse
 endif
 
@@ -365,7 +374,7 @@ endif
   LIBS=-ldl -lm
 
   #CLIENT_LIBS=-/usr/local/include $(SDL_LIBS) -lGL
-  CLIENT_LIBS=$(SDL_LIBS) -lGL
+  CLIENT_LIBS=$(SDL_LIBS) -lGL -lX11
 
   ifeq ($(ARCH),x86_64)
      CLIENT_LIBS=-L/usr/lib/x86_64-linux-gnu -lSDL -lGL
@@ -415,6 +424,8 @@ else # ifeq Linux
 # SETUP AND BUILD -- MAC OS X
 #############################################################################
 
+GCC_IS_CLANG = $(shell gcc --version 2>/dev/null | grep clang)
+
 ifeq ($(PLATFORM),darwin)
   MACOSX_DEPLOYMENT_TARGET=10.5
   export MACOSX_DEPLOYMENT_TARGET
@@ -426,7 +437,7 @@ ifeq ($(PLATFORM),darwin)
   CLIENT_LIBS=
   OPTIMIZEVM = -DNQDEBUG
 
-  BASE_CFLAGS = -Wall -Wimplicit -Wstrict-prototypes
+  BASE_CFLAGS = -Wall
   CLIENT_CFLAGS =
   SERVER_CFLAGS =
 
@@ -470,12 +481,14 @@ ifeq ($(PLATFORM),darwin)
   endif
 
   ifeq ($(USE_CODEC_VORBIS),1)
-    CLIENT_CFLAGS += -DUSE_CODEC_VORBIS
-    CLIENT_LIBS += -lvorbisfile -lvorbis -logg
+    CLIENT_CFLAGS += -DUSE_CODEC_VORBIS -I$(MOUNT_DIR)/vorbis/include
+    #CLIENT_LIBS += -lvorbisfile -lvorbis -logg
+    CLIENT_LIBS += $(LIBSDIR)/macosx/libvorbisfile.a $(LIBSDIR)/macosx/libvorbis.a $(LIBSDIR)/macosx/libogg.a
   endif
 
   ifeq ($(USE_FREETYPE),1)
-    CLIENT_CFLAGS += -DBUILD_FREETYPE -I/usr/include/freetype2 -I/usr/X11/include -I/usr/x11/include/freetype2
+    #CLIENT_CFLAGS += -DBUILD_FREETYPE -I/usr/include/freetype2 -I/usr/X11/include -I/usr/x11/include/freetype2
+    CLIENT_CFLAGS += -DBUILD_FREETYPE -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2/freetype -I$(MOUNT_DIR)/freetype2/include/freetype2
     CLIENT_LIBS += $(LIBSDIR)/macosx/libfreetype.a
   endif
 
@@ -492,7 +505,10 @@ ifeq ($(PLATFORM),darwin)
   CLIENT_LIBS += -framework Cocoa -framework IOKit -framework OpenGL \
     $(LIBSDIR)/macosx/libSDL-1.2.0.dylib
 
-  OPTIMIZEVM += -falign-loops=16
+  ifeq ($(GCC_IS_CLANG),)
+    OPTIMIZEVM += -falign-loops=16
+  endif
+
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   ifneq ($(HAVE_VM_COMPILED),true)
@@ -532,7 +548,7 @@ ifdef MINGW
   # was -g
   # gdb.exe wants -gstabs ?
   #  -D__USE_MINGW_ANSI_STDIO
-  BASE_CFLAGS = -g -gdwarf-3 -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
+  BASE_CFLAGS = -g -gdwarf-3 -Wall -fno-strict-aliasing \
     -DUSE_ICON -msse
 
   #CLIENT_CFLAGS = -D__MINGW32__
@@ -659,7 +675,7 @@ ifeq ($(PLATFORM),freebsd)
 
   # flags
   BASE_CFLAGS = $(shell env MACHINE_ARCH=$(ARCH) make -f /dev/null -VCFLAGS) \
-    -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
+    -Wall -fno-strict-aliasing \
     -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS = $(SDL_CFLAGS)
   SERVER_CFLAGS =
@@ -729,7 +745,7 @@ ifeq ($(PLATFORM),openbsd)
 
   ARCH=$(shell uname -m)
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
+  BASE_CFLAGS = -Wall -fno-strict-aliasing \
      -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS = $(SDL_CFLAGS)
   SERVER_CFLAGS =
@@ -807,7 +823,7 @@ ifeq ($(PLATFORM),netbsd)
   SHLIBLDFLAGS=-shared $(LDFLAGS)
   THREAD_LIBS=-lpthread
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  BASE_CFLAGS = -Wall -fno-strict-aliasing
   CLIENT_CFLAGS =
   SERVER_CFLAGS =
 
@@ -870,7 +886,7 @@ ifeq ($(PLATFORM),sunos)
     endif
   endif
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes \
+  BASE_CFLAGS = -Wall -fno-strict-aliasing \
     -pipe -DUSE_ICON
   CLIENT_CFLAGS = $(SDL_CFLAGS)
   SERVER_CFLAGS =
@@ -1040,22 +1056,22 @@ endif
 
 define DO_CC
 $(echo_cmd) "CC $<"
-$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
+$(Q)$(CC) $(NOTSHLIBCFLAGS) $(EXTRA_C_WARNINGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
 endef
 
 define DO_CPP
 $(echo_cmd) "CPP $<"
-$(Q)$(CPP) -Wall $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -m32 -o $@ -c $<
+$(Q)$(CPP) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
 endef
 
 define DO_SMP_CC
 $(echo_cmd) "SMP_CC $<"
-$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -DSMP -o $@ -c $<
+$(Q)$(CC) $(NOTSHLIBCFLAGS) $(EXTRA_C_WARNINGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -DSMP -o $@ -c $<
 endef
 
 define DO_BOT_CC
 $(echo_cmd) "BOT_CC $<"
-$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(BOTCFLAGS) $(OPTIMIZE) -DBOTLIB -o $@ -c $<
+$(Q)$(CC) $(NOTSHLIBCFLAGS) $(EXTRA_C_WARNINGS) $(CFLAGS) $(BOTCFLAGS) $(OPTIMIZE) -DBOTLIB -o $@ -c $<
 endef
 
 ifeq ($(GENERATE_DEPENDENCIES),1)
@@ -1155,6 +1171,12 @@ targets: makedirs
 	@echo "  COMPILE_ARCH: $(COMPILE_ARCH)"
 	@echo "  CPP: $(CPP)"
 	@echo "  CC: $(CC)"
+	@echo ""
+	@echo "  EXTRA_C_WARNINGS:"
+	-@for i in $(EXTRA_C_WARNINGS); \
+	do \
+		echo "    $$i"; \
+	done
 	@echo ""
 	@echo "  CFLAGS:"
 	-@for i in $(CFLAGS); \
@@ -2357,6 +2379,10 @@ $(B)/client/%.o: $(SYSDIR)/%.rc
 
 $(B)/ded/%.o: $(ASMDIR)/%.s
 	$(DO_AS)
+
+# k8 so inline assembler knows about SSE
+$(B)/ded/%.o: $(ASMDIR)/%.c
+	$(DO_CC) -march=k8
 
 $(B)/ded/%.o: $(SDIR)/%.c
 	$(DO_DED_CC)

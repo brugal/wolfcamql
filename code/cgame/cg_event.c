@@ -469,6 +469,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 		cg.lastFragWeapon = BG_ModToWeapon(mod);
 		cg.lastFragMod = mod;
 		cg.lastFragVictimTeam = cgs.clientinfo[target].team;
+		cg.lastFragKillerTeam = cgs.clientinfo[attacker].team;
 
 		// print the text message as well
 	} else if (wolfcam_following) {
@@ -493,6 +494,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 			cg.lastFragWeapon = BG_ModToWeapon(mod);
 			cg.lastFragMod = mod;
 			cg.lastFragVictimTeam = cgs.clientinfo[target].team;
+			cg.lastFragKillerTeam = cgs.clientinfo[attacker].team;
         }
     }
 

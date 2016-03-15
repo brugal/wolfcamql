@@ -1049,6 +1049,9 @@ intptr_t CL_UISystemCalls( intptr_t *args ) {
 	case UI_OPEN_WOLFCAM_DIRECTORY:
 		Sys_OpenWolfcamDirectory();
 		return 0;
+	case UI_DRAW_CONSOLE_LINES_OVER:
+		Con_DrawConsoleLinesOver(args[1], args[2], args[3]);
+		return 0;
 
 
 	default:

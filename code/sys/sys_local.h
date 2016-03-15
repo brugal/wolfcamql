@@ -20,6 +20,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
+#ifndef sys_local_h_included
+#define sys_local_h_included
+
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
@@ -51,10 +54,30 @@ char *Sys_StripAppBundle( char *pwd );
 
 void Sys_GLimpSafeInit( void );
 void Sys_GLimpInit( void );
-void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput);
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolean useDpiAware);
 void Sys_PlatformExit (void);
 void Sys_SigHandler( int signal );
 void Sys_ErrorDialog( const char *error );
 void Sys_AnsiColorPrint( const char *msg );
 void Sys_Backtrace_f (void);
-qboolean Sys_FileIsDirectory (char *path);
+qboolean Sys_FileIsDirectory (const char *path);
+qboolean Sys_FileExists (const char *path);
+qboolean Sys_CopyFile (const char *src, const char *dest);
+
+typedef struct {
+    void *data;
+} popenData_t;
+
+// need to free() returned data
+popenData_t *Sys_PopenAsync (const char *command);
+void Sys_PopenClose (popenData_t *p);
+
+// like fgets()
+char *Sys_PopenGetLine (popenData_t *p, char *buffer, int size);
+
+// check after call to Sys_PopenGetLine()
+qboolean Sys_PopenIsDone (popenData_t *p);
+
+const char *Sys_GetSteamCmd (void);
+
+#endif  //  sys_local_h_included

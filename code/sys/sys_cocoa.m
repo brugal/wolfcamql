@@ -36,5 +36,20 @@ void Cocoa_MsgBox( const char *text )
 	                             @"OK", nil, nil);
 }
 
+//FIXME MAX_EDIT_LINE * 4
+static char clipBoardString[256 * 4];
+
+char *Cocoa_GetClipboardData (void)
+{
+  NSPasteboard* pasteboard = [NSPasteboard generalPasteboard];
+  NSString* string = [pasteboard stringForType:NSStringPboardType];
+  const char *us;
+
+  us = [string UTF8String];
+  strncpy(clipBoardString, us, 256 * 4);  //FIXME MAX_EDIT_LINE * 4
+
+  return clipBoardString;
+}
+
 // end of sys_cocoa.m ...
 

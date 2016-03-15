@@ -226,6 +226,7 @@ void trap_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *
 int trap_GetGameStartTime (void);
 int trap_GetGameEndTime (void);
 int trap_GetFirstServerTime (void);
+int trap_GetLastServerTime (void);
 void trap_AddAt (int serverTime, const char *clockTime, const char *command);
 int trap_GetLegsAnimStartTime (int entityNum);
 int trap_GetTorsoAnimStartTime (int entityNum);
@@ -244,5 +245,6 @@ void trap_Key_SetBinding (int keynum, const char *binding);
 void trap_Key_GetBindingBuf (int keynum, char *buf, int buflen);
 void trap_Key_KeynumToStringBuf (int keynum, char *buf, int buflen);
 qboolean trap_R_GetGlyphInfo (const fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
+qboolean trap_R_GetFontInfo (int fontId, fontInfo_t *font);
 
 #endif  // cg_syscalls_h_included

@@ -3114,14 +3114,27 @@ typedef ptrdiff_t GLsizeiptr;
 
 #ifndef GL_ARB_vertex_buffer_object
 /* GL types for handling large vertex buffer objects */
-typedef ptrdiff_t GLintptrARB;
-typedef ptrdiff_t GLsizeiptrARB;
+
+    #ifdef __MACOSX__  // os x redifining them
+	    typedef long GLintptrARB;
+	    typedef long GLsizeiptrARB;
+    #else
+	    typedef ptrdiff_t GLintptrARB;
+	    typedef ptrdiff_t GLsizeiptrARB;
+    #endif
+
 #endif
 
 #ifndef GL_ARB_shader_objects
 /* GL types for handling shader object handles and program/shader text */
 typedef char GLcharARB;		/* native character */
-typedef unsigned int GLhandleARB;	/* shader object handle */
+
+	#ifdef __MACOSX__
+	    typedef void *GLhandleARB;
+	#else
+	    typedef unsigned int GLhandleARB;	/* shader object handle */
+	#endif
+
 #endif
 
 /* GL types for "half" precision (s10e5) float data in host memory */

@@ -415,3 +415,8 @@ void trap_OpenWolfcamDirectory (void)
 {
 	syscall(UI_OPEN_WOLFCAM_DIRECTORY);
 }
+
+void trap_DrawConsoleLinesOver (int xpos, int ypos, int numLines)
+{
+	syscall(UI_DRAW_CONSOLE_LINES_OVER, xpos, ypos, numLines);
+}

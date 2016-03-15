@@ -327,6 +327,7 @@ void CON_Init( void )
 CON_Input
 ==================
 */
+//FIXME utf8 input
 char *CON_Input( void )
 {
 	INPUT_RECORD buff[ MAX_EDIT_LINE ];
@@ -409,12 +410,15 @@ char *CON_Input( void )
 		else if( key == VK_TAB )
 		{
 			field_t f;
+			const char *fieldString;
 
-			Q_strncpyz( f.buffer, qconsole_line,
-				sizeof( f.buffer ) );
+			//Q_strncpyz( f.buffer, qconsole_line, sizeof( f.buffer ) );
+			Field_SetBuffer(&f, qconsole_line, sizeof(qconsole_line), 0);
 			Field_AutoComplete( &f );
-			Q_strncpyz( qconsole_line, f.buffer,
-				sizeof( qconsole_line ) );
+			//Q_strncpyz( qconsole_line, f.buffer, sizeof( qconsole_line ) );
+			fieldString = Field_AsStr(&f, 0, 0);
+			Q_strncpyz(qconsole_line, fieldString, sizeof(qconsole_line));
+
 			qconsole_linelen = strlen( qconsole_line );
 			qconsole_cursor = qconsole_linelen;
 			break;
@@ -488,7 +492,7 @@ Set text colors based on Q3 color codes
 */
 void CON_WindowsColorPrint( const char *msg )
 {
-	static char buffer[ MAXPRINTMSG ];
+	static char buffer[ MAX_PRINT_MSG ];
 	int length = 0;
 
 	while( *msg )
@@ -521,7 +525,7 @@ void CON_WindowsColorPrint( const char *msg )
 				}
 			else
 				{
-					if( length >= MAXPRINTMSG - 1 )
+					if( length >= MAX_PRINT_MSG - 1 )
 						break;
 
 					buffer[ length ] = *msg;

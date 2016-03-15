@@ -243,7 +243,7 @@ void _UI_DrawRect( float x, float y, float width, float height, float size, cons
 	trap_R_SetColor( NULL );
 }
 
-int Text_Width(const char *text, float scale, int limit) {
+static float Text_Width(const char *text, float scale, int limit) {
   int count,len;
 	float out;
 	glyphInfo_t *glyph;
@@ -278,7 +278,7 @@ int Text_Width(const char *text, float scale, int limit) {
   return out * useScale;
 }
 
-int Text_Height(const char *text, float scale, int limit) {
+static float Text_Height(const char *text, float scale, int limit) {
   int len, count;
 	float max;
 	glyphInfo_t *glyph;
@@ -521,7 +521,7 @@ static void Text_Paint_Limit(float *maxX, float x, float y, float scale, vec4_t 
 				continue;
 			} else {
 	      float yadj = useScale * glyph->top;
-				if (Text_Width(s, useScale, 1) + x > max) {
+				if (Text_Width(s, scale, 1) + x > max) {
 					*maxX = 0;
 					break;
 				}
@@ -1603,7 +1603,7 @@ static void UI_DrawOpponentName(rectDef_t *rect, float scale, vec4_t color, int 
 }
 
 
-static int UI_OwnerDrawWidth(int ownerDraw, float scale) {
+static float UI_OwnerDrawWidth(int ownerDraw, float scale) {
 	int i, h, value;
 	const char *text;
 	const char *s = NULL;
@@ -5327,12 +5327,12 @@ static void UI_PrintTime ( char *buf, int bufsize, int time ) {
 }
 
 void Text_PaintCenter(float x, float y, float scale, vec4_t color, const char *text, float adjust) {
-	int len = Text_Width(text, scale, 0);
+	float len = Text_Width(text, scale, 0);
 	Text_Paint(x - len / 2, y, scale, color, text, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE);
 }
 
 void Text_PaintCenter_AutoWrapped(float x, float y, float xmax, float ystep, float scale, vec4_t color, const char *str, float adjust) {
-	int width;
+	float width;
 	char *s1,*s2,*s3;
 	char c_bcp;
 	char buf[1024];

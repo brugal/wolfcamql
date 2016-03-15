@@ -51,25 +51,12 @@ wc/bloodTrailAlt {
         }
 }
 
-wc/bloodExplosion {  // blood at point of impact
-    nopicmip
-    cull disable
-    {
-        map models/weaphits/blood201.tga
-        blendfunc blend
-        alphagen entity
-        rgbgen entity
-    }
-}
-
 wc/bloodExplosionAlt {  // blood at point of impact
     nopicmip
     cull disable
     {
 	animmap 5 gfx/wc/blood201.tga gfx/wc/blood202.tga gfx/wc/blood203.tga gfx/wc/blood204.tga gfx/wc/blood205.tga
         blendfunc blend
-        alphagen entity
-        rgbgen entity
     }
 }
 

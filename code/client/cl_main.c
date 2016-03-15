@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "cl_avi.h"
 #include "keys.h"
 #include "snd_local.h"
+#include "../sys/sys_local.h"
 #include <limits.h>
 
 #ifdef USE_LOCAL_HEADERS
@@ -133,6 +134,7 @@ cvar_t *cl_keepDemoFileInMemory;
 cvar_t *cl_demoFileCheckSystem;
 cvar_t *cl_demoFile;
 cvar_t *cl_demoFileBaseName;
+cvar_t *cl_downloadWorkshops;
 
 clientActive_t		cl;
 clientConnection_t	clc;
@@ -193,6 +195,7 @@ static void CL_ServerStatus_f(void);
 static void CL_ServerStatusResponse( netadr_t from, msg_t *msg );
 
 static void CL_ReadExtraDemoMessage (demoFile_t *df);
+static void CL_CheckWorkshopDownload (void);
 
 /*
 ===============
@@ -2004,7 +2007,6 @@ done:
 	return file;
 }
 
-
 /*
 ====================
 CL_PlayDemo_f
@@ -2023,6 +2025,14 @@ void CL_PlayDemo_f (void)
 	int i;
 	int n;
 
+#if 0
+	if (cls.state == CA_CONNECTING) {
+		// recursive call
+		Com_Printf("^1CL_PlayDemo_f: invalid state\n");
+		return;
+	}
+#endif
+
 	n = Cmd_Argc();
 
 	if (n < 2) {
@@ -2033,7 +2043,7 @@ void CL_PlayDemo_f (void)
 	// make sure a local server is killed
 	// 2 means don't force disconnect of local client
 	Cvar_Set( "sv_killserver", "2" );
-	Cvar_Set("cl_workshopids", "");
+	Cvar_Set("com_workshopids", "");
 
 	for (i = 1;  i < n  &&  i <= MAX_DEMO_FILES;  i++) {
 		arg = Cmd_Argv(i);
@@ -2090,23 +2100,22 @@ void CL_PlayDemo_f (void)
 
 	//Q_strncpyz( clc.demoName, Cmd_Argv(1), sizeof( clc.demoName ) );
 
-	//Com_Printf("^1slkdfkdjf\n");
-
 	Con_Close();
 
 	parse_demo();
-	cls.state = CA_CONNECTED;
-	clc.demoplaying = qtrue;
-	Q_strncpyz( cls.servername, arg, sizeof( cls.servername ) );
 
-	// read demo messages until connected
-	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
-		//Com_Printf("reading demo messages until connected\n");
-		CL_ReadDemoMessage(qfalse);
-	}
-	// don't get the first snapshot this frame, to prevent the long
-	// time from the gamestate load from messing causing a time skip
-	clc.firstDemoFrameSkipped = qfalse;
+	// CL_CheckWorkshopDownload() advances to CA_CONNECTED
+	cls.state = CA_DOWNLOADINGWORKSHOPS;
+	clc.demoplaying = qtrue;
+	clc.demoPlayBegin = Sys_Milliseconds();
+
+	// let CL_CheckWorkshopDownload() know it needs to initialize
+	clc.demoWorkshopsString = NULL;
+	Q_strncpyz( cls.servername, arg, sizeof( cls.servername ) );
+	Com_Printf("^5checking workshops\n");
+	// check immediately so it doesn't flash download screen if the file
+	// is present or steamcmd not available
+	CL_CheckWorkshopDownload();
 }
 
 
@@ -2340,6 +2349,14 @@ void CL_Disconnect( qboolean showMainMenu ) {
 		CL_StopRecord_f ();
 	}
 
+	if (clc.wfp) {
+		Sys_PopenClose(clc.wfp);
+		free(clc.wfp);
+		clc.wfp = NULL;
+		clc.currentWorkshop[0] = '\0';
+		clc.demoWorkshopsString = NULL;
+	}
+
 	if (clc.download) {
 		FS_FCloseFile( clc.download );
 		clc.download = 0;
@@ -2460,6 +2477,8 @@ void CL_ForwardCommandToServer( const char *string ) {
 
 	cmd = Cmd_Argv(0);
 
+	//printf("cmd: '%s'  '%s'\n", cmd, string);
+	
 	// ignore key up commands
 	if ( cmd[0] == '-' ) {
 		return;
@@ -2772,7 +2791,7 @@ void CL_Rcon_f( void ) {
 	char	message[MAX_RCON_MESSAGE];
 	netadr_t	to;
 
-	if ( !rcon_client_password->string ) {
+	if ( !rcon_client_password->string[0] ) {
 		Com_Printf ("You must set 'rconpassword' before\n"
 					"issuing an rcon command.\n");
 		return;
@@ -3814,6 +3833,219 @@ void CL_CheckUserinfo( void ) {
 	}
 }
 
+
+static char downloadDir[MAX_OSPATH];
+static char checkPath[MAX_OSPATH];
+
+static char inputFile[MAX_OSPATH];
+static char outputFile[MAX_OSPATH];
+
+static void CL_CheckWorkshopDownload (void)
+{
+	qboolean doneParsing;
+
+	if (cls.state != CA_DOWNLOADINGWORKSHOPS) {
+		return;
+	}
+
+	if (cl_downloadWorkshops->integer == 0) {
+		goto done;
+	}
+
+	//FIXME testing
+	if (Sys_Milliseconds() - clc.demoPlayBegin < 11500) {
+		//return;
+	}
+
+	if (clc.demoWorkshopsString == NULL) {
+		clc.demoWorkshopsString = Cvar_VariableString("com_workshopids");
+		clc.currentWorkshop[0] = '\0';
+	}
+
+ keepChecking:
+
+	//Com_Printf("^2 CL_CheckWorkshopDownload:  '%s'\n", clc.demoWorkshopsString);
+	doneParsing = qfalse;
+
+	if (clc.currentWorkshop[0] == '\0') {
+		const char *s;
+		char *cw;
+		int count;
+
+		count = 0;
+		cw = clc.currentWorkshop;
+		s = clc.demoWorkshopsString;
+		while (qtrue) {
+			if (count >= sizeof(clc.currentWorkshop)) {
+				Com_Printf("^1CL_CheckWorkshopDownload:  currentWorkshop buffer overrun : %d >= %d\n", count, (unsigned int)sizeof(clc.currentWorkshop));
+				cw[0] = '\0';
+				break;
+			}
+			cw[0] = '\0';
+
+			if (*s == '\0') {
+				doneParsing = qtrue;
+				break;
+			}
+
+			if (*s == ' ') {
+				s++;
+				break;
+			}
+
+			cw[0] = s[0];
+
+			count++;
+			cw++;
+			s++;
+		}
+
+		clc.demoWorkshopsString = s;
+	}
+
+	if (clc.currentWorkshop[0] != '\0') {  // downloading workshop
+		char buffer[1024];
+		const char *retp;
+		const char *homePath;
+
+		// get new workshop
+		//Com_Printf("^6getting workshop %s\n", currentWorkshop);
+
+		//FIXME check if directory exists and has files
+
+		if (clc.wfp == NULL) {
+			const char *s;
+
+			homePath = Cvar_VariableString("fs_homepath");
+			if (!*homePath) {
+				homePath = Sys_DefaultHomePath();
+			}
+
+			//FIXME not here
+			// make sure wolfcam workshop folder exists
+			Com_sprintf(checkPath, sizeof(checkPath), "%s%cworkshop", homePath, PATH_SEP);
+			Sys_Mkdir(checkPath);
+
+			//Com_sprintf(checkPath, sizeof(checkPath), "%s/workshop/%s", homePath, currentWorkshop);
+			Com_sprintf(checkPath, sizeof(checkPath), "%s%cworkshop%c%s", homePath, PATH_SEP, PATH_SEP, clc.currentWorkshop);
+
+			if (Sys_FileExists(checkPath)  &&  Sys_FileIsDirectory(checkPath)) {
+				Com_Printf("^6workshop %s already present\n", clc.currentWorkshop);
+				clc.currentWorkshop[0] = '\0';
+				downloadDir[0] = '\0';
+				// don't 'return' so that the download screen doesn't popup
+				// unless downloading is needed
+				goto keepChecking;
+			}
+
+			Com_Printf("^6need '%s'\n", checkPath);
+			//s = va("steamcmd.sh +login anonymous +workshop_download_item 282440 %s +quit", currentWorkshop);
+			//s = va("steamcmd.sh +login anonymous +workshop_download_item 282440 %s +quit 2>&1", currentWorkshop);
+
+			s = va("%s +login anonymous +workshop_download_item %d %s +quit", Sys_GetSteamCmd(), QUAKELIVE_STEAM_APP_ID, clc.currentWorkshop);
+			//s = "ping google.com";
+			//system("\\share\\wc\\steamcmd\\pcat.exe sdkfj");
+			clc.wfp = Sys_PopenAsync(s);
+			if (clc.wfp == NULL) {
+				Com_Printf("^1CL_CheckWorkshopDownload: couldn't open process pipe\n");
+				goto done;
+			}
+		}
+
+		//FIXME testing
+		// steamcmd.sh +login anonymous +workshop_download_item 282440 547252823 +quit
+		//s = va("steamcmd.sh +login anonymous +workshop_download_item 282440 %s +quit", currentWorkshop);
+		//r = system(s);
+		//Com_Printf("system steamcmd.sh return: %d\n", r);
+
+		//currentWorkshop[0] = '\0';
+
+		buffer[0] = '\0';
+		retp = Sys_PopenGetLine(clc.wfp, buffer, sizeof(buffer));
+
+		if (retp == NULL) {
+			if (Sys_PopenIsDone(clc.wfp)) {
+				Sys_PopenClose(clc.wfp);
+				free(clc.wfp);
+				clc.wfp = NULL;
+				//FIXME get exit code
+				//Com_Printf("popen done\n");
+
+				clc.currentWorkshop[0] = '\0';
+				downloadDir[0] = '\0';
+			}
+		}
+
+		if (buffer[0] != '\0') {
+			Com_Printf("%s", buffer);
+			char **fileList;
+			int numFiles;
+			int i;
+
+			//FIXME hack to check for download location
+			// Success. Downloaded item 549600167 to "/home/acano/steamcmd/x/steamapps/workshop/content/282440/549600167" (1658883 bytes)
+			if (!Q_stricmpn(buffer, "Success. Downloaded item", strlen("Success. Downloaded item"))) {
+				char *s;
+
+				// goto to first quote "
+				s = buffer;
+				while (*s) {
+					if (s[0] == '"') {
+						s++;
+						break;
+					}
+					s++;
+				}
+
+				Com_Printf("\n");
+				//Com_Printf("xxxxxxxxxx buffer: '%s'\n", s);
+				Q_strncpyz(downloadDir, s, sizeof(downloadDir));
+
+				// strip last quote marker "
+				s = downloadDir;
+				while (*s) {
+					if (s[0] == '"') {
+						s[0] = '\0';
+						break;
+					}
+					s++;
+				}
+
+				Com_Printf("^6download dir:  '%s'\n", downloadDir);
+				Sys_Mkdir(checkPath);
+				fileList = Sys_ListFiles(downloadDir, "", NULL, &numFiles, qfalse);
+				for (i = 0;  i < numFiles;  i++) {
+					Com_Printf("filelist[%d]: '%s'\n", i, fileList[i]);
+					Com_sprintf(inputFile, sizeof(inputFile), "%s/%s", downloadDir, fileList[i]);
+					Com_sprintf(outputFile, sizeof(outputFile), "%s/%s", checkPath, fileList[i]);
+					Sys_CopyFile(inputFile, outputFile);
+				}
+				Sys_FreeFileList(fileList);
+			}
+		}
+
+		//Sys_Sleep(1000);
+	}
+
+	if (doneParsing == qfalse) {
+		return;
+	}
+
+ done:
+	// all done
+	clc.demoWorkshopsString = NULL;
+	cls.state = CA_CONNECTED;
+
+	// read demo messages until connected
+	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
+		//Com_Printf("reading demo messages until connected\n");
+		CL_ReadDemoMessage(qfalse);
+	}
+	// don't get the first snapshot this frame, to prevent the long
+	// time from the gamestate load from messing causing a time skip
+	clc.firstDemoFrameSkipped = qfalse;
+}
+
 //static float overf = 0.0;
 
 /*
@@ -3995,6 +4227,8 @@ void CL_Frame ( int msec, double fmsec ) {
 
 	// resend a connection request if necessary
 	CL_CheckForResend();
+
+	CL_CheckWorkshopDownload();
 
  seeking:
 	// decide on the serverTime to render
@@ -4263,7 +4497,7 @@ void CL_Video_f( void )
   qboolean png;
   qboolean noSoundAvi;
 
-  if (!clc.demoplaying) {
+  if (!clc.demoplaying) {  //  ||  cls.state == CA_CONNECTING) {
 	  Com_Printf( "^1The video command can only be used when playing back demos\n" );
 	  return;
   }
@@ -4424,7 +4658,7 @@ static void fast_forward_demo (double wantedTime)
 	}
 
 	if (Cvar_VariableIntegerValue("debug_seek")) {
-		Com_Printf("fastfowarding from %f to %f\n", (double)cl.serverTime + Overf, wantedTime);
+		Com_Printf("fastforwarding from %f to %f\n", (double)cl.serverTime + Overf, wantedTime);
 	}
 
 	//Com_Printf("ff  %d\n", clc.lastExecutedServerCommand);
@@ -5125,6 +5359,7 @@ void CL_Init ( void ) {
 	cl_demoFileCheckSystem = Cvar_Get("cl_demoFileCheckSystem", "2", CVAR_ARCHIVE);
 	cl_demoFile = Cvar_Get("cl_demoFile", "", CVAR_ROM);
 	cl_demoFileBaseName = Cvar_Get("cl_demoFileBaseName", "", CVAR_ROM);
+	cl_downloadWorkshops = Cvar_Get("cl_downloadWorkshops", "1", CVAR_ARCHIVE);
 
 	//
 	// register our commands

@@ -283,23 +283,35 @@ Coordinates and size in 640*480 virtual screen size
 ===============
 */
 static void CG_DrawChar( int x, int y, int width, int height, int ch ) {
-	int row, col;
-	float frow, fcol;
-	float size;
+	//int row, col;
+	//float frow, fcol;
+	//float size;
 	float	ax, ay, aw, ah;
+	glyphInfo_t glyph;
 
+	//Com_Printf("getting char %d '%c'\n", ch, ch);
+
+	//FIXME cgs.media.charsetFont is cgs.media.bigchar
+	
+	//trap_R_GetGlyphInfo(&cgs.media.charsetFont, ch, &glyph);
+	trap_R_GetGlyphInfo(&cgs.media.bigchar, ch, &glyph);
+	
+#if 0
 	ch &= 255;
 
 	if ( ch == ' ' ) {
 		return;
 	}
+#endif
 
+	//FIXME get scaled witdh and height
 	ax = x;
 	ay = y;
 	aw = width;
 	ah = height;
 	CG_AdjustFrom640( &ax, &ay, &aw, &ah );
 
+#if 0
 	row = ch>>4;
 	col = ch&15;
 
@@ -311,6 +323,27 @@ static void CG_DrawChar( int x, int y, int width, int height, int ch ) {
 					   fcol, frow, 
 					   fcol + size, frow + size, 
 					   cgs.media.charsetShader );
+#endif
+
+	// draw from the bottom up
+	ay += ah;
+
+	//FIXME testing, make it visible
+	//ay += 40;
+	
+	trap_R_DrawStretchPic(
+						  ax + ((float)glyph.left * ((float)aw / 16.0f)),
+
+						  ay /*- glyph.top*/
+
+						  - ((float)glyph.top * ((float)ah / 16.0f)) ,
+
+						  glyph.imageWidth * ((float)aw / 16.0f) ,
+
+						  glyph.imageHeight * ((float)ah / 16.0f),
+						  glyph.s, glyph.t,
+						  glyph.s2, glyph.t2,
+						  glyph.glyph);
 }
 
 
@@ -332,12 +365,15 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 	int			xx;
 	int			cnt;
 
+#if 0
 	//FIXME test
 	color[0] = 1.0;
 	color[1] = 1.0;
 	color[2] = 1.0;
 	color[3] = 1.0;
-
+#endif
+	Vector4Copy(setColor, color);
+	
 	if (cg_testQlFont.integer) {
 		float scale;
 		float pt;
@@ -371,8 +407,16 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 		//FIXME
 		CG_Text_Paint(x, y + (24.0f * 0.25f) + 2, 0.25, color, string, 0, 0, 0, &cgs.media.qlfont24);
 		return;
+	} else {
+		//CG_Text_Paint(x, y, 0.25, color, string, 0, 0, 0, font);
+		//CG_Text_Paint(x, y + (24.0f * 0.25f) + 2, 0.25, color, string, 0, 0, 0, font);
+		//CG_Text_Paint(x, y + (24.0f * 0.25f) + 2, 0.25, color, string, 0, 0, 0, font);
+		//return;
 	}
 
+	// 2016-02-02 still using this stuff since some drawing functions are using different scales for height and width
+
+	//FIXME utf8
 	if (maxChars <= 0)
 		maxChars = 32767; // do them all!
 
@@ -385,6 +429,10 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 		xx = x;
 		cnt = 0;
 		while ( *s && cnt < maxChars) {
+			int codePoint;
+			int numUtf8Bytes;
+			qboolean error;
+
 			if ( Q_IsColorString( s ) ) {
 				if (cgs.osp) {
 					if (s[1] == 'x'  ||  s[1] == 'X') {
@@ -397,7 +445,11 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 				}
 				continue;
 			}
-			CG_DrawChar( xx + 2, y + 2, charWidth, charHeight, *s );
+			codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+			s += (numUtf8Bytes - 1);
+
+			//CG_DrawChar( xx + 2, y + 2, charWidth, charHeight, *s );
+			CG_DrawChar(xx + 2, y + 2, charWidth, charHeight, codePoint);
 			cnt++;
 			xx += charWidth;
 			s++;
@@ -410,6 +462,10 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 	cnt = 0;
 	trap_R_SetColor( setColor );
 	while ( *s && cnt < maxChars) {
+		int codePoint;
+		int numUtf8Bytes;
+		qboolean error;
+
 		if ( Q_IsColorString( s ) ) {
 			if ( !forceColor ) {
 				if (cgs.cpma) {
@@ -434,7 +490,11 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 			}
 			continue;
 		}
-		CG_DrawChar( xx, y, charWidth, charHeight, *s );
+		codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+		s += (numUtf8Bytes - 1);
+
+		//CG_DrawChar( xx, y, charWidth, charHeight, *s );
+		CG_DrawChar(xx, y, charWidth, charHeight, codePoint);
 		xx += charWidth;
 		cnt++;
 		s++;
@@ -473,7 +533,8 @@ CG_DrawStrlen
 Returns character count, skiping color escape codes
 =================
 */
-int CG_DrawStrlen( const char *str, const fontInfo_t *font ) {
+//FIXME utf8
+float CG_DrawStrlen( const char *str, const fontInfo_t *font ) {
 	const char *s = str;
 	int count = 0;
 	int w;
@@ -500,6 +561,7 @@ int CG_DrawStrlen( const char *str, const fontInfo_t *font ) {
 				s += 2;
 			}
 		} else {
+			//FIXME utf8
 			count++;
 			s++;
 		}
@@ -1024,6 +1086,10 @@ static int UI_ProportionalStringWidth( const char* str ) {
 	s = str;
 	width = 0;
 	while ( *s ) {
+		int codePoint;
+		int numUtf8Bytes;
+		qboolean error;
+
 		if (Q_IsColorString(s)) {
 			if (cgs.osp) {
 				if (s[1] == 'x'  ||  s[1] == 'X') {
@@ -1037,10 +1103,20 @@ static int UI_ProportionalStringWidth( const char* str ) {
 			continue;
 		}
 		ch = *s & 127;
-		charWidth = propMap[ch][2];
-		if ( charWidth != -1 ) {
-			width += charWidth;
-			width += PROP_GAP_WIDTH;
+		codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+		s += (numUtf8Bytes - 1);
+
+		if (codePoint <= 127) {
+			charWidth = propMap[ch][2];
+			if ( charWidth != -1 ) {
+				width += charWidth;
+				width += PROP_GAP_WIDTH;
+			}
+		} else {
+			glyphInfo_t glyph;
+
+			trap_R_GetGlyphInfo(&cgs.media.qlfont24, codePoint, &glyph);
+			width += ((float)glyph.xSkip * ((float)PROP_HEIGHT / 24.0f));
 		}
 		s++;
 	}
@@ -1062,6 +1138,7 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 	float	fwidth;
 	float	fheight;
 	vec4_t newColor;
+	glyphInfo_t glyph;
 
 	// draw the colored text
 	trap_R_SetColor( color );
@@ -1076,7 +1153,14 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 	s = str;
 	while ( *s )
 	{
+		int codePoint;
+		int numUtf8Bytes;
+		qboolean error;
+
 		ch = *s & 127;
+		codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+		s += (numUtf8Bytes - 1);
+
 		if (Q_IsColorString(s)) {
 			if (forceColor) {
 				if (cgs.osp) {
@@ -1090,14 +1174,14 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 				}
 				continue;
 			}
-				if (cgs.cpma) {
-					CG_CpmaColorFromString(s + 1, newColor);
-				} else if (cgs.osp) {
-					CG_OspColorFromString(s + 1, newColor);
-				} else {
-					memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
-				}
-				//memcpy(newColor, g_color_table[ColorIndex(*(s+1))], sizeof(newColor));
+			if (cgs.cpma) {
+				CG_CpmaColorFromString(s + 1, newColor);
+			} else if (cgs.osp) {
+				CG_OspColorFromString(s + 1, newColor);
+			} else {
+				memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
+			}
+			//memcpy(newColor, g_color_table[ColorIndex(*(s+1))], sizeof(newColor));
 			newColor[3] = color[3];
 			if (s[1] == '7') {
 				VectorCopy(color, newColor);
@@ -1113,26 +1197,40 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 				s += 2;
 			}
 			continue;
-		} else if ( ch == ' ' ) {
+		} else if (codePoint <= 127  &&  ch == ' ') {  // ! q3color string
 			aw = (float)PROP_SPACE_WIDTH * cgs.screenXScale * sizeScale;
-		} else if ( propMap[ch][2] != -1 ) {
+		} else if (codePoint <= 127  &&   propMap[ch][2] != -1) {
 			fcol = (float)propMap[ch][0] / 256.0f;
 			frow = (float)propMap[ch][1] / 256.0f;
 			fwidth = (float)propMap[ch][2] / 256.0f;
 			fheight = (float)PROP_HEIGHT / 256.0f;
-			/*
-			aw = (float)propMap[ch][2] * cgs.screenXScale * sizeScale;
-			ah = (float)PROP_HEIGHT * cgs.screenYScale * sizeScale;
-			trap_R_DrawStretchPic( ax, ay, aw, ah, fcol, frow, fcol+fwidth, frow+fheight, charset );
-			*/
 			aw = (float)propMap[ch][2] * sizeScale;
 			ah = (float)PROP_HEIGHT * sizeScale;
 			CG_DrawStretchPic(ax, ay, aw, ah, fcol, frow, fcol + fwidth, frow + fheight, charset);
+		} else if (codePoint > 127) {
+			float my;
+			float adjScale;
+
+			// adjust 24 point font to match prop font
+			adjScale = sizeScale * ((float)PROP_HEIGHT / 24.0);
+
+			trap_R_GetGlyphInfo(&cgs.media.qlfont24, codePoint, &glyph);
+			// draw from the bottom up
+			my = ay;
+			my += 24.0 * sizeScale;
+			CG_DrawStretchPic(
+							  ax + ((float)glyph.left * adjScale),
+							  my - ((float)glyph.top * adjScale),
+							  glyph.imageWidth * adjScale,
+							  glyph.imageHeight * adjScale,
+							  glyph.s, glyph.t,
+							  glyph.s2, glyph.t2,
+							  glyph.glyph);
+			aw = glyph.xSkip * adjScale;
 		} else {
 			aw = 0;
 		}
 
-		//ax += (aw + (float)PROP_GAP_WIDTH * cgs.screenXScale * sizeScale);
 		ax += (aw + (float)PROP_GAP_WIDTH * sizeScale);
 		s++;
 	}
@@ -1216,72 +1314,103 @@ void UI_DrawProportionalString( int x, int y, const char* str, int style, const 
 }
 #endif // Q3STATIC
 
+
 //FIXME hack for info screen
 int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const vec4_t color)
 {
-	char buffer[MAX_STRING_CHARS];
-	int count;
-	int realCount;
-	const char *p;
+	char buffer[MAX_STRING_CHARS];  // must hold at least 21 bytes, see below, 8 bytes for color string before, 8 bytes for new color string, up to 4 utf8 butes, and '\0'
 	char *b;
 	int lines;
+	char lastColorString[9];
+	int ch;
+	const char *s;
+	int width;
+	int charWidth;
+	float fontScale;
 
-	p = str;
-	b = buffer;
-	count = 0;
-	realCount = 0;
-	lines = 1;
-	while (1) {
-		*b = *p;
-
-		if (*p == '^') {
-			if (*(p + 1) == '\0') {
-				*b = '\0';
-				break;
-			}
-			if (realCount >= MAX_STRING_CHARS) {
-				*b = '\0';
-				break;
-			}
-			b++;
-			p++;
-			*b = *p;
-			b++;
-			p++;
-
-			realCount += 2;
-			continue;
-		}
-
-		count++;
-		realCount++;
-
-		if (realCount >= (MAX_STRING_CHARS - 1)) {
-			*b = '\0';
-			break;
-		}
-
-		if (*p == '\0') {
-			break;
-		}
-
-		if (count >= 40) {
-			*(b + 1) = '\0';
-			UI_DrawProportionalString (x, y, buffer, style, color);
-			y += PROP_HEIGHT;
-			b = buffer;
-			p++;
-			count = 0;
-			realCount = 0;
-			lines++;
-			continue;
-		}
-
-		b++;
-		p++;
+	// make sure buffer[] is big enough
+	if (sizeof(buffer) < 21) {
+		Com_Printf("^1UI_DrawProportionalString3: buffer is not big enough (%d)\n", (unsigned int)sizeof(buffer));
 	}
 
-	//UI_DrawProportionalString (x, y, str, style, color);
+	fontScale = UI_ProportionalSizeScale(style);
+
+	s = str;
+	width = 0;
+	lastColorString[0] = '\0';
+	buffer[0] = '\0';
+	b = buffer;
+	lines = 1;
+	while (*s) {
+		int codePoint;
+		int numUtf8Bytes;
+		qboolean error;
+
+		if (Q_IsColorString(s)) {
+			lastColorString[0] = '^';
+			b[0] = '^';
+			b++;
+			if (cgs.osp) {
+				if (s[1] == 'x'  ||  s[1] == 'X') {
+					lastColorString[1] = 'x';
+					Com_Memcpy(lastColorString + 2, s + 2, 6);
+					lastColorString[8] = '\0';
+					b[0] = s[1];
+					b++;
+					Com_Memcpy(b, s + 2, 6);
+					b += 6;
+					s += 8;
+				} else {
+					lastColorString[1] = s[1];
+					lastColorString[2] = '\0';
+					b[0] = s[1];
+					b++;
+					s += 2;
+				}
+			} else {
+				lastColorString[1] = s[1];
+				lastColorString[2] = '\0';
+				b[0] = s[1];
+				b++;
+				s += 2;
+			}
+			continue;
+		}
+		ch = *s & 127;
+		codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+		Com_Memcpy(b, s, numUtf8Bytes);
+		b+= numUtf8Bytes;
+		s += numUtf8Bytes;
+
+		if (codePoint <= 127) {
+			charWidth = propMap[ch][2];
+			if (charWidth != -1) {
+				width += charWidth;
+				width += PROP_GAP_WIDTH;
+			}
+		} else {
+			glyphInfo_t glyph;
+
+			trap_R_GetGlyphInfo(&cgs.media.qlfont24, codePoint, &glyph);
+			width += ((float)glyph.xSkip * ((float)PROP_HEIGHT / 24.0f));
+		}
+
+		// each while loop uses potentially 13 bytes in buffer[]:  ^xafafaf + (4 utf8 bytes) + '\0'
+		// 30: max prop width 'W'
+		//FIXME allow going past widescreen dimensions
+		if ((width * fontScale) >= (640 - (30 * fontScale))
+			  ||  ((b - buffer) >= (sizeof(buffer) - 13))) {
+			b[0] = '\0';
+			UI_DrawProportionalString(x, y, buffer, style, color);
+			Q_strncpyz(buffer, lastColorString, 9);
+			b = buffer + strlen(buffer);
+			y += PROP_HEIGHT;
+			width = 0;
+			lines++;
+		}
+	}
+
+	b[0] = '\0';
 	UI_DrawProportionalString(x, y, buffer, style, color);
 
 	return lines;

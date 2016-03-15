@@ -36,12 +36,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define CLIENT_WINDOW_TITLE     	"changeme"
   #define CLIENT_WINDOW_MIN_TITLE 	"changeme2"
   #define GAMENAME_FOR_MASTER		"iofoo3"	// must NOT contain whitespaces
+  #define CINEMATICS_LOGO		"foologo.roq"
+  #define CINEMATICS_INTRO		"intro.roq"
 #else
   #define PRODUCT_NAME			"wolfcamql"
   #define BASEGAME			"baseq3"
   #define CLIENT_WINDOW_TITLE     	"wolfcam quakelive demo player"
   #define CLIENT_WINDOW_MIN_TITLE 	"wolfcamql"
   #define GAMENAME_FOR_MASTER		"Q...."
+  #define CINEMATICS_LOGO		"idlogo.RoQ"
+  #define CINEMATICS_INTRO		"intro.RoQ"
 #endif
 
 #define BASETA                          "missionpack"
@@ -88,6 +92,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #  ifndef __attribute__
 #    define __attribute__(x)
 #  endif
+#endif
+
+#ifdef __GNUC__
+#define UNUSED_VAR __attribute__((unused))
+#define NO_WARNING_UNUSED_FUNCTION __attribute__((unused))
+#else
+#define UNUSED_VAR
+#define NO_WARNING_UNUSED_FUNCTION
 #endif
 
 #define STRING(s)			#s
@@ -408,7 +420,8 @@ extern	vec4_t		colorMdGrey;
 extern	vec4_t		colorDkGrey;
 
 #define Q_COLOR_ESCAPE	'^'
-#define Q_IsColorString(p)	((p) && *(p) == Q_COLOR_ESCAPE && *((p)+1) && isalnum(*((p)+1))) // ^[0-9a-zA-Z]
+#define Q_IsColorString(p) ((p) && *(p) == Q_COLOR_ESCAPE && *((p)+1) && isalnum(*((p)+1))) // ^[0-9a-zA-Z]
+#define Q_IsColorStringPicString(p) ((p) && p[0].i == Q_COLOR_ESCAPE && p[1].i && isalnum(p[1].i)) // ^[0-9a-zA-Z]
 
 #define COLOR_BLACK	'0'
 #define COLOR_RED	'1'
@@ -1390,7 +1403,8 @@ typedef struct entityState_s {
 typedef enum {
 	CA_UNINITIALIZED,
 	CA_DISCONNECTED, 	// not talking to a server
-	CA_AUTHORIZING,		// not used any more, was checking cd key 
+	CA_AUTHORIZING,		// not used any more, was checking cd key
+	CA_DOWNLOADINGWORKSHOPS,
 	CA_CONNECTING,		// sending request packets to the server
 	CA_CHALLENGING,		// sending challenge packets to the server
 	CA_CONNECTED,		// netchan_t established, getting gamestate
@@ -1412,8 +1426,10 @@ typedef struct {
   int top;          // top of glyph in buffer
   int bottom;       // bottom of glyph in buffer
   int pitch;        // width for copying
-	//FIXME font.dat
-	//int left;		    // xMin
+
+  // q3 issue: 'left' not in font.dat
+  int left;		    // xMin
+
   int xSkip;        // x adjustment
   int imageWidth;   // width of actual image
   int imageHeight;  // height of actual image
@@ -1427,22 +1443,21 @@ typedef struct {
 
 typedef struct extraGlyphInfo_s {
 	int charValue;
-	
-  int height;       // number of scan lines
-  int top;          // top of glyph in buffer
-  int bottom;       // bottom of glyph in buffer
-  int pitch;        // width for copying
-	//FIXME font.dat
-	//int left;		    // xMin
-  int xSkip;        // x adjustment
-  int imageWidth;   // width of actual image
-  int imageHeight;  // height of actual image
-  float s;          // x offset in image where glyph starts
-  float t;          // y offset in image where glyph starts
-  float s2;
-  float t2;
-  qhandle_t glyph;  // handle to the shader with the glyph
-  char shaderName[32];  //FIXME waste of space
+
+	int height;       // number of scan lines
+	int top;          // top of glyph in buffer
+	int bottom;       // bottom of glyph in buffer
+	int pitch;        // width for copying
+	int left;		    // xMin
+	int xSkip;        // x adjustment
+	int imageWidth;   // width of actual image
+	int imageHeight;  // height of actual image
+	float s;          // x offset in image where glyph starts
+	float t;          // y offset in image where glyph starts
+	float s2;
+	float t2;
+	qhandle_t glyph;  // handle to the shader with the glyph
+	char shaderName[32];  //FIXME waste of space
 
 	struct extraGlyphInfo_s *prev, *next;
 } extraGlyphInfo_t;
@@ -1527,6 +1542,10 @@ typedef enum _flag_status {
 #define CDKEY_LEN 16
 #define CDCHKSUM_LEN 2
 #define QUAKELIVE_STEAM_APP_ID 282440
+#define DEFAULT_FONT "fonts/handelgothic.ttf"
+#define DEFAULT_SANS_FONT "fonts/notosans-regular.ttf"
+#define DEFAULT_MONO_FONT "fonts/droidsansmono.ttf"
+
 
 #define LERP( a, b, w ) ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )
@@ -1536,5 +1555,6 @@ void Crash (void);
 qboolean VectorCheck (const vec3_t v);
 void Q_PrintSubString (const char *start, const char *end);
 int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error);
+void Q_GetUtf8FromCp (int codePoint, char *buffer, int *numBytes, qboolean *error);
 
 #endif	// __Q_SHARED_H

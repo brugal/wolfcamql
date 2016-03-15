@@ -272,7 +272,7 @@ int Sys_FileTime( char *path )
 	return buf.st_mtime;
 }
 
-qboolean Sys_FileIsDirectory (char *path)
+qboolean Sys_FileIsDirectory (const char *path)
 {
 	struct stat buf;
 
@@ -286,6 +286,62 @@ qboolean Sys_FileIsDirectory (char *path)
 	}
 
 	return qfalse;
+}
+
+qboolean Sys_FileExists (const char *path)
+{
+	struct stat buf;
+
+	if (stat(path, &buf) != 0) {
+		return qfalse;
+	}
+
+	return qtrue;
+}
+
+qboolean Sys_CopyFile (const char *src, const char *dest)
+{
+	char buffer[8192];
+	FILE *in, *out;
+	size_t nbytes;
+	qboolean ret;
+
+	in = fopen(src, "rb");
+	if (!in) {
+		Com_Printf("^1%s:  couldn't open src '%s'\n", __FUNCTION__, src);
+		return qfalse;
+	}
+
+	out = fopen(dest, "wb");
+	if (!out) {
+		Com_Printf("^1%s:  couldn't open dest '%s'\n", __FUNCTION__, dest);
+		fclose(in);
+		return qfalse;
+	}
+
+	while ((nbytes = fread(buffer, 1, sizeof(buffer), in)) > 0)  {
+		int n;
+
+		n = fwrite(buffer, 1, nbytes, out);
+		if (n < nbytes) {
+			Com_Printf("^1%s:  couldn't write to dest %d\n", __FUNCTION__, n);
+			fclose(in);
+			fclose(out);
+			return qfalse;
+		}
+	}
+
+	ret = qtrue;
+
+	if (!feof(in)) {
+		Com_Printf("^1%s:  couldn't read from src %d\n", __FUNCTION__, ferror(in));
+		ret = qfalse;
+	}
+
+	fclose(in);
+	fclose(out);
+
+	return ret;
 }
 
 /*
@@ -450,6 +506,12 @@ void Sys_SigHandler( int signal )
 	Sys_Exit( 0 ); // Exit with 0 to avoid recursive signals
 }
 
+#ifdef _WIN32
+#include <windows.h>
+
+extern CRITICAL_SECTION printCriticalSection;
+#endif
+
 /*
 =================
 main
@@ -461,6 +523,9 @@ int main( int argc, char **argv )
 	char  commandLine[ MAX_STRING_CHARS ] = { 0 };
 	qboolean useBacktrace;
 	qboolean useConsoleOutput;
+	qboolean useDpiAware;
+	qboolean demoNameAsArg;
+	qboolean gotFirstArg;
 
 #ifndef DEDICATED
 	// SDL version check
@@ -472,6 +537,10 @@ int main( int argc, char **argv )
 
 	// Run time
 	const SDL_version *ver = SDL_Linked_Version( );
+
+#ifdef _WIN32
+	InitializeCriticalSection(&printCriticalSection);
+#endif
 
 #define MINSDL_VERSION \
 	XSTRING(MINSDL_MAJOR) "." \
@@ -491,15 +560,20 @@ int main( int argc, char **argv )
 
 	useBacktrace = qtrue;
 	useConsoleOutput = qfalse;
+	useDpiAware = qtrue;
+	demoNameAsArg = qtrue;
 	for (i = 1;  i < argc;  i++) {
 		if (!strcmp(argv[i], "--nobacktrace")) {
 			useBacktrace = qfalse;
 		} else if (!strcmp(argv[i], "--console-output")) {
 			useConsoleOutput = qtrue;
+		} else if (!strcmp(argv[i], "--no-dpi-aware")) {
+			useDpiAware = qfalse;
+		} else if (!strcmp(argv[i], "--no-demo-arg")) {
+			demoNameAsArg = qfalse;
 		}
-
 	}
-	Sys_PlatformInit(useBacktrace, useConsoleOutput);
+	Sys_PlatformInit(useBacktrace, useConsoleOutput, useDpiAware);
 
 	// Set the initial time base
 	//Sys_Milliseconds( );
@@ -509,9 +583,34 @@ int main( int argc, char **argv )
 	Sys_SetDefaultInstallPath( DEFAULT_BASEDIR );
 
 	// Concatenate the command line for passing to Com_Init
+	gotFirstArg = qfalse;
 	for( i = 1; i < argc; i++ )
 	{
-		const qboolean containsSpaces = strchr(argv[i], ' ') != NULL;
+		qboolean containsSpaces;
+
+		if (!strcmp(argv[i], "--nobacktrace")) {
+			continue;
+		} else if (!strcmp(argv[i], "--console-output")) {
+			continue;
+		} else if (!strcmp(argv[i], "--no-dpi-aware")) {
+			continue;
+		} else if (!strcmp(argv[i], "--no-demo-arg")) {
+			continue;
+		}
+
+		if (demoNameAsArg  &&  !gotFirstArg) {
+			if (argv[i][0] != '+'  &&  argv[i][0] != '-') {
+				Q_strcat(commandLine, sizeof(commandLine), "+demo \"");
+				Q_strcat(commandLine, sizeof(commandLine), argv[i]);
+				Q_strcat(commandLine, sizeof(commandLine), "\"");
+				printf("demo: '%s'\n", argv[i]);
+				continue;
+			}
+		}
+
+		gotFirstArg = qtrue;
+		containsSpaces = strchr(argv[i], ' ') != NULL;
+
 		if (containsSpaces)
 			Q_strcat( commandLine, sizeof( commandLine ), "\"" );
 
@@ -544,4 +643,3 @@ int main( int argc, char **argv )
 
 	return 0;
 }
-

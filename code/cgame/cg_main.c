@@ -184,6 +184,7 @@ vmCvar_t cg_shotgunStyle;
 vmCvar_t cg_shotgunRandomness;
 vmCvar_t	cg_drawTimer;
 vmCvar_t	cg_drawClientItemTimer;
+vmCvar_t cg_drawClientItemTimerFilter;
 vmCvar_t	cg_drawClientItemTimerX;
 vmCvar_t	cg_drawClientItemTimerY;
 vmCvar_t	cg_drawClientItemTimerScale;
@@ -430,6 +431,7 @@ vmCvar_t 	cg_forceModel;
 vmCvar_t cg_forcePovModel;
 vmCvar_t	cg_paused;
 vmCvar_t	cg_blood;
+vmCvar_t cg_bleedTime;
 vmCvar_t	cg_predictItems;
 vmCvar_t	cg_deferPlayers;
 
@@ -1219,6 +1221,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawTeamBackground, "cg_drawTeamBackground", "1", CVAR_ARCHIVE },
 	{ &cg_drawTimer, "cg_drawTimer", "1", CVAR_ARCHIVE  },
 	{ &cg_drawClientItemTimer, "cg_drawClientItemTimer", "1", CVAR_ARCHIVE },
+	{ cvp(cg_drawClientItemTimerFilter), "rmygqb", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerX, "cg_drawClientItemTimerX", "635", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerY, "cg_drawClientItemTimerY", "150", CVAR_ARCHIVE },
 	{ &cg_drawClientItemTimerScale, "cg_drawClientItemTimerScale", "0.4", CVAR_ARCHIVE },
@@ -1248,7 +1251,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFPSY, "cg_drawFPSY", "", CVAR_ARCHIVE },
 	{ &cg_drawFPSAlign, "cg_drawFPSAlign", "2", CVAR_ARCHIVE },
 	{ &cg_drawFPSStyle, "cg_drawFPSStyle", "3", CVAR_ARCHIVE },
-	{ &cg_drawFPSFont, "cg_drawFPSFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
+	{ &cg_drawFPSFont, "cg_drawFPSFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
 	{ &cg_drawFPSPointSize, "cg_drawFPSPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawFPSScale, "cg_drawFPSScale", "0.25", CVAR_ARCHIVE },
 	//	{ &cg_drawFPSTime, "cg_drawFPSTime", "", CVAR_ARCHIVE },
@@ -1469,7 +1472,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawTeamOverlayX, "cg_drawTeamOverlayX", "640", CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayY, "cg_drawTeamOverlayY", "", CVAR_ARCHIVE },
 	{ &cg_teamOverlayUserinfo, "teamoverlay", "1", CVAR_ROM | CVAR_USERINFO },
-	{ &cg_drawTeamOverlayFont, "cg_drawTeamOverlayFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
+	{ &cg_drawTeamOverlayFont, "cg_drawTeamOverlayFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayPointSize, "cg_drawTeamOverlayPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayAlign, "cg_drawTeamOverlayAlign", "2", CVAR_ARCHIVE },
 	{ &cg_drawTeamOverlayScale, "cg_drawTeamOverlayScale", "0.2", CVAR_ARCHIVE },
@@ -1529,6 +1532,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_buildScript, "com_buildScript", "0", 0 },	// force loading of all possible data amd error on failures
 	{ &cg_paused, "cl_paused", "0", CVAR_ROM },
 	{ &cg_blood, "com_blood", "1", CVAR_ARCHIVE },
+	{ cvp(cg_bleedTime), "500", CVAR_ARCHIVE },
 	{ &cg_synchronousClients, "g_synchronousClients", "0", CVAR_SYSTEMINFO },	// communicated by systeminfo
 #if 1  //def MPACK
 	{ &cg_redTeamName, "g_redteam", DEFAULT_REDTEAM_NAME, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_USERINFO },
@@ -1600,7 +1604,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawSpeedNoText, "cg_drawSpeedNoText", "0", CVAR_ARCHIVE },
 	{ &cg_drawSpeedAlign, "cg_drawSpeedAlign", "2", CVAR_ARCHIVE },
 	{ &cg_drawSpeedStyle, "cg_drawSpeedStyle", "3", CVAR_ARCHIVE },
-	{ &cg_drawSpeedFont, "cg_drawSpeedFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
+	{ &cg_drawSpeedFont, "cg_drawSpeedFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
 	{ &cg_drawSpeedPointSize, "cg_drawSpeedPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawSpeedScale, "cg_drawSpeedScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawSpeedColor, "cg_drawSpeedColor", "0xffffff", CVAR_ARCHIVE },
@@ -1641,7 +1645,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawItemPickupsImageScale, "cg_drawItemPickupsImageScale", "0.5", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsAlign, "cg_drawItemPickupsAlign", "0", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsStyle, "cg_drawItemPickupsStyle", "0", CVAR_ARCHIVE },
-	{ &cg_drawItemPickupsFont, "cg_drawItemPickupsFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
+	{ &cg_drawItemPickupsFont, "cg_drawItemPickupsFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsPointSize, "cg_drawItemPickupsPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsScale, "cg_drawItemPickupsScale", "0.25", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsTime, "cg_drawItemPickupsTime", "3000", CVAR_ARCHIVE },
@@ -1657,7 +1661,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFollowingY, "cg_drawFollowingY", "50", CVAR_ARCHIVE },
 	{ &cg_drawFollowingAlign, "cg_drawFollowingAlign", "1", CVAR_ARCHIVE },
 	{ &cg_drawFollowingStyle, "cg_drawFollowingStyle", "6", CVAR_ARCHIVE },
-	{ &cg_drawFollowingFont, "cg_drawFollowingFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
+	{ &cg_drawFollowingFont, "cg_drawFollowingFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
 	{ &cg_drawFollowingPointSize, "cg_drawFollowingPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawFollowingScale, "cg_drawFollowingScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawFollowingColor, "cg_drawFollowingColor", "0xffffff", CVAR_ARCHIVE },
@@ -1770,7 +1774,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawWaitingForPlayersY, "cg_drawWaitingForPlayersY", "60", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersAlign, "cg_drawWaitingForPlayersAlign", "1", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersStyle, "cg_drawWaitingForPlayersStyle", "6", CVAR_ARCHIVE },
-	{ &cg_drawWaitingForPlayersFont, "cg_drawWaitingForPlayersFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
+	{ &cg_drawWaitingForPlayersFont, "cg_drawWaitingForPlayersFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersPointSize, "cg_drawWaitingForPlayersPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersScale, "cg_drawWaitingForPlayersScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawWaitingForPlayersColor, "cg_drawWaitingForPlayersColor", "0xffffff", CVAR_ARCHIVE },
@@ -2092,7 +2096,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawProxWarningY, "cg_drawProxWarningY", "80", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningAlign, "cg_drawProxWarningAlign", "1", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningStyle, "cg_drawProxWarningStyle", "6", CVAR_ARCHIVE },
-	{ &cg_drawProxWarningFont, "cg_drawProxWarningFont", "fonts/notosans-regular.ttf", CVAR_ARCHIVE },
+	{ &cg_drawProxWarningFont, "cg_drawProxWarningFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
 	{ &cg_drawProxWarningPointSize, "cg_drawProxWarningPointSize", "24", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningScale, "cg_drawProxWarningScale", "0.4", CVAR_ARCHIVE },
 	{ &cg_drawProxWarningColor, "cg_drawProxWarningColor", "0xfe0000", CVAR_ARCHIVE },
@@ -2436,35 +2440,37 @@ void CG_UpdateCvars( void ) {
 	}
 }
 
-static qboolean CG_CheckIndividualFontUpdate (fontInfo_t *font, int pointSize, const vmCvar_t *cv, int *modCount)
+static qboolean CG_CheckIndividualFontUpdate (fontInfo_t *font, int pointSize, const vmCvar_t *cv, int *modCount, const vmCvar_t *pointSizecv, int *pointSizeModCount)
 {
 	const char *s;
 
-	if (*modCount == cv->modificationCount) {
+	if (*modCount == cv->modificationCount  &&  *pointSizeModCount == pointSizecv->modificationCount) {
 		return qfalse;
 	}
 
-	if (*modCount != cv->modificationCount) {
+	if (*modCount != cv->modificationCount  ||  *pointSizeModCount != pointSizecv->modificationCount) {
 		s = cv->string;
+
 		if (!*s) {
-			//memcpy(font, &cgDC.Assets.textFont, sizeof(cgDC.Assets.textFont));
-			memcpy(font, &cgs.media.qlfont24, sizeof(cgs.media.qlfont24));
+			//FIXME define
+			s = DEFAULT_FONT;
 			//Com_Printf("using default font for %d\n", cv->handle);
-		} else {
-			//FIXME testing
-			if (!Q_stricmp(s, "smallchar")) {
-				//FIXME
-			}
-			trap_R_RegisterFont(s, pointSize, font);
-			if (!font->name[0]) {
-				Com_Printf("^1failed to load font %s for %d\n", s, cv->handle);
-				//memcpy(font, &cgDC.Assets.textFont, sizeof(cgDC.Assets.textFont));
-				memcpy(font, &cgs.media.qlfont24, sizeof(cgs.media.qlfont24));
-			} else {
-				//Com_Printf("loaded font %s for %d\n", s, cv->handle);
-			}
 		}
+
+		//Com_Printf("^5CG_CheckIndividualFontUpdate: loading '%s' %d  pscv:%d\n", s, pointSize, pointSizecv->integer);
+
+		trap_R_RegisterFont(s, pointSize, font);
+		if (!font->name[0]) {
+			Com_Printf("^1failed to load font %s %d for %d\n", s, pointSize, cv->handle);
+			//memcpy(font, &cgDC.Assets.textFont, sizeof(cgDC.Assets.textFont));
+			//FIXME point size
+			memcpy(font, &cgs.media.qlfont24, sizeof(cgs.media.qlfont24));
+		} else {
+			//Com_Printf("^5loaded font %s %d for %d\n", s, pointSize, cv->handle);
+		}
+
 		*modCount = cv->modificationCount;
+		*pointSizeModCount = pointSizecv->modificationCount;
 	}
 
 	return qtrue;
@@ -2474,37 +2480,37 @@ void CG_CheckFontUpdates (void)
 {
 	//int i;
 
-	CG_CheckIndividualFontUpdate(&cgs.media.fragMessageFont, cg_drawFragMessagePointSize.integer, &cg_drawFragMessageFont, &cgs.media.fragMessageFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.centerPrintFont, cg_drawCenterPrintPointSize.integer, &cg_drawCenterPrintFont, &cgs.media.centerPrintFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.rewardsFont, cg_drawRewardsPointSize.integer, &cg_drawRewardsFont, &cgs.media.rewardsFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.fpsFont, cg_drawFPSPointSize.integer, &cg_drawFPSFont, &cgs.media.fpsFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.clientItemTimerFont, cg_drawClientItemTimerPointSize.integer, &cg_drawClientItemTimerFont, &cgs.media.clientItemTimerFontModificationCount);
-	if (CG_CheckIndividualFontUpdate(&cgs.media.playerNamesFont, cg_drawPlayerNamesPointSize.integer, &cg_drawPlayerNamesFont, &cgs.media.playerNamesFontModificationCount)) {
+	CG_CheckIndividualFontUpdate(&cgs.media.fragMessageFont, cg_drawFragMessagePointSize.integer, &cg_drawFragMessageFont, &cgs.media.fragMessageFontModificationCount, &cg_drawFragMessagePointSize, &cgs.media.fragMessageFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.centerPrintFont, cg_drawCenterPrintPointSize.integer, &cg_drawCenterPrintFont, &cgs.media.centerPrintFontModificationCount, &cg_drawCenterPrintPointSize, &cgs.media.centerPrintFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.rewardsFont, cg_drawRewardsPointSize.integer, &cg_drawRewardsFont, &cgs.media.rewardsFontModificationCount, &cg_drawRewardsPointSize, &cgs.media.rewardsFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.fpsFont, cg_drawFPSPointSize.integer, &cg_drawFPSFont, &cgs.media.fpsFontModificationCount, &cg_drawFPSPointSize, &cgs.media.fpsFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.clientItemTimerFont, cg_drawClientItemTimerPointSize.integer, &cg_drawClientItemTimerFont, &cgs.media.clientItemTimerFontModificationCount, &cg_drawClientItemTimerPointSize, &cgs.media.clientItemTimerFontPointSizeModificationCount);
+	if (CG_CheckIndividualFontUpdate(&cgs.media.playerNamesFont, cg_drawPlayerNamesPointSize.integer, &cg_drawPlayerNamesFont, &cgs.media.playerNamesFontModificationCount, &cg_drawPlayerNamesPointSize, &cgs.media.playerNamesPointSizeModificationCount)) {
 		CG_CreateNameSprites();
 	}
 
-	CG_CheckIndividualFontUpdate(&cgs.media.snapshotFont, cg_drawSnapshotPointSize.integer, &cg_drawSnapshotFont, &cgs.media.snapshotFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.ammoWarningFont, cg_drawAmmoWarningPointSize.integer, &cg_drawAmmoWarningFont, &cgs.media.ammoWarningFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.crosshairNamesFont, cg_drawCrosshairNamesPointSize.integer, &cg_drawCrosshairNamesFont, &cgs.media.crosshairNamesFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.crosshairTeammateHealthFont, cg_drawCrosshairTeammateHealthPointSize.integer, &cg_drawCrosshairTeammateHealthFont, &cgs.media.crosshairTeammateHealthFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.warmupStringFont, cg_drawWarmupStringPointSize.integer, &cg_drawWarmupStringFont, &cgs.media.warmupStringFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.waitingForPlayersFont, cg_drawWaitingForPlayersPointSize.integer, &cg_drawWaitingForPlayersFont, &cgs.media.waitingForPlayersFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.voteFont, cg_drawVotePointSize.integer, &cg_drawVoteFont, &cgs.media.voteFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.teamVoteFont, cg_drawTeamVotePointSize.integer, &cg_drawTeamVoteFont, &cgs.media.teamVoteFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.followingFont, cg_drawFollowingPointSize.integer, &cg_drawFollowingFont, &cgs.media.followingFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.weaponBarFont, cg_weaponBarPointSize.integer, &cg_weaponBarFont, &cgs.media.weaponBarFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.itemPickupsFont, cg_drawItemPickupsPointSize.integer, &cg_drawItemPickupsFont, &cgs.media.itemPickupsFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.originFont, cg_drawOriginPointSize.integer, &cg_drawOriginFont, &cgs.media.originFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.speedFont, cg_drawSpeedPointSize.integer, &cg_drawSpeedFont, &cgs.media.speedFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.lagometerFont, cg_lagometerFontPointSize.integer, &cg_lagometerFont, &cgs.media.lagometerFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.attackerFont, cg_drawAttackerPointSize.integer, &cg_drawAttackerFont, &cgs.media.attackerFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.teamOverlayFont, cg_drawTeamOverlayPointSize.integer, &cg_drawTeamOverlayFont, &cgs.media.teamOverlayFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.cameraPointInfoFont, cg_drawCameraPointInfoPointSize.integer, &cg_drawCameraPointInfoFont, &cgs.media.cameraPointInfoFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.jumpSpeedsFont, cg_drawJumpSpeedsPointSize.integer, &cg_drawJumpSpeedsFont, &cgs.media.jumpSpeedsFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.jumpSpeedsTimeFont, cg_drawJumpSpeedsTimePointSize.integer, &cg_drawJumpSpeedsTimeFont, &cgs.media.jumpSpeedsTimeFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.proxWarningFont, cg_drawProxWarningPointSize.integer, &cg_drawProxWarningFont, &cgs.media.proxWarningFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.dominationPointStatusFont, cg_drawDominationPointStatusPointSize.integer, &cg_drawDominationPointStatusFont, &cgs.media.dominationPointStatusFontModificationCount);
-	CG_CheckIndividualFontUpdate(&cgs.media.damagePlumFont, cg_damagePlumPointSize.integer, &cg_damagePlumFont, &cgs.media.damagePlumFontModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.snapshotFont, cg_drawSnapshotPointSize.integer, &cg_drawSnapshotFont, &cgs.media.snapshotFontModificationCount, &cg_drawSnapshotPointSize, &cgs.media.snapshotFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.ammoWarningFont, cg_drawAmmoWarningPointSize.integer, &cg_drawAmmoWarningFont, &cgs.media.ammoWarningFontModificationCount, &cg_drawAmmoWarningPointSize, &cgs.media.ammoWarningFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.crosshairNamesFont, cg_drawCrosshairNamesPointSize.integer, &cg_drawCrosshairNamesFont, &cgs.media.crosshairNamesFontModificationCount, &cg_drawCrosshairNamesPointSize, &cgs.media.crosshairNamesFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.crosshairTeammateHealthFont, cg_drawCrosshairTeammateHealthPointSize.integer, &cg_drawCrosshairTeammateHealthFont, &cgs.media.crosshairTeammateHealthFontModificationCount, &cg_drawCrosshairTeammateHealthPointSize, &cgs.media.crosshairTeammateHealthFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.warmupStringFont, cg_drawWarmupStringPointSize.integer, &cg_drawWarmupStringFont, &cgs.media.warmupStringFontModificationCount, &cg_drawWarmupStringPointSize, &cgs.media.warmupStringFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.waitingForPlayersFont, cg_drawWaitingForPlayersPointSize.integer, &cg_drawWaitingForPlayersFont, &cgs.media.waitingForPlayersFontModificationCount, &cg_drawWaitingForPlayersPointSize, &cgs.media.waitingForPlayersFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.voteFont, cg_drawVotePointSize.integer, &cg_drawVoteFont, &cgs.media.voteFontModificationCount, &cg_drawVotePointSize, &cgs.media.voteFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.teamVoteFont, cg_drawTeamVotePointSize.integer, &cg_drawTeamVoteFont, &cgs.media.teamVoteFontModificationCount, &cg_drawTeamVotePointSize, &cgs.media.teamVoteFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.followingFont, cg_drawFollowingPointSize.integer, &cg_drawFollowingFont, &cgs.media.followingFontModificationCount, &cg_drawFollowingPointSize, &cgs.media.followingFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.weaponBarFont, cg_weaponBarPointSize.integer, &cg_weaponBarFont, &cgs.media.weaponBarFontModificationCount, &cg_weaponBarPointSize, &cgs.media.weaponBarFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.itemPickupsFont, cg_drawItemPickupsPointSize.integer, &cg_drawItemPickupsFont, &cgs.media.itemPickupsFontModificationCount, &cg_drawItemPickupsPointSize, &cgs.media.itemPickupsFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.originFont, cg_drawOriginPointSize.integer, &cg_drawOriginFont, &cgs.media.originFontModificationCount, &cg_drawOriginPointSize, &cgs.media.originFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.speedFont, cg_drawSpeedPointSize.integer, &cg_drawSpeedFont, &cgs.media.speedFontModificationCount, &cg_drawSpeedPointSize, &cgs.media.speedFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.lagometerFont, cg_lagometerFontPointSize.integer, &cg_lagometerFont, &cgs.media.lagometerFontModificationCount, &cg_lagometerFontPointSize, &cgs.media.lagometerFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.attackerFont, cg_drawAttackerPointSize.integer, &cg_drawAttackerFont, &cgs.media.attackerFontModificationCount, &cg_drawAttackerPointSize, &cgs.media.attackerFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.teamOverlayFont, cg_drawTeamOverlayPointSize.integer, &cg_drawTeamOverlayFont, &cgs.media.teamOverlayFontModificationCount, &cg_drawTeamOverlayPointSize, &cgs.media.teamOverlayFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.cameraPointInfoFont, cg_drawCameraPointInfoPointSize.integer, &cg_drawCameraPointInfoFont, &cgs.media.cameraPointInfoFontModificationCount, &cg_drawCameraPointInfoPointSize, &cgs.media.cameraPointInfoFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.jumpSpeedsFont, cg_drawJumpSpeedsPointSize.integer, &cg_drawJumpSpeedsFont, &cgs.media.jumpSpeedsFontModificationCount, &cg_drawJumpSpeedsPointSize, &cgs.media.jumpSpeedsFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.jumpSpeedsTimeFont, cg_drawJumpSpeedsTimePointSize.integer, &cg_drawJumpSpeedsTimeFont, &cgs.media.jumpSpeedsTimeFontModificationCount, &cg_drawJumpSpeedsTimePointSize, &cgs.media.jumpSpeedsTimeFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.proxWarningFont, cg_drawProxWarningPointSize.integer, &cg_drawProxWarningFont, &cgs.media.proxWarningFontModificationCount, &cg_drawProxWarningPointSize, &cgs.media.proxWarningFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.dominationPointStatusFont, cg_drawDominationPointStatusPointSize.integer, &cg_drawDominationPointStatusFont, &cgs.media.dominationPointStatusFontModificationCount, &cg_drawDominationPointStatusPointSize, &cgs.media.dominationPointStatusFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.damagePlumFont, cg_damagePlumPointSize.integer, &cg_damagePlumFont, &cgs.media.damagePlumFontModificationCount, &cg_damagePlumPointSize, &cgs.media.damagePlumFontPointSizeModificationCount);
 }
 
 static void CG_TimeChange (int serverTime, int ioverf)
@@ -3302,6 +3308,40 @@ static void CG_RegisterFonts (void)
 	cgs.media.proxWarningFontModificationCount = -100;
 	cgs.media.dominationPointStatusFontModificationCount = -100;
 
+	// point size
+
+	cgs.media.fragMessageFontPointSizeModificationCount = -100;
+	cgs.media.centerPrintFontPointSizeModificationCount = -100;
+	cgs.media.rewardsFontPointSizeModificationCount = -100;
+	cgs.media.fpsFontPointSizeModificationCount = -100;
+	cgs.media.clientItemTimerFontPointSizeModificationCount = -100;
+
+	// cgs.media.playerNames* handled above
+
+	cgs.media.snapshotFontPointSizeModificationCount = -100;
+	cgs.media.ammoWarningFontPointSizeModificationCount = -100;
+	cgs.media.crosshairNamesFontPointSizeModificationCount = -100;
+	cgs.media.crosshairTeammateHealthFontPointSizeModificationCount = -100;
+
+	cgs.media.warmupStringFontPointSizeModificationCount = -100;
+	cgs.media.waitingForPlayersFontPointSizeModificationCount = -100;
+	cgs.media.waitingForPlayersFontPointSizeModificationCount = -100;
+	cgs.media.voteFontPointSizeModificationCount = -100;
+	cgs.media.teamVoteFontPointSizeModificationCount = -100;
+	cgs.media.followingFontPointSizeModificationCount = -100;
+	cgs.media.weaponBarFontPointSizeModificationCount = -100;
+	cgs.media.itemPickupsFontPointSizeModificationCount = -100;
+	cgs.media.originFontPointSizeModificationCount = -100;
+	cgs.media.speedFontPointSizeModificationCount = -100;
+	cgs.media.lagometerFontPointSizeModificationCount = -100;
+	cgs.media.attackerFontPointSizeModificationCount = -100;
+	cgs.media.teamOverlayFontPointSizeModificationCount = -100;
+	cgs.media.cameraPointInfoFontPointSizeModificationCount = -100;
+	cgs.media.jumpSpeedsFontPointSizeModificationCount = -100;
+	cgs.media.jumpSpeedsTimeFontPointSizeModificationCount = -100;
+	cgs.media.proxWarningFontPointSizeModificationCount = -100;
+	cgs.media.dominationPointStatusFontPointSizeModificationCount = -100;
+
 	CG_CheckFontUpdates();
 
 	cg.fontsLoaded = qtrue;
@@ -3639,8 +3679,8 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.balloonShader = trap_R_RegisterShader( "sprites/balloon3" );
 
-	//cgs.media.bloodExplosionShader = trap_R_RegisterShader( "bloodExplosion" );
-	cgs.media.bloodExplosionShader = trap_R_RegisterShader("wc/bloodExplosion");
+	// try q3 blood first
+	cgs.media.bloodExplosionShader = trap_R_RegisterShader("q3bloodExplosion");
 	if (!cgs.media.bloodExplosionShader) {
 		Com_Printf("trying alternate blood explosion\n");
 		cgs.media.bloodExplosionShader = trap_R_RegisterShader("wc/bloodExplosionAlt");
@@ -3958,7 +3998,7 @@ void CG_BuildSpectatorString(void) {
 		sc = &cg.scores[i];
 		if (sc->team == TEAM_SPECTATOR) {
 
-			if (cg_spectatorListSkillRating.integer  &&  cgs.clientinfo[sc->client].knowSkillRating) {
+			if (cg_spectatorListSkillRating.integer  &&  cgs.clientinfo[sc->client].knowSkillRating  &&  cgs.protocol == PROTOCOL_QL   &&  cgs.realProtocol < 91) {
 				Q_strcat(slist, sizeof(slist), va("^5(%d)", cgs.clientinfo[sc->client].skillRating));
 			}
 			if (*cgs.clientinfo[sc->client].clanTag) {
@@ -3983,7 +4023,7 @@ void CG_BuildSpectatorString(void) {
 
 #if 0
 			//Com_Printf("%s\n", cgs.clientinfo[sc->client].name);
-			if (cgs.clientinfo[sc->client].knowSkillRating  &&  cg_spectatorListSkillRating.integer) {
+			if (cgs.clientinfo[sc->client].knowSkillRating  &&  cg_spectatorListSkillRating.integer  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 				//Com_Printf("know for %s\n", cgs.clientinfo[sc->client].name);
 				if (*cgs.clientinfo[sc->client].clanTag) {
 					Q_strcat(slist, sizeof(slist), va("^5(%d)%s %s^3(%d)^7     ", cgs.clientinfo[sc->client].skillRating, cgs.clientinfo[sc->client].clanTag, cgs.clientinfo[sc->client].name, sc->score));
@@ -5580,7 +5620,7 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^1%d  ^7%s ^7%s", info->skillRating, clanTag, info->name);
 					} else {
@@ -5779,7 +5819,7 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 				}
 
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -5982,7 +6022,7 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 				}
 
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6180,7 +6220,7 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 				}
 
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6369,7 +6409,7 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6542,7 +6582,7 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6703,7 +6743,7 @@ static const char *CG_FeederItemTextRace (float feederID, int index, int column,
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6897,7 +6937,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating) {
+				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -7355,7 +7395,9 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	//Com_Printf("CG_Init()\n");
 
 	// load a few needed things before we do any screen updates
-	cgs.media.charsetShader		= trap_R_RegisterShader( "gfx/2d/bigchars" );
+
+	//cgs.media.charsetShader		= trap_R_RegisterShader( "gfx/2d/bigchars" );
+	//trap_R_RegisterFont("q3big", 16, &cgs.media.charsetFont);
 	cgs.media.whiteShader		= trap_R_RegisterShader( "white" );
 	cgs.media.charsetProp		= trap_R_RegisterShaderNoMip( "menu/art/font1_prop.tga" );
 	cgs.media.charsetPropGlow	= trap_R_RegisterShaderNoMip( "menu/art/font1_prop_glo.tga" );
@@ -7370,6 +7412,9 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	}
 
 	CG_RegisterCvars();
+
+	// after CG_RegisterCvars() since this will call trap_R_RegisterFonts with cvar values
+	CG_RegisterFonts();
 
 	CG_InitConsoleCommands();
 
@@ -7525,7 +7570,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	CG_RegisterSounds();
 
-	CG_RegisterFonts();  //FIXME better place
+	//CG_RegisterFonts();  //FIXME better place
 
 	CG_LoadingString( "graphics" );
 
@@ -7735,7 +7780,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	demo.camera.target = -1;
 
 	// hack for ql area chat not using default font
-	trap_R_RegisterFont("fonts/notosans-regular.ttf", 16, &cg.notosansFont);
+	trap_R_RegisterFont(DEFAULT_SANS_FONT, 16, &cg.notosansFont);
 }
 
 void CG_LoadDefaultMenus (void)

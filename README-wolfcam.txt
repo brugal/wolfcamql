@@ -94,23 +94,27 @@ Use cl_useq3gibs 1 to enable, and cl_useq3gibs 0 to use to ql gibs.
 
 q3 style player bleeding when they are hit:
 
-from quake3 copy models/weaphits/blood201.tga, models/weaphits/blood202.tga, models/weaphits/blood203.tga, models/weaphits/blood204.tga, and models/weaphits/blood205.tga  into wolfcamql/wolfcam-ql/gfx/wc
+from quake3 copy
+  models/weaphits/blood201.tga
+  models/weaphits/blood202.tga
+  models/weaphits/blood203.tga
+  models/weaphits/blood204.tga
+  models/weaphits/blood205.tga
 
-then create a file called "wolfcamql/wolfcam-ql/shaderoverride/q3bleed.shader" with the following text:
+into wolfcamql/wolfcam-ql/gfx/damageq3
 
-// start text
-bloodExplosion
-{
-        cull disable
-        {
-                animmap 5 gfx/wc/blood201.tga gfx/wc/blood202.tga gfx/wc/blood203.tga gfx/wc/blood204.tga gfx/wc/blood205.tga
-                blendFunc blend
-        }
-}
-// end text
+  wolfcamql/wolfcam-ql/gfx/damageq3/blood201.tga
+  wolfcamql/wolfcam-ql/gfx/damageq3/blood202.tga
+  wolfcamql/wolfcam-ql/gfx/damageq3/blood203.tga
+  wolfcamql/wolfcam-ql/gfx/damageq3/blood204.tga
+  wolfcamql/wolfcam-ql/gfx/damageq3/blood205.tga
 
+If these files aren't present a substitute blood shader will be used that
+uses the blood*.tga images from wolfcamql/wolfcam-ql/gfx/wc.  The shader name
+is wc/bloodExplostionAlt.
 
-The bleeding effect can be turned on/off with com_blood cvar.
+The bleeding effect can be turned on/off with com_blood cvar and the time
+can be controlled with cg_bleedTime.
 
 -------------------------------------------------------------------------
 
@@ -1216,8 +1220,8 @@ Available tokens:
   %a  per kill accuracy of kill weapon (killer)
   %D  per kill total accuracy (all weapons) (victim)
   %d  per kill total accuracy of last held weapon (victim)
-  %c  hex color code  ex:  %c0xff00ff  you can also use the usual color codes: \
-^3
+  %c  hex color code  ex:  %c0xff00ff  (note that the usual ^ color codes
+          can still be used in the token string)
   %t  victim's team color
   %T  killer's team color
   %f  victim's flag in team games
@@ -1228,12 +1232,26 @@ Available tokens:
   %L  victim's clan tag with no color codes
   %x  killer's clan tag
   %X  killer's clan tag with no color codes
+  %{newline <value>}  value is vertical distance
+  %{x <value>}  horizontal offset value, note that text length for alignment
+          is calculated without this offset
+  %{y <value>}  vertical offset value
+  %{font <point size> <font file/name>}  change fonts, this gets reset after
+          newline
+  %{scale <value>}  change font scale, this gets reset after newline
+  %{iconscale <value>}  change icon scale, this gets reset after newline
+  %{style <value>}  change text style, this gets reset after newline
+
 
   For lightning gun whores try:  cg_drawFragMessageSeparate 1, cg_drawFragMessageTokens "You fragged %v %a"
 
   For freezetag and thaw message use cg_drawFragMessageThawTokens
 
   cvar cg_fragTokenAccuracyStyle  (0: "35%", 1: "35", 2:  "0.35")
+
+  Icon tokens are automatically scaled to the height of the surrounding text.
+  Scaling settings like %{iconscale ...} and cg_drawFragMessageIconScale are
+  applied after the automatic scaling.
 
 ---------------------------------------------------------
 
@@ -1411,6 +1429,8 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
      customize with:  cg_drawClientItemTimerX, cg_drawClientItemTimerY, cg_drawClientItemTimerScale, cg_drawClientItemTimerTextColor, cg_drawClientItemTimerFont, cg_drawClientItemTimerPointSize, cg_drawClientItemTimerAlpha, cg_drawClientItemTimerStyle, cg_drawClientItemTimerAlign, cg_drawClientItemTimerSpacing, cg_drawClientItemTimerIcon, cg_drawClientItemTimerIconSize, cg_drawClientItemTimerIconXoffset, cg_drawClientItemTimerIconYoffset
 
+* cg_drawClientItemTimerFilter to disable items.  Default is "rmygqb".  Available tokens are 'b' (battle suit), 'g' (green armor), 'm' (mega health), 'q' (quad damage), 'r' (red armor), and 'y' (yellow armor).  This also selects the order for drawing.
+
 * cg_itemSpawnPrint  adds a chatline when items re-spawn and the demo was recorded with cg_enableRespawnTimer 1
 
 * r_mapGreyScale, r_greyscaleValue   load the map in grey, darken to
@@ -1434,6 +1454,8 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
       System fonts are added for Windows users.  These are the same MS fonts listed above.  This can be enabled/disabled with r_defaultSystemFontFallbacks.
 
       GNU Unifonts are used as the final fallbacks.  This can be enabled/disabled with r_defaultUnifontFallbakcs.
+
+  - to enter unicode characters into the console type 'x' plus the hex value and then press 'ctrl + tab' or 'ctrl + keypad_insert'.
 
 * cg_qlFontScaling  [1: like ql, use alternate ql font when text becomes small, 2: always use 24 point ql font (old behavior)]
 
@@ -2250,7 +2272,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * cg_drawTieredArmorAvailability  (same as quakelive)
 
-* cg_racePlayerShader to enable or disable the invisible/ghost shader on other players in ql race mode
+* cg_racePlayerShader  (0: disable the invisible/ghost shader on other players in ql race mode, 1: enable for other players, 2: use ghost shader for followed player and weapon, 3: use ghost shader for followed player's weapon, 4:  use ghost shader for followed player (not weapon))
 
 * cl_maxRewindBackups  Number of seek points to divide the demo into.  The higher, the more response fast forwarding and rewinding becomes.  Note that each backup point will require about 1.7MB .  The default is 12.
 
@@ -2264,7 +2286,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   ex:  to show current demo name with a keybind:
      bind F6 echopopupcvar cl_demoFileBaseName
-
+* demo name is also shown in +info screen along with the length and progress counter
 * cg_itemTimers  in world quake live item timers (0: not visible, 1: visible, 2: visible with depth hack)
 * cg_itemTimersScale  size scale of in world timers
 * cg_itemTimersOffset  vertical displacement of in world timers
@@ -2300,15 +2322,29 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   Ex:  wolfcamql +set fs_extraGames1 "Temp pk3s" +set fs_extraGames1 "myExplosions" ...
 
-* fs_searchWorkshops (0: don't use steam workshop pk3s,  1: (default) load extra pk3s referenced in demos from steam workshop directories)
+* fs_searchWorkshops (0: don't use steam workshop pk3s,  1: (default) load extra pk3s referenced in demos from steam workshop directories).  This checks both the steam directory and wolfcamql {APPLICATION DATA}/workshop.
+
+  Workshops referenced in demo can be checked in the +info screen and with the com_workshopids cvar.
+
+* cl_downloadWorkshops  to auto download workshop items into wolfcamql workshop folder.  This uses steamcmd (https://developer.valvesoftware.com/wiki/SteamCMD) which needs to be in your executable search path or it can be specified with fs_steamcmd.
+
 * /screenshotPNG for png screenshots
 * r_pngZlibCompression  (0:  no compression,  1: (default) enables high speed zlib compression), 9:  best space compression, -1:  default zlib compression)
 
 * ability to filter out reward types to disable both the announcment and the display icon:  cg_rewardCapture, cg_rewardImpressive, cg_rewardExcellent, cg_rewardHumiliation, cg_rewardDefend, cg_rewardAssist, cg_rewardComboKill, cg_rewardRampage, cg_rewardMidAir, cg_rewardRevenge, cg_rewardPerforated, cg_rewardHeadshot, cg_rewardAccuracy, cg_rewardQuadGod, cg_rewardFirstFrag, cg_rewardPerfect
 
-* windows version can echo console messages in the command prompt if --console-output is used in the command line.  This will also convert ansi colors.
+* windows version can echo console messages in the command prompt if --console-output is used in the command line.  Color output can be controlled with com_ansiColor.
 
 * cg_useDemoFov  protocol 91 transmits player fov values and this can be used to view the demo using the players fov or to try and detect zoom changes.  Note that zoom isn't transmitted in the demo so it is detected using a fov change.  This will lead to a problem if the player uses a config that changes fov (ex:  per weapon).  Values (0:  ignore demo fov (default),  1:  use player's fov,  2:  detect zoom changes).
+* com_idleSleep (0:  full cpu usage while waiting for next frame, 1: (default) lower cpu usage if there's time available between frames, 2:  same as 1 with debugging output)
+* Linux and Mac OS X console paste support
+* If the first command line option doesn't begin with '-' or '+' it is automatically treated as a demo name.  This should make it easier to associate file name extensions (.dm_xx) with the wolfcamql executable.  This can be disabled with '--no-demo-arg' command line option.
+* console page up/down keys scroll faster while CTRL or SHIFT keys are also pressed
+* console HOME key scrolls the display to the top of the entire buffer
+* In Windows dpi awareness is set to prevent scaling.  This can be disabled with '--no-dpi-aware' command line option.
+* cg_bleedTime to control the amount of time player bleeding is shown on screen
+* com_logo to control logo cinematic when the program starts
+
 
 ----------
 

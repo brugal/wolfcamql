@@ -260,7 +260,7 @@ void Cbuf_Execute (void)
 
 // execute the command line
 
-		Cmd_ExecuteString (line);		
+		Cmd_ExecuteString (line);
 	}
 }
 
@@ -937,8 +937,8 @@ will point into this temporary buffer.
 // NOTE TTimo define that to track tokenization issues
 //#define TKN_DBG
 static void Cmd_TokenizeString2( const char *text_in, qboolean ignoreQuotes ) {
-	const char	*text;
-	char	*textOut;
+	const unsigned char *text;
+	unsigned char *textOut;
 
 #ifdef TKN_DBG
   // FIXME TTimo blunt hook to try to find the tokenization of userinfo
@@ -956,8 +956,8 @@ static void Cmd_TokenizeString2( const char *text_in, qboolean ignoreQuotes ) {
 	
 	Q_strncpyz( cmd_cmd, text_in, sizeof(cmd_cmd) );
 
-	text = text_in;
-	textOut = cmd_tokenized;
+	text = (unsigned char *)text_in;
+	textOut = (unsigned char *)cmd_tokenized;
 
 	while ( 1 ) {
 		if ( cmd_argc == MAX_STRING_TOKENS ) {
@@ -1004,7 +1004,7 @@ static void Cmd_TokenizeString2( const char *text_in, qboolean ignoreQuotes ) {
 		// handle quoted strings
     // NOTE TTimo this doesn't handle \" escaping
 		if ( !ignoreQuotes && *text == '"' ) {
-			cmd_argv[cmd_argc] = textOut;
+			cmd_argv[cmd_argc] = (char *)textOut;
 			cmd_argc++;
 			text++;
 			while ( *text && *text != '"' ) {
@@ -1019,7 +1019,7 @@ static void Cmd_TokenizeString2( const char *text_in, qboolean ignoreQuotes ) {
 		}
 
 		// regular token
-		cmd_argv[cmd_argc] = textOut;
+		cmd_argv[cmd_argc] = (char *)textOut;
 		cmd_argc++;
 
 		// skip until whitespace, quote, or command
@@ -1119,6 +1119,7 @@ void Cmd_SetCommandCompletionFunc( const char *command, completionFunc_t complet
 	for( cmd = cmd_functions; cmd; cmd = cmd->next ) {
 		if( !Q_stricmp( command, cmd->name ) ) {
 			cmd->complete = complete;
+			return;
 		}
 	}
 }
@@ -1195,8 +1196,10 @@ void Cmd_CompleteArgument( const char *command, char *args, int argNum ) {
 	cmd_function_t	*cmd;
 
 	for( cmd = cmd_functions; cmd; cmd = cmd->next ) {
-		if( !Q_stricmp( command, cmd->name ) && cmd->complete ) {
-			cmd->complete( args, argNum );
+		if( !Q_stricmp( command, cmd->name ) ) {
+			if ( cmd->complete ) {
+				cmd->complete( args, argNum );
+			}
 		}
 	}
 }

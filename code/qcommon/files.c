@@ -248,6 +248,7 @@ static	cvar_t		*fs_gamedirvar;
 static	searchpath_t	*fs_searchpaths;
 static cvar_t *fs_quakelivedir;
 // fs_extraGames* can be defined on the command line
+static cvar_t *fs_steamcmd;
 
 static	int			fs_readCount;			// total bytes read
 static	int			fs_loadCount;			// total files read
@@ -2741,7 +2742,7 @@ void FS_Path_f( void ) {
 	searchpath_t	*s;
 	int				i;
 
-	Com_Printf ("Current search path:\n");
+	Com_Printf ("We are looking in the current search path:\n");
 	for (s = fs_searchpaths; s; s = s->next) {
 		if (s->pack) {
 			Com_Printf ("%s (%i files) %08x\n", s->pack->pakFilename, s->pack->numfiles, s->pack->checksum);
@@ -3138,6 +3139,8 @@ static void FS_Startup( const char *gameName )
 	fs_basegame = Cvar_Get ("fs_basegame", "", CVAR_INIT );
 	fs_quakelivedir = Cvar_Get("fs_quakelivedir", "", CVAR_INIT);
 	fs_searchWorkshops = Cvar_Get("fs_searchWorkshops", "1", CVAR_ARCHIVE);
+	fs_steamcmd = Cvar_Get("fs_steamcmd", "", CVAR_ARCHIVE);
+
 	homePath = Sys_DefaultHomePath();
 	if (!homePath || !homePath[0]) {
 		homePath = fs_basepath->string;
@@ -3221,11 +3224,12 @@ static void FS_Startup( const char *gameName )
 		char buffer[1024];
 		const char *s;
 
-		cv = Cvar_Get("cl_workshopids", "", 0);
+		cv = Cvar_Get("com_workshopids", "", 0);
 		s = cv->string;
 
 		count = 0;
 		while (qtrue) {
+			const char *path;
 
 			if (*s == '\0'  ||  *s == ' ') {
 				if (count > 0) {
@@ -3234,8 +3238,18 @@ static void FS_Startup( const char *gameName )
 						break;
 					}
 					buffer[count] = '\0';
+					path = Cvar_VariableString("fs_quakelivedir");
+					if (!*path) {
+						path = Sys_QuakeLiveDir();
+					}
 					//FIXME resolve '../'
-					FS_AddGameDirectory(va("%s/../../../workshop/content/%d", Sys_QuakeLiveDir(), QUAKELIVE_STEAM_APP_ID), buffer);
+					FS_AddGameDirectory(va("%s/../../../workshop/content/%d", path, QUAKELIVE_STEAM_APP_ID), buffer);
+
+					path = Cvar_VariableString("fs_homepath");
+					if (!*path) {
+						path = Sys_DefaultHomePath();
+					}
+					FS_AddGameDirectory(va("%s/workshop", path), buffer);
 					count = 0;
 				} else {
 					// buffer is empty, skip spaces

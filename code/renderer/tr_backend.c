@@ -1161,8 +1161,6 @@ static void RB_ColorCorrect (void)
 	qglEnable(GL_TEXTURE_2D);
 }
 
-#define	MAC_EVENT_PUMP_MSEC		5
-
 /*
 ==================
 RB_RenderDrawSurfList

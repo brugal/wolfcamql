@@ -41,7 +41,6 @@ typedef struct {
 typedef struct {
 	qboolean	initialized;
 
-	//short	text[CON_TEXTSIZE];
 	consoleChar_t text[CON_TEXTSIZE];
 
 	int		current;		// line where next message will be printed
@@ -57,6 +56,7 @@ typedef struct {
 	float	finalFrac;		// 0.0 to 1.0 lines of console to display
 
 	int		vislines;		// in scanlines
+	int firstLine;
 
 	int		times[NUM_CON_TIMES];	// cls.realtime time the line was generated
 								// for transparent notify lines
@@ -74,7 +74,9 @@ static cvar_t *con_scale;
 static cvar_t *con_lineWidth;
 
 #define	DEFAULT_CONSOLE_WIDTH	78
+#define MIN_CON_SCALE 0.001f
 
+static void Con_CalcFirstLine (void);
 
 /*
 ================
@@ -164,7 +166,6 @@ void Con_Clear_f (void) {
 	int		i;
 
 	for ( i = 0 ; i < CON_TEXTSIZE ; i++ ) {
-		//con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
 		con.text[i].color = (ColorIndex(COLOR_WHITE));
 		con.text[i].codePoint = ' ';
 		con.text[i].utf8Bytes[0] = ' ';
@@ -174,6 +175,7 @@ void Con_Clear_f (void) {
 		con.text[i].numUtf8Bytes = 1;
 	}
 
+	Con_CalcFirstLine();
 	Con_Bottom();		// go to end
 }
 
@@ -188,8 +190,7 @@ Save the console contents out to a file
 void Con_Dump_f (void)
 {
 	int		l, x, i;
-	//short	*line;
-	consoleChar_t *line;
+	const consoleChar_t *line;
 	fileHandle_t	f;
 	int		bufferlen;
 	char	*buffer;
@@ -216,7 +217,6 @@ void Con_Dump_f (void)
 	{
 		line = con.text + (l%con.totallines)*con.linewidth;
 		for (x=0 ; x<con.linewidth ; x++)
-			//if ((line[x] & 0xff) != ' ') {
 			if (line[x].codePoint != ' ') {
 				break;
 			}
@@ -246,7 +246,6 @@ void Con_Dump_f (void)
 		line = con.text + (l%con.totallines)*con.linewidth;
 		for (i = 0, bi = 0;  i < con.linewidth;  i++) {
 			int n;
-			//buffer[i] = line[i] & 0xff;
 			for (n = 0;  n < line[i].numUtf8Bytes;  n++) {
 				buffer[bi] = line[i].utf8Bytes[n];
 				bi++;
@@ -281,13 +280,33 @@ Con_ClearNotify
 */
 void Con_ClearNotify( void ) {
 	int		i;
-	
+
 	for ( i = 0 ; i < NUM_CON_TIMES ; i++ ) {
 		con.times[i] = 0;
 	}
 }
 
-						
+
+static void Con_CalcFirstLine (void)
+{
+	int i;
+	int x;
+	const consoleChar_t *line;
+
+	for (i = con.current - con.totallines + 1;  i <= con.current;  i++) {
+		line = con.text + (i % con.totallines) * con.linewidth;
+		for (x = 0;  x < con.linewidth;  x++) {
+			if (line[x].codePoint != ' ') {
+				break;
+			}
+		}
+		if (x != con.linewidth) {
+			break;
+		}
+	}
+
+	con.firstLine = i - 1;
+}
 
 /*
 ================
@@ -301,8 +320,6 @@ static consoleChar_t tbuf[CON_TEXTSIZE];
 static void Con_CheckResize (void)
 {
 	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
-	//short	tbuf[CON_TEXTSIZE];
-	//consoleChar_t tbuf[CON_TEXTSIZE];
 
 	if (con_lineWidth) {
 		if (*con_lineWidth->string) {
@@ -321,6 +338,8 @@ static void Con_CheckResize (void)
 	if (width == con.linewidth)
 		return;
 
+	//printf("resizing console...\n");
+
 	//FIXME this can't happen
 	if (width < 1)			// video hasn't been initialized yet
 	{
@@ -329,7 +348,6 @@ static void Con_CheckResize (void)
 		con.linewidth = width;
 		con.totallines = CON_TEXTSIZE / con.linewidth;
 		for(i=0; i<CON_TEXTSIZE; i++) {
-			//con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
 			con.text[i].color = ColorIndex(COLOR_WHITE);
 			con.text[i].codePoint = ' ';
 			con.text[i].utf8Bytes[0] = ' ';
@@ -351,13 +369,12 @@ static void Con_CheckResize (void)
 			numlines = con.totallines;
 
 		numchars = oldwidth;
-	
+
 		if (con.linewidth < numchars)
 			numchars = con.linewidth;
 
 		Com_Memcpy (tbuf, con.text, CON_TEXTSIZE * sizeof(consoleChar_t));
 		for(i=0; i<CON_TEXTSIZE; i++) {
-			//con.text[i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
 			con.text[i].color = ColorIndex(COLOR_WHITE);
 			con.text[i].codePoint = ' ';
 			con.text[i].utf8Bytes[0] = ' ';
@@ -372,6 +389,7 @@ static void Con_CheckResize (void)
 		{
 			for (j=0 ; j<numchars ; j++)
 			{
+				//FIXME widen lines if width is greater
 				con.text[(con.totallines - 1 - i) * con.linewidth + j] =
 						tbuf[((con.current - i + oldtotallines) %
 							  oldtotallines) * oldwidth + j];
@@ -383,6 +401,8 @@ static void Con_CheckResize (void)
 
 	con.current = con.totallines - 1;
 	con.display = con.current;
+
+	Con_CalcFirstLine();
 }
 
 /*
@@ -456,8 +476,6 @@ static void Con_Linefeed (qboolean skipnotify)
 	con.current++;
 	for (i = 0;  i < con.linewidth;  i++) {
 		consoleChar_t *c;
-
-		//con.text[(con.current%con.totallines)*con.linewidth+i] = (ColorIndex(COLOR_WHITE)<<8) | ' ';
 
 		c = &con.text[(con.current%con.totallines)*con.linewidth+i];
 		c->color = ColorIndex(COLOR_WHITE);
@@ -667,6 +685,7 @@ static void Con_DrawInput (void) {
 	float y;
 	float cwidth;
 	float cheight;
+	float conScale;
 
 	if ( cls.state != CA_DISCONNECTED && !(Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
 		return;
@@ -675,14 +694,25 @@ static void Con_DrawInput (void) {
 	cheight = SMALLCHAR_HEIGHT;
 	cwidth = SMALLCHAR_WIDTH;
 
-	cheight *= con_scale->value;
-	cwidth *= con_scale->value;
+	conScale = con_scale->value;
+	if (conScale < MIN_CON_SCALE) {
+		conScale = MIN_CON_SCALE;
+	}
+	cheight *= conScale;
+	cwidth *= conScale;
 
 	y = con.vislines - ( cheight * 2.0 );
 
-	re.SetColor( con.color );
+	if (g_consoleField.widthInChars <= g_consoleField.cursor) {
+		//FIXME what if con.color is red
+		re.SetColor(g_color_table[ColorIndex(COLOR_RED)]);
+	} else {
+		re.SetColor(con.color);
+	}
 
 	SCR_DrawSmallCharExt( (float)con.xadjust + 1.0 * cwidth, y, cwidth, cheight, ']' );
+
+	re.SetColor(con.color);
 
 	Field_VariableSizeDraw( &g_consoleField, con.xadjust + 2 * cwidth, y,
 							cwidth - 3 * cwidth, SMALLCHAR_WIDTH, cwidth, cheight, qtrue, qtrue );
@@ -699,7 +729,6 @@ Draws the last few lines of output transparently over the game top
 void Con_DrawNotify (void)
 {
 	int		x, v;
-	//short	*text;
 	consoleChar_t *text;
 	int		i;
 	int		time;
@@ -732,20 +761,14 @@ void Con_DrawNotify (void)
 		}
 
 		for (x = 0 ; x < con.linewidth ; x++) {
-			//if ( ( text[x] & 0xff ) == ' ' ) {
 			if (text[x].codePoint == ' ') {
 				continue;
 			}
-			//if ( ColorIndexForNumber( text[x]>>8 ) != currentColor ) {
 			if (ColorIndexForNumber(text[x].color) != currentColor) {
-				//currentColor = ColorIndexForNumber( text[x]>>8 );
 				currentColor = ColorIndexForNumber(text[x].color);
 				re.SetColor( g_color_table[currentColor] );
 			}
-			//SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x] & 0xff );
-			//FIXME utf8
-			//SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x].codePoint & 0xff);
-			SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v, text[x].codePoint);
+			SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v + SMALLCHAR_HEIGHT, text[x].codePoint);
 		}
 
 		v += SMALLCHAR_HEIGHT;
@@ -775,7 +798,47 @@ void Con_DrawNotify (void)
 		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v,
 			SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
 	}
+}
 
+void Con_DrawConsoleLinesOver (int xpos, int ypos, int numLines)
+{
+	int		x;
+	float xposf;
+	float v;
+	consoleChar_t *text;
+	int		i;
+	int		currentColor;
+
+	currentColor = 7;
+	re.SetColor(g_color_table[currentColor]);
+
+	//FIXME duplicate code with Con_DrawNotify()
+
+	xposf = xpos;
+	v = ypos;
+	SCR_AdjustFrom640(&xposf, &v, NULL, NULL);
+
+	for (i = con.current - numLines; i <= con.current;  i++)
+	{
+		if (i < 0)
+			continue;
+		text = con.text + ((i % con.totallines) * con.linewidth);
+
+		for (x = 0 ; x < con.linewidth ; x++) {
+			if (text[x].codePoint == ' ') {
+				continue;
+			}
+			if (ColorIndexForNumber(text[x].color) != currentColor) {
+				currentColor = ColorIndexForNumber(text[x].color);
+				re.SetColor( g_color_table[currentColor] );
+			}
+			SCR_DrawSmallChar(xposf + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v + SMALLCHAR_HEIGHT, text[x].codePoint);
+		}
+
+		v += SMALLCHAR_HEIGHT;
+	}
+
+	re.SetColor(NULL);
 }
 
 /*
@@ -800,6 +863,7 @@ static void Con_DrawSolidConsole( float frac ) {
 	vec4_t			color;
 	float cwidth;
 	float cheight;
+	float conScale;
 
 	lines = cls.glconfig.vidHeight * frac;
 	if (lines <= 0)
@@ -863,8 +927,12 @@ static void Con_DrawSolidConsole( float frac ) {
 	cwidth = SMALLCHAR_WIDTH;
 	cheight = SMALLCHAR_HEIGHT;
 
-	cwidth *= con_scale->value;
-	cheight *= con_scale->value;
+	conScale = con_scale->value;
+	if (conScale < MIN_CON_SCALE) {
+		conScale = MIN_CON_SCALE;
+	}
+	cwidth *= conScale;
+	cheight *= conScale;
 
 	con.vislines = lines;
 	rows = (lines - cwidth) / cwidth;		// rows of text to draw
@@ -874,10 +942,16 @@ static void Con_DrawSolidConsole( float frac ) {
 	// draw from the bottom up
 	if (con.display != con.current)
 	{
-	// draw arrows to show the buffer is backscrolled
-		re.SetColor( g_color_table[ColorIndex(COLOR_RED)] );
-		for (x=0 ; x<con.linewidth ; x+=4)
+		// draw arrows to show the buffer is backscrolled
+		if ((con.display - con.firstLine) <= ((con.vislines / (SMALLCHAR_HEIGHT * conScale)) - 5)) {
+			re.SetColor(g_color_table[ColorIndex(COLOR_YELLOW)]);
+		} else {
+
+			re.SetColor(g_color_table[ColorIndex(COLOR_RED)]);
+		}
+		for (x=0 ; x<con.linewidth ; x+=4) {
 			SCR_DrawSmallCharExt( con.xadjust + (x+1)*cwidth, y, cwidth, cheight, '^' );
+		}
 		y -= cheight;
 		rows--;
 	}
@@ -914,8 +988,6 @@ static void Con_DrawSolidConsole( float frac ) {
 				currentColor = ColorIndexForNumber(text[x].color);
 				re.SetColor( g_color_table[currentColor] );
 			}
-			//SCR_DrawSmallCharExt(  con.xadjust + (x+1)*cwidth, y, cwidth, cheight, text[x] & 0xff );
-			//SCR_DrawSmallCharExt(  con.xadjust + (x+1)*cwidth, y, cwidth, cheight, text[x].codePoint & 0xff );
 			SCR_DrawSmallCharExt(  con.xadjust + (x+1)*cwidth, y, cwidth, cheight, text[x].codePoint );
 		}
 	}
@@ -1022,10 +1094,29 @@ void Con_RunConsole (void) {
 }
 
 
-void Con_PageUp( void ) {
+void Con_PageUp (void)
+{
+	float conScale;
+
+	conScale = con_scale->value;
+	if (conScale < MIN_CON_SCALE) {
+		conScale = MIN_CON_SCALE;
+	}
+	if ((con.display - con.firstLine) < ((con.vislines / (SMALLCHAR_HEIGHT * conScale)) - 5)) {
+		//printf("returning:  con.display %d, con.firstLine %d, lines %d\n", con.display, con.firstLine, (con.vislines / SMALLCHAR_HEIGHT) - 5);
+		//printf("con.current: %d\n", con.current);
+		return;
+	}
+
 	con.display -= 2;
 	if ( con.current - con.display >= con.totallines ) {
 		con.display = con.current - con.totallines + 1;
+	}
+
+	// don't scroll past beginning of buffer
+	if ((con.display - con.firstLine) < ((con.vislines / (SMALLCHAR_HEIGHT * conScale)) - 5)) {
+		//printf("no scroll:  con.display %d, con.firstLine %d, lines %d\n", con.display, con.firstLine, (con.vislines / SMALLCHAR_HEIGHT) - 5);
+		con.display = con.firstLine + (con.vislines / (SMALLCHAR_HEIGHT * conScale)) - 5;
 	}
 }
 
@@ -1036,11 +1127,20 @@ void Con_PageDown( void ) {
 	}
 }
 
-void Con_Top( void ) {
-	con.display = con.totallines;
-	if ( con.current - con.display >= con.totallines ) {
-		con.display = con.current - con.totallines + 1;
+void Con_Top (void)
+{
+	float conScale;
+
+	conScale = con_scale->value;
+	if (conScale < MIN_CON_SCALE) {
+		conScale = MIN_CON_SCALE;
 	}
+
+	if ((con.display - con.firstLine) < ((con.vislines / (SMALLCHAR_HEIGHT * conScale)) - 3)) {
+		return;
+	}
+
+	con.display = con.firstLine + (con.vislines / (SMALLCHAR_HEIGHT * conScale)) - 5;
 }
 
 void Con_Bottom( void ) {

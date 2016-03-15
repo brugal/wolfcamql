@@ -243,7 +243,7 @@ typedef struct {
 extern mapNames_t MapNames[];
 
 //#define	PROTOCOL_VERSION	73
-#define PROTOCOL_VERSION 90  // bump when new ql release supports 91
+#define PROTOCOL_VERSION 91
 
 // 1.31 - 67
 
@@ -742,20 +742,37 @@ Edit fields and command line history/completion
 ==============================================================
 */
 
+typedef struct {
+	int codePoint;
+	char utf8Bytes[4];
+	int numUtf8Bytes;
+} fieldChar_t;
+
 #define	MAX_EDIT_LINE	256
 typedef struct {
 	int		cursor;
 	int		scroll;
 	int		widthInChars;
-	char	buffer[MAX_EDIT_LINE];
+	//char	buffer[MAX_EDIT_LINE];
+	fieldChar_t	xbuffer[MAX_EDIT_LINE];
 } field_t;
 
 void Field_Clear( field_t *edit );
 void Field_AutoComplete( field_t *edit );
 void Field_CompleteKeyname( void );
 void Field_CompleteFilename (const char *dir, const char *ext, qboolean stripExt, qboolean allowNonPureFilesOnDisk, qboolean *foundMatch);
-void Field_CompleteCommand( char *cmd,
-		qboolean doCommands, qboolean doCvars );
+void Field_CompleteCommand( char *cmd, qboolean doCommands, qboolean doCvars );
+size_t Field_Strlen (const field_t *field);
+
+// char *p must be able to hold at least MAX_EDIT_LINE * 4 (utf8 bytes) chars
+// len == 0 is full string
+void Field_ToStr (char *p, const field_t *field, int skip, int len);
+
+// len == 0 is full string
+char *Field_AsStr (const field_t *field, int skip, int len);
+void Field_Insert (field_t *field, int pos, int codePoint);
+
+void Field_SetBuffer (field_t *field, const char *p, int len, int pos);
 
 /*
 ==============================================================

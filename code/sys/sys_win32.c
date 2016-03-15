@@ -68,6 +68,7 @@ char *Sys_DefaultHomePath( void )
 			return NULL;
 		}
 
+		// SHGetFolderPath() is deprecated since Vista
 		qSHGetFolderPath = GetProcAddress(shfolder, "SHGetFolderPathA");
 		if(qSHGetFolderPath == NULL)
 		{
@@ -277,15 +278,65 @@ Sys_GetClipboardData
 char *Sys_GetClipboardData( void )
 {
 	char *data = NULL;
-	char *cliptext;
+	//char *cliptext;
+	WCHAR *wcliptext;
+	int nchars;
 
 	if ( OpenClipboard( NULL ) != 0 ) {
 		HANDLE hClipboardData;
 
+#if 0
 		if ( ( hClipboardData = GetClipboardData( CF_TEXT ) ) != 0 ) {
 			if ( ( cliptext = GlobalLock( hClipboardData ) ) != 0 ) {
 				data = Z_Malloc( GlobalSize( hClipboardData ) + 1 );
+				if (data == NULL) {
+					Com_Printf("^1Sys_GetClipboardData:  couldn't allocate memory for data\n");
+					GlobalUnlock(hClipboardData);
+					CloseClipboard();
+					return NULL;
+				}
 				Q_strncpyz( data, cliptext, GlobalSize( hClipboardData ) );
+				GlobalUnlock( hClipboardData );
+
+				strtok( data, "\n\r\b" );
+			}
+		}
+#endif
+
+		if ( ( hClipboardData = GetClipboardData( CF_UNICODETEXT ) ) != 0 ) {
+			if ( ( wcliptext = GlobalLock( hClipboardData ) ) != 0 ) {
+				nchars = WideCharToMultiByte(
+											 CP_UTF8,
+											 0,
+											 wcliptext,
+											 GlobalSize(hClipboardData),
+											 NULL,
+											 0,
+											 NULL,
+											 NULL);
+				if (nchars <= 0) {
+					GlobalUnlock(hClipboardData);
+					return NULL;
+				}
+
+				data = Z_Malloc(nchars + 1);
+				if (data == NULL) {
+					Com_Printf("^1Sys_GetClipboardData:  couldn't allocate memory for data\n");
+					GlobalUnlock(hClipboardData);
+					CloseClipboard();
+					return NULL;
+				}
+				Com_Memset(data, 0, nchars + 1);
+
+				WideCharToMultiByte(
+									CP_UTF8,
+									0,
+									wcliptext,
+									GlobalSize(hClipboardData),
+									data,
+									nchars,
+									NULL,
+									NULL);
 				GlobalUnlock( hClipboardData );
 
 				strtok( data, "\n\r\b" );
@@ -762,6 +813,9 @@ static HANDLE HStdout = INVALID_HANDLE_VALUE;
 static CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
 static qboolean GotHandle = qfalse;
 
+typedef BOOL (*SetProcessDPIAwareFunc)(void);
+typedef HRESULT (*SetProcessDpiAwarenessFunc)(int);
+
 /*
 ==============
 Sys_PlatformInit
@@ -769,7 +823,7 @@ Sys_PlatformInit
 Windows specific initialisation
 ==============
 */
-void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolean useDpiAware)
 {
 	HMODULE bt;
 	OSVERSIONINFO vi;
@@ -780,6 +834,71 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 	TIMECAPS ptc;
 	const char *SDL_VIDEODRIVER;
 #endif
+	HMODULE shcore = NULL;
+	HMODULE user32 = NULL;
+	HRESULT hr;
+	SetProcessDpiAwarenessFunc fpSetProcessDpiAwareness;
+	SetProcessDPIAwareFunc fpSetProcessDPIAware;
+	qboolean setDpiAware = qfalse;
+
+	// set dpi awareness
+
+	//FIXME as option?
+	// Not using manifest since it might not run with Windows XP.  Using a
+	// manifest would allow reporting of the correct OSVERSIONINFO.
+	// It is suggested to call *DpiAware* functions as early as possible.
+	if (useDpiAware) {
+		shcore = LoadLibrary("shcore.dll");
+		if (shcore == NULL) {
+			//FIXME printing
+			Com_Printf("shcore.dll not available\n");
+		} else {
+			fpSetProcessDpiAwareness = (SetProcessDpiAwarenessFunc)GetProcAddress(shcore, "SetProcessDpiAwareness");
+			if (fpSetProcessDpiAwareness == NULL) {
+				//FIXME printing
+				Com_Printf("couldn't get function SetProcessDpiAwareness\n");
+			} else {
+				hr = fpSetProcessDpiAwareness(2 /*PROCESS_PER_MONITOR_DPI_AWARE*/);
+				if (hr != S_OK) {
+					//FIXME  printing
+					// this can happen if the application property has already been set with a dpi awareness value
+					Com_Printf("couldn't use SetProcessDpiAwareness (%ld) : %lu\n", hr, GetLastError());
+				} else {
+					Com_Printf("SetProcessDpiAwareness\n");
+					setDpiAware = qtrue;
+				}
+			}
+
+			FreeLibrary(shcore);
+		}
+
+		if (!setDpiAware) {
+			// try SetProcessDPIAware()
+			user32 = LoadLibrary("user32.dll");
+			if (user32 == NULL) {
+				//FIXME printing
+				Com_Printf("user32.dll not available\n");
+			} else {
+				fpSetProcessDPIAware = (SetProcessDPIAwareFunc)GetProcAddress(user32, "SetProcessDPIAware");
+				if (fpSetProcessDPIAware == NULL) {
+					//FIXME printing
+					Com_Printf("couldn't get function SetProcessDPIAware\n");
+				} else {
+					BOOL r;
+
+					r = fpSetProcessDPIAware();
+					if (r == 0) {
+						//FIXME printing
+						Com_Printf("SetProcessDPIAware failed (%d) : %ld\n", r, GetLastError());
+					} else {
+						Com_Printf("SetProcessDPIAware\n");
+						setDpiAware = qtrue;
+					}
+				}
+				FreeLibrary(user32);
+			}
+		}
+	}
 
 	// sdl redirects output, steal it back
 	if (useConsoleOutput) {
@@ -810,6 +929,7 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 			Com_Printf("win32:  couldn't get parent console for console output, error %ld\n", GetLastError());
 		}
 	}
+
 	if (useBacktrace) {
 		bt = LoadLibraryA("backtrace.dll");
 		Com_Printf("backtrace: %d\n", (int)bt);
@@ -886,6 +1006,7 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 		SYSTEM_INFO si;
 		qboolean ntWorkStation;
 
+		//FIXME GetVersionEx() is deprecated since Windows 8 and will show as Windows 8 even for Windows 10 if there isn't a manifest showing win10 support
 		memset(&viex, 0, sizeof(viex));
 		memset(&si, 0, sizeof(si));
 
@@ -1012,8 +1133,10 @@ Windows specific initialisation
 
 void Sys_PlatformExit (void)
 {
+#ifndef DEDICATED
 	if (timerResolution)
 		timeEndPeriod(timerResolution);
+#endif
 
 	if (GotHandle  &&  HStdout != INVALID_HANDLE_VALUE) {
 		SetConsoleTextAttribute(HStdout, ScreenBufferInfo.wAttributes);
@@ -1163,5 +1286,499 @@ void Sys_AnsiColorPrint( const char *msg )
 	{
 		buffer[ length ] = '\0';
 		fputs( buffer, stderr );
+	}
+}
+
+// popen
+
+#define POPEN_DATA_EMPTY 0
+#define POPEN_DATA_AVAILABLE 1
+#define POPEN_DONE 2
+#define POPEN_DONE_THREAD_ERROR 3
+
+typedef struct {
+	HANDLE hChildStdOutR;
+	HANDLE hChildStdOutW;
+	HANDLE hChildStdInR;
+	HANDLE hChildStdInW;
+
+	HANDLE readMutex;
+	HANDLE threadHandle;
+	unsigned int threadId;
+	int threadStatus;
+	BOOL threadCancel;
+	PROCESS_INFORMATION piProcInfo;
+	char szCmdline[4096];
+
+	char buffer[4096];
+} popenDataWin_t;
+
+static unsigned int __stdcall Proc_ReadThreadFunc (void *param)
+{
+	popenDataWin_t *pw;
+	BOOL keepRunning = TRUE;
+	DWORD r;
+	BOOL bResult;
+	BOOL bReadResult;
+	DWORD dwRead;
+	DWORD readLastError;
+
+	pw = param;
+
+	if (pw == NULL) {
+		Com_Printf("^1ERROR:  %s pw == NULL\n", __FUNCTION__);
+		keepRunning = FALSE;
+	}
+
+	while (keepRunning) {
+		BOOL waiting = FALSE;
+
+		r = WaitForSingleObject(pw->readMutex, INFINITE);
+		if (r) {
+			Com_Printf("^1ERROR: %s couldn't get mutex (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+			keepRunning = FALSE;
+			pw->threadStatus = POPEN_DONE_THREAD_ERROR;
+		}
+
+		if (pw->threadCancel) {
+			keepRunning = FALSE;
+		} else {
+			if (pw->threadStatus == POPEN_DATA_AVAILABLE) {
+				// still waiting for main thread to get our data
+				waiting = TRUE;
+			} else if (pw->threadStatus == POPEN_DATA_EMPTY) {
+				// try to get new data
+
+				bResult = ReleaseMutex(pw->readMutex);
+				if (bResult == FALSE) {
+					Com_Printf("^1ERROR:  %s  start read release mutex error: %ld\n", __FUNCTION__, GetLastError());
+					keepRunning = FALSE;
+					pw->threadStatus = POPEN_DONE_THREAD_ERROR;
+				}
+
+				bReadResult = ReadFile(pw->hChildStdOutR, pw->buffer, sizeof(pw->buffer) - 1, &dwRead, NULL);
+				readLastError = GetLastError();
+
+				r = WaitForSingleObject(pw->readMutex, INFINITE);
+				if (r) {
+					Com_Printf("^1ERROR: %s read done couldn't get mutex (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+					keepRunning = FALSE;
+					pw->threadStatus = POPEN_DONE_THREAD_ERROR;
+				}
+
+				if (bReadResult == FALSE  ||  dwRead < 0) {
+					keepRunning = FALSE;
+					pw->threadStatus = POPEN_DONE;
+
+					if (bReadResult == FALSE  &&  readLastError != ERROR_BROKEN_PIPE) {
+						Com_Printf("^1ERROR: %s read error:  %ld\n", __FUNCTION__, readLastError);
+						pw->threadStatus = POPEN_DONE_THREAD_ERROR;
+					}
+				} else if (dwRead == 0) {
+					// all done
+					keepRunning = FALSE;
+					pw->threadStatus = POPEN_DONE;
+				} else {
+					// got data
+					//Com_Printf("got data %ld\n", dwRead);
+					pw->buffer[dwRead] = '\0';
+					pw->threadStatus = POPEN_DATA_AVAILABLE;
+				}
+			} else {
+				Com_Printf("^1ERROR: %s invalid thread status value %d\n", __FUNCTION__, pw->threadStatus);
+				keepRunning = FALSE;
+			}
+		}
+
+		bResult = ReleaseMutex(pw->readMutex);
+		if (bResult == FALSE) {
+			Com_Printf("^1ERROR:  %s  couldn't release mutex error: %ld\n", __FUNCTION__, GetLastError());
+			keepRunning = FALSE;
+			pw->threadStatus = POPEN_DONE_THREAD_ERROR;
+		}
+
+		if (waiting) {
+			Sys_Sleep(100);
+		}
+	}
+
+	return 0;
+}
+
+// need to free() returned data
+popenData_t *Sys_PopenAsync (const char *command)
+{
+	popenData_t *p;
+	popenDataWin_t *pw;
+	SECURITY_ATTRIBUTES saAttr;
+	STARTUPINFO siStartInfo;
+	BOOL bSuccess = FALSE;
+
+	p = (popenData_t *)malloc(sizeof(popenData_t));
+	if (p == NULL) {
+		Com_Printf("^1%s couldn't allocate memory\n", __FUNCTION__);
+		return NULL;
+	}
+	memset(p, 0, sizeof(popenData_t));
+
+	pw = (popenDataWin_t *)malloc(sizeof(popenDataWin_t));
+	if (pw == NULL) {
+		Com_Printf("^1%s couldn't get Windows data %ld\n", __FUNCTION__, GetLastError());
+		free(p);
+		return NULL;
+	}
+	memset(pw, 0, sizeof(popenDataWin_t));
+
+	p->data = pw;
+	pw->threadStatus = 0;
+	pw->threadCancel = FALSE;
+
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	saAttr.bInheritHandle = TRUE;
+	saAttr.lpSecurityDescriptor = NULL;
+
+	if (!CreatePipe(&pw->hChildStdOutR, &pw->hChildStdOutW, &saAttr, 0)) {
+		Com_Printf("^1%s couldn't create stdout pipes %ld\n", __FUNCTION__, GetLastError());
+		free(pw);
+		free(p);
+		return NULL;
+	}
+
+	// make sure parent stdout read handle isn't inherited
+	if (!SetHandleInformation(pw->hChildStdOutR, HANDLE_FLAG_INHERIT, 0)) {
+		Com_Printf("^1%s couldn't change inherit status of stdout read pipe %ld\n", __FUNCTION__, GetLastError());
+		CloseHandle(pw->hChildStdOutR);
+		CloseHandle(pw->hChildStdOutW);
+		free(pw);
+		free(p);
+		return NULL;
+	}
+
+	if (!CreatePipe(&pw->hChildStdInR, &pw->hChildStdInW, &saAttr, 0)) {
+		Com_Printf("^1%s couldn't create stdin pipes %ld\n", __FUNCTION__, GetLastError());
+		CloseHandle(pw->hChildStdOutR);
+		CloseHandle(pw->hChildStdOutW);
+		free(pw);
+		free(p);
+		return NULL;
+	}
+
+	// make sure parent stdin write handle isn't inherited
+	if (!SetHandleInformation(pw->hChildStdInW, HANDLE_FLAG_INHERIT, 0)) {
+		Com_Printf("^1%s couldn't change inherit status of stdin write pipe %ld\n", __FUNCTION__, GetLastError());
+		CloseHandle(pw->hChildStdInR);
+		CloseHandle(pw->hChildStdInW);
+		CloseHandle(pw->hChildStdOutR);
+		CloseHandle(pw->hChildStdOutW);
+		free(pw);
+		free(p);
+		return NULL;
+	}
+
+
+
+	
+	// create child process
+
+	// testing
+	//Q_strncpyz(pw->szCmdline, "ping google.com", sizeof(pw->szCmdline));
+
+	Q_strncpyz(pw->szCmdline, command, sizeof(pw->szCmdline));
+	memset(&pw->piProcInfo, 0, sizeof(PROCESS_INFORMATION));
+	memset(&siStartInfo, 0, sizeof(STARTUPINFO));
+
+	siStartInfo.cb = sizeof(STARTUPINFO);
+	siStartInfo.hStdError = pw->hChildStdOutW;
+	siStartInfo.hStdOutput = pw->hChildStdOutW;
+	siStartInfo.hStdInput = pw->hChildStdInR;  //NULL;
+	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+	bSuccess = CreateProcess(NULL,
+							 pw->szCmdline,
+							 NULL,  // process security attributes
+							 NULL,  // primary thread security attributes
+							 TRUE,  // inherit handles
+
+
+							 // creation flags
+
+							 //CREATE_NEW_CONSOLE,
+							 CREATE_NO_WINDOW,
+
+							 NULL,  // use parent environment
+							 NULL,  // use parent current directory
+							 &siStartInfo,
+							 &pw->piProcInfo);
+	if (!bSuccess) {
+		Com_Printf("^1%s couldn't create process '%s'  error: %ld\n", __FUNCTION__, command, GetLastError());
+		CloseHandle(pw->hChildStdInR);
+		CloseHandle(pw->hChildStdInW);
+		CloseHandle(pw->hChildStdOutR);
+		CloseHandle(pw->hChildStdOutW);
+		free(pw);
+		free(p);
+		return NULL;
+	}
+
+	//CloseHandle(pw->piProcInfo.hProcess);
+	//CloseHandle(pw->piProcInfo.hThread);
+	
+	//Sys_Sleep(15000);
+	CloseHandle(pw->hChildStdOutW);
+	CloseHandle(pw->hChildStdInW);
+	
+	pw->readMutex = CreateMutex(NULL, FALSE, NULL);
+	if (pw->readMutex == NULL) {
+		Com_Printf("^1%s couldn't create mutex %ld\n", __FUNCTION__, GetLastError());
+		CloseHandle(pw->piProcInfo.hProcess);
+		CloseHandle(pw->piProcInfo.hThread);
+		CloseHandle(pw->hChildStdInR);
+		CloseHandle(pw->hChildStdOutR);
+		free(pw);
+		free(p);
+		return NULL;
+	}
+
+	pw->threadHandle = (HANDLE) _beginthreadex(NULL,
+											   0,  // stack size
+											   Proc_ReadThreadFunc,
+											   pw,  // param pointer
+											   0,  // initflag
+											   &pw->threadId);
+	if (pw->threadHandle == NULL) {
+		Com_Printf("^1%s couldn't create thread %ld\n", __FUNCTION__, GetLastError());
+		CloseHandle(pw->readMutex);
+		CloseHandle(pw->piProcInfo.hProcess);
+		CloseHandle(pw->piProcInfo.hThread);
+		CloseHandle(pw->hChildStdInR);
+		CloseHandle(pw->hChildStdOutR);
+		free(pw);
+		free(p);
+		return NULL;
+	}
+
+	return p;
+}
+
+void Sys_PopenClose (popenData_t *p)
+{
+	popenDataWin_t *pw;
+	DWORD r;
+	BOOL bResult;
+	DWORD exitCode;
+
+	if (p == NULL) {
+		Com_Printf("^1%s p == NULL\n", __FUNCTION__);
+		return;
+	}
+
+	if (p->data == NULL) {
+		Com_Printf("^1%s p->data == NULL\n", __FUNCTION__);
+		return;
+	}
+
+	pw = p->data;
+
+	r = WaitForSingleObject(pw->readMutex, INFINITE);
+	if (r) {
+		Com_Printf("^1%s failed to get mutex (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+	}
+
+	pw->threadCancel = TRUE;
+
+	r = ReleaseMutex(pw->readMutex);
+	if (!r) {
+		Com_Printf("^1%s failed to release mutex (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+
+	}
+
+	// join thread
+	r = WaitForSingleObject(pw->threadHandle, INFINITE);
+	if (r) {
+		Com_Printf("^1%s couldn't wait for thread (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+	}
+
+	CloseHandle(pw->threadHandle);
+	CloseHandle(pw->readMutex);
+
+	// close process
+	r = WaitForSingleObject(pw->piProcInfo.hProcess, INFINITE);
+	if (r) {
+		Com_Printf("^1%s couldn't wait for process to finish (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+	}
+	bResult = GetExitCodeProcess(pw->piProcInfo.hProcess, &exitCode);
+	if (bResult == FALSE) {
+		Com_Printf("^1%s couldn't get process exit code %ld\n", __FUNCTION__, GetLastError());
+	}
+
+	Com_Printf("popen done: %ld\n", exitCode);
+
+	CloseHandle(pw->piProcInfo.hProcess);
+	CloseHandle(pw->piProcInfo.hThread);
+	CloseHandle(pw->hChildStdInR);
+	CloseHandle(pw->hChildStdOutR);
+
+	free(p->data);
+}
+
+char *Sys_PopenGetLine (popenData_t *p, char *buffer, int size)
+{
+	popenDataWin_t *pw;
+	char *retp = NULL;
+	DWORD r;
+	BOOL bResult;
+
+	if (p == NULL) {
+		Com_Printf("^1%s p == NULL\n", __FUNCTION__);
+		return NULL;
+	}
+
+	if (p->data == NULL) {
+		Com_Printf("^1%s p->data == NULL\n", __FUNCTION__);
+		return NULL;
+	}
+
+	pw = p->data;
+
+	//Com_Printf("%p\n", pw);  // silence gcc
+
+	r = WaitForSingleObject(pw->readMutex, INFINITE);
+	if (r) {
+		Com_Printf("^1%s couldn't get mutex (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+		pw->threadCancel = TRUE;
+		return NULL;
+	}
+
+	if (pw->threadStatus == POPEN_DATA_EMPTY  ||  pw->threadStatus == POPEN_DONE) {
+		// pass
+		retp = NULL;
+	} else if (pw->threadStatus == POPEN_DATA_AVAILABLE) {
+		char *p;
+		char *s;
+		int minSize;
+		int i;
+		int j;
+
+		// return data
+
+		minSize = size;
+		if (minSize > sizeof(pw->buffer)) {
+			minSize = sizeof(pw->buffer);
+		}
+
+		s = buffer;
+		p = pw->buffer;
+
+		//Com_Printf("^5 buffer orig: '%s'\n", pw->buffer);
+
+		for (i = 0;  i < minSize - 1;  i++) {
+			if (*p == '\0') {
+				*s = *p;
+				break;
+			} else if (*p == '\r') {
+				// skip
+				s--;
+			} else if (*p == '\n') {
+				*s = *p;
+				break;
+			} else {
+				*s = *p;
+			}
+
+			s++;
+			p++;
+		}
+
+		//Com_Printf("^3 buffer:  '%s'\n", buffer);
+
+		if (*s == '\0') {
+			pw->threadStatus = POPEN_DATA_EMPTY;
+			pw->buffer[0] = '\0';
+		} else {   // data still available, clear what was sent
+			int n;
+
+			s++;
+			*s = '\0';
+
+			p = pw->buffer;
+			for (j = i + 1, n = 0;  j < sizeof(pw->buffer) - 1;  j++, n++) {
+				p[n] = p[j];
+				if (p[n] == '\0') {
+					break;
+				}
+			}
+
+			//Com_Printf("^2 buffer new: '%s'\n", pw->buffer);
+		}
+
+		retp = buffer;
+	} else {
+		Com_Printf("^1%s invalid thread status %d\n", __FUNCTION__, pw->threadStatus);
+		retp = NULL;
+	}
+
+	bResult = ReleaseMutex(pw->readMutex);
+	if (bResult == FALSE) {
+		Com_Printf("^1%s  couldn't release mutex error: %ld\n", __FUNCTION__, GetLastError());
+		pw->threadCancel = TRUE;
+		return NULL;
+	}
+
+	return retp;
+}
+
+qboolean Sys_PopenIsDone (popenData_t *p)
+{
+	popenDataWin_t *pw;
+	DWORD r;
+	BOOL bResult;
+	int status;
+
+	if (p == NULL) {
+		Com_Printf("^1%s p == NULL\n", __FUNCTION__);
+		return qtrue;
+	}
+
+	if (p->data == NULL) {
+		Com_Printf("^1%s p->data == NULL\n", __FUNCTION__);
+		return qtrue;
+	}
+
+	pw = p->data;
+
+	r = WaitForSingleObject(pw->readMutex, INFINITE);
+	if (r) {
+		Com_Printf("^1%s couldn't get mutex (0x%x) error: %ld\n", __FUNCTION__, (unsigned int)r, GetLastError());
+		pw->threadCancel = TRUE;
+		return qtrue;
+	}
+
+	status = pw->threadStatus;
+
+	bResult = ReleaseMutex(pw->readMutex);
+	if (bResult == FALSE) {
+		Com_Printf("^1%s  couldn't release mutex error: %ld\n", __FUNCTION__, GetLastError());
+		pw->threadCancel = TRUE;
+		return qtrue;
+	}
+
+	if (status != POPEN_DATA_EMPTY  &&  status != POPEN_DATA_AVAILABLE) {
+		//Com_Printf("^5 status %d\n", status);
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
+const char *Sys_GetSteamCmd (void)
+{
+	const char *s;
+
+	s = Cvar_VariableString("fs_steamcmd");
+
+	if (s  &&  *s) {
+		return s;
+	} else {
+		return "steamcmd.exe";
 	}
 }

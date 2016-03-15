@@ -936,21 +936,29 @@ static void CG_SeekClock_f (void)
 		if (currentTime > clockTimeWanted) {
 			timeLength = currentTime - clockTimeWanted;
 			timeLength = CG_AdjustTimeForTimeouts(timeLength, qfalse);
-			trap_SendConsoleCommand(va("rewind %f\n", (double)(timeLength / 1000.0)));
+			// using 'now' since other demo seek commands could occur in this
+			// frame
+			trap_SendConsoleCommandNow(va("rewind %f\n", (double)(timeLength / 1000.0)));
 		} else if (currentTime < clockTimeWanted) {
 			timeLength = clockTimeWanted - currentTime;
 			timeLength = CG_AdjustTimeForTimeouts(timeLength, qtrue);
-			trap_SendConsoleCommand(va("fastforward %f\n", (double)(timeLength / 1000.0)));
+			// using 'now' since other demo seek commands could occur in this
+			// frame
+			trap_SendConsoleCommandNow(va("fastforward %f\n", (double)(timeLength / 1000.0)));
 		}
 	} else {
 		if (currentTime > clockTimeWanted) {
 			timeLength = currentTime - clockTimeWanted;
 			timeLength = CG_AdjustTimeForTimeouts(timeLength, qtrue);
-			trap_SendConsoleCommand(va("fastforward %f\n", (double)(timeLength / 1000.0)));
+			// using 'now' since other demo seek commands could occur in this
+			// frame
+			trap_SendConsoleCommandNow(va("fastforward %f\n", (double)(timeLength / 1000.0)));
 		} else if (currentTime < clockTimeWanted) {
 			timeLength = clockTimeWanted - currentTime;
 			timeLength = CG_AdjustTimeForTimeouts(timeLength, qfalse);
-			trap_SendConsoleCommand(va("rewind %f\n", (double)(timeLength / 1000.0)));
+			// using 'now' since other demo seek commands could occur in this
+			// frame
+			trap_SendConsoleCommandNow(va("rewind %f\n", (double)(timeLength / 1000.0)));
 		}
 	}
 }
@@ -993,8 +1001,8 @@ static void CG_EchoPopup_f (void)
 	}
 #endif
 
-	cg.echoPopupX = cg_echoPopupX.integer;
-	cg.echoPopupY = cg_echoPopupY.integer;
+	cg.echoPopupX = cg_echoPopupX.value;
+	cg.echoPopupY = cg_echoPopupY.value;
 	cg.echoPopupWideScreen = cg_echoPopupWideScreen.integer;
 	cg.echoPopupScale = cg_echoPopupScale.value;
 }
@@ -6534,6 +6542,12 @@ static void CG_ListAtCommands_f (void)
 	int i;
 	const atCommand_t *at;
 
+#if 0
+	if (cg_levelTimerDirection.integer != 0  &&  cg_levelTimerDirection.integer != 2) {
+		Com_Printf("^3warning: level timer counts down and clock values will be incorrect\n");
+	}
+#endif
+
 	for (i = 0;  i < MAX_AT_COMMANDS;  i++) {
 		at = &cg.atCommands[i];
 		if (!at->valid) {
@@ -6761,6 +6775,10 @@ static void CG_EntityFreeze_f (void)
 		return;
 	}
 
+	if (!cg.snap) {
+		return;
+	}
+
 	arg = CG_Argv(1);
 
 	if (!Q_stricmpn(arg, "clear", strlen("clear"))) {
@@ -6869,6 +6887,10 @@ static void CG_MouseSeekUp_f (void)
 static void CG_PrintLegsInfo (int entNumber)
 {
 	const lerpFrame_t *lf;
+
+	if (!cg.snap) {
+		return;
+	}
 
 	if (entNumber < 0  ||  entNumber >= MAX_GENTITIES) {
 		return;
@@ -7535,66 +7557,6 @@ static void CG_PrintDirVector_f (void)
 	Com_Printf("%f %f %f\n", dir[0], dir[1], dir[2]);
 }
 
-#if 0
-static void CG_ImportQ3mmeCamera_f (void)
-{
-	int len;
-	qhandle_t f;
-	char filename[MAX_QPATH];
-	const char *line;
-	qboolean gotPoint;
-	cameraPoint_t *cp;
-
-	if (CG_Argc() < 2) {
-		Com_Printf("usage:  importq3mmecamera <filename>\n");
-		return;
-	}
-
-	cp = NULL;
-	Com_sprintf(filename, sizeof(filename), "%s", CG_Argv(1));
-
-	trap_FS_FOpenFile(filename, &f, FS_READ);
-
-	cg.numCameraPoints = 0;
-	gotPoint = qfalse;
-	while (1) {
-		line = CG_FS_ReadLine(f, &len);
-		if (len == 0) {
-			return;
-		}
-		CG_LStrip(&line);
-		if (!Q_stricmpn(line, "</point>", strlen("</point>") - 1)) {
-			gotPoint = qfalse;
-		}
-
-		if (!Q_stricmpn(line, "<point>", strlen("<point>") - 1)) {
-			gotPoint = qtrue;
-			cp = &cg.cameraPoints[cg.numCameraPoints];
-			memset(cp, 0, sizeof (*cp));
-			cp->type = CAMERA_SPLINE;
-			cg.numCameraPoints++;
-			continue;
-		}
-		if (gotPoint) {
-			if (!Q_stricmpn(line, "<time>", strlen("<time>") - 1)) {
-				sscanf(line + strlen("<time>"), "%lf", &cp->cgtime);
-				cp->cgtime += trap_GetFirstServerTime();
-				Com_Printf("%d: time %f\n", cg.numCameraPoints - 1, cp->cgtime);
-			} else if (!Q_stricmpn(line, "<origin>", strlen("<origin>") - 1)) {
-				sscanf(line + strlen("<origin>"), "%f %f %f", &cp->origin[0], &cp->origin[1], &cp->origin[2]);
-				Com_Printf("%f %f %f\n", cp->origin[0], cp->origin[1], cp->origin[2]);
-			} else if (!Q_stricmpn(line, "<angles>", strlen("<angles>") - 1)) {
-				sscanf(line + strlen("<angles>"), "%f %f %f", &cp->angles[0], &cp->angles[1], &cp->angles[2]);
-				Com_Printf("a %f %f %f\n", cp->angles[0], cp->angles[1], cp->angles[2]);
-			}
-		}
-	}
-
-	CG_UpdateCameraInfo();
-	trap_FS_FCloseFile(f);
-}
-#endif
-
 static void CG_EventFilter_f (void)
 {
 	int id;
@@ -7878,6 +7840,15 @@ static void CG_LoadQ3mmeCamera_f (void)
 	}
 }
 
+// testing
+#if 0
+static void CG_BackDown_f (void)
+{
+	Com_Printf("+back !!!!!!!!!!!!!!!!!!!!\n");
+}
+#endif
+
+
 typedef struct {
 	const char *cmd;
 	void (*function)(void);
@@ -8066,6 +8037,7 @@ static consoleCommand_t	commands[] = {
 	{ "stopq3mmecamera", CG_StopQ3mmeCamera_f },
 	{ "saveq3mmecamera", CG_SaveQ3mmeCamera_f },
 	{ "loadq3mmecamera", CG_LoadQ3mmeCamera_f },
+	//{ "+back", CG_BackDown_f },
 
 };
 

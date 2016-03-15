@@ -835,6 +835,32 @@ void CG_Q3ColorFromString (const char *v, vec3_t color)
 	}
 }
 
+void CG_CpmaColorFromPicString (const floatint_t *v, vec3_t color)
+{
+	int n;
+	char c;
+
+	VectorClear(color);
+	c = v[0].i;
+
+	if (c == 'y'  ||  c == 'Y'  ||  c == 'z'  ||  c == 'Z') {
+		VectorSet(color, 1, 1, 1);
+	} else if ((c >= 'a'  &&  c < 'y')  ||  (c >= 'A'  &&  c < 'Y')) {
+		c = (char)tolower(v[0].i);
+		n = c - 'a';
+		VectorCopy(g_color_table_ql_0_1_0_303[n], color);
+	} else {
+#if 0
+		color[0] = g_color_table_q3[ColorIndex(v[0].i)][0];
+		color[1] = g_color_table_q3[ColorIndex(v[0].i)][1];
+		color[2] = g_color_table_q3[ColorIndex(v[0].i)][2];
+#endif
+		color[0] = g_color_table[ColorIndex(v[0].i)][0];
+		color[1] = g_color_table[ColorIndex(v[0].i)][1];
+		color[2] = g_color_table[ColorIndex(v[0].i)][2];
+	}
+}
+
 void CG_CpmaColorFromString (const char *v, vec3_t color)
 {
 	int n;
@@ -861,40 +887,40 @@ void CG_CpmaColorFromString (const char *v, vec3_t color)
 	}
 }
 
-void CG_OspColorFromIntString (const int *v, vec3_t color)
+void CG_OspColorFromPicString (const floatint_t *v, vec3_t color)
 {
 	char hexString[16];
 	int c;
 
 	//VectorClear(color);
 
-	c = v[0];
+	c = v[0].i;
 
-	if (v[0] == 'x'  ||  v[0] == 'X') {
+	if (v[0].i == 'x'  ||  v[0].i == 'X') {
 		vmCvar_t tmpCvar;
 
 		//Com_sprintf(hexString, sizeof(hexString), "0x%s", v + 1);
 		hexString[0] = '0';
 		hexString[1] = 'x';
 		//memcpy(hexString + 2, v + 1, 6);
-		hexString[2] = (char)v[1];
-		hexString[3] = (char)v[2];
-		hexString[4] = (char)v[3];
-		hexString[5] = (char)v[4];
-		hexString[6] = (char)v[5];
-		hexString[7] = (char)v[6];
+		hexString[2] = (char)v[1].i;
+		hexString[3] = (char)v[2].i;
+		hexString[4] = (char)v[3].i;
+		hexString[5] = (char)v[4].i;
+		hexString[6] = (char)v[5].i;
+		hexString[7] = (char)v[6].i;
 		hexString[8] = '\0';
 		//tmpCvar.integer = Com_HexStrToInt(va("0x%s", v + 1));
 		tmpCvar.integer = Com_HexStrToInt(hexString);
 		//Com_Printf("osp color 0x%s\n", v + 1);
 		SC_Vec3ColorFromCvar(color, &tmpCvar);
-	} else if (v[0] == 'b'  ||  v[0] == 'B'  ||  v[0] == 'f'  ||  v[0] == 'F'  ||  v[0] == 'N') {  // 'n' ?
+	} else if (v[0].i == 'b'  ||  v[0].i == 'B'  ||  v[0].i == 'f'  ||  v[0].i == 'F'  ||  v[0].i == 'N') {  // 'n' ?
 		//FIXME  this is dumb...  caller has to make sure color is reset
 
 		// do nothing
 
-	} else if (v[0] >= '0'  &&  v[0] <= '9') {
-		if (v[0] == '8') {
+	} else if (v[0].i >= '0'  &&  v[0].i <= '9') {
+		if (v[0].i == '8') {
 			c = '3';
 		}
 		color[0] = g_color_table[ColorIndex(c)][0];
@@ -1362,6 +1388,7 @@ static void CG_WhiteName (char *out, const char *in)
 {
 	int i;
 	int j;
+	int len;
 
 	if (!out ||  !in) {
 		return;
@@ -1370,22 +1397,29 @@ static void CG_WhiteName (char *out, const char *in)
 		return;
 	}
 
+	out[0] = '\0';
+
+	len = strlen(in);
 	i = 0;
 	j = 0;
 	while (1) {
-		if (in[i] == '\0') {
+		if (i >= len  ||  in[i] == '\0') {
 			out[j] = '\0';
 			break;
 		}
 		if (in[i] == '^') {
-			i++;
-			if (in[i] == '\0') {
+			if (in[i + 1] == '\0') {
 				out[j] = '\0';
 				break;
-			} else {
-				i++;
-				continue;
 			}
+
+			if (cgs.osp) {
+				if (in[i + 1] == 'x'  ||  in[i + 1] == 'X') {
+					i += 8;
+				}
+			}
+			i += 2;
+			continue;
 		}
 		out[j] = in[i];
 		i++;
@@ -3154,7 +3188,7 @@ static void CG_PlayerFloatSpriteNameExt (const centity_t *cent, qhandle_t shader
 	memset( &ent, 0, sizeof( ent ) );
 	VectorCopy( cent->lerpOrigin, ent.origin );
 	ent.origin[2] += 20;  // 2014-09-21 new ql font scale
-	ent.origin[2] += cg_drawPlayerNamesY.integer;  //48;  //48
+	ent.origin[2] += cg_drawPlayerNamesY.value;  //48;  //48
 	ent.reType = RT_SPRITE;
 	ent.customShader = shader;
 
@@ -4491,6 +4525,12 @@ static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, ref
 
 	if (cgs.gametype == GT_RACE  &&  !CG_IsUs(ci)) {
 		if (cg_racePlayerShader.integer) {
+			legs->customShader = cgs.media.noPlayerClipShader;
+			torso->customShader = cgs.media.noPlayerClipShader;
+			head->customShader = cgs.media.noPlayerClipShader;
+		}
+	} else if (cgs.gametype == GT_RACE  &&  CG_IsUs(ci)) {
+		if (cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 4) {
 			legs->customShader = cgs.media.noPlayerClipShader;
 			torso->customShader = cgs.media.noPlayerClipShader;
 			head->customShader = cgs.media.noPlayerClipShader;

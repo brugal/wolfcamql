@@ -1643,7 +1643,7 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 		return c;
 	} else if ((c & 0xe0) == 0xc0) {  // 2 bytes 110xxxxx 10xxxxxx
 		if (qfalse) {  //(s[1] == '\0') {  // not enough bytes to read
-			Com_Printf("^3Q_GetCpFromUtf8 two byte utf8 sequenced terminated, %d\n", c);
+			Com_Printf("^3Q_GetCpFromUtf8 two byte utf8 sequence terminated, %d\n", c);
 			*bytes = 1;
 			//FIXME return a standard invalid char
 			*error = qtrue;
@@ -1655,7 +1655,7 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 		return ( ((b0 & 0x1f) << 6) | (b1 & 0x3f) );
 	} else if ((c & 0xf0) == 0xe0) {  // 3 bytes 1110xxxx 10xxxxxx 10xxxxxx
 		if (qfalse) {  //(s[1] == '\0'  ||  s[2] == '\0') {
-			Com_Printf("^3Q_GetCpFromUtf8  three byte utf8 sequenced terminated, %d\n", c);
+			Com_Printf("^3Q_GetCpFromUtf8  three byte utf8 sequence terminated, %d\n", c);
 			//Com_Printf("%s\n", s);
 			*bytes = 1;
 			//FIXME return a standard invalid char
@@ -1669,7 +1669,7 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 		return ( ((b0 & 0xf) << 12) | ((b1 & 0x3f) << 6) | (b2 & 0x3f));
 	} else if ((c & 0xf8) == 0xf0) {  // 4 bytes 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
 		if (qfalse) {  //(s[1] == '\0'  ||  s[2] == '\0'  ||  s[3] == '\0') {
-			Com_Printf("^3Q_GetCpFromUtf8  four byte utf8 sequenced terminated, %d\n", c);
+			Com_Printf("^3Q_GetCpFromUtf8  four byte utf8 sequence terminated, %d\n", c);
 			*bytes = 1;
 			//FIXME return a standard invalid char
 			*error = qtrue;
@@ -1688,4 +1688,45 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 	*error = qtrue;
 	*bytes = 1;
 	return c;
+}
+
+//FIXME implement
+void Q_GetUtf8FromCp (int codePoint, char *buffer, int *numBytes, qboolean *error)
+{
+	*error = qfalse;
+
+	//FIXME bad encodings
+
+	if (codePoint < 0) {
+		Com_Printf("^3Q_GetUtf8FromCp:  codePoint less than zero  %d\n", codePoint);
+		goto err;
+	} else if (codePoint <= 0x7f) {  // 7bits: 0xxxxxxx
+		buffer[0] = codePoint;
+		*numBytes = 1;
+		return;
+	} else if (codePoint <= 0x7ff) {  // 11bits: 110xxxxx 10xxxxxx
+		buffer[0] = ((codePoint >> 6) & 0x1f) | 0xc0;
+		buffer[1] = (codePoint & 0x3f) | 0x80;
+		*numBytes = 2;
+		return;
+	} else if (codePoint <= 0xffff) {  // 16bits: 1110xxxx 10xxxxxx 10xxxxxx
+		buffer[0] = ((codePoint >> 12) & 0xf) | 0xe0;
+		buffer[1] = ((codePoint >> 6) & 0x3f) | 0x80;
+		buffer[2] = (codePoint & 0x3f) | 0x80;
+		*numBytes = 3;
+		return;
+	} else if (codePoint <= 0x1fffff) {  // 21bits: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+		//FIXME Unicode max is U+10FFFF
+		buffer[0] = ((codePoint >> 18) & 0x7) | 0xf0;
+		buffer[1] = ((codePoint >> 12) & 0x3f) | 0x80;
+		buffer[2] = ((codePoint >> 6) & 0x3f) | 0x80;
+		buffer[3] = (codePoint & 0x3f) | 0x80;
+		*numBytes = 4;
+		return;
+	}
+
+ err:
+	buffer[0] = codePoint & 127;
+	*numBytes = 1;
+	*error = qtrue;
 }

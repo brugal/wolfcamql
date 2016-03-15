@@ -356,8 +356,8 @@ typedef struct {
 	void (*drawHandlePic) (float x, float y, float w, float h, qhandle_t asset, int widescreen, rectDef_t menuRect);
 	void (*drawStretchPic) (float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader, int widescreen, rectDef_t menuRect);
 	void (*drawText) (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex, int widescreen, rectDef_t menuRect);
-	int (*textWidth) (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect);
-	int (*textHeight) (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect);
+	float (*textWidth) (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect);
+	float (*textHeight) (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect);
   qhandle_t (*registerModel) (const char *p);
   void (*modelBounds) (qhandle_t model, vec3_t min, vec3_t max);
 	void (*fillRect) (float x, float y, float w, float h, const vec4_t color, int widescreen, rectDef_t menuRect);
@@ -394,7 +394,7 @@ typedef struct {
 	void (*Error)(int level, const char *error, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
 	void (*Print)(const char *msg, ...) __attribute__ ((format (printf, 1, 2)));
 	void (*Pause)(qboolean b);
-	int (*ownerDrawWidth)(int ownerDraw, float scale, int fontIndex, int widescreen, rectDef_t menuRect);
+	float (*ownerDrawWidth)(int ownerDraw, float scale, int fontIndex, int widescreen, rectDef_t menuRect);
 	sfxHandle_t (*registerSound)(const char *name, qboolean compressed);
 	void (*startBackgroundTrack)( const char *intro, const char *loop);
 	void (*stopBackgroundTrack)( void );
@@ -431,7 +431,7 @@ void Init_Display(displayContextDef_t *dc);
 void Display_ExpandMacros(char * buff);
 void Menu_Init(menuDef_t *menu);
 void Item_Init(itemDef_t *item);
-void Menu_PostParse(menuDef_t *menu);
+//void Menu_PostParse(menuDef_t *menu);
 menuDef_t *Menu_GetFocused( void );
 void Menu_HandleKey(menuDef_t *menu, int key, qboolean down);
 void Menu_HandleMouseMove(menuDef_t *menu, float x, float y);

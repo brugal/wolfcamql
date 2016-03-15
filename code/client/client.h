@@ -32,6 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../cgame/cg_public.h"
 #include "../game/bg_public.h"
 #include "cl_avi.h"
+#include "../sys/sys_local.h"
 
 #ifdef USE_CURL
 #include "cl_curl.h"
@@ -224,6 +225,12 @@ typedef struct {
 	qboolean	spDemoRecording;
 	qboolean	demorecording;
 	qboolean	demoplaying;
+	int demoPlayBegin;
+	const char *demoWorkshopsString;
+	char currentWorkshop[MAX_STRING_CHARS];
+
+	popenData_t *wfp;
+
 	qboolean	demowaiting;	// don't record until a non-delta message is received
 	qboolean	firstDemoFrameSkipped;
 	fileHandle_t demoReadFile;
@@ -554,7 +561,7 @@ extern cvar_t *cl_keepDemoFileInMemory;
 extern cvar_t *cl_demoFileCheckSystem;
 extern cvar_t *cl_demoFile;
 extern cvar_t *cl_demoFileBaseName;
-
+extern cvar_t *cl_downloadWorkshops;
 
 extern double Overf;
 
@@ -655,6 +662,7 @@ void Con_Clear_f (void);
 void Con_ToggleConsole_f (void);
 void Con_DrawNotify (void);
 void Con_ClearNotify (void);
+void Con_DrawConsoleLinesOver (int xpos, int ypos, int numLines);
 void Con_RunConsole (void);
 void Con_DrawConsole (void);
 void Con_PageUp( void );

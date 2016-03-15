@@ -21,7 +21,7 @@ void CG_DrawBigStringColor( int x, int y, const char *s, const vec4_t color );
 void CG_DrawSmallString( int x, int y, const char *s, float alpha );
 void CG_DrawSmallStringColor( int x, int y, const char *s, const vec4_t color );
 
-int CG_DrawStrlen( const char *str, const fontInfo_t *font );
+float CG_DrawStrlen( const char *str, const fontInfo_t *font );
 
 void CG_TileClear( void );
 

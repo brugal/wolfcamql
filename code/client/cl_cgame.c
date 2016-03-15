@@ -977,6 +977,8 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		return 0;
 	case CG_R_GETGLYPHINFO:
 		return re.GetGlyphInfo(VMA(1), args[2], VMA(3));
+	case CG_R_GETFONTINFO:
+		return re.GetFontInfo(args[1], VMA(2));
 	case CG_R_CLEARSCENE:
 		re.ClearScene();
 		return 0;
@@ -1194,6 +1196,8 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		return di.gameEndTime;
 	case CG_GETFIRSTSERVERTIME:
 		return di.firstServerTime;
+	case CG_GETLASTSERVERTIME:
+		return di.lastServerTime;
 	case CG_GETLEGSANIMSTARTTIME: {
 		if (args[1] < 0  ||  args[1] >= MAX_GENTITIES) {
 			return -1;

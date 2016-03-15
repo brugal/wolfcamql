@@ -30,9 +30,9 @@ void CG_DrawTextDc (float x, float y, float scale, const vec4_t color, const cha
     wsoff();
 }
 
-int CG_TextWidthDc (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect)
+float CG_TextWidthDc (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect)
 {
-    int r;
+    float r;
 
     wsset();
     //FIXME widescreen
@@ -42,9 +42,9 @@ int CG_TextWidthDc (const char *text, float scale, int limit, int fontIndex, int
     return r;
 }
 
-int CG_TextHeightDc (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect)
+float CG_TextHeightDc (const char *text, float scale, int limit, int fontIndex, int widescreen, rectDef_t menuRect)
 {
-    int r;
+    float r;
 
     wsset();
     //FIXME widescreen
@@ -94,7 +94,7 @@ static void CG_Text_PaintWithCursor (float x, float y, float scale, const vec4_t
 
 	 CG_Text_Paint(x, y, scale, color, text, 0, limit, style, font);
 
-	 Com_Printf("FIXME cursor\n");
+	 Com_Printf("FIXME cursor (%s)\n", text);
 	 //FIXME cursor
 }
 
@@ -106,7 +106,7 @@ void CG_DrawTextWithCursorDc (float x, float y, float scale, const vec4_t color,
     wsoff();
 }
 
-static int CG_OwnerDrawWidth (int ownerDraw, float scale, int fontIndex)
+static float CG_OwnerDrawWidth (int ownerDraw, float scale, int fontIndex)
 {
 	 const fontInfo_t *font;
 	 const char *s;
@@ -124,19 +124,19 @@ static int CG_OwnerDrawWidth (int ownerDraw, float scale, int fontIndex)
 		  vec4_t color = { 1, 1, 1, 1 };
 
 		  return CG_Text_Width(CG_GetGameStatusText(color), scale, 0, font);
-			break;
+		  break;
 	  }
 	  case CG_KILLER:
 		  return CG_Text_Width(CG_GetKillerText(), scale, 0, font);
-			break;
+		  break;
 	  case CG_RED_NAME:
 		  //return CG_Text_Width(cg_redTeamName.string, scale, 0, font);
 		  return CG_Text_Width(cgs.redTeamName, scale, 0, font);
-			break;
+		  break;
 	  case CG_BLUE_NAME:
 		  //return CG_Text_Width(cg_blueTeamName.string, scale, 0, font);
 		  return CG_Text_Width(cgs.blueTeamName, scale, 0, font);
-			break;
+		  break;
 	case UI_KEYBINDSTATUS:
 		if (Display_KeyBindPending()) {
 			s = "Waiting for new key... Press ESCAPE to cancel";
@@ -153,9 +153,9 @@ static int CG_OwnerDrawWidth (int ownerDraw, float scale, int fontIndex)
 }
 
 //FIXME is it even used?
-int CG_OwnerDrawWidthDc (int ownerDraw, float scale, int fontIndex, int widescreen, rectDef_t menuRect)
+float CG_OwnerDrawWidthDc (int ownerDraw, float scale, int fontIndex, int widescreen, rectDef_t menuRect)
 {
-    int r;
+    float r;
 
     wsset();
     //FIXME widescreen

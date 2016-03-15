@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // common.c -- misc functions used in client and server
 
-//#include <unistd.h>
+#include <unistd.h>
 
 #include "q_shared.h"
 #include "qcommon.h"
@@ -53,6 +53,10 @@ char	*com_argv[MAX_NUM_ARGVS+1];
 
 jmp_buf abortframe;		// an ERR_DROP occured, exit the entire frame
 
+#ifdef _WIN32
+CRITICAL_SECTION printCriticalSection;
+#endif
+
 
 FILE *debuglogfile;
 static fileHandle_t logfile;
@@ -78,6 +82,7 @@ cvar_t	*com_version;
 cvar_t	*com_blood;
 cvar_t	*com_buildScript;	// for automated data building scripts
 cvar_t	*com_introPlayed;
+cvar_t *com_logo;
 cvar_t	*cl_paused;
 cvar_t	*sv_paused;
 cvar_t  *cl_packetdelay;
@@ -93,6 +98,7 @@ cvar_t *com_protocol;
 cvar_t *com_autoWriteConfig;
 cvar_t *com_execVerbose;
 cvar_t *com_qlColors;
+cvar_t *com_idleSleep;
 
 #if idx64
 int (*Q_VMftol)(void);
@@ -122,6 +128,7 @@ char	com_errorMessage[MAX_PRINT_MSG];
 
 void Com_WriteConfig_f( void );
 void CIN_CloseAllVideos( void );
+static void Com_Crash_f (void);
 
 mapNames_t MapNames[] = {
 	{ "maps/qzdm1.bsp", "maps/arenagate.bsp", NULL, NULL },  // The Gate
@@ -225,6 +232,10 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 	Q_vsnprintf (msg, sizeof(msg), fmt, argptr);
 	va_end (argptr);
 
+#ifdef _WIN32
+	EnterCriticalSection(&printCriticalSection);
+#endif
+
 	if ( rd_buffer ) {
 		if ((strlen (msg) + strlen(rd_buffer)) > (rd_buffersize - 1)) {
 			rd_flush(rd_buffer);
@@ -234,6 +245,10 @@ void QDECL Com_Printf( const char *fmt, ... ) {
     // TTimo nooo .. that would defeat the purpose
 		//rd_flush(rd_buffer);			
 		//*rd_buffer = 0;
+
+#ifdef _WIN32
+		LeaveCriticalSection(&printCriticalSection);
+#endif
 		return;
 	}
 
@@ -282,6 +297,10 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 			FS_Write(msg, strlen(msg), logfile);
 		}
 	}
+
+#ifdef _WIN32
+	LeaveCriticalSection(&printCriticalSection);
+#endif
 }
 
 
@@ -427,6 +446,11 @@ void Com_Quit_f( void ) {
 		Com_Shutdown ();
 		FS_Shutdown(qtrue);
 	}
+
+#ifdef _WIN32
+	DeleteCriticalSection(&printCriticalSection);
+#endif
+
 	Sys_Quit ();
 }
 
@@ -1025,6 +1049,11 @@ void *Z_TagMalloc( int size, int tag ) {
 		Com_Error( ERR_FATAL, "Z_TagMalloc: tried to use a 0 tag" );
 	}
 
+	if (size < 0) {
+		Com_Printf("^1Z_TagMalloc:  size < 0 : %d\n", size);
+		return NULL;
+	}
+
 	if ( tag == TAG_SMALL ) {
 		zone = smallzone;
 	}
@@ -1054,8 +1083,12 @@ void *Z_TagMalloc( int size, int tag ) {
 			Z_LogHeap();
 			Com_Error(ERR_FATAL, "Z_Malloc: failed on allocation of %i bytes from the %s zone: %s, line: %d (%s)",size, zone == smallzone ? "small" : "main", file, line, label);
 #else
-			Com_Error( ERR_FATAL, "Z_Malloc: failed on allocation of %i bytes from the %s zone",
-								size, zone == smallzone ? "small" : "main");
+
+			//FIXME option to not call Com_Error()
+			//Com_Crash_f();
+			Com_Error( ERR_FATAL, "Z_Malloc: failed on allocation of %i bytes from the %s zone", size, zone == smallzone ? "small" : "main");
+
+			//Com_Printf("^1Z_Malloc:nd: failed on allocation of %i bytes from the %s zone\n", size, zone == smallzone ? "small" : "main");
 #endif
 			return NULL;
 		}
@@ -1064,7 +1097,7 @@ void *Z_TagMalloc( int size, int tag ) {
 		} else {
 			rover = rover->next;
 		}
-	} while (base->tag || base->size < size);
+	} while (base->tag || base->size < size);  // this is why size is checked for negative values at start of function
 
 	//
 	// found a block big enough
@@ -1073,7 +1106,7 @@ void *Z_TagMalloc( int size, int tag ) {
 	if (extra > MINFRAGMENT) {
 		// there will be a free fragment after the allocated block
 		new = (memblock_t *) ((byte *)base + size );
-		new->size = extra;
+		new->size = extra;  //FIXME 2016-03-13 crashed here
 		new->tag = 0;			// free block
 		new->prev = base;
 		new->id = ZONEID;
@@ -1122,7 +1155,12 @@ void *Z_Malloc( int size ) {
 #else
 	buf = Z_TagMalloc( size, TAG_GENERAL );
 #endif
-	Com_Memset( buf, 0, size );
+
+	//Com_Printf("buf: %p\n", buf);
+
+	if (buf != NULL) {
+		Com_Memset( buf, 0, size );
+	}
 
 	return buf;
 }
@@ -2895,6 +2933,7 @@ void Com_Init( char *commandLine ) {
 		Sys_Error ("Error during initialization");
 	}
 
+
 	// Clear queues
 	Com_Memset( &eventQueue[ 0 ], 0, MAX_QUEUED_EVENTS * sizeof( sysEvent_t ) );
 	Com_Memset( &sys_packetReceived[ 0 ], 0, MAX_MSGLEN * sizeof( byte ) );
@@ -2996,6 +3035,7 @@ void Com_Init( char *commandLine ) {
 	com_standalone = Cvar_Get( "com_standalone", "0", CVAR_INIT );
 
 	com_introPlayed = Cvar_Get( "com_introplayed", "1", CVAR_ARCHIVE);
+	com_logo = Cvar_Get("com_logo", "0", CVAR_ARCHIVE);
 
 	s = va("%s %s %s", Q3_VERSION, PLATFORM_STRING, __DATE__ );
 	com_version = Cvar_Get ("version", s, CVAR_ROM | CVAR_SERVERINFO );
@@ -3003,6 +3043,9 @@ void Com_Init( char *commandLine ) {
 	com_autoWriteConfig = Cvar_Get("com_autoWriteConfig", "2", CVAR_ARCHIVE);
 	com_execVerbose = Cvar_Get("com_execVerbose", "0", CVAR_ARCHIVE);
 	com_qlColors = Cvar_Get("com_qlColors", "1", CVAR_ARCHIVE);
+	com_idleSleep = Cvar_Get("com_idleSleep", "1", CVAR_ARCHIVE);
+
+	Cvar_Get("com_workshopids", "", CVAR_ROM);
 
 	com_writeConfig = qtrue;
 
@@ -3036,10 +3079,16 @@ void Com_Init( char *commandLine ) {
 	if ( !Com_AddStartupCommands() ) {
 		// if the user didn't give any commands, run default action
 		if ( !com_dedicated->integer ) {
-			Cbuf_AddText ("cinematic idlogo.RoQ\n");
+			if (com_logo->integer) {
+				Cbuf_AddText ("cinematic " CINEMATICS_LOGO "\n");
+			}
 			if( !com_introPlayed->integer ) {
 				Cvar_Set( com_introPlayed->name, "1" );
-				Cvar_Set( "nextmap", "cinematic intro.RoQ" );
+				if (com_logo->integer) {
+					Cvar_Set( "nextmap", "cinematic " CINEMATICS_INTRO );
+				} else {
+					Cbuf_AddText("cinematic " CINEMATICS_INTRO "\n");
+				}
 			}
 		}
 	}
@@ -3312,27 +3361,31 @@ void Com_Frame( void ) {
 		// The existing Sys_Sleep implementations aren't really
 		// precise enough to be of use beyond 100fps
 		// FIXME: implement a more precise sleep (RDTSC or something)
-#if 1
+#if 0
 		if( timeRemaining >= 10 )
 			Sys_Sleep( timeRemaining );
 #endif
 
-		// testing
-#if 0
-		if (timeRemaining > 1) {
-			static int count = 0;
+#ifndef DEDICATED
+		if (com_idleSleep->integer  &&  !CL_VideoRecording(&afdMain)) {
+#else
+		if (com_idleSleep->integer) {
+#endif
+			if (timeRemaining > 1) {
+				static int count = 0;
 
-			count++;
-			if (count % 100 == 0) {
-				Com_Printf("sleeping: %d\n", timeRemaining);
-			}
-			//NET_Sleep(timeRemaining * 1000 - 1);
-			{
-				struct timespec tm;
-				usleep(timeRemaining - 1);
+				count++;
+				if (com_idleSleep->integer > 1  &&  (count % 100 == 0)) {
+					Com_Printf("sleeping: %d\n", timeRemaining);
+				}
+				//NET_Sleep(timeRemaining * 1000 - 1);
+				{
+					//struct timespec tm;
+					usleep((timeRemaining - 1) * 1000);
+				}
 			}
 		}
-#endif
+
 		com_frameTime = Com_EventLoop();
 		if ( lastTime > com_frameTime ) {
 			lastTime = com_frameTime;		// possible on first frame
@@ -3512,7 +3565,8 @@ Field_Clear
 ==================
 */
 void Field_Clear( field_t *edit ) {
-  memset(edit->buffer, 0, MAX_EDIT_LINE);
+	//memset(edit->buffer, 0, MAX_EDIT_LINE);
+	Com_Memset(edit->xbuffer, 0, sizeof(edit->xbuffer));
 	edit->cursor = 0;
 	edit->scroll = 0;
 }
@@ -3620,22 +3674,29 @@ static qboolean Field_Complete( void )
 	if( matchCount == 0 )
 		return qtrue;
 
-	completionOffset = strlen( completionField->buffer ) - strlen( completionString );
+	//FIXME utf8 completionString, shortestMatch
+	////completionOffset = strlen( completionField->buffer ) - strlen( completionString );
+	//FIXME utf8 strlen(completionString)
+	completionOffset = Field_Strlen(completionField) - strlen(completionString);
 
-	Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,
-		sizeof( completionField->buffer ) - completionOffset );
+	////Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch, sizeof( completionField->buffer ) - completionOffset );
+	//printf("shortest match: '%s'\n", shortestMatch);
+	Field_SetBuffer(completionField, shortestMatch, strlen(shortestMatch), completionOffset);
 
-	completionField->cursor = strlen( completionField->buffer );
+	////completionField->cursor = strlen( completionField->buffer );
+	completionField->cursor = Field_Strlen(completionField);
 
 	if( matchCount == 1 )
 	{
 		//FIXME wc why?????
-		Q_strcat( completionField->buffer, sizeof( completionField->buffer ), " " );
+		////Q_strcat( completionField->buffer, sizeof( completionField->buffer ), " " );
+		Field_Insert(completionField, Field_Strlen(completionField), ' ');
 		completionField->cursor++;
 		return qtrue;
 	}
 
-	Com_Printf( "]%s\n", completionField->buffer );
+	////Com_Printf( "]%s\n", completionField->buffer );
+	Com_Printf("]%s\n", Field_AsStr(completionField, 0, 0));
 
 	return qfalse;
 }
@@ -3714,23 +3775,32 @@ void Field_CompleteCommand( char *cmd,
 
 #ifndef DEDICATED
 	// Unconditionally add a '\' to the start of the buffer
-	if( completionField->buffer[ 0 ] &&
-			completionField->buffer[ 0 ] != '\\' )
+	if( completionField->xbuffer[ 0 ].codePoint  &&
+			completionField->xbuffer[ 0 ].codePoint != '\\' )
 	{
-		if( completionField->buffer[ 0 ] != '/' )
+		if( completionField->xbuffer[ 0 ].codePoint != '/' )
 		{
 			// Buffer is full, refuse to complete
-			if( strlen( completionField->buffer ) + 1 >=
-				sizeof( completionField->buffer ) )
+			////if( strlen( completionField->buffer ) + 1 >=
+			////	sizeof( completionField->buffer ) )
+			////	return;
+			if (Field_Strlen(completionField) + 1 >= MAX_EDIT_LINE) {
 				return;
+			}
 
-			memmove( &completionField->buffer[ 1 ],
-				&completionField->buffer[ 0 ],
-				strlen( completionField->buffer ) + 1 );
-			completionField->cursor++;
+			////memmove( &completionField->buffer[ 1 ],
+			////	&completionField->buffer[ 0 ],
+			////	strlen( completionField->buffer ) + 1 );
+			////completionField->cursor++;
+
+			Field_Insert(completionField, 0, '\\');
+		} else {  // it is equal to '/'
+			completionField->xbuffer[0].codePoint = '\\';
+			completionField->xbuffer[0].numUtf8Bytes = 1;
+			completionField->xbuffer[0].utf8Bytes[0] = '\\';
 		}
 
-		completionField->buffer[ 0 ] = '\\';
+		////completionField->buffer[ 0 ] = '\\';
 	}
 #endif
 
@@ -3793,7 +3863,191 @@ void Field_AutoComplete( field_t *field )
 {
 	completionField = field;
 
-	Field_CompleteCommand( completionField->buffer, qtrue, qtrue );
+	////Field_CompleteCommand( completionField->buffer, qtrue, qtrue );
+	Field_CompleteCommand(Field_AsStr(completionField, 0, 0), qtrue, qtrue);
+}
+
+size_t Field_Strlen (const field_t *field)
+{
+	int i;
+
+	if (field == NULL) {
+		Com_Printf("^1Field_Strlen:  field == NULL\n");
+		return 0;
+	}
+
+	for (i = 0;  i < MAX_EDIT_LINE;  i++) {
+		if (field->xbuffer[i].codePoint == 0) {
+			break;
+		}
+	}
+
+	if (i >= MAX_EDIT_LINE) {
+		Com_Printf("^1Field_Strlen:  couldn't find end of buffer\n");
+		return 0;
+	}
+
+	return i;
+}
+
+void Field_ToStr (char *p, const field_t *field, int skip, int len)
+{
+	size_t count = 0;
+	int i;
+
+	if (p == NULL) {
+		Com_Printf("^1Field_ToStr:  p == NULL\n");
+		return;
+	}
+
+	if (field == NULL) {
+		Com_Printf("^1Field_ToStr:  field == NULL\n");
+		return;
+	}
+
+	if (skip >= MAX_EDIT_LINE) {
+		Com_Printf("^1Field_ToStr:  skip value >= MAX_EDIT_LINE  (%d > %d)\n", skip, MAX_EDIT_LINE);
+		return;
+	}
+
+	if (skip < 0) {
+		Com_Printf("^1Field_ToStr:  invalid skip value %d\n", skip);
+		return;
+	}
+
+	for (i = skip;  i < MAX_EDIT_LINE;  i++) {
+		int n;
+
+		if (field->xbuffer[i].codePoint == 0) {
+			break;
+		}
+
+		if (len > 0  &&  count >= len) {
+			break;
+		}
+
+		for (n = 0;  n < field->xbuffer[i].numUtf8Bytes;  n++) {
+			p[0] = field->xbuffer[i].utf8Bytes[n];
+			p++;
+		}
+		count++;
+	}
+
+	p[0] = '\0';
+}
+
+static char FieldToStringBuffer[MAX_EDIT_LINE * 4];
+
+char *Field_AsStr (const field_t *field, int skip, int len)
+{
+	static int recursiveCalls = 0;
+
+	recursiveCalls++;
+	if (recursiveCalls > 1) {
+		Com_Printf("^3Field_AsStr:  recursive call\n");
+	}
+
+	Field_ToStr(FieldToStringBuffer, field, skip, len);
+	recursiveCalls--;
+
+	return FieldToStringBuffer;
+}
+
+void Field_Insert (field_t *field, int pos, int codePoint)
+{
+	int i;
+	qboolean error;
+
+	if (field == NULL) {
+		Com_Printf("^1Field_Insert:  field == NULL\n");
+		return;
+	}
+
+	if (pos < 0  ||  pos >= MAX_EDIT_LINE) {
+		Com_Printf("^1Field_Inser:  invalid position %d\n", pos);
+		return;
+	}
+
+	for (i = 0;  i < MAX_EDIT_LINE;  i++) {
+		/*
+		if (field->xbuffer[i].codePoint == 0) {
+			break;
+		}
+		*/
+		if (i == pos) {
+			int n;
+			fieldChar_t *fc;
+
+			for (n = MAX_EDIT_LINE - 2;  n >= i;  n--) {
+				field->xbuffer[n + 1] = field->xbuffer[n];
+			}
+
+			fc = &field->xbuffer[i];
+			fc->codePoint = codePoint;
+			Q_GetUtf8FromCp(codePoint, fc->utf8Bytes, &fc->numUtf8Bytes, &error);
+
+			return;
+		}
+	}
+
+	Com_Printf("^3Field_Insert:  couldn't find position %d\n", pos);
+}
+
+void Field_SetBuffer (field_t *field, const char *p, int len, int pos)
+{
+	int i;
+	qboolean error;
+	const char *porig;
+	fieldChar_t *fc;
+
+	if (field == NULL) {
+		Com_Printf("^1Field_SetBuffer:  field == NULL\n");
+		return;
+	}
+
+	if (pos < 0  ||  pos >= MAX_EDIT_LINE) {
+		Com_Printf("^1Field_SetBuffer:  invalid pos %d\n", pos);
+		return;
+	}
+
+	if (p == NULL) {
+		Com_Printf("^1Field_SetBuffer:  string == NULL\n");
+		return;
+	}
+
+	porig = p;
+
+	for (i = pos;  i < MAX_EDIT_LINE - 1;  i++) {
+		//int codePoint;
+		int nb;
+
+		//FIXME check p  len
+		fc = &field->xbuffer[i];
+		fc->codePoint = Q_GetCpFromUtf8(p, &fc->numUtf8Bytes, &error);
+		if (fc->codePoint == 0) {
+			break;
+		}
+		for (nb = 0;  nb < fc->numUtf8Bytes;  nb++) {
+			fc->utf8Bytes[nb] = p[nb];
+		}
+		// note, this depends on Q_GetCpFromUtf8() stopping if there are null bytes ahead
+		p += fc->numUtf8Bytes;
+
+		if (p - porig == len) {
+			// all done
+			i++;  // advance to set '\0';
+			break;
+		}
+
+		if (p - porig > len) {
+			Com_Printf("^1Field_SetBuffer:  exceeded length %d '%s'\n", len, porig);
+			break;
+		}
+	}
+
+	fc = &field->xbuffer[i];
+	fc->codePoint = 0;
+	//FIXME others, numUtf8Bytes, utf8Bytes
 }
 
 /*

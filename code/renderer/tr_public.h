@@ -101,6 +101,7 @@ typedef struct {
 #endif
 	void	(*RegisterFont)(const char *fontName, int pointSize, fontInfo_t *font);
 	qboolean (*GetGlyphInfo) (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
+	qboolean (*GetFontInfo) (int fontId, fontInfo_t *font);
 	void (*RemapShader)(const char *oldShader, const char *newShader, const char *offsetTime, qboolean keepLightmap, qboolean userSet);
 	void (*ClearRemappedShader)(const char *shaderName);
 	qboolean (*GetEntityToken)( char *buffer, int size );

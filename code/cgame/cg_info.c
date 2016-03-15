@@ -126,7 +126,7 @@ void CG_LoadingClient( int clientNum ) {
 	}
 
 	Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof(personality) );
-	Q_CleanStr( personality );
+	//Q_CleanStr( personality );
 	//Com_Printf("clean str %c%c  %s\n", personality[0], personality[1], personality);
 
 	if( cgs.gametype == GT_SINGLE_PLAYER ) {
@@ -134,6 +134,7 @@ void CG_LoadingClient( int clientNum ) {
 	}
 
 	CG_LoadingString( personality );
+	//sleep(5);
 }
 
 void CG_LoadingFutureClient (const char *modelName)
@@ -174,7 +175,7 @@ void CG_LoadingFutureClient (const char *modelName)
 
 	//Q_strncpyz( personality, Info_ValueForKey( info, "n" ), sizeof(personality) );
 	Q_strncpyz(personality, modelName, sizeof(personality));
-	Q_CleanStr( personality );
+	//Q_CleanStr( personality );
 	//Com_Printf("clean str %c%c  %s\n", personality[0], personality[1], personality);
 
 	if( cgs.gametype == GT_SINGLE_PLAYER ) {
@@ -184,14 +185,54 @@ void CG_LoadingFutureClient (const char *modelName)
 	CG_LoadingString( personality );
 }
 
+static char clockBuffer[MAX_STRING_CHARS];
+
+static char *clockString (int timems)
+{
+	int days, hours, minutes;
+	float seconds;
+	int count;
+	char *s;
+
+	clockBuffer[0] = '\0';
+
+	days = hours = minutes = 0;
+	count = timems;
+
+
+	days = count / (24 * 60 * 60 * 1000);
+	count -= days * (24 * 60 * 60 * 1000);
+
+	hours = count / (60 * 60 * 1000);
+	count -= hours * (60 * 60 * 1000);
+
+	minutes = count / (60 * 1000);
+	count -= minutes * (60 * 1000);
+
+	seconds = count / 1000.0f;
+
+	if (days > 0) {
+		s = va("%d day(s) %d:%02d:%02.2f", days, hours, minutes, seconds);
+	} else if (hours > 0) {
+		s = va("%d:%02d:%02.2f", hours, minutes, seconds);
+	} else if (minutes > 0) {
+		s = va("%d:%02.2f", minutes, seconds);
+	} else {
+		s = va("%02.2f", seconds);
+	}
+
+	Q_strncpyz(clockBuffer, s, sizeof(clockBuffer));
+
+	return clockBuffer;
+}
 
 /*
 ====================
 CG_DrawInformation
-
+ 
 Draw all the status / pacifier stuff during level loading and ingame
 ====================
-*/
+**/
 void CG_DrawInformation (qboolean loading)
 {
 	const char	*s;
@@ -250,13 +291,16 @@ void CG_DrawInformation (qboolean loading)
 	}  // loading
 
 	QLWideScreen = 1;
-	CG_DrawStringExt(2, 2, va("wolfcamql version %s", WOLFCAM_VERSION), colorYellow, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.smallchar);
+	//CG_DrawStringExt(2, 2, va("wolfcamql version %s Τη γλώσσα μου έδωσαν ελληνική test test", WOLFCAM_VERSION), colorYellow, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.smallchar);
+	//CG_DrawStringExt(2, 2, va("wolfcamql version %s Τη γλώσσα μου έδωσαν ελληνική test test", WOLFCAM_VERSION), colorYellow, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
+	CG_DrawStringExt(2, 2, va("wolfcamql version %s", WOLFCAM_VERSION), colorYellow, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
 	QLWideScreen = 2;
 
 	// draw info string information
 
 	if (loading) {
-		y = 200 - 32;
+		//y = 200 - 32;
+		y = 160 - 32;
 	} else {
 		y = 20;
 	}
@@ -277,19 +321,35 @@ void CG_DrawInformation (qboolean loading)
 		}
 
 		// server hostname
-		//Q_strncpyz(buf, Info_ValueForKey( info, "sv_hostname" ), 1024);
-		//Q_CleanStr(buf);
-		if (cgs.protocol == PROTOCOL_QL) {
+		lines = UI_DrawProportionalString3( 320, y, Info_ValueForKey(info, "sv_hostname"),
+											UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite);
+		y += PROP_HEIGHT * lines;
+
+		// ranked or mod
+		if (cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 			value = atoi(Info_ValueForKey(info, "sv_ranked"));
-			Com_sprintf(buf, sizeof(buf), "%s (%s)", Info_ValueForKey(info, "sv_hostname"), value ? "ranked" : "unranked");
+			Com_sprintf(buf, sizeof(buf), "(%s server)", value ? "ranked" : "unranked");
+		} else if (cgs.protocol == PROTOCOL_Q3) {  // mod:  baseq3, osp, cpma, etc..
+			if (cgs.ospEncrypt) {
+				Com_sprintf(buf, sizeof(buf), "osp ^6encrypted");
+			} else if (cgs.osp) {
+				Com_sprintf(buf, sizeof(buf), "osp");
+			} else if (cgs.cpma) {
+				Com_sprintf(buf, sizeof(buf), "cpma: %s", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"));
+			} else {
+				Com_sprintf(buf, sizeof(buf), "%s", CG_ConfigString(CS_GAME_VERSION));
+			}
 		} else {
-			value = 1;
-			Com_sprintf(buf, sizeof(buf), "%s", Info_ValueForKey(info, "sv_hostname"));
+			// current ql, skip
+			//FIXME check for maybe minix or something else?
+			buf[0] = '\0';
 		}
 
+		if (buf[0] != '\0') {
 			lines = UI_DrawProportionalString3( 320, y, buf,
-									   UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, value ? colorWhite : colorYellow);
+											UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorYellow);
 			y += PROP_HEIGHT * lines;
+		}
 
 		// pure server
 		s = Info_ValueForKey( sysInfo, "sv_pure" );
@@ -446,21 +506,53 @@ void CG_DrawInformation (qboolean loading)
 		}
 	}
 
-	if (cgs.protocol != PROTOCOL_QL) {
-		return;
-	}
+	if (cgs.protocol == PROTOCOL_QL) {
+		const char *p;
 
-	value = atoi(Info_ValueForKey(info, "sv_skillrating"));
-	lines = UI_DrawProportionalString3(320, y, va( "skill rating %i", value), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
-	y += PROP_HEIGHT * lines;
+		if (cgs.realProtocol < 91) {
+			value = atoi(Info_ValueForKey(info, "sv_skillrating"));
+			lines = UI_DrawProportionalString3(320, y, va( "skill rating %i", value), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
+			y += PROP_HEIGHT * lines;
+		}
 
-	if (*Info_ValueForKey(info, "sv_location")) {
-		lines = UI_DrawProportionalString3(320, y, va("location %s", Info_ValueForKey(info, "sv_location")), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
-		y += PROP_HEIGHT * lines;
-	}
+		if (*Info_ValueForKey(info, "sv_location")) {
+			lines = UI_DrawProportionalString3(320, y, va("location %s", Info_ValueForKey(info, "sv_location")), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorWhite);
+			y += PROP_HEIGHT * lines;
+		}
 
-	if (*cgs.serverModelOverride  ||  *cgs.serverHeadModelOverride) {
-		lines = UI_DrawProportionalString3(320, y, "forced server models", UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorMdGrey);
-		y += PROP_HEIGHT * lines;
+		if (*cgs.serverModelOverride  ||  *cgs.serverHeadModelOverride) {
+			lines = UI_DrawProportionalString3(320, y, "forced server models", UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorMdGrey);
+			y += PROP_HEIGHT * lines;
+		}
+
+		p = SC_Cvar_Get_String("com_workshopids");
+		// strlen() check since it is sometimes a blank space ' '
+		if (p  && *p  &&  strlen(p) > 1) {
+			lines = UI_DrawProportionalString3(320, y, va("workshops: %s", p), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorMdGrey);
+			y += PROP_HEIGHT * lines;
+		}
+	}  // end protocol ql
+
+	if (cg.demoPlayback  &&  !loading  &&  cg.snap) {
+		int startTime, endTime, currentTime;
+
+		startTime = trap_GetFirstServerTime();
+		endTime = trap_GetLastServerTime();
+		currentTime = cg.snap->serverTime;
+
+		trap_Cvar_VariableStringBuffer("cl_demoFileBaseName", buf, sizeof(buf));
+
+		QLWideScreen = 1;
+		CG_DrawStringExt(2, 480 - 64,
+						 va("^3demo: ^7%s", buf),
+						 colorWhite, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
+
+		CG_DrawStringExt(2, 480 - 32,
+						 va("  ^5%s   ^6%02.2f%%", clockString(endTime - startTime), (float)(currentTime - startTime) / (float)(endTime - startTime) * 100.0f),
+						 colorWhite, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
+
+
+		QLWideScreen = 2;
+
 	}
 }

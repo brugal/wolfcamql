@@ -1856,6 +1856,8 @@ static void CG_AddDamagePlum (localEntity_t *le)
 		//glyph = &font->glyphs[48 + digits[i]];
 		trap_R_GetGlyphInfo(font, 48 + digits[i], &glyph);
 		yadj = useScale * yscale * glyph.top;
+		//FIXME
+		//xadj = useScale * xscale * glyph.left;
 
 		VectorMA(origin, xSkip + (float)glyph.imageWidth / 2.0f * useScale * xscale, right, re->origin);
 		re->origin[2] += yadj;
@@ -1870,6 +1872,7 @@ static void CG_AddDamagePlum (localEntity_t *le)
 #endif
 
 		//FIXME yAdj
+		//FIXME xAdj
 		// test  cgs.media.qlfont16
 		//glyph = &cgs.media.qlfont16.glyphs[numdigits - 1 - i];
 		//glyph = &cgs.media.qlfont24.glyphs[48 + digits[numdigits-1-i]];

@@ -44,11 +44,13 @@ char systemChat[256];
 char teamChat1[256];
 char teamChat2[256];
 
+
 static void CG_DrawEchoPopup (void);
 static void CG_DrawErrorPopup (void);
 static void CG_DrawAccStats (void);
 static void CG_DrawFade (void);
 
+//FIXME float for SP_x, *SP_y, and SP_h
 static int SP_x;
 static int *SP_y;
 static int SP_h;
@@ -87,8 +89,8 @@ static void CG_SPrintInit (int x, int *y, int h, int align, float scale, const v
 
 static void CG_SPrint (const char *s)
 {
-	int x;
-	int w;
+	float x;
+	float w;
 
 	x = SP_x;
 	w = CG_Text_Width(s, SP_scale, 0, SP_font);
@@ -116,7 +118,7 @@ static void CG_DrawCameraPointInfo (void)
 {
 	vec4_t color;
 	int x, y;
-	int h;
+	float h;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -649,7 +651,7 @@ static void CG_DrawQ3mmeCameraPointInfo (void)
 {
 	vec4_t color;
 	int x, y;
-	int h;
+	float h;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -784,12 +786,11 @@ static float Wolfcam_DrawSpeed (float y)
     float speed;
     int c;
 	vec4_t color;
-	int x;
-	//int w;
+	float x;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
-	int h;
+	float h;
 	rectDef_t rect;
 
 	if (!cg_drawSpeed.integer) {
@@ -808,9 +809,9 @@ static float Wolfcam_DrawSpeed (float y)
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawSpeedX.integer;
+	x = cg_drawSpeedX.value;
 	if (*cg_drawSpeedY.string) {
-		y = cg_drawSpeedY.integer;
+		y = cg_drawSpeedY.value;
 	} else {
 		y = y + 2;
 	}
@@ -860,23 +861,20 @@ static float Wolfcam_DrawSpeed (float y)
 		s = va("^%d%d^7ups", c, (int)speed);
 	}
 
-	//w = CG_Text_Width(s, scale, 0, font);
 	h = CG_Text_Height(s, scale, 0, font);
 
 	memset(&rect, 0, sizeof(rectDef_t));
 	rect.x = x;
 	rect.y = y + h + (12.0f * scale);
-	//CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
 	CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, style, font, align);
 
-	//return y - 2 + h + 4;
 	return y + h + (12.0f * scale);
 }
 
 static void CG_DrawJumpSpeeds (void)
 {
 	vec4_t color;
-	int x, y, w;
+	float x, y, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -909,8 +907,8 @@ static void CG_DrawJumpSpeeds (void)
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawJumpSpeedsX.integer;
-	y = cg_drawJumpSpeedsY.integer;
+	x = cg_drawJumpSpeedsX.value;
+	y = cg_drawJumpSpeedsY.value;
 
 	buffer[0] = '\0';
 	if (!cg_drawJumpSpeedsNoText.integer) {
@@ -943,7 +941,7 @@ static void CG_DrawJumpSpeeds (void)
 static void CG_DrawJumpSpeedsTime (void)
 {
 	vec4_t color;
-	int x, y, w;
+	float x, y, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -974,8 +972,8 @@ static void CG_DrawJumpSpeedsTime (void)
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawJumpSpeedsTimeX.integer;
-	y = cg_drawJumpSpeedsTimeY.integer;
+	x = cg_drawJumpSpeedsTimeX.value;
+	y = cg_drawJumpSpeedsTimeY.value;
 
 	buffer[0] = '\0';
 	if (!cg_drawJumpSpeedsTimeNoText.integer) {
@@ -1086,7 +1084,7 @@ static void Wolfcam_DrawFollowing (void)
     const char *s;
     const char *scolor;
     qboolean visible;
-	int x, y, w;
+	float x, y, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -1175,8 +1173,8 @@ static void Wolfcam_DrawFollowing (void)
 		}
 	}
 
-	x = cg_drawFollowingX.integer;
-	y = cg_drawFollowingY.integer;
+	x = cg_drawFollowingX.value;
+	y = cg_drawFollowingY.value;
 
 	w = CG_Text_Width(s, scale, 0, font);
 	if (align == 1) {
@@ -1192,14 +1190,19 @@ static void Wolfcam_DrawFollowing (void)
 
 #if 1  //def MPACK
 
-static int CG_Text_Width_orig (const char *text, float scale, int limit, const fontInfo_t *fontOrig)
+//FIXME depends on textHeight
+float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, int limit, float textHeight, const fontInfo_t *fontOrig)
 {
-	int count,len;
+	int byteCount;  // check overflow
+	int charCount;
+	int len;
 	float out;
 	glyphInfo_t glyph;
 	float useScale;
-	const char *s = text;
+	float xscale;
 	const fontInfo_t *font;
+	int i;
+	fontInfo_t newFont;
 
 	font = fontOrig;
 
@@ -1211,25 +1214,227 @@ static int CG_Text_Width_orig (const char *text, float scale, int limit, const f
 		}
 	}
 
+	xscale = 1.0;
+
+	if (!Q_stricmp(font->name, "q3tiny")) {
+		xscale = 0.5;
+	} else if (!Q_stricmp(font->name, "q3small")) {
+		xscale = 0.5;
+	} else if (!Q_stricmp(font->name, "q3giant")) {
+		xscale = 2.0;
+	}
+
 	useScale = scale * font->glyphScale;
+
+	font = CG_ScaleFont(font, &scale, &useScale);
+
+	out = 0;
+	if (text) {
+		const floatint_t *s;
+		char stmp[5] = "\0\0\0\0\0";
+		int cp;
+		int bytes;
+		qboolean error;
+
+		s = text;
+		i = 0;
+		while (1) {
+			if (s[0].i == 0) {
+				break;
+			}
+			if (s[0].i < 0  ||  s[0].i > 255) {
+				s += 2;
+				continue;
+			}
+			s++;
+			i++;
+		}
+
+		len = i;
+		s = text;
+
+		byteCount = 0;
+		charCount = 0;
+		while (s  &&  s[0].i  &&  byteCount < len) {
+			if (limit > 0) {
+				if (charCount >= limit) {
+					break;
+				}
+			}
+
+			if (s[0].i < 0  ||  s[0].i > 255) {
+				if (s[0].i == TEXT_PIC_PAINT_ICON) {
+					out += (textHeight * iconScale);
+				} else if (s[0].i == TEXT_PIC_PAINT_XOFFSET) {
+					//FIXME maybe not
+
+				} else if (s[0].i == TEXT_PIC_PAINT_FONT) {
+					if (!trap_R_GetFontInfo(s[1].i, &newFont)) {
+						Com_Printf("^3CG_Text_Pic_Paint: couldn't get new font info for %d\n", s[1].i);
+						font = fontOrig;
+					} else {
+						font = &newFont;
+					}
+
+					//FIXME duplicate code
+
+					//FIXME will never be true unless frag token parsing can pass font == ""
+					if (cg_qlFontScaling.integer  &&  font == &cgDC.Assets.textFont) {
+						if (scale <= cg_smallFont.value) {
+							font = &cgDC.Assets.smallFont;
+						} else if (scale > cg_bigFont.value) {
+							font = &cgDC.Assets.bigFont;
+						}
+					}
+
+					xscale = 1.0;
+					//yscale = 1.0;
+
+					if (!Q_stricmp(font->name, "q3tiny")) {
+						xscale = 0.5;
+						//yscale = 0.5;
+					} else if (!Q_stricmp(font->name, "q3small")) {
+						xscale = 0.5;
+					} else if (!Q_stricmp(font->name, "q3giant")) {
+						xscale = 2.0;
+						//yscale = 3.0;
+					}
+
+					useScale = scale * font->glyphScale;
+
+					font = CG_ScaleFont(font, &scale, &useScale);
+				} else if (s[0].i == TEXT_PIC_PAINT_SCALE) {
+					scale *= s[1].f;
+					useScale = scale * font->glyphScale;
+					font = CG_ScaleFont(font, &scale, &useScale);
+				} else if (s[0].i == TEXT_PIC_PAINT_ICONSCALE) {
+					iconScale *= s[1].f;
+				} else {
+					//Com_Printf("^1CG_Text_Pic_Paint_Width:  unknown command: %d\n", s[0].i);
+				}
+				s += 2;
+				byteCount += 2;
+				continue;
+			}
+
+			stmp[0] = s[0].i & 255;
+			if (s[1].i != 0) {
+				stmp[1] = s[1].i & 255;
+				if (s[2].i != 0) {
+					stmp[2] = s[2].i & 255;
+					if (s[3].i != 0) {
+						stmp[3] = s[3].i & 255;
+					}
+				}
+			}
+
+			bytes = 0;
+			cp = Q_GetCpFromUtf8(stmp, &bytes, &error);
+			if (bytes > 1) {
+				//Com_Printf("^2text_width cp unicode: %d\n", cp);
+			}
+			if (error) {
+				const floatint_t *s1 = text;
+				Com_Printf("cg_text_pic_width error: '%c'... \n", text[0].i);
+				while (s1[0].i != '\0') {
+					Com_Printf("char: %u\n", s1[0].i & 255);
+					s1++;
+				}
+			}
+
+			trap_R_GetGlyphInfo(font, cp, &glyph);
+
+			if ( Q_IsColorStringPicString(s) ) {
+				if (cgs.osp) {
+					if (s[1].i == 'x'  ||  s[1].i == 'X') {
+						s += 8;
+						byteCount += 8;
+					} else {
+						s += 2;
+						byteCount += 2;
+					}
+				} else {
+					s += 2;
+					byteCount += 2;
+				}
+				continue;
+			} else {
+
+				out += ((float)glyph.xSkip * useScale * xscale);
+				//FIXME adjust?
+
+				s += bytes;
+				byteCount += bytes;
+				charCount++;
+			}
+		}
+	}
+
+	return out;
+}
+
+static float CG_Text_Width_orig (const char *text, float scale, int limit, const fontInfo_t *fontOrig)
+{
+	int byteCount;
+	int charCount;
+	int len;
+	float out;
+	glyphInfo_t glyph;
+	float useScale;
+	float xscale;
+	const char *s = text;
+	const fontInfo_t *font;
+
+
+	font = fontOrig;
+
+	if (cg_qlFontScaling.integer  &&  font == &cgDC.Assets.textFont) {
+		if (scale <= cg_smallFont.value) {
+			font = &cgDC.Assets.smallFont;
+		} else if (scale > cg_bigFont.value) {
+			font = &cgDC.Assets.bigFont;
+		}
+	}
+
+	xscale = 1.0;
+
+	if (!Q_stricmp(font->name, "q3tiny")) {
+		xscale = 0.5;
+	} else if (!Q_stricmp(font->name, "q3small")) {
+		xscale = 0.5;
+	} else if (!Q_stricmp(font->name, "q3giant")) {
+		xscale = 2.0;
+	}
+
+	useScale = scale * font->glyphScale;
+
+	font = CG_ScaleFont(font, &scale, &useScale);
+
 	out = 0;
 	if (text) {
 		len = strlen(text);
-		if (limit > 0 && len > limit) {
-			len = limit;
-		}
 
-		count = 0;
-		while (s && *s && count < len) {
+		byteCount = 0;
+		charCount = 0;
+		while (s  &&  *s  &&  byteCount < len) {
+			if (limit > 0) {
+				if (charCount >= limit) {
+					break;
+				}
+			}
+
 			if ( Q_IsColorString(s) ) {
 				if (cgs.osp) {
 					if (s[1] == 'x'  ||  s[1] == 'X') {
 						s += 8;
+						byteCount += 8;
 					} else {
 						s += 2;
+						byteCount += 2;
 					}
 				} else {
 					s += 2;
+					byteCount += 2;
 				}
 				continue;
 			} else {
@@ -1239,7 +1444,6 @@ static int CG_Text_Width_orig (const char *text, float scale, int limit, const f
 
 				bytes = 0;
 				cp = Q_GetCpFromUtf8(s, &bytes, &error);
-				s += (bytes - 1);
 
 				if (bytes > 1) {
 					//Com_Printf("^2text_width cp unicode: %d\n", cp);
@@ -1254,44 +1458,23 @@ static int CG_Text_Width_orig (const char *text, float scale, int limit, const f
 				}
 				trap_R_GetGlyphInfo(font, cp, &glyph);
 				out += glyph.xSkip;
-				s++;
-				count++;
+
+				s += bytes;
+				byteCount += bytes;
+				charCount++;
 			}
 		}
 	}
-	return out * useScale;
+
+	return out * useScale * xscale;
 }
 
-int CG_Text_Width (const char *text, float scale, int limit, const fontInfo_t *font)
+float CG_Text_Width (const char *text, float scale, int limit, const fontInfo_t *font)
 {
-	float xscale;
-
-	xscale = 1.0;
-
-#if 0
-	if (font == &cgs.media.tinychar) {
-		xscale = 0.5;
-	} else if (font == &cgs.media.smallchar) {
-		xscale = 0.5;
-	} else if (font == &cgs.media.giantchar) {
-		xscale = 2.0;
-	}
-
-	Com_Printf("width added scale %f\n", xscale);
-#endif
-
-	if (!Q_stricmp(font->name, "q3tiny")) {
-		xscale = 0.5;
-	} else if (!Q_stricmp(font->name, "q3small")) {
-		xscale = 0.5;
-	} else if (!Q_stricmp(font->name, "q3giant")) {
-		xscale = 2.0;
-	}
-
-	return CG_Text_Width_orig(text, scale * xscale, limit, font);
+	return CG_Text_Width_orig(text, scale, limit, font);
 }
 
-int CG_Text_Width_old(const char *text, float scale, int limit, int fontIndex)
+float CG_Text_Width_old(const char *text, float scale, int limit, int fontIndex)
 {
 	const fontInfo_t *font;
 
@@ -1304,14 +1487,16 @@ int CG_Text_Width_old(const char *text, float scale, int limit, int fontIndex)
 	return CG_Text_Width(text, scale, limit, font);
 }
 
-static int CG_Text_Height_orig (const char *text, float scale, int limit, const fontInfo_t *fontOrig)
+static float CG_Text_Height_orig (const char *text, float scale, int limit, const fontInfo_t *fontOrig)
 {
-  int len, count;
+	int len;
+	int byteCount;
+	int charCount;
 	float max;
 	glyphInfo_t glyph;
 	float useScale;
+	float yscale;
 	const char *s = text;
-	//fontInfo_t *font = &cgDC.Assets.textFont;
 	const fontInfo_t *font;
 
 	font = fontOrig;
@@ -1324,24 +1509,44 @@ static int CG_Text_Height_orig (const char *text, float scale, int limit, const 
 		}
 	}
 
+	yscale = 1.0;
+
+	if (!Q_stricmp(font->name, "q3tiny")) {
+		yscale = 0.5;
+	} else if (!Q_stricmp(font->name, "q3small")) {
+		//
+	} else if (!Q_stricmp(font->name, "q3giant")) {
+		yscale = 3.0;
+	}
+
   useScale = scale * font->glyphScale;
+  font = CG_ScaleFont(font, &scale, &useScale);
+
   max = 0;
   if (text) {
-    len = strlen(text);
-		if (limit > 0 && len > limit) {
-			len = limit;
-		}
-		count = 0;
-		while (s && *s && count < len) {
+	    len = strlen(text);
+
+		byteCount = 0;
+		charCount = 0;
+		while (s  &&  *s  &&  byteCount < len) {
+			if (limit > 0) {
+				if (charCount >= limit) {
+					break;
+				}
+			}
+
 			if ( Q_IsColorString(s) ) {
 				if (cgs.osp) {
 					if (s[1] == 'x'  ||  s[1] == 'X') {
 						s += 8;
+						byteCount += 8;
 					} else {
 						s += 2;
+						byteCount += 2;
 					}
 				} else {
 					s += 2;
+					byteCount += 2;
 				}
 				continue;
 			} else {
@@ -1351,7 +1556,7 @@ static int CG_Text_Height_orig (const char *text, float scale, int limit, const 
 
 				bytes = 0;
 				cp = Q_GetCpFromUtf8(s, &bytes, &error);
-				s += (bytes - 1);
+
 				if (error) {
 					const char *s1 = text;
 					Com_Printf("text_width error: '%s'\n", text);
@@ -1364,42 +1569,23 @@ static int CG_Text_Height_orig (const char *text, float scale, int limit, const 
 				if (max < glyph.height) {
 					max = glyph.height;
 				}
-				s++;
-				count++;
+
+				s += bytes;
+				byteCount += bytes;
+				charCount++;
 			}
     }
   }
-  return max * useScale;
+
+  return max * useScale * yscale;;
 }
 
-int CG_Text_Height (const char *text, float scale, int limit, const fontInfo_t *font)
+float CG_Text_Height (const char *text, float scale, int limit, const fontInfo_t *font)
 {
-	float yscale;
-
-	yscale = 1.0;
-
-#if 0
-	if (font == &cgs.media.tinychar) {
-		yscale = 0.5;
-	} else if (font == &cgs.media.smallchar) {
-		//
-	} else if (font == &cgs.media.giantchar) {
-		yscale = 3.0;
-	}
-#endif
-
-	if (!Q_stricmp(font->name, "q3tiny")) {
-		yscale = 0.5;
-	} else if (!Q_stricmp(font->name, "q3small")) {
-		//
-	} else if (!Q_stricmp(font->name, "q3giant")) {
-		yscale = 3.0;
-	}
-
-	return CG_Text_Height_orig(text, scale * yscale, limit, font);
+	return CG_Text_Height_orig(text, scale, limit, font);
 }
 
-int CG_Text_Height_old(const char *text, float scale, int limit, int fontIndex)
+float CG_Text_Height_old(const char *text, float scale, int limit, int fontIndex)
 {
 	const fontInfo_t *font;
 
@@ -1432,7 +1618,7 @@ void CG_Text_PaintCharScale (float x, float y, float width, float height, float 
 }
 
 
-static const fontInfo_t *scaleFont (const fontInfo_t *font, float *scale, float *useScale)
+const fontInfo_t *CG_ScaleFont (const fontInfo_t *font, float *scale, float *useScale)
 {
 	static fontInfo_t scaledFont;
 	int threshold;
@@ -1482,7 +1668,7 @@ static const fontInfo_t *scaleFont (const fontInfo_t *font, float *scale, float 
 			newPointSize = threshold;
 		}
 
-		trap_R_RegisterFont(font->qlDefaultFont ? "fonts/handelgothic.ttf" : font->registerName, newPointSize, &scaledFont);
+		trap_R_RegisterFont(font->qlDefaultFont ? DEFAULT_FONT : font->registerName, newPointSize, &scaledFont);
 		if (scaledFont.name[0] == '\0') {
 			Com_Printf("^3couldn't register new scaled point size for '%s' '%s' qlDefaultFont: %d\n", font->registerName, font->name, font->qlDefaultFont);
 		} else {
@@ -1505,7 +1691,9 @@ static const fontInfo_t *scaleFont (const fontInfo_t *font, float *scale, float 
 //FIXME xy scale factors
 void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig)
 {
-	int len, count;
+	int len;
+	int byteCount;
+	int charCount;
 	vec4_t newColor;
 	glyphInfo_t glyph;
 	float useScale;
@@ -1542,26 +1730,32 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 
 	//FIXME eliminate font->glyphScale hack
 
-	font = scaleFont(font, &scale, &useScale);
+	font = CG_ScaleFont(font, &scale, &useScale);
 
 
   if (text) {
 		const char *s = text;
 		trap_R_SetColor( color );
 		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
+
 		len = strlen(text);
-		if (limit > 0 && len > limit) {
-			len = limit;
-		}
-		count = 0;
-		while (s && *s && count < len) {
+
+		byteCount = 0;
+		charCount = 0;
+		while (s  &&  *s  &&  byteCount < len) {
 			int cp;
 			int bytes;
 			qboolean error;
 
+			if (limit > 0) {
+				if (charCount >= limit) {
+					break;
+				}
+			}
+
 			bytes = 0;
 			cp = Q_GetCpFromUtf8(s, &bytes, &error);
-			s += (bytes - 1);
+
 			if (bytes > 1) {
 				//Com_Printf("^2cp unicode: %d\n", cp);
 			}
@@ -1577,8 +1771,6 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 			//FIXME do below
 			trap_R_GetGlyphInfo(font, cp, &glyph);
 
-			//int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
-			//float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
 			if ( Q_IsColorString( s ) ) {
 				if (cgs.cpma) {
 					CG_CpmaColorFromString(s + 1, newColor);
@@ -1597,22 +1789,20 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 				if (cgs.osp) {
 					if (s[1] == 'x'  ||  s[1] == 'X') {
 						s += 8;
-						count += 8;
+						byteCount += 8;
 					} else {
 						s += 2;
-						count += 2;
+						byteCount += 2;
 					}
 				} else {
 					s += 2;
-					//FIXME count?
-					count += 2;
+					byteCount += 2;
 				}
 				continue;
 			} else {
 				float yadj = useScale * yscale * glyph.top;
-				//float yadj = useScale *  glyph.top;
-				//yadj = 0;
-				//yadj = -yadj;
+				float xadj = useScale * xscale * glyph.left;
+
 				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
 					float ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
 					float xofs = ofs;
@@ -1641,7 +1831,7 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 					trap_R_SetColor( colorBlack );
 					//FIXME ofs should use scale value
 					CG_Text_PaintCharScale(
-										   x + xofs ,
+										   x + xadj + xofs ,
 										   y - yadj + yofs,
 														glyph.imageWidth,
 														glyph.imageHeight,
@@ -1656,7 +1846,9 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 					trap_R_SetColor( newColor );
 				}
 #if 1
-				CG_Text_PaintCharScale(x /*+ glyph.left * useScale */, y - yadj,
+				CG_Text_PaintCharScale(
+									   x + xadj,
+									   y - yadj,
 													glyph.imageWidth,
 													glyph.imageHeight,
 													useScale * xscale,
@@ -1666,23 +1858,41 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 													glyph.s2,
 													glyph.t2,
 													glyph.glyph);
-				// CG_DrawPic(x, y - yadj, scale * cgDC.Assets.textFont.glyphs[text[i]].imageWidth, scale * cgDC.Assets.textFont.glyphs[text[i]].imageHeight, cgDC.Assets.textFont.glyphs[text[i]].glyph);
+
 #endif
 				x += (glyph.xSkip * useScale * xscale) + adjust;
 				//Com_Printf("%c  xSkip %d\n", s[0], glyph->xSkip);
-				//x += (glyph->imageWidth * useScale) + adjust;
-				s++;
-				count++;
+				s += bytes;
+				byteCount += bytes;
+				charCount++;
 			}
     }
 	  trap_R_SetColor( NULL );
   }
 }
 
-//FIXME xy scale factors
-void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const int *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, int textHeight, float iconScale)
+void CG_PrintPicString (const floatint_t *s)
 {
-	int len, count;
+	while (s  &&  s[0].i != 0) {
+		if (s[0].i >= 0  &&  s[0].i <= 255) {
+			Com_Printf("%c:%d ", s[0].i, s[0].i);
+		} else {
+			Com_Printf(" [%d .] ", s[0].i);
+			s += 2;
+			continue;
+		}
+		s++;
+	}
+
+	Com_Printf("\n");
+}
+
+//FIXME xy scale factors
+void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const floatint_t *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, float textHeight, float iconScale)
+{
+	int len;
+	int byteCount;  // check text overflow
+	int charCount;
 	vec4_t newColor;
 	glyphInfo_t glyph;
 	float useScale;
@@ -1690,9 +1900,11 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 	float xscale;
 	float yscale;
 	int i;
+	fontInfo_t newFont;
 
 	font = fontOrig;
 
+	//printPicString(text);
 	if (cg_qlFontScaling.integer  &&  font == &cgDC.Assets.textFont) {
 		if (scale <= cg_smallFont.value) {
 			font = &cgDC.Assets.smallFont;
@@ -1716,37 +1928,46 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 
 	useScale = scale * font->glyphScale;
 
-	font = scaleFont(font, &scale, &useScale);
+	font = CG_ScaleFont(font, &scale, &useScale);
 
 	if (text) {
-		const int *s = text;
+		const floatint_t *s = text;
 		int cp;
 		int bytes;
 		qboolean error;
 
 		trap_R_SetColor( color );
 		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
-		//len = strlen(text);
+
 		i = 0;
 		while (1) {
-			if (*s == 0) {
+			if (s[0].i == 0) {
 				break;
 			}
-			if (*s < 0  ||  *s > 255) {
+			if (s[0].i < 0  ||  s[0].i > 255) {
 				s += 2;
+				i += 2;
+				continue;
 			}
+
+			// char value
 			s++;
 			i++;
 		}
 		len = i;
 		s = text;
-		if (limit > 0 && len > limit) {
-			len = limit;
-		}
-		count = 0;
-		while (s && *s && count < len) {
-			if (*s < 0  ||  *s > 255) {
-				if (*s == 256) {
+
+		byteCount = 0;
+		charCount = 0;
+		while (s  &&  s[0].i  &&  byteCount < len) {
+			if (limit > 0) {
+				if (charCount >= limit) {
+					break;
+				}
+			}
+
+			if (s[0].i < 0  ||  s[0].i > 255) {
+				if (s[0].i == TEXT_PIC_PAINT_ICON) {
 					float picScale;
 					float picWidth;
 					float picHeight;
@@ -1755,57 +1976,106 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					picWidth = textHeight * picScale;
 					picHeight = picWidth;
 
-					//Com_Printf("picwidth: %d\n", picWidth);
-					//trap_R_DrawStretchPic(px, py, pw, ph, 0, 0, 1, 1, *(s + 1));
-					//trap_R_DrawStretchPic(x, y - textHeight, textHeight, textHeight, 0, 0, 1, 1, *(s + 1));
-					//CG_DrawPic(x, y - textHeight, textHeight, textHeight, *s);
-					CG_DrawPic(x, y - textHeight - (picHeight - textHeight) / 2, picWidth, picHeight, *(s + 1));
-					//trap_R_DrawStretchPic(x, y, textHeight, textHeight, 0, 0, 1, 1, cg_weapons[WP_RAILGUN].weaponIcon);
-					//Com_Printf("drawing %d\n", *(s + 1));
-					//x += 32;  //textHeight;
+					CG_DrawPic(x, y - textHeight - (picHeight - textHeight) / 2, picWidth, picHeight, s[1].i);
 					x += picWidth;
-				} else if (*s == 257) {
+				} else if (s[0].i == TEXT_PIC_PAINT_COLOR) {
 					int c;
 
-					c = *(s + 1);
+					c = s[1].i;
 					c &= 0xff0000;
 					c /= 0x010000;
 					newColor[0] = (float)c / 255.0;
-					c = *(s + 1);
+					c = s[1].i;
 					c &= 0x00ff00;
 					c /= 0x000100;
 					newColor[1] = (float)c / 255.0;
-					c = *(s + 1);
+					c = s[1].i;
 					c &= 0x0000ff;
 					c /= 0x000001;
 					newColor[2] = (float)c / 255.0;
 					newColor[3] = color[3];
 					trap_R_SetColor(newColor);
+				} else if (s[0].i == TEXT_PIC_PAINT_XOFFSET) {
+					//FIXME text_width()
+					x += s[1].f;
+				} else if (s[0].i == TEXT_PIC_PAINT_YOFFSET) {
+					//FIXME text_height()
+					y += s[1].f;
+				} else if (s[0].i == TEXT_PIC_PAINT_FONT) {
+
+					if (!trap_R_GetFontInfo(s[1].i, &newFont)) {
+						Com_Printf("^3CG_Text_Pic_Paint: couldn't get new font info for %d\n", s[1].i);
+						font = fontOrig;
+					} else {
+						font = &newFont;
+					}
+
+					//FIXME duplicate code
+
+					//FIXME will never be true unless frag token parsing can pass font == ""
+					if (cg_qlFontScaling.integer  &&  font == &cgDC.Assets.textFont) {
+						if (scale <= cg_smallFont.value) {
+							font = &cgDC.Assets.smallFont;
+						} else if (scale > cg_bigFont.value) {
+							font = &cgDC.Assets.bigFont;
+						}
+					}
+
+					xscale = 1.0;
+					yscale = 1.0;
+
+					if (!Q_stricmp(font->name, "q3tiny")) {
+						xscale = 0.5;
+						yscale = 0.5;
+					} else if (!Q_stricmp(font->name, "q3small")) {
+						xscale = 0.5;
+					} else if (!Q_stricmp(font->name, "q3giant")) {
+						xscale = 2.0;
+						yscale = 3.0;
+					}
+
+					useScale = scale * font->glyphScale;
+
+					font = CG_ScaleFont(font, &scale, &useScale);
+
+				} else if (s[0].i == TEXT_PIC_PAINT_SCALE) {
+					scale *= s[1].f;
+					useScale = scale * font->glyphScale;
+					font = CG_ScaleFont(font, &scale, &useScale);
+				} else if (s[0].i == TEXT_PIC_PAINT_ICONSCALE) {
+					iconScale *= s[1].f;
+				} else if (s[0].i == TEXT_PIC_PAINT_STYLE) {
+					style = s[1].i;
+					//Com_Printf("style: %d\n", style);
+				} else {
+					Com_Printf("^1CG_Text_Pic_Paint:  unknown command: %d\n", s[0].i);
 				}
+
 				s += 2;
+				byteCount += 2;
 				continue;
 			} // *s < 0  ||  *s > 255
 
 			{
 				char stmp[5] = "\0\0\0\0\0";
 
-				stmp[0] = s[0] & 255;
-				if (s[1] != 0) {
-					stmp[1] = s[1] & 255;
-					if (s[2] != 0) {
-						stmp[2] = s[2] & 255;
-						if (s[3] != 0) {
-							stmp[3] = s[3] & 255;
+				stmp[0] = s[0].i & 255;
+				if (s[1].i != 0) {
+					stmp[1] = s[1].i & 255;
+					if (s[2].i != 0) {
+						stmp[2] = s[2].i & 255;
+						if (s[3].i != 0) {
+							stmp[3] = s[3].i & 255;
 						}
 					}
 				}
 
 #if 0
 				//FIXME testing
-				stmp[0] = s[0] & 255;
-				stmp[1] = s[1] & 255;
-				stmp[2] = s[2] & 255;
-				stmp[3] = s[3] & 255;
+				stmp[0] = s[0].i & 255;
+				stmp[1] = s[1].i & 255;
+				stmp[2] = s[2].i & 255;
+				stmp[3] = s[3].i & 255;
 #endif
 
 				//Com_Printf("^2xxxxxxx '%s' 0x%x 0x%x 0x%x 0x%x\n", stmp, s[0], s[1], s[2], s[3]);
@@ -1816,47 +2086,41 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 				}
 			}
 
+			//Com_Printf("cp: %d '%c'\n", cp, (unsigned char)cp);
+			
 			trap_R_GetGlyphInfo(font, cp, &glyph);
 
-			//int yadj = Assets.textFont.glyphs[text[i]].bottom + Assets.textFont.glyphs[text[i]].top;
-			//float yadj = scale * (Assets.textFont.glyphs[text[i]].imageHeight - Assets.textFont.glyphs[text[i]].height);
-			if ( Q_IsColorString( s ) ) {
+			if ( Q_IsColorStringPicString( s ) ) {
 				if (cgs.cpma) {
-					CG_CpmaColorFromString((char *)(s + 1), newColor);
+					CG_CpmaColorFromPicString(s + 1, newColor);
 				} else if (cgs.osp) {
-					CG_OspColorFromIntString(s + 1, newColor);
+					CG_OspColorFromPicString(s + 1, newColor);
 				} else {
-					memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
+					memcpy( newColor, g_color_table[ColorIndex(s[1].i)], sizeof( newColor ) );
 				}
 				//memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
 				newColor[3] = color[3];
-				if (s[1] == '7') {
+				if (s[1].i == '7') {
 					VectorCopy(color, newColor);
 				}
 				trap_R_SetColor( newColor );
 				if (cgs.osp) {
-					if (s[1] == 'x'  ||  s[1] == 'X') {
+					if (s[1].i == 'x'  ||  s[1].i == 'X') {
 						s += 8;
-						count += 8;
-						//count += 2;
+						byteCount += 8;
 					} else {
 						s += 2;
-						count += 2;
+						byteCount += 2;
 					}
 				} else {
 					s += 2;
-					//FIXME count?
-					count += 2;
+					byteCount += 2;
 				}
 				continue;
 			} else {   // not Q_IsColorString()
-				//float yadj = useScale *  glyph->top;
 				float yadj = useScale * yscale * glyph.top;
-				//float xadj = useScale * xscale;  // * glyph->left;
+				float xadj = useScale * xscale * glyph.left;
 
-				//Com_Printf("top %d\n", glyph->top);
-				//yadj = 0;
-				//yadj = -yadj;
 				if (style == ITEM_TEXTSTYLE_SHADOWED || style == ITEM_TEXTSTYLE_SHADOWEDMORE) {
 					float ofs = style == ITEM_TEXTSTYLE_SHADOWED ? 1 : 2;
 					float xofs = ofs;
@@ -1868,9 +2132,9 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					colorBlack[3] = newColor[3];  //FIXME wtf?????
 					trap_R_SetColor( colorBlack );
 					//trap_R_SetColor(colorWhite);
-					CG_Text_PaintCharScale(x + xofs, y - yadj + yofs,
-					//CG_Text_PaintCharScale(x - xadj + ofs, y - yadj + ofs,
-					//CG_Text_PaintCharScale(x + ofs, y - yadj + 14,
+					CG_Text_PaintCharScale(
+										   x + xadj + xofs,
+										   y - yadj + yofs,
 														glyph.imageWidth,
 														glyph.imageHeight,
 														useScale * xscale,
@@ -1884,7 +2148,9 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					trap_R_SetColor( newColor );
 				}
 #if 1
-				CG_Text_PaintCharScale(x /*+ glyph->left * useScale */, y - yadj,
+				CG_Text_PaintCharScale(
+									   x + xadj,
+									   y - yadj,
 													glyph.imageWidth,
 													glyph.imageHeight,
 													useScale * xscale,
@@ -1894,14 +2160,13 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 													glyph.s2,
 													glyph.t2,
 													glyph.glyph);
-				// CG_DrawPic(x, y - yadj, scale * cgDC.Assets.textFont.glyphs[text[i]].imageWidth, scale * cgDC.Assets.textFont.glyphs[text[i]].imageHeight, cgDC.Assets.textFont.glyphs[text[i]].glyph);
+
 #endif
 				x += (glyph.xSkip * useScale * xscale) + adjust;
 				//Com_Printf("%c  xSkip %d\n", s[0], glyph->xSkip);
-				//x += (glyph->imageWidth * useScale) + adjust;
-				s++;
-				s += (bytes - 1);
-				count++;
+				s += bytes;
+				byteCount += bytes;
+				charCount++;
 			}
 		}
 
@@ -1930,6 +2195,7 @@ static ubyte tmpBuff[TMPBUFF_SIZE];
 static int fontImageWidth;
 static int fontImageHeight;
 
+//FIXME font x offset
 //FIXME xy scale factors
 //FIXME scaling is done when you add the sprite
 void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, qhandle_t h)
@@ -2054,8 +2320,6 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 		}
 		count = 0;
 		while (s && *s && count < len) {
-			trap_R_GetGlyphInfo(font, *s & 255, &glyph);
-
 			if ( Q_IsColorString( s ) ) {
 				if (!*cg_drawPlayerNamesColor.string) {
 				if (cgs.cpma) {
@@ -2082,6 +2346,16 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 				}
 				continue;
 			} else {
+				int codePoint;
+				int numUtf8Bytes;
+				qboolean error;
+
+				codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+				s += (numUtf8Bytes - 1);
+				//trap_R_GetGlyphInfo(font, *s & 255, &glyph);
+				trap_R_GetGlyphInfo(font, codePoint, &glyph);
+
+
 				trap_GetShaderImageDimensions(glyph.glyph, &fontImageWidth, &fontImageHeight);
 				//if (fontImageWidth != FONT_DIMENSIONS  ||  fontImageHeight != FONT_DIMENSIONS) {
 				if (fontImageWidth > FONT_DIMENSIONS  ||  fontImageHeight > FONT_DIMENSIONS) {
@@ -2148,8 +2422,8 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 
 				s++;
 				count++;
-			}
-		}
+			}  //  !color string
+		}  // while (*s ...
 
 		memset(finalImgBuff, 0, sizeof(finalImgBuff));
 		x += NAME_SPRITE_SHADOW_OFFSET;  // to allow for shadow
@@ -2217,18 +2491,15 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 
 void CG_Text_Paint_Bottom (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *font)
 {
-	//int tw, th;
-	int th;
+	float th;
 
-
-	//tw = CG_Text_Width(text, scale, limit, font);
 	//th = CG_Text_Height(text, scale, limit, font);
 	//th = CG_Text_Height("1IPUTY", scale, limit, font);  //FIXME fontInfo should store max height
 	th = CG_Text_Height("1IPUTYgj", scale, limit, font);  //FIXME fontInfo should store max height
 	CG_Text_Paint(x, y + th, scale, color, text, adjust, limit, style, font);
 }
 
-void CG_Text_Paint_old(float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex)
+void CG_Text_Paint_old (float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex)
 {
 	const fontInfo_t *font;
 	//FIXME testing limit * 2  team scoreboard tmp fix
@@ -2519,7 +2790,7 @@ static void CG_DrawStatusBarHead( float x ) {
 	//}
 
 	//if (cg_drawStatusBarHeadX.string[0] != '\0') {
-	//	x = cg_drawStatusBarHeadX.integer;
+	//	x = cg_drawStatusBarHeadX.value;
 	//}
 
 	VectorClear( angles );
@@ -2566,7 +2837,7 @@ static void CG_DrawStatusBarHead( float x ) {
 
 #if 0
 	if (cg_drawStatusBarHeadY.string[0] != '\0') {
-		y = cg_drawStatusBarHeadY.integer;
+		y = cg_drawStatusBarHeadY.value;
 	} else {
 		y = 480 - size;
 	}
@@ -3039,7 +3310,7 @@ static int Wolfcam_DrawAttacker( float y ) {
     trace_t trace;
     vec3_t start, forward, end;
     //int content;
-	int x;
+	float x;
 
     VectorCopy (cg_entities[wcg.clientNum].currentState.pos.trBase, start);
     AngleVectors (cg_entities[wcg.clientNum].currentState.apos.trBase, forward, NULL, NULL);
@@ -3094,13 +3365,13 @@ static int Wolfcam_DrawAttacker( float y ) {
 	size = ICON_SIZE * cg_drawAttackerImageScale.value;  //1.25;
 
 	if (cg_drawAttackerX.string[0] != '\0') {
-		x = cg_drawAttackerX.integer;
+		x = cg_drawAttackerX.value;
 	} else {
 		x = 640 - size;
 	}
 
 	if (cg_drawAttackerY.string[0] != '\0') {
-		y = cg_drawAttackerY.integer;
+		y = cg_drawAttackerY.value;
 	}
 
 	angles[PITCH] = 0;
@@ -3141,15 +3412,14 @@ static float CG_DrawAttacker( float y ) {
 	//const char	*info;
 	//	const char	*name;
 	int			clientNum = 0;  // silence compiler
-	//int x;
 	vec4_t color;
-	int x, w;
+	float x, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
 	float *fcolor;
 	char *s;
-	int h;
+	float h;
 
 	if (cg_drawAttacker.integer == 0) {
 		return y;
@@ -3195,9 +3465,9 @@ static float CG_DrawAttacker( float y ) {
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawAttackerX.integer;
+	x = cg_drawAttackerX.value;
 	if (*cg_drawAttackerY.string) {
-		y = cg_drawAttackerY.integer;
+		y = cg_drawAttackerY.value;
 	}
 
 	if (!wolfcam_following) {
@@ -3248,7 +3518,7 @@ static float CG_DrawAttacker( float y ) {
 	trap_R_SetColor(color);
 	CG_DrawHead( x, y, size, size, clientNum, angles, qtrue );
 
-	x = cg_drawAttackerX.integer;
+	x = cg_drawAttackerX.value;
 	if (align == 1) {
 		x -= w / 2;
 	} else if (align == 2) {
@@ -3275,7 +3545,7 @@ static float CG_DrawAttacker( float y ) {
 
 #if 0
 	if (cg_drawAttackerX.string[0] != '\0') {
-		x = cg_drawAttackerX.integer;
+		x = cg_drawAttackerX.value;
 	} else {
 		x = 640 - size;
 	}
@@ -3283,7 +3553,7 @@ static float CG_DrawAttacker( float y ) {
 
 #if 0
 	if (cg_drawAttackerY.string[0] != '\0') {
-		y = cg_drawAttackerY.integer;
+		y = cg_drawAttackerY.value;
 	}
 #endif
 
@@ -3327,8 +3597,7 @@ CG_DrawSnapshot
 */
 static float CG_DrawSnapshot( float y ) {
 	char		*s;
-	int			w;
-	int x;
+	float w, x;
 	float scale;
 	vec4_t color;
 	int align;
@@ -3356,7 +3625,7 @@ static float CG_DrawSnapshot( float y ) {
 	w = CG_Text_Width(s, scale, 0, &cgs.media.snapshotFont);
 
 	if (cg_drawSnapshotX.string[0] != '\0') {
-		x = cg_drawSnapshotX.integer;
+		x = cg_drawSnapshotX.value;
 	} else {
 		x = 635;
 	}
@@ -3368,7 +3637,7 @@ static float CG_DrawSnapshot( float y ) {
 	}
 
 	if (cg_drawSnapshotY.string[0] != '\0') {
-		y = cg_drawSnapshotY.integer;
+		y = cg_drawSnapshotY.value;
 	} else {
 		y = y + 2;
 	}
@@ -3390,8 +3659,7 @@ CG_DrawFPS
 #define	FPS_FRAMES	4
 static float CG_DrawFPS( float y ) {
 	char		*s;
-	//int w;
-	int	h;
+	float h;
 	float		scale;
 	static int	previousTimes[FPS_FRAMES];
 	static int	index = 0;
@@ -3401,7 +3669,7 @@ static float CG_DrawFPS( float y ) {
 	static	int	previous;
 	int		t, frameTime;
 	static double lastFtime = 0;
-	int x;
+	float x;
 	int align;
 	vec4_t color;
 	const fontInfo_t *font;
@@ -3460,12 +3728,11 @@ static float CG_DrawFPS( float y ) {
 		}
 
 		scale = cg_drawFPSScale.value;
-		//w = CG_Text_Width(s, scale, 0, font);
 		h = CG_Text_Height(s, scale, 0, font);
 
 		align = cg_drawFPSAlign.integer;
 
-		x = cg_drawFPSX.integer;
+		x = cg_drawFPSX.value;
 
 #if 0
 		if (align == 1) {
@@ -3475,7 +3742,7 @@ static float CG_DrawFPS( float y ) {
 		}
 #endif
 		if (cg_drawFPSY.string[0] != '\0') {
-			y = cg_drawFPSY.integer;
+			y = cg_drawFPSY.value;
 		} else {
 			y = y + 2;
 		}
@@ -3494,96 +3761,16 @@ static float CG_DrawFPS( float y ) {
 	return y + h + (12.0f * scale);
 }
 
-
-static void CG_DrawClientItemTimer (void)
+static float CG_DrawRedArmorTimer (float x, float y, int cgtime, int ourClientNum, qboolean useTextColor, int align, qboolean useIcon, float iconX, float iconY, float iconSize, vec4_t color, float scale, const fontInfo_t *font, int textStyle, int spacing)
 {
-    char *s;
-    int w;
-	//int h;
-	vec4_t color;
 	int i;
+	timedItem_t *titem;
 	int t;
 	int ts;
-	int ourClientNum;
-	int cgtime;
-	int x;
-	int xAlign;
-	int y;
-	float scale;
-	int alpha;
-	int textStyle;
-	const fontInfo_t *font;
-	int spacing;
-	int align;
-	timedItem_t *titem;
 	int pickupTime;
-	float iconSize;
-	qboolean useIcon;
-	float iconX;
-	float iconY;
-	qboolean useTextColor;
-
-	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_DOMINATION  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER  ||  cgs.gametype == GT_RACE) {
-		return;
-	}
-
-	x = cg_drawClientItemTimerX.integer;
-	y = cg_drawClientItemTimerY.integer;
-
-	scale = cg_drawClientItemTimerScale.value;
-	alpha = (float)cg_drawClientItemTimerAlpha.integer / 255.0;
-	textStyle = cg_drawClientItemTimerStyle.integer;
-	QLWideScreen = cg_drawClientItemTimerWideScreen.integer;
-
-	if (*cg_drawClientItemTimerFont.string) {
-		font = &cgs.media.clientItemTimerFont;
-	} else {
-		font = &cgDC.Assets.textFont;
-	}
-
-	if (cg_drawClientItemTimerIcon.integer == 0) {
-		useIcon = qfalse;
-	} else {
-		useIcon = qtrue;
-	}
-	iconSize = cg_drawClientItemTimerIconSize.value;
-	iconX = cg_drawClientItemTimerIconXoffset.value;
-	iconY = cg_drawClientItemTimerIconYoffset.value;
-
-	align = cg_drawClientItemTimerAlign.integer;
-
-	if (*cg_drawClientItemTimerSpacing.string) {
-		spacing = cg_drawClientItemTimerSpacing.integer;
-	} else {
-		spacing = CG_Text_Height("0123456789", scale, 0, font);  //FIXME
-		if (spacing < 4) {
-			spacing++;
-		} else {
-			spacing = (float)spacing * 1.25;
-		}
-		spacing++;
-	}
-
-	if (wolfcam_following) {  //  &&  !cgs.cpm) {
-		ourClientNum = wcg.clientNum;
-	} else {
-		ourClientNum = cg.snap->ps.clientNum;
-	}
-
-	if (CG_GameTimeout()) {
-		cgtime = cgs.timeoutBeginTime;
-	} else {
-		cgtime = cg.time;
-	}
-
-	if (*cg_drawClientItemTimerTextColor.string) {
-		useTextColor = qtrue;
-		SC_Vec4ColorFromCvars(color, &cg_drawClientItemTimerTextColor, &cg_drawClientItemTimerAlpha);
-	} else {
-		useTextColor = qfalse;
-		color[0] = color[1] = color[2] = 1.0f;
-	}
-	color[3] = alpha;
+	const char *s;
+	float w;
+	float xAlign;
 
 	for (i = 0;  i < cg.numRedArmors;  i++) {
 		titem = &cg.redArmors[i];
@@ -3625,7 +3812,6 @@ static void CG_DrawClientItemTimer (void)
 
 		w = CG_Text_Width(s, scale, 0, font);
 		//h = CG_Text_Height(s, scale, 0, font);
-		color[3] = alpha;
 
 		xAlign = x;
 		if (align == 1) {
@@ -3641,6 +3827,158 @@ static void CG_DrawClientItemTimer (void)
 
 		y += spacing;
 	}
+
+	return y;
+}
+
+static float CG_DrawYellowArmorTimer (float x, float y, int cgtime, int ourClientNum, qboolean useTextColor, int align, qboolean useIcon, float iconX, float iconY, float iconSize, vec4_t color, float scale, const fontInfo_t *font, int textStyle, int spacing)
+{
+	int i;
+	timedItem_t *titem;
+	int t;
+	int ts;
+	int pickupTime;
+	const char *s;
+	float w;
+	float xAlign;
+
+	for (i = 0;  i < cg.numYellowArmors;  i++) {
+		titem = &cg.yellowArmors[i];
+
+		if (titem->specPickupTime > titem->pickupTime) {
+			titem->clientNum = -1;
+			pickupTime = titem->specPickupTime;
+		} else {
+			pickupTime = titem->pickupTime;
+		}
+
+		t = ((pickupTime / 1000) + titem->respawnLength) - (cgtime / 1000);
+		if (t < -5) {
+			titem->clientNum = -1;
+		}
+
+		if (t < 0)
+			ts = 0;
+		else
+			ts = t;
+
+		if (titem->specPickupTime  &&  titem->specPickupTime >= titem->pickupTime  &&  t < 0) {
+			t = 0;
+			ts = 0;
+		}
+
+		if (t < -5  &&  cg_drawClientItemTimer.integer == 1) {
+			s = "^3  -";
+		} else if (titem->clientNum == ourClientNum  &&  cg_drawClientItemTimer.integer == 1) {
+			s = va("^3* %d", ts);
+		} else {
+			s = va("^3  %d", ts);
+		}
+
+		if (useTextColor) {
+			s += 2;
+		}
+
+		w = CG_Text_Width(s, scale, 0, font);
+		//h = CG_Text_Height(s, scale, 0, font);
+
+		xAlign = x;
+		if (align == 1) {
+			xAlign -= (w / 2);
+		} else if (align == 2) {
+			xAlign -= w;
+		}
+
+		CG_Text_Paint_Bottom(xAlign, y, scale, color, s, 0, 0, textStyle, font);
+		if (useIcon) {
+			CG_DrawPic(x + iconX, y + iconY, iconSize, iconSize, cgs.media.yellowArmorIcon);
+		}
+
+		y += spacing;
+	}
+
+	return y;
+}
+
+static float CG_DrawGreenArmorTimer (float x, float y, int cgtime, int ourClientNum, qboolean useTextColor, int align, qboolean useIcon, float iconX, float iconY, float iconSize, vec4_t color, float scale, const fontInfo_t *font, int textStyle, int spacing)
+{
+	int i;
+	timedItem_t *titem;
+	int t;
+	int ts;
+	int pickupTime;
+	const char *s;
+	float w;
+	float xAlign;
+
+	for (i = 0;  i < cg.numGreenArmors;  i++) {
+		titem = &cg.greenArmors[i];
+
+		if (titem->specPickupTime > titem->pickupTime) {
+			titem->clientNum = -1;
+			pickupTime = titem->specPickupTime;
+		} else {
+			pickupTime = titem->pickupTime;
+		}
+
+		t = ((pickupTime / 1000) + titem->respawnLength) - (cgtime / 1000);
+		if (t < -5) {
+			titem->clientNum = -1;
+		}
+
+		if (t < 0)
+			ts = 0;
+		else
+			ts = t;
+
+		if (titem->specPickupTime  &&  titem->specPickupTime >= titem->pickupTime  &&  t < 0) {
+			t = 0;
+			ts = 0;
+		}
+
+		if (t < -5  &&  cg_drawClientItemTimer.integer == 1) {
+			s = "^2  -";
+		} else if (titem->clientNum == ourClientNum  &&  cg_drawClientItemTimer.integer == 1) {
+			s = va("^2* %d", ts);
+		} else {
+			s = va("^2  %d", ts);
+		}
+
+		if (useTextColor) {
+			s += 2;
+		}
+
+		w = CG_Text_Width(s, scale, 0, font);
+		//h = CG_Text_Height(s, scale, 0, font);
+
+		xAlign = x;
+		if (align == 1) {
+			xAlign -= (w / 2);
+		} else if (align == 2) {
+			xAlign -= w;
+		}
+
+		CG_Text_Paint_Bottom(xAlign, y, scale, color, s, 0, 0, textStyle, font);
+		if (useIcon) {
+			CG_DrawPic(x + iconX, y + iconY, iconSize, iconSize, cgs.media.greenArmorIcon);
+		}
+
+		y += spacing;
+	}
+
+	return y;
+}
+
+static float CG_DrawMegaHealthTimer (float x, float y, int cgtime, int ourClientNum, qboolean useTextColor, int align, qboolean useIcon, float iconX, float iconY, float iconSize, vec4_t color, float scale, const fontInfo_t *font, int textStyle, int spacing)
+{
+	int i;
+	timedItem_t *titem;
+	int t;
+	int ts;
+	int pickupTime;
+	const char *s;
+	float w;
+	float xAlign;
 
 	for (i = 0;  i < cg.numMegaHealths;  i++) {
 		titem = &cg.megaHealths[i];
@@ -3699,7 +4037,7 @@ static void CG_DrawClientItemTimer (void)
 
 		w = CG_Text_Width(s, scale, 0, font);
 		//h = CG_Text_Height(s, scale, 0, font);
-		color[3] = alpha;
+
 		xAlign = x;
 		if (align == 1) {
 			xAlign -= (w / 2);
@@ -3712,119 +4050,20 @@ static void CG_DrawClientItemTimer (void)
 		if (useIcon) {
 			CG_DrawPic(x + iconX, y + iconY, iconSize, iconSize, cgs.media.megaHealthIcon);
 		}
-;
+		;
 		y += spacing;
 	}
 
-	for (i = 0;  i < cg.numYellowArmors;  i++) {
-		titem = &cg.yellowArmors[i];
+	return y;
+}
 
-		if (titem->specPickupTime > titem->pickupTime) {
-			titem->clientNum = -1;
-			pickupTime = titem->specPickupTime;
-		} else {
-			pickupTime = titem->pickupTime;
-		}
-
-		t = ((pickupTime / 1000) + titem->respawnLength) - (cgtime / 1000);
-		if (t < -5) {
-			titem->clientNum = -1;
-		}
-
-		if (t < 0)
-			ts = 0;
-		else
-			ts = t;
-
-		if (titem->specPickupTime  &&  titem->specPickupTime >= titem->pickupTime  &&  t < 0) {
-			t = 0;
-			ts = 0;
-		}
-
-		if (t < -5  &&  cg_drawClientItemTimer.integer == 1) {
-			s = "^3  -";
-		} else if (titem->clientNum == ourClientNum  &&  cg_drawClientItemTimer.integer == 1) {
-			s = va("^3* %d", ts);
-		} else {
-			s = va("^3  %d", ts);
-		}
-
-		if (useTextColor) {
-			s += 2;
-		}
-
-		w = CG_Text_Width(s, scale, 0, font);
-		//h = CG_Text_Height(s, scale, 0, font);
-		color[3] = alpha;
-		xAlign = x;
-		if (align == 1) {
-			xAlign -= (w / 2);
-		} else if (align == 2) {
-			xAlign -= w;
-		}
-
-		CG_Text_Paint_Bottom(xAlign, y, scale, color, s, 0, 0, textStyle, font);
-		if (useIcon) {
-			CG_DrawPic(x + iconX, y + iconY, iconSize, iconSize, cgs.media.yellowArmorIcon);
-		}
-
-		y += spacing;
-	}
-
-	for (i = 0;  i < cg.numGreenArmors;  i++) {
-		titem = &cg.greenArmors[i];
-
-		if (titem->specPickupTime > titem->pickupTime) {
-			titem->clientNum = -1;
-			pickupTime = titem->specPickupTime;
-		} else {
-			pickupTime = titem->pickupTime;
-		}
-
-		t = ((pickupTime / 1000) + titem->respawnLength) - (cgtime / 1000);
-		if (t < -5) {
-			titem->clientNum = -1;
-		}
-
-		if (t < 0)
-			ts = 0;
-		else
-			ts = t;
-
-		if (titem->specPickupTime  &&  titem->specPickupTime >= titem->pickupTime  &&  t < 0) {
-			t = 0;
-			ts = 0;
-		}
-
-		if (t < -5  &&  cg_drawClientItemTimer.integer == 1) {
-			s = "^2  -";
-		} else if (titem->clientNum == ourClientNum  &&  cg_drawClientItemTimer.integer == 1) {
-			s = va("^2* %d", ts);
-		} else {
-			s = va("^2  %d", ts);
-		}
-
-		if (useTextColor) {
-			s += 2;
-		}
-
-		w = CG_Text_Width(s, scale, 0, font);
-		//h = CG_Text_Height(s, scale, 0, font);
-		color[3] = alpha;
-		xAlign = x;
-		if (align == 1) {
-			xAlign -= (w / 2);
-		} else if (align == 2) {
-			xAlign -= w;
-		}
-
-		CG_Text_Paint_Bottom(xAlign, y, scale, color, s, 0, 0, textStyle, font);
-		if (useIcon) {
-			CG_DrawPic(x + iconX, y + iconY, iconSize, iconSize, cgs.media.greenArmorIcon);
-		}
-
-		y += spacing;
-	}
+static float CG_DrawQuadDamageTimer (float x, float y, int cgtime, int ourClientNum, qboolean useTextColor, int align, qboolean useIcon, float iconX, float iconY, float iconSize, vec4_t color, float scale, const fontInfo_t *font, int textStyle, int spacing)
+{
+	int i;
+	int t;
+	const char *s;
+	float w;
+	float xAlign;
 
 	for (i = 0;  i < cg.numQuads;  i++) {
 		t = ((cg.quads[i].pickupTime / 1000) + cg.quads[i].respawnLength) - (cgtime / 1000);
@@ -3838,7 +4077,7 @@ static void CG_DrawClientItemTimer (void)
 
 		w = CG_Text_Width(s, scale, 0, font);
 		//h = CG_Text_Height(s, scale, 0, font);
-		color[3] = alpha;
+
 		xAlign = x;
 		if (align == 1) {
 			xAlign -= (w / 2);
@@ -3854,6 +4093,17 @@ static void CG_DrawClientItemTimer (void)
 		y += spacing;
 	}
 
+	return y;
+}
+
+static float CG_DrawBattleSuitTimer (float x, float y, int cgtime, int ourClientNum, qboolean useTextColor, int align, qboolean useIcon, float iconX, float iconY, float iconSize, vec4_t color, float scale, const fontInfo_t *font, int textStyle, int spacing)
+{
+	int i;
+	int t;
+	const char *s;
+	float w;
+	float xAlign;
+
 	for (i = 0;  i < cg.numBattleSuits;  i++) {
 		t = ((cg.battleSuits[i].pickupTime / 1000) + cg.battleSuits[i].respawnLength) - (cgtime / 1000);
 		if (t < 0)
@@ -3866,7 +4116,7 @@ static void CG_DrawClientItemTimer (void)
 
 		w = CG_Text_Width(s, scale, 0, font);
 		//h = CG_Text_Height(s, scale, 0, font);
-		color[3] = alpha;
+
 		xAlign = x;
 		if (align == 1) {
 			xAlign -= (w / 2);
@@ -3880,6 +4130,144 @@ static void CG_DrawClientItemTimer (void)
 		}
 
 		y += spacing;
+	}
+
+	return y;
+}
+
+static void CG_DrawClientItemTimer (void)
+{
+	vec4_t color;
+	int ourClientNum;
+	int cgtime;
+	float x;
+	float y;
+	float scale;
+	int alpha;
+	int textStyle;
+	const fontInfo_t *font;
+	int spacing;
+	int align;
+	float iconSize;
+	qboolean useIcon;
+	float iconX;
+	float iconY;
+	qboolean useTextColor;
+	qboolean shownMH, shownRA, shownYA, shownGA, shownQuad, shownBS;
+	const char *str;
+
+	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_DOMINATION  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER  ||  cgs.gametype == GT_RACE) {
+		return;
+	}
+
+
+	x = cg_drawClientItemTimerX.value;
+	y = cg_drawClientItemTimerY.value;
+
+	scale = cg_drawClientItemTimerScale.value;
+	alpha = (float)cg_drawClientItemTimerAlpha.integer / 255.0;
+	textStyle = cg_drawClientItemTimerStyle.integer;
+	QLWideScreen = cg_drawClientItemTimerWideScreen.integer;
+
+	if (*cg_drawClientItemTimerFont.string) {
+		font = &cgs.media.clientItemTimerFont;
+	} else {
+		font = &cgDC.Assets.textFont;
+	}
+
+	if (cg_drawClientItemTimerIcon.integer == 0) {
+		useIcon = qfalse;
+	} else {
+		useIcon = qtrue;
+	}
+	iconSize = cg_drawClientItemTimerIconSize.value;
+	iconX = cg_drawClientItemTimerIconXoffset.value;
+	iconY = cg_drawClientItemTimerIconYoffset.value;
+
+	align = cg_drawClientItemTimerAlign.integer;
+
+	if (*cg_drawClientItemTimerSpacing.string) {
+		spacing = cg_drawClientItemTimerSpacing.integer;
+	} else {
+		spacing = CG_Text_Height("0123456789", scale, 0, font);  //FIXME
+		if (spacing < 4) {
+			spacing++;
+		} else {
+			spacing = (float)spacing * 1.25;
+		}
+		spacing++;
+	}
+
+	if (wolfcam_following) {  //  &&  !cgs.cpm) {
+		ourClientNum = wcg.clientNum;
+	} else {
+		ourClientNum = cg.snap->ps.clientNum;
+	}
+
+	if (CG_GameTimeout()) {
+		cgtime = cgs.timeoutBeginTime;
+	} else {
+		cgtime = cg.time;
+	}
+
+	if (*cg_drawClientItemTimerTextColor.string) {
+		useTextColor = qtrue;
+		SC_Vec4ColorFromCvars(color, &cg_drawClientItemTimerTextColor, &cg_drawClientItemTimerAlpha);
+	} else {
+		useTextColor = qfalse;
+		color[0] = color[1] = color[2] = 1.0f;
+	}
+	color[3] = alpha;
+
+
+		shownMH = shownRA = shownYA = shownGA = shownQuad = shownBS = qfalse;
+
+	str = cg_drawClientItemTimerFilter.string;
+	while (*str) {
+		switch (*str) {
+		case 'b':
+			if (!shownBS) {
+				shownBS = qtrue;
+				y = CG_DrawBattleSuitTimer(x, y, cgtime, ourClientNum, useTextColor, align, useIcon, iconX, iconY, iconSize, color, scale, font, textStyle, spacing);
+			}
+			break;
+		case 'g':
+			if (!shownGA) {
+				shownGA = qtrue;
+				y = CG_DrawGreenArmorTimer(x, y, cgtime, ourClientNum, useTextColor, align, useIcon, iconX, iconY, iconSize, color, scale, font, textStyle, spacing);
+			}
+			break;
+		case 'm':
+			if (!shownMH) {
+				shownMH = qtrue;
+				y = CG_DrawMegaHealthTimer(x, y, cgtime, ourClientNum, useTextColor, align, useIcon, iconX, iconY, iconSize, color, scale, font, textStyle, spacing);
+			}
+			break;
+		case 'q':
+			if (!shownQuad) {
+				shownQuad = qtrue;
+				y = CG_DrawQuadDamageTimer(x, y, cgtime, ourClientNum, useTextColor, align, useIcon, iconX, iconY, iconSize, color, scale, font, textStyle, spacing);
+			}
+			break;
+		case 'r':
+			if (!shownRA) {
+				shownRA = qtrue;
+				y = CG_DrawRedArmorTimer(x, y, cgtime, ourClientNum, useTextColor, align, useIcon, iconX, iconY, iconSize, color, scale, font, textStyle, spacing);
+
+			}
+			break;
+		case 'y':
+			if (!shownYA) {
+				shownYA = qtrue;
+				y = CG_DrawYellowArmorTimer(x, y, cgtime, ourClientNum, useTextColor, align, useIcon, iconX, iconY, iconSize, color, scale, font, textStyle, spacing);
+			}
+			break;
+		default:
+			// pass
+			break;
+		}
+
+		str++;
 	}
 }
 
@@ -3895,11 +4283,11 @@ static float CG_DrawOrigin (float y)
 	vec3_t origin;
 	vec3_t angles;
 	vec4_t color;
-	int x, w;
+	float x, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
-	int h;
+	float h;
 
 	if (cg.playPath) {
 		VectorCopy(cg.refdef.vieworg, origin);
@@ -3933,8 +4321,8 @@ static float CG_DrawOrigin (float y)
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawOriginX.integer;
-	y = cg_drawOriginY.integer;
+	x = cg_drawOriginX.value;
+	y = cg_drawOriginY.value;
 
 	w = CG_Text_Width(s, scale, 0, font);
 	h = CG_Text_Height(s, scale, 0, font);
@@ -3956,7 +4344,7 @@ CG_DrawTimer
 */
 static float CG_DrawTimer( float y ) {
 	char		*s;
-	int			w;
+	float w;
 	int			mins, seconds, tens;
 	int			msec;
 
@@ -4100,10 +4488,10 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 	//y = 0;
 
 	if (cg_drawTeamOverlayX.string[0] != '\0') {
-		//x = cg_drawTeamOverlayX.integer;
+		//x = cg_drawTeamOverlayX.value;
 	}
 	if (cg_drawTeamOverlayY.string[0] != '\0') {
-		//y = cg_drawTeamOverlayY.integer;
+		//y = cg_drawTeamOverlayY.value;
 	}
 
 	if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_RED ) {
@@ -4210,7 +4598,7 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 
 static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 {
-	int x, w, h, xx;
+	float x, w, h, xx;
 	int i, j, len;
 	const char *p;
 	vec4_t		hcolor;
@@ -4222,8 +4610,8 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	int ret_y, count;
 	const fontInfo_t *font;
 	float scale;
-	int cheight;
-	int cwidth;
+	float cheight;
+	float cwidth;
 	float wlimit;
 	float alpha;
 	int align;
@@ -4329,9 +4717,9 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	h = plyrs * cheight;
 	h += (plyrs - 1) * lineOffset;
 
-	x = cg_drawTeamOverlayX.integer;
+	x = cg_drawTeamOverlayX.value;
 	if (*cg_drawTeamOverlayY.string) {
-		y = cg_drawTeamOverlayY.integer;
+		y = cg_drawTeamOverlayY.value;
 	}
 
 	if (align == 1) {
@@ -4623,7 +5011,7 @@ Draw the small two score display
 static float CG_DrawPlayersLeft( float y ) {
 	const char	*s;
 	int			s1, s2, score;
-	int			x, w;
+	float x, w;
 	int			v;
 	vec4_t		color;
 	float		y1;
@@ -4802,7 +5190,7 @@ static float CG_DrawPlayersLeft( float y ) {
 static float CG_DrawScores( float y ) {
 	const char	*s;
 	int			s1, s2, score;
-	int			x, w;
+	float x, w;
 	int			v;
 	vec4_t		color;
 	float		y1;
@@ -5144,16 +5532,17 @@ CG_DrawPickupItem
 #if 1  //ndef MPACK
 
 
-static int CG_DrawPickupItem (int y)
+//FIXME return proper y value
+static float CG_DrawPickupItem (float y)
 {
 	int value;
 	float *fadeColor;
 	int iconSize;
 	int mins, seconds, tens, msec;
 	char timeStr[128];
-	int textHeight;
+	float textHeight;
 	vec4_t color;
-	int x, w;
+	float x, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -5201,8 +5590,8 @@ static int CG_DrawPickupItem (int y)
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawItemPickupsX.integer;
-	y = cg_drawItemPickupsY.integer;
+	x = cg_drawItemPickupsX.value;
+	y = cg_drawItemPickupsY.value;
 
 	value = cg.itemPickup;
 	if (value) {
@@ -5246,6 +5635,23 @@ static int CG_DrawPickupItem (int y)
 				x -= (w + pickupCountStrWidth);
 			}
 
+#if 0
+			//FIXME testing
+			if (1) {
+				vec4_t color = { 1.0f, 0.0f, 0.0f, 0.33f };
+
+				x += 20;
+				CG_FillRect(x , y + (iconSize/2 - textHeight/2) + textHeight, w, 20 /*height*/, color);
+				
+				CG_Text_Paint(x, y + (iconSize/2 - textHeight/2) + textHeight, scale, fadeColor, bg_itemlist[value].pickup_name, 0, 0, style, font);
+				x += 1;
+				CG_Text_Paint(x + w, y + (iconSize/2 - textHeight/2) + textHeight, scale, fadeColor, bg_itemlist[value].pickup_name, 0, 0, style, font);
+
+				return y;
+			}
+#endif
+
+			
 			CG_Text_Paint(x, y + (iconSize/2 - textHeight/2) + textHeight, scale, fadeColor, bg_itemlist[value].pickup_name, 0, 0, style, font);
 			if (cg.itemPickupCount > 1) {
 				x += w;
@@ -5342,7 +5748,7 @@ static int CG_DrawPickupItem (int y)
 		trap_R_SetColor(NULL);
 	}
 
-	return y;
+	return y + iconSize;  //FIXME test, just guessed for a value
 }
 
 #endif // ndef MPACK
@@ -5379,7 +5785,7 @@ CG_DrawTeamInfo
 */
 #ifndef MISSIONPACK
 static void CG_DrawTeamInfo( void ) {
-	int w, h;
+	float w, h;
 	int i, len;
 	vec4_t		hcolor;
 	int		chatHeight;
@@ -5523,13 +5929,14 @@ CG_DrawReward
 */
 static void CG_DrawReward (void)
 {
+	//FIXME imageWidth, maxWidth as float
 	vec4_t	color;
 	int		i, count;
-	int	x, y;
+	float x, y;
 	char	buf[32];
 	const fontInfo_t *font;
 	int imageWidth;
-	int tw, th;
+	float tw, th;
 	int maxWidth;
 	float textScale;
 	float imageScale;
@@ -5681,10 +6088,10 @@ static void CG_DrawReward (void)
 			y = 56;
 			x = 320;
 			if (*cg_drawRewardsY.string) {
-				y = cg_drawRewardsY.integer;
+				y = cg_drawRewardsY.value;
 			}
 			if (*cg_drawRewardsX.string) {
-				x = cg_drawRewardsX.integer;
+				x = cg_drawRewardsX.value;
 			}
 
 			if (cg_drawRewardsAlign.integer == 1) {
@@ -5719,10 +6126,10 @@ static void CG_DrawReward (void)
 		y = 56;
 		x = 320;  //  - ICON_SIZE/2;
 		if (*cg_drawRewardsY.string) {
-			y = cg_drawRewardsY.integer;
+			y = cg_drawRewardsY.value;
 		}
 		if (*cg_drawRewardsX.string) {
-			x = cg_drawRewardsX.integer;
+			x = cg_drawRewardsX.value;
 		}
 		if (cg_drawRewards.integer == 2) {
 			// like q3
@@ -5751,10 +6158,10 @@ static void CG_DrawReward (void)
 		y = 56;
 		x = 320;  // - count * ICON_SIZE/2;
 		if (*cg_drawRewardsY.string) {
-			y = cg_drawRewardsY.integer;
+			y = cg_drawRewardsY.value;
 		}
 		if (*cg_drawRewardsX.string) {
-			x = cg_drawRewardsX.integer;
+			x = cg_drawRewardsX.value;
 		}
 		if (cg_drawRewardsAlign.integer == 1) {
 			x -= (count * (((float)(ICON_SIZE + 4)) * imageScale + 1)) / 2;
@@ -5886,7 +6293,7 @@ static void CG_DrawDisconnect( void ) {
 	int			cmdNum;
 	usercmd_t	cmd;
 	const char		*s;
-	int			w;  // bk010215 - FIXME char message[1024];
+	float		w;  // bk010215 - FIXME char message[1024];
 
 	// draw the phone jack if we are completely past our buffers
 	cmdNum = trap_GetCurrentCmdNumber() - CMD_BACKUP + 1;
@@ -5931,10 +6338,10 @@ static void CG_DrawDisconnect( void ) {
 	}
 
 	if (cg_lagometerX.string != '\0') {
-		x = cg_lagometerX.integer;
+		x = cg_lagometerX.value;
 	}
 	if (cg_lagometerY.string != '\0') {
-		y = cg_lagometerY.integer;
+		y = cg_lagometerY.value;
 	}
 	QLWideScreen = cg_lagometerWideScreen.integer;
 
@@ -5951,7 +6358,8 @@ CG_DrawLagometer
 ==============
 */
 static void CG_DrawLagometer( void ) {
-	int		a, x, y, i;
+	int		a, i;
+	float x, y;
 	float	v;
 	int pval;
 	float	ax, ay, aw, ah, mid, range;
@@ -5961,7 +6369,7 @@ static void CG_DrawLagometer( void ) {
 	int tcount;
 	int ping;
 	vec4_t fontColor;
-	int w;
+	float w;
 	int fontStyle, align;
 	int fontAlign;
 	float scale;
@@ -6002,8 +6410,8 @@ static void CG_DrawLagometer( void ) {
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-	x = cg_lagometerX.integer;
-	y = cg_lagometerY.integer;
+	x = cg_lagometerX.value;
+	y = cg_lagometerY.value;
 
 
 #if 0
@@ -6012,10 +6420,10 @@ static void CG_DrawLagometer( void ) {
 	}
 
 	if (cg_lagometerX.string[0] != '\0') {
-		x = cg_lagometerX.integer;
+		x = cg_lagometerX.value;
 	}
 	if (cg_lagometerY.string[0] != '\0') {
-		y = cg_lagometerY.integer;
+		y = cg_lagometerY.value;
 	}
 #endif
 
@@ -6266,7 +6674,8 @@ Called for important messages that should stay in the center of the screen
 for a few moments
 ==============
 */
-void CG_CenterPrint( const char *str, int y, int charWidth ) {
+void CG_CenterPrint (const char *str, float y, int charWidth)
+{
 	char	*s;
 
 	Q_strncpyz( cg.centerPrint, str, sizeof(cg.centerPrint) );
@@ -6274,7 +6683,7 @@ void CG_CenterPrint( const char *str, int y, int charWidth ) {
 	QLWideScreen = cg_drawCenterPrintWideScreen.integer;
 
 	if (cg_drawCenterPrintY.string[0] != '\0') {
-		y = cg_drawCenterPrintY.integer;
+		y = cg_drawCenterPrintY.value;
 	}
 
 	//Com_Printf("centerprint %s\n", str);
@@ -6295,7 +6704,7 @@ void CG_CenterPrint( const char *str, int y, int charWidth ) {
 	cg.centerPrintIsFragMessage = qfalse;
 }
 
-void CG_CenterPrintFragMessage (const char *str, int y, int charWidth)
+void CG_CenterPrintFragMessage (const char *str, float y, int charWidth)
 {
 	CG_CenterPrint(str, y, charWidth);
 	cg.centerPrintIsFragMessage = qtrue;
@@ -6530,9 +6939,9 @@ static void CG_DrawCenter (void)
 }
 
 // handles both frag and obituary
-int *CG_CreateFragString (qboolean lastFrag, int indexNum)
+floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum)
 {
-	static int extString[MAX_STRING_CHARS];
+	static floatint_t extString[MAX_STRING_CHARS];
 	int i, j, k;
 	const char *tokenString;
 	int hits;
@@ -6553,14 +6962,14 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			tokenString = cg_drawFragMessageThawTokens.string;
 		} else {
 			if (cgs.gametype == GT_FREEZETAG) {
-				if (lastFrag  &&  CG_IsTeammate(&cgs.clientinfo[cg.lastFragVictim])) {
+				if (lastFrag  &&  (CG_IsTeamGame(cgs.gametype)  &&  cg.lastFragKillerTeam == cg.lastFragVictimTeam)) {
 					tokenString = cg_drawFragMessageFreezeTeamTokens.string;
 				} else {
 					tokenString = cg_drawFragMessageFreezeTokens.string;
 				}
 			} else {
 				//FIXME ctfs with team damage???
-				if (lastFrag  &&  CG_IsTeammate(&cgs.clientinfo[cg.lastFragVictim])  &&  (cgs.gametype != GT_CA  &&  cgs.gametype != GT_RED_ROVER  &&  cgs.gametype != GT_DOMINATION  &&  cgs.gametype != GT_CTFS)) {
+				if (lastFrag  &&  (CG_IsTeamGame(cgs.gametype)  &&  cg.lastFragKillerTeam == cg.lastFragVictimTeam)  &&  (cgs.gametype != GT_CA  &&  cgs.gametype != GT_RED_ROVER  &&  cgs.gametype != GT_DOMINATION  &&  cgs.gametype != GT_CTFS)) {
 					tokenString = cg_drawFragMessageTeamTokens.string;
 				} else {
 					tokenString = cg_drawFragMessageTokens.string;
@@ -6582,7 +6991,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 		const char *s;
 
 		if (i >= strlen(tokenString)) {
-			extString[j] = 0;
+			extString[j].i = 0;
 			//Com_Printf("ent past  %d > %d\n", i, strlen(tokenString));
 			break;
 		}
@@ -6593,12 +7002,12 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 		}
 
 		if (c == '\0') {
-			extString[j] = 0;
+			extString[j].i = 0;
 			break;
 		}
 
 		if (c != '%') {
-			extString[j] = (unsigned char)tokenString[i];
+			extString[j].i = (unsigned char)tokenString[i];
 			i++;
 			j++;
 			continue;
@@ -6611,13 +7020,15 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			//Com_Printf("token %c\n", c);
 		}
 		if (c == 'v') {  // name, unedited
+			//Com_Printf("got v...\n");
 			if (lastFrag) {
 				s = cg.lastFragVictimName;
+				//m_Printf("last victim name: '%s'\n", s);
 			} else {
 				s = obituary->victim;
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6628,7 +7039,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				s = obituary->victimWhiteName;
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6643,7 +7054,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6658,7 +7069,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6669,7 +7080,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				s = obituary->q3obitString;
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6692,7 +7103,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6704,9 +7115,9 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			} else {
 				icon = obituary->icon;
 			}
-			extString[j] = 256;  //FIXME define
+			extString[j].i = TEXT_PIC_PAINT_ICON;
 			j++;
-			extString[j] = icon;
+			extString[j].i = icon;
 			j++;
 		} else if (c == 'A') {
 			// total accuracy
@@ -6746,7 +7157,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 
 			//Com_Printf("acc: %s\n", s);
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6788,7 +7199,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6828,7 +7239,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			}
 			//Com_Printf("acc: %s\n", s);
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -6871,18 +7282,18 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
 		} else if (c == 'c') {
 			char tmpString[9];
-			extString[j] = 257;  //FIXME define
+			extString[j].i = TEXT_PIC_PAINT_COLOR;
 			j++;
 			Q_strncpyz(tmpString, tokenString + i + 1, sizeof(tmpString));
 			i++;
 			i += 7;  // hex color is 8 (0xff00ff) and 'i' will be incremented before fetching next token
-			extString[j] = Com_HexStrToInt(tmpString);
+			extString[j].i = Com_HexStrToInt(tmpString);
 			j++;
 		} else if (c == 't') {
 			int team;
@@ -6893,14 +7304,14 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				team = obituary->victimTeam;
 			}
 
-			extString[j] = 257;
+			extString[j].i = TEXT_PIC_PAINT_COLOR;
 			j++;
 			if (team == TEAM_RED) {
-				extString[j] = Com_HexStrToInt(cg_obituaryRedTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_obituaryRedTeamColor.string);
 			} else if (team == TEAM_BLUE) {
-				extString[j] = Com_HexStrToInt(cg_obituaryBlueTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_obituaryBlueTeamColor.string);
 			} else {
-				extString[j] = Com_HexStrToInt("0xffffff");
+				extString[j].i = Com_HexStrToInt("0xffffff");
 			}
 			j++;
 		} else if (c == 'T') {
@@ -6919,14 +7330,14 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				team = obituary->killerTeam;
 			}
 
-			extString[j] = 257;
+			extString[j].i = TEXT_PIC_PAINT_COLOR;
 			j++;
 			if (team == TEAM_RED) {
-				extString[j] = Com_HexStrToInt(cg_obituaryRedTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_obituaryRedTeamColor.string);
 			} else if (team == TEAM_BLUE) {
-				extString[j] = Com_HexStrToInt(cg_obituaryBlueTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_obituaryBlueTeamColor.string);
 			} else {
-				extString[j] = Com_HexStrToInt("0xffffff");
+				extString[j].i = Com_HexStrToInt("0xffffff");
 			}
 			j++;
 		} else if (c == 'f') {
@@ -6952,22 +7363,22 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			}
 
 			if (cgs.gametype >= GT_TEAM) {
-				extString[j] = 256;
+				extString[j].i = TEXT_PIC_PAINT_ICON;
 				j++;
 				if (0) {  //(suicide) {
-					extString[j - 1] = -1;
-					extString[j] = 0;
+					extString[j - 1].i = -1;
+					extString[j].i = 0;
 				} else if (team == TEAM_RED) {
-					extString[j] = cgs.media.redFlagShader[0];
+					extString[j].i = cgs.media.redFlagShader[0];
 				} else if (team == TEAM_BLUE) {
-					extString[j] = cgs.media.blueFlagShader[0];
+					extString[j].i = cgs.media.blueFlagShader[0];
 				} else {
-					extString[j] = 0;
+					extString[j].i = 0;
 				}
 			} else {
-				extString[j] = -1;
+				extString[j].i = -1;
 				j++;
-				extString[j] = 0;
+				extString[j].i = 0;
 			}
 			j++;
 		} else if (c == 'F') {
@@ -6994,22 +7405,22 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			}
 
 			if (cgs.gametype >= GT_TEAM) {
-				extString[j] = 256;
+				extString[j].i = TEXT_PIC_PAINT_ICON;
 				j++;
 				if (suicide) {
-					extString[j - 1] = -1;
-					extString[j] = 0;
+					extString[j - 1].i = -1;
+					extString[j].i = 0;
 				} else if (team == TEAM_RED) {
-					extString[j] = cgs.media.redFlagShader[0];
+					extString[j].i = cgs.media.redFlagShader[0];
 				} else if (team == TEAM_BLUE) {
-					extString[j] = cgs.media.blueFlagShader[0];
+					extString[j].i = cgs.media.blueFlagShader[0];
 				} else {
-					extString[j] = 0;
+					extString[j].i = 0;
 				}
 			} else {
-				extString[j] = -1;
+				extString[j].i = -1;
 				j++;
-				extString[j] = 0;
+				extString[j].i = 0;
 			}
 			j++;
 		} else if (c == 'n') {  // victim's country flag
@@ -7025,9 +7436,9 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			if (clientNum >= 0  ||  clientNum < MAX_CLIENTS) {
 				icon = cgs.clientinfo[clientNum].countryFlag;
 				if (icon) {
-					extString[j] = 256;  //FIXME define
+					extString[j].i = TEXT_PIC_PAINT_ICON;
 					j++;
-					extString[j] = icon;
+					extString[j].i = icon;
 					j++;
 				}
 			}
@@ -7044,9 +7455,9 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			if (clientNum >= 0  ||  clientNum < MAX_CLIENTS) {
 				icon = cgs.clientinfo[clientNum].countryFlag;
 				if (icon) {
-					extString[j] = 256;  //FIXME define
+					extString[j].i = TEXT_PIC_PAINT_ICON;
 					j++;
-					extString[j] = icon;
+					extString[j].i = icon;
 					j++;
 				}
 			}
@@ -7065,7 +7476,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -7084,7 +7495,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -7107,7 +7518,7 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
@@ -7130,15 +7541,132 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 				}
 			}
 			while (*s) {
-				extString[j] = (unsigned char)s[0];
+				extString[j].i = (unsigned char)s[0];
 				j++;
 				s++;
 			}
+		} else if (c == '{') {  // long form commands
+			qboolean foundEndBrace;
+			int rets;
+
+			rets = 0;
+
+			if (!Q_stricmpn(&tokenString[i + 1], "newline ", strlen("newline "))) {
+				extString[j].i = TEXT_PIC_PAINT_NEWLINE;
+				j++;
+				rets = sscanf(&tokenString[i + 1 + strlen("newline ")], "%f", &extString[j].f);
+				if (rets != 1) {
+					Com_Printf("^3CG_CreateFragString:  invalid newline long token\n");
+					extString[j].f = 16.0f;
+				}
+				//Com_Printf("^3got newline: %f\n", extString[j].f);
+				j++;
+			} else if (!Q_stricmpn(&tokenString[i + 1], "x ", strlen("x "))) {
+				extString[j].i = TEXT_PIC_PAINT_XOFFSET;
+				j++;
+				rets = sscanf(&tokenString[i + 1 + strlen("x ")], "%f", &extString[j].f);
+				if (rets != 1) {
+					Com_Printf("^3CG_CreateFragString:  invalid x long token\n");
+					extString[j].f = 0;
+				}
+				j++;
+			} else if (!Q_stricmpn(&tokenString[i + 1], "y ", strlen("y "))) {
+				extString[j].i = TEXT_PIC_PAINT_YOFFSET;
+				j++;
+				rets = sscanf(&tokenString[i + 1 + strlen("y ")], "%f", &extString[j].f);
+				if (rets != 1) {
+					Com_Printf("^3CG_CreateFragString:  invalid y long token\n");
+					extString[j].f = 0;
+				}
+				j++;
+			} else if (!Q_stricmpn(&tokenString[i + 1], "font ", strlen("font "))) {
+				fontInfo_t fi;
+				int pointSize;
+				char fontName[MAX_STRING_CHARS];
+				char *sf;
+
+				extString[j].i = TEXT_PIC_PAINT_FONT;
+				j++;
+
+				fontName[0] = '\0';
+				rets = sscanf(&tokenString[i + 1 + strlen("font ")], "%d %s}", &pointSize, fontName);
+				//Com_Printf("font: %d '%s'\n", pointSize, fontName);
+
+				// strip final '}'
+				sf = fontName;
+				while (*sf) {
+					if (*sf == '}') {
+						*sf = '\0';
+						break;
+					}
+
+					sf++;
+				}
+				//Com_Printf("^5font: %d '%s'\n", pointSize, fontName);
+				if (rets != 2) {
+					Com_Printf("^3CG_CreateFragString:  invalid font long token\n");
+					pointSize = 24;
+					fontName[0] = '\0';
+				}
+				trap_R_RegisterFont(fontName, pointSize, &fi);
+				extString[j].i = fi.fontId;
+				j++;
+			} else if (!Q_stricmpn(&tokenString[i + 1], "scale ", strlen("scale "))) {
+				extString[j].i = TEXT_PIC_PAINT_SCALE;
+				j++;
+				rets = sscanf(&tokenString[i + 1 + strlen("scale ")], "%f", &extString[j].f);
+				if (rets != 1) {
+					Com_Printf("^3CG_CreateFragString:  invalid scale long token\n");
+					extString[j].f = 1;
+				}
+				j++;
+			} else if (!Q_stricmpn(&tokenString[i + 1], "iconscale ", strlen("iconscale "))) {
+				extString[j].i = TEXT_PIC_PAINT_ICONSCALE;
+				j++;
+				rets = sscanf(&tokenString[i + 1 + strlen("iconscale ")], "%f", &extString[j].f);
+				if (rets != 1) {
+					Com_Printf("^3CG_CreateFragString:  invalid iconscale long token\n");
+					extString[j].f = 1;
+				}
+				j++;
+			} else if (!Q_stricmpn(&tokenString[i + 1], "style ", strlen("style "))) {
+				extString[j].i = TEXT_PIC_PAINT_STYLE;
+				j++;
+				rets = sscanf(&tokenString[i + 1 + strlen("style ")], "%d", &extString[j].i);
+				//extString[j].i = 0;
+
+				if (rets != 1) {
+					Com_Printf("^3CG_CreateFragString:  invalid style long token\n");
+					extString[j].i = 0;
+				}
+				j++;
+
+				//FIXME testing
+				//Com_Printf("^2xxxx: ");
+				//extString[j].i = 0;
+				//printPicString(extString);
+			} else {
+				Com_Printf("^1CG_CreateFragString() unknown long command: '%s'\n", &tokenString[i + 1]);
+			}
+
+			i++;
+			foundEndBrace = qfalse;
+			while (tokenString[i]) {
+				if (tokenString[i] == '}') {
+					foundEndBrace = qtrue;
+					break;
+				}
+				//Com_Printf("skipping '%c'\n", tokenString[i]);
+				i++;
+			}
+			if (!foundEndBrace) {
+				Com_Printf("^1CG_CreateFragString() couldn't find ending brace\n");
+			}
 		} else if (c == '%') {
-			extString[j] = '%';
+			extString[j].i = '%';
 			j++;
 		} else {
-			Com_Printf("CreateFragString() unknown token '%c'\n", c);
+			Com_Printf("^1CG_CreateFragString() unknown token '%c'\n", c);
 		}
 
 		i++;
@@ -7154,11 +7682,15 @@ int *CG_CreateFragString (qboolean lastFrag, int indexNum)
 CG_DrawCenterString
 ===================
 */
+
+// same size as CG_CreateFragString
+floatint_t tmpExtString[MAX_STRING_CHARS];
+
 static void CG_DrawCenterString( void ) {
 	const char	*start;
 	int		l;
-	int		x, y, w;
-	int h;
+	float x, y, w;
+	float h;
 	//float	*color;
 	//FIXME test
 	const fontInfo_t *font;
@@ -7167,7 +7699,7 @@ static void CG_DrawCenterString( void ) {
 	//float alphaOverride;
 	vec4_t color;
 	//float fadeAlpha;
-	const int *extString = NULL;
+	const floatint_t *extString = NULL;
 	int numIcons = 0;
 	int startLen;
 
@@ -7240,8 +7772,6 @@ static void CG_DrawCenterString( void ) {
 		//Com_Printf("linebuffer: '%s'\n", linebuffer);
 
 		if (cg_qlhud.integer) {
-			//#ifdef MISSIONPACK
-			//font = &cgs.media.centerPrintFont;
 			if (*cg_drawCenterPrintFont.string) {
 				font = &cgs.media.centerPrintFont;
 			} else {
@@ -7251,63 +7781,133 @@ static void CG_DrawCenterString( void ) {
 			//Com_Printf("x %s\n", font->name);
 			if (cg.centerPrintIsFragMessage  &&  start == cg.centerPrint) {
 				char *lb;
-				const int *es;
+				const floatint_t *es;
 
-
-				//Q_strncpyz(linebuffer, "frag", sizeof(linebuffer));
-				//Q_strncpyz(linebuffer, CG_CreateFragString(), sizeof(linebuffer));
 				extString = CG_CreateFragString(qtrue, 0);
-				lb = linebuffer;
-				es = extString;
-				numIcons = 0;
-				while (*es) {
-					if (*es >= 0  &&  *es <= 255) {
-						*lb = (char)*es;
-						lb++;
-						es++;
-						continue;
-					}
-					if (*es == 256) {
-						numIcons++;
-					}
-					//lb++;
-					//es++;
-					es += 2;
-				}
-				*lb = '\0';
-			}
 
-			//Com_Printf("centerprint %s font %d\n", linebuffer, *font);
-			scale = cg_drawCenterPrintScale.value;
-			w = CG_Text_Width(linebuffer, scale, 0, font);
-			h = CG_Text_Height(linebuffer, scale, 0, font);
-			if (cg.centerPrintIsFragMessage  &&  start == cg.centerPrint) {
-				//Com_Printf("old w %d  icons %d\n", w, numIcons);
-				w += ((float)h * cg_drawFragMessageIconScale.value) * (float)numIcons;
-				//Com_Printf("new w %d\n", w);
-			}
-			align = cg_drawCenterPrintAlign.value;
-			//x = cg_drawCenterPrintX.integer;
-			x = (SCREEN_WIDTH - w) / 2;
-			if (*cg_drawCenterPrintX.string) {
-				x = cg_drawCenterPrintX.integer;
-				if (align == 1) {
-					x -= w / 2;
-				} else if (align == 2) {
-					x -= w;
-				}
-			}
+				//Com_Printf("^3fullstring: ");
+				//printPicString(extString);
+					
+				while (1) {
+					floatint_t *ts;
+					qboolean haveNewLineAmount = qfalse;
+					float newLineAmount = 0;
 
-			//CG_Text_Paint(x, y + h, 0.5, color, linebuffer, 0, 0, ITEM_TEXTSTYLE_SHADOWEDMORE, &cgDC.Assets.textFont);
-			//Com_Printf("doint it %d %d  (%s) %s\n", x, y + h, font->name, linebuffer);
-			if (cg.centerPrintIsFragMessage  &&  start == cg.centerPrint) {
-				CG_Text_Pic_Paint(x, y + h, scale, color, extString, 0, 0, cg_drawCenterPrintStyle.integer, font, h, cg_drawFragMessageIconScale.value);
-			} else {
+					if (extString[0].i == 0) {
+						break;
+					}
+
+					// get a line
+					ts = tmpExtString;
+
+					while (extString[0].i) {
+						if (extString[0].i >= 0  &&  extString[0].i <= 255) {
+							*ts = *extString;
+							//Com_Printf("'%c'\n", (char)*extString);
+							if (extString[0].i == 0) {
+								break;
+							}
+							extString++;
+							ts++;
+							continue;
+						}
+
+						if (extString[0].i == TEXT_PIC_PAINT_NEWLINE) {
+							extString++;
+							newLineAmount = extString[0].f;
+							extString++;
+
+							haveNewLineAmount = qtrue;
+							ts[0].i = 0;
+							break;
+						}
+						// command (2 ints)
+						*ts = *extString;
+						extString++;
+						ts++;
+						*ts = *extString;
+						extString++;
+						ts++;
+					}
+					ts[0].i = 0;
+
+					//Com_Printf("^6beforenewline: ");
+					//printPicString(tmpExtString);
+					
+					lb = linebuffer;
+					es = tmpExtString;  //extString;
+					numIcons = 0;
+					while (es[0].i) {
+
+						if (es[0].i >= 0  &&  es[0].i <= 255) {
+							*lb = (char)es[0].i;
+
+							if (es[0].i == 0) {
+								break;
+							}
+							lb++;
+							es++;
+							continue;
+						}
+						if (es[0].i == TEXT_PIC_PAINT_ICON) {
+							numIcons++;
+						}
+						es += 2;
+					}
+					*lb = '\0';
+
+					//Com_Printf("linebuffer:  '%s'\n", linebuffer);
+					scale = cg_drawCenterPrintScale.value;
+					//w = CG_Text_Width(linebuffer, scale, 0, font);
+					h = CG_Text_Height(linebuffer, scale, 0, font);
+
+					//Com_Printf("old w %d  icons %d\n", w, numIcons);
+					//w += ((float)h * cg_drawFragMessageIconScale.value) * (float)numIcons;
+					w = CG_Text_Pic_Width(tmpExtString, scale, cg_drawFragMessageIconScale.value, /*limit*/ 0, h, font);
+					
+					align = cg_drawCenterPrintAlign.value;
+					x = (SCREEN_WIDTH - w) / 2;
+					if (*cg_drawCenterPrintX.string) {
+						x = cg_drawCenterPrintX.value;
+						if (align == 1) {
+							x -= w / 2;
+						} else if (align == 2) {
+							x -= w;
+						}
+					}
+
+					CG_Text_Pic_Paint(x, y + h, scale, color, tmpExtString, 0, 0, cg_drawCenterPrintStyle.integer, font, h, cg_drawFragMessageIconScale.value);
+
+					if (haveNewLineAmount) {
+						y += newLineAmount;
+					} else {
+						y += h + 6;  //FIXME scale not fixed value of 6
+					}
+				}  // while (1)  getting new line
+			} else { // centerprintisfrag and start == cg.centerprint
+
+				//Com_Printf("centerprint %s font %d\n", linebuffer, *font);
+				scale = cg_drawCenterPrintScale.value;
+				w = CG_Text_Width(linebuffer, scale, 0, font);
+				h = CG_Text_Height(linebuffer, scale, 0, font);
+
+				align = cg_drawCenterPrintAlign.value;
+				x = (SCREEN_WIDTH - w) / 2;
+				if (*cg_drawCenterPrintX.string) {
+					x = cg_drawCenterPrintX.value;
+					if (align == 1) {
+						x -= w / 2;
+					} else if (align == 2) {
+						x -= w;
+					}
+				}
+
 				CG_Text_Paint(x, y + h, scale, color, linebuffer, 0, 0, cg_drawCenterPrintStyle.integer, font);
-			}
-			y += h + 6;  //FIXME scale not fixed value of 6
-			//#else
-		} else {
+
+				y += h + 6;  //FIXME scale not fixed value of 6
+			}  // end centerprintisfrag and start == cg.centerprint
+
+		} else {  // else qlhud
 			//FIXME width
 			w = cg.centerPrintCharWidth * CG_DrawStrlen( linebuffer, &cgs.media.bigchar ) / BIGCHAR_WIDTH;
 
@@ -7361,22 +7961,17 @@ static void CG_DrawCenterString( void ) {
 
 static void CG_DrawFragMessage (void)
 {
-	int x, y, tw, th;
+	float x, y, tw, th;
 	const fontInfo_t *font;
 	float scale;
 	int align;
 	vec4_t color;
-	//	int hits;
-	//int atts;
-	//float acc;
-	//wweaponStats_t *ws;
-	//int i;
-	//char *s;
-	//int ourClientNum;
 	const char *text;
-	const int *extString;
+	const floatint_t *extString;
 	int numIcons;
 	char linebuffer[1024];
+	char *lb;
+	const floatint_t *es;
 
 	if (!cg_drawFragMessageSeparate.integer) {
 		return;
@@ -7405,108 +8000,123 @@ static void CG_DrawFragMessage (void)
 	}
 	QLWideScreen = cg_drawFragMessageWideScreen.integer;
 
-	x = cg_drawFragMessageX.integer;
-	y = cg_drawFragMessageY.integer;
+
+	y = cg_drawFragMessageY.value;
 	scale = cg_drawFragMessageScale.value;
 
-	//FIXME testing
-	//text = CG_CreateFragString();
-	{
-				char *lb;
-				const int *es;
+	//FIXME duplicate code in draw center print
+	extString = CG_CreateFragString(qtrue, 0);
 
+	while (1) {
+		floatint_t *ts;
+		qboolean haveNewLineAmount = qfalse;
+		float newLineAmount = 0;
 
+		if (extString[0].i == 0) {
+			break;
+		}
 
-				//Q_strncpyz(linebuffer, "frag", sizeof(linebuffer));
-				//Q_strncpyz(linebuffer, CG_CreateFragString(), sizeof(linebuffer));
-				extString = CG_CreateFragString(qtrue, 0);
-				lb = linebuffer;
-				es = extString;
-				numIcons = 0;
-				while (*es) {
-					if (*es >= 0  &&  *es <= 255) {
-						*lb = (char)*es;
-						lb++;
-						es++;
-						continue;
-					}
-					if (*es == 256) {
-						numIcons++;
-					}
-					//lb++;
-					es += 2;
+		// get a line
+		ts = tmpExtString;
+
+		while (extString[0].i) {
+			if (extString[0].i >= 0  &&  extString[0].i <= 255) {
+				*ts = *extString;
+				if (extString[0].i == 0) {
+					break;
 				}
-				*lb = '\0';
-				text = linebuffer;
-	}
+				extString++;
+				ts++;
+				continue;
+			}
 
-	tw = CG_Text_Width(text, scale, 0, font);
-	th = CG_Text_Height(text, scale, 0, font);
-	//Com_Printf("old w %d  icons %d\n", tw, numIcons);
-	//Com_Printf("linebuffer: %s\n", linebuffer);
+			if (extString[0].i == TEXT_PIC_PAINT_NEWLINE) {
+				extString++;
+				newLineAmount = extString[0].f;
+				extString++;
+				haveNewLineAmount = qtrue;
+				ts[0].i = 0;
+				break;
+			}
 
+			// command (2 ints)
+			*ts = *extString;
+			extString++;
+			ts++;
+			*ts = *extString;
+			extString++;
+			ts++;
+		}  // end while (*extString)
+		ts[0].i = 0;
 
+		lb = linebuffer;
+		es = tmpExtString;  //extString;
+		numIcons = 0;
+		while (es[0].i) {
+			if (es[0].i >= 0  &&  es[0].i <= 255) {
+				*lb = (char)es[0].i;
+				if (es[0].i == 0) {
+					break;
+				}
+				lb++;
+				es++;
+				continue;
+			}
+			if (es[0].i == TEXT_PIC_PAINT_ICON) {
+				numIcons++;
+			}
 
-	tw += ((float)th * cg_drawFragMessageIconScale.value) * (float)numIcons;
-	//Com_Printf("new w %d\n", tw);
-	align = cg_drawFragMessageAlign.integer;
-	if (align == 1) {
-		x -= (tw / 2);
-	} else if (align == 2) {
-		x -= tw;
-	}
+			es += 2;
+		}
+		*lb = '\0';
+		text = linebuffer;
 
-	if (cg_drawFragMessageFade.integer) {
-		CG_FadeColorVec4(color, cg.lastFragTime, cg_drawFragMessageTime.integer, cg_drawFragMessageFadeTime.integer);
-	} else {
-		Vector4Set(color, 1.0, 1.0, 1.0, 1.0);
-	}
+		//tw = CG_Text_Width(text, scale, 0, font);
+		th = CG_Text_Height(text, scale, 0, font);
+		//Com_Printf("old w %d  icons %d\n", tw, numIcons);
+		//Com_Printf("linebuffer: %s\n", linebuffer);
 
-	//	if (color[0] == 0.0  &&  color[1] == 0.0  &&  color[2] == 0.0  &&  color[3] == 0.0) {
-	if (color[3] <= 0.0) {
-		return;
-	}
+		//tw += ((float)th * cg_drawFragMessageIconScale.value) * (float)numIcons;
+		tw = CG_Text_Pic_Width(tmpExtString, scale, cg_drawFragMessageIconScale.value, /*limit*/ 0, th, font);
+		
+		//Com_Printf("new w %d\n", tw);
 
-	if (*cg_drawFragMessageColor.string) {
-		SC_Vec3ColorFromCvar(color, &cg_drawFragMessageColor);
-	}
+		x = cg_drawFragMessageX.value;
+		align = cg_drawFragMessageAlign.integer;
+		if (align == 1) {
+			x -= (tw / 2);
+		} else if (align == 2) {
+			x -= tw;
+		}
 
-	if (*cg_drawFragMessageAlpha.string) {
-		color[3] = (float)cg_drawFragMessageAlpha.integer / 255.0 - (1.0 - color[3]);
+		if (cg_drawFragMessageFade.integer) {
+			CG_FadeColorVec4(color, cg.lastFragTime, cg_drawFragMessageTime.integer, cg_drawFragMessageFadeTime.integer);
+		} else {
+			Vector4Set(color, 1.0, 1.0, 1.0, 1.0);
+		}
+
 		if (color[3] <= 0.0) {
 			return;
 		}
-	}
 
-#if 0
-	CG_Text_Paint(x, y, scale, color, "You fragged ", 0, 0, cg_drawFragMessageStyle.integer, font);
-	color[0] = 1.0;
-	color[1] = 1.0;
-	color[2] = 1.0;
+		if (*cg_drawFragMessageColor.string) {
+			SC_Vec3ColorFromCvar(color, &cg_drawFragMessageColor);
+		}
 
-	ws = wclients[ourClientNum].lastKillwstats;
-	hits = 0;
-	atts = 0;
-	for (i = 0;  i < WP_NUM_WEAPONS;  i++) {
-		hits += ws[i].hits;
-		atts += ws[i].atts;
-	}
-	if (atts) {
-		acc = (float)hits / (float)atts;
-	} else {
-		acc = 0;
-	}
+		if (*cg_drawFragMessageAlpha.string) {
+			color[3] = (float)cg_drawFragMessageAlpha.integer / 255.0 - (1.0 - color[3]);
+			if (color[3] <= 0.0) {
+				return;
+			}
+		}
 
-	//Com_Printf("hits %d  atts %d\n", hits, atts);
+		CG_Text_Pic_Paint(x, y, scale, color, tmpExtString, 0, 0, cg_drawFragMessageStyle.integer, font, th, cg_drawFragMessageIconScale.value);
 
-	CG_Text_Paint(x + CG_Text_Width("You fragged ", scale, 0, font), y, scale, color, va("%s  ^3%.2f", cg.lastFragString + 13, acc), 0, 0, cg_drawFragMessageStyle.integer, font);
-	//CG_Text_Paint(x, y + 20, scale, color, va("%.2f accuracy", (float)wclients[cg.snap->ps.clientNum].lastKillwstats[cg.snap->ps.weapon].hits / (float)wclients[cg.snap->ps.clientNum].lastKillwstats[cg.snap->ps.weapon].atts), 0, 0, cg_drawFragMessageStyle.integer, font);
-	//hits = wclients[cg.snap->ps.clientNum].lastKillwstats[cg.snap->ps.weapon].hits;
-	//atts = wclients[cg.snap->ps.clientNum].lastKillwstats[cg.snap->ps.weapon].atts;
-#endif
+		if (haveNewLineAmount) {
+			y += (float)newLineAmount;
+		}
 
-	//CG_Text_Paint(x, y, scale, color, text, 0, 0, cg_drawFragMessageStyle.integer, font);
-	CG_Text_Pic_Paint(x, y, scale, color, extString, 0, 0, cg_drawFragMessageStyle.integer, font, th, cg_drawFragMessageIconScale.value);
+	}  // while (1)  getting new line
 }
 
 
@@ -7534,8 +8144,8 @@ static void Wolfcam_DrawCrosshair (void)
 
 	w = h = cg_crosshairSize.value;
 
-    x = cg_crosshairX.integer;
-    y = cg_crosshairY.integer;
+    x = cg_crosshairX.value;
+    y = cg_crosshairY.value;
 	//QLWideScreen = cg_crosshairWideScreen.integer;
 	//FIXME change?
 	QLWideScreen = WIDESCREEN_NONE;
@@ -7814,8 +8424,8 @@ static void CG_DrawCrosshair(void) {
 		}
 	}
 
-	x = cg_crosshairX.integer;
-	y = cg_crosshairY.integer;
+	x = cg_crosshairX.value;
+	y = cg_crosshairY.value;
 	//QLWideScreen = cg_crosshairWideScreen.integer;
 	//FIXME change?
 	QLWideScreen = WIDESCREEN_NONE;
@@ -8028,7 +8638,7 @@ static void CG_DrawCrosshairNames( void ) {
 	float		w;
 	vec4_t selectedColor;
 	int align;
-	int x, y;
+	float x, y;
 	const fontInfo_t *font;
 	const char *clanTag;
 
@@ -8103,8 +8713,8 @@ static void CG_DrawCrosshairNames( void ) {
 	//trap_R_SetColor( NULL );
 
 	w = CG_Text_Width(name, cg_drawCrosshairNamesScale.value, 0, font);
-	x = cg_drawCrosshairNamesX.integer;
-	y = cg_drawCrosshairNamesY.integer;
+	x = cg_drawCrosshairNamesX.value;
+	y = cg_drawCrosshairNamesY.value;
 	if (align == 1) {
 		x -= w / 2;
 	} else if (align == 2) {
@@ -8117,7 +8727,7 @@ static void CG_DrawCrosshairNames( void ) {
 static void CG_DrawCrosshairTeammateHealth (void)
 {
 	vec4_t color;
-	int x, y, w;
+	float x, y, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -8182,8 +8792,8 @@ static void CG_DrawCrosshairTeammateHealth (void)
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawCrosshairTeammateHealthX.integer;
-	y = cg_drawCrosshairTeammateHealthY.integer;
+	x = cg_drawCrosshairTeammateHealthX.value;
+	y = cg_drawCrosshairTeammateHealthY.value;
 
 	//s = "Waiting for players";
 	//FIXME check color
@@ -8420,7 +9030,7 @@ static void CG_DrawVote (void)
 	const char	*s;
 	int		sec;
 	vec4_t color;
-	int x, y, w;
+	float x, y, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -8449,8 +9059,8 @@ static void CG_DrawVote (void)
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-	x = cg_drawVoteX.integer;
-	y = cg_drawVoteY.integer;
+	x = cg_drawVoteX.value;
+	y = cg_drawVoteY.value;
 
 	s = va("VOTE(%is):%s  yes:%i no:%i", sec, cgs.voteString, cgs.voteYes, cgs.voteNo);
 
@@ -8508,8 +9118,8 @@ CG_DrawTeamVote
 static void CG_DrawTeamVote(void) {
 	const char	*s;
 	int		sec, cs_offset;
-	int x;
-	int y;
+	float x;
+	float y;
 	int ourClientNum;
 
 	if (!cg_drawTeamVote.integer) {
@@ -8541,12 +9151,12 @@ static void CG_DrawTeamVote(void) {
 							cgs.teamVoteYes[cs_offset], cgs.teamVoteNo[cs_offset] );
 
 	if (cg_drawTeamVoteX.string[0] != '\0') {
-		x = cg_drawTeamVoteX.integer;
+		x = cg_drawTeamVoteX.value;
 	} else {
 		x = 0;
 	}
 	if (cg_drawTeamVoteY.string[0] != '\0') {
-		y = cg_drawTeamVoteY.integer;
+		y = cg_drawTeamVoteY.value;
 	} else {
 		y = 90;
 	}
@@ -8561,7 +9171,7 @@ static void CG_DrawTeamVote (void)
 {
 	const char *s;
 	int		sec, cs_offset;
-	int x, y, w;
+	float x, y, w;
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
@@ -8606,8 +9216,8 @@ static void CG_DrawTeamVote (void)
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-	x = cg_drawTeamVoteX.integer;
-	y = cg_drawTeamVoteY.integer;
+	x = cg_drawTeamVoteX.value;
+	y = cg_drawTeamVoteY.value;
 
 	s = va("TEAMVOTE(%is):%s  yes:%i no:%i", sec, cgs.teamVoteString[cs_offset], cgs.teamVoteYes[cs_offset], cgs.teamVoteNo[cs_offset]);
 
@@ -8865,7 +9475,7 @@ static qboolean CG_DrawFollow( void ) {
 	float scale;
 	const fontInfo_t *font;
 	//const char	*name;
-	int x, y, w;
+	float x, y, w;
 	//int h;
 	const char *s;
 	const char *clanTag;
@@ -8894,8 +9504,8 @@ static qboolean CG_DrawFollow( void ) {
 	} else {
 		font = &cgDC.Assets.textFont;
 	}
-	x = cg_drawFollowingX.integer;
-	y = cg_drawFollowingY.integer;
+	x = cg_drawFollowingX.value;
+	y = cg_drawFollowingY.value;
 
 	clanTag = cgs.clientinfo[cg.snap->ps.clientNum].clanTag;
 	if (*clanTag) {
@@ -8931,9 +9541,7 @@ CG_DrawAmmoWarning
 */
 static void CG_DrawAmmoWarning( void ) {
 	const char	*s;
-	int			w;
-	int x;
-	int y;
+	float x, y, w;
 	float scale;
 	int align;
 	vec4_t color;
@@ -8988,13 +9596,13 @@ static void CG_DrawAmmoWarning( void ) {
 	//w = CG_DrawStrlen( s, &cgs.media.bigchar );
 	w = CG_Text_Width(s, scale, 0, font);
 
-	x = cg_drawAmmoWarningX.integer;
+	x = cg_drawAmmoWarningX.value;
 	if (align == 1) {
 		x -= w / 2;
 	} else if (align == 2) {
 		x -= w;
 	}
-	y = cg_drawAmmoWarningY.integer;
+	y = cg_drawAmmoWarningY.value;
 
 	//CG_DrawBigString(x, y, s, 1.0F);
 	CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, cg_drawAmmoWarningStyle.integer, font);
@@ -9013,7 +9621,7 @@ static void CG_DrawProxWarning (void)
 	int style, align;
 	float scale;
 	const fontInfo_t *font;
-	int x, y, w;
+	float x, y, w;
 	const char *s;
 
 	if (!(cg.snap->ps.eFlags & EF_TICKING)) {
@@ -9040,8 +9648,8 @@ static void CG_DrawProxWarning (void)
 		font = &cgDC.Assets.textFont;
 	}
 
-	x = cg_drawProxWarningX.integer;
-	y = cg_drawProxWarningY.integer;
+	x = cg_drawProxWarningX.value;
+	y = cg_drawProxWarningY.value;
 
 
 	if (cg.proxTick != 0) {
@@ -9137,15 +9745,15 @@ static void CG_WarmupAnnouncements (void)
 }
 
 static void CG_DrawWarmup( void ) {
-	int			w;  //, h;
+	float w;  //, h;
 	int			sec;
 	int			i;
 	float scale;
 	const clientInfo_t	*ci1, *ci2;
 	//int			cw;
 	const char	*s;
-	int x;
-	int y;
+	float x;
+	float y;
 	int align;
 	vec4_t color;
 	int style;
@@ -9173,8 +9781,8 @@ static void CG_DrawWarmup( void ) {
 		} else {
 			font = &cgDC.Assets.textFont;
 		}
-		x = cg_drawWaitingForPlayersX.integer;
-		y = cg_drawWaitingForPlayersY.integer;
+		x = cg_drawWaitingForPlayersX.value;
+		y = cg_drawWaitingForPlayersY.value;
 
 		if (cgs.protocol == PROTOCOL_QL  &&  *CG_ConfigString(CS_READY_UP_TIME)) {
 			readyUpTime = atoi(CG_ConfigString(CS_READY_UP_TIME));
@@ -9243,8 +9851,8 @@ static void CG_DrawWarmup( void ) {
 			s = va( "%s ^7vs %s", ci1->name, ci2->name );
 			//w = CG_Text_Width(s, 0.6f, 0, &cgDC.Assets.textFont);
 			w = CG_Text_Width(s, cg_drawWarmupStringScale.value, 0, font);
-			x = cg_drawWarmupStringX.integer;
-			y = cg_drawWarmupStringY.integer;
+			x = cg_drawWarmupStringX.value;
+			y = cg_drawWarmupStringY.value;
 			if (align == 1) {
 				x -= w / 2;
 			} else if (align == 2) {
@@ -9296,8 +9904,8 @@ static void CG_DrawWarmup( void ) {
 #if 1  //def MPACK
 		//w = CG_Text_Width(s, 0.6f, 0, &cgDC.Assets.textFont);
 		w = CG_Text_Width(s, cg_drawWarmupStringScale.value, 0, font);
-		x = cg_drawWarmupStringX.integer;
-		y = cg_drawWarmupStringY.integer + CG_Text_Height(s, cg_drawWarmupStringScale.value, 0, font);  //FIXME 30 ?  not text height?
+		x = cg_drawWarmupStringX.value;
+		y = cg_drawWarmupStringY.value + CG_Text_Height(s, cg_drawWarmupStringScale.value, 0, font);  //FIXME 30 ?  not text height?
 		if (align == 1) {
 			x -= w / 2;
 		} else if (align == 2) {
@@ -9314,12 +9922,12 @@ static void CG_DrawWarmup( void ) {
 			cw = GIANT_WIDTH;
 		}
 		if (cg_drawWarmupStringX.string[0] != '\0') {
-			x = cg_drawWarmupStringX.integer;
+			x = cg_drawWarmupStringX.value;
 		} else {
 			x = 320 - w * cw/2;
 		}
 		if (cg_drawWarmupStringY.string[0] != '\0') {
-			y = cg_drawWarmupStringY.integer + 5;
+			y = cg_drawWarmupStringY.value + 5.0f;
 		} else {
 			y = 25;
 		}
@@ -9363,8 +9971,8 @@ static void CG_DrawWarmup( void ) {
 	//w = CG_Text_Width(s, scale, 0, &cgDC.Assets.textFont);
 	w = CG_Text_Width(s, cg_drawWarmupStringScale.value, 0, font);
 	//Com_Printf("height: %d\n", CG_Text_Height(s, cg_drawWarmupStringScale.value, 0, &cgs.media.warmupStringFont));
-	x = cg_drawWarmupStringX.integer;
-	y = cg_drawWarmupStringY.integer + 3 * CG_Text_Height(s, cg_drawWarmupStringScale.value, 0, font);  //FIXME 65 ?  not text height?
+	x = cg_drawWarmupStringX.value;
+	y = cg_drawWarmupStringY.value + 3.0f * CG_Text_Height(s, cg_drawWarmupStringScale.value, 0, font);  //FIXME 65 ?  not text height?
 	if (align == 1) {
 		x -= w / 2;
 	} else if (align == 2) {
@@ -9379,12 +9987,12 @@ static void CG_DrawWarmup( void ) {
 	//FIXME width
 	w = CG_DrawStrlen( s, &cgs.media.giantchar ) / GIANTCHAR_WIDTH;
 	if (cg_drawWarmupStringX.string[0] != '\0') {
-		x = cg_drawWarmupStringX.integer;
+		x = cg_drawWarmupStringX.value;
 	} else {
 		x = 320 - w * cw/2;
 	}
 	if (cg_drawWarmupStringY.string[0] != '\0') {
-		y = cg_drawWarmupStringY.integer + 50;
+		y = cg_drawWarmupStringY.value + 50.0f;
 	} else {
 		y = 70;
 	}
@@ -9412,10 +10020,11 @@ static void CG_DrawTimedMenus( void ) {
 }
 #endif
 
+//FIXME scaling
 static void CG_DrawAccStats (void)
 {
 	vec4_t color;
-	int x, y;
+	float x, y;
 	int i;
 	const wclient_t *wc;
 	const wweaponStats_t *ws;
@@ -9443,8 +10052,8 @@ static void CG_DrawAccStats (void)
 	color[3] = 0.3;  //cg_accAlpha.value / 255.0;  //0.3;
 
 	//CG_FillRect(100, 100, 48, 48, colorRed);
-	x = cg_accX.integer;  //450;  //20;
-	y = cg_accY.integer;  //100;
+	x = cg_accX.value;  //450;  //20;
+	y = cg_accY.value;  //100;
 	QLWideScreen = cg_accWideScreen.integer;
 
 	windowWidth = 80;
@@ -9497,7 +10106,7 @@ static void CG_DrawAccStats (void)
 static void CG_DrawErrorPopup (void)
 {
 	//int w;
-	int h, x, y;
+	float h, x, y;
 	float scale;
 	vec4_t color;
 
@@ -9532,7 +10141,7 @@ static void CG_DrawErrorPopup (void)
 
 static void CG_DrawEchoPopup (void)
 {
-	int w, h, x, y;
+	float w, h, x, y;
 	float scale;
 	vec4_t color;
 
@@ -9589,8 +10198,8 @@ static void CG_DrawDominationPointStatus (void)
 		team = cg.snap->ps.persistant[PERS_TEAM];
 	}
 
-	x = cg_drawDominationPointStatusX.integer;  //258;
-	y = cg_drawDominationPointStatusY.integer;  //365;
+	x = cg_drawDominationPointStatusX.value;  //258;
+	y = cg_drawDominationPointStatusY.value;  //365;
 	scale = cg_drawDominationPointStatusScale.value;
 	QLWideScreen = cg_drawDominationPointStatusWideScreen.integer;
 
@@ -9710,7 +10319,7 @@ static void CG_DrawCtfsRoundScoreboard (void)
 	//int align;
 	float scale;
 	int i;
-	//int h;
+	//float h;
 	const fontInfo_t *font;
 
 	if (!cg_roundScoreBoard.integer) {

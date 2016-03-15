@@ -221,6 +221,11 @@ void SCR_DrawSmallCharExt( float x, float y, float width, float height, int ch )
 		printf("drawsmallcharext drawing glyph %d 0x%x\n", ch, ch);
 	}
 	*/
+	// testing
+	//printf("drawsmallcharext: %d\n", ch);
+	//if (ch < 0) {
+	//	Crash();
+	//}
 	re.GetGlyphInfo(&cls.consoleFont, ch, &glyph);
 #endif
 	
@@ -281,6 +286,8 @@ void SCR_DrawStringExt( int x, int y, float size, const char *string, float *set
 	const char	*s;
 	int			xx;
 
+	//printf("SCR_DrawStringExt: '%s'\n", string);
+	
 	// draw the drop shadow
 	color[0] = color[1] = color[2] = 0;
 	color[3] = setColor[3];
@@ -348,12 +355,17 @@ void SCR_DrawSmallStringExt( float x, float y, float cwidth, float cheight, cons
 	vec4_t		color;
 	const char	*s;
 	float			xx;
+	//glyphInfo_t glyph;
 
 	// draw the colored text
 	s = string;
 	xx = x;
 	re.SetColor( setColor );
 	while ( *s ) {
+		int codePoint;
+		int numUtf8Bytes;
+		qboolean error;
+
 		if ( Q_IsColorString( s ) ) {
 			if ( !forceColor ) {
 				Com_Memcpy( color, g_color_table[ColorIndex(*(s+1))], sizeof( color ) );
@@ -365,7 +377,10 @@ void SCR_DrawSmallStringExt( float x, float y, float cwidth, float cheight, cons
 				continue;
 			}
 		}
-		SCR_DrawSmallCharExt( xx, y, cwidth, cheight, *s );
+		codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+		s += (numUtf8Bytes - 1);
+		//SCR_DrawSmallCharExt( xx, y, cwidth, cheight, *s );
+		SCR_DrawSmallCharExt(xx, y, cwidth, cheight, codePoint);
 		xx += cwidth;  //SMALLCHAR_WIDTH;
 		s++;
 	}
@@ -594,6 +609,7 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame ) {
 			S_StopAllSounds();
 			VM_Call( uivm, UI_SET_ACTIVE_MENU, UIMENU_MAIN );
 			break;
+		case CA_DOWNLOADINGWORKSHOPS:
 		case CA_CONNECTING:
 		case CA_CHALLENGING:
 		case CA_CONNECTED:

@@ -2401,11 +2401,14 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 		}
 
 		if (!ps  &&  cgs.gametype == GT_RACE  &&  cg_racePlayerShader.integer) {
-			gun.customShader = cgs.media.noPlayerClipShader;
-			gun.shaderRGBA[0] = 255;
-			gun.shaderRGBA[1] = 255;
-			gun.shaderRGBA[2] = 255;
-			gun.shaderRGBA[3] = 255;
+			//if (cent->currentState.clientNum != cg.snap->ps.clientNum  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
+			if (!CG_IsUs(&cgs.clientinfo[cent->currentState.clientNum]) != cg.snap->ps.clientNum  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
+				gun.customShader = cgs.media.noPlayerClipShader;
+				gun.shaderRGBA[0] = 255;
+				gun.shaderRGBA[1] = 255;
+				gun.shaderRGBA[2] = 255;
+				gun.shaderRGBA[3] = 255;
+			}
 		}
 
 		CG_AddWeaponWithPowerups( &gun, cent->currentState.powerups );
@@ -2439,11 +2442,14 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 		}
 
 		if (!ps  &&  cgs.gametype == GT_RACE  &&  cg_racePlayerShader.integer) {
-			gun.customShader = cgs.media.noPlayerClipShader;
-			gun.shaderRGBA[0] = 255;
-			gun.shaderRGBA[1] = 255;
-			gun.shaderRGBA[2] = 255;
-			gun.shaderRGBA[3] = 255;
+			//if (cent->currentState.clientNum != cg.snap->ps.clientNum  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
+			if (!CG_IsUs(&cgs.clientinfo[cent->currentState.clientNum])  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
+				gun.customShader = cgs.media.noPlayerClipShader;
+				gun.shaderRGBA[0] = 255;
+				gun.shaderRGBA[1] = 255;
+				gun.shaderRGBA[2] = 255;
+				gun.shaderRGBA[3] = 255;
+			}
 		}
 
 		CG_AddWeaponWithPowerups( &barrel, cent->currentState.powerups );
@@ -2732,7 +2738,7 @@ void CG_DrawWeaponSelect( void ) {
 	int		i;
 	int		bits;
 	int		count;
-	int		x, y, w;
+	float x, y, w;
 	const char	*name;
 	float	*color;
 	int weaponSelectTime;
@@ -2805,10 +2811,10 @@ void CG_DrawWeaponSelect( void ) {
 	x = 320 - count * 20;
 	y = 380;
 	if (cg_weaponBarX.string[0] != '\0') {
-		x = cg_weaponBarX.integer;
+		x = cg_weaponBarX.value;
 	}
 	if (cg_weaponBarY.string[0] != '\0') {
-		y = cg_weaponBarY.integer;
+		y = cg_weaponBarY.value;
 	}
 
 	for ( i = 1 ; i < 16 ; i++ ) {

@@ -5213,6 +5213,7 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 				VectorCopy(ScriptVars.origin, newOrigin);
 
 				count = 0;
+				oldDistance = 0;  // silence gcc warning
 
 				//memcpy(&svOrig, &ScriptVars, sizeof(svOrig));
 
@@ -5226,7 +5227,7 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 
 					// check if it overshoots
 					if (count == 0) {
-
+						// pass and just set oldDistance
 					} else {
 						if (d >= oldDistance) {
 							//Com_Printf("^5overshooting:  old %f  new %f  count %d\n", oldDistance, d, count);

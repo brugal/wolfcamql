@@ -1588,7 +1588,7 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
   - 1fctf (cap attack)
 
 * double check di.protocol == PROTOCOL_QL is also for 73 and now 91  2015-07-28
-* protocol 91:  utf8, scoreboards, config strings
+* protocol 91:  scoreboards, config strings
 * WARNING: unknown general shader parameter 'nodefault' in 'models/players/hunter/harpy_f'
 * dir demos/ doesn't list ql ones
 * ui_shared.c DC->cursorx -- horiz scrollbars
@@ -1662,7 +1662,6 @@ FIXME ui execute text:  2  'cmd team red ; '
 * 'error camera not waiting to sync and cg.ftime < cp->cgtime'
 * document MAX_SPLINEPOINTS as well?
 * q3mme camera:  draw box around target
-* with demo zoom slight zoom at start of match (assuming transition from zoom 90 intermission)
 * check with /ecam smooth * that flags are being used/checked
 * check CAM_TIME with q3mme camera
 * camera roll spline
@@ -1670,19 +1669,12 @@ FIXME ui execute text:  2  'cmd team red ; '
 * camera spline angles and origin use linear distance to calculate new times with acceleration
 * drawplayernames font weirdness (scale and Y) when it isn't default font
 * text_paint with NULL color crash
-* item pickup count wrong with /devmap  -- it's predicted item pickups
 * new ql testing:  CG_MATCH_STATE, new spec hud, teammate overhead icon with info
-* q3 blood explosion shaders
 * better bloodexplosion shader fallback
 * powerups shown in ffa scoreboard (and others?)
 * check font used in scoreboard spec list
-* CG_DamageFeedback  control  -- cg_kickScale
-* quakecon 2015 demos ctf showing player names (not client num) for mvp config strings
 * not showing info in team overlay
 * caim ca demo long name in scoreboard -- use limit
-* ctf1.dm_91 zoom up and down at start of match with usedemozoom
-* check if ql let's you set zoom to 0
-* check teleport if zoomed in
 * hud WCG_ ql version and protocol/mod (q3, cpma, ...)
 * right align with var width font not stable
 * remove old area draw chat hack so it doesn't overdraw
@@ -1691,30 +1683,159 @@ FIXME ui execute text:  2  'cmd team red ; '
 * register sound:  sound/world/hockey_horn.ogg fails even though hockey_horn.wav is there..  fallback for .wav ?
 * home locate older foe2.[png|tga|jpg] used in menus for notification?
 * user might have non standard steam folder location
-* zoom-spec.dm_91  spec during ca free cam doesn't unzoom when 1st person view is back
 * out of ammo  vs  player follow  (see if out of ammo is in same place as ql)
 * mvp awards highlight in score listings (extra outside filled box?)
 * scoreboard set selection so you can see who's being followed
 * protocol 91 team info status only being updated with tinfo command, see if it should be updated with real values in team overlay cg_draw.c
 * utf8:  fallbacks depending on type (sans, serif, ..), fallbacks for q3fonts need adjusted baseline
 * don't expose fontInfo_t private data
-* ill.dm_91 3:20  ca demo zoomed in at round start
-* utf8:  q3font bolding and offset, disable default ql font fallbacks, unifont, console font, ui loading screen fonts, insert unicode in console
+* utf8:  q3font bolding and offset, console font 0 width chars, insert unicode in console
 * option to include demo file folder as pk3 search path
-* option to treat only one command line arg as demo file
 * test default 0 char fallback if no fallbacks defined
 * cl_scrn initialized before render but it uses drawing functions and crashes if registerfont is called in Init()
-* utf8 console:  xskip 0 for diacritics and combining marks?
+* utf8 console / bitmap:  xskip 0 for diacritics and combining marks?
 * glyph left for non bitmap fonts
 * r_defaultFont
-* font:  "K/D" x spacing ql does kerning for 'K' -> '/'
+* font:  "K/D" x spacing ql does kerning for 'K' -> '/'  -- 2016-02-24 no, just missing x offset
 * scaleFont() corruption -- see screenshots without post processing and missing images  -- that's with multiple calls to syncrenderthread() in tr_font.c double check
-* note high dpi scaling with windows 10/8 :  https://support.microsoft.com/en-us/kb/2907016  --  maybe declare dpi aware
 * check if cg_qlFontScaling is needed anymore
 * check freetype prefered point sizes for scaling
 * mmod demo cuc.o.dm_91  8:25 scoreboard showing '0' before name
 * check cg_autoFontScaling threshold 1 and 0
+* recorddemolist what if times don't match?
+* utf8:  CG_Text_Paint  limit value just cuts based on string buffer length
+* propMap as font
+* MAX_STRING_CHARS and utf8
+* check and comment all trap_Send seekservertimes which need 'now' ?
+* update to sdl2:  track ioq3, has hidden window option, clipboards all platforms
+* check recorddemolist.py with long demo names
+* /devmap pickup x(value) multiple -- ignore predicted?
+  -- item pickup count wrong with /devmap  -- it's predicted item pickups
+* demo name completion problem.  /demo cu[TAB] will show ccull.dm_91 _  if there are demos named cut1.dm_91, cut2.dm_91, cull.dm_91  --  calling Field_Comp*() twice with ql:demos
+* CG_DrawAccStats scaling
+* utf8 ui/ui_shared.c
+* CG_DrawStrlen use scale
+* CG_SPrintInit use floats
+* MessageMode  working
+* CG_CenterPrint  int charWidth  utf8?
+* Download workshop items  with:
 
+  ./steamcmd.sh +login anonymous +workshop_download_item (appid) (workshop_id) +quit
+
+from /home/acano/tmp/steam
+
+steamcmd.sh +login anonymous +workshop_download_item 282440 547252823 +quit
+
+...
+
+Connecting anonymously to Steam Public...Logged in OK
+Waiting for license info...OK
+Downloading item 547252823 ...
+Success. Downloaded item 547252823 to "/home/acano/steamcmd/steamapps/workshop/content/282440/547252823" (736352 bytes)
+Steam>
+
+
+and didn't 'quit'  -- it's '+quit' not '-quit'
+
+
+* osp accepts '_' as color code  cooller-vs lexer ztn gtv
+* console var width font
+* console select font
+* console indication that input line is scrolling (different color']') ?
+  --  ] set to red for console scroll horizontal, what if con.color is red, use different char?
+* com_altivec default change for windows / linux
+* keypress hud:  strcmp(binding, "+back")  maybe search for string in binding
+* windows 10 showing as windows 8 in os info printf  -- microsoft changed / deprecated GetVersionEx()
+* gdb for Mac OS X, bsd, etc.. (non linux)
+* .gitignore build/ for-github
+* +back, +moveright, etc.. as demo commands instead of checking for keybinding
+* --version command line arg happens after os info is output:
+
+Linux, 3.16.0-4-686-pae, #1 SMP Debian 3.16.7-ckt20-1+deb8u3 (2016-01-17), i686
+PRETTY_NAME="Debian GNU/Linux 8 (jessie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="8"
+VERSION="8 (jessie)"
+ID=debian
+HOME_URL="http://www.debian.org/"
+SUPPORT_URL="http://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+wolfcamql 11.0test15 client (Feb 17 2016)
+
+* R_GetCommandBuffer() command dropped
+  with con_scale 0.00..1  --  CON_TEXTSIZE > MAX_RENDER_COMMANDS
+* utf8 with con_tty and con_win32 input
+* wcg rail accuracies too high
+* mark hud only refernced cvars like cg_drawSpecMessages
+* why the 'plus 1' for xSkip?  glyph.xSkip = (face->glyph->metrics.horiAdvance >> 6) + 1;
+* CG_Text_Paint_Limit() missing 'style'
+* CG_AddDamagePlum()  xadj (glyph->left)
+* create name sprites missing glyph horiz offset
+* "Usually, an error occurs with a fixed-size font format (like FNT or PCF) when trying to set the pixel size to a value that is not listed in the face->fixed_sizes array."
+* font sheets for glyphs
+* blood:  http://www.gimpusers.com/tutorials/blood-splatter-texture
+* force extra workshop ids
+* utf8 q3_ui
+* check for MAX_QPATH that should be OS MAX_PATH
+* run console and process event during loading screen
+* mac vm shows flashing flag texture at the start of okremix*91  -- 2016-03-08 happens with ioq3 as well
+* font cvar "" still forcing 24 point size  -- ok this is cg_qlFontScaling
+* create name sprite point size check make name consistent with other cvar point size checks
+* document ql font scaling and fonts set to ""
+* fragtoken:  CG_Text_Width|Height() take into account x and y offset options*
+* frag message call ui or fx code
+* Q_stricmpn(s, s2, strlen(s2) - 1)  why -1 ???
+* CG_Text_Pic_Paint, CG_Text_Pic_Paint_Width, etc.. limit needs utf8 support
+* CG_Text_Paint_Width|Height doesn't increase 'count' for limit check like CG_Text_Paint() does
+* duplicate code with Text*Paint() functions and Width() Height() .. same function with extended options
+* CG_Text_Width|Height not treating count the same as Paint() for limit
+* frag token %{font} specify default qlfont  -- 2016-03-11 allows for empty font name but still qlfont check uses pointer to fontInfo to check for old ql default font
+* console history cursor up seems to have fixed line width
+* cg_obituaryTokens "%{scale 2.0}%{font q3big}%k %{iconscale 2.5}%i %{scale 0.7}%{font qlfont}%v"   z_malloc error  -- 2016-03-13 this comes from the random point size being sent with the call to registerfont()  (ex: pointsize 552499848)  -- validate sscanf return value in createfragstring()
+
+*
+
+^1RE_ConstructGlyphInfo: no bitmap for 31
+^1xxxZ_Malloc: failed on allocation of 1394756968 bytes from the main zone
+^1R_RenderGlyph:  couldn't allocate memory for bitmap:o buffer (1394756944 bytes)
+^1RE_ConstructGlyphInfo: no bitmap for 34
+0x4550b1 : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-player/code/qcommon/common.c (1103) : in function (Z_TagMalloc)
+0x455103 : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-player/code/qcommon/common.c (1150) : in function (Z_Malloc)
+0x5367de : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-player/code/renderer/tr_font.c (163) : in function (R_RenderGlyph)
+0x537866 : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-
+
+*
+
+* freetype can crash with invalid point sizes:  (this is with Z_Malloc set to call printf instead of com_error())
+
+^1RE_ConstructGlyphInfo: no bitmap for 47
+^1Z_TagMalloc:  size < 0 : -1465649608
+^1R_RenderGlyph:  couldn't allocate memory for bitmap:o buffer (-1465649608 byte
+s)
+^1RE_ConstructGlyphInfo: no bitmap for 48
+^1Z_Malloc:nd: failed on allocation of 1300741352 bytes from the main zone
+^1R_RenderGlyph:  couldn't allocate memory for bitmap:o buffer (1300741328 bytes
+)
+^1RE_ConstructGlyphInfo: no bitmap for 50
+0x63210d : C:\Share\wc\dev\wolfcamql.exe : /home/amanieu/code/freetype-2.3.9/src
+/smooth/ftgrays.c (1192) : in function (gray_render_span)
+0x631a33 : C:\Share\wc\dev\wolfcamql.exe : /home/amanieu/code/freetype-2.3.9/src
+/smooth/ftgrays.c (1263) : in function (gray_hline)
+0x6327c5 : C:\Share\wc\dev\wolfcamql.exe : /home/amanieu/code/freetype-2.3.9/src
+/smooth/ftgrays.c (1363) : in function (gray_sweep)
+
+* console editing limit (couldn't add text, wanted to add %{scale 2.5} before %i):
+
+]\cg_drawFragMessageTokens "b%{y 3.3}l%{y 3.4}%{font 16 q3small}a%{y 3.}h ...%{newline 24}%{scale
+2.5}%{font 16}This is ql %i%{scale 2.0}%{iconscale 2.0}%{newline 20}%ifont%{scale .5}K%{iconscale
+0.25}%iilled%{font 16 c:\Windows\Fonts\Arial.ttf}%v"
+]\cg_drawFragMessageTokens "b%{y 3.3}l%{y 3.4}%{font 16 q3small}a%{y 3.}h ...%{newline 24}%{scale
+2.5}%{font 16}This is ql %i%{scale 2.0}%{iconscale 2.0}%{newline 20}%ifont%{scale 2.5}K%{iconscale
+0.25}%iilled%{font 16 c:\Windows\Fonts\Arial.ttf}%v"
+]/condump x.txt
+
+* MAX_EDIT_LINE defined multiple times
 
 ---------
 

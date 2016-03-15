@@ -1001,6 +1001,7 @@ qboolean		trap_VerifyCDKey( const char *key, const char *chksum);
 void			trap_SetPbClStatus( int status );
 void trap_OpenQuakeLiveDirectory (void);
 void trap_OpenWolfcamDirectory (void);
+void trap_DrawConsoleLinesOver (int xpos, int ypos, int numLines);
 
 //
 // ui_addbots.c

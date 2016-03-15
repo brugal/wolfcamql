@@ -1688,3 +1688,130 @@ Remove unnecessary localhost check from reconnect command.
 2015-07-30-01 skip:  Merge pull request #145 from Pan7/va_list
 2015-07-30-02 Fix (unused) watertype checks in PM_WaterMove
 
+2015-08-18-01 skip:  Remove MSVC user configuation files
+2015-08-18-02 skip:  Ignore MSVC non-project files
+2015-08-18-03 skip:  Update msvc10 renderer filenames (copied from msvc11)
+2015-08-18-04 skip (msvc):  Fix msvc11 x86_64 runtime
+2015-08-18-05 skip:  Fix mscv11 libcurl include path
+2015-08-18-06 skip:  Copy msvc11 build changes to msvc10
+2015-08-18-07 skip:  Make msvc10/11 use UseOfMfc false and CharacterSet "NotSet"
+2015-08-18-08 skip:  Update msvc10/11 for SDL2
+2015-08-18-09 skip:  add post-build event for msvc10/11 to copy SDL2.dll to build folder
+2015-08-18-10 skip:  Make msvc10/11 x86_64 copy SDL264.dll
+
+2015-08-19-01 skip:  Update headers in VS (10 and 11) projects
+
+2015-08-25-01 Remove unused define CG_FONT_THRESHOLD
+2015-08-25-02 more helpful error message
+2015-08-25-03 skip (not used):  Githalytics seems to have stopped being a thing.
+2015-08-25-04 skip:  Moving large chunks of README to wiki step 1
+2015-08-25-05 skip:  Point to the moved information
+2015-08-25-06 skip:  Removing more large chunks of outdated text
+2015-08-25-07 Better language, less tense
+
+2015-09-07-01 Fix Cvar_Unset not notifying cvar_modifiedFlags
+2015-09-07-02 Ensure reads from /dev/urandom are unbuffered
+2015-09-07-03 skip (merge):  Merge pull request #153 from dionrhys/read-urandom-unbuffered
+2015-09-07-04 skip (merge):  Merge pull request #152 from dionrhys/cvar-unset-notify
+
+2015-09-09-01 Fix wonky va_list usage
+2015-09-09-02 Fix the wonky fix to the wonky va_list usage
+
+2015-09-14-01 Fix glyph width calculation in Text_Paint_Limit
+
+2015-09-16-01 Make add bots menu use standard menu drawing
+
+2015-09-17-01 skip:  Add Steam's Quake 3 Arena dir to game dirs on Windows.
+2015-09-18-02 Use correct array size for facets in cm_patch.c
+
+2015-09-20-01 Early out of Cmd_CompleteArgument and Cmd_SetCommandCompletionFunc
+
+2015-09-22-01 skip:  Align indent of defines at top of q_shared.h to 4 space tabs
+2015-09-22-02 skip:  Make steam path optional at compile time for standalone games
+
+2015-09-24-01 skip:  A mac dedicated server script
+2015-09-24-02 skip (mac ded script):  Fixed the os x path and now both scripts will take arguments
+2015-09-24-03 skip (mac ded script):  Don't quote me.
+
+2015-09-25-01 skip:  Search for mods in steam path as well as home and base paths.
+2015-09-25-02 skip:  Use Windows uninstall path to find Steam Quake 3 install.
+2015-09-25-03 skip (curl stuff):  Effectively revert c2e146c
+
+2015-09-26-01 skip (curl stuff):  Now with less infinite recursion
+2015-09-26-02 skip:  Fix compiling on Windows without Steam path/appid
+
+2015-10-04-01 Fix check for empty rconpassword in CL_Rcon_f
+
+2015-09-28-01 Remove unused define MAC_EVENT_PUMP_MSEC
+
+2015-09-30-01 skip (not implemented):  Maybe fix old MSYS when there is an empty for loop
+
+2015-10-16-01 skip (image->flags not implemented):  Add support for uncompressed image upload flag to OpenGL1
+2015-10-16-02 Fix not swapping buffers because out of cmd buffer space
+2015-10-16-03 Fix crash from reading past end of tr.refdef.drawSurfs
+2015-10-16-04 Fix reserved size for swap buffer command being too small on x86_64
+
+2015-10-17-01 Replace 4 with sizeof( int ) in R_GetCommandBufferReserved
+
+2015-12-02-01 skip (q3 steam):  Access 32-bit registry key from 64-bit Windows correctly.
+2015-12-02-02 skip (rend2):  OpenGL2: automatically load textures with a _s suffix as specular.
+
+2015-12-03-01 skip (rend2):  OpenGL2: Remove some rendering options for simplicity.
+
+2015-12-08-01 skip (rend2):  OpenGL2: Add option in code for alternate overbright method.
+
+2015-12-09-01 skip (rend2):  OpenGL2: Add r_glossIsRoughness.
+2015-12-09-02 skip (rend2):  OpenGL2: Parse radius entries from misc_cubemap entities.
+2015-12-09-03 skip (rend2):  OpenGL2: Forgot a multiply.
+2015-12-09-04 skip (rend2):  OpenGL2: Use correct sunlight color for sunlight specular.
+
+2015-12-15-01 skip (rend2):  OpenGL2: Switch to RGTC from LATC for normal maps.
+
+2015-12-16-01 skip (rend2):  OpenGL2: Some tr_image.c cleanup.
+
+2015-12-18-01 skip (rend2):  OpenGL2: DDS (compressed textures) support.
+2015-12-18-02 skip (rend2):  OpenGL2: Add null dereference checks to DDS loader.
+
+2015-12-20-01 skip (jpeg older):  Make jpeg loading errors non-fatal.
+
+2015-12-21-01 skip check (makes changes outside of lib) (jpeg older):  Fix error handling in RE_SaveJPGToBuffer().
+2015-12-21-02 skip (rend2):  OpenGL2: Support picmip for DDS textures.
+
+2015-12-22-01 skip (rend2):  OpenGL2: Add r_exportCubemaps for saving cubemaps on map load.
+
+2015-12-23-01 skip (rend2):  OpenGL2: Replace r_exportCubemaps cvar with exportCubemaps command.
+
+2015-12-24-01 skip (rend2):  OpenGL2: Add r_cubemapSize.
+
+2015-12-28-01  Merge pull request #103 from openmoh/ioq3-intro  Have custom intro cinematics for standalone game
+2015-12-28-02 (need to check):   Merge pull request #73 from Pan7/sayto sayto cmd with player name completion
+
+2015-12-10-01 skip (voip):  Use Opus for VoIP
+
+2014-01-14-01 skip (check voip):  Fix some opus_decode issues
+
+2016-01-07-01 skip (merge):  Merge pull request #42 from zturtleman/opus_voip_2
+
+2016-01-15-01 skip (rend2):  OpenGL2: Remove specular ambient.
+2016-01-15-02 skip (msvc12):  Add msvc12 project files.
+
+2016-01-18-01 skip (rend2):  OpenGL2: Direct state access, part 1: Texture binds
+
+2016-01-19-01 skip (rend2):  OpenGL2: Direct state access, part 2: Uniforms.
+
+2016-01-20-01 skip (rend2):  OpenGL2: Direct state access, part 3: Framebuffers.
+
+2016-01-22-01 skip (rend2):  OpenGL2: Some FBO related cleanup/fixes.
+
+2016-01-28-01 skip (rend2):  OpenGL2: Load existing per-map cubemaps.
+
+2016-01-29-01 Fix frame_msec possibly being zero in cl_input.c.
+
+2016-02-02-01 skip (rend2):  OpenGL2: Merge several cvars into r_pbr.
+
+2016-02-10-01 skip (rend2):  OpenGL2: Add named cubemaps and per-map env.json parsing.
+
+2016-02-12-01 skip (rend2):  OpenGL2: Typos.
+
+2016-02-17-01 skip (rend2):  OpenGL2: Fix some GL errors and no sun shadows on older OpenGLs.
+2016-02-17-02 skip (rend2):  OpenGL2: Shader optimization, and add dither to tonemap.

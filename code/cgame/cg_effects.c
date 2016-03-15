@@ -624,15 +624,19 @@ void CG_Bleed( const vec3_t origin, int entityNum ) {
 		return;
 	}
 
-	if (!cgs.media.bloodExplosionShader) {
-
+	// don't show own blood in view
+	if (wolfcam_following  &&  wcg.clientNum == entityNum) {
+		return;
 	}
+
+	//if (!cgs.media.bloodExplosionShader) {
+	//}
 
 	ex = CG_AllocLocalEntity();
 	ex->leType = LE_EXPLOSION;
 
 	ex->startTime = cg.time;
-	ex->endTime = ex->startTime + 500;
+	ex->endTime = ex->startTime + cg_bleedTime.integer;
 
 	VectorCopy ( origin, ex->refEntity.origin);
 	ex->refEntity.reType = RT_SPRITE;
@@ -645,6 +649,7 @@ void CG_Bleed( const vec3_t origin, int entityNum ) {
 	if ( entityNum == cg.snap->ps.clientNum ) {
 		ex->refEntity.renderfx |= RF_THIRD_PERSON;
 	}
+	//CG_Printf("bleed %d\n", entityNum);
 }
 
 void CG_ImpactSparks( int weapon, const vec3_t origin, const vec3_t dir, int entityNum)

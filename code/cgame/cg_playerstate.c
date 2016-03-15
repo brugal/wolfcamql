@@ -1242,17 +1242,22 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 		if (cg_useDemoFov.integer == 2  &&  !wolfcam_following) {
 			//Com_Printf("fov:  %d\n", ps->fov);
 			if (ps->clientNum == ops->clientNum) {
-				if (ps->pm_type != PM_INTERMISSION  &&  ops->pm_type != PM_INTERMISSION) {
+				if ((ps->pm_type != PM_INTERMISSION  &&  ops->pm_type != PM_INTERMISSION)  &&
+					(ps->pm_type != PM_SPECTATOR  &&  ops->pm_type != PM_SPECTATOR)  /* clan arena dead-spec fix */  &&
+					(ps->fov > 0)  /* 2016-02-12 min ql zoom seems to be 10 and this avoids probable entity reset (fov == 0) at start of match translating to zoom */
+
+					) {
 					if (ps->fov < ops->fov) {
-						//Com_Printf("^1zomm down %d %d  %d -> %d  tele: %d %d\n", ps->pm_type, ops->pm_type, ps->fov, ops->fov, ps->eFlags & EF_TELEPORT_BIT, ops->eFlags & EF_TELEPORT_BIT);
+						//Com_Printf("^1zoom down ps %d %d  %d -> %d  tele: %d %d\n", ps->pm_type, ops->pm_type, ps->fov, ops->fov, ps->eFlags & EF_TELEPORT_BIT, ops->eFlags & EF_TELEPORT_BIT);
+						//Com_Printf("^2zoom down ps\n");
 						CG_ZoomDown_f();
 					} else if (ps->fov > ops->fov) {
-						//Com_Printf("^2zoom up\n");
+						//Com_Printf("^2zoom up ps\n");
 						CG_ZoomUp_f();
 					}
 				}
 			} else {
-				//Com_Printf("3zoom up\n");
+				//Com_Printf("^2zoom up ps\n");
 				CG_ZoomUp_f();
 			}
 		}

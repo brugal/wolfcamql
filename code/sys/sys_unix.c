@@ -213,6 +213,8 @@ qboolean Sys_RandomBytes( byte *string, int len )
 	if( !fp )
 		return qfalse;
 
+	setvbuf( fp, NULL, _IONBF, 0 ); // don't buffer reads from /dev/urandom
+
 	if( fread( string, sizeof( byte ), len, fp ) != len )
 	{
 		fclose( fp );
@@ -243,10 +245,205 @@ char *Sys_GetCurrentUser( void )
 Sys_GetClipboardData
 ==================
 */
-char *Sys_GetClipboardData(void)
+#if defined(DEDICATED)
+char *Sys_GetClipboardData (void)
 {
 	return NULL;
 }
+#elif defined(MACOS_X)
+
+extern char *Cocoa_GetClipboardData (void);
+
+char *Sys_GetClipboardData(void)
+{
+	const char *s;
+	char *data;
+	int len;
+
+	s = Cocoa_GetClipboardData();
+	len = strlen(s);
+	data = Z_Malloc(len + 1);
+	if (data == NULL) {
+		Com_Printf("^1Sys_GetClipboardData:  couldn't allocate memory for data\n");
+		return NULL;
+	}
+
+	Q_strncpyz(data, s, len);
+
+	// like win32 clipboard handler
+	strtok(data, "\n\r\b");
+
+	return data;
+}
+
+#else  // default unix client
+
+#include "SDL_syswm.h"
+#include "SDL.h"
+//#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+
+//static qboolean clipBoardInit = qfalse;
+
+//static void clipBoardInit (void)
+//{
+//
+//}
+
+char *Sys_GetClipboardData (void)
+{
+	SDL_SysWMinfo info;
+	int r;
+	Atom XA_CLIPBOARD;
+	Atom ourAtom;
+	Atom UTF8_STRING;
+	Window selectionWindow;
+	Window ourWindow;
+	Display *dpy;
+	SDL_Event event;
+	int selectionFormat;
+	Atom selectionType;
+	unsigned long nbytes;
+	unsigned char *data;
+	unsigned long nbytesAfter;
+	char *retData;
+	int startTime;
+
+	//FIXME move from here
+	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
+
+	// need to initialize before getting window information
+	SDL_VERSION(&info.version);
+	r = SDL_GetWMInfo(&info);
+
+	if (r != 1) {
+		Com_Printf("^3Sys_GetClipboardData: SDL_GetWMInfo failed %d  '%s'\n", r, SDL_GetError());
+		return NULL;
+	}
+
+	dpy = info.info.x11.display;
+	ourWindow = info.info.x11.window;
+
+	XA_CLIPBOARD = XInternAtom(dpy, "CLIPBOARD", True);
+	if (XA_CLIPBOARD == None) {
+		Com_Printf("^1Sys_GetClipboardData:  couldn't create clipboard atom\n");
+		return NULL;
+	}
+
+	UTF8_STRING = XInternAtom(dpy, "UTF8_STRING", True);
+	if (UTF8_STRING == None) {
+		Com_Printf("^1Sys_GetClipboardData:  couldn't create utf8 atom\n");
+		return NULL;
+	}
+
+	// create if necessary
+	ourAtom = XInternAtom(dpy, "WOLFCAMQL_SELECTION", False);
+	if (ourAtom == None) {
+		Com_Printf("^1Sys_GetClipboardData:  couldn't create our atom\n");
+		return NULL;
+	}
+
+	selectionWindow = XGetSelectionOwner(dpy, XA_CLIPBOARD);
+	if (selectionWindow == None) {
+		Com_Printf("no selection window\n");
+		return NULL;
+	}
+	if (selectionWindow == ourWindow) {
+		//FIXME
+		Com_Printf("we already own selection\n");
+		return NULL;
+	}
+
+	// ask other window to copy to our atom
+	//XConvertSelection(dpy, XA_PRIMARY, UTF8_STRING, ourAtom, ourWindow, CurrentTime);
+	XConvertSelection(dpy, XA_CLIPBOARD, UTF8_STRING, ourAtom, ourWindow, CurrentTime);
+	//XFlush(dpy);
+
+
+	// wait for other window to copy the data
+	startTime = Sys_Milliseconds();
+	while (1) {
+		int r;
+		//int num;
+		//SDL_Event events[20];
+		//int i;
+
+		//SDL_WaitEvent(&event);
+		//SDL_WaitEventTimeout(&event, 1000);
+		//FIXME should use sdl_peepevent
+		//r = SDL_PollEvent(&event);
+		SDL_PumpEvents();
+		//r = SDL_PeepEvents(events, 1, SDL_GETEVENT, SDL_EVENTMASK(SDL_SYSWMEVENT));
+		//r = SDL_PeepEvents(events, 1, SDL_GETEVENT, SDL_ALLEVENTS);
+		//r = SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_ALLEVENTS);
+		//r = SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_SYSWMEVENT);
+		//num = SDL_PeepEvents(events, 20, SDL_GETEVENT, SDL_EVENTMASK(SDL_SYSWMEVENT));
+		r = SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENTMASK(SDL_SYSWMEVENT));
+
+#if 0
+		Com_Printf("got wm events: %d\n", num);
+		for (i = 0;  i < num;  i++) {
+			if (events[i].type == SDL_SYSWMEVENT) {
+
+			}
+		}
+#endif
+		//Com_Printf("ev: %d\n", event.type);
+
+#if 0
+		if (r == 0) {
+			Com_Printf("no event yet...\n");
+		} else {
+			Com_Printf("xxxxxxxx got event r:%d\n", r);
+		}
+#endif
+
+		if (r == 1  &&  event.type == SDL_SYSWMEVENT) {
+			//Com_Printf("got SDL_SYSWMEVENT\n");
+			XEvent xevent = event.syswm.msg->event.xevent;
+
+			if (xevent.type == SelectionNotify  &&  xevent.xselection.requestor == ourWindow) {
+				// got it
+				break;
+			} else {
+				//FIXME pop this back?
+			}
+		}
+
+		if ((Sys_Milliseconds() - startTime > 3000)) {
+			Com_Printf("^3Sys_GetClipboardData:  timed out\n");
+			return NULL;
+		}
+
+		//Com_Printf("sleeping ...\n");
+		usleep(1000 * 50);
+	}
+
+	XGetWindowProperty(dpy, ourWindow, ourAtom, 0, INT_MAX/4, False, AnyPropertyType, &selectionType, &selectionFormat, &nbytes, &nbytesAfter, &data);
+	if (nbytesAfter != 0) {
+		Com_Printf("^3Sys_GetClipboardData: %ld bytes after\n", nbytesAfter);
+	}
+	//Com_Printf("got selection data... '%s'\n", data);
+
+	retData = Z_Malloc(nbytes + 1);
+	if (retData == NULL) {
+		Com_Printf("^1Sys_GetClipboardData:  couldn't allocate memory for clipboard buffer\n");
+		XFree(data);
+		return NULL;
+	}
+
+	Q_strncpyz(retData, (char *)data, nbytes + 1);
+
+	// like win32 clipboard handler
+	strtok(retData, "\n\r\b");
+
+	XFree(data);
+	XDeleteProperty(dpy, ourWindow, ourAtom);
+
+	return retData;
+}
+
+#endif
 
 #define MEM_THRESHOLD 96*1024*1024
 
@@ -709,14 +906,37 @@ Unix specific initialisation
 
 #if defined(MACOS_X)  ||  DEDICATED
 
+#include <execinfo.h>
+
+// from backtrace() man page
+static void print_dl_backtrace (void)
+{
+	void *callstack[128];
+	int i;
+	int frames;
+	char **strs;
+
+	frames = backtrace(callstack, 128);
+	strs = backtrace_symbols(callstack, frames);
+	for (i = 0;  i < frames;  i++) {
+		fprintf(stderr, "%s\n", strs[i]);
+	}
+}
+
 static int print_gdb_trace (void)
 {
+	//FIXME test gdb?
+
+	//FIXME testing
+	//print_dl_backtrace();
+
 	return 0;
 }
 
 static void signal_crash (int signum, siginfo_t *info, void *ptr)
 {
 	fprintf(stderr, "crash with signal %d\n", signum);
+	print_dl_backtrace();
 	exit(-1);
 }
 
@@ -783,7 +1003,7 @@ using __cxxabiv1::__cxa_demangle;
 #if defined(REG_RIP)
 # define SIGSEGV_STACK_IA64
 //#error lskdjflskdjflksdjf
-# define REGFORMAT "%016lx"
+# define REGFORMAT "%016llx"
 #elif defined(REG_EIP)
 //#error ssss
 # define SIGSEGV_STACK_X86
@@ -794,6 +1014,7 @@ using __cxxabiv1::__cxa_demangle;
 # define REGFORMAT "%x"
 #endif
 
+//FIXME linux only :  /proc/self/exe
 static int print_gdb_trace (void)
 {
     char pid_buf[30];
@@ -807,15 +1028,21 @@ static int print_gdb_trace (void)
 		return -1;
 	}
 
-    if (!child_pid) {
+    if (child_pid == 0) {
         dup2(2, 1);   // redirect output to stderr
         fprintf(stdout, "stack trace for %s pid=%s\n", name_buf, pid_buf);
         execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt full", name_buf, pid_buf, NULL);
-        //abort(); /* If gdb failed to start */
-		//exit(1);
+		exit(1);  // should only get here if execlp() failed
     } else {
-        waitpid(child_pid, NULL, 0);
-		//exit(1);
+		int status;
+        waitpid(child_pid, &status, 0);
+
+		if (WEXITSTATUS(status) == 0) {
+			return 0;
+		} else {
+			printf("couldn't execute gdb\n");
+			return -1;
+		}
     }
 
 	return 0;
@@ -831,12 +1058,15 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 	void **bp = 0;
 	void *ip = 0;
 
+	//printf("here we go...\n");
 	if (print_gdb_trace() != -1) {
 		//return;
 		exit(1);
 	}
 
-	sigsegv_outp("%s\n", strsignal(signum));
+	printf("fallback trace...\n");
+
+	sigsegv_outp("signal string: %s\n", strsignal(signum));
 	sigsegv_outp("info.si_signo = %d", signum);
 	sigsegv_outp("info.si_errno = %d", info->si_errno);
 	sigsegv_outp("info.si_code  = %d (%s)", info->si_code, si_codes[info->si_code]);
@@ -935,7 +1165,7 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 
 #endif
 
-void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolean useDpiAware)
 {
 	struct sigaction action;
 	const char *term = getenv("TERM");
@@ -1179,4 +1409,173 @@ int Sys_DirnameCmp (const char *pathName1, const char *pathName2)
 #else
 	return strcmp(pathName1, pathName2);
 #endif
+}
+
+// popen
+
+typedef struct {
+	FILE *fp;
+	int lastErrno;
+} popenDataUnix_t;
+
+// need to free() returned data
+popenData_t *Sys_PopenAsync (const char *command)
+{
+	popenData_t *p;
+	popenDataUnix_t *pu;
+
+	int fd;
+	int flags;
+
+	p = (popenData_t *)malloc(sizeof(popenData_t));
+	if (p == NULL) {
+		Com_Printf("^1%s couldn't allocate memory\n", __FUNCTION__);
+		return NULL;
+	}
+	memset(p, 0, sizeof(popenData_t));
+
+	pu = (popenDataUnix_t *)malloc(sizeof(popenDataUnix_t));
+	if (pu == NULL) {
+		Com_Printf("^1%s couldn't get unix data\n", __FUNCTION__);
+		free(p);
+		return NULL;
+	}
+	memset(pu, 0, sizeof(popenDataUnix_t));
+	p->data = pu;
+
+	pu->fp = popen(command, "r");
+	if (pu->fp == NULL) {
+		Com_Printf("^1%s couldn't launch process '%s'\n", __FUNCTION__, command);
+		free(pu);
+		free(p);
+		return NULL;
+	}
+
+	// set non-blocking
+	fd = fileno(pu->fp);
+	flags = fcntl(fd, F_GETFL, 0);
+	flags |= O_NONBLOCK;
+	fcntl(fd, F_SETFL, flags);
+
+	pu->lastErrno = EWOULDBLOCK;
+
+	return p;
+}
+
+void Sys_PopenClose (popenData_t *p)
+{
+	popenDataUnix_t *pu;
+	int err;
+	int ret;
+
+	if (p == NULL) {
+		Com_Printf("^1%s p == NULL\n", __FUNCTION__);
+		return;
+	}
+
+	if (p->data == NULL) {
+		Com_Printf("^1%s p->data == NULL\n", __FUNCTION__);
+		return;
+	}
+
+	pu = p->data;
+
+	if (pu->fp == NULL) {
+		Com_Printf("^1%s invalid file\n", __FUNCTION__);
+		return;
+	}
+
+	ret = pclose(pu->fp);
+	err = errno;
+
+	Com_Printf("popen done: %d  %d\n", ret, err);
+	if (ret != 0) {
+		Com_Printf("  %d: %s\n", err, strerror(err));
+	}
+
+	free(p->data);
+	//pu->fp = NULL;
+}
+
+char *Sys_PopenGetLine (popenData_t *p, char *buffer, int size)
+{
+	popenDataUnix_t *pu;
+	char *retp;
+
+	if (p == NULL) {
+		Com_Printf("^1%s p == NULL\n", __FUNCTION__);
+		return NULL;
+	}
+
+	if (p->data == NULL) {
+		Com_Printf("^1%s p->data == NULL\n", __FUNCTION__);
+		return NULL;
+	}
+
+	pu = p->data;
+
+	if (pu->fp == NULL) {
+		Com_Printf("^1%s invalid file\n", __FUNCTION__);
+		return NULL;
+	}
+
+	if (buffer == NULL) {
+		Com_Printf("^1%s buffer == NULL\n", __FUNCTION__);
+		return NULL;
+	}
+
+	if (size <= 0) {
+		Com_Printf("^1%s invalid size %d\n", __FUNCTION__, size);
+		return NULL;
+	}
+
+	retp = fgets(buffer, size, pu->fp);
+	pu->lastErrno = errno;
+
+	return retp;
+}
+
+qboolean Sys_PopenIsDone (popenData_t *p)
+{
+	popenDataUnix_t *pu;
+
+	if (p == NULL) {
+		Com_Printf("^1%s p == NULL\n", __FUNCTION__);
+		return qfalse;
+	}
+
+	if (p->data == NULL) {
+		Com_Printf("^1%s p->data == NULL\n", __FUNCTION__);
+		return qfalse;
+	}
+
+	pu = p->data;
+
+	if (pu->fp == NULL) {
+		Com_Printf("^1%s invalid file\n", __FUNCTION__);
+		return qfalse;
+	}
+
+	if (pu->lastErrno != EWOULDBLOCK) {
+		return qtrue;
+	}
+
+	if (feof(pu->fp)) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
+const char *Sys_GetSteamCmd (void)
+{
+	const char *s;
+
+	s = Cvar_VariableString("fs_steamcmd");
+
+	if (s  &&  *s) {
+		return s;
+	} else {
+		return "steamcmd.sh";
+	}
 }

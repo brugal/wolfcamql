@@ -33,10 +33,6 @@
 #define       MAX_SPAWN_VARS                  64
 #define       MAX_SPAWN_VARS_CHARS    4096
 
-#if 1  //def MPACK
-#define CG_FONT_THRESHOLD 0.1
-#endif
-
 #define	POWERUP_BLINKS		5
 
 #define	POWERUP_BLINK_TIME	1000
@@ -1082,7 +1078,7 @@ typedef struct {
 	// centerprinting
 	int			centerPrintTime;
 	int			centerPrintCharWidth;
-	int			centerPrintY;
+	float centerPrintY;
 	char		centerPrint[1024];
 	int			centerPrintLines;
 	qboolean	centerPrintIsFragMessage;
@@ -1236,6 +1232,7 @@ typedef struct {
 	char			lastFragVictimName[MAX_QPATH * 2];
 	char			lastFragVictimWhiteName[MAX_QPATH * 2];
 	int				lastFragVictimTeam;
+	int lastFragKillerTeam;
 	int				lastFragWeapon;
 	int				lastFragMod;
 	char			lastFragq3obitString[MAX_STRING_CHARS];
@@ -1302,8 +1299,8 @@ typedef struct {
 	int echoPopupStartTime;
 	int echoPopupTime;
 	char echoPopupString[MAX_STRING_CHARS];
-	int echoPopupX;
-	int echoPopupY;
+	float echoPopupX;
+	float echoPopupY;
 	int echoPopupWideScreen;
 	float echoPopupScale;
 
@@ -1532,7 +1529,8 @@ typedef struct {
 // Other media that can be tied to clients, weapons, or items are
 // stored in the clientInfo_t, itemInfo_t, weaponInfo_t, and powerupInfo_t
 typedef struct {
-	qhandle_t	charsetShader;
+	//qhandle_t	charsetShader;
+	//fontInfo_t charsetFont;
 	qhandle_t	charsetProp;
 	qhandle_t	charsetPropGlow;
 	qhandle_t	charsetPropB;
@@ -2069,16 +2067,22 @@ typedef struct {
 
 	fontInfo_t	centerPrintFont;
 	int centerPrintFontModificationCount;
+	int centerPrintFontPointSizeModificationCount;
 	fontInfo_t	fragMessageFont;
 	int fragMessageFontModificationCount;
+	int fragMessageFontPointSizeModificationCount;
 	fontInfo_t rewardsFont;
 	int rewardsFontModificationCount;
+	int rewardsFontPointSizeModificationCount;
 	fontInfo_t fpsFont;
 	int fpsFontModificationCount;
+	int fpsFontPointSizeModificationCount;
 	fontInfo_t clientItemTimerFont;
 	int clientItemTimerFontModificationCount;
+	int clientItemTimerFontPointSizeModificationCount;
 	fontInfo_t ammoWarningFont;
 	int ammoWarningFontModificationCount;
+	int ammoWarningFontPointSizeModificationCount;
 
 	// such crap
 	fontInfo_t playerNamesFont;
@@ -2090,46 +2094,67 @@ typedef struct {
 
 	fontInfo_t snapshotFont;
 	int snapshotFontModificationCount;
+	int snapshotFontPointSizeModificationCount;
 	fontInfo_t crosshairNamesFont;
 	int crosshairNamesFontModificationCount;
+	int crosshairNamesFontPointSizeModificationCount;
 	fontInfo_t crosshairTeammateHealthFont;
 	int crosshairTeammateHealthFontModificationCount;
+	int crosshairTeammateHealthFontPointSizeModificationCount;
 	fontInfo_t warmupStringFont;
 	int warmupStringFontModificationCount;
+	int warmupStringFontPointSizeModificationCount;
 	fontInfo_t waitingForPlayersFont;
 	int waitingForPlayersFontModificationCount;
+	int waitingForPlayersFontPointSizeModificationCount;
 	fontInfo_t voteFont;
 	int voteFontModificationCount;
+	int voteFontPointSizeModificationCount;
 	fontInfo_t teamVoteFont;
 	int teamVoteFontModificationCount;
+	int teamVoteFontPointSizeModificationCount;
 	fontInfo_t followingFont;
 	int followingFontModificationCount;
+	int followingFontPointSizeModificationCount;
 	fontInfo_t weaponBarFont;
 	int weaponBarFontModificationCount;
+	int weaponBarFontPointSizeModificationCount;
 	fontInfo_t itemPickupsFont;
 	int itemPickupsFontModificationCount;
+	int itemPickupsFontPointSizeModificationCount;
 	fontInfo_t originFont;
 	int originFontModificationCount;
+	int originFontPointSizeModificationCount;
 	fontInfo_t speedFont;
 	int speedFontModificationCount;
+	int speedFontPointSizeModificationCount;
 	fontInfo_t lagometerFont;
 	int lagometerFontModificationCount;
+	int lagometerFontPointSizeModificationCount;
 	fontInfo_t attackerFont;
 	int attackerFontModificationCount;
+	int attackerFontPointSizeModificationCount;
 	fontInfo_t teamOverlayFont;
 	int teamOverlayFontModificationCount;
+	int teamOverlayFontPointSizeModificationCount;
 	fontInfo_t cameraPointInfoFont;
 	int cameraPointInfoFontModificationCount;
+	int cameraPointInfoFontPointSizeModificationCount;
 	fontInfo_t jumpSpeedsFont;
 	int jumpSpeedsFontModificationCount;
+	int jumpSpeedsFontPointSizeModificationCount;
 	fontInfo_t jumpSpeedsTimeFont;
 	int jumpSpeedsTimeFontModificationCount;
+	int jumpSpeedsTimeFontPointSizeModificationCount;
 	fontInfo_t proxWarningFont;
 	int proxWarningFontModificationCount;
+	int proxWarningFontPointSizeModificationCount;
 	fontInfo_t dominationPointStatusFont;
 	int dominationPointStatusFontModificationCount;
+	int dominationPointStatusFontPointSizeModificationCount;
 	fontInfo_t damagePlumFont;
 	int damagePlumFontModificationCount;
+	int damagePlumFontPointSizeModificationCount;
 
 	qhandle_t	gametypeIcon[GT_MAX_GAME_TYPE];
 	qhandle_t singleShader;
@@ -2435,6 +2460,7 @@ extern vmCvar_t cg_shotgunRandomness;
 extern	vmCvar_t		cg_drawTimer;
 
 extern  vmCvar_t		cg_drawClientItemTimer;
+extern vmCvar_t cg_drawClientItemTimerFilter;
 extern	vmCvar_t		cg_drawClientItemTimerX;
 extern	vmCvar_t		cg_drawClientItemTimerY;
 extern	vmCvar_t		cg_drawClientItemTimerScale;
@@ -2733,6 +2759,7 @@ extern vmCvar_t cg_forcePovModel;
 extern	vmCvar_t 		cg_buildScript;
 extern	vmCvar_t		cg_paused;
 extern	vmCvar_t		cg_blood;
+extern vmCvar_t cg_bleedTime;
 extern	vmCvar_t		cg_predictItems;
 extern	vmCvar_t		cg_deferPlayers;
 

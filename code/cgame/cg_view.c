@@ -4171,6 +4171,11 @@ static void CG_CheckSkillRating (void)
 		return;
 	}
 
+	if (cgs.realProtocol >= 91) {
+		// no more skill ratings
+		return;
+	}
+
 	// there was a connect or disconnect and sv_skillRating wasn't updated,
 	// so the client had the same skill rating as the server average
 	if (!cgs.clientinfo[cgs.lastConnectedDisconnectedPlayer].infoValid) {
@@ -5053,6 +5058,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 				}
 			}
 			if (cg_useDemoFov.integer == 2) {
+				//Com_Printf("^2zoom up cg_view.c\n");
 				CG_ZoomUp_f();
 			}
 			trap_SendConsoleCommand("exec wolfcamfirstpersonswitch.cfg\n");
@@ -5123,6 +5129,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 				CG_StartLocalSound(sfx, CHAN_LOCAL_SOUND);
 			}
 			if (cg_useDemoFov.integer == 2) {
+				//Com_Printf("^2zoom up cg_view.c 2\n");
 				CG_ZoomUp_f();
 			}
 			trap_SendConsoleCommand("exec firstpersonswitch.cfg\n");

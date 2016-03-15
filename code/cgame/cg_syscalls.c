@@ -571,6 +571,11 @@ int trap_GetFirstServerTime (void)
 	return syscall(CG_GETFIRSTSERVERTIME);
 }
 
+int trap_GetLastServerTime (void)
+{
+	return syscall(CG_GETLASTSERVERTIME);
+}
+
 #if 0
 void trap_AddAt (int serverTime, const char *clockTime, const char *command)
 {
@@ -657,4 +662,9 @@ void trap_Key_KeynumToStringBuf (int keynum, char *buf, int buflen)
 qboolean trap_R_GetGlyphInfo (const fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut)
 {
 	return syscall(CG_R_GETGLYPHINFO, fontInfo, charValue, glyphOut);
+}
+
+qboolean trap_R_GetFontInfo (int fontId, fontInfo_t *font)
+{
+	return syscall(CG_R_GETFONTINFO, fontId, font);
 }

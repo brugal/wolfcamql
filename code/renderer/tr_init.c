@@ -2893,6 +2893,7 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 
 	re.RegisterFont = RE_RegisterFont;
 	re.GetGlyphInfo = RE_GetGlyphInfo;
+	re.GetFontInfo = RE_GetFontInfo;
 	re.RemapShader = R_RemapShader;
 	re.ClearRemappedShader = R_ClearRemappedShader;
 	re.GetEntityToken = R_GetEntityToken;

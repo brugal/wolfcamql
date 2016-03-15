@@ -651,8 +651,8 @@ void demoDrawCrosshair( void ) {
 	}
 
 	w = h = cg_crosshairSize.value;
-	x = cg_crosshairX.integer;
-	y = cg_crosshairY.integer;
+	x = cg_crosshairX.value;
+	y = cg_crosshairY.value;
 	CG_AdjustFrom640( &x, &y, &w, &h );
 	ca = cg_drawCrosshair.integer;
 	if (ca < 0) {

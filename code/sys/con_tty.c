@@ -88,7 +88,7 @@ send "\b \b"
 static void CON_Back( void )
 {
 	char key;
-	size_t size;
+	size_t UNUSED_VAR size;
 
 	key = '\b';
 	size = write(STDOUT_FILENO, &key, 1);
@@ -146,13 +146,17 @@ static void CON_Show( void )
 		ttycon_hide--;
 		if (ttycon_hide == 0)
 		{
-			size_t size;
+			size_t UNUSED_VAR size;
 			size = write(STDOUT_FILENO, "]", 1);
 			if (TTY_con.cursor)
 			{
 				for (i=0; i<TTY_con.cursor; i++)
 				{
-					size = write(STDOUT_FILENO, TTY_con.buffer+i, 1);
+					int n;
+					//size = write(STDOUT_FILENO, TTY_con.buffer+i, 1);
+					for (n = 0;  n < TTY_con.xbuffer[i].numUtf8Bytes;  n++) {
+						size = write(STDOUT_FILENO, &TTY_con.xbuffer[i].utf8Bytes[n], 1);
+					}
 				}
 			}
 		}
@@ -328,10 +332,11 @@ char *CON_Input( void )
 	int avail;
 	char key;
 	field_t *history;
-	size_t size;
+	size_t UNUSED_VAR size;
 
 	if(ttycon_on)
 	{
+		//FIXME utf8
 		avail = read(STDIN_FILENO, &key, 1);
 		if (avail != -1)
 		{
@@ -343,7 +348,10 @@ char *CON_Input( void )
 				if (TTY_con.cursor > 0)
 				{
 					TTY_con.cursor--;
-					TTY_con.buffer[TTY_con.cursor] = '\0';
+					//TTY_con.buffer[TTY_con.cursor] = '\0';
+					TTY_con.xbuffer[TTY_con.cursor].codePoint = '\0';
+					TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 1;
+					TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[0] = '\0';
 					CON_Back();
 				}
 				return NULL;
@@ -353,9 +361,13 @@ char *CON_Input( void )
 			{
 				if (key == '\n')
 				{
+					const char *fieldString;
+
 					// push it in history
 					Hist_Add(&TTY_con);
-					Q_strncpyz(text, TTY_con.buffer, sizeof(text));
+					//Q_strncpyz(text, TTY_con.buffer, sizeof(text));
+					fieldString = Field_AsStr(&TTY_con, 0, 0);
+					Q_strncpyz(text, fieldString, sizeof(text));
 					Field_Clear(&TTY_con);
 					key = '\n';
 					size = write(STDOUT_FILENO, &key, 1);
@@ -419,8 +431,14 @@ char *CON_Input( void )
 			}
 			if (TTY_con.cursor >= sizeof(text) - 1)
 				return NULL;
+
+			//FIXME utf8
 			// push regular character
-			TTY_con.buffer[TTY_con.cursor] = key;
+			//TTY_con.buffer[TTY_con.cursor] = key;
+			TTY_con.xbuffer[TTY_con.cursor].codePoint = key;
+			TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[0] = key;
+			TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 0;
+
 			TTY_con.cursor++;
 			// print the current line (this is differential)
 			size = write(STDOUT_FILENO, &key, 1);

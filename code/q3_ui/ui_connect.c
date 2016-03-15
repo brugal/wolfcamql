@@ -183,6 +183,17 @@ void UI_DrawConnectScreen( qboolean overlay ) {
 	if (!cstate.demoplaying) {
 		UI_DrawProportionalString( 320, 64, va("Connecting to %s", cstate.servername), UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, menu_text_color );
 		//UI_DrawProportionalString( 320, 96, "Press Esc to abort", UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, menu_text_color );
+	} else {
+		//FIXME would need wrapping
+		//UI_DrawProportionalString( 320, 64, va("Playing %s", UI_Cvar_VariableString("cl_demoFileBaseName")), UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, menu_text_color );
+
+		if (cstate.connState == CA_DOWNLOADINGWORKSHOPS) {
+			//FIXME maybe show current workshop number
+			UI_DrawProportionalString(320, 64, "Downloading Workshops", UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, menu_text_color);
+			trap_DrawConsoleLinesOver(10, 160, 10);
+		} else {
+			UI_DrawProportionalString(320, 64, "Playing demo", UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, menu_text_color);
+		}
 	}
 
 	// display global MOTD at bottom
@@ -234,6 +245,7 @@ void UI_DrawConnectScreen( qboolean overlay ) {
 		char downloadName[MAX_INFO_VALUE];
 
 			trap_Cvar_VariableStringBuffer( "cl_downloadName", downloadName, sizeof(downloadName) );
+			//Q_strncpyz(downloadName, "test download", sizeof(downloadName));
 			if (*downloadName) {
 				UI_DisplayDownloadInfo( downloadName );
 				return;
@@ -242,6 +254,7 @@ void UI_DrawConnectScreen( qboolean overlay ) {
 		s = "Awaiting gamestate...";
 		break;
 	case CA_LOADING:
+		//Com_Printf("loading ...\n");
 		return;
 	case CA_PRIMED:
 		return;
@@ -261,6 +274,7 @@ UI_KeyConnect
 ===================
 */
 void UI_KeyConnect( int key ) {
+	//Com_Printf("^5ui key connect: %d\n", key);
 	if ( key == K_ESCAPE ) {
 		trap_Cmd_ExecuteText( EXEC_APPEND, "disconnect\n" );
 		return;
