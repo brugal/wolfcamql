@@ -456,7 +456,7 @@ void R_SetupFrustum (viewParms_t *dest, float xmin, float xmax, float ymax, floa
 	float oppleg, adjleg, length;
 	int i;
 
-	if(stereoSep == 0 && xmin == -xmax)
+	if (stereoSep == 0 && xmin == -xmax)
 	{
 		// symmetric case can be simplified
 		VectorCopy(dest->or.origin, ofsorigin);
@@ -530,6 +530,7 @@ void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
 			stereoSep = 0;
 	}
 
+	//Com_Printf("zProj: %f\n", zProj);
 	ymax = zProj * tan(dest->fovY * M_PI / 360.0f);
 	ymin = -ymax;
 
@@ -555,8 +556,9 @@ void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
 	dest->projectionMatrix[15] = 0;
 
 	// Now that we have all the data for the projection matrix we can also setup the view frustum.
-	if(computeFrustum)
+	if(computeFrustum) {
 		R_SetupFrustum(dest, xmin, xmax, ymax, zProj, stereoSep);
+	}
 }
 
 /*

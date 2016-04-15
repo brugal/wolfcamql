@@ -22,5 +22,5 @@ Jonathan Young:  quakelive offline
 Maverick and quake live developers for information regarding dm90 and dm91 protocol changes
 
 Dmitry 'qrealka' Loginov:  cpma pro-sound description
-Ravensoft:  png output from Jedi Acadmey
+Ravensoft:  png output from Jedi Academy
 GNU Unifont:  font files

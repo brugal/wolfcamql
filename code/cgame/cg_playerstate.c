@@ -988,6 +988,11 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 			if (cg_audioAnnouncerFlagStatus.integer) {
 				CG_StartLocalSound( cgs.media.youHaveFlagSound, CHAN_ANNOUNCER );
 			}
+
+			if (cg_flagTakenSound.integer) {
+				//CG_AddBufferedSound(cgs.media.takenYourTeamSound);
+				CG_AddBufferedSound(cgs.media.takenOpponentSound);
+			}
 		}
 	}
 
@@ -1241,22 +1246,30 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 
 		if (cg_useDemoFov.integer == 2  &&  !wolfcam_following) {
 			//Com_Printf("fov:  %d\n", ps->fov);
-			if (ps->clientNum == ops->clientNum) {
+			if (ps->clientNum == ops->clientNum  &&  ps->pm_type == ops->pm_type) {  // pm_type check fixes clan arena switching player views to free spec when dead (entire team dead)
+				//Com_Printf("team: %d  %d\n", ps->persistant[PERS_TEAM], ps->clientNum);
 				if ((ps->pm_type != PM_INTERMISSION  &&  ops->pm_type != PM_INTERMISSION)  &&
-					(ps->pm_type != PM_SPECTATOR  &&  ops->pm_type != PM_SPECTATOR)  /* clan arena dead-spec fix */  &&
+					//(ps->pm_type != PM_SPECTATOR  &&  ops->pm_type != PM_SPECTATOR)  /* clan arena dead-spec fix */  &&  // 2016-04-01 no -- also disables zoom for spec demos
 					(ps->fov > 0)  /* 2016-02-12 min ql zoom seems to be 10 and this avoids probable entity reset (fov == 0) at start of match translating to zoom */
 
 					) {
+
+					// 2016-04-01 clan arena switch from other player when dead to free spec if your entire team dies seems to keep the fov of the last player for one player state when the switch occurs
+					if (ps->pm_type == PM_SPECTATOR) {
+						//Com_Printf("^3spec %d %d\n", ps->clientNum, cg.clientNum);
+						//CG_PrintPlayerState();
+					}
+
 					if (ps->fov < ops->fov) {
-						//Com_Printf("^1zoom down ps %d %d  %d -> %d  tele: %d %d\n", ps->pm_type, ops->pm_type, ps->fov, ops->fov, ps->eFlags & EF_TELEPORT_BIT, ops->eFlags & EF_TELEPORT_BIT);
+						//Com_Printf("^1zoom down ps pm_type: %d %d  zoom: %d %d  tele: %d %d realClientNum:%d clientNum:%d %d\n", ops->pm_type, ps->pm_type, ops->fov, ps->fov, ops->eFlags & EF_TELEPORT_BIT, ps->eFlags & EF_TELEPORT_BIT, cg.clientNum, ops->clientNum, ps->clientNum);
 						//Com_Printf("^2zoom down ps\n");
 						CG_ZoomDown_f();
 					} else if (ps->fov > ops->fov) {
-						//Com_Printf("^2zoom up ps\n");
+						//Com_Printf("^2zoom up ps spec:%d  zoom: %d %d\n", ps->pm_type == PM_SPECTATOR, ops->fov, ps->fov);
 						CG_ZoomUp_f();
 					}
 				}
-			} else {
+			} else {  // client num or pm_type not equal
 				//Com_Printf("^2zoom up ps\n");
 				CG_ZoomUp_f();
 			}

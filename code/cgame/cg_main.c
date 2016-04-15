@@ -377,7 +377,10 @@ vmCvar_t cg_itemSize;
 vmCvar_t	cg_fov;
 vmCvar_t cg_fovy;
 vmCvar_t cg_fovStyle;
+vmCvar_t cg_fovForceAspectWidth;
+vmCvar_t cg_fovForceAspectHeight;
 vmCvar_t cg_fovIntermission;
+
 vmCvar_t	cg_zoomFov;
 vmCvar_t cg_zoomTime;
 vmCvar_t cg_zoomIgnoreTimescale;
@@ -573,6 +576,7 @@ vmCvar_t cg_drawSpeedScale;
 vmCvar_t cg_drawSpeedColor;
 vmCvar_t cg_drawSpeedAlpha;
 vmCvar_t cg_drawSpeedWideScreen;
+vmCvar_t cg_drawSpeedChangeColor;
 
 vmCvar_t cg_drawOrigin;
 vmCvar_t cg_drawOriginX;
@@ -1047,6 +1051,11 @@ vmCvar_t cg_wh;
 vmCvar_t cg_whIncludeDeadBody;
 vmCvar_t cg_whIncludeProjectile;
 vmCvar_t cg_whShader;
+vmCvar_t cg_whColor;
+vmCvar_t cg_whAlpha;
+vmCvar_t cg_whEnemyShader;
+vmCvar_t cg_whEnemyColor;
+vmCvar_t cg_whEnemyAlpha;
 
 vmCvar_t cg_playerShader;
 vmCvar_t cg_adShaderOverride;
@@ -1089,6 +1098,7 @@ vmCvar_t cg_allowServerOverride;
 vmCvar_t cg_powerupLight;
 vmCvar_t cg_buzzerSound;
 vmCvar_t cg_flagStyle;
+vmCvar_t cg_flagTakenSound;
 
 vmCvar_t cg_helpIcon;
 vmCvar_t cg_helpIconStyle;
@@ -1155,6 +1165,8 @@ vmCvar_t cg_rewardFirstFrag;
 vmCvar_t cg_rewardPerfect;
 
 vmCvar_t cg_useDemoFov;
+//vmCvar_t cg_specViewHeight;
+vmCvar_t cg_specOffsetQL;
 
 // end cvar_t
 
@@ -1181,6 +1193,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_fov, "cg_fov", xmstr(DEFAULT_FOV), CVAR_ARCHIVE },
 	{ &cg_fovy, "cg_fovy", "", CVAR_ARCHIVE },
 	{ &cg_fovStyle, "cg_fovStyle", "1", CVAR_ARCHIVE },
+	{ cvp(cg_fovForceAspectWidth), "", CVAR_ARCHIVE },
+	{ cvp(cg_fovForceAspectHeight), "", CVAR_ARCHIVE },
 	{ &cg_fovIntermission, "cg_fovIntermission", "90", CVAR_ARCHIVE },
 	{ &cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE },
 	{ &cg_stereoSeparation, "cg_stereoSeparation", "0.4", CVAR_ARCHIVE  },
@@ -1610,7 +1624,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawSpeedColor, "cg_drawSpeedColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawSpeedAlpha, "cg_drawSpeedAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawSpeedWideScreen), "3", CVAR_ARCHIVE },
-	
+	{ cvp(cg_drawSpeedChangeColor), "1", CVAR_ARCHIVE },
+
 	{ &cg_drawOrigin, "cg_drawOrigin", "0", CVAR_ARCHIVE },
 	{ &cg_drawOriginX, "cg_drawOriginX", "5", CVAR_ARCHIVE },
 	{ &cg_drawOriginY, "cg_drawOriginY", "420", CVAR_ARCHIVE },
@@ -1792,7 +1807,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawWarmupStringColor, "cg_drawWarmupStringColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawWarmupStringAlpha, "cg_drawWarmupStringAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawWarmupStringWideScreen), "2", CVAR_ARCHIVE },
-	
+
 	{ &cg_ambientSounds, "cg_ambientSounds", "2", CVAR_ARCHIVE },
 	{ &cg_weather, "cg_weather", "1", CVAR_ARCHIVE },
 	{ &wolfcam_hoverTime, "wolfcam_hoverTime", "2000", CVAR_ARCHIVE },
@@ -1806,6 +1821,11 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_whIncludeProjectile), "1", CVAR_ARCHIVE },
 	{ &cg_whShader, "cg_whShader", "", CVAR_ARCHIVE },
 	{ &cg_playerShader, "cg_playerShader", "", CVAR_ARCHIVE },
+	{ cvp(cg_whColor), "0xffffff", CVAR_ARCHIVE },
+	{ cvp(cg_whAlpha), "30", CVAR_ARCHIVE },
+	{ cvp(cg_whEnemyShader), "", CVAR_ARCHIVE },
+	{ cvp(cg_whEnemyColor), "0xaf1f00", CVAR_ARCHIVE },
+	{ cvp(cg_whEnemyAlpha), "30", CVAR_ARCHIVE },
 	{ &wolfcam_fixedViewAngles, "wolfcam_fixedViewAngles", "0", CVAR_ARCHIVE },
 	{ &cg_useOriginalInterpolation, "cg_useOriginalInterpolation", "0", CVAR_ARCHIVE },
 	{ &cg_drawBBox, "cg_drawBBox", "0", CVAR_ARCHIVE },
@@ -2123,6 +2143,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_powerupLight, "cg_powerupLight", "1", CVAR_ARCHIVE },
 	{ &cg_buzzerSound, "cg_buzzerSound", "1", CVAR_ARCHIVE },
 	{ &cg_flagStyle, "cg_flagStyle", "1", CVAR_ARCHIVE },
+	{ cvp(cg_flagTakenSound), "0", CVAR_ARCHIVE },
 
 	{ cvp(cg_helpIcon), "1", CVAR_ARCHIVE },
 	{ &cg_helpIconStyle, "cg_helpIconStyle", "3", CVAR_ARCHIVE },
@@ -2221,6 +2242,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_rewardPerfect), "1", CVAR_ARCHIVE },
 
 	{ cvp(cg_useDemoFov), "0", CVAR_ARCHIVE },
+	//{ cvp(cg_specViewHeight), "", CVAR_ARCHIVE },
+	{ cvp(cg_specOffsetQL), "1", CVAR_ARCHIVE },
 
 };
 
@@ -3015,9 +3038,8 @@ static void CG_RegisterSounds( void ) {
 		cgs.media.returnYourTeamSound = trap_S_RegisterSound( "sound/teamplay/flagreturn_yourteam.wav", qtrue );
 		cgs.media.returnOpponentSound = trap_S_RegisterSound( "sound/teamplay/flagreturn_opponent.wav", qtrue );
 
-		// unused
-		//cgs.media.takenYourTeamSound = trap_S_RegisterSound( "sound/teamplay/flagtaken_yourteam.wav", qtrue );
-		//cgs.media.takenOpponentSound = trap_S_RegisterSound( "sound/teamplay/flagtaken_opponent.wav", qtrue );
+		cgs.media.takenYourTeamSound = trap_S_RegisterSound( "sound/teamplay/flagtaken_yourteam.wav", qtrue );
+		cgs.media.takenOpponentSound = trap_S_RegisterSound( "sound/teamplay/flagtaken_opponent.wav", qtrue );
 
 
 
@@ -3456,6 +3478,8 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.backTileShader = trap_R_RegisterShader( "gfx/2d/backtile" );
 	cgs.media.noammoShader = trap_R_RegisterShader( "icons/noammo" );
+
+	cgs.media.wallHackShader = trap_R_RegisterShader("wc/wallhack");
 
 	// powerup shaders
 	cgs.media.quadShader = trap_R_RegisterShader("powerups/quad" );
@@ -7410,6 +7434,8 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		cgs.clientNameImage[i] = trap_RegisterShaderFromData(va("clientName%d", i), tmpImgBuff, 64, 64, qfalse, qfalse, GL_CLAMP_TO_EDGE, LIGHTMAP_2D);
 
 	}
+
+	trap_SendConsoleCommandNow("unset cg_forceBModel*\n");
 
 	CG_RegisterCvars();
 

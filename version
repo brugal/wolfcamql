@@ -1,4 +1,21 @@
+11.1test1
 
+* bug fix:  incorrect text length calculation with frag/obituary token strings
+* bug fix:  cg_useDemoZoom 2 didn't work with spec demos
+* /unset command can use '*' at end of name to perform pattern matching.  Ex: /unset cg_*
+* bug fix:  forced bmodels weren't reset when a new map was loaded
+* cg_fovStyle 2 added.  This should match quakelive.  This is similar to 1 but uses fixed aspect ratios (5:4, 4:3, 16:10, and 16:9).  Vertical fov is preserved and more of the horizontal view is shown as the screen width increases and passes through each aspect threshold.  This stretches the ingame world view to match the highest apsect ratio matched and has an upper limit of 16:9.
+* cg_fovForceAspectWidth and cg_fovForceAspectHeight  with cg_fovStyle 1 or 2 this forces fov calculations to this apsect ratio and then stretches the ingame world view to match the screen width.
+* bug fix:  free spec was using third person view offset
+* cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
+* cg_drawSpeedChangeColor to change text color based on speed
+* cg_whColor, cg_whAlpha, cg_whEnemyShader, cg_whEnemyColor, cg_whEnemyAlpha
+* default wallhack shader changed to wc/wallhack
+* cg_wh 2 enables wall hack only for enemies, 3 only for teammates
+* cg_flagTakenSound  alarm sounds for flag taken
+* change window icon color
+
+------------------------------------
 11.0  2016-03-15
 
 * hud:  quake3 single player gametype is cg_gametype 16

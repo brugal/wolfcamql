@@ -4084,17 +4084,33 @@ void CG_AddRefEntityWithPowerups( refEntity_t *ent, const entityState_t *state, 
 			} else if (cg_whIncludeProjectile.integer == 0  &&  state->eType == ET_MISSILE) {
 				// pass
 			} else {
-				ent->shaderRGBA[0] = 255;
-				ent->shaderRGBA[1] = 255;
-				ent->shaderRGBA[2] = 255;
-				ent->shaderRGBA[3] = 255;
+				if (CG_IsEnemyTeam(team)) {
+					if (cg_wh.integer == 3) {
+						return;
+					}
+					SC_ByteVec3ColorFromCvar(ent->shaderRGBA, &cg_whEnemyColor);
+					ent->shaderRGBA[3] = cg_whEnemyAlpha.integer;
+
+					if (*cg_whEnemyShader.string) {
+						ent->customShader = trap_R_RegisterShader(cg_whEnemyShader.string);
+					} else {
+						ent->customShader = cgs.media.wallHackShader;
+					}
+				} else {
+					if (cg_wh.integer == 2) {  // only enemies
+						return;
+					}
+					SC_ByteVec3ColorFromCvar(ent->shaderRGBA, &cg_whColor);
+					ent->shaderRGBA[3] = cg_whAlpha.integer;
+
+					if (*cg_whShader.string) {
+						ent->customShader = trap_R_RegisterShader(cg_whShader.string);
+					} else {
+						ent->customShader = cgs.media.wallHackShader;
+					}
+				}
 
 				ent->renderfx |= RF_DEPTHHACK;
-				if (*cg_whShader.string) {
-					ent->customShader = trap_R_RegisterShader(cg_whShader.string);
-				} else {
-					ent->customShader = cgs.media.quadShader;
-				}
 
 				CG_AddRefEntity(ent);
 			}

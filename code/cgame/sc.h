@@ -27,6 +27,9 @@ qboolean CG_IsTeammate (const clientInfo_t *ci);
 qboolean CG_IsUs (const clientInfo_t *ci);
 qboolean CG_IsFirstPersonView (int clientNum);
 qboolean CG_IsTeamGame (int gametype);
+qboolean CG_IsEnemyTeam (int team);
+qboolean CG_IsOurTeam (int team);
+
 
 char *CG_FS_ReadLine (qhandle_t f, int *len);
 const char *CG_GetToken (const char *inputString, char *token, qboolean isFilename, qboolean *newLine);

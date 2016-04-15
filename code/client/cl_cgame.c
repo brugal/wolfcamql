@@ -719,14 +719,34 @@ CL_ShutdonwCGame
 */
 void CL_ShutdownCGame( void ) {
 	vec4_t color;
+	//qboolean force = qfalse;
 
 	Key_SetCatcher( Key_GetCatcher( ) & ~KEYCATCH_CGAME );
 	cls.cgameStarted = qfalse;
 	if ( !cgvm ) {
 		return;
 	}
+
+	//Com_Printf("^5cls.state: %d\n", cls.state);
+	
+	if (cls.state == CA_LOADING) {
+		//force = qtrue;
+	}
+
+
 	VM_Call( cgvm, CG_SHUTDOWN );
+
+#if 0
+	if (force) {
+		VM_Forced_Unload_Start();  // could be called from loading screen
+	}
+#endif
 	VM_Free( cgvm );
+#if 0
+	if (force) {
+		VM_Forced_Unload_Done();
+	}
+#endif
 	cgvm = NULL;
 	re.SetPathLines(NULL, NULL, NULL, NULL, color);
 }
@@ -869,7 +889,25 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 // if there is a map change while we are downloading at pk3.
 // ZOID
 		if (cl.draw) {
+
+
+#if 0  // still a problem with /vid_restart, etc.. that calls VM shutdown
+			// get input and pump events to make window responsive during the
+			// loading screen
+			IN_Frame();
+			// option to skip network processing added to Com_EventLoop() to
+			// prevent crashing mentioned above.
+			Com_EventLoop(qfalse);
+			//Com_EventLoop(qtrue);
+			Cbuf_Execute();
+#endif
+
 			SCR_UpdateScreen();
+
+#if 0
+			S_Update();
+			Con_RunConsole();
+#endif
 		}
 		return 0;
 	case CG_CM_LOADMAP:

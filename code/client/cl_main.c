@@ -3082,7 +3082,7 @@ void CL_DownloadsComplete( void ) {
 	cls.state = CA_LOADING;
 
 	// Pump the loop, this may change gamestate!
-	Com_EventLoop();
+	Com_EventLoop(qtrue);
 
 	// if the gamestate was changed by calling Com_EventLoop
 	// then we loaded everything already and we don't want to do it again.

@@ -2665,6 +2665,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					team = TEAM_RED;
 				}
 #endif
+				//Com_Printf("^6eventParm %d\n", es->eventParm);
 				switch (es->eventParm) {
 				case GTS_RED_CAPTURE: // CTF: red team captured the blue flag, 1FCTF: red team captured the neutral flag
 					if ( team == TEAM_RED )
@@ -2718,24 +2719,30 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					}
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer) {
-					if (team == TEAM_BLUE) {
-#if 1  //def MPACK
-							if (cgs.gametype == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-#endif
- 							CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-					}
-						else if (team == TEAM_RED) {
-#if 1  //def MPACK
-							if (cgs.gametype == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-#endif
+							if (team == TEAM_BLUE) {
+								if (cgs.gametype == GT_1FCTF)
+									CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
+								else
+									CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
+							}
+							else if (team == TEAM_RED) {
+								if (cgs.gametype == GT_1FCTF)
+									CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
+								else
+									CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
+							}
+						}  // audio announcer
 
-						 	CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						}
-					}
+						if (cg_flagTakenSound.integer) {
+							if (team == TEAM_BLUE) {
+								CG_AddBufferedSound(cgs.media.takenOpponentSound);
+							} else if (team == TEAM_RED) {
+								CG_AddBufferedSound(cgs.media.takenYourTeamSound);
+							}
+
+							//FIXME team spec?
+
+						}  // flag taken sound
 					}
 					break;
 				case GTS_BLUE_TAKEN: // blue flag taken
@@ -2745,24 +2752,27 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					}
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer) {
-						if (team == TEAM_RED) {
-#if 1  //def MPACK
-							if (cgs.gametype == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-#endif
+							if (team == TEAM_RED) {
+								if (cgs.gametype == GT_1FCTF)
+									CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
+								else
+									CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
+							}
+							else if (team == TEAM_BLUE) {
+								if (cgs.gametype == GT_1FCTF)
+									CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
+								else
+									CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
+							}
+						}  // audio announcer
 
-							CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
+						if (cg_flagTakenSound.integer) {
+							if (team == TEAM_RED) {
+								CG_AddBufferedSound(cgs.media.takenOpponentSound);
+							} else if (team == TEAM_BLUE) {
+								CG_AddBufferedSound(cgs.media.takenYourTeamSound);
+							}
 						}
-						else if (team == TEAM_BLUE) {
-#if 1  //def MPACK
-							if (cgs.gametype == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-#endif
-							CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
-						}
-					}
 					}
 					break;
 #if 1  //def MPACK
@@ -2894,22 +2904,30 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer  &&  cgs.gametype != GT_CTFS) {
 							if (team == TEAM_BLUE) {
-#if 1  //def MPACK
 								if (cgs.gametype == GT_1FCTF)
 									CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
 								else
-#endif
 									CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
 							}
 							else if (team == TEAM_RED) {
-#if 1  //def MPACK
 								if (cgs.gametype == GT_1FCTF)
 									CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
 								else
-#endif
 									CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
 							}
-						}
+						}  // audio announcer
+
+						if (cg_flagTakenSound.integer) {
+							if (team == TEAM_BLUE) {
+								CG_AddBufferedSound(cgs.media.takenOpponentSound);
+							} else if (team == TEAM_RED) {
+								CG_AddBufferedSound(cgs.media.takenYourTeamSound);
+							}
+
+							//FIXME team spec?
+
+						}  // flag taken sound
+
 					}
 					break;
 				case GTS_BLUE_TAKEN: // CTF: blue team took the red flag, 1FCTF red team took the neutral flag
@@ -2919,23 +2937,28 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					}
 					else {
 						if (cg_audioAnnouncerFlagStatus.integer  &&  cgs.gametype != GT_CTFS) {
-						if (team == TEAM_RED) {
-#if 1  //def MPACK
-							if (cgs.gametype == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
-							else
-#endif
-							CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
+							if (team == TEAM_RED) {
+								if (cgs.gametype == GT_1FCTF)
+									CG_AddBufferedSound( cgs.media.yourTeamTookTheFlagSound );
+								else
+									CG_AddBufferedSound( cgs.media.enemyTookYourFlagSound );
+							}
+							else if (team == TEAM_BLUE) {
+								if (cgs.gametype == GT_1FCTF)
+									CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
+								else
+									CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
+							}
+						}  // audio announcer
+
+						if (cg_flagTakenSound.integer) {
+							if (team == TEAM_RED) {
+								CG_AddBufferedSound(cgs.media.takenOpponentSound);
+							} else if (team == TEAM_BLUE) {
+								CG_AddBufferedSound(cgs.media.takenYourTeamSound);
+							}
 						}
-						else if (team == TEAM_BLUE) {
-#if 1  //def MPACK
-							if (cgs.gametype == GT_1FCTF)
-								CG_AddBufferedSound( cgs.media.enemyTookTheFlagSound );
-							else
-#endif
-							CG_AddBufferedSound( cgs.media.yourTeamTookEnemyFlagSound );
-						}
-					}
+
 					}
 					break;
 				case GTS_REDOBELISK_ATTACKED: // Overload: red obelisk is being attacked

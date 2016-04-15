@@ -1199,6 +1199,12 @@ void ClientSpawn(gentity_t *ent) {
 	// health will count down towards max_health
 	ent->health = client->ps.stats[STAT_HEALTH] = client->ps.stats[STAT_MAX_HEALTH] + 25;
 
+#if 0  // hack to match quake live
+	if (client->sess.spectatorState == SPECTATOR_FREE) {
+		//ent->health = client->ps.stats[STAT_HEALTH] = 0;
+	}
+#endif
+
 	G_SetOrigin( ent, spawn_origin );
 	VectorCopy( spawn_origin, client->ps.origin );
 

@@ -855,6 +855,10 @@ static float Wolfcam_DrawSpeed (float y)
     else
         c = 7;
 
+	if (cg_drawSpeedChangeColor.integer == 0) {
+		c = 7;
+	}
+
 	if (cg_drawSpeedNoText.integer) {
 		s = va("^%d%d", c, (int)speed);
 	} else {
@@ -1244,6 +1248,7 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 			}
 			if (s[0].i < 0  ||  s[0].i > 255) {
 				s += 2;
+				i++;
 				continue;
 			}
 			s++;
@@ -1369,6 +1374,9 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 			}
 		}
 	}
+
+	//Com_Printf("width: %f (%d)\n", out, charCount);
+	//CG_PrintPicString(text);
 
 	return out;
 }
@@ -1901,9 +1909,11 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 	float yscale;
 	int i;
 	fontInfo_t newFont;
+	float outWidth;
 
 	font = fontOrig;
 
+	outWidth = 0;
 	//printPicString(text);
 	if (cg_qlFontScaling.integer  &&  font == &cgDC.Assets.textFont) {
 		if (scale <= cg_smallFont.value) {
@@ -2164,6 +2174,7 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 #endif
 				x += (glyph.xSkip * useScale * xscale) + adjust;
 				//Com_Printf("%c  xSkip %d\n", s[0], glyph->xSkip);
+				outWidth += ((float)glyph.xSkip * useScale * xscale);
 				s += bytes;
 				byteCount += bytes;
 				charCount++;
@@ -2172,6 +2183,9 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 
 		trap_R_SetColor( NULL );
 	}
+
+	//Com_Printf("outWidth: %f (%d)\n", outWidth, charCount);
+	//CG_PrintPicString(text);
 }
 
 
@@ -7864,7 +7878,7 @@ static void CG_DrawCenterString( void ) {
 					//Com_Printf("old w %d  icons %d\n", w, numIcons);
 					//w += ((float)h * cg_drawFragMessageIconScale.value) * (float)numIcons;
 					w = CG_Text_Pic_Width(tmpExtString, scale, cg_drawFragMessageIconScale.value, /*limit*/ 0, h, font);
-					
+					//Com_Printf("width: %f\n", w);
 					align = cg_drawCenterPrintAlign.value;
 					x = (SCREEN_WIDTH - w) / 2;
 					if (*cg_drawCenterPrintX.string) {

@@ -323,6 +323,7 @@ void	G_TouchTriggers( gentity_t *ent ) {
 SpectatorThink
 =================
 */
+
 void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 	pmove_t	pm;
 	gclient_t	*client;
@@ -1105,6 +1106,11 @@ void SpectatorClientEndFrame( gentity_t *ent ) {
 		ent->client->ps.pm_flags |= PMF_SCOREBOARD;
 	} else {
 		ent->client->ps.pm_flags &= ~PMF_SCOREBOARD;
+	}
+
+	// hack to match quake live
+	if ( ent->client->sess.spectatorState == SPECTATOR_FREE ) {
+		ent->client->ps.stats[STAT_HEALTH] = ent->health = 0;
 	}
 }
 

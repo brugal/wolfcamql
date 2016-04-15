@@ -495,7 +495,6 @@ byte	mipBlendColors[16][4] = {
 	{0,0,255,128},
 };
 
-
 /*
 ===============
 Upload32
@@ -531,6 +530,35 @@ void R_Upload32( unsigned *data,
 	if ( r_roundImagesDown->integer && scaled_height > height )
 		scaled_height >>= 1;
 
+#if 0
+	// testing
+	scaled_width = width;
+	scaled_height = height;
+
+
+	if (width % 4 != 0) {
+		//scaled_width = width - (width % 4);
+		scaled_width = width + (4 - width % 4);
+	}
+
+	if (height % 4 != 0) {
+		//scaled_height = height - (height % 4);
+		scaled_height = height + (4 - height % 4);
+	}
+#endif
+
+
+#if 0
+	//mipmap = qtrue;
+	if (scaled_width < width  ||  scaled_height < height) {
+		scaled_width = width >> 1;
+		scaled_height = height >> 1;
+		Com_Printf("^6scaled %d:%d  ->  %d:%d  (mipmap:%d)\n", width, height, scaled_width, scaled_height, mipmap);
+		//scaled_width = 256;
+		//scaled_height = 256;
+	}
+#endif
+
 	if ( scaled_width != width || scaled_height != height ) {
 		int sw, sh;
 
@@ -551,8 +579,21 @@ void R_Upload32( unsigned *data,
 		resampledBuffer = ri.Hunk_AllocateTempMemory( scaled_width * scaled_height * 4 );
 		ResampleTexture (data, width, height, resampledBuffer, scaled_width, scaled_height);
 		data = resampledBuffer;
+
+		if (r_debugScaledImages->integer  &&  (scaled_width != width  ||  scaled_height != height)) {
+			int i;
+			char *sd = (char *)data;
+
+			for (i = 0;  i < (scaled_width * scaled_height * 4);  i += 4) {
+				sd[i + 0] = 255;
+				sd[i + 1] = 255;
+				sd[i + 2] = 0;
+			}
+		}
+
 		width = scaled_width;
 		height = scaled_height;
+
 	}
 
 	//

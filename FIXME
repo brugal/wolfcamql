@@ -1836,6 +1836,133 @@ s)
 ]/condump x.txt
 
 * MAX_EDIT_LINE defined multiple times
+* +info screen also show recording demo name
+* /quit during map load:  "VM_Free(cgame) on running vm"
+* crash when issuing random comand ccis? in console during loading screen:
+
+
+UI menu load time = 121 milli seconds  ui/hud.txt
+freed 0.000000 mb for jit fx tokens
+CL_InitCGame: 12.08 seconds, total time: 23.70
+309 msec to draw all images
+Com_TouchMemory: 0 msec
+Dumped console text to cgameboot.log.
+stack trace for /home/acano/work/hg/ioquakelive-demo-player/build/release-linux-i386/ioquake3.i386 pid=20644
+[New LWP 20654]
+[New LWP 20653]
+[New LWP 20652]
+[New LWP 20651]
+[New LWP 20650]
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+0xf76e5d70 in __kernel_vsyscall ()
+[Current thread is 1 (Thread 0xf668a9c0 (LWP 20644))]
+#0  0xf76e5d70 in __kernel_vsyscall ()
+No symbol table info available.
+#1  0xf70d4adb in waitpid () from /lib/i386-linux-gnu/i686/cmov/libc.so.6
+No symbol table info available.
+#2  0x0823a784 in print_gdb_trace () at code/sys/sys_unix.c:1038
+        status = -128
+        pid_buf = "20644\000\006\000\000\000\000\000\000\000\000\340\001\000\000\250\374\377\000 \376\377\000\a$/"
+        name_buf = "/home/acano/work/hg/ioquakelive-demo-player/build/release-linux-i386/ioquake3.i386\000\v\226\243\306\366\000P\310\366  \321\366\300<\324\v\240M\324\v\324(\243\377\330(\243\377\000p\034\367\001\000\000\000\001\000\000\000\264l\021\367\314<\324\v\200\177\322\f\211\216\306\366\000P\310\366\300<\324\v\210l\021\367\000P\310\366\201\217\306\366\314<\324\v\000\000\000\000\000\000\000\000#\324\020\341\000\000\000\000\034)\243\377\334)\243\377\314<\324\v\000\000\000\070\000\000\000\000"...
+        child_pid = <optimized out>
+#3  0x0823a828 in signal_crash (signum=11, info=0xffa32a8c, ptr=0xffa32b0c) at code/sys/sys_unix.c:1062
+        si_codes = {0x8273843 "", 0x8273999 "SEGV_MAPERR", 0x82739a5 "SEGV_ACCERR"}
+        f = 0
+        ucontext = 0xffa32b0c
+        dlinfo = {dli_fname = 0xe00 <error: Cannot access memory at address 0xe00>, dli_fbase = 0x0, dli_sname = 0xe102676b "\201Õx[", dli_saddr = 0xe00}
+        bp = 0x0
+        ip = 0x0
+#4  <signal handler called>
+No symbol table info available.
+#5  0xc1fd1e56 in ?? ()
+No symbol table info available.
+#6  0xc1f32eed in ?? ()
+No symbol table info available.
+#7  0xc1ed923f in ?? ()
+No symbol table info available.
+#8  0xc1edcb71 in ?? ()
+No symbol table info available.
+#9  0x081183f6 in VM_Call (vm=0xb296e60 <vmTable+224>, callnum=0) at code/qcommon/vm.c:802
+        args = {97826, 0, 0, 1, 5, 5, 0, 0, 21668, 58657919, 0, 169050716}
+        ap = 0xffa346e8 "\"~\001"
+        oldVM = <optimized out>
+        r = <optimized out>
+        i = 0
+#10 0x0807ddf3 in CL_InitCGame () at code/client/cl_cgame.c:1430
+        mapname = <optimized out>
+        t1 = 5203
+        t2 = <optimized out>
+        interpret = <optimized out>
+#11 0x0809ffc7 in CL_DownloadsComplete () at code/client/cl_main.c:3104
+No locals.
+#12 CL_InitDownloads () at code/client/cl_main.c:3287
+        missingfiles = "\000\000\000\000\000\000\000\000\310f\345\v\b\000\000\000\276m\242]\a\240\301x\200", '\000' <repeats 47 times>, "@\000\000\000\000\000\000\000\276m\242]\a\240\301x\200", '\000' <repeats 47 times>, "@", '\000' <repeats 71 times>...
+#13 0x080a6195 in CL_ParseGamestate (msg=0xffa350b8) at code/client/cl_parse.c:1037
+        i = <optimized out>
+        newnum = <optimized out>
+        nullstate = {number = 0, eType = 0, eFlags = 0, pos = {trType = TR_STATIONARY, trTime = 0, trDuration = 0, trBase = {0, 0, 0}, trDelta = {0, 0, 0}, gravity = 0}, apos = {trType = TR_STATIONARY, trTime = 0, trDuration = 0, trBase = {0, 0, 0}, trDelta = {0, 0, 0}, gravity = 0}, time = 0, time2 = 0, origin = {0, 0, 0}, origin2 = {0, 0, 0}, angles = {0, 0, 0}, angles2 = {0, 0, 0}, otherEntityNum = 0, otherEntityNum2 = 0, groundEntityNum = 0, constantLight = 0, loopSound = 0, modelindex = 0, modelindex2 = 0, clientNum = 0, frame = 0, solid = 0, event = 0, eventParm = 0, powerups = 0, weapon = 0, legsAnim = 0, torsoAnim = 0, generic1 = 0, jumpTime = 0, doubleJumped = qfalse, health = 0, armor = 0, location = 0}
+        cmd = <optimized out>
+        s = <optimized out>
+#14 0x080a6fd3 in CL_ParseServerMessage (msg=0xffa350b8) at code/client/cl_parse.c:1663
+        cmd = <optimized out>
+#15 0x0809a83d in CL_ReadDemoMessage (seeking=qfalse) at code/client/cl_main.c:1174
+        r = <optimized out>
+        buf = {allowoverflow = qfalse, overflowed = qfalse, oob = qfalse, data = 0xffa35400 "\304U\344\345Pe¿\v\354#\036\006b\260K¿\217=¿\230\315", <incomplete sequence \302>, maxsize = 32768, cursize = 6894, readcount = 6893, bit = 55143}
+        bufData = "\304U\344\345Pe¿\v\354#\036\006b\260K¿\217=¿\230\315\302\000a\362<\315;\366~z?\226w\201¿\211\071\233\021\062\233\301\200\071\313s\351\330\360\261\274\v\354G<K\217\061Q`\f¿c\303\r\216\345]`s\263yY\006\236G\260c\200\216`\260\033\320\354\321\r\305\304<\026t\304\363\024\023\345\021J\366X\354\351\330S\354\331\v\330Q\026\345\021\354\330\351\330S\354\247<\217`\331\360B¿¿,\312#\030&\312#\224\354\261\341\330cO\261\037\361,\255M\f\005\023s:\024\330¿\330cO\263\330G0\036\314G\307\030\201<\304`\230(\027\260c\027\260\243<\224Y\206c\235\000y\210\301:\243\\\300\356\373D\177\230"...
+        s = 97826
+        i = <optimized out>
+        rb = <optimized out>
+#16 0x0809af44 in CL_CheckWorkshopDownload () at code/client/cl_main.c:4042
+        doneParsing = <optimized out>
+#17 0x0809cfbb in CL_CheckWorkshopDownload () at code/client/cl_main.c:3847
+No locals.
+#18 CL_PlayDemo_f () at code/client/cl_main.c:2118
+        arg = <optimized out>
+        i = <optimized out>
+        n = <optimized out>
+#19 0x080bdc59 in Cbuf_Execute () at code/qcommon/cmd.c:263
+        i = <optimized out>
+        text = 0xa0f5ba0 <cmd_text_buf> "condump cgameboot.log\ng\nfa.cfg\n11709\nvid_restart \n\n\nseta fs_searchWorkshops \"1\"\nseta com_zoneMegs \"24\"\n\neta com_zoneMegs \"24\"\n\nearchWorkshops \"1\"\nseta com_zoneMegs \"24\"\n\nseta com_zoneMegs \"24\"\n\ncom_zo"...
+        line = "demo \"demos/christian-lime-aimbot.dm_73\"\000t\034\367\214N\274\340\356\000\000\000\001\000\000\000\350\254\341\v\356\252\030¿Z\244\377\350\254\341\v\240Z\244\377T\240'\367\020\000\000\000P\031\325\vP\232\341\v\000\220\061\367\350\254\341\v\270\357\320\v\004[\244\377\205\016\t\367", '\000' <repeats 16 times>, "\001\000\000\000V~'\367\000\220\061\367\250~'\367\001\000\000\000\330\067\356\v t\034\367\214N\274\340\340(\321\v\226~'\367\214N\274\340:\v\031¿4\356\v\240Z\244\377\260Z\244\377\002\000\000\000\t\241'\367%\233\024\367\240Z"...
+        quotes = <optimized out>
+        cComment = <optimized out>
+        slashComment = <optimized out>
+#20 0x080c3ef7 in Com_Frame () at code/qcommon/common.c:3411
+        msec = 10
+        minMsec = <optimized out>
+        fmsec = 9
+        useSubTime = qfalse
+        lastTime = 4533
+        qlColors = qtrue
+        timeBeforeFirstEvents = 0
+        timeBeforeServer = 0
+        timeBeforeEvents = 0
+        timeBeforeClient = 0
+        timeAfter = 0
+#21 0x08071b18 in main (argc=1, argv=0xffa48704) at code/sys/sys_main.c:641
+        i = <optimized out>
+        commandLine = '\000' <repeats 1023 times>
+        useBacktrace = <optimized out>
+        useConsoleOutput = <optimized out>
+        useDpiAware = <optimized out>
+        demoNameAsArg = <optimized out>
+        gotFirstArg = <optimized out>
+        ver = <optimized out>
+
+* team based wall hack shaders
+* zoom + demo seek stays zoomed
+* include read only r_aspectratio like ql
+* damage base hitsounds for wolfcam_following
+* bloodrun r_fullbright 1 and r_vertexLight 1  is black
+* ql third person has pitch setting
+* cpma's cg_oldCTFSounds 2 :  Team-specific sounds, no voiceovers
+* flag announcer not added to CHAN_ANNOUNCER,  flag status added as buffered sounds  -- 2016-04-13  ok CG_AddBufferedSound uses CHAN_ANNOUNCER
+* textures/gothic_door/archpart9  226x383
+  textures/gothic_trim/columnsupportbottoms.jpg 96x96  ok at 48x48
+* option to turn off buffered sound
+* fx cullNear cullRadius
+
 
 ---------
 

@@ -1667,10 +1667,17 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
 
 * cg_crosshairColor "0xffffff"
 
-* cg_wh "0"  // 1 or 0, gives players quad shader which can be seen through walls, alternative to watching a demo with r_shownormals
+* cg_wh [0:  no wall hack, 1:  wall hack shader applied to all players, 2:  wall hack shader applied only to enemies, 3:  wall hack shader applied only to teammates]
+
 * cg_whIncludeDeadBody  // 1 or 0, includes dead bodies
 * cg_whIncludeProjectile  // 1 or 0, includes projectiles
-* cg_whShader if you want to use something other than 'powerups/quad'
+* cg_whShader if you want to use something other than 'wc/wallhack'
+* cg_whColor
+* cg_whAlpha
+* cg_whEnemyShader
+* cg_whEnemyColor
+* cg_whEnemyAlpha
+
 * cg_playerShader to add a non wall hacked shader (can be used in combination with cg_whShader to make it easier to see when someone becomes visible)
 
 * cg_itemsWh  wall hack for items
@@ -1843,9 +1850,18 @@ It pushes the impact location this amount towards you in order to increase visib
 
 * cg_drawItemPickupsCount  to enable/disable new quake live behavior
 
-* cg_fovStyle  (0:  quake3 style where cg_fov sets the actual horizontal field of view,  1: quake live style where vertical field of view doesn't change with different window sizes and horizontal view is adjusted accordingly)
+* cg_fovStyle
+
+	0:  Same as quake3.  cg_fov sets the actual horizontal fov and the vertical fov is adjusted according to this.  This avoids stretching the ingame world view but has the effect of zooming in as the screen width increases.
+
+	1:  (default) This preserves vertical fov as if the screen dimensions were 4:3.  Horizontal fov is adjusted according to this.  This avoids stretching the ingame world view and has the effect of showing more of the horizontal view when the screen width increases.
+
+	2:  Same as quakelive.  This is similar to 1 but uses fixed aspect ratios (5:4, 4:3, 16:10, and 16:9).  Vertical fov is preserved and more of the horizontal view is shown as the screen width increases and passes through each aspect threshold.  This stretches the ingame world view to match the highest apsect ratio matched and has an upper limit of 16:9.
+
 
 * cg_fovy   to force a y fov
+
+* cg_fovForceAspectWidth and cg_fovForceAspectHeight  with cg_fovStyle 1 or 2 this forces fov calculations to this apsect ratio and then stretches the ingame world view to match the screen width.
 
 * cg_fovIntermission  force a default fov during intermission, default is 90
 
@@ -2187,10 +2203,13 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * cg_flagStyle  (1:  regular flags,  2:  holographic models,  3:  holographic models which can be colorized with cg_teamFlagColor, cg_enemyFlagColor, cg_neutralFlagColor)
 
+* cg_flagTakenSound  alarm sounds for flag taken
+
 * cg_debugImpactOrigin  to print to the console the origin of the last impact mark
 
 * cg_drawSpeed  hud speedometer (in game units per second)
 * cg_drawSpeedNoText  don't add 'UPS' text:  "400 UPS" ->  "400"
+* cg_drawSpeedChangeColor to change text color based on speed
 
 * r_fog  enable/disable drawing fog
 
@@ -2344,6 +2363,9 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * In Windows dpi awareness is set to prevent scaling.  This can be disabled with '--no-dpi-aware' command line option.
 * cg_bleedTime to control the amount of time player bleeding is shown on screen
 * com_logo to control logo cinematic when the program starts
+* /unset command can use '*' at end of name to perform pattern matching.  Ex: /unset cg_*
+* r_debugScaledImages to show non power of two scaled images
+* cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
 
 
 ----------

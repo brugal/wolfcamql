@@ -2231,7 +2231,7 @@ Com_GetSystemEvent
 
 ================
 */
-sysEvent_t Com_GetSystemEvent( void )
+sysEvent_t Com_GetSystemEvent (qboolean networkEvents)
 {
 	sysEvent_t  ev;
 	char        *s;
@@ -2258,19 +2258,21 @@ sysEvent_t Com_GetSystemEvent( void )
 		Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
 
-	// check for network packets
-	MSG_Init( &netmsg, sys_packetReceived, sizeof( sys_packetReceived ) );
-	if ( Sys_GetPacket ( &adr, &netmsg ) )
-	{
-		netadr_t  *buf;
-		int       len;
+	if (networkEvents) {
+		// check for network packets
+		MSG_Init( &netmsg, sys_packetReceived, sizeof( sys_packetReceived ) );
+		if ( Sys_GetPacket ( &adr, &netmsg ) )
+			{
+				netadr_t  *buf;
+				int       len;
 
-		// copy out to a seperate buffer for qeueing
-		len = sizeof( netadr_t ) + netmsg.cursize;
-		buf = Z_Malloc( len );
-		*buf = adr;
-		memcpy( buf+1, netmsg.data, netmsg.cursize );
-		Com_QueueEvent( 0, SE_PACKET, 0, 0, len, buf );
+				// copy out to a seperate buffer for qeueing
+				len = sizeof( netadr_t ) + netmsg.cursize;
+				buf = Z_Malloc( len );
+				*buf = adr;
+				memcpy( buf+1, netmsg.data, netmsg.cursize );
+				Com_QueueEvent( 0, SE_PACKET, 0, 0, len, buf );
+			}
 	}
 
 	// return if we have data
@@ -2292,12 +2294,15 @@ sysEvent_t Com_GetSystemEvent( void )
 Com_GetRealEvent
 =================
 */
-sysEvent_t	Com_GetRealEvent( void ) {
+sysEvent_t Com_GetRealEvent (qboolean networkEvents)
+{
 	int			r;
 	sysEvent_t	ev;
 
 	// either get an event from the system or the journal file
 	if ( com_journal->integer == 2 ) {
+		//FIXME network events
+
 		r = FS_Read( &ev, sizeof(ev), com_journalFile );
 		if ( r != sizeof(ev) ) {
 			Com_Error( ERR_FATAL, "Error reading from journal file" );
@@ -2310,8 +2315,10 @@ sysEvent_t	Com_GetRealEvent( void ) {
 			}
 		}
 	} else {
-		ev = Com_GetSystemEvent();
-
+		ev = Com_GetSystemEvent(networkEvents);
+		//ev = Com_GetSystemEvent(qtrue);
+		//Com_Printf("system event: time:%d type:%d\n", ev.evTime, ev.evType);
+		
 		// write the journal value out if needed
 		if ( com_journal->integer == 1 ) {
 			r = FS_Write( &ev, sizeof(ev), com_journalFile );
@@ -2383,12 +2390,13 @@ void Com_PushEvent( sysEvent_t *event ) {
 Com_GetEvent
 =================
 */
-sysEvent_t	Com_GetEvent( void ) {
+sysEvent_t	Com_GetEvent (qboolean networkEvents)
+{
 	if ( com_pushedEventsHead > com_pushedEventsTail ) {
 		com_pushedEventsTail++;
 		return com_pushedEvents[ (com_pushedEventsTail-1) & (MAX_PUSHED_EVENTS-1) ];
 	}
-	return Com_GetRealEvent();
+	return Com_GetRealEvent(networkEvents);
 }
 
 /*
@@ -2423,7 +2431,8 @@ Com_EventLoop
 Returns last event time
 =================
 */
-int Com_EventLoop( void ) {
+int Com_EventLoop (qboolean networkEvents)
+{
 	sysEvent_t	ev;
 	netadr_t	evFrom;
 	byte		bufData[MAX_MSGLEN];
@@ -2432,26 +2441,29 @@ int Com_EventLoop( void ) {
 	MSG_Init( &buf, bufData, sizeof( bufData ) );
 
 	while ( 1 ) {
-		NET_FlushPacketQueue();
-		ev = Com_GetEvent();
+		if (1) {  //(networkEvents) {  // possibly send disconnect
+			NET_FlushPacketQueue();
+		}
+		ev = Com_GetEvent(networkEvents);
 
 		// if no more events are available
-		if ( ev.evType == SE_NONE ) {
-			// manually send packet events for the loopback channel
-			while ( NET_GetLoopPacket( NS_CLIENT, &evFrom, &buf ) ) {
-				CL_PacketEvent( evFrom, &buf );
-			}
+		if (ev.evType == SE_NONE) {
+			if (networkEvents) {
+				// manually send packet events for the loopback channel
+				while ( NET_GetLoopPacket( NS_CLIENT, &evFrom, &buf ) ) {
+					CL_PacketEvent( evFrom, &buf );
+				}
 
-			while ( NET_GetLoopPacket( NS_SERVER, &evFrom, &buf ) ) {
-				// if the server just shut down, flush the events
-				if ( com_sv_running->integer ) {
-					Com_RunAndTimeServerPacket( &evFrom, &buf );
+				while ( NET_GetLoopPacket( NS_SERVER, &evFrom, &buf ) ) {
+					// if the server just shut down, flush the events
+					if ( com_sv_running->integer ) {
+						Com_RunAndTimeServerPacket( &evFrom, &buf );
+					}
 				}
 			}
 
 			return ev.evTime;
 		}
-
 
 		switch ( ev.evType ) {
 		default:
@@ -2476,6 +2488,10 @@ int Com_EventLoop( void ) {
 			Cbuf_AddText( "\n" );
 			break;
 		case SE_PACKET:
+			if (!networkEvents) {
+				Com_Printf("^1Com_EventLoop: SE_PACKET and !networkEvents\n");
+				break;
+			}
 			// this cvar allows simulation of connections that
 			// drop a lot of packets.  Note that loopback connections
 			// don't go through here at all.
@@ -2529,7 +2545,7 @@ int Com_Milliseconds (void) {
 	// get events and push them until we get a null event with the current time
 	do {
 
-		ev = Com_GetRealEvent();
+		ev = Com_GetRealEvent(qtrue);
 		if ( ev.evType != SE_NONE ) {
 			Com_PushEvent( &ev );
 		}
@@ -3386,7 +3402,7 @@ void Com_Frame( void ) {
 			}
 		}
 
-		com_frameTime = Com_EventLoop();
+		com_frameTime = Com_EventLoop(qtrue);
 		if ( lastTime > com_frameTime ) {
 			lastTime = com_frameTime;		// possible on first frame
 		}
@@ -3441,7 +3457,7 @@ void Com_Frame( void ) {
 	if ( com_speeds->integer ) {
 		timeBeforeEvents = Sys_Milliseconds ();
 	}
-	Com_EventLoop();
+	Com_EventLoop(qtrue);
 	Cbuf_Execute ();
 
 

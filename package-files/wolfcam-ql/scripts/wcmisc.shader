@@ -115,3 +115,44 @@ mme_additiveWhite
                 alphaGen vertex
          }
 }
+
+
+wc/wallhackplain
+{
+	{
+		map $whiteimage
+		blendFunc GL_DST_COLOR GL_ONE
+	        rgbGen entity
+	}
+
+	{
+		map $whiteimage
+		blendFunc GL_DST_COLOR GL_ONE
+		rgbGen entity
+	}
+}
+
+wc/wallhack
+{
+	nopicmip
+	//deformVertexes wave 100 sin 3 0 0 0
+
+	{
+		map $whiteimage
+		//map textures/effects/quadmap2.tga
+		//map textures/effects/icemap.tga
+
+		blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+
+	        rgbGen entity
+
+		// GT0
+		//alphaFunc GE128
+		alphaGen entity
+
+		//tcGen environment
+		//tcmod rotate 30
+                //tcmod scroll 1 .1
+	}
+
+}

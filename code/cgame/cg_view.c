@@ -240,9 +240,31 @@ static void CG_OffsetThirdPersonView( void ) {
 
 	cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
 
+	//FIXME testing quakelive
+	//cg.refdef.vieworg[2] -= 15;
+
+#if 0
+	if (cg.predictedPlayerState.pm_type == PM_SPECTATOR) {
+		//cg.refdef.vieworg[2] -= 56;
+		//Com_Printf("yeah...\n");
+		if (*cg_specViewHeight.string) {
+			cg.refdef.vieworg[2] -= cg.predictedPlayerState.viewheight;
+			cg.refdef.vieworg[2] += cg_specViewHeight.value;
+			//Com_Printf("new view %f\n", cg_specViewHeight.value);
+		}
+	}
+#endif
+
+	//Com_Printf("vh %d\n", cg.predictedPlayerState.viewheight);
+
 	VectorCopy( cg.refdefViewAngles, focusAngles );
 
-	if ( cg.predictedPlayerState.stats[STAT_HEALTH] <= 0 ) {
+	if ( cg.predictedPlayerState.stats[STAT_HEALTH] <= 0  &&
+
+		 // hack for setting spec free health to 0 like quake live
+		 !(!cg.demoPlayback  &&  cg.clientNum == cg.snap->ps.clientNum  &&  cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR)
+
+	   ) {
 		if (cg_deathStyle.integer == 1) {
 			if (cg.killerClientNum >= 0  &&  cg.killerClientNum < MAX_CLIENTS  &&  cg.killerClientNum != cg.snap->ps.clientNum) {
 				focusAngles[YAW] = cg.deadAngles[YAW];
@@ -317,6 +339,11 @@ static void CG_OffsetThirdPersonView( void ) {
 	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
 }
 
+static void CG_OffsetQuakeLiveSpec (void)
+{
+	//Com_Printf("offset ql spec...\n");
+}
+
 
 // this causes a compiler bug on mac MrC compiler
 static void CG_StepOffset( void ) {
@@ -349,7 +376,8 @@ CG_OffsetFirstPersonView
 
 ===============
 */
-static void CG_OffsetFirstPersonView( void ) {
+static void CG_OffsetFirstPersonView (qboolean ignoreHealth)
+{
 	float			*origin;
 	float			*angles;
 	float			bob;
@@ -367,12 +395,13 @@ static void CG_OffsetFirstPersonView( void ) {
 	angles = cg.refdefViewAngles;
 
 	// if dead, fix the angle and don't add any kick
-	if ( cg.snap->ps.stats[STAT_HEALTH] <= 0 ) {
+	if (!ignoreHealth  &&  cg.snap->ps.stats[STAT_HEALTH] <= 0) {
 		angles[ROLL] = 40;
 		angles[PITCH] = -15;
 		//angles[YAW] = cg.snap->ps.stats[STAT_DEAD_YAW];
 		angles[YAW] = cg.deadAngles[YAW];
 		origin[2] += cg.predictedPlayerState.viewheight;
+		//Com_Printf("dead...\n");
 		return;
 	}
 
@@ -592,8 +621,20 @@ void CG_AdjustedFov (float fov_x, float *new_fov_x, float *new_fov_y)
 {
 	double x;
 	double fov_y;
+	double aspectWidth;
+	double aspectHeight;
 
-	if (cg_fovStyle.integer == 0) {   // quake3
+	/*
+
+	  r = w / h = tan(Hfov/2) / tan(Vfov/2)
+
+	  Hfov = 2 * atan(tan(Vfov / 2) * (w/h))
+	  Vfov = 2 * atan(tan(Hfov / 2) * (h/w))
+
+
+	 */
+
+	if (cg_fovStyle.integer == 0) {   // quake3, keep x fov as is and adjust y fov to avoid stretching, zooms in with higher screen width
 		if (*cg_fovy.string) {
 			fov_y = cg_fovy.value;
 		} else {
@@ -606,10 +647,57 @@ void CG_AdjustedFov (float fov_x, float *new_fov_x, float *new_fov_y)
 		return;
 	}
 
-	// quake live
-	// preserves y fov as if viewing area was 4:3
+	// preserves y fov (as if viewing area was 4:3) and adjusts x fov so that more is shown when screen width increases.  This avoids stretching.
 
-	// also fov_x = 2 * atan(tan(fov_y/2) * width/height)
+	aspectWidth = cg.refdef.width;
+	aspectHeight = cg.refdef.height;
+
+	// avoid divide by zero in fovstyle 2 check
+	if (aspectWidth <= 0) {
+		aspectWidth = 1;
+	}
+
+	if (aspectHeight <= 0) {
+		aspectHeight = 1;
+	}
+
+	if (cg_fovStyle.integer == 2) {  // quake live, keep y fov as is, set x fov using preset aspect ratios and stretch image horizontally if real aspect doesn't match
+		double ratio;
+
+		ratio = aspectWidth / aspectHeight;
+
+		if (ratio >= (16.0 / 9.0)) {  // 1.777...
+			aspectWidth = 16.0;
+			aspectHeight = 9.0;
+		} else if (ratio >= 16.0 / 10.0) {  // 1.6
+			aspectWidth = 16.0;
+			aspectHeight = 10.0;
+		} else if (ratio >= 4.0 / 3.0) {  // 1.333...
+			aspectWidth = 4.0;
+			aspectHeight = 3.0;
+		} else {  // 5:4   1.25
+			aspectWidth = 5.0;
+			aspectHeight = 4.0;
+		}
+	}
+
+	if (*cg_fovForceAspectWidth.string) {
+		aspectWidth = cg_fovForceAspectWidth.value;
+	}
+
+	if (*cg_fovForceAspectHeight.string) {
+		aspectHeight = cg_fovForceAspectHeight.value;
+	}
+
+	if (aspectWidth <= 0) {
+		aspectWidth = 1;
+	}
+
+	if (aspectHeight <= 0) {
+		aspectHeight = 1;
+	}
+
+	// reference:  fov_x = 2 * atan(tan(fov_y/2) * width/height)
 
 	if (fov_x < 1.0) {
 		fov_x = 1.0;
@@ -620,14 +708,17 @@ void CG_AdjustedFov (float fov_x, float *new_fov_x, float *new_fov_y)
 	if (*cg_fovy.string) {
 		fov_y = cg_fovy.value;
 	} else {
-		x = 640.0 / tan(fov_x / 360.0 * M_PI);
-		fov_y = atan2(480.0, x);
-		fov_y = fov_y * 360.0 / M_PI;
+		fov_y = 2.0 * atan2(tan((fov_x * (M_PI / 180.0)) / 2.0) * (480.0 / 640.0), 1);
+		fov_y *= (180.0 / M_PI);
 	}
 
 	//Com_Printf("yfov %f\n", fov_y);
 
-	fov_x = 360.0 / M_PI * atan2((float)cg.refdef.width / (float)cg.refdef.height * tan(fov_y * M_PI / 360.0), 1);
+	//fov_x = 360.0 / M_PI * atan2(aspectWidth / aspectHeight * tan(fov_y * M_PI / 360.0), 1);
+
+	fov_x = 2.0 * atan2(tan(fov_y * (M_PI / 180.0) / 2.0) * (aspectWidth / aspectHeight), 1);
+	fov_x *= (180.0 / M_PI);
+
 	//Com_Printf("%f  ->  %f\n", cg_fov.value, fov_x);
 
 	*new_fov_x = fov_x;
@@ -665,6 +756,7 @@ static int CG_CalcFov( void ) {
 		}
 	} else {
 		// user selectable
+		//FIXME enable for q3 demos?
 		if (0) {  //( cgs.dmflags & DF_FIXED_FOV ) {  //FIXME some ql demos have it set,   maybe dmflags have changed
 			// dmflag to prevent wide fov for all clients
 			Com_Printf("DF_FIXED_FOV\n");
@@ -1017,10 +1109,24 @@ static int CG_CalcViewValues( void ) {
 	if ( cg.renderingThirdPerson ) {
 		//if ( cg.renderingThirdPerson  ||  (!wolfcam_following  &&  cg.snap->ps.stats[STAT_HEALTH] <= 0)) {
 		// back away from character
-		CG_OffsetThirdPersonView();
+
+		// hack for ql setting spec health to 0, don't use third person offset
+		if (cgs.protocol == PROTOCOL_QL  &&   cg.snap->ps.clientNum == cg.clientNum  &&  cg.snap->ps.stats[STAT_HEALTH] <= 0  &&  cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) {
+			if (cg_specOffsetQL.integer == 1) {
+				CG_OffsetQuakeLiveSpec();
+			} else if (cg_specOffsetQL.integer == 2) {
+				CG_OffsetThirdPersonView();
+			} else {
+				CG_OffsetFirstPersonView(qtrue);
+			}
+		} else {
+			CG_OffsetThirdPersonView();
+		}
+		//Com_Printf("third...\n");
 	} else {
 		// offset for local bobbing and kicks
-		CG_OffsetFirstPersonView();
+		CG_OffsetFirstPersonView(qfalse);
+		//Com_Printf("first...\n");
 	}
 
 

@@ -1746,6 +1746,8 @@ typedef struct {
 	qhandle_t	deathEffectModel;
 	qhandle_t	deathEffectShader;
 
+	qhandle_t wallHackShader;
+
 #if 1  //def MPACK
 	qhandle_t	kamikazeEffectModel;
 	qhandle_t	kamikazeShockWave;
@@ -1966,9 +1968,8 @@ typedef struct {
 	sfxHandle_t	returnYourTeamSound;
 	sfxHandle_t	returnOpponentSound;
 
-	// unused
-	//sfxHandle_t	takenYourTeamSound;
-	//sfxHandle_t	takenOpponentSound;
+	sfxHandle_t	takenYourTeamSound;
+	sfxHandle_t	takenOpponentSound;
 
 	sfxHandle_t redFlagReturnedSound;
 	sfxHandle_t blueFlagReturnedSound;
@@ -2704,7 +2705,10 @@ extern vmCvar_t cg_itemSize;
 extern	vmCvar_t		cg_fov;
 extern vmCvar_t cg_fovy;
 extern vmCvar_t cg_fovStyle;
+extern vmCvar_t cg_fovForceAspectWidth;
+extern vmCvar_t cg_fovForceAspectHeight;
 extern vmCvar_t cg_fovIntermission;
+
 extern	vmCvar_t		cg_zoomFov;
 extern vmCvar_t cg_zoomTime;
 extern vmCvar_t cg_zoomIgnoreTimescale;
@@ -2858,6 +2862,7 @@ extern vmCvar_t cg_drawSpeedScale;
 extern vmCvar_t cg_drawSpeedColor;
 extern vmCvar_t cg_drawSpeedAlpha;
 extern vmCvar_t cg_drawSpeedWideScreen;
+extern vmCvar_t cg_drawSpeedChangeColor;
 
 extern vmCvar_t cg_drawOrigin;
 extern vmCvar_t cg_drawOriginX;
@@ -3341,6 +3346,11 @@ extern vmCvar_t cg_wh;
 extern vmCvar_t cg_whIncludeDeadBody;
 extern vmCvar_t cg_whIncludeProjectile;
 extern vmCvar_t cg_whShader;
+extern vmCvar_t cg_whColor;
+extern vmCvar_t cg_whAlpha;
+extern vmCvar_t cg_whEnemyShader;
+extern vmCvar_t cg_whEnemyColor;
+extern vmCvar_t cg_whEnemyAlpha;
 
 extern vmCvar_t cg_playerShader;
 extern vmCvar_t cg_adShaderOverride;
@@ -3383,6 +3393,7 @@ extern vmCvar_t cg_allowServerOverride;
 extern vmCvar_t cg_powerupLight;
 extern vmCvar_t cg_buzzerSound;
 extern vmCvar_t cg_flagStyle;
+extern vmCvar_t cg_flagTakenSound;
 
 extern vmCvar_t cg_helpIcon;
 extern vmCvar_t cg_helpIconStyle;
@@ -3449,6 +3460,8 @@ extern vmCvar_t cg_rewardFirstFrag;
 extern vmCvar_t cg_rewardPerfect;
 
 extern vmCvar_t cg_useDemoFov;
+//extern vmCvar_t cg_specViewHeight;
+extern vmCvar_t cg_specOffsetQL;
 
 // end cvar_t
 

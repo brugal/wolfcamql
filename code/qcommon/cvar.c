@@ -1159,18 +1159,39 @@ Unsets a userdefined cvar
 void Cvar_Unset_f(void)
 {
 	cvar_t *cv;
-	
+	const char *varName;
+
 	if(Cmd_Argc() != 2)
 	{
-		Com_Printf("Usage: %s <varname>\n", Cmd_Argv(0));
+		Com_Printf("Usage: %s <varname | varname*>\n", Cmd_Argv(0));
 		return;
 	}
-	
+
+	varName = Cmd_Argv(1);
+
+	if (varName  &&  *varName  &&  strlen(varName) >= 1) {
+		if (varName[strlen(varName) - 1] == '*') {
+			//Com_Printf("unset all: '%s'\n", varName);
+
+			cv = cvar_vars;
+			while (cv) {
+				if (cv->flags & CVAR_USER_CREATED  &&  (varName[0] == '*'  ||  !Q_stricmpn(cv->name, varName, strlen(varName) - 2))) {
+					cv = Cvar_Unset(cv);
+					continue;
+				}
+
+				cv = cv->next;
+			}
+
+			return;
+		}
+	}
+
 	cv = Cvar_FindVar(Cmd_Argv(1));
 
 	if(!cv)
 		return;
-	
+
 	if(cv->flags & CVAR_USER_CREATED)
 		Cvar_Unset(cv);
 	else

@@ -1815,3 +1815,28 @@ Remove unnecessary localhost check from reconnect command.
 
 2016-02-17-01 skip (rend2):  OpenGL2: Fix some GL errors and no sun shadows on older OpenGLs.
 2016-02-17-02 skip (rend2):  OpenGL2: Shader optimization, and add dither to tonemap.
+
+2016-03-07-01 skip (rend2):  OpenGL2: Add r_shadowBlur.
+2016-03-07-02 skip (rend2):  OpenGL2: Add r_glossType.
+
+2016-03-08-01 skip (rend2):  OpenGL2: Speedup for SSAO & blur shaders, fix sunlight normals in lightall.
+
+2016-03-09-01 skip (rend2):  OpenGL2: Create FBOs if target image exists, not cvar settings.
+
+2016-03-10-01 skip (rend2):  OpenGL2: Fixes to depth blur and ssao.
+
+2016-03-11-01 skip (rend2):  OpenGL2: More ssao/depth blur improvements.
+
+2016-03-14-01 skip (rend2):  OpenGL2: Fix r_lightmap.
+
+2016-03-15-01 skip (rend2):  OpenGL2: Fix horribly broken metallic shader.
+
+2016-03-27-01 skip (not needed):  Sys_GetProcessorFeatures() didn't check for 3DNow! or Altivec.
+2016-03-27-02 skip (not needed):  Fix typo of SDL_Has3DNow() in Sys_GetProcessorFeatures()
+
+2016-03-29-01 skip (rend2):  OpenGL2: Improve cubemap outside error.
+
+2016-04-04-01 skip (not implemented):  Remove incorrect documentation from q3a.service
+
+2016-04-05-01 skip (rend2):  OpenGL2: Render metals as nonmetal on cubemaps, and some ComputeShade...
+2016-04-05-02 skip (rend2):  OpenGL2: Some FBO cleanup, and add non-depth blur to blur shader.

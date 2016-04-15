@@ -349,11 +349,8 @@ qboolean CG_IsEnemy (const clientInfo_t *ci)
         return qfalse;
     }
 
-    //if (cgs.gametype >= GT_TEAM  &&  ci->team != us->team) {
 	if (CG_IsTeamGame(cgs.gametype)  &&  ci->team != us->team) {
-        //Com_Printf("us %s %d    them %s %d\n", us->name, us->team, ci->name, ci->team);
         return qtrue;
-		//} else if (cgs.gametype < GT_TEAM) {
 	} else if (!CG_IsTeamGame(cgs.gametype)) {
         return qtrue;
     }
@@ -379,6 +376,56 @@ qboolean CG_IsTeammate (const clientInfo_t *ci)
     us = &cgs.clientinfo[ourClientNum];
 
     if (ci->team != us->team) {
+        return qfalse;
+    }
+
+    return qtrue;
+}
+
+qboolean CG_IsEnemyTeam (int team)
+{
+    int ourClientNum;
+    const clientInfo_t *us;
+
+    if (wolfcam_following) {
+        ourClientNum = wcg.clientNum;
+    } else {
+        ourClientNum = cg.snap->ps.clientNum;
+    }
+
+    us = &cgs.clientinfo[ourClientNum];
+
+    //if (us == ci) {
+    //    return qfalse;
+    //}
+
+	if (CG_IsTeamGame(cgs.gametype)  &&  team != us->team) {
+        return qtrue;
+	} else if (!CG_IsTeamGame(cgs.gametype)) {
+        return qtrue;
+    }
+
+    return qfalse;
+}
+
+qboolean CG_IsOurTeam (int team)
+{
+    int ourClientNum;
+    const clientInfo_t *us;
+
+    if (cgs.gametype < GT_TEAM) {
+        return qfalse;
+    }
+
+    if (wolfcam_following) {
+        ourClientNum = wcg.clientNum;
+    } else {
+        ourClientNum = cg.snap->ps.clientNum;
+    }
+
+    us = &cgs.clientinfo[ourClientNum];
+
+    if (team != us->team) {
         return qfalse;
     }
 

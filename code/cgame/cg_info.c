@@ -135,6 +135,19 @@ void CG_LoadingClient( int clientNum ) {
 
 	CG_LoadingString( personality );
 	//sleep(5);
+
+#if 0
+	// testing
+	while (1) {
+		const char *s;
+		static int i = 0;
+
+		i++;
+		s = va("loading test %d", i);
+		CG_LoadingString(s);
+	}
+#endif
+
 }
 
 void CG_LoadingFutureClient (const char *modelName)
@@ -183,6 +196,8 @@ void CG_LoadingFutureClient (const char *modelName)
 	}
 
 	CG_LoadingString( personality );
+
+
 }
 
 static char clockBuffer[MAX_STRING_CHARS];
