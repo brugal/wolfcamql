@@ -7483,7 +7483,7 @@ void CG_CopyPlayerDataToScriptData (centity_t *cent)
 
 	clientNum = cent->currentState.clientNum;
 	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
-		CG_Printf("CG_CopyPlayerDataToScriptData() invalid clientNum %d  %p  %d\n", clientNum, cent, cent - cg_entities);
+		CG_Printf("CG_CopyPlayerDataToScriptData() invalid clientNum %d  %p  %ld\n", clientNum, cent, (long int)(cent - cg_entities));
 		clientNum = 0;
 	}
 

@@ -517,47 +517,39 @@ void R_Upload32( unsigned *data,
 	byte		*scan;
 	GLenum		internalFormat = GL_RGB;
 	float		rMax = 0, gMax = 0, bMax = 0;
+	qboolean powerOfTwoScale;
+
+	powerOfTwoScale = qtrue;
+
+	// allow non power of two for hardware that supposedly supports it
+	//FIXME also check major < 2 and arb extension?
+	if (glConfig.openGLMajorVersion >= 2  &&  r_scaleImagesPowerOfTwo->integer == 0) {
+		powerOfTwoScale = qfalse;
+	}
+
+	// allow disabling even if hardware doesn't support it
+	if (r_scaleImagesPowerOfTwo->integer == -1) {
+		powerOfTwoScale = qfalse;
+	}
 
 	//
 	// convert to exact power of 2 sizes
 	//
-	for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
-		;
-	for (scaled_height = 1 ; scaled_height < height ; scaled_height<<=1)
-		;
-	if ( r_roundImagesDown->integer && scaled_width > width )
-		scaled_width >>= 1;
-	if ( r_roundImagesDown->integer && scaled_height > height )
-		scaled_height >>= 1;
-
-#if 0
-	// testing
-	scaled_width = width;
-	scaled_height = height;
-
-
-	if (width % 4 != 0) {
-		//scaled_width = width - (width % 4);
-		scaled_width = width + (4 - width % 4);
+	if (powerOfTwoScale) {
+		for (scaled_width = 1 ; scaled_width < width ; scaled_width<<=1)
+			;
+		for (scaled_height = 1 ; scaled_height < height ; scaled_height<<=1)
+			;
+		if ( r_roundImagesDown->integer && scaled_width > width )
+			scaled_width >>= 1;
+		if ( r_roundImagesDown->integer && scaled_height > height )
+			scaled_height >>= 1;
+	} else {
+		scaled_width = width;
+		scaled_height = height;
 	}
 
-	if (height % 4 != 0) {
-		//scaled_height = height - (height % 4);
-		scaled_height = height + (4 - height % 4);
-	}
-#endif
 
-
-#if 0
-	//mipmap = qtrue;
-	if (scaled_width < width  ||  scaled_height < height) {
-		scaled_width = width >> 1;
-		scaled_height = height >> 1;
-		Com_Printf("^6scaled %d:%d  ->  %d:%d  (mipmap:%d)\n", width, height, scaled_width, scaled_height, mipmap);
-		//scaled_width = 256;
-		//scaled_height = 256;
-	}
-#endif
 
 	if ( scaled_width != width || scaled_height != height ) {
 		int sw, sh;

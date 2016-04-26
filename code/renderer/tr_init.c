@@ -221,6 +221,7 @@ cvar_t *r_ignoreNoMarks;
 cvar_t *r_fog;
 cvar_t *r_ignoreEntityMergable;
 cvar_t *r_debugScaledImages;
+cvar_t *r_scaleImagesPowerOfTwo;
 
 static void R_DeleteGlslShadersAndPrograms (void);
 
@@ -2640,6 +2641,7 @@ void R_Register( void )
 	r_fog = ri.Cvar_Get("r_fog", "1", CVAR_ARCHIVE);
 	r_ignoreEntityMergable = ri.Cvar_Get("r_ignoreEntityMergable", "2", CVAR_ARCHIVE);
 	r_debugScaledImages = ri.Cvar_Get("r_debugScaledImages", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_scaleImagesPowerOfTwo = ri.Cvar_Get("r_scaleImagesPowerOfTwo", "0", CVAR_ARCHIVE | CVAR_LATCH);
 
 	// make sure all the commands added here are also
 	// removed in R_Shutdown

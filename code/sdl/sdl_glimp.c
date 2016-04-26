@@ -1043,6 +1043,11 @@ success:
 	if (*glConfig.renderer_string && glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] == '\n')
 		glConfig.renderer_string[strlen(glConfig.renderer_string) - 1] = 0;
 	Q_strncpyz( glConfig.version_string, (char *) qglGetString (GL_VERSION), sizeof( glConfig.version_string ) );
+
+	if (sscanf(glConfig.version_string, "%d.%d", &glConfig.openGLMajorVersion, &glConfig.openGLMinorVersion) != 2) {
+		glConfig.openGLMajorVersion = glConfig.openGLMinorVersion = 0;
+	}
+
 	ExtensionString = (const char *)qglGetString(GL_EXTENSIONS);
 	Q_strncpyz( glConfig.extensions_string, ExtensionString, sizeof( glConfig.extensions_string ) );
 

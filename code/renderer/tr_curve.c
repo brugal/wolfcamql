@@ -332,6 +332,7 @@ srfGridMesh_t *R_CreateSurfaceGridMesh(int width, int height,
 	// compute local origin and bounds
 	VectorAdd( grid->meshBounds[0], grid->meshBounds[1], grid->localOrigin );
 	VectorScale( grid->localOrigin, 0.5f, grid->localOrigin );
+	//VectorScale( grid->localOrigin, 1.0f, grid->localOrigin );
 	VectorSubtract( grid->meshBounds[0], grid->localOrigin, tmpVec );
 	grid->meshRadius = VectorLength( tmpVec );
 
@@ -475,6 +476,7 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height,
 		if ( errorTable[0][i] != 999 ) {
 			continue;
 		}
+
 		for ( j = i+1 ; j < width ; j++ ) {
 			for ( k = 0 ; k < height ; k++ ) {
 				ctrl[k][j-1] = ctrl[k][j];

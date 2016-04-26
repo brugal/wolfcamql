@@ -1182,6 +1182,7 @@ extern cvar_t *r_fog;
 extern cvar_t *r_ignoreEntityMergable;
 extern cvar_t *r_pngZlibCompression;
 extern cvar_t *r_debugScaledImages;
+extern cvar_t *r_scaleImagesPowerOfTwo;
 
 //====================================================================
 

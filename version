@@ -1,4 +1,12 @@
-11.1test1
+11.2test1
+
+* r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
+* bug fix:  r_fullbright 1 wasn't working with r_vertexlight 1
+* bug fix:  remove debug printf parsing menu foreground color
+* bug fix:  render commands missing padding
+
+------------------------------------
+11.1  2016-04-14
 
 * bug fix:  incorrect text length calculation with frag/obituary token strings
 * bug fix:  cg_useDemoZoom 2 didn't work with spec demos

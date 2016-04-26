@@ -1950,11 +1950,9 @@ No locals.
         gotFirstArg = <optimized out>
         ver = <optimized out>
 
-* team based wall hack shaders
 * zoom + demo seek stays zoomed
 * include read only r_aspectratio like ql
 * damage base hitsounds for wolfcam_following
-* bloodrun r_fullbright 1 and r_vertexLight 1  is black
 * ql third person has pitch setting
 * cpma's cg_oldCTFSounds 2 :  Team-specific sounds, no voiceovers
 * flag announcer not added to CHAN_ANNOUNCER,  flag status added as buffered sounds  -- 2016-04-13  ok CG_AddBufferedSound uses CHAN_ANNOUNCER
@@ -1962,6 +1960,9 @@ No locals.
   textures/gothic_trim/columnsupportbottoms.jpg 96x96  ok at 48x48
 * option to turn off buffered sound
 * fx cullNear cullRadius
+* curve:  retribution /team s far curves matched with r_subdivisions 10 and r_lodcurveerror 10000, near curves don't match though (those match with r_subdivision 4), it's like r_subdivision scales with distance
+* CG_AREA_POWERUP  'special' used for spacing
+
 
 
 ---------

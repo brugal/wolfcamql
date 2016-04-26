@@ -7501,7 +7501,7 @@ static qboolean MenuParse_forecolor( itemDef_t *item, int handle ) {
 		}
 		menu->window.foreColor[i]  = f;
 		menu->window.flags |= WINDOW_FORECOLORSET;
-		Com_Printf("color[%d] %f\n", i, f);
+		//Com_Printf("color[%d] %f\n", i, f);
 	}
 	return qtrue;
 }

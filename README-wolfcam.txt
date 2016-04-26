@@ -2366,7 +2366,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * /unset command can use '*' at end of name to perform pattern matching.  Ex: /unset cg_*
 * r_debugScaledImages to show non power of two scaled images
 * cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
-
+* r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
 
 ----------
 

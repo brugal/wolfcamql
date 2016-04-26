@@ -2017,6 +2017,7 @@ const void	*RB_SwapBuffers (const void *data, qboolean endFrame)
 
 static const void *RB_SkipRenderCommand (const void *data)
 {
+	data = PADP(data, sizeof(void *));
 	switch (*(const int *)data) {
 		case RC_SET_COLOR:
 			data += sizeof(setColorCommand_t);
@@ -2096,6 +2097,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	videoCommand = qfalse;
 	data = dataOrig;
 	while (1) {
+		data = PADP(data, sizeof(void *));
 		switch (*(const int *)data) {
 		case RC_VIDEOFRAME:
 			videoCommand = qtrue;
@@ -2118,6 +2120,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	data = dataOrig;
 	dprintf("render1 commands start ----------------------------\n");
 	while (1) {
+		data = PADP(data, sizeof(void *));
 		switch (*(const int *)data) {
 		case RC_DRAW_SURFS:
 			dprintf("r1 drawsurfs\n");
@@ -2161,6 +2164,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 				// draw hud
 				data2 = dataOrig;
 				while (1) {
+					data2 = PADP(data2, sizeof(void *));
 					switch (*(const int *)data2) {
 					case RC_SET_COLOR:
 						//dprintf("r1 hud setcolor\n");
@@ -2270,6 +2274,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	data = dataOrig;
 	dprintf("render2 commands start ------------------------------\n");
 	while (1) {
+		data = PADP(data, sizeof(void *));
 		switch ( *(const int *)data ) {
 		case RC_SET_COLOR:
 			//dprintf("r2 setcolor\n");
@@ -2333,6 +2338,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	data = dataOrig;
 	dprintf("render3 commands start -------------------------\n");
 	while (1) {
+		data = PADP(data, sizeof(void *));
 		switch (*(const int *)data) {
 		case RC_SCREENSHOT:
 			dprintf("r3 takescreenshot\n");
