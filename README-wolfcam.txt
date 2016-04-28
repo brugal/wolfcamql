@@ -1954,6 +1954,11 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * cg_battleSuitKillCounter (same as quakelive)
 * cg_forcemodel has a new option 2:  ignore team skins
 * cg_forcePovModel  will use 'model' settings for 1st person pov
+
+  1:  also sets team skins and colors
+  2:  sets model and ignores team settings
+* cg_forcePovModelIgnoreFreecamTeamSettings  can be used to override the value of cg_freecam_useTeamSettings
+
 * cg_wideScreen
 
   Note:  Quake Live's August 27, 2014 update added support for widescreen

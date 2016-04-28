@@ -521,13 +521,13 @@ void R_Upload32( unsigned *data,
 
 	powerOfTwoScale = qtrue;
 
-	// allow non power of two for hardware that supposedly supports it
+	// allow non power of two textures for hardware that supposedly supports it
 	//FIXME also check major < 2 and arb extension?
 	if (glConfig.openGLMajorVersion >= 2  &&  r_scaleImagesPowerOfTwo->integer == 0) {
 		powerOfTwoScale = qfalse;
 	}
 
-	// allow disabling even if hardware doesn't support it
+	// allow non power of two textures even if hardware doesn't support it
 	if (r_scaleImagesPowerOfTwo->integer == -1) {
 		powerOfTwoScale = qfalse;
 	}

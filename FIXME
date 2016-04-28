@@ -1962,6 +1962,7 @@ No locals.
 * fx cullNear cullRadius
 * curve:  retribution /team s far curves matched with r_subdivisions 10 and r_lodcurveerror 10000, near curves don't match though (those match with r_subdivision 4), it's like r_subdivision scales with distance
 * CG_AREA_POWERUP  'special' used for spacing
+* cg_teamModel */[bright|color] doesn't work unless model is set to */[bright|color]
 
 
 

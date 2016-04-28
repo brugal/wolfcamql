@@ -432,6 +432,7 @@ vmCvar_t 	cg_stats;
 vmCvar_t 	cg_buildScript;
 vmCvar_t 	cg_forceModel;
 vmCvar_t cg_forcePovModel;
+vmCvar_t cg_forcePovModelIgnoreFreecamTeamSettings;
 vmCvar_t	cg_paused;
 vmCvar_t	cg_blood;
 vmCvar_t cg_bleedTime;
@@ -1476,6 +1477,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE  },
 	{ &cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE  },
 	{ &cg_forcePovModel, "cg_forcePovModel", "0", CVAR_ARCHIVE },
+	{ cvp(cg_forcePovModelIgnoreFreecamTeamSettings), "0", CVAR_ARCHIVE },
 	{ &cg_predictItems, "cg_predictItems", "1", CVAR_ARCHIVE },
 #ifdef MISSIONPACK
 	{ &cg_deferPlayers, "cg_deferPlayers", "0", CVAR_ARCHIVE },

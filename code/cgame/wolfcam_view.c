@@ -206,6 +206,8 @@ static void Wolfcam_LoadOurModel (void)
 	static int modc = -1;
 	//static int modchead = -1;
 
+	//FIXME modelIcon?
+
 	if (cg_ourModel.modificationCount != modc) {
 		modc = cg_ourModel.modificationCount;
 		//FIXME hack for black listing enemy model for teammates
@@ -222,10 +224,11 @@ static void Wolfcam_LoadOurModel (void)
 		Q_strncpyz (modelStr, cg_ourModel.string, sizeof(modelStr));
 		if ((skin = strchr(modelStr, '/')) == NULL) {
 			skin = "default";
-			cg.useTeamSkins = qtrue;
+			//FIXME why?
+			cg.useTeamSkinsUs = qtrue;
 		} else {
 			*skin++ = 0;
-			cg.useTeamSkins = qfalse;
+			cg.useTeamSkinsUs = qfalse;
 		}
 
 		Q_strncpyz(cg.ourModel.modelName, modelStr, sizeof(cg.ourModel.modelName));
@@ -235,9 +238,20 @@ static void Wolfcam_LoadOurModel (void)
 		Q_strncpyz(cg.ourModel.headModelName, cg.ourModel.modelName, sizeof(cg.ourModel.headModelName));
 		Q_strncpyz(cg.ourModel.headSkinName, cg.ourModel.skinName, sizeof(cg.ourModel.headSkinName));
 
+
 		//RegisterClientModelnameWithFallback(&cg.teamModel, cg.teamModel.modelName, cg.teamModel.skinName, cg.teamModel.headModelName, cg.teamModel.headSkinName, "", qtrue);
 
 		CG_RegisterClientModelname(&cg.ourModel, cg.ourModel.modelName, cg.ourModel.skinName, cg.ourModel.headModelName, cg.ourModel.headSkinName, "", qtrue);
+
+		// red and blue skins
+		memcpy(&cg.ourModelRed, &cg.ourModel, sizeof(clientInfo_t));
+		memcpy(&cg.ourModelBlue, &cg.ourModel, sizeof(clientInfo_t));
+
+		cg.ourModelRed.team = TEAM_RED;
+		cg.ourModelBlue.team = TEAM_BLUE;
+
+		CG_RegisterClientModelname(&cg.ourModelRed, cg.ourModelRed.modelName, cg.ourModelRed.skinName, cg.ourModelRed.headModelName, cg.ourModelRed.headSkinName, "red", qfalse);
+		CG_RegisterClientModelname(&cg.ourModelBlue, cg.ourModelBlue.modelName, cg.ourModelBlue.skinName, cg.ourModelBlue.headModelName, cg.ourModelBlue.headSkinName, "blue", qfalse);
 
 		// sounds
 		dir = cg.ourModel.modelName;
@@ -248,10 +262,10 @@ static void Wolfcam_LoadOurModel (void)
 			if (!s) {
 				break;
 			}
-			cg.ourModel.sounds[i] = 0;
+			cg.ourModel.sounds[i] = cg.ourModelRed.sounds[i] = cg.ourModelBlue.sounds[i] = 0;
 
 			// if the model didn't load use the sounds of the default model
-			cg.ourModel.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
+			cg.ourModel.sounds[i] = cg.ourModelRed.sounds[i] = cg.ourModelBlue.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
 			//if (!EM_ModelInfo.sounds[i]) {
 			//EM_ModelInfo.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", fallback, s + 1), qfalse);
 			//}

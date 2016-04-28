@@ -924,10 +924,8 @@ static void CG_LoadServerModelOverride (void)
 		Q_strncpyz(modelStr, cgs.serverModelOverride, sizeof(modelStr));
 		if ((skin = strchr(modelStr, '/')) == NULL) {
 			skin = "default";
-			//cg.useTeamSkins = qtrue;
 		} else {
 			*skin++ = 0;
-			//cg.useTeamSkins = qfalse;
 		}
 
 		Q_strncpyz(cg.serverModel.modelName, modelStr, sizeof(cg.serverModel.modelName));
@@ -960,10 +958,8 @@ static void CG_LoadServerModelOverride (void)
 		Q_strncpyz(modelStr, cgs.serverHeadModelOverride, sizeof(modelStr));
 		if ((skin = strchr(modelStr, '/')) == NULL) {
 			skin = "default";
-			//cg.useTeamSkins = qtrue;
 		} else {
 			*skin++ = 0;
-			//cg.useTeamSkins = qfalse;
 		}
 
 		Q_strncpyz(cg.serverModel.headModelName, modelStr, sizeof(cg.serverModel.headModelName));

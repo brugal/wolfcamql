@@ -4,6 +4,9 @@
 * bug fix:  r_fullbright 1 wasn't working with r_vertexlight 1
 * bug fix:  remove debug printf parsing menu foreground color
 * bug fix:  render commands missing padding
+* cg_forcePovModel 1  also sets team skins and colors for team games, 2 sets model as is
+* bug fix:  bright or color skins for teammates weren't enabled unless model was also set to use a bright or color skin
+* cg_forcePovModelIgnoreFreecamTeamSettings  can be used to override the value of cg_freecam_useTeamSettings
 
 ------------------------------------
 11.1  2016-04-14

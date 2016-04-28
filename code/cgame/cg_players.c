@@ -4169,7 +4169,7 @@ static int CG_LightVerts( const vec3_t normal, int numVerts, polyVert_t *verts )
 #endif
 
 
-static void CG_LoadAltTeamSkins (clientInfo_t *ci)
+static void CG_LoadAltTeamSkins (clientInfo_t *ci, qboolean useTeamModel)
 {
 	char modelStr[MAX_QPATH];
 	char skinStr[MAX_QPATH];
@@ -4180,7 +4180,7 @@ static void CG_LoadAltTeamSkins (clientInfo_t *ci)
 	if (*cg_teamHeadSkin.string) {
 		CG_GetModelAndSkinName(cg_teamHeadSkin.string, modelStr, skinStr);
 		if (!*modelStr) {
-			if (*cg_teamModel.string) {
+			if (*cg_teamModel.string  &&  useTeamModel) {
 				CG_GetModelName(cg_teamModel.string, modelStr);
 			} else {
 				Q_strncpyz(modelStr, ci->headModelName, sizeof(modelStr));
@@ -4198,7 +4198,7 @@ static void CG_LoadAltTeamSkins (clientInfo_t *ci)
 	if (*cg_teamTorsoSkin.string) {
 		CG_GetModelAndSkinName(cg_teamTorsoSkin.string, modelStr, skinStr);
 		if (!*modelStr) {
-			if (*cg_teamModel.string) {
+			if (*cg_teamModel.string  &&  useTeamModel) {
 				CG_GetModelName(cg_teamModel.string, modelStr);
 			} else {
 				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
@@ -4216,7 +4216,7 @@ static void CG_LoadAltTeamSkins (clientInfo_t *ci)
 	if (*cg_teamLegsSkin.string) {
 		CG_GetModelAndSkinName(cg_teamLegsSkin.string, modelStr, skinStr);
 		if (!*modelStr) {
-			if (*cg_teamModel.string) {
+			if (*cg_teamModel.string  &&  useTeamModel) {
 				CG_GetModelName(cg_teamModel.string, modelStr);
 			} else {
 				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
@@ -4340,11 +4340,67 @@ static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, ref
 	}
 
 	if (CG_IsUs(ci)) {
-		if (cg_forcePovModel.integer) {
+		qboolean freecamPovSettings = qfalse;
+
+		if (cg.freecam  &&  CG_IsTeamGame(cgs.gametype)  &&  cg_freecam_useTeamSettings.integer  &&  cg_forcePovModelIgnoreFreecamTeamSettings.integer == 0) {
+			freecamPovSettings = qtrue;
+		}
+
+
+		if (cg_forcePovModel.integer == 2  &&  freecamPovSettings == qfalse) {
 			CG_CopyClientInfoModel(&cg.ourModel, ci);
 			return;
 		}
+
+
+		if (cg_forcePovModel.integer  &&  freecamPovSettings == qfalse) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(cg.teamColors));
+				memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(cg.teamColors));
+				memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(cg.teamColors));
+
+				if (cg.useTeamSkinsUs) {
+					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+						CG_CopyClientInfoModel(&cg.ourModelRed, ci);
+					} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
+						CG_CopyClientInfoModel(&cg.ourModelBlue, ci);
+					} else {
+						CG_CopyClientInfoModel(&cg.ourModel, ci);
+					}
+				} else {
+					CG_CopyClientInfoModel(&cg.ourModel, ci);
+				}
+
+				// here is where you do it
+				if (*cg_teamHeadSkin.string  ||  *cg_teamTorsoSkin.string  ||  *cg_teamLegsSkin.string) {
+					//if (!ci->headSkinAlt  ||  !ci->torsoSkinAlt  ||  !ci->legsSkinAlt) {
+					if ((!ci->headSkinAlt  &&  *cg_teamHeadSkin.string)  ||
+						(!ci->torsoSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
+						(!ci->legsSkinAlt  &&  *cg_teamLegsSkin.string)
+						) {
+						Q_strncpyz(ci->modelName, cg.ourModel.modelName, sizeof(ci->modelName));
+						CG_LoadAltTeamSkins(ci, qfalse);
+						//Com_Printf("^6model name: '%s'\n", ci->modelName);
+					}
+					if (ci->headSkinAlt  &&  *cg_teamHeadSkin.string) {
+						ci->headSkin = ci->headSkinAlt;
+					}
+					if (ci->torsoSkinAlt  &&  *cg_teamTorsoSkin.string) {
+						ci->torsoSkin = ci->torsoSkinAlt;
+					}
+					if (ci->legsSkinAlt  &&  *cg_teamLegsSkin.string) {
+						ci->legsSkin = ci->legsSkinAlt;
+					}
+				}
+			} else {
+				CG_CopyClientInfoModel(&cg.ourModel, ci);
+			}
+
+			return;
+		}  // force pov model
+
 		//Com_Printf("us: %d  %s %s\n", cent->currentState.clientNum, cgs.clientinfo[cent->currentState.clientNum].name, ci->name);
+
 		if (cg.freecam  &&  cgs.gametype >= GT_TEAM  &&  cg_freecam_useTeamSettings.integer) {
 			if (*cg_teamModel.string) {
 				if (cg.useTeamSkins) {
@@ -4370,7 +4426,7 @@ static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, ref
 					(!ci->torsoSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
 					(!ci->legsSkinAlt  &&  *cg_teamLegsSkin.string)
 					) {
-					CG_LoadAltTeamSkins(ci);
+					CG_LoadAltTeamSkins(ci, qtrue);
 				}
 				if (ci->headSkinAlt  &&  *cg_teamHeadSkin.string) {
 					ci->headSkin = ci->headSkinAlt;
@@ -4469,7 +4525,7 @@ static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, ref
 					(!ci->torsoSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
 					(!ci->legsSkinAlt  &&  *cg_teamLegsSkin.string)
 					) {
-					CG_LoadAltTeamSkins(ci);
+					CG_LoadAltTeamSkins(ci, qtrue);
 				}
 				if (ci->headSkinAlt  &&  *cg_teamHeadSkin.string) {
 					ci->headSkin = ci->headSkinAlt;
@@ -4618,7 +4674,7 @@ static void CG_CheckForEnemyModel (const centity_t *cent, clientInfo_t *ci, refE
 						(!ci->torsoSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
 						(!ci->legsSkinAlt  &&  *cg_teamLegsSkin.string)
 						) {
-						CG_LoadAltTeamSkins(ci);
+						CG_LoadAltTeamSkins(ci, qtrue);
 					}
 					if (ci->headSkinAlt) {
 						ci->headSkin = ci->headSkinAlt;
@@ -4685,7 +4741,7 @@ static void CG_CheckForEnemyModel (const centity_t *cent, clientInfo_t *ci, refE
 					(!ci->torsoSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
 					(!ci->legsSkinAlt  &&  *cg_teamLegsSkin.string)
 					) {
-					CG_LoadAltTeamSkins(ci);
+					CG_LoadAltTeamSkins(ci, qtrue);
 				}
 				if (ci->headSkinAlt) {
 					ci->headSkin = ci->headSkinAlt;
@@ -4740,7 +4796,7 @@ static void CG_CheckForEnemyModel (const centity_t *cent, clientInfo_t *ci, refE
 			(*cg_teamTorsoSkin.string  &&  !ci->torsoSkinAlt)  ||
 			(*cg_teamLegsSkin.string  &&  !ci->legsSkinAlt)
 			) {
-			CG_LoadAltTeamSkins(ci);
+			CG_LoadAltTeamSkins(ci, qtrue);
 			memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(cg.teamColors));
 			memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(cg.teamColors));
 			memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(cg.teamColors));
@@ -4752,7 +4808,7 @@ static void CG_CheckForEnemyModel (const centity_t *cent, clientInfo_t *ci, refE
 					(!ci->torsoSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
 					(!ci->legsSkinAlt  &&  *cg_teamLegsSkin.string)
 					) {
-					CG_LoadAltTeamSkins(ci);
+					CG_LoadAltTeamSkins(ci, qtrue);
 				}
 				if (ci->headSkinAlt) {
 					ci->headSkin = ci->headSkinAlt;
