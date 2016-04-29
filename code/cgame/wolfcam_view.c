@@ -224,11 +224,15 @@ static void Wolfcam_LoadOurModel (void)
 		Q_strncpyz (modelStr, cg_ourModel.string, sizeof(modelStr));
 		if ((skin = strchr(modelStr, '/')) == NULL) {
 			skin = "default";
-			//FIXME why?
 			cg.useTeamSkinsUs = qtrue;
 		} else {
 			*skin++ = 0;
 			cg.useTeamSkinsUs = qfalse;
+		}
+
+		// hack to switch red/blue skins in team games
+		if (CG_IsTeamGame(cgs.gametype)  &&  (!Q_stricmpn(skin, "red", strlen("red"))  ||  !Q_stricmpn(skin, "blue", strlen("blue")))) {
+			cg.useTeamSkinsUs = qtrue;
 		}
 
 		Q_strncpyz(cg.ourModel.modelName, modelStr, sizeof(cg.ourModel.modelName));
