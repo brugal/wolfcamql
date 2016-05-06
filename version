@@ -1,4 +1,4 @@
-11.2test1
+11.2test4
 
 * r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
 * bug fix:  r_fullbright 1 wasn't working with r_vertexlight 1
@@ -7,6 +7,10 @@
 * cg_forcePovModel 1  also sets team skins and colors for team games, 2 sets model as is
 * bug fix:  bright or color skins for teammates weren't enabled unless model was also set to use a bright or color skin
 * cg_forcePovModelIgnoreFreecamTeamSettings  can be used to override the value of cg_freecam_useTeamSettings
+* bug fix:  rail stats counting hits twice for protocol 91 demos
+* bug fix:  hmg info not shown in clan arena stats menu
+* bug fix:  steam workshops pk3s where loaded after ql pak00.pk3 which allowed them to modify the pak00.pk3 content
+* fs_searchWorkshops 2  allows workshops to be treated like mods by loading them after other pk3s (including ql pak00.pk3).  This lets them modify content.
 
 ------------------------------------
 11.1  2016-04-14

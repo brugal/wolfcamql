@@ -1766,7 +1766,6 @@ wolfcamql 11.0test15 client (Feb 17 2016)
 * R_GetCommandBuffer() command dropped
   with con_scale 0.00..1  --  CON_TEXTSIZE > MAX_RENDER_COMMANDS
 * utf8 with con_tty and con_win32 input
-* wcg rail accuracies too high
 * mark hud only refernced cvars like cg_drawSpecMessages
 * why the 'plus 1' for xSkip?  glyph.xSkip = (face->glyph->metrics.horiAdvance >> 6) + 1;
 * CG_Text_Paint_Limit() missing 'style'
@@ -1962,8 +1961,17 @@ No locals.
 * fx cullNear cullRadius
 * curve:  retribution /team s far curves matched with r_subdivisions 10 and r_lodcurveerror 10000, near curves don't match though (those match with r_subdivision 4), it's like r_subdivision scales with distance
 * CG_AREA_POWERUP  'special' used for spacing
-* cg_teamModel */[bright|color] doesn't work unless model is set to */[bright|color]
+* team info based on entity info not tinfo command in newer ql (tinfo hardly updates)
+* fov314.dm_91 still showing ca zoomed in at start  -- this is ql bug copying old player fov to new player
+* check ql spec demo playing sounds not in pvs
+* names and locations? sometimes truncated too much in team overlay
+* is cg_teamModel setting sounds as well?
+* 2016-05-05  check black names:
 
+ Yakumo [has Quake Live] 2 hours ago
+ just /condump namelist.txt some time you see someone with black in the name, then you can open namelist.txt and see how it's done.
+ ^^0 will give black, but the leading ^ will still show, I never checked into how people tricked it into working as I wasn't after the colour.
+* cg_lightningstyle like ql
 
 
 ---------

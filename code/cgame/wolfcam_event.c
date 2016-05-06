@@ -365,7 +365,7 @@ void Wolfcam_LogMissileHit (int weapon, const vec3_t origin, const vec3_t dir, i
 
     //FIXME wolfcam can be dead for other than lightning
     if (possibleClient > -1  &&  !(cg_entities[possibleClient].currentState.eFlags & EF_DEAD)) {
-        //CG_Printf ("logging %s hit for %s\n", weapNames[weapon], cgs.clientinfo[possibleClient].name);
+        //CG_Printf ("  ^3logging %s hit for %s\n", weapNames[weapon], cgs.clientinfo[possibleClient].name);
         //wclients[possibleClient].wstats[weapon].hits++;
         wclients[possibleClient].wstats[weapon].hits++;
         wclients[possibleClient].perKillwstats[weapon].hits++;

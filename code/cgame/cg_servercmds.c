@@ -609,8 +609,18 @@ static void CG_ParseCaStats (void)
 	s->rgKills = atoi(CG_Argv(17));
 	s->pgAccuracy = atoi(CG_Argv(18));
 	s->pgKills = atoi(CG_Argv(19));
-
-	// the rest ....
+	s->bfgAccuracy = atoi(CG_Argv(20));
+	s->bfgKills = atoi(CG_Argv(21));
+	s->grappleAccuracy = atoi(CG_Argv(22));
+	s->grappleKills = atoi(CG_Argv(23));
+	s->ngAccuracy = atoi(CG_Argv(24));
+	s->ngKills = atoi(CG_Argv(25));
+	s->plAccuracy = atoi(CG_Argv(26));
+	s->plKills = atoi(CG_Argv(27));
+	s->cgAccuracy = atoi(CG_Argv(28));
+	s->cgKills = atoi(CG_Argv(29));
+	s->hmgAccuracy = atoi(CG_Argv(30));
+	s->hmgKills = atoi(CG_Argv(31));
 }
 
 
@@ -771,6 +781,9 @@ static void CG_ParseTeamInfo( void ) {
 
 /*
 
+  1068 linux-x64 Mar  4 2016 19:27:22
+  1068 win-x86 Apr 28 2016 15:24:47
+
   1067 win-x86 Feb 22 2016 13:59:16
   1064 win-x86 Nov 10 2015 10:16:14
   1064 win-x86 Oct 30 2015 12:09:55
@@ -848,7 +861,8 @@ static void CG_ParseVersion (const char *info)
 			return;
 		}
 
-		if (!Q_stricmpn(val, "QuakeLive", strlen("QuakeLive"))  ||  !Q_stricmpn(val, "Quake Live", strlen("Quake Live"))) {
+		// protocol 91 no longer has 'quake live' string in version
+		if (!Q_stricmpn(val, "QuakeLive", strlen("QuakeLive"))  ||  !Q_stricmpn(val, "Quake Live", strlen("Quake Live"))  ||  cgs.realProtocol >= 91) {
 			cgs.isQuakeLiveDemo = qtrue;
 		} else {
 			cgs.isQuakeLiveDemo = qfalse;

@@ -220,6 +220,7 @@ static void Wolfcam_LoadOurModel (void)
 
 	Com_Printf("loading our model\n");
 
+	//FIXME this is always true since default cvar is set to something (sarge)
 	if (*cg_ourModel.string) {
 		Q_strncpyz (modelStr, cg_ourModel.string, sizeof(modelStr));
 		if ((skin = strchr(modelStr, '/')) == NULL) {
@@ -268,13 +269,9 @@ static void Wolfcam_LoadOurModel (void)
 			}
 			cg.ourModel.sounds[i] = cg.ourModelRed.sounds[i] = cg.ourModelBlue.sounds[i] = 0;
 
-			// if the model didn't load use the sounds of the default model
 			cg.ourModel.sounds[i] = cg.ourModelRed.sounds[i] = cg.ourModelBlue.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
-			//if (!EM_ModelInfo.sounds[i]) {
-			//EM_ModelInfo.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", fallback, s + 1), qfalse);
-			//}
-		}
-	}
+		}  // max custom sounds
+	}  // cg_ourModel.string*
 }
 
 //FIXME testing

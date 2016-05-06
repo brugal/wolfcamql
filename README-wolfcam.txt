@@ -2346,7 +2346,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   Ex:  wolfcamql +set fs_extraGames1 "Temp pk3s" +set fs_extraGames1 "myExplosions" ...
 
-* fs_searchWorkshops (0: don't use steam workshop pk3s,  1: (default) load extra pk3s referenced in demos from steam workshop directories).  This checks both the steam directory and wolfcamql {APPLICATION DATA}/workshop.
+* fs_searchWorkshops (0: don't use steam workshop pk3s,  1: (default) load extra pk3s referenced in demos from steam workshop directories).  This checks both the steam directory and wolfcamql {APPLICATION DATA}/workshop.  This loads the pk3s before any others to prevent changing content.  Workshops can only adds new content.,  2:  This is like 1 but loads the pk3s after all the others (treating the workshop like a mod) so it can change the content that was loaded previously)
 
   Workshops referenced in demo can be checked in the +info screen and with the com_workshopids cvar.
 

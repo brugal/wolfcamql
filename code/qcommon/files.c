@@ -3120,6 +3120,62 @@ static void FS_ReorderPurePaks( void )
 	}
 }
 
+// steam workshops pk3s
+static void FS_AddWorkshopsToSearchPath (void)
+{
+	cvar_t *cv;
+	int count;
+	char buffer[1024];
+	const char *s;
+
+	cv = Cvar_Get("com_workshopids", "", 0);
+	s = cv->string;
+
+	count = 0;
+	while (qtrue) {
+		const char *path;
+
+		if (*s == '\0'  ||  *s == ' ') {
+			if (count > 0) {
+				if (count >= (1024 - 1)) {
+					Com_Printf("^1FS_Startup:  couldn't close workshop id string\n");
+					break;
+				}
+				buffer[count] = '\0';
+				path = Cvar_VariableString("fs_quakelivedir");
+				if (!*path) {
+					path = Sys_QuakeLiveDir();
+				}
+				//FIXME resolve '../'
+				FS_AddGameDirectory(va("%s/../../../workshop/content/%d", path, QUAKELIVE_STEAM_APP_ID), buffer);
+
+				path = Cvar_VariableString("fs_homepath");
+				if (!*path) {
+					path = Sys_DefaultHomePath();
+				}
+				FS_AddGameDirectory(va("%s/workshop", path), buffer);
+				count = 0;
+			} else {
+				// buffer is empty, skip spaces
+			}
+
+			if (*s == '\0') {
+				break;
+			}
+			s++;
+			continue;
+		}
+
+		if (count >= 1024) {
+			Com_Printf("^1FS_Startup:  workshop id exceeded buffer size\n");
+			break;
+		}
+		buffer[count] = *s;
+		count++;
+		s++;
+	}
+}
+
 /*
 ================
 FS_Startup
@@ -3149,6 +3205,12 @@ static void FS_Startup( const char *gameName )
 	fs_gamedirvar = Cvar_Get ("fs_game", "wolfcam-ql", CVAR_INIT|CVAR_SYSTEMINFO );
 
 	// add search path elements in reverse priority order
+
+	if (fs_searchWorkshops->integer > 0  &&  fs_searchWorkshops->integer != 2) {
+		// load before anything else to prevent overwriting files, this seems to match quake live
+		FS_AddWorkshopsToSearchPath();
+	}
+
 	if (fs_basepath->string[0]) {
 		FS_AddGameDirectory( fs_basepath->string, gameName );
 	}
@@ -3216,60 +3278,9 @@ static void FS_Startup( const char *gameName )
 		i++;
 	}
 
-	// steam workshop paks
-
-	if (fs_searchWorkshops->integer) {
-		cvar_t *cv;
-		int count;
-		char buffer[1024];
-		const char *s;
-
-		cv = Cvar_Get("com_workshopids", "", 0);
-		s = cv->string;
-
-		count = 0;
-		while (qtrue) {
-			const char *path;
-
-			if (*s == '\0'  ||  *s == ' ') {
-				if (count > 0) {
-					if (count >= (1024 - 1)) {
-						Com_Printf("^1FS_Startup:  couldn't close workshop id string\n");
-						break;
-					}
-					buffer[count] = '\0';
-					path = Cvar_VariableString("fs_quakelivedir");
-					if (!*path) {
-						path = Sys_QuakeLiveDir();
-					}
-					//FIXME resolve '../'
-					FS_AddGameDirectory(va("%s/../../../workshop/content/%d", path, QUAKELIVE_STEAM_APP_ID), buffer);
-
-					path = Cvar_VariableString("fs_homepath");
-					if (!*path) {
-						path = Sys_DefaultHomePath();
-					}
-					FS_AddGameDirectory(va("%s/workshop", path), buffer);
-					count = 0;
-				} else {
-					// buffer is empty, skip spaces
-				}
-
-				if (*s == '\0') {
-					break;
-				}
-				s++;
-				continue;
-			}
-
-			if (count >= 1024) {
-				Com_Printf("^1FS_Startup:  workshop id exceeded buffer size\n");
-				break;
-			}
-			buffer[count] = *s;
-			count++;
-			s++;
-		}
+	if (fs_searchWorkshops->integer == 2) {
+		// like a mod, can ovewrite previous files
+		FS_AddWorkshopsToSearchPath();
 	}
 
 	// check for additional game folder for mods

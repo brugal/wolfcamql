@@ -690,6 +690,18 @@ typedef struct {
 	int rgKills;
 	int pgAccuracy;
 	int pgKills;
+	int bfgAccuracy;
+	int bfgKills;
+	int grappleAccuracy;
+	int grappleKills;
+	int ngAccuracy;
+	int ngKills;
+	int plAccuracy;
+	int plKills;
+	int cgAccuracy;
+	int cgKills;
+	int hmgAccuracy;
+	int hmgKills;
 } caStats_t;
 
 typedef struct {

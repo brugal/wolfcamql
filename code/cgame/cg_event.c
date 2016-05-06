@@ -2354,6 +2354,9 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		}
 
 #if 1
+		//Com_Printf("is ql demo: %d\n", cgs.isQuakeLiveDemo);
+		//Com_Printf("check version: %d\n", CG_CheckQlVersion(0, 1, 0, 284));
+
 		if (cg.demoPlayback  &&  cgs.isQuakeLiveDemo  &&  CG_CheckQlVersion(0, 1, 0, 284)) {
 			// don't do anything, rail registers as a missile hit
 		} else
@@ -2400,7 +2403,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
             //Wolfcam_WeaponTrace (&tr, or /*es->origin2*/, NULL, NULL, newEnd, clientNum, CONTENTS_SOLID | CONTENTS_BODY);
             Wolfcam_WeaponTrace (&tr, or /*es->origin2*/, NULL, NULL, es->pos.trBase, clientNum, CONTENTS_SOLID | CONTENTS_BODY);
             if (tr.entityNum < MAX_CLIENTS) {
-                //CG_Printf ("  ^3xxxx hit %d  %s\n", tr.entityNum, cgs.clientinfo[tr.entityNum].name);
+                //CG_Printf ("  ^2logging trace hit to %d  %s for %s\n", tr.entityNum, cgs.clientinfo[tr.entityNum].name, cgs.clientinfo[clientNum].name);
                 wclients[clientNum].wstats[WP_RAILGUN].hits++;
                 wclients[clientNum].perKillwstats[WP_RAILGUN].hits++;
                 if (wolfcam_following  &&  clientNum == wcg.clientNum) {

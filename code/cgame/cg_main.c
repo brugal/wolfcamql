@@ -5218,6 +5218,8 @@ static const char *CG_FeederItemTextCaStats (float feederID, int index, int colu
 		case 14:
 			return va("^3%d ^7%d%%", ts->pgKills, ts->pgAccuracy);
 		case 15:
+			return va("^3%d ^7%d%%", ts->hmgKills, ts->hmgAccuracy);
+		case 16:
 			return va("%d", sp->time);
 		default:
 			break;

@@ -3414,3 +3414,39 @@ The update should come down automatically for everyone through Steam.
 
 ---------------------------------------
 
+2016-04-28
+
+Quake Live Update v1068
+April 28 - sponge	
+We've just released an update to both the client and the server today. Servers and clients will both need to update as the changes are not compatible between versions, and older servers will be de-listed from the server list. Here's the list of changes:
+
+- worked around corrupted userinfo by kicking players with invalid userinfo - the "sarge" bug. behavior can be controlled with g_kickBadUserInfo in case you notice it kicking too many valid players.
+- handle too big scoreboard messages a little better by falling back to a smaller message. some elements of the scoreboard will still be out of date on large servers after this, but the basics will be correct.
+- fixed loading loop when clicking on the button in the training center
+- don't crash when demoting a player from the server console
+- fix "training level: bad spawn" when playing online matches with lots of players on the training maps
+- fix PLAY_TIME in stats reporting to not take into account warmup time
+- added /listaccess admin command to view access list by page
+- fixed issue where factory-based tags were not getting a comma before them properly
+- fixed crash from out of range /clientmute parameter
+- fixed inability to play demos back from frontend with spaces in filename
+- fixed a potential crash in listen servers when clearing out players who haven't de-authed from steam successfully
+- fixed alignment of crosshairs 11 and 13 as they were not centered properly
+- keys no longer spawn on match start, but instead spawn in at 30s + rand(15s). added cvars to control or remove this ability for both keys and power-ups: g_spawnDelay_key, g_spawnDelayRandom_key, g_spawnDelay_powerup, g_spawnDelayRandom_powerup
+- don't show spec item timers for entities flagged with spawnflags 256 (SECRET_ITEM)
+- fixed missing FX on medkit
+- fixed classic weapon bar being stretched in widescreen
+- settings menu: lightning impact was wrong type
+- settings menu: added lightning impact cap
+- settings menu: added voice chat indicator
+- settings menu: added right side weapon bar to weapon bar options
+- midlife crisis, smash, sinister, solarium: added teleport decals
+- overlord: added FFA spawns
+- cliffside, asylum, intervention: fixed some texture issues
+- demonkeep: fixed broken lava geometry, and added lavacaulk
+- hellsgate: replaced useless shotgun shells with plasma cells
+- overkill: fixed HOM near bottom of bridge
+
+----------------------------------------------
+
+
