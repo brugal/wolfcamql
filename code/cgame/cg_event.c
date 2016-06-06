@@ -218,7 +218,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 
 	// check for single client messages
 
-	icon = cgs.media.redCubeIcon;
+	icon = cgs.media.worldDeathIcon;
 	lastObituary->weapon = BG_ModToWeapon(mod);
 
 	switch( mod ) {

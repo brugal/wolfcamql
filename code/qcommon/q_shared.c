@@ -1154,8 +1154,11 @@ int QDECL Com_sprintf( char *dest, int size, const char *fmt, ...)
 	len = Q_vsnprintf(dest, size, fmt, argptr);
 	va_end (argptr);
 
-	if (len >= size)
+	if (len >= size) {
+		//Com_Printf("^5  vsnprintf: '%s'\n", dest);
 		Com_Printf("Com_sprintf: Output length %d too short, require %d bytes.\n", size, len + 1);
+		//Crash();
+	}
 
 	return len;
 }
@@ -1482,10 +1485,12 @@ void Info_SetValueForKey( char *s, const char *key, const char *value ) {
 			return;
 		}
 	}
-	
+
 	Info_RemoveKey (s, key);
 	if (!value)
 		return;
+
+	//Com_Printf("^2set value for key: '%s' '%s'\n", key, value);
 
 	Com_sprintf (newi, sizeof(newi), "\\%s\\%s", key, value);
 

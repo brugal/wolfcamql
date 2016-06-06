@@ -15,6 +15,7 @@
 #include "cg_servercmds.h"
 #include "cg_sound.h"
 #include "cg_syscalls.h"
+#include "cg_view.h"
 #include "sc.h"
 #include "wolfcam_servercmds.h"
 
@@ -593,7 +594,7 @@ static void CG_ParseCaStats (void)
 	s->clientNum = clientNum;
 	s->damageDone = atoi(CG_Argv(2));
 	s->damageReceived = atoi(CG_Argv(3));
-	// 4  --  ??  0  gauntAccuracy?
+	// 4  guantlet accuracy, ql loops through all the weapons generically
 	s->gauntKills = atoi(CG_Argv(5));
 	s->mgAccuracy = atoi(CG_Argv(6));
 	s->mgKills = atoi(CG_Argv(7));
@@ -2245,6 +2246,11 @@ static void CG_ConfigStringModified( void ) {
 		//Com_Printf("%d CS_ROUND_TIME %d\n", cg.time, val);
 		if (val > 0  &&  !cgs.roundStarted) {
 			//CG_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
+			// hack, ql appears to have a bug where the fov values from the
+			// previously viewed player are still being copied into playerstate
+			if (cg_useDemoFov.integer == 2) {
+				CG_ZoomUp_f();
+			}
 			cgs.roundStarted = qtrue;
 			trap_SendConsoleCommand("exec roundstart.cfg\n");
 		} else if (val < 0) {

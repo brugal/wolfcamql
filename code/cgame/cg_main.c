@@ -129,10 +129,7 @@ centity_t			cg_entities[MAX_GENTITIES + 1];
 weaponInfo_t		cg_weapons[MAX_WEAPONS];
 itemInfo_t			cg_items[MAX_ITEMS];
 
-clientInfo_t		EM_ModelInfo;
 int					EM_Loaded = 0;
-byte				EC_Colors[3][4];
-int					EC_Loaded = 0;
 
 vmCvar_t	cg_railTrailTime;
 vmCvar_t	cg_railQL;
@@ -779,6 +776,7 @@ vmCvar_t cg_hudForceRedTeamClanTag;
 vmCvar_t cg_hudForceBlueTeamClanTag;
 
 vmCvar_t cg_enemyModel;
+vmCvar_t cg_enemyHeadModel;
 vmCvar_t cg_enemyHeadSkin;
 vmCvar_t cg_enemyTorsoSkin;
 vmCvar_t cg_enemyLegsSkin;
@@ -796,7 +794,9 @@ vmCvar_t cg_enemyRailNudge;
 vmCvar_t cg_enemyFlagColor;
 
 vmCvar_t cg_useDefaultTeamSkins;
+vmCvar_t cg_ignoreClientHeadModel;
 vmCvar_t cg_teamModel;
+vmCvar_t cg_teamHeadModel;
 vmCvar_t cg_teamHeadSkin;
 vmCvar_t cg_teamTorsoSkin;
 vmCvar_t cg_teamLegsSkin;
@@ -816,8 +816,18 @@ vmCvar_t cg_teamFlagColor;
 vmCvar_t cg_neutralFlagColor;
 
 vmCvar_t cg_ourModel;
+vmCvar_t cg_ourHeadSkin;
+vmCvar_t cg_ourTorsoSkin;
+vmCvar_t cg_ourLegsSkin;
+vmCvar_t cg_ourHeadModel;
+vmCvar_t cg_ourHeadColor;
+vmCvar_t cg_ourTorsoColor;
+vmCvar_t cg_ourLegsColor;
+
 vmCvar_t cg_deadBodyColor;
 vmCvar_t cg_disallowEnemyModelForTeammates;
+vmCvar_t cg_fallbackModel;
+vmCvar_t cg_fallbackHeadModel;
 
 vmCvar_t cg_audioAnnouncer;
 vmCvar_t cg_audioAnnouncerRewards;
@@ -1843,6 +1853,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_hudForceBlueTeamClanTag, "cg_hudForceBlueTeamClanTag", "", CVAR_ARCHIVE },
 
 	{ &cg_enemyModel, "cg_enemyModel", "keel/bright", CVAR_ARCHIVE },
+	{ cvp(cg_enemyHeadModel), "keel/bright", CVAR_ARCHIVE },
 	{ &cg_enemyHeadSkin, "cg_enemyHeadSkin", "", CVAR_ARCHIVE },
 	{ &cg_enemyTorsoSkin, "cg_enemyTorsoSkin", "", CVAR_ARCHIVE },
 	{ &cg_enemyLegsSkin, "cg_enemyLegsSkin", "", CVAR_ARCHIVE },
@@ -1861,7 +1872,9 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_enemyFlagColor), "0x00ff00", CVAR_ARCHIVE },
 
 	{ &cg_useDefaultTeamSkins, "cg_useDefaultTeamSkins", "1", CVAR_ARCHIVE },
+	{ cvp(cg_ignoreClientHeadModel), "2", CVAR_ARCHIVE },
 	{ &cg_teamModel, "cg_teamModel", "", CVAR_ARCHIVE },
+	{ cvp(cg_teamHeadModel), "", CVAR_ARCHIVE },
 	{ &cg_teamHeadSkin, "cg_teamHeadSkin", "", CVAR_ARCHIVE },
 	{ &cg_teamTorsoSkin, "cg_teamTorsoSkin", "", CVAR_ARCHIVE },
 	{ &cg_teamLegsSkin, "cg_teamLegsSkin", "", CVAR_ARCHIVE },
@@ -1881,10 +1894,21 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 	{ cvp(cg_neutralFlagColor), "0xf6f600", CVAR_ARCHIVE },
 
-	{ &cg_ourModel, "model", "", CVAR_ARCHIVE },
+	//FIXME this two have already been set to default values and can't be ""
+	{ &cg_ourModel, "model", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE },
+	{ &cg_ourHeadModel, "headmodel", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE },
+	{ cvp(cg_ourHeadSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_ourTorsoSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_ourLegsSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_ourHeadColor), "0xffffff", CVAR_ARCHIVE },
+	{ cvp(cg_ourTorsoColor), "0xffffff", CVAR_ARCHIVE },
+	{ cvp(cg_ourLegsColor), "0xffffff", CVAR_ARCHIVE },
+
 	//{ (vmCvar_t *)&cg_deadBodyColor, "cg_deadBodyColor", "16 16 16 255", CVAR_ARCHIVE },
 	{ &cg_deadBodyColor, "cg_deadBodyColor", "0x101010", CVAR_ARCHIVE },
 	{ cvp(cg_disallowEnemyModelForTeammates), "1", CVAR_ARCHIVE },
+	{ cvp(cg_fallbackModel), "crash", CVAR_ARCHIVE },
+	{ cvp(cg_fallbackHeadModel), "crash", CVAR_ARCHIVE },
 
 	{ &cg_audioAnnouncer, "cg_audioAnnouncer", "1", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerRewards, "cg_audioAnnouncerRewards", "1", CVAR_ARCHIVE },
@@ -2276,10 +2300,9 @@ static void CG_RegisterCvars( void ) {
 
 	forceModelModificationCount = cg_forceModel.modificationCount;
 
-	trap_Cvar_Register(NULL, "model", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE );
-	trap_Cvar_Register(NULL, "headmodel", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE );
-	trap_Cvar_Register(NULL, "team_model", DEFAULT_TEAM_MODEL, CVAR_USERINFO | CVAR_ARCHIVE );
-	trap_Cvar_Register(NULL, "team_headmodel", DEFAULT_TEAM_HEAD, CVAR_USERINFO | CVAR_ARCHIVE );
+	// unused
+	//trap_Cvar_Register(NULL, "team_model", DEFAULT_TEAM_MODEL, CVAR_USERINFO | CVAR_ARCHIVE );
+	//trap_Cvar_Register(NULL, "team_headmodel", DEFAULT_TEAM_HEAD, CVAR_USERINFO | CVAR_ARCHIVE );
 }
 
 /*
@@ -2287,7 +2310,7 @@ static void CG_RegisterCvars( void ) {
 CG_ForceModelChange
 ===================
 */
-static void CG_ForceModelChange( void ) {
+void CG_ForceModelChange( void ) {
 	int		i;
 
 	for (i=0 ; i<MAX_CLIENTS ; i++) {
@@ -3501,8 +3524,13 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.blueCubeModel = trap_R_RegisterModel( "models/powerups/orb/b_orb.md3" );
 	}
 
+	//FIXME 2016-05-27  with current ql shaders these can't use alpha fade
 	cgs.media.redCubeIcon = trap_R_RegisterShader( "icons/skull_red" );
 	cgs.media.blueCubeIcon = trap_R_RegisterShader( "icons/skull_blue" );
+
+	//FIXME no alpha blend??
+	//cgs.media.worldDeathIcon = trap_R_RegisterShader("icons/icon_frag");
+	cgs.media.worldDeathIcon = trap_R_RegisterShader("wc/worldDeath");
 
 #if 0
 	cgs.media.redFlagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_red1" );
@@ -3656,6 +3684,7 @@ static void CG_RegisterGraphics( void ) {
 	}
 	cgs.media.foeShader = trap_R_RegisterShader("wc/foe");
 	cgs.media.selfShader = trap_R_RegisterShader("wc/self");
+	cgs.media.selfDemoTakerShader = trap_R_RegisterShader("wc/selfDemoTaker");
 	cgs.media.infectedFoeShader = trap_R_RegisterShader("gfx/2d/infected/bite");
 
 	if (cgs.gametype == GT_FREEZETAG) {
@@ -3783,7 +3812,7 @@ static void CG_RegisterGraphics( void ) {
 
 	//FIXME MAX_WEAPONS and older ql demos and q3 demos
 	for (i = 0;  i < MAX_WEAPONS;  i++) {
-		cg_weapons[i].weaponIcon = trap_R_RegisterShader("icons/skull_red");
+		cg_weapons[i].weaponIcon = trap_R_RegisterShader("icons/icon_frag");
 	}
 	// only register the items that the server says we need
 	Q_strncpyz(items, CG_ConfigString(CS_ITEMS), sizeof(items));

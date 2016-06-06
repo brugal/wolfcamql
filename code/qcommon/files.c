@@ -3138,7 +3138,7 @@ static void FS_AddWorkshopsToSearchPath (void)
 		if (*s == '\0'  ||  *s == ' ') {
 			if (count > 0) {
 				if (count >= (1024 - 1)) {
-					Com_Printf("^1FS_Startup:  couldn't close workshop id string\n");
+					Com_Printf("^1%s:  couldn't close workshop id string\n", __FUNCTION__);
 					break;
 				}
 				buffer[count] = '\0';
@@ -3167,7 +3167,7 @@ static void FS_AddWorkshopsToSearchPath (void)
 		}
 
 		if (count >= 1024) {
-			Com_Printf("^1FS_Startup:  workshop id exceeded buffer size\n");
+			Com_Printf("^1%s:  workshop id exceeded buffer size\n", __FUNCTION__);
 			break;
 		}
 		buffer[count] = *s;

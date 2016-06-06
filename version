@@ -1,4 +1,4 @@
-11.2test4
+11.2  2016-06-06
 
 * r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
 * bug fix:  r_fullbright 1 wasn't working with r_vertexlight 1
@@ -9,8 +9,44 @@
 * cg_forcePovModelIgnoreFreecamTeamSettings  can be used to override the value of cg_freecam_useTeamSettings
 * bug fix:  rail stats counting hits twice for protocol 91 demos
 * bug fix:  hmg info not shown in clan arena stats menu
-* bug fix:  steam workshops pk3s where loaded after ql pak00.pk3 which allowed them to modify the pak00.pk3 content
+* bug fix:  steam workshops pk3s were loaded after ql pak00.pk3 which allowed them to modify the pak00.pk3 content
 * fs_searchWorkshops 2  allows workshops to be treated like mods by loading them after other pk3s (including ql pak00.pk3).  This lets them modify content.
+* bug fix:   team overlay information correctly wasn't updating correctly with protocol 91 demos
+* cg_useDemoZoom 2  resets zoom settings at round start in clan arena to work around a quake live bug where the fov values from the previously viewed player are still being used
+* bug fix:  cg_forcePovModel didn't check model for "tag_flag"
+* cg_enemyHeadModel
+* cg_teamHeadModel
+* headmodel support with cg_forcePovModel
+* bug fix:  blacklisted team model wasn't reset correctly if own model changed
+* setting "model" doesn't automatically set the same value for "headmodel"
+* bug fix:  cg_forceModel 1  still used cg_team* and cg_enemy* models
+* bug fix:  cg_forceModel 2  ignored server model settings
+* bug fix:  red/blue skins sometimes used for own player in non-team games
+* bug fix:  enemy model wasn't using red/blue team skins
+* model and headmodel cvars can be set to ""
+* bug fix:  alt skins would keep trying to load every frame if they were invalid
+* cg_drawSelf  uses a different color for not just demo pov (white) but also demo taker (green)
+* bug fix:  enemy alternate legs and head skins would use teammate alt skins
+* cg_ourHeadSkin, cg_ourTorsoSkin, and cg_ourLegsSkin used with cg_forcePovModel 2
+* cg_ourHeadColor, cg_ourTorsoColor, and cg_ourLegsColor used with cg_forcePovModel 2
+* bug fix:  buffer overflow setting team and enemy colors
+* bug fix:  wrong alternate skins could be used with black listed team models
+* bug fix:  changing value of cg_disallowEnemyModelForTeammates could use wrong alternate team skins
+* added cg_fallbackModel and cg_fallbackHeadModel.  These are now used with cg_disallowEnemyModelForTeammates instead of "model" and "headmodel"
+* cg_disallowEnemyModelForTeammates 1 also changes pov model.  Setting to 2 is the old behavior that only changes the model if the player was a teammate (not including self).
+* bug fix:  wrong icon for world kill/death
+* bug fix:  team skins used in non-team games
+* changing cg_useDefaultTeamSkins doesn't require vid_restart
+* cg_ignoreClientHeadModel [0: use head model set by player,  1: ignore and use 'model' setting,  2: (default) ignore for quake live demos and use 'model' setting]
+* "-teamColor" skin to select approriate red, blue, or default
+* fx bug fix:  cullNear and cullRadius weren't used
+* fx:  cullDistance render token and cullDistanceValue variable to prevent rendering of entities far away.  Ex:
+
+   emitter 2 {
+      ...
+      cullDistanceValue 400  // set cull value
+      sprite cullDistance  // set sprite to use cullDistanceValue
+
 
 ------------------------------------
 11.1  2016-04-14

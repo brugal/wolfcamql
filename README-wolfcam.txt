@@ -343,6 +343,13 @@ Ex:
     t1  loopcount // will go from 1 to 6  (1, 2, ...)
   }
 
+* cullDistance render token and cullDistanceValue variable to prevent rendering of entities far away.  Ex:
+
+   emitter 2 {
+      ...
+      cullDistanceValue 400  // set cull value
+      sprite cullDistance  // set sprite to use cullDistanceValue
+
 * some additional trig/math functions:  acos, asin, atan, atan2, pow
 
   Note that atan2 and pow have the following syntax:
@@ -893,10 +900,6 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
 * cg_buzzerSound  end of game buzz sound (same as quakelive)
 
-* cg_drawCrosshairTeammateHealth*
-
-* cg_drawCrosshairNames 2  to only show names for teammates
-
 * cg_spawnArmorTime  new spawn armor shader for spawn protected players, default 500
 
 * r_forceMap
@@ -1310,10 +1313,13 @@ Available tokens:
 
 * cg_kickScale same as quakelive
 
+* cg_crosshairColor "0xffffff"
 
-* color skins for all models, they are generated automatically from the already available red and blue skins you can use r_colorSkinsFuzz (the amount that the difference between red and blue skins will signal a match and not replace with white: default 20)  and r_colorSkinsIntensity (default 1.0) and the /createcolorskins  vid_restart to tweak them.  You can then use skin overrides to allow either team or enemies to keep their models but use colorized skins:    ex:  set cg_enemyModel "", then cg_enemyHeadSkin "color", cg_enemyTorsoSkin "color", cg_enemyLegsSkin "color", same for team
+* cg_drawCrosshairTeammateHealth*
 
-*cg_crosshairAlphaAdjust to adjust the transparent portions of cross-hairs.  cg_crosshairAlphaAdjust > 0 will make them more visible, less than 0 will make them even more transparent
+* cg_drawCrosshairNames 2  to only show names for teammates
+
+* cg_crosshairAlphaAdjust to adjust the transparent portions of cross-hairs.  cg_crosshairAlphaAdjust > 0 will make them more visible, less than 0 will make them even more transparent
 
 * cg_crosshairBrightness values 0.0 -> 1.0 work the same as quake live (essentially making it more like cross-hair darkness).  Values greater than 1.0 will actually make it brighter.  The values above 1.0 will shift that integer amount of the pixels towards white.  cg_crosshairBrightness 255 will make all the original pixels white.
 
@@ -1389,7 +1395,7 @@ Available tokens:
 * cg_drawFoeMinWidth
 * cg_drawFoeMaxWidth
 
-* cg_drawSelf similar to cg_drawFriend and cg_drawFoe.  It draws a white triangle over the demo taker.  Useful if you use /follow
+* cg_drawSelf similar to cg_drawFriend and cg_drawFoe.  It draws a white triangle over the demo pov and green triangle if demo pov is also the demo taker.  Useful if you use /follow
 * cg_drawSelfMinWidth
 * cg_drawSelfMaxWidth
 
@@ -1627,9 +1633,68 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
        /freecam last   switch to third person and use last freecam position
 ---------------------------------------------------------------------------
 
-* cg_enemyModel "keel/bright"
+Player Models:
 
-* cg_enemyHeadSkin ""  can be used to override.  Ex:  cg_enemyHeadSkin "xaero/color" to use xaero's head skin
+* color skins for all models, they are generated automatically from the already available red and blue skins you can use r_colorSkinsFuzz (the amount that the difference between red and blue skins will signal a match and not replace with white: default 20)  and r_colorSkinsIntensity (default 1.0) and the /createcolorskins  vid_restart to tweak them.  You can then use skin overrides to allow either team or enemies to keep their models but use colorized skins:    ex:  set cg_enemyModel "", then cg_enemyHeadSkin "color", cg_enemyTorsoSkin "color", cg_enemyLegsSkin "color", same for team
+
+* cg_ignoreClientHeadModel [0: use head model set by player,  1: ignore and use 'model' setting,  2: (default) ignore for quake live demos and use 'model' setting]
+
+* cg_disallowEnemyModelForTeammates [0, 1, 2]   If cg_teamModel isn't set and teammates use their own models this will prevent them from using the model set with cg_enemyModel.  The replacement model is set with cg_fallbackModel and cg_fallbackHeadModel.  With a setting of 1 it will also apply to first person view.  With a setting of 2 it only applies to teammates and not the person being viewed.
+
+* cg_fallbackModel "crash"
+* cg_fallbackHeadModel "crash"
+
+* cg_useDefaultTeamSkins  If you don't have forced team models you can set to 0 and see your teammates chosen skin instead of blue or red.
+
+* "-teamColor" skin to pick appropriate blue, red, or default skin.
+
+  Example:  This can be used with cg_useDefaultTeamSkins 0 to then select red/blue for either/or enemies or teammates.
+
+* cg_playerLeanScale  similar to quakelive's cg_playerLean and allows you to select how much leaning the player models do (can be higher than 1.0).
+
+* cg_deadBodyColor "0x101010"
+
+* player model scaling and server set models:
+    cg_playerModelAutoScaleHeight  scale player models to match this height (default: 57, "" to disable)
+
+    these are used after auto scaling pass:
+      cg_playerModelAllowServerScale  use server info to apply additional scaling
+      cg_playerModelAllowServerScaleDefault  for older demos without server info use this as default  (default is 1.1)
+
+
+    server set player models:
+      cg_playerModelAllowServerOverride  (default 1)
+
+    options to force settings:
+      cg_playerModelForceScale, cg_playerModelForceLegsScale, cg_playerModelForceTorsoScale, cg_playerModelForceHeadScale, cg_playerModelForceHeadOffset
+
+      client override options:  "modelscale", "legsmodelscale", "torsomodelscale", "headmodelscale", "headoffset", "modelautoscale" (match this height)
+
+* cg_forcemodel has a new option 2:  ignore team skins
+* cg_forcePovModel  will use 'model' and 'headmodel' settings for 1st person pov
+
+  1:  also sets team skins and colors
+  2:  sets model and ignores team settings
+
+  If model or headmodel are set to "" it will use the original player values.
+  Setting to "" can be used with cg_forcePovModel 1 to use team settings (team colors, skins, fallback if enemy model) for demo taker's model.
+
+* cg_forcePovModelIgnoreFreecamTeamSettings  can be used to override the value of cg_freecam_useTeamSettings
+* cg_ourHeadSkin to set alternate skin with cg_forcePovModel 2
+* cg_ourTorsoSkin to set alternate skin with cg_forcePovModel 2
+* cg_ourLegsSkin to set alternate skin with cg_forcePovModel 2
+* cg_ourHeadColor set color with cg_forcePovModel 2
+* cg_ourTorsoColor set color with cg_forcePovModel 2
+* cg_ourLegsColor set color with cg_forcePovModel 2
+
+* cg_enemyModel "keel/bright"
+* cg_enemyHeadModel "keel/bright"
+
+  For both cg_enemyModel and cg_enemyHeadModel setting to "" will use original player values.  Setting to just a model without skin (ex: "doom") will pick the appropriate red or blue skin in team games.
+
+* cg_enemyHeadSkin ""  can be used to override what is set with cg_enemyHeadModel.
+    Ex:  cg_enemyHeadSkin "xaero/color" and cg_enemyHeadModel "sarge/default" to use xaero's color head skin on sarge's head model
+
 * cg_enemyTorsoSkin
 * cg_enemyLegsSkin
 
@@ -1655,17 +1720,7 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
 * cg_enemyRailItemColor  the color of the actual gun they hold, default is "" which uses whatever the player's color1 is.
 * cg_enemyRailRings
 
-* cg_teamModel ""              // disable
-* cg_teamModel "doom"          // without skin, will use the model and
-                                  // pick the right red/blue skin
-* cg_teamModel "crash/bright"
 * for cg_team* same options as cg_enemy*
-
-* cg_disallowEnemyModelForTeammates  if cg_teamModel isn't set this will prevent a teammate having an enemy model
-
-* cg_deadBodyColor "0x101010"
-
-* cg_crosshairColor "0xffffff"
 
 * cg_wh [0:  no wall hack, 1:  wall hack shader applied to all players, 2:  wall hack shader applied only to enemies, 3:  wall hack shader applied only to teammates]
 
@@ -1683,6 +1738,10 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
 * cg_itemsWh  wall hack for items
 * cg_itemSize
 * cg_itemFx same as quake live
+
+* quake3 demo playback support
+   ex:  copy map_cpm3a.pk3 into wolfcamql/wolfcam-ql/
+        wolfcamql.exe +demo ratelpajuo
 
 * cg_useOriginalInterpolation "0"  // 0: try to match demo taker's screen (including ping correction), 1: same as q3/ql
 
@@ -1737,8 +1796,6 @@ One of the side effects of using cg_useOriginalInterpolation 0, is that it will 
 -----------------------------------------------
 
 * alias, unalias, and unaliasall  same as quake live
-
-* cg_playerLeanScale  similar to quakelive's cg_playerLean and allows you to select how much leaning the player models do (can be higher than 1.0).
 
 * cg_gibColor  for the color of the gib particle emitted
 * cg_gibSparksColor  for the color of the spark trail
@@ -1931,8 +1988,6 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
    /listeventfilter
 
-* cg_useDefaultTeamSkins  If you don't have forced team models you can set to 0 and see your teammates chosen skin instead of blue or red.
-
 * cg_killBeep   same as quake live
 
 * fs_quakelivedir  Default quake live install paths are checked in order to list demos (steam and stand alone versions).  You can override with this cvar.  It should point to the directory that contains the 'baseq3' directory where demos are saved.  Ex:
@@ -1952,12 +2007,6 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * r_portalBobbing
 * cg_quadKillCounter (same as quakelive)
 * cg_battleSuitKillCounter (same as quakelive)
-* cg_forcemodel has a new option 2:  ignore team skins
-* cg_forcePovModel  will use 'model' settings for 1st person pov
-
-  1:  also sets team skins and colors
-  2:  sets model and ignores team settings
-* cg_forcePovModelIgnoreFreecamTeamSettings  can be used to override the value of cg_freecam_useTeamSettings
 
 * cg_wideScreen
 
@@ -2163,25 +2212,6 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
     ex:  'bind h /remaplasttwoshaders'  shoot surface with shader you want, shoot surface you want to change, hit 'h'  (maps 0 to 1 in console)
 
 * cg_allowServerOverride to allow custom game type messages, sounds, sprites, etc...
-* player model scaling and server set models:
-    cg_playerModelAutoScaleHeight  scale player models to match this height (default: 57, "" to disable)
-
-    these are used after auto scaling pass:
-      cg_playerModelAllowServerScale  use server info to apply additional scaling
-      cg_playerModelAllowServerScaleDefault  for older demos without server info use this as default  (default is 1.1)
-
-
-    server set player models:
-      cg_playerModelAllowServerOverride  (default 1)
-
-    options to force settings:
-      cg_playerModelForceScale, cg_playerModelForceLegsScale, cg_playerModelForceTorsoScale, cg_playerModelForceHeadScale, cg_playerModelForceHeadOffset
-
-      client override options:  "modelscale", "legsmodelscale", "torsomodelscale", "headmodelscale", "headoffset", "modelautoscale" (match this height)
-
-* quake3 demo playback support
-   ex:  copy map_cpm3a.pk3 into wolfcamql/wolfcam-ql/
-        wolfcamql.exe +demo ratelpajuo
 
 * cl_numberPadInput  to disable number pad functions and allow them as input
 

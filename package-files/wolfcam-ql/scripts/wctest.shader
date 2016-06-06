@@ -73,6 +73,16 @@ wc/self
         }
 }
 
+wc/selfDemoTaker
+{
+        nomipmaps
+        nopicmip
+        {
+                map gfx/wc/self-demo-taker.tga
+                blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        }
+}
+
 wc/tracer
 {
         nopicmip
@@ -165,4 +175,16 @@ wc/wcrocketaim
                 map gfx/wc/wcrocket.png
                 blendfunc blend
         }
+}
+
+// hack for ql icons/icon_frag not fading
+wc/worldDeath
+{
+	nomipmaps
+	nopicmip
+	{
+		map icons/icon_frag.tga
+		blendfunc blend
+		alphagen vertex
+	}
 }

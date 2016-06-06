@@ -179,6 +179,7 @@ enum {
     TOKEN_EMITTER,
     TOKEN_EMITTERF,
     TOKEN_ALPHAFADE,
+	TOKEN_CULLDISTANCEVALUE,
     TOKEN_SHADERTIME,
     TOKEN_DIRMODEL,
     TOKEN_LOOPSOUND,
@@ -423,6 +424,7 @@ static fxToken_t fxTokens[] = {
     { "emitter", TOKEN_EMITTER },
     { "emitterf", TOKEN_EMITTERF },
     { "alphafade", TOKEN_ALPHAFADE },
+	{ "culldistancevalue", TOKEN_CULLDISTANCEVALUE },
     { "shadertime", TOKEN_SHADERTIME },
     { "dirmodel", TOKEN_DIRMODEL },
     { "loopsound", TOKEN_LOOPSOUND },
@@ -1180,6 +1182,9 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
 				break;
 			case TOKEN_ALPHAFADE:
 				goto alphafadetoken;
+				break;
+			case TOKEN_CULLDISTANCEVALUE:
+				goto culldistancetokenvalue;
 				break;
 			case TOKEN_EMITTERID:
 				goto emitteridtoken;
@@ -2169,6 +2174,12 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
 		alphafadetoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.alphaFade;
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "culldistancevalue")) {
+		culldistancetokenvalue:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.cullDistanceValue;
             numOps += 2;
 			goto handledToken;
         } else if (!Q_stricmpt(token, "shadertime")) {
@@ -3813,6 +3824,7 @@ static const char *CG_ParseRenderTokens (const char *script)
     ScriptVars.shadow = qfalse;
     ScriptVars.cullNear = qfalse;  // overlapping sprites, draw the closer one
     ScriptVars.cullRadius = qfalse;
+	ScriptVars.cullDistance = qfalse;
     ScriptVars.depthHack = qfalse;
     ScriptVars.stencil = qfalse;
     newLine = qfalse;
@@ -3831,6 +3843,8 @@ static const char *CG_ParseRenderTokens (const char *script)
             ScriptVars.cullNear = qtrue;
         } else if (!Q_stricmpt(token, "cullradius")) {
             ScriptVars.cullRadius = qtrue;
+		} else if (!Q_stricmpt(token, "culldistance")) {
+			ScriptVars.cullDistance = qtrue;
         } else if (!Q_stricmpt(token, "depthhack")) {
             ScriptVars.depthHack = qtrue;
         } else if (!Q_stricmpt(token, "stencil")) {
@@ -4200,6 +4214,9 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 			break;
 		case TOKEN_ALPHAFADE:
 			goto alphafadetoken;
+			break;
+		case TOKEN_CULLDISTANCEVALUE:
+			goto culldistancevaluetoken;
 			break;
 		case TOKEN_SHADERTIME:
 			goto shadertimetoken;
@@ -5391,6 +5408,16 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
             }
             ScriptVars.alphaFade = f;
             ScriptVars.hasAlphaFade = qtrue;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "cullDistancevalue")) {
+		culldistancevaluetoken:
+            err = 0;
+            script = CG_Q3mmeMath(script, &f, &err);
+            if (err) {
+                Com_Printf("^1math error\n");
+                return qtrue;
+            }
+            ScriptVars.cullDistanceValue = f;
 			goto handledToken;
         } else if (!Q_stricmpt(token, "shaderTime")) {
 		shadertimetoken:

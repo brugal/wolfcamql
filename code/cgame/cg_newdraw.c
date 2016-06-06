@@ -9051,6 +9051,8 @@ void CG_RunMenuScript(char **args) {
 void CG_GetTeamColor(vec4_t *color) {
 	int team;
 
+	//Com_Printf("^2  :: getteamcolor\n");
+
 	if (wolfcam_following) {
 		team = cgs.clientinfo[wcg.clientNum].team;
 	} else {

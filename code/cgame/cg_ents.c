@@ -1750,9 +1750,9 @@ static void CG_Item ( centity_t *cent ) {
 
 	if (item->giType == IT_WEAPON  &&  item->giTag == WP_RAILGUN) {
 #if 0
-		ent.shaderRGBA[0] = EC_Colors[1][0];
-		ent.shaderRGBA[1] = EC_Colors[1][1];
-		ent.shaderRGBA[2] = EC_Colors[1][2];
+		ent.shaderRGBA[0] = cg.enemyColors[1][0];
+		ent.shaderRGBA[1] = cg.enemyColors[1][1];
+		ent.shaderRGBA[2] = cg.enemyColors[1][2];
 #endif
 		SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_railItemColor);
 		ent.shaderRGBA[3] = 255;
@@ -3354,7 +3354,7 @@ void CG_AddPacketEntities( void ) {
 	// generate and add the entity from the playerstate
 	ps = &cg.predictedPlayerState;
 	BG_PlayerStateToEntityState( ps, &cg.predictedPlayerEntity.currentState, qfalse );
-
+	//CG_Printf("^5copying to predicted\n");
 
 	//CG_AddCEntity( &cg.predictedPlayerEntity );
 	{  //FIXME not calling AddCEntity since spec demos will have ET_INVISIBLE and not call CG_Player()

@@ -109,6 +109,8 @@ typedef struct ScriptVars_s {
 	qboolean shadow;
 	qboolean cullNear;
 	qboolean cullRadius;
+	qboolean cullDistance;
+	float cullDistanceValue;
 	qboolean depthHack;
 	qboolean stencil;  //FIXME check
 

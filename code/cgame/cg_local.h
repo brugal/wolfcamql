@@ -90,6 +90,8 @@
 #define	DEFAULT_TEAM_HEAD		"sarge"
 #endif
 
+#define TEAM_COLOR_SKIN "-teamColor"
+
 #define MAX_EVENT_FILTER 1024
 #define ICON_SCALE_DISTANCE 200.0
 
@@ -383,19 +385,22 @@ typedef struct {
 
 	qhandle_t		legsModel;
 	qhandle_t		legsSkin;
-	qhandle_t		legsSkinAlt;
+	qhandle_t		legsTeamSkinAlt;
 	qhandle_t		legsEnemySkinAlt;
+	qhandle_t legsOurSkinAlt;
 
 	qhandle_t		torsoModel;
 	qhandle_t		torsoSkin;
-	qhandle_t		torsoSkinAlt;
+	qhandle_t		torsoTeamSkinAlt;
 	qhandle_t		torsoEnemySkinAlt;
+	qhandle_t torsoOurSkinAlt;
 
 	qhandle_t		headModel;
 	qhandle_t		headSkin;
 	qhandle_t setHeadSkin;
-	qhandle_t		headSkinAlt;
+	qhandle_t		headTeamSkinAlt;
 	qhandle_t		headEnemySkinAlt;
+	qhandle_t headOurSkinAlt;
 
 	qhandle_t headModelFallback;
 	qhandle_t headSkinFallback;
@@ -1181,18 +1186,28 @@ typedef struct {
 	qboolean		testGun;
 
 	clientInfo_t	enemyModel;
+	clientInfo_t enemyModelRed;
+	clientInfo_t enemyModelBlue;
 	clientInfo_t	teamModel;
 	clientInfo_t	teamModelRed;
 	clientInfo_t	teamModelBlue;
 	clientInfo_t	ourModel;
 	clientInfo_t	ourModelRed;
 	clientInfo_t	ourModelBlue;
+	clientInfo_t fallbackModel;
+	clientInfo_t fallbackModelRed;
+	clientInfo_t fallbackModelBlue;
 	clientInfo_t serverModel;
-	qboolean		useTeamSkins;
-	qboolean useTeamSkinsUs;
+	qboolean teamModelTeamSkinFound;
+	qboolean teamModelTeamHeadSkinFound;
+	qboolean enemyModelTeamSkinFound;
+	qboolean enemyModelTeamHeadSkinFound;
+	qboolean ourModelUsingTeamColorSkin;
+	qboolean ourModelUsingTeamColorHeadSkin;
 
-	//byte			enemyColors[4][3];
-	byte			teamColors[4][4];
+	byte			enemyColors[3][4];
+	byte			teamColors[3][4];
+	byte ourColors[3][4];
 
 	//byte			deadBodyColor[4];
 	//byte			grenadeColor[3];
@@ -1557,6 +1572,9 @@ typedef struct {
 	qhandle_t	redCubeIcon;
 	qhandle_t	blueCubeIcon;
 #endif
+
+	qhandle_t worldDeathIcon;
+
 	qhandle_t	redFlagModel;
 	qhandle_t	blueFlagModel;
 	qhandle_t	neutralFlagModel;
@@ -1677,6 +1695,7 @@ typedef struct {
 	qhandle_t	frozenShader;
 	qhandle_t foeShader;
 	qhandle_t selfShader;
+	qhandle_t selfDemoTakerShader;
 	qhandle_t infectedFoeShader;
 
 	qhandle_t	balloonShader;
@@ -2430,11 +2449,7 @@ extern	weaponInfo_t	cg_weapons[MAX_WEAPONS];
 extern	itemInfo_t		cg_items[MAX_ITEMS];
 //extern	markPoly_t		cg_markPolys[MAX_MARK_POLYS];
 
-extern clientInfo_t		EM_ModelInfo;
 extern int				EM_Loaded;
-extern byte				EC_Colors[3][4];
-extern int				EC_Loaded;
-
 
 //extern	vmCvar_t		cg_centertime;
 extern	vmCvar_t		cg_bobup;
@@ -3083,6 +3098,7 @@ extern vmCvar_t cg_hudForceRedTeamClanTag;
 extern vmCvar_t cg_hudForceBlueTeamClanTag;
 
 extern vmCvar_t cg_enemyModel;
+extern vmCvar_t cg_enemyHeadModel;
 extern vmCvar_t cg_enemyHeadSkin;
 extern vmCvar_t cg_enemyTorsoSkin;
 extern vmCvar_t cg_enemyLegsSkin;
@@ -3101,7 +3117,9 @@ extern vmCvar_t cg_enemyRailNudge;
 extern vmCvar_t cg_enemyFlagColor;
 
 extern vmCvar_t cg_useDefaultTeamSkins;
+extern vmCvar_t cg_ignoreClientHeadModel;
 extern vmCvar_t cg_teamModel;
+extern vmCvar_t cg_teamHeadModel;
 extern vmCvar_t cg_teamHeadSkin;
 extern vmCvar_t cg_teamTorsoSkin;
 extern vmCvar_t cg_teamLegsSkin;
@@ -3122,8 +3140,18 @@ extern vmCvar_t cg_teamFlagColor;
 extern vmCvar_t cg_neutralFlagColor;
 
 extern vmCvar_t cg_ourModel;
+extern vmCvar_t cg_ourHeadModel;
+extern vmCvar_t cg_ourHeadSkin;
+extern vmCvar_t cg_ourTorsoSkin;
+extern vmCvar_t cg_ourLegsSkin;
+extern vmCvar_t cg_ourHeadColor;
+extern vmCvar_t cg_ourTorsoColor;
+extern vmCvar_t cg_ourLegsColor;
+
 extern vmCvar_t cg_deadBodyColor;
 extern vmCvar_t cg_disallowEnemyModelForTeammates;
+extern vmCvar_t cg_fallbackModel;
+extern vmCvar_t cg_fallbackHeadModel;
 
 extern vmCvar_t cg_crosshairColor;
 

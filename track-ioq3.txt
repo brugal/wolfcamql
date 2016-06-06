@@ -1840,3 +1840,12 @@ Remove unnecessary localhost check from reconnect command.
 
 2016-04-05-01 skip (rend2):  OpenGL2: Render metals as nonmetal on cubemaps, and some ComputeShade...
 2016-04-05-02 skip (rend2):  OpenGL2: Some FBO cleanup, and add non-depth blur to blur shader.
+
+2016-05-08-01 skip (not implemented):  Cross-compiling using mingw should only pick one gcc executable
+
+2016-05-09-01 skip (not implemented):  Fix warnings that names passed to Name_PlayerNameCompletion is not const
+2016-05-09-02 skip (rend2):  OpenGL2: Fix specularScale override not being used in RB_IterateStage...
+
+2016-05-16-01 Explicitly set cull type for skybox
+
+2016-05-19-01 skip (rend2):  OpenGL2: Speed up surface merging.

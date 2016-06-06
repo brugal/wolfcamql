@@ -35,5 +35,6 @@ void CG_ResetTimedItemPickupTimes (void);
 void CG_CreateScoresFromClientInfo (void);
 void CG_LoadDefaultMenus (void);
 void CG_SetDuelPlayers (void);
+void CG_ForceModelChange (void);
 
 #endif  // cg_main_h_included

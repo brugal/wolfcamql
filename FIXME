@@ -196,10 +196,10 @@
 * fx treat sprites separately -- renderer
 * fx modellist and soundlist using 'loop' 0 likely called twice, and last num never called
 * fx *list loop might just mean random, so not like soundList
-* fx cullnear draw closer of overlapping sprites
+* fx cullnear draw closer of overlapping sprites  -- 2016-06-04 what?  implementation seems to just be based on radius and distance
 * impact sparks aligned to vieworg?  and also gib sparks
 * fx + localents and draw ent numbers -- maybe for models (gibs)
-* fx need culling, even with renderer max entities raised.  is cullradius default?  cvar
+* fx need culling, even with renderer max entities raised.
 * timescale and map animations -- done, check item bobbing though
 * fx is parentVelocity player or q3 gib starting velocity?
 * fx sprites overdraw
@@ -1958,20 +1958,45 @@ No locals.
 * textures/gothic_door/archpart9  226x383
   textures/gothic_trim/columnsupportbottoms.jpg 96x96  ok at 48x48
 * option to turn off buffered sound
-* fx cullNear cullRadius
 * curve:  retribution /team s far curves matched with r_subdivisions 10 and r_lodcurveerror 10000, near curves don't match though (those match with r_subdivision 4), it's like r_subdivision scales with distance
 * CG_AREA_POWERUP  'special' used for spacing
-* team info based on entity info not tinfo command in newer ql (tinfo hardly updates)
-* fov314.dm_91 still showing ca zoomed in at start  -- this is ql bug copying old player fov to new player
+* fov314.dm_91 3:27  still showing ca zoomed in at start  -- this is ql bug copying old player fov to new player  -- 2016-05-08 hack added to ca round start to reset zoom
 * check ql spec demo playing sounds not in pvs
 * names and locations? sometimes truncated too much in team overlay
-* is cg_teamModel setting sounds as well?
 * 2016-05-05  check black names:
 
  Yakumo [has Quake Live] 2 hours ago
  just /condump namelist.txt some time you see someone with black in the name, then you can open namelist.txt and see how it's done.
- ^^0 will give black, but the leading ^ will still show, I never checked into how people tricked it into working as I wasn't after the colour.
-* cg_lightningstyle like ql
+ ^^0 will give black, but the leading ^ will still show, I never checked into how people tricked it into working as I wasn't after the colour.  -- 2016-05-08 still works the same as ql
+
+* team info protocol 91 -- is command needed or just use info from entityState?
+* option to get player sounds from head instead of torso/legs model?
+* check cg_forceModel and new headmodel support
+* https://www.youtube.com/watch?v=Gk5LZQnExZo  cg_drawgun no movement and lg beam
+* move more EM_* into cg_t
+* Wolfcam_LoadEnemyModel() and Wolfcam_LoadTeamModel() should be the same
+* team skins should just be stored in clientInfo_t no need for things like cg.teamModel[Red|Blue]
+* option to load all known workshops, for testing maps
+* cg_drawSelf and health changes and hit marker, maybe different shape for demo taker icons
+* option for info screen font
+* for clan areana /follow victim|killer if it returns to teammate just return to pov as main preference or check pvs
+* cg_thirdperson and team settings doesn't work
+* /follow *  and cg_thirdPerson 1 doesn't show player
+* /freecam stops /follow * from working, goes back to demo pov but /follow still says it's following someone else
+* own-player-when-dead-appears-as-crosshair-client.dm_91  crosshair scan entity pickup up invisible specs  10:00 ?
+* team equivalent to EM_Loaded?
+* /follow and cg_disallowEnemyModelForTeammates still uses enemy model for 1st person pov?
+* big-name-big-obit-icon.dm_91  big player name results in bigger weapon icon for obituary messages
+* clean up CG_CheckForModelChange()
+* ql world death shader icons/icon_frag no alpha blend ? -- 2016-05-28 apparently not
+* /model "doom/-headcolor"
+
+  Com_sprintf: output length 64 too short, require 65 bytes.
+
+  --  2016-05-30 ok 'models/players/characters/xaero/redlower_-headcolor_default.ski'  63 characters
+* check alt skins with clientoverride
+* demo smoothing /follow
+* name-overlay.dm_91 6:27 small name truncated in overlay
 
 
 ---------

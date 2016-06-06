@@ -4460,15 +4460,27 @@ void CL_InitRef ( void ) {
 
 void CL_SetModel_f( void ) {
 	char	*arg;
-	char	name[256];
+	char	name[256];  //FIXME why 256?
 
 	arg = Cmd_Argv( 1 );
 	if (arg[0]) {
 		Cvar_Set( "model", arg );
-		Cvar_Set( "headmodel", arg );
 	} else {
 		Cvar_VariableStringBuffer( "model", name, sizeof(name) );
 		Com_Printf("model is set to %s\n", name);
+	}
+}
+
+void CL_SetHeadModel_f( void ) {
+	char	*arg;
+	char	name[256];  //FIXME why 256?
+
+	arg = Cmd_Argv( 1 );
+	if (arg[0]) {
+		Cvar_Set( "headmodel", arg );
+	} else {
+		Cvar_VariableStringBuffer( "headmodel", name, sizeof(name) );
+		Com_Printf("headmodel is set to %s\n", name);
 	}
 }
 
@@ -5386,7 +5398,8 @@ void CL_Init ( void ) {
 	Cmd_AddCommand ("showip", CL_ShowIP_f );
 	Cmd_AddCommand ("fs_openedList", CL_OpenedPK3List_f );
 	Cmd_AddCommand ("fs_referencedList", CL_ReferencedPK3List_f );
-	Cmd_AddCommand ("model", CL_SetModel_f );
+	//Cmd_AddCommand ("model", CL_SetModel_f );
+	//Cmd_AddCommand ("headmodel", CL_SetHeadModel_f );
 	Cmd_AddCommand ("video", CL_Video_f );
 	Cmd_AddCommand ("stopvideo", CL_StopVideo_f );
 	Cmd_AddCommand("minimize", GLimp_Minimize);
@@ -5465,7 +5478,8 @@ void CL_Shutdown( void ) {
 	Cmd_RemoveCommand ("ping");
 	Cmd_RemoveCommand ("serverstatus");
 	Cmd_RemoveCommand ("showip");
-	Cmd_RemoveCommand ("model");
+	//Cmd_RemoveCommand ("model");
+	//Cmd_RemoveCommand ("headmodel");
 	Cmd_RemoveCommand ("video");
 	Cmd_RemoveCommand ("stopvideo");
 	Cmd_RemoveCommand("stall");

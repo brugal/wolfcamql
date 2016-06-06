@@ -5522,6 +5522,11 @@ void BG_PlayerStateToEntityState( playerState_t *ps, entityState_t *s, qboolean 
 
 	s->loopSound = ps->loopSound;
 	s->generic1 = ps->generic1;
+
+	// protocol 91
+	s->location = ps->location;
+	s->health = ps->stats[STAT_HEALTH];
+	s->armor = ps->stats[STAT_ARMOR];
 }
 
 /*

@@ -4610,6 +4610,8 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 }
 #endif
 
+#define SIGNED_16_BIT(x) (((x > 32767) ? -(65536 - x) : x))
+
 static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 {
 	float x, w, h, xx;
@@ -4809,7 +4811,36 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	}
 
 	for (i = 0; i < count; i++) {
+		const entityState_t *es;
+		int powerups;
+		//FIXME what if it is negative?
+		int location;
+		int health;
+		int armor;
+		int curWeapon;
+
+		es = &cg_entities[sortedTeamPlayers[i]].currentState;
 		ci = cgs.clientinfo + sortedTeamPlayers[i];
+
+		powerups = ci->powerups;
+		location = ci->location;
+		health = ci->health;
+		armor = ci->armor;
+		curWeapon = ci->curWeapon;
+
+		if (cgs.realProtocol >= 91) {
+			powerups = es->powerups;
+			location = es->location;
+
+			// these are 16 bit signed values
+
+			health = SIGNED_16_BIT(es->health);
+			//FIXME armor not showing correctly when dead specing ca
+			armor = SIGNED_16_BIT(es->armor);
+
+			curWeapon = es->weapon;
+		}
+
 		if ( ci->infoValid && ci->team == cg.snap->ps.persistant[PERS_TEAM]) {
 			//Com_Printf("%d %s\n", i, ci->name);
 			if (get_player_ping(sortedTeamPlayers[i]) < 0) {
@@ -4838,7 +4869,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 			//CG_Text_Paint_Bottom(wlimit, y, scale, hcolor, "test", 0, 0, 0, font);
 
 			if (lwidth) {
-				p = CG_ConfigString(CS_LOCATIONS + ci->location);
+				p = CG_ConfigString(CS_LOCATIONS + location);
 				if (!p || !*p)
 					p = "unknown";
 				//FIXME width
@@ -4873,46 +4904,48 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 				//CG_Text_Paint_Bottom(xx, y, scale, hcolor, p, 0, 0, style, font);
 				CG_Text_Paint_Limit_Bottom(&wlimit, xx, y, scale, hcolor, p, 0, 0, font);
 			} else {
-			CG_GetColorForHealth( ci->health, ci->armor, hcolor );
-			hcolor[3] = alpha;
+				CG_GetColorForHealth(health, armor, hcolor);
+				hcolor[3] = alpha;
 
-			//Com_sprintf (st, sizeof(st), "%3i %3i", ci->health,	ci->armor);
-			Com_sprintf(st, sizeof(st), "%3i", ci->health);
+				//FIXME ql shows 'DEAD' for <= 0 health
+				//Com_sprintf (st, sizeof(st), "%3i %3i", health, armor);
+				Com_sprintf(st, sizeof(st), "%3i", health);
 
-			//xx = x + TINYCHAR_WIDTH * 3 + TINYCHAR_WIDTH * pwidth + TINYCHAR_WIDTH * lwidth;
-			//xx = x + cwidth * 3 + cwidth * pwidth + cwidth * lwidth;
-			xx = x + cwidth * 3 + pwidth + lwidth;
-			wlimit = xx + cwidth * 3;
-			//CG_DrawStringExt( xx, y, st, hcolor, qfalse, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0, &cgs.media.tinychar );
-			//CG_DrawStringExt( xx, y, st, hcolor, qfalse, qfalse, cwidth, cheight, 0, font );
-			CG_Text_Paint_Limit_Bottom(&wlimit, xx, y, scale, hcolor, st, 0, 0, font);
+				//xx = x + TINYCHAR_WIDTH * 3 + TINYCHAR_WIDTH * pwidth + TINYCHAR_WIDTH * lwidth;
+				//xx = x + cwidth * 3 + cwidth * pwidth + cwidth * lwidth;
+				xx = x + cwidth * 3 + pwidth + lwidth;
+				wlimit = xx + cwidth * 3;
+				//CG_DrawStringExt( xx, y, st, hcolor, qfalse, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, 0, &cgs.media.tinychar );
+				//CG_DrawStringExt( xx, y, st, hcolor, qfalse, qfalse, cwidth, cheight, 0, font );
+				CG_Text_Paint_Limit_Bottom(&wlimit, xx, y, scale, hcolor, st, 0, 0, font);
 
-			// draw weapon icon
-			//xx += TINYCHAR_WIDTH * 3;
-			if (q3font) {
-				xx += cwidth * 3;
-			} else {
-				xx += cwidth * 2.5;  // xskip hack
-			}
+				// draw weapon icon
+				//xx += TINYCHAR_WIDTH * 3;
+				if (q3font) {
+					xx += cwidth * 3;
+				} else {
+					xx += cwidth * 2.5;  // xskip hack
+				}
 
-			if (ci->curWeapon == WP_NONE) {
-				CG_DrawPic(xx, y + picy, cwidth, cheight, cgs.media.deferShader);
-			} else if ( cg_weapons[ci->curWeapon].weaponIcon ) {
-				CG_DrawPic( xx, y + picy, cwidth, cheight, cg_weapons[ci->curWeapon].weaponIcon );
-			} else {
-				// no y adjust, looks fine :sdf
-				CG_DrawPic( xx, y + picy, cwidth, cheight, cgs.media.deferShader );
-			}
-			if (q3font) {
-				xx += cwidth * 1;
-			} else {
-				xx += cwidth * 1.5;  // xskip hack
-			}
-			wlimit = xx + cwidth * 3;
-			Com_sprintf (st, sizeof(st), "%3i", ci->armor);
-			//trap_R_SetColor(hcolor);
-			//CG_DrawStringExt( xx, y, st, hcolor, qfalse, qfalse, cwidth, cheight, 0, font );
-			CG_Text_Paint_Limit_Bottom(&wlimit, xx, y, scale, hcolor, st, 0, 0, font);
+				//FIXME check curWeapon range
+				if (curWeapon == WP_NONE) {
+					CG_DrawPic(xx, y + picy, cwidth, cheight, cgs.media.deferShader);
+				} else if ( cg_weapons[curWeapon].weaponIcon ) {
+					CG_DrawPic( xx, y + picy, cwidth, cheight, cg_weapons[curWeapon].weaponIcon );
+				} else {
+					// no y adjust, looks fine :sdf
+					CG_DrawPic( xx, y + picy, cwidth, cheight, cgs.media.deferShader );
+				}
+				if (q3font) {
+					xx += cwidth * 1;
+				} else {
+					xx += cwidth * 1.5;  // xskip hack
+				}
+				wlimit = xx + cwidth * 3;
+				Com_sprintf (st, sizeof(st), "%3i", armor);
+				//trap_R_SetColor(hcolor);
+				//CG_DrawStringExt( xx, y, st, hcolor, qfalse, qfalse, cwidth, cheight, 0, font );
+				CG_Text_Paint_Limit_Bottom(&wlimit, xx, y, scale, hcolor, st, 0, 0, font);
 			}
 			// powerups
 
@@ -4925,12 +4958,12 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 			}
 
 			for (j = 0; j <= PW_NUM_POWERUPS; j++) {
-				if (ci->powerups & (1 << j)) {
+				if (powerups & (1 << j)) {
 
 					item = BG_FindItemForPowerup( j );
 
 					// 2010-08-08 new ql, spawn protection powerup
-					if (item &&  !(ci->powerups & PWEX_SPAWNPROTECTION)) {
+					if (item &&  !(powerups & PWEX_SPAWNPROTECTION)) {
 						//CG_DrawPic( xx, y, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, trap_R_RegisterShader( item->icon ) );
 						if (q3font) {
 							CG_DrawPic( xx, y - cwidth / 1, cwidth, cheight, trap_R_RegisterShader( item->icon ) );
@@ -4962,6 +4995,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 //#endif
 }
 
+#undef SIGNED_16_BIT
 
 /*
 =====================

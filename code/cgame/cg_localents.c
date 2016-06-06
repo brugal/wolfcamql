@@ -2060,6 +2060,7 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 	float ratio;
 
 
+	//Com_Printf("add fx emitted\n");
 	CG_GetStoredScriptVarsFromLE(le);
 
 	// testing
@@ -2434,6 +2435,8 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		}
 	}
 
+	//Com_Printf("lsssssssssss\n");
+	
 	if (cg.ftime - le->lastRunTime > cg_fxinterval.value) {  //  &&  cg.frametime < 9) {  //25) {  //(cg.time != le->lastRunTime) {  //(cg.time - le->lastRunTime > 100) {
 	//if (rand() % 100 == 0) {
 		DistanceScript = qfalse;  //qtrue;  //FIXME hack
@@ -2470,13 +2473,41 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 		}
 		//FIXME size?
 		//VectorCopy(ScriptVars.origin, le->pos.trBase);
-	} else {
+	} else {  // scripting already run:  paused demo, etc..
 		if (ScriptVars.hasMoveBounce  ||  ScriptVars.hasMoveGravity) {
 			//VectorCopy(ScriptVars.origin, re->origin);
 			VectorCopy(newOrigin, re->origin);
 		} else {
 			// use re->origin
 		}
+
+		// kill sprite if view inside
+		if (ScriptVars.cullNear  ||  ScriptVars.cullRadius) {
+			if (re->reType == RT_SPRITE  ||  re->reType == RT_SPRITE_FIXED  ||  re->reType == RT_SPARK) {
+				VectorSubtract(re->origin, cg.refdef.vieworg, delta);
+				len = VectorLength(delta);
+				if (len < ScriptVars.size) {
+					//Com_Printf("^3culling... %f\n", len);
+					return;
+				} else {
+					//Com_Printf("^6not culling... %f  (%f, %f, %f)\n", len, cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);
+				}
+			}
+		}
+
+		if (ScriptVars.cullDistance) {
+			if (re->reType == RT_SPRITE  ||  re->reType == RT_SPRITE_FIXED  ||  re->reType == RT_SPARK) {
+				VectorSubtract(re->origin, cg.refdef.vieworg, delta);
+				len = VectorLength(delta);
+				if (len >= ScriptVars.cullDistanceValue) {
+					//Com_Printf("^3culling... %f\n", len);
+					return;
+				} else {
+					//Com_Printf("^6not culling... %f  (%f, %f, %f)\n", len, cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);
+				}
+			}
+		}
+
 		//Com_Printf("width %f\n", re->width);
 		R_AddRefEntityPtrToScene(re);
 		return;
@@ -2499,7 +2530,21 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 			//Lock_EntList();
 			//CG_FreeLocalEntity(le);
 			//Unlock_EntList();
-			//return;
+
+			//FIXME this doesn't work when paused
+			if (ScriptVars.cullNear  ||  ScriptVars.cullRadius) {
+				//Com_Printf("^5culling... %f\n", len);
+				return;
+			}
+		} else {
+			//Com_Printf("^6not culling... %f  (%f, %f, %f)\n", len, cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);
+		}
+
+		if (ScriptVars.cullDistance) {
+			if (len >= ScriptVars.cullDistanceValue) {
+				//Com_Printf("^1culling %f\n", len);
+				return;
+			}
 		}
 	}
 
@@ -2633,7 +2678,6 @@ static void CG_Add_FX_Emitted (localEntity_t *le)
 	le->sv.lastIntervalTime = ScriptVars.lastIntervalTime;
 	VectorCopy(ScriptVars.lastDistancePosition, le->sv.lastDistancePosition);
 	le->sv.lastDistanceTime = ScriptVars.lastDistanceTime;
-	//FIXME distance and radius culling
 
 	//Com_Printf("origin: %f %f %f\n", re->origin[0], re->origin[1], re->origin[2]);
     //Com_Printf("adding sprite SV %f  radius %f\n", ScriptVars.size, re->radius);

@@ -248,6 +248,7 @@ static void CG_TransitionSnapshot( void ) {
 	}
 
 	BG_PlayerStateToEntityState( &cg.snap->ps, &cg_entities[ cg.snap->ps.clientNum ].currentState, qfalse );
+	//Com_Printf("^6armor:  %d\n", cg_entities[cg.snap->ps.clientNum].currentState.armor);
 	cg_entities[ cg.snap->ps.clientNum ].interpolate = qfalse;
 
 	if (cg_drawJumpSpeeds.integer == 1  &&  sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]) < 1.0) {
