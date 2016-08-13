@@ -921,6 +921,8 @@ void CL_ParseGamestate( msg_t *msg ) {
 				if (di.testParse) {
 					di.protocol = atoi(com_protocol->string);
 					Com_Printf("^5demo parse protocol %d\n", di.protocol);
+					value = Info_ValueForKey(s, "g_gametype");
+					di.gametype = atoi(value);
 				}
 
 			} else if (i == CS91_STEAM_WORKSHOP_IDS) {  //  &&  !di.testParse) {
@@ -1385,15 +1387,59 @@ void CL_ParseCommandString( msg_t *msg ) {
 		csnum = atoi(txtNum);
 #undef BUFFER_SIZE
 
-		// models used in demos
+		// models used in demos also team switches
 		if (  ((di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90)  &&  (csnum >= CS_PLAYERS  &&  csnum < (CS_PLAYERS + MAX_CLIENTS)))  ||
 			  (di.protocol == PROTOCOL_Q3  &&  (csnum >= CSQ3_PLAYERS  &&  csnum < (CSQ3_PLAYERS + MAX_CLIENTS)))
 			) {
 			char *model;
 			//char *skin;
 			int i;
+			int clientNum = -1;
+			int team;
+
+			//Com_Printf("^3cs: '%s'\n", s);
+			if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
+				clientNum = csnum - CS_PLAYERS;
+			} else if (di.protocol == PROTOCOL_Q3) {
+				clientNum= csnum - CSQ3_PLAYERS;
+			}
 
 			p = s + strlen("cs XXX ");
+			// strings have quotes around then and Info_ValueForKey() will fail with "\...
+			p++;
+
+			if (*p == '"') {
+				//Com_Printf("^2disconnected: %d\n", clientNum);
+				team = TEAM_NUM_TEAMS;
+			} else {
+				team = atoi(Info_ValueForKey(p, "t"));
+			}
+
+			if (clientNum >= 0  &&  clientNum < MAX_CLIENTS) {
+				if (team != di.clientTeam[clientNum]) {
+					//char *k;
+					//qboolean has = qfalse;
+					//Com_Printf("^3: '%s'\n", p);
+					//Com_Printf("     '%s'\n", Info_ValueForKey(p, "t"));
+					//k = Info_ValueForKeyExt(p, "t", &has);
+					//Com_Printf("      '%s' : %d\n", k, has);
+					//Com_Printf("^5team switch %d:  %d -> %d\n", clientNum, di.clientTeam[clientNum], team);
+					if (di.numTeamSwitches < MAX_TEAM_SWITCHES) {
+						teamSwitch_t *ts = &di.teamSwitches[di.numTeamSwitches];
+						ts->clientNum = clientNum;
+						ts->oldTeam = di.clientTeam[clientNum];
+						ts->newTeam = team;
+						ts->serverTime = cl.snap.serverTime;
+
+						di.numTeamSwitches++;
+					}
+
+					di.clientTeam[clientNum] = team;
+				}
+			} else {
+				Com_Printf("^3test parse invalid client number: %d\n", clientNum);
+			}
+
 			model = Info_ValueForKey(p, "model");
 #if 0
 			skin = strrchr(model, '/');
@@ -1508,6 +1554,67 @@ void CL_ParseCommandString( msg_t *msg ) {
 #undef DEFAULT_TIMEOUT_AMOUNT
 
 		}  // done with timeout check
+
+		// round starts
+
+		if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
+			if (!Q_stricmpn(s, "cs 662 ", strlen("cs 662 "))) {
+				//Com_Printf("^2%d  timeout start %s\n", cl.snap.serverTime, s);
+				s2 = s + strlen("cs 662 ") + 1;
+				if (Q_isdigit(s2[0])) {
+					n = atoi(s2);
+					//Com_Printf("^6round start: %d\n", n);
+					if (di.numRoundStarts < MAX_DEMO_ROUND_STARTS) {
+						di.roundStarts[di.numRoundStarts] = n;
+						di.numRoundStarts++;
+					}
+				}
+			}
+		} else if (di.cpma) {
+			if (!Q_stricmpn(s, "cs 710 ", strlen("cs 710 "))  &&  di.gametype == 5 /* clan arena */) {  //FIXME check other game types
+				int roundTime;
+
+				s2 = s + strlen("cs 710 ") + 1;
+				roundTime = atoi(Info_ValueForKey(s2, "tw"));
+				if (roundTime > 0) {
+					if (di.numRoundStarts < MAX_DEMO_ROUND_STARTS) {
+						if (di.numRoundStarts > 0) {
+							// check if it was already added
+							if (di.roundStarts[di.numRoundStarts - 1] != roundTime) {
+								di.roundStarts[di.numRoundStarts] = roundTime;
+								di.numRoundStarts++;
+								//Com_Printf("^3round start: %d\n", roundTime);
+							}
+						} else {
+							di.roundStarts[0] = roundTime;
+							di.numRoundStarts++;
+							//Com_Printf("^3 xxx round start: %d\n", roundTime);
+						}
+					}
+				}
+			} else if (!Q_stricmpn(s, "cs 672 ", strlen("cs 672 "))  &&  di.gametype == 7 /* ctfs */) {  //FIXME check other gametypes
+				int roundTime;
+
+				s2 = s + strlen("cs 672 ") + 1;
+				roundTime = atoi(Info_ValueForKey(s2, "tw"));
+				if (roundTime > 0) {
+					if (di.numRoundStarts < MAX_DEMO_ROUND_STARTS) {
+						if (di.numRoundStarts > 0) {
+							// check if it was already added
+							if (di.roundStarts[di.numRoundStarts - 1] != roundTime) {
+								di.roundStarts[di.numRoundStarts] = roundTime;
+								di.numRoundStarts++;
+								//Com_Printf("^3round start: %d\n", roundTime);
+							}
+						} else {
+							di.roundStarts[0] = roundTime;
+							di.numRoundStarts++;
+							//Com_Printf("^3 xxx round start: %d\n", roundTime);
+						}
+					}
+				}
+			}
+		}
 
 		// game start and end times
 		//Com_Printf("xx %s\n", s);
@@ -1672,6 +1779,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 #ifdef USE_VOIP
 			CL_ParseVoip( msg );
 #endif
+			//Com_Printf("net:  voip\n");
 			break;
 		}
 	}

@@ -2565,16 +2565,24 @@ static qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, 
 }
 
 static qboolean Item_YesNo_HandleKey(itemDef_t *item, int key) {
+	if (item->cvar) {
+		qboolean action = qfalse;
 
-	if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
-		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
-	    DC->setCVar(item->cvar, va("%i", !DC->getCVarValue(item->cvar)));
-		  return qtrue;
+		if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3) {
+			if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && item->window.flags & WINDOW_HASFOCUS) {
+				action = qtrue;
+			}
+		} else if (UI_SelectForKey(key) != 0) {
+			action = qtrue;
 		}
-  }
 
-  return qfalse;
+		if (action) {
+			DC->setCVar(item->cvar, va("%i", !DC->getCVarValue(item->cvar)));
+			return qtrue;
+		}
+	}
 
+	return qfalse;
 }
 
 static int Item_Multi_CountSettings(itemDef_t *item) {
@@ -2640,11 +2648,23 @@ static const char *Item_Multi_Setting(itemDef_t *item) {
 static qboolean Item_Multi_HandleKey(itemDef_t *item, int key) {
 	multiDef_t *multiPtr = (multiDef_t*)item->typeData;
 	if (multiPtr) {
-		if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && item->window.flags & WINDOW_HASFOCUS && item->cvar) {
-			if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+		if (item->cvar) {
+			int select = 0;
+
+			if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3) {
+				if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && item->window.flags & WINDOW_HASFOCUS) {
+					select = (key == K_MOUSE2) ? -1 : 1;
+				}
+			} else {
+				select = UI_SelectForKey(key);
+			}
+
+			if (select != 0) {
 				int current = Item_Multi_FindCvarByValue(item) + 1;
 				int max = Item_Multi_CountSettings(item);
-				if ( current < 0 || current >= max ) {
+				if ( current < 0 ) {
+					current = max-1;
+				} else if ( current >= max ) {
 					current = 0;
 				}
 				if (multiPtr->strDef) {
@@ -2662,7 +2682,7 @@ static qboolean Item_Multi_HandleKey(itemDef_t *item, int key) {
 			}
 		}
 	}
-  return qfalse;
+	return qfalse;
 }
 
 //FIXME utf8
@@ -2985,10 +3005,10 @@ static qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down) {
 	float x, value, width, work;
 
 	//DC->Print("slider handle key\n");
-	if (item->window.flags & WINDOW_HASFOCUS && item->cvar && Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen)) {
-		if (key == K_MOUSE1 || key == K_ENTER || key == K_MOUSE2 || key == K_MOUSE3) {
+	if (item->cvar) {
+		if (key == K_MOUSE1 || key == K_MOUSE2 || key == K_MOUSE3) {
 			editFieldDef_t *editDef = item->typeData;
-			if (editDef) {
+			if (editDef  &&  Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen)  &&  item->window.flags & WINDOW_HASFOCUS) {
 				rectDef_t testRect;
 				width = SLIDER_WIDTH;
 				if (item->text) {
@@ -3018,8 +3038,25 @@ static qboolean Item_Slider_HandleKey(itemDef_t *item, int key, qboolean down) {
 					return qtrue;
 				}
 			}
+		} else {
+			int select = UI_SelectForKey(key);
+			if (select != 0) {
+				editFieldDef_t *editDef = item->typeData;
+				if (editDef) {
+					// 20 is number of steps
+					value = DC->getCVarValue(item->cvar) + (((editDef->maxVal - editDef->minVal)/20) * select);
+					if (value < editDef->minVal)
+						value = editDef->minVal;
+					else if (value > editDef->maxVal)
+						value = editDef->maxVal;
+
+					DC->setCVar(item->cvar, va("%f", value));
+					return qtrue;
+				}
+			}
 		}
 	}
+
 	//DC->Print("slider handle key exit\n");
 	return qfalse;
 }
@@ -3252,6 +3289,32 @@ static rectDef_t *Item_CorrectedTextRect(itemDef_t *item) {
 	return &rect;
 }
 
+// menu item key horizontal action: -1 = previous value, 1 = next value, 0 = no change
+int UI_SelectForKey(int key)
+{
+	switch (key) {
+	case K_MOUSE1:
+	case K_MOUSE3:
+	case K_ENTER:
+	case K_KP_ENTER:
+	case K_RIGHTARROW:
+	case K_KP_RIGHTARROW:
+	case K_JOY1:
+	case K_JOY2:
+	case K_JOY3:
+	case K_JOY4:
+		return 1; // next
+	case K_MOUSE2:
+	case K_LEFTARROW:
+	case K_KP_LEFTARROW:
+		return -1; // previous
+	}
+
+	// no change
+	return 0;
+}
+
+
 //FIXME utf8
 void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 	//int i;
@@ -3417,7 +3480,6 @@ void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 		case K_AUX14:
 		case K_AUX15:
 		case K_AUX16:
-			break;
 		case K_KP_ENTER:
 		case K_ENTER:
 			if (item) {
@@ -4204,9 +4266,10 @@ static qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down) {
 	int			id;
 	int			i;
 
-	if (Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen) && !g_waitingForKey)
+	if (!g_waitingForKey)
 	{
-		if (down && (key == K_MOUSE1 || key == K_ENTER)) {
+		if (down &&  ((key == K_MOUSE1 &&  Rect_ContainsWidescreenPoint(&item->window.rect, DC->cursorx, DC->cursory, item->widescreen))
+					  || key == K_ENTER || key == K_KP_ENTER || key == K_JOY1 || key == K_JOY2 || key == K_JOY3 || key == K_JOY4)) {
 			g_waitingForKey = qtrue;
 			g_bindItem = item;
 		}
@@ -4214,7 +4277,7 @@ static qboolean Item_Bind_HandleKey(itemDef_t *item, int key, qboolean down) {
 	}
 	else
 	{
-		if (!g_waitingForKey || g_bindItem == NULL) {
+		if (g_bindItem == NULL) {
 			return qtrue;
 		}
 
@@ -4414,15 +4477,63 @@ void Item_ListBox_Paint(itemDef_t *item) {
 	qhandle_t optionalImage;
 	listBoxDef_t *listPtr = (listBoxDef_t*)item->typeData;
 	rectDef_t menuRect;
+	float elementHeight;
 
 	if (item->parent) {
 		menuRect = ((menuDef_t *)item->parent)->window.rect;
 	}
+
 	// the listbox is horizontal or vertical and has a fixed size scroll bar going either direction
 	// elements are enumerated from the DC and either text or image handles are acquired from the DC as well
 	// textscale is used to size the text, textalignx and textaligny are used to size image elements
 	// there is no clipping available so only the last completely visible item is painted
 	count = DC->feederCount(item->special);
+
+	// hack to dynamically change scoreboard line height
+	elementHeight = listPtr->elementHeight;
+
+	if (item->special == FEEDER_REDTEAM_LIST  ||  item->special == FEEDER_BLUETEAM_LIST) {
+		float forceLineHeight;
+		int defaultCount;
+
+		forceLineHeight = DC->getCVarValue("cg_scoreBoardForceLineHeightTeam");
+		defaultCount = DC->getCVarValue("cg_scoreBoardForceLineHeightTeamDefault");
+		if (defaultCount < 1) {
+			defaultCount = 1;
+		}
+
+		// default height of 16 fits 8 players
+		if (forceLineHeight > 0.001f) {
+			elementHeight = forceLineHeight;
+		} else if (forceLineHeight < 0.0f) {
+			if (count > defaultCount) {
+				elementHeight *= (float)defaultCount / (count + 1);  // +1 since the last one can be cut off
+			}
+		} else {  // 0 disables and uses height set in menu
+			// pass
+		}
+	} else if (item->special == FEEDER_SCOREBOARD) {
+		float forceLineHeight;
+		int defaultCount;
+
+		forceLineHeight = DC->getCVarValue("cg_scoreBoardForceLineHeight");
+		defaultCount = DC->getCVarValue("cg_scoreBoardForceLineHeightDefault");
+		if (defaultCount < 1) {
+			defaultCount = 1;
+		}
+
+		// default height of 18 fits 9 players
+		if (forceLineHeight > 0.001f) {
+			elementHeight = forceLineHeight;
+		} else if (forceLineHeight < 0.0f) {
+			if (count > defaultCount) {
+				elementHeight *= (float)defaultCount / (count + 1);
+			}
+		} else {  // 0 disables and uses height set in menu
+			// pass
+		}
+	}
+
 	// default is vertical if horizontal flag is not here
 	if (item->window.flags & WINDOW_HORIZONTAL) {
 		// draw scrollbar in bottom of the window
@@ -4455,11 +4566,11 @@ void Item_ListBox_Paint(itemDef_t *item) {
 				// which may overdraw the box if it is too small for the element
 				image = DC->feederItemImage(item->special, i);
 				if (image) {
-					DC->drawHandlePic(x+1, y+1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, image, item->widescreen, menuRect);
+					DC->drawHandlePic(x+1, y+1, listPtr->elementWidth - 2, elementHeight - 2, image, item->widescreen, menuRect);
 				}
 
 				if (i == item->cursorPos) {
-					DC->drawRect(x, y, listPtr->elementWidth-1, listPtr->elementHeight-1, item->window.borderSize, item->window.borderColor, item->widescreen, menuRect);
+					DC->drawRect(x, y, listPtr->elementWidth-1, elementHeight-1, item->window.borderSize, item->window.borderColor, item->widescreen, menuRect);
 				}
 
 				size -= listPtr->elementWidth;
@@ -4504,20 +4615,20 @@ void Item_ListBox_Paint(itemDef_t *item) {
 				// which may overdraw the box if it is too small for the element
 				image = DC->feederItemImage(item->special, i);
 				if (image) {
-					DC->drawHandlePic(x+1, y+1, listPtr->elementWidth - 2, listPtr->elementHeight - 2, image, item->widescreen, menuRect);
+					DC->drawHandlePic(x+1, y+1, listPtr->elementWidth - 2, elementHeight - 2, image, item->widescreen, menuRect);
 				}
 
 				if (i == item->cursorPos) {
-					DC->drawRect(x, y, listPtr->elementWidth - 1, listPtr->elementHeight - 1, item->window.borderSize, item->window.borderColor, item->widescreen, menuRect);
+					DC->drawRect(x, y, listPtr->elementWidth - 1, elementHeight - 1, item->window.borderSize, item->window.borderColor, item->widescreen, menuRect);
 				}
 
 				listPtr->endPos++;
 				size -= listPtr->elementWidth;
-				if (size < listPtr->elementHeight) {
-					listPtr->drawPadding = listPtr->elementHeight - size;
+				if (size < elementHeight) {
+					listPtr->drawPadding = elementHeight - size;
 					break;
 				}
-				y += listPtr->elementHeight;
+				y += elementHeight;
 				// fit++;
 			}
 		} else {
@@ -4536,10 +4647,10 @@ void Item_ListBox_Paint(itemDef_t *item) {
 					color[3] = 0.5;
 #endif
 
-				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, item->window.outlineColor, item->widescreen, menuRect);
+				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, elementHeight, item->window.outlineColor, item->widescreen, menuRect);
 				} else if ((int)i % 2 == 1) {
-				    //DC->fillRect(x + 2, y + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, item->window.outlineColor, item->widescreen, menuRect);
-				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, listPtr->altRowColor, item->widescreen, menuRect);
+				    //DC->fillRect(x + 2, y + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, elementHeight, item->window.outlineColor, item->widescreen, menuRect);
+				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, elementHeight, listPtr->altRowColor, item->widescreen, menuRect);
 				}
 
 				if (listPtr->numColumns > 0) {
@@ -4547,11 +4658,11 @@ void Item_ListBox_Paint(itemDef_t *item) {
 					for (j = 0; j < listPtr->numColumns; j++) {
 						text = DC->feederItemText(item->special, i, j, &optionalImage);
 						if (optionalImage >= 0) {
-							DC->drawHandlePic(x + 4 + listPtr->columnInfo[j].pos, y - 1 + listPtr->elementHeight / 2, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage, item->widescreen, menuRect);
+							DC->drawHandlePic(x + 4 + listPtr->columnInfo[j].pos, y - 1 + elementHeight / 2, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage, item->widescreen, menuRect);
 						} else if (text) {
-							//DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
+							//DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + elementHeight, item->textscale, item->window.foreColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
 							// scoreboard text
-							DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + listPtr->elementHeight, item->textscale, listPtr->elementColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
+							DC->drawText(x + 4 + listPtr->columnInfo[j].pos, y + elementHeight, item->textscale, listPtr->elementColor, text, 0, listPtr->columnInfo[j].maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
 							//Com_Printf("feeder: text scale %f\n", item->textscale);
 							// 0.16
 							//Com_Printf("max: %d\n", listPtr->columnInfo[j].maxChars);
@@ -4560,32 +4671,32 @@ void Item_ListBox_Paint(itemDef_t *item) {
 				} else {
 					text = DC->feederItemText(item->special, i, 0, &optionalImage);
 					if (optionalImage >= 0) {
-						//DC->drawHandlePic(x + 4 + listPtr->elementHeight, y, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage);
+						//DC->drawHandlePic(x + 4 + elementHeight, y, listPtr->columnInfo[j].width, listPtr->columnInfo[j].width, optionalImage);
 					} else if (text) {
-						//DC->drawText(x + 4, y + listPtr->elementHeight, item->textscale, item->window.foreColor, text, 0, 0, item->textStyle, item->fontIndex);
-						DC->drawText(x + 4, y + listPtr->elementHeight, item->textscale, listPtr->elementColor, text, 0, 0, item->textStyle, item->fontIndex, item->widescreen, menuRect);
+						//DC->drawText(x + 4, y + elementHeight, item->textscale, item->window.foreColor, text, 0, 0, item->textStyle, item->fontIndex);
+						DC->drawText(x + 4, y + elementHeight, item->textscale, listPtr->elementColor, text, 0, 0, item->textStyle, item->fontIndex, item->widescreen, menuRect);
 					}
 				}
 
 				//FIXME covers names in scoreboard
 #if 0
 				if (i == item->cursorPos) {
-					DC->fillRect(x + 2, y + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, item->window.outlineColor, item->widescreen, menuRect);
+					DC->fillRect(x + 2, y + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, elementHeight, item->window.outlineColor, item->widescreen, menuRect);
 				}
 #endif
 #if 0
 				if ((int)i % 2 == 1) {
-				    //DC->fillRect(x + 2, y + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, item->window.outlineColor, item->widescreen, menuRect);
-				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, listPtr->elementHeight, listPtr->altRowColor, item->widescreen, menuRect);
+				    //DC->fillRect(x + 2, y + 2, item->window.rect.w - SCROLLBAR_SIZE - 4, elementHeight, item->window.outlineColor, item->widescreen, menuRect);
+				    DC->fillRect(x + 2, y + 2 + 4, item->window.rect.w - SCROLLBAR_SIZE - 4, elementHeight, listPtr->altRowColor, item->widescreen, menuRect);
 				}
 #endif
-				size -= listPtr->elementHeight;
-				if (size < listPtr->elementHeight) {
-					listPtr->drawPadding = listPtr->elementHeight - size;
+				size -= elementHeight;
+				if (size < elementHeight) {
+					listPtr->drawPadding = elementHeight - size;
 					break;
 				}
 				listPtr->endPos++;
-				y += listPtr->elementHeight;
+				y += elementHeight;
 				// fit++;
 			}
 		}
@@ -5595,6 +5706,7 @@ static qboolean ItemParse_elementheight( itemDef_t *item, int handle ) {
 	if (!PC_Float_Parse(handle, &listPtr->elementHeight)) {
 		return qfalse;
 	}
+
 	return qtrue;
 }
 

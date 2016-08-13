@@ -29,6 +29,8 @@ wc/levelShotDetail
         }
 }
 
+// 2016-06-10 unused
+/*
 wc/bloodTrail {
         nopicmip
         entityMergable
@@ -50,6 +52,7 @@ wc/bloodTrailAlt {
                 alphagen vertex
         }
 }
+*/
 
 wc/bloodExplosionAlt {  // blood at point of impact
     nopicmip
@@ -60,6 +63,8 @@ wc/bloodExplosionAlt {  // blood at point of impact
     }
 }
 
+// unused 2016-06-10
+/*
 wc/bloodMark {
     nopicmip
     polygonOffset
@@ -81,6 +86,7 @@ wc/bloodMarkAlt {
         alphagen vertex
     }
 }
+*/
 
 wc/slice5
 {

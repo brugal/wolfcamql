@@ -381,6 +381,15 @@ typedef struct {
 	char modelName[MAX_QPATH];
 } playerInfo_t;
 
+#define MAX_TEAM_SWITCHES 512
+
+typedef struct {
+	int clientNum;
+	int oldTeam;
+	int newTeam;
+	int serverTime;
+} teamSwitch_t;
+
 typedef struct {
 	int numSnaps;
 	int lastServerTime;
@@ -439,10 +448,21 @@ typedef struct {
 	demoFile_t demoFiles[MAX_DEMO_FILES];
 	int numDemoFiles;
 
+	int roundStarts[MAX_DEMO_ROUND_STARTS];
+	int numRoundStarts;
+
 	int pov;
 
 	playerInfo_t playerInfo[MAX_PLAYER_INFO];
 	int numPlayerInfo;
+
+	// keeps track of current team
+	int clientTeam[MAX_CLIENTS];
+
+	teamSwitch_t teamSwitches[MAX_TEAM_SWITCHES];
+	int numTeamSwitches;
+
+	int gametype;
 } demoInfo_t;
 
 extern demoInfo_t di;

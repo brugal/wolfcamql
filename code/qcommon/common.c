@@ -180,7 +180,11 @@ mapNames_t MapNames[] = {
 	{ "maps/qzteam4.bsp", "maps/scornforge.bsp", NULL, NULL },  // scornforge
 	{ "maps/qzteam6.bsp", "maps/vortexportal.bsp", NULL, NULL },  // vortex portal
 	{ "maps/qzteam7.bsp", "maps/rebound.bsp", NULL, NULL },  // rebound
+
 	{ "maps/cpm3a.bsp", "maps/useandabuse.bsp", NULL, NULL },  // use and abuse
+
+	{ "maps/q3dm6.bsp", "maps/campgrounds.bsp", NULL, NULL },
+	{ "maps/q3ctf1.bsp", "maps/duelingkeeps.bsp", NULL, NULL },
 	{ NULL, NULL, NULL, NULL },
 };
 

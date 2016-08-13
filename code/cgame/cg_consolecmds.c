@@ -6811,6 +6811,11 @@ static void CG_EntityFreeze_f (void)
 				cent = &cg_entities[i];
 			}
 
+			wclients[i].freezeCgtime = cg.time;
+			wclients[i].freezeXyspeed = wclients[i].xyspeed;
+			wclients[i].freezeLandChange = wclients[i].landChange;
+			wclients[i].freezeLandTime = wclients[i].landTime;
+
 			memcpy(&cg.freezeCent[i], cent, sizeof(cg.freezeCent[i]));
 		}
 	}
@@ -7848,6 +7853,67 @@ static void CG_BackDown_f (void)
 }
 #endif
 
+static void CG_SeekNextRound_f (void)
+{
+	int i;
+	float offset;
+	int roundStartIndex;
+
+	offset = -3000.0;
+
+	if (CG_Argc() > 1) {
+		offset = atof(CG_Argv(1));
+		//Com_Printf("^3offset %f\n", offset);
+	}
+
+	roundStartIndex = -1;
+	for (i = 0;  i < cg.numRoundStarts;  i++) {
+		if (cg.roundStarts[i] > cg.time) {
+			//trap_SendConsoleCommand(va("seekservertime %f\n", (double)((double)cg.roundStarts[i] + (double)offset)));
+			roundStartIndex = i;
+			break;
+		}
+	}
+
+
+	if (roundStartIndex > -1) {
+		int roundTime;
+
+		roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
+
+		// ql specific
+		//if (!cgs.roundStarted  &&  cgs.roundBeginTime > 0) {
+		if (roundTime <= 0) {
+			// skip current warmup
+			roundStartIndex++;
+		}
+
+		if (roundStartIndex < cg.numRoundStarts) {
+			trap_SendConsoleCommand(va("seekservertime %f\n", (double)((double)cg.roundStarts[roundStartIndex] + (double)offset)));
+		}
+	}
+}
+
+static void CG_SeekPrevRound_f (void)
+{
+	int i;
+	double offset;
+
+	offset = -3000.0;
+
+	if (CG_Argc() > 1) {
+		offset = atof(CG_Argv(1));
+		//Com_Printf("^3offset %f\n", offset);
+	}
+
+	for (i = cg.numRoundStarts - 1;  i >= 0;  i--) {
+		if (cg.roundStarts[i] < cg.time) {
+			trap_SendConsoleCommand(va("seekservertime %f\n", (double)((double)cg.roundStarts[i] + (double)offset)));
+			break;
+		}
+	}
+}
+
 
 typedef struct {
 	const char *cmd;
@@ -8038,6 +8104,8 @@ static consoleCommand_t	commands[] = {
 	{ "saveq3mmecamera", CG_SaveQ3mmeCamera_f },
 	{ "loadq3mmecamera", CG_LoadQ3mmeCamera_f },
 	//{ "+back", CG_BackDown_f },
+	{ "seeknextround", CG_SeekNextRound_f },
+	{ "seekprevround", CG_SeekPrevRound_f },
 
 };
 

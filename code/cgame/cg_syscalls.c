@@ -668,3 +668,13 @@ qboolean trap_R_GetFontInfo (int fontId, fontInfo_t *font)
 {
 	return syscall(CG_R_GETFONTINFO, fontId, font);
 }
+
+void trap_GetRoundStartTimes (int *numRoundStarts, int *roundStarts)
+{
+	syscall(CG_GETROUNDSTARTTIMES, numRoundStarts, roundStarts);
+}
+
+qboolean trap_GetTeamSwitchTime (int clientNum, int startTime, int *teamSwitchTime)
+{
+	return syscall(CG_GETTEAMSWITCHTIME, clientNum, startTime, teamSwitchTime);
+}

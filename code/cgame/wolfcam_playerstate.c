@@ -64,7 +64,7 @@ int wolfcam_find_client_to_follow (void)
                 c = cg.snap->ps.clientNum;
             }
             if (trap_GetNextVictim(c, cg.snap->serverTime, &wcg.nextVictim, &wcg.nextVictimServerTime, qtrue)) {
-                //Com_Printf("next victim for %s: %d %d %s\n", cgs.clientinfo[cg.snap->ps.clientNum].name, wcg.nextVictim, wcg.nextVictimServerTime, cgs.clientinfo[wcg.nextVictim].name);
+                //Com_Printf("^5next victim for %s: %d %d %s\n", cgs.clientinfo[cg.snap->ps.clientNum].name, wcg.nextVictim, wcg.nextVictimServerTime, cgs.clientinfo[wcg.nextVictim].name);
                 //FIXME hack to not switch away so fast
                 wcg.nextVictimServerTime += 0;  //2000;
                 wcg.ourLastClientNum = cg.snap->ps.clientNum;
@@ -521,6 +521,8 @@ void Wolfcam_TransitionPlayerState (int oldClientNum)
     }
 #endif
 
+    //FIXME when is psbobCycle set?  starts random or 0?
+
     if (wc->xyspeed < 5) {
         wc->psbobCycle = 0;
         bobmove = 0.0;
@@ -541,12 +543,14 @@ void Wolfcam_TransitionPlayerState (int oldClientNum)
     //Com_Printf ("wolfcam_xyspeed: %f  cg.xyspeed: %f\n", wolfcam_xyspeed, cg.xyspeed);
 
 
-    if (wc->bobfracsin > 0  &&  !(wc->psbobCycle)) {
-        wc->lastvalidBobcycle = wc->bobcycle;
-        wc->lastvalidBobfracsin = wc->bobfracsin;
+    if (cent->currentState.groundEntityNum != ENTITYNUM_NONE) {
+        if (wc->bobfracsin > 0  &&  !(wc->psbobCycle)) {
+            wc->lastvalidBobcycle = wc->bobcycle;
+            wc->lastvalidBobfracsin = wc->bobfracsin;
+        }
+        wc->bobcycle = (wc->psbobCycle & 128) >> 7;
+        wc->bobfracsin = fabs( sin( (wc->psbobCycle & 127 ) / 127.0 * M_PI ));
     }
-    wc->bobcycle = (wc->psbobCycle & 128) >> 7;
-    wc->bobfracsin = fabs( sin( (wc->psbobCycle & 127 ) / 127.0 * M_PI ));
 
     //Com_Printf ("wolfcam_bobcycle: %d  cg.bobcycle: %d\n", wolfcam_bobcycle, cg.bobcycle);
     //    Com_Printf ("wolfcam_bobfracsin: %f  cg.bobfracsin: %f\n", wolfcam_bobfracsin, cg.bobfracsin);

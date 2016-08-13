@@ -444,10 +444,11 @@ qboolean CG_ParseSpawnVars( void ) {
                     }
                 }
             } else {  // string value
-                //Com_Printf("^2gametype: %s\n", com_token);
-                gametypeName = gametypeNames[cgs.gametype];
-
-                s = strstr(value, gametypeName);
+                s = NULL;
+                if (cgs.gametype < ARRAY_LEN(gametypeNames)) {
+                    gametypeName = gametypeNames[cgs.gametype];
+                    s = strstr(value, gametypeName);
+                }
                 if (!s) {
                     // try alternate quake live gametype names
                     if (cgs.gametype == GT_TEAM) {
@@ -522,7 +523,7 @@ qboolean CG_ParseSpawnVars( void ) {
                     } else {
                         Com_Printf("FIXME gametype : '%s'  '%s'\n", com_token, token);
                     }
-                } else if (!Q_stricmp(token, gametypeNames[cgs.gametype])) {
+                } else if (cgs.gametype < ARRAY_LEN(gametypeNames)  &&  !Q_stricmp(token, gametypeNames[cgs.gametype])) {
                     skipItem = 0;
                 }
             }
@@ -531,7 +532,7 @@ qboolean CG_ParseSpawnVars( void ) {
                 Com_Printf("FIXME gametype : %s\n", com_token);
             }
 
-            if (Q_stricmp(com_token, gametypeNames[cgs.gametype])) {
+            if (cgs.gametype >= ARRAY_LEN(gametypeNames)  ||  Q_stricmp(com_token, gametypeNames[cgs.gametype])) {
                 skipItem = 1;
             }
 #endif

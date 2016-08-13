@@ -167,7 +167,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 				wclients[attacker].killCount++;
 				//Com_Printf("%d %s killCount %d\n", attacker, cgs.clientinfo[attacker].name, wclients[attacker].killCount);
 			}
-			//FIXME huh?
+			//FIXME huh?  -- 2016-07-27 'They killed someone or they died' I think
 			wclients[attacker].killedOrDied = qtrue;
 			wclients[attacker].needToClearPerKillStats = qtrue;
 		}
@@ -183,6 +183,19 @@ static void CG_Obituary( const entityState_t *ent ) {
 		}
 		lastObituary->victimTeam = cgs.clientinfo[target].team;
 		lastObituary->victimClientNum = target;
+		wclients[target].aliveThisRound = qfalse;
+		//if (target == cg.snap->ps.clientNum  &&  cg.clientNum == cg.snap->ps.clientNum) {
+		if (target == cg.clientNum) {
+			if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_CTFS) {
+				int roundTime;
+
+				roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
+
+				if (roundTime > 0) {
+					trap_SendConsoleCommand("exec demoTakerDieRound.cfg\n");
+				}
+			}
+		}
     }
 
 	if ( target < 0 || target >= MAX_CLIENTS ) {
@@ -1580,6 +1593,8 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			cg.landChange = -8;
 			cg.landTime = cg.time;
 		}
+		wclients[clientNum].landChange = -8;
+		wclients[clientNum].landTime = cg.time;
 		break;
 	case EV_FALL_MEDIUM:
 		DEBUGNAME("EV_FALL_MEDIUM");
@@ -1596,6 +1611,8 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			cg.landChange = -16;
 			cg.landTime = cg.time;
 		}
+		wclients[clientNum].landChange = -16;
+		wclients[clientNum].landTime = cg.time;
 		break;
 	case EV_FALL_FAR:
 		DEBUGNAME("EV_FALL_FAR");
@@ -1609,6 +1626,9 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			cg.landChange = -24;
 			cg.landTime = cg.time;
 		}
+
+		wclients[clientNum].landChange = -24;
+		wclients[clientNum].landTime = cg.time;
 		break;
 
 	case EV_STEP_4:
@@ -3500,7 +3520,6 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		if (*EffectScripts.thawed) {
 			CG_FX_ThawPlayer(cent);
 		} else {
-			//CG_GibPlayer( cent->lerpOrigin );
 			CG_ThawPlayer(cent);
 		}
 		break;

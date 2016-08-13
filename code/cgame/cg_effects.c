@@ -620,7 +620,7 @@ This is the spurt of blood when a character gets hit
 void CG_Bleed( const vec3_t origin, int entityNum ) {
 	localEntity_t	*ex;
 
-	if ( !cg_blood.integer ) {
+	if (cg_bleedTime.integer <= 0) {
 		return;
 	}
 
@@ -1161,7 +1161,7 @@ void CG_ThawPlayer (const centity_t *cent)
 	int i;
 
 	// allow gibs to be turned off for speed
-	if ( !cg_gibs.integer ) {
+	if ( !cg_thawGibs.integer ) {
 		return;
 	}
 
@@ -1173,18 +1173,20 @@ void CG_ThawPlayer (const centity_t *cent)
 //	}
 
 
-	for (i = 0;  i < 5;  i++) {
-		VectorCopy( playerOrigin, origin );
-		velocity[0] = crandom()*GIB_VELOCITY;
-		velocity[1] = crandom()*GIB_VELOCITY;
-		velocity[2] = GIB_JUMP + crandom()*GIB_VELOCITY;
-		CG_LaunchIce( origin, velocity, cgs.media.iceAbdomen);
-
-		VectorCopy( playerOrigin, origin );
-		velocity[0] = crandom()*GIB_VELOCITY;
-		velocity[1] = crandom()*GIB_VELOCITY;
-		velocity[2] = GIB_JUMP + crandom()*GIB_VELOCITY;
-		CG_LaunchIce( origin, velocity, cgs.media.iceBrain);
+	for (i = 0;  i < cg_thawGibs.integer;  i++) {
+		if (i % 2 == 0) {
+			VectorCopy( playerOrigin, origin );
+			velocity[0] = crandom()*GIB_VELOCITY;
+			velocity[1] = crandom()*GIB_VELOCITY;
+			velocity[2] = GIB_JUMP + crandom()*GIB_VELOCITY;
+			CG_LaunchIce( origin, velocity, cgs.media.iceAbdomen);
+		} else {
+			VectorCopy( playerOrigin, origin );
+			velocity[0] = crandom()*GIB_VELOCITY;
+			velocity[1] = crandom()*GIB_VELOCITY;
+			velocity[2] = GIB_JUMP + crandom()*GIB_VELOCITY;
+			CG_LaunchIce( origin, velocity, cgs.media.iceBrain);
+		}
 	}
 }
 

@@ -246,5 +246,6 @@ void trap_Key_GetBindingBuf (int keynum, char *buf, int buflen);
 void trap_Key_KeynumToStringBuf (int keynum, char *buf, int buflen);
 qboolean trap_R_GetGlyphInfo (const fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
 qboolean trap_R_GetFontInfo (int fontId, fontInfo_t *font);
-
+void trap_GetRoundStartTimes (int *numRoundStarts, int *roundStarts);
+qboolean trap_GetTeamSwitchTime (int clientNum, int startTime, int *teamSwitchTime);
 #endif  // cg_syscalls_h_included

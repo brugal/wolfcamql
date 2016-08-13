@@ -73,12 +73,32 @@ wc/self
         }
 }
 
+wc/selfEnemy
+{
+        nomipmaps
+        nopicmip
+        {
+                map gfx/wc/self-enemy.tga
+                blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        }
+}
+
 wc/selfDemoTaker
 {
         nomipmaps
         nopicmip
         {
                 map gfx/wc/self-demo-taker.tga
+                blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        }
+}
+
+wc/selfDemoTakerEnemy
+{
+        nomipmaps
+        nopicmip
+        {
+                map gfx/wc/self-demo-taker-enemy.tga
                 blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         }
 }

@@ -22,6 +22,7 @@
 #include "cg_view.h"
 #include "cg_weapons.h"
 #include "sc.h"
+#include "wolfcam_main.h"
 #include "wolfcam_predict.h"
 
 #include "wolfcam_local.h"
@@ -1981,12 +1982,18 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					float picScale;
 					float picWidth;
 					float picHeight;
+					float theight;
 
-					picScale = iconScale;  //cg_drawFragMessageIconScale.value;
-					picWidth = textHeight * picScale;
+					if (cg_fragIconHeightFixed.integer) {
+						theight = CG_Text_Height("ABCXYZ", scale, 0, fontOrig);
+					} else {
+						theight = textHeight;
+					}
+					picScale = iconScale;
+					picWidth = theight * picScale;
 					picHeight = picWidth;
 
-					CG_DrawPic(x, y - textHeight - (picHeight - textHeight) / 2, picWidth, picHeight, s[1].i);
+					CG_DrawPic(x, y - theight - (picHeight - theight) / 2, picWidth, picHeight, s[1].i);
 					x += picWidth;
 				} else if (s[0].i == TEXT_PIC_PAINT_COLOR) {
 					int c;
@@ -2798,6 +2805,7 @@ static void CG_DrawStatusBarHead( float x ) {
 	float		size, stretch;
 	float		frac;
 	int y;
+	int clientNum;
 
 	//if (!cg_drawStatusBarHead.integer) {
 	//	return;
@@ -2809,7 +2817,7 @@ static void CG_DrawStatusBarHead( float x ) {
 
 	VectorClear( angles );
 
-	if ( cg.damageTime && cg.time - cg.damageTime < DAMAGE_TIME ) {
+	if (!wolfcam_following  &&  (cg.damageTime && cg.time - cg.damageTime < DAMAGE_TIME)) {
 		frac = (float)(cg.time - cg.damageTime ) / DAMAGE_TIME;
 		size = ICON_SIZE * 1.25 * ( 1.5 - frac * 0.5 );
 
@@ -2858,8 +2866,14 @@ static void CG_DrawStatusBarHead( float x ) {
 #endif
 	y = 480 - size;
 
+	if (wolfcam_following) {
+		clientNum = wcg.clientNum;
+	} else {
+		clientNum = cg.snap->ps.clientNum;
+	}
+
 	CG_DrawHead( x, y, size, size,
-				 cg.snap->ps.clientNum, angles, qtrue );
+				 clientNum, angles, qtrue );
 }
 #endif // MISSIONPACK
 
@@ -2913,211 +2927,6 @@ CG_DrawStatusBar
 ================
 */
 #ifndef MISSIONPACK
-#if 0
-static void Wolfcam_DrawStatusBar (void)
-{
-	int			color;
-	const centity_t	*cent;
-	const playerState_t	*ps;
-	//int			value;
-	//vec4_t		hcolor;
-	vec3_t		angles;
-	vec3_t		origin;
-#ifdef MISSIONPACK
-	qhandle_t	handle;
-#endif
-	static float colors[4][4] = {
-//		{ 0.2, 1.0, 0.2, 1.0 } , { 1.0, 0.2, 0.2, 1.0 }, {0.5, 0.5, 0.5, 1} };
-		{ 1.0f, 0.69f, 0.0f, 1.0f },    // normal
-		{ 1.0f, 0.2f, 0.2f, 1.0f },     // low health
-		{ 0.5f, 0.5f, 0.5f, 1.0f },     // weapon firing
-		{ 1.0f, 1.0f, 1.0f, 1.0f } };   // health > 100
-
-	if ( cg_drawStatus.integer == 0 ) {
-		return;
-	}
-
-    if (!wolfcam_following)
-        return;
-
-	// draw the team background
-    //FIXME wolfcam
-	//CG_DrawTeamBackground( 0, 420, 640, 60, 0.33f, cg.snap->ps.persistant[PERS_TEAM] );
-	CG_DrawTeamBackground(0, 420, 640, 60, 0.33f, cgs.clientinfo[wcg.clientNum].team);
-
-	cent = &cg_entities[wcg.clientNum];
-	ps = &cg.snap->ps;
-
-	VectorClear( angles );
-
-	// draw any 3D icons first, so the changes back to 2D are minimized
-	if ( cent->currentState.weapon && cg_weapons[ cent->currentState.weapon ].ammoModel ) {
-		origin[0] = 70;
-		origin[1] = 0;
-		origin[2] = 0;
-		angles[YAW] = 90 + 20 * sin( cg.time / 1000.0 );
-		CG_Draw3DModel( CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE,
-					   cg_weapons[ cent->currentState.weapon ].ammoModel, 0, origin, angles );
-	}
-
-    //FIXME wolfcam
-	//CG_DrawStatusBarHead( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE );
-
-    //trap_R_SetColor (colors[1]);
-    if (cent->currentState.eFlags & EF_FIRING) {
-        color = 1;  // red
-    } else
-        color = 2;  // dark grey
-    trap_R_SetColor (colors[color]);
-    CG_DrawField (0, 432, 3, 0);
-    trap_R_SetColor (NULL);
-
-    //FIXME wolfcam
-    return;
-
-#if 0  //FIXME wolfcam
-	if( cg.predictedPlayerState.powerups[PW_REDFLAG] ) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED );
-	} else if( cg.predictedPlayerState.powerups[PW_BLUEFLAG] ) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE );
-	} else if( cg.predictedPlayerState.powerups[PW_NEUTRALFLAG] ) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE );
-	}
-
-	if ( ps->stats[ STAT_ARMOR ] ) {
-		origin[0] = 90;
-		origin[1] = 0;
-		origin[2] = -10;
-		angles[YAW] = ( cg.time & 2047 ) * 360 / 2048.0;
-		CG_Draw3DModel( 370 + CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE,
-					   cgs.media.armorModel, 0, origin, angles );
-	}
-#ifdef MISSIONPACK
-	if( cgs.gametype == GT_HARVESTER ) {
-		origin[0] = 90;
-		origin[1] = 0;
-		origin[2] = -10;
-		angles[YAW] = ( cg.time & 2047 ) * 360 / 2048.0;
-		if( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE ) {
-			handle = cgs.media.redCubeModel;
-		} else {
-			handle = cgs.media.blueCubeModel;
-		}
-		CG_Draw3DModel( 640 - (TEXT_ICON_SPACE + ICON_SIZE), 416, ICON_SIZE, ICON_SIZE, handle, 0, origin, angles );
-	}
-#endif
-	//
-	// ammo
-	//
-	if ( cent->currentState.weapon ) {
-		value = ps->ammo[cent->currentState.weapon];
-		if ( value > -1 ) {
-			if ( cg.predictedPlayerState.weaponstate == WEAPON_FIRING
-				&& cg.predictedPlayerState.weaponTime > 100 ) {
-				// draw as dark grey when reloading
-				color = 2;	// dark grey
-			} else {
-				if ( value >= 0 ) {
-					color = 0;	// green
-				} else {
-					color = 1;	// red
-				}
-			}
-			trap_R_SetColor( colors[color] );
-
-			CG_DrawField (0, 432, 3, value);
-			trap_R_SetColor( NULL );
-
-			// if we didn't draw a 3D icon, draw a 2D icon for ammo
-			if ( !cg_draw3dIcons.integer && cg_drawIcons.integer ) {
-				qhandle_t	icon;
-
-				icon = cg_weapons[ cg.predictedPlayerState.weapon ].ammoIcon;
-				if ( icon ) {
-					CG_DrawPic( CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE, icon );
-				}
-			}
-		}
-	}
-
-	//
-	// health
-	//
-	value = ps->stats[STAT_HEALTH];
-	if ( value > 100 ) {
-		trap_R_SetColor( colors[3] );		// white
-	} else if (value > 25) {
-		trap_R_SetColor( colors[0] );	// green
-	} else if (value > 0) {
-		color = (cg.time >> 8) & 1;	// flash
-		trap_R_SetColor( colors[color] );
-	} else {
-		trap_R_SetColor( colors[1] );	// red
-	}
-
-	// stretch the health up when taking damage
-	CG_DrawField ( 185, 432, 3, value);
-	CG_ColorForHealth( hcolor );
-	trap_R_SetColor( hcolor );
-
-
-	//
-	// armor
-	//
-	value = ps->stats[STAT_ARMOR];
-	if (value > 0 ) {
-		trap_R_SetColor( colors[0] );
-		CG_DrawField (370, 432, 3, value);
-		trap_R_SetColor( NULL );
-		// if we didn't draw a 3D icon, draw a 2D icon for armor
-		if ( !cg_draw3dIcons.integer && cg_drawIcons.integer ) {
-			CG_DrawPic( 370 + CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE, cgs.media.yellowArmorIcon );
-		}
-
-	}
-#ifdef MISSIONPACK
-	//
-	// cubes
-	//
-	if( cgs.gametype == GT_HARVESTER ) {
-		value = ps->generic1 & 0x3f;
-		if( value > 99 ) {
-			value = 99;
-		}
-		trap_R_SetColor( colors[0] );
-		CG_DrawField (640 - (CHAR_WIDTH*2 + TEXT_ICON_SPACE + ICON_SIZE), 432, 2, value);
-		trap_R_SetColor( NULL );
-		// if we didn't draw a 3D icon, draw a 2D icon for armor
-		if ( !cg_draw3dIcons.integer && cg_drawIcons.integer ) {
-			if( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE ) {
-				handle = cgs.media.redCubeIcon;
-			} else {
-				handle = cgs.media.blueCubeIcon;
-			}
-			CG_DrawPic( 640 - (TEXT_ICON_SPACE + ICON_SIZE), 432, ICON_SIZE, ICON_SIZE, handle );
-		}
-	}
-#endif
-
-#endif  //FIXME wolfcam
-}
-#endif
-
-
-#endif  // ifndef MISSIONPACK
-#ifdef MISSIONPACK
-static void Wolfcam_DrawStatusBar (void)
-{
-}
-#endif
-
-/*
-================
-CG_DrawStatusBar
-
-================
-*/
-#ifndef MISSIONPACK
 static void CG_DrawStatusBar( void ) {
 	int			color;
 	const centity_t	*cent;
@@ -3126,6 +2935,8 @@ static void CG_DrawStatusBar( void ) {
 	vec4_t		hcolor;
 	vec3_t		angles;
 	vec3_t		origin;
+	int health;
+	int armor;
 #ifdef MISSIONPACK
 	qhandle_t	handle;
 #endif
@@ -3148,12 +2959,17 @@ static void CG_DrawStatusBar( void ) {
 		CG_DrawTeamBackground( 0, 420, 640, 60, 0.33f, cg.snap->ps.persistant[PERS_TEAM] );
 	}
 
+	ps = &cg.snap->ps;
 	if (wolfcam_following) {
 		cent = &cg_entities[wcg.clientNum];
+		armor = Wolfcam_PlayerArmor(wcg.clientNum);
+		health = Wolfcam_PlayerHealth(wcg.clientNum);
 	} else {
 		cent = &cg_entities[cg.snap->ps.clientNum];
+		armor = ps->stats[STAT_ARMOR];
+		health = ps->stats[STAT_HEALTH];
 	}
-	ps = &cg.snap->ps;
+
 
 	VectorClear( angles );
 
@@ -3167,21 +2983,19 @@ static void CG_DrawStatusBar( void ) {
 					   cg_weapons[ cent->currentState.weapon ].ammoModel, 0, origin, angles );
 	}
 
-	if (wolfcam_following) {
-		return;
-	}
-
 	CG_DrawStatusBarHead( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE );
 
-	if( cg.predictedPlayerState.powerups[PW_REDFLAG] ) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED );
-	} else if( cg.predictedPlayerState.powerups[PW_BLUEFLAG] ) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE );
-	} else if( cg.predictedPlayerState.powerups[PW_NEUTRALFLAG] ) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE );
+	if (!wolfcam_following) {  //FIXME
+		if( cg.predictedPlayerState.powerups[PW_REDFLAG] ) {
+			CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED );
+		} else if( cg.predictedPlayerState.powerups[PW_BLUEFLAG] ) {
+			CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE );
+		} else if( cg.predictedPlayerState.powerups[PW_NEUTRALFLAG] ) {
+			CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE );
+		}
 	}
 
-	if ( ps->stats[ STAT_ARMOR ] ) {
+	if (armor > 0) {
 		origin[0] = 90;
 		origin[1] = 0;
 		origin[2] = -10;
@@ -3189,6 +3003,7 @@ static void CG_DrawStatusBar( void ) {
 		CG_Draw3DModel( 370 + CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE,
 					   cgs.media.armorModel, 0, origin, angles );
 	}
+	//FIXME wolfcam
 #ifdef MISSIONPACK
 	if( cgs.gametype == GT_HARVESTER ) {
 		origin[0] = 90;
@@ -3206,8 +3021,9 @@ static void CG_DrawStatusBar( void ) {
 	//
 	// ammo
 	//
-	if ( cent->currentState.weapon ) {
+	if (cent->currentState.weapon  &&  !wolfcam_following) {
 		value = ps->ammo[cent->currentState.weapon];
+
 		if ( value > -1 ) {
 			if ( cg.predictedPlayerState.weaponstate == WEAPON_FIRING
 				&& cg.predictedPlayerState.weaponTime > 100 ) {
@@ -3240,7 +3056,7 @@ static void CG_DrawStatusBar( void ) {
 	//
 	// health
 	//
-	value = ps->stats[STAT_HEALTH];
+	value = health;
 	if ( value > 100 ) {
 		trap_R_SetColor( colors[3] );		// white
 	} else if (value > 25) {
@@ -3252,16 +3068,17 @@ static void CG_DrawStatusBar( void ) {
 		trap_R_SetColor( colors[1] );	// red
 	}
 
-	// stretch the health up when taking damage
-	CG_DrawField ( 185, 432, 3, value);
-	CG_ColorForHealth( hcolor );
-	trap_R_SetColor( hcolor );
-
+	// stretch the health up when taking damage  2016-07-15 wc what?
+	if (!wolfcam_following  ||  (wolfcam_following  &&  value != INVALID_WOLFCAM_HEALTH)) {
+		CG_DrawField ( 185, 432, 3, value);
+		CG_ColorForHealth( hcolor );
+		trap_R_SetColor( hcolor );
+	}
 
 	//
 	// armor
 	//
-	value = ps->stats[STAT_ARMOR];
+	value = armor;
 	if (value > 0 ) {
 		trap_R_SetColor( colors[0] );
 		CG_DrawField (370, 432, 3, value);
@@ -3272,6 +3089,7 @@ static void CG_DrawStatusBar( void ) {
 		}
 
 	}
+	//FIXME wolfcam
 #ifdef MISSIONPACK
 	//
 	// cubes
@@ -3772,7 +3590,9 @@ static float CG_DrawFPS( float y ) {
 
 	lastFtime = cg.ftime;
 
+	//Com_Printf("fps height: %f + (12.0f * %f : %f)\n", h, scale, 12.0f * scale);
 	return y + h + (12.0f * scale);
+	//return y + h + 4;
 }
 
 static float CG_DrawRedArmorTimer (float x, float y, int cgtime, int ourClientNum, qboolean useTextColor, int align, qboolean useIcon, float iconX, float iconY, float iconSize, vec4_t color, float scale, const fontInfo_t *font, int textStyle, int spacing)
@@ -4362,7 +4182,7 @@ static float CG_DrawTimer( float y ) {
 	int			mins, seconds, tens;
 	int			msec;
 
-	if (cg_qlhud.integer) {  //  &&  !wolfcam_following) {  //FIXME
+	if (cg_qlhud.integer) {
 		return y;
 	}
 
@@ -4401,6 +4221,7 @@ static float CG_DrawTimer( float y ) {
 	CG_DrawBigString( 635 - w, y + 2, s, 1.0F);
 
 	return y + BIGCHAR_HEIGHT + 4;
+	//return y + BIGCHAR_HEIGHT + 0;
 }
 
 
@@ -4609,8 +4430,6 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 //#endif
 }
 #endif
-
-#define SIGNED_16_BIT(x) (((x > 32767) ? -(65536 - x) : x))
 
 static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 {
@@ -4859,10 +4678,8 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 			//xx = x + TINYCHAR_WIDTH;
 			xx = x + cwidth;  //TINYCHAR_WIDTH;
 
-			//CG_DrawStringExt( xx, y, ci->name, hcolor, qfalse, qfalse, cwidth, cheight, TEAM_OVERLAY_MAXNAME_WIDTH, &cgs.media.tinychar);
-			//CG_DrawStringExt( xx, y, ci->name, hcolor, qfalse, qfalse, cwidth, cheight, TEAM_OVERLAY_MAXNAME_WIDTH, font);
-			//wlimit = xx + TEAM_OVERLAY_MAXNAME_WIDTH * 8;  //cwidth;
-			wlimit = xx + pwidth;
+			// +cwidth hack to avoid truncating largest string by one char
+			wlimit = xx + pwidth + cwidth;
 			//Com_Printf("%d %f\n", i, wlimit);
 			CG_Text_Paint_Limit_Bottom(&wlimit, xx, y, scale, hcolor, ci->name, 0, 0, font);  // FIXME width
 			//wlimit = xx + pwidth;
@@ -4878,15 +4695,9 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 				if (len > lwidth)
 					len = lwidth;
 
-//				xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth +
-//					((lwidth/2 - len/2) * TINYCHAR_WIDTH);
-				//xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth;
-				//xx = x + cwidth * 2 + cwidth * pwidth;
 				xx = x + cwidth * 2 + pwidth;
-				wlimit = xx + lwidth;
-				//CG_DrawStringExt( xx, y, p, hcolor, qfalse, qfalse, TINYCHAR_WIDTH, TINYCHAR_HEIGHT, TEAM_OVERLAY_MAXLOCATION_WIDTH, &cgs.media.tinychar);
-				//CG_DrawStringExt( xx, y, p, hcolor, qfalse, qfalse, cwidth, cheight, TEAM_OVERLAY_MAXLOCATION_WIDTH, font);
-				//CG_Text_Paint_Bottom(xx, y, scale, hcolor, p, 0, TEAM_OVERLAY_MAXLOCATION_WIDTH, style, font);  // FIXME width
+				// +cwidth hack to avoid truncating largest string by one char
+				wlimit = xx + lwidth + cwidth;
 				CG_Text_Paint_Limit_Bottom(&wlimit, xx, y, scale, hcolor, p, 0, 0, font);
 			}
 
@@ -4995,8 +4806,6 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 //#endif
 }
 
-#undef SIGNED_16_BIT
-
 /*
 =====================
 CG_DrawUpperRight
@@ -5017,13 +4826,14 @@ static void CG_DrawUpperRight( void ) {
 	if ( cg_drawFPS.integer ) {
 		y = CG_DrawFPS( y );
 	}
+	if (cg_drawSpeed.integer) {
+        y = Wolfcam_DrawSpeed(y);
+    }
+	y = Wolfcam_DrawMouseSpeed(y);
+
 	if ( cg_drawTimer.integer ) {
 		y = CG_DrawTimer( y );
 	}
-    if (cg_drawSpeed.integer) {
-        y = Wolfcam_DrawSpeed (y);
-    }
-	y = Wolfcam_DrawMouseSpeed (y);
 	if ( cg_drawAttacker.integer ) {
 		y = CG_DrawAttacker( y );
 	}
@@ -6828,6 +6638,7 @@ static void CG_RoundAnnouncements (void)
 					} else if (cgs.gametype == GT_RACE) {
 						CG_StartLocalSound(cgs.media.countGoSound, CHAN_ANNOUNCER);
 					} else {
+						//CG_Printf("^2FIGHT sound cg_draw.c\n");
 						CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
 					}
 				}
@@ -6916,7 +6727,7 @@ static void CG_DrawCenter (void)
 
 		//ival = cg.time - atoi(CG_ConfigString(CS_ROUND_TIME));
 
-		//Com_Printf("played %d  started %d\n", cgs.countDownSoundPlayed, cgs.roundStarted);
+		//Com_Printf("^5played %d  started %d  roundBeginTime %d\n", cgs.countDownSoundPlayed, cgs.roundStarted, cgs.roundBeginTime);
 		if (cgs.countDownSoundPlayed == 0  &&  cgs.roundStarted) {
 			//Com_Printf("one ..\n");
 			if (cg_drawFightMessage.integer) {
@@ -6953,6 +6764,7 @@ static void CG_DrawCenter (void)
 						CG_CenterPrint("FIGHT!", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 					}
 				} else {
+					//CG_Printf("^6FIGHT cg_draw\n");
 					CG_CenterPrint("FIGHT!", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 				}
 			} else {  // no fight screen message
@@ -10610,9 +10422,6 @@ static void CG_Draw2D( void ) {
 	//if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR ) {
 
 	if (wolfcam_following) {
-#if 0
-        Wolfcam_DrawStatusBar ();
-#endif
 		if (cg_drawStatus.integer) {
 			if (cg_qlhud.integer) {
 				Menu_PaintAll();

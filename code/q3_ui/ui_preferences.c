@@ -52,9 +52,6 @@ GAME OPTIONS MENU
 #define ID_ALLOWDOWNLOAD			137
 #define ID_BACK					138
 
-#define	NUM_CROSSHAIRS			10
-
-
 typedef struct {
 	menuframework_s		menu;
 
@@ -399,8 +396,9 @@ void Preferences_Cache( void ) {
 	trap_R_RegisterShaderNoMip( ART_FRAMER );
 	trap_R_RegisterShaderNoMip( ART_BACK0 );
 	trap_R_RegisterShaderNoMip( ART_BACK1 );
-	for( n = 0; n < NUM_CROSSHAIRS; n++ ) {
-		s_preferences.crosshairShader[n] = trap_R_RegisterShaderNoMip( va("gfx/2d/crosshair%c", 'a' + n ) );
+	for( n = 1; n < NUM_CROSSHAIRS; n++ ) {
+		//s_preferences.crosshairShader[n] = trap_R_RegisterShaderNoMip( va("gfx/2d/crosshair%c", 'a' + n ) );
+		s_preferences.crosshairShader[n] = trap_R_RegisterShaderNoMip( va("gfx/2d/crosshair%d",  n ) );
 	}
 }
 

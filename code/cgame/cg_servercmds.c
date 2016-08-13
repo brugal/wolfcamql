@@ -56,6 +56,23 @@ static int CG_ValidOrder(const char *p) {
 }
 #endif
 
+static void CG_RoundStart (void)
+{
+	int i;
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		wclients[i].aliveThisRound = qtrue;
+	}
+
+	trap_SendConsoleCommand("exec roundstart.cfg\n");
+}
+
+static void CG_RoundEnd (void)
+{
+	trap_SendConsoleCommand("exec roundend.cfg\n");
+}
+
+
 //FIXME hack for demos that might send stray premium scores commands to
 //      non premium users
 #define MAX_OLD_SCORE_TIME 500
@@ -781,6 +798,8 @@ static void CG_ParseTeamInfo( void ) {
 }
 
 /*
+  1069 linux-i386 May 25 2016 20:02:14
+  1069 win-x86 Jun  3 2016 16:09:50
 
   1068 linux-x64 Mar  4 2016 19:27:22
   1068 win-x86 Apr 28 2016 15:24:47
@@ -1093,7 +1112,7 @@ This is called explicitly when the gamestate is first received,
 and whenever the server updates any serverinfo flagged cvars
 ================
 */
-void CG_ParseServerinfo (qboolean firstCall)
+void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 {
 	const char	*info;
 	const char *str;
@@ -1223,7 +1242,8 @@ void CG_ParseServerinfo (qboolean firstCall)
 	Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.bsp", mapname );
 
 	if (cgs.cpma) {
-		CG_CpmaParseScores();
+		//CG_Printf("^3CG_ParseServerInfo\n");
+		CG_CpmaParseScores(seeking);
 	}
 
 	if (cgs.cpma) {
@@ -1343,7 +1363,10 @@ void CG_ParseServerinfo (qboolean firstCall)
 	trap_Cvar_Set("sv_skillrating", va("%d", val));
 
 	//FIXME breaks with seeking
-	if (cgs.lastConnectedDisconnectedPlayer > -1  &&  cgs.lastConnectedDisconnectedPlayerName[0]  &&  cgs.lastConnectedDisconnectedPlayerClientInfo  &&  cgs.needToCheckSkillRating) {
+	if (
+		(cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol <= 90)  &&
+		(cgs.lastConnectedDisconnectedPlayer > -1  &&  cgs.lastConnectedDisconnectedPlayerName[0]  &&  cgs.lastConnectedDisconnectedPlayerClientInfo  &&  cgs.needToCheckSkillRating)
+		) {
 		for (i = 0, numClients = 0;  i < MAX_CLIENTS;  i++) {
 			if (cgs.clientinfo[i].infoValid) {
 				numClients++;
@@ -1625,7 +1648,7 @@ void CG_InterMissionHit (void)
 
 #if 0
 	if (cgs.cpma) {
-		CG_CpmaParseScores();
+		CG_CpmaParseScores(qfalse);
 		Com_Printf("red %d   blue %d\n", cgs.scores1, cgs.scores2);
 		trap_SendConsoleCommand("configstrings\n");
 	}
@@ -1791,7 +1814,7 @@ static qboolean CG_IsTeamVoteString (int num, int *newNum)
 	return qfalse;
 }
 
-void CG_CpmaParseScores (void)
+void CG_CpmaParseScores (qboolean seeking)
 {
 	const char *str;
 	int i;
@@ -1799,13 +1822,41 @@ void CG_CpmaParseScores (void)
 
 	str = CG_ConfigStringNoConvert(CSCPMA_SCORES);
 
-	if (cgs.gametype >= GT_TEAM) {
+	//CG_Printf("^5scores(%d): %s\n", seeking, str);
+
+	if (CG_IsTeamGame(cgs.gametype)) {
+		int roundTime;
+		int lastRoundTime;
 		cgs.scores1 = atoi(Info_ValueForKey(str, "sr"));
 		cgs.scores2 = atoi(Info_ValueForKey(str, "sb"));
 		cgs.bluePlayersLeft = atoi(Info_ValueForKey(str, "pb"));
 		cgs.redPlayersLeft = atoi(Info_ValueForKey(str, "pr"));
 		// tw round time
 
+		// -1 before match starts
+		// > 0 indicates when round begins
+		// 0 when round starts  -- 2016-08-06 not always (match start) so this can't be used as the trigger for round starting.  Start of first round is triggered when gamestate warmup has ended
+		//FIXME this isn't used for ctfs round status it is always based on game status changes
+		lastRoundTime = cgs.roundBeginTime;
+		roundTime = atoi(Info_ValueForKey(str, "tw"));
+		//CG_Printf("^5%d round time(%d): %d\n", cg.time, seeking, roundTime);
+
+		cgs.roundBeginTime = roundTime;
+		if (roundTime > 0) {
+			cgs.roundStarted = qfalse;
+			if (lastRoundTime == 0) {
+				if (!seeking) {
+					CG_RoundEnd();
+				}
+			}
+		} else if (roundTime == 0  &&  lastRoundTime > 0) {
+			// check for lastRoundTime since first round start is triggered when warmup changes, not based on roundTime.  Other rounds are based on roundTime
+			cgs.roundStarted = qtrue;
+			cgs.countDownSoundPlayed = 1;  // trigger "FIGHT!" screen message
+			if (!seeking) {
+				CG_RoundStart();
+			}
+		}
 	} else {  // duel or ffa
 		cgs.scores1 = atoi(Info_ValueForKey(str, "sr"));
 		cgs.scores2 = atoi(Info_ValueForKey(str, "sb"));
@@ -1867,6 +1918,7 @@ void CG_CpmaParseGameState (qboolean initial)
 	str = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
 
 	//Com_Printf("%d ^2%s\n", cg.snap ? cg.snap->serverTime : 0, str);
+	//CG_Printf("^2cs game state(%d): %s\n", initial, str);
 
 	/*
 
@@ -1932,7 +1984,12 @@ te + ts + td == serverTime
 		x = atoi(Info_ValueForKey(str, "tw"));
 		if (!x  &&  cg.warmup) {
 			cg.warmup = x;  // to play sound
-			CG_MapRestart();  // hmmmmmm no? not sure  //FIXME seeking
+			if (!initial) {
+				CG_MapRestart();  // hmmmmmm no? not sure  //FIXME seeking
+				if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_CTFS) {
+					CG_RoundStart();
+				}
+			}
 		}
 		cg.warmup = x;
 
@@ -1989,7 +2046,8 @@ static qboolean CG_CpmaCs (int num)
 	//FIXME plays buzzer sound to mark intermission?
 
 	if (num == CSCPMA_SCORES) {
-		CG_CpmaParseScores();
+		//CG_Printf("^3CG_CpmaCs\n");
+		CG_CpmaParseScores(qfalse);
 		// hack for overtime or end of buzzer scores that trigger
 		// PM_INTERMISSION  but scores haven't updated
 		//FIXME no, not here
@@ -2084,7 +2142,7 @@ static void CG_ConfigStringModified( void ) {
 	if ( num == CS_MUSIC ) {
 		CG_StartMusic();
 	} else if ( num == CS_SERVERINFO ) {
-		CG_ParseServerinfo(qfalse);
+		CG_ParseServerinfo(qfalse, qfalse);
 	} else if (num == CS_SYSTEMINFO) {
 
 	} else if ( num == CS_WARMUP ) {
@@ -2246,19 +2304,20 @@ static void CG_ConfigStringModified( void ) {
 		//Com_Printf("%d CS_ROUND_TIME %d\n", cg.time, val);
 		if (val > 0  &&  !cgs.roundStarted) {
 			//CG_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
+
 			// hack, ql appears to have a bug where the fov values from the
 			// previously viewed player are still being copied into playerstate
 			if (cg_useDemoFov.integer == 2) {
 				CG_ZoomUp_f();
 			}
 			cgs.roundStarted = qtrue;
-			trap_SendConsoleCommand("exec roundstart.cfg\n");
+			CG_RoundStart();
 		} else if (val < 0) {
 			//Com_Printf("ca time reset\n");
 			cgs.roundStarted = qfalse;
 			cgs.roundBeginTime = -999;
 			cgs.countDownSoundPlayed = -999;
-			trap_SendConsoleCommand("exec roundend.cfg\n");
+			CG_RoundEnd();
 			//Com_Printf("round end\n");
 		}
 	} else if (num == CS_TIMEOUT_BEGIN_TIME) {
@@ -2269,6 +2328,8 @@ static void CG_ConfigStringModified( void ) {
 		cgs.redTeamTimeoutsLeft = atoi(str);
 	} else if (num == CS_BLUE_TEAM_TIMEOUTS_LEFT) {
 		cgs.blueTeamTimeoutsLeft = atoi(str);
+	} else if (num == CS91_NAME1STPLAYER  &&  cgs.realProtocol >= 91) {
+	} else if (num == CS91_NAME2NDPLAYER  &&  cgs.realProtocol >= 91) {
 	} else if (num == CS_FIRST_PLACE_CLIENT_NUM  &&  !newcs) {
 	} else if (num == CS_FIRST_PLACE_CLIENT_NUM2  &&  newcs) {
 	} else if (num == CS_SECOND_PLACE_CLIENT_NUM  &&  !newcs) {
@@ -2550,8 +2611,15 @@ static void CG_MapRestart( void ) {
 			} else if (cgs.gametype == GT_RACE) {
 				CG_StartLocalSound(cgs.media.countGoSound, CHAN_ANNOUNCER);
 			} else {
+				//CG_Printf("^2FIGHT sound servercmds\n");
 				CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
 			}
+		}
+
+		if (cgs.cpma) {
+			cgs.roundBeginTime = 0;
+			cgs.roundStarted = qtrue;
+			cgs.countDownSoundPlayed = 0;
 		}
 
 		if (cg_drawFightMessage.integer) {
@@ -2591,6 +2659,7 @@ static void CG_MapRestart( void ) {
 				}
 #endif
 			} else {
+				//CG_Printf("^6FIGHT servercmds\n");
 				CG_CenterPrint("FIGHT!", 120, BIGCHAR_WIDTH);
 			}
 		} else {  // no fight screen message
@@ -4133,6 +4202,128 @@ static void CG_ParseScores_Ca (void)
 	}
 }
 
+static void CG_ParseSmScores (void)
+{
+	int i;
+	tdmPlayerScore_t *ts;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+
+	//Com_Printf("^5CG_ParseSmScores()\n");
+	cg.tdmScore.valid = qtrue;
+	cg.tdmScore.version = 3;
+
+	cg.tdmScore.numPlayerScores = atoi(CG_Argv(1));
+
+	memset(&cg.tdmScore.playerScore, 0, sizeof(cg.tdmScore.playerScore));
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+
+	i = 2;
+
+	cg.teamScores[0] = atoi(CG_Argv(i));  i++;
+	cg.teamScores[1] = atoi(CG_Argv(i));  i++;
+
+	// need score indexes for endgame stats
+	cg.numScores = 0;
+	cg.scoresValid = qtrue;
+
+	while (1) {
+		int clientNum;
+		score_t *oldScore;
+
+		if (!*CG_Argv(i)) {
+			break;
+		}
+
+		oldScore = &cg.scores[cg.numScores];
+		cg.numScores++;
+
+		clientNum = atoi(CG_Argv(i));  i++;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseSmScores invalid client number %d\n", clientNum);
+			return;
+		}
+
+		ts = &cg.tdmScore.playerScore[clientNum];
+		ts->valid = qtrue;
+		ts->clientNum = clientNum;
+		oldScore->client = clientNum;
+
+		//ts->team = atoi(CG_Argv(i));  i++;
+		ts->team = cgs.clientinfo[clientNum].team;
+		oldScore->team = ts->team;
+
+		ts->score = atoi(CG_Argv(i));  i++;
+		oldScore->score = ts->score;
+		ts->ping = atoi(CG_Argv(i));  i++;
+		oldScore->ping = ts->ping;
+		ts->time = atoi(CG_Argv(i));  i++;
+		oldScore->time = ts->time;
+
+		// for these two have only seen 0 0  or  0 1 (1 0 ?)
+		i++;  // unknown
+		i++;  // unknown
+
+		/*
+		ts->accuracy = atoi(CG_Argv(i));  i++;
+		//oldScore->bestWeaponAccuracy = ts->accuracy;
+		oldScore->accuracy = ts->accuracy;
+		ts->bestWeapon = atoi(CG_Argv(i));  i++;
+		oldScore->bestWeapon = ts->bestWeapon;
+		*/
+		
+		ts->kills = atoi(CG_Argv(i));  i++;
+		oldScore->frags = ts->kills;
+		ts->deaths = atoi(CG_Argv(i));  i++;
+		oldScore->deaths = ts->deaths;
+
+
+		/*
+		ts->bestWeaponAccuracy = atoi(CG_Argv(i));  i++;
+		oldScore->bestWeaponAccuracy = ts->bestWeaponAccuracy;
+		ts->damageDone = atoi(CG_Argv(i));  i++;
+		ts->awardImpressive = atoi(CG_Argv(i));  i++;
+		oldScore->impressiveCount = ts->awardImpressive;
+		ts->awardExcellent = atoi(CG_Argv(i));  i++;
+		oldScore->excellentCount = ts->awardExcellent;
+		ts->awardHumiliation = atoi(CG_Argv(i));  i++;
+		oldScore->gauntletCount = ts->awardHumiliation;
+		ts->perfect = atoi(CG_Argv(i));  i++;
+		oldScore->perfect = ts->perfect;
+		ts->alive = atoi(CG_Argv(i));  i++;
+		oldScore->alive = ts->alive;
+		*/
+		if (ts->team == TEAM_RED) {
+			redCount++;
+			redTotalPing += ts->ping;
+		} else if (ts->team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += ts->ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+	// check sizes
+	if (CG_Argc() != i) {
+		CG_Printf("^1CG_ParseSmScores()) argc (%d) != %d\n", CG_Argc(), i);
+	}
+}
+
 static void CG_ParseScores_Ctf (void)
 {
 	int i;
@@ -4796,7 +4987,7 @@ static void CG_ServerCommand( void ) {
 
 	cmd = CG_Argv(0);
 
-	if (SC_Cvar_Get_Int("cg_debugcommands")) {
+	if (cg_debugServerCommands.integer == 1) {
 		Com_Printf("^3command: '%s'\n", cmd);
 		i = 1;
 		while (1) {
@@ -5030,7 +5221,10 @@ static void CG_ServerCommand( void ) {
 	if (cgs.protocol == PROTOCOL_QL) {
 		// crash tutorial
 		if (!Q_stricmp(cmd, "playSound")) {
-			trap_SendConsoleCommand(va("play %s\n", CG_Argv(1)));
+			if (!cg_ignoreServerPlaySound.integer) {
+				trap_SendConsoleCommand(va("play %s\n", CG_Argv(1)));
+				//CG_Printf("^5playsound: '%s'\n", CG_Argv(1));
+			}
 			return;
 		}
 
@@ -5141,6 +5335,12 @@ static void CG_ServerCommand( void ) {
 			return;
 		}
 
+		// 2016-08-05 might be a ql or minqlx bug, sometimes server starts sending this instead of ca scores
+		if (!strcmp(cmd, "smscores")) {
+			CG_ParseSmScores();
+			return;
+		}
+
 		if (!Q_stricmp(cmd, "rcmd")) {
 			CG_Printf("^3remote command '%s'\n", CG_ArgsFrom(1));
 			return;
@@ -5190,15 +5390,17 @@ static void CG_ServerCommand( void ) {
 	}
 
 	// unknown:
-	//CG_Printf( "Unknown client game command: %s\n", cmd );
+
 	CG_Printf( "Unknown client game command: %s\n", CG_Argv(0) );
-	i = 1;
-	while (1) {
-		if (!*CG_Argv(i)) {
-			break;
+	if (cg_debugServerCommands.integer == 2) {
+		i = 1;
+		while (1) {
+			if (!*CG_Argv(i)) {
+				break;
+			}
+			CG_Printf("argv[%d]: %s\n", i, CG_Argv(i));
+			i++;
 		}
-		CG_Printf("argv[%d]: %s\n", i, CG_Argv(i));
-		i++;
 	}
 }
 

@@ -2,6 +2,7 @@
 
 #include "cg_main.h"
 #include "cg_syscalls.h"
+#include "sc.h"
 #include "wolfcam_main.h"
 
 #include "wolfcam_local.h"
@@ -18,6 +19,8 @@ vmCvar_t wolfcam_fixedViewAngles;
 vmCvar_t cg_useOriginalInterpolation;
 vmCvar_t cg_drawBBox;
 
+// 2016-07-12 unused
+/*
 char *weapNames[] = {
     "WP_NONE",
     "WP_GAUNTLET",
@@ -33,9 +36,11 @@ char *weapNames[] = {
     "WP_NAILGUN",
     "WP_PROX_LAUNCHER",
     "WP_CHAINGUN",
+	"WP_HEAVY_MACHINEGUN",
 	"WP_KAMIKAZE",
 	"UNDEFINED",
 };
+*/
 
 char *weapNamesCasual[] = {
     "",
@@ -327,30 +332,42 @@ int Wolfcam_PlayerHealth (int clientNum)
 	const clientInfo_t *ci;
 
 	if (clientNum >= MAX_CLIENTS) {
-		return -9999;
+		return INVALID_WOLFCAM_HEALTH;
 	}
 
 	ci = &cgs.clientinfo[clientNum];
 	if (!ci->infoValid) {
-		return -9999;
+		return INVALID_WOLFCAM_HEALTH;
 	}
 
 	if (clientNum == cg.snap->ps.clientNum) {
 		return cg.snap->ps.stats[STAT_HEALTH];
 	}
 
-	if (cgs.gametype >= GT_TEAM  &&  cg.snap->ps.clientNum == cg.clientNum) {
+	if (cgs.realProtocol >= 91  &&  cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR) {
+		// we have info for all players
+		return SIGNED_16_BIT(cg_entities[clientNum].currentState.health);
+	}
+
+	if (CG_IsTeamGame(cgs.gametype)) {
 		if (ci->team == cgs.clientinfo[cg.snap->ps.clientNum].team) {
-			return ci->health;
+			if (cgs.realProtocol >= 91) {
+				return SIGNED_16_BIT(cg_entities[clientNum].currentState.health);
+			} else {
+				// demos don't have team info values for spec players
+				if (cg.snap->ps.clientNum == cg.clientNum) {
+					return ci->health;
+				}
+			}
 		}
 	}
 
-	return -9999;
+	return INVALID_WOLFCAM_HEALTH;
 #if 0
 	//FIXME broken in ql
 
 	if (wclients[clientNum].ev_pain_time == 0) {
-		return -9999;
+		return INVALID_WOLFCAM_HEALTH;
 	}
 
 	value = wclients[clientNum].eventHealth;
@@ -358,7 +375,7 @@ int Wolfcam_PlayerHealth (int clientNum)
 		if (cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD) {
 			value = 0;
 		} else {
-			value = -9999;
+			value = INVALID_WOLFCAM_HEALTH;
 		}
 	}
 
@@ -383,10 +400,23 @@ int Wolfcam_PlayerArmor (int clientNum) {
 		return cg.snap->ps.stats[STAT_ARMOR];
 	}
 
-	if (cgs.gametype >= GT_TEAM  &&  cg.snap->ps.clientNum == cg.clientNum) {
+	if (cgs.realProtocol >= 91  &&  cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR) {
+		// we have info for all players
+		return SIGNED_16_BIT(cg_entities[clientNum].currentState.armor);
+	}
+
+	if (CG_IsTeamGame(cgs.gametype)) {
 		if (ci->team == cgs.clientinfo[cg.snap->ps.clientNum].team) {
-			//Com_Printf("armor == %d\n", ci->armor);
-			return ci->armor;
+			if (cgs.realProtocol >= 91) {
+				return SIGNED_16_BIT(cg_entities[clientNum].currentState.armor);
+			} else {
+				// demos don't have team info values for spec players
+				if (cg.snap->ps.clientNum == cg.clientNum) {
+
+					//Com_Printf("armor == %d\n", ci->armor);
+					return ci->armor;
+				}
+			}
 		}
 	}
 

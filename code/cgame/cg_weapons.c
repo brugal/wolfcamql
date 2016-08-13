@@ -1536,7 +1536,7 @@ CG_MapTorsoToWeaponFrame
 
 =================
 */
-static int CG_MapTorsoToWeaponFrame( const clientInfo_t *ci, int frame ) {
+int CG_MapTorsoToWeaponFrame( const clientInfo_t *ci, int frame ) {
 
 	// change weapon
 	if ( frame >= ci->animations[TORSO_DROP].firstFrame
@@ -1577,7 +1577,7 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 	VectorCopy( cg.refdef.vieworg, origin );
 	VectorCopy( cg.refdefViewAngles, angles );
 
-	if (cg_drawGun.integer > 1) {
+	if (cg_drawGun.integer <= 0  ||  cg_drawGun.integer == 2  ||  cg_drawGun.integer == 3) {
 		return;
 	}
 
@@ -1592,6 +1592,12 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 		landChange = cg.landChange;
 		landTime = cg.landTime;
 	}
+
+	//Com_Printf("xyspeed %f\n", xyspeed);
+	//Com_Printf("bob: %f\n", cg.bobfracsin);
+	//Com_Printf("bobcycle:  %d\n", cg.snap->ps.bobCycle);
+	
+	//FIXME with wolfcam_following cg.xyspeed : xyspeed hasn't been calculated
 
 	// on odd legs, invert some angles
 	if ( cg.bobcycle & 1 ) {
@@ -2058,7 +2064,7 @@ Origin will be the exact tag point, which is slightly
 different than the muzzle point used for determining hits.
 ===============
 */
-static void CG_SpawnRailTrail( centity_t *cent, const vec3_t origin ) {
+void CG_SpawnRailTrail( centity_t *cent, const vec3_t origin ) {
 	const clientInfo_t	*ci;
 
 	if ( cent->currentState.weapon != WP_RAILGUN ) {
@@ -2083,7 +2089,7 @@ CG_MachinegunSpinAngle
 */
 #define		SPIN_SPEED	0.9
 #define		COAST_TIME	1000
-static float	CG_MachinegunSpinAngle( centity_t *cent ) {
+float CG_MachinegunSpinAngle( centity_t *cent ) {
 	int		delta;
 	float	angle;
 	float	speed;
@@ -2120,7 +2126,7 @@ static float	CG_MachinegunSpinAngle( centity_t *cent ) {
 CG_AddWeaponWithPowerups
 ========================
 */
-static void CG_AddWeaponWithPowerups( refEntity_t *gun, int powerups ) {
+void CG_AddWeaponWithPowerups( refEntity_t *gun, int powerups ) {
 	// add powerup effects
 	if ( powerups & ( 1 << PW_INVIS ) ) {
 		gun->customShader = cgs.media.invisShader;
@@ -2598,7 +2604,8 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 	if ( ps || cg.renderingThirdPerson ||
 		 cent->currentState.number != cg.predictedPlayerState.clientNum  ||  (wolfcam_following  &&  cent->currentState.number != wcg.clientNum)) {
 		// add lightning bolt
-		if (!wolfcam_following  ||  !ps) {
+		if ((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))
+			 ||  !ps) {
 			CG_LightningBolt( nonPredictedCent, flash.origin );
 
 			//Com_Printf("adding bolt\n");

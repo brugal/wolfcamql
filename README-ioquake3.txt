@@ -86,6 +86,7 @@ Makefile.local:
   BUILD_GAME_SO     - build the game shared libraries
   BUILD_GAME_QVM    - build the game qvms
   BUILD_STANDALONE  - build binaries suited for stand-alone games
+  USE_YACC          - use yacc to update code/tools/lcc/lburg/gram.c
   USE_OPENAL        - use OpenAL where available
   USE_OPENAL_DLOPEN - link with OpenAL at runtime
   USE_CURL          - use libcurl for http/ftp download support
@@ -194,7 +195,7 @@ New cvars
 
   protocol                          - Allow changing protocol version (startup only)
 
-  r_allowResize                     - make window resizable (SDL only)
+  r_allowResize                     - make window resizable
   r_ext_texture_filter_anisotropic  - anisotropic texture filtering
   r_zProj                           - distance of observer camera to projection
                                       plane in quake3 standard units

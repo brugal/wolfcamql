@@ -8,6 +8,7 @@
 #define MAX_DEMO_OBITS (1024 * 2)
 #define MAX_ITEM_PICKUPS (1024 * 4)
 #define MAX_TIMEOUTS (256)
+#define MAX_DEMO_ROUND_STARTS 256
 
 typedef struct {
 	int startTime;
@@ -244,6 +245,8 @@ typedef enum {
 	CG_KEY_KEYNUMTOSTRINGBUF,
 	CG_R_GETGLYPHINFO,
 	CG_R_GETFONTINFO,
+	CG_GETROUNDSTARTTIMES,
+	CG_GETTEAMSWITCHTIME,
 
 } cgameImport_t;
 

@@ -1295,6 +1295,40 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 
 		return 0;
 	}
+	case CG_GETROUNDSTARTTIMES: {
+		int *numRoundStartTimes;
+		int *roundStarts;
+
+		numRoundStartTimes = (int *)VMA(1);
+		roundStarts = (int *)VMA(2);
+
+		*numRoundStartTimes = di.numRoundStarts;
+		memcpy(roundStarts, di.roundStarts, sizeof(int) * di.numRoundStarts);
+
+		return 0;
+	}
+	case CG_GETTEAMSWITCHTIME: {
+		int clientNum;
+		int startTime;
+		int *teamSwitchTime;
+		int i;
+
+		clientNum = args[1];
+		startTime = args[2];
+		teamSwitchTime = (int *)VMA(3);
+
+		*teamSwitchTime = 0;
+		for (i = 0;  i < di.numTeamSwitches;  i++) {
+			if (di.teamSwitches[i].serverTime >= startTime) {
+				if (di.teamSwitches[i].clientNum == clientNum) {
+					*teamSwitchTime = di.teamSwitches[i].serverTime;
+					return qtrue;
+				}
+			}
+		}
+
+		return qfalse;
+	}
 	case CG_GET_NUM_PLAYER_INFO: {
 		return di.numPlayerInfo;
 	}

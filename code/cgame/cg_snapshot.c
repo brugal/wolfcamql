@@ -666,7 +666,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cgs.firstPlace[0] = '\0';
 	cgs.secondPlace[0] = '\0';
 	trap_GetGameState(&cgs.gameState);
-	CG_ParseServerinfo(qfalse);
+	CG_ParseServerinfo(qfalse, qtrue);
 	//memset(cgs.clientinfo, 0, sizeof(cgs.clientinfo));
 	//memset(cgs.clientinfoOrig, 0, sizeof(cgs.clientinfoOrig));
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
@@ -772,7 +772,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		// correct level start time, round info, timeouts
 		//cgs.cpmaLastTd = 0;
 		cgs.cpmaLastTe = 0;
-		CG_CpmaParseGameState(qtrue);
+		CG_CpmaParseGameState(qfalse);
 		s = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
 		if (atoi(Info_ValueForKey(s, "te"))) {
 #if 0
@@ -799,7 +799,13 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 #endif
 			CG_ResetTimedItemPickupTimes();  //FIXME change eventually
 		}
-		CG_CpmaParseScores();
+		//CG_Printf("^4seeking 1\n");
+		CG_CpmaParseScores(qtrue);
+	}
+
+	//FIXME clear other stuff as well?
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		wclients[i].landTime = 0;
 	}
 
 	cg.centerPrintLines = 0;
@@ -1013,8 +1019,15 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 			cg.snap->ping = (cg.snap->serverTime - cg.snap->ps.commandTime) - 25 - 25 / 2.0;
 		}
 
-		if (cgs.cpma) {  //FIXME hack since we use nextSnap to calc score placement :(
-			CG_ParseServerinfo(qfalse);
+		if (cgs.cpma) {
+			//FIXME hack since we use nextSnap to calc score placement :(
+			CG_ParseServerinfo(qfalse, qtrue);
+
+			// hack to avoid player/drawing FIGHT after score changes
+			cgs.roundStarted = qfalse;
+			if (cg.snap->serverTime > cgs.roundBeginTime) {
+				cgs.roundBeginTime = 0;
+			}
 		}
 
 		// don't do it if setting next snap in this function
@@ -1229,6 +1242,47 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	//CG_ClearFxExternalForces();
 
 	//Com_Printf("teleport this: %d  next: %d\n", cg.thisFrameTeleport, cg.nextFrameTeleport);
+
+
+	// get alive status for scoreboard
+
+	if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+		int roundStartTime = 0;
+
+		for (i = cg.numRoundStarts - 1;  i >= 0;  i--) {
+			if (cg.roundStarts[i] < cg.time) {
+				roundStartTime = cg.roundStarts[i];
+				break;
+			}
+		}
+
+		//Com_Printf("^6round start time: %d\n", roundStartTime);
+
+		if (roundStartTime > 0) {
+			for (i = 0;  i < MAX_CLIENTS;  i++) {
+				int killerClientNum;
+				int killTime;
+				int teamSwitchTime;
+
+				wclients[i].aliveThisRound = qtrue;
+				if (trap_GetNextKiller(i, roundStartTime, &killerClientNum, &killTime, qfalse)) {
+					if (killTime <= cg.time) {
+						wclients[i].aliveThisRound = qfalse;
+						//Com_Printf("^5%d already died this round (%s)\n", i, cgs.clientinfo[i].name);
+					}
+				}
+
+				if (trap_GetTeamSwitchTime(i, roundStartTime, &teamSwitchTime)) {
+					//Com_Printf("^2switch time: %d %d\n", i, teamSwitchTime);
+					if (teamSwitchTime <= cg.time) {
+						//Com_Printf("^5got team switch for %d '%s'\n", i, cgs.clientinfo[i].name);
+						wclients[i].aliveThisRound = qfalse;
+					}
+				}
+			}
+		}
+	}
+
 	if (SC_Cvar_Get_Int("debug_seek")) {
 		Com_Printf("cgame: reset time change %f  snap->serverTime %d", cg.ftime, cg.snap->serverTime);
 		if (cg.nextSnap) {
@@ -1316,7 +1370,7 @@ static snapshot_t *CG_ReadNextSnapshot( void ) {
 			static int lastPing = 0;
 
 			if (dest->ps.commandTime <= 0) {
-				Com_Printf("^1ssssss\n");
+				//Com_Printf("^1ps.commandTime <= 0 (%d)\n", dest->ps.commandTime);
 			}
 			if (dest->serverTime == lastServerTime) {
 				dest->ping = lastPing;

@@ -7,6 +7,8 @@
 
 #define MAX_SNAPSHOT_BACKUP 256
 
+#define INVALID_WOLFCAM_HEALTH -9999
+
 enum {
 	WOLFCAM_FOLLOW_DEMO_TAKER,
 	WOLFCAM_FOLLOW_SELECTED_PLAYER,
@@ -131,6 +133,11 @@ typedef struct {
     float lastvalidBobfracsin;
     int lastvalidBobcycle;
 
+	int freezeCgtime;
+	float freezeXyspeed;
+	float freezeLandChange;
+	int freezeLandTime;
+
     qboolean crosshairClientNoShoot;
     int oldSolid;
 
@@ -171,6 +178,7 @@ typedef struct {
 	qboolean killedOrDied;
 
 	int killCount;
+	qboolean aliveThisRound;
 
 } wclient_t;
 

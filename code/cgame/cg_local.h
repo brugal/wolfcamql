@@ -76,8 +76,6 @@
 #define	GIANT_WIDTH			32
 #define	GIANT_HEIGHT		48
 
-//#define	NUM_CROSSHAIRS		20  in ui_shared.h
-
 #define TEAM_OVERLAY_MAXNAME_WIDTH	12
 #define TEAM_OVERLAY_MAXLOCATION_WIDTH	16
 
@@ -1545,6 +1543,9 @@ typedef struct {
 
 	// hack for area chat not using default font
 	fontInfo_t notosansFont;
+
+	int roundStarts[MAX_DEMO_ROUND_STARTS];
+	int numRoundStarts;
 } cg_t;
 
 
@@ -1695,7 +1696,9 @@ typedef struct {
 	qhandle_t	frozenShader;
 	qhandle_t foeShader;
 	qhandle_t selfShader;
+	qhandle_t selfEnemyShader;
 	qhandle_t selfDemoTakerShader;
+	qhandle_t selfDemoTakerEnemyShader;
 	qhandle_t infectedFoeShader;
 
 	qhandle_t	balloonShader;
@@ -1716,7 +1719,8 @@ typedef struct {
 	qhandle_t	shotgunSmokePuffShader;
 	qhandle_t	plasmaBallShader;
 	qhandle_t	waterBubbleShader;
-	qhandle_t	bloodTrailShader;
+	// 2016-06-10 unused
+	//qhandle_t	bloodTrailShader;
 	qhandle_t	q3bloodTrailShader;
 	qhandle_t	iceTrailShader;
 #if 1  //def MPACK
@@ -1732,7 +1736,8 @@ typedef struct {
 
 	// wall mark shaders
 	qhandle_t	wakeMarkShader;
-	qhandle_t	bloodMarkShader;
+	// unused 2016-06-10
+	//qhandle_t	bloodMarkShader;
 	qhandle_t	q3bloodMarkShader;
 	qhandle_t	iceMarkShader;
 	qhandle_t	bulletMarkShader;
@@ -2457,6 +2462,7 @@ extern	vmCvar_t		cg_bobpitch;
 extern	vmCvar_t		cg_bobroll;
 extern	vmCvar_t		cg_swingSpeed;
 extern	vmCvar_t		cg_shadows;
+extern vmCvar_t cg_thawGibs;
 extern	vmCvar_t		cg_gibs;
 extern vmCvar_t cg_gibColor;
 extern	vmCvar_t		cg_gibJump;
@@ -2687,9 +2693,12 @@ extern	vmCvar_t		cg_drawStatus;
 extern	vmCvar_t		cg_drawTeamBackground;
 extern	vmCvar_t		cg_draw2D;
 extern	vmCvar_t		cg_animSpeed;
+
 extern	vmCvar_t		cg_debugAnim;
 extern	vmCvar_t		cg_debugPosition;
 extern	vmCvar_t		cg_debugEvents;
+extern vmCvar_t cg_debugServerCommands;
+
 extern	vmCvar_t		cg_railTrailTime;
 extern vmCvar_t cg_railQL;
 //extern vmCvar_t cg_railQLWhiteShift;
@@ -2809,9 +2818,11 @@ extern vmCvar_t cg_drawFoeMaxWidth;
 extern vmCvar_t cg_drawSelf;
 extern vmCvar_t cg_drawSelfMinWidth;
 extern vmCvar_t cg_drawSelfMaxWidth;
+extern vmCvar_t cg_drawSelfIconStyle;
 extern vmCvar_t cg_drawInfected;
 
 extern vmCvar_t cg_drawFlagCarrier;
+extern vmCvar_t cg_drawFlagCarrierSize;
 extern vmCvar_t cg_drawHitFlagCarrierTime;
 
 extern	vmCvar_t		cg_teamChatsOnly;
@@ -2977,6 +2988,10 @@ extern vmCvar_t cg_scoreBoardWarmup;
 extern vmCvar_t cg_scoreBoardOld;
 extern vmCvar_t cg_scoreBoardOldWideScreen;
 //extern vmCvar_t cg_scoreBoardCursorAreaWideScreen;
+extern vmCvar_t cg_scoreBoardForceLineHeight;
+extern vmCvar_t cg_scoreBoardForceLineHeightDefault;
+extern vmCvar_t cg_scoreBoardForceLineHeightTeam;
+extern vmCvar_t cg_scoreBoardForceLineHeightTeamDefault;
 
 extern vmCvar_t cg_hitBeep;
 
@@ -3172,6 +3187,7 @@ extern vmCvar_t cg_audioAnnouncerScore;
 extern vmCvar_t cg_audioAnnouncerLastStanding;
 extern vmCvar_t cg_audioAnnouncerDominationPoint;
 extern vmCvar_t cg_audioAnnouncerPowerup;
+extern vmCvar_t cg_ignoreServerPlaySound;
 
 extern vmCvar_t wolfcam_drawFollowing;
 extern vmCvar_t wolfcam_drawFollowingOnlyName;
@@ -3233,6 +3249,7 @@ extern vmCvar_t cg_obituaryFadeTime;
 extern vmCvar_t cg_obituaryStack;
 
 extern vmCvar_t cg_fragTokenAccuracyStyle;
+extern vmCvar_t cg_fragIconHeightFixed;
 
 extern vmCvar_t cg_drawPlayerNames;
 //extern vmCvar_t cg_drawPlayerNamesX;
@@ -3483,6 +3500,8 @@ extern vmCvar_t cg_drawHitFriendTime;
 extern vmCvar_t cg_racePlayerShader;
 extern vmCvar_t cg_quadSoundRate;
 extern vmCvar_t cg_cpmaSound;
+extern vmCvar_t cg_soundPvs;
+extern vmCvar_t cg_soundBuffer;
 extern vmCvar_t cg_drawFightMessage;
 extern vmCvar_t cg_winLossMusic;
 
@@ -3521,5 +3540,9 @@ typedef enum {
 
 //FIXME forward declarations
 //void CG_GetStoredScriptVarsFromLE (localEntity_t *le);
+
+// player health/armor in ql protocol 91
+#define SIGNED_16_BIT(x) (((x > 32767) ? -(65536 - x) : x))
+
 
 #endif  // cg_local_h_included

@@ -148,6 +148,7 @@ vmCvar_t	cg_bobpitch;
 vmCvar_t	cg_bobroll;
 vmCvar_t	cg_swingSpeed;
 vmCvar_t	cg_shadows;
+vmCvar_t cg_thawGibs;
 vmCvar_t	cg_gibs;
 vmCvar_t cg_gibColor;
 vmCvar_t	cg_gibJump;
@@ -338,9 +339,12 @@ vmCvar_t	cg_draw2D;
 vmCvar_t	cg_drawStatus;
 vmCvar_t	cg_drawTeamBackground;
 vmCvar_t	cg_animSpeed;
+
 vmCvar_t	cg_debugAnim;
 vmCvar_t	cg_debugPosition;
 vmCvar_t	cg_debugEvents;
+vmCvar_t cg_debugServerCommands;
+
 vmCvar_t	cg_errorDecay;
 vmCvar_t	cg_nopredict;
 vmCvar_t	cg_noPlayerAnims;
@@ -486,8 +490,10 @@ vmCvar_t cg_drawFoeMaxWidth;
 vmCvar_t cg_drawSelf;
 vmCvar_t cg_drawSelfMinWidth;
 vmCvar_t cg_drawSelfMaxWidth;
+vmCvar_t cg_drawSelfIconStyle;
 vmCvar_t cg_drawInfected;
 vmCvar_t cg_drawFlagCarrier;
+vmCvar_t cg_drawFlagCarrierSize;
 vmCvar_t cg_drawHitFlagCarrierTime;
 
 vmCvar_t	cg_teamChatsOnly;
@@ -654,7 +660,10 @@ vmCvar_t cg_scoreBoardWarmup;
 vmCvar_t cg_scoreBoardOld;
 vmCvar_t cg_scoreBoardOldWideScreen;
 //vmCvar_t cg_scoreBoardCursorAreaWideScreen;
-
+vmCvar_t cg_scoreBoardForceLineHeight;
+vmCvar_t cg_scoreBoardForceLineHeightDefault;
+vmCvar_t cg_scoreBoardForceLineHeightTeam;
+vmCvar_t cg_scoreBoardForceLineHeightTeamDefault;
 vmCvar_t cg_hitBeep;
 
 vmCvar_t cg_drawSpawns;
@@ -846,6 +855,7 @@ vmCvar_t cg_audioAnnouncerScore;
 vmCvar_t cg_audioAnnouncerLastStanding;
 vmCvar_t cg_audioAnnouncerDominationPoint;
 vmCvar_t cg_audioAnnouncerPowerup;
+vmCvar_t cg_ignoreServerPlaySound;
 
 vmCvar_t wolfcam_drawFollowing;
 vmCvar_t wolfcam_drawFollowingOnlyName;
@@ -905,6 +915,7 @@ vmCvar_t cg_obituaryFadeTime;
 vmCvar_t cg_obituaryStack;
 
 vmCvar_t cg_fragTokenAccuracyStyle;
+vmCvar_t cg_fragIconHeightFixed;
 
 vmCvar_t cg_drawPlayerNames;
 //vmCvar_t cg_drawPlayerNamesX;
@@ -1155,6 +1166,8 @@ vmCvar_t cg_drawHitFriendTime;
 vmCvar_t cg_racePlayerShader;
 vmCvar_t cg_quadSoundRate;
 vmCvar_t cg_cpmaSound;
+vmCvar_t cg_soundPvs;
+vmCvar_t cg_soundBuffer;
 vmCvar_t cg_drawFightMessage;
 vmCvar_t cg_winLossMusic;
 
@@ -1210,6 +1223,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_viewsize, "cg_viewsize", "100", CVAR_ARCHIVE },
 	{ &cg_stereoSeparation, "cg_stereoSeparation", "0.4", CVAR_ARCHIVE  },
 	{ &cg_shadows, "cg_shadows", "1", CVAR_ARCHIVE  },
+	{ cvp(cg_thawGibs), "10", CVAR_ARCHIVE },
 	{ &cg_gibs, "cg_gibs", "15", CVAR_ARCHIVE  },
 	{ &cg_gibColor, "cg_gibColor", "", CVAR_ARCHIVE },
 	{ &cg_gibJump, "cg_gibJump", "0", CVAR_ARCHIVE },
@@ -1472,6 +1486,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_debugAnim, "cg_debuganim", "0", CVAR_CHEAT },
 	{ &cg_debugPosition, "cg_debugposition", "0", CVAR_CHEAT },
 	{ &cg_debugEvents, "cg_debugevents", "0", CVAR_CHEAT },
+	{ cvp(cg_debugServerCommands), "0", CVAR_ARCHIVE },
 	{ &cg_errorDecay, "cg_errordecay", "100", 0 },
 	{ &cg_nopredict, "cg_nopredict", "0", 0 },
 	{ &cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT },
@@ -1544,8 +1559,10 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawSelf, "cg_drawSelf", "2", CVAR_ARCHIVE },
 	{ &cg_drawSelfMinWidth, "cg_drawSelfMinWidth", "4.0", CVAR_ARCHIVE },
 	{ &cg_drawSelfMaxWidth, "cg_drawSelfMaxWidth", "24.0", CVAR_ARCHIVE },
+	{ cvp(cg_drawSelfIconStyle), "1", CVAR_ARCHIVE },
 	{ cvp(cg_drawInfected), "0", CVAR_ARCHIVE },
 	{ cvp(cg_drawFlagCarrier), "1", CVAR_ARCHIVE },
+	{ cvp(cg_drawFlagCarrierSize), "10", CVAR_ARCHIVE },
 	{ cvp(cg_drawHitFlagCarrierTime), "1500", CVAR_ARCHIVE },
 
 	{ &cg_teamChatsOnly, "cg_teamChatsOnly", "0", CVAR_ARCHIVE },
@@ -1719,6 +1736,10 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_scoreBoardOld, "cg_scoreBoardOld", "0", CVAR_ARCHIVE },
 	{ cvp(cg_scoreBoardOld), "2", CVAR_ARCHIVE },
 	//{ cvp(cg_scoreBoardCursorAreaWideScreen), "2", CVAR_ARCHIVE },
+	{ cvp(cg_scoreBoardForceLineHeight), "-1", CVAR_ARCHIVE },
+	{ cvp(cg_scoreBoardForceLineHeightDefault), "9", CVAR_ARCHIVE },
+	{ cvp(cg_scoreBoardForceLineHeightTeam), "-1", CVAR_ARCHIVE },
+	{ cvp(cg_scoreBoardForceLineHeightTeamDefault), "8", CVAR_ARCHIVE },
 
 	{ &cg_hitBeep, "cg_hitBeep", "2", CVAR_ARCHIVE },
 
@@ -1927,6 +1948,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_audioAnnouncerLastStanding, "cg_audioAnnouncerLastStanding", "0", CVAR_ARCHIVE },
 	{ &cg_audioAnnouncerDominationPoint, "cg_audioAnnouncerDominationPoint", "1", CVAR_ARCHIVE },
 	{ cvp(cg_audioAnnouncerPowerup), "1", CVAR_ARCHIVE },
+	{ cvp(cg_ignoreServerPlaySound), "0", CVAR_ARCHIVE },
 
 	{ &wolfcam_drawFollowing, "wolfcam_drawFollowing", "2", CVAR_ARCHIVE },
 	{ &wolfcam_drawFollowingOnlyName, "wolfcam_drawFollowingOnlyName", "0", CVAR_ARCHIVE },
@@ -1989,6 +2011,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_obituaryStack), "5", CVAR_ARCHIVE },
 
 	{ &cg_fragTokenAccuracyStyle, "cg_fragTokenAccuracyStyle", "0", CVAR_ARCHIVE },
+	{ cvp(cg_fragIconHeightFixed), "1", CVAR_ARCHIVE },
 
 	{ &cg_drawPlayerNames, "cg_drawPlayerNames", "0", CVAR_ARCHIVE },
 	{ &cg_drawPlayerNamesY, "cg_drawPlayerNamesY", "64", CVAR_ARCHIVE },
@@ -2247,6 +2270,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_racePlayerShader), "1", CVAR_ARCHIVE },
 	{ cvp(cg_quadSoundRate), "1000", CVAR_ARCHIVE },
 	{ cvp(cg_cpmaSound), "1", CVAR_ARCHIVE },
+	{ cvp(cg_soundPvs), "1", CVAR_ARCHIVE },
+	{ cvp(cg_soundBuffer), "1", CVAR_ARCHIVE },
 	{ cvp(cg_drawFightMessage), "1", CVAR_ARCHIVE },
 	{ cvp(cg_winLossMusic), "1", CVAR_ARCHIVE },
 
@@ -3090,11 +3115,23 @@ static void CG_RegisterSounds( void ) {
 	cgs.media.wearOffSound = trap_S_RegisterSound( "sound/items/wearoff.wav", qfalse );
 	cgs.media.useNothingSound = trap_S_RegisterSound( "sound/items/use_nothing.wav", qfalse );
 
-	//FIXME check for gibs
+	// try q3 gibs and then dlc_gibs
 	cgs.media.gibSound = trap_S_RegisterSound( "sound/player/gibsplt1.wav", qfalse );
+	if (!cgs.media.gibSound) {
+		cgs.media.gibSound = trap_S_RegisterSound( "dlc_gibs/gibsplt1.wav", qfalse );
+	}
 	cgs.media.gibBounce1Sound = trap_S_RegisterSound( "sound/player/gibimp1.wav", qfalse );
+	if (!cgs.media.gibBounce1Sound) {
+		cgs.media.gibBounce1Sound = trap_S_RegisterSound( "dlc_gibs/gibimp1.wav", qfalse );
+	}
 	cgs.media.gibBounce2Sound = trap_S_RegisterSound( "sound/player/gibimp2.wav", qfalse );
+	if (!cgs.media.gibBounce2Sound) {
+		cgs.media.gibBounce2Sound = trap_S_RegisterSound( "dlc_gibs/gibimp2.wav", qfalse );
+	}
 	cgs.media.gibBounce3Sound = trap_S_RegisterSound( "sound/player/gibimp3.wav", qfalse );
+	if (!cgs.media.gibBounce3Sound) {
+		cgs.media.gibBounce3Sound = trap_S_RegisterSound( "dlc_gibs/gibimp3.wav", qfalse );
+	}
 
 	cgs.media.electroGibSound1 = trap_S_RegisterSound( "sound/misc/electrogib_01.ogg", qfalse );
 	cgs.media.electroGibSound2 = trap_S_RegisterSound( "sound/misc/electrogib_02.ogg", qfalse );
@@ -3473,12 +3510,18 @@ static void CG_RegisterGraphics( void ) {
 
 	// removed in ql 2015-05-15
 	//cgs.media.bloodTrailShader = trap_R_RegisterShader( "bloodTrail" );
+	// unused 2016-06-10
+	/*
 	cgs.media.bloodTrailShader = trap_R_RegisterShader("wc/bloodTrail");
 	if (!cgs.media.bloodTrailShader) {
 		Com_Printf("trying alternate blood trail\n");
 		cgs.media.bloodTrailShader = trap_R_RegisterShader("wc/bloodTrailAlt");
 	}
+	*/
 	cgs.media.q3bloodTrailShader = trap_R_RegisterShader("q3bloodTrail");
+	if (!cgs.media.q3bloodTrailShader) {
+		cgs.media.q3bloodTrailShader = trap_R_RegisterShader("dlc_bloodTrail");
+	}
 
 	cgs.media.lagometerShader = trap_R_RegisterShader("lagometer" );
 	cgs.media.connectionShader = trap_R_RegisterShader( "disconnected" );
@@ -3684,7 +3727,9 @@ static void CG_RegisterGraphics( void ) {
 	}
 	cgs.media.foeShader = trap_R_RegisterShader("wc/foe");
 	cgs.media.selfShader = trap_R_RegisterShader("wc/self");
+	cgs.media.selfEnemyShader = trap_R_RegisterShader("wc/selfEnemy");
 	cgs.media.selfDemoTakerShader = trap_R_RegisterShader("wc/selfDemoTaker");
+	cgs.media.selfDemoTakerEnemyShader = trap_R_RegisterShader("wc/selfDemoTakerEnemy");
 	cgs.media.infectedFoeShader = trap_R_RegisterShader("gfx/2d/infected/bite");
 
 	if (cgs.gametype == GT_FREEZETAG) {
@@ -3717,16 +3762,47 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.iceBrain = trap_R_RegisterModel("models/gibs/brain.md3");
 	}
 
+	// try q3 gibs and then ql dlc_gibs
 	cgs.media.gibAbdomen = trap_R_RegisterModel( "models/gibsq3/abdomen.md3" );
+	if (!cgs.media.gibAbdomen) {
+		cgs.media.gibAbdomen = trap_R_RegisterModel( "dlc_gibs/abdomen.md3" );
+	}
 	cgs.media.gibArm = trap_R_RegisterModel( "models/gibsq3/arm.md3" );
+	if (!cgs.media.gibArm) {
+		cgs.media.gibArm = trap_R_RegisterModel( "dlc_gibs/arm.md3" );
+	}
 	cgs.media.gibChest = trap_R_RegisterModel( "models/gibsq3/chest.md3" );
+	if (!cgs.media.gibChest) {
+		cgs.media.gibChest = trap_R_RegisterModel( "dlc_gibs/chest.md3" );
+	}
 	cgs.media.gibFist = trap_R_RegisterModel( "models/gibsq3/fist.md3" );
+	if (!cgs.media.gibFist) {
+		cgs.media.gibFist = trap_R_RegisterModel( "dlc_gibs/fist.md3" );
+	}
 	cgs.media.gibFoot = trap_R_RegisterModel( "models/gibsq3/foot.md3" );
+	if (!cgs.media.gibFoot) {
+		cgs.media.gibFoot = trap_R_RegisterModel( "dlc_gibs/foot.md3" );
+	}
 	cgs.media.gibForearm = trap_R_RegisterModel( "models/gibsq3/forearm.md3" );
+	if (!cgs.media.gibForearm) {
+		cgs.media.gibForearm = trap_R_RegisterModel( "dlc_gibs/forearm.md3" );
+	}
 	cgs.media.gibIntestine = trap_R_RegisterModel( "models/gibsq3/intestine.md3" );
+	if (!cgs.media.gibIntestine) {
+		cgs.media.gibIntestine = trap_R_RegisterModel( "dlc_gibs/intestine.md3" );
+	}
 	cgs.media.gibLeg = trap_R_RegisterModel( "models/gibsq3/leg.md3" );
+	if (!cgs.media.gibLeg) {
+		cgs.media.gibLeg = trap_R_RegisterModel( "dlc_gibs/leg.md3" );
+	}
 	cgs.media.gibSkull = trap_R_RegisterModel( "models/gibsq3/skull.md3" );
+	if (!cgs.media.gibSkull) {
+		cgs.media.gibSkull = trap_R_RegisterModel( "dlc_gibs/skull.md3" );
+	}
 	cgs.media.gibBrain = trap_R_RegisterModel( "models/gibsq3/brain.md3" );
+	if (!cgs.media.gibBrain) {
+		cgs.media.gibBrain = trap_R_RegisterModel( "dlc_gibs/brain.md3" );
+	}
 
 	cgs.media.gibSphere = trap_R_RegisterModel("models/gibs/sphere.md3");
 
@@ -3736,6 +3812,9 @@ static void CG_RegisterGraphics( void ) {
 
 	// try q3 blood first
 	cgs.media.bloodExplosionShader = trap_R_RegisterShader("q3bloodExplosion");
+	if (!cgs.media.bloodExplosionShader) {
+		cgs.media.bloodExplosionShader = trap_R_RegisterShader("dlc_bloodExplosion");
+	}
 	if (!cgs.media.bloodExplosionShader) {
 		Com_Printf("trying alternate blood explosion\n");
 		cgs.media.bloodExplosionShader = trap_R_RegisterShader("wc/bloodExplosionAlt");
@@ -3849,13 +3928,19 @@ static void CG_RegisterGraphics( void ) {
 		cgs.media.iceMarkShader = trap_R_RegisterShader("iceMark");
 	}
 
+	// unused 2016-06-10
+	/*
 	//cgs.media.bloodMarkShader = trap_R_RegisterShader( "bloodMark" );
 	cgs.media.bloodMarkShader = trap_R_RegisterShader("wc/bloodMark");
 	if (!cgs.media.bloodMarkShader) {
 		Com_Printf("trying alternate blood mark\n");
 		cgs.media.bloodMarkShader = trap_R_RegisterShader("wc/bloodMarkAlt");
 	}
+	*/
 	cgs.media.q3bloodMarkShader = trap_R_RegisterShader("q3bloodMark");
+	if (!cgs.media.q3bloodMarkShader) {
+		cgs.media.q3bloodMarkShader = trap_R_RegisterShader("dlc_bloodMark");
+	}
 
 	// register the inline models
 	cgs.numInlineModels = trap_CM_NumInlineModels();
@@ -5649,6 +5734,11 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 				alive = sp->alive;
 			}
 
+			// using obituary to track players still alive
+			if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+				alive = wclients[sp->client].aliveThisRound;
+			}
+
 			if (alive) {
 				if (sp->team == TEAM_RED) {
 					*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
@@ -6028,6 +6118,9 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 		case 3: {
 			qboolean ready = qfalse;
 			int powerups;
+			qboolean iconSet;
+
+			iconSet = qfalse;
 
 			if (version >= 1) {
 				powerups = ts->powerups;
@@ -6041,14 +6134,31 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			if (cg.warmup  ||  cg.snap->ps.pm_type == PM_INTERMISSION) {
 				if (ready) {
 					*handle = trap_R_RegisterShader("ui/assets/score/arrowg");
+					iconSet = qtrue;
 				} else {
 					*handle = trap_R_RegisterShader("ui/assets/score/arrowr");
+					iconSet = qtrue;
 				}
 				return "";
 			} else if (powerups & ( 1 << PW_REDFLAG )) {
 					*handle = cgs.media.pickup_iconredflag;
+					iconSet = qtrue;
 			} else if (powerups & ( 1 << PW_BLUEFLAG )) {
 					*handle = cgs.media.pickup_iconblueflag;
+					iconSet = qtrue;
+			}
+
+			//Com_Printf("^5 %d  %d\n", sp->client, wclients[sp->client].aliveThisRound);
+			if (!iconSet) {
+				if (cgs.gametype == GT_CTFS) {
+					if (wclients[sp->client].aliveThisRound) {
+						if (sp->team == TEAM_RED) {
+							*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
+						} else {
+							*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_blue");
+						}
+					}
+				}
 			}
 
 			return "";
@@ -6236,6 +6346,19 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 				alive = ts->alive;
 			} else {
 				alive = sp->alive;
+			}
+
+			// using obituary to track players still alive
+
+#if 0
+			if (alive) {
+				if (!wclients[sp->client].aliveThisRound) {
+					alive = qfalse;
+				}
+			}
+#endif
+			if (cgs.protocol == PROTOCOL_QL) {
+				alive = wclients[sp->client].aliveThisRound;
 			}
 
 			if (alive) {
@@ -6949,9 +7072,16 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 			}
 
 			if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {
-				if (sp->alive) {
-					//*handle = trap_R_RegisterShader("ui/assets/score/arrow.png");
-					//*handle = trap_R_RegisterShader("ui/assets/score/arrow");
+				qboolean alive;
+
+				alive = sp->alive;
+
+				// using obituary to track players still alive
+				if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+					alive = wclients[sp->client].aliveThisRound;
+				}
+
+				if (alive) {
 					if (sp->team == TEAM_RED) {
 						*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 					} else {
@@ -6982,7 +7112,6 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 			return "";
 		}
 		case 3:
-			//*handle = trap_R_RegisterShader("ui/assets/score/ca_arrow_red");
 			if (cg_scoreBoardStyle.integer == 0) {
 				//return info->name;
 				clanTag = info->clanTag;
@@ -7555,7 +7684,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	s = CG_ConfigString( CS_LEVEL_START_TIME );
 	cgs.levelStartTime = atoi( s );
 
-	CG_ParseServerinfo(qtrue);
+	CG_ParseServerinfo(qtrue, qfalse);
 	if (cgs.protocol == PROTOCOL_QL) {
 		Com_Printf("^5ql%s ^5version %d.%d.%d.%d\n", cgs.isQuakeLiveBetaDemo ? " ^6beta" : "", cgs.qlversion[0], cgs.qlversion[1], cgs.qlversion[2], cgs.qlversion[3]);
 	}
@@ -7830,6 +7959,9 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	if (cg.demoPlayback) {
 		trap_Get_Demo_Timeouts(&cgs.numTimeouts, cgs.timeOuts);
+		if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+			trap_GetRoundStartTimes(&cg.numRoundStarts, cg.roundStarts);
+		}
 	}
 
 	// q3mme camera
@@ -7840,6 +7972,8 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	// hack for ql area chat not using default font
 	trap_R_RegisterFont(DEFAULT_SANS_FONT, 16, &cg.notosansFont);
+
+	trap_SendConsoleCommand("exec wolfcamfirstpersonviewdemotaker.cfg\n");
 }
 
 void CG_LoadDefaultMenus (void)

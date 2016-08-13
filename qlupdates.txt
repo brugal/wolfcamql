@@ -3448,5 +3448,19 @@ We've just released an update to both the client and the server today. Servers a
 - overkill: fixed HOM near bottom of bridge
 
 ----------------------------------------------
+2016-06-07
 
+Quake Live Update v1069
+June 7 - [id] sponge
+We've just released an update to both the client and the server today. Servers and clients will both need to update as the changes are not compatible between versions, and older servers will be de-listed from the server list. Here's the list of changes:
+
+- add server support for alternate death effects through workshop
+- fixed inability to look around after issuing a map_restart while paused
+- grappling hooks on dead and disconnected players weren't freed, resulting in the hook snapping from player to player
+- clientmute now properly mutes team chat
+- fixed some random color issues on map rotation error output
+- powerups and keys were spawning before the minimum amount of time at map start
+- elder: fixed doubled up fog volume
+- ironworks: fixed ffa spawns
+------------------------------------------
 

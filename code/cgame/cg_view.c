@@ -1176,10 +1176,15 @@ CG_AddBufferedSound
 void CG_AddBufferedSound( sfxHandle_t sfx ) {
 	if ( !sfx )
 		return;
-	cg.soundBuffer[cg.soundBufferIn] = sfx;
-	cg.soundBufferIn = (cg.soundBufferIn + 1) % MAX_SOUNDBUFFER;
-	if (cg.soundBufferIn == cg.soundBufferOut) {
-		cg.soundBufferOut++;
+
+	if (cg_soundBuffer.integer) {
+		cg.soundBuffer[cg.soundBufferIn] = sfx;
+		cg.soundBufferIn = (cg.soundBufferIn + 1) % MAX_SOUNDBUFFER;
+		if (cg.soundBufferIn == cg.soundBufferOut) {
+			cg.soundBufferOut++;
+		}
+	} else {
+		CG_StartLocalSound(sfx, CHAN_ANNOUNCER);
 	}
 }
 
@@ -5168,6 +5173,11 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 				CG_ZoomUp_f();
 			}
 			trap_SendConsoleCommand("exec wolfcamfirstpersonswitch.cfg\n");
+			if (wcg.clientNum == cg.snap->ps.clientNum) {
+				trap_SendConsoleCommand("exec wolfcamfirstpersonviewdemotaker.cfg\n");
+			} else {
+				trap_SendConsoleCommand("exec wolfcamfirstpersonviewother.cfg\n");
+			}
 		}
 		wolfcamLastClientNum = wcg.clientNum;
 	}
@@ -5293,7 +5303,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	//cg.renderingThirdPerson = cg_thirdPerson.integer ||  cg.freecam;
 
 	// build cg.refdef
-    if (!wolfcam_following) {
+    if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
         inwater = CG_CalcViewValues();
 	}
 
@@ -5442,8 +5452,12 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	CG_VibrateCamera();
 
-	CG_AddViewWeapon( &cg.predictedPlayerState );
-	if (wolfcam_following) {
+	//FIXME should check wolfcam_following ?
+	if (1) { //(!wolfcam_following) {
+		CG_AddViewWeapon( &cg.predictedPlayerState );
+	}
+
+	if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
 		Wolfcam_AddViewWeapon();
 	}
 	//CG_VibrateCameraAngles();

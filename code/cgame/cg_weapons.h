@@ -24,6 +24,9 @@ void CG_ShotgunFire( const entityState_t *es );
 
 void CG_GetWeaponFlashOrigin (int clientNum, vec3_t startPoint);
 void CG_Bullet( const vec3_t origin, int sourceEntityNum, const vec3_t normal, qboolean flesh, int fleshEntityNum );
-
+int CG_MapTorsoToWeaponFrame( const clientInfo_t *ci, int frame );
+float CG_MachinegunSpinAngle( centity_t *cent );
+void CG_AddWeaponWithPowerups( refEntity_t *gun, int powerups );
+void CG_SpawnRailTrail( centity_t *cent, const vec3_t origin );
 
 #endif  // cg_weapons_h_included

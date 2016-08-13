@@ -1,3 +1,54 @@
+11.3  2016-08-13
+
+* bug fix:  player name and location in team overlay truncating last letter
+* support for steam workshop gibs (need to copy workshop_gibs.pk3 into wolfcam-ql/)
+* player bleeding not dependent on com_blood cvar
+* bug fix:  invalid lightning gun beam origin when /follow'ed player is the same as demo pov
+* bug fix:  invalid gun offset when /follow'ed player is the same as demo pov
+* first person weapon drawn with /follow'ed player
+* cg_ignoreServerPlaySound  disable/enable server 'playsound' command.  Used with 'crash' tutorial and minqlx custom sounds.
+* bug fix:  /follow'ed player showing inaccurate health/armor for teammates in protocol 91 demos
+* bug fix:  invalid check for teamgame with /follow'ed player armor and health
+* bug fix:  /follow'ed player not showing armor and health for teammates with spec demo and protocol 91
+* cg_fragIconHeightFixed  for frag and obiturary messages controls whether icon height is based on the height of the surrounding text (leads to variable icon sizes) or on a fixed value per font (matches quake live)
+* bug fix:  remove console spamming if playerState command time was reset
+* switch drawing order of timer and speed in old q3 hud
+* ioquake3 fixes
+* bug fix:  draw status bar head for /follow'ed player in old q3 hud
+* bug fix:  health and armor not shown for /follow'ed player in old q3 hud
+* bug fix:  protocol 91 spectator demos not using additional health and armor information for /follow'ed player
+* cg_thawGibs to control freezetag thaw effect separately from cg_gibs
+* bug fix:  player skill rating value sometimes printed for demos that don't support skill rating
+* auto execs for /follow'ed player view switches:  wolfcamfirstpersonviewdemotaker.cfg and wolfcamfirstpersonviewother.cfg
+* bug fix:  scoreboard not showing team sizes
+* cg_drawGun 4 enables transparent weapon and bobbing
+* bug fix:  invalid shader used for crosshairs in setup menu
+* bug fix:  cg_demoSmoothing didn't work with /follow'ed player
+* scoreboard alive/dead status updates based on obituary events as well as server score commands
+* cg_scoreBoardForceLineHeight  override the menu defined line height for the player list in non-team modes.  (-1:  scales line height to fit all players, 0:  uses the menu defined value, > 0:  uses this value)
+* cg_scoreBoardForceLineHeightDefault  this is the default number of players that fit in the non-team scoreboard, this needs to match menu value for line forcing to work
+* cg_scoreBoardForceLineHeightTeam  override the menu defined line height for the player list in team modes.  (-1:  scales line height to fit all players, 0:  uses the menu defined value, > 0:  uses this value)
+* cg_scoreBoardForceLineHeightTeamDefault  this is the default number of players that fit in the team scoreboard, this needs to match menu value for line forcing to work
+* /seeknextround [millisecond offset]
+* /seekprevround [millisecond offset]
+* auto exec:  demoTakerDieRound.cfg  if demo taker is also a player and dies during a Clan arena or CTFS round
+* bug fix:  crash parsing spawn variables with cpma demos
+* cg_soundPvs (1:  for ql demo protocol >= 91 which sends extra sound information only play sounds in potentially visible set, 2:  restrict sounds to pvs for all demos, 3:  for debugging, restrict sounds to pvs and print skipped sounds)
+* bug fix:  cpma sound don't use lerp origin
+* cg_soundBuffer (0:  disabled buffered sounds, 1:  enable buffered sounds)
+* bug fix:  model check during demo parsing using incorrect config string value
+* cg_drawFlagCarrierSize  icon size
+* "smscores" server command
+* cg_debugServerCommands (0 (default):  only print message for unknown commands, 1:  print all commands and arguments, 2:  only print message and arguments for unknown commands)
+* bug fix:  missing cpma ca round status messages
+* bug fix:  missing cpma autoexecs for ca round start and end
+* cpma update round alive status in ca scoreboard
+* bug fix:  alive status missing in 'Attack and Defend' scoreboard
+* bug fix:  remove 'unknown config string: 690' warning
+* bug fix:  self demo taker icon didn't use cg_drawSelf[Min|Max]Width
+* cg_drawSelfIconStyle  (0: use same icon regardless of team,  1: use diamond icon for enemy)
+
+---------------------------------
 11.2  2016-06-06
 
 * r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
@@ -11,7 +62,7 @@
 * bug fix:  hmg info not shown in clan arena stats menu
 * bug fix:  steam workshops pk3s were loaded after ql pak00.pk3 which allowed them to modify the pak00.pk3 content
 * fs_searchWorkshops 2  allows workshops to be treated like mods by loading them after other pk3s (including ql pak00.pk3).  This lets them modify content.
-* bug fix:   team overlay information correctly wasn't updating correctly with protocol 91 demos
+* bug fix:   team overlay information wasn't updating correctly with protocol 91 demos
 * cg_useDemoZoom 2  resets zoom settings at round start in clan arena to work around a quake live bug where the fov values from the previously viewed player are still being used
 * bug fix:  cg_forcePovModel didn't check model for "tag_flag"
 * cg_enemyHeadModel

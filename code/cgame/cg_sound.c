@@ -7,15 +7,12 @@
 static qboolean CG_CheckCanPlaySound (const vec3_t origin, int entityNum, sfxHandle_t sfx)
 {
     if (cg_cpmaSound.integer > 1  ||  (cg_cpmaSound.integer  &&  cgs.cpma)) {
-        //int ourClientNum;
         vec3_t ourOrigin;
         vec3_t soundOrigin;
 
         if (wolfcam_following) {
-            //ourClientNum = wcg.clientNum;
-            VectorCopy(cg_entities[wcg.clientNum].lerpOrigin, ourOrigin);
+            VectorCopy(cg_entities[wcg.clientNum].currentState.pos.trBase, ourOrigin);
         } else {
-            //ourClientNum = cg.snap->ps.clientNum;
             VectorCopy(cg.snap->ps.origin, ourOrigin);
         }
 
@@ -32,7 +29,7 @@ static qboolean CG_CheckCanPlaySound (const vec3_t origin, int entityNum, sfxHan
                 Com_Printf("^3WARNING cpma sound invalid entityNum: %d\n", entityNum);
                 return qtrue;
             }
-            VectorCopy(cg_entities[entityNum].lerpOrigin, soundOrigin);
+            VectorCopy(cg_entities[entityNum].currentState.pos.trBase, soundOrigin);
         } else {
             VectorCopy(origin, soundOrigin);
         }
@@ -57,6 +54,43 @@ static qboolean CG_CheckCanPlaySound (const vec3_t origin, int entityNum, sfxHan
 
         //Com_Printf("^5yes... playing ent %d at origin %f %f %f  dist^7: %f\n", entityNum, soundOrigin[0], soundOrigin[1], soundOrigin[2], Distance(ourOrigin, soundOrigin));
         return qtrue;
+    } else if ((cg_soundPvs.integer == 1  &&  cgs.realProtocol >= 91)  ||  cg_soundPvs.integer > 1) {
+        // ql spec demos send entity info that isn't in pvs
+        //FIXME duplicate code with cpma sound
+        vec3_t ourOrigin;
+        vec3_t soundOrigin;
+
+        if (wolfcam_following) {
+            VectorCopy(cg_entities[wcg.clientNum].currentState.pos.trBase, ourOrigin);
+        } else {
+            VectorCopy(cg.snap->ps.origin, ourOrigin);
+        }
+
+        if (origin != NULL  &&  entityNum != 0) {
+            //Com_Printf("^3sound check:  origin != null and entityNum %d\n", entityNum);
+        }
+
+        if (origin == NULL) {
+            if (entityNum == ENTITYNUM_WORLD) {
+                Com_Printf("^3WARNING sound WORLD entity and null origin\n");
+                return qtrue;
+            }
+            if (entityNum < 0  ||  entityNum >= MAX_GENTITIES) {
+                Com_Printf("^3WARNING sound invalid entityNum: %d\n", entityNum);
+                return qtrue;
+            }
+            VectorCopy(cg_entities[entityNum].currentState.pos.trBase, soundOrigin);
+        } else {
+            VectorCopy(origin, soundOrigin);
+        }
+
+        if (!trap_R_inPVS(ourOrigin, soundOrigin)) {
+            if (cg_soundPvs.integer > 2) {
+                CG_Printf("^4sound:  skipping, not in pvs  %d\n", sfx);
+                trap_S_PrintSfxFilename(sfx);
+            }
+            return qfalse;
+        }
     }
 
     return qtrue;

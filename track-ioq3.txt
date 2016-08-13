@@ -1849,3 +1849,46 @@ Remove unnecessary localhost check from reconnect command.
 2016-05-16-01 Explicitly set cull type for skybox
 
 2016-05-19-01 skip (rend2):  OpenGL2: Speed up surface merging.
+
+2016-05-23-01 Improve keyboard/joystick input in Team Arena UI
+2016-05-23-02 Fix iamamonkey printing 'levels' instead of 'awards'
+
+2016-05-27-01 skip (not updated):  Include SDL2 dll from repository in NSIS installer
+
+2016-06-08-01 skip (ren2):  OpenGL2: Set cubemap mip selection to match output from ggxcc.
+
+2016-06-12-01 skip (bumps mac osx sdk version):  Fix Makefile for OSX
+2016-06-12-02 skip (^):  Merge pull request #190 from wtfbbqhax/OSX_64bit_builds
+
+2016-06-15-01 skip (no git):  Add temporary backup text files to .gitignore
+2016-06-15-02 skip (no git):  Erroneously removed that line in .gitignore
+
+2016-06-10-01 skip (rend2):  OpenGL2: Remove loading (unused) glDrawBuffersARB
+2016-06-10-02 skip (rend2):  OpenGL2: Remove duplicate textureFloat = qfalse
+
+2016-06-15-01 Prevent CL_RunCinematic from reading cinTable[-1]
+
+2016-02-04-01 Remove note that r_allowResize requires SDL backend
+
+2016-06-15-01 skip (com_logo):  Only play logo/intro if their filenames have been defined in q_shared.h
+2016-06-15-02 skip (com_logo):  Missed this Cvar_Get() on com_introPlayed
+
+2016-06-27-01 Fix typo of empty in ai_main.c
+
+2016-07-10-01 Fix bot team order to kill last player it killed
+
+2016-06-15-01 Make using Yacc optional, disabled by default
+
+2016-07-11-01 skip (rend2):  Fix OpenGL2 readme missing text in md
+
+2016-07-25-01 skip (rend2):  OpenGL2: Require OpenGL 2.0
+2016-07-25-02 Remove 'abs(unsigned)', which is unnecessary and potentially wrong
+2016-07-25-03 [botlib] Use floating point absolute value rather than truncate to in...
+2016-07-25-04 (merge):  Merge pull request #195 from tkoeppe/intfix
+2016-07-25-05 skip (rend2):  OpenGL2: Use loader for all extension funcs.
+2016-07-25-06 [null/null_glimp.c] Fix up bitrot in null impl
+2016-07-25-07 (merge):  Merge pull request #197 from tkoeppe/null
+
+2016-07-28-01 skip (rend2):  OpenGL2: Fix GL_EXT_direct_state_access function names.
+
+2016-07-29-01 skip (rend2):  OpenGL2: Let unlit materials use parallax maps.

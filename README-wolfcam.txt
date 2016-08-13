@@ -19,15 +19,19 @@ enjoy!
 -------------------------------------------------------------------------------
 Installation:
 
-unzip wolfcamql*.zip anywhere you would like.  You do not have to, and it's not recommended to, install into quakelive's directory.
+Unzip wolfcamql*.zip anywhere you would like.  You do not have to, and it's not recommended to, install into quakelive's directory.
 
-Copy the quakelive paks into baseq3
+Copy the quakelive paks into baseq3.
+
+To auto-download steam workshop maps for demo playback you should install steamcmd from https://developer.valvesoftware.com/wiki/SteamCMD and set its location in the fs_steamcmd variable.
 
 If you want to use the same maps that an older demo was recorded with you can copy over files that start with qz (ex: qzteam1.pk3, qzdm6.pk3) from an older quakelive baseq3/ into wolfcam's baseq3/ .  Otherwise, it will use the new maps with old demos.
 
 ------------------------------------------------------------------------
 
-If you'd like to have quake3 gibs and blood, you need to copy the following files from quake3's pak0.pk3:
+If you want to use steam workshop gibs you need to copy workshop_gibs.pk3 into wolfcam-ql/.
+
+Alternatively, if you'd like to have the original quake3 gibs and blood, you need to copy the following files from quake3's pak0.pk3:
 
 First copy:
 
@@ -88,13 +92,17 @@ wolfcamql/wolfcam-ql/sound/player/gibimp3.wav
 wolfcamql/wolfcam-ql/sound/player/gibsplt1.wav
 
 
+
 Use cl_useq3gibs 1 to enable, and cl_useq3gibs 0 to use to ql gibs.
+
+When gibs are enabled quake3 gibs are checked first and if they aren't found it falls back to workshop gibs.
 
 ------------------------------------------------------------------------
 
 q3 style player bleeding when they are hit:
 
-from quake3 copy
+Enabled when workshop_gibs.pk3 is copied into wolfcam-ql/ or from quake3 copy
+
   models/weaphits/blood201.tga
   models/weaphits/blood202.tga
   models/weaphits/blood203.tga
@@ -883,6 +891,7 @@ Fonts can also be used for hud config elements:
 
 * cg_audioAnnouncer  (0:  disable audio announcer, 1:  Vadrigar (Classic), 2:  Daemia (Female), 3:  new ql announcer)
 
+* cg_ignoreServerPlaySound  disable/enable server 'playsound' command.  Used with 'crash' tutorial and minqlx custom sounds.
 
 ------------------------------------------------------------
 
@@ -1252,9 +1261,12 @@ Available tokens:
 
   cvar cg_fragTokenAccuracyStyle  (0: "35%", 1: "35", 2:  "0.35")
 
-  Icon tokens are automatically scaled to the height of the surrounding text.
+  Icon tokens are automatically scaled to the height of the surrounding text.  The type of scaling can be controled with cg_fragIconHeightFixed.
+
+  cvar cg_fragIconHeightFixed  for frag and obiturary messages controls whether icon height is based on the height of the surrounding text (leads to variable icon sizes) or on a fixed height value per font (matches quake live)
+
   Scaling settings like %{iconscale ...} and cg_drawFragMessageIconScale are
-  applied after the automatic scaling.
+  applied after automatic scaling based on text height.
 
 ---------------------------------------------------------
 
@@ -1275,6 +1287,10 @@ Available tokens:
 * cg_scoreBoardAtIntermission  Draw scoreboard at the end of the game.
 * cg_scoreBoardWarmup  draw scoreboard when you die in warmup
 * cg_scoreBoardOld  use non premium scoreboards
+* cg_scoreBoardForceLineHeight  override the menu defined line height for the player list in non-team modes.  (-1:  scales line height to fit all players, 0:  uses the menu defined value, > 0:  uses this value)
+* cg_scoreBoardForceLineHeightDefault  this is the default number of players that fit in the non-team scoreboard, this needs to match menu value for line forcing to work
+* cg_scoreBoardForceLineHeightTeam  override the menu defined line height for the player list in team modes.  (-1:  scales line height to fit all players, 0:  uses the menu defined value, > 0:  uses this value)
+* cg_scoreBoardForceLineHeightDefault  this is the default number of players that fit in the team scoreboard, this needs to match menu value for line forcing to work
 * cg_roundScoreBoard  in Attack and Defend game type
 * cg_spectatorListSkillRating  show skill rating if known in the scrolling scoreboard spectator list
 * cg_spectatorListScore
@@ -1398,13 +1414,16 @@ Available tokens:
 * cg_drawSelf similar to cg_drawFriend and cg_drawFoe.  It draws a white triangle over the demo pov and green triangle if demo pov is also the demo taker.  Useful if you use /follow
 * cg_drawSelfMinWidth
 * cg_drawSelfMaxWidth
+* cg_drawSelfIconStyle  (0: use same icon regardless of team,  1: use diamond icon for enemy)
+
 
 * cg_drawFlagCarrier  to control flag carrier icons (0: disabled, 1: (default) show only for team flag, 2:  show for both teams)
+* cg_drawFlagCarrierSize  icon size
 * cg_drawHitFlagCarrierTime  to control the time the hit icon is displayed
 
 * cg_drawInfected  to draw 'bite' sprite over player's head in infected game type
 
-* echopopup and echopopupcvar commands to print something on the screen.  /echopopupcvar <cvar> will only print the value.  Add 'name' if you want to print the cvar name as well.  Ex:  /echopopup cg_teamModel name.  Position, time, and widescreen setting are controlled by cg_echoPopupX, cg_echoPopupY, cg_echoPopupTime, and cg_echoPopupWidescreen.
+* echopopup and echopopupcvar commands to print something on the screen.  /echopopupcvar <cvar> will only print the value.  Add 'name' if you want to print the cvar name as well.  Ex:  /echopopupcvar cg_teamModel name.  Position, time, and widescreen setting are controlled by cg_echoPopupX, cg_echoPopupY, cg_echoPopupTime, and cg_echoPopupWidescreen.
 
 * +acc command to show both server side and client side weapon stats window.  Bound to CTRL by default.  Position controlled with cg_accX and cg_accY
 
@@ -1415,6 +1434,9 @@ Available tokens:
   /fastforward /rewind /seek /seekend can accept a cvar as arg and take the cvar's value
   /seekclock can seek within warmup.  ex:  /seekclock w5:12
   /seekclock can be passed in as a command line option (make sure +demo somedemo.dm_73 comes first)
+  /seeknextround [millisecond offset]
+  /seekprevround [millisecond offset]
+
 cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
 * cl_freezeDemo [1/0]  to pause demo playback.  You can also use the pause command to toggle playback on and off.
@@ -1529,11 +1551,25 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
 * cg_hitBeep  multi-tone hit-sounds, same values as quakelive
 
-* exec files: automatically execs follow.cfg when following player (to allow different huds), freecam.cfg when switching to freecam, spectator.cfg, ingame.cfg when you switch back to your own view, gameend.cfg, gamestart.cfg, roundend.cfg, roundstart.cfg, firstpersonswitch.cfg  when switching first person view to another player, wolfcamfirstpersonswitch.cfg  same as firstpersonswitch.cfg but using /follow, scoreboardon.cfg, scoreboardoff.cfg
+* exec files: automatically execs the following
 
-   cgameinit.cfg:  just before map load, most game info and commands not available
-   cgamepostinit.cfg: all set up has been completed and all the game info and commands are available
-
+  - follow.cfg when following player (to allow different huds)
+  - freecam.cfg when switching to freecam
+  - spectator.cfg when you switch to spectator
+  - ingame.cfg when you switch back to your own view
+  - gameend.cfg
+  - gamestart.cfg
+  - roundend.cfg
+  - roundstart.cfg
+  - firstpersonswitch.cfg  when switching first person view to another player (ex:  spectator demo switches person being viewed)
+  - wolfcamfirstpersonswitch.cfg  same as firstpersonswitch.cfg but using /follow
+  - wolfcamfirstpersonviewdemotaker.cfg  when /follow'ed player is same as demo taker view
+  - wolfcamfirstpersonviewother.cfg  when /follow'ed player is not the same as demo taker view
+  - scoreboardon.cfg
+  - scoreboardoff.cfg
+  - cgameinit.cfg  just before map load, most game info and commands not available
+  - cgamepostinit.cfg  all set up has been completed and all the game info and commands are available
+  - demoTakerDieRound.cfg  if demo taker is also a player and dies during a Clan arena or CTFS round
 
 * exec files: will exec a per gametype config (duel.cfg, ffa.cfg, tdm.cfg, ca.cfg, ctf.cfg, 1fctf.cfg, obelisk.cfg, harvester.cfg, freezetag.cfg, domination.cfg, ad.cfg, rr.cfg, (cpma) ntf.cfg, (cpma) 2v2.cfg, (cpma) hm.cfg, iffa.cfg, ictf.cfg, i* etc..)
 
@@ -1797,6 +1833,7 @@ One of the side effects of using cg_useOriginalInterpolation 0, is that it will 
 
 * alias, unalias, and unaliasall  same as quake live
 
+* cg_thawGibs  number of gib particles for freezetag thaw effect
 * cg_gibColor  for the color of the gib particle emitted
 * cg_gibSparksColor  for the color of the spark trail
 * cg_gibSparksSize
@@ -1928,7 +1965,7 @@ It pushes the impact location this amount towards you in order to increase visib
 
 * cg_smokeRadius_dust, cg_smokeRadius_breath, cg_smokeRadius_flight, cg_smokeRadius_haste
 
-* cg_drawgun  2:  eliminates bobbing like quake live, 3:  transparent weapon
+* cg_drawgun  2:  eliminates bobbing like quake live, 3:  transparent weapon, 4:  transparent weapon with bobbing
 
 * cg_localTime (0: use demo time, 1: real time) default 0, cg_localTimeStyle (0: 24-hour clock, 1: am, pm) default 1
 
@@ -2365,6 +2402,12 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
     A sound is only played if it is in a player's potentially visible set and it is less than 1280.0f units away.  Exceptions are broadcast and speaker sounds.  Also, there is an exception for mvd spec coaches (not implemented yet).
 
+* cg_soundPvs (1:  for ql demo protocol >= 91 which sends extra sound information only play sounds in potentially visible set, 2:  restrict sounds to pvs for all demos, 3:  for debugging, restrict sounds to pvs and print skipped sounds)
+
+  Note that cg_cpmaSound > 1 will take precedence over this
+
+* cg_soundBuffer (0:  disabled buffered sounds, 1:  enable buffered sounds)
+
 * cg_drawFightMessage  to enable or disable the starting "FIGHT!" screen messages
 * fs_extraGames*  similar to q3mme's fs_extraGames
 
@@ -2402,6 +2445,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_debugScaledImages to show non power of two scaled images
 * cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
 * r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
+* cg_debugServerCommands (0 (default):  only print message for unknown commands, 1:  print all commands and arguments, 2:  only print message and arguments for unknown commands)
 
 ----------
 

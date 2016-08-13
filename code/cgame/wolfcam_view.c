@@ -3,6 +3,7 @@
 #include "cg_main.h"
 #include "cg_players.h"
 #include "cg_predict.h"
+#include "cg_snapshot.h"
 #include "cg_syscalls.h"
 #include "cg_view.h"
 #include "sc.h"
@@ -903,15 +904,14 @@ int Wolfcam_OffsetFirstPersonView (void)
     wclient_t *wc;
     float ratio;
     float v_dmg_pitch;
-    //qboolean wasBinocZooming;
     int timeDelta;
-    //qboolean notDrawing;
     float bob;
     float speed;
     float delta;
-    qboolean                useLastValidBob = qfalse;
+    qboolean useLastValidBob = qfalse;
     int anim;
 	int t;
+	qboolean useSmoothing = qfalse;
 
 	memset(&cg.refdef, 0, sizeof(cg.refdef));
 	CG_CalcVrect();
@@ -956,28 +956,103 @@ int Wolfcam_OffsetFirstPersonView (void)
     cent->nextState.eFlags |= EF_NODRAW;
 
 
-    VectorCopy (cent->lerpOrigin, cg.refdef.vieworg);
-    VectorCopy (cent->lerpAngles, cg.refdefViewAngles);
+	//FIXME 1 0 ?
+	if (cg_demoSmoothing.integer > 2) {
+		float f;
+		const snapshot_t *old;
+		const snapshot_t *new;
+		const entityState_t *esNew;
+		const entityState_t *esOld;
+		int num;
+		vec3_t origin;
+		int smoothNum;
+		int currentNum;
+		int nextNum;
+		qboolean r;
+
+		useSmoothing = qtrue;
+
+		smoothNum = cg_demoSmoothing.integer;
+		//FIXME why?
+		if (smoothNum >= PACKET_BACKUP) {
+			smoothNum = PACKET_BACKUP - 1;
+		}
+		currentNum = cg.snap->messageNum - cg.snap->messageNum % (smoothNum - 1);
+		nextNum = currentNum + (smoothNum - 1);
+		//FIXME getting snapshots every frame instead of at snapshot transition
+		r = CG_GetSnapshot(currentNum, &cg.smoothOldSnap);
+		if (!r) {
+			//Com_Printf("^3smooth couldn't get old snapshot %d\n", currentNum);
+			useSmoothing = qfalse;
+		}
+		r = CG_PeekSnapshot(nextNum, &cg.smoothNewSnap);
+		if (!r) {
+			//Com_Printf("^3smooth couldn't get next snapshot %d\n", nextNum);
+			useSmoothing = qfalse;
+		}
+		old = &cg.smoothOldSnap;
+		new = &cg.smoothNewSnap;
+
+		//esOld = &cg_entities[wcg.clientNum].currentState;
+		esOld = NULL;
+		esNew = NULL;
+
+		if (useSmoothing) {
+			for (num = 0;  num < new->numEntities;  num++) {
+				if (old->entities[num].number == wcg.clientNum) {
+					esOld = &old->entities[num];
+					break;
+				}
+			}
+
+			for (num = 0;  num < new->numEntities;  num++) {
+				if (new->entities[num].number == wcg.clientNum) {
+					esNew = &new->entities[num];
+					break;
+				}
+			}
+		}
+
+		if (esNew == NULL  ||  esOld == NULL) {
+			useSmoothing = qfalse;
+			//Com_Printf("^6not in new snapshot\n");
+		} else {
+			//Com_Printf("^5got new snap\n");
+			if (cg_demoSmoothingTeleportCheck.integer  &&  ((esOld->eFlags ^ esNew->eFlags) & EF_TELEPORT_BIT)) {
+				//Com_Printf("^2teleport, skipping\n");
+				useSmoothing = qfalse;
+			}
+			f = (cg.ftime - (double)old->serverTime) / (double)(new->serverTime - old->serverTime);
+
+			origin[0] = esOld->pos.trBase[0] + f * (esNew->pos.trBase[0] - esOld->pos.trBase[0]);
+			origin[1] = esOld->pos.trBase[1] + f * (esNew->pos.trBase[1] - esOld->pos.trBase[1]);
+			origin[2] = esOld->pos.trBase[2] + f * (esNew->pos.trBase[2] - esOld->pos.trBase[2]);
+			VectorCopy(origin, cg.refdef.vieworg);
+
+			if (cg_demoSmoothingAngles.integer) {
+				vec3_t angles;
+
+				angles[0] = LerpAngleNear(esOld->apos.trBase[0], esNew->apos.trBase[0], f);
+				angles[1] = LerpAngleNear(esOld->apos.trBase[1], esNew->apos.trBase[1], f);
+				angles[2] = LerpAngleNear(esOld->apos.trBase[2], esNew->apos.trBase[2], f);
+				VectorCopy(angles, cg.refdefViewAngles);
+				if (useSmoothing) {
+					// for lg beam
+					VectorCopy(angles, cent->lerpAngles);
+				}
+			} else {
+				VectorCopy(cent->lerpAngles, cg.refdefViewAngles);
+			}
+		}
+	}
+
+	if (!useSmoothing) {
+		VectorCopy(cent->lerpOrigin, cg.refdef.vieworg);
+		VectorCopy(cent->lerpAngles, cg.refdefViewAngles);
+	}
 
     // CG_TransitionPlayerState for wcg.clientNum
-    //FIXME wolfcam don't know
-#if 0
-    if (cent->currentState.eFlags & EF_DEAD) {
-        trap_SendConsoleCommand ("-zoom\n");
-    }
-#endif
 
-#if 0
-    wasBinocZooming = qfalse;
-    if (wolfcam_esPrev.eFlags & EF_ZOOMING  &&  wolfcam_esPrev.weapon == WP_BINOCULARS) {
-        wasBinocZooming = qtrue;
-    }
-
-    if (wasBinocZooming == qfalse  &&  cent->currentState.weapon == WP_BINOCULARS  &&  cent->currentState.eFlags & EF_ZOOMING) {
-        wolfcam_binocZoomTime = cg.time;
-        Com_Printf ("ent zooming with binocs\n");
-    }
-#endif
 
 #if 1
     // add view height
@@ -1072,24 +1147,6 @@ int Wolfcam_OffsetFirstPersonView (void)
     cg.refdef.vieworg[2] += bob;  //FIXME wolfcam ok for weapons, not player movement
     }
 
-#if 0
-    // ZoomSway
-    if (wc->zoomval)
-    {
-        float spreadfrac, phase;
-
-        if (es->eFlags & EF_MG42_ACTIVE) {  //  ||  es->eFlags & EF_AAGUN_ACTIVE) {
-        } else {
-            //spreadfrac = (float)cg.snap->ps.aimSpreadScale / 255.0;
-            spreadfrac = 0.25;  //FIXME wolfcam
-            phase = cg.time / 1000.0 * ZOOM_PITCH_FREQUENCY * M_PI * 2;
-            cg.refdefViewAngles[PITCH] += ZOOM_PITCH_AMPLITUDE * sin( phase ) * (spreadfrac+ZOOM_PITCH_MIN_AMPLITUDE);
-            phase = cg.time / 1000.0 * ZOOM_YAW_FREQUENCY * M_PI * 2;
-            cg.refdefViewAngles[YAW] += ZOOM_YAW_AMPLITUDE * sin( phase ) * (spreadfrac+ZOOM_YAW_MIN_AMPLITUDE);
-        }
-    }
-#endif
-
 	if (wcg.followMode == WOLFCAM_FOLLOW_VICTIM) {
 		t = wcg.nextVictimServerTime - cg.snap->serverTime;
 		if (t < 0  &&  t > -wolfcam_hoverTime.integer) {
@@ -1117,119 +1174,6 @@ int Wolfcam_OffsetFirstPersonView (void)
 
     return 0;
 }
-
-#if 0
-static void Wolfcam_AdjustZoomVal (float val, int type)
-{
-    //wclient_t *wc = &wclients[wcg.clientNum];
-
-#if 0
-    wc->zoomval += val;
-    if (wc->zoomval > zoomTable[type][ZOOM_OUT])
-        wc->zoomval = zoomTable[type][ZOOM_OUT];
-    if(wc->zoomval < zoomTable[type][ZOOM_IN])
-        wc->zoomval = zoomTable[type][ZOOM_IN];
-#endif
-}
-#endif
-
-
-#if 0
-void Wolfcam_ZoomIn (void)
-{
-    //centity_t *cent;
-
-#if 0
-    cent = &cg_entities[cgs.clientinfo[wcg.clientNum].clientNum];
-
-    if (cent->currentState.weapon == WP_SNIPERRIFLE) {
-        Wolfcam_AdjustZoomVal (-(cg_zoomStepSniper.value), ZOOM_SNIPER);
-    } else if (wclients[wcg.clientNum].zoomedBinoc) {
-        Wolfcam_AdjustZoomVal (-(cg_zoomStepSniper.value), ZOOM_SNIPER);
-    }
-#endif
-}
-
-void Wolfcam_ZoomOut (void)
-{
-    //centity_t *cent;
-
-#if 0
-    cent = &cg_entities[cgs.clientinfo[wcg.clientNum].clientNum];
-
-    if (cent->currentState.weapon == WP_SNIPERRIFLE) {
-        Wolfcam_AdjustZoomVal(cg_zoomStepSniper.value, ZOOM_SNIPER);
-    } else if (wclients[wcg.clientNum].zoomedBinoc) {
-        Wolfcam_AdjustZoomVal(cg_zoomStepSniper.value, ZOOM_SNIPER); // JPW NERVE per atvi request BINOC);
-    }
-#endif
-}
-
-
-void Wolfcam_Zoom (void)
-{
-    //entityState_t *es;
-    //wclient_t *wc;
-
-#if 0
-    es = &(cg_entities[cgs.clientinfo[wcg.clientNum].clientNum].currentState);
-    wc = &wclients[wcg.clientNum];
-
-	// OSP - Fix for demo playback
-	if ( (cg.snap->ps.pm_flags & PMF_FOLLOW) || cg.demoPlayback ) {
-		cg.predictedPlayerState.eFlags = cg.snap->ps.eFlags;
-		cg.predictedPlayerState.weapon = cg.snap->ps.weapon;
-
-		// check for scope wepon in use, and switch to if necessary
-		// OSP - spec/demo scaling allowances
-		if(es->weapon == WP_FG42SCOPE)
-			wc->zoomval = (wc->zoomval == 0) ? cg_zoomDefaultSniper.value : wc->zoomval; // JPW NERVE was DefaultFG, changed per atvi req
-		else if ( es->weapon == WP_SNIPERRIFLE )
-			wc->zoomval = (wc->zoomval == 0) ? cg_zoomDefaultSniper.value : wc->zoomval;
-		else if(!(es->eFlags & EF_ZOOMING))
-			wc->zoomval = 0;
-	}
-
-	if(es->eFlags & EF_ZOOMING) {
-		if ( wc->zoomedBinoc )
-			return;
-		wc->zoomedBinoc	= qtrue;
-		wc->zoomTime	= cg.time;
-		wc->zoomval = cg_zoomDefaultSniper.value; // JPW NERVE was DefaultBinoc, changed per atvi req
-	}
-	else {
-		if (wc->zoomedBinoc) {
-			wc->zoomedBinoc	= qfalse;
-			wc->zoomTime	= cg.time;
-
-			// check for scope weapon in use, and switch to if necessary
-			//if( cg.weaponSelect == WP_FG42SCOPE ) {
-            if (es->weapon == WP_FG42SCOPE) {
-				wc->zoomval = cg_zoomDefaultSniper.value; // JPW NERVE was DefaultFG, changed per atvi req
-			} else if ( es->weapon == WP_SNIPERRIFLE ) {
-				wc->zoomval = cg_zoomDefaultSniper.value;
-			} else {
-				wc->zoomval = 0;
-			}
-		} else {
-//bani - we now sanity check to make sure we can't zoom non-zoomable weapons
-//zinx - fix for #423 - don't sanity check while following
-			if (!((cg.snap->ps.pm_flags & PMF_FOLLOW) || cg.demoPlayback)) {
-				switch( es->weapon ) {
-					case WP_FG42SCOPE:
-					case WP_SNIPERRIFLE:
-						break;
-					default:
-						wc->zoomval = 0;
-						break;
-				}
-			}
-		}
-	}
-#endif
-}
-
-#endif
 
 #define	WAVE_AMPLITUDE	1
 #define	WAVE_FREQUENCY	0.4

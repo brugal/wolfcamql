@@ -1614,6 +1614,9 @@ static void parse_demo (void)
 	//memset(&di, 0, sizeof(di));
 	di.gameStartTime = -1;
 	di.gameEndTime = -1;
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		di.clientTeam[i] = TEAM_NUM_TEAMS;
+	}
 
 	FS_Seek(clc.demoReadFile, 0, FS_SEEK_SET);
     cls.state = CA_CONNECTED;

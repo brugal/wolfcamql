@@ -2,7 +2,7 @@
 #define cg_servercmds_h_included
 
 void CG_LoadInfectedGameTypeModels (void);
-void CG_ParseServerinfo (qboolean firstCall);
+void CG_ParseServerinfo (qboolean firstCall, qboolean seeking);
 void CG_ParseWarmup (void);
 void CG_SetConfigValues( void );
 void CG_ShaderStateChanged(void);
@@ -16,7 +16,7 @@ void CG_PlayBufferedVoiceChats( void );
 
 void CG_ExecuteNewServerCommands( int latestSequence );
 
-void CG_CpmaParseScores (void);
+void CG_CpmaParseScores (qboolean seeking);
 void CG_CpmaParseGameState (qboolean initial);
 void CG_PlayWinLossMusic (void);
 

@@ -199,6 +199,8 @@ void Wolfcam_Follow_f (void)
 		} else {
 			trap_SendConsoleCommand("exec ingame.cfg\n");
 		}
+
+		trap_SendConsoleCommand("exec wolfcamfirstpersonviewdemotaker.cfg\n");
         return;
     }
     if (!cgs.clientinfo[clientNum].infoValid) {
@@ -214,6 +216,12 @@ void Wolfcam_Follow_f (void)
     wolfcam_following = qtrue;
 	cg.freecam = qfalse;
 	trap_SendConsoleCommand("exec follow.cfg\n");
+	if (wcg.clientNum == cg.snap->ps.clientNum) {
+		trap_SendConsoleCommand("exec wolfcamfirstpersonviewdemotaker.cfg\n");
+	} else {
+		trap_SendConsoleCommand("exec wolfcamfirstpersonviewother.cfg\n");
+	}
+
 }
 
 

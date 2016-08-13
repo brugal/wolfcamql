@@ -71,7 +71,7 @@
 * cg_deadbodydarken 2  transitions model to original
 * hunter has crap above her lips, james has stuff on chest, ranger shit on his arms, sarge arm, slash left of mouth, sorlag stuff on mouth, tankjr stuff on head, uriel stuff on legs, visor green in hair, xaero arms and feet -- fix with fuzz  -- color skins
 * low ammo warning is returning if ca and spec -- what if speccing someone
-* get alive status from engine after rewind/ff  -- think it's done
+* get alive status from engine after rewind/ff  -- think it's done  -- 2016-07-27  don't think it's done yet
 * update scores in client info change last scores time in scoreboard
 * /seekclock check for ready up (as opposed to warmup)
 * /time is better to print both server time demo time(from beginning of demo), clock time and real time
@@ -970,7 +970,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * hud:  com_parseext  keep original  PS_ReadToken()
 
 * crash cr.dm_73  /stopmusic
-* cpma ca and others warmup count announcments -- have tmp fix
 * r_uifullscreen and vertex light ??
 * check insta freeze and 'prepare your team' sound
 * cpma end of game buzzer
@@ -1673,7 +1672,6 @@ FIXME ui execute text:  2  'cmd team red ; '
 * better bloodexplosion shader fallback
 * powerups shown in ffa scoreboard (and others?)
 * check font used in scoreboard spec list
-* not showing info in team overlay
 * caim ca demo long name in scoreboard -- use limit
 * hud WCG_ ql version and protocol/mod (q3, cpma, ...)
 * right align with var width font not stable
@@ -1686,7 +1684,6 @@ FIXME ui execute text:  2  'cmd team red ; '
 * out of ammo  vs  player follow  (see if out of ammo is in same place as ql)
 * mvp awards highlight in score listings (extra outside filled box?)
 * scoreboard set selection so you can see who's being followed
-* protocol 91 team info status only being updated with tinfo command, see if it should be updated with real values in team overlay cg_draw.c
 * utf8:  fallbacks depending on type (sans, serif, ..), fallbacks for q3fonts need adjusted baseline
 * don't expose fontInfo_t private data
 * utf8:  q3font bolding and offset, console font 0 width chars, insert unicode in console
@@ -1957,12 +1954,9 @@ No locals.
 * flag announcer not added to CHAN_ANNOUNCER,  flag status added as buffered sounds  -- 2016-04-13  ok CG_AddBufferedSound uses CHAN_ANNOUNCER
 * textures/gothic_door/archpart9  226x383
   textures/gothic_trim/columnsupportbottoms.jpg 96x96  ok at 48x48
-* option to turn off buffered sound
 * curve:  retribution /team s far curves matched with r_subdivisions 10 and r_lodcurveerror 10000, near curves don't match though (those match with r_subdivision 4), it's like r_subdivision scales with distance
 * CG_AREA_POWERUP  'special' used for spacing
 * fov314.dm_91 3:27  still showing ca zoomed in at start  -- this is ql bug copying old player fov to new player  -- 2016-05-08 hack added to ca round start to reset zoom
-* check ql spec demo playing sounds not in pvs
-* names and locations? sometimes truncated too much in team overlay
 * 2016-05-05  check black names:
 
  Yakumo [has Quake Live] 2 hours ago
@@ -1972,7 +1966,6 @@ No locals.
 * team info protocol 91 -- is command needed or just use info from entityState?
 * option to get player sounds from head instead of torso/legs model?
 * check cg_forceModel and new headmodel support
-* https://www.youtube.com/watch?v=Gk5LZQnExZo  cg_drawgun no movement and lg beam
 * move more EM_* into cg_t
 * Wolfcam_LoadEnemyModel() and Wolfcam_LoadTeamModel() should be the same
 * team skins should just be stored in clientInfo_t no need for things like cg.teamModel[Red|Blue]
@@ -1986,7 +1979,6 @@ No locals.
 * own-player-when-dead-appears-as-crosshair-client.dm_91  crosshair scan entity pickup up invisible specs  10:00 ?
 * team equivalent to EM_Loaded?
 * /follow and cg_disallowEnemyModelForTeammates still uses enemy model for 1st person pov?
-* big-name-big-obit-icon.dm_91  big player name results in bigger weapon icon for obituary messages
 * clean up CG_CheckForModelChange()
 * ql world death shader icons/icon_frag no alpha blend ? -- 2016-05-28 apparently not
 * /model "doom/-headcolor"
@@ -1996,7 +1988,56 @@ No locals.
   --  2016-05-30 ok 'models/players/characters/xaero/redlower_-headcolor_default.ski'  63 characters
 * check alt skins with clientoverride
 * demo smoothing /follow
-* name-overlay.dm_91 6:27 small name truncated in overlay
+* text_paint_limit shouldn't use xSkip and position afterwards for limiting, should be based on what is drawn
+* ql workshop gibs  workshop\content\282440\691078677  -- download?
+* ui still work with in_nograb 1
+* option to disable ft thaw  -- 2016-06-10 controlled by cg_gibs
+* servitude map:  RB_RenderDrawSurfList refent ptr == NULL for entity 127
+* top-3-47-self-not-in-team-overlay.dm_91  -- 2016-06-17  team overlay player limit (8)
+* smscores.dm_91 : Unknown client game command : smscores
+* check if lg fire sound is added twice when /follow'ed player is cg.snap->ps.clientNum
+* cg_gun_frame unused cvar
+* /follow victim not working after seek and victim is invalid when dead (high01.dm_91 darh 16:30)
+* /follow bobcyle predictable not random
+* change /follow to fallback on player that does damage to demo pov
+* /follow'ed player not showing flag status
+* chat overdraw happens with /follow and +scores
+* save Info_ValueForKey values in cg_newdraw.c (ex:  CS_SERVERINFO "teamsize")
+* option for larger scoreboard to fit all players  (ex:  clan arena team size > 8)
+* option to sort feeder for scoreboard based on alive status
+* /follow [victim|killer] [clientNum]
+* setup menu changing values in console doesn't update displayed values (ex:  cg_drawCrosshair)
+* timescale 1.5 when recording makes it slower when watching video?  https://steamcommunity.com/app/282440/discussions/0/451848855024054074/?ctp=3  -- 2016-07-28 couldn't reproduce
+* ^  flag icon more visible?
+* overflow player name in end game stats : engame-stats-player-name-overflow.dm_91
+* zoom 2 pov  stuck  zoom-stuck-2-57.dm_91  -- 2016-07-31  seems to be a fov script, can't fix
+* confusion between cgs.protocol and cgs.realProtocol
+* /at now+3sec  (offset for 'now' and also option to run only once)
+* option for /wait with exact time instead of frame time
+* q3mme command time based demo smoothing
+* q3mme video pipe
+* /follow duel player maybe play hitsounds if damage plum present
+* vm cgame create failed:  not enough storage to process this command
+* doc for cg_roundScoreBoard
+* maybe in parse demo check if fov change is due to zoom or cvar change
+* optimize trap_GetNextKiller|victim  and trap_GetTeamSwitchTime to store last server time and offset into array
+* fx missing flag carrier, frozen, infected
+* icon size options:  frozen, infected
+* *spriteExt() shouldn't be checking shaders directly
+* self icon different for enemy and team
+* what if steam workshop item is updated?
+* cpma round hacks need to use seeking option for parse functions
+* cpma ctfs:  round scoreboard show in warmup  ctfs1.dm_68
+* cpma ctfs:  round alive status not update in scoreboard  ctfs1.dm_68
+* ctfs1.dm_68 showing red scored instead of blue
+* cpma ctfs:  dead player still being rendered ctfs1.dm_68
+* info screen should show map substitutions and force map setting
+* cpma ctfs always says 'defend the flag'
+* cpma ctfs ctfs1.dm_68 wcstats not showing kills/deaths
+* cpma ft frozen player shows harvester icons, thawing teammate shows as frag with watch your fire message, round starts
+* seeking register user country flag failed spam
+* dedicated win32 loadlibrary error always "unknown"
+* doesn't use image fallbacks like ql  (ex:  copperfx.tga should then try copperfx.jpg)
 
 
 ---------

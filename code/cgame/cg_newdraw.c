@@ -752,7 +752,7 @@ static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_
 
 	if (wolfcam_following) {
 		value = Wolfcam_PlayerHealth(wcg.clientNum);
-		if (value <= -9999) {
+		if (value <= INVALID_WOLFCAM_HEALTH) {
 			return;
 		}
 	}
@@ -3789,10 +3789,16 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 			} else {
 				float yadj = useScale * glyph.top;
 				float xadj = useScale * glyph.left;
-
+#if 0
 				//if (CG_Text_Width(s, useScale, 1, font) + x > max) {
 				if (CG_Text_Width(s, scale, 1, font) + x > max) {
 					//Com_Printf("maxx %f  %s\n", max, text);
+					*maxX = 0;
+					break;
+				}
+#endif
+				//FIXME not really, shouldn't use xSkip, should be based on actual width drawn
+				if (x + (glyph.xSkip * useScale * xscale) + adjust > max) {
 					*maxX = 0;
 					break;
 				}
@@ -6288,7 +6294,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  //break;  //FIXME
 		  //ival = wclients[wcg.clientNum].eventHealth;  //FIXME time, team info
 		  ival = Wolfcam_PlayerHealth(wcg.clientNum);
-		  if (ival <= -9999) {
+		  if (ival <= INVALID_WOLFCAM_HEALTH) {
 			  break;
 		  }
 	  }
@@ -6318,7 +6324,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  //break;  //FIXME
 		  //ival = wclients[wcg.clientNum].eventHealth;  //FIXME time, team info
 		  ival = Wolfcam_PlayerHealth(wcg.clientNum);
-		  if (ival <= -9999) {
+		  if (ival <= INVALID_WOLFCAM_HEALTH) {
 			  break;
 		  }
 	  }
@@ -6619,6 +6625,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  int i;
 	  int count;
 	  const clientInfo_t *ci;
+	  const char *teamSizeStr;
+	  int teamSize;
 
 	  //FIXME use cg.scores?
 	  //FIXME don't do it every time
@@ -6635,10 +6643,26 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  count++;
 	  }
 
+	  //FIXME store teamsize in cgs.
+	  teamSizeStr = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "teamsize");
+	  teamSize = 0;
+	  if (*teamSizeStr) {
+		  teamSize = atoi(teamSizeStr);
+	  }
+
 	  if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_CA  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_DOMINATION) {
-		  CG_Text_Paint(rect.x, rect.y, scale, color, va("(%d)", count), 0, 0, textStyle, font);
+
+		  if (teamSize > 0) {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("(%d/%d)", count, teamSize), 0, 0, textStyle, font);
+		  } else {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("(%d)", count), 0, 0, textStyle, font);
+		  }
 	  } else {
-		  CG_Text_Paint(rect.x, rect.y, scale, color, va("RED - %d/%s PLAYERS", count, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "teamsize")), 0, 0, textStyle, font);
+		  if (teamSize > 0) {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("RED - %d/%d PLAYERS", count, teamSize), 0, 0, textStyle, font);
+		  } else {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("RED - %d PLAYERS", count), 0, 0, textStyle, font);
+		  }
 	  }
 	  break;
   }
@@ -6646,6 +6670,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  int i;
 	  int count;
 	  const clientInfo_t *ci;
+	  const char *teamSizeStr;
+	  int teamSize;
 
 	  //FIXME use cg.scores?
 	  //FIXME don't do it every time
@@ -6662,10 +6688,25 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  count++;
 	  }
 
+	  //FIXME store teamsize in cgs.
+	  teamSizeStr = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "teamsize");
+	  teamSize = 0;
+	  if (*teamSizeStr) {
+		  teamSize = atoi(teamSizeStr);
+	  }
+
 	  if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_CA  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_DOMINATION) {
-		  CG_Text_Paint(rect.x, rect.y, scale, color, va("(%d)", count), 0, 0, textStyle, font);
+		  if (teamSize > 0) {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("(%d/%d)", count, teamSize), 0, 0, textStyle, font);
+		  } else {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("(%d)", count), 0, 0, textStyle, font);
+		  }
 	  } else {
-		  CG_Text_Paint(rect.x, rect.y, scale, color, va("BLUE - %d/%s PLAYERS", count, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "teamsize")), 0, 0, textStyle, font);
+		  if (teamSize > 0) {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("BLUE - %d/%d PLAYERS", count, teamSize), 0, 0, textStyle, font);
+		  } else {
+			  CG_Text_Paint(rect.x, rect.y, scale, color, va("BLUE - %d PLAYERS", count), 0, 0, textStyle, font);
+		  }
 	  }
 	  break;
   }

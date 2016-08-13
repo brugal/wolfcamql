@@ -1521,9 +1521,25 @@ void CG_NewClientInfo( int clientNum ) {
 	char tmpString[MAX_QPATH];
 	char iconSkin[MAX_QPATH];
 	qhandle_t h;
+	int oldTeam;
+	int newTeam;
 
 	ci = &cgs.clientinfo[clientNum];
 	ciOrig = &cgs.clientinfoOrig[clientNum];
+
+	// hack for keeping track of players that are alive in round based games
+	oldTeam = TEAM_SPECTATOR;
+	if (ci->infoValid) {
+		oldTeam = ci->team;
+	}
+	configstring = CG_ConfigString(clientNum + CS_PLAYERS);
+	v = Info_ValueForKey( configstring, "t" );
+	newTeam = atoi(v);
+	if (newTeam == TEAM_RED  ||  newTeam == TEAM_BLUE) {
+		if (newTeam != oldTeam) {
+			wclients[clientNum].aliveThisRound = qfalse;
+		}
+	}
 
 	//Com_Printf("override %d  -> %d\n", clientNum, ci->override);
 
@@ -3203,7 +3219,10 @@ static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, in
 		ent.shaderRGBA[3] = 255;
 	}
 
-	if (shader == cgs.media.friendShader  ||  shader == cgs.media.foeShader  ||  shader == cgs.media.selfShader) {
+	//FIXME shader checking at this point is fucked up since they might not have been loaded and will be default values
+	if (shader == 0) {
+		//FIXME pass
+	} else if (shader == cgs.media.friendShader  ||  shader == cgs.media.foeShader  ||  shader == cgs.media.selfShader  ||  shader == cgs.media.selfDemoTakerShader) {
 		if (wolfcam_following) {
 			VectorCopy(cg_entities[wcg.clientNum].lerpOrigin, org);
 		} else if (cg.freecam) {
@@ -3229,6 +3248,9 @@ static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, in
 		} else if (shader == cgs.media.selfShader) {
 			minWidth = cg_drawSelfMinWidth.value;
 			maxWidth = cg_drawSelfMaxWidth.value;
+		} else if (shader == cgs.media.selfDemoTakerShader) {
+			minWidth = cg_drawSelfMinWidth.value;
+			maxWidth = cg_drawSelfMaxWidth.value;
 		}
 
 		radius = maxWidth / 2.0;
@@ -3238,13 +3260,38 @@ static void CG_PlayerFloatSpriteExt (const centity_t *cent, qhandle_t shader, in
 			dist *= (16.0 / minWidth);
 		}
 
+		if (shader == cgs.media.selfDemoTakerShader  &&  cg_drawSelfIconStyle.integer == 1) {
+			if (!CG_IsTeammate(&cgs.clientinfo[cg.snap->ps.clientNum])) {
+				//radius = -radius;
+				//Com_Printf("^3enemy\n");
+				//ent.rotation = 90;
+				//FIXME hack, shouldn't be changing shaders at this point
+				shader = cgs.media.selfDemoTakerEnemyShader;
+			} else {
+				//Com_Printf("^2teammate\n");
+			}
+		} else if (shader == cgs.media.selfShader  &&  cg_drawSelfIconStyle.integer == 1) {
+			if (!CG_IsTeammate(&cgs.clientinfo[cg.snap->ps.clientNum])) {
+				//FIXME hack, shouldn't be changing shaders at this point
+				shader = cgs.media.selfEnemyShader;
+			} else {
+				//Com_Printf("^2teammate\n");
+			}
+		}
+
 		ent.radius = radius;
+
 
 		if (Distance(ent.origin, org) > dist  &&  minWidth > 0.1) {
 			ent.radius = radius * (Distance(ent.origin, org) / dist);
 		}
+	} else if (shader == cgs.media.flagCarrier  ||  shader == cgs.media.flagCarrierNeutral  ||  shader == cgs.media.flagCarrierHit) {
+		// allowing negative values, flips icon
+		//Com_Printf("what the fuck!!!!!  %d\n", shader);
+		ent.radius = cg_drawFlagCarrierSize.value;
 	}
 
+	//ent.origin[2] += fabs(ent.radius);
 	ent.origin[2] += ent.radius;
 
 	ent.reType = RT_SPRITE;
@@ -3809,6 +3856,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 		if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
 			if (cent->currentState.number == cg.clientNum) {
 				CG_PlayerFloatSpriteExt(cent, cgs.media.selfDemoTakerShader, cg_drawSelf.integer == 2 ? RF_DEPTHHACK : 0, NULL, 0);
+				//Com_Printf("^3self...\n");
 			} else {
 				CG_PlayerFloatSpriteExt(cent, cgs.media.selfShader, cg_drawSelf.integer == 2 ? RF_DEPTHHACK : 0, NULL, 0);
 			}
