@@ -187,12 +187,18 @@ static void CG_Obituary( const entityState_t *ent ) {
 		//if (target == cg.snap->ps.clientNum  &&  cg.clientNum == cg.snap->ps.clientNum) {
 		if (target == cg.clientNum) {
 			if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_CTFS) {
-				int roundTime;
+				if (cgs.protocol == PROTOCOL_QL) {
+					int roundTime;
 
-				roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
+					roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
 
-				if (roundTime > 0) {
-					trap_SendConsoleCommand("exec demoTakerDieRound.cfg\n");
+					if (roundTime > 0) {
+						trap_SendConsoleCommand("exec demoTakerDieRound.cfg\n");
+					}
+				} else if (cgs.cpma) {
+					if (!CG_CpmaIsRoundWarmup()) {
+						trap_SendConsoleCommand("exec demoTakerDieRound.cfg\n");
+					}
 				}
 			}
 		}
@@ -1725,6 +1731,11 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
 		CG_StartSound (NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, "*jump1.wav" ) );
+
+		if (es->number < MAX_CLIENTS) {
+			wclients[es->number].jumpTime = cg.time;
+		}
+
 		if (es->number == cg.snap->ps.clientNum) {
 			if (cg.jumpsNeedClearing) {
 				cg.numJumps = 0;

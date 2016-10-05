@@ -724,6 +724,11 @@ static void CG_ParseTeamInfo_91 (void)
 	const entityState_t *es;
 	const playerState_t *ps;
 
+	// handling in transition snapshot
+	if (1) {
+		return;
+	}
+
 	numSortedTeamPlayers = atoi( CG_Argv( 1 ) );
 
 	for ( i = 0 ; i < numSortedTeamPlayers ; i++ ) {
@@ -1813,6 +1818,7 @@ static qboolean CG_IsTeamVoteString (int num, int *newNum)
 
 	return qfalse;
 }
+
 
 void CG_CpmaParseScores (qboolean seeking)
 {

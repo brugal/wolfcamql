@@ -7879,13 +7879,22 @@ static void CG_SeekNextRound_f (void)
 	if (roundStartIndex > -1) {
 		int roundTime;
 
-		roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
+		if (cgs.protocol == PROTOCOL_QL) {
+			roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
 
-		// ql specific
-		//if (!cgs.roundStarted  &&  cgs.roundBeginTime > 0) {
-		if (roundTime <= 0) {
-			// skip current warmup
-			roundStartIndex++;
+			// ql specific
+			//if (!cgs.roundStarted  &&  cgs.roundBeginTime > 0) {
+			if (roundTime <= 0) {
+				// skip current warmup
+				roundStartIndex++;
+			}
+		} else if (cgs.cpma) {
+			//FIXME ctfs
+			if (cgs.gametype == GT_CA) {
+				if (CG_CpmaIsRoundWarmup()) {
+					roundStartIndex++;
+				}
+			}
 		}
 
 		if (roundStartIndex < cg.numRoundStarts) {

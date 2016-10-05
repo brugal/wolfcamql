@@ -843,10 +843,12 @@ Fonts can also be used for hud config elements:
        }
 
 
-  WCG_WEAPON_SELECTED, WCG_WEAPON_SELECT_TIME, WCG_WEAPON_HAVE_MACHINEGUN, WCG_WEAPON_AMMO_MACHINEGUN, and others to allow creation of custom weapon bars.  See wolfcam-ql/ui/wcweaponbar.menu for an example.
+  WCG_WEAPON_SELECTED, WCG_WEAPON_SELECT_TIME, WCG_WEAPON_HAVE_MACHINEGUN, WCG_WEAPON_AMMO_MACHINEGUN, and others to allow creation of custom weapon bars.  See wolfcam-ql/ui/wcweaponbar.menu for an example.  You can test it in game with '/loadmenu ui/wcweaponbar.menu'.
 
   WCG_KILL_COUNT  number of kills since last death or reset ("killcountreset"
                   command)
+
+  WCG_PLAYER_KEY_PRESS_[FORWARD|BACK|RIGHT|LEFT|FIRE|JUMP|CROUCH]
 
 * cg_gametype variable checking corresponds to quake with additional support for quake3 and cpma gametypes:
 
@@ -869,6 +871,10 @@ Fonts can also be used for hud config elements:
   16  quake3 single player
 
 * ownerdraws removed in Aug 27, 2014 quakelive update can still be referenced by including ui/wcmenudef.h
+
+* /loadmenu [menu file]
+
+  To test / debug individual menu files.
 
 ----------------------------------------------------------------
 
@@ -1515,6 +1521,9 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 -----------------------------------------------------------
 
 * cg_drawTeamOverlayLineOffset  Specifies spacing between team overlay lines.  Value is percentage of line height.
+* cg_drawTeamOverlayMaxPlayers  -1 (default) shows an unlimited number of players in team players.  A value greater than or equal to 0 sets the maximum number of players shown.  Note that the maximum number of players shown is also limited by the demo protocol.  Only quake live protocol 91 or greater can show more than 8.
+* cg_selfOnTeamOverlay  Same as quakelive:  (0: (default) don't show yourself in team overvaly, 1: show yourself in team overlay)
+
 * cg_scoreBoardStyle 0: like quakelive, 1 (default): switches the model icon for their best weapon icon, also prepends their accuracy before name,  2: switches model icon for country flags, also prepends their accuracy before name
 
 * cg_shotgunImpactSparks
@@ -2446,6 +2455,10 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
 * r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
 * cg_debugServerCommands (0 (default):  only print message for unknown commands, 1:  print all commands and arguments, 2:  only print message and arguments for unknown commands)
+
+* cg_drawKeyPress  to enable drawing player key press information.  Also added WCG_PLAYER_KEY_PRESS_[FORWARD|BACK|RIGHT|LEFT|FIRE|JUMP|CROUCH] hud ownerdraws.  See ui/wckeypress.menu for an example.  '/loadmenu ui/wckeypress.menu' to test.
+
+  Note that demos don't record key press information.  Demos do record movement direction which can be used to extract some of the values.  'right', 'left', and 'back' can be accurately extracted from the movement direction but 'forward' is an estimate based on the player's velocity.
 
 ----------
 

@@ -4935,6 +4935,222 @@ static void CG_DumpEntities (void)
 }
 
 
+static void CG_CheckPlayerKeyPress (void)
+{
+	vec3_t forward, back, right, up;
+	//vec3_t left;
+	//vec3_t prevForward, prevBack, prevRight, prevLeft, prevUp;
+	//vec3_t down;
+	vec3_t velocity;
+	//vec3_t prevVelocity;
+	float threshold;
+	qboolean f, b, r, l, u, d;
+	int movementDir;
+	int legsAnim;
+
+	cg.playerKeyPressCrouch = qfalse;
+	cg.playerKeyPressFire = qfalse;
+	cg.playerKeyPressJump = qfalse;
+
+	if (wolfcam_following) {
+		legsAnim = cg_entities[wcg.clientNum].currentState.legsAnim & ~ANIM_TOGGLEBIT;
+
+		if (cg_entities[wcg.clientNum].currentState.eFlags & EF_FIRING) {
+			cg.playerKeyPressFire = qtrue;
+		}
+		if (legsAnim == LEGS_WALKCR  ||  legsAnim == LEGS_IDLECR) {
+			cg.playerKeyPressCrouch = qtrue;
+		}
+
+#if 0
+		if (legsAnim == LEGS_JUMP  ||  legsAnim == LEGS_JUMPB) {
+			// this is also set in free fall
+			if (cg_entities[wcg.clientNum].currentState.groundEntityNum != ENTITYNUM_NONE) {
+				// check doesn't work, already airborne
+				//cg.playerKeyPressJump = qtrue;
+			}
+		}
+#endif
+
+		// key press jump checked with EV_JUMP
+
+		if (cg.time - wclients[wcg.clientNum].jumpTime <= 150) {
+			cg.playerKeyPressJump = qtrue;
+		}
+	} else {
+		legsAnim = cg.snap->ps.legsAnim & ~ANIM_TOGGLEBIT;
+
+		if (cg.snap->ps.eFlags & EF_FIRING) {
+			cg.playerKeyPressFire = qtrue;
+		}
+		if (cg.snap->ps.pm_flags & PMF_DUCKED) {
+			cg.playerKeyPressCrouch = qtrue;
+		}
+		if (cg.snap->ps.pm_flags & PMF_JUMP_HELD) {
+			cg.playerKeyPressJump = qtrue;
+		}
+	}
+
+	if (wolfcam_following) {
+		movementDir = cg_entities[wcg.clientNum].currentState.angles2[YAW];
+	} else {
+		movementDir = cg.snap->ps.movementDir;
+	}
+
+	f = b = r = l = u = d = qfalse;
+
+	switch (movementDir) {
+	case 0:
+		f = qtrue;
+		break;
+	case 1:
+		l = f = qtrue;
+		break;
+	case 2:
+		l = qtrue;
+		break;
+	case 3:
+		l = b = qtrue;
+		break;
+	case 4:
+		b = qtrue;
+		break;
+	case 5:
+		r = b = qtrue;
+		break;
+	case 6:
+		r = qtrue;
+		break;
+	case 7:
+		r = f = qtrue;
+		break;
+	default:
+		break;
+	}
+
+	// these are not accurate
+	if (movementDir == 1  ||  movementDir == 7) {
+		//Com_Printf("forward unknown: %d\n", movementDir);
+	}
+
+	f = qfalse;
+	//Com_Printf("%f\n", AngleBetweenVectors(velocity, forward));
+
+	cg.playerKeyPressForward = f;
+	cg.playerKeyPressBack = b;
+	cg.playerKeyPressLeft = l;
+	cg.playerKeyPressRight = r;
+
+	if (wolfcam_following) {
+		VectorCopy(cg_entities[wcg.clientNum].currentState.pos.trDelta, velocity);
+	} else {
+		VectorCopy(cg.snap->ps.velocity, velocity);
+		//VectorCopy(cg.prevSnap->ps.velocity, prevVelocity);
+	}
+
+	//FIXME can still use feet animation
+	//if (VectorLength(velocity) == 0) {
+	if (legsAnim == LEGS_IDLE  ||  legsAnim == LEGS_IDLECR) {
+		//return;
+#if 1
+		cg.playerKeyPressForward = qfalse;
+		cg.playerKeyPressBack = qfalse;
+		cg.playerKeyPressLeft = qfalse;
+		cg.playerKeyPressRight = qfalse;
+#endif
+	} else {
+		//Com_Printf("^3legs anim: %d\n", legsAnim);
+	}
+
+	VectorNormalize(velocity);
+
+	if (wolfcam_following) {
+		AngleVectors(cg_entities[wcg.clientNum].currentState.apos.trBase, forward, right, up);
+	} else {
+		AngleVectors(cg.snap->ps.viewangles, forward, right, up);
+		//AngleVectors(cg.prevSnap->ps.viewangles, prevForward, prevRight, prevUp);
+	}
+
+	VectorScale(forward, -1, back);
+	//VectorScale(right, -1, left);
+	//VectorScale(up, -1, down);
+
+	// testing just velocity based
+#if 0
+	{
+		vec3_t start;
+		vec3_t p;
+		vec_t vlen;
+		vec3_t point;
+
+		if (wolfcam_following) {
+			VectorCopy(cg_entities[wcg.clientNum].currentState.pos.trBase, start);
+		} else {
+			VectorCopy(cg.snap->ps.origin, start);
+		}
+
+		if (wolfcam_following) {
+			VectorCopy(cg_entities[wcg.clientNum].currentState.pos.trDelta, velocity);
+		} else {
+			VectorCopy(cg.snap->ps.velocity, velocity);
+			//VectorCopy(cg.prevSnap->ps.velocity, prevVelocity);
+		}
+
+		VectorClear(start);
+
+		//f = b = l = r = qfalse;
+		cg.playerKeyPressForward = cg.playerKeyPressBack = cg.playerKeyPressRight = cg.playerKeyPressLeft = qfalse;
+
+		VectorMA(start, 1, velocity, point);
+
+		//ProjectPointOntoVector(velocity, start, forward, p);
+		ProjectPointOntoVector(point, start, forward, p);
+		//f = VectorLength(p);
+		vlen = VectorLength(p);
+		//Com_Printf("viewangles: %f %f %f\n", cg.snap->ps.viewangles[0], cg.snap->ps.viewangles[1], cg.snap->ps.viewangles[2]);
+
+		if (vlen > 0.101) {
+			cg.playerKeyPressForward = qtrue;
+			Com_Printf("vlen forw %f  vel: %f\n", vlen, VectorLength(velocity));
+		}
+		//ProjectPointOntoVector(velocity, start, right, p);
+		ProjectPointOntoVector(point, start, right, p);
+		//r = VectorLength(p);
+		vlen = VectorLength(p);
+
+		if (vlen > 0.101) {
+			cg.playerKeyPressRight = qtrue;
+			Com_Printf("vlen right %f  vel: %f\n", vlen, VectorLength(velocity));
+		}
+		//ProjectPointOntoVector(velocity, start, up, p);
+		//u = VectorLength(p);
+	}
+#endif
+
+	threshold = 10;
+
+	//if (AngleBetweenVectors(velocity, forward)) { };
+	if ((RAD2DEG(AngleBetweenVectors(velocity, forward)) - threshold) < 45) {
+		cg.playerKeyPressForward = qtrue;
+	} else if ((RAD2DEG(AngleBetweenVectors(velocity, back)) - threshold) < 45) {
+		//FIXME check?
+	}
+
+#if 0
+	if ((RAD2DEG(AngleBetweenVectors(velocity, right)) - threshold) < 45) {
+		// right
+	} else if ((RAD2DEG(AngleBetweenVectors(velocity, left)) - threshold) < 45) {
+		// left
+	}
+#endif
+
+	//Com_Printf("backwards run: %d  backward jump: %d\n", cg.snap->ps.pm_flags & PMF_BACKWARDS_RUN, cg.snap->ps.pm_flags & PMF_BACKWARDS_JUMP);
+#if 0
+	Com_Printf("f: %f   r:  %f   u:  %f\n", f, r, u);
+	CG_PrintToScreen("f: %f   r:  %f   u:  %f", f, r, u);
+#endif
+}
+
 /*
 =================
 CG_DrawActiveFrame
@@ -4958,6 +5174,8 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	int currentWeapon;
 	//int startTime;
 	int oldClientNum;
+
+	//cg.drawActiveFrameCount++;
 
 	if (SC_Cvar_Get_Int("debug_cgame_time")) {
 		Com_Printf("cgame time: %d  %d\n", serverTime, ioverf);
@@ -5189,6 +5407,8 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		cg.demoSeeking = qfalse;
 		return;
 	}
+
+	CG_CheckPlayerKeyPress();
 
 	//FIXME hack for scoreboard auto exec.  Done here since checking in
 	// cg_draw.c is alot more complicated

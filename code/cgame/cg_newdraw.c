@@ -2714,6 +2714,27 @@ float CG_GetValue(int ownerDraw) {
 	  }
   }
 
+  case WCG_PLAYER_KEY_PRESS_FORWARD:
+	  return cg.playerKeyPressForward;
+
+  case WCG_PLAYER_KEY_PRESS_BACK:
+	  return cg.playerKeyPressBack;
+
+  case WCG_PLAYER_KEY_PRESS_RIGHT:
+	  return cg.playerKeyPressRight;
+
+  case WCG_PLAYER_KEY_PRESS_LEFT:
+	  return cg.playerKeyPressLeft;
+
+  case WCG_PLAYER_KEY_PRESS_FIRE:
+	  return cg.playerKeyPressFire;
+
+  case WCG_PLAYER_KEY_PRESS_CROUCH:
+	  return cg.playerKeyPressCrouch;
+
+  case WCG_PLAYER_KEY_PRESS_JUMP:
+	  return cg.playerKeyPressJump;
+
   default:
 	  Com_Printf("CG_GetValue() unknown ownerDraw %d\n", ownerDraw);
     break;
@@ -5003,9 +5024,19 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 	int count;
 	int lines;
 	int firstLine = -1;  // silence gcc warning
+	//static int lastDrawActiveFrameCount = -1;
 
+	//FIXME hack to avoid overdrawing chat area, happens with wolfcam_follow, need to check why
+	// 2016-09-28 with wolfcam_follow this gets called twice and it will have different widescreen values -- 2016-09-29  no, menu simply being drawn twice with wolfcam_follow
+	/*
+	if (lastDrawActiveFrameCount == cg.drawActiveFrameCount) {
+		return;
+	}
+	*/
 	scale = args->scale;
 	//Com_Printf("areanewchat scale %f\n", scale);
+
+	//Com_Printf("areanewchat %d  widescreen:%d\n", cg.time, QLWideScreen);
 
 	//scale = 0.25;  //FIXME  ??
 	ctime = cg_chatTime.integer;
@@ -5023,6 +5054,8 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 
 	//FIXME text max height
 	height = CG_Text_Height("T", scale, 0, args->font);
+
+	//height = 20;
 
 	count = 0;
 	for (i = 0;  i < lines;  i++) {
@@ -5054,12 +5087,33 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 			break;
 		}
 
+		//Com_Printf("text style: %d\n", args->textStyle);
+
 		//FIXME height based on scale
 		CG_Text_Paint(args->x, args->y + (args->h) - (height + 4) * count, scale, args->color, cg.chatAreaStrings[n], 0, 0, args->textStyle, args->font);
+
+		// testing
+#if 0
+		{
+			vec4_t color;
+
+			//Com_Printf("acfcount %d\n", cg.drawActiveFrameCount);
+
+			if (lastDrawActiveFrameCount == cg.drawActiveFrameCount) {
+				Vector4Copy(colorRed, color);
+			} else {
+				Vector4Copy(colorYellow, color);
+			}
+			CG_Text_Paint(200, 400, 0.22, color, "test", 0, 0, 1, &cgs.media.attackerFont);
+		}
+#endif
+
 		count++;
 	}
 
 	cg.numChatLinesVisible = count;
+
+	//lastDrawActiveFrameCount = cg.drawActiveFrameCount;
 }
 
 #if 0  // broken

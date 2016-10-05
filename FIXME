@@ -71,7 +71,6 @@
 * cg_deadbodydarken 2  transitions model to original
 * hunter has crap above her lips, james has stuff on chest, ranger shit on his arms, sarge arm, slash left of mouth, sorlag stuff on mouth, tankjr stuff on head, uriel stuff on legs, visor green in hair, xaero arms and feet -- fix with fuzz  -- color skins
 * low ammo warning is returning if ca and spec -- what if speccing someone
-* get alive status from engine after rewind/ff  -- think it's done  -- 2016-07-27  don't think it's done yet
 * update scores in client info change last scores time in scoreboard
 * /seekclock check for ready up (as opposed to warmup)
 * /time is better to print both server time demo time(from beginning of demo), clock time and real time
@@ -1675,7 +1674,6 @@ FIXME ui execute text:  2  'cmd team red ; '
 * caim ca demo long name in scoreboard -- use limit
 * hud WCG_ ql version and protocol/mod (q3, cpma, ...)
 * right align with var width font not stable
-* remove old area draw chat hack so it doesn't overdraw
 * team overlay text style
 * team overlay order (name, armor, powerup, etc..)
 * register sound:  sound/world/hockey_horn.ogg fails even though hockey_horn.wav is there..  fallback for .wav ?
@@ -1991,19 +1989,14 @@ No locals.
 * text_paint_limit shouldn't use xSkip and position afterwards for limiting, should be based on what is drawn
 * ql workshop gibs  workshop\content\282440\691078677  -- download?
 * ui still work with in_nograb 1
-* option to disable ft thaw  -- 2016-06-10 controlled by cg_gibs
 * servitude map:  RB_RenderDrawSurfList refent ptr == NULL for entity 127
-* top-3-47-self-not-in-team-overlay.dm_91  -- 2016-06-17  team overlay player limit (8)
-* smscores.dm_91 : Unknown client game command : smscores
 * check if lg fire sound is added twice when /follow'ed player is cg.snap->ps.clientNum
 * cg_gun_frame unused cvar
 * /follow victim not working after seek and victim is invalid when dead (high01.dm_91 darh 16:30)
 * /follow bobcyle predictable not random
 * change /follow to fallback on player that does damage to demo pov
 * /follow'ed player not showing flag status
-* chat overdraw happens with /follow and +scores
 * save Info_ValueForKey values in cg_newdraw.c (ex:  CS_SERVERINFO "teamsize")
-* option for larger scoreboard to fit all players  (ex:  clan arena team size > 8)
 * option to sort feeder for scoreboard based on alive status
 * /follow [victim|killer] [clientNum]
 * setup menu changing values in console doesn't update displayed values (ex:  cg_drawCrosshair)
@@ -2024,7 +2017,6 @@ No locals.
 * fx missing flag carrier, frozen, infected
 * icon size options:  frozen, infected
 * *spriteExt() shouldn't be checking shaders directly
-* self icon different for enemy and team
 * what if steam workshop item is updated?
 * cpma round hacks need to use seeking option for parse functions
 * cpma ctfs:  round scoreboard show in warmup  ctfs1.dm_68
@@ -2037,7 +2029,15 @@ No locals.
 * cpma ft frozen player shows harvester icons, thawing teammate shows as frag with watch your fire message, round starts
 * seeking register user country flag failed spam
 * dedicated win32 loadlibrary error always "unknown"
-* doesn't use image fallbacks like ql  (ex:  copperfx.tga should then try copperfx.jpg)
+* dead invisible demo taker shown in crosshair client scan :  invis-demo-taker-24-00.dm_91
+* ql demos handicap needs to check starting health
+* /follow victim, switch to freecam [ENTER] and player is not visible
+* chat area still overdrawn  spca.dm_91 9:16
+* with protocol 91 demos and free spec can show team overlay for both teams
+* background "wc/keyPressForward" shows points in edges  (shader setting? since setting image directly works:  gfx/wc/arrow-up.png)
+* draw keypress:  walk (LEGS_WALK)
+* WCG_ for following
+* accuracy against player
 
 
 ---------

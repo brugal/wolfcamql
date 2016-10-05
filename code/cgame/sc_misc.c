@@ -1215,3 +1215,30 @@ qboolean CG_ScoresEqual (int score1, int score2)
 
 	return qfalse;
 }
+
+qboolean CG_CpmaIsRoundWarmup (void)
+{
+	int roundTime;
+	const char *str;
+
+	//FIXME ctfs
+	if (cgs.gametype == GT_CA) {
+		str = CG_ConfigStringNoConvert(CSCPMA_SCORES);
+		roundTime = atoi(Info_ValueForKey(str, "tw"));
+		//Com_Printf("^3round time %d\n", roundTime);
+		if (roundTime > 0  &&  roundTime > cg.time) {
+			//Com_Printf("^5round warmup\n");
+			return qtrue;
+		} else {
+			// check game warmup
+			str = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
+			roundTime = atoi(Info_ValueForKey(str, "tw"));
+			if (roundTime != 0) {
+				//Com_Printf("^2game warmup\n");
+				return qtrue;
+			}
+		}
+	}
+
+	return qfalse;
+}

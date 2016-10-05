@@ -176,6 +176,11 @@ CG_TransitionSnapshot
 The transition point from snap to nextSnap has passed
 ===================
 */
+
+static int SortClients (const void *a, const void *b) {
+	return *(int *)a - *(int *)b;
+}
+
 static void CG_TransitionSnapshot( void ) {
 	centity_t			*cent;
 	snapshot_t			*oldFrame;
@@ -251,6 +256,12 @@ static void CG_TransitionSnapshot( void ) {
 	//Com_Printf("^6armor:  %d\n", cg_entities[cg.snap->ps.clientNum].currentState.armor);
 	cg_entities[ cg.snap->ps.clientNum ].interpolate = qfalse;
 
+	if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)  &&  cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR) {
+		numSortedTeamPlayers = 1;
+		sortedTeamPlayers[0] = cg.snap->ps.clientNum;
+		//Com_Printf("adding %d\n", cg.snap->ps.clientNum);
+	}
+
 	if (cg_drawJumpSpeeds.integer == 1  &&  sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]) < 1.0) {
 		cg.jumpsNeedClearing = qtrue;
 	}
@@ -280,7 +291,22 @@ static void CG_TransitionSnapshot( void ) {
 					   cg.snap->entities[i].pos.trBase[2]
 					   );
 #endif
+
+			if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)) {
+				const clientInfo_t *ci;
+
+				ci = cgs.clientinfo + cg.snap->entities[i].number;
+				if (ci->infoValid  &&  ci->team == cg.snap->ps.persistant[PERS_TEAM]) {
+					numSortedTeamPlayers++;
+					sortedTeamPlayers[numSortedTeamPlayers - 1] = cg.snap->entities[i].number;
+				}
+			}
         }
+
+		if (cgs.realProtocol >= 91) {
+			qsort(sortedTeamPlayers, numSortedTeamPlayers, sizeof(sortedTeamPlayers[0]), SortClients);
+		}
+
 		CG_TransitionEntity( cent );
 
 		// remember time of snapshot this entity was last updated in
@@ -806,6 +832,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	//FIXME clear other stuff as well?
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		wclients[i].landTime = 0;
+		wclients[i].jumpTime = 0;
 	}
 
 	cg.centerPrintLines = 0;

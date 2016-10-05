@@ -186,8 +186,7 @@ void Wolfcam_AddBoundingBox( const centity_t *cent ) {
 	}
 
 	// don't draw it if it's us in first-person
-	if ( cent->currentState.number == cg.predictedPlayerState.clientNum &&
-			!cg.renderingThirdPerson ) {
+	if (!wolfcam_following  &&  cent->currentState.number == cg.predictedPlayerState.clientNum  &&  !cg.renderingThirdPerson) {
 		return;
 	}
 

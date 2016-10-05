@@ -1,3 +1,24 @@
+11.4  2016-10-05
+
+* bug fix:  cpma round seeking would skip 2 rounds instead of 1 after round starts
+* bug fix:  demoTakerDieRound.cfg didn't work with cpma ca demos
+* show real map file name in info screen
+* bug fix:  scoreboard handicap display didn't check server starting health
+* bug fix:  cg_drawBBox wasn't showing box for demo pov
+* bug fix:  area chat was over drawn (making it bolder) when following other players and scores shown
+* cg_drawTeamOverlayMaxPlayers  -1 (default) shows an unlimited number of players in team players.  A value greater than or equal to 0 sets the maximum number of players shown.  Note that the maximum number of players shown is also limited by the demo protocol.  Only quake live protocol 91 or greater can show more than 8.
+* faster team overlay updates for protocol 91 demos
+* team overlay works with spectator demos and protocol 91
+* bug fix:  area chat was over drawn in clan arena when scores shown and dead spec view was free floating
+* bug fix:  /follow player name drawn over scoreboard
+* cg_selfOnTeamOverlay  same as quakelive
+* /loadmenu [menu file] added to documentation.  This can be used to test/debug a menu file directly.
+* cg_drawKeyPress  to enable drawing player key press information.  Also added WCG_PLAYER_KEY_PRESS_[FORWARD|BACK|RIGHT|LEFT|FIRE|JUMP|CROUCH] hud ownerdraws.  See ui/wckeypress.menu for an example.  '/loadmenu ui/wckeypress.menu' to test.
+
+  Note that demos don't record key press information.  Demos do record movement direction which can be used to extract some of the values.  'right', 'left', and 'back' can be accurately extracted from the movement direction but 'forward' is an estimate based on the player's velocity.
+
+
+---------------------------------
 11.3  2016-08-13
 
 * bug fix:  player name and location in team overlay truncating last letter

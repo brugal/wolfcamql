@@ -451,6 +451,8 @@ vmCvar_t cg_drawTeamOverlayScale;
 //vmCvar_t cg_drawTeamOverlayAlpha;
 vmCvar_t cg_drawTeamOverlayWideScreen;
 vmCvar_t cg_drawTeamOverlayLineOffset;
+vmCvar_t cg_drawTeamOverlayMaxPlayers;
+vmCvar_t cg_selfOnTeamOverlay;
 
 vmCvar_t cg_drawJumpSpeeds;
 vmCvar_t cg_drawJumpSpeedsNoText;
@@ -1192,6 +1194,7 @@ vmCvar_t cg_useDemoFov;
 //vmCvar_t cg_specViewHeight;
 vmCvar_t cg_specOffsetQL;
 
+vmCvar_t cg_drawKeyPress;
 // end cvar_t
 
 typedef struct {
@@ -1520,6 +1523,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	//{ &cg_drawTeamOverlayAlpha, "cg_drawTeamOverlayAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawTeamOverlayWideScreen), "3", CVAR_ARCHIVE },
 	{ cvp(cg_drawTeamOverlayLineOffset), "0.4", CVAR_ARCHIVE },
+	{ cvp(cg_drawTeamOverlayMaxPlayers), "-1", CVAR_ARCHIVE },
+	{ cvp(cg_selfOnTeamOverlay), "0", CVAR_ARCHIVE },
 
 	{ &cg_drawJumpSpeeds, "cg_drawJumpSpeeds", "0", CVAR_ARCHIVE },
 	{ &cg_drawJumpSpeedsNoText, "cg_drawJumpSpeedsNoText", "0", CVAR_ARCHIVE },
@@ -2295,6 +2300,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_useDemoFov), "0", CVAR_ARCHIVE },
 	//{ cvp(cg_specViewHeight), "", CVAR_ARCHIVE },
 	{ cvp(cg_specOffsetQL), "1", CVAR_ARCHIVE },
+
+	{ cvp(cg_drawKeyPress), "0", CVAR_ARCHIVE },
 
 };
 
@@ -4085,6 +4092,12 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.mme_additiveWhiteShader = trap_R_RegisterShader("mme_additiveWhite");
 
+	cgs.media.playerKeyPressForwardShader = trap_R_RegisterShaderNoMip("wc/keyPressForward");
+	cgs.media.playerKeyPressBackShader = trap_R_RegisterShaderNoMip("wc/keyPressBack");
+	cgs.media.playerKeyPressRightShader = trap_R_RegisterShaderNoMip("wc/keyPressRight");
+	cgs.media.playerKeyPressLeftShader = trap_R_RegisterShaderNoMip("wc/keyPressLeft");
+	cgs.media.playerKeyPressMiscShader = trap_R_RegisterShaderNoMip("wc/keyPressMisc");
+
 	//FIXME why here?
 	CG_ClearParticles ();
 /*
@@ -5707,8 +5720,17 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 			}
 			return "";
 		case 2:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
 			}
 			return "";
 
@@ -5917,8 +5939,17 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 			}
 			return "";
 		case 2:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
 			}
 			return "";
 
@@ -6111,8 +6142,17 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			}
 			return "";
 		case 2:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
 			}
 			return "";
 		case 3: {
@@ -6321,8 +6361,17 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 			return "";
 
 		case 2:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
 			}
 			return "";
 
@@ -6548,8 +6597,17 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 			return "";
 
 		case 2:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
 			}
 			return "";
 		case 3: {
@@ -6723,8 +6781,17 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 			}
 			return "";
 		case 2:
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
 			}
 			return "";
 		case 3: {
@@ -6885,9 +6952,24 @@ static const char *CG_FeederItemTextRace (float feederID, int index, int column,
 				}
 			}
 			//FIXME own column?
-			if (info->handicap < 100) {
+#if 0
+			if (info->handicap != 100) {
 				return va("^3%d%%", info->handicap);
 			}
+#endif
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
+			}
+
 			return "";
 		case 2: {
 			qboolean ready = qfalse;
@@ -7052,8 +7134,17 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 					*handle = cgs.media.premiumIcon;
 				}
 			}
-			if (info->handicap < 100) {
-				return va("^3%d%%", info->handicap);
+			if (cgs.protocol == PROTOCOL_QL) {
+				int startingHealth;
+
+				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+				if (info->handicap < startingHealth) {
+					return va("^3%d", info->handicap);
+				}
+			} else {
+				if (info->handicap < 100) {
+					return va("^3%d", info->handicap);
+				}
 			}
 			return "";
 		case 2: {
@@ -7091,23 +7182,21 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 				}
 			}
 			if (cg_scoreBoardStyle.integer == 0) {
-				if (info->handicap < 100) {
-					//FIXME spacing
-					return va("%d", info->handicap);
-				}
-			} else if (0) {  //(cg_scoreBoardStyle.integer == 1) {
-				int t;
+				//FIXME spacing
+				if (cgs.protocol == PROTOCOL_QL) {
+					int startingHealth;
 
-				t = cg.time / 1000;
-				if (info->handicap < 100) {
-					if (t % 2 == 0) {
-						return va("%d", info->handicap);
+					startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
+					if (info->handicap < startingHealth) {
+						return va("^3%d", info->handicap);
 					}
-					else {
-						return va("%d", sp->accuracy);
+				} else {
+					if (info->handicap < 100) {
+						return va("^3%d", info->handicap);
 					}
 				}
-				return va("%d", sp->accuracy);
+			} else {
+				//FIXME ?
 			}
 			return "";
 		}

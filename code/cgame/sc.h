@@ -56,5 +56,6 @@ void CG_Rocket_Aim (const centity_t *enemy, vec3_t epos);
 qboolean CG_ClientInSnapshot (int clientNum);
 int CG_NumPlayers (void);
 qboolean CG_ScoresEqual (int score1, int score2);
+qboolean CG_CpmaIsRoundWarmup (void);
 
 #endif  // sc_h_included

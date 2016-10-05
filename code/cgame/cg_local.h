@@ -1546,6 +1546,18 @@ typedef struct {
 
 	int roundStarts[MAX_DEMO_ROUND_STARTS];
 	int numRoundStarts;
+
+	// hack to check if areanewchat is being drawn more than once during frame
+	//int drawActiveFrameCount;
+
+	qboolean playerKeyPressForward;
+	qboolean playerKeyPressBack;
+	qboolean playerKeyPressRight;
+	qboolean playerKeyPressLeft;
+	qboolean playerKeyPressFire;
+	qboolean playerKeyPressCrouch;
+	qboolean playerKeyPressJump;
+
 } cg_t;
 
 
@@ -2246,6 +2258,11 @@ typedef struct {
 	sfxHandle_t invisibilityPickupVo;
 	sfxHandle_t regenPickupVo;
 
+	qhandle_t playerKeyPressForwardShader;
+	qhandle_t playerKeyPressBackShader;
+	qhandle_t playerKeyPressRightShader;
+	qhandle_t playerKeyPressLeftShader;
+	qhandle_t playerKeyPressMiscShader;
 } cgMedia_t;
 
 
@@ -2648,6 +2665,8 @@ extern vmCvar_t cg_drawTeamOverlayScale;
 //extern vmCvar_t cg_drawTeamOverlayAlpha;
 extern vmCvar_t cg_drawTeamOverlayWideScreen;
 extern vmCvar_t cg_drawTeamOverlayLineOffset;
+extern vmCvar_t cg_drawTeamOverlayMaxPlayers;
+extern vmCvar_t cg_selfOnTeamOverlay;
 
 extern vmCvar_t cg_drawJumpSpeeds;
 extern vmCvar_t cg_drawJumpSpeedsNoText;
@@ -3526,6 +3545,7 @@ extern vmCvar_t cg_useDemoFov;
 //extern vmCvar_t cg_specViewHeight;
 extern vmCvar_t cg_specOffsetQL;
 
+extern vmCvar_t cg_drawKeyPress;
 // end cvar_t
 
 //===============================================

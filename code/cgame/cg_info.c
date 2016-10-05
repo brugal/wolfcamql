@@ -391,7 +391,8 @@ void CG_DrawInformation (qboolean loading)
 	}
 
 	// map-specific message (long map name)
-	s = CG_ConfigString( CS_MESSAGE );
+	//s = CG_ConfigString( CS_MESSAGE );
+	s = va("^1(%s.bsp) ^7%s", Info_ValueForKey(info, "mapname"), CG_ConfigString(CS_MESSAGE));
 	if ( s[0] ) {
 		lines = UI_DrawProportionalString3( 320, y, s,
 			UI_CENTER|UI_SMALLFONT|UI_DROPSHADOW, colorWhite );

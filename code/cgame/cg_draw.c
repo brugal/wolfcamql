@@ -4453,11 +4453,13 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	int picy;
 	qboolean q3font = qfalse;
 	float lineOffset;
+	int ourClientNum;
 
 	if ( !cg_drawTeamOverlay.integer ) {
 		return y;
 	}
 
+	//FIXME can skip this check with protocol >= 91 ?
 	if ( cg.snap->ps.persistant[PERS_TEAM] != TEAM_RED && cg.snap->ps.persistant[PERS_TEAM] != TEAM_BLUE ) {
 		return y; // Not on any team
 	}
@@ -4502,8 +4504,25 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 
 	// max player name width
 	pwidth = 0;
-	count = (numSortedTeamPlayers > 8) ? 8 : numSortedTeamPlayers;
+
+	// note cg*maxPlayers unlimited or greater than numSortedPlayers only works with quake live protocol >= 91
+	if (cg_drawTeamOverlayMaxPlayers.integer < 0) {
+		count = numSortedTeamPlayers;
+	} else {
+		count = (numSortedTeamPlayers > cg_drawTeamOverlayMaxPlayers.integer) ? cg_drawTeamOverlayMaxPlayers.integer : numSortedTeamPlayers;
+	}
+
+	if (wolfcam_following) {
+		ourClientNum = wcg.clientNum;
+	} else {
+		ourClientNum = cg.snap->ps.clientNum;
+	}
+
 	for (i = 0; i < count; i++) {
+		if (cg_selfOnTeamOverlay.integer == 0  &&  ourClientNum == sortedTeamPlayers[i]) {
+			continue;
+		}
+
 		ci = cgs.clientinfo + sortedTeamPlayers[i];
 		if ( ci->infoValid && ci->team == cg.snap->ps.persistant[PERS_TEAM]) {
 			plyrs++;
@@ -4637,6 +4656,10 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 		int health;
 		int armor;
 		int curWeapon;
+
+		if (cg_selfOnTeamOverlay.integer == 0  &&  ourClientNum == sortedTeamPlayers[i]) {
+			continue;
+		}
 
 		es = &cg_entities[sortedTeamPlayers[i]].currentState;
 		ci = cgs.clientinfo + sortedTeamPlayers[i];
@@ -8704,141 +8727,53 @@ static void CG_DrawCrosshairTeammateHealth (void)
 
 static void CG_DrawKeyPress (void)
 {
-	vec3_t forward, right, up, back;
-	//vec3_t left, down;
-	vec3_t velocity;
-	float threshold;
 	float w, h;
-	qboolean f, b, r, l, u, d;
 
-	if (!SC_Cvar_Get_Int("cg_drawKeyPress")) {
-		return;
-	}
-
-	if (!cg.prevSnap  ||  VectorLength(cg.prevSnap->ps.velocity) == 0) {
-		return;
-	}
-
-	if (VectorLength(cg.snap->ps.velocity) == 0) {
+	if (cg_drawKeyPress.integer == 0) {
 		return;
 	}
 
 	//FIXME widescreen
 	QLWideScreen = WIDESCREEN_CENTER;
 
-	//VectorCopy(cg.snap->ps.velocity, velocity);
-	VectorCopy(cg.prevSnap->ps.velocity, velocity);
-	VectorNormalize(velocity);
+	w = 16;
+	h = 16;
 
-	AngleVectors(cg.snap->ps.viewangles, forward, right, up);
-	//AngleVectors(cg.prevSnap->ps.viewangles, forward, right, up);
-	VectorScale(forward, -1, back);
-	//VectorScale(right, -1, left);
-	//VectorScale(up, -1, down);
-
-#if 0
-	ProjectPointOntoVector(velocity, start, forward, p);
-	f = VectorLength(p);
-	ProjectPointOntoVector(velocity, start, right, p);
-	r = VectorLength(p);
-	ProjectPointOntoVector(velocity, start, up, p);
-	u = VectorLength(p);
-#endif
-
-	threshold = 10;
-	w = 32;
-	h = 32;
-
-#if 0
-	if (f + threshold >= 1.0) {
-		CG_DrawPic(640/2, 480/2 + 50, w, h, cgs.media.redCubeIcon);
-	} else if (f - threshold <= -1.0) {
-		CG_DrawPic(640/2, 480/2 - 50, w, h, cgs.media.redCubeIcon);
+	if (cg.playerKeyPressForward) {
+		trap_R_SetColor(colorYellow);
+		CG_DrawPic(640/2 - w/2, 480/2 - h * 3 - h, w, h, cgs.media.playerKeyPressForwardShader);
 	}
 
-	if (r + threshold >= 1.0) {
-		CG_DrawPic(640/2 + 50, 480/2, w, h, cgs.media.redCubeIcon);
-	} else if (r - threshold <= -1.0) {
-		CG_DrawPic(640/2 - 50, 480/2, w, h, cgs.media.redCubeIcon);
-	}
-#endif
-
-#if 1
-	//if (AngleBetweenVectors(velocity, forward)) { };
-	if ((RAD2DEG(AngleBetweenVectors(velocity, forward)) - threshold) < 45) {
-		CG_DrawPic(640/2, 480/2 - 50, w, h, cgs.media.redCubeIcon);
-	} else if ((RAD2DEG(AngleBetweenVectors(velocity, back)) - threshold) < 45) {
-		CG_DrawPic(640/2, 480/2 + 50, w, h, cgs.media.redCubeIcon);
+	if (cg.playerKeyPressBack) {
+		trap_R_SetColor(colorGreen);
+		CG_DrawPic(640/2 - w/2, 480/2 + h * 3, w, h, cgs.media.playerKeyPressBackShader);
 	}
 
-#if 0
-	if ((RAD2DEG(AngleBetweenVectors(velocity, right)) - threshold) < 45) {
-		CG_DrawPic(640/2 + 50, 480/2, w, h, cgs.media.redCubeIcon);
-	} else if ((RAD2DEG(AngleBetweenVectors(velocity, left)) - threshold) < 45) {
-		CG_DrawPic(640/2 - 50, 480/2, w, h, cgs.media.redCubeIcon);
-	}
-#endif
-
-#endif
-
-	f = b = r = l = u = d = qfalse;
-
-	//Com_Printf("%d\n", cg.snap->ps.movementDir);
-	switch (cg.snap->ps.movementDir) {
-	case 0:
-		f = qtrue;
-		break;
-	case 1:
-		l = f = qtrue;
-		break;
-	case 2:
-		l = qtrue;
-		break;
-	case 3:
-		l = b = qtrue;
-		break;
-	case 4:
-		b = qtrue;
-		break;
-	case 5:
-		r = b = qtrue;
-		break;
-	case 6:
-		r = qtrue;
-		break;
-	case 7:
-		r = f = qtrue;
-		break;
-	default:
-		break;
+	if (cg.playerKeyPressRight) {
+		trap_R_SetColor(colorGreen);
+		CG_DrawPic(640/2 + w * 3, 480/2 - h/2, w, h, cgs.media.playerKeyPressRightShader);
 	}
 
-	if (cg.snap->ps.movementDir == 1  ||  cg.snap->ps.movementDir == 7) {
-		Com_Printf("forward unknown: %d\n", cg.snap->ps.movementDir);
+	if (cg.playerKeyPressLeft) {
+		trap_R_SetColor(colorGreen);
+		CG_DrawPic(640/2 - w * 3 - w, 480/2 - h/2, w, h, cgs.media.playerKeyPressLeftShader);
 	}
 
-	f = qfalse;
-	//Com_Printf("%f\n", AngleBetweenVectors(velocity, forward));
-
-#if 1
-	if (f) {
-		CG_DrawPic(640/2, 480/2 - 50, w, h, cgs.media.redCubeIcon);
-	} else if (b) {
-		CG_DrawPic(640/2, 480/2 + 50, w, h, cgs.media.redCubeIcon);
+	if (cg.playerKeyPressFire) {
+		trap_R_SetColor(colorRed);
+		CG_DrawPic(640/2 - w * 3 - w, 480/2 - h * 3, w, h, cgs.media.playerKeyPressMiscShader);
 	}
 
-	if (r) {
-		CG_DrawPic(640/2 + 50, 480/2, w, h, cgs.media.redCubeIcon);
-	} else if (l) {
-		CG_DrawPic(640/2 - 50, 480/2, w, h, cgs.media.redCubeIcon);
-	}
-#endif
+	if (cg.playerKeyPressCrouch) {
+		trap_R_SetColor(colorBlue);
+		CG_DrawPic(640/2 + w * 3, 480/2 + h * 3, w, h, cgs.media.playerKeyPressMiscShader);
 
-	//Com_Printf("backwards run: %d  backward jump: %d\n", cg.snap->ps.pm_flags & PMF_BACKWARDS_RUN, cg.snap->ps.pm_flags & PMF_BACKWARDS_JUMP);
-#if 0
-	Com_Printf("f: %f   r:  %f   u:  %f\n", f, r, u);
-	CG_PrintToScreen("f: %f   r:  %f   u:  %f", f, r, u);
-#endif
+	}
+
+	if (cg.playerKeyPressJump) {
+		trap_R_SetColor(colorCyan);
+		CG_DrawPic(640/2 + w * 3, 480/2 - h * 3, w, h, cgs.media.playerKeyPressMiscShader);
+	}
 }
 
 //==============================================================================
@@ -10424,7 +10359,9 @@ static void CG_Draw2D( void ) {
 	if (wolfcam_following) {
 		if (cg_drawStatus.integer) {
 			if (cg_qlhud.integer) {
-				Menu_PaintAll();
+				if (!cg.showDemoScores) {
+					Menu_PaintAll();
+				}
 				//CG_DrawTimedMenus();  //FIXME ac
 			} else {
 				CG_DrawStatusBar();
@@ -10444,7 +10381,9 @@ static void CG_Draw2D( void ) {
 			//Com_Printf("ca\n");
 			if (cg_drawStatus.integer) {
 				if (cg_qlhud.integer) {
-					Menu_PaintAll();
+					if (!cg.showDemoScores) {
+						Menu_PaintAll();
+					}
 					//CG_DrawTimedMenus();  //FIXME ac
 				} else {
 					CG_DrawStatusBar();
@@ -10464,11 +10403,15 @@ static void CG_Draw2D( void ) {
 #if 1  //def MPACK
 			//if (cg_drawStatus.integer  &&  (cgs.gametype != GT_CA  ||  (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_DEAD  &&  !cg_scoreBoardWhenDead.integer)  ||  (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_INTERMISSION  &&  !cg_scoreBoardAtIntermission.integer))) {
 			if (cgs.gametype == GT_CA) {
-				if ((cg.snap->ps.pm_type == PM_DEAD  &&  cg_scoreBoardWhenDead.integer)  ||  (cg.snap->ps.pm_type == PM_INTERMISSION  &&  cg_scoreBoardAtIntermission.integer)) {
+				if ((cg.snap->ps.pm_type == PM_DEAD  &&  cg_scoreBoardWhenDead.integer)  ||
+					((cg.snap->ps.pm_type == PM_SPECTATOR  &&  cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR  &&  cg.snap->ps.stats[STAT_HEALTH] <= 0)  &&  cg_scoreBoardWhenDead.integer)  ||
+					(cg.snap->ps.pm_type == PM_INTERMISSION  &&  cg_scoreBoardAtIntermission.integer)) {
 					// don't draw hud
 				} else {
 					if (cg_qlhud.integer  &&  cg_drawStatus.integer) {
-						Menu_PaintAll();
+						if (!cg.showDemoScores) {
+							Menu_PaintAll();
+						}
 						//CG_DrawTimedMenus();  //FIXME ac
 					} else {
 						CG_DrawStatusBar();
@@ -10477,7 +10420,9 @@ static void CG_Draw2D( void ) {
 			} else {
 				if (cg_qlhud.integer  &&  cg_drawStatus.integer) {
 					//Com_Printf("xx  %d\n", cg.showScores);
-					Menu_PaintAll();
+					if (!cg.showDemoScores) {
+						Menu_PaintAll();
+					}
 					//CG_DrawTimedMenus();  //FIXME ac
 				} else {
 					CG_DrawStatusBar();
@@ -10553,9 +10498,13 @@ static void CG_Draw2D( void ) {
 	CG_DrawLowerLeft();
 #endif
 
+	// keep different draw follow together so behavior is consistent (previously wolfcam follow would draw over scoreboard)
+	//FIXME wolfcam draw follow should probably just be handled in CG_DrawFollow()
 	if ( !CG_DrawFollow() ) {
 		//CG_DrawWarmup();
 	}
+	Wolfcam_DrawFollowing();
+
 	CG_WarmupAnnouncements();
 	CG_DrawWarmup();
 
@@ -10577,7 +10526,6 @@ static void CG_Draw2D( void ) {
 		CG_DrawFragMessage();
 	}
 
-    Wolfcam_DrawFollowing();
 #if 0
 	if (wolfcam_following  ||  cg_qlhud.integer == 0) {
 		//trap_R_DrawConsoleLines();

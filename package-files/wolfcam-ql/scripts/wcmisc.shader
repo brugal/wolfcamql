@@ -162,3 +162,58 @@ wc/wallhack
 	}
 
 }
+
+wc/keyPressRight
+{
+        nopicmip
+        nomipmaps
+        {
+                clampmap gfx/wc/arrow-right.png
+                blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+                rgbgen vertex
+        }
+}
+
+wc/keyPressLeft
+{
+        nopicmip
+        nomipmaps
+        {
+                clampmap gfx/wc/arrow-left.png
+                blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+                rgbgen vertex
+        }
+}
+
+wc/keyPressForward
+{
+        nopicmip
+        nomipmaps
+        {
+                clampmap gfx/wc/arrow-up.png
+                blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+                rgbgen vertex
+        }
+}
+
+wc/keyPressBack
+{
+        nopicmip
+        nomipmaps
+        {
+                clampmap gfx/wc/arrow-down.png
+                blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+                rgbgen vertex
+        }
+}
+
+wc/keyPressMisc
+{
+        nopicmip
+        nomipmaps
+        {
+                clampmap gfx/wc/circle.jpg
+                blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+                rgbgen vertex
+        }
+}

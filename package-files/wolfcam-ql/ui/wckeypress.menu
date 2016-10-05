@@ -1,0 +1,130 @@
+#include "ui/menudef.h"
+#include "ui/wcmenudef.h"
+
+// player key press
+
+menuDef {
+	name "playerKeyPress"
+	visible 1
+	rect 100 200 80 80
+	widescreen 2  // center
+
+	itemDef {
+		name "keyPressForward"
+		rect 32 0 16 16
+		visible 1
+		backcolor 1 1 0 0.7
+		style WINDOW_STYLE_FILLED
+		background "gfx/wc/arrow-up.png"
+
+		run {
+		    if ((ownerdrawvalue WCG_PLAYER_KEY_PRESS_FORWARD) = 1) {
+		       visible 1
+		    } else {
+		       visible 0
+		    }
+		}
+	}
+
+	itemDef {
+		name "keyPressBack"
+		rect 32 64 16 16
+		visible 1
+		backcolor 0 1 0 0.7
+		style WINDOW_STYLE_FILLED
+		background "gfx/wc/arrow-down.png"
+
+		run {
+		    if ((ownerdrawvalue WCG_PLAYER_KEY_PRESS_BACK) = 1) {
+		       visible 1
+		    } else {
+		       visible 0
+		    }
+		}
+	}
+
+	itemDef {
+		name "keyPressRight"
+		rect 64 32 16 16
+		visible 1
+		backcolor 0 1 0 0.7
+		style WINDOW_STYLE_FILLED
+		background "gfx/wc/arrow-right.png"
+
+		run {
+		    if ((ownerdrawvalue WCG_PLAYER_KEY_PRESS_RIGHT) = 1) {
+		       visible 1
+		    } else {
+		       visible 0
+		    }
+		}
+	}
+
+	itemDef {
+		name "keyPressLeft"
+		rect 0 32 16 16
+		visible 1
+		backcolor 0 1 0 0.7
+		style WINDOW_STYLE_FILLED
+		background "gfx/wc/arrow-left.png"
+
+		run {
+		    if ((ownerdrawvalue WCG_PLAYER_KEY_PRESS_LEFT) = 1) {
+		       visible 1
+		    } else {
+		       visible 0
+		    }
+		}
+	}
+
+	itemDef {
+		name "keyPressFire"
+		rect 0 0 16 16
+		visible 1
+		backcolor 1 0 0 0.7
+		style WINDOW_STYLE_FILLED
+		background "gfx/wc/circle.png"
+
+		run {
+		    if ((ownerdrawvalue WCG_PLAYER_KEY_PRESS_FIRE) = 1) {
+		       visible 1
+		    } else {
+		       visible 0
+		    }
+		}
+	}
+
+	itemDef {
+		name "keyPressJump"
+		rect 64 0 16 16
+		visible 1
+		backcolor 0 1 1 0.7
+		style WINDOW_STYLE_FILLED
+		background "gfx/wc/circle.png"
+
+		run {
+		    if ((ownerdrawvalue WCG_PLAYER_KEY_PRESS_JUMP) = 1) {
+		       visible 1
+		    } else {
+		       visible 0
+		    }
+		}
+	}
+
+	itemDef {
+		name "keyPressCrouch"
+		rect 64 64 16 16
+		visible 1
+		backcolor 0 0 1 0.7
+		style WINDOW_STYLE_FILLED
+		background "gfx/wc/circle.png"
+
+		run {
+		    if ((ownerdrawvalue WCG_PLAYER_KEY_PRESS_CROUCH) = 1) {
+		       visible 1
+		    } else {
+		       visible 0
+		    }
+		}
+	}
+}
