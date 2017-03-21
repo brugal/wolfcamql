@@ -304,6 +304,10 @@ static void CG_NextOrder_f( void ) {
 
 	ci = cgs.clientinfo + cg.snap->ps.clientNum;
 	if (ci) {
+		if (cg_currentSelectedPlayer.integer < 0  ||  cg_currentSelectedPlayer.integer > numSortedTeamPlayers) {
+			Com_Printf("^3CG_NextOrder_f:  invalid selected player %d\n", cg_currentSelectedPlayer.integer);
+			return;
+		}
 		if (!ci->teamLeader && sortedTeamPlayers[cg_currentSelectedPlayer.integer] != cg.snap->ps.clientNum) {
 			return;
 		}

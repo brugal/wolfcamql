@@ -25,6 +25,8 @@ Copy the quakelive paks into baseq3.
 
 To auto-download steam workshop maps for demo playback you should install steamcmd from https://developer.valvesoftware.com/wiki/SteamCMD and set its location in the fs_steamcmd variable.
 
+  Ex:  set fs_steamcmd "C:\Program Files\steamcmd\steamcmd.exe"
+
 If you want to use the same maps that an older demo was recorded with you can copy over files that start with qz (ex: qzteam1.pk3, qzdm6.pk3) from an older quakelive baseq3/ into wolfcam's baseq3/ .  Otherwise, it will use the new maps with old demos.
 
 ------------------------------------------------------------------------
@@ -101,7 +103,7 @@ When gibs are enabled quake3 gibs are checked first and if they aren't found it 
 
 q3 style player bleeding when they are hit:
 
-Enabled when workshop_gibs.pk3 is copied into wolfcam-ql/ or from quake3 copy
+Enabled when workshop_gibs.pk3 is copied into wolfcam-ql/ or when these are copied from quake3:
 
   models/weaphits/blood201.tga
   models/weaphits/blood202.tga

@@ -1,3 +1,9 @@
+11.5test1
+
+* bug fix:  check bounds for sortedTeamPlayers
+* Windows binary allows more memory usage
+
+---------------------------------
 11.4  2016-10-05
 
 * bug fix:  cpma round seeking would skip 2 rounds instead of 1 after round starts

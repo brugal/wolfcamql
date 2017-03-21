@@ -1732,7 +1732,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		}
 		CG_StartSound (NULL, es->number, CHAN_VOICE, CG_CustomSound( es->number, "*jump1.wav" ) );
 
-		if (es->number < MAX_CLIENTS) {
+		if (es->number >= 0  &&  es->number < MAX_CLIENTS) {
 			wclients[es->number].jumpTime = cg.time;
 		}
 

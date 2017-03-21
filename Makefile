@@ -557,6 +557,7 @@ ifdef MINGW
 
   #CLIENT_CFLAGS = -D__MINGW32__
   #CLIENT_CFLAGS = -I../../vorbis/include
+  LDFLAGS += -Xlinker --large-address-aware
   CLIENT_CFLAGS =
   CLIENT_LIBS =
   SERVER_CFLAGS =

@@ -256,10 +256,14 @@ static void CG_TransitionSnapshot( void ) {
 	//Com_Printf("^6armor:  %d\n", cg_entities[cg.snap->ps.clientNum].currentState.armor);
 	cg_entities[ cg.snap->ps.clientNum ].interpolate = qfalse;
 
-	if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)  &&  cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR) {
-		numSortedTeamPlayers = 1;
-		sortedTeamPlayers[0] = cg.snap->ps.clientNum;
-		//Com_Printf("adding %d\n", cg.snap->ps.clientNum);
+	if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)) {
+		numSortedTeamPlayers = 0;
+
+		if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR) {
+			numSortedTeamPlayers = 1;
+			sortedTeamPlayers[0] = cg.snap->ps.clientNum;
+			//Com_Printf("adding %d\n", cg.snap->ps.clientNum);
+		}
 	}
 
 	if (cg_drawJumpSpeeds.integer == 1  &&  sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]) < 1.0) {
@@ -297,13 +301,15 @@ static void CG_TransitionSnapshot( void ) {
 
 				ci = cgs.clientinfo + cg.snap->entities[i].number;
 				if (ci->infoValid  &&  ci->team == cg.snap->ps.persistant[PERS_TEAM]) {
-					numSortedTeamPlayers++;
-					sortedTeamPlayers[numSortedTeamPlayers - 1] = cg.snap->entities[i].number;
+					if (numSortedTeamPlayers < TEAM_MAXOVERLAY) {
+						numSortedTeamPlayers++;
+						sortedTeamPlayers[numSortedTeamPlayers - 1] = cg.snap->entities[i].number;
+					}
 				}
 			}
         }
 
-		if (cgs.realProtocol >= 91) {
+		if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)) {
 			qsort(sortedTeamPlayers, numSortedTeamPlayers, sizeof(sortedTeamPlayers[0]), SortClients);
 		}
 

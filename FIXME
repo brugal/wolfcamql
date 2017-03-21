@@ -1,4 +1,4 @@
-* gibs (open arena has?)
+[* gibs (open arena has?)
 * kami wcstats
 * EV_GAMEOVER
 
@@ -2030,14 +2030,12 @@ No locals.
 * seeking register user country flag failed spam
 * dedicated win32 loadlibrary error always "unknown"
 * dead invisible demo taker shown in crosshair client scan :  invis-demo-taker-24-00.dm_91
-* ql demos handicap needs to check starting health
 * /follow victim, switch to freecam [ENTER] and player is not visible
-* chat area still overdrawn  spca.dm_91 9:16
 * with protocol 91 demos and free spec can show team overlay for both teams
-* background "wc/keyPressForward" shows points in edges  (shader setting? since setting image directly works:  gfx/wc/arrow-up.png)
 * draw keypress:  walk (LEGS_WALK)
 * WCG_ for following
 * accuracy against player
+
 
 
 ---------

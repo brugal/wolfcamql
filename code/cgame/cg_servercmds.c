@@ -731,6 +731,11 @@ static void CG_ParseTeamInfo_91 (void)
 
 	numSortedTeamPlayers = atoi( CG_Argv( 1 ) );
 
+	if (numSortedTeamPlayers >= TEAM_MAXOVERLAY) {
+		CG_Printf("^3team info91:  numSortedTeamPlayers >= TEAM_MAXOVERLAY\n");
+		numSortedTeamPlayers = TEAM_MAXOVERLAY - 1;
+	}
+
 	for ( i = 0 ; i < numSortedTeamPlayers ; i++ ) {
 		clientNum = atoi( CG_Argv( i + 2 ) );
 		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
@@ -771,6 +776,11 @@ static void CG_ParseTeamInfo( void ) {
 	//int healthOld;
 
 	numSortedTeamPlayers = atoi( CG_Argv( 1 ) );
+	if (numSortedTeamPlayers >= TEAM_MAXOVERLAY) {
+		CG_Printf("^3team info:  numSortedTeamPlayers >= TEAM_MAXOVERLAY\n");
+		numSortedTeamPlayers = TEAM_MAXOVERLAY - 1;
+	}
+
 	//Com_Printf("CG_ParseTeamInfo numSortedTeamPlayers %d\n", numSortedTeamPlayers);
 
 	for ( i = 0 ; i < numSortedTeamPlayers ; i++ ) {
