@@ -1040,6 +1040,12 @@ static void RB_PostProcessing (void)
 		return;
 	}
 
+	// 2017-03-23 qglScissor() not working with bloom and 3d icons which set
+	//  a new scissor value  --  GL_RENDERER: AMD Radeon R9 M370X
+	//FIXME not enough to set scissor to size of viewport like in RB_SetGL2D()?
+	qglDisable(GL_SCISSOR_TEST);
+
+
 	//qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 	// since bloom is using readpixels()
@@ -1074,6 +1080,7 @@ static void RB_PostProcessing (void)
 		qglBindFramebufferEXT(GL_FRAMEBUFFER_EXT, tr.frameBufferMultiSample);
 	}
 
+	qglEnable(GL_SCISSOR_TEST);
 }
 
 static void RB_ColorCorrect (void)
@@ -1880,7 +1887,14 @@ const void	*RB_SwapBuffers (const void *data, qboolean endFrame)
 		qglReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 	}
 
+	// 2017-03-23 qglScissor() not working with bloom and 3d icons which set
+	//  a new scissor value  --  GL_RENDERER: AMD Radeon R9 M370X
+	//FIXME not enough to set scissor to size of viewport like in RB_SetGL2D()?
+	qglDisable(GL_SCISSOR_TEST);
+
 	RB_ColorCorrect();
+
+	qglEnable(GL_SCISSOR_TEST);
 
 	if (tr.usingFrameBufferObject) {
 		int height, width;

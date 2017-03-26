@@ -1892,3 +1892,125 @@ Remove unnecessary localhost check from reconnect command.
 2016-07-28-01 skip (rend2):  OpenGL2: Fix GL_EXT_direct_state_access function names.
 
 2016-07-29-01 skip (rend2):  OpenGL2: Let unlit materials use parallax maps.
+
+2016-08-04-01 skip (rend2):  OpenGL2: Fix shader error logs.
+
+2016-08-05-01 Better defaults for joystick axes.
+2016-08-05-02 skip (sdl2):  Controller hot plug support.
+2016-08-05-03 Minor updates to README.md
+
+2016-08-08-01 skip (sdl2):  Better gamepad support.
+2016-08-08-02 skip (prev sdl2 patch):  Fix stricmp usage in previous commit.
+2016-08-08-03 skip (file not included):  Minor URL change.
+
+2016-08-11-01 skip (sdl2):  Fix black screen when in_joystick disabled but controller connected.
+
+2016-08-15-01 skip (rend2):  OpenGL2: Preallocate grid surfaces like other BSP surfaces.
+2016-08-15-02 skip (rend2):  Missing bit of previous commit.
+2016-08-15-03 skip (sdl2):  Update SDL2 to 2.0.4
+
+2016-08-16-01 skip (merge):  Merge pull request #207 from MAN-AT-ARMS/sdl204
+2016-08-16-02 skip (sdl2):  Add stripped SDL2 reference dll's to repo
+2016-08-16-03 skip (merge):  Merge pull request #212 from MAN-AT-ARMS/sdl204-stripped
+2016-08-16-04 skip (sdl2):  Fix joystick w/o controller mapping not working with SDL update.
+
+2016-08-23-01 [game/ai_main.c] Use floating-point fabs() for floating-point values
+2016-08-23-02 skip (merge):  Merge pull request #213 from tkoeppe/abs
+
+2016-09-01-01 skip (rend2):  [renderergl2/tr_main.c] Use floating-point fabsf() for floating-point
+
+2016-09-06-01 skip (rend2):  OpenGL2: Store normals/tangents as int16_t[4].
+2016-09-06-02 skip (rend2):  OpenGL2: Fix missing bounds calculation when loading BSP surfaces.
+
+2016-09-07-01 skip (rend2):  OpenGL2: Make R_FreeSurfaceGridMeshData() static.
+2016-09-07-02 Fix undefined behavior when shifting left by 32.
+
+2016-09-11-01 skip (rend2):  OpenGL2: Fix reversed VectorCopy4() usage.
+
+2016-09-12-01 [qcommon/msg.c] Remove dead code (which had undefined behaviour)
+2016-09-12-02 skip (merge):  Merge pull request #220 from tkoeppe/shift
+
+2016-09-13-01 skip (rend2):  OpenGL2: Fix more reversed VectorCopy4() usage.
+2016-09-13-02 skip (merge):  Merge pull request #216 from tkoeppe/abs
+2016-09-13-03 [code/botlib/l_precomp.c] Fix string buffer overflow
+2016-09-13-04 skip (merge):  Merge pull request #221 from tkoeppe/strncpy
+
+2016-09-14-01 skip (rend2):  OpenGL2: Remove map color scaling and r_forceSunMapLightScale.
+2016-09-14-02 skip (rend2):  OpenGL2: Remove per fragment tangent space calculation code.
+2016-09-14-03 skip (rend2):  OpenGL2: Clamp entity lighting to more resemble OpenGL1.
+
+2016-09-21-01 Fix mis-spellings of "separating" as "seperating"
+
+2016-03-21-01 Introduce NOTSHLIBLDFLAGS, used to link executables only
+
+2015-04-02-01 Pick up date from SOURCE_DATE_EPOCH, for reproducible builds
+
+2016-09-23-01 skip (rend2):  OpenGL2: Some tr_image refactoring/cleanup.
+2016-09-25-01 snd_wavelet: avoid undefined pointer below array bounds
+2016-09-25-02 UI_BuildFindPlayerList: avoid array underflow
+2016-09-25-03 UI_BuildFindPlayerList: make a sizeof() more obviously correct
+
+2016-09-27-01 skip (merge):  Merge pull request #223 from smcv/seperating
+2016-09-27-02 skip (merge):  Merge pull request #224 from smcv/notshlib
+2016-09-27-03 skip (merge):  Merge pull request #225 from smcv/reproducible-date
+2016-09-27-03 skip (merge):  Merge pull request #226 from smcv/underflow
+
+2016-10-02-01 skip (rend2):  Default cl_renderer to opengl2.
+
+2016-10-09-01 reset samplefrac to 8-bits, to prevent overflow
+2016-10-09-02 skip:  Offer post-crash safe settings on a per-mod basis
+2016-10-09-03 skip (no opus):  Avoid shuting down opus voip codec multiple times
+2016-10-09-04 skip (skip prev commits):  Handle ERR_DROP during Com_GameRestart
+
+2016-10-10-01 skip (rend2):  OpenGL2: Non-square merged lightmaps.
+2016-10-10-02 skip (rend2):  OpenGL2: Store vertex colors and hdr lightmaps/lightgrid as RGBA16.
+
+2016-10-11-01 skip (rend2):  OpenGL2: Workaround for multiple deforms on MD3 mesh.
+
+2016-10-13-01 skip (rend2):  OpenGL2: Fix fog color.
+
+2016-10-20-01 skip (rend2):  OpenGL2: Remove half float support.
+
+2016-10-21-01 skip (rend2):  OpenGL2: Remove check for GL_ARB_texture_non_power_of_two.
+2016-10-21-02 skip (rend2):  OpenGL2: Faster mipmap generation.
+
+2016-10-27-01 skip (rend2):  OpenGL2: Load images with "_nh" suffix as parallax normalmaps.
+2016-10-27-02 skip (rend2):  OpenGL2: Prioritize loading .png images over all others besides .dds.
+2016-10-27-03 skip (rend2):  OpenGL2: Add more ambient to lightmapped materials.
+2016-10-27-04 skip (no pidfile):  Fix removing/creating PID file for base game when switching to/from mods
+
+2016-09-29-01 Avoid 'register' declarations
+
+2016-11-01-01 skip (no mingw_prefixes):  Prefer mingw-w64 for cross-compiling
+2016-11-01-02 skip (file not updated):  Allow overriding platform in NSIS installer
+
+2016-11-25-01 skip (rend2):  OpenGL2: Don't interleave texCoords and lightCoords in tess.
+2016-11-25-02 skip (rend2):  OpenGL2: Don't draw viewmodels in portal views.
+2016-11-25-03 skip (rend2):  OpenGL2: glGetIntegerv -> qglGetIntegerv
+
+2016-05-16-01 Don't have clients use private slots when sv_privatePassword is unset
+
+2016-12-07-01 skip (rend2):  OpenGL2: Don't bind null framebuffers when not using framebuffers.
+
+2016-12-08-01 skip (rend2):  OpenGL2: Detect Intel graphics and avoid/use certain operations there.
+
+2016-12-10-01 skip (sdl2):  GLimp_HaveExtension() -> SDL_GL_ExtensionSupported()
+
+2016-12-12-01 skip (rend2):  OpenGL2: Fix bug in generating normal maps for non-square textures.
+
+2017-01-24-01 skip (rend2):  OpenGL2: Render dlights only when r_lightmap is 0.
+
+2017-01-25-01 skip (merge):  Merge pull request #227 from smcv/old-style-declaration
+2017-01-25-02 skip (merge):  Merge pull request #91 from lnussel/master
+2017-01-25-03 skip (merge):  Merge pull request #99 from openmoh/ioq3-SSE-msg
+2017-01-25-04 skip (merge):  Merge pull request #230 from fmwviormv/patch-1
+2017-01-25-05 skip (sdl2):  Correct test for GL_EXT_texture_env_add support
+
+2017-01-26-01 skip (rend2):  OpenGL2: Generate less shaders when r_sunlightMode is disabled.
+
+2017-02-19-01 Fix source filename/includepath length in l_precomp.c
+
+2017-02-22-01 Fix command line variables not being set correctly
+
+2017-02-27-01 Fix swapping AAS bboxes
+

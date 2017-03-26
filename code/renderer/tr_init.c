@@ -1438,6 +1438,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	int blurFrames;
 	int blurOverlap;
 	qboolean useBlur;
+	int frameRateDivider;
 
 	cmd = (const videoFrameCommand_t *)data;
 
@@ -1452,6 +1453,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	blurOverlap = Cvar_VariableIntegerValue("mme_blurOverlap");
 	if (blurOverlap > 0) {
 		useBlur = qtrue;
+	}
+	frameRateDivider = Cvar_VariableIntegerValue("cl_aviFrameRateDivider");
+	if (frameRateDivider < 1) {
+		frameRateDivider = 1;
 	}
 
 	shotData->pixelCount = cmd->width * cmd->height;
@@ -1505,6 +1510,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	}
 
 	if (!useBlur) {
+		//Com_Printf("no blur pic count: %d\n", cmd->picCount + 1);
+		if ((cmd->picCount + 1) % frameRateDivider != 0) {
+			//Com_Printf("    skipping %d\n", cmd->picCount + 1);
+			goto dontwrite;
+		}
+		//Com_Printf("writing %d\n", cmd->picCount + 1);
 		qglReadPixels(0, 0, cmd->width, cmd->height, glMode, GL_UNSIGNED_BYTE, fetchBuffer + 18);
 		R_GammaCorrect(fetchBuffer + 18, cmd->width * cmd->height * (3 + fetchBufferHasAlpha));
 	} else {  // use blur
@@ -1558,6 +1569,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				shotData->blurIndex = 0;
 				accumShift( shotData->accumAlign, outAlign, shotData->pixelCount );
 				//R_MME_SaveShot( &shotData->shot.main, glConfig.vidWidth, glConfig.vidHeight, shotData->shot.fps, doGamma && !mme_blurGamma->integer, (byte *)outAlign );
+				//shotData->frameCount++;
+				//Com_Printf("pic count: %d\n", cmd->picCount);
+				if (((cmd->picCount + 1) * blurFrames) % frameRateDivider != 0) {
+					goto dontwrite;
+				}
 			} else {
 				// skip saving the shot
 				//goto done;
@@ -1577,6 +1593,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		} else {
 			count = cmd->picCount;
 		}
+		count /= frameRateDivider;
 
 		//FIXME hack
 		if (shotData == &shotDataLeft) {
@@ -1713,6 +1730,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		} else {
 			count = cmd->picCount;
 		}
+		count /= frameRateDivider;
 
 		//FIXME hack
 		if (shotData == &shotDataLeft) {
@@ -2074,6 +2092,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		} else {
 			count = cmd->picCount;
 		}
+		count /= frameRateDivider;
 
 		if (shotData == &shotDataLeft) {
 			Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-left-%010d.tga", cmd->givenFileName, count);

@@ -880,6 +880,13 @@ void S_PaintChannels( int endtime ) {
 
 			sampleOffset = ltime - ch->startSample;
 
+			if (sampleOffset < 0) {
+				// this can happen after /stopvideo
+				//Com_Printf("smain %d\n", sampleOffset);
+				//Com_Printf("  ltime %d  ch->startSample %d\n", ltime, ch->startSample);
+				continue;
+			}
+
 			if ( count > 0 ) {
 				if( sc->soundCompressionMethod == SND_COMPRESSION_ADPCM) {
 					S_PaintChannelFromADPCM		(ch, sc, count, sampleOffset, ltime - s_paintedtime);
@@ -954,6 +961,11 @@ void S_PaintChannels( int endtime ) {
 				//sampleOffset = (ltime % soundLength);
 
 				//Com_Printf("%d\n", sc->soundCompressionMethod);
+
+				if (sampleOffset < 0) {
+					break;
+				}
+
 
 				if ( count > 0 ) {
 					if( sc->soundCompressionMethod == SND_COMPRESSION_ADPCM) {

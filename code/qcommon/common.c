@@ -465,7 +465,7 @@ void Com_Quit_f( void ) {
 
 COMMAND LINE FUNCTIONS
 
-+ characters seperate the commandLine string into multiple console
++ characters separate the commandLine string into multiple console
 command lines.
 
 All of these are valid:
@@ -497,8 +497,8 @@ void Com_ParseCommandLine( char *commandLine ) {
         if (*commandLine == '"') {
             inq = !inq;
         }
-        // look for a + seperating character
-        // if commandLine came from a file, we might have real line seperators
+        // look for a + separating character
+        // if commandLine came from a file, we might have real line separators
         if ( (*commandLine == '+' && !inq) || *commandLine == '\n'  || *commandLine == '\r' ) {
             if ( com_numConsoleLines == MAX_CONSOLE_LINES ) {
                 return;
@@ -561,9 +561,9 @@ void Com_StartupVariable( const char *match ) {
 		if(!match || !strcmp(s, match))
 		{
 			if(Cvar_Flags(s) == CVAR_NONEXISTENT)
-				Cvar_Get(s, Cmd_Argv(2), CVAR_USER_CREATED);
+				Cvar_Get(s, Cmd_ArgsFrom(2), CVAR_USER_CREATED);
 			else
-				Cvar_Set( s, Cmd_Argv(2) );
+				Cvar_Set( s, Cmd_ArgsFrom(2) );
 		}
 	}
 }
@@ -574,7 +574,7 @@ void Com_StartupVariable( const char *match ) {
 Com_AddStartupCommands
 
 Adds command line parameters as script statements
-Commands are seperated by + signs
+Commands are separated by + signs
 
 Returns qtrue if any late commands were added, which
 will keep the demoloop from immediately starting
@@ -592,7 +592,7 @@ qboolean Com_AddStartupCommands( void ) {
 		}
 
 		// set commands already added with Com_StartupVariable
-		if ( !Q_stricmpn( com_consoleLines[i], "set", 3 ) ) {
+		if ( !Q_stricmpn( com_consoleLines[i], "set ", 4 ) ) {
 			continue;
 		}
 
@@ -2270,7 +2270,7 @@ sysEvent_t Com_GetSystemEvent (qboolean networkEvents)
 				netadr_t  *buf;
 				int       len;
 
-				// copy out to a seperate buffer for qeueing
+				// copy out to a separate buffer for qeueing
 				len = sizeof( netadr_t ) + netmsg.cursize;
 				buf = Z_Malloc( len );
 				*buf = adr;
@@ -2947,7 +2947,7 @@ void Com_Init( char *commandLine ) {
 	char	*s;
 	int	qport;
 
-	Com_Printf( "%s %s %s\n", Q3_VERSION, PLATFORM_STRING, __DATE__ );
+	Com_Printf( "%s %s %s\n", Q3_VERSION, PLATFORM_STRING, PRODUCT_DATE );
 
 	if ( setjmp (abortframe) ) {
 		Sys_Error ("Error during initialization");
@@ -3057,7 +3057,7 @@ void Com_Init( char *commandLine ) {
 	com_introPlayed = Cvar_Get( "com_introplayed", "1", CVAR_ARCHIVE);
 	com_logo = Cvar_Get("com_logo", "0", CVAR_ARCHIVE);
 
-	s = va("%s %s %s", Q3_VERSION, PLATFORM_STRING, __DATE__ );
+	s = va("%s %s %s", Q3_VERSION, PLATFORM_STRING, PRODUCT_DATE );
 	com_version = Cvar_Get ("version", s, CVAR_ROM | CVAR_SERVERINFO );
 	com_protocol = Cvar_Get ("protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_INIT);
 	com_autoWriteConfig = Cvar_Get("com_autoWriteConfig", "2", CVAR_ARCHIVE);

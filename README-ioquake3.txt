@@ -36,7 +36,7 @@ use a modern copy from http://icculus.org/gtkradiant/.
 
 The original id software readme that accompanied the Q3 source release has been
 renamed to id-readme.txt so as to prevent confusion. Please refer to the
-web-site for updated status.
+website for updated status.
 
 
 --------------------------------------------- Compilation and installation -----
@@ -590,8 +590,6 @@ but we have some general guidelines:
 
   * Please include an OpenAL so/dylib/dll, since every platform should be using
     it by now.
-
-  * Please contact the mailing list when you've made your installer.
 
   * Please be prepared to alter your installer on the whim of the maintainers.
 

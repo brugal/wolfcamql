@@ -77,6 +77,7 @@ cvar_t	*cl_timedemo;
 cvar_t	*cl_timedemoLog;
 cvar_t	*cl_autoRecordDemo;
 cvar_t	*cl_aviFrameRate;
+cvar_t *cl_aviFrameRateDivider;
 cvar_t	*cl_aviCodec;
 cvar_t *cl_aviAllowLargeFiles;
 cvar_t *cl_aviFetchMode;
@@ -4115,15 +4116,21 @@ void CL_Frame ( int msec, double fmsec ) {
 		// save the current screen
 		if ( cls.state == CA_ACTIVE || cl_forceavidemo->integer) {
 			int blurFrames;
+			double frameRateDivider;
+
+			frameRateDivider = (double)cl_aviFrameRateDivider->integer;
+			if (frameRateDivider < 1.0) {
+				frameRateDivider = 1.0;
+			}
 
 			CL_TakeVideoFrame(&afdMain);
 
 			// fixed time for next frame'
 			blurFrames = Cvar_VariableIntegerValue("mme_blurFrames");
 			if (blurFrames == 0  ||  blurFrames == 1) {
-				f = ( ((double)1000.0f / (double)cl_aviFrameRate->value) * (double)com_timescale->value );
+				f = ( ((double)1000.0f / ((double)cl_aviFrameRate->value * frameRateDivider)) * (double)com_timescale->value );
 			} else {
-				f = (((double)1000.0f / ((double)cl_aviFrameRate->value * (double)blurFrames)) * (double)com_timescale->value);
+				f = ( ((double)1000.0f / ((double)cl_aviFrameRate->value * frameRateDivider * (double)blurFrames)) * (double)com_timescale->value);
 			}
 			//msec = (int)ceil(f);
 			msec = (int)floor(f);
@@ -4545,7 +4552,14 @@ void CL_Video_f( void )
 		  //FIXME no -- still other stuff
 		  SplitVideo = qtrue;
 	  } else if (!Q_stricmp(Cmd_Argv(i), "name")) {
-		  Q_strncpyz(filename, Cmd_Argv(i + 1), MAX_OSPATH);
+		  if (!Q_stricmp(Cmd_Argv(i + 1), ":demoname")) {
+			  char dnameBuffer[MAX_OSPATH];
+
+			  COM_StripExtension(Cvar_VariableString("cl_demoFileBaseName"), dnameBuffer, MAX_OSPATH);
+			  Q_strncpyz(filename, dnameBuffer, MAX_OSPATH);
+		  } else {
+			  Q_strncpyz(filename, Cmd_Argv(i + 1), MAX_OSPATH);
+		  }
 		  i++;
 	  }
   }
@@ -5203,6 +5217,7 @@ void CL_Init ( void ) {
 	cl_timedemoLog = Cvar_Get ("cl_timedemoLog", "", CVAR_ARCHIVE);
 	cl_autoRecordDemo = Cvar_Get ("cl_autoRecordDemo", "0", CVAR_ARCHIVE);
 	cl_aviFrameRate = Cvar_Get ("cl_aviFrameRate", "50", CVAR_ARCHIVE);
+	cl_aviFrameRateDivider = Cvar_Get("cl_aviFrameRateDivider", "1", CVAR_ARCHIVE);
 	cl_aviCodec = Cvar_Get ("cl_aviCodec", "uncompressed", CVAR_ARCHIVE);
 	cl_aviAllowLargeFiles = Cvar_Get("cl_aviAllowLargeFiles", "1", CVAR_ARCHIVE);
 	cl_aviFetchMode = Cvar_Get("cl_aviFetchMode", "GL_RGB", CVAR_ARCHIVE);
@@ -5269,13 +5284,13 @@ void CL_Init ( void ) {
 	j_yaw =          Cvar_Get ("j_yaw",          "-0.022", CVAR_ARCHIVE);
 	j_forward =      Cvar_Get ("j_forward",      "-0.25", CVAR_ARCHIVE);
 	j_side =         Cvar_Get ("j_side",         "0.25", CVAR_ARCHIVE);
-	j_up =         Cvar_Get ("j_up",         "1", CVAR_ARCHIVE);
+	j_up =         Cvar_Get ("j_up",         "0", CVAR_ARCHIVE);
 
 	j_pitch_axis =   Cvar_Get ("j_pitch_axis",   "3", CVAR_ARCHIVE);
-	j_yaw_axis =     Cvar_Get ("j_yaw_axis",     "4", CVAR_ARCHIVE);
+	j_yaw_axis =     Cvar_Get ("j_yaw_axis",     "2", CVAR_ARCHIVE);
 	j_forward_axis = Cvar_Get ("j_forward_axis", "1", CVAR_ARCHIVE);
 	j_side_axis =    Cvar_Get ("j_side_axis",    "0", CVAR_ARCHIVE);
-	j_up_axis =    Cvar_Get ("j_up_axis",    "2", CVAR_ARCHIVE);
+	j_up_axis =    Cvar_Get ("j_up_axis",    "4", CVAR_ARCHIVE);
 
 	Cvar_CheckRange(j_pitch_axis, 0, MAX_JOYSTICK_AXIS-1, qtrue);
 	Cvar_CheckRange(j_yaw_axis, 0, MAX_JOYSTICK_AXIS-1, qtrue);

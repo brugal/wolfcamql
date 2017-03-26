@@ -122,12 +122,9 @@ bit functions
 =============================================================================
 */
 
-int	overflows;
-
 // negative bit values include signs
 void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 	int	i;
-//	FILE*	fp;
 
 	oldsize += bits;
 
@@ -142,65 +139,46 @@ void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 		return;
 	}
 
-	// check for overflows
-	if ( bits != 32 ) {
-		if ( bits > 0 ) {
-			if ( value > ( ( 1 << bits ) - 1 ) || value < 0 ) {
-				overflows++;
-			}
-		} else {
-			int	r;
-
-			r = 1 << (bits-1);
-
-			if ( value >  r - 1 || value < -r ) {
-				overflows++;
-			}
-		}
-	}
 	if ( bits < 0 ) {
 		bits = -bits;
 	}
-	if (msg->oob) {
-		if (bits==8) {
+	if ( msg->oob ) {
+		if ( bits == 8 ) {
 			msg->data[msg->cursize] = value;
 			msg->cursize += 1;
 			msg->bit += 8;
-		} else if (bits==16) {
+		} else if ( bits == 16 ) {
 			unsigned short *sp = (unsigned short *)&msg->data[msg->cursize];
 			*sp = LittleShort(value);
 			msg->cursize += 2;
 			msg->bit += 16;
-		} else if (bits==32) {
+		} else if ( bits == 32 ) {
 			unsigned int *ip = (unsigned int *)&msg->data[msg->cursize];
 			*ip = LittleLong(value);
 			msg->cursize += 4;
 			msg->bit += 32;
 		} else {
-			MSG_Error(ERR_DROP, "can't read %d bits", bits);
+			MSG_Error(ERR_DROP, "can't write %d bits", bits);
 			return;
 		}
 	} else {
-//		fp = fopen("c:\\netchan.bin", "a");
 		value &= (0xffffffff>>(32-bits));
-		if (bits&7) {
+		if ( bits&7 ) {
 			int nbits;
 			nbits = bits&7;
-			for(i=0;i<nbits;i++) {
-				Huff_putBit((value&1), msg->data, &msg->bit);
-				value = (value>>1);
+			for( i = 0; i < nbits; i++ ) {
+				Huff_putBit((value & 1), msg->data, &msg->bit);
+				value = (value >> 1);
 			}
 			bits = bits - nbits;
 		}
-		if (bits) {
-			for(i=0;i<bits;i+=8) {
-//				fwrite(bp, 1, 1, fp);
-				Huff_offsetTransmit (&msgHuff.compressor, (value&0xff), msg->data, &msg->bit);
-				value = (value>>8);
+		if ( bits ) {
+			for( i = 0; i < bits; i +=8 ) {
+				Huff_offsetTransmit( &msgHuff.compressor, (value&0xff), msg->data, &msg->bit );
+				value = (value >> 8);
 			}
 		}
-		msg->cursize = (msg->bit>>3)+1;
-//		fclose(fp);
+		msg->cursize = (msg->bit >> 3) + 1;
 	}
 }
 

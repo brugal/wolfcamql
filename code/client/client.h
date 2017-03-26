@@ -536,6 +536,7 @@ extern  cvar_t  *j_up_axis;
 
 extern	cvar_t	*cl_timedemo;
 extern	cvar_t	*cl_aviFrameRate;
+extern cvar_t *cl_aviFrameRateDivider;
 extern	cvar_t	*cl_aviCodec;
 extern cvar_t *cl_aviAllowLargeFiles;
 extern cvar_t *cl_aviFetchMode;

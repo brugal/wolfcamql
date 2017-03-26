@@ -1,7 +1,12 @@
-11.5test1
+11.5  2017-03-26
 
 * bug fix:  check bounds for sortedTeamPlayers
 * Windows binary allows more memory usage
+* bug fix:  screen would become white with bloom and 3d hud icons
+* video option: 'name :demoname' will use the current demo filename as the video file basename
+* bug fix:  sound mixer crash using /stopvideo
+* cl_aviFrameRateDivider  integer value that will force rendering at cl_aviFrameRate * blur frames * value and drop frames so that final output still has a rate equal to cl_aviFrameRate.  Values less than 2 are ignored.
+* ioquake3 fixes
 
 ---------------------------------
 11.4  2016-10-05

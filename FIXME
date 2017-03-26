@@ -2035,7 +2035,7 @@ No locals.
 * draw keypress:  walk (LEGS_WALK)
 * WCG_ for following
 * accuracy against player
-
+* why is it not enough to set scissor to size of viewport (RB_SetGL2D()) for post processing?
 
 
 ---------

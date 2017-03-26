@@ -195,6 +195,8 @@ Note: it's not mentioned in the ioquake3 documentation but you need to disable o
 
 added features:
 
+cl_aviFrameRateDivider  integer value that will force rendering at cl_aviFrameRate * blur frames * value and drop frames so that final output still has a rate equal to cl_aviFrameRate.  Values less than 2 are ignored.
+
 cl_aviCodec  uncompressed, mjpeg, huffyuv
 
 cl_aviAllowLargeFiles 1  to allow opendml avi files (up to about 500 gigabytes)
@@ -204,6 +206,8 @@ cl_aviAllowLargeFiles 1  to allow opendml avi files (up to about 500 gigabytes)
 
   ex:  /video tga wav    to dump tga screen-shots and a wav sound recording
   ex:  /video avins wav name myNewVideo     avi file with no sound and a wav file
+
+  'name :demoname' will use the current demo filename as the video file basename
 
   r_jpegCompressionQuality   controls jpeg compression quality
   r_pngZlibCompression  choose between high speed or higher compression size

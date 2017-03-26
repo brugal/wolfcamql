@@ -1353,6 +1353,12 @@ static void S_GetSoundtime(void)
 	//if (CL_VideoRecording(&afdMain)  &&  !(cl_freezeDemoPauseVideoRecording->integer  &&  cl_freezeDemo->integer))
 	if (CL_VideoRecording(&afdMain))
 	{
+		double frameRateDivider;
+
+		frameRateDivider = (double)cl_aviFrameRateDivider->integer;
+		if (frameRateDivider < 1.0) {
+			frameRateDivider = 1.0;
+		}
 		//FIXME why no msec check like video?
 		blurFrames = Cvar_VariableIntegerValue("mme_blurFrames");
 		if (blurFrames == 0  ||  blurFrames == 1) {
@@ -1360,13 +1366,13 @@ static void S_GetSoundtime(void)
 			//s_soundtime += (int)ceil( dma.speed / cl_aviFrameRate->value );
 			//msec = (int)ceil( dma.speed / cl_aviFrameRate->value );
 			//msec = ceil( (float)dma.speed / (float)cl_aviFrameRate->value );
-			msec = ( (double)dma.speed / (double)cl_aviFrameRate->value );
+			msec = ( (double)dma.speed / ((double)cl_aviFrameRate->value * frameRateDivider) );
 		} else {
 			//msec = (int)ceil((1000.0f / (cl_aviFrameRate->value * (float)blurFrames)) * com_timescale->value);
 			//s_soundtime += (int)ceil( dma.speed / (cl_aviFrameRate->value * (float)blurFrames));
 			//msec = (int)ceil( dma.speed / (cl_aviFrameRate->value * (float)blurFrames));
 			//msec = ceil( (float)dma.speed / ((float)cl_aviFrameRate->value * (float)blurFrames));
-			msec = ( (double)dma.speed / ((double)cl_aviFrameRate->value * (double)blurFrames));
+			msec = ( (double)dma.speed / ((double)cl_aviFrameRate->value * (double)blurFrames * frameRateDivider));
 		}
 		//overf += ceil(msec) - msec;
 		overf += msec - floor(msec);
