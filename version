@@ -1,3 +1,11 @@
+11.6  2017-03-29
+
+* bug fix:  /seekclock incorrectly calculating timeouts
+* stricter checking if hardware supports non power of two textures
+* ioquake3 fixes
+* bug fix:  invalid check for empty filename when testing that a file exists
+
+---------------------------------
 11.5  2017-03-26
 
 * bug fix:  check bounds for sortedTeamPlayers

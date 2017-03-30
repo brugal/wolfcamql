@@ -2014,3 +2014,17 @@ Remove unnecessary localhost check from reconnect command.
 
 2017-02-27-01 Fix swapping AAS bboxes
 
+2017-03-13-01 Don't load .pk3s as .dlls, and don't load user config files from .pk3s.
+2017-03-13-02 Don't open .pk3 files as OpenAL drivers.
+2017-03-13-03 skip (use condump cgameboot.log):  Merge some file writing extension checks from OpenJK.
+
+2017-03-17-01 Remove FS_Read2().
+
+2017-03-23-01 skip (not applicable):  Makefile: using generic windres if specific one is not present in mingw patform
+2017-03-23-02 skip (merge):  Merge pull request #277 from em92/master
+
+2017-03-27-01 skip (previous patch not applied):  Fill in filename in Com_WriteConfig_f() before checking extension.
+2017-03-27-02 Do not pull CFLAGS into BASE_CFLAGS on FreeBSD
+2017-03-27-03 Use -On level from CFLAGS on FreeBSD
+
+2017-03-28-01 skip (merge):  Merge pull request #279 from lonkamikaze/freebsd-build

@@ -1005,7 +1005,12 @@ void CL_ParseGamestate( msg_t *msg ) {
 				di.timeOuts[di.numTimeouts].startTime = cl.snap.serverTime;
 				di.timeOuts[di.numTimeouts].serverTime = cl.snap.serverTime;
 				//Com_Printf("^3start inside timeout %d\n", cl.snap.serverTime);
-				di.numTimeouts++;
+				// 2017-03-28 not ok if server time is 0, looks like servers
+				// might not be eliminating string correctly and just set it
+				// to 0
+				if (info[0] != '0') {
+					di.numTimeouts++;
+				}
 			}
 		} else if (di.cpma) {
 			int te, td;
@@ -1504,7 +1509,11 @@ void CL_ParseCommandString( msg_t *msg ) {
 					}
 				} else {
 					//Com_Printf("^2timeout end %d -> %d (%d)\n", di.timeOuts[di.numTimeouts - 1].startTime, di.timeOuts[di.numTimeouts - 1].endTime, cl.snap.serverTime);
-					di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime;
+					// 2017-03-28 server could have started with stale timeout
+					// start time set to 0
+					if (di.numTimeouts > 0) {
+						di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime;
+					}
 					//di.timeOuts[di.numTimeouts - 1].endTime = cl.snap.serverTime + 25;
 					//Com_Printf("servertime %d\n", cl.serverTime);
 					//Com_Printf("clSnap %d\n", clSnap.serverTime);
@@ -1559,7 +1568,7 @@ void CL_ParseCommandString( msg_t *msg ) {
 
 		if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 			if (!Q_stricmpn(s, "cs 662 ", strlen("cs 662 "))) {
-				//Com_Printf("^2%d  timeout start %s\n", cl.snap.serverTime, s);
+				//Com_Printf("^2%d  round start %s\n", cl.snap.serverTime, s);
 				s2 = s + strlen("cs 662 ") + 1;
 				if (Q_isdigit(s2[0])) {
 					n = atoi(s2);

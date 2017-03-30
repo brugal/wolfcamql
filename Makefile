@@ -679,14 +679,14 @@ else # ifdef MINGW
 ifeq ($(PLATFORM),freebsd)
 
   # flags
-  BASE_CFLAGS = $(shell env MACHINE_ARCH=$(ARCH) make -f /dev/null -VCFLAGS) \
+  BASE_CFLAGS = \
     -Wall -fno-strict-aliasing \
     -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS = $(SDL_CFLAGS)
   SERVER_CFLAGS =
   HAVE_VM_COMPILED = true
 
-  OPTIMIZEVM = -DNQDEBUG -O3 -funroll-loops -fno-omit-frame-pointer
+  OPTIMIZEVM = -DNQDEBUG -funroll-loops -fno-omit-frame-pointer
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   SHLIBEXT=so

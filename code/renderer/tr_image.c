@@ -522,8 +522,23 @@ void R_Upload32( unsigned *data,
 	powerOfTwoScale = qtrue;
 
 	// allow non power of two textures for hardware that supposedly supports it
-	//FIXME also check major < 2 and arb extension?
-	if (glConfig.openGLMajorVersion >= 2  &&  r_scaleImagesPowerOfTwo->integer == 0) {
+	//FIXME also check major < 2 and arb extension?  -- no, would still have
+	// limited support
+
+	/*
+	 * http://aras-p.info/blog/2012/10/17/non-power-of-two-textures/
+	 *
+	 * "Then the question of course is, how to detect DX10+ level GPU in
+	 * OpenGL? If you’re using OpenGL 3+, then you are on DX10+ GPU. In
+	 * earlier GL versions, you’d have to use some heuristics. For example, if
+	 * you have ARB_fragment_program and
+	 * GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB is less than 4096 is a pretty
+	 * good indicator of pre-DX10 hardware, on Mac OS X at least. Likewise,
+	 * you could query MAX_TEXTURE_SIZE, lower than 8192 is a good indicator
+	 * for pre-DX10.
+	 */
+
+	if (glConfig.openGLMajorVersion >= 3  &&  r_scaleImagesPowerOfTwo->integer == 0) {
 		powerOfTwoScale = qfalse;
 	}
 

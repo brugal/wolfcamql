@@ -410,6 +410,13 @@ void *Sys_LoadDll( const char *name, char *fqpath,
 
 	assert( name );
 
+	// Don't load any DLLs that end with the pk3 extension
+	if (COM_CompareExtension(name, ".pk3"))
+	{
+			Com_Printf("Rejecting DLL named \"%s\"", name);
+			return NULL;
+	}
+
 	Com_sprintf(fname, sizeof(fname), "%s" ARCH_STRING DLL_EXT, name);
 
 	// TODO: use fs_searchpaths from files.c

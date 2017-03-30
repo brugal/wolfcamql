@@ -274,7 +274,6 @@ typedef struct {
 	int			zipFilePos;
 	int			zipFileLen;
 	qboolean	zipFile;
-	qboolean	streamed;
 	char		name[MAX_ZPATH];
 	qboolean memoryMapped;
 	long mapPos;
@@ -1148,11 +1147,16 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 	long			hash;
 	FILE			*temp;
 	int				len;
+	qboolean isLocalConfig;
 
 	hash = 0;
 
 	if ( !fs_searchpaths ) {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
+	}
+
+	if ( !filename ) {
+		Com_Error( ERR_FATAL, "FS_FOpenFileRead: NULL 'filename' parameter passed" );
 	}
 
 	if ( file == NULL ) {
@@ -1190,9 +1194,6 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 		return qfalse;
 	}
 
-	if ( !filename ) {
-		Com_Error( ERR_FATAL, "FS_FOpenFileRead: NULL 'filename' parameter passed" );
-	}
 
 	// qpaths are not supposed to have a leading slash
 	if ( filename[0] == '/' || filename[0] == '\\' ) {
@@ -1221,9 +1222,14 @@ int FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean uniqueF
 	*file = FS_HandleForFile();
 	fsh[*file].handleFiles.unique = uniqueFILE;
 
+	isLocalConfig = !strcmp(filename, "autoexec.cfg") || !strcmp(filename, Q3CONFIG_CFG);
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
 		//
 		if ( search->pack ) {
+			// autoexec.cfg and q3config.cfg can only be loaded outside of pk3 files.
+			if (isLocalConfig && search->pack) {
+				continue;
+			}
 			hash = FS_HashFileName(filename, search->pack->hashSize);
 		}
 		// is the element a pak file?
@@ -1398,33 +1404,6 @@ qboolean FS_FileLoadInMemory (qhandle_t f)
 	return qtrue;
 }
 
-
-/*
-=================
-FS_Read
-
-Properly handles partial reads
-=================
-*/
-int FS_Read2( void *buffer, int len, fileHandle_t f ) {
-	if ( !fs_searchpaths ) {
-		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
-	}
-
-	if ( !f ) {
-		return 0;
-	}
-	if (fsh[f].streamed) {
-		int r;
-		fsh[f].streamed = qfalse;
-		r = FS_Read( buffer, len, f );
-		fsh[f].streamed = qtrue;
-		return r;
-	} else {
-		return FS_Read( buffer, len, f);
-	}
-}
-
 static int FS_Feof (fileHandle_t f)
 {
 	if (fsh[f].memoryMapped) {
@@ -1458,6 +1437,14 @@ static size_t FS_ReadMapped (void *ptr, size_t size, size_t nmeb, fileHandle_t f
 		return (size * nmeb);
 	}
 }
+
+/*
+=================
+FS_Read
+
+Properly handles partial reads
+=================
+*/
 
 int FS_Read( void *buffer, int len, fileHandle_t f ) {
 	int		block, remaining;
@@ -1596,14 +1583,6 @@ int FS_Seek( fileHandle_t f, long offset, int origin ) {
 	if ( !fs_searchpaths ) {
 		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
 		return -1;
-	}
-
-	if (fsh[f].streamed) {
-		int r;
-		fsh[f].streamed = qfalse;
-	 	r = FS_Seek( f, offset, origin );
-		fsh[f].streamed = qtrue;
-		return r;
 	}
 
 	if (fsh[f].zipFile == qtrue) {
@@ -3941,11 +3920,6 @@ int		FS_FOpenFileByMode( const char *qpath, fileHandle_t *f, fsMode_t mode ) {
 
 	if ( *f ) {
 		fsh[*f].fileSize = r;
-		fsh[*f].streamed = qfalse;
-
-		if (mode == FS_READ) {
-			fsh[*f].streamed = qtrue;
-		}
 	}
 	fsh[*f].handleSync = sync;
 

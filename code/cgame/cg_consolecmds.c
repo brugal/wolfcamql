@@ -765,11 +765,12 @@ int CG_AdjustTimeForTimeouts (int timeLength, qboolean forward)
 
 		endServerTime = startServerTime + timeLength;
 
-		//Com_Printf("start length %d\n", timeLength);
+		//Com_Printf("^5start end: %d  %d  %d\n", startServerTime, endServerTime, timeLength);
 
 		for (i = 0;  i < cgs.numTimeouts;  i++) {
 			t = &cgs.timeOuts[i];
 
+			//Com_Printf("^3 timeout %d  %d  ->  %d\n", i + 1, t->startTime, t->endTime);
 			if (t->endTime < startServerTime) {
 				continue;
 			}
