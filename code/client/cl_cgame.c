@@ -797,7 +797,7 @@ static qboolean CG_GetNextVictim (int us, int serverTime, int *victim, int *foun
 			continue;
 		}
 
-		if (d->killer == us) {
+		if (d->killer == us && d->mod != MOD_THAW) {
 			if (onlyOtherClient) {
 				if (d->victim == us  ||  d->victim < 0  ||  d->victim >= MAX_CLIENTS) {
 					continue;
