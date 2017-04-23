@@ -5935,6 +5935,7 @@ void CG_Player ( centity_t *cent ) {
 	}
 	else {
 		ci->invulnerabilityStartTime = 0;
+		ci->invulnerabilityStopTime = 0;
 	}
 	if ( (cent->currentState.powerups & ( 1 << PW_INVULNERABILITY ) ) ||
 		cg.time - ci->invulnerabilityStopTime < 250 ) {
