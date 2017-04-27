@@ -2022,7 +2022,6 @@ No locals.
 * cpma ctfs:  round scoreboard show in warmup  ctfs1.dm_68
 * cpma ctfs:  round alive status not update in scoreboard  ctfs1.dm_68
 * ctfs1.dm_68 showing red scored instead of blue
-* cpma ctfs:  dead player still being rendered ctfs1.dm_68
 * info screen should show map substitutions and force map setting
 * cpma ctfs always says 'defend the flag'
 * cpma ctfs ctfs1.dm_68 wcstats not showing kills/deaths
