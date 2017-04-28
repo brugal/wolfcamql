@@ -5436,10 +5436,9 @@ void CG_Player ( centity_t *cent ) {
 
 
 	//FIXME hack so you don't draw demo taker in third person when following in ca
-	if (cgs.gametype == GT_CA  &&  cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
+	if ( ( cgs.gametype == GT_CA || cgs.gametype == GT_CTFS ) &&  cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
 		return;
 	}
-
 
 	if (cent->currentState.number == cent->currentState.clientNum  &&  cent->currentState.weapon == WP_NONE  &&  !(cent->currentState.eFlags & EF_DEAD)) {
 		//return;
