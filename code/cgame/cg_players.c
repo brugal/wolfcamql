@@ -3696,7 +3696,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 	//FIXME dead players?
 	// cent->currentState.eFlags & EF_DEAD
 
-	if (qtrue) {  //(!(cent->currentState.eFlags & EF_DEAD)) {  // don't draw for dead ppl
+	if (!(cent->currentState.eFlags & EF_DEAD)) {  // don't draw for dead ppl
 		//FIXME time
 		if (cg.time <= ci->clientRewards.startTime) {  // demo seeking
 			// pass
