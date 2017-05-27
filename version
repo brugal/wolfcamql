@@ -1,3 +1,15 @@
+11.7test1
+
+* windows:  automatically disable screen blanking (re-enable with SDL_VIDEO_ALLOW_SCREENSAVER environement variable)
+* ioquake3 fixes
+* bug fix:  invalid invulnerability sphere would appear after rewinding (em92 Eugene Molotov)
+* bug fix:  fragforward treated freeze tag thaws as kills (em92 Eugene Molotov)
+* bug fix:  freecam spec mode shows own corpse in 'Attack and Defend' / CTFS (em92 Eugene Molotov)
+* bug fix:  don't draw sprites for dead players (em92 Eugene Molotov)
+* cg_drawSpritesDeadPlayers controls drawing sprites for dead players
+* update to libfreetype 2.8 (security update)
+
+---------------------------------
 11.6  2017-03-29
 
 * bug fix:  /seekclock incorrectly calculating timeouts

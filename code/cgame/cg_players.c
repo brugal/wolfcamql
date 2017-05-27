@@ -3559,6 +3559,13 @@ static void CG_PlayerSprites( centity_t *cent ) {
 	const clientInfo_t *ci;
 	qboolean flagIconDrawn;
 
+	// 2017-05-03 quake live doesn't draw sprites for dead players but q3 does
+
+	if (cg_drawSpritesDeadPlayers.integer == 0  &&  cent->currentState.eFlags & EF_DEAD) {
+		// don't draw for dead ppl
+		return;
+	}
+
 	ci = &cgs.clientinfo[cent->currentState.clientNum];
 
 	//team = ci->team;
@@ -3693,90 +3700,86 @@ static void CG_PlayerSprites( centity_t *cent ) {
 
 	// check new ql rewards first
 	//FIXME what is the order now?
-	//FIXME dead players?
-	// cent->currentState.eFlags & EF_DEAD
 
-	if (!(cent->currentState.eFlags & EF_DEAD)) {  // don't draw for dead ppl
-		//FIXME time
-		if (cg.time <= ci->clientRewards.startTime) {  // demo seeking
-			// pass
-		} else if (cg.time - ci->clientRewards.startTime <= 1500) {
-			// check fx
-			if (ci->clientRewards.shader == cgs.media.medalComboKill  &&  *EffectScripts.playerMedalComboKill) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalComboKill, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalMidAir  &&  *EffectScripts.playerMedalMidAir) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalMidAir, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalRevenge  &&  *EffectScripts.playerMedalRevenge) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalRevenge, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalFirstFrag  &&  *EffectScripts.playerMedalFirstFrag) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalFirstFrag, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalRampage  &&  *EffectScripts.playerMedalRampage) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalRampage, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalPerforated  &&  *EffectScripts.playerMedalPerforated) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalPerforated, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalAccuracy  &&  *EffectScripts.playerMedalAccuracy) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalAccuracy, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalHeadshot  &&  *EffectScripts.playerMedalHeadshot) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalHeadshot, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalPerfect  &&  *EffectScripts.playerMedalPerfect) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalPerfect, NULL);
-				return;
-			}
-			if (ci->clientRewards.shader == cgs.media.medalQuadGod  &&  *EffectScripts.playerMedalQuadGod) {
-				CG_ResetScriptVars();
-				CG_CopyPlayerDataToScriptData(cent);
-				ScriptVars.origin[2] += 48;
-				CG_RunQ3mmeScript(EffectScripts.playerMedalQuadGod, NULL);
-				return;
-			}
-
-			// no fx
-			CG_PlayerFloatSprite(cent, ci->clientRewards.shader);
+	//FIXME time
+	if (cg.time <= ci->clientRewards.startTime) {  // demo seeking
+		// pass
+	} else if (cg.time - ci->clientRewards.startTime <= 1500) {
+		// check fx
+		if (ci->clientRewards.shader == cgs.media.medalComboKill  &&  *EffectScripts.playerMedalComboKill) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalComboKill, NULL);
 			return;
 		}
+		if (ci->clientRewards.shader == cgs.media.medalMidAir  &&  *EffectScripts.playerMedalMidAir) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalMidAir, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalRevenge  &&  *EffectScripts.playerMedalRevenge) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalRevenge, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalFirstFrag  &&  *EffectScripts.playerMedalFirstFrag) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalFirstFrag, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalRampage  &&  *EffectScripts.playerMedalRampage) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalRampage, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalPerforated  &&  *EffectScripts.playerMedalPerforated) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalPerforated, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalAccuracy  &&  *EffectScripts.playerMedalAccuracy) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalAccuracy, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalHeadshot  &&  *EffectScripts.playerMedalHeadshot) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalHeadshot, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalPerfect  &&  *EffectScripts.playerMedalPerfect) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalPerfect, NULL);
+			return;
+		}
+		if (ci->clientRewards.shader == cgs.media.medalQuadGod  &&  *EffectScripts.playerMedalQuadGod) {
+			CG_ResetScriptVars();
+			CG_CopyPlayerDataToScriptData(cent);
+			ScriptVars.origin[2] += 48;
+			CG_RunQ3mmeScript(EffectScripts.playerMedalQuadGod, NULL);
+			return;
+		}
+
+		// no fx
+		CG_PlayerFloatSprite(cent, ci->clientRewards.shader);
+		return;
 	}
 
 	if ( cent->currentState.eFlags & EF_AWARD_IMPRESSIVE ) {
@@ -5436,9 +5439,10 @@ void CG_Player ( centity_t *cent ) {
 
 
 	//FIXME hack so you don't draw demo taker in third person when following in ca
-	if ( ( cgs.gametype == GT_CA || cgs.gametype == GT_CTFS ) &&  cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
+	if ( ( cgs.gametype == GT_CA || cgs.gametype == GT_CTFS) &&  cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
 		return;
 	}
+
 
 	if (cent->currentState.number == cent->currentState.clientNum  &&  cent->currentState.weapon == WP_NONE  &&  !(cent->currentState.eFlags & EF_DEAD)) {
 		//return;

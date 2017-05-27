@@ -1829,8 +1829,9 @@ One of the side effects of using cg_useOriginalInterpolation 0, is that it will 
 * cg_allowLargeSprites default 0,  if a sprite is big enough and you are close to it the quake3 engine won't draw it.
 * cg_drawSprites  (like quake live)
 * cg_drawSpriteSelf  (like quake live:  controls drawing own 'frozen' sprite in freezetag)
+* cg_drawSpritesDeadPlayers controls drawing sprites for dead players
 
-*cg_hasteTrail  to allow or disable smoke trails
+* cg_hasteTrail  to allow or disable smoke trails
 * cg_flightTrail
 
 -----------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os, sys
 
-shareDir = "/mac-old-share"
+shareDir = "/mac-share"
 destDir = os.path.join(shareDir, "wolfcam-build")
 buildLocal = False
 

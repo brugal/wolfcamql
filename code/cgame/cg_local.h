@@ -3381,6 +3381,7 @@ extern vmCvar_t cg_allowLargeSprites;
 extern vmCvar_t cg_allowSpritePassThrough;
 extern vmCvar_t cg_drawSprites;
 extern vmCvar_t cg_drawSpriteSelf;
+extern vmCvar_t cg_drawSpritesDeadPlayers;
 extern vmCvar_t cg_playerLeanScale;
 extern vmCvar_t cg_cameraRewindTime;
 extern vmCvar_t cg_cameraQue;

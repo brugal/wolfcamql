@@ -1030,6 +1030,7 @@ vmCvar_t cg_allowLargeSprites;
 vmCvar_t cg_allowSpritePassThrough;
 vmCvar_t cg_drawSprites;
 vmCvar_t cg_drawSpriteSelf;
+vmCvar_t cg_drawSpritesDeadPlayers;
 vmCvar_t cg_playerLeanScale;
 vmCvar_t cg_cameraRewindTime;
 vmCvar_t cg_cameraQue;
@@ -2123,6 +2124,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_allowSpritePassThrough, "cg_allowSpritePassThrough", "1", CVAR_ARCHIVE },
 	{ &cg_drawSprites, "cg_drawSprites", "1", CVAR_ARCHIVE },
 	{ &cg_drawSpriteSelf, "cg_drawSpriteSelf", "0", CVAR_ARCHIVE },
+	{ cvp(cg_drawSpritesDeadPlayers), "0", CVAR_ARCHIVE },
 	{ &cg_playerLeanScale, "cg_playerLeanScale", "1.0", CVAR_ARCHIVE },
 	{ &cg_cameraRewindTime, "cg_cameraRewindTime", "0", CVAR_ARCHIVE },
 	{ &cg_cameraQue, "cg_cameraQue", "1", CVAR_ARCHIVE },

@@ -2035,6 +2035,11 @@ No locals.
 * WCG_ for following
 * accuracy against player
 * why is it not enough to set scissor to size of viewport (RB_SetGL2D()) for post processing?
+* should only disable blanking/screensaver during demo playback or playing and set back to normal for menu
+* R_GetCommandBuffer() command dropped : demo name with spaces?
+  "thx i fixed the issu by replacing the spaces in the demo name with some -"
+* null127.dm_91  RB_RenderDrawSurfList refent ptr == NULL for entity 127
+* null127.dm_91  not showing teammates health/armor in crosshair info
 
 
 ---------

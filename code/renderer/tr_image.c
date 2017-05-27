@@ -535,7 +535,7 @@ void R_Upload32( unsigned *data,
 	 * GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB is less than 4096 is a pretty
 	 * good indicator of pre-DX10 hardware, on Mac OS X at least. Likewise,
 	 * you could query MAX_TEXTURE_SIZE, lower than 8192 is a good indicator
-	 * for pre-DX10.
+	 * for pre-DX10."
 	 */
 
 	if (glConfig.openGLMajorVersion >= 3  &&  r_scaleImagesPowerOfTwo->integer == 0) {

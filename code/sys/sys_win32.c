@@ -840,6 +840,7 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 	SetProcessDpiAwarenessFunc fpSetProcessDpiAwareness;
 	SetProcessDPIAwareFunc fpSetProcessDPIAware;
 	qboolean setDpiAware = qfalse;
+	const char *envVal;
 
 	// set dpi awareness
 
@@ -962,6 +963,13 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 	else
 		timerResolution = 0;
 #endif
+
+	envVal = getenv("SDL_VIDEO_ALLOW_SCREENSAVER");
+	if (envVal == NULL  ||  strlen(envVal) == 0  ||  atoi(envVal) != 0) {
+		// don't disable screen blanking
+	} else {
+		SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
+	}
 
 	memset(&vi, 0, sizeof(vi));
 	vi.dwOSVersionInfoSize = sizeof(vi);
@@ -1137,6 +1145,9 @@ void Sys_PlatformExit (void)
 	if (timerResolution)
 		timeEndPeriod(timerResolution);
 #endif
+
+	// re-enable screen blanking if previously disabled
+	SetThreadExecutionState(ES_CONTINUOUS);
 
 	if (GotHandle  &&  HStdout != INVALID_HANDLE_VALUE) {
 		SetConsoleTextAttribute(HStdout, ScreenBufferInfo.wAttributes);

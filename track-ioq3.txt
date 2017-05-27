@@ -2028,3 +2028,19 @@ Remove unnecessary localhost check from reconnect command.
 2017-03-27-03 Use -On level from CFLAGS on FreeBSD
 
 2017-03-28-01 skip (merge):  Merge pull request #279 from lonkamikaze/freebsd-build
+
+2017-03-30-01 Fix build when cloned as submodule
+2017-03-30-02 skip (merge):  Merge pull request #282 from h3xx/fix-git-dependency
+
+2017-04-07-01 skip (not implemented):  Add missing RegCloseKey to Sys_SteamPath
+2017-04-07-02 skip (check):  Detect GOG install path
+2017-04-07-03 skip (merge):  Merge pull request #286 from maxcrofts/install-path
+
+2017-04-12-01 Improve FS_GetModList
+2017-04-12-02 skip (merge):  Merge pull request #288 from maxcrofts/list-pk3dir-mods
+2017-04-12-03 Don't start a vote after vote passed for map change
+
+2017-04-20-01 Delete BUGS
+2017-04-20-02 Delete NotToDo
+
+2017-04-28-01 skip (rend2):  Add vao cache for static surfaces

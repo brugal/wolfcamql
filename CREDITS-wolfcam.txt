@@ -8,7 +8,12 @@ Cyberstorm:  anim map change
 iodfe:  number pad fix
 Ben Rudiak-Gould: HuffYUV
 ffmpeg project:  HuffYUV implementation
+em92 (Eugene Molotov):
 
+  * bug fix:  invalid invulnerability sphere would appear after rewinding
+  * bug fix:  fragforward treated freeze tag thaws as kills
+  * bug fix:  freecam spec mode shows own corpse in 'Attack and Defend' / CTFS
+  * bug fix:  don't draw sprites for dead players
 
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program
 KittenIgnition:  helping others, ideas and suggestions, beta testing
