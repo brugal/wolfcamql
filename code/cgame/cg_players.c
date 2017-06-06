@@ -5437,9 +5437,8 @@ void CG_Player ( centity_t *cent ) {
 		return;
 	}
 
-
-	//FIXME hack so you don't draw demo taker in third person when following in ca
-	if ( ( cgs.gametype == GT_CA || cgs.gametype == GT_CTFS) &&  cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
+	// don't draw spectators
+	if ( cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
 		return;
 	}
 
@@ -5474,10 +5473,6 @@ void CG_Player ( centity_t *cent ) {
 	// not have valid clientinfo
 	if ( !ci->infoValid ) {
 		//Com_Printf("info invalid for %d\n", clientNum);
-		return;
-	}
-
-	if (ci->team == TEAM_SPECTATOR) {
 		return;
 	}
 
