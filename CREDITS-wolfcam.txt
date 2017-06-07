@@ -14,6 +14,7 @@ em92 (Eugene Molotov):
   * bug fix:  fragforward treated freeze tag thaws as kills
   * bug fix:  freecam spec mode shows own corpse in 'Attack and Defend' / CTFS
   * bug fix:  don't draw sprites for dead players
+  * work around for ql/minqlx bug not updating player config strings correctly
 
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program
 KittenIgnition:  helping others, ideas and suggestions, beta testing

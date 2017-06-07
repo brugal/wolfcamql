@@ -1196,6 +1196,8 @@ vmCvar_t cg_useDemoFov;
 vmCvar_t cg_specOffsetQL;
 
 vmCvar_t cg_drawKeyPress;
+vmCvar_t cg_useScoresUpdateTeam;
+
 // end cvar_t
 
 typedef struct {
@@ -2304,6 +2306,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_specOffsetQL), "1", CVAR_ARCHIVE },
 
 	{ cvp(cg_drawKeyPress), "0", CVAR_ARCHIVE },
+	{ cvp(cg_useScoresUpdateTeam), "1", CVAR_ARCHIVE },
 
 };
 

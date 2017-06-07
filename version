@@ -1,4 +1,4 @@
-11.7test1
+11.7  2017-06-07
 
 * windows:  automatically disable screen blanking (re-enable with SDL_VIDEO_ALLOW_SCREENSAVER environement variable)
 * ioquake3 fixes
@@ -8,6 +8,10 @@
 * bug fix:  don't draw sprites for dead players (em92 Eugene Molotov)
 * cg_drawSpritesDeadPlayers controls drawing sprites for dead players
 * update to libfreetype 2.8 (security update)
+* r_centerWindow default changed to 1
+* cg_useScoresUpdateTeam  hack for ql/minqlx bug not updating player config strings correctly.  Players can be shown on the wrong team and this will update the player teams from the score commands.
+* draw player entities even if their config string shows them as spectators.  This is also a work around for ql/minqlx bug not updating player config strings correctly.  (em92 Eugene Molotov)
+* Mac OS X build uses clang
 
 ---------------------------------
 11.6  2017-03-29

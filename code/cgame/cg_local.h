@@ -3547,6 +3547,8 @@ extern vmCvar_t cg_useDemoFov;
 extern vmCvar_t cg_specOffsetQL;
 
 extern vmCvar_t cg_drawKeyPress;
+extern vmCvar_t cg_useScoresUpdateTeam;
+
 // end cvar_t
 
 //===============================================

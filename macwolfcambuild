@@ -2,16 +2,18 @@
 
 cd
 
-curl http://192.168.1.50:8000/deb/build/macsrc.tar.gz > macsrc.tar.gz
+#curl http://192.168.1.50:8000/deb/build/macsrc.tar.gz > macsrc.tar.gz
 
 rm -r build
 mkdir build
 cd build
-tar -zxvf ../macsrc.tar.gz
+tar -zxvf ../share/wolfcam-build/macsrc.tar.gz
 mkdir bin
 make
 cp build/release-darwin-i386/ioquake3.i386 bin/wolfcamqlmac
 cp build/release-darwin-i386/baseq3/*dylib bin/
 cd bin
 tar -zcvf bin.tar.gz *
-lilweb-deb
+#lilweb-deb
+cp bin.tar.gz ~/share/wolfcam-build/
+

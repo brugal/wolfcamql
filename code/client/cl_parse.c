@@ -1323,7 +1323,7 @@ static void CL_ParseExtraCommandString (demoFile_t *df, msg_t *msg)
 	seq = MSG_ReadLong( msg );
 	s = MSG_ReadString( msg );
 
-	//Com_Printf("^3'%s'\n", s);
+	//Com_Printf("^3extra cs(%d) '%s'\n", seq, s);
 
 	if (cl_shownet->integer == 3) {
 		Com_Printf("demoFile %d cs (%d) '%s'\n", df->f, seq, s);
@@ -1357,10 +1357,15 @@ void CL_ParseCommandString( msg_t *msg ) {
 		Com_Printf("cs (%d) '%s'\n", seq, s);
 	}
 
+	//Com_Printf("cs (%d) '%s'\n", seq, s);
+	
 	// see if we have already executed stored it off
 	if ( clc.serverCommandSequence >= seq ) {
 		return;
 	}
+
+	//Com_Printf("^2cs (%d) '%s'\n", seq, s);
+	
 	clc.serverCommandSequence = seq;
 
 	index = seq & (MAX_RELIABLE_COMMANDS-1);
@@ -1402,7 +1407,7 @@ void CL_ParseCommandString( msg_t *msg ) {
 			int clientNum = -1;
 			int team;
 
-			//Com_Printf("^3cs: '%s'\n", s);
+			//Com_Printf("^3cs (%d): '%s'\n", seq, s);
 			if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 				clientNum = csnum - CS_PLAYERS;
 			} else if (di.protocol == PROTOCOL_Q3) {
@@ -1725,6 +1730,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 
 	//
 	if ( clc.reliableAcknowledge < clc.reliableSequence - MAX_RELIABLE_COMMANDS ) {
+		//Com_Printf("^1***************** skipping reliable sequence: %d  %d\n", clc.reliableAcknowledge, clc.reliableSequence);
 		clc.reliableAcknowledge = clc.reliableSequence;
 	}
 

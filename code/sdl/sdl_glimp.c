@@ -978,7 +978,7 @@ void GLimp_Init( void )
 #endif
 
 	r_allowResize = ri.Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
-	r_centerWindow = ri.Cvar_Get( "r_centerWindow", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_centerWindow = ri.Cvar_Get( "r_centerWindow", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_visibleWindowWidth = ri.Cvar_Get("r_visibleWindowWidth", "", CVAR_ARCHIVE | CVAR_LATCH);
 	r_visibleWindowHeight = ri.Cvar_Get("r_visibleWindowHeight", "", CVAR_ARCHIVE | CVAR_LATCH);
 	r_fboStencil = ri.Cvar_Get("r_fboStencil", "1", CVAR_ARCHIVE | CVAR_LATCH);

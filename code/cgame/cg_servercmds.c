@@ -3722,7 +3722,7 @@ static void CG_FilterOspTeamChatLocation (const char *text)
 
 static void CG_ParseScores_Ffa (void)
 {
-	int		i;
+	int i;
 	int redCount = 0;
 	int blueCount = 0;
 	int redTotalPing = 0;
@@ -3885,6 +3885,8 @@ static void CG_ParseScores_Duel (void)
 			return;
 		}
 
+		//FIXME 2017-06-03 ql/minqlx config string fix needed?
+
 		ci = &cgs.clientinfo[ds->clientNum];
 
 		if (ci->infoValid) {
@@ -4030,6 +4032,13 @@ static void CG_ParseScores_Tdm (void)
 
 		team = atoi(CG_Argv(i));  i++;
 
+		// 2017-06-03 ql/minqlx bug not updating config strings so players appear with wrong team, hack to grab them from scores
+		if (cg_useScoresUpdateTeam.integer) {
+			if (!cgs.clientinfo[clientNum].override) {
+				cgs.clientinfo[clientNum].team = team;
+			}
+		}
+
 		//Com_Printf("client %d  team %d\n", clientNum, team);
 
 		ts = &cg.tdmScore.playerScore[clientNum];
@@ -4157,6 +4166,14 @@ static void CG_ParseScores_Ca (void)
 		oldScore->client = clientNum;
 
 		ts->team = atoi(CG_Argv(i));  i++;
+
+		// 2017-06-03 ql/minqlx bug not updating config strings so players appear with wrong team, hack to grab them from scores
+		if (cg_useScoresUpdateTeam.integer) {
+			if (!cgs.clientinfo[clientNum].override) {
+				cgs.clientinfo[clientNum].team = ts->team;
+			}
+		}
+
 		oldScore->team = ts->team;
 
 		if (cgs.realProtocol < 91) {
@@ -4437,6 +4454,13 @@ static void CG_ParseScores_Ctf (void)
 		s->team = atoi(CG_Argv(i));  i++;
 		oldScore->team = s->team;
 
+		// 2017-06-03 ql/minqlx bug not updating config strings so players appear with wrong team, hack to grab them from scores
+		if (cg_useScoresUpdateTeam.integer) {
+			if (!cgs.clientinfo[clientNum].override) {
+				cgs.clientinfo[clientNum].team = s->team;
+			}
+		}
+
 		if (s->team == TEAM_RED  ||  s->team == TEAM_BLUE) {
 			s->valid = qtrue;
 		} else {
@@ -4510,7 +4534,7 @@ static void CG_ParseScores_Ctf (void)
 
 static void CG_ParseScores_Rr (void)
 {
-	int		i;
+	int i;
 	int redCount = 0;
 	int blueCount = 0;
 	int redTotalPing = 0;
@@ -4518,6 +4542,7 @@ static void CG_ParseScores_Rr (void)
 	int n;
 
 	// they forgot score->team ?
+	// 2017-06-03 ql/minqlx bug not updating config strings -- can't get team from here then
 
 	cg.scoresValid = qtrue;
 	cg.scoresVersion = 1;
@@ -4666,6 +4691,8 @@ static void CG_ParseScores_Race (void)
 
 		if (cgs.realProtocol < 91) {
 			// team?
+
+			//FIXME 2017-06-03 ql/minql config string team fix?
 			i++;
 		}
 
@@ -4784,6 +4811,14 @@ static void CG_ParseScores_Ft (void)
 		team = atoi(CG_Argv(i));  i++;
 
 		//Com_Printf("client %d  team %d\n", clientNum, team);
+
+		// 2017-06-03 ql/minqlx bug not updating config strings so players appear with wrong team, hack to grab them from scores
+		if (cg_useScoresUpdateTeam.integer) {
+			if (!cgs.clientinfo[clientNum].override) {
+				cgs.clientinfo[clientNum].team = team;
+			}
+		}
+
 
 		ts = &cg.tdmScore.playerScore[clientNum];
 

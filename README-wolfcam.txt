@@ -2467,6 +2467,10 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
   Note that demos don't record key press information.  Demos do record movement direction which can be used to extract some of the values.  'right', 'left', and 'back' can be accurately extracted from the movement direction but 'forward' is an estimate based on the player's velocity.
 
+* In Windows screen blanking is disabled.  It can be re-enabled by setting the SDL_VIDEO_ALLOW_SCREENSAVER environment variable.
+
+* cg_useScoresUpdateTeam  hack for ql/minqlx bug not updating player config strings correctly.  Players can be shown on the wrong team and this will update the player teams from the score commands.
+
 ----------
 
 brugal

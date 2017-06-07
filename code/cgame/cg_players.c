@@ -5437,8 +5437,9 @@ void CG_Player ( centity_t *cent ) {
 		return;
 	}
 
-	// don't draw spectators
-	if ( cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
+
+	// don't draw self spectating
+	if (cent->currentState.number == cg.clientNum  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
 		return;
 	}
 
@@ -5474,6 +5475,15 @@ void CG_Player ( centity_t *cent ) {
 	if ( !ci->infoValid ) {
 		//Com_Printf("info invalid for %d\n", clientNum);
 		return;
+	}
+
+	if (ci->team == TEAM_SPECTATOR) {
+		if (cgs.realProtocol == 91) {
+			// 2017-06-06 hack for ql/minqlx bug that doesn't update configs strings correctly.  Spectator team might not be valid.  (part of em92 change)
+			// pass
+		} else {
+			return;
+		}
 	}
 
 	//if (wolfcam_following  &&  clientNum == wcg.clientNum) {
