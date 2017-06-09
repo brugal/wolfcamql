@@ -985,13 +985,13 @@ RB_TakeScreenshotJPEG
 void RB_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName ) {
 	byte		*buffer;
 
-	buffer = ri.Hunk_AllocateTempMemory(glConfig.vidWidth*glConfig.vidHeight*4);
+	buffer = ri.Hunk_AllocateTempMemory(glConfig.vidWidth * glConfig.vidHeight * 3);
 
 	if (!tr.usingFrameBufferObject) {
 		//qglReadBuffer(GL_FRONT);
 	}
 
-	qglReadPixels( x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
+	qglReadPixels( x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer );
 
 	if (!tr.usingFrameBufferObject) {
 		//qglReadBuffer(GL_BACK);
@@ -999,11 +999,11 @@ void RB_TakeScreenshotJPEG( int x, int y, int width, int height, char *fileName 
 
 	// gamma correct
 	if ( glConfig.deviceSupportsGamma ) {
-		R_GammaCorrect( buffer, glConfig.vidWidth * glConfig.vidHeight * 4 );
+		R_GammaCorrect( buffer, glConfig.vidWidth * glConfig.vidHeight * 3 );
 	}
 
 	ri.FS_WriteFile( fileName, buffer, 1 );		// create path
-	SaveJPG( fileName, r_jpegCompressionQuality->integer, glConfig.vidWidth, glConfig.vidHeight, buffer);
+	RE_SaveJPG(fileName, r_jpegCompressionQuality->integer, glConfig.vidWidth, glConfig.vidHeight, buffer, 0);
 
 	ri.Hunk_FreeTempMemory( buffer );
 }
@@ -1035,7 +1035,7 @@ void RB_TakeScreenshotPNG (int x, int y, int width, int height, char *fileName)
 	}
 
 	ri.FS_WriteFile( fileName, buffer, 1 );		// create path
-	//SaveJPG( fileName, r_jpegCompressionQuality->integer, glConfig.vidWidth, glConfig.vidHeight, buffer);
+	//RE_SaveJPG(fileName, r_jpegCompressionQuality->integer, glConfig.vidWidth, glConfig.vidHeight, buffer, 0);
 	SavePNG(fileName, buffer, glConfig.vidWidth, glConfig.vidHeight, 4);
 	ri.Hunk_FreeTempMemory( buffer );
 }
@@ -1412,6 +1412,28 @@ void R_ScreenShotPNG_f (void)
 
 //============================================================================
 
+//FIXME hack, older jpeg-6b could accept rgba input buffer, now it has to be rgb
+static void convert_rgba_to_rgb (byte *buffer, int width, int height)
+{
+	byte *src;
+	byte *dst;
+	int totalSize;
+
+
+	totalSize = width * height * 4;
+	src = buffer;
+	dst = buffer;
+	while (src < (buffer + totalSize)) {
+		dst[0] = src[0];
+		dst[1] = src[1];
+		dst[2] = src[2];
+		// skip alpha src[3]
+
+		src += 4;
+		dst += 3;
+	}
+}
+
 extern GLfloat *Video_DepthBuffer;
 extern byte *ExtraVideoBuffer;
 extern qboolean SplitVideo;
@@ -1465,7 +1487,8 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	//outAlign = (__m64 *)((((int)(outAlloc))+7) & ~7);
 
 
-	if ((cmd->jpg  ||  cmd->png)  ||  (cmd->avi  &&  cmd->motionJpeg)) {
+	//if ((cmd->jpg  ||  cmd->png)  ||  (cmd->avi  &&  cmd->motionJpeg)) {
+	if (cmd->png) {
 		fetchBufferHasAlpha = qtrue;
 		fetchBufferNeedsBGRswap = qtrue;
 		glMode = GL_RGBA;
@@ -1475,7 +1498,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		//outAlign = (__m64 *)fetchBuffer;
 		//R_GammaCorrect(cmd->captureBuffer + 18, cmd->width * cmd->height * 4);
 		//memcpy(outAlign, fetchBuffer, shotData->pixelCount * 4);
-	} else {  //  not jpg or png
+	} else {  //  not png
 		sbuf = finalName;
 		Cvar_VariableStringBuffer("cl_aviFetchMode", sbuf, MAX_QPATH);
 		if (!Q_stricmp("gl_rgba", sbuf)) {
@@ -1500,7 +1523,13 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			fetchBufferNeedsBGRswap = qtrue;
 			glMode = GL_RGB;
 		}
-		fetchBuffer = cmd->encodeBuffer;
+
+		if (cmd->jpg  ||  (cmd->avi  &&  cmd->motionJpeg)) {
+			//FIXME jpg check not needed anymore
+			fetchBuffer = cmd->captureBuffer;
+		} else {
+			fetchBuffer = cmd->encodeBuffer;
+		}
 	}
 
 	if (useBlur) {
@@ -1744,7 +1773,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		buffer = cmd->captureBuffer + 18;
 		ri.FS_WriteFile(finalName, buffer, 1);  // create path
 		if (cmd->jpg) {
-			SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer);
+			if (fetchBufferHasAlpha) {
+				convert_rgba_to_rgb(buffer, width, height);
+			}
+			RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer, 0);
 		} else {  // png
 			SavePNG(finalName, buffer, width, height, (3 + fetchBufferHasAlpha));
 		}
@@ -1809,7 +1841,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 			if (r_anaglyphMode->integer != 19) {
 				if (cmd->jpg) {
-					SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer);
+					if (fetchBufferHasAlpha) {
+						convert_rgba_to_rgb(buffer, width, height);
+					}
+					RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer, 0);
 				} else {
 					SavePNG(finalName, buffer, width, height, (3 + fetchBufferHasAlpha));
 				}
@@ -1849,7 +1884,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			}
 
 			if (cmd->jpg) {
-				SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, ExtraVideoBuffer);
+				if (fetchBufferHasAlpha) {
+					convert_rgba_to_rgb(ExtraVideoBuffer, width, height);
+				}
+				RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, ExtraVideoBuffer, 0);
 			} else {  // png
 				SavePNG(finalName, ExtraVideoBuffer, width, height, (3 + fetchBufferHasAlpha));
 			}
@@ -1859,7 +1897,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 	if( cmd->avi  &&  cmd->motionJpeg )
 	{
-		frameSize = SaveJPGToBuffer(cmd->encodeBuffer + 18, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->captureBuffer + 18);
+		if (fetchBufferHasAlpha) {
+			convert_rgba_to_rgb(cmd->captureBuffer + 18, cmd->width, cmd->height);
+		}
+		frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->captureBuffer + 18, 0);
 		if (shotData == &shotDataLeft) {
 
 			ri.CL_WriteAVIVideoFrame(&afdLeft, cmd->encodeBuffer + 18, frameSize);
@@ -1915,7 +1956,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			}
 
 			if (r_anaglyphMode->integer != 19) {
-				frameSize = SaveJPGToBuffer(cmd->encodeBuffer + 18, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer + 18);
+				if (fetchBufferHasAlpha) {
+					convert_rgba_to_rgb(buffer + 18, cmd->width, cmd->height);
+				}
+				frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer + 18, 0);
 				ri.CL_WriteAVIVideoFrame(&afdLeft, cmd->encodeBuffer + 18, frameSize);
 			}
 
@@ -1949,7 +1993,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				break;
 			}
 
-			frameSize = SaveJPGToBuffer(cmd->encodeBuffer + 18, r_jpegCompressionQuality->integer, cmd->width, cmd->height, ExtraVideoBuffer + 18);
+			if (fetchBufferHasAlpha) {
+				convert_rgba_to_rgb(ExtraVideoBuffer + 18, cmd->width, cmd->height);
+			}
+			frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, ExtraVideoBuffer + 18, 0);
 			ri.CL_WriteAVIVideoFrame(&afdRight, cmd->encodeBuffer + 18, frameSize);
 		}
 	} else if (cmd->avi) {
@@ -2200,13 +2247,16 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				buffer = cmd->encodeBuffer + 18;
 				ri.FS_WriteFile(finalName, buffer, 1);  // create path
 				if (cmd->jpg) {
-					SaveJPG(finalName, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer);
+					RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer, 0);
 				} else {
 					SavePNG(finalName, buffer, cmd->width, cmd->height, (3 + fetchBufferHasAlpha));
 				}
 			} else if (cmd->avi  &&  cmd->motionJpeg) {
 				//////////////////
-				frameSize = SaveJPGToBuffer(cmd->captureBuffer + 18, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->encodeBuffer + 18);
+				if (fetchBufferHasAlpha) {
+					convert_rgba_to_rgb(cmd->encodeBuffer + 18, cmd->width, cmd->height);
+				}
+				frameSize = RE_SaveJPGToBuffer(cmd->captureBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->encodeBuffer + 18, 0);
 				if (shotData == &shotDataLeft) {
 					ri.CL_WriteAVIVideoFrame(&afdDepthLeft, cmd->captureBuffer + 18, frameSize);
 				} else {
@@ -2307,6 +2357,9 @@ This reverts commit 9257327.
 	qglDrawBuffer( GL_BACK );
 	qglClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_STENCIL_BUFFER_BIT );
     */
+
+	// for screenshots and screen width not divisible by 4
+	qglPixelStorei(GL_PACK_ALIGNMENT, 1);
 }
 
 /*

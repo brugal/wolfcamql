@@ -1787,10 +1787,10 @@ void RE_StretchPic ( float x, float y, float w, float h,
 					  float s1, float t1, float s2, float t2, qhandle_t hShader );
 void RE_BeginFrame (stereoFrame_t stereoFrame, qboolean recordingVideo);
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
-void SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer);
-int SaveJPGToBuffer( byte *buffer, int quality,
+void RE_SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer, int padding);
+size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
 		int image_width, int image_height,
-		byte *image_buffer );
+						   byte *image_buffer, int padding);
 qboolean SavePNG (const char *name, byte *data, int width, int height, int bytedepth);
 void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, qboolean png, int picCount, char *givenFileName);
 void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);

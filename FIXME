@@ -2040,10 +2040,14 @@ No locals.
   "thx i fixed the issu by replacing the spaces in the demo name with some -"
 * null127.dm_91  RB_RenderDrawSurfList refent ptr == NULL for entity 127
 * null127.dm_91  not showing teammates health/armor in crosshair info
-* invisible_player.dm_91  config string shows oppenent is team spectator
-* angry.dm_91 config string has players on wrong team (maybe minqlx bug like invisible_player.dm_91)
+* invisible_player.dm_91  config string shows oppenent is team spectator  -- em92 hack to show specs and hack to update team from scores
+* angry.dm_91 config string has players on wrong team (maybe minqlx bug like invisible_player.dm_91)  -- hack to update team from scores
 * check *parsescores_ffa and reading past SCSIZE > 18?
 * ca not showing teamate health + armor crosshair scan entity
+* readpixels padding alignment  -- using pixelstore pack align 1
+* motion blur forces GL_RGBA fetch mode
+* png capture forces GL_RGBA fetch mode
+
 
 ---------
 

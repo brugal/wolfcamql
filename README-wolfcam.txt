@@ -224,6 +224,8 @@ r cl_avifetchmode"
 
   Do a test run and try the different values to see if you can get a performance boost when rendering.  Note that there is no information in the alpha channel, so this isn't a way of getting transparency information.
 
+Note:  png output and/or motion blur disregard this option and force GL_RGBA as the fetch mode.
+
 cl_aviNoAudioHWOutput  don't pass audio data to sound card when recording, default is 1
 
 cl_freezeDemoPauseVideoRecording  to pause recording of video/screen-shots while paused

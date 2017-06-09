@@ -191,7 +191,7 @@ Gunaxf 2 lbh.
 1923 * strtod exists in bg_lib.c now so Q_isanumber will work in the VMs, too.
 1924 * Make buffers for device lists a bit longer. Just in case.
 1925 done:  Revert premature change to Makefile for migration to jpeg-8c. *sigh*
-1926 skip for now:  Migrate to jpeg-8c, Add possibility to link against system libjpeg
+1926 skip option to link to system libjpeg:  Migrate to jpeg-8c, Add possibility to link against system libjpeg
 1927 * include alext.h for ALC_ALL_DEVICES_SPECIFIER  This assumes OpenAL Soft (Simon McVittie, bug 4927)
 1928 skip for now:  add missing jconfig.h
 1929 * include vm_local.h in vm_powerpc_asm.c  Patch by Simon McVittie, bug 4930
@@ -201,9 +201,9 @@ Gunaxf 2 lbh.
 1933 * Fix dynamic lighting for moving world surfaces. Patch by gimhael, thx
 1934 skip for now jpeg stuff: Bug 4935 - dedicated server linked against libjpeg if using system libjpeg, patch by Simon McVittie
 1935 * Bug 4936 - Wrong color for non-ascii symbols in console
-1936 skip for now jpeg stuff:  Fix JPEG compression for screenshots and mjpeg video recording with new JPG library
+1936 Fix JPEG compression for screenshots and mjpeg video recording with new JPG library
 1937 skip:  Crash recovery for com_pipeFile (Lakitu7)
-1938 skip for now jpeg stuff:  Fix jpeg warnings
+1938 Fix jpeg warnings
 1939 * Fix player queueing for tournament play (#4939)
 1940 done:  Actually call Sys_PlatformExit
 1941 some (skipped jpeg stuff):  Fix a few comments (#4591)
@@ -278,7 +278,7 @@ Gunaxf 2 lbh.
 2010 * (#5016) - Calls to trap_CM_PointContents don't update their origins based on moving entities (water). Patch by Ensiform
 2011 * Fix return values for several syscall functions, patch by Zack Middleton (#5018)
 2012 * Remove misleading comment
-2013 skip (new jpeg and new model):  Adapt MSVC project files to new libjpeg, fix by Guillaume Bougard and cyrri, add tr_model_iqm.c to MSVC project, by cyrri
+2013 skip (new model):  Adapt MSVC project files to new libjpeg, fix by Guillaume Bougard and cyrri, add tr_model_iqm.c to MSVC project, by cyrri
 2014 skip (iqm model stuff):  Fixes to IQM support, by Zack Middleton
       - Bug 5029 - IQM skin support for upper case surface names
       - Bug 5030 - IQM version 2 support
@@ -576,7 +576,7 @@ From /dev/humancontroller.
 - first_gauntlet_hit.wav was not played (ops/ps) bug
 - capturelimit not hit (from OAX)
 2295 skip .. later reverted  -- Support for .pk3dir (#5298) - Patch by Andrew (dersaidin@gmail.com)
-2296 skip  Mark JPEG lib changes, file provided by Simon McVittie
+2296 Mark JPEG lib changes, file provided by Simon McVittie
 2297 skip .. never applied  -- Revert pk3dir patch because some users report the code gets stuck in an infinite loop in the new code
 2298 We should not try to broadcast via the IPv4 socket if that socket is closed.
 
@@ -1185,8 +1185,8 @@ Remove unnecessary localhost check from reconnect command.
 
 2014-01-25-01 Check for buffer overflow for rail/lightning surfaces
 
-2014-01-27-01 skip:  Fix check for jpeg_mem_ to work with libjpeg-turbo
-2014-01-27-02 skip:  Merge pull request #34 from robo9k/issue/libjpeg-turbo
+2014-01-27-01 Fix check for jpeg_mem_ to work with libjpeg-turbo
+2014-01-27-02 Merge pull request #34 from robo9k/issue/libjpeg-turbo
 2014-01-27-03 Try default OpenAL driver if user set one fails to load
 
 2014-02-01-01 restart the renderer after the hunk mark has been set
@@ -1556,7 +1556,7 @@ Remove unnecessary localhost check from reconnect command.
 
 2015-03-13-01 skip (rend2):  OpenGL2: Fix culling again.
 
-2015-03-15-01 skip (new jpeglib):  Use pkg-config for a system libjpeg if available: libjpeg-turbo has it
+2015-03-15-01 Use pkg-config for a system libjpeg if available: libjpeg-turbo has it
 
 2015-03-18-01 unzip: comment why there is no USE_INTERNAL_MINIZIP boolean option
 
@@ -1772,9 +1772,9 @@ Remove unnecessary localhost check from reconnect command.
 2015-12-18-01 skip (rend2):  OpenGL2: DDS (compressed textures) support.
 2015-12-18-02 skip (rend2):  OpenGL2: Add null dereference checks to DDS loader.
 
-2015-12-20-01 skip (jpeg older):  Make jpeg loading errors non-fatal.
+2015-12-20-01 Make jpeg loading errors non-fatal.
 
-2015-12-21-01 skip check (makes changes outside of lib) (jpeg older):  Fix error handling in RE_SaveJPGToBuffer().
+2015-12-21-01 Fix error handling in RE_SaveJPGToBuffer().
 2015-12-21-02 skip (rend2):  OpenGL2: Support picmip for DDS textures.
 
 2015-12-22-01 skip (rend2):  OpenGL2: Add r_exportCubemaps for saving cubemaps on map load.

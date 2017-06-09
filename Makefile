@@ -168,6 +168,14 @@ ifndef USE_INTERNAL_ZLIB
 USE_INTERNAL_ZLIB=1
 endif
 
+#FIXME enable
+#ifndef USE_INTERNAL_JPEG
+#USE_INTERNAL_JPEG=1
+#endif
+
+USE_INTERNAL_JPEG=1
+
+
 ifndef USE_LOCAL_HEADERS
 USE_LOCAL_HEADERS=1
 endif
@@ -217,7 +225,7 @@ BLIBDIR=$(MOUNT_DIR)/botlib
 NDIR=$(MOUNT_DIR)/null
 UIDIR=$(MOUNT_DIR)/ui
 Q3UIDIR=$(MOUNT_DIR)/q3_ui
-JPDIR=$(MOUNT_DIR)/jpeg-6b
+JPDIR=$(MOUNT_DIR)/jpeg-8c
 SPEEXDIR=$(MOUNT_DIR)/libspeex
 ZDIR=$(MOUNT_DIR)/zlib
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
@@ -1025,6 +1033,18 @@ else
   LIBS += -lz
 endif
 
+ifeq ($(USE_INTERNAL_JPEG),1)
+  BASE_CFLAGS += -DUSE_INTERNAL_JPEG
+  BASE_CFLAGS += -I$(JPDIR)
+else
+  # IJG libjpeg doesn't have pkg-config, but libjpeg-turbo uses libjpeg.pc;
+  # we fall back to hard-coded answers if libjpeg.pc is unavailable
+  JPEG_CFLAGS ?= $(shell pkg-config --silence-errors --cflags libjpeg || true)
+  JPEG_LIBS ?= $(shell pkg-config --silence-errors --libs libjpeg || echo -ljpeg)
+  BASE_CFLAGS += $(JPEG_CFLAGS)
+  RENDERER_LIBS += $(JPEG_LIBS)
+endif
+
 ifdef DEFAULT_BASEDIR
   BASE_CFLAGS += -DDEFAULT_BASEDIR=\\\"$(DEFAULT_BASEDIR)\\\"
 endif
@@ -1557,8 +1577,10 @@ Q3OBJ = \
   $(B)/client/l_script.o \
   $(B)/client/l_struct.o \
   \
+  $(B)/client/jaricom.o \
   $(B)/client/jcapimin.o \
   $(B)/client/jcapistd.o \
+  $(B)/client/jcarith.o \
   $(B)/client/jccoefct.o  \
   $(B)/client/jccolor.o \
   $(B)/client/jcdctmgr.o \
@@ -1569,11 +1591,12 @@ Q3OBJ = \
   $(B)/client/jcmaster.o \
   $(B)/client/jcomapi.o \
   $(B)/client/jcparam.o \
-  $(B)/client/jcphuff.o \
   $(B)/client/jcprepct.o \
   $(B)/client/jcsample.o \
+  $(B)/client/jctrans.o \
   $(B)/client/jdapimin.o \
   $(B)/client/jdapistd.o \
+  $(B)/client/jdarith.o \
   $(B)/client/jdatasrc.o \
   $(B)/client/jdcoefct.o \
   $(B)/client/jdcolor.o \
@@ -1583,14 +1606,21 @@ Q3OBJ = \
   $(B)/client/jdmainct.o \
   $(B)/client/jdmarker.o \
   $(B)/client/jdmaster.o \
+  $(B)/client/jdmerge.o \
   $(B)/client/jdpostct.o \
   $(B)/client/jdsample.o \
   $(B)/client/jdtrans.o \
   $(B)/client/jerror.o \
   $(B)/client/jfdctflt.o \
+  $(B)/client/jfdctfst.o \
+  $(B)/client/jfdctint.o \
   $(B)/client/jidctflt.o \
+  $(B)/client/jidctfst.o \
+  $(B)/client/jidctint.o \
   $(B)/client/jmemmgr.o \
   $(B)/client/jmemnobs.o \
+  $(B)/client/jquant1.o \
+  $(B)/client/jquant2.o \
   $(B)/client/jutils.o \
   \
   $(B)/client/tr_animation.o \
