@@ -293,6 +293,10 @@ static void CG_CheckAmmo( void ) {
 
 	cg.lowAmmoWarning = AMMO_WARNING_OK;
 
+	if (cg.snap->ps.stats[STAT_HEALTH] <= 0) {
+		return;
+	}
+
 	//FIXME other gametypes
 	if (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
 		//return;
