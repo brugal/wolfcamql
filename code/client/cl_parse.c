@@ -1181,8 +1181,7 @@ CL_ParseVoip
 A VoIP message has been received from the server
 =====================
 */
-static
-void CL_ParseVoip ( msg_t *msg ) {
+void CL_ParseVoip ( msg_t *msg, qboolean justPeek ) {
 	static short decoded[4096];  // !!! FIXME: don't hardcode.
 
 	const int sender = MSG_ReadShort(msg);
@@ -1191,7 +1190,7 @@ void CL_ParseVoip ( msg_t *msg ) {
 	const int frames = MSG_ReadByte(msg);
 	const int packetsize = MSG_ReadShort(msg);
 	char encoded[1024];
-	int seqdiff;
+	int seqdiff = sequence - clc.voipIncomingSequence[sender];
 	int written = 0;
 	int i;
 
@@ -1220,7 +1219,7 @@ void CL_ParseVoip ( msg_t *msg ) {
 		return;   // overlarge packet, bail.
 	}
 
-	if (!clc.speexInitialized) {
+	if (!clc.speexInitialized  ||  justPeek  ||  di.testParse) {
 		MSG_ReadData(msg, encoded, packetsize);  // skip payload.
 		return;   // can't handle VoIP without libspeex!
 	} else if (sender >= MAX_CLIENTS) {
@@ -1234,8 +1233,6 @@ void CL_ParseVoip ( msg_t *msg ) {
 	// !!! FIXME: make sure data is narrowband? Does decoder handle this?
 
 	Com_DPrintf("VoIP: packet accepted!\n");
-
-	seqdiff = sequence - clc.voipIncomingSequence[sender];
 
 	// This is a new "generation" ... a new recording started, reset the bits.
 	if (generation != clc.voipIncomingGeneration[sender]) {
@@ -1283,6 +1280,7 @@ void CL_ParseVoip ( msg_t *msg ) {
 			            written * 2, written, i);
 			S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
 			             (const byte *) decoded, clc.voipGain[sender]);
+			Com_Printf("^3voip written size (shouldn't happen)\n");
 			written = 0;
 		}
 
@@ -1291,6 +1289,8 @@ void CL_ParseVoip ( msg_t *msg ) {
 		                 &clc.speexDecoderBits[sender], decoded + written);
 
 		#if 0
+
+		// sox -r 8k -e signed -b 16 -c 1 decoded.raw test.wav
 		static FILE *encio = NULL;
 		if (encio == NULL) encio = fopen("voip-incoming-encoded.bin", "wb");
 		if (encio != NULL) { fwrite(encoded, len, 1, encio); fflush(encio); }
@@ -1308,6 +1308,7 @@ void CL_ParseVoip ( msg_t *msg ) {
 	if (written > 0) {
 		S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
 		             (const byte *) decoded, clc.voipGain[sender]);
+		//Com_Printf("^2  ... voip ...\n");
 	}
 
 	clc.voipIncomingSequence[sender] = sequence + frames;
@@ -1792,7 +1793,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 			break;
 		case svc_voip:
 #ifdef USE_VOIP
-			CL_ParseVoip( msg );
+			CL_ParseVoip( msg, qfalse );
 #endif
 			//Com_Printf("net:  voip\n");
 			break;

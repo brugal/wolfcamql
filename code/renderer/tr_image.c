@@ -589,7 +589,7 @@ void R_Upload32( unsigned *data,
 
 		if (r_debugScaledImages->integer  &&  (scaled_width != width  ||  scaled_height != height)) {
 			int i;
-			char *sd = (char *)data;
+			unsigned char *sd = (unsigned char *)data;
 
 			for (i = 0;  i < (scaled_width * scaled_height * 4);  i += 4) {
 				sd[i + 0] = 255;

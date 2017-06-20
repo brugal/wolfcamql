@@ -98,7 +98,7 @@ static int gamecodetoui[] = {4,2,3,0,5,1,6};
 static int uitogamecode[] = {4,6,2,3,1,5,7};
 
 
-static void UI_StartServerRefresh(qboolean full);
+static void UI_StartServerRefresh(qboolean full, qboolean force);
 static void UI_StopServerRefresh( void );
 static void UI_DoServerRefresh( void );
 static void UI_FeederSelection(float feederID, int index);
@@ -2466,9 +2466,7 @@ static qboolean UI_NetSource_HandleKey(int flags, float *special, int key) {
 		}
 
 		UI_BuildServerDisplayList(qtrue);
-		if (ui_netSource.integer != AS_GLOBAL) {
-			UI_StartServerRefresh(qtrue);
-		}
+		UI_StartServerRefresh(qtrue, qfalse);
 		trap_Cvar_SetValue( "ui_netSource", ui_netSource.integer );
 		return qtrue;
 	}
@@ -2707,6 +2705,9 @@ void UI_ServersSort(int column, qboolean force) {
 
 	uiInfo.serverStatus.sortKey = column;
 	qsort( &uiInfo.serverStatus.displayServers[0], uiInfo.serverStatus.numDisplayServers, sizeof(int), UI_ServersQsortCompare);
+
+	// update displayed levelshot
+	UI_FeederSelection( FEEDER_SERVERS, uiInfo.serverStatus.currentServer );
 }
 
 /*
@@ -3222,10 +3223,10 @@ static void UI_RunMenuScript(char **args) {
 		} else if (Q_stricmp(name, "resetScores") == 0) {
 			UI_ClearScores();
 		} else if (Q_stricmp(name, "RefreshServers") == 0) {
-			UI_StartServerRefresh(qtrue);
+			UI_StartServerRefresh(qtrue, qtrue);
 			UI_BuildServerDisplayList(qtrue);
 		} else if (Q_stricmp(name, "RefreshFilter") == 0) {
-			UI_StartServerRefresh(qfalse);
+			UI_StartServerRefresh(qfalse, qtrue);
 			UI_BuildServerDisplayList(qtrue);
 		} else if (Q_stricmp(name, "RunSPDemo") == 0) {
 			if (uiInfo.demoAvailable) {
@@ -3268,9 +3269,8 @@ static void UI_RunMenuScript(char **args) {
 			uiInfo.nextServerStatusRefresh = 0;
 			uiInfo.nextFindPlayerRefresh = 0;
 		} else if (Q_stricmp(name, "UpdateFilter") == 0) {
-			if (ui_netSource.integer == AS_LOCAL) {
-				UI_StartServerRefresh(qtrue);
-			}
+			// UpdateFilter is called when server broser menu is opened and when a favorite server is deleted.
+			UI_StartServerRefresh(qtrue, qfalse);
 			UI_BuildServerDisplayList(qtrue);
 			UI_FeederSelection(FEEDER_SERVERS, 0);
 		} else if (Q_stricmp(name, "ServerStatus") == 0) {
@@ -3605,6 +3605,11 @@ static void UI_InsertServerIntoDisplayList(int num, int position) {
 		uiInfo.serverStatus.displayServers[i] = uiInfo.serverStatus.displayServers[i-1];
 	}
 	uiInfo.serverStatus.displayServers[position] = num;
+
+	// update displayed levelshot
+	if ( position == uiInfo.serverStatus.currentServer ) {
+		UI_FeederSelection( FEEDER_SERVERS, uiInfo.serverStatus.currentServer );
+	}
 }
 
 /*
@@ -3727,15 +3732,22 @@ static void UI_BuildServerDisplayList(int force) {
 		// get the ping for this server
 		ping = trap_LAN_GetServerPing(ui_netSource.integer, i);
 		if (ping > 0 || ui_netSource.integer == AS_FAVORITES) {
+			// Remove favorite servers so they do not appear multiple times
+			// or appear when the cached server info was not filtered out
+			// but the new server info is filtered out.
+			if (ui_netSource.integer == UIAS_FAVORITES) {
+				UI_RemoveServerFromDisplayList(i);
+			}
 
 			trap_LAN_GetServerInfo(ui_netSource.integer, i, info, MAX_STRING_CHARS);
 
 			clients = atoi(Info_ValueForKey(info, "clients"));
-			uiInfo.serverStatus.numPlayersOnServers += clients;
 
 			if (ui_browserShowEmpty.integer == 0) {
 				if (clients == 0) {
-					trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					if (ping > 0) {
+						trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					}
 					continue;
 				}
 			}
@@ -3743,7 +3755,9 @@ static void UI_BuildServerDisplayList(int force) {
 			if (ui_browserShowFull.integer == 0) {
 				maxClients = atoi(Info_ValueForKey(info, "sv_maxclients"));
 				if (clients == maxClients) {
-					trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					if (ping > 0) {
+						trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					}
 					continue;
 				}
 			}
@@ -3751,26 +3765,27 @@ static void UI_BuildServerDisplayList(int force) {
 			if (uiInfo.joinGameTypes[ui_joinGameType.integer].gtEnum != -1) {
 				game = atoi(Info_ValueForKey(info, "gametype"));
 				if (game != uiInfo.joinGameTypes[ui_joinGameType.integer].gtEnum) {
-					trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					if (ping > 0) {
+						trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					}
 					continue;
 				}
 			}
 				
 			if (ui_serverFilterType.integer > 0) {
 				if (Q_stricmp(Info_ValueForKey(info, "game"), serverFilters[ui_serverFilterType.integer].basedir) != 0) {
-					trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					if (ping > 0) {
+						trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+					}
 					continue;
 				}
-			}
-			// make sure we never add a favorite server twice
-			if (ui_netSource.integer == AS_FAVORITES) {
-				UI_RemoveServerFromDisplayList(i);
 			}
 			// insert the server into the list
 			UI_BinaryServerInsertion(i);
 			// done with this server
 			if (ping > 0) {
 				trap_LAN_MarkServerVisible(ui_netSource.integer, i, qfalse);
+				uiInfo.serverStatus.numPlayersOnServers += clients;
 				numinvisible++;
 			}
 		}
@@ -3848,11 +3863,21 @@ static int UI_GetServerStatusInfo( const char *serverAddress, serverStatusInfo_t
 	char *p, *score, *ping, *name;
 	int i, len;
 
+	if (info) {
+		memset(info, 0, sizeof(*info));
+	}
+
+	// ignore initial unser addresses
+	if (serverAddress && *serverAddress == '\0') {
+		return qfalse;
+	}
+
+	// reset server status request for this address
 	if (!info) {
 		trap_LAN_ServerStatus( serverAddress, NULL, 0);
 		return qfalse;
 	}
-	memset(info, 0, sizeof(*info));
+
 	if ( trap_LAN_ServerStatus( serverAddress, info->text, sizeof(info->text)) ) {
 		Q_strncpyz(info->address, serverAddress, sizeof(info->address));
 		p = info->text;
@@ -5721,7 +5746,7 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_blueteam3, "ui_blueteam3", "0", CVAR_ARCHIVE },
 	{ &ui_blueteam4, "ui_blueteam4", "0", CVAR_ARCHIVE },
 	{ &ui_blueteam5, "ui_blueteam5", "0", CVAR_ARCHIVE },
-	{ &ui_netSource, "ui_netSource", "0", CVAR_ARCHIVE },
+	{ &ui_netSource, "ui_netSource", "1", CVAR_ARCHIVE },
 	{ &ui_menuFiles, "ui_menuFiles", "ui/menus.txt", CVAR_ARCHIVE },
 	{ &ui_currentTier, "ui_currentTier", "0", CVAR_ARCHIVE },
 	{ &ui_currentMap, "ui_currentMap", "0", CVAR_ARCHIVE },
@@ -5888,11 +5913,20 @@ static void UI_DoServerRefresh( void )
 UI_StartServerRefresh
 =================
 */
-static void UI_StartServerRefresh(qboolean full)
+static void UI_StartServerRefresh(qboolean full, qboolean force)
 {
 	char	*ptr;
-
 	qtime_t q;
+
+	// This function is called with force=qfalse when server browser menu opens or net source changes.
+	// Automatically update local and favorite servers.
+	// Only auto update master server list if there is no server info cache.
+	if ( !force && ( ui_netSource.integer >= UIAS_GLOBAL1 && ui_netSource.integer <= UIAS_GLOBAL5 ) ) {
+		if ( trap_LAN_GetServerCount( UI_SourceForLAN() ) > 0 ) {
+			return; // have cached list
+		}
+	}
+
 	trap_RealTime(&q, qtrue, 0);
  	trap_Cvar_Set( va("ui_lastServerRefresh_%i", ui_netSource.integer), va("%s-%i, %i at %i:%i", MonthAbbrev[q.tm_mon],q.tm_mday, 1900+q.tm_year,q.tm_hour,q.tm_min));
 

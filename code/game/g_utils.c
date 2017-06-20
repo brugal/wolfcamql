@@ -412,11 +412,11 @@ gentity_t *G_Spawn( void ) {
 			G_InitGentity( e );
 			return e;
 		}
-		if ( i != MAX_GENTITIES ) {
+		if ( level.num_entities < ENTITYNUM_MAX_NORMAL ) {
 			break;
 		}
 	}
-	if ( i == ENTITYNUM_MAX_NORMAL ) {
+	if ( level.num_entities == ENTITYNUM_MAX_NORMAL ) {
 		for (i = MAX_CLIENTS;  i < level.num_entities;  i++) {
 			e = &g_entities[i];
 			if (e->inuse) {
@@ -451,6 +451,11 @@ G_EntitiesFree
 qboolean G_EntitiesFree( void ) {
 	int			i;
 	gentity_t	*e;
+
+	if ( level.num_entities < ENTITYNUM_MAX_NORMAL ) {
+		// can open a new slot if needed
+		return qtrue;
+	}
 
 	e = &g_entities[MAX_CLIENTS];
 	for ( i = MAX_CLIENTS; i < level.num_entities; i++, e++) {

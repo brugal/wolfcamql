@@ -2520,7 +2520,7 @@ static qboolean CG_PlayCamera (void)
 		// check for last cam point being hit
 		//
 		if (cg.ftime == lastPoint->cgtime  ||  (cg.cameraPlayedLastFrame  &&  cg.ftime >= lastPoint->cgtime)) {
-			if (cg_cameraQue.integer > 1  &&  lastPoint->command  &&  lastPoint->cgtime != cg.cameraPointCommandTime) {
+			if (cg_cameraQue.integer > 1  &&  *lastPoint->command  &&  lastPoint->cgtime != cg.cameraPointCommandTime) {
 				trap_SendConsoleCommand(va("%s\n", lastPoint->command));
 				cg.cameraPointCommandTime = lastPoint->cgtime;
 			}
@@ -2554,7 +2554,7 @@ static qboolean CG_PlayCamera (void)
 				cpprev = &cg.cameraPoints[cg.currentCameraPoint - 1];
 			}
 			//if (cg_cameraQue.integer > 1  &&  cg.ftime == cp->cgtime  &&  cg.ftime != cg.cameraPointCommandTime) {
-			if (cg_cameraQue.integer > 1  &&  cp->command  &&  cp->cgtime != cg.cameraPointCommandTime) {
+			if (cg_cameraQue.integer > 1  &&  *cp->command  &&  cp->cgtime != cg.cameraPointCommandTime) {
 				trap_SendConsoleCommand(va("%s\n", cp->command));
 				cg.cameraPointCommandTime = cp->cgtime;
 			}
@@ -2563,7 +2563,7 @@ static qboolean CG_PlayCamera (void)
 		// check for last cam point being hit
 		//
 		if (cg.ftime == lastPoint->cgtime  ||  (cg.cameraPlayedLastFrame  &&  cg.ftime >= lastPoint->cgtime)) {
-			if (lastPoint->command  &&  lastPoint->cgtime != cg.cameraPointCommandTime) {
+			if (*lastPoint->command  &&  lastPoint->cgtime != cg.cameraPointCommandTime) {
 				//trap_SendConsoleCommand(va("%s\n", lastPoint->command));
 				//cg.cameraPointCommandTime = lastPoint->cgtime;
 			}
@@ -3257,7 +3257,7 @@ handleCameraAngles:
 		}
 
  		if (c1->useXoffsetVelocity) {
-			totalDist = fabs(nx - x);
+			totalDist = abs(nx - x);
 			accel = (c1->xoffsetFinalVelocity - c1->xoffsetInitialVelocity) / totalTime;
 			dist = (c1->xoffsetInitialVelocity * t) + 0.5 * accel * t * t;
 			x = x + (dist / totalDist) * (nx - x);
@@ -3266,7 +3266,7 @@ handleCameraAngles:
 		}
 
  		if (c1->useYoffsetVelocity) {
-			totalDist = fabs(ny - y);
+			totalDist = abs(ny - y);
 			accel = (c1->yoffsetFinalVelocity - c1->yoffsetInitialVelocity) / totalTime;
 			dist = (c1->yoffsetInitialVelocity * t) + 0.5 * accel * t * t;
 			y = y + (dist / totalDist) * (ny - y);
@@ -3275,7 +3275,7 @@ handleCameraAngles:
 		}
 
  		if (c1->useZoffsetVelocity) {
-			totalDist = fabs(nz - z);
+			totalDist = abs(nz - z);
 			accel = (c1->zoffsetFinalVelocity - c1->zoffsetInitialVelocity) / totalTime;
 			dist = (c1->zoffsetInitialVelocity * t) + 0.5 * accel * t * t;
 			z = z + (dist / totalDist) * (nz - z);

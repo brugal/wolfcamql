@@ -31,9 +31,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 void Cocoa_MsgBox( const char *text )
 {
-	NSRunInformationalAlertPanel(@"ioquake3", 
-	                             [NSString stringWithUTF8String:text],
-	                             @"OK", nil, nil);
+	NSRunInformationalAlertPanel(@"ioquake3",
+				     @"%@",
+	                             @"OK", nil, nil,
+				     [NSString stringWithUTF8String:text]
+				     );
 }
 
 //FIXME MAX_EDIT_LINE * 4

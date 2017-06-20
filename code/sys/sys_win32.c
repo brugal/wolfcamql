@@ -39,6 +39,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <process.h>
 
 
+#ifndef KEY_WOW64_32KEY
+#define KEY_WOW64_32KEY 0x0200
+#endif
+
 // Used to determine where to store user-specific files
 static char homePath[ MAX_OSPATH ] = { 0 };
 static char QuakeLivePath[MAX_OSPATH] = { 0 };
@@ -1792,4 +1796,15 @@ const char *Sys_GetSteamCmd (void)
 	} else {
 		return "steamcmd.exe";
 	}
+}
+
+/*
+=================
+Sys_DllExtension
+
+Check if filename should be allowed to be loaded as a DLL.
+=================
+*/
+qboolean Sys_DllExtension( const char *name ) {
+	return COM_CompareExtension( name, DLL_EXT );
 }

@@ -1,9 +1,21 @@
-11.8test1
+11.8test2
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
 * jpeg video capture doesn't force GL_RGBA fetch mode
 * add to documentation that png output and/or motion blur force GL_RGBA fetch mode
+* ioquake3 fixes
+* bug fix:  disconnect icon didn't match lagometer x, y, scale, and align settings
+* bug fix:  draw selected player name didn't detect clan tag correctly
+* bug fix:  invalid check if camera point command exists
+* bug fix:  invalid check for followed player and cg_racePlayerShader
+* update documentation for cg_racePlayerShader
+* bug fix:  'out of ammo' sound played when player dies (em92 Eugene Molotov)
+* bug fix:  snapshot look ahead didn't work voip demos
+* bug fix:  snapshot look ahead didn't check if demo message didn't have a snapshot
+* remove "CL_PeekSnapshot buf.cursize == -1" spam
+* bug fix:  voip sounds played during initial demo parsing
+* bug fix:  illegible server message error when recording a demo from a demo with voip packets
 
 ---------------------------------
 11.7  2017-06-07

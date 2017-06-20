@@ -2381,7 +2381,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * cg_drawTieredArmorAvailability  (same as quakelive)
 
-* cg_racePlayerShader  (0: disable the invisible/ghost shader on other players in ql race mode, 1: enable for other players, 2: use ghost shader for followed player and weapon, 3: use ghost shader for followed player's weapon, 4:  use ghost shader for followed player (not weapon))
+* cg_racePlayerShader  (0: disable the invisible/ghost shader on other players in ql race mode, 1: enable for other players, 2: enable for other players and also use ghost shader for followed player and weapon in third person, 3: enable for other players and also use ghost shader for followed player's weapon in third person, 4:  enable for other players and also use ghost shader for followed player (but not weapon) in third person)
 
 * cl_maxRewindBackups  Number of seek points to divide the demo into.  The higher, the more response fast forwarding and rewinding becomes.  Note that each backup point will require about 1.7MB .  The default is 12.
 

@@ -902,6 +902,7 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 	int i;
 	int len;
 	playerState_t tmpps;
+	qboolean haveSnapshot = qfalse;
 
 	MSG_BeginReading(inMsg);
 
@@ -940,6 +941,7 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			Com_Error(ERR_DROP, "%s: Illegible server message %d", __FUNCTION__, cmd);
 			break;
 		case svc_nop:
+			MSG_WriteByte(&outMsg, svc_nop);
 			break;
 		case svc_serverCommand:
 			//CL_ParseCommandString( msg );
@@ -986,8 +988,12 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			MSG_WriteLong(&outMsg, r);
 
 			break;
-		case svc_snapshot:
+		case svc_snapshot: {
+			entityState_t esFrom, esTo;
+
 			//CL_ParseSnapshot( msg, NULL, qfalse );
+
+			haveSnapshot = qtrue;
 			// server time
 			r = MSG_ReadLong(inMsg);
 			MSG_WriteLong(&outMsg, r);
@@ -1006,6 +1012,10 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			r = MSG_ReadByte(inMsg);
 			MSG_WriteByte(&outMsg, r);
 
+			if (r > sizeof(areamask)) {
+				Com_Printf("^1%s snapshot: invalid size for areamask %d\n", __FUNCTION__, r);
+				goto done;
+			}
 			MSG_ReadData(inMsg, areamask, r);
 			MSG_WriteData(&outMsg, areamask, r);
 
@@ -1014,13 +1024,26 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 
 			// CL_ParsePacketEntities
 
+			while (1) {
+				int newnum = MSG_ReadBits(inMsg, GENTITYNUM_BITS);
+
+				if (newnum == (MAX_GENTITIES - 1)) {
+					break;
+				}
+
+				MSG_ReadDeltaEntity(inMsg, &esFrom, &esTo, newnum);
+			}
+
 			for (i = 0;  i < cl.snap.numEntities;  i++) {
 				es = &cl.parseEntities[(cl.snap.parseEntitiesNum + i) & (MAX_PARSE_ENTITIES - 1)];
 				MSG_WriteDeltaEntity(&outMsg, &cl.entityBaselines[es->number], es, qtrue);
 			}
 			MSG_WriteBits(&outMsg, (MAX_GENTITIES - 1), GENTITYNUM_BITS);
-			goto done;
+
+			// sv_padPackets
+
 			break;
+		}
 		case svc_download:
 			//CL_ParseDownload( msg );
 
@@ -1029,16 +1052,54 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			Com_Printf("FIXME %s  download\n", __FUNCTION__);
 
 			break;
-		case svc_voip:
-#ifdef USE_VOIP
-			//CL_ParseVoip( msg );
-			Com_Printf("FIXME %s  voip\n", __FUNCTION__);
-#endif
+		case svc_voip: {
+			const int sender = MSG_ReadShort(inMsg);
+			const int generation = MSG_ReadByte(inMsg);
+			const int sequence = MSG_ReadLong(inMsg);
+			const int frames = MSG_ReadByte(inMsg);
+			const int packetsize = MSG_ReadShort(inMsg);
+			char encoded[1024];
+			int bytesleft;
+
+			//Com_Printf("^2%s  voip\n", __FUNCTION__);
+
+			MSG_WriteShort(&outMsg, sender);
+			MSG_WriteByte(&outMsg, generation);
+			MSG_WriteLong(&outMsg, sequence);
+			MSG_WriteByte(&outMsg, frames);
+			MSG_WriteShort(&outMsg, packetsize);
+
+			if (packetsize < 0) {
+				Com_Printf("^1%s voip invalid packetsize %d\n", __FUNCTION__, packetsize);
+				// skip this and the rest of the demo message
+				goto done;
+			}
+
+			bytesleft = packetsize;
+			while (bytesleft) {
+				int br = bytesleft;
+				if (br > sizeof(encoded)) {
+					br = sizeof(encoded);
+				}
+				MSG_ReadData(inMsg, encoded, br);
+				MSG_WriteData(&outMsg, encoded, br);
+				bytesleft -= br;
+			}
+
 			break;
+		}
+
 		}
 	}
 
  done:
+
+	if (!haveSnapshot) {
+		// probably fake message with voip, return to make sure it's known that a non delta message still needs to be written
+		//Com_Printf("^2 no snap, writing\n");
+		CL_WriteDemoMessage(inMsg, 0);
+		return;
+	}
 
 	//////////////////////////////////////////
 
@@ -2677,7 +2738,7 @@ CL_Connect_f
 ================
 */
 void CL_Connect_f( void ) {
-	char	*server;
+	char	server[MAX_OSPATH];
 	const char	*serverString;
 	int argc = Cmd_Argc();
 	netadrtype_t family = NA_UNSPEC;
@@ -2688,7 +2749,7 @@ void CL_Connect_f( void ) {
 	}
 
 	if(argc == 2)
-		server = Cmd_Argv(1);
+		Q_strncpyz( server, Cmd_Argv(1), sizeof( server ) );
 	else
 	{
 		if(!strcmp(Cmd_Argv(1), "-4"))
@@ -2698,7 +2759,7 @@ void CL_Connect_f( void ) {
 		else
 			Com_Printf( "warning: only -4 or -6 as address type understood.\n");
 
-		server = Cmd_Argv(2);
+		Q_strncpyz( server, Cmd_Argv(2), sizeof( server ) );
 	}
 
 	// save arguments for reconnect

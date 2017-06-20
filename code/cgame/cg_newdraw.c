@@ -261,16 +261,6 @@ static void CG_DrawPlayerArmorValue (const rectDef_t *rect, float scale, const v
 	}
 }
 
-#if 0  //ndef MISSIONPACK // bk001206
-static const float healthColors[4][4] = {
-//		{ 0.2, 1.0, 0.2, 1.0 } , { 1.0, 0.2, 0.2, 1.0 }, {0.5, 0.5, 0.5, 1} };
-  // bk0101016 - float const
-  { 1.0f, 0.69f, 0.0f, 1.0f } ,		// normal
-  { 1.0f, 0.2f, 0.2f, 1.0f },		// low health
-  { 0.5f, 0.5f, 0.5f, 1.0f},		// weapon firing
-  { 1.0f, 1.0f, 1.0f, 1.0f } };		// health > 100
-#endif
-
 static void CG_DrawPlayerAmmoIcon( const rectDef_t *rect, qboolean draw2D ) {
 	//centity_t	*cent;
 	//playerState_t	*ps;
@@ -537,7 +527,7 @@ static void CG_DrawSelectedPlayerName( const rectDef_t *rect, float scale, const
 	const clientInfo_t *ci;
   ci = cgs.clientinfo + ((voice) ? cgs.currentVoiceClient : sortedTeamPlayers[CG_GetSelectedPlayer()]);
   if (ci) {
-	  if (ci->clanTag) {
+	  if (*ci->clanTag) {
 		  CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, va("%s ^7%s", ci->clanTag, ci->name), 0, 0, textStyle, font);
 	  } else {
 		  CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, ci->name, 0, 0, textStyle, font);
@@ -8248,7 +8238,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
   case CG_SELECTED_PLYR_NAME:
 	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
-	  if (ci->clanTag) {
+	  if (*ci->clanTag) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%s ^7%s", ci->clanTag, ci->name), 0, 0, textStyle, font, align);
 	  } else {
 		  CG_Text_Paint_Align(&rect, scale, color, ci->name, 0, 0, textStyle, font, align);

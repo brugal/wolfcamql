@@ -7310,9 +7310,7 @@ static void CG_FeederSelection (float feederID, int index) {
 		cg.selectedScore = index;
 	}
 }
-#endif
 
-#if 1  //def MPACK // bk001204 - only needed there
 float CG_Cvar_Get (const char *cvar)
 {
 	char buff[128];
@@ -7321,11 +7319,6 @@ float CG_Cvar_Get (const char *cvar)
 	trap_Cvar_VariableStringBuffer(cvar, buff, sizeof(buff));
 	return atof(buff);
 }
-#endif
-
-#if 1  //def MPACK
-
-
 
 /*
 =================

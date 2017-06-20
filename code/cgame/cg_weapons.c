@@ -2407,8 +2407,7 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 		}
 
 		if (!ps  &&  cgs.gametype == GT_RACE  &&  cg_racePlayerShader.integer) {
-			//if (cent->currentState.clientNum != cg.snap->ps.clientNum  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
-			if (!CG_IsUs(&cgs.clientinfo[cent->currentState.clientNum]) != cg.snap->ps.clientNum  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
+			if (!CG_IsUs(&cgs.clientinfo[cent->currentState.clientNum])  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
 				gun.customShader = cgs.media.noPlayerClipShader;
 				gun.shaderRGBA[0] = 255;
 				gun.shaderRGBA[1] = 255;
@@ -2448,7 +2447,6 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 		}
 
 		if (!ps  &&  cgs.gametype == GT_RACE  &&  cg_racePlayerShader.integer) {
-			//if (cent->currentState.clientNum != cg.snap->ps.clientNum  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
 			if (!CG_IsUs(&cgs.clientinfo[cent->currentState.clientNum])  ||  cg_racePlayerShader.integer == 2  ||  cg_racePlayerShader.integer == 3) {
 				gun.customShader = cgs.media.noPlayerClipShader;
 				gun.shaderRGBA[0] = 255;

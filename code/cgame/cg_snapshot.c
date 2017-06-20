@@ -1441,6 +1441,7 @@ static snapshot_t *CG_ReadNextSnapshot( void ) {
 		// read them.
 	}
 
+	//Com_Printf("looped out\n");
 	// nothing left to read
 	return NULL;
 }
@@ -1736,7 +1737,9 @@ qboolean CG_GetSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	int i;
 
 	r = trap_GetSnapshot(snapshotNumber, snapshot);
-
+	if (!r) {
+		//Com_Printf("^1couldn't get snapshot %d\n", snapshotNumber);
+	}
 	if (cgs.ospEncrypt) {
 		for (i = 0;  i < snapshot->numEntities;  i++) {
 			es = &snapshot->entities[i];

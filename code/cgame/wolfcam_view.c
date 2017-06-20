@@ -640,7 +640,7 @@ static void Wolfcam_LoadEnemyModel (void)
 
 		memset(&cg.enemyModel, 0, sizeof(clientInfo_t));
 
-		if (cg_enemyModel.string  &&  *cg_enemyModel.string) {
+		if (*cg_enemyModel.string) {
 			Q_strncpyz(modelStr, cg_enemyModel.string, sizeof(modelStr));
 		} else {
 			// just set to something in order to load
@@ -659,7 +659,7 @@ static void Wolfcam_LoadEnemyModel (void)
 			cg.enemyModelTeamSkinFound = qtrue;
 		}
 
-		if (cg_enemyHeadModel.string  &&  *cg_enemyHeadModel.string) {
+		if (*cg_enemyHeadModel.string) {
 			Q_strncpyz(headModelStr, cg_enemyHeadModel.string, sizeof(headModelStr));
 		} else {
 			Q_strncpyz(headModelStr, DEFAULT_MODEL, sizeof(headModelStr));

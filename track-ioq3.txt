@@ -306,49 +306,87 @@ Gunaxf 2 lbh.
 2027 skip (trem done though): - Merge http://svn.icculus.org/tremulous?view=rev&revision=2185, patch by Chris Schwarz
      - Remove Q_snprintf as Com_sprintf exists already
 2028 * Need space of len+1 for snprintf to work
--- check 2029
-2030 skip
-2031 skip
-2032 skip
-2033 skip
-2034 skip
-2035 skip
+2029 skip check: Small change to search path order - local files not in .pk3s take precedence over files in pk3s. Should make life easier for modders/mappers wanting to override textures that are already contained in some older pk3.  Make VM loading more robust, change loading order: when vm_* == 0 first try loading DLL, then QVM in *each* search directory/path.  Fix FS_FileForHandle that would return a FILE pointer to invalid file handle 0
+
+2030 skip:  Don't try to load QVM/DLL files on pure servers.  Fallback after failed DLL load will be VMI_COMPILED, not INTERPRETED
+2031 skip:  Various fixes to vm_interpreted.c
+2032 skip: Use Q_ftol for vm_interpreted
+2033 skip: Fix wrong macro. MSVC win32 build should work again now.
+2034 skip:  remove static VM_BlockCopy from vm_powerpc
+2035 skip:  Add mingw64 crossbuild script, patch by Zack Middleton
 2036 Clear game logfile handle after closing file. (patch from tremulous)
-2037 skip
-2038 skip
-2039 skip
-2040 skip
-2041 skip
--- check 2042
+2037 skip:  Patch and description by ensiform (#5043):  This patch moves cg_particles.c out of cg_marks.c to the actual file that was already there but not used.  By default WOLF_PARTICLES definition is commented out if someone wants to use the old cg_particles.c changes.  cg_particles.c has been added to the makefile and msvc projects.
+2038 skip:  Fix #lese in las commit
+2039 skip:  Fix a few comments in tr_local.h.  A bit of refactoring of the cpp macros
+2040 skip:  Fixes for bugs introduced in last several revisions
+2041 skip:  Still forgot this one :(
+2042 skip check:  Fix memory leak in DMA sound after S_Shutdown().  Make codec load use temp hunk memory instead of zone mem.  Fix sound issues with direct sound and game_restart (#4526)
 2043 Bug 5047 - Win32 dedicated server console title should use define, patch by Zack Middleton
 2044 Bug 5048 - Entity constant light does not work correctly, bug found by Eraesr (Eraser?)
--- check 2045
+2045 skip check:
+  - Improve game_restart:
+    * differing screen resolutions and network settings are now honoured when changing fs_game
+    * Fix hunk memory leak on game_restart
+    * Move cls.state and cls.servername to clc so connection state is fully preserved over game_restart
+    * Revert back to previous fs_game after disconnecting from a server that triggered a game_restart
+    * Fix error dialog popping up after every game_restart if an error happened previously (reported by Ensiform)
+  - Fixed that not all commands added by CL_Init() would be removed by CL_Shutdown()
 
+2046 skip:  Fix unnoticed bug in game_restart
+2047 skip:
 
-2049 skip
+  - Bug 5034 - q3_ui: fill whole screen and allow cursor to move to edge in wi
+descreen, by Zack Middleton
+    Check if uivm is loaded before using it
 
-2054 skip
+    Patch adds a check for uivm before using it, fixes running dedicated server
+    using client binary.
+
+    Missing uivm check pointed out by Ensiform.
+
+  - Bug 5049 - TA UI forces overstrike mode on when focusing an edit box, by Ensiform
+  - Bug 5052 - Missing podium timer initialization, by Eugene C.
+
+2048 skip:  Fix to (#5051) - strchr in GraphicsOptions_GetAspectRatios() might return NULL for some strange reason
+2049 skip:  Fix x64 compilation on MSVC
+2050 skip:  Clear ip address listings after a NET_Restart.  check for oldGameSet instead of the gamename string
+2051 skip:  Fix by Laurent Desnogues for my feeble attempt at a fix
+2052 skip:  align sse control word storage space to 16 byte boundary for snapvector.  replace some whitespace with tabs in snapvector.c.  Give gcc a bit more freedom in choice of registers
+
+2053  skip:
+  - Automatically reset fs_game to "" if it was supplied by the user and is equal to com_basegame
+  - Fix problem where users could change values of CVAR_INIT variables after the call to Cvar_Get() via Com_StartupVariable()
+  - Move sound shutdown after client shutdown so VMs don't hold invalid sound handles in memory
+
+2054 skip:  Allow recursive VM entry for VM operations as well
+2055 skip:  orrect fix to (#5051), patch by Roughael
 
 2056 * Fix grenade rotation ends always the orientation (#5053), patch by Eugene C.
 2057 Get rid of redundancy
+2058 skip:  Fix ipv6 server query
+2059 skip:  Add forced VM unloading to Com_Quit_f
 
-2060 skip (done)
+
+2060 skip (done):  Make sound fallback behaviour for music streams less verbose
+
 2061 Make g_doWarmup archived cvar
-2062 skip
+2062 skip:  Fix opStack size for vm_x86.c.  Change opStack alignment to 16 for vm_x86_64.c
 2063 All patches by Zack Middleton:
      - Bug 5057  - Two weapon number range checks allows invalid number
      - Bug 5058  - Railgun explosion cannot be colorized
      - Bug 5059  - Client's railgun does not glow in third person and mirror
      - Bug 5060  - Warning in RAVENMD4 R_GetAnimTag cross compiling with amd64-mingw32
-2064 done
+
+2064 skip (done):  More color fixes for railgun
+
 2065 - Add better protection against DoSing connecting users from connecting
      - Have Com_sprintf return string length
      - add STR_LEN macro for static strings
 2066 Add fixes to ui menu by Ensiform and DevHC (#5062)
 2067 Make naming a bit more foolproof for new macro
-2068 skip  (Fix indentation)
+2068 skip:  Fix indentation
 2069 Bug 5067 - Remove references to unused teamtournament gametype. Toggle areaportal on mover ents where due is needed, patch by Ensiform
-2070 skip (plasma explosion is distracting)
+2070 skip (plasma explosion is distracting):  Bug 5066 - Plasmagun and BFG don't play the explosion when they hit players, patch by Ensiform
 2071 Bug 5069 - Remove unused variable console_color, by uZu
 
 
@@ -664,20 +702,22 @@ when hard-linking renderers, put the old renderer (not the new one) into the "io
 2367 Fix function prototype for Info_RemoveKey_Big. Pointed out by Ensiform.
 2368 In q3_ui if uis.demoversion is set, hide "Team Arena" and "Mods" in main menu. (They aren't shown in id's q3a demo and use to be drawn under demo message).
 2369 Add length check here as well, thanks Ensiform
-2370
-2371
-2372
-2373
-2374
-2375
-2376
-2377
-2378
-2379 check
-2380 check voip
-2381 check voip
-2382
-2383
+2370 skip (rend2):  #5808 - Include and use .glsl in source (rend2)
+2371 skip (rend2):  Oops, fix line endings in new files in previous commit
+2372 skip (rend2):  #5812 - Use refdef's coordinates when drawing to screen shadow fbo, and separate depth texture and screen texture coordinates in glsl shaders.
+2373 skip (rend2):  From /dev/humancontroller: Typo.
+2374 skip (rend2):  Include Rend2 renderer in MacOSX bundle.  Include OpenGL1 and Rend2 renderers in MacOSX UB
+2375 skip (rend2):  Include Rend2 renderer in NSIS installer.
+2376 skip (rend2):  Include OpenGL1 and Rend2 renderers in Loki Setup Installer.
+2377 skip (rend2):  Have NSIS uninstaller delete rend2.
+2378 skip (rend2):  Split light sample into direct and ambient parts when using deluxemaps or per-vertex light vectors.  Fixes #5813.
+2379 skip check voip:  Fix writting voip data in demos (broke in r2102).
+2380 skip check voip:  Fix server ignoring client move commands if voip data is included.
+2381 skip check voip:  Allow changing cl_voip without restarting.  Fix assert failing in CL_ParseVoip() while flipping cl_voip off and on.
+2382 skip (rend2):  Only declare var_SampleToView in lightall shader when it is actually used.
+2383 skip check:  Fix a couple files not ending with a newline.
+
+
 2384 Fix clients being able to reset their player state and respawn using donedl.
 2385 Fix passing arg9 (qvm only), arg10, and arg11 to vmMain for native libs and non-i386 compiled or interpated qvms. (Currently they aren't use in vmMain in game, cgame, or ui.)
 Fix passing args[11] to args[15] from vm to engine on ppc64 and sparc64. Some of the args are used by game bot prediction syscalls. May have been causing bugs. Note: This was fixed for x86_64 in r2163.
@@ -2044,3 +2084,91 @@ Remove unnecessary localhost check from reconnect command.
 2017-04-20-02 Delete NotToDo
 
 2017-04-28-01 skip (rend2):  Add vao cache for static surfaces
+
+2017-05-23-01 skip (still have):  Remove libspeex from README
+2017-05-23-02 skip (still using):  Remove unused libspeex
+2017-05-23-03 skip (no libogg):  Update libogg from 1.3.1 to 1.3.2
+2017-05-23-04 skip (no libogg):  Rename (already updated) libogg-1.3.1 to libogg-1.3.2
+2017-05-23-05 skip (no libvorbis):  Update libvorbis from 1.3.4 to 1.3.5
+2017-05-23-06 skip (no libvorbis):  Rename (already updated) libvorbis-1.3.4 to libvorbis-1.3.5
+2017-05-23-07 skip (no opus):  Update opus from 1.1 to 1.1.4
+2017-05-23-08 skip (no opus):  Rename (already updated) opus-1.1 to opus-1.1.4
+2017-05-23-09 skip (no opusfile):  Update opusfile 0.5 to 0.8
+2017-05-23-10 skip (no opusfile):  Rename (already updated) opusfile-0.5 to opusfile-0.8
+
+2017-05-24-01 Fix compiling when KEY_WOW64_32KEY is missing from system headers
+2017-05-24-02 skip (partial dll loading different):  Don't load libraries with non-standard file extensions
+2017-05-24-03 skip (dll loading):  Check for truncated paths in Sys_LoadDll
+2017-05-24-04 Merge pull request #270 from mickael9/unused-warning  Don't include (mission)pak_checksums in standalone build
+2017-05-24-05 Save connect and playdemo argument before calling CL_Disconnect()
+2017-05-24-06 Merge pull request #198 from UniQP/deadvariable Remove dead variables
+2017-05-24-07 Merge pull request #199 from UniQP/typos Fix some typos in comments
+2017-05-24-08 Merge pull request #254 from WolfWings/patch-1 Redundant #ifndef MISSIONPACK block
+2017-05-24-09 Merge pull request #256 from WolfWings/patch-4 ...too much MISSIONPACK ifdeffery.
+2017-05-24-10 skip (mac os x build):  Fix compiling Mac OS 10.5 Universal App Bundle
+
+2017-05-25-01 skip (qvm):  Allow unaligned load/store in QVM interpreter/x86 compiler
+2017-05-25-02 skip (previous qvm):  Fix comment
+2017-05-25-03 skip (autoupdate):  Initial shot at writing an ioquake3 autoupdater.
+2017-05-25-04 skip (autoupdate):  autoupdater should build with $(CC), not $(TOOLS_CC), in Makefile.
+2017-05-25-05 skip (autoupdate):  Removed extraneous '\' in Makefile in autoupdater source file list.
+
+2017-05-26-01 skip (dll loading):  Fix dllHandle possibly being uninitialized in Sys_LoadDll
+
+2017-05-29-01 skip (voip not updated yet):  Fix compiling debug code for writing VoIP data
+2017-05-29-02 Don't repeat alt+enter key event
+
+2017-05-30-01 skip (autoupdate):  Fixed -Wstrict-prototypes warning.
+2017-05-30-02 skip (autoupdate):  Fixed failure to link libcurl on some platforms.
+2017-05-30-03 skip (autoupdate):  Cleanup in failures a little better.
+2017-05-30-04 Refresh master server address cache every 24 hours
+2017-05-30-05 skip (autoupdate):  Don't link directly to libcurl.
+2017-05-30-06 skip (autoupdate):  Don't fclose(NULL) if a file doesn't exist.
+
+2017-05-31-01 skip (autoupdate):  Initial Windows autoupdater support: the ioq3 internal bits.
+2017-05-31-02 skip (autoupdate):  Fix tabs vs spaces.
+2017-05-31-03 skip (autoupdate):  Move the autoupdater launcher into its own public domain source file.
+2017-05-31-04 skip (autoupdate):  Fixed up some types in sha256.*
+
+2017-06-01-01 skip (autoupdate):  ioquake3 calls this arch "x86" and not "i386".
+2017-06-01-02 skip (autoupdate):  Fully initialize ManifestItems (rollback, etc, was uninitialized befo...
+2017-06-01-03 Make server browser default to Internet
+2017-06-01-04 Automatically get initial Internet servers in Team Arena UI
+2017-06-01-05 Replace constant value with UIAS_GLOBAL1
+2017-06-01-06 Make Team Arena server list sub-sort clients by max clients
+2017-06-01-07 Fix filtering favorite servers in Team Arena UI
+2017-06-01-08 Fix favorite servers player count message in Team Arena UI
+2017-06-01-09 Fix levelshot displayed in Team Arena server browser
+2017-06-01-10 Fix hitch when opening Team Arena find friend menu
+
+2017-06-02-01 skip (autoupdate):  Working Windows port of the autoupdater!
+2017-06-02-02 skip (autoupdate):  Use stdint.h on Visual C if >= Visual Studio 2010.
+2017-06-02-03 skip (autoupdate):  Don't fail if the game process went away before we were ready to wait...
+2017-06-02-04 skip (autoupdate):  Fixed linking on things that need -ldl, and compiler warnings.
+2017-06-02-05 skip (autoupdate):  Disable the autoupdater; enable only if intentional, like for officia...
+2017-06-02-06 skip (autoupdate):  Fixed comment typo: s/until/under
+2017-06-02-07 Fix joining team when starting local team play server
+2017-06-02-08 Make Team Arena win logic handle more game types/blue team
+2017-06-02-09 Fix spawn/freed entity logic (specifically harvester skulls)
+2017-06-02-10 Fix "brought in 1 skulls" Harvester message
+2017-06-02-11 Enable tourney scoreboard in Team Arena
+2017-06-02-12 skip (done):  Draw disconnect icon over lagometer in Team Arena too
+
+2017-06-03-01 skip (autoupdate):  Merge pull request #290 from rcgordon/autoupdater
+2017-06-03-02 skip (autoupdate):  autoupdater: Fixed up GCC/clang printf function attribute.
+2017-06-03-03 skip (rend2):  Remove unneeded code from OpenGL2's RB_RenderDrawSurfList
+2017-06-03-04 Only auto update empty Team Arena internet server cache
+2017-06-03-05 skip (partial, mouse wheel already acts like arrow up/down, added to ui/ui_shared.c with this patch)  Add mouse wheel support to UI list boxes
+2017-06-03-06 skip (autoupdate):  Initial add of rsa_tools.
+
+2017-06-04-01 skip (autoupdate):  Verify libTom source archives aren't tampered with.
+2017-06-04-02 skip (autoupdate):  Wire up libTom stuff to build system.
+2017-06-04-03 skip (autoupdate):  Replace sha256.c with libTomCrypt equivalent, since we'll be using it...
+2017-06-04-04 skip (autoupdate):  Autoupdater now checks RSA digital signature for manifest.
+2017-06-04-05 skip (autoupdate):  Updated autoupdater-readme.txt with manifest signing details.
+2017-06-04-06 skip (autoupdate):  build-rsa-tools.sh now works on Linux.
+2017-06-04-07 skip (autoupdate):  Added .gitignore for rsa_tools directory.
+2017-06-04-08 skip (autoupdate):  Windows support for autoupdater manifest signatures.
+2017-06-04-09 skip (autoupdate):  Add a log message if manifest is valid.
+2017-06-04-10 skip (autoupdate):  Use "x86_64" and not "x86-64" like everything else in ioq3.
+2017-06-04-11 skip (autoupdate):  Removed unnecessary trailing backslash.

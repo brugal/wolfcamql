@@ -109,7 +109,8 @@ static void AxisToAngles( const vec3_t axis[3], vec3_t angles ) {
 	angles[ROLL] = roll;
 }
 
-
+// not used
+#if 0
 static qboolean ID_INLINE BoxTraceTestResult( int axis, float dist, const vec3_t start, const vec3_t forward, const vec3_t mins, const vec3_t maxs, vec3_t result ) {
 	result[0] = start[0] + forward[0] * dist;
 	result[1] = start[1] + forward[1] * dist;
@@ -123,7 +124,10 @@ static qboolean ID_INLINE BoxTraceTestResult( int axis, float dist, const vec3_t
 		return qfalse;
 	return qtrue;
 }
+#endif
 
+// not used
+#if 0
 static qboolean ID_INLINE BoxTraceTestSides( int axis, const vec3_t start, const vec3_t forward, const vec3_t mins, const vec3_t maxs, vec3_t result ) {
 	if (forward[axis] > 0 && start[axis] <= mins[axis]) {
 		float dist = ( mins[axis] - start[axis] ) / forward[axis];
@@ -137,6 +141,7 @@ static qboolean ID_INLINE BoxTraceTestSides( int axis, const vec3_t start, const
 	}
 	return qfalse;
 }
+#endif
 
 // not used
 #if 0

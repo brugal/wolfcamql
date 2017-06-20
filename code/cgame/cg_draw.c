@@ -6175,6 +6175,9 @@ static void CG_DrawDisconnect( void ) {
 	usercmd_t	cmd;
 	const char		*s;
 	float		w;  // bk010215 - FIXME char message[1024];
+	float scale;
+	int align;
+	int picSize;
 
 	// draw the phone jack if we are completely past our buffers
 	cmdNum = trap_GetCurrentCmdNumber() - CMD_BACKUP + 1;
@@ -6211,22 +6214,21 @@ static void CG_DrawDisconnect( void ) {
 		return;
 	}
 
-	x = 640 - 48;
-	y = 480 - 48;
+	x = cg_lagometerX.value;
+	y = cg_lagometerY.value;
 
-	if (cg_qlhud.integer) {  //  &&  !wolfcam_following) {
-		y = 336;
-	}
-
-	if (cg_lagometerX.string != '\0') {
-		x = cg_lagometerX.value;
-	}
-	if (cg_lagometerY.string != '\0') {
-		y = cg_lagometerY.value;
-	}
 	QLWideScreen = cg_lagometerWideScreen.integer;
 
-	CG_DrawPic( x, y, 48, 48, trap_R_RegisterShader("disconnected"));
+	align = cg_lagometerAlign.integer;
+	scale = cg_lagometerScale.value;
+	picSize = 48.0 * scale;
+	if (align == 1) {
+		x -= picSize / 2;
+	} else if (align == 2) {
+		x -= picSize;
+	}
+
+	CG_DrawPic(x, y, picSize, picSize, trap_R_RegisterShader("disconnected"));
 }
 
 
@@ -10560,14 +10562,6 @@ static void CG_Draw2D( void ) {
 	if (cg.scoreBoardShowing) {
 		CG_DrawScoreboardMenuCursor();
 	}
-}
-
-
-static void CG_DrawTourneyScoreboard(void) {
-#ifdef MISSIONPACK
-#else
-	CG_DrawOldTourneyScoreboard();
-#endif
 }
 
 

@@ -234,8 +234,10 @@ typedef struct {
 	int			nextHeartbeatTime;
 	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
 	netadr_t	redirectAddress;			// for rcon return messages
-
+#ifndef STANDALONE
 	netadr_t	authorizeAddress;			// for rcon return messages
+#endif
+	int			masterResolveTime[MAX_MASTER_SERVERS]; // next svs.time that server should do dns lookup for master server
 } serverStatic_t;
 
 #define SERVER_MAXBANS	1024
@@ -254,8 +256,6 @@ typedef struct
 extern	serverStatic_t	svs;				// persistant server info across maps
 extern	server_t		sv;					// cleared each map
 extern	vm_t			*gvm;				// game virtual machine
-
-#define	MAX_MASTER_SERVERS	5
 
 extern	cvar_t	*sv_fps;
 extern	cvar_t	*sv_timeout;

@@ -15,6 +15,7 @@ em92 (Eugene Molotov):
   * bug fix:  freecam spec mode shows own corpse in 'Attack and Defend' / CTFS
   * bug fix:  don't draw sprites for dead players
   * work around for ql/minqlx bug not updating player config strings correctly
+  * bug fix:  'out of ammo' sound played when player dies
 
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program
 KittenIgnition:  helping others, ideas and suggestions, beta testing

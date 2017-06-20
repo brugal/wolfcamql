@@ -781,7 +781,7 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us);
 void CL_WriteDemoMessage ( msg_t *msg, int headerBytes );
 
 void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, int serverMessageSequence, qboolean justPeek );
-
+void CL_ParseVoip (msg_t *msg, qboolean justPeek);
 qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot);
 void CL_Pause_f (void);
 void CL_AddAt (int serverTime, const char *clockTime, const char *command);

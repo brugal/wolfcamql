@@ -12,7 +12,7 @@
 #define YYPTR char *
 #endif
 #ifndef lint
-YYCONST static char yysccsid[] = "@(#)yaccpar	1.8 (Berkeley +Cygnus.28) 01/20/91";
+__attribute__((unused)) YYCONST static char yysccsid[] = "@(#)yaccpar	1.8 (Berkeley +Cygnus.28) 01/20/91";
 #endif
 #define YYBYACC 1
 #ifndef YYDONT_INCLUDE_STDIO

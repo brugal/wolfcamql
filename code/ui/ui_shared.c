@@ -1683,10 +1683,10 @@ static void Menu_TransitionItemByName(menuDef_t *menu, const char *p, rectDef_t 
       item->window.offsetTime = time;
 			memcpy(&item->window.rectClient, &rectFrom, sizeof(rectDef_t));
 			memcpy(&item->window.rectEffects, &rectTo, sizeof(rectDef_t));
-			item->window.rectEffects2.x = abs(rectTo.x - rectFrom.x) / amt;
-			item->window.rectEffects2.y = abs(rectTo.y - rectFrom.y) / amt;
-			item->window.rectEffects2.w = abs(rectTo.w - rectFrom.w) / amt;
-			item->window.rectEffects2.h = abs(rectTo.h - rectFrom.h) / amt;
+			item->window.rectEffects2.x = Q_fabs(rectTo.x - rectFrom.x) / amt;
+			item->window.rectEffects2.y = Q_fabs(rectTo.y - rectFrom.y) / amt;
+			item->window.rectEffects2.w = Q_fabs(rectTo.w - rectFrom.w) / amt;
+			item->window.rectEffects2.h = Q_fabs(rectTo.h - rectFrom.h) / amt;
       Item_UpdatePosition(item);
     }
   }
@@ -2412,7 +2412,7 @@ static qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, 
 		}
 		else {
 			viewmax = (item->window.rect.h / listPtr->elementHeight);
-			if ( key == K_UPARROW || key == K_KP_UPARROW ) 
+			if ( key == K_UPARROW || key == K_KP_UPARROW || K_MWHEELUP )
 			{
 				if (!listPtr->notselectable) {
 					listPtr->cursorPos--;
@@ -2435,7 +2435,7 @@ static qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, 
 				}
 				return qtrue;
 			}
-			if ( key == K_DOWNARROW || key == K_KP_DOWNARROW ) 
+			if ( key == K_DOWNARROW || key == K_KP_DOWNARROW || key == K_MWHEELDOWN )
 			{
 				if (!listPtr->notselectable) {
 					listPtr->cursorPos++;
@@ -4185,9 +4185,17 @@ static void Item_Slider_Paint(itemDef_t *item) {
 	menuDef_t *parent = (menuDef_t*)item->parent;
 	rectDef_t menuRect;
 
-	if (item->parent) {
-		menuRect = ((menuDef_t *)item->parent)->window.rect;
+	if (!item) {
+		Com_Printf("^1Item_Slider_Paint item == NULL\n");
+		return;
 	}
+
+	if (item->parent == NULL) {
+		Com_Printf("^1Item_Slider_Paint item->parent == NULL\n");
+		return;
+	}
+
+	menuRect = ((menuDef_t *)item->parent)->window.rect;
 	//value = (item->cvar) ? DC->getCVarValue(item->cvar) : 0;
 
 	if (item->window.flags & WINDOW_HASFOCUS) {
@@ -8107,6 +8115,7 @@ void Menu_PaintAll(void) {
 	if (debugMode) {
 		vec4_t v = {1, 1, 1, 1};
 		rectDef_t r;
+		memset(&r, 0, sizeof(rectDef_t));
 		DC->drawText(5, 25, .5, v, va("fps: %f", DC->FPS), 0, 0, 0, 0, 0, r);
 	}
 }

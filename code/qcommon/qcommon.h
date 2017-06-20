@@ -1068,6 +1068,8 @@ void    * QDECL Sys_LoadDll( const char *name, char *fqpath, intptr_t (QDECL **e
 				  intptr_t (QDECL *systemcalls)(intptr_t, ...) );
 void	Sys_UnloadDll( void *dllHandle );
 
+qboolean Sys_DllExtension( const char *name );
+
 char	*Sys_GetCurrentUser( void );
 
 void	QDECL Sys_Error( const char *error, ...) __attribute__ ((noreturn, format (printf, 1, 2)));

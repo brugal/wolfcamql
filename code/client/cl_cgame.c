@@ -277,7 +277,6 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	int				i, count;
 	int origPosition;
 	int cmd;
-	//char *s;
 	char buffer[16];
 	qboolean success = qfalse;
 	int r;
@@ -288,6 +287,8 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	int parseEntitiesNumOrig;
 	int currentSnapNum;
 	int serverMessageSequence;
+	int cmdCount;
+	qboolean snapshotInMessage;
 
 	clSnap = &csn;
 
@@ -313,12 +314,15 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 
 	parseEntitiesNumOrig = cl.parseEntitiesNum;
 	lastPacketTimeOrig = clc.lastPacketTime;
+
 	// CL_ReadDemoMessage()
 	origPosition = FS_FTell(clc.demoReadFile);
 
 	currentSnapNum = cl.snap.messageNum;
 
-	for (j = 0;  j < snapshotNumber - currentSnapNum; j++) {
+	for (j = 0;  j < snapshotNumber - currentSnapNum;  ) {
+		success = qfalse;
+		snapshotInMessage = qfalse;
 		// get the sequence number
 		memset(buffer, 0, sizeof(buffer));
 		r = FS_Read( &buffer, 4, clc.demoReadFile);
@@ -330,6 +334,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 			return qfalse;
 		}
 		serverMessageSequence = LittleLong(*((int *)buffer));
+		//Com_Printf("seq %d (%d)\n", serverMessageSequence, j);
 
 		// init the message
 		memset(&buf, 0, sizeof(msg_t));
@@ -346,7 +351,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 		}
 		buf.cursize = LittleLong( buf.cursize );
 		if ( buf.cursize == -1 ) {
-			Com_Printf("CL_PeekSnapshot buf.cursize == -1\n");
+			//Com_Printf("CL_PeekSnapshot buf.cursize == -1\n");
 			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
 			clc.lastPacketTime = lastPacketTimeOrig;
 			cl.parseEntitiesNum = parseEntitiesNumOrig;
@@ -357,7 +362,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 		}
 		r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
 		if ( r != buf.cursize ) {
-			Com_Printf( "CL_PeekSnapshot Demo file was truncated.\n");
+			Com_Printf("CL_PeekSnapshot Demo file was truncated.\n");
 			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
 			clc.lastPacketTime = lastPacketTimeOrig;
 			cl.parseEntitiesNum = parseEntitiesNumOrig;
@@ -366,6 +371,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 
 		clc.lastPacketTime = cls.realtime;
 		buf.readcount = 0;
+
 		//  CL_ParseServerMessage( &buf );
 		MSG_Bitstream(&buf);
 		// get the reliable sequence acknowledge number
@@ -375,7 +381,9 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 		//
 		// parse the message
 		//
+		cmdCount = 0;
 		while ( 1 ) {
+			//cmdCount++;
 			if ( buf.readcount > buf.cursize ) {
 				Com_Error (ERR_DROP,"CL_PeekSnapshot: read past end of server message");
 				break;
@@ -395,10 +403,11 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 				}
 			}
 
+			//Com_Printf("cmd: %d\n", cmd);
+
 			if (cmd == svc_EOF) {
 				break;
 			}
-			success = qfalse;
 
 			switch (cmd) {
 			default:
@@ -406,12 +415,15 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 				break;
 			case svc_nop:
 				break;
-			case svc_serverCommand:
+			case svc_serverCommand: {
+				//char *s;
 				//CL_ParseCommandString( msg );
 				MSG_ReadLong(&buf);  // seq
 				//s = MSG_ReadString(&buf);
 				MSG_ReadString(&buf);
+				//Com_Printf("^2cs: '%s'\n", s);
 				break;
+			}
 			case svc_gamestate:
 				//CL_ParseGamestate( msg );
 				//MSG_ReadLong(msg);  // clc.serverCommandSequence
@@ -419,69 +431,80 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 				goto alldone;
 				break;
 			case svc_snapshot:
+				snapshotInMessage = qtrue;
 				CL_ParseSnapshot(&buf, &csn, serverMessageSequence, qtrue);
+				//Com_Printf(" -- snapshot seq:%d  cmdCount:%d  loop:%d\n", serverMessageSequence, cmdCount, j);
 				if (csn.valid) {
 					success = qtrue;
+				} else {
+					//Com_Printf("bad snap\n");
 				}
+				j++;
 				break;
 			case svc_download:
 				//CL_ParseDownload( msg );
 				Com_Printf("FIXME CL_PeekSnapshot: download\n");
 				goto alldone;
 				break;
-			case svc_voip:
 #ifdef USE_VOIP
-				//CL_ParseVoip( msg );
-				Com_Printf("FIXME CL_PeekSnapshot: voip\n");
-				goto alldone;
-#endif
+			case svc_voip:
+				CL_ParseVoip(&buf, qtrue);
+				//Com_Printf("voip... seq:%d  cmdCount:%d  loop:%d\n", serverMessageSequence, cmdCount, j);
 				break;
+#endif
 			}
-		}  // while (1)
+		}  // while (1)  reading commands
 
  alldone:
 
-	if (!success) {
-		Com_Printf("^1CL_PeekSnapshot failed\n");
-		FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
-		clc.lastPacketTime = lastPacketTimeOrig;
-		cl.parseEntitiesNum = parseEntitiesNumOrig;
-		return success;
-	}
+		if (!snapshotInMessage) {
+			// could be a fake voip message written to demo
+			continue;
+		}
 
-	//FIXME other ents not supported yet
+		//Com_Printf("^3 total cmds: %d\n", cmdCount);
 
-	// if the entities in the frame have fallen out of their
-	// circular buffer, we can't return it
-	if ( cl.parseEntitiesNum - clSnap->parseEntitiesNum >= MAX_PARSE_ENTITIES ) {
-		Com_Printf("%s cl.parseEntitiesNum - clSnap->parseEntitiesNum >= MAX_PARSE_ENTITIES", __FUNCTION__);
-		FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
-		clc.lastPacketTime = lastPacketTimeOrig;
-		cl.parseEntitiesNum = parseEntitiesNumOrig;
-		//return qfalse;
-		return qtrue;  //FIXME if you fix other ents
-	}
+		if (!success) {
+			Com_Printf("^1CL_PeekSnapshot failed seq:%d  cmdCount:%d  loop:%d\n", serverMessageSequence, cmdCount, j);
+			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+			clc.lastPacketTime = lastPacketTimeOrig;
+			cl.parseEntitiesNum = parseEntitiesNumOrig;
+			return qfalse;
+		}
 
-	// write the snapshot
-	snapshot->messageNum = serverMessageSequence;
-	//Com_Printf("peek got %d\n", snapshot->messageNum);
-	snapshot->snapFlags = clSnap->snapFlags;
-	snapshot->serverCommandSequence = clSnap->serverCommandNum;
-	snapshot->ping = clSnap->ping;
-	snapshot->serverTime = clSnap->serverTime;
-	Com_Memcpy( snapshot->areamask, clSnap->areamask, sizeof( snapshot->areamask ) );
-	snapshot->ps = clSnap->ps;
-	count = clSnap->numEntities;
-	if ( count > MAX_ENTITIES_IN_SNAPSHOT ) {
-		//Com_DPrintf( "CL_PeekSnapshot: truncated %i entities to %i\n", count, MAX_ENTITIES_IN_SNAPSHOT );
-		Com_Printf( "CL_PeekSnapshot: truncated %i entities to %i\n", count, MAX_ENTITIES_IN_SNAPSHOT );
-		count = MAX_ENTITIES_IN_SNAPSHOT;
-	}
-	snapshot->numEntities = count;
-	for ( i = 0 ; i < count ; i++ ) {
-		snapshot->entities[i] =
-			cl.parseEntities[ ( clSnap->parseEntitiesNum + i ) & (MAX_PARSE_ENTITIES-1) ];
-	}
+		//FIXME other ents not supported yet
+
+		// if the entities in the frame have fallen out of their
+		// circular buffer, we can't return it
+		if ( cl.parseEntitiesNum - clSnap->parseEntitiesNum >= MAX_PARSE_ENTITIES ) {
+			Com_Printf("%s cl.parseEntitiesNum - clSnap->parseEntitiesNum >= MAX_PARSE_ENTITIES", __FUNCTION__);
+			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+			clc.lastPacketTime = lastPacketTimeOrig;
+			cl.parseEntitiesNum = parseEntitiesNumOrig;
+			//return qfalse;
+			return qtrue;  //FIXME if you fix other ents
+		}
+
+		// write the snapshot
+		snapshot->messageNum = serverMessageSequence;
+		//Com_Printf("peek got %d\n", snapshot->messageNum);
+		snapshot->snapFlags = clSnap->snapFlags;
+		snapshot->serverCommandSequence = clSnap->serverCommandNum;
+		snapshot->ping = clSnap->ping;
+		snapshot->serverTime = clSnap->serverTime;
+		Com_Memcpy( snapshot->areamask, clSnap->areamask, sizeof( snapshot->areamask ) );
+		snapshot->ps = clSnap->ps;
+		count = clSnap->numEntities;
+		if ( count > MAX_ENTITIES_IN_SNAPSHOT ) {
+			//Com_DPrintf( "CL_PeekSnapshot: truncated %i entities to %i\n", count, MAX_ENTITIES_IN_SNAPSHOT );
+			Com_Printf( "CL_PeekSnapshot: truncated %i entities to %i\n", count, MAX_ENTITIES_IN_SNAPSHOT );
+			count = MAX_ENTITIES_IN_SNAPSHOT;
+		}
+		snapshot->numEntities = count;
+		for ( i = 0 ; i < count ; i++ ) {
+			snapshot->entities[i] =
+				cl.parseEntities[ ( clSnap->parseEntitiesNum + i ) & (MAX_PARSE_ENTITIES-1) ];
+		}
 
 	}
 

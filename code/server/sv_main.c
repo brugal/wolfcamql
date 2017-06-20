@@ -236,6 +236,7 @@ but not on every player enter or exit.
 ================
 */
 #define	HEARTBEAT_MSEC	300*1000
+#define	MASTERDNS_MSEC	24*60*60*1000
 #define	HEARTBEAT_GAME	"QuakeArena-1"
 void SV_MasterHeartbeat( void ) {
 	static netadr_t	adr[MAX_MASTER_SERVERS][2]; // [2] for v4 and v6 address for the same address string.
@@ -261,13 +262,13 @@ void SV_MasterHeartbeat( void ) {
 		if(!sv_master[i]->string[0])
 			continue;
 
-		// see if we haven't already resolved the name
-		// resolving usually causes hitches on win95, so only
-		// do it when needed
-		if(sv_master[i]->modified || (adr[i][0].type == NA_BAD && adr[i][1].type == NA_BAD))
+		// see if we haven't already resolved the name or if it's been over 24 hours
+		// resolving usually causes hitches on win95, so only do it when needed
+		if (sv_master[i]->modified || svs.time > svs.masterResolveTime[i])
 		{
 			sv_master[i]->modified = qfalse;
-			
+			svs.masterResolveTime[i] = svs.time + MASTERDNS_MSEC;
+
 			if(netenabled & NET_ENABLEV4)
 			{
 				Com_Printf("Resolving %s (IPv4)\n", sv_master[i]->string);
@@ -304,11 +305,6 @@ void SV_MasterHeartbeat( void ) {
 
 			if(adr[i][0].type == NA_BAD && adr[i][1].type == NA_BAD)
 			{
-				// if the address failed to resolve, clear it
-				// so we don't take repeated dns hits
-				Com_Printf("Couldn't resolve address: %s\n", sv_master[i]->string);
-				Cvar_Set(sv_master[i]->name, "");
-				sv_master[i]->modified = qfalse;
 				continue;
 			}
 		}
