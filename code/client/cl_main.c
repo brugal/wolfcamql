@@ -288,7 +288,7 @@ void CL_Voip_f( void )
 		reason = "Not connected to a server";
 	else if (!clc.speexInitialized)
 		reason = "Speex not initialized";
-	else if (!cl_connectedToVoipServer)
+	else if (!clc.voipEnabled)
 		reason = "Server doesn't support VoIP";
 	else if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER || Cvar_VariableValue("ui_singlePlayerActive"))
 		reason = "running in single-player mode";
@@ -384,7 +384,7 @@ void CL_CaptureVoip(void)
 		qboolean dontCapture = qfalse;
 		if (cls.state != CA_ACTIVE)
 			dontCapture = qtrue;  // not connected to a server.
-		else if (!cl_connectedToVoipServer)
+		else if (!clc.voipEnabled)
 			dontCapture = qtrue;  // server doesn't support VoIP.
 		else if (clc.demoplaying)
 			dontCapture = qtrue;  // playing back a demo.
@@ -682,14 +682,14 @@ void CL_Record_f( void ) {
 	if ( Cmd_Argc() == 2 ) {
 		s = Cmd_Argv(1);
 		Q_strncpyz( demoName, s, sizeof( demoName ) );
-		Com_sprintf (name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, com_protocol->integer );
+		Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, clc.realProtocol);
 	} else {
 		int		number;
 
 		// scan for a free demo name
 		for ( number = 0 ; number <= 9999 ; number++ ) {
 			CL_DemoFilename( number, demoName, sizeof( demoName ) );
-			Com_sprintf (name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, com_protocol->integer );
+			Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, clc.realProtocol);
 
 			if (!FS_FileExists(name))
 				break;	// file doesn't exist
@@ -916,10 +916,15 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 	MSG_WriteLong(&outMsg, r);
 
 	while (1) {
+		qboolean dataFollowsEOF = qfalse;
+
 		cmd = MSG_ReadByte(inMsg);
 		MSG_WriteByte(&outMsg, cmd);
 
+		// See if this is an extension command after the EOF, which means we
+		// have speex voip data.
 		if (cmd == svc_EOF  &&  MSG_LookaheadByte(inMsg) == svc_extension) {
+			dataFollowsEOF = qtrue;
 			r = MSG_ReadByte(inMsg);
 			MSG_WriteByte(&outMsg, r);
 
@@ -1052,41 +1057,69 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			Com_Printf("FIXME %s  download\n", __FUNCTION__);
 
 			break;
+		case svc_extension:  // libspeex voip protocol 70 or 71
+			if (dataFollowsEOF) {
+				// shouldn't happen
+				Com_Printf("^1%s unknown svc_extension\n", __FUNCTION__);
+				break;
+			} else {
+				// speex with protocol checking to determine if flags present
+ 				// fall through and check 'cmd == svc_extension' below
+			}
 		case svc_voip: {
-			const int sender = MSG_ReadShort(inMsg);
-			const int generation = MSG_ReadByte(inMsg);
-			const int sequence = MSG_ReadLong(inMsg);
-			const int frames = MSG_ReadByte(inMsg);
-			const int packetsize = MSG_ReadShort(inMsg);
-			char encoded[1024];
-			int bytesleft;
+			if (!dataFollowsEOF  &&  cmd == svc_voip) {  // opus voip
+				Com_Printf("^3%s FIXME voip opus\n", __FUNCTION__);
+			} else {  // speex
+				int sender;
+				int generation;
+				int sequence;
+				int frames;
+				int packetsize;
+				int flags = VOIP_DIRECT;
+				char encoded[1024];
+				int bytesleft;
 
-			//Com_Printf("^2%s  voip\n", __FUNCTION__);
+				//Com_Printf("^2%s  voip\n", __FUNCTION__);
 
-			MSG_WriteShort(&outMsg, sender);
-			MSG_WriteByte(&outMsg, generation);
-			MSG_WriteLong(&outMsg, sequence);
-			MSG_WriteByte(&outMsg, frames);
-			MSG_WriteShort(&outMsg, packetsize);
+				sender = MSG_ReadShort(inMsg);
+				generation = MSG_ReadByte(inMsg);
+				sequence = MSG_ReadLong(inMsg);
+				frames = MSG_ReadByte(inMsg);
+				packetsize = MSG_ReadShort(inMsg);
 
-			if (packetsize < 0) {
-				Com_Printf("^1%s voip invalid packetsize %d\n", __FUNCTION__, packetsize);
-				// skip this and the rest of the demo message
-				goto done;
-			}
-
-			bytesleft = packetsize;
-			while (bytesleft) {
-				int br = bytesleft;
-				if (br > sizeof(encoded)) {
-					br = sizeof(encoded);
+				if (!dataFollowsEOF  &&  cmd == svc_extension  &&  clc.realProtocol == 71) {
+					flags = MSG_ReadBits(inMsg, VOIP_FLAGCNT);
 				}
-				MSG_ReadData(inMsg, encoded, br);
-				MSG_WriteData(&outMsg, encoded, br);
-				bytesleft -= br;
-			}
 
-			break;
+				MSG_WriteShort(&outMsg, sender);
+				MSG_WriteByte(&outMsg, generation);
+				MSG_WriteLong(&outMsg, sequence);
+				MSG_WriteByte(&outMsg, frames);
+				MSG_WriteShort(&outMsg, packetsize);
+
+				if (!dataFollowsEOF  &&  cmd == svc_extension  &&  clc.realProtocol == 71) {
+					MSG_WriteShort(&outMsg, flags);
+				}
+
+				if (packetsize < 0) {
+					Com_Printf("^1%s voip invalid packetsize %d\n", __FUNCTION__, packetsize);
+					// skip this and the rest of the demo message
+					goto done;
+				}
+
+				bytesleft = packetsize;
+				while (bytesleft) {
+					int br = bytesleft;
+					if (br > sizeof(encoded)) {
+						br = sizeof(encoded);
+					}
+					MSG_ReadData(inMsg, encoded, br);
+					MSG_WriteData(&outMsg, encoded, br);
+					bytesleft -= br;
+				}
+
+				break;
+			}
 		}
 
 		}
@@ -1848,7 +1881,7 @@ static void parse_demo (void)
 	cl_connectedToPureServer = qfalse;
 #ifdef USE_VOIP
 	// not connected to voip server anymore.
-	cl_connectedToVoipServer = qfalse;
+	clc.voipEnabled = qfalse;
 #endif
 	//CL_UpdateGUID( NULL, 0 );
 	Con_Close();
@@ -2518,7 +2551,7 @@ void CL_Disconnect( qboolean showMainMenu ) {
 
 #ifdef USE_VOIP
 	// not connected to voip server anymore.
-	cl_connectedToVoipServer = qfalse;
+	clc.voipEnabled = qfalse;
 #endif
 
 	CL_UpdateGUID( NULL, 0 );
@@ -6399,7 +6432,7 @@ void CL_ShowIP_f(void) {
 
 /*
 =================
-bool CL_CDKeyValidate
+CL_CDKeyValidate
 =================
 */
 qboolean CL_CDKeyValidate( const char *key, const char *checksum ) {

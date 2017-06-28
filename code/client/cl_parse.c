@@ -50,7 +50,7 @@ static void Parse_Error (int code, const char *fmt, ...)
 	va_list argptr;
 	char errorMsg[MAX_PRINT_MSG];
 
-    va_start(argptr, fmt);
+	va_start(argptr, fmt);
 	Q_vsnprintf (errorMsg, sizeof(errorMsg), fmt, argptr);
 	va_end(argptr);
 
@@ -607,10 +607,6 @@ void CL_ParseSnapshot (msg_t *msg, clSnapshot_t *sn, int serverMessageSequence, 
 int cl_connectedToPureServer;
 int cl_connectedToCheatServer;
 
-#ifdef USE_VOIP
-int cl_connectedToVoipServer;
-#endif
-
 /*
 ==================
 CL_SystemInfoChanged
@@ -640,13 +636,18 @@ void CL_SystemInfoChanged( void ) {
 	}
 
 #ifdef USE_VOIP
-	// in the future, (val) will be a protocol version string, so only
-	//  accept explicitly 1, not generally non-zero.
-	s = Info_ValueForKey( systemInfo, "sv_voip" );
-	if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER || Cvar_VariableValue("ui_singlePlayerActive"))
-		cl_connectedToVoipServer = qfalse;
+#ifdef LEGACY_PROTOCOL
+	if(clc.compat)
+		clc.voipEnabled = qfalse;
 	else
-		cl_connectedToVoipServer = (atoi( s ) == 1);
+#endif
+	{
+		s = Info_ValueForKey( systemInfo, "sv_voip" );
+		if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER || Cvar_VariableValue("ui_singlePlayerActive"))
+			clc.voipEnabled = qfalse;
+		else
+			clc.voipEnabled = atoi(s);
+	}
 #endif
 
 	s = Info_ValueForKey( systemInfo, "sv_cheats" );
@@ -891,6 +892,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 
 				Com_Printf("^5real gamestate protocol %d\n", p);
 				Cvar_Set("real_protocol", value);
+				clc.realProtocol = p;
 
 				if (p >= 66  &&  p <= 71) {
 					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
@@ -915,6 +917,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 				if (p >= 66  &&  p <= 71) {
 					Com_Printf("^5real gamestate using com_protocol %d (%s)\n", PROTOCOL_Q3, value);
 					Cvar_Set("real_protocol", value);
+					clc.realProtocol = p;
 					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
 				}
 
@@ -928,7 +931,7 @@ void CL_ParseGamestate( msg_t *msg ) {
 			} else if (i == CS91_STEAM_WORKSHOP_IDS) {  //  &&  !di.testParse) {
 				int protocol;
 
-				protocol = Cvar_VariableIntegerValue("real_protocol");
+				protocol = clc.realProtocol;
 				if (protocol >= 91) {
 					if (!di.testParse) {
 						Com_Printf("^2workshop ids:  '%s'\n", s);
@@ -1169,30 +1172,95 @@ qboolean CL_ShouldIgnoreVoipSender(int sender)
 	return qfalse;
 }
 
+/*
+=====================
+CL_PlayVoip
+
+Play raw data
+=====================
+*/
+
+static void CL_PlayVoip(int sender, int samplecnt, const byte *data, int flags)
+{
+	if(flags & VOIP_DIRECT)
+	{
+			S_RawSamples(sender + 1, samplecnt, clc.speexSampleRate, 2, 1,
+						 data, clc.voipGain[sender], -1);
+	}
+
+	if(flags & VOIP_SPATIAL)
+	{
+			S_RawSamples(sender + MAX_CLIENTS + 1, samplecnt, clc.speexSampleRate, 2, 1,
+						 data, 1.0f, sender);
+	}
+}
+
 static void CL_ParseExtraVoip (demoFile_t *df, msg_t *msg)
 {
 	Com_Printf("FIXME CL_ParseExtraVoip\n");
 }
 
 /*
-=====================
-CL_ParseVoip
+  voip history:
 
-A VoIP message has been received from the server
+  ----
+  Original ioquake3 voip using protocol 68(?) and 69 with libspeex.  Voice data
+  transmitted as svc_EOF followed by svc_extension and then svc_voip.
+
+  Reference:  a844c94af116dec8602d82c4af29b9b93c66ccc2
+
+  ----
+  2011-07-13  ac30d86db01a43130d2c9ff6fe31d6135d8e2592
+  Still libspeex based but tied to protocol.  Protocol now 70.  Voice data
+  transimtted as just svc_extension (renamed to svc_voip in ioquake3) before
+  svc_EOF.
+
+  ----
+  2011-07-27  2349148cf1b8cc80ad3d907881e6c53c2248fa92
+  This bumps protocol to 71 and adds VOIP_FLAGCNT which breaks fakemsg writing
+  for own voip data in demos.
+
+  ----
+  2012-12-13  7786f95c066eb55411bcdca43cd14c4a1c776b2f
+  This fixes missing VOIP_FLAGCNT writing in fakemsg.
+
+  ----
+  2016-01-07  42dee17663cfc841fe6d0933f5c1dc10463e2dbd
+  Now uses opus for voip.  This now uses svc_voip (svc_voipOpus in ioquake3)
+  instead of svc_extension (svc_voipSpeex in ioquake3).
+
+*/
+
+/*
+=====================
+CL_ParseVoipSpeex
+
+A VoIP Speex message has been received from the server
 =====================
 */
-void CL_ParseVoip ( msg_t *msg, qboolean justPeek ) {
+void CL_ParseVoipSpeex (msg_t *msg, qboolean checkForFlags, qboolean justPeek)
+{
 	static short decoded[4096];  // !!! FIXME: don't hardcode.
-
-	const int sender = MSG_ReadShort(msg);
-	const int generation = MSG_ReadByte(msg);
-	const int sequence = MSG_ReadLong(msg);
-	const int frames = MSG_ReadByte(msg);
-	const int packetsize = MSG_ReadShort(msg);
 	char encoded[1024];
-	int seqdiff = sequence - clc.voipIncomingSequence[sender];
+	int sender;
+	int generation;
+	int sequence;
+	int frames;
+	int packetsize;
+	int flags = VOIP_DIRECT;
+	int seqdiff;
 	int written = 0;
 	int i;
+
+	sender = MSG_ReadShort(msg);
+	generation = MSG_ReadByte(msg);
+	sequence = MSG_ReadLong(msg);
+	frames = MSG_ReadByte(msg);
+	packetsize = MSG_ReadShort(msg);
+
+	if (checkForFlags  &&  clc.realProtocol == 71) {
+		flags = MSG_ReadBits(msg, VOIP_FLAGCNT);
+	}
 
 	Com_DPrintf("VoIP: %d-byte packet from client %d\n", packetsize, sender);
 
@@ -1233,6 +1301,8 @@ void CL_ParseVoip ( msg_t *msg, qboolean justPeek ) {
 	// !!! FIXME: make sure data is narrowband? Does decoder handle this?
 
 	Com_DPrintf("VoIP: packet accepted!\n");
+
+	seqdiff = sequence - clc.voipIncomingSequence[sender];
 
 	// This is a new "generation" ... a new recording started, reset the bits.
 	if (generation != clc.voipIncomingGeneration[sender]) {
@@ -1278,10 +1348,11 @@ void CL_ParseVoip ( msg_t *msg, qboolean justPeek ) {
 		if ((written + clc.speexFrameSize) * 2 > sizeof (decoded)) {
 			Com_DPrintf("VoIP: playback %d bytes, %d samples, %d frames\n",
 			            written * 2, written, i);
-			S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
-			             (const byte *) decoded, clc.voipGain[sender]);
-			Com_Printf("^3voip written size (shouldn't happen)\n");
+			//S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
+			//             (const byte *) decoded, clc.voipGain[sender]);
+			CL_PlayVoip(sender, written, (const byte *) decoded, flags);
 			written = 0;
+			Com_Printf("^3voip written size (shouldn't happen)\n");
 		}
 
 		speex_bits_read_from(&clc.speexDecoderBits[sender], encoded, len);
@@ -1306,9 +1377,9 @@ void CL_ParseVoip ( msg_t *msg, qboolean justPeek ) {
 	            written * 2, written, i);
 
 	if (written > 0) {
-		S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
-		             (const byte *) decoded, clc.voipGain[sender]);
-		//Com_Printf("^2  ... voip ...\n");
+		//S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
+		//             (const byte *) decoded, clc.voipGain[sender]);
+		CL_PlayVoip(sender, written, (const byte *) decoded, flags);
 	}
 
 	clc.voipIncomingSequence[sender] = sequence + frames;
@@ -1739,6 +1810,8 @@ void CL_ParseServerMessage( msg_t *msg ) {
 	// parse the message
 	//
 	while ( 1 ) {
+		qboolean dataFollowsEOF = qfalse;
+
 		if ( msg->readcount > msg->cursize ) {
 			Parse_Error (ERR_DROP,"CL_ParseServerMessage: read past end of server message");
 			return;
@@ -1747,13 +1820,12 @@ void CL_ParseServerMessage( msg_t *msg ) {
 		cmd = MSG_ReadByte( msg );
 
 		// See if this is an extension command after the EOF, which means we
-		//  got data that a legacy client should ignore.
+		// have speex voip data.
 		if ((cmd == svc_EOF) && (MSG_LookaheadByte( msg ) == svc_extension)) {
 			SHOWNET( msg, "EXTENSION" );
+			dataFollowsEOF = qtrue;
 			MSG_ReadByte( msg );  // throw the svc_extension byte away.
-			cmd = MSG_ReadByte( msg );  // something legacy clients can't do!
-			// sometimes you get a svc_extension at end of stream...dangling
-			//  bits in the huffman decoder giving a bogus value?
+			cmd = MSG_ReadByte( msg );
 			if (cmd == -1) {
 				cmd = svc_EOF;
 			}
@@ -1791,12 +1863,27 @@ void CL_ParseServerMessage( msg_t *msg ) {
 		case svc_download:
 			CL_ParseDownload( msg );
 			break;
-		case svc_voip:
 #ifdef USE_VOIP
-			CL_ParseVoip( msg, qfalse );
-#endif
-			//Com_Printf("net:  voip\n");
+		case svc_extension: {  // libspeex voip protocol 70 or 71
+			if (dataFollowsEOF) {
+				// shouldn't happen
+				Com_Printf("^1%s unknown svc_extension\n", __FUNCTION__);
+			} else {
+				// check protocol to see if it contains flags
+				CL_ParseVoipSpeex(msg, qtrue, qfalse);
+			}
 			break;
+		}
+		case svc_voip:
+			//Com_Printf("net:  voip\n");
+			if (dataFollowsEOF) {
+				// old speex without flags
+				CL_ParseVoipSpeex(msg, qfalse, qfalse);
+			} else {
+				Com_Printf("^3%s FIXME voip opus\n", __FUNCTION__);
+			}
+			break;
+#endif
 		}
 	}
 }
@@ -1883,6 +1970,7 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
 		case svc_download:
 			CL_ParseExtraDownload(df, msg);
 			break;
+		case svc_extension:  // libspeex voip protocol 70
 		case svc_voip:
 #ifdef USE_VOIP
 			CL_ParseExtraVoip(df, msg);

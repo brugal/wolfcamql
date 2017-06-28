@@ -2052,36 +2052,12 @@ No locals.
 * ioq3 dll loading
 * dieammo.dm_71  no falling or pain sound for EV_FALL_FAR  -- it's openal backend
 * ioq3-voip1.dm_71 illegible server message
-* voip mess:
-
-  old libspeex  (svc_extension)
-
-  2011-07-13  a844c94af116dec8602d82c4af29b9b93c66ccc2
-
-  protocol 68 and 69
-
- ====
-
-  libspeex  voip detection tied to protocol
-
-  2011-07-13  ac30d86db01a43130d2c9ff6fe31d6135d8e2592
-     this makes protocol 70
-
-  2011-07-27  2349148cf1b8cc80ad3d907881e6c53c2248fa92
-      this adds VOIP_FLAGCNT which breaks fakemsg for own voip data in demos
-      protocol incremented to 71
-
-  2012-12-13  7786f95c066eb55411bcdca43cd14c4a1c776b2f
-
-     Fix writting voip data in demos (broke in r2102).
-
-  2016-01-07  42dee17663cfc841fe6d0933f5c1dc10463e2dbd
-
-      Merge pull request #42 from zturtleman/opus_voip_2
-      Now uses opus for voip
-
 * voip and combined demo playback
 * voip allow voice messages in demo recording from demo -- what if you then record voice on top of that new demo with voip?
+* invis-demo-taker-24-00.dm_91 s_useOpenal 1  WARNING using default sound for keel gasp ... taunt
+* openal voip entity num support (ioquake3 has)  -- update openal
+* snddma voip entity num support
+* cpp make dependencies not working (splines.cpp -> util_list.h)
 
 
 ---------

@@ -335,18 +335,18 @@ endif
     CLIENT_CFLAGS += -DBUILD_FREETYPE -I/usr/include/freetype2 -I/usr/include/freetype2/freetype
   endif
 
-  OPTIMIZEVM = -DNQDEBUG -O3 -funroll-loops -fno-omit-frame-pointer
+  OPTIMIZEVM = -O3 -funroll-loops -fno-omit-frame-pointer
   OPTIMIZE += $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -DNQDEBUG -O3 -fno-omit-frame-pointer -funroll-loops \
+    OPTIMIZEVM = -O3 -fno-omit-frame-pointer -funroll-loops \
       -falign-loops=2 -falign-jumps=2 -falign-functions=2 \
       -fstrength-reduce -m64
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   else
   ifeq ($(ARCH),i386)
-    OPTIMIZEVM = -DNQDEBUG -O3 -march=i586 -fno-omit-frame-pointer \
+    OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer \
       -funroll-loops -falign-loops=2 -falign-jumps=2 \
       -falign-functions=2 -fstrength-reduce
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
@@ -447,7 +447,7 @@ ifeq ($(PLATFORM),darwin)
   endif
   HAVE_VM_COMPILED=true
   CLIENT_LIBS=
-  OPTIMIZEVM = -DNQDEBUG
+  OPTIMIZEVM=
 
   BASE_CFLAGS = -Wall
   CLIENT_CFLAGS =
@@ -605,14 +605,14 @@ ifdef MINGW
 
 
   ifeq ($(ARCH),x64)
-    OPTIMIZEVM = -DNQDEBUG -O3 -fno-omit-frame-pointer \
+    OPTIMIZEVM = -O3 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
       -fstrength-reduce -m64
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -DNQDEBUG -O3 -march=i586 -fno-omit-frame-pointer \
+    OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
       -fstrength-reduce -m32
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
@@ -694,7 +694,7 @@ ifeq ($(PLATFORM),freebsd)
   SERVER_CFLAGS =
   HAVE_VM_COMPILED = true
 
-  OPTIMIZEVM = -DNQDEBUG -funroll-loops -fno-omit-frame-pointer
+  OPTIMIZEVM = -funroll-loops -fno-omit-frame-pointer
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   SHLIBEXT=so
@@ -904,7 +904,7 @@ ifeq ($(PLATFORM),sunos)
   CLIENT_CFLAGS = $(SDL_CFLAGS)
   SERVER_CFLAGS =
 
-  OPTIMIZEVM = -DNQDEBUG -O3 -funroll-loops
+  OPTIMIZEVM = -O3 -funroll-loops
 
   ifeq ($(ARCH),sparc)
     OPTIMIZEVM += -O3 \
@@ -946,7 +946,7 @@ else # ifeq sunos
 # SETUP AND BUILD -- GENERIC
 #############################################################################
   BASE_CFLAGS=-DNO_VM_COMPILED
-  OPTIMIZE = -DNQDEBUG -O3
+  OPTIMIZE = -O3
 
   SHLIBEXT=so
   SHLIBCFLAGS=-fPIC
@@ -1186,7 +1186,7 @@ debug:
 
 release:
 	@$(MAKE) targets B=$(BR) CFLAGS="$(CFLAGS) $(BASE_CFLAGS) $(DEPEND_CFLAGS)" \
-	  OPTIMIZE="$(OPTIMIZE)" OPTIMIZEVM="$(OPTIMIZEVM)" \
+	  OPTIMIZE="-DNQDEBUG $(OPTIMIZE)" OPTIMIZEVM="-DNQDEBUG $(OPTIMIZEVM)" \
 	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
 
 # Create the build directories, check libraries and print out

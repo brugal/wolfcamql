@@ -1117,43 +1117,44 @@ Check to see if there is any VoIP queued for a client, and send if there is.
 */
 void SV_WriteVoipToClient( client_t *cl, msg_t *msg )
 {
-	voipServerPacket_t *packet = &cl->voipPacket[0];
-	int totalbytes = 0;
-	int i;
-
-	if (*cl->downloadName) {
+	if(*cl->downloadName)
+	{
 		cl->queuedVoipPackets = 0;
 		return;  // no VoIP allowed if download is going, to save bandwidth.
 	}
 
-	// Write as many VoIP packets as we reasonably can...
-	for (i = 0; i < cl->queuedVoipPackets; i++, packet++) {
-		totalbytes += packet->len;
-		if (totalbytes > MAX_DOWNLOAD_BLKSIZE)
-			break;
+	if(cl->queuedVoipPackets)
+	{
+		int totalbytes = 0;
+		int i;
+		voipServerPacket_t *packet;
 
-		// You have to start with a svc_EOF, so legacy clients drop the
-		//  rest of this packet. Otherwise, those without VoIP support will
-		//  see the svc_voip command, then panic and disconnect.
-		// Generally we don't send VoIP packets to legacy clients, but this
-		//  serves as both a safety measure and a means to keep demo files
-		//  compatible.
-		MSG_WriteByte( msg, svc_EOF );
-		MSG_WriteByte( msg, svc_extension );
-		MSG_WriteByte( msg, svc_voip );
-		MSG_WriteShort( msg, packet->sender );
-		MSG_WriteByte( msg, (byte) packet->generation );
-		MSG_WriteLong( msg, packet->sequence );
-		MSG_WriteByte( msg, packet->frames );
-		MSG_WriteShort( msg, packet->len );
-		MSG_WriteData( msg, packet->data, packet->len );
-	}
+		// Write as many VoIP packets as we reasonably can...
+		for(i = cl->queuedVoipIndex; i < cl->queuedVoipPackets; i++)
+		{
+			packet = cl->voipPacket[i % ARRAY_LEN(cl->voipPacket)];
 
-	// !!! FIXME: I hate this queue system.
-	cl->queuedVoipPackets -= i;
-	if (cl->queuedVoipPackets > 0) {
-		memmove( &cl->voipPacket[0], &cl->voipPacket[i],
-		         sizeof (voipServerPacket_t) * i);
+			totalbytes += packet->len;
+			if (totalbytes > (msg->maxsize - msg->cursize) / 2)
+				break;
+
+			// using old speex protocol:  eof, ext, voip and no flags
+			MSG_WriteByte(msg, svc_EOF);
+			MSG_WriteByte(msg, svc_extension);
+			MSG_WriteByte(msg, svc_voip);
+			MSG_WriteShort(msg, packet->sender);
+			MSG_WriteByte(msg, (byte) packet->generation);
+			MSG_WriteLong(msg, packet->sequence);
+			MSG_WriteByte(msg, packet->frames);
+			MSG_WriteShort(msg, packet->len);
+			MSG_WriteData(msg, packet->data, packet->len);
+
+			Hunk_FreeTempMemory(packet);
+		}
+
+		cl->queuedVoipPackets -= i;
+		cl->queuedVoipIndex += i;
+		cl->queuedVoipIndex %= ARRAY_LEN(cl->voipPacket);
 	}
 }
 #endif
@@ -1401,12 +1402,17 @@ void SV_UserinfoChanged( client_t *cl ) {
 	} else {
 		cl->snapshotMsec = 50;
 	}
-	
+
 #ifdef USE_VOIP
-	// in the future, (val) will be a protocol version string, so only
-	//  accept explicitly 1, not generally non-zero.
-	val = Info_ValueForKey (cl->userinfo, "cl_voip");
-	cl->hasVoip = (atoi(val) == 1) ? qtrue : qfalse;
+#ifdef LEGACY_PROTOCOL
+	if(cl->compat)
+		cl->hasVoip = qfalse;
+	else
+#endif
+	{
+		val = Info_ValueForKey (cl->userinfo, "cl_voip");
+		cl->hasVoip = atoi(val);
+	}
 #endif
 
 	// TTimo
@@ -1741,7 +1747,7 @@ void SV_UserVoip( client_t *cl, msg_t *msg ) {
 	const int recip2 = MSG_ReadLong(msg);
 	const int recip3 = MSG_ReadLong(msg);
 	const int packetsize = MSG_ReadShort(msg);
-	byte encoded[sizeof (cl->voipPacket[0].data)];
+	byte encoded[sizeof(cl->voipPacket[0]->data)];
 	client_t *client = NULL;
 	voipServerPacket_t *packet = NULL;
 	int i;
@@ -1815,13 +1821,14 @@ void SV_UserVoip( client_t *cl, msg_t *msg ) {
 			continue;  // no room for another packet right now.
 		}
 
-		packet = &client->voipPacket[client->queuedVoipPackets];
+		packet = Hunk_AllocateTempMemory(sizeof(*packet));
 		packet->sender = sender;
 		packet->frames = frames;
 		packet->len = packetsize;
 		packet->generation = generation;
 		packet->sequence = sequence;
 		memcpy(packet->data, encoded, packetsize);
+		client->voipPacket[(client->queuedVoipIndex + client->queuedVoipPackets) % ARRAY_LEN(client->voipPacket)] = packet;
 		client->queuedVoipPackets++;
 	}
 }
@@ -1915,12 +1922,10 @@ void SV_ExecuteClientMessage( client_t *cl, msg_t *msg ) {
 		c = MSG_ReadByte( msg );
 
 		// See if this is an extension command after the EOF, which means we
-		//  got data that a legacy server should ignore.
+		//  are using old speex protocol.
 		if ((c == clc_EOF) && (MSG_LookaheadByte( msg ) == clc_extension)) {
 			MSG_ReadByte( msg );  // throw the clc_extension byte away.
-			c = MSG_ReadByte( msg );  // something legacy servers can't do!
-			// sometimes you get a clc_extension at end of stream...dangling
-			//  bits in the huffman decoder giving a bogus value?
+			c = MSG_ReadByte( msg );
 			if (c == -1) {
 				c = clc_EOF;
 			}

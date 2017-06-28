@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	MAX_ENT_CLUSTERS	16
 
 #ifdef USE_VOIP
+#define VOIP_QUEUE_LENGTH 64
 typedef struct voipServerPacket_s
 {
 	int generation;
@@ -182,8 +183,9 @@ typedef struct client_s {
 	qboolean hasVoip;
 	qboolean muteAllVoip;
 	qboolean ignoreVoipFromClient[MAX_CLIENTS];
-	voipServerPacket_t voipPacket[64]; // !!! FIXME: WAY too much memory!
+	voipServerPacket_t *voipPacket[VOIP_QUEUE_LENGTH];
 	int queuedVoipPackets;
+	int queuedVoipIndex;
 #endif
 
 	int				oldServerTime;

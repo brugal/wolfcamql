@@ -1655,13 +1655,18 @@ S_AL_RawSamples
 =================
 */
 static
-void S_AL_RawSamples(int stream, int samples, int rate, int width, int channels, const byte *data, float volume)
+void S_AL_RawSamples(int stream, int samples, int rate, int width, int channels, const byte *data, float volume, int entityNum)
 {
 	ALuint buffer;
 	ALuint format;
 
 	if ((stream < 0) || (stream >= MAX_RAW_STREAMS))
 		return;
+
+	if (entityNum >= 0) {
+		// FIXME: support spatialized raw streams, e.g. for VoIP
+		//return;
+	}
 
 	format = S_AL_Format( width, channels );
 

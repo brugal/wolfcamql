@@ -16,6 +16,8 @@
 * remove "CL_PeekSnapshot buf.cursize == -1" spam
 * bug fix:  voip sounds played during initial demo parsing
 * bug fix:  illegible server message error when recording a demo from a demo with voip packets
+* support for libpseex voip data in protocol 70 and 71 demos
+* bug fix:  recording demo from demo could use wrong protocol extension is demo name
 
 ---------------------------------
 11.7  2017-06-07

@@ -854,7 +854,7 @@ static float Wolfcam_DrawSpeed (float y)
     else if (speed >= 320.0)
         c = 2;
     else
-        c = 7;
+		c = 7;
 
 	if (cg_drawSpeedChangeColor.integer == 0) {
 		c = 7;
@@ -1097,7 +1097,7 @@ static void Wolfcam_DrawFollowing (void)
 	vec4_t color;
 
     if (!wolfcam_following)
-        return;
+		return;
 
 	if (!wolfcam_drawFollowing.integer) {
 		return;
@@ -1127,7 +1127,7 @@ static void Wolfcam_DrawFollowing (void)
     if (visible)
         scolor = S_COLOR_WHITE;
     else
-        scolor = S_COLOR_RED;
+		scolor = S_COLOR_RED;
 
 	if (wolfcam_drawFollowing.integer == 2) {
 		if (wcg.followMode == WOLFCAM_FOLLOW_KILLER) {
@@ -8025,7 +8025,7 @@ static void Wolfcam_DrawCrosshair (void)
 	float aspect;
 
     if (cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD)
-        return;
+		return;
 
 	w = h = cg_crosshairSize.value;
 

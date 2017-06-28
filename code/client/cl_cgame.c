@@ -383,6 +383,8 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 		//
 		cmdCount = 0;
 		while ( 1 ) {
+			qboolean dataFollowsEOF = qfalse;
+
 			//cmdCount++;
 			if ( buf.readcount > buf.cursize ) {
 				Com_Error (ERR_DROP,"CL_PeekSnapshot: read past end of server message");
@@ -392,12 +394,12 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 			cmd = MSG_ReadByte(&buf);
 
 			// See if this is an extension command after the EOF, which means we
-			//  got data that a legacy client should ignore.
+			// have speex voip data.
 			if ((cmd == svc_EOF) && (MSG_LookaheadByte( &buf ) == svc_extension)) {
+				dataFollowsEOF = qtrue;
 				MSG_ReadByte( &buf );  // throw the svc_extension byte away.
-				cmd = MSG_ReadByte( &buf );  // something legacy clients can't do!
-				// sometimes you get a svc_extension at end of stream...dangling
-				//  bits in the huffman decoder giving a bogus value?
+				cmd = MSG_ReadByte( &buf );
+
 				if (cmd == -1) {
 					cmd = svc_EOF;
 				}
@@ -447,9 +449,24 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 				goto alldone;
 				break;
 #ifdef USE_VOIP
+			case svc_extension: {  // libspeex voip protocol 70 or 71
+				if (dataFollowsEOF) {
+					// shouldn't happen
+					Com_Printf("^1%s unknown svc_extension\n", __FUNCTION__);
+				} else {
+					// check protocol to see if it contains flags
+					CL_ParseVoipSpeex(&buf, qtrue, qtrue);
+				}
+				break;
+			}
 			case svc_voip:
-				CL_ParseVoip(&buf, qtrue);
 				//Com_Printf("voip... seq:%d  cmdCount:%d  loop:%d\n", serverMessageSequence, cmdCount, j);
+				if (dataFollowsEOF) {
+					// old speex without flags
+					CL_ParseVoipSpeex(&buf, qfalse, qtrue);
+				} else {
+					Com_Printf("^3%s FIXME voip opus\n", __FUNCTION__);
+				}
 				break;
 #endif
 			}
