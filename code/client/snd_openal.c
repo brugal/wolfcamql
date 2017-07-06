@@ -48,7 +48,9 @@ cvar_t *s_alAvailableInputDevices;
 
 static qboolean enumeration_ext = qfalse;
 static qboolean enumeration_all_ext = qfalse;
+#ifdef USE_VOIP
 static qboolean capture_ext = qfalse;
+#endif
 
 /*
 =================
@@ -193,6 +195,25 @@ static sfxHandle_t S_AL_BufferFind(const char *filename)
 	sfxHandle_t sfx = -1;
 	int i;
 
+	if ( !filename ) {
+		Com_Error( ERR_FATAL, "Sound name is NULL" );
+	}
+
+	if ( !filename[0] ) {
+		Com_Printf( S_COLOR_YELLOW "WARNING: Sound name is empty\n" );
+		return 0;
+	}
+
+	if ( strlen( filename ) >= MAX_QPATH ) {
+		Com_Printf( S_COLOR_YELLOW "WARNING: Sound name is too long: %s\n", filename );
+		return 0;
+	}
+
+	if ( filename[0] == '*' ) {
+		Com_Printf( S_COLOR_YELLOW "WARNING: Tried to load player sound directly: %s\n", filename );
+		return 0;
+	}
+
 	for(i = 0; i < numSfx; i++)
 	{
 		if(!Q_stricmp(knownSfx[i].filename, filename))
@@ -310,10 +331,6 @@ static void S_AL_BufferLoad(sfxHandle_t sfx, qboolean cache)
 
 	// Nothing?
 	if(curSfx->filename[0] == '\0')
-		return;
-
-	// Player SFX
-	if(curSfx->filename[0] == '*')
 		return;
 
 	// Already done?
@@ -566,7 +583,6 @@ static void _S_AL_SanitiseVector( vec3_t v, int line )
 }
 
 
-#define AL_THIRD_PERSON_THRESHOLD_SQ (48.0f*48.0f)
 
 /*
 =================
@@ -644,7 +660,7 @@ static qboolean S_AL_HearingThroughEntity( int entityNum )
 				entityList[ entityNum ].origin,
 				lastListenerOrigin );
 
-		if( distanceSq > AL_THIRD_PERSON_THRESHOLD_SQ )
+		if( distanceSq > THIRD_PERSON_THRESHOLD_SQ )
 			return qfalse; //we're the player, but third person
 		else
 			return qtrue;  //we're the player
@@ -1826,6 +1842,7 @@ static void S_AL_MusicSourceFree( void )
 {
 	// Release the output musicSource
 	S_AL_SrcUnlock(musicSourceHandle);
+	S_AL_SrcKill(musicSourceHandle);
 	musicSource = 0;
 	musicSourceHandle = -1;
 }
@@ -1858,17 +1875,22 @@ S_AL_StopBackgroundTrack
 static
 void S_AL_StopBackgroundTrack( void )
 {
+	int             numBuffers;
+
 	if(!musicPlaying)
 		return;
 
 	// Stop playing
 	qalSourceStop(musicSource);
 
-	// De-queue the musicBuffers
-	qalSourceUnqueueBuffers(musicSource, NUM_MUSIC_BUFFERS, musicBuffers);
-
-	// Destroy the musicBuffers
-	qalDeleteBuffers(NUM_MUSIC_BUFFERS, musicBuffers);
+	// Un-queue any buffers, and delete them
+	qalGetSourcei( musicSource, AL_BUFFERS_PROCESSED, &numBuffers );
+	while( numBuffers-- )
+	{
+		ALuint buffer;
+		qalSourceUnqueueBuffers(musicSource, 1, &buffer);
+		qalDeleteBuffers(1, &buffer);
+	}
 
 	// Free the musicSource
 	S_AL_MusicSourceFree();
@@ -2422,21 +2444,25 @@ qboolean S_AL_Init( soundInterface_t *si )
 		char devicenames[16384] = "";
 		const char *devicelist;
 #ifdef _WIN32
-		//const char *defaultdevice;
+		const char *defaultdevice;
 #endif
 		int curlen;
 
 		// get all available devices + the default device name.
-		if(enumeration_ext)
+		if(enumeration_all_ext)
 		{
 			devicelist = qalcGetString(NULL, ALC_ALL_DEVICES_SPECIFIER);
-			//defaultdevice = qalcGetString(NULL, ALC_DEFAULT_ALL_DEVICES_SPECIFIER);
+#ifdef _WIN32
+			defaultdevice = qalcGetString(NULL, ALC_DEFAULT_ALL_DEVICES_SPECIFIER);
+#endif
 		}
 		else
 		{
 			// We don't have ALC_ENUMERATE_ALL_EXT but normal enumeration.
 			devicelist = qalcGetString(NULL, ALC_DEVICE_SPECIFIER);
-			//defaultdevice = qalcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
+#ifdef _WIN32
+			defaultdevice = qalcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER);
+#endif
 			enumeration_ext = qtrue;
 		}
 
@@ -2445,20 +2471,23 @@ qboolean S_AL_Init( soundInterface_t *si )
 		// Generic Software as that one works more reliably with various sound systems.
 		// If it's not, use OpenAL's default selection as we don't want to ignore
 		// native hardware acceleration.
-#if 0  // gcc code/client/snd_openal.c:2378: error: 'defaultdevice' undeclared (first use in this function)
-		if(!device && !strcmp(defaultdevice, "Generic Hardware"))
+		if(!device && defaultdevice && !strcmp(defaultdevice, "Generic Hardware"))
 			device = "Generic Software";
-#endif
 #endif
 
 		// dump a list of available devices to a cvar for the user to see.
-		while((curlen = strlen(devicelist)))
+		if(devicelist)
 		{
-			Q_strcat(devicenames, sizeof(devicenames), devicelist);
-			Q_strcat(devicenames, sizeof(devicenames), "\n");
+			while((curlen = strlen(devicelist)))
+			{
+				Q_strcat(devicenames, sizeof(devicenames), devicelist);
+				Q_strcat(devicenames, sizeof(devicenames), "\n");
 
-			devicelist += curlen + 1;
+				devicelist += curlen + 1;
+			}
 		}
+		else
+			devicelist = "";
 
 		s_alAvailableDevices = Cvar_Get("s_alAvailableDevices", devicenames, CVAR_ROM | CVAR_NORESTART);
 	}

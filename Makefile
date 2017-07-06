@@ -1010,6 +1010,8 @@ ifneq ($(BUILD_GAME_QVM),0)
   endif
 endif
 
+CLIENT_CXXFLAGS = -fwrapv
+
 ifeq ($(USE_MUMBLE),1)
   CLIENT_CFLAGS += -DUSE_MUMBLE
 endif
@@ -1089,9 +1091,10 @@ $(echo_cmd) "CC $<"
 $(Q)$(CC) $(NOTSHLIBCFLAGS) $(EXTRA_C_WARNINGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
 endef
 
+# -fwrapv for $(SPLINES) gcc warning
 define DO_CPP
 $(echo_cmd) "CPP $<"
-$(Q)$(CPP) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
+$(Q)$(CPP) $(CLIENT_CXXFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
 endef
 
 define DO_SMP_CC
@@ -1182,12 +1185,12 @@ all: debug release
 debug:
 	@$(MAKE) targets B=$(BD) CFLAGS="$(CFLAGS) $(BASE_CFLAGS) $(DEPEND_CFLAGS)" \
 	  OPTIMIZE="$(DEBUG_CFLAGS)" OPTIMIZEVM="$(DEBUG_CFLAGS)" \
-	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
+	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" CLIENT_CXXFLAGS="$(CLIENT_CXXFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
 
 release:
 	@$(MAKE) targets B=$(BR) CFLAGS="$(CFLAGS) $(BASE_CFLAGS) $(DEPEND_CFLAGS)" \
 	  OPTIMIZE="-DNQDEBUG $(OPTIMIZE)" OPTIMIZEVM="-DNQDEBUG $(OPTIMIZEVM)" \
-	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
+	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" CLIENT_CXXFLAGS="$(CLIENT_CXXFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
 
 # Create the build directories, check libraries and print out
 # an informational message, then start building
@@ -1223,6 +1226,13 @@ targets: makedirs
 	do \
 		echo "    $$i"; \
 	done
+	@echo ""
+	@echo "  CLIENT_CXXFLAGS:"
+	-@for i in $(CLIENT_CXXFLAGS); \
+	do \
+		echo "    $$i"; \
+	done
+
 	@echo ""
 	@echo "  SERVER_CFLAGS:"
 	-@for i in $(SERVER_CFLAGS); \
@@ -2556,7 +2566,7 @@ $(B)/missionpack/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
 # MISC
 #############################################################################
 
-OBJ = $(Q3OBJ) $(Q3POBJ) $(Q3POBJ_SMP) $(Q3DOBJ) \
+OBJ = $(Q3OBJ) $(Q3POBJ) $(Q3POBJ_SMP) $(Q3DOBJ) $(SPLINES) \
   $(MPGOBJ) $(Q3GOBJ) $(Q3CGOBJ) $(MPCGOBJ) $(Q3UIOBJ) $(MPUIOBJ) \
   $(MPGVMOBJ) $(Q3GVMOBJ) $(Q3CGVMOBJ) $(MPCGVMOBJ) $(Q3UIVMOBJ) $(MPUIVMOBJ)
 TOOLSOBJ = $(LBURGOBJ) $(Q3CPPOBJ) $(Q3RCCOBJ) $(Q3LCCOBJ) $(Q3ASMOBJ)

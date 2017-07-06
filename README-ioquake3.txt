@@ -165,10 +165,16 @@ New cvars
                                       backend
   s_muteWhenMinimized               - mute sound when minimized
   s_muteWhenUnfocused               - mute sound when window is unfocused
+  sv_dlRate			    - bandwidth allotted to PK3 file downloads
+  				      via UDP, in kbyte/s
 
   com_ansiColor                     - enable use of ANSI escape codes in the tty
   com_altivec                       - enable use of altivec on PowerPC systems
   com_standalone                    - Run in standalone mode
+  com_legacyprotocol		    - Specify protocol version number for
+  				      legacy Quake3 1.32c protocol, see
+				      "Network protocols" section below
+				      (startup only)
   com_maxfpsUnfocused               - Maximum frames per second when unfocused
   com_maxfpsMinimized               - Maximum frames per second when minimized
 
@@ -441,6 +447,11 @@ Using HTTP/FTP Download Support (Server)
   HTTP servers from other ioquake3 servers can make use of the HTTP_REFERER
   that ioquake3 sets which is "ioQ3://{SERVER_IP}:{SERVER_PORT}".  For,
   example, Apache's mod_rewrite can restrict access based on HTTP_REFERER.
+
+  On a sidenote, downloading via UDP has been improved and yields higher data
+  rates now. You can configure the maximum bandwidth for UDP downloads via the
+  cvar sv_dlRate. Due to system-specific limits the download rate is capped
+  at about 1 Mbyte/s per client, so curl downloading may still be faster.
 
 Using HTTP/FTP Download Support (Client)
   Simply setting cl_allowDownload to 1 will enable HTTP/FTP downloads

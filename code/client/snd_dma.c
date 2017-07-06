@@ -280,16 +280,16 @@ static sfx_t *S_FindName( const char *name ) {
 	sfx_t	*sfx;
 
 	if (!name) {
-		Com_Error (ERR_FATAL, "S_FindName: NULL");
+		Com_Error(ERR_FATAL, "Sound name is NULL");
 	}
 	if (!name[0]) {
-		//Com_Error (ERR_FATAL, "S_FindName: empty name");
-		Com_Printf(S_COLOR_YELLOW "WARNING S_FindName: empty name\n");
+		Com_Printf(S_COLOR_YELLOW "WARNING: Sound name is empty\n");
 		return NULL;
 	}
 
 	if (strlen(name) >= MAX_QPATH) {
-		Com_Error (ERR_FATAL, "Sound name too long: %s", name);
+		Com_Printf( S_COLOR_YELLOW "WARNING: Sound name is too long: %s\n", name );
+		return NULL;
 	}
 
 	if (name[0] == '*') {
@@ -378,11 +378,6 @@ static sfxHandle_t	S_Base_RegisterSound( const char *name, qboolean compressed )
 
 	compressed = qfalse;
 	if (!s_soundStarted) {
-		return 0;
-	}
-
-	if ( strlen( name ) >= MAX_QPATH ) {
-		Com_Printf( "Sound name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
@@ -541,19 +536,58 @@ static void S_SpatializeOrigin (const vec3_t origin, int master_vol, int *left_v
 // =======================================================================
 
 /*
+=================
+S_Base_HearingThroughEntity
+
+Also see S_AL_HearingThroughEntity
+=================
+*/
+static qboolean S_Base_HearingThroughEntity( int entityNum, const vec3_t origin )
+{
+	float	distanceSq;
+	vec3_t	sorigin;
+
+	if (origin)
+		VectorCopy(origin, sorigin);
+	else
+		VectorCopy(loopSounds[entityNum].origin, sorigin);
+
+	if( listener_number == entityNum )
+	{
+		// This is an outrageous hack to detect
+		// whether or not the player is rendering in third person or not. We can't
+		// ask the renderer because the renderer has no notion of entities and we
+		// can't ask cgame since that would involve changing the API and hence mod
+		// compatibility. I don't think there is any way around this, but I'll leave
+		// the FIXME just in case anyone has a bright idea.
+		distanceSq = DistanceSquared(
+				sorigin,
+				listener_origin );
+
+		if( distanceSq > THIRD_PERSON_THRESHOLD_SQ )
+			return qfalse; //we're the player, but third person
+		else
+			return qtrue;  //we're the player
+	}
+	else
+		return qfalse; //not the player
+}
+
+/*
 ====================
-S_Base_StartSound
+S_Base_StartSoundEx
 
 Validates the parms and ques the sound up
-if pos is NULL, the sound will be dynamically sourced from the entity
+if origin is NULL, the sound will be dynamically sourced from the entity
 Entchannel 0 will never override a playing sound
 ====================
 */
-static void S_Base_StartSound (const vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfxHandle) {
+static void S_Base_StartSoundEx (const vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfxHandle, qboolean localSound) {
 	channel_t	*ch;
 	sfx_t		*sfx;
   int i, oldest, chosen, time;
   int	inplay, allowed;
+  qboolean fullVolume;
 
 	if ( !s_soundStarted || s_soundMuted ) {
 		return;
@@ -590,6 +624,11 @@ static void S_Base_StartSound (const vec3_t origin, int entityNum, int entchanne
 		if (entityNum == listener_number) {
 			allowed = 8;
 		}
+	}
+
+	fullVolume = qfalse;
+	if (localSound || S_Base_HearingThroughEntity(entityNum, origin)) {
+		fullVolume = qtrue;
 	}
 
 	ch = s_channels;
@@ -689,6 +728,7 @@ static void S_Base_StartSound (const vec3_t origin, int entityNum, int entchanne
 	ch->leftvol = ch->master_vol;		// these will get calced at next spatialize
 	ch->rightvol = ch->master_vol;		// unless the game isn't running
 	ch->doppler = qfalse;
+	ch->fullVolume = fullVolume;
 
 	if (ch->entnum != listener_number) {
 		if (ch->fixed_origin) {
@@ -699,6 +739,16 @@ static void S_Base_StartSound (const vec3_t origin, int entityNum, int entchanne
 	}
 }
 
+/*
+====================
+S_Base_StartSound
+
+if origin is NULL, the sound will be dynamically sourced from the entity
+====================
+*/
+void S_Base_StartSound( const vec3_t origin, int entityNum, int entchannel, sfxHandle_t sfxHandle ) {
+	S_Base_StartSoundEx( origin, entityNum, entchannel, sfxHandle, qfalse );
+}
 
 /*
 ==================
@@ -715,7 +765,7 @@ static void S_Base_StartLocalSound( sfxHandle_t sfxHandle, int channelNum ) {
 		return;
 	}
 
-	S_Base_StartSound (NULL, listener_number, channelNum, sfxHandle );
+	S_Base_StartSoundEx( NULL, listener_number, channelNum, sfxHandle, qtrue );
 }
 
 
@@ -1036,6 +1086,7 @@ static void S_AddLoopSounds (void) {
 		ch->doppler = loop->doppler;
 		ch->dopplerScale = loop->dopplerScale;
 		ch->oldDopplerScale = loop->oldDopplerScale;
+		ch->fullVolume = qfalse;
 		numLoopChannels++;
 	}
 }
@@ -1232,8 +1283,8 @@ static void S_Base_Respatialize( int entityNum, const vec3_t head, const vec3_t 
 		if ( !ch->thesfx ) {
 			continue;
 		}
-		// anything coming from the view entity will always be full volume
-		if (ch->entnum == listener_number) {
+		// local and first person sounds will always be full volume
+		if (ch->fullVolume) {
 			ch->leftvol = ch->master_vol;
 			ch->rightvol = ch->master_vol;
 		} else {

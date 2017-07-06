@@ -1630,8 +1630,8 @@ void NET_Sleep( int msec ) {
 	if (ip_socket == INVALID_SOCKET && ip6_socket == INVALID_SOCKET)
 		return;
 
-	if (msec < 0 )
-		return;
+	if(msec < 0)
+		msec = 0;
 
 	FD_ZERO(&fdset);
 

@@ -238,12 +238,13 @@ void Sys_Error( const char *error, ... )
 	Sys_Exit( 1 );
 }
 
+#if 0
 /*
 =================
 Sys_Warn
 =================
 */
-void Sys_Warn( char *warning, ... )
+static __attribute__ ((format (printf, 1, 2))) void Sys_Warn( char *warning, ... )
 {
 	va_list argptr;
 	char    string[1024];
@@ -254,6 +255,7 @@ void Sys_Warn( char *warning, ... )
 
 	CON_Print( va( "Warning: %s", string ) );
 }
+#endif
 
 /*
 ============

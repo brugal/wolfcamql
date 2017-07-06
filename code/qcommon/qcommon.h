@@ -183,9 +183,11 @@ void		NET_Sleep(int msec);
 #define	MAX_MSGLEN				(16384 * 2)		// max length of a message, which may
 											// be fragmented into multiple packets
 
-#define MAX_DOWNLOAD_WINDOW			8		// max of eight download frames
-#define MAX_DOWNLOAD_BLKSIZE		2048	// 2048 byte block chunks
- 
+#define MAX_DOWNLOAD_WINDOW            48      // ACK window of 48 download chunks. Cannot set this higher, or clients
+                                               // will overflow the reliable commands buffer
+#define MAX_DOWNLOAD_BLKSIZE           1024    // 896 byte block chunks
+
+#define NETCHAN_GENCHECKSUM(challenge, sequence) ((challenge) ^ ((sequence) * (challenge)))
 
 /*
 Netchan handles packet fragmentation and out of order / duplicate suppression
@@ -214,10 +216,18 @@ typedef struct {
 	int			unsentFragmentStart;
 	int			unsentLength;
 	byte		unsentBuffer[MAX_MSGLEN];
+
+	int 		challenge;
+	int			lastSentTime;
+	int			lastSentSize;
+
+#ifdef LEGACY_PROTOCOL
+	qboolean 	compat;
+#endif
 } netchan_t;
 
 void Netchan_Init( int qport );
-void Netchan_Setup( netsrc_t sock, netchan_t *chan, netadr_t adr, int qport );
+void Netchan_Setup(netsrc_t sock, netchan_t *chan, netadr_t adr, int qport, int challenge, qboolean compat);
 
 void Netchan_Transmit( netchan_t *chan, int length, const byte *data );
 void Netchan_TransmitNextFragment( netchan_t *chan );
@@ -244,7 +254,7 @@ extern mapNames_t MapNames[];
 
 //#define	PROTOCOL_VERSION	73
 #define PROTOCOL_VERSION 91
-
+#define PROTOCOL_LEGACY_VERSION 68
 // 1.31 - 67
 
 // maintain a list of compatible protocols for demo playing
@@ -833,7 +843,7 @@ void		Com_EndRedirect( void );
 void 		QDECL Com_Printf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void 		QDECL Com_DPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
 void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((noreturn, format (printf, 2, 3)));
-void 		Com_Quit_f( void );
+void 		Com_Quit_f( void )  __attribute__ ((noreturn));
 void		Com_GameRestart(int checksumFeed, qboolean clientRestart);
 
 int			Com_Milliseconds( void );	// will be journaled properly
@@ -877,6 +887,9 @@ extern	cvar_t	*cl_packetdelay;
 extern	cvar_t	*sv_packetdelay;
 
 extern  cvar_t  *com_protocol;
+#ifdef LEGACY_PROTOCOL
+extern cvar_t	*com_legacyprotocol;
+#endif
 extern cvar_t *com_autoWriteConfig;
 extern qboolean com_writeConfig;
 
@@ -1043,7 +1056,7 @@ void SV_Shutdown( char *finalmsg );
 void SV_Frame( int msec, double fmsec );
 void SV_PacketEvent( netadr_t from, msg_t *msg );
 qboolean SV_GameCommand( void );
-
+int SV_SendQueuedPackets(void);
 
 //
 // UI interface
@@ -1073,7 +1086,7 @@ qboolean Sys_DllExtension( const char *name );
 char	*Sys_GetCurrentUser( void );
 
 void	QDECL Sys_Error( const char *error, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
-void	Sys_Quit (void);
+void	Sys_Quit (void) __attribute__ ((noreturn));
 char	*Sys_GetClipboardData( void );	// note that this isn't journaled...
 
 void	Sys_Print( const char *msg );

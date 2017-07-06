@@ -549,7 +549,7 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 					client->gentity = ent;
 
 					client->deltaMessage = -1;
-					client->nextSnapshotTime = svs.time;	// generate a snapshot immediately
+					client->lastSnapshotTime = 0;	// generate a snapshot immediately
 
 					VM_Call( gvm, GAME_CLIENT_BEGIN, i );
 				}
@@ -643,6 +643,7 @@ void SV_Init (void) {
 
 	sv_minRate = Cvar_Get ("sv_minRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
 	sv_maxRate = Cvar_Get ("sv_maxRate", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
+	sv_dlRate = Cvar_Get("sv_dlRate", "100", CVAR_ARCHIVE | CVAR_SERVERINFO);
 	sv_minPing = Cvar_Get ("sv_minPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
 	sv_maxPing = Cvar_Get ("sv_maxPing", "0", CVAR_ARCHIVE | CVAR_SERVERINFO );
 	sv_floodProtect = Cvar_Get ("sv_floodProtect", "1", CVAR_ARCHIVE | CVAR_SERVERINFO );
@@ -723,7 +724,7 @@ void SV_FinalMessage( char *message ) {
 					SV_SendServerCommand( cl, "disconnect \"%s\"", message );
 				}
 				// force a snapshot to be sent
-				cl->nextSnapshotTime = -1;
+				cl->lastSnapshotTime = 0;
 				SV_SendClientSnapshot( cl );
 			}
 		}
@@ -760,8 +761,14 @@ void SV_Shutdown( char *finalmsg ) {
 	SV_ClearServer();
 
 	// free server static data
-	if ( svs.clients ) {
-		Z_Free( svs.clients );
+	if(svs.clients)
+	{
+		int index;
+
+		for(index = 0; index < sv_maxclients->integer; index++)
+			SV_FreeClient(&svs.clients[index]);
+
+		Z_Free(svs.clients);
 	}
 	Com_Memset( &svs, 0, sizeof( svs ) );
 

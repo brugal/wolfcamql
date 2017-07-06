@@ -56,7 +56,7 @@ void Sys_GLimpSafeInit( void );
 void Sys_GLimpInit( void );
 void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolean useDpiAware);
 void Sys_PlatformExit (void);
-void Sys_SigHandler( int signal );
+void Sys_SigHandler( int signal ) __attribute__ ((noreturn));
 void Sys_ErrorDialog( const char *error );
 void Sys_AnsiColorPrint( const char *msg );
 void Sys_Backtrace_f (void);

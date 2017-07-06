@@ -165,7 +165,7 @@
 * ft gfx/misc/iceball
 * models/powerups/trailtest.md3 ?
 * for offline demo and (maybe demo smoothing, if you do more than 2) keep track of angle direction while you skip snapshots so that it doesn't do an 30 degree turn as opposed to a full 330
-* spites/flagcarrier
+* sprites/flagcarrier
 * surfacePuff
 * machine gun tracers using gfx/misc/iceball
 * dynamic light for other powerups check (did battlesuit and quad)
@@ -2057,7 +2057,7 @@ No locals.
 * invis-demo-taker-24-00.dm_91 s_useOpenal 1  WARNING using default sound for keel gasp ... taunt
 * openal voip entity num support (ioquake3 has)  -- update openal
 * snddma voip entity num support
-* cpp make dependencies not working (splines.cpp -> util_list.h)
+* ioquake3 com_protocol
 
 
 ---------

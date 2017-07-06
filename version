@@ -1,10 +1,12 @@
-11.8test2
+11.8test4
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
 * jpeg video capture doesn't force GL_RGBA fetch mode
 * add to documentation that png output and/or motion blur force GL_RGBA fetch mode
 * ioquake3 fixes
+    - third person player sounds don't play at full volume
+
 * bug fix:  disconnect icon didn't match lagometer x, y, scale, and align settings
 * bug fix:  draw selected player name didn't detect clan tag correctly
 * bug fix:  invalid check if camera point command exists
@@ -18,6 +20,7 @@
 * bug fix:  illegible server message error when recording a demo from a demo with voip packets
 * support for libpseex voip data in protocol 70 and 71 demos
 * bug fix:  recording demo from demo could use wrong protocol extension is demo name
+* bug fix:  installer missing voip-readme.txt
 
 ---------------------------------
 11.7  2017-06-07

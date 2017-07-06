@@ -95,6 +95,9 @@ cvar_t	*com_minimized;
 cvar_t	*com_maxfpsMinimized;
 cvar_t	*com_standalone;
 cvar_t *com_protocol;
+#ifdef LEGACY_PROTOCOL
+cvar_t *com_legacyprotocol;
+#endif
 cvar_t *com_autoWriteConfig;
 cvar_t *com_execVerbose;
 cvar_t *com_qlColors;
@@ -3054,7 +3057,18 @@ void Com_Init( char *commandLine ) {
 
 	s = va("%s %s %s", Q3_VERSION, PLATFORM_STRING, PRODUCT_DATE );
 	com_version = Cvar_Get ("version", s, CVAR_ROM | CVAR_SERVERINFO );
+	//com_protocol = Cvar_Get ("com_protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_INIT);
 	com_protocol = Cvar_Get ("protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_INIT);
+#ifdef LEGACY_PROTOCOL
+	com_legacyprotocol = Cvar_Get("com_legacyprotocol", va("%i", PROTOCOL_LEGACY_VERSION), CVAR_INIT);
+
+	// Keep for compatibility with old mods / mods that haven't updated yet.
+	if(com_legacyprotocol->integer > 0)
+		Cvar_Get("protocol", com_legacyprotocol->string, CVAR_ROM);
+	else
+#endif
+		Cvar_Get("protocol", com_protocol->string, CVAR_ROM);
+
 	com_autoWriteConfig = Cvar_Get("com_autoWriteConfig", "2", CVAR_ARCHIVE);
 	com_execVerbose = Cvar_Get("com_execVerbose", "0", CVAR_ARCHIVE);
 	com_qlColors = Cvar_Get("com_qlColors", "1", CVAR_ARCHIVE);
@@ -3286,6 +3300,27 @@ int Com_ModifyMsec( int msec, qboolean *useSubTime, double *fmsec ) {
 	return msec;
 }
 
+/*
+=================
+Com_TimeVal
+=================
+*/
+
+int Com_TimeVal(int minMsec)
+{
+	int timeVal;
+
+	timeVal = Sys_Milliseconds() - com_frameTime;
+
+	if(timeVal >= minMsec)
+		timeVal = 0;
+	else
+		timeVal = minMsec - timeVal;
+
+	return timeVal;
+}
+
+
 //extern qboolean CL_VideoRecording( void );
 
 #ifndef DEDICATED
@@ -3306,13 +3341,13 @@ void Com_Frame( void ) {
 	//int key;
 	static qboolean qlColors = qtrue;
 
+	int		timeValSV;
+
 	int		timeBeforeFirstEvents;
 	int           timeBeforeServer;
 	int           timeBeforeEvents;
 	int           timeBeforeClient;
 	int           timeAfter;
-
-
 
 
 	if ( setjmp (abortframe) ) {
@@ -3381,6 +3416,17 @@ void Com_Frame( void ) {
 			Sys_Sleep( timeRemaining );
 #endif
 
+		if(com_sv_running->integer)
+		{
+			timeValSV = SV_SendQueuedPackets();
+
+			if(timeValSV < timeRemaining)
+				timeRemaining = timeValSV;
+		}
+
+		//if(timeRemaining == 0)
+		//	timeRemaining = 1;
+
 #ifndef DEDICATED
 		if (com_idleSleep->integer  &&  !CL_VideoRecording(&afdMain)) {
 #else
@@ -3396,6 +3442,7 @@ void Com_Frame( void ) {
 				//NET_Sleep(timeRemaining * 1000 - 1);
 				{
 					//struct timespec tm;
+					//FIXME NET_Sleep() ?
 					usleep((timeRemaining - 1) * 1000);
 				}
 			}
@@ -3407,6 +3454,7 @@ void Com_Frame( void ) {
 		}
 		msec = com_frameTime - lastTime;
 	} while ( msec < minMsec );
+
 	Cbuf_Execute ();
 
 	if (com_altivec->modified)
