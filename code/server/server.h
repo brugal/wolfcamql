@@ -43,7 +43,8 @@ typedef struct voipServerPacket_s
 	int frames;
 	int len;
 	int sender;
-	byte data[1024];
+	int flags;
+	byte data[4000];
 } voipServerPacket_t;
 #endif
 
@@ -305,6 +306,7 @@ extern	int serverBansCount;
 
 #ifdef USE_VOIP
 extern	cvar_t	*sv_voip;
+extern 	cvar_t	*sv_voipProtocol;
 #endif
 
 extern cvar_t *sv_randomClientSlot;
@@ -315,6 +317,28 @@ extern cvar_t *sv_randomClientSlot;
 //
 // sv_main.c
 //
+typedef struct leakyBucket_s leakyBucket_t;
+struct leakyBucket_s {
+	netadrtype_t	type;
+
+	union {
+		byte	_4[4];
+		byte	_6[16];
+	} ipv;
+
+	int						lastTime;
+	signed char		burst;
+
+	long					hash;
+
+	leakyBucket_t *prev, *next;
+};
+
+extern leakyBucket_t outboundLeakyBucket;
+
+qboolean SVC_RateLimit( leakyBucket_t *bucket, int burst, int period );
+qboolean SVC_RateLimitAddress( netadr_t from, int burst, int period );
+
 void SV_FinalMessage (char *message);
 void QDECL SV_SendServerCommand( client_t *cl, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
 
@@ -368,10 +392,6 @@ void SV_ClientThink (client_t *cl, usercmd_t *cmd);
 int SV_WriteDownloadToClient(client_t *cl , msg_t *msg);
 int SV_SendDownloadMessages(void);
 int SV_SendQueuedMessages(void);
-
-#ifdef USE_VOIP
-void SV_WriteVoipToClient( client_t *cl, msg_t *msg );
-#endif
 
 
 //

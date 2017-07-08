@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef USE_VOIP
 cvar_t *sv_voip;
+cvar_t *sv_voipProtocol;
 #endif
 
 serverStatic_t	svs;				// persistant server info
@@ -352,30 +353,13 @@ CONNECTIONLESS COMMANDS
 ==============================================================================
 */
 
-typedef struct leakyBucket_s leakyBucket_t;
-struct leakyBucket_s {
-	netadrtype_t	type;
-
-	union {
-		byte	_4[4];
-		byte	_6[16];
-	} ipv;
-
-	int						lastTime;
-	signed char		burst;
-
-	long					hash;
-
-	leakyBucket_t *prev, *next;
-};
-
 // This is deliberately quite large to make it more of an effort to DoS
 #define MAX_BUCKETS			16384
 #define MAX_HASHES			1024
 
 static leakyBucket_t buckets[ MAX_BUCKETS ];
 static leakyBucket_t *bucketHashes[ MAX_HASHES ];
-static leakyBucket_t outboundLeakyBucket;
+leakyBucket_t outboundLeakyBucket;
 
 /*
 ================
@@ -491,7 +475,7 @@ static leakyBucket_t *SVC_BucketForAddress( netadr_t address, int burst, int per
 SVC_RateLimit
 ================
 */
-static qboolean SVC_RateLimit( leakyBucket_t *bucket, int burst, int period ) {
+qboolean SVC_RateLimit( leakyBucket_t *bucket, int burst, int period ) {
 	if ( bucket != NULL ) {
 		int now = Sys_Milliseconds();
 		int interval = now - bucket->lastTime;
@@ -523,7 +507,7 @@ SVC_RateLimitAddress
 Rate limit for a particular address
 ================
 */
-static qboolean SVC_RateLimitAddress( netadr_t from, int burst, int period ) {
+qboolean SVC_RateLimitAddress( netadr_t from, int burst, int period ) {
 	leakyBucket_t *bucket = SVC_BucketForAddress( from, burst, period );
 
 	return SVC_RateLimit( bucket, burst, period );
@@ -674,8 +658,8 @@ void SVC_Info( netadr_t from ) {
 	Info_SetValueForKey(infostring, "g_needpass", va("%d", Cvar_VariableIntegerValue("g_needpass")));
 
 #ifdef USE_VOIP
-	if (sv_voip->integer) {
-		Info_SetValueForKey( infostring, "voip", va("%i", sv_voip->integer ) );
+	if (sv_voipProtocol->string && *sv_voipProtocol->string) {
+		Info_SetValueForKey( infostring, "voip", sv_voipProtocol->string );
 	}
 #endif
 

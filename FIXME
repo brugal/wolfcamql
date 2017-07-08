@@ -2058,7 +2058,7 @@ No locals.
 * openal voip entity num support (ioquake3 has)  -- update openal
 * snddma voip entity num support
 * ioquake3 com_protocol
-
+* parsevoip use 'ignoreData' instead of 'justPeek' to match ioquake3
 
 ---------
 

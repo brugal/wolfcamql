@@ -854,6 +854,8 @@ int			Com_FilterPath(char *filter, char *name, int casesensitive);
 int			Com_RealTime (qtime_t *qtime, qboolean now, int convertTime);
 qboolean	Com_SafeMode( void );
 
+qboolean	Com_IsVoipTarget(uint8_t *voipTargets, int voipTargetsSize, int clientNum);
+
 void		Com_StartupVariable( const char *match );
 // checks for and removes command line "+set var arg" constructs
 // if match is NULL, all set commands will be executed, otherwise

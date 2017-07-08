@@ -1128,7 +1128,7 @@ S_Base_RawSamples
 Music streaming
 ============
 */
-static void S_Base_RawSamples( int stream, int samples, int rate, int width, int s_channels, const byte *data, float volume, int entityNum ) {
+static void S_Base_RawSamples( int stream, int samples, int rate, int width, int s_channels, const byte *data, float volume, int entityNum) {
 	int		i;
 	int		src, dst;
 	float	scale;
@@ -1147,6 +1147,7 @@ static void S_Base_RawSamples( int stream, int samples, int rate, int width, int
 	if ( (stream < 0) || (stream >= MAX_RAW_STREAMS) ) {
 		return;
 	}
+
 	rawsamples = s_rawsamples[stream];
 
 	if(s_muted->integer)

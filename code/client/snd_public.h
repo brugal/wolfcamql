@@ -34,7 +34,7 @@ void S_PrintSfxFilename (sfxHandle_t sfx);
 
 // cinematics and voice-over-network will send raw samples
 // 1.0 volume will be direct output of source samples
-void S_RawSamples (int stream, int samples, int rate, int width, int channels,
+void S_RawSamples(int stream, int samples, int rate, int width, int channels,
 				   const byte *data, float volume, int entityNum);
 
 // stop all sounds and the background track

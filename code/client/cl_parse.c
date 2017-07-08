@@ -630,11 +630,6 @@ void CL_SystemInfoChanged( void ) {
 	// in some cases, outdated cp commands might get sent with this news serverId
 	cl.serverId = atoi( Info_ValueForKey( systemInfo, "sv_serverid" ) );
 
-	// don't set any vars when playing a demo
-	if ( clc.demoplaying ) {
-		return;
-	}
-
 #ifdef USE_VOIP
 #ifdef LEGACY_PROTOCOL
 	if(clc.compat)
@@ -642,13 +637,15 @@ void CL_SystemInfoChanged( void ) {
 	else
 #endif
 	{
-		s = Info_ValueForKey( systemInfo, "sv_voip" );
-		if ( Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER || Cvar_VariableValue("ui_singlePlayerActive"))
-			clc.voipEnabled = qfalse;
-		else
-			clc.voipEnabled = atoi(s);
+		s = Info_ValueForKey( systemInfo, "sv_voipProtocol" );
+		clc.voipEnabled = !Q_stricmp(s, "opus");
 	}
 #endif
+
+	// don't set any vars when playing a demo
+	if ( clc.demoplaying ) {
+		return;
+	}
 
 	s = Info_ValueForKey( systemInfo, "sv_cheats" );
 	cl_connectedToCheatServer = atoi( s );
@@ -1181,7 +1178,7 @@ Play raw data
 =====================
 */
 
-static void CL_PlayVoip(int sender, int samplecnt, const byte *data, int flags)
+static void CL_PlayVoipSpeex (int sender, int samplecnt, const byte *data, int flags)
 {
 	if(flags & VOIP_DIRECT)
 	{
@@ -1192,6 +1189,29 @@ static void CL_PlayVoip(int sender, int samplecnt, const byte *data, int flags)
 	if(flags & VOIP_SPATIAL)
 	{
 			S_RawSamples(sender + MAX_CLIENTS + 1, samplecnt, clc.speexSampleRate, 2, 1,
+						 data, 1.0f, sender);
+	}
+}
+
+/*
+=====================
+CL_PlayVoip
+
+Play raw data
+=====================
+*/
+
+static void CL_PlayVoip(int sender, int samplecnt, const byte *data, int flags)
+{
+	if(flags & VOIP_DIRECT)
+	{
+			S_RawSamples(sender + 1, samplecnt, 48000, 2, 1,
+						 data, clc.voipGain[sender], -1);
+	}
+
+	if(flags & VOIP_SPATIAL)
+	{
+			S_RawSamples(sender + MAX_CLIENTS + 1, samplecnt, 48000, 2, 1,
 						 data, 1.0f, sender);
 	}
 }
@@ -1318,7 +1338,7 @@ void CL_ParseVoipSpeex (msg_t *msg, qboolean checkForFlags, qboolean justPeek)
 		// reset the bits just in case.
 		speex_bits_reset(&clc.speexDecoderBits[sender]);
 		seqdiff = 0;
-	} else if (seqdiff > 100) { // more than 2 seconds of audio dropped?
+	} else if (seqdiff * clc.speexFrameSize * 2 >= sizeof (decoded)) { // dropped more than we can handle?
 		// just start over.
 		Com_DPrintf("VoIP: Dropped way too many (%d) frames from client #%d\n",
 		            seqdiff, sender);
@@ -1349,9 +1369,7 @@ void CL_ParseVoipSpeex (msg_t *msg, qboolean checkForFlags, qboolean justPeek)
 		if ((written + clc.speexFrameSize) * 2 > sizeof (decoded)) {
 			Com_DPrintf("VoIP: playback %d bytes, %d samples, %d frames\n",
 			            written * 2, written, i);
-			//S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
-			//             (const byte *) decoded, clc.voipGain[sender]);
-			CL_PlayVoip(sender, written, (const byte *) decoded, flags);
+			CL_PlayVoipSpeex(sender, written, (const byte *) decoded, flags);
 			written = 0;
 			Com_Printf("^3voip written size (shouldn't happen)\n");
 		}
@@ -1377,14 +1395,140 @@ void CL_ParseVoipSpeex (msg_t *msg, qboolean checkForFlags, qboolean justPeek)
 	Com_DPrintf("VoIP: playback %d bytes, %d samples, %d frames\n",
 	            written * 2, written, i);
 
-	if (written > 0) {
-		//S_RawSamples(sender + 1, written, clc.speexSampleRate, 2, 1,
-		//             (const byte *) decoded, clc.voipGain[sender]);
-		CL_PlayVoip(sender, written, (const byte *) decoded, flags);
-	}
+	if(written > 0)
+		CL_PlayVoipSpeex(sender, written, (const byte *) decoded, flags);
 
 	clc.voipIncomingSequence[sender] = sequence + frames;
 }
+
+/*
+=====================
+CL_ParseVoip
+
+A VoIP message has been received from the server
+=====================
+*/
+void CL_ParseVoip ( msg_t *msg, qboolean ignoreData ) {
+	static short decoded[VOIP_MAX_PACKET_SAMPLES*4]; // !!! FIXME: don't hard code
+
+	const int sender = MSG_ReadShort(msg);
+	const int generation = MSG_ReadByte(msg);
+	const int sequence = MSG_ReadLong(msg);
+	const int frames = MSG_ReadByte(msg);
+	const int packetsize = MSG_ReadShort(msg);
+	const int flags = MSG_ReadBits(msg, VOIP_FLAGCNT);
+	unsigned char encoded[4000];
+	int	numSamples;
+	int seqdiff;
+	int written = 0;
+	int i;
+
+	Com_DPrintf("VoIP: %d-byte packet from client %d\n", packetsize, sender);
+
+	if (sender < 0)
+		return;   // short/invalid packet, bail.
+	else if (generation < 0)
+		return;   // short/invalid packet, bail.
+	else if (sequence < 0)
+		return;   // short/invalid packet, bail.
+	else if (frames < 0)
+		return;   // short/invalid packet, bail.
+	else if (packetsize < 0)
+		return;   // short/invalid packet, bail.
+
+	if (packetsize > sizeof (encoded)) {  // overlarge packet?
+		int bytesleft = packetsize;
+		while (bytesleft) {
+			int br = bytesleft;
+			if (br > sizeof (encoded))
+				br = sizeof (encoded);
+			MSG_ReadData(msg, encoded, br);
+			bytesleft -= br;
+		}
+		return;   // overlarge packet, bail.
+	}
+
+	MSG_ReadData(msg, encoded, packetsize);
+
+	if (ignoreData  ||  di.testParse) {
+		return; // just ignore legacy speex voip data
+	} else if (!clc.voipCodecInitialized) {
+		return;   // can't handle VoIP without libopus!
+	} else if (sender >= MAX_CLIENTS) {
+		return;   // bogus sender.
+	} else if (CL_ShouldIgnoreVoipSender(sender)) {
+		return;   // Channel is muted, bail.
+	}
+
+	// !!! FIXME: make sure data is narrowband? Does decoder handle this?
+
+	Com_DPrintf("VoIP: packet accepted!\n");
+
+	seqdiff = sequence - clc.voipIncomingSequence[sender];
+
+	// This is a new "generation" ... a new recording started, reset the bits.
+	if (generation != clc.voipIncomingGeneration[sender]) {
+		Com_DPrintf("VoIP: new generation %d!\n", generation);
+		opus_decoder_ctl(clc.opusDecoder[sender], OPUS_RESET_STATE);
+		clc.voipIncomingGeneration[sender] = generation;
+		seqdiff = 0;
+	} else if (seqdiff < 0) {   // we're ahead of the sequence?!
+		// This shouldn't happen unless the packet is corrupted or something.
+		Com_DPrintf("VoIP: misordered sequence! %d < %d!\n",
+		            sequence, clc.voipIncomingSequence[sender]);
+		// reset the decoder just in case.
+		opus_decoder_ctl(clc.opusDecoder[sender], OPUS_RESET_STATE);
+		seqdiff = 0;
+	} else if (seqdiff * VOIP_MAX_PACKET_SAMPLES*2 >= sizeof (decoded)) { // dropped more than we can handle?
+		// just start over.
+		Com_DPrintf("VoIP: Dropped way too many (%d) frames from client #%d\n",
+		            seqdiff, sender);
+		opus_decoder_ctl(clc.opusDecoder[sender], OPUS_RESET_STATE);
+		seqdiff = 0;
+	}
+
+	if (seqdiff != 0) {
+		Com_DPrintf("VoIP: Dropped %d frames from client #%d\n",
+		            seqdiff, sender);
+		// tell opus that we're missing frames...
+		for (i = 0; i < seqdiff; i++) {
+			assert((written + VOIP_MAX_PACKET_SAMPLES) * 2 < sizeof (decoded));
+			numSamples = opus_decode(clc.opusDecoder[sender], NULL, 0, decoded + written, VOIP_MAX_PACKET_SAMPLES, 0);
+			if ( numSamples <= 0 ) {
+				Com_DPrintf("VoIP: Error decoding frame %d from client #%d\n", i, sender);
+				continue;
+			}
+			written += numSamples;
+		}
+	}
+
+	numSamples = opus_decode(clc.opusDecoder[sender], encoded, packetsize, decoded + written, ARRAY_LEN(decoded) - written, 0);
+
+	if ( numSamples <= 0 ) {
+		Com_DPrintf("VoIP: Error decoding voip data from client #%d\n", sender);
+		numSamples = 0;
+	}
+
+	#if 0
+	static FILE *encio = NULL;
+	if (encio == NULL) encio = fopen("voip-incoming-encoded.bin", "wb");
+	if (encio != NULL) { fwrite(encoded, packetsize, 1, encio); fflush(encio); }
+	static FILE *decio = NULL;
+	if (decio == NULL) decio = fopen("voip-incoming-decoded.bin", "wb");
+	if (decio != NULL) { fwrite(decoded+written, numSamples*2, 1, decio); fflush(decio); }
+	#endif
+
+	written += numSamples;
+
+	Com_DPrintf("VoIP: playback %d bytes, %d samples, %d frames\n",
+	            written * 2, written, frames);
+
+	if(written > 0)
+		CL_PlayVoip(sender, written, (const byte *) decoded, flags);
+
+	clc.voipIncomingSequence[sender] = sequence + frames;
+}
+
 #endif
 
 
@@ -1881,7 +2025,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 				// old speex without flags
 				CL_ParseVoipSpeex(msg, qfalse, qfalse);
 			} else {
-				Com_Printf("^3%s FIXME voip opus\n", __FUNCTION__);
+				CL_ParseVoip(msg, qfalse);
 			}
 			break;
 #endif

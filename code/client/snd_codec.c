@@ -104,7 +104,13 @@ S_CodecInit
 void S_CodecInit(void)
 {
 	codecs = NULL;
+
 	S_CodecRegister(&wav_codec);
+
+#ifdef USE_CODEC_OPUS
+	S_CodecRegister(&opus_codec);
+#endif
+
 #ifdef USE_CODEC_VORBIS
 	S_CodecRegister(&ogg_codec);
 #endif

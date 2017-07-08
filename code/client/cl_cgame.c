@@ -465,7 +465,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 					// old speex without flags
 					CL_ParseVoipSpeex(&buf, qfalse, qtrue);
 				} else {
-					Com_Printf("^3%s FIXME voip opus\n", __FUNCTION__);
+					CL_ParseVoip(&buf, qtrue);
 				}
 				break;
 #endif
@@ -1696,6 +1696,7 @@ void CL_FirstSnapshot( void ) {
 #endif
 
 #ifdef USE_VOIP
+	// speex used for demo playback
 	if (!clc.speexInitialized) {
 		int i;
 		speex_bits_init(&clc.speexEncoderBits);
@@ -1727,10 +1728,33 @@ void CL_FirstSnapshot( void ) {
 			clc.voipGain[i] = 1.0f;
 		}
 		clc.speexInitialized = qtrue;
+	}
+
+	if (!clc.voipCodecInitialized) {
+		int i;
+		int error;
+
+		clc.opusEncoder = opus_encoder_create(48000, 1, OPUS_APPLICATION_VOIP, &error);
+
+		if ( error ) {
+			Com_DPrintf("VoIP: Error opus_encoder_create %d\n", error);
+			return;
+		}
+
+		for (i = 0; i < MAX_CLIENTS; i++) {
+			clc.opusDecoder[i] = opus_decoder_create(48000, 1, &error);
+			if ( error ) {
+				Com_DPrintf("VoIP: Error opus_decoder_create(%d) %d\n", i, error);
+				return;
+			}
+			clc.voipIgnore[i] = qfalse;
+			clc.voipGain[i] = 1.0f;
+		}
+		clc.voipCodecInitialized = qtrue;
 		clc.voipMuteAll = qfalse;
 		Cmd_AddCommand ("voip", CL_Voip_f);
-		Cvar_Set("cl_voipSendTarget", "all");
-		clc.voipTarget1 = clc.voipTarget2 = clc.voipTarget3 = 0x7FFFFFFF;
+		Cvar_Set("cl_voipSendTarget", "spatial");
+		Com_Memset(clc.voipTargets, ~0, sizeof(clc.voipTargets));
 	}
 #endif
 }

@@ -41,6 +41,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #ifdef USE_VOIP
 #include "speex/speex.h"
 #include "speex/speex_preprocess.h"
+#include <opus.h>
 #endif
 
 #define MAX_DEMO_FILES 64
@@ -251,11 +252,13 @@ typedef struct {
 	qboolean speexInitialized;
 	int speexFrameSize;
 	int speexSampleRate;
+	qboolean voipCodecInitialized;
 
 	// incoming data...
 	// !!! FIXME: convert from parallel arrays to array of a struct.
 	SpeexBits speexDecoderBits[MAX_CLIENTS];
 	void *speexDecoder[MAX_CLIENTS];
+	OpusDecoder *opusDecoder[MAX_CLIENTS];
 	byte voipIncomingGeneration[MAX_CLIENTS];
 	int voipIncomingSequence[MAX_CLIENTS];
 	float voipGain[MAX_CLIENTS];
@@ -263,12 +266,14 @@ typedef struct {
 	qboolean voipMuteAll;
 
 	// outgoing data...
-	int voipTarget1;  // these three ints make up a bit mask of 92 bits.
-	int voipTarget2;  //  the bits say who a VoIP pack is addressed to:
-	int voipTarget3;  //  (1 << clientnum). See cl_voipSendTarget cvar.
+	// if voipTargets[i / 8] & (1 << (i % 8)),
+	// then we are sending to clientnum i.
+	uint8_t voipTargets[(MAX_CLIENTS + 7) / 8];
+	uint8_t voipFlags;
 	SpeexPreprocessState *speexPreprocessor;
 	SpeexBits speexEncoderBits;
 	void *speexEncoder;
+	OpusEncoder *opusEncoder;
 	int voipOutgoingDataSize;
 	int voipOutgoingDataFrames;
 	int voipOutgoingSequence;
@@ -578,6 +583,14 @@ extern	cvar_t	*cl_voipGainDuringCapture;
 extern	cvar_t	*cl_voipCaptureMult;
 extern	cvar_t	*cl_voipShowMeter;
 extern	cvar_t	*cl_voip;
+
+// 20ms at 48k
+#define VOIP_MAX_FRAME_SAMPLES         ( 20 * 48 )
+
+// 3 frame is 60ms of audio, the max opus will encode at once
+#define VOIP_MAX_PACKET_FRAMES         3
+#define VOIP_MAX_PACKET_SAMPLES                ( VOIP_MAX_FRAME_SAMPLES * VOIP_MAX_PACKET_FRAMES )
+
 #endif
 
 extern cvar_t	*cl_useq3gibs;
@@ -786,6 +799,7 @@ void CL_WriteDemoMessage ( msg_t *msg, int headerBytes );
 
 void CL_ParseSnapshot( msg_t *msg, clSnapshot_t *sn, int serverMessageSequence, qboolean justPeek );
 void CL_ParseVoipSpeex (msg_t *msg, qboolean checkForFlags, qboolean justPeek);
+void CL_ParseVoip (msg_t *msg, qboolean ignoreData);
 qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot);
 void CL_Pause_f (void);
 void CL_AddAt (int serverTime, const char *clockTime, const char *command);

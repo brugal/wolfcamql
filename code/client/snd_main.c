@@ -166,9 +166,8 @@ S_RawSamples
 void S_RawSamples (int stream, int samples, int rate, int width, int channels,
 				   const byte *data, float volume, int entityNum)
 {
-	if( si.RawSamples ) {
+	if(si.RawSamples)
 		si.RawSamples(stream, samples, rate, width, channels, data, volume, entityNum);
-	}
 }
 
 /*
