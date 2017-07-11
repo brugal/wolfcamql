@@ -113,8 +113,8 @@ init with 1753
 1809 Fix potential segfault when no PK3s have been loaded (may happen when compiled with -DSTANDALONE)
 
 1810 Fix this bug in a better way.
-1811 skip:  Make it use the correct game name in getserversExt queries
-1812 skip:  Revert changes because dpmaster doesn't work that way.
+1811 Make it use the correct game name in getserversExt queries
+1812 Revert changes because dpmaster doesn't work that way.
 1813 Fix name resolution for domains with A and AAAA record
 1814 Fix bug reported by cyrri
 1815 skip:  Make this change so standalone developers will know to change the HEARTBEAT game string for their versions, too.
@@ -459,9 +459,9 @@ init with 1753
 1965 Add error handling to malloc as well
 1966 Fix nasty crash bug
 
-1967 skip:  Add codec fallback support for sound files not found, Patch by Zack Middleton (#4982)
+1967 Add codec fallback support for sound files not found, Patch by Zack Middleton (#4982)
 
-1968 skip:  Choose better alignment for heavy-duty rendering structures, patch by Matt Turner (#4981)
+1968 skip (missing RB_ReadPixels, others done):  Choose better alignment for heavy-duty rendering structures, patch by Matt Turner (#4981)
 
 1969 skip:  Add opStack protection to defend against malicious QVMs
 
@@ -475,9 +475,9 @@ init with 1753
 1974 Refactoring patch by DevHC
 1975 done:  DevHC messed up
 
-1976 skip (new audio codec loader):  Fix crash bug in new codec audio loader, thanks brain for reporting
+1976 Fix crash bug in new codec audio loader, thanks brain for reporting
 
-1977 skip (new audio codec loader):  More codec loader troubles with extensions
+1977 More codec loader troubles with extensions
 
 1978 done:  Remove newlines from Com_Error message format strings, patch by DevHC
 
@@ -677,7 +677,7 @@ init with 1753
 2040 skip:  Fixes for bugs introduced in last several revisions
 2041 skip:  Still forgot this one :(
 
-2042 skip check:
+2042
      - Fix memory leak in DMA sound after S_Shutdown().
      - Make codec load use temp hunk memory instead of zone mem.
      - Fix sound issues with direct sound and game_restart (#4526)
@@ -844,7 +844,7 @@ client gets disconnected with download blocks in the queue
      - Fix a compiler warning for cross compile
 
 2092 skip:  * Fix various issues with unix Sys_Dialog
-2093 skip:  Shut up returning functions with noreturn attribute warning
+2093 Shut up returning functions with noreturn attribute warning
 
 2094 Revert attribute patch from r2090 because the jpeg functions really shouldn't be deviating from the codebase unnecessarily
 
@@ -854,7 +854,7 @@ client gets disconnected with download blocks in the queue
 2097 skip:  * Replace usage of system with fork/exec
 2098 skip:  Fix extension name comparison for DLL files
 2099 Include q_shared.h instead of redefining these
-2100 skip:  Fix last "noreturn" warnings
+2100 Fix last "noreturn" warnings
 
 2101 Bug 5096  - Define PRODUCT_VERSION in q_shared.h if it is not, patch by Zack Middleton
 
@@ -869,10 +869,9 @@ client gets disconnected with download blocks in the queue
 
 2103 Fix menu corruption on IRIX (#5097), patch by Rainer Canavan
 
+2104 Bug 5094 - Code cleanup, patch by Zack Middleton and DevHC. Fixes unused-but-set gcc warnings
+
 ---------------   this   ---------------
-
-
-2104 skip:  Bug 5094 - Code cleanup, patch by Zack Middleton and DevHC. Fixes unused-but-set gcc warnings
 
 2105 skip:
     - Switch master server protocol to dpmaster for better game separation. Based partly on patch by Zack Middleton
@@ -2155,6 +2154,7 @@ client gets disconnected with download blocks in the queue
     user doesn't override it, assume normal system paths.
 
 -------   this   --------------
+
 2013-05-19-05 skip:  Find system zlib via user override, pkg-config or in standard locations
 
 2013-05-19-06
@@ -2627,7 +2627,7 @@ in SDL2.
     flareCoeff was only set if r_flareCoeff cvar was set as modified.
     Cvars are set as modified when created or changed.
 
-2013-11-10-01 skip (openal):
+2013-11-10-01
     Make OpenAL buffer management work on OS X
 
     Don't assume we have unlimited OpenAL buffers.
@@ -2635,12 +2635,12 @@ in SDL2.
     Free unprocessed stream and music buffers.
     Free unused sfx buffers when sound file exists and fails loading into OpenAL (though I haven't seen it fail).
 
-2013-11-10-02 skip (openal):
+2013-11-10-02
     Fix restoring loop sound position on OS X
 
     The default OpenAL library on OS X errors AL_INVALID_VALUE for AL_SEC_OFFSET if source isn't playing.
 
-2013-11-10-03 skip (openal):
+2013-11-10-03
     Fix cinematics often being silent on OS X
 
     If OpenAL source isn't playing, often what happens is: queued buffers is 0 and processed buffers is non-0.
@@ -2752,7 +2752,7 @@ in SDL2.
 
 2013-12-09-02 skip (rend2):  OpenGL2: Support GL_ARB_vertex_type_2_10_10_10_rev for normals/tangents/lightdirs
 
-2013-12-09-03 skip:  Fix crash in OpenAL when no input devices are available
+2013-12-09-03 Fix crash in OpenAL when no input devices are available
 
 2013-12-13-01 skip (rend2):  OpenGL2: Small glsl shader optimizations, fixes, and cleanup.
 
@@ -2932,9 +2932,9 @@ the demo.
 2014-02-18-01 skip:  Merge branch 'master' into sdl2
 2014-02-20-01 skip (rend2):  OpenGL2: Remove and force r_softOverbright.
 
-2014-02-22-01 skip:  Replace deprecated alDopplerVelocity with alSpeedOfSound per OpenAL
+2014-02-22-01 Replace deprecated alDopplerVelocity with alSpeedOfSound per OpenAL 1.1 spec
 
-2014-02-22-02 skip:
+2014-02-22-02
     Remove references to alDopplerVelocity
 
     Let's load driver even if it doesn't have the deprecated alDopplerVelocity.
@@ -3477,7 +3477,7 @@ the demo.
 
     Fix building with curl on Linux PPC and Sparc
 
-2014-09-09-06 skip:
+2014-09-09-06
     Merge pull request #84 from MAN-AT-ARMS/openal_speedsound
 
     Change default value for s_alDopplerSpeed
@@ -4656,12 +4656,12 @@ the demo.
 
 2016-06-08-01 skip (ren2):  OpenGL2: Set cubemap mip selection to match output from ggxcc.
 
-2016-06-12-01 skip (bumps mac osx sdk version):
+2016-06-12-01
     Fix Makefile for OSX
     Bump base SDK from 10.5 -> 10.7
     Just use the builtin __APPLE__
 
-2016-06-12-02 skip (^):
+2016-06-12-02
     Merge pull request #190 from wtfbbqhax/OSX_64bit_builds
 
     Fix Makefile for OSX

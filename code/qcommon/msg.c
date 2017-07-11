@@ -1593,7 +1593,6 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 	int				ammobits;
 	int				powerupbits;
 	int				numFields;
-	int				c;
 	netField_t		*field;
 	int				*fromF, *toF;
 	float			fullFloat;
@@ -1603,8 +1602,6 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 		from = &dummy;
 		Com_Memset (&dummy, 0, sizeof(dummy));
 	}
-
-	c = msg->cursize;
 
 	if (com_protocol->integer == 90) {
 		numFields = ARRAY_LEN(playerStateFieldsQldm90);
@@ -1675,7 +1672,6 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 			MSG_WriteBits( msg, *toF, field->bits );
 		}
 	}
-	c = msg->cursize - c;
 
 
 	//

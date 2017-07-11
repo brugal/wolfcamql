@@ -176,8 +176,6 @@ void CG_SelectPrevPlayer(void) {
 
 
 static void CG_DrawPlayerArmorIcon( const rectDef_t *rect, qboolean draw2D ) {
-	//centity_t	*cent;
-	//playerState_t	*ps;
 	vec3_t		angles;
 	vec3_t		origin;
 
@@ -189,28 +187,23 @@ static void CG_DrawPlayerArmorIcon( const rectDef_t *rect, qboolean draw2D ) {
 		return;
 	}
 
-	//cent = &cg_entities[cg.snap->ps.clientNum];
-	//ps = &cg.snap->ps;
-
 	if ( draw2D || ( !cg_draw3dIcons.integer && cg_drawIcons.integer) ) { // bk001206 - parentheses
 		CG_DrawPic( rect->x, rect->y + rect->h/2 + 1, rect->w, rect->h, cgs.media.yellowArmorIcon );
-  } else if (cg_draw3dIcons.integer) {
-	  VectorClear( angles );
-    origin[0] = 90;
-  	origin[1] = 0;
-  	origin[2] = -10;
-  	angles[YAW] = ( cg.time & 2047 ) * 360 / 2048.0;
+	} else if (cg_draw3dIcons.integer) {
+		VectorClear( angles );
+		origin[0] = 90;
+		origin[1] = 0;
+		origin[2] = -10;
+		angles[YAW] = ( cg.time & 2047 ) * 360 / 2048.0;
 
-    CG_Draw3DModel( rect->x, rect->y, rect->w, rect->h, cgs.media.armorModel, 0, origin, angles );
-  }
-
+		CG_Draw3DModel( rect->x, rect->y, rect->w, rect->h, cgs.media.armorModel, 0, origin, angles );
+	}
 }
 
 static void CG_DrawPlayerArmorValue (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align, const rectDef_t *menuRect)
 {
 	char	num[16];
-	int value;
-	//centity_t	*cent;
+ 	int value;
 	const playerState_t	*ps;
 	rectDef_t r;
 
@@ -221,8 +214,6 @@ static void CG_DrawPlayerArmorValue (const rectDef_t *rect, float scale, const v
 		if (value < 0)
 			return;
 	} else {
-
-		//cent = &cg_entities[cg.snap->ps.clientNum];
 		ps = &cg.snap->ps;
 
 		value = ps->stats[STAT_ARMOR];
@@ -231,9 +222,9 @@ static void CG_DrawPlayerArmorValue (const rectDef_t *rect, float scale, const v
 	memcpy(&r, rect, sizeof(rectDef_t));
 
 	if (shader) {
-    trap_R_SetColor( color );
+		trap_R_SetColor( color );
 		CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
-	  trap_R_SetColor( NULL );
+		trap_R_SetColor( NULL );
 	} else {
 		float height;
 
@@ -262,8 +253,6 @@ static void CG_DrawPlayerArmorValue (const rectDef_t *rect, float scale, const v
 }
 
 static void CG_DrawPlayerAmmoIcon( const rectDef_t *rect, qboolean draw2D ) {
-	//centity_t	*cent;
-	//playerState_t	*ps;
 	vec3_t		angles;
 	vec3_t		origin;
 	int weapon;
@@ -274,25 +263,22 @@ static void CG_DrawPlayerAmmoIcon( const rectDef_t *rect, qboolean draw2D ) {
 		weapon = cg.predictedPlayerState.weapon;
 	}
 
-	//cent = &cg_entities[cg.snap->ps.clientNum];
-	//ps = &cg.snap->ps;
-
 	if ( draw2D || (!cg_draw3dIcons.integer && cg_drawIcons.integer) ) { // bk001206 - parentheses
-	  qhandle_t	icon;
-	  icon = cg_weapons[weapon].ammoIcon;
+		qhandle_t	icon;
+		icon = cg_weapons[weapon].ammoIcon;
 		if ( icon ) {
-		  CG_DrawPic( rect->x, rect->y, rect->w, rect->h, icon );
+			CG_DrawPic( rect->x, rect->y, rect->w, rect->h, icon );
 		}
-  } else if (cg_draw3dIcons.integer) {
-  	if ( weapon && cg_weapons[weapon].ammoModel ) {
-	    VectorClear( angles );
-	  	origin[0] = 70;
-  		origin[1] = 0;
-  		origin[2] = 0;
-  		angles[YAW] = 90 + 20 * sin( cg.time / 1000.0 );
-  		CG_Draw3DModel( rect->x, rect->y, rect->w, rect->h, cg_weapons[weapon].ammoModel, 0, origin, angles );
-  	}
-  }
+	} else if (cg_draw3dIcons.integer) {
+		if ( weapon && cg_weapons[weapon].ammoModel ) {
+			VectorClear( angles );
+			origin[0] = 70;
+			origin[1] = 0;
+			origin[2] = 0;
+			angles[YAW] = 90 + 20 * sin( cg.time / 1000.0 );
+			CG_Draw3DModel( rect->x, rect->y, rect->w, rect->h, cg_weapons[weapon].ammoModel, 0, origin, angles );
+		}
+	}
 }
 
 static void CG_DrawPlayerAmmoValue (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align, const rectDef_t *menuRect)
@@ -460,7 +446,7 @@ static void CG_DrawSelectedPlayerArmor( const rectDef_t *rect, float scale, cons
 }
 
 static qhandle_t CG_StatusHandle(int task) {
-	qhandle_t h = cgs.media.assaultShader;
+	qhandle_t h;
 	switch (task) {
 		case TEAMTASK_OFFENSE :
 			h = cgs.media.assaultShader;

@@ -80,7 +80,7 @@ char *Sys_DefaultHomePath(void)
 		if( ( p = getenv( "HOME" ) ) != NULL )
 		{
 			Q_strncpyz( homePath, p, sizeof( homePath ) );
-#ifdef MACOS_X
+#ifdef __APPLE__
 			Q_strcat( homePath, sizeof( homePath ),
 					"/Library/Application Support/Wolfcamql" );
 #else
@@ -151,7 +151,7 @@ char *Sys_QuakeLiveDir (void)
 				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/.wine/drive_c/users/%s/Application Data/id Software/quakelive/home", p, user);
 			} else {
 				// try old quakelive native linux/mac support
-#ifdef MACOS_X
+#ifdef __APPLE__
 				//FIXME not sure
 				// /Library/Application\ Support/Quakelive/
 				Com_sprintf(QuakeLivePath, sizeof(QuakeLivePath), "%s/Library/Application Support/Quakelive/home/", p);
@@ -250,7 +250,7 @@ char *Sys_GetClipboardData (void)
 {
 	return NULL;
 }
-#elif defined(MACOS_X)
+#elif defined(__APPLE__)
 
 extern char *Cocoa_GetClipboardData (void);
 
@@ -610,7 +610,8 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 	char          *list[MAX_FOUND_FILES];
 	int           i;
 	struct stat   st;
-	//int           extLen;
+
+	int           extLen;
 	qboolean wantDirs;
 
 	if (filter) {
@@ -648,7 +649,7 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 		dironly = qtrue;
 	}
 
-	//extLen = strlen( extension );
+	extLen = strlen( extension );
 
 	// search
 	nfiles = 0;
@@ -678,9 +679,9 @@ char **Sys_ListFiles( const char *directory, const char *extension, char *filter
 		}
 
 		if (*extension) {
-			if ( strlen( d->d_name ) < strlen( extension ) ||
+			if ( strlen( d->d_name ) < extLen ||
 				Q_stricmp(
-					d->d_name + strlen( d->d_name ) - strlen( extension ),
+					d->d_name + strlen( d->d_name ) - extLen,
 					extension ) ) {
 				continue; // didn't match
 			}
@@ -741,7 +742,7 @@ void Sys_FreeFileList( char **list )
 	Z_Free( list );
 }
 
-#ifdef MACOS_X
+#ifdef __APPLE__
 /*
 =================
 Sys_StripAppBundle
@@ -767,7 +768,7 @@ char *Sys_StripAppBundle( char *dir )
 	Q_strncpyz(cwd, Sys_Dirname(cwd), sizeof(cwd));
 	return cwd;
 }
-#endif // MACOS_X
+#endif // __APPLE__
 
 
 /*
@@ -831,7 +832,7 @@ void Sys_ErrorDialog( const char *error )
 
 	Sys_Print( va( "%s\n", error ) );
 
-#if defined(MACOS_X) && !DEDICATED
+#if defined(__APPLE__) && !DEDICATED
 	/* This function has to be in a separate file, compiled as Objective-C. */
 	extern void Cocoa_MsgBox( const char *text );
 	if (!com_dedicated || !com_dedicated->integer)
@@ -904,7 +905,7 @@ Unix specific initialisation
 ==============
 */
 
-#if defined(MACOS_X)  ||  DEDICATED
+#if defined(__APPLE__)  ||  DEDICATED
 
 #include <execinfo.h>
 
@@ -1379,7 +1380,7 @@ void Sys_OpenQuakeLiveDirectory (void)
 		path = Sys_QuakeLiveDir();
 	}
 
-#ifdef MACOS_X
+#ifdef __APPLE__
 	system(va("open \"%s\"&", path));
 #else
 	system(va("xdg-open \"%s\"&", path));
@@ -1395,7 +1396,7 @@ void Sys_OpenWolfcamDirectory (void)
 		path = Sys_DefaultHomePath();
 	}
 
-#ifdef MACOS_X
+#ifdef __APPLE__
 	system(va("open \"%s\"&", path));
 #else
 	system(va("xdg-open \"%s\"&", path));
@@ -1404,7 +1405,7 @@ void Sys_OpenWolfcamDirectory (void)
 
 int Sys_DirnameCmp (const char *pathName1, const char *pathName2)
 {
-#ifdef MACOS_X
+#ifdef __APPLE__
 	return Q_stricmp(pathName1, pathName2);
 #else
 	return strcmp(pathName1, pathName2);

@@ -515,9 +515,7 @@ void CL_CaptureVoip(void)
 	// try to get more audio data from the sound card...
 
 	if (initialFrame) {
-		float gain = cl_voipGainDuringCapture->value;
-		if (gain < 0.0f) gain = 0.0f; else if (gain >= 1.0f) gain = 1.0f;
-		S_MasterGain(cl_voipGainDuringCapture->value);
+		S_MasterGain(Com_Clamp(0.0f, 1.0f, cl_voipGainDuringCapture->value));
 		S_StartCapture();
 		CL_VoipNewGeneration();
 		CL_VoipParseTargets();
@@ -3153,15 +3151,15 @@ void CL_Vid_Restart_f (void)
 
 /*
 =================
-CL_Snd_Restart
+CL_Snd_Shutdown
 
 Restart the sound subsystem
 =================
 */
-void CL_Snd_Restart(void)
+void CL_Snd_Shutdown(void)
 {
 	S_Shutdown();
-	S_Init();
+	cls.soundStarted = qfalse;
 }
 
 /*
@@ -3175,7 +3173,8 @@ handles will be invalid
 */
 void CL_Snd_Restart_f(void)
 {
-	CL_Snd_Restart();
+	CL_Snd_Shutdown();
+	// sound will be reinitialized by vid_restart
 	CL_Vid_Restart_f();
 }
 
@@ -4517,7 +4516,7 @@ void CL_Frame ( int msec, double fmsec ) {
 	cls.realtime += cls.frametime;
 
 	if ( cl_timegraph->integer ) {
-		SCR_DebugGraph ( cls.realFrametime * 0.25, 0 );
+		SCR_DebugGraph ( cls.realFrametime * 0.25 );
 	}
 
 	// see if we need to update any userinfo
@@ -5551,7 +5550,7 @@ void CL_Init ( void ) {
 #endif
 
 	cl_conXOffset = Cvar_Get ("cl_conXOffset", "0", 0);
-#ifdef MACOS_X
+#ifdef __APPLE__
 	// In game video is REALLY slow in Mac OS X right now due to driver slowness
 	cl_inGameVideo = Cvar_Get ("r_inGameVideo", "0", CVAR_ARCHIVE);
 #else
@@ -5568,7 +5567,7 @@ void CL_Init ( void ) {
 	m_yaw = Cvar_Get ("m_yaw", "0.022", CVAR_ARCHIVE);
 	m_forward = Cvar_Get ("m_forward", "0.25", CVAR_ARCHIVE);
 	m_side = Cvar_Get ("m_side", "0.25", CVAR_ARCHIVE);
-#ifdef MACOS_X
+#ifdef __APPLE__
 	// Input is jittery on OS X w/o this
 	m_filter = Cvar_Get ("m_filter", "1", CVAR_ARCHIVE);
 #else
@@ -5756,7 +5755,7 @@ void CL_Shutdown( void ) {
 
 	CL_Disconnect( qtrue );
 
-	S_Shutdown();
+	CL_Snd_Shutdown();
 	CL_ShutdownRef();
 
 	CL_ShutdownUI();
@@ -5962,10 +5961,8 @@ CL_GetServerStatus
 ===================
 */
 serverStatus_t *CL_GetServerStatus( netadr_t from ) {
-	//serverStatus_t *serverStatus;
 	int i, oldest, oldestTime;
 
-	//serverStatus = NULL;
 	for (i = 0; i < MAX_SERVERSTATUSREQUESTS; i++) {
 		if ( NET_CompareAdr( from, cl_serverStatusList[i].address ) ) {
 			return &cl_serverStatusList[i];
@@ -6483,7 +6480,6 @@ qboolean CL_UpdateVisiblePings_f(int source) {
 	if (slots < MAX_PINGREQUESTS) {
 		serverInfo_t *server = NULL;
 
-		max = (source == AS_GLOBAL) ? MAX_GLOBAL_SERVERS : MAX_OTHER_SERVERS;
 		switch (source) {
 			case AS_LOCAL :
 				server = &cls.localServers[0];

@@ -4365,9 +4365,9 @@ static float CG_DrawTeamOverlay_orig( float y, qboolean right, qboolean upper ) 
 				if (!p || !*p)
 					p = "unknown";
 				//FIXME width
-				len = CG_DrawStrlen(p, &cgs.media.tinychar) / TINYCHAR_WIDTH;
-				if (len > lwidth)
-					len = lwidth;
+//				len = CG_DrawStrlen(p, &cgs.media.tinychar) / TINYCHAR_WIDTH;
+//				if (len > lwidth)
+//					len = lwidth;
 
 //				xx = x + TINYCHAR_WIDTH * 2 + TINYCHAR_WIDTH * pwidth +
 //					((lwidth/2 - len/2) * TINYCHAR_WIDTH);
@@ -5666,8 +5666,8 @@ CG_DrawTeamInfo
 */
 #ifndef MISSIONPACK
 static void CG_DrawTeamInfo( void ) {
-	float w, h;
-	int i, len;
+	float h;
+	int i;
 	vec4_t		hcolor;
 	int		chatHeight;
 
@@ -5689,17 +5689,6 @@ static void CG_DrawTeamInfo( void ) {
 		}
 
 		h = (cgs.teamChatPos - cgs.teamLastChatPos) * TINYCHAR_HEIGHT;
-
-		w = 0;
-
-		for (i = cgs.teamLastChatPos; i < cgs.teamChatPos; i++) {
-			//FIXME width
-			len = CG_DrawStrlen(cgs.teamChatMsgs[i % chatHeight], &cgs.media.tinychar) / TINYCHAR_WIDTH;
-			if (len > w)
-				w = len;
-		}
-		w *= TINYCHAR_WIDTH;
-		w += TINYCHAR_WIDTH * 2;
 
 		if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_RED ) {
 			hcolor[0] = 1.0f;
@@ -9032,8 +9021,6 @@ static void CG_DrawTeamVote (void)
 static qboolean CG_DrawScoreboard (void)
 {
 	static qboolean firstTime = qtrue;
-	//float fade;
-	const float *fadeColor;
 	qboolean dead;
 
 	if (cg.freecam  &&  !cg.showScores) {
@@ -9067,12 +9054,9 @@ static qboolean CG_DrawScoreboard (void)
 	}
 
 	if (cg.showScores || (cg_scoreBoardWhenDead.integer  &&  dead) || (cg_scoreBoardAtIntermission.integer  &&  cg.predictedPlayerState.pm_type == PM_INTERMISSION)) {
-		//fade = 1.0;
-		fadeColor = colorWhite;
 		//Com_Printf("%f yes\n", cg.ftime);
 	} else {
-		fadeColor = CG_FadeColor( cg.scoreFadeTime, FADE_TIME );
-		if ( !fadeColor ) {
+		if ( !CG_FadeColor( cg.scoreFadeTime, FADE_TIME ) ) {
 			// next time scoreboard comes up, don't print killer
 			cg.deferredPlayerLoading = 0;
 			cg.killerName[0] = 0;
@@ -9080,7 +9064,6 @@ static qboolean CG_DrawScoreboard (void)
 			//Com_Printf("%f nope\n", cg.ftime);
 			return qfalse;
 		}
-		//fade = *fadeColor;
 	}
 
 	if (cg_qlhud.integer  &&  !cg_scoreBoardOld.integer) {
@@ -9740,7 +9723,6 @@ static void CG_DrawWarmup( void ) {
 	}
 	s = va( "Starts in: %i", sec + 1 );
 
-	scale = 0.45f;
 	switch ( cg.warmupCount ) {
 	case 0:
 		//cw = 28;

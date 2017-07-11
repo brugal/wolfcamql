@@ -1702,11 +1702,9 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 //		CG_Printf( "EV_JUMP_PAD w/effect #%i\n", es->eventParm );
 		//CG_Printf("jump pad\n");
 		{
-			//localEntity_t	*smoke;
 			vec3_t			up = {0, 0, 1};
 
 
-			//smoke = CG_SmokePuff( cent->lerpOrigin, up,
 			CG_SmokePuff( cent->lerpOrigin, up,
 						  32,
 						  1, 1, 1, 0.33f,

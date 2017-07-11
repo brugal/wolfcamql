@@ -2537,7 +2537,6 @@ void CG_AdjustPositionForMover (const vec3_t in, int moverNum, int fromTime, int
 
 	VectorAdd( in, deltaOrigin, out );
 	VectorAdd( angles_in, deltaAngles, angles_out );
-
 	// FIXME: origin change when on a rotating object
 }
 

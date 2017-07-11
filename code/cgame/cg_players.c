@@ -2679,7 +2679,6 @@ CG_DustTrail
 */
 static void CG_DustTrail( centity_t *cent ) {
 	int				anim;
-	//localEntity_t	*dust;
 	vec3_t end, vel;
 	trace_t tr;
 
@@ -2721,7 +2720,6 @@ static void CG_DustTrail( centity_t *cent ) {
 	end[2] -= 16;
 
 	VectorSet(vel, 0, 0, -30);
-	//dust = CG_SmokePuff( end, vel,
 	CG_SmokePuff( end, vel,
 						 cg_smokeRadius_dust.value,  // 24
 				  .8f, .8f, 0.7f, 0.33f,

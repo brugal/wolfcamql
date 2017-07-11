@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define INDEX_AUDIO_FILENAME_EXT ".aindex.dat"
 
 
-#ifndef MACOS_X
+#ifndef __APPLE__
 #ifndef ftello
 #define ftello ftello64
 #endif

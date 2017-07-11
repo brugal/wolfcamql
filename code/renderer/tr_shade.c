@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_shade.c
 
 #include "tr_local.h"
-#if idppc_altivec && !defined(MACOS_X)
+#if idppc_altivec && !defined(__APPLE__)
 #include <altivec.h>
 #endif
 
@@ -1271,8 +1271,10 @@ static void RB_IterateStagesGeneric( shaderCommands_t *input )
 void RB_StageIteratorGeneric( void )
 {
 	shaderCommands_t *input;
+	shader_t	*shader;
 
 	input = &tess;
+	shader = input->shader;
 
 	RB_DeformTessGeometry();
 
@@ -1289,10 +1291,10 @@ void RB_StageIteratorGeneric( void )
 	//
 	// set face culling appropriately
 	//
-	GL_Cull( input->shader->cullType );
+	GL_Cull( shader->cullType );
 
 	// set polygon offset if necessary
-	if (input->shader->polygonOffset  &&  r_polygonFill->integer)
+	if (shader->polygonOffset  &&  r_polygonFill->integer)
 	{
 		qglEnable( GL_POLYGON_OFFSET_FILL );
 		qglPolygonOffset( r_offsetFactor->value, r_offsetUnits->value );
@@ -1304,7 +1306,7 @@ void RB_StageIteratorGeneric( void )
 	// to avoid compiling those arrays since they will change
 	// during multipass rendering
 	//
-	if ( tess.numPasses > 1 || input->shader->multitextureEnv )
+	if ( tess.numPasses > 1 || shader->multitextureEnv )
 	{
 		setArraysOnce = qfalse;
 		qglDisableClientState (GL_COLOR_ARRAY);
@@ -1371,7 +1373,7 @@ void RB_StageIteratorGeneric( void )
 	//
 	// reset polygon offset
 	//
-	if (input->shader->polygonOffset  &&  r_polygonFill->integer)
+	if (shader->polygonOffset  &&  r_polygonFill->integer)
 	{
 		qglDisable( GL_POLYGON_OFFSET_FILL );
 	}
@@ -1384,11 +1386,10 @@ void RB_StageIteratorGeneric( void )
 void RB_StageIteratorVertexLitTexture( void )
 {
 	shaderCommands_t *input;
-	//shader_t		*shader;
+	shader_t		*shader;
 
 	input = &tess;
-
-	//shader = input->shader;
+	shader = input->shader;
 
 	//
 	// compute colors
@@ -1408,7 +1409,7 @@ void RB_StageIteratorVertexLitTexture( void )
 	//
 	// set face culling appropriately
 	//
-	GL_Cull( input->shader->cullType );
+	GL_Cull( shader->cullType );
 
 	//
 	// set arrays and lock
@@ -1463,8 +1464,10 @@ void RB_StageIteratorVertexLitTexture( void )
 
 void RB_StageIteratorLightmappedMultitexture( void ) {
 	shaderCommands_t *input;
+	shader_t	*shader;
 
 	input = &tess;
+	shader = input->shader;
 
 	//Com_Printf("%s\n", __FUNCTION__);
 
@@ -1480,7 +1483,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	//
 	// set face culling appropriately
 	//
-	GL_Cull( input->shader->cullType );
+	GL_Cull( shader->cullType );
 
 	//
 	// set color, pointers, and lock

@@ -290,7 +290,6 @@ CG_RailTrail
 void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 {
 	vec3_t axis[36], move, move2, vec, temp;
-	//vec3_t next_move;
 	float  len;
 	int    i, j, skip;
 
@@ -689,7 +688,6 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 	AxisClear( re->axis );
 
 	VectorMA(move, 20, vec, move);
-	//VectorCopy(move, next_move);
 	VectorScale (vec, SPACING, vec);
 
 	if (!cg_railFromMuzzle.integer) {
@@ -964,7 +962,6 @@ static void CG_PlasmaTrail( centity_t *cent, const weaponInfo_t *wi ) {
 	vec3_t			velocity, xvelocity, origin;
 	vec3_t			offset, xoffset;
 	vec3_t			v[3];
-	//int				t, startTime, step;
 	float	waterScale = 1.0f;
 	int cgtime;
 
@@ -979,15 +976,10 @@ static void CG_PlasmaTrail( centity_t *cent, const weaponInfo_t *wi ) {
 
 	cgtime = cent->cgtime;
 
-	//step = 50;
-
 	//es = &cent->currentState;
 	memcpy(&tmpes, &cent->currentState, sizeof(tmpes));
 	es = &tmpes;
 	//es->pos.trTime += cent->serverTimeOffset;
-
-	//startTime = cent->trailTime;
-	//t = step * ( (startTime + step) / step );
 
 	BG_EvaluateTrajectoryf( &es->pos, cgtime, origin, cg.foverf );
 
@@ -1032,21 +1024,21 @@ static void CG_PlasmaTrail( centity_t *cent, const weaponInfo_t *wi ) {
 	VectorScale( xvelocity, waterScale, le->pos.trDelta );
 
 	AxisCopy( axisDefault, re->axis );
-    re->shaderTime = cgtime / 1000.0f;
-    re->reType = RT_SPRITE;
-    re->radius = 0.25f;
+	re->shaderTime = cgtime / 1000.0f;
+	re->reType = RT_SPRITE;
+	re->radius = 0.25f;
 	re->customShader = cgs.media.railRingsShader;
 	le->bounceFactor = 0.3f;
 
-    re->shaderRGBA[0] = wi->flashDlightColor[0] * 63;
-    re->shaderRGBA[1] = wi->flashDlightColor[1] * 63;
-    re->shaderRGBA[2] = wi->flashDlightColor[2] * 63;
-    re->shaderRGBA[3] = 63;
+	re->shaderRGBA[0] = wi->flashDlightColor[0] * 63;
+	re->shaderRGBA[1] = wi->flashDlightColor[1] * 63;
+	re->shaderRGBA[2] = wi->flashDlightColor[2] * 63;
+	re->shaderRGBA[3] = 63;
 
-    le->color[0] = wi->flashDlightColor[0] * 0.2;
-    le->color[1] = wi->flashDlightColor[1] * 0.2;
-    le->color[2] = wi->flashDlightColor[2] * 0.2;
-    le->color[3] = 0.25f;
+	le->color[0] = wi->flashDlightColor[0] * 0.2;
+	le->color[1] = wi->flashDlightColor[1] * 0.2;
+	le->color[2] = wi->flashDlightColor[2] * 0.2;
+	le->color[3] = 0.25f;
 
 	le->angles.trType = TR_LINEAR;
 	le->angles.trTime = cgtime;
@@ -1284,8 +1276,6 @@ void CG_RegisterWeapon( int weaponNum ) {
 		weaponInfo->handsModel = trap_R_RegisterModel( "models/weapons2/shotgun/shotgun_hand.md3" );
 	}
 
-	weaponInfo->loopFireSound = qfalse;
-
 	switch ( weaponNum ) {
 	case WP_GAUNTLET:
 		MAKERGB( weaponInfo->flashDlightColor, 0.6f, 0.6f, 1.0f );
@@ -1326,7 +1316,6 @@ void CG_RegisterWeapon( int weaponNum ) {
 #if 1  //def MPACK
 	case WP_CHAINGUN:
 		weaponInfo->firingSound = trap_S_RegisterSound( "sound/weapons/vulcan/wvulfire.wav", qfalse );
-		weaponInfo->loopFireSound = qtrue;
 		MAKERGB( weaponInfo->flashDlightColor, 1, 1, 0 );
 		weaponInfo->flashSound[0] = trap_S_RegisterSound( "sound/weapons/vulcan/vulcanf1b.wav", qfalse );
 		weaponInfo->flashSound[1] = trap_S_RegisterSound( "sound/weapons/vulcan/vulcanf2b.wav", qfalse );
@@ -3592,6 +3581,7 @@ void CG_MissileHitWall( int weapon, int clientNum, const vec3_t origin, const ve
 		shader = cgs.media.bulletExplosionShader;
 		mark = cgs.media.bulletMarkShader;
 
+		// 2017-07-09 this rand snd fx code is taken out in ioquake3 patch 2104
 		r = rand() & 3;
 		if ( r < 2 ) {
 			sfx = cgs.media.sfx_ric1;

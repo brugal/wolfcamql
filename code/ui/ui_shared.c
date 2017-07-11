@@ -2155,16 +2155,12 @@ static int Item_Slider_OverSlider(itemDef_t *item, float x, float y) {
 
 static int Item_ListBox_OverLB(itemDef_t *item, float x, float y) {
 	rectDef_t r;
-	//listBoxDef_t *listPtr;
 	int thumbstart;
-	//int count;
 
 	if (!item) {
 		Com_Printf("^1Item_ListBox_OverLB item == NULL\n");
 	}
 
-	//count = DC->feederCount(item->special);
-	//listPtr = (listBoxDef_t*)item->typeData;
 	if (item->window.flags & WINDOW_HORIZONTAL) {
 		// check if on left arrow
 		r.x = item->window.rect.x;
@@ -2412,7 +2408,7 @@ static qboolean Item_ListBox_HandleKey(itemDef_t *item, int key, qboolean down, 
 		}
 		else {
 			viewmax = (item->window.rect.h / listPtr->elementHeight);
-			if ( key == K_UPARROW || key == K_KP_UPARROW || K_MWHEELUP )
+			if ( key == K_UPARROW || key == K_KP_UPARROW || key == K_MWHEELUP )
 			{
 				if (!listPtr->notselectable) {
 					listPtr->cursorPos--;
@@ -3826,8 +3822,6 @@ static void Item_TextField_Paint(itemDef_t *item) {
 		DC->getCVarString(item->cvar, buff, sizeof(buff));
 	} 
 
-	parent = (menuDef_t*)item->parent;
-
 	if (item->window.flags & WINDOW_HASFOCUS) {
 		lowLight[0] = 0.8 * parent->focusColor[0]; 
 		lowLight[1] = 0.8 * parent->focusColor[1]; 
@@ -4181,7 +4175,7 @@ static void BindingFromName(const char *cvar) {
 
 static void Item_Slider_Paint(itemDef_t *item) {
 	vec4_t newColor, lowLight;
-	float x, y;  //, value;
+	float x, y;
 	menuDef_t *parent = (menuDef_t*)item->parent;
 	rectDef_t menuRect;
 
@@ -4196,7 +4190,6 @@ static void Item_Slider_Paint(itemDef_t *item) {
 	}
 
 	menuRect = ((menuDef_t *)item->parent)->window.rect;
-	//value = (item->cvar) ? DC->getCVarValue(item->cvar) : 0;
 
 	if (item->window.flags & WINDOW_HASFOCUS) {
 		lowLight[0] = 0.8 * parent->focusColor[0];
@@ -4220,12 +4213,10 @@ static void Item_Slider_Paint(itemDef_t *item) {
 
 	x = Item_Slider_ThumbPosition(item);
 	DC->drawHandlePic(x - (SLIDER_THUMB_WIDTH / 2), y - 2, SLIDER_THUMB_WIDTH, SLIDER_THUMB_HEIGHT, DC->Assets.sliderThumb, item->widescreen, menuRect);
-
 }
 
 static void Item_Bind_Paint(itemDef_t *item) {
 	vec4_t newColor, lowLight;
-	float value;
 	int maxChars = 0;
 	menuDef_t *parent = (menuDef_t*)item->parent;
 	editFieldDef_t *editPtr = (editFieldDef_t*)item->typeData;
@@ -4237,8 +4228,6 @@ static void Item_Bind_Paint(itemDef_t *item) {
 	if (editPtr) {
 		maxChars = editPtr->maxPaintChars;
 	}
-
-	value = (item->cvar) ? DC->getCVarValue(item->cvar) : 0;
 
 	if (item->window.flags & WINDOW_HASFOCUS) {
 		if (g_bindItem == item) {
@@ -4262,7 +4251,7 @@ static void Item_Bind_Paint(itemDef_t *item) {
 		BindingFromName(item->cvar);
 		DC->drawText(item->textRect.x + item->textRect.w + 8, item->textRect.y, item->textscale, newColor, g_nameBind1, 0, maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
 	} else {
-		DC->drawText(item->textRect.x, item->textRect.y, item->textscale, newColor, (value != 0) ? "FIXME" : "FIXME", 0, maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
+		DC->drawText(item->textRect.x, item->textRect.y, item->textscale, newColor, "FIXME", 0, maxChars, item->textStyle, item->fontIndex, item->widescreen, menuRect);
 	}
 }
 
@@ -4480,7 +4469,8 @@ static void Item_Image_Paint(itemDef_t *item) {
 #endif
 
 void Item_ListBox_Paint(itemDef_t *item) {
-	float x, y, size, count, i, thumb;
+	float x, y, size, thumb;
+	int	count, i;
 	qhandle_t image;
 	qhandle_t optionalImage;
 	listBoxDef_t *listPtr = (listBoxDef_t*)item->typeData;
@@ -4713,14 +4703,11 @@ void Item_ListBox_Paint(itemDef_t *item) {
 
 
 static void Item_OwnerDraw_Paint(itemDef_t *item) {
-	//menuDef_t *parent;
 	int menuWidescreen = 0;
 
 	if (item == NULL) {
 		return;
 	}
-
-	//parent = (menuDef_t*)item->parent;
 
 	if (DC->ownerDrawItem) {
 		vec4_t color, lowLight;

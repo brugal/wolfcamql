@@ -513,8 +513,7 @@ voiceCommand_t voiceCommands[] = {
 };
 
 int BotVoiceChatCommand(bot_state_t *bs, int mode, char *voiceChat) {
-	int i;
-	int clientNum;
+	int i, clientNum;
 	char *ptr, buf[MAX_MESSAGE_SIZE], *cmd;
 
 	if (!TeamPlayIsOn()) {
@@ -529,13 +528,13 @@ int BotVoiceChatCommand(bot_state_t *bs, int mode, char *voiceChat) {
 	cmd = buf;
 	for (ptr = cmd; *cmd && *cmd > ' '; cmd++);
 	while (*cmd && *cmd <= ' ') *cmd++ = '\0';
-	//atoi(ptr);  // voiceOnly
+	//voiceOnly = atoi(ptr);
 	for (ptr = cmd; *cmd && *cmd > ' '; cmd++);
 	while (*cmd && *cmd <= ' ') *cmd++ = '\0';
 	clientNum = atoi(ptr);
 	for (ptr = cmd; *cmd && *cmd > ' '; cmd++);
 	while (*cmd && *cmd <= ' ') *cmd++ = '\0';
-	//atoi(ptr);  // color
+	//color = atoi(ptr);
 
 	if (!BotSameTeam(bs, clientNum)) {
 		return qfalse;

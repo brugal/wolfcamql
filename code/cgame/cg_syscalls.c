@@ -36,9 +36,11 @@ void	trap_Print( const char *fmt ) {
 	syscall( CG_PRINT, fmt );
 }
 
-void __attribute__ ((noreturn)) trap_Error( const char *fmt ) {
-	syscall( CG_ERROR, fmt );
-	exit(1);  // silence gcc warning
+void trap_Error(const char *fmt)
+{
+	syscall(CG_ERROR, fmt);
+	// shut up GCC warning about returning functions, because we know better
+	exit(1);
 }
 
 int		trap_Milliseconds( void ) {

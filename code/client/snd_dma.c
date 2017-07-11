@@ -419,9 +419,8 @@ static void S_Base_BeginRegistration( void ) {
 	if (s_numSfx == 0) {
 		SND_setup();
 
-		s_numSfx = 0;
-		Com_Memset( s_knownSfx, 0, sizeof( s_knownSfx ) );
-		Com_Memset(sfxHash, 0, sizeof(sfx_t *)*LOOP_HASH);
+		Com_Memset(s_knownSfx, '\0', sizeof(s_knownSfx));
+		Com_Memset(sfxHash, '\0', sizeof(sfx_t *) * LOOP_HASH);
 
 		//S_Base_RegisterSound("sound/feedback/hit.wav", qfalse);		// changed to a sound in baseq3
 		if (s_debugMissingSounds->integer) {
@@ -1744,8 +1743,10 @@ static void S_Base_Shutdown( void ) {
 	}
 
 	SNDDMA_Shutdown();
+	SND_shutdown();
 
 	s_soundStarted = 0;
+	s_numSfx = 0;
 
 	Cmd_RemoveCommand("s_info");
 }

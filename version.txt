@@ -21,7 +21,7 @@
 * bug fix:  illegible server message error when recording a demo from a demo with voip packets
 * support for libpseex voip data in protocol 70 and 71 demos
 * support for opus voip data
-* opus used voip codec
+* opus used as voip codec
 * bug fix:  recording demo from demo could use wrong protocol extension is demo name
 * bug fix:  installer missing voip-readme.txt
 * version renamed to version.txt

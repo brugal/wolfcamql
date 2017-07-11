@@ -382,18 +382,6 @@ void AAS_Accelerate(vec3_t velocity, float frametime, vec3_t wishdir, float wish
 	}
 } //end of the function AAS_Accelerate
 //===========================================================================
-//
-// Parameter:			-
-// Returns:				-
-// Changes Globals:		-
-//===========================================================================
-void AAS_AirControl(vec3_t start, vec3_t end, vec3_t velocity, vec3_t cmdmove)
-{
-	//vec3_t dir;
-
-	//VectorSubtract(end, start, dir);
-} //end of the function AAS_AirControl
-//===========================================================================
 // applies ground friction to the given velocity
 //
 // Parameter:			-

@@ -45,8 +45,9 @@ void	trap_Print( const char *text ) {
 	syscall( G_PRINT, text );
 }
 
-void	trap_Error( const char *text ) {
-	syscall( G_ERROR, text );
+void trap_Error(const char *text)
+{
+	syscall(G_ERROR, text);
 	exit(1);
 }
 

@@ -130,7 +130,6 @@ This is called at surface tesselation time
 void RB_AddFlare( void *surface, int fogNum, vec3_t point, vec3_t color, vec3_t normal ) {
 	int				i;
 	flare_t			*f;
-	//flare_t *oldest;
 	vec3_t			local;
 	float			d = 1;
 	vec4_t			eye, clip, normalized, window;
@@ -169,7 +168,6 @@ void RB_AddFlare( void *surface, int fogNum, vec3_t point, vec3_t color, vec3_t 
 	}
 
 	// see if a flare with a matching surface, scene, and view exists
-	//oldest = r_flareStructs;
 	for ( f = r_activeFlares ; f ; f = f->next ) {
 		if ( f->surface == surface && f->frameSceneNum == backEnd.viewParms.frameSceneNum
 			&& f->inPortal == backEnd.viewParms.isPortal ) {

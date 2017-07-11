@@ -2051,7 +2051,6 @@ No locals.
 * sem_init() sem_destroy() mac os x
 * ioq3 dll loading
 * dieammo.dm_71  no falling or pain sound for EV_FALL_FAR  -- it's openal backend
-* ioq3-voip1.dm_71 illegible server message
 * voip and combined demo playback
 * voip allow voice messages in demo recording from demo -- what if you then record voice on top of that new demo with voip?
 * invis-demo-taker-24-00.dm_91 s_useOpenal 1  WARNING using default sound for keel gasp ... taunt
@@ -2059,6 +2058,11 @@ No locals.
 * snddma voip entity num support
 * ioquake3 com_protocol
 * parsevoip use 'ignoreData' instead of 'justPeek' to match ioquake3
+* crash/failed with this command line:
+    wolfcamql +devmap campgrounds --console-output set cg_fxfile ""
+
+    wolfcamql +set cg_fxfile ""
+    
 
 ---------
 

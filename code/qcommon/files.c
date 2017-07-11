@@ -239,7 +239,7 @@ static	cvar_t		*fs_debug;
 static	cvar_t		*fs_homepath;
 static cvar_t *fs_searchWorkshops;
 
-#ifdef MACOS_X
+#ifdef __APPLE__
 // Also search the .app bundle for .pk3 files
 static  cvar_t          *fs_apppath;
 #endif
@@ -2926,7 +2926,6 @@ we are not interested in a download string format, we want something human-reada
 qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring ) {
 	searchpath_t	*sp;
 	qboolean havepak;
-	//qboolean badchecksum;
 	char *origpos = neededpaks;
 	int i;
 
@@ -2938,7 +2937,6 @@ qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring ) {
 	for ( i = 0 ; i < fs_numServerReferencedPaks ; i++ )
 	{
 		// Ok, see if we have this pak file
-		//badchecksum = qfalse;
 		havepak = qfalse;
 
 		// never autodownload any of the id paks
@@ -3213,7 +3211,7 @@ static void FS_Startup( const char *gameName )
 	}
 	// fs_homepath is somewhat particular to *nix systems, only add if relevant
 
-	#ifdef MACOS_X
+	#ifdef __APPLE__
 	fs_apppath = Cvar_Get ("fs_apppath", Sys_DefaultAppPath(), CVAR_INIT|CVAR_PROTECTED );
 	// Make MacOSX also include the base path included with the .app bundle
 	if (fs_apppath->string[0])

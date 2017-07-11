@@ -290,7 +290,6 @@ int AAS_GetJumpPadInfo(int ent, vec3_t areastart, vec3_t absmins, vec3_t absmaxs
 int AAS_BestReachableFromJumpPadArea(vec3_t origin, vec3_t mins, vec3_t maxs)
 {
 	int ent, bot_visualizejumppads, bestareanum;
-	//int area2num;
 	float volume, bestareavolume;
 	vec3_t areastart, cmdmove, bboxmins, bboxmaxs;
 	vec3_t absmins, absmaxs, velocity;
@@ -328,7 +327,6 @@ int AAS_BestReachableFromJumpPadArea(vec3_t origin, vec3_t mins, vec3_t maxs)
 		//
 		VectorSet(cmdmove, 0, 0, 0);
 		Com_Memset(&move, 0, sizeof(aas_clientmove_t));
-		//area2num = 0;
 		AAS_ClientMovementHitBBox(&move, -1, areastart, PRESENCE_NORMAL, qfalse,
 								velocity, cmdmove, 0, 30, 0.1f, bboxmins, bboxmaxs, bot_visualizejumppads);
 		if (move.frames < 30)
@@ -838,7 +836,6 @@ int AAS_Reachability_Swim(int area1num, int area2num)
 {
 	int i, j, face1num, face2num, side1;
 	aas_area_t *area1, *area2;
-	//aas_areasettings_t *areasettings;
 	aas_lreachability_t *lreach;
 	aas_face_t *face1;
 	aas_plane_t *plane;
@@ -876,7 +873,6 @@ int AAS_Reachability_Swim(int area1num, int area2num)
 				{
 					//
 					face1 = &aasworld.faces[face1num];
-					//areasettings = &aasworld.areasettings[area1num];
 					//create a new reachability link
 					lreach = AAS_AllocReachability();
 					if (!lreach) return qfalse;
@@ -1064,7 +1060,6 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 	int water_bestarea2groundedgenum, water_foundreach;
 	int side1, area1swim, faceside1, groundface1num;
 	float dist, dist1, dist2, diff, ortdot;
-	//float invgravitydot;
 	float x1, x2, x3, x4, y1, y2, y3, y4, tmp, y;
 	float length, ground_bestlength, water_bestlength, ground_bestdist, water_bestdist;
 	vec3_t v1, v2, v3, v4, tmpv, p1area1, p1area2, p2area1, p2area2;
@@ -1075,7 +1070,7 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 	vec3_t testpoint;
 	aas_plane_t *plane;
 	aas_area_t *area1, *area2;
-	aas_face_t *groundface1, *groundface2;  // *ground_bestface1, *water_bestface1;
+	aas_face_t *groundface1, *groundface2;
 	aas_edge_t *edge1, *edge2;
 	aas_lreachability_t *lreach;
 	aas_trace_t trace;
@@ -1304,7 +1299,6 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 							ground_bestlength = length;
 							ground_foundreach = qtrue;
 							ground_bestarea2groundedgenum = edge1num;
-							//ground_bestface1 = groundface1;
 							//best point towards area1
 							VectorCopy(start, ground_beststart);
 							//normal is pointing into area2
@@ -1325,7 +1319,6 @@ int AAS_Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, int area2
 							water_bestlength = length;
 							water_foundreach = qtrue;
 							water_bestarea2groundedgenum = edge1num;
-							//water_bestface1 = groundface1;
 							//best point towards area1
 							VectorCopy(start, water_beststart);
 							//normal is pointing into area2
@@ -2854,9 +2847,9 @@ void AAS_Reachability_Teleport(void)
 				botimport.Print(PRT_ERROR, "teleporter destination (%s) in solid\n", target);
 				continue;
 			} //end if
+			/*
 			area2num = AAS_PointAreaNum(trace.endpos);
 			//
-			/*
 			if (!AAS_AreaTeleporter(area2num) &&
 				!AAS_AreaJumpPad(area2num) &&
 				!AAS_AreaGrounded(area2num))
@@ -3400,7 +3393,6 @@ void AAS_Reachability_FuncBobbing(void)
 		//
 		for (i = 0; i < 2; i++)
 		{
-			firststartreach = firstendreach = NULL;
 			//
 			if (i == 0)
 			{
@@ -3719,6 +3711,9 @@ void AAS_Reachability_JumpPad(void)
 					//direction towards the face center
 					VectorSubtract(facecenter, areastart, dir);
 					dir[2] = 0;
+
+					// 2017-07-09 below line 'hordist = VectorNormalize(dir)' removed in ioquake3 patch 2104.  Appears to be removed because of hordist not being used, but that will forget to normalize the vector
+
 					//hordist = VectorNormalize(dir);
 					VectorNormalize(dir);
 					//if (hordist < 1.6 * facecenter[2] - areastart[2])
@@ -4064,6 +4059,9 @@ int AAS_Reachability_WeaponJump(int area1num, int area2num)
 				//direction towards the face center
 				VectorSubtract(facecenter, areastart, dir);
 				dir[2] = 0;
+
+				// 2017-07-09 below line 'hordist = VectorNormalize(dir)' removed in ioquake3 patch 2104.  Appears to be removed because of hordist not being used, but that will forget to normalize the vector
+
 				//hordist = VectorNormalize(dir);
 				VectorNormalize(dir);
 				//if (hordist < 1.6 * (facecenter[2] - areastart[2]))

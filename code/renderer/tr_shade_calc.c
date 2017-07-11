@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // tr_shade_calc.c
 
 #include "tr_local.h"
-#if idppc_altivec && !defined(MACOS_X)
+#if idppc_altivec && !defined(__APPLE__)
 #include <altivec.h>
 #endif
 
@@ -624,7 +624,7 @@ void RB_CalcColorFromOneMinusEntity( unsigned char *dstColors )
 	int	i;
 	int *pColors = ( int * ) dstColors;
 	unsigned char invModulate[4];
-	//int c;
+	int c;
 
 	if ( !backEnd.currentEntity )
 		return;
@@ -634,11 +634,11 @@ void RB_CalcColorFromOneMinusEntity( unsigned char *dstColors )
 	invModulate[2] = 255 - backEnd.currentEntity->ePtr->shaderRGBA[2];
 	invModulate[3] = 255 - backEnd.currentEntity->ePtr->shaderRGBA[3];	// this trashes alpha, but the AGEN block fixes it
 
-	//c = * ( int * ) invModulate;
+	c = * ( int * ) invModulate;
 
 	for ( i = 0; i < tess.numVertexes; i++, pColors++ )
 	{
-		*pColors = * ( int * ) invModulate;
+		*pColors = c;
 	}
 }
 

@@ -748,8 +748,8 @@ get the first intersection of the ray with the sphere
 */
 void CM_TraceThroughSphere( traceWork_t *tw, vec3_t origin, float radius, vec3_t start, vec3_t end ) {
 	float l1, l2, length, scale, fraction;
-	float b, c, d, sqrtd;
 	//float a;
+	float b, c, d, sqrtd;
 	vec3_t v1, dir, intersection;
 
 	// if inside the sphere
@@ -840,8 +840,8 @@ the cylinder extends halfheight above and below the origin
 */
 void CM_TraceThroughVerticalCylinder( traceWork_t *tw, vec3_t origin, float radius, float halfheight, vec3_t start, vec3_t end) {
 	float length, scale, fraction, l1, l2;
-	float b, c, d, sqrtd;
 	//float a;
+	float b, c, d, sqrtd;
 	vec3_t v1, dir, start2d, end2d, org2d, intersection;
 
 	// 2d coordinates

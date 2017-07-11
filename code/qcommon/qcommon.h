@@ -1036,7 +1036,7 @@ void CL_FlushMemory( void );
 void CL_StartHunkUsers( qboolean rendererOnly );
 // start all the client stuff using the hunk
 
-void CL_Snd_Restart(void);
+void CL_Snd_Shutdown(void);
 // Restart sound subsystem
 
 void Key_KeynameCompletion( void(*callback)(const char *s) );
@@ -1048,7 +1048,7 @@ void Key_WriteBindings( fileHandle_t f );
 void S_ClearSoundBuffer( void );
 // call before filesystem access
 
-void SCR_DebugGraph (float value, int color);	// FIXME: move logging to common?
+void SCR_DebugGraph (float value);	// FIXME: move logging to common?
 
 //
 // server interface
@@ -1122,7 +1122,7 @@ void	Sys_SetDefaultInstallPath(const char *path);
 char	*Sys_DefaultInstallPath(void);
 char *Sys_QuakeLiveDir (void);
 
-#ifdef MACOS_X
+#ifdef __APPLE__
 char    *Sys_DefaultAppPath(void);
 #endif
 

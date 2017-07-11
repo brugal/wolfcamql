@@ -1597,7 +1597,6 @@ or bursted delayed packets.
 #define	RESET_TIME	500
 
 void CL_AdjustTimeDelta( void ) {
-	//int		resetTime;
 	int		newDelta;
 	int		deltaDelta;
 
@@ -1607,15 +1606,6 @@ void CL_AdjustTimeDelta( void ) {
 	if ( clc.demoplaying ) {
 		return;
 	}
-
-#if 0
-	// if the current time is WAY off, just correct to the current value
-	if ( com_sv_running->integer ) {
-		resetTime = 100;
-	} else {
-		resetTime = RESET_TIME;
-	}
-#endif
 
 	newDelta = cl.snap.serverTime - cls.realtime;
 	deltaDelta = abs( newDelta - cl.serverTimeDelta );

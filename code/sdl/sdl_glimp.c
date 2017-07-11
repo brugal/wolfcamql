@@ -46,7 +46,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define PrintPtrAddr(ptr) do { ri.Printf(PRINT_ALL, "ptr# %p\n", ptr); } while (0);
 
 /* Just hack it for now. */
-#ifdef MACOS_X
+#ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
 typedef CGLContextObj QGLContext;
 #define GLimp_GetCurrentContext() CGLGetCurrentContext()
@@ -1228,7 +1228,7 @@ qboolean GLimp_SpawnRenderThread( void (*function)( void ) )
 		warned = qtrue;
 	}
 
-#ifndef MACOS_X
+#ifndef __APPLE__
 	return qfalse;  /* better safe than sorry for now. */
 #endif
 

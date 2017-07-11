@@ -631,7 +631,6 @@ CG_CheckLocalSounds
 */
 static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *ops ) {
 	int			highScore, armor, reward;
-	//int health;
 	sfxHandle_t sfx;
 	int n;
 	int contents;

@@ -503,7 +503,6 @@ typedef struct weaponInfo_s {
 
 	sfxHandle_t		readySound;
 	sfxHandle_t		firingSound;
-	qboolean		loopFireSound;
 } weaponInfo_t;
 
 
@@ -1888,7 +1887,7 @@ typedef struct {
 	sfxHandle_t	sfx_ric1;
 	sfxHandle_t	sfx_ric2;
 	sfxHandle_t	sfx_ric3;
-	sfxHandle_t	sfx_railg;
+	//sfxHandle_t	sfx_railg;
 	sfxHandle_t	sfx_rockexp;
 	sfxHandle_t	sfx_plasmaexp;
 #if 1  //def MPACK
@@ -1914,7 +1913,6 @@ typedef struct {
 	sfxHandle_t	obeliskRespawnSound;
 	sfxHandle_t	winnerSound;
 	sfxHandle_t	loserSound;
-	sfxHandle_t	youSuckSound;
 #endif
 	sfxHandle_t	gibSound;
 	sfxHandle_t	gibBounce1Sound;

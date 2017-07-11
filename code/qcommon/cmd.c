@@ -287,7 +287,6 @@ void Cmd_Exec_f( void ) {
 		char	*c;
 		void	*v;
 	} f;
-	//int		len;
 	char	filename[MAX_QPATH];
 
 	quiet = !Q_stricmp(Cmd_Argv(0), "execq");
@@ -299,7 +298,6 @@ void Cmd_Exec_f( void ) {
 
 	Q_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
 	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
-	//len = FS_ReadFile( filename, &f.v);
 	FS_ReadFile( filename, &f.v);
 	if (!f.c) {
 		if ((!com_cl_running  ||  !com_sv_running)  ||  (com_execVerbose  &&  com_execVerbose->integer)) {
