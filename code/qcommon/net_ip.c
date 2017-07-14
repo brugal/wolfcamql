@@ -109,6 +109,8 @@ static cvar_t	*net_port6;
 static cvar_t	*net_mcast6addr;
 static cvar_t	*net_mcast6iface;
 
+static cvar_t	*net_dropsim;
+
 static struct sockaddr	socksRelayAddr;
 
 static SOCKET	ip_socket = INVALID_SOCKET;
@@ -203,7 +205,7 @@ char *NET_ErrorString( void ) {
 		default: return "NO ERROR";
 	}
 #else
-	return strerror (errno);
+	return strerror(socketError);
 #endif
 }
 
@@ -513,19 +515,20 @@ qboolean	NET_IsLocalAddress( netadr_t adr ) {
 
 /*
 ==================
-Sys_GetPacket
+NET_GetPacket
 
-Never called by the game logic, just the system event queing
+Receive one packet
 ==================
 */
 
-qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
+qboolean NET_GetPacket(netadr_t *net_from, msg_t *net_message, fd_set *fdr)
+{
 	int 	ret;
 	struct sockaddr_storage from;
 	socklen_t	fromlen;
 	int		err;
 
-	if(ip_socket != INVALID_SOCKET)
+	if(ip_socket != INVALID_SOCKET && FD_ISSET(ip_socket, fdr))
 	{
 		fromlen = sizeof(from);
 		ret = recvfrom( ip_socket, (void *)net_message->data, net_message->maxsize, 0, (struct sockaddr *) &from, &fromlen );
@@ -559,7 +562,7 @@ qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
 				net_message->readcount = 0;
 			}
 		
-			if( ret == net_message->maxsize ) {
+			if( ret >= net_message->maxsize ) {
 				Com_Printf( "Oversize packet from %s\n", NET_AdrToString (*net_from) );
 				return qfalse;
 			}
@@ -569,7 +572,7 @@ qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
 		}
 	}
 	
-	if(ip6_socket != INVALID_SOCKET)
+	if(ip6_socket != INVALID_SOCKET && FD_ISSET(ip6_socket, fdr))
 	{
 		fromlen = sizeof(from);
 		ret = recvfrom(ip6_socket, (void *)net_message->data, net_message->maxsize, 0, (struct sockaddr *) &from, &fromlen);
@@ -586,7 +589,7 @@ qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
 			SockadrToNetadr((struct sockaddr *) &from, net_from);
 			net_message->readcount = 0;
 		
-			if(ret == net_message->maxsize)
+			if(ret >= net_message->maxsize)
 			{
 				Com_Printf( "Oversize packet from %s\n", NET_AdrToString (*net_from) );
 				return qfalse;
@@ -597,7 +600,7 @@ qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
 		}
 	}
 
-	if(multicast6_socket != INVALID_SOCKET && multicast6_socket != ip6_socket)
+	if(multicast6_socket != INVALID_SOCKET && multicast6_socket != ip6_socket && FD_ISSET(multicast6_socket, fdr))
 	{
 		fromlen = sizeof(from);
 		ret = recvfrom(multicast6_socket, (void *)net_message->data, net_message->maxsize, 0, (struct sockaddr *) &from, &fromlen);
@@ -614,7 +617,7 @@ qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message ) {
 			SockadrToNetadr((struct sockaddr *) &from, net_from);
 			net_message->readcount = 0;
 		
-			if(ret == net_message->maxsize)
+			if(ret >= net_message->maxsize)
 			{
 				Com_Printf( "Oversize packet from %s\n", NET_AdrToString (*net_from) );
 				return qfalse;
@@ -1472,6 +1475,8 @@ static qboolean NET_GetCvars( void ) {
 	modified += net_socksPassword->modified;
 	net_socksPassword->modified = qfalse;
 
+	net_dropsim = Cvar_Get("net_dropsim", "", CVAR_TEMP);
+
 	return modified ? qtrue : qfalse;
 }
 
@@ -1600,6 +1605,42 @@ void NET_Shutdown( void ) {
 #endif
 }
 
+/*
+====================
+NET_Event
+
+Called from NET_Sleep which uses select() to determine which sockets have seen action.
+====================
+*/
+
+void NET_Event(fd_set *fdr)
+{
+	byte bufData[MAX_MSGLEN + 1];
+	netadr_t from;
+	msg_t netmsg;
+	
+	while(1)
+	{
+		MSG_Init(&netmsg, bufData, sizeof(bufData));
+
+		if(NET_GetPacket(&from, &netmsg, fdr))
+		{
+			if(net_dropsim->value > 0.0f && net_dropsim->value <= 100.0f)
+			{
+				// com_dropsim->value percent of incoming packets get dropped.
+				if(rand() < (int) (((double) RAND_MAX) / 100.0 * (double) net_dropsim->value))
+					continue;          // drop this packet
+                        }
+
+			if(com_sv_running->integer)
+				Com_RunAndTimeServerPacket(&from, &netmsg);
+			else
+				CL_PacketEvent(from, &netmsg);
+		}
+		else
+			break;
+	}
+}
 
 /*
 ====================
@@ -1608,42 +1649,47 @@ NET_Sleep
 Sleeps msec or until something happens on the network
 ====================
 */
-void NET_Sleep( int msec ) {
+void NET_Sleep(int msec)
+{
 	struct timeval timeout;
-	fd_set	fdset;
-	//int retval;
-	SOCKET highestfd = INVALID_SOCKET;
+	fd_set fdr;
+	int highestfd = -1, retval;
 
-	if (!com_dedicated->integer)
-		return; // we're not a server, just run full speed
-
-	if (ip_socket == INVALID_SOCKET && ip6_socket == INVALID_SOCKET)
-		return;
-
-	if(msec < 0)
-		msec = 0;
-
-	FD_ZERO(&fdset);
+	FD_ZERO(&fdr);
 
 	if(ip_socket != INVALID_SOCKET)
 	{
-		FD_SET(ip_socket, &fdset);
+		FD_SET(ip_socket, &fdr);
 
 		highestfd = ip_socket;
 	}
 	if(ip6_socket != INVALID_SOCKET)
 	{
-		FD_SET(ip6_socket, &fdset);
-
-		if(highestfd == INVALID_SOCKET || ip6_socket > highestfd)
+		FD_SET(ip6_socket, &fdr);
+		
+		if(ip6_socket > highestfd)
 			highestfd = ip6_socket;
 	}
 
 	timeout.tv_sec = msec/1000;
 	timeout.tv_usec = (msec%1000)*1000;
-	select(highestfd + 1, &fdset, NULL, NULL, &timeout);
-}
+	
+#ifdef _WIN32
+	if(highestfd < 0)
+	{
+		// windows ain't happy when select is called without valid FDs
+		SleepEx(msec, 0);
+		return;
+	}
+#endif
 
+	retval = select(highestfd + 1, &fdr, NULL, NULL, &timeout);
+	
+	if(retval < 0)
+		Com_Printf("Warning: select() syscall failed: %s\n", NET_ErrorString());
+	else if(retval > 0)
+		NET_Event(&fdr);
+}
 
 /*
 ====================

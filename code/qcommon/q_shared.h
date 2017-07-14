@@ -35,22 +35,25 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define BASEGAME			"foobar"
   #define CLIENT_WINDOW_TITLE     	"changeme"
   #define CLIENT_WINDOW_MIN_TITLE 	"changeme2"
-  #define GAMENAME_FOR_MASTER		"iofoo3"	// must NOT contain whitespaces
+  #define GAMENAME_FOR_MASTER		"iofoo3"		// must NOT contain whitespaces
+  #define HEARTBEAT_FOR_MASTER	GAMENAME_FOR_MASTER
+  #define FLATLINE_FOR_MASTER	GAMENEMA_FOR_MASTER "dead"
   #define CINEMATICS_LOGO		"foologo.roq"
   #define CINEMATICS_INTRO		"intro.roq"
 //  #define LEGACY_PROTOCOL		// You probably don't need this for your standalone game
 #else
   #define PRODUCT_NAME			"wolfcamql"
   #define BASEGAME			"baseq3"
+  #define BASETA                          "missionpack"
   #define CLIENT_WINDOW_TITLE     	"wolfcam quakelive demo player"
   #define CLIENT_WINDOW_MIN_TITLE 	"wolfcamql"
   #define GAMENAME_FOR_MASTER		"Q...."
+  #define HEARTBEAT_FOR_MASTER	"QuakeArena-1"
+  #define FLATLINE_FOR_MASTER	HEARTBEAT_FOR_MASTER
   #define CINEMATICS_LOGO		"idlogo.RoQ"
   #define CINEMATICS_INTRO		"intro.RoQ"
   #define LEGACY_PROTOCOL
 #endif
-
-#define BASETA                          "missionpack"
 
 #ifndef PRODUCT_VERSION
   #define PRODUCT_VERSION "1.36"
@@ -62,7 +65,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define Q3_VERSION PRODUCT_NAME " " PRODUCT_VERSION
 
-#define MAX_TEAMNAME 32
+#define MAX_TEAMNAME 			32
 #define MAX_MASTER_SERVERS      5       // number of supported master servers
 
 #define DEMOEXT "dm_"                   // standard demo extension

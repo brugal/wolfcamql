@@ -116,7 +116,8 @@ New cvars
   cl_mouseAccelStyle                - Set to 1 for QuakeLive mouse acceleration
                                       behaviour, 0 for standard q3
   cl_mouseAccelOffset               - Tuning the acceleration curve, see below
-
+  cl_gamename			    - Gamename sent to master server in
+  				      getserversExt query
   in_joystickUseAnalog              - Do not translate joystick axis events
                                       to keyboard commands
 
@@ -174,7 +175,14 @@ New cvars
 
   com_ansiColor                     - enable use of ANSI escape codes in the tty
   com_altivec                       - enable use of altivec on PowerPC systems
-  com_standalone                    - Run in standalone mode
+  com_standalone (read only)        - If set to 1, quake3 is running in
+                                      standalone mode
+  com_basegame                      - Use a different base than baseq3. If no
+                                      original Quake3 or TeamArena pak files
+                                      are found, this will enable running in
+                                      standalone mode
+  com_homepath                      - Specify name that is to be appended to the
+                                      home path
   com_legacyprotocol		    - Specify protocol version number for
   				      legacy Quake3 1.32c protocol, see
 				      "Network protocols" section below
@@ -189,7 +197,10 @@ New cvars
   sv_dlURL                          - the base of the HTTP or FTP site that
                                       holds custom pk3 files for your server
   sv_banFile                        - Name of the file that is used for storing
-                                      the server bans.
+                                      the server bans
+  sv_heartbeat			    - Heartbeat string sent to master server
+  sv_flatline			    - Heartbeat string sent to master server
+  				      when server is killed
 
   net_ip6                           - IPv6 address to bind to
   net_port6                         - port to bind to using the ipv6 address
@@ -259,6 +270,8 @@ New commands
   net_restart             - restart network subsystem to change latched settings
   game_restart <fs_game>  - Switch to another mod
 
+  which <filename/path>	  - print out the path on disk to a loaded item
+
   execq <filename>        - quiet exec command, doesn't print "execing file.cfg"
 
   kicknum <client number> - kick a client by number, same as clientkick command
@@ -286,6 +299,16 @@ Using Demo Data Files
   Please bear in mind that you will not be able to play online using the demo
   data, nor is it something that we like to spend much time maintaining or
   supporting.
+
+Help! Ioquake3 won't give me an fps of X anymore when setting com_maxfps!
+  Ioquake3 now uses the select() system call to wait for the rendering of the
+  next frame when com_maxfps was hit. This will improve your CPU load
+  considerably in these cases. However, not all systems may support a
+  granularity for its timing functions that is required to perform this waiting
+  correctly. For instance, ioquake3 tells select() to wait 2 milliseconds, but
+  really it can only wait for a multiple of 5ms, i.e. 5, 10, 15, 20... ms.
+  In this case you can always revert back to the old behaviour by setting the
+  cvar com_busyWait (com_idleSleep in wolfcamql) to 1.
 
 QuakeLive mouse acceleration (patch and this text written by TTimo from id)
   I've been using an experimental mouse acceleration code for a while, and
@@ -375,11 +398,39 @@ Creating standalone games
   your own binaries. Instead, you can just use the pre-built binaries on the
   website. Just make sure the game is called with:
 
-    +set com_standalone 1 +set fs_game <yourgamedir>
+    +set com_basegame <yournewbase>
+    
+  in any links/scripts you install for your users to start the game. The
+  binary must not detect any original quake3 game pak files. If this
+  condition is met, the game will set com_standalone to 1 and is then running
+  in stand alone mode.
+  
+  If you want the engine to use a different directory in your homepath than
+  e.g. "Quake3" on Windows or ".q3a" on Linux, then set a new name at startup
+  by adding
+  
+    +set com_homepath <homedirname>
+  
+  to the command line. Then you can control which kind of messages to send to
+  the master server:
 
-  in any links/scripts you install for your users to start the game. Note that
-  the com_standalone setting is rendered ineffective, if the binary detects pk3
-  files in the directory "baseq3", so you cannot use that one as game dir.
+    +set sv_heartbeat <heartbeat> +set sv_flatline <flatline>
+    +set cl_gamename <gamename>
+
+  The <heartbeat> and <flatline> message can be specific to your game. The
+  flatline message is sent to signal the master server that the game server is
+  quitting. Vanilla quake3 uses "QuakeArena-1" both for the heartbeat and
+  flatline messages.
+  The cl_gamename message is for dpmaster to specify which game the client
+  wants a server list for. It is only used in the new ipv6 based getServersExt
+  query.
+
+  Example line:
+
+    +set com_basegame basefoo +set com_homepath .foo
+    +set sv_heartbeat fooalive +set sv_flatline foodead
+    +set cl_gamename foo
+
 
   If you really changed parts that would make vanilla ioquake3 incompatible with
   your mod, we have included another way to conveniently build a stand-alone

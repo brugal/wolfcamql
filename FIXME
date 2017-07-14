@@ -2062,7 +2062,12 @@ No locals.
     wolfcamql +devmap campgrounds --console-output set cg_fxfile ""
 
     wolfcamql +set cg_fxfile ""
-    
+
+  -- this is SDL 1.2 ParseCommandLine() Windows bug
+
+* s_list not implemented with openal
+* /video test  has swapped bgr colors  -- cl_aviFetchmode gl_bgr, cl_avicodec mjpeg
+
 
 ---------
 

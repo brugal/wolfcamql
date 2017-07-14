@@ -4,9 +4,9 @@
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
 * jpeg video capture doesn't force GL_RGBA fetch mode
 * add to documentation that png output and/or motion blur force GL_RGBA fetch mode
-* ioquake3 fixes
+* ioquake3 fixes and patches
     - third person player sounds don't play at full volume
-    - OpenAL fixes
+    - OpenAL fixes (crash, ogg fallback)
 
 * bug fix:  disconnect icon didn't match lagometer x, y, scale, and align settings
 * bug fix:  draw selected player name didn't detect clan tag correctly

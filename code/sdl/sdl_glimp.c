@@ -983,6 +983,14 @@ void GLimp_Init( void )
 	r_visibleWindowHeight = ri.Cvar_Get("r_visibleWindowHeight", "", CVAR_ARCHIVE | CVAR_LATCH);
 	r_fboStencil = ri.Cvar_Get("r_fboStencil", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
+	if( Cvar_VariableIntegerValue( "com_abnormalExit" ) )
+	{
+		ri.Cvar_Set( "r_mode", va( "%d", R_MODE_FALLBACK ) );
+		ri.Cvar_Set( "r_fullscreen", "0" );
+		ri.Cvar_Set( "r_centerWindow", "0" );
+		ri.Cvar_Set( "com_abnormalExit", "0" );
+	}
+
 	Sys_SetEnv( "SDL_VIDEO_CENTERED", r_centerWindow->integer ? "1" : "" );
 
 	Sys_GLimpInit( );
@@ -1012,7 +1020,7 @@ void GLimp_Init( void )
 		ri.Printf( PRINT_ALL, "Setting r_mode %d failed, falling back on r_mode %d\n",
 				r_mode->integer, R_MODE_FALLBACK );
 
-		if(GLimp_StartDriverAndSetMode(R_MODE_FALLBACK, r_fullscreen->integer, qfalse))
+		if(GLimp_StartDriverAndSetMode(R_MODE_FALLBACK, qfalse, qfalse))
 			goto success;
 	}
 

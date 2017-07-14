@@ -451,7 +451,9 @@ ifeq ($(PLATFORM),darwin)
   ifneq ($(CPP),)
     CPP = g++
   endif
+
   HAVE_VM_COMPILED=true
+  LIBS = -framework Cocoa
   CLIENT_LIBS=
   OPTIMIZEVM=
 
@@ -517,7 +519,7 @@ ifeq ($(PLATFORM),darwin)
   #  the file has been modified by each build.
   LIBSDLMAIN=$(B)/libSDLmain.a
   LIBSDLMAINSRC=$(LIBSDIR)/macosx/libSDLmain.a
-  CLIENT_LIBS += -framework Cocoa -framework IOKit -framework OpenGL \
+  CLIENT_LIBS += -framework IOKit -framework OpenGL \
     $(LIBSDIR)/macosx/libSDL-1.2.0.dylib
 
   ifeq ($(GCC_IS_CLANG),)
@@ -555,9 +557,6 @@ ifdef MINGW
     WINDRES=windres
   endif
 
-  #FIXME adding to enable mingw32 compile using linux 32-bit
-  ARCH=x86
-
   # was -g
   # gdb.exe wants -gstabs ?
   #  -D__USE_MINGW_ANSI_STDIO
@@ -594,13 +593,7 @@ ifdef MINGW
     #CLIENT_LIBS += -L$(LIBSDIR) -lfreetype6
   endif
 
-#  OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer \
-#    -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
-#    -fstrength-reduce
-#  OPTIMIZE = $(OPTIMIZEVM) -ffast-math
-
-
-  ifeq ($(ARCH),x64)
+  ifeq ($(ARCH),x86_64)
     OPTIMIZEVM = -O3 -fno-omit-frame-pointer \
       -falign-loops=2 -funroll-loops -falign-jumps=2 -falign-functions=2 \
       -fstrength-reduce -m64
@@ -628,7 +621,8 @@ ifdef MINGW
 	TOOLS_CC=$(CC)
   endif
 
-  LIBS= -lws2_32 -lwinmm -static-libgcc -static-libstdc++
+  LIBS= -lws2_32 -lwinmm -lpsapi -static-libgcc -static-libstdc++
+
   # clang 3.4 doesn't support this
   ifneq ("$(CC)", $(findstring "$(CC)", "clang" "clang++"))
     CLIENT_LDFLAGS += -mwindows -gdwarf-3
@@ -641,7 +635,11 @@ ifdef MINGW
     ifneq ($(USE_CURL_DLOPEN),1)
       ifeq ($(USE_LOCAL_HEADERS),1)
         CLIENT_CFLAGS += -DCURL_STATICLIB
-        CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a
+	ifeq ($(ARCH),x86_64)
+	  CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a
+	else
+	  CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a
+	endif
       else
         CLIENT_LIBS += $(CURL_LIBS)
       endif
@@ -659,9 +657,15 @@ ifdef MINGW
   CLIENT_LIBS += -lmingw32
   ifeq ($(USE_LOCAL_HEADERS),1)
     CLIENT_CFLAGS += -I$(SDLHDIR)/include
-    CLIENT_LIBS += $(LIBSDIR)/win32/libSDLmain.a \
+    ifeq ($(ARCH), x86)
+      CLIENT_LIBS += $(LIBSDIR)/win32/libSDLmain.a \
                       $(LIBSDIR)/win32/libSDL.dll.a
-    #CLIENT_LIBS += $(LIBSDIR)/win32/libSDL.dll.a
+      #CLIENT_LIBS += $(LIBSDIR)/win32/libSDL.dll.a
+    else
+      CLIENT_LIBS += $(LIBSDIR)/win64/libSDLmain.a \
+                      $(LIBSDIR/win64/libSDL.dll.a
+      #CLIENT_LIBS += $(LIBSDIR)/win64/libSDL.a
+    endif
   else
     CLIENT_CFLAGS += $(SDL_CFLAGS)
     #CLIENT_LIBS += $(SDL_LIBS)
@@ -1053,9 +1057,7 @@ endif
 
 ifeq ($(USE_INTERNAL_ZLIB),1)
   BASE_CFLAGS += -DNO_GZIP
-  ifneq ($(USE_LOCAL_HEADERS),1)
-    BASE_CFLAGS += -I$(ZDIR)
-  endif
+  BASE_CFLAGS += -I$(ZDIR)
 else
   LIBS += -lz
 endif
@@ -1328,7 +1330,7 @@ ifndef YACC
   YACC = yacc
 endif
 
-TOOLS_OPTIMIZE = -g -O2 -Wall -fno-strict-aliasing
+TOOLS_OPTIMIZE = -g -Wall -fno-strict-aliasing
 TOOLS_CFLAGS += $(TOOLS_OPTIMIZE) \
                 -DTEMPDIR=\"$(TEMPDIR)\" -DSYSTEM=\"\" \
                 -I$(Q3LCCSRCDIR) \
@@ -2024,7 +2026,7 @@ endif
 
 ifeq ($(PLATFORM),darwin)
   Q3OBJ += \
-    $(B)/client/sys_cocoa.o
+    $(B)/client/sys_osx.o
 endif
 
 ifeq ($(USE_MUMBLE),1)
@@ -2217,11 +2219,10 @@ else
     $(B)/ded/con_tty.o
 endif
 
-# Not currently referenced in the dedicated server.
-#ifeq ($(PLATFORM),darwin)
-#  Q3DOBJ += \
-#    $(B)/ded/sys_cocoa.o
-#endif
+ifeq ($(PLATFORM),darwin)
+  Q3DOBJ += \
+    $(B)/ded/sys_osx.o
+endif
 
 $(B)/ioq3ded$(FULLBINEXT): $(Q3DOBJ)
 	$(echo_cmd) "LD $@"

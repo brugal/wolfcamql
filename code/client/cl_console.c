@@ -638,10 +638,8 @@ void CL_ConsolePrint (const char *txt)
 			}
 #endif
 			con.x++;
-			if (con.x >= con.linewidth) {
+			if(con.x >= con.linewidth)
 				Con_Linefeed(skipnotify);
-				con.x = 0;
-			}
 			break;
 		}
 

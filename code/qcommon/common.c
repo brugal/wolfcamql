@@ -69,7 +69,6 @@ cvar_t	*com_dedicated;
 cvar_t	*com_timescale;
 cvar_t *com_timescaleSafe;
 cvar_t	*com_fixedtime;
-cvar_t	*com_dropsim;		// 0.0 to 1.0, simulated packet drops
 cvar_t	*com_journal;
 cvar_t	*com_maxfps;
 cvar_t	*com_altivec;
@@ -93,7 +92,10 @@ cvar_t	*com_unfocused;
 cvar_t	*com_maxfpsUnfocused;
 cvar_t	*com_minimized;
 cvar_t	*com_maxfpsMinimized;
+cvar_t	*com_abnormalExit;
 cvar_t	*com_standalone;
+cvar_t	*com_basegame;
+cvar_t	*com_homepath;
 cvar_t *com_protocol;
 #ifdef LEGACY_PROTOCOL
 cvar_t *com_legacyprotocol;
@@ -119,7 +121,6 @@ int		time_frontend;		// renderer frontend time
 int		time_backend;		// renderer backend time
 
 int			com_frameTime;
-int			com_frameMsec;
 int			com_frameNumber;
 
 qboolean	com_errorEntered = qfalse;
@@ -338,7 +339,7 @@ void QDECL Com_DPrintf( const char *fmt, ...) {
 Com_Error
 
 Both client and server can use this, and it will
-do the apropriate things.
+do the appropriate thing.
 =============
 */
 void QDECL Com_Error( int code, const char *fmt, ... ) {
@@ -425,7 +426,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		longjmp (abortframe, -1);
 	} else {
 		VM_Forced_Unload_Start();
-		CL_Shutdown ();
+		CL_Shutdown (va("Client fatal crashed: %s", com_errorMessage));
 		SV_Shutdown (va("Server fatal crashed: %s", com_errorMessage));
 		VM_Forced_Unload_Done();
 	}
@@ -449,7 +450,7 @@ void Com_Quit_f( void ) {
 	char *p = Cmd_Args( );
 	if ( !com_errorEntered ) {
 		SV_Shutdown (p[0] ? p : "Server quit");
-		CL_Shutdown ();
+		CL_Shutdown (p[0] ? p : "Client quit");
 		Com_Shutdown ();
 		FS_Shutdown(qtrue);
 	}
@@ -2184,7 +2185,6 @@ EVENT LOOP
 static sysEvent_t  eventQueue[ MAX_QUEUED_EVENTS ];
 static int         eventHead = 0;
 static int         eventTail = 0;
-static byte        sys_packetReceived[ MAX_MSGLEN ];
 
 /*
 ================
@@ -2233,12 +2233,10 @@ Com_GetSystemEvent
 
 ================
 */
-sysEvent_t Com_GetSystemEvent (qboolean networkEvents)
+sysEvent_t Com_GetSystemEvent (void)
 {
 	sysEvent_t  ev;
 	char        *s;
-	msg_t       netmsg;
-	netadr_t    adr;
 
 	// return if we have data
 	if ( eventHead > eventTail )
@@ -2260,23 +2258,6 @@ sysEvent_t Com_GetSystemEvent (qboolean networkEvents)
 		Com_QueueEvent( 0, SE_CONSOLE, 0, 0, len, b );
 	}
 
-	if (networkEvents) {
-		// check for network packets
-		MSG_Init( &netmsg, sys_packetReceived, sizeof( sys_packetReceived ) );
-		if ( Sys_GetPacket ( &adr, &netmsg ) )
-			{
-				netadr_t  *buf;
-				int       len;
-
-				// copy out to a separate buffer for qeueing
-				len = sizeof( netadr_t ) + netmsg.cursize;
-				buf = Z_Malloc( len );
-				*buf = adr;
-				memcpy( buf+1, netmsg.data, netmsg.cursize );
-				Com_QueueEvent( 0, SE_PACKET, 0, 0, len, buf );
-			}
-	}
-
 	// return if we have data
 	if ( eventHead > eventTail )
 	{
@@ -2296,7 +2277,7 @@ sysEvent_t Com_GetSystemEvent (qboolean networkEvents)
 Com_GetRealEvent
 =================
 */
-sysEvent_t Com_GetRealEvent (qboolean networkEvents)
+sysEvent_t Com_GetRealEvent (void)
 {
 	int			r;
 	sysEvent_t	ev;
@@ -2317,8 +2298,7 @@ sysEvent_t Com_GetRealEvent (qboolean networkEvents)
 			}
 		}
 	} else {
-		ev = Com_GetSystemEvent(networkEvents);
-		//ev = Com_GetSystemEvent(qtrue);
+		ev = Com_GetSystemEvent();
 		//Com_Printf("system event: time:%d type:%d\n", ev.evTime, ev.evType);
 		
 		// write the journal value out if needed
@@ -2392,13 +2372,13 @@ void Com_PushEvent( sysEvent_t *event ) {
 Com_GetEvent
 =================
 */
-sysEvent_t	Com_GetEvent (qboolean networkEvents)
+sysEvent_t	Com_GetEvent (void)
 {
 	if ( com_pushedEventsHead > com_pushedEventsTail ) {
 		com_pushedEventsTail++;
 		return com_pushedEvents[ (com_pushedEventsTail-1) & (MAX_PUSHED_EVENTS-1) ];
 	}
-	return Com_GetRealEvent(networkEvents);
+	return Com_GetRealEvent();
 }
 
 /*
@@ -2433,7 +2413,7 @@ Com_EventLoop
 Returns last event time
 =================
 */
-int Com_EventLoop (qboolean networkEvents)
+int Com_EventLoop (void)
 {
 	sysEvent_t	ev;
 	netadr_t	evFrom;
@@ -2443,36 +2423,27 @@ int Com_EventLoop (qboolean networkEvents)
 	MSG_Init( &buf, bufData, sizeof( bufData ) );
 
 	while ( 1 ) {
-		if (1) {  //(networkEvents) {  // possibly send disconnect
-			NET_FlushPacketQueue();
-		}
-		ev = Com_GetEvent(networkEvents);
+		ev = Com_GetEvent();
 
 		// if no more events are available
 		if (ev.evType == SE_NONE) {
-			if (networkEvents) {
-				// manually send packet events for the loopback channel
-				while ( NET_GetLoopPacket( NS_CLIENT, &evFrom, &buf ) ) {
-					CL_PacketEvent( evFrom, &buf );
-				}
+			// manually send packet events for the loopback channel
+			while ( NET_GetLoopPacket( NS_CLIENT, &evFrom, &buf ) ) {
+				CL_PacketEvent( evFrom, &buf );
+			}
 
-				while ( NET_GetLoopPacket( NS_SERVER, &evFrom, &buf ) ) {
-					// if the server just shut down, flush the events
-					if ( com_sv_running->integer ) {
-						Com_RunAndTimeServerPacket( &evFrom, &buf );
-					}
+			while ( NET_GetLoopPacket( NS_SERVER, &evFrom, &buf ) ) {
+				// if the server just shut down, flush the events
+				if ( com_sv_running->integer ) {
+					Com_RunAndTimeServerPacket( &evFrom, &buf );
 				}
 			}
 
 			return ev.evTime;
 		}
 
-		switch ( ev.evType ) {
-		default:
-			Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType );
-			break;
-        case SE_NONE:
-            break;
+		switch(ev.evType)
+		{
 		case SE_KEY:
 			CL_KeyEvent( ev.evValue, ev.evValue2, ev.evTime );
 			break;
@@ -2489,39 +2460,8 @@ int Com_EventLoop (qboolean networkEvents)
 			Cbuf_AddText( (char *)ev.evPtr );
 			Cbuf_AddText( "\n" );
 			break;
-		case SE_PACKET:
-			if (!networkEvents) {
-				Com_Printf("^1Com_EventLoop: SE_PACKET and !networkEvents\n");
-				break;
-			}
-			// this cvar allows simulation of connections that
-			// drop a lot of packets.  Note that loopback connections
-			// don't go through here at all.
-			if ( com_dropsim->value > 0 ) {
-				static int seed;
-
-				if ( Q_random( &seed ) < com_dropsim->value ) {
-					break;		// drop this packet
-				}
-			}
-
-			evFrom = *(netadr_t *)ev.evPtr;
-			buf.cursize = ev.evPtrLength - sizeof( evFrom );
-
-			// we must copy the contents of the message out, because
-			// the event buffers are only large enough to hold the
-			// exact payload, but channel messages need to be large
-			// enough to hold fragment reassembly
-			if ( (unsigned)buf.cursize > buf.maxsize ) {
-				Com_Printf("Com_EventLoop: oversize packet\n");
-				continue;
-			}
-			Com_Memcpy( buf.data, (byte *)((netadr_t *)ev.evPtr + 1), buf.cursize );
-			if ( com_sv_running->integer ) {
-				Com_RunAndTimeServerPacket( &evFrom, &buf );
-			} else {
-				CL_PacketEvent( evFrom, &buf );
-			}
+		default:
+			Com_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType );
 			break;
 		}
 
@@ -2547,7 +2487,7 @@ int Com_Milliseconds (void) {
 	// get events and push them until we get a null event with the current time
 	do {
 
-		ev = Com_GetRealEvent(qtrue);
+		ev = Com_GetRealEvent();
 		if ( ev.evType != SE_NONE ) {
 			Com_PushEvent( &ev );
 		}
@@ -2954,7 +2894,6 @@ void Com_Init( char *commandLine ) {
 
 	// Clear queues
 	Com_Memset( &eventQueue[ 0 ], 0, MAX_QUEUED_EVENTS * sizeof( sysEvent_t ) );
-	Com_Memset( &sys_packetReceived[ 0 ], 0, MAX_MSGLEN * sizeof( byte ) );
 
 	// initialize the weak pseudo-random number generator for use later.
 	Com_InitRand();
@@ -2981,12 +2920,19 @@ void Com_Init( char *commandLine ) {
 	Cmd_Init ();
 
 	// get the developer cvar set as early as possible
-	//Com_StartupVariable( "developer" );
 	com_developer = Cvar_Get("developer", "0", CVAR_TEMP);
 
 	// done early so bind command exists
 	CL_InitKeyCommands();
 
+	com_standalone = Cvar_Get("com_standalone", "0", CVAR_ROM);
+	com_basegame = Cvar_Get("com_basegame", BASEGAME, CVAR_INIT);
+	com_homepath = Cvar_Get("com_homepath", "", CVAR_INIT);
+
+	if(!com_basegame->string[0])
+		Cvar_ForceReset("com_basegame");
+
+	// Com_StartupVariable(
 	FS_InitFilesystem ();
 
 	Com_InitJournaling();
@@ -3032,7 +2978,6 @@ void Com_Init( char *commandLine ) {
 	com_timescaleSafe = Cvar_Get("com_timescaleSafe", "1", CVAR_ARCHIVE);
 	com_fixedtime = Cvar_Get ("fixedtime", "0", CVAR_CHEAT);
 	com_showtrace = Cvar_Get ("com_showtrace", "0", CVAR_CHEAT);
-	com_dropsim = Cvar_Get ("com_dropsim", "0", CVAR_CHEAT);
 	com_speeds = Cvar_Get ("com_speeds", "0", 0);
 	com_timedemo = Cvar_Get ("timedemo", "0", CVAR_CHEAT);
 	com_cameraMode = Cvar_Get ("com_cameraMode", "0", CVAR_CHEAT);
@@ -3050,7 +2995,7 @@ void Com_Init( char *commandLine ) {
 	com_maxfpsUnfocused = Cvar_Get( "com_maxfpsUnfocused", "0", CVAR_ARCHIVE );
 	com_minimized = Cvar_Get( "com_minimized", "0", CVAR_ROM );
 	com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
-	com_standalone = Cvar_Get( "com_standalone", "0", CVAR_INIT );
+	com_abnormalExit = Cvar_Get( "com_abnormalExit", "0", CVAR_ROM );
 
 	com_introPlayed = Cvar_Get( "com_introplayed", "1", CVAR_ARCHIVE);
 	com_logo = Cvar_Get("com_logo", "0", CVAR_ARCHIVE);
@@ -3086,6 +3031,18 @@ void Com_Init( char *commandLine ) {
 	}
 
 	Sys_Init();
+
+	if( Sys_WritePIDFile( ) ) {
+#ifndef DEDICATED
+		const char *message = "The last time " CLIENT_WINDOW_TITLE " ran, "
+			"it didn't exit properly. This may be due to inappropriate video "
+			"settings. Would you like to start with \"safe\" video settings?";
+
+		if( Sys_Dialog( DT_YES_NO, message, "Abnormal Exit" ) == DR_YES ) {
+			Cvar_Set( "com_abnormalExit", "1" );
+		}
+#endif
+	}
 
 	// Pick a random port value
 	Com_RandomBytes( (byte*)&qport, sizeof(int) );
@@ -3196,7 +3153,7 @@ void Com_WriteConfiguration( void ) {
 	// not needed for dedicated or standalone
 #if !defined(DEDICATED) && !defined(STANDALONE)
 	fs = Cvar_Get ("fs_game", "", CVAR_INIT|CVAR_SYSTEMINFO );
-	if (0) //(!Cvar_VariableIntegerValue("com_standalone"))  // it keeps doing it all the time
+	if (0) //(!com_standalone->integer)  // it keeps doing it all the time
 	{
 		if (UI_usesUniqueCDKey() && fs && fs->string[0] != 0) {
 			Com_WriteCDKey( fs->string, &cl_cdkey[16] );
@@ -3443,17 +3400,28 @@ void Com_Frame( void ) {
 				{
 					//struct timespec tm;
 					//FIXME NET_Sleep() ?
-					usleep((timeRemaining - 1) * 1000);
+					//usleep((timeRemaining - 1) * 1000);
+
+					NET_Sleep(timeRemaining - 1);
 				}
+			} else {
+				NET_Sleep(0);
 			}
+		} else {
+			NET_Sleep(0);
 		}
 
-		com_frameTime = Com_EventLoop(qtrue);
+		//com_frameTime = Com_EventLoop();
+		com_frameTime = Sys_Milliseconds();
 		if ( lastTime > com_frameTime ) {
 			lastTime = com_frameTime;		// possible on first frame
 		}
 		msec = com_frameTime - lastTime;
 	} while ( msec < minMsec );
+
+	com_frameTime = Com_EventLoop();
+
+	msec = com_frameTime - lastTime;
 
 	Cbuf_Execute ();
 
@@ -3466,7 +3434,6 @@ void Com_Frame( void ) {
 	lastTime = com_frameTime;
 
 	// mess with msec if needed
-	com_frameMsec = msec;
 	//Com_Printf("msec: %d\n", msec);
 	msec = Com_ModifyMsec( msec, &useSubTime, &fmsec );
 
@@ -3504,7 +3471,7 @@ void Com_Frame( void ) {
 	if ( com_speeds->integer ) {
 		timeBeforeEvents = Sys_Milliseconds ();
 	}
-	Com_EventLoop(qtrue);
+	Com_EventLoop();
 	Cbuf_Execute ();
 
 
@@ -3527,6 +3494,9 @@ void Com_Frame( void ) {
 		timeBeforeClient = timeAfter;
 	}
 #endif
+
+
+	NET_FlushPacketQueue();
 
 	//
 	// report timing information

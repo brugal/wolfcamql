@@ -31,7 +31,7 @@ serverStatic_t	svs;				// persistant server info
 server_t		sv;					// local server
 vm_t			*gvm = NULL;				// game virtual machine
 
-cvar_t	*sv_fps;				// time rate for running non-clients
+cvar_t	*sv_fps = NULL;			// time rate for running non-clients
 cvar_t	*sv_timeout;			// seconds without any message
 cvar_t	*sv_zombietime;			// seconds to sink messages after disconnect
 cvar_t	*sv_rconPassword;		// password for remote server commands
@@ -62,6 +62,10 @@ cvar_t	*sv_lanForceRate; // dedicated 1 (LAN) server forces local client rates t
 cvar_t	*sv_strictAuth;
 #endif
 cvar_t	*sv_banFile;
+cvar_t	*sv_heartbeat;			// Heartbeat string that is sent to the master
+cvar_t	*sv_flatline;			// If the master server supports it we can send a flatline
+                                // when server is killed
+
 cvar_t *sv_broadcastAll;
 cvar_t *sv_randomClientSlot;
 
@@ -239,8 +243,8 @@ but not on every player enter or exit.
 */
 #define	HEARTBEAT_MSEC	300*1000
 #define	MASTERDNS_MSEC	24*60*60*1000
-#define	HEARTBEAT_GAME	"QuakeArena-1"
-void SV_MasterHeartbeat( void ) {
+void SV_MasterHeartbeat(const char *message)
+{
 	static netadr_t	adr[MAX_MASTER_SERVERS][2]; // [2] for v4 and v6 address for the same address string.
 	int			i;
 	int			res;
@@ -318,9 +322,9 @@ void SV_MasterHeartbeat( void ) {
 		// ever incompatably changes
 
 		if(adr[i][0].type != NA_BAD)
-			NET_OutOfBandPrint( NS_SERVER, adr[i][0], "heartbeat %s\n", HEARTBEAT_GAME );
+			NET_OutOfBandPrint( NS_SERVER, adr[i][0], "heartbeat %s\n", message );
 		if(adr[i][1].type != NA_BAD)
-			NET_OutOfBandPrint( NS_SERVER, adr[i][1], "heartbeat %s\n", HEARTBEAT_GAME );
+			NET_OutOfBandPrint( NS_SERVER, adr[i][1], "heartbeat %s\n", message );
 	}
 }
 
@@ -334,11 +338,11 @@ Informs all masters that this server is going down
 void SV_MasterShutdown( void ) {
 	// send a heartbeat right now
 	svs.nextHeartbeatTime = -9999;
-	SV_MasterHeartbeat();
+	SV_MasterHeartbeat(sv_flatline->string);
 
 	// send it again to minimize chance of drops
 	svs.nextHeartbeatTime = -9999;
-	SV_MasterHeartbeat();
+	SV_MasterHeartbeat(sv_flatline->string);
 
 	// when the master tries to poll the server, it won't respond, so
 	// it will be removed from the list
@@ -1063,13 +1067,6 @@ void SV_Frame( int msec, double fmsec ) {
 
 	if (!com_dedicated->integer) SV_BotFrame (sv.time + sv.timeResidual);
 
-	if ( com_dedicated->integer && sv.timeResidual < frameMsec ) {
-		// NET_Sleep will give the OS time slices until either get a packet
-		// or time enough for a server frame has gone by
-		NET_Sleep(frameMsec - sv.timeResidual);
-		return;
-	}
-
 	// if time is about to hit the 32nd bit, kick all clients
 	// and clear sv.time, rather
 	// than checking for negative time wraparound everywhere.
@@ -1134,7 +1131,7 @@ void SV_Frame( int msec, double fmsec ) {
 	SV_SendClientMessages();
 
 	// send a heartbeat to the master if needed
-	SV_MasterHeartbeat();
+	SV_MasterHeartbeat(sv_heartbeat->string);
 }
 
 

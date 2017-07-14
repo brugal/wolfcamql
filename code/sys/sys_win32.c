@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <conio.h>
 #include <wincrypt.h>
 #include <shlobj.h>
+#include <psapi.h>
 #include <process.h>
 
 
@@ -88,12 +89,36 @@ char *Sys_DefaultHomePath( void )
 			FreeLibrary(shfolder);
 			return NULL;
 		}
-		Q_strncpyz( homePath, szPath, sizeof( homePath ) );
-		Q_strcat( homePath, sizeof( homePath ), "\\wolfcamql" );
+
+		Com_sprintf(homePath, sizeof(homePath), "%s%c", szPath, PATH_SEP);
+
+		if(com_homepath->string[0])
+			Q_strcat(homePath, sizeof(homePath), com_homepath->string);
+		else
+			Q_strcat(homePath, sizeof(homePath), "wolfcamql");
+
 		FreeLibrary(shfolder);
 	}
 
 	return homePath;
+}
+
+/*
+==============
+Sys_TempPath
+==============
+*/
+const char *Sys_TempPath( void )
+{
+	static TCHAR path[ MAX_PATH ];
+	DWORD length;
+
+	length = GetTempPath( sizeof( path ), path );
+
+	if( length > sizeof( path ) || length == 0 )
+		return Sys_DefaultHomePath( );
+	else
+		return path;
 }
 
 char *Sys_QuakeLiveDir (void)
@@ -728,8 +753,8 @@ Display an error message
 */
 void Sys_ErrorDialog( const char *error )
 {
-	if( MessageBox( NULL, va( "%s\nCopy console log to clipboard?", error ),
-			NULL, MB_YESNO|MB_ICONERROR ) == IDYES )
+	if( Sys_Dialog( DT_YES_NO, va( "%s. Copy console log to clipboard?", error ),
+					"Error" ) == DR_YES )
 	{
 		HGLOBAL memoryHandle;
 		char *clipMemory;
@@ -757,6 +782,37 @@ void Sys_ErrorDialog( const char *error )
 			GlobalUnlock( clipMemory );
 			CloseClipboard( );
 		}
+	}
+}
+
+/*
+==============
+Sys_Dialog
+
+Display a win32 dialog box
+==============
+*/
+dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title )
+{
+	UINT uType;
+
+	switch( type )
+	{
+		default:
+		case DT_INFO:      uType = MB_ICONINFORMATION|MB_OK; break;
+		case DT_WARNING:   uType = MB_ICONWARNING|MB_OK; break;
+		case DT_ERROR:     uType = MB_ICONERROR|MB_OK; break;
+		case DT_YES_NO:    uType = MB_ICONQUESTION|MB_YESNO; break;
+		case DT_OK_CANCEL: uType = MB_ICONWARNING|MB_OKCANCEL; break;
+	}
+
+	switch( MessageBox( NULL, message, title, uType ) )
+	{
+		default:
+		case IDOK:      return DR_OK;
+		case IDCANCEL:  return DR_CANCEL;
+		case IDYES:     return DR_YES;
+		case IDNO:      return DR_NO;
 	}
 }
 
@@ -1166,13 +1222,48 @@ Sys_SetEnv
 set/unset environment variables (empty value removes it)
 ==============
 */
-
 void Sys_SetEnv(const char *name, const char *value)
 {
 	if(value)
 		_putenv(va("%s=%s", name, value));
 	else
 		_putenv(va("%s=", name));
+}
+
+/*
+==============
+Sys_PID
+==============
+*/
+int Sys_PID( void )
+{
+	return GetCurrentProcessId( );
+}
+
+/*
+==============
+Sys_PIDIsRunning
+==============
+*/
+qboolean Sys_PIDIsRunning( int pid )
+{
+	DWORD processes[ 1024 ];
+	DWORD numBytes, numProcesses;
+	int i;
+
+	if( !EnumProcesses( processes, sizeof( processes ), &numBytes ) )
+		return qfalse; // Assume it's not running
+
+	numProcesses = numBytes / sizeof( DWORD );
+
+	// Search for the pid
+	for( i = 0; i < numProcesses; i++ )
+	{
+		if( processes[ i ] == pid )
+			return qtrue;
+	}
+
+	return qfalse;
 }
 
 void Sys_Backtrace_f (void)

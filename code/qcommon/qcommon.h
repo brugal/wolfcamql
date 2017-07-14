@@ -172,7 +172,7 @@ qboolean	NET_CompareBaseAdrMask(netadr_t a, netadr_t b, int netmask);
 qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);
 qboolean	NET_IsLocalAddress (netadr_t adr);
 const char	*NET_AdrToString (netadr_t a);
-const char      *NET_AdrToStringwPort (netadr_t a);
+const char	*NET_AdrToStringwPort (netadr_t a);
 int		NET_StringToAdr ( const char *s, netadr_t *a, netadrtype_t family);
 qboolean	NET_GetLoopPacket (netsrc_t sock, netadr_t *net_from, msg_t *net_message);
 void		NET_JoinMulticast6(void);
@@ -599,6 +599,7 @@ issues.
 
 // number of id paks that will never be autodownloaded from baseq3
 #define NUM_ID_PAKS		9
+#define NUM_TA_PAKS		4
 
 #define	MAX_FILE_HANDLES	64
 
@@ -631,6 +632,9 @@ const char *FS_FindSystemFile (const char *file);
 qboolean FS_VirtualFileExists (const char *file);
 
 qboolean FS_CreatePath (char *OSPath);
+
+char *FS_FindDll( const char *filename );
+
 char   *FS_BuildOSPath( const char *base, const char *game, const char *qpath );
 qboolean FS_CompareZipChecksum(const char *zipfile);
 
@@ -729,7 +733,7 @@ void FS_PureServerSetLoadedPaks( const char *pakSums, const char *pakNames );
 // sole exception of .cfg files.
 
 qboolean FS_CheckDirTraversal(const char *checkdir);
-qboolean FS_idPak( char *pak, char *base );
+qboolean FS_idPak(char *pak, char *base, int numPaks);
 qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring );
 
 void FS_Rename( const char *from, const char *to );
@@ -739,6 +743,9 @@ void FS_HomeRemove( const char *homePath );
 
 void	FS_FilenameCompletion( const char *dir, const char *ext,
 							   qboolean stripExt, void(*callback)(const char *s), qboolean allowNonPureFilesOnDisk );
+
+const char *FS_GetCurrentGameDir(void);
+
 void FS_SortFileList(char **filelist, int numfiles);
 void FS_ReplaceSeparators (char *path);
 char *FS_BaseName (const char *path);
@@ -814,13 +821,12 @@ typedef enum
 
 typedef enum {
 	// SE_NONE must be zero
-	SE_NONE = 0,	// evTime is still valid
-	SE_KEY,		// evValue is a key code, evValue2 is the down flag
-	SE_CHAR,	// evValue is an ascii char
-	SE_MOUSE,	// evValue and evValue2 are relative signed x / y moves
+	SE_NONE = 0,		// evTime is still valid
+	SE_KEY,				// evValue is a key code, evValue2 is the down flag
+	SE_CHAR,			// evValue is an ascii char
+	SE_MOUSE,			// evValue and evValue2 are relative signed x / y moves
 	SE_JOYSTICK_AXIS,	// evValue is an axis number and evValue2 is the current state (-127 to 127)
-	SE_CONSOLE,	// evPtr is a char*
-	SE_PACKET	// evPtr is a netadr_t followed by data bytes to evPtrLength
+	SE_CONSOLE			// evPtr is a char*
 } sysEventType_t;
 
 typedef struct {
@@ -832,8 +838,8 @@ typedef struct {
 } sysEvent_t;
 
 void		Com_QueueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
-int			Com_EventLoop( qboolean networkEvents );
-sysEvent_t	Com_GetSystemEvent( qboolean networkEvents );
+int			Com_EventLoop( void );
+sysEvent_t	Com_GetSystemEvent( void );
 
 char		*CopyString( const char *in );
 void		Info_Print( const char *s );
@@ -853,6 +859,7 @@ int			Com_Filter(char *filter, char *name, int casesensitive);
 int			Com_FilterPath(char *filter, char *name, int casesensitive);
 int			Com_RealTime (qtime_t *qtime, qboolean now, int convertTime);
 qboolean	Com_SafeMode( void );
+void		Com_RunAndTimeServerPacket(netadr_t *evFrom, msg_t *buf);
 
 qboolean	Com_IsVoipTarget(uint8_t *voipTargets, int voipTargetsSize, int clientNum);
 
@@ -880,6 +887,9 @@ extern	cvar_t	*com_maxfpsUnfocused;
 extern	cvar_t	*com_minimized;
 extern	cvar_t	*com_maxfpsMinimized;
 extern	cvar_t	*com_altivec;
+extern 	cvar_t 	*com_standalone;
+extern	cvar_t	*com_basegame;
+extern	cvar_t 	*com_homepath;
 
 // both client and server must agree to pause
 extern	cvar_t	*cl_paused;
@@ -904,7 +914,6 @@ extern	int		time_frontend;
 extern	int		time_backend;		// renderer backend time
 
 extern	int		com_frameTime;
-extern	int		com_frameMsec;
 
 extern	qboolean	com_errorEntered;
 
@@ -997,7 +1006,7 @@ void CL_InitKeyCommands( void );
 
 void CL_Init( void );
 void CL_Disconnect( qboolean showMainMenu );
-void CL_Shutdown( void );
+void CL_Shutdown( char *finalmsg );
 void CL_Frame( int msec, double fmsec );
 qboolean CL_GameCommand( void );
 void CL_KeyEvent (int key, qboolean down, unsigned time);
@@ -1107,7 +1116,6 @@ cpuFeatures_t Sys_GetProcessorFeatures( void );
 void	Sys_SetErrorText( const char *text );
 
 void	Sys_SendPacket( int length, const void *data, netadr_t to );
-qboolean Sys_GetPacket( netadr_t *net_from, msg_t *net_message );
 
 qboolean	Sys_StringToAdr( const char *s, netadr_t *a, netadrtype_t family );
 //Does NOT parse port numbers, only base addresses.
@@ -1128,6 +1136,7 @@ char    *Sys_DefaultAppPath(void);
 
 void  Sys_SetDefaultHomePath(const char *path);
 char	*Sys_DefaultHomePath(void);
+const char	*Sys_TempPath(void);
 const char *Sys_Dirname( char *path );
 const char *Sys_Basename( char *path );
 char *Sys_ConsoleInput(void);
@@ -1142,6 +1151,27 @@ void Sys_SetEnv(const char *name, const char *value);
 void Sys_OpenQuakeLiveDirectory (void);
 void Sys_OpenWolfcamDirectory (void);
 int Sys_DirnameCmp (const char *pathName1, const char *pathName2);
+
+typedef enum
+{
+	DR_YES = 0,
+	DR_NO = 1,
+	DR_OK = 0,
+	DR_CANCEL = 1
+} dialogResult_t;
+
+typedef enum
+{
+	DT_INFO,
+	DT_WARNING,
+	DT_ERROR,
+	DT_YES_NO,
+	DT_OK_CANCEL
+} dialogType_t;
+
+dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title );
+
+qboolean Sys_WritePIDFile( void );
 
 /* This is based on the Adaptive Huffman algorithm described in Sayood's Data
  * Compression book.  The ranks are not actually stored, but implicitly defined

@@ -59,6 +59,10 @@ void Sys_PlatformExit (void);
 void Sys_SigHandler( int signal ) __attribute__ ((noreturn));
 void Sys_ErrorDialog( const char *error );
 void Sys_AnsiColorPrint( const char *msg );
+
+int Sys_PID( void );
+qboolean Sys_PIDIsRunning( int pid );
+
 void Sys_Backtrace_f (void);
 qboolean Sys_FileIsDirectory (const char *path);
 qboolean Sys_FileExists (const char *path);

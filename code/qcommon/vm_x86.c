@@ -1136,7 +1136,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 	{
 		if(compiledOfs > maxLength - 16)
 		{
-	        	VMFREE_BUFFERS();
+			VMFREE_BUFFERS();
 			Com_Error(ERR_DROP, "VM_CompileX86: maxLength exceeded");
 		}
 
@@ -1151,7 +1151,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 
 		if(pc > header->codeLength)
 		{
-		        VMFREE_BUFFERS();
+			VMFREE_BUFFERS();
 			Com_Error(ERR_DROP, "VM_CompileX86: pc > header->codeLength");
 		}
 
@@ -1648,7 +1648,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 			EmitCallErrJump(vm, callDoSyscallOfs);
 			break;
 		default:
-		        VMFREE_BUFFERS();
+			VMFREE_BUFFERS();
 			Com_Error(ERR_DROP, "VM_CompileX86: bad opcode %i at offset %i", op, pc);
 		}
 		pop0 = pop1;

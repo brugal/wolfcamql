@@ -1,4 +1,4 @@
-init with 1753
+init with svn 1753
 
 2011-02-17
 
@@ -27,13 +27,13 @@ init with 1753
 1771 * Clean-up whitespace in net_ip.c
 1772 __WORDSIZE is not available on non-GNU systems (Dominic Fandrey)
 
-1773 skip -- need to check CL_Shutdown() changes:
+1773
     * Sys_Dialog for more user friendly error reporting
     * (bug #3932) Recovery from bad video settings
 
-1774 skip:  * Oops, missed a bit
+1774 * Oops, missed a bit
 
-1775 skip:
+1775
     * Fix a memory leak in OS X Sys_Dialog
     * Fix compilation on Snow Leopard
 
@@ -41,14 +41,14 @@ init with 1753
 
 1777 enable (dummy) cdkey calls in standalone mode to prevents mods from crashing
 
-1778 skip:  64bit Windows support (patch by Michael Menegakis)
+1778 64bit Windows support (patch by Michael Menegakis)
 1779 don't link librt on FreeBSD (bug 4507)
 1780 fix mingw32 build
 1781 package zlib1.dll in nsis installer
-1782 skip:  rename x86_64 -> x64 for Windows
+1782 rename x86_64 -> x64 for Windows
 1783 64bit Windows fix (patch by Marcus Meissner)
-1784 skip:  fix OP_BLOCK_COPY alignment for win64 (patch by Marcus Meissner)
-1785 skip:  fix stack alignment dynamically for OP_BLOCK_COPY
+1784 fix OP_BLOCK_COPY alignment for win64 (patch by Marcus Meissner)
+1785 fix stack alignment dynamically for OP_BLOCK_COPY
 1786 fix typo
 1787 Fix typo
 1788 Fix buffer overflow, report and patch by Eugene C. (#4669)
@@ -99,7 +99,7 @@ init with 1753
     commands sent to client when disconnected
 
 1803 use mmap on freebsd too
-1804 skip:  * Use correct compiler defines for OS detection on Windows
+1804 * Use correct compiler defines for OS detection on Windows
 
 1805
     * (bug #4800) Don't prepend a slash to console commands if they're empty
@@ -108,7 +108,7 @@ init with 1753
 
 1806 * (bug #4853) Fix comment that refers to old code
 1807 * (bug #4842) Speedup shader buffer creation (Eugene C.)
-1808 skip:  Shut up compiler error
+1808 Shut up compiler error
 
 1809 Fix potential segfault when no PK3s have been loaded (may happen when compiled with -DSTANDALONE)
 
@@ -117,8 +117,10 @@ init with 1753
 1812 Revert changes because dpmaster doesn't work that way.
 1813 Fix name resolution for domains with A and AAAA record
 1814 Fix bug reported by cyrri
-1815 skip:  Make this change so standalone developers will know to change the HEARTBEAT game string for their versions, too.
-1816 skip:  Make number of supported master servers tunable via define
+
+1815 Make this change so standalone developers will know to change the HEARTBEAT game string for their versions, too.
+
+1816 Make number of supported master servers tunable via define
 
 1817 Make sure status reply always has at least one space between address and qport, important for ipv6 addresses.
 
@@ -143,12 +145,12 @@ init with 1753
 
     Gunaxf 2 lbh.
 
-1824 skip:  Fix compiler warnings (#4887)
-1825 skip:  well, shit.
+1824 Fix compiler warnings (#4887)
+1825 well, shit.
 
 1826 Fix hanging client when map_restart executed on the server while client is still loading the map
 
-1827 skip:  Make Ludwig happy
+1827 Make Ludwig happy
 
 1828
     - Add parameter checking to CL_*Ping* functions
@@ -161,11 +163,11 @@ init with 1753
 1833 Windows doesn't know z in format string
 1834 done: Delete unused variable
 
-1835 skip:
+1835
     - Use select() to sleep when idle as opposed to busy waiting.
     - Introduce com_busyWait cvar to go back to old behaviour
 
-1836 skip:  r1833 now made some Linux systems spit out warnings. Fix this once and for all
+1836 r1833 now made some Linux systems spit out warnings. Fix this once and for all
 
 1837 Server crash can cause recursive call to Com_Error, too
 
@@ -175,7 +177,7 @@ init with 1753
 
 1839 whatever devhc you're right
 
-1840 skip:
+1840
     - Change runtime standalone detection:
      * com_standalone now read-only
      * add new cvars com_basegame, com_homepath
@@ -184,9 +186,9 @@ init with 1753
    - Replace a few hardcoded string literals with macros
    - Add checks for Team Arena PK3s to FS_CheckPak0()
 
-1841 skip:  Fix banfile writing to wrong game directory
+1841 Fix banfile writing to wrong game directory
 
-1842 skip:  - Add cvars cl_gamename, sv_heartbeat, sv_flatline so standalone games can customise their messages to the master server
+1842 - Add cvars cl_gamename, sv_heartbeat, sv_flatline so standalone games can customise their messages to the master server
 
 1843 https://bugzilla.icculus.org/show_bug.cgi?id=4460
 1844 Fix a warning
@@ -208,7 +210,8 @@ init with 1753
 1853 typos, patch by Ansgar Burchardt <ansgar@43-1.org>
 1854 * Fix fp literals
 1855 Support GNU/kFreeBSD, patch by Cyril Brulebois. Thanks.
-1856 skip:  Patch by Simon McVittie to improve dynamic library loading (#4700)
+
+1856 Patch by Simon McVittie to improve dynamic library loading (#4700)
 
 1857 Remove guid again because we don't want every play on the server to know all guids, thanks brain for reporting
 
@@ -218,7 +221,7 @@ init with 1753
 
 1861 Fix adding multiple entries for same server when using globalservers several times, patch by Tequila
 
-1862 skip:  Oops typo.
+1862 Oops typo.
 
 1863 done (misusing CGEN_* enums with alphaGen):  How could this stay undiscovered for so long? Unbelievable.
 
@@ -229,7 +232,8 @@ init with 1753
     - With _BSD_SOURCE now explicitly defined bring back strdup to vm_x86_64_assembler.c
 
 1866 Fix buffer overflow, reported by Mads Lind
-1867 skip:  strdup still not accepted by some systems. *sigh*.
+
+1867 strdup still not accepted by some systems. *sigh*.
 1868 Allow user to specify different temp dir for building (#4349)
 
 1869 Thank you devhc
@@ -257,7 +261,7 @@ init with 1753
 
 1882 Fix strcpy copying buffer into itself, thanks to Simon McVittie for reporting and the patch (#4894)
 
-1883 skip:  First batch of getting replacing malloc() with Z_Malloc
+1883 First batch of getting replacing malloc() with Z_Malloc
 1884 Brace for incoming grammar fix by DevHC!
 1885 Finally fix missionpack compiling for STANDALONE=1, yes, this is tested.
 1886 Make Q_vsnprintf() more standard conform in bg_lib.c, patch by devhc
@@ -267,13 +271,13 @@ init with 1753
 
     (minor English issues, most of which are via /dev/humancontroller)
 
-1888 skip some (did Use MAP_FAILED...):
+1888
     - Use MAP_FAILED error code for check whether mmap() was successful
     - Replace various malloc() with Z_Malloc
     - Fix several memory leaks when VM compilation failed and Com_Error is called
     - Make failed mmap/VirtualAlloc/malloc calls fatal
 
-1889 skip some (did Make some string...):
+1889
     - Make some string functions in g_cmds.c cleaner, by DevHC
     - embed VM_FREEBUFFERS() macro in do-while-loop
 
@@ -282,15 +286,15 @@ init with 1753
 
 1892 Fix console tab autocomplete for exec and condump on pure servers, patch by Zack Middleton
 
-1893 skip (done):  JPEG quality control patch, by Zack Middleton (#4673)
+1893 no (done: r_jpegCompressionQuality):  JPEG quality control patch, by Zack Middleton (#4673)
 
-1894 skip:  Merge "which" command upstream from Tremulous, patch provided by Chris Schwarz
+1894 Merge "which" command upstream from Tremulous, patch provided by Chris Schwarz
 
 1895 OMGWHATISTHISSHITIDONTEVENKNOW
 
 1896 Auto complete demos on not in pk3s while in pure servers. Patch by Zack Middleton (#4794)
 
-1897 skip:  Support non-256x256 videos in shaders, by Zack Middleton (#4745)
+1897 Support non-256x256 videos in shaders, by Zack Middleton (#4745)
 
 1898
     * Fix Sys_Milliseconds wrapping causing the flood protection code to
@@ -301,7 +305,7 @@ init with 1753
     - Get rid of bigbuffer in Com_sprintf()
     - Get rid of Q_snprintf and replace with Com_sprintf()
 
-1900 skip:  Make NET_Sleep wait 1ms less than requested, then busy-wait the last ms for better timeout precision.
+1900 Make NET_Sleep wait 1ms less than requested, then busy-wait the last ms for better timeout precision.
 
 1901 done (crouch and lg bolt):  Patch by Zack Middleton (#4920)
 
@@ -309,7 +313,7 @@ init with 1753
 
 1903 (#4919) Extra variable in missionpack ui's bind_t structure, by Zack Middleton
 
-1904 skip:  (#4291) Redundant statement in client console, by Zack Middleton
+1904 (#4291) Redundant statement in client console, by Zack Middleton
 
 1905 (#4922) Use screenYScale, not screenXScale, for scaling Y, by Zack Middleton
 
@@ -352,13 +356,16 @@ init with 1753
     - Fix default device for s_alInputDevice
     - Adjust formatting of S_AL_Info output
 
+----  this  ----
+
+
 1921 skip:  (#4925) - com_pipefile to create a named pipe for sending commands from other processes, patch by Chris Schwarz
 
 1922 done:  * Fix misplaced ; in MSVC _vsnprintf wrapper
 1923 strtod exists in bg_lib.c now so Q_isanumber will work in the VMs, too.
 1924 Make buffers for device lists a bit longer. Just in case.
 
-1925 done:  Revert premature change to Makefile for migration to jpeg-8c. *sigh*
+1925 Revert premature change to Makefile for migration to jpeg-8c. *sigh*
 
 1926 skip option to link to system libjpeg:
     - Migrate to jpeg-8c
@@ -873,7 +880,7 @@ client gets disconnected with download blocks in the queue
 
 ---------------   this   ---------------
 
-2105 skip:
+2105 skip (removing alot of 1842):
     - Switch master server protocol to dpmaster for better game separation. Based partly on patch by Zack Middleton
     - Get rid of ugly cvars sv_heartbeat and cl_gamename and replace with single com_gamename
     - Remove sv_flatline. Flatlines are ignored by dpmaster and are considered to be insecure because flatlines can be udp-spoofed.
@@ -997,12 +1004,12 @@ client gets disconnected with download blocks in the queue
 
 2144 skip check:  Removed "Color Depth" from q3_ui system settings, it didn't control anything.
 
-2145 skip check:
+2145
     - Added r_mode -2 for using display resolution.
     - Changed q3_ui's very high video settings use display resolution.
 
 2146 skip (rend2):  Fixed copyfiles when USE_RENDERER_DLOPEN is disabled.
-2147 skip:  Reverted r2145 per Timbo's suggestion.
+2147 Reverted r2145 per Timbo's suggestion.
 2148 skip:  Disabled getting motd from update server in standalone build.
 
 2149 skip:  Fix auto game-restart when disconnecting from a server that explicitly set fs_game to "baseq3" instead of ""
@@ -1123,9 +1130,9 @@ client gets disconnected with download blocks in the queue
 
 2208 Removed unused functoin Hunk_Trash.
 
-2209 done:  Show warning when renderer cannot load model after checking all supported formats, instead of after each format.
+2209 Show warning when renderer cannot load model after checking all supported formats, instead of after each format.
 
-2210 done:  Reverted r2209
+2210 Reverted r2209
 
 2211 skip:  Fixed typo in Makefiles copyfiles directory path check.
 
@@ -1328,7 +1335,7 @@ client gets disconnected with download blocks in the queue
 
     From /dev/humancontroller.
 
-2286 #5672 - Fixed incorrect type usage in NET_Sleep(), patch from Özkan Sezer.
+2286 skip:  #5672 - Fixed incorrect type usage in NET_Sleep(), patch from Özkan Sezer.
 
 2287 skip:
     - Have NET_Sleep work with Windows' INVALID_SOCKET again...
@@ -1356,11 +1363,11 @@ client gets disconnected with download blocks in the queue
     - first_gauntlet_hit.wav was not played (ops/ps) bug
     - capturelimit not hit (from OAX)
 
-2295 skip (later reverted):  Support for .pk3dir (#5298) - Patch by Andrew (dersaidin@gmail.com)
+2295 Support for .pk3dir (#5298) - Patch by Andrew (dersaidin@gmail.com)
 
 2296 Mark JPEG lib changes, file provided by Simon McVittie
 
-2297 skip (never applied):  Revert pk3dir patch because some users report the code gets stuck in an infinite loop in the new code
+2297 Revert pk3dir patch because some users report the code gets stuck in an infinite loop in the new code
 
 2298
     We should not try to broadcast via the IPv4 socket if that socket is closed.
@@ -1637,7 +1644,8 @@ client gets disconnected with download blocks in the queue
 2399 skip:  Lets list all the valid options.
 
 
------------ now git 2399 == 2d02694749efe39ae54652c8b86ca98530d255eb -------
+----------------------------------------------------------------------------
+------- now svn 2399 == git 2d02694749efe39ae54652c8b86ca98530d255eb -------
 -------   2013-01-03-01 f6c98fd29f3eb18ab0bd69c870ac00394fab961f     -------
 ----------------------------------------------------------------------------
 
@@ -3014,7 +3022,7 @@ the demo.
 
     Caused a crash. Already done for looping sounds.
 
-2014-03-11-03 skip (reverted in ioq3):
+2014-03-11-03
     DMA 44100Hz needs more memory for sound buffers
 
     It doubles the size of the data compared to the default (22050),
@@ -3043,7 +3051,7 @@ the demo.
 
 2014-03-18-02 skip (diff sdl):  Fix ctrl-c etc codes for edit fields
 
-2014-03-18-03 skip (never applied):
+2014-03-18-03
     Revert "DMA 44100Hz needs more memory for sound buffers"
 
     This reverts commit 0e6632f464c08dcb76f26a52f33d97228e64fda1.
@@ -3288,12 +3296,12 @@ the demo.
 2014-07-03-01 Remove unused cvar in_joystickDebug
 2014-07-03-02 Fix overstrike/insert logic being reversed in q3_ui
 
-2014-07-12-01 skip (reverted later):
+2014-07-12-01
     Don't draw client console buffer past top of screen
 
     Thanks @Pan7.
 
-2014-07-13-01 skip (revert last commit):
+2014-07-13-01
     Restore drawing a cut off client console line in 1920x1080
 
     The text lines don't meet at top of the sceen in 1920x1080, restore
@@ -3448,13 +3456,13 @@ the demo.
 2014-09-01-03 (only part):  Fix game warnings
 2014-09-01-04 skip:  Fix client warnings
 
-2014-09-01-05 skip (reverted later):  Suppress warning of (deliberate) null pointer deference
+2014-09-01-05 Suppress warning of (deliberate) null pointer deference
 
 2014-09-01-06 skip:  Fix renderergl1 warnings
 2014-09-01-07 skip (rend2):  Fix renderergl2 warnings
 2014-09-01-08 skip:  Fix more warnings
 
-2014-09-01-09 skip (reversion):  Actually, that's not suppressing, that's changing behaviour
+2014-09-01-09 Actually, that's not suppressing, that's changing behaviour
 
 2014-09-01-10 skip:  Coverity travis integration experiment
 2014-09-01-11 skip:  Fix .travis.yml indentation
