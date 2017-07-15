@@ -1434,6 +1434,21 @@ static void convert_rgba_to_rgb (byte *buffer, int width, int height)
 	}
 }
 
+// swap rgb to bgr
+static void swap_bgr (byte *buffer, int width, int height, qboolean hasAlpha)
+{
+	int temp;
+	int i;
+	int c;
+
+	c = width * height * (3 + (hasAlpha ? 1 : 0));
+	for (i = 0;  i < c;  i += (3 + (hasAlpha ? 1 : 0))) {
+		temp = buffer[i];
+		buffer[i] = buffer[i + 2];
+		buffer[i + 2] = temp;
+	}
+}
+
 extern GLfloat *Video_DepthBuffer;
 extern byte *ExtraVideoBuffer;
 extern qboolean SplitVideo;
@@ -1486,18 +1501,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	//FIXME
 	//outAlign = (__m64 *)((((int)(outAlloc))+7) & ~7);
 
-
-	//if ((cmd->jpg  ||  cmd->png)  ||  (cmd->avi  &&  cmd->motionJpeg)) {
 	if (cmd->png) {
 		fetchBufferHasAlpha = qtrue;
 		fetchBufferNeedsBGRswap = qtrue;
 		glMode = GL_RGBA;
-		//qglReadPixels(0, 0, cmd->width, cmd->height, GL_RGBA, GL_UNSIGNED_BYTE, cmd->captureBuffer + 18);
 		fetchBuffer = cmd->captureBuffer;
-		//FIXME align
-		//outAlign = (__m64 *)fetchBuffer;
-		//R_GammaCorrect(cmd->captureBuffer + 18, cmd->width * cmd->height * 4);
-		//memcpy(outAlign, fetchBuffer, shotData->pixelCount * 4);
 	} else {  //  not png
 		sbuf = finalName;
 		Cvar_VariableStringBuffer("cl_aviFetchMode", sbuf, MAX_QPATH);
@@ -1536,6 +1544,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		glMode = GL_RGBA;
 		fetchBufferHasAlpha = qtrue;
 		fetchBufferNeedsBGRswap = qtrue;
+	}
+
+	if (cmd->jpg  ||  (cmd->avi  &&  cmd->motionJpeg)) {
+		// no need to use data as bgr
+		fetchBufferNeedsBGRswap = !fetchBufferNeedsBGRswap;
 	}
 
 	if (!useBlur) {
@@ -1614,7 +1627,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	if (cmd->tga) {
 		byte *buffer;
 		int width, height;
-		int temp, c;
+		int c;
 		int count;
 
 		if (blurFrames > 1) {
@@ -1644,14 +1657,9 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		frameSize = cmd->width * cmd->height;
 
 		if (fetchBufferNeedsBGRswap) {
-			// swap rgb to bgr
-			c = 18 + width * height * (3 + fetchBufferHasAlpha);
-			for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-				temp = buffer[i];
-				buffer[i] = buffer[i + 2];
-				buffer[i + 2] = temp;
-			}
+			swap_bgr(buffer + 18, width, height, fetchBufferHasAlpha);
 		}
+
 		ri.FS_WriteFile(finalName, buffer, width * height * (3 + fetchBufferHasAlpha) + 18);
 
 		if (shotData == &shotDataLeft) {
@@ -1773,9 +1781,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		buffer = cmd->captureBuffer + 18;
 		ri.FS_WriteFile(finalName, buffer, 1);  // create path
 		if (cmd->jpg) {
+			if (fetchBufferNeedsBGRswap) {
+				swap_bgr(buffer, width, height, fetchBufferHasAlpha);
+			}
+
 			if (fetchBufferHasAlpha) {
 				convert_rgba_to_rgb(buffer, width, height);
 			}
+
 			RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer, 0);
 		} else {  // png
 			SavePNG(finalName, buffer, width, height, (3 + fetchBufferHasAlpha));
@@ -1841,9 +1854,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 			if (r_anaglyphMode->integer != 19) {
 				if (cmd->jpg) {
+					if (fetchBufferNeedsBGRswap) {
+						swap_bgr(buffer, width, height, fetchBufferHasAlpha);
+					}
+
 					if (fetchBufferHasAlpha) {
 						convert_rgba_to_rgb(buffer, width, height);
 					}
+
 					RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer, 0);
 				} else {
 					SavePNG(finalName, buffer, width, height, (3 + fetchBufferHasAlpha));
@@ -1884,9 +1902,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			}
 
 			if (cmd->jpg) {
+				if (fetchBufferNeedsBGRswap) {
+					swap_bgr(ExtraVideoBuffer, width, height, fetchBufferHasAlpha);
+				}
+
 				if (fetchBufferHasAlpha) {
 					convert_rgba_to_rgb(ExtraVideoBuffer, width, height);
 				}
+
 				RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, ExtraVideoBuffer, 0);
 			} else {  // png
 				SavePNG(finalName, ExtraVideoBuffer, width, height, (3 + fetchBufferHasAlpha));
@@ -1897,9 +1920,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 	if( cmd->avi  &&  cmd->motionJpeg )
 	{
+		if (fetchBufferNeedsBGRswap) {
+			swap_bgr(cmd->captureBuffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
+		}
+
 		if (fetchBufferHasAlpha) {
 			convert_rgba_to_rgb(cmd->captureBuffer + 18, cmd->width, cmd->height);
 		}
+
 		frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->captureBuffer + 18, 0);
 		if (shotData == &shotDataLeft) {
 
@@ -1956,9 +1984,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			}
 
 			if (r_anaglyphMode->integer != 19) {
+				if (fetchBufferNeedsBGRswap) {
+					swap_bgr(buffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
+				}
+
 				if (fetchBufferHasAlpha) {
 					convert_rgba_to_rgb(buffer + 18, cmd->width, cmd->height);
 				}
+
 				frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer + 18, 0);
 				ri.CL_WriteAVIVideoFrame(&afdLeft, cmd->encodeBuffer + 18, frameSize);
 			}
@@ -1993,16 +2026,21 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				break;
 			}
 
+			if (fetchBufferNeedsBGRswap) {
+				swap_bgr(ExtraVideoBuffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
+			}
+
 			if (fetchBufferHasAlpha) {
 				convert_rgba_to_rgb(ExtraVideoBuffer + 18, cmd->width, cmd->height);
 			}
+
 			frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, ExtraVideoBuffer + 18, 0);
 			ri.CL_WriteAVIVideoFrame(&afdRight, cmd->encodeBuffer + 18, frameSize);
 		}
 	} else if (cmd->avi) {
 		frameSize = cmd->width * cmd->height;
 		//byte *buffer;
-		int temp, c;
+		int c;
 		byte *outBuffer;
 
 		//buffer = cmd->encodeBuffer;
@@ -2026,14 +2064,9 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				outBuffer[i * 3 + 2 + 18] = cmd->encodeBuffer[i * 4 + 2 + 18];
 			}
 		} else if (fetchBufferNeedsBGRswap) {
-			// gl_rgb
-			// swap rgb to bgr, there is no alpha
-			c = 18 + cmd->width * cmd->height * 3;
-			for (i = 18;  i < c;  i += 3) {
-				temp = outBuffer[i];
-				outBuffer[i] = outBuffer[i + 2];
-				outBuffer[i + 2] = temp;
-			}
+			// gl_rbg
+			// there is no alpha
+			swap_bgr(outBuffer + 18, cmd->width, cmd->height, qfalse);
 		} else {
 			// it's just gl_bgr, no change needed
 		}
@@ -2162,7 +2195,6 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			int i;
 			GLfloat *out;
 			byte *buffer;
-			int needAlpha;
 
 			focusStart = mme_depthFocus->value - mme_depthRange->value;
 			focusEnd = mme_depthFocus->value + mme_depthRange->value;
@@ -2177,12 +2209,6 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			buffer = (byte *)Video_DepthBuffer;
 			buffer += 18;
 			out = (GLfloat *)buffer;
-
-			if (cmd->jpg  ||  (cmd->avi  &&  cmd->motionJpeg)) {
-				needAlpha = 1;
-			} else {
-				needAlpha = 0;
-			}
 
 			qglDepthRange( 0.0f, 1.0f );
 			qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, GL_FLOAT, out );
@@ -2205,13 +2231,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				else
 					outVal = (zVal - focusStart) * focusMul;
 				//((byte *)out)[i] = outVal;
-				cmd->encodeBuffer[18 + i * (3 + needAlpha) + 0] = outVal;
-				cmd->encodeBuffer[18 + i * (3 + needAlpha) + 1] = outVal;
-				cmd->encodeBuffer[18 + i * (3 + needAlpha) + 2] = outVal;
-				if (needAlpha) {
-					cmd->encodeBuffer[18 + i * (3 + needAlpha) + 3] = 255;
-				}
+				cmd->encodeBuffer[18 + i * 3 + 0] = outVal;
+				cmd->encodeBuffer[18 + i * 3 + 1] = outVal;
+				cmd->encodeBuffer[18 + i * 3 + 2] = outVal;
 			}
+
 			if (cmd->tga) {
 				buffer = cmd->encodeBuffer;
 				Com_Memset(buffer, 0, 18);
@@ -2220,9 +2244,9 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				buffer[13] = cmd->width >> 8;
 				buffer[14] = cmd->height & 255;
 				buffer[15] = cmd->height >> 8;
-				buffer[16] = 24 + 8 * needAlpha;        // pixel size
+				buffer[16] = 24;        // pixel size
 				//buffer[16] = 8;
-				ri.FS_WriteFile(finalName, cmd->encodeBuffer, cmd->width * cmd->height * (3 + needAlpha) + 18);
+				ri.FS_WriteFile(finalName, cmd->encodeBuffer, cmd->width * cmd->height * 3 + 18);
 			} else if (cmd->jpg  ||  cmd->png) {
 				const char *type = "png";
 
@@ -2249,13 +2273,15 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				if (cmd->jpg) {
 					RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer, 0);
 				} else {
-					SavePNG(finalName, buffer, cmd->width, cmd->height, (3 + fetchBufferHasAlpha));
+					SavePNG(finalName, buffer, cmd->width, cmd->height, 3);
 				}
 			} else if (cmd->avi  &&  cmd->motionJpeg) {
 				//////////////////
+				/*
 				if (fetchBufferHasAlpha) {
 					convert_rgba_to_rgb(cmd->encodeBuffer + 18, cmd->width, cmd->height);
 				}
+				*/
 				frameSize = RE_SaveJPGToBuffer(cmd->captureBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->encodeBuffer + 18, 0);
 				if (shotData == &shotDataLeft) {
 					ri.CL_WriteAVIVideoFrame(&afdDepthLeft, cmd->captureBuffer + 18, frameSize);

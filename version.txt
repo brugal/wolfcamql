@@ -25,6 +25,7 @@
 * bug fix:  recording demo from demo could use wrong protocol extension is demo name
 * bug fix:  installer missing voip-readme.txt
 * version renamed to version.txt
+* bug fix:  png file depth capture incorrectly determined if alpha channel was present
 
 
 ---------------------------------
