@@ -7,6 +7,7 @@
 * ioquake3 fixes and patches
     - third person player sounds don't play at full volume
     - OpenAL fixes (crash, ogg fallback)
+    - IQM model support
 
 * bug fix:  disconnect icon didn't match lagometer x, y, scale, and align settings
 * bug fix:  draw selected player name didn't detect clan tag correctly

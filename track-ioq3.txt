@@ -356,10 +356,7 @@ init with svn 1753
     - Fix default device for s_alInputDevice
     - Adjust formatting of S_AL_Info output
 
-----  this  ----
-
-
-1921 skip:  (#4925) - com_pipefile to create a named pipe for sending commands from other processes, patch by Chris Schwarz
+1921 (#4925) - com_pipefile to create a named pipe for sending commands from other processes, patch by Chris Schwarz
 
 1922 done:  * Fix misplaced ; in MSVC _vsnprintf wrapper
 1923 strtod exists in bg_lib.c now so Q_isanumber will work in the VMs, too.
@@ -367,7 +364,7 @@ init with svn 1753
 
 1925 Revert premature change to Makefile for migration to jpeg-8c. *sigh*
 
-1926 skip option to link to system libjpeg:
+1926
     - Migrate to jpeg-8c
     - Add possibility to link against system libjpeg
 
@@ -382,7 +379,7 @@ init with svn 1753
 
     Patch by Simon McVittie, bug 4930
 
-1930 some (wolfcam: commented out no 'defaultdevice'):
+1930
     - Remove alext.h dependency and manually add the required macros
     - Use ALC_DEFAULT_ALL_DEVICES_SPECIFIER instead of ALC_DEFAULT_DEVICE_SPECIFIER if extension exists
 
@@ -394,13 +391,13 @@ init with svn 1753
 
 1933 Fix dynamic lighting for moving world surfaces. Patch by gimhael, thx
 
-1934 skip for now jpeg stuff: Bug 4935 - dedicated server linked against libjpeg if using system libjpeg, patch by Simon McVittie
+1934 Bug 4935 - dedicated server linked against libjpeg if using system libjpeg, patch by Simon McVittie
 
 1935 Bug 4936 - Wrong color for non-ascii symbols in console
 
 1936 Fix JPEG compression for screenshots and mjpeg video recording with new JPG library
 
-1937 skip:  * Crash recovery for com_pipeFile (Lakitu7)
+1937 * Crash recovery for com_pipeFile (Lakitu7)
 1938 * Fix jpeg warnings
 1939 Fix player queueing for tournament play (#4939)
 1940 done:  * Actually call Sys_PlatformExit
@@ -408,7 +405,9 @@ init with svn 1753
 1942 Consider key states before startup, patch by Zack Middleton (#4950)
 1943 Make Sys_SetEnv behave alike on Windows and Linux
 
-1944 skip:
+---- check ----
+
+1944 no check: (no change in cl_avi.c, not using RB_ReadPixels, maybe add this?):
     - Fix data alignment issue with glReadPixel call, reported by Guillaume Bougard (#4954)
     - Fix data alignment issue in raw AVI recording for weird resolutions (like 1366x768)
 
@@ -424,14 +423,13 @@ init with svn 1753
     - Retains full compatibility to the old but unsecure protocol between clients and servers
     - Harden the connection process against DoS attacks, possibly connected to UDP spoofing
 
-
-1951 skip:
+1951
     - Change the layout of the README and split "misc" section into a part for end users, and a part for developers
     - Update the readme for rev. 1950
 
 1952 Revert protocol 69 pending further discussion (#4962)
 
-1953 skip (too much):
+1953
     - Add Inter-Quake Model (IQM) Format support, patch by gimhael with minor modifications by myself (#4965)
     - Changed model_t::md4 to model_t::modelData
     - Fix R_ModelBounds for MD4, MDR and IQM models (#4966)
@@ -444,23 +442,22 @@ init with svn 1753
 
 1957 Fix sending reliable commands before being connected, patch by Eugene C. (#4971)
 
-1958 skip (new model type):
+1958
     - Add licence headers to new files
     - Add patch from Zack Middleton which fixes a few issues still
 
-1959 skip (new model stuff):
-
+1959
     [23:59:05] <ZTurtleMan> Thilo: altName (created using va) does not point to model filename in developer-only printf as va is used to load images before the printf. http://pastebin.com/1KCjz6Ct
 
 1960 Do use the SV_Game{Error,Print} functions (#4972)
 
-1961 skip:
+1961
     - Add HOMEPATH default name define to q_shared.c, patch by uZu (#4973)
     - reverted change from (#4972) and implemented the other suggestion to be consistent with cl_cgame.c and cl_ui.c
 
-1962 skip (new model stuff): Remove C99 code constructs from IQM code, patch by gimhael (#4974)
+1962 Remove C99 code constructs from IQM code, patch by gimhael (#4974)
 
-1963 skip (new model stuff):  IQM skin support and print limit info, make other limit info consistent, patch by Zack Middleton (#4978)
+1963 IQM skin support and print limit info, make other limit info consistent, patch by Zack Middleton (#4978)
 
 1964 fix overzealous cvar cheat protection, patch by cyrri (#4974)
 1965 Add error handling to malloc as well
@@ -468,11 +465,11 @@ init with svn 1753
 
 1967 Add codec fallback support for sound files not found, Patch by Zack Middleton (#4982)
 
-1968 skip (missing RB_ReadPixels, others done):  Choose better alignment for heavy-duty rendering structures, patch by Matt Turner (#4981)
+1968 Choose better alignment for heavy-duty rendering structures, patch by Matt Turner (#4981)
 
-1969 skip:  Add opStack protection to defend against malicious QVMs
+1969 Add opStack protection to defend against malicious QVMs
 
-1970 some done and skip:
+1970
     - Remove newlines in Com_Error()
     - Update register description
 
@@ -491,16 +488,16 @@ init with svn 1753
 1979 done:  Ffffuuuuuu  I don't even know....
 1980 done:  Remove newlines from Com_Error calls, patch by DevHC
 
-1981 some (skip vm stuff):  ensure that ent->classname is always non-null (for entity numbers up to level.num_entities-1, and ENTITYNUM_WORLD and ENTITYNUM_NONE), for player entities and #ENTITYNUM_NONE in particular, patch by DevHC
+1981 ensure that ent->classname is always non-null (for entity numbers up to level.num_entities-1, and ENTITYNUM_WORLD and ENTITYNUM_NONE), for player entities and #ENTITYNUM_NONE in particular, patch by DevHC
 
-1982 done/skip (vm stuff):
+1982
     - Reverting accidentally committed vm_x86.c
     - Last commit contained some refactoring for vm_x86_64.c
 
 1983 Make bg_lib.c strchr ANSI-C conformant
 1984 Fix typecast
 
-1985 skip (vm stuff):
+1985
     - Add vm_x86.c optimization patch by Eugene C.
     - Remove ASM syntax specific code (AT&T vs MASM) for OP_CALL and replace with machine code
 
@@ -519,48 +516,48 @@ init with svn 1753
 1990 Optimise VectorNormalize functions, patch by Matt Turner
 1991 0 --> NULL
 
-1992 skip (vm stuff):
+1992
     - Fix SEGV in while loop getop() after t = b = 0
     - Fix iss8, iss16 and iss32 which would not correctly detect 32-bit signed integer range
     - Add support for "addb", "subb" etc. assembler mnemonic
     - Change opStack protection for x86_64 VM: No overflow checks necessary anymore as offset register is 1 byte long only
 
-1993 skip (vm stuff):
+1993
     - Set default opStack size to 256
     - Fix integer wraparound. opStack offset in rbx will always be >= 0
 
-1994 skip (vm stuff):
+1994
     - Use edx for CALLs instead of ecx, as the latter does not require any push to stack
     - Make Linux AT&T asm code consistent with the MASM codeblock
 
-1995 skip (vm stuff):  Use scaled indexing mode n=4 for addressing opStack, this way we can use the 8 bit offset value in %%bl to address an OPSTACK_SIZE of 1024 which was the old value.
+1995 Use scaled indexing mode n=4 for addressing opStack, this way we can use the 8 bit offset value in %%bl to address an OPSTACK_SIZE of 1024 which was the old value.
 
-1996 skip (vm stuff):  Fix VM call for release version, bug introduced by myself in r1994
+1996 Fix VM call for release version, bug introduced by myself in r1994
 
-1997 skip (vm stuff):  I don't seem to get these constraints right. This should fix it
+1997 I don't seem to get these constraints right. This should fix it
 
-1998 skip (vm stuff):
+1998
     - Do assignment of value 0xDEADBEEF after the 4-byte alignment
     - Add all GPR to clobber list as GCC function callAsmCall seems to change register r11 without saving it to stack first, which may result in SIGSEGV in VM_CallCompiled()
 
-1999 skip (vm stuff):
+1999
     - Implement opStack protection: Use register %ebx for scaled indexed addressing mode to access opStack, make opStack push/pop operate on %bl portion only
     - Add a third pass to VM compilation for computation of jump address offsets, removing the need to dereference into vm->instructionPointers[] for every call/jump
     - Make use of 0F opcode prefix relative jumps
     - Call Com_Memcpy for OP_BLOCK_COPY
     - Fix several missing range checks for vm->dataBase memory access
 
-2000 skip (vm stuff):  Add instruction number checks to jumps and calls to SPARC VM, patch by David Miller
+2000 Add instruction number checks to jumps and calls to SPARC VM, patch by David Miller
 
-2001 skip (vm stuff):  Fix compilation on mingw64
+2001 Fix compilation on mingw64
 
-2002 skip (vm stuff):  Fix is*() functions for windows where long value is 4 bytes
+2002 Fix is*() functions for windows where long value is 4 bytes
 
-2003 skip most (vm stuff) use of intptr_t:
+2003
     - Add x86_64 support to vm_x86.c
     - Fix warning on mingw64
 
-2004 skip (vm stuff):
+2004
     - Use EmitCallDoSyscall() to call the jump violations function which guarantees 16-byte stack alignment
     - Add x64 code for MSVC _asm() blocks, not tested yet.
 
@@ -584,12 +581,11 @@ init with svn 1753
 
 2012 * Remove misleading comment
 
-2013 skip (new model):
+2013
     - Adapt MSVC project files to new libjpeg, fix by Guillaume Bougard and cyrri
     - add tr_model_iqm.c to MSVC project, by cyrri
 
-2014 skip (iqm model stuff):
-
+2014
     Fixes to IQM support, by Zack Middleton
       - Bug 5029 - IQM skin support for upper case surface names
       - Bug 5030 - IQM version 2 support
@@ -603,61 +599,62 @@ init with svn 1753
 
 2017 Bug 5034  - q3_ui: fill whole screen and allow cursor to move to edge in widescreen, patch by Zack Middleton
 
-2018 skip (iqm stuff):  Fix forgotten IQM2 support in iqm.h, patch by Zack Middleton
+2018 Fix forgotten IQM2 support in iqm.h, patch by Zack Middleton
 
-2019 skip:  Add static SDL libraries for compilation with MSVC
+2019 Add static SDL libraries for compilation with MSVC
 
-2020 skip (too many changes at once):
+2020
      - Add MASM assembler files for MSVC x64 projects to support vm_x86 in x64 mode
      - Clean up ftol()/snapvector() mess
      - Make use of SSE instructions for ftol()/snapvector() if available
      - move ftol/snapvector pure assembler to inline assembler, this will add x86_64 and improve support for different calling conventions
      - Set FPU control word at program startup to get consistent behaviour on all platforms
 
-2021 skip (based on last patch):
+2021
     - Fix macro that uses constant float suffix as argument
     - retval variables in ftola.c must have type long, not int
 
-2022 skip (more crap to fix ugly patch):  Forgot the inline assembler parts, here they come! Using inline asm to get rid of all the boilerplate stuff
+2022 Forgot the inline assembler parts, here they come! Using inline asm to get rid of all the boilerplate stuff
 
-2023 skip (more crap to fix ugly patch):
+2023
      - Still forgot qasm-inline.h
      - Leave GCC more freedom in choice of registers
 
-2024 skip:
+2024
      - mingw64 now links against SDL64.dll to allow for 32 and 64 bit version in the same directory
      - Add library files for MinGW64
 
-2025 skip:  Project files for Microsoft Visual Studio 10. Has x86 and x64 build configurations (#2681)
+2025 Project files for Microsoft Visual Studio 10. Has x86 and x64 build configurations (#2681)
 
-2026 skip (more crap to fix ugly patch):  Fix #if macros for idx64 and id386
+2026 Fix #if macros for idx64 and id386
 
-2027 skip (trem done though):
+2027
      - Merge http://svn.icculus.org/tremulous?view=rev&revision=2185, patch by Chris Schwarz
      - Remove Q_snprintf as Com_sprintf exists already
 
 2028 Need space of len+1 for snprintf to work
 
-2029 skip check:
+2029
      - Small change to search path order - local files not in .pk3s take precedence over files in pk3s. Should make life easier for modders/mappers wanting to override textures that are already contained in some older pk3.
      - Make VM loading more robust, change loading order: when vm_* == 0 first try loading DLL, then QVM in *each* search directory/path.
      - Fix FS_FileForHandle that would return a FILE pointer to invalid file handle 0
 
-2030 skip:
+2030
      - Don't try to load QVM/DLL files on pure servers.
      - Fallback after failed DLL load will be VMI_COMPILED, not INTERPRETED
 
-2031 skip:
+2031
      Various fixes to vm_interpreted.c
      - Add opStack protection
      - Fix dataMask check for OP_BLOCK_COPY
      - Add instruction number check for conditional jumps
      - Make errors in VM_PrepareInterpreter nonfatal
 
-2032 skip:  Use Q_ftol for vm_interpreted
-2033 skip:  Fix wrong macro. MSVC win32 build should work again now.
-2034 skip:  remove static VM_BlockCopy from vm_powerpc
-2035 skip:  Add mingw64 crossbuild script, patch by Zack Middleton
+2032 Use Q_ftol for vm_interpreted
+
+2033 Fix wrong macro. MSVC win32 build should work again now.
+2034 remove static VM_BlockCopy from vm_powerpc
+2035 Add mingw64 crossbuild script, patch by Zack Middleton
 
 2036
      Patch from Tremulous / description from Zack Middleton: (#5041)
@@ -669,20 +666,20 @@ init with svn 1753
 
      Patch from tremulous http://svn.icculus.org/tremulous?view=rev&revision=2041
 
-2037 skip:
+2037
      Patch and description by ensiform (#5043):
 
      This patch moves cg_particles.c out of cg_marks.c to the actual file that was already there but not used.  By default WOLF_PARTICLES definition is commented out if someone wants to use the old cg_particles.c changes.  cg_particles.c has been added to the makefile and msvc projects.
 
-2038 skip:  Fix #lese in las commit
+2038 Fix #lese in las commit
 
-2039 skip:
+2039
      patch by Zack Middleton (#5044)
      - Fix a few comments in tr_local.h.
      - A bit of refactoring of the cpp macros
 
-2040 skip:  Fixes for bugs introduced in last several revisions
-2041 skip:  Still forgot this one :(
+2040 Fixes for bugs introduced in last several revisions
+2041 Still forgot this one :(
 
 2042
      - Fix memory leak in DMA sound after S_Shutdown().
@@ -693,7 +690,7 @@ init with svn 1753
 
 2044 Bug 5048 - Entity constant light does not work correctly, bug found by Eraesr (Eraser?)
 
-2045 skip check:
+2045
   - Improve game_restart:
     * differing screen resolutions and network settings are now honoured when changing fs_game
     * Fix hunk memory leak on game_restart
@@ -702,10 +699,9 @@ init with svn 1753
     * Fix error dialog popping up after every game_restart if an error happened previously (reported by Ensiform)
   - Fixed that not all commands added by CL_Init() would be removed by CL_Shutdown()
 
-2046 skip:  Fix unnoticed bug in game_restart
+2046 Fix unnoticed bug in game_restart
 
-2047 skip:
-
+2047
   - Bug 5034 - q3_ui: fill whole screen and allow cursor to move to edge in wi
 descreen, by Zack Middleton
     Check if uivm is loaded before using it
@@ -718,40 +714,40 @@ descreen, by Zack Middleton
   - Bug 5049 - TA UI forces overstrike mode on when focusing an edit box, by Ensiform
   - Bug 5052 - Missing podium timer initialization, by Eugene C.
 
-2048 skip:  Fix to (#5051) - strchr in GraphicsOptions_GetAspectRatios() might return NULL for some strange reason
+2048 Fix to (#5051) - strchr in GraphicsOptions_GetAspectRatios() might return NULL for some strange reason
 
-2049 skip:  Fix x64 compilation on MSVC
+2049 Fix x64 compilation on MSVC
 
-2050 skip:
+2050
      - Clear ip address listings after a NET_Restart.
      - check for oldGameSet instead of the gamename string
 
-2051 skip:  Fix by Laurent Desnogues for my feeble attempt at a fix
+2051 Fix by Laurent Desnogues for my feeble attempt at a fix
 
-2052 skip:
+2052
      - align sse control word storage space to 16 byte boundary for snapvector.
      - replace some whitespace with tabs in snapvector.c.
      - Give gcc a bit more freedom in choice of registers
 
-2053  skip:
+2053
   - Automatically reset fs_game to "" if it was supplied by the user and is equal to com_basegame
   - Fix problem where users could change values of CVAR_INIT variables after the call to Cvar_Get() via Com_StartupVariable()
   - Move sound shutdown after client shutdown so VMs don't hold invalid sound handles in memory
 
-2054 skip:  Allow recursive VM entry for VM operations as well
-2055 skip:  Correct fix to (#5051), patch by Roughael
+2054 Allow recursive VM entry for VM operations as well
+2055 Correct fix to (#5051), patch by Roughael
 
 2056 Fix grenade rotation ends always the orientation (#5053), patch by Eugene C.
 
 2057 Get rid of redundancy
-2058 skip:  Fix ipv6 server query
-2059 skip:  Add forced VM unloading to Com_Quit_f
+2058 Fix ipv6 server query
+2059 Add forced VM unloading to Com_Quit_f
 
-2060 skip (done):  Make sound fallback behaviour for music streams less verbose
+2060 (done):  Make sound fallback behaviour for music streams less verbose
 
 2061 Make g_doWarmup archived cvar
 
-2062 skip:
+2062
      - Fix opStack size for vm_x86.c.
      - Change opStack alignment to 16 for vm_x86_64.c
 
@@ -761,7 +757,7 @@ descreen, by Zack Middleton
      - Bug 5059  - Client's railgun does not glow in third person and mirror
      - Bug 5060  - Warning in RAVENMD4 R_GetAnimTag cross compiling with amd64-mingw32
 
-2064 skip (done):
+2064 (done):
 
     More color fixes for railgun
 
@@ -776,11 +772,11 @@ descreen, by Zack Middleton
 
 2066 Add fixes to ui menu by Ensiform and DevHC (#5062)
 2067 Make naming a bit more foolproof for new macro
-2068 skip (different):  Fix indentation
+2068 Fix indentation
 
 2069 Bug 5067 - Remove references to unused teamtournament gametype. Toggle areaportal on mover ents where due is needed, patch by Ensiform
 
-2070 skip (plasma explosion is distracting):  Bug 5066 - Plasmagun and BFG don't play the explosion when they hit players, patch by Ensiform
+2070 no (not plasma explosion because it is distracting, can be done with fx if needed):  Bug 5066 - Plasmagun and BFG don't play the explosion when they hit players, patch by Ensiform
 
 2071 Bug 5069 - Remove unused variable console_color, by uZu
 
@@ -797,7 +793,7 @@ descreen, by Zack Middleton
     - Implement dual protocol support (#4962)
     - Fix several UDP spoofing security issues
 
-2076 skip (demo lists not based on protocol):
+2076 no (demo lists not based on protocol):
     - Add dual protocol support to team arena demo selector
     - Fix demo selection in team arena menu on case sensitive file systems
     - Some changes in the way how vanilla q3 demo file lists are compiled in the menu
@@ -823,7 +819,7 @@ client gets disconnected with download blocks in the queue
     - Make sure at least one round of download packets and packet queues gets sent each frame
     - Fix timeVal select timeout value for case of unlimited data rate and now downloads are active
 
-2080 skip (different):  Remove one unnecessary loop in the beginning
+2080 no (check again) (different):  Remove one unnecessary loop in the beginning
 
 2081
     - Revert back to Z_Malloc from Hunk_FreeTempMemory introduced in r2077 as Hunk_FreeTempMemory must be freed in LIFO order (#5079)
@@ -833,33 +829,33 @@ client gets disconnected with download blocks in the queue
 
 2083 Move rate limiting / queued packet sending logic from Com_Frame() to sv_main.c
 
-2084 skip (done?)  ?  Bug 5075 - Fix comments in quake3 configs, patch by q3urt.undead@gmail.com
+2084 done (possibly different):  Bug 5075 - Fix comments in quake3 configs, patch by q3urt.undead@gmail.com
 
 2085 Fix compile for USE_VOIP=0
 
 2086 Fix alignment issues in message sending/reading that would crash IRIX, thanks to Canavan for supplying a shell where I could fix this (#5077)
 
 2087 Fix legacy protocol with new packet queueing
-2088 skip:  * Use specific exit code for xmessage
+2088 * Use specific exit code for xmessage
 
 2089 Fix delta compression breaking due to packet queuing
 
 2090 Bug 4812 - GCC __attribute__ annotations for printf, non-returning functions etc., patch by linux@youmustbejoking.demon.co.uk and Zack Middleton
 
-2091 skip:
+2091
      - Bug 5083 - Cross compiling for 64bit is missing libcurl.a
      - Fix a compiler warning for cross compile
 
-2092 skip:  * Fix various issues with unix Sys_Dialog
+2092 * Fix various issues with unix Sys_Dialog
 2093 Shut up returning functions with noreturn attribute warning
 
 2094 Revert attribute patch from r2090 because the jpeg functions really shouldn't be deviating from the codebase unnecessarily
 
-2095 skip:  Bug 5084 - [patch] add support for Debian cross compiling, by q3urt.undead@gmail.com
+2095 Bug 5084 - [patch] add support for Debian cross compiling, by q3urt.undead@gmail.com
 
 2096 Fix client crash on windows with old OpenAL
-2097 skip:  * Replace usage of system with fork/exec
-2098 skip:  Fix extension name comparison for DLL files
+2097 * Replace usage of system with fork/exec
+2098 Fix extension name comparison for DLL files
 2099 Include q_shared.h instead of redefining these
 2100 Fix last "noreturn" warnings
 
@@ -878,33 +874,33 @@ client gets disconnected with download blocks in the queue
 
 2104 Bug 5094 - Code cleanup, patch by Zack Middleton and DevHC. Fixes unused-but-set gcc warnings
 
----------------   this   ---------------
-
-2105 skip (removing alot of 1842):
+2105
     - Switch master server protocol to dpmaster for better game separation. Based partly on patch by Zack Middleton
     - Get rid of ugly cvars sv_heartbeat and cl_gamename and replace with single com_gamename
     - Remove sv_flatline. Flatlines are ignored by dpmaster and are considered to be insecure because flatlines can be udp-spoofed.
 
-2106 skip:
+2106
     Change DLL search path order for external libraries that are linked at runtime, like libcurl or libopenal to:
        * system library paths
        * executable path
        * fs_basepath
 
 2107 Fix cvar flags to get rid of warnings (#2881)
-2108 skip:  Fix strange ifdeffery (#5140)
+2108 Fix strange ifdeffery (#5140)
 
 2109 Bug 5134 - q3_ui incorrectly tells user to refresh servers while auto-refreshing, patch by Zack Middleton
 
 2110 Some more removal of unused code in addition to r2104, by Zack Middleton
 
-2111 skip:
+2111
     Fix pak order when reconnecting to a server.
     When /connect to the same server is issued while already connected, an initial call to CL_Disconnect will remove all pak file references
     and reset the pak order.
     Reordering only occurs through FS_Restart, which in turn is called when checksum feed changes. Because we reconnect to the same server,
     checksum feed never changes and pak file order is not restored to server order again. With certain pak file constellations between client/server,
     this may result in an inability to load files from paks which are not correctly detected as referenced paks.
+
+---- this ----
 
 2112 skip (rend2):
     Modular rendering system. Patch by use.less01

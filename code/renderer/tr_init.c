@@ -929,6 +929,48 @@ FIXME: the statics don't get a reinit between fs_game changes
 ===========================================================================
 */
 
+/* 
+================== 
+RB_ReadPixels
+
+Reads an image but takes care of alignment issues for reading RGB images.
+
+Reads a minimum offset for where the RGB data starts in the image from
+integer stored at pointer offset. When the function has returned the actual
+offset was written back to address offset. This address will always have an
+alignment of packAlign to ensure efficient copying.
+
+Stores the length of padding after a line of pixels to address padlen
+
+Return value must be freed with ri.Hunk_FreeTempMemory()
+================== 
+*/  
+
+#if 0  // unused in wolfcamql, alignment is set with qglPixelstorei(GL_PACK_ALIGNMENT, 1)
+byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
+{
+	byte *buffer, *bufstart;
+	int padwidth, linelen;
+	GLint packAlign;
+	
+	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
+	
+	linelen = width * 3;
+	padwidth = PAD(linelen, packAlign);
+	
+	// Allocate a few more bytes so that we can choose an alignment we like
+	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
+	
+	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
+	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
+	
+	*offset = bufstart - buffer;
+	*padlen = padwidth - linelen;
+	
+	return buffer;
+}
+#endif
+
 /*
 ==================
 RB_TakeScreenshot
@@ -1440,9 +1482,12 @@ static void swap_bgr (byte *buffer, int width, int height, qboolean hasAlpha)
 	int temp;
 	int i;
 	int c;
+	int psize;
 
-	c = width * height * (3 + (hasAlpha ? 1 : 0));
-	for (i = 0;  i < c;  i += (3 + (hasAlpha ? 1 : 0))) {
+	psize = 3 + (hasAlpha ? 1 : 0);
+
+	c = width * height * psize;
+	for (i = 0;  i < c;  i += psize) {
 		temp = buffer[i];
 		buffer[i] = buffer[i + 2];
 		buffer[i + 2] = temp;
@@ -2780,9 +2825,7 @@ void R_Init( void ) {
 	// why ??
 #if 0
 	if(sizeof(glconfig_t) != 11332)
-	{
-		ri.Error( ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %zd != 11332", sizeof(glconfig_t));
-	}
+		ri.Error( ERR_FATAL, "Mod ABI incompatible: sizeof(glconfig_t) == %u != 11332", (unsigned int) sizeof(glconfig_t));
 #endif
 
 	backEnd.entity2D.ePtr = &backEnd.entity2D.ent;

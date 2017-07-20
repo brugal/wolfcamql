@@ -3,8 +3,12 @@
 
 #include "cg_local.h"
 
+#include "cg_localents.h"
+#include "cg_main.h"
 #include "cg_predict.h"
 #include "cg_syscalls.h"
+
+//#define WOLF_PARTICLES
 
 #define BLOODRED	2
 #define EMISIVEFADE	3
@@ -73,6 +77,21 @@ typedef enum
 #define	MAX_SHADER_ANIMS		32
 #define	MAX_SHADER_ANIM_FRAMES	64
 
+#ifndef WOLF_PARTICLES
+static char *shaderAnimNames[MAX_SHADER_ANIMS] = {
+	"explode1",
+	NULL
+};
+static qhandle_t shaderAnims[MAX_SHADER_ANIMS][MAX_SHADER_ANIM_FRAMES];
+static int     shaderAnimCounts[MAX_SHADER_ANIMS] = {
+	23
+};
+static float   shaderAnimSTRatio[MAX_SHADER_ANIMS] = {
+	1.0f
+};
+static int     numShaderAnims;
+// done.
+#else
 static char *shaderAnimNames[MAX_SHADER_ANIMS] = {
 	"explode1",
 	"blacksmokeanim",
@@ -99,11 +118,14 @@ static float	shaderAnimSTRatio[MAX_SHADER_ANIMS] = {
 	1.0f,
 	1.0f,
 };
-static int	numShaderAnims;
-// done.
+#endif
 
 #define		PARTICLE_GRAVITY	40
+#ifdef WOLF_PARTICLES
 #define		MAX_PARTICLES	1024 * 8
+#else
+#define		MAX_PARTICLES 1024
+#endif
 
 cparticle_t	*active_particles, *free_particles;
 cparticle_t	particles[MAX_PARTICLES];
@@ -323,7 +345,11 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 		vec3_t	rr, ru;
 		vec3_t	rotate_ang;
 
+#ifdef WOLF_PARTICLES
 		VectorSet (color, 1.0, 1.0, 1.0);
+#else
+		VectorSet (color, 1.0, 1.0, 0.5);
+#endif
 		time = cg.time - p->time;
 		time2 = p->endtime - p->time;
 		ratio = time / time2;
@@ -804,9 +830,9 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 	}
 
 	if (p->type == P_WEATHER || p->type == P_WEATHER_TURBULENT || p->type == P_WEATHER_FLURRY)
-		trap_R_AddPolyToScene( p->pshader, 3, TRIverts );
+		trap_R_AddPolyToScene( p->pshader, 3, TRIverts, qfalse );
 	else
-		trap_R_AddPolyToScene( p->pshader, 4, verts );
+		trap_R_AddPolyToScene( p->pshader, 4, verts, qfalse );
 
 }
 
@@ -995,10 +1021,6 @@ void CG_ParticleSnowFlurry (qhandle_t pshader, centity_t *cent)
 		p->vel[2] = -10;
 	
 	VectorCopy(cent->currentState.origin, p->org);
-
-	p->org[0] = p->org[0];
-	p->org[1] = p->org[1];
-	p->org[2] = p->org[2];
 
 	p->vel[0] = p->vel[1] = 0;
 	
@@ -1254,7 +1276,11 @@ void CG_ParticleExplosion (char *animStr, vec3_t origin, vec3_t vel, int duratio
 	p->next = active_particles;
 	active_particles = p;
 	p->time = cg.time;
+#ifdef WOLF_PARTICLES
 	p->alpha = 1.0;
+#else
+	p->alpha = 0.5;
+#endif
 	p->alphavel = 0;
 
 	if (duration < 0) {

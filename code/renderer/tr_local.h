@@ -33,6 +33,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "tr_mme.h"
 
 #include "qgl.h"
+#include "iqm.h"
 
 #define fcheckgl() do { GLenum err; err = qglGetError(); if (err) Com_Error(ERR_FATAL, "^1opengl error 0x%x  file:'%s'  line:%d", err, __FILE__, __LINE__); } while (0);
 
@@ -41,22 +42,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
 
-// fast float to int conversion
-#if id386 && !defined(__GNUC__)
-long myftol( float f );
-#else
-#define	myftol(x) ((int)(x))
-#endif
-
-
 // everything that is needed by the backend needs
 // to be double buffered to allow it to run in
 // parallel on a dual cpu machine
 #define	SMP_FRAMES		2
 
-// 12 bits
+// 14 bits
+// can't be increased without changing bit packing for drawsurfs
 // see QSORT_SHADERNUM_SHIFT
-#define	MAX_SHADERS				16384
+#define SHADERNUM_BITS 14
+#define	MAX_SHADERS				(1<<SHADERNUM_BITS)
 
 #define	MAX_DRAWIMAGES			2048
 #define	MAX_SKINS				1024
@@ -66,7 +61,6 @@ long myftol( float f );
 #define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
 
 
-// can't be increased without changing bit packing for drawsurfs
 
 
 typedef struct dlight_s {
@@ -537,6 +531,7 @@ typedef enum {
 #ifdef RAVENMD4
 	SF_MDR,
 #endif
+	SF_IQM,
 	SF_FLARE,
 	SF_ENTITY,				// beams, rails, lightning, etc that can be determined by entity
 
@@ -637,6 +632,40 @@ typedef struct {
 	int				numVerts;
 	drawVert_t		*verts;
 } srfTriangles_t;
+
+// inter-quake-model
+typedef struct {
+	int             num_vertexes;
+	int             num_triangles;
+	int             num_frames;
+	int             num_surfaces;
+	int             num_joints;
+	struct srfIQModel_s     *surfaces;
+
+	float           *positions;
+	float           *texcoords;
+	float           *normals;
+	float           *tangents;
+	byte            *blendIndexes;
+	byte            *blendWeights;
+	byte            *colors;
+	int             *triangles;
+
+	int             *jointParents;
+	float           *poseMats;
+	float           *bounds;
+	char            *names;
+} iqmData_t;
+
+// inter-quake-model surface
+typedef struct srfIQModel_s {
+	surfaceType_t   surfaceType;
+	char			name[MAX_QPATH];
+	shader_t        *shader;
+	iqmData_t       *data;
+	int             first_vertex, num_vertexes;
+	int             first_triangle, num_triangles;
+} srfIQModel_t;
 
 
 extern	void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
@@ -749,19 +778,20 @@ typedef enum {
 	MOD_MESH,
 	MOD_MD4,
 #ifdef RAVENMD4
-	MOD_MDR
+	MOD_MDR,
 #endif
+	MOD_IQM
 } modtype_t;
 
 typedef struct model_s {
 	char		name[MAX_QPATH];
 	modtype_t	type;
-	int			index;				// model = tr.models[model->index]
+	int			index;					// model = tr.models[model->index]
 
-	int			dataSize;			// just for listing purposes
-	bmodel_t	*bmodel;			// only if type == MOD_BRUSH
-	md3Header_t	*md3[MD3_MAX_LODS];	// only if type == MOD_MESH
-	void	*md4;				// only if type == (MOD_MD4 | MOD_MDR)
+	int			dataSize;				// just for listing purposes
+	bmodel_t	*bmodel;				// only if type == MOD_BRUSH
+	md3Header_t	*md3[MD3_MAX_LODS];		// only if type == MOD_MESH
+	void		*modelData;				// only if type == (MOD_MD4 | MOD_MDR | MOD_IQM)
 
 	int			 numLods;
 } model_t;
@@ -1572,6 +1602,12 @@ void RB_SurfaceAnim( md4Surface_t *surfType );
 void R_MDRAddAnimSurfaces( trRefEntity_t *ent );
 void RB_MDRSurfaceAnim( md4Surface_t *surface );
 #endif
+qboolean R_LoadIQM (model_t *mod, void *buffer, int filesize, const char *name);
+void R_AddIQMSurfaces( trRefEntity_t *ent );
+void RB_IQMSurfaceAnim( surfaceType_t *surface );
+int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
+				  int startFrame, int endFrame,
+				  float frac, const char *tagName );
 
 /*
 =============================================================

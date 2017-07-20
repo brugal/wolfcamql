@@ -146,7 +146,8 @@ void UI_SetBestScores(postGameInfo_t *newInfo, qboolean postGame) {
 	}
 }
 
-void UI_LoadBestScores(const char *map, int game) {
+void UI_LoadBestScores(const char *map, int game)
+{
 	char		fileName[MAX_QPATH];
 	fileHandle_t f;
 	postGameInfo_t newInfo;

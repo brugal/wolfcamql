@@ -2050,10 +2050,8 @@ No locals.
 * does make-macosx-ub.sh still work?
 * sem_init() sem_destroy() mac os x
 * ioq3 dll loading
-* dieammo.dm_71  no falling or pain sound for EV_FALL_FAR  -- it's openal backend
 * voip and combined demo playback
 * voip allow voice messages in demo recording from demo -- what if you then record voice on top of that new demo with voip?
-* invis-demo-taker-24-00.dm_91 s_useOpenal 1  WARNING using default sound for keel gasp ... taunt
 * openal voip entity num support (ioquake3 has)  -- update openal
 * snddma voip entity num support
 * ioquake3 com_protocol
@@ -2066,6 +2064,12 @@ No locals.
   -- this is SDL 1.2 ParseCommandLine() Windows bug
 
 * s_list not implemented with openal
+* no need to retry .ogg, .wav, etc with snddma
+* pipe handle be in clc (clc.wfp)?
+* check stoprecord() use in client, all flush and set not recording state?
+* vid_restart / snd_restart doesn't reinit sound?  s_useOpenal 1
+* play demo, while playing /devmap campgrounds :  still shows workshops active
+* NAMEBUFSIZE == (MAX_DEMOS * 64)  name length assumed to be less than 64?
 
 
 ---------

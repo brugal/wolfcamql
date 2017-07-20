@@ -35,11 +35,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define BASEGAME			"foobar"
   #define CLIENT_WINDOW_TITLE     	"changeme"
   #define CLIENT_WINDOW_MIN_TITLE 	"changeme2"
-  #define GAMENAME_FOR_MASTER		"iofoo3"		// must NOT contain whitespaces
-  #define HEARTBEAT_FOR_MASTER	GAMENAME_FOR_MASTER
-  #define FLATLINE_FOR_MASTER	GAMENEMA_FOR_MASTER "dead"
+  #define HOMEPATH_NAME_UNIX	".foo"
+  #define HOMEPATH_NAME_WIN		"FooBar"
+  #define HOMEPATH_NAME_MACOSX	HOMEPATH_NAME_WIN
   #define CINEMATICS_LOGO		"foologo.roq"
   #define CINEMATICS_INTRO		"intro.roq"
+#define GAMENAME_FOR_MASTER	"foobar"		// must NOT contain whitespace
 //  #define LEGACY_PROTOCOL		// You probably don't need this for your standalone game
 #else
   #define PRODUCT_NAME			"wolfcamql"
@@ -47,13 +48,17 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define BASETA                          "missionpack"
   #define CLIENT_WINDOW_TITLE     	"wolfcam quakelive demo player"
   #define CLIENT_WINDOW_MIN_TITLE 	"wolfcamql"
-  #define GAMENAME_FOR_MASTER		"Q...."
-  #define HEARTBEAT_FOR_MASTER	"QuakeArena-1"
-  #define FLATLINE_FOR_MASTER	HEARTBEAT_FOR_MASTER
+  #define HOMEPATH_NAME_UNIX	".wolfcamql"
+  #define HOMEPATH_NAME_WIN		"Wolfcamql"
+  #define HOMEPATH_NAME_MACOSX	HOMEPATH_NAME_WIN
+  #define GAMENAME_FOR_MASTER	"WolfcamqlGame"
   #define CINEMATICS_LOGO		"idlogo.RoQ"
   #define CINEMATICS_INTRO		"intro.RoQ"
   #define LEGACY_PROTOCOL
 #endif
+
+// Heartbeat for dpmaster protocol. You shouldn't change this unless you know what you're doing
+#define HEARTBEAT_FOR_MASTER	"DarkPlaces"
 
 #ifndef PRODUCT_VERSION
   #define PRODUCT_VERSION "1.36"

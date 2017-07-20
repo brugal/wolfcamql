@@ -43,6 +43,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <pwd.h>
 #include <libgen.h>
 #include <fcntl.h>
+#include <fenv.h>
 #include <execinfo.h>
 
 //#define _GNU_SOURCE
@@ -87,12 +88,12 @@ char *Sys_DefaultHomePath(void)
 			if(com_homepath->string[0])
 				Q_strcat(homePath, sizeof(homePath), com_homepath->string);
 			else
-				Q_strcat(homePath, sizeof(homePath), "Wolfcamql");
+				Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_MACOSX);
 #else
 			if(com_homepath->string[0])
 				Q_strcat(homePath, sizeof(homePath), com_homepath->string);
 			else
-				Q_strcat(homePath, sizeof(homePath), ".wolfcamql");
+				Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_UNIX);
 #endif
 		}
 	}
@@ -536,6 +537,36 @@ qboolean Sys_Mkdir( const char *path )
 
 /*
 ==================
+Sys_Mkfifo
+==================
+*/
+FILE *Sys_Mkfifo( const char *ospath )
+{
+	FILE	*fifo;
+	int		result;
+	int		fn;
+	struct stat buf;
+
+	// if file already exists AND is a pipefile, remove it
+	if( !stat( ospath, &buf ) && S_ISFIFO( buf.st_mode ) )
+		FS_Remove( ospath );
+
+	result = mkfifo( ospath, 0600 );
+	if( result != 0 )
+		return NULL;
+
+	fifo = fopen( ospath, "w+" );
+	if( fifo )
+	{
+		fn = fileno( fifo );
+		fcntl( fn, F_SETFL, O_NONBLOCK );
+	}
+
+	return fifo;
+}
+
+/*
+==================
 Sys_Cwd
 ==================
 */
@@ -867,30 +898,106 @@ void Sys_ErrorDialog( const char *error )
 }
 
 #ifndef __APPLE__
+static char execBuffer[ 1024 ];
+static char *execBufferPointer;
+static char *execArgv[ 16 ];
+static int execArgc;
+
+/*
+==============
+Sys_ClearExecBuffer
+==============
+*/
+static void Sys_ClearExecBuffer( void )
+{
+	execBufferPointer = execBuffer;
+	Com_Memset( execArgv, 0, sizeof( execArgv ) );
+	execArgc = 0;
+}
+
+/*
+==============
+Sys_AppendToExecBuffer
+==============
+*/
+static void Sys_AppendToExecBuffer( const char *text )
+{
+	size_t size = sizeof( execBuffer ) - ( execBufferPointer - execBuffer );
+	int length = strlen( text ) + 1;
+
+	if( length > size || execArgc >= ARRAY_LEN( execArgv ) )
+		return;
+
+	Q_strncpyz( execBufferPointer, text, size );
+	execArgv[ execArgc++ ] = execBufferPointer;
+
+	execBufferPointer += length;
+}
+
+/*
+==============
+Sys_Exec
+==============
+*/
+static int Sys_Exec( void )
+{
+	pid_t pid = fork( );
+
+	if( pid < 0 )
+		return -1;
+
+	if( pid )
+	{
+		// Parent
+		int exitCode;
+
+		wait( &exitCode );
+
+		return WEXITSTATUS( exitCode );
+	}
+	else
+	{
+		// Child
+		execvp( execArgv[ 0 ], execArgv );
+
+		// Failed to execute
+		exit( -1 );
+
+		return -1;
+	}
+}
+
 /*
 ==============
 Sys_ZenityCommand
 ==============
 */
-static int Sys_ZenityCommand( dialogType_t type, const char *message, const char *title )	
+static void Sys_ZenityCommand( dialogType_t type, const char *message, const char *title )
 {
-	const char *options = "";
-	char       command[ 1024 ];
+	Sys_ClearExecBuffer( );
+	Sys_AppendToExecBuffer( "zenity" );
 
 	switch( type )
 	{
 		default:
-		case DT_INFO:      options = "--info"; break;
-		case DT_WARNING:   options = "--warning"; break;
-		case DT_ERROR:     options = "--error"; break;
-		case DT_YES_NO:    options = "--question --ok-label=\"Yes\" --cancel-label=\"No\""; break;
-		case DT_OK_CANCEL: options = "--question --ok-label=\"OK\" --cancel-label=\"Cancel\""; break;
+	    case DT_INFO:      Sys_AppendToExecBuffer( "--info" ); break;
+		case DT_WARNING:   Sys_AppendToExecBuffer( "--warning" ); break;
+		case DT_ERROR:     Sys_AppendToExecBuffer( "--error" ); break;
+		case DT_YES_NO:
+			Sys_AppendToExecBuffer( "--question" );
+			Sys_AppendToExecBuffer( "--ok-label=Yes" );
+			Sys_AppendToExecBuffer( "--cancel-label=No" );
+			break;
+
+		case DT_OK_CANCEL:
+			Sys_AppendToExecBuffer( "--question" );
+			Sys_AppendToExecBuffer( "--ok-label=OK" );
+			Sys_AppendToExecBuffer( "--cancel-label=Cancel" );
+			break;
 	}
 
-	Com_sprintf( command, sizeof( command ), "zenity %s --text=\"%s\" --title=\"%s\"",
-		options, message, title );
-
-	return system( command );
+	Sys_AppendToExecBuffer( va( "--text=%s", message ) );
+	Sys_AppendToExecBuffer( va( "--title=%s", title ) );
 }
 
 /*
@@ -898,25 +1005,23 @@ static int Sys_ZenityCommand( dialogType_t type, const char *message, const char
 Sys_KdialogCommand
 ==============
 */
-static int Sys_KdialogCommand( dialogType_t type, const char *message, const char *title )
+static void Sys_KdialogCommand( dialogType_t type, const char *message, const char *title )
 {
-	const char *options = "";
-	char       command[ 1024 ];
+	Sys_ClearExecBuffer( );
+	Sys_AppendToExecBuffer( "kdialog" );
 
 	switch( type )
 	{
 		default:
-		case DT_INFO:      options = "--msgbox"; break;
-		case DT_WARNING:   options = "--sorry"; break;
-		case DT_ERROR:     options = "--error"; break;
-		case DT_YES_NO:    options = "--warningyesno"; break;
-		case DT_OK_CANCEL: options = "--warningcontinuecancel"; break;
+		case DT_INFO:      Sys_AppendToExecBuffer( "--msgbox" ); break;
+		case DT_WARNING:   Sys_AppendToExecBuffer( "--sorry" ); break;
+		case DT_ERROR:     Sys_AppendToExecBuffer( "--error" ); break;
+		case DT_YES_NO:    Sys_AppendToExecBuffer( "--warningyesno" ); break;
+		case DT_OK_CANCEL: Sys_AppendToExecBuffer( "--warningcontinuecancel" ); break;
 	}
 
-	Com_sprintf( command, sizeof( command ), "kdialog %s \"%s\" --title \"%s\"",
-		options, message, title );
-
-	return system( command );
+	Sys_AppendToExecBuffer( message );
+	Sys_AppendToExecBuffer( va( "--title=%s", title ) );
 }
 
 /*
@@ -924,22 +1029,21 @@ static int Sys_KdialogCommand( dialogType_t type, const char *message, const cha
 Sys_XmessageCommand
 ==============
 */
-static int Sys_XmessageCommand( dialogType_t type, const char *message, const char *title )
+static void Sys_XmessageCommand( dialogType_t type, const char *message, const char *title )
 {
-	const char *options = "";
-	char       command[ 1024 ];
+	Sys_ClearExecBuffer( );
+	Sys_AppendToExecBuffer( "xmessage" );
+	Sys_AppendToExecBuffer( "-buttons" );
 
 	switch( type )
 	{
-		default:           options = "-buttons OK"; break;
-		case DT_YES_NO:    options = "-buttons Yes:0,No:1"; break;
-		case DT_OK_CANCEL: options = "-buttons OK:0,Cancel:1"; break;
+		default:           Sys_AppendToExecBuffer( "OK:0" ); break;
+		case DT_YES_NO:    Sys_AppendToExecBuffer( "Yes:0,No:1" ); break;
+		case DT_OK_CANCEL: Sys_AppendToExecBuffer( "OK:0,Cancel:1" ); break;
 	}
 
-	Com_sprintf( command, sizeof( command ), "xmessage -center %s \"%s\"",
-		options, message );
-
-	return system( command );
+	Sys_AppendToExecBuffer( "-center" );
+	Sys_AppendToExecBuffer( message );
 }
 
 /*
@@ -959,7 +1063,7 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 		XMESSAGE,
 		NUM_DIALOG_PROGRAMS
 	} dialogCommandType_t;
-	typedef int (*dialogCommandBuilder_t)( dialogType_t, const char *, const char * );
+	typedef void (*dialogCommandBuilder_t)( dialogType_t, const char *, const char * );
 
 	const char              *session = getenv( "DESKTOP_SESSION" );
 	qboolean                tried[ NUM_DIALOG_PROGRAMS ] = { qfalse };
@@ -979,7 +1083,6 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 	while( 1 )
 	{
 		int i;
-		int exitCode;
 
 		for( i = NONE + 1; i < NUM_DIALOG_PROGRAMS; i++ )
 		{
@@ -988,14 +1091,17 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 
 			if( !tried[ i ] )
 			{
-				exitCode = commands[ i ]( type, message, title );
+				int exitCode;
+
+				commands[ i ]( type, message, title );
+				exitCode = Sys_Exec( );
 
 				if( exitCode >= 0 )
 				{
 					switch( type )
 					{
-						case DT_YES_NO:    return exitCode ? DR_NO : DR_YES;
-						case DT_OK_CANCEL: return exitCode ? DR_CANCEL : DR_OK;
+					    case DT_YES_NO:    return exitCode ? DR_NO : DR_YES;
+					    case DT_OK_CANCEL: return exitCode ? DR_CANCEL : DR_OK;
 						default:           return DR_OK;
 					}
 				}
@@ -1047,6 +1153,12 @@ Unix specific GL implementation initialisation
 void Sys_GLimpInit( void )
 {
 	// NOP
+}
+
+void Sys_SetFloatEnv(void)
+{
+	// rounding towards 0
+	fesetround(FE_TOWARDZERO);
 }
 
 /*

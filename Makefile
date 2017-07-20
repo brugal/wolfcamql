@@ -179,10 +179,9 @@ ifndef USE_INTERNAL_ZLIB
 USE_INTERNAL_ZLIB=1
 endif
 
-#FIXME enable
-#ifndef USE_INTERNAL_JPEG
-#USE_INTERNAL_JPEG=1
-#endif
+ifndef USE_INTERNAL_JPEG
+USE_INTERNAL_JPEG=1
+endif
 
 USE_INTERNAL_JPEG=1
 
@@ -660,11 +659,9 @@ ifdef MINGW
     ifeq ($(ARCH), x86)
       CLIENT_LIBS += $(LIBSDIR)/win32/libSDLmain.a \
                       $(LIBSDIR)/win32/libSDL.dll.a
-      #CLIENT_LIBS += $(LIBSDIR)/win32/libSDL.dll.a
     else
       CLIENT_LIBS += $(LIBSDIR)/win64/libSDLmain.a \
-                      $(LIBSDIR/win64/libSDL.dll.a
-      #CLIENT_LIBS += $(LIBSDIR)/win64/libSDL.a
+                      $(LIBSDIR/win64/libSDL64.dll.a
     endif
   else
     CLIENT_CFLAGS += $(SDL_CFLAGS)
@@ -1683,6 +1680,7 @@ Q3OBJ = \
   $(B)/client/tr_mesh.o \
   $(B)/client/tr_mme.o \
   $(B)/client/tr_model.o \
+  $(B)/client/tr_model_iqm.o \
   $(B)/client/tr_noise.o \
   $(B)/client/tr_scene.o \
   $(B)/client/tr_shade.o \
@@ -2255,6 +2253,7 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/baseq3/cgame/cg_marks.o \
   $(B)/baseq3/cgame/cg_mem.o \
   $(B)/baseq3/cgame/cg_newdraw.o \
+  $(B)/baseq3/cgame/cg_particles.o \
   $(B)/baseq3/cgame/cg_players.o \
   $(B)/baseq3/cgame/cg_playerstate.o \
   $(B)/baseq3/cgame/cg_predict.o \
@@ -2305,6 +2304,7 @@ Q3CGOBJ_ = \
   $(B)/baseq3/cgame/cg_marks.o \
   $(B)/baseq3/cgame/cg_mem.o \
   $(B)/baseq3/cgame/cg_newdraw.o \
+  $(B)/baseq3/cgame/cg_particles.o \
   $(B)/baseq3/cgame/cg_players.o \
   $(B)/baseq3/cgame/cg_playerstate.o \
   $(B)/baseq3/cgame/cg_predict.o \

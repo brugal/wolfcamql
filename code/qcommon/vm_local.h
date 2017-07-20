@@ -150,7 +150,7 @@ struct vm_s {
 	//------------------------------------
    
 	char		name[MAX_QPATH];
-	void	*searchPath;				// hint for FS_ReadFileDir()
+	void		*searchPath;				// hint for FS_ReadFileDir()
 
 	// for dynamic linked modules
 	void		*dllHandle;
@@ -179,8 +179,6 @@ struct vm_s {
 	int			callLevel;		// counts recursive VM_Call
 	int			breakFunction;		// increment breakCount on function entry to this
 	int			breakCount;
-
-	char fqpath[MAX_QPATH + 1];
 
 	byte		*jumpTableTargets;
 	int			numJumpTableTargets;

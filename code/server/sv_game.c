@@ -27,7 +27,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 botlib_export_t	*botlib_export;
 
-
 // these functions must be used instead of pointer arithmetic, because
 // the game allocates gentities with private information after the server shared part
 int	SV_NumForGentity( sharedEntity_t *ent ) {
@@ -427,7 +426,7 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_REAL_TIME:
 		return Com_RealTime(VMA(1), args[2], args[3]);
 	case G_SNAPVECTOR:
-		Q_SnapVector( VMA(1) );
+		Q_SnapVector(VMA(1));
 		return 0;
 
 	case 114:  // acos

@@ -48,32 +48,47 @@ compared quickly during the qsorting process
 
 the bits are allocated as follows:
 
-21 - 31	: sorted shader index
-11 - 20	: entity index
-2 - 6	: fog index
-//2		: used to be clipped flag REMOVED - 03.21.00 rad
 0 - 1	: dlightmap index
+//2		: used to be clipped flag REMOVED - 03.21.00 rad
+2 - 6	: fog index
+11 - 20	: entity index
+21 - 31	: sorted shader index
 
 	TTimo - 1.32
-17-31 : sorted shader index
+0-1   : dlightmap index
+2-6   : fog index
 7-16  : entity index
-2-6   : fog index
-0-1   : dlightmap index
-*/
-//#define	QSORT_SHADERNUM_SHIFT	17
-//#define	QSORT_ENTITYNUM_SHIFT	7
-//#define	QSORT_FOGNUM_SHIFT		2
+17-30 : sorted shader index
 
-/* wolfcam
-20-34 : sorted shader index
-7-19  : entity index  // 8192 ents
-2-6   : fog index
-0-1   : dlightmap index
 */
 
-#define	QSORT_SHADERNUM_SHIFT	21
-#define	QSORT_REFENTITYNUM_SHIFT	7
+// quake3 / ioquake3
+
+/*
 #define	QSORT_FOGNUM_SHIFT		2
+#define	QSORT_ENTITYNUM_SHIFT	7
+//#define	QSORT_SHADERNUM_SHIFT	17
+#define	QSORT_SHADERNUM_SHIFT	(QSORT_ENTITYNUM_SHIFT+GENTITYNUM_BITS)
+#if (QSORT_SHADERNUM_SHIFT+SHADERNUM_BITS) > 32
+    #error "Need to update sorting, too many bits."
+#endif
+*/
+
+// changed in wolfcam to allow more entities
+
+/*
+
+0-1   : dlightmap index
+2-6   : fog index
+7-19  : entity index  // 8192 ents
+20-34 : sorted shader index
+
+*/
+
+#define	QSORT_FOGNUM_SHIFT		2
+#define	QSORT_REFENTITYNUM_SHIFT	7
+#define	QSORT_SHADERNUM_SHIFT	21
+
 
 #define	MAX_DLIGHTS		32		// can't be increased, because bit flags are used on surfaces
 #define	MAX_REFENTITIES		((1 << (QSORT_SHADERNUM_SHIFT - QSORT_REFENTITYNUM_SHIFT)) - 1)  // can't be increased without changing drawsurf bit packing

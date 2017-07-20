@@ -3754,7 +3754,7 @@ void CG_MissileHitPlayer( int weapon, const vec3_t origin, const vec3_t dir, int
 	switch ( weapon ) {
 	case WP_GRENADE_LAUNCHER:
 	case WP_ROCKET_LAUNCHER:
-	//case WP_PLASMAGUN:   // skipping... distracting
+	//case WP_PLASMAGUN:   // skipping... distracting, not in default quake3 but is added in ioquake3
 	case WP_BFG:
 #if 1  //def MPACK
 	case WP_NAILGUN:

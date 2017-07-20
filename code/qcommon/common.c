@@ -59,6 +59,7 @@ CRITICAL_SECTION printCriticalSection;
 
 
 FILE *debuglogfile;
+static fileHandle_t pipefile;
 static fileHandle_t logfile;
 fileHandle_t	com_journalFile;			// events are written here
 fileHandle_t	com_journalDataFile;		// config files are written here
@@ -76,6 +77,7 @@ cvar_t	*com_timedemo;
 cvar_t	*com_sv_running;
 cvar_t	*com_cl_running;
 cvar_t	*com_logfile;		// 1 = buffer log, 2 = flush after each print
+cvar_t	*com_pipefile;
 cvar_t	*com_showtrace;
 cvar_t	*com_version;
 cvar_t	*com_blood;
@@ -94,6 +96,7 @@ cvar_t	*com_minimized;
 cvar_t	*com_maxfpsMinimized;
 cvar_t	*com_abnormalExit;
 cvar_t	*com_standalone;
+cvar_t 	*com_gamename;
 cvar_t	*com_basegame;
 cvar_t	*com_homepath;
 cvar_t *com_protocol;
@@ -106,11 +109,11 @@ cvar_t *com_qlColors;
 cvar_t *com_idleSleep;
 
 #if idx64
-int (*Q_VMftol)(void);
+  int (*Q_VMftol)(void);
 #elif id386
-long (QDECL *Q_ftol)(float f);
-int (QDECL *Q_VMftol)(void);
-void (QDECL *Q_SnapVector)(vec3_t vec);
+  long (QDECL *Q_ftol)(float f);
+  int (QDECL *Q_VMftol)(void);
+  void (QDECL *Q_SnapVector)(vec3_t vec);
 #endif
 
 qboolean com_writeConfig;
@@ -426,7 +429,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		longjmp (abortframe, -1);
 	} else {
 		VM_Forced_Unload_Start();
-		CL_Shutdown (va("Client fatal crashed: %s", com_errorMessage));
+		CL_Shutdown (va("Client fatal crashed: %s", com_errorMessage), qtrue);
 		SV_Shutdown (va("Server fatal crashed: %s", com_errorMessage));
 		VM_Forced_Unload_Done();
 	}
@@ -449,8 +452,14 @@ void Com_Quit_f( void ) {
 	// don't try to shutdown if we are in a recursive error
 	char *p = Cmd_Args( );
 	if ( !com_errorEntered ) {
+		// Some VMs might execute "quit" command directly,
+		// which would trigger an unload of active CM error.
+		// Sys_Quit will kill this process anyways, so
+		// a corrupt call stack makes no difference
+		VM_Forced_Unload_Start();
 		SV_Shutdown (p[0] ? p : "Server quit");
-		CL_Shutdown (p[0] ? p : "Client quit");
+		CL_Shutdown (p[0] ? p : "Client quit", qtrue);
+		VM_Forced_Unload_Done();
 		Com_Shutdown ();
 		FS_Shutdown(qtrue);
 	}
@@ -567,7 +576,7 @@ void Com_StartupVariable( const char *match ) {
 			if(Cvar_Flags(s) == CVAR_NONEXISTENT)
 				Cvar_Get(s, Cmd_ArgsFrom(2), CVAR_USER_CREATED);
 			else
-				Cvar_Set( s, Cmd_ArgsFrom(2) );
+				Cvar_Set2(s, Cmd_ArgsFrom(2), qfalse);
 		}
 	}
 }
@@ -2621,22 +2630,27 @@ Change to a new mod properly with cleaning up cvars before switching.
 ==================
 */
 
-void Com_GameRestart(int checksumFeed, qboolean clientRestart)
+void Com_GameRestart(int checksumFeed, qboolean disconnect)
 {
 	// make sure no recursion can be triggered
 	if(!com_gameRestarting && com_fullyInitialized)
 	{
+		int clWasRunning;
+
 		com_gameRestarting = qtrue;
-		
-		if(clientRestart)
-		{
-			CL_Disconnect(qfalse);
-			CL_ShutdownAll();
-		}
+		clWasRunning = com_cl_running->integer;
 
 		// Kill server if we have one
 		if(com_sv_running->integer)
 			SV_Shutdown("Game directory changed");
+
+		if(clWasRunning)
+		{
+			if(disconnect)
+				CL_Disconnect(qfalse);
+
+			CL_Shutdown("Game directory changed", disconnect);
+		}
 
 		FS_Restart(checksumFeed);
 	
@@ -2644,12 +2658,20 @@ void Com_GameRestart(int checksumFeed, qboolean clientRestart)
 		Cvar_Restart(qtrue);
 		Com_ExecuteCfg();
 
-		// shut down sound system before restart
-		CL_Snd_Shutdown();
+		if(disconnect)
+		{
+			// We don't wat to change any network settings if gamedir
+			// change was triggered by a connect to server because the
+			// new network settings might make the connection fail.
+			NET_Restart_f();
+		}
 
-		if(clientRestart)
+		if(clWasRunning)
+		{
+			CL_Init();
 			CL_StartHunkUsers(qfalse);
-		
+		}
+
 		com_gameRestarting = qfalse;
 	}
 }
@@ -2664,7 +2686,16 @@ Expose possibility to change current running mod to the user
 
 void Com_GameRestart_f(void)
 {
-	Cvar_Set("fs_game", Cmd_Argv(1));
+	if(!FS_FilenameCompare(Cmd_Argv(1), com_basegame->string))
+	{
+		// This is the standard base game.  Servers and clients should
+		// use "" and not the standard basegame name because this messes
+		// up pak file negotiation and lots of other stuff
+
+		Cvar_Set("fs_game", "");
+	}
+	else
+		Cvar_Set("fs_game", Cmd_Argv(1));
 
 	Com_GameRestart(0, qtrue);
 }
@@ -2932,7 +2963,6 @@ void Com_Init( char *commandLine ) {
 	if(!com_basegame->string[0])
 		Cvar_ForceReset("com_basegame");
 
-	// Com_StartupVariable(
 	FS_InitFilesystem ();
 
 	Com_InitJournaling();
@@ -2997,11 +3027,14 @@ void Com_Init( char *commandLine ) {
 	com_maxfpsMinimized = Cvar_Get( "com_maxfpsMinimized", "0", CVAR_ARCHIVE );
 	com_abnormalExit = Cvar_Get( "com_abnormalExit", "0", CVAR_ROM );
 
+	Cvar_Get("com_errorMessage", "", CVAR_ROM | CVAR_NORESTART);
+
 	com_introPlayed = Cvar_Get( "com_introplayed", "1", CVAR_ARCHIVE);
 	com_logo = Cvar_Get("com_logo", "0", CVAR_ARCHIVE);
 
 	s = va("%s %s %s", Q3_VERSION, PLATFORM_STRING, PRODUCT_DATE );
 	com_version = Cvar_Get ("version", s, CVAR_ROM | CVAR_SERVERINFO );
+	com_gamename = Cvar_Get("com_gamename", GAMENAME_FOR_MASTER, CVAR_SERVERINFO | CVAR_INIT);
 	//com_protocol = Cvar_Get ("com_protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_INIT);
 	com_protocol = Cvar_Get ("protocol", va("%i", PROTOCOL_VERSION), CVAR_SERVERINFO | CVAR_INIT);
 #ifdef LEGACY_PROTOCOL
@@ -3095,8 +3128,35 @@ void Com_Init( char *commandLine ) {
 	Com_Printf ("Altivec support is %s\n", com_altivec->integer ? "enabled" : "disabled");
 #endif
 
+	com_pipefile = Cvar_Get( "com_pipefile", "", CVAR_ARCHIVE|CVAR_LATCH );
+	if( com_pipefile->string[0] )
+	{
+		pipefile = FS_FCreateOpenPipeFile( com_pipefile->string );
+	}
+
 	Com_Printf ("--- Common Initialization Complete ---\n");
 }
+
+/*
+===============
+Com_ReadFromPipe
+
+Read whatever is in com_pipefile, if anything, and execute it
+===============
+*/
+void Com_ReadFromPipe( void )
+{
+	char buffer[MAX_STRING_CHARS] = {""};
+	qboolean read;
+
+	if( !pipefile )
+		return;
+
+	read = FS_Read( buffer, sizeof( buffer ), pipefile );
+	if( read )
+		Cbuf_ExecuteText( EXEC_APPEND, buffer );
+}
+
 
 //==================================================================
 
@@ -3534,6 +3594,8 @@ void Com_Frame( void ) {
 	// old net chan encryption key
 	//key = lastTime * 0x87243987;
 
+	Com_ReadFromPipe( );
+
 	com_frameNumber++;
 }
 
@@ -3553,6 +3615,10 @@ void Com_Shutdown (void) {
 		com_journalFile = 0;
 	}
 
+	if( pipefile ) {
+		FS_FCloseFile( pipefile );
+		FS_HomeRemove( com_pipefile->string );
+	}
 }
 
 //------------------------------------------------------------------------

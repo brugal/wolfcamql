@@ -289,7 +289,7 @@ void Sys_Error( const char *error, ... )
 	Q_vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 
-	CL_Shutdown( string );
+	CL_Shutdown(string, qtrue);
 	Sys_ErrorDialog( string );
 
 	Sys_Exit( 3 );
@@ -423,23 +423,69 @@ void Sys_UnloadDll( void *dllHandle )
 =================
 Sys_LoadDll
 
-Used to load a development dll instead of a virtual machine
-#1 look in fs_homepath
-#2 look in fs_basepath
+First try to load library name from system library path,
+from executable path, then fs_basepath.
 =================
 */
-void *Sys_LoadDll( const char *name, char *fqpath,
-	intptr_t (**entryPoint)(int, ...),
-	intptr_t (*systemcalls)(intptr_t, ...) )
+
+void *Sys_LoadDll(const char *name)
 {
-	void  *libHandle;
-	void  (*dllEntry)( intptr_t (*syscallptr)(intptr_t, ...) );
-	char  fname[MAX_OSPATH];
-	char  *netpath;
+	void *dllhandle;
+	
+	Com_Printf("Try loading \"%s\"...\n", name);
+	if(!(dllhandle = Sys_LoadLibrary(name)))
+	{
+		const char *topDir;
+		char libPath[MAX_OSPATH];
 
-	assert( name );
+		topDir = Sys_BinaryPath();
 
-	Com_sprintf(fname, sizeof(fname), "%s" ARCH_STRING DLL_EXT, name);
+		if(!*topDir)
+			topDir = ".";
+
+		Com_Printf("Try loading \"%s\" from \"%s\"...\n", name, topDir);
+		Com_sprintf(libPath, sizeof(libPath), "%s%c%s", topDir, PATH_SEP, name);
+
+		if(!(dllhandle = Sys_LoadLibrary(libPath)))
+		{
+			const char *basePath = Cvar_VariableString("fs_basepath");
+			
+			if(!basePath || !*basePath)
+				basePath = ".";
+			
+			if(FS_FilenameCompare(topDir, basePath))
+			{
+				Com_Printf("Try loading \"%s\" from \"%s\"...\n", name, basePath);
+				Com_sprintf(libPath, sizeof(libPath), "%s%c%s", basePath, PATH_SEP, name);
+				dllhandle = Sys_LoadLibrary(libPath);
+			}
+			
+			if(!dllhandle)
+				Com_Printf("Loading \"%s\" failed\n", name);
+		}
+	}
+	
+	return dllhandle;
+}
+
+/*
+=================
+Sys_LoadQVMDll
+
+Used to load a development dll instead of a virtual machine
+=================
+*/
+void *Sys_LoadQVMDll( const char *name,
+						  intptr_t (QDECL **entryPoint)(int, ...),
+						  intptr_t (*systemcalls)(intptr_t, ...))
+{
+	void *libHandle;
+	void (*dllEntry)(intptr_t (*syscallptr)(intptr_t, ...));
+
+	assert(name);
+
+	Com_Printf( "Loading DLL file: %s\n", name);
+	libHandle = Sys_LoadLibrary(name);
 
 #if 0  // too many ioq3 changes
 	if (!Sys_DllExtension(name))
@@ -449,19 +495,9 @@ void *Sys_LoadDll( const char *name, char *fqpath,
 	}
 #endif
 
-	// TODO: use fs_searchpaths from files.c
-	netpath = FS_FindDll(fname);
-
-	if(!netpath) {
-		Com_Printf( "Sys_LoadDll(%s) could not find it\n", fname );
-		return NULL;
-	}
-
-	Com_Printf( "Loading DLL file: %s\n", netpath);
-	libHandle = Sys_LoadLibrary(netpath);
-
-	if(!libHandle) {
-		Com_Printf( "Sys_loadDll(%s) failed:\n\"%s\"\n", netpath, Sys_LibraryError() );
+	if(!libHandle)
+	{
+		Com_Printf("Sys_LoadQVMDll(%s) failed:\n\"%s\"\n", name, Sys_LibraryError());
 		return NULL;
 	}
 
@@ -470,13 +506,13 @@ void *Sys_LoadDll( const char *name, char *fqpath,
 
 	if ( !*entryPoint || !dllEntry )
 	{
-		Com_Printf ( "Sys_LoadDll(%s) failed to find vmMain function:\n\"%s\" !\n", name, Sys_LibraryError( ) );
+		Com_Printf ( "Sys_LoadQVMDll(%s) failed to find vmMain function:\n\"%s\" !\n", name, Sys_LibraryError( ) );
 		Sys_UnloadLibrary(libHandle);
 
 		return NULL;
 	}
 
-	Com_Printf ( "Sys_LoadDll(%s) found vmMain function at %p\n", name, *entryPoint );
+	Com_Printf ( "Sys_LoadQVMDll(%s) found vmMain function at %p\n", name, *entryPoint );
 	dllEntry( systemcalls );
 
 	return libHandle;
@@ -534,9 +570,9 @@ void Sys_SigHandler( int signal )
 		VM_Forced_Unload_Start();
 
 #ifndef DEDICATED
-		CL_Shutdown( va( "Received signal %d", signal ) );
+		CL_Shutdown(va("Received signal %d", signal), qtrue);
 #endif
-		SV_Shutdown( va( "Received signal %d", signal ) );
+		SV_Shutdown(va("Received signal %d", signal) );
 		VM_Forced_Unload_Done();
 	}
 

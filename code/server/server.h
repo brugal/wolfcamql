@@ -295,8 +295,6 @@ extern	cvar_t	*sv_lanForceRate;
 extern	cvar_t	*sv_strictAuth;
 #endif
 extern	cvar_t	*sv_banFile;
-extern	cvar_t	*sv_heartbeat;
-extern	cvar_t	*sv_flatline;
 
 extern cvar_t *sv_broadcastAll;
 

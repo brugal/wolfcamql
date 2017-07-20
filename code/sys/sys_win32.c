@@ -37,6 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <wincrypt.h>
 #include <shlobj.h>
 #include <psapi.h>
+#include <float.h>
 #include <process.h>
 
 
@@ -51,6 +52,39 @@ static char QuakeLivePath[MAX_OSPATH] = { 0 };
 #ifndef DEDICATED
 static UINT timerResolution = 0;
 #endif
+
+/*
+================
+Sys_SetFPUCW
+Set FPU control word to default value
+================
+*/
+
+#ifndef _RC_CHOP
+// mingw doesn't seem to have these defined :(
+
+  #define _MCW_EM	0x0008001fU
+  #define _MCW_RC	0x00000300U
+  #define _MCW_PC	0x00030000U
+  #define _RC_CHOP	0x00000300U
+  #define _PC_53	0x00010000U
+  
+  unsigned int _controlfp(unsigned int new, unsigned int mask);
+#endif
+
+#define FPUCWMASK1 (_MCW_RC | _MCW_EM)
+#define FPUCW (_RC_CHOP | _MCW_EM | _PC_53)
+
+#if idx64
+#define FPUCWMASK	(FPUCWMASK1)
+#else
+#define FPUCWMASK	(FPUCWMASK1 | _MCW_PC)
+#endif
+
+void Sys_SetFloatEnv(void)
+{
+	_controlfp(FPUCW, FPUCWMASK);
+}
 
 /*
 ================
@@ -95,7 +129,7 @@ char *Sys_DefaultHomePath( void )
 		if(com_homepath->string[0])
 			Q_strcat(homePath, sizeof(homePath), com_homepath->string);
 		else
-			Q_strcat(homePath, sizeof(homePath), "wolfcamql");
+			Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_WIN);
 
 		FreeLibrary(shfolder);
 	}
@@ -464,6 +498,17 @@ qboolean Sys_Mkdir( const char *path )
 	}
 
 	return qtrue;
+}
+
+/*
+==================
+Sys_Mkfifo
+Noop on windows because named pipes do not function the same way
+==================
+*/
+FILE *Sys_Mkfifo( const char *ospath )
+{
+	return NULL;
 }
 
 /*
@@ -995,6 +1040,8 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 		bt = LoadLibraryA("backtrace.dll");
 		Com_Printf("backtrace: %d\n", (int)bt);
 	}
+
+	Sys_SetFloatEnv();
 
 #ifndef DEDICATED
 	SDL_VIDEODRIVER = getenv( "SDL_VIDEODRIVER" );

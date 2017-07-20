@@ -417,7 +417,7 @@ void SV_SpawnServer( char *server, qboolean killBots ) {
 	CL_MapLoading();
 
 	// make sure all the client stuff is unloaded
-	CL_ShutdownAll();
+	CL_ShutdownAll(qfalse);
 
 	// clear the whole hunk because we're (re)loading the server
 	Hunk_Clear();
@@ -690,8 +690,6 @@ void SV_Init (void)
 	sv_strictAuth = Cvar_Get ("sv_strictAuth", "0", CVAR_ARCHIVE );
 #endif
 	sv_banFile = Cvar_Get("sv_banFile", "serverbans.dat", CVAR_ARCHIVE);
-	sv_heartbeat = Cvar_Get("sv_heartbeat", HEARTBEAT_FOR_MASTER, CVAR_INIT);
-	sv_flatline = Cvar_Get("sv_flatline", FLATLINE_FOR_MASTER, CVAR_INIT);
 	sv_broadcastAll = Cvar_Get("sv_broadcastAll", "0", CVAR_ARCHIVE);
 	sv_randomClientSlot = Cvar_Get("sv_randomClientSlot", "1", CVAR_ARCHIVE);
 

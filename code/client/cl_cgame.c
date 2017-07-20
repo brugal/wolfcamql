@@ -767,9 +767,9 @@ void CL_ShutdownCGame( void ) {
 		return;
 	}
 
-	//Com_Printf("^5cls.state: %d\n", cls.state);
-	
-	if (cls.state == CA_LOADING) {
+	//Com_Printf("^5clc.state: %d\n", clc.state);
+
+	if (clc.state == CA_LOADING) {
 		//force = qtrue;
 	}
 
@@ -1193,7 +1193,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	case CG_REAL_TIME:
 		return Com_RealTime(VMA(1), args[2], args[3]);
 	case CG_SNAPVECTOR:
-		Q_SnapVector( VMA(1) );
+		Q_SnapVector(VMA(1));
 		return 0;
 
 	case CG_CIN_PLAYCINEMATIC:
@@ -1505,7 +1505,7 @@ void CL_InitCGame( void ) {
 	if ( !cgvm ) {
 		Com_Error( ERR_DROP, "VM_Create on cgame failed" );
 	}
-	cls.state = CA_LOADING;
+	clc.state = CA_LOADING;
 
 	// init for this gamestate
 	// use the lastExecutedServerCommand instead of the serverCommandSequence
@@ -1518,7 +1518,7 @@ void CL_InitCGame( void ) {
 
 	// we will send a usercmd this frame, which
 	// will cause the server to send us the first snapshot
-	cls.state = CA_PRIMED;
+	clc.state = CA_PRIMED;
 
 	t2 = Sys_Milliseconds();
 
@@ -1656,7 +1656,7 @@ void CL_FirstSnapshot( void ) {
 	if ( cl.snap.snapFlags & SNAPFLAG_NOT_ACTIVE ) {
 		return;
 	}
-	cls.state = CA_ACTIVE;
+	clc.state = CA_ACTIVE;
 
 	//cl.serverTime = cl.snap.serverTime - 100;
 
@@ -1759,12 +1759,12 @@ void CL_SetCGameTime( void ) {
 	int startTime;
 	static int lastTime = -1;  //FIXME static
 
-	//Com_Printf("%s  cls.state:%d\n", __FUNCTION__, cls.state);
+	//Com_Printf("%s  clc.state:%d\n", __FUNCTION__, clc.state);
 
 	// getting a valid frame message ends the connection process
-	if ( cls.state != CA_ACTIVE ) {
-		if ( cls.state != CA_PRIMED ) {
-			//Com_Printf("%s cls.state != CA_PRIMED returning\n", __FUNCTION__);
+	if ( clc.state != CA_ACTIVE ) {
+		if ( clc.state != CA_PRIMED ) {
+			//Com_Printf("%s clc.state != CA_PRIMED returning\n", __FUNCTION__);
 			return;
 		}
 		if ( clc.demoplaying ) {
@@ -1784,11 +1784,11 @@ void CL_SetCGameTime( void ) {
 			cl.newSnapshots = qfalse;
 			CL_FirstSnapshot();
 		}
-		if (cls.state != CA_ACTIVE) { //  &&  !(cl_freezeDemo->integer  &&  cl.vidRestarted)) {
+		if (clc.state != CA_ACTIVE) { //  &&  !(cl_freezeDemo->integer  &&  cl.vidRestarted)) {
 			return;
 		}
 	} else {
-		//Com_Printf("%s cls.state == CA_ACTIVE no read\n", __FUNCTION__);
+		//Com_Printf("%s clc.state == CA_ACTIVE no read\n", __FUNCTION__);
 	}
 
 	// if we have gotten to this point, cl.snap is guaranteed to be valid
@@ -1927,7 +1927,7 @@ void CL_SetCGameTime( void ) {
 				}
 			}
 			CL_ReadDemoMessage(qfalse);
-			if (!di.testParse  &&  cls.state == CA_ACTIVE  &&  cl.serverTime > cl.snap.serverTime  &&  com_timescaleSafe->integer) {  //  &&  com_timescale->value > 1.0) {
+			if (!di.testParse  &&  clc.state == CA_ACTIVE  &&  cl.serverTime > cl.snap.serverTime  &&  com_timescaleSafe->integer) {  //  &&  com_timescale->value > 1.0) {
 				if (com_timescale->value > 1.0) {  //(!di.offlineDemo) {  //FIXME offlinedemo  ||  (di.offlineDemo  &&  cl.serverTime > cl.snap.serverTime)) {
 					//Com_Printf("setcgametime timescale %f  framecount %d\n", com_timescale->value, cls.framecount);
 					//Com_Printf("setcgametime timescale %f\n", com_timescale->value);
@@ -1961,7 +1961,7 @@ void CL_SetCGameTime( void ) {
 
 		lastTime = cl.snap.serverTime;
 
-		if ( cls.state != CA_ACTIVE ) {
+		if ( clc.state != CA_ACTIVE ) {
 			return;		// end of demo
 		}
 		if (di.testParse  &&  di.endOfDemo) {

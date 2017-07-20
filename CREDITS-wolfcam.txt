@@ -1,7 +1,8 @@
 id software:  releasing quake3 source
 ioquake3
 Luigi Auriemma:  quake live pk3 decryption
-CaNaBiS, HMage, auri, ent:  q3mme (blur code, q3mme camera code, and obviously inspiration)
+CaNaBiS, HMage, auri:  q3mme (blur code, q3mme camera code, and obviously inspiration)
+ent / entdark: q3mme, image bgr swap speedup
 Cloud Wu:  backtrace
 OpenArena:  some content
 Cyberstorm:  anim map change
