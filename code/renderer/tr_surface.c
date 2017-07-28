@@ -677,7 +677,7 @@ static void RB_SurfaceRailRingsQ3mme (void)
 
 	e = backEnd.currentEntity->ePtr;
 
-	//Com_Printf("rend q3mme rail rings rotation %f  radius %f \n", e->rotation, e->radius);
+	//ri.Printf(PRINT_ALL, "rend q3mme rail rings rotation %f  radius %f \n", e->rotation, e->radius);
 
 	//VectorCopy(e->oldorigin, start);
 
@@ -688,7 +688,7 @@ static void RB_SurfaceRailRingsQ3mme (void)
 	//VectorCopy(e->origin, start);
 	//VectorMA(e->oldorigin, -1, start, end);
 	//VectorCopy(e->oldorigin, end);
-	//Com_Printf("e->oldorigin %f %f %f\n", e->oldorigin[0], e->oldorigin[1], e->oldorigin[2]);
+	//ri.Printf(PRINT_ALL, "e->oldorigin %f %f %f\n", e->oldorigin[0], e->oldorigin[1], e->oldorigin[2]);
 
 	//VectorCopy( e->oldorigin, start );
 
@@ -734,7 +734,7 @@ static void RB_SurfaceRailCore (qboolean useRadius, qboolean nudgeOrigin)
 	if (nudgeOrigin) {
 		float n;
 
-		//Com_Printf("nudge\n");
+		//ri.Printf(PRINT_ALL, "nudge\n");
 
 		n = 0.5;
 		end[0] += n;
@@ -1378,7 +1378,7 @@ static void RB_SurfaceGrid( srfGridMesh_t *cv ) {
 	int		*vDlightBits;
 	qboolean	needsNormal;
 
-	//Com_Printf("RB_SurfaceGrid '%s'\n", tess.shader->name);
+	//ri.Printf(PRINT_ALL, "RB_SurfaceGrid '%s'\n", tess.shader->name);
 
 	dlightBits = cv->dlightBits[backEnd.smpFrame];
 	tess.dlightBits |= dlightBits;

@@ -1,6 +1,6 @@
 /*
     SDL - Simple DirectMedia Layer
-    Copyright (C) 1997-2009 Sam Lantinga
+    Copyright (C) 1997-2012 Sam Lantinga
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -27,10 +27,11 @@
 
 /* This is the minimal configuration that can be used to build SDL */
 
+#include <stdio.h>
+#include <stdint.h>
 #include <stdarg.h>
 
-
-
+#if 0
 typedef signed char int8_t;
 typedef unsigned char uint8_t;
 typedef signed short int16_t;
@@ -38,10 +39,8 @@ typedef unsigned short uint16_t;
 typedef signed int int32_t;
 typedef unsigned int uint32_t;
 typedef unsigned int size_t;
-// disabling for 32-bit Debian Linux
-//typedef unsigned long uintptr_t;
-
-
+typedef unsigned long uintptr_t;
+#endif
 
 /* Enable the dummy audio driver (src/audio/dummy/\*.c) */
 #define SDL_AUDIO_DRIVER_DUMMY	1

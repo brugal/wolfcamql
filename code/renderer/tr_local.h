@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define fcheckgl() do { GLenum err; err = qglGetError(); if (err) Com_Error(ERR_FATAL, "^1opengl error 0x%x  file:'%s'  line:%d", err, __FILE__, __LINE__); } while (0);
 
-//#define fcheckgl() do { GLenum err; err = qglGetError(); if (err) Com_Printf("^1opengl error 0x%x  file:'%s'  line:%d\n", err, __FILE__, __LINE__); *(int *)0 = 0x666666; } while(0);
+//#define fcheckgl() do { GLenum err; err = qglGetError(); if (err) ri.Printf(PRINT_ALL, "^1opengl error 0x%x  file:'%s'  line:%d\n", err, __FILE__, __LINE__); *(int *)0 = 0x666666; } while(0);
 
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
@@ -1381,6 +1381,7 @@ void		GLimp_FrontEndSleep( void );
 void		GLimp_WakeRenderer( void *data );
 
 void		GLimp_LogComment( char *comment );
+void		GLimp_Minimize(void);
 
 // NOTE TTimo linux works with float gamma value, not the gamma table
 //   the params won't be used, getting the r_gamma cvar directly

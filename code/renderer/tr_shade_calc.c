@@ -27,7 +27,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 
-#define	WAVEVALUE( table, base, amplitude, phase, freq )  ((base) + table[ Q_ftol( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
+#define	WAVEVALUE( table, base, amplitude, phase, freq )  ((base) + table[ ri.ftol( ( ( (phase) + tess.shaderTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
 
 static float *TableForFunc( genFunc_t func ) 
 {
@@ -358,8 +358,8 @@ static void AutospriteDeform( void ) {
 	vec3_t	left, up;
 	vec3_t	leftDir, upDir;
 
-	//Com_Printf("^5autosprite '%s'  %d  %d  %f %f %f\n", tess.shader->name, tess.numVertexes, tess.numIndexes, tess.xyz[0][0], tess.xyz[0][1], tess.xyz[0][2]);
-	//Com_Printf("^5autosprite '%s'\n", tess.shader->name);
+	//ri.Printf(PRINT_ALL, "^5autosprite '%s'  %d  %d  %f %f %f\n", tess.shader->name, tess.numVertexes, tess.numIndexes, tess.xyz[0][0], tess.xyz[0][1], tess.xyz[0][2]);
+	//ri.Printf(PRINT_ALL, "^5autosprite '%s'\n", tess.shader->name);
 
 	if ( tess.numVertexes & 3 ) {
 		ri.Printf( PRINT_WARNING, "Autosprite shader %s had odd vertex count %d\n", tess.shader->name, tess.numVertexes );
@@ -703,7 +703,7 @@ void RB_CalcWaveColor( const waveForm_t *wf, unsigned char *dstColors )
 		glow = 1;
 	}
 
-	v = Q_ftol(255 * glow);
+	v = ri.ftol(255 * glow);
 	color[0] = color[1] = color[2] = v;
 	color[3] = 255;
 	v = *(int *)color;
@@ -1183,19 +1183,19 @@ static void RB_CalcDiffuseColor_scalar( unsigned char *colors )
 			*(int *)&colors[i*4] = ambientLightInt;
 			continue;
 		} 
-		j = Q_ftol( ambientLight[0] + incoming * directedLight[0] );
+		j = ri.ftol( ambientLight[0] + incoming * directedLight[0] );
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+0] = j;
 
-		j = Q_ftol( ambientLight[1] + incoming * directedLight[1] );
+		j = ri.ftol( ambientLight[1] + incoming * directedLight[1] );
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+1] = j;
 
-		j = Q_ftol( ambientLight[2] + incoming * directedLight[2] );
+		j = ri.ftol( ambientLight[2] + incoming * directedLight[2] );
 		if ( j > 255 ) {
 			j = 255;
 		}

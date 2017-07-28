@@ -24,6 +24,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qcommon.h"
 #include "sys_local.h"
 
+#ifndef DEDICATED
+#include "../client/client.h"
+#endif
+
 #include <unistd.h>
 #include <signal.h>
 #include <termios.h>
@@ -45,6 +49,7 @@ static qboolean stdin_active;
 // general flag to tell about tty console mode
 static qboolean ttycon_on = qfalse;
 static int ttycon_hide = 0;
+static int ttycon_show_overdue = 0;
 
 // some key codes that the terminal may be using, initialised on start up
 static int TTY_erase;
@@ -59,6 +64,14 @@ static field_t TTY_con;
 #define CON_HISTORY 32
 static field_t ttyEditLines[ CON_HISTORY ];
 static int hist_current = -1, hist_count = 0;
+
+#ifndef DEDICATED
+// Dont use "]" as it would be the same as in-game console,
+//   this makes it clear where input came from.
+#define TTY_CONSOLE_PROMPT "tty]"
+#else
+#define TTY_CONSOLE_PROMPT "]"
+#endif
 
 /*
 ==================
@@ -123,7 +136,10 @@ static void CON_Hide( void )
 				CON_Back();
 			}
 		}
-		CON_Back(); // Delete "]"
+		// Delete prompt
+		for (i = strlen(TTY_CONSOLE_PROMPT); i > 0; i--) {
+			CON_Back();
+		}
 		ttycon_hide++;
 	}
 }
@@ -147,7 +163,7 @@ static void CON_Show( void )
 		if (ttycon_hide == 0)
 		{
 			size_t UNUSED_VAR size;
-			size = write(STDOUT_FILENO, "]", 1);
+			size = write(STDOUT_FILENO, TTY_CONSOLE_PROMPT, strlen(TTY_CONSOLE_PROMPT));
 			if (TTY_con.cursor)
 			{
 				for (i=0; i<TTY_con.cursor; i++)
@@ -174,7 +190,7 @@ void CON_Shutdown( void )
 {
 	if (ttycon_on)
 	{
-		CON_Back(); // Delete "]"
+		CON_Hide();
 		tcsetattr (STDIN_FILENO, TCSADRAIN, &TTY_tc);
 	}
 
@@ -190,6 +206,11 @@ Hist_Add
 void Hist_Add(field_t *field)
 {
 	int i;
+
+	// Don't save blank lines in history.
+	if (!field->cursor)
+		return;
+
 	assert(hist_count <= CON_HISTORY);
 	assert(hist_count >= 0);
 	assert(hist_current >= -1);
@@ -318,6 +339,8 @@ void CON_Init( void )
 	tc.c_cc[VTIME] = 0;
 	tcsetattr (STDIN_FILENO, TCSADRAIN, &tc);
 	ttycon_on = qtrue;
+	ttycon_hide = 1; // Mark as hidden, so prompt is shown in CON_Show
+	CON_Show();
 }
 
 /*
@@ -331,15 +354,46 @@ char *CON_Input( void )
 	static char text[MAX_EDIT_LINE];
 	int avail;
 	char key;
+	unsigned char ukey;
 	field_t *history;
 	size_t UNUSED_VAR size;
+	int i;
+	static int needUtf8Bytes = 0;
 
 	if(ttycon_on)
 	{
-		//FIXME utf8
 		avail = read(STDIN_FILENO, &key, 1);
 		if (avail != -1)
 		{
+			//printf("key... %d  '%d'\n", (unsigned char)key & 0xff, key);
+
+			if (needUtf8Bytes > 0) {
+				for (i = 1;  i < 4;  i++) {
+					if (TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[i] == '\0') {
+						TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[i] = key;
+						needUtf8Bytes--;
+						break;
+					}
+				}
+
+				if (needUtf8Bytes <= 0) {
+					// got it
+
+					{
+						int nbytes;
+						qboolean uerror;
+
+						TTY_con.xbuffer[TTY_con.cursor].codePoint = Q_GetCpFromUtf8(TTY_con.xbuffer[TTY_con.cursor].utf8Bytes, &nbytes, &uerror);
+					}
+
+					// print the current line (this is differential)
+					size = write(STDOUT_FILENO, TTY_con.xbuffer[TTY_con.cursor].utf8Bytes, TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes);
+					TTY_con.cursor++; // next char will always be '\0';
+				}
+
+				return NULL;
+			}
+
 			// we have something
 			// backspace?
 			// NOTE TTimo testing a lot of values .. seems it's the only way to get it to work everywhere
@@ -357,12 +411,50 @@ char *CON_Input( void )
 				return NULL;
 			}
 			// check if this is a control char
-			if ((key) && (key) < ' ')
+			if ((key) && (key) < ' ' &&  key > '\0')
 			{
+				//printf("control char xxxxx\n");
+
 				if (key == '\n')
 				{
 					const char *fieldString;
 
+#ifndef DEDICATED
+					// if not in the game explicitly prepend a slash if needed
+					if (clc.state != CA_ACTIVE && TTY_con.cursor &&
+						TTY_con.xbuffer[0].codePoint != '/' && TTY_con.xbuffer[0].codePoint != '\\')
+					{
+						memmove(TTY_con.xbuffer + 1, TTY_con.xbuffer, sizeof(TTY_con.xbuffer) - 1);
+						TTY_con.xbuffer[0].codePoint = '\\';
+						TTY_con.xbuffer[0].numUtf8Bytes = 1;
+						TTY_con.xbuffer[0].utf8Bytes[0] = '\\';
+						TTY_con.cursor++;
+					}
+
+					if (TTY_con.xbuffer[0].codePoint == '/' ||  TTY_con.xbuffer[0].codePoint == '\\') {
+						//Q_strncpyz(text, TTY_con.buffer + 1, sizeof(text));
+						fieldString = Field_AsStr(&TTY_con, 1, 0);
+						Q_strncpyz(text, fieldString, sizeof(text));
+					} else if (TTY_con.cursor) {
+						if (cl_consoleAsChat->integer) {
+							//Com_sprintf(text, sizeof(text), "cmd say %s", TTY_con.buffer);
+							Com_sprintf(text, sizeof(text), "cmd say %s", Field_AsStr(&TTY_con, 0, 0));
+						} else {
+							fieldString = Field_AsStr(&TTY_con, 1, 0);
+							Q_strncpyz(text, fieldString, sizeof(text));
+						}
+					} else {
+						text[0] = '\0';
+					}
+
+					// push it in history
+					Hist_Add(&TTY_con);
+					CON_Hide();
+					//Com_Printf("%s%s\n", TTY_CONSOLE_PROMPT, TTY_con.buffer);
+					Com_Printf("%s%s\n", TTY_CONSOLE_PROMPT, Field_AsStr(&TTY_con, 0, 0));
+					Field_Clear(&TTY_con);
+					CON_Show();
+#else
 					// push it in history
 					Hist_Add(&TTY_con);
 					//Q_strncpyz(text, TTY_con.buffer, sizeof(text));
@@ -371,7 +463,8 @@ char *CON_Input( void )
 					Field_Clear(&TTY_con);
 					key = '\n';
 					size = write(STDOUT_FILENO, &key, 1);
-					size = write(STDOUT_FILENO, "]", 1);
+					size = write(STDOUT_FILENO, TTY_CONSOLE_PROMPT, strlen(TTY_CONSOLE_PROMPT));
+#endif
 					return text;
 				}
 				if (key == '\t')
@@ -432,14 +525,43 @@ char *CON_Input( void )
 			if (TTY_con.cursor >= sizeof(text) - 1)
 				return NULL;
 
-			//FIXME utf8
-			// push regular character
-			//TTY_con.buffer[TTY_con.cursor] = key;
+
+			// push regular character and/or check of utf8
+
+			TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[1] = '\0';
+			TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[2] = '\0';
+			TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[3] = '\0';
+
 			TTY_con.xbuffer[TTY_con.cursor].codePoint = key;
 			TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[0] = key;
-			TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 0;
+			TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 1;
 
-			TTY_con.cursor++;
+			ukey = key;
+
+			// utf8 check
+			if (ukey <= 0x7f) {
+				// 1 byte utf8, all set
+			} else if ((ukey & 0xe0) == 0xc0) {  // 2 bytes
+				TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 2;
+				needUtf8Bytes = 1;
+				return NULL;
+			} else if ((ukey & 0xf0) == 0xe0) {  // 3 bytes
+				TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 3;
+				needUtf8Bytes = 2;
+				return NULL;
+			} else if ((ukey & 0xf8) == 0xf0) {  // 4 bytes
+				TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 4;
+				needUtf8Bytes = 3;
+				return NULL;
+			} else {
+				Com_Printf(S_COLOR_YELLOW "CON_Input() invalid byte: %x\n", (unsigned int)ukey);
+				return NULL;
+			}
+
+			// utf8 1 byte
+			needUtf8Bytes = 0;
+
+			TTY_con.cursor++; // next char will always be '\0';
 			// print the current line (this is differential)
 			size = write(STDOUT_FILENO, &key, 1);
 		}
@@ -482,6 +604,9 @@ CON_Print
 */
 void CON_Print( const char *msg )
 {
+	if (!msg[0])
+		return;
+
 	CON_Hide( );
 
 	if( com_ansiColor && com_ansiColor->integer )
@@ -489,5 +614,25 @@ void CON_Print( const char *msg )
 	else
 		fputs( msg, stderr );
 
-	CON_Show( );
+	if (!ttycon_on) {
+		// CON_Hide didn't do anything.
+		return;
+	}
+
+	// Only print prompt when msg ends with a newline, otherwise the console
+	//   might get garbled when output does not fit on one line.
+	if (msg[strlen(msg) - 1] == '\n') {
+		CON_Show();
+
+		// Run CON_Show the number of times it was deferred.
+		while (ttycon_show_overdue > 0) {
+			CON_Show();
+			ttycon_show_overdue--;
+		}
+	}
+	else
+	{
+		// Defer calling CON_Show
+		ttycon_show_overdue++;
+	}
 }

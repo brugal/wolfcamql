@@ -208,9 +208,9 @@ void *R_GetCommandBufferReserved( int bytes, int reservedBytes ) {
 		// if we run out of room, just start dropping commands
 
 		// don't spam message since it will make console unresponsive
-		if (Sys_Milliseconds() - lastDroppedTime > 1000) {
-			Com_Printf("^3R_GetCommandBuffer() command dropped\n");
-			lastDroppedTime = Sys_Milliseconds();
+		if (ri.RealMilliseconds() - lastDroppedTime > 1000) {
+			ri.Printf(PRINT_ALL, "^3R_GetCommandBuffer() command dropped\n");
+			lastDroppedTime = ri.RealMilliseconds();
 		}
 
 		return NULL;
@@ -318,7 +318,8 @@ void RE_StretchPic ( float x, float y, float w, float h,
 #define MODE_RED_CYAN	1
 #define MODE_RED_BLUE	2
 #define MODE_RED_GREEN	3
-#define MODE_MAX	MODE_RED_GREEN
+#define MODE_GREEN_MAGENTA	4
+#define MODE_MAX	MODE_GREEN_MAGENTA
 
 void R_SetColorMode(GLboolean *rgba, stereoFrame_t stereoFrame, int colormode)
 {
@@ -337,17 +338,27 @@ void R_SetColorMode(GLboolean *rgba, stereoFrame_t stereoFrame, int colormode)
 		
 		colormode -= MODE_MAX;
 	}
-	
-	if(stereoFrame == STEREO_LEFT)
-		rgba[1] = rgba[2] = GL_FALSE;
-	else if(stereoFrame == STEREO_RIGHT)
+
+	if(colormode == MODE_GREEN_MAGENTA)
 	{
-		rgba[0] = GL_FALSE;
-		
-		if(colormode == MODE_RED_BLUE)
+		if(stereoFrame == STEREO_LEFT)
+			rgba[0] = rgba[2] = GL_FALSE;
+		else if(stereoFrame == STEREO_RIGHT)
 			rgba[1] = GL_FALSE;
-		else if(colormode == MODE_RED_GREEN)
-			rgba[2] = GL_FALSE;
+	}
+	else
+	{
+		if(stereoFrame == STEREO_LEFT)
+			rgba[1] = rgba[2] = GL_FALSE;
+		else if(stereoFrame == STEREO_RIGHT)
+		{
+			rgba[0] = GL_FALSE;
+
+			if(colormode == MODE_RED_BLUE)
+				rgba[1] = GL_FALSE;
+			else if(colormode == MODE_RED_GREEN)
+				rgba[2] = GL_FALSE;
+		}
 	}
 }
 
@@ -535,7 +546,7 @@ void RE_BeginFrame (stereoFrame_t stereoFrame, qboolean recordingVideo)
 				r_anaglyphMode->modified = qfalse;
 			}
 
-			//Com_Printf("%s\n", r_drawBuffer->string);
+			//ri.Printf(PRINT_ALL, "%s\n", r_drawBuffer->string);
 			if (!Q_stricmp(r_drawBuffer->string, "GL_FRONT"))
 				cmd->buffer = (int)GL_FRONT;
 			else

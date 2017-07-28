@@ -280,7 +280,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	}
 
 	if ( strlen( name ) >= MAX_QPATH ) {
-		Com_Printf( "Model name exceeds MAX_QPATH\n" );
+		ri.Printf(PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
@@ -383,7 +383,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	}
 
 	if (!hModel) {
-		Com_Printf("^3RE_RegisterModel: failed to load %s\n", name);
+		ri.Printf(PRINT_ALL, "^3RE_RegisterModel: failed to load %s\n", name);
 	}
 
 	LoadingModelName[0] = '\0';
@@ -507,18 +507,18 @@ static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_
         for ( j = 0 ; j < surf->numShaders ; j++, shader++ ) {
             shader_t	*sh;
 
-			//Com_Printf("^2model '%s' loading shader '%s'\n", mod_name, shader->name);
+			//ri.Printf(PRINT_ALL, "^2model '%s' loading shader '%s'\n", mod_name, shader->name);
 			if (!Q_stricmpn(mod_name, "models/gibsq3/", strlen("models/gibsq3/"))) {
 				Q_strncpyz(shader->name, "models/gibsq3/gibs", MAX_QPATH);
-				//Com_Printf("yes -> %s\n", shader->name);
+				//ri.Printf(PRINT_ALL, "yes -> %s\n", shader->name);
 			}
 
             sh = R_FindShader( shader->name, LIGHTMAP_NONE, qtrue );
 			if ( sh->defaultShader ) {
-				//Com_Printf("couldn't find shader for %s\n", shader->name);
+				//ri.Printf(PRINT_ALL, "couldn't find shader for %s\n", shader->name);
 				shader->shaderIndex = 0;
 			} else {
-				//Com_Printf("loaded shader for %s\n", shader->name);
+				//ri.Printf(PRINT_ALL, "loaded shader for %s\n", shader->name);
 				shader->shaderIndex = sh->index;
 			}
         }

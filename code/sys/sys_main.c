@@ -142,7 +142,12 @@ Sys_PIDFileName
 */
 static char *Sys_PIDFileName( void )
 {
-	return va( "%s/%s", Sys_TempPath( ), PID_FILENAME );
+	const char *homePath = Sys_DefaultHomePath( );
+
+	if( *homePath != '\0' )
+		return va( "%s/%s", homePath, PID_FILENAME );
+
+	return NULL;
 }
 
 /*
@@ -157,6 +162,9 @@ qboolean Sys_WritePIDFile( void )
 	char      *pidFile = Sys_PIDFileName( );
 	FILE      *f;
 	qboolean  stale = qfalse;
+
+	if( pidFile == NULL )
+		return qfalse;
 
 	// First, check if the pid file is already there
 	if( ( f = fopen( pidFile, "r" ) ) != NULL )
@@ -210,7 +218,10 @@ static void __attribute__ ((noreturn)) Sys_Exit( int exitCode )
 	if( exitCode < 2 )
 	{
 		// Normal exit
-		remove( Sys_PIDFileName( ) );
+		char *pidFile = Sys_PIDFileName( );
+
+		if( pidFile != NULL)
+			remove( pidFile );
 	}
 
 	exit( exitCode );
@@ -289,7 +300,6 @@ void Sys_Error( const char *error, ... )
 	Q_vsnprintf (string, sizeof(string), error, argptr);
 	va_end (argptr);
 
-	CL_Shutdown(string, qtrue);
 	Sys_ErrorDialog( string );
 
 	Sys_Exit( 3 );
@@ -428,12 +438,14 @@ from executable path, then fs_basepath.
 =================
 */
 
-void *Sys_LoadDll(const char *name)
+void *Sys_LoadDll(const char *name, qboolean useSystemLib)
 {
 	void *dllhandle;
-	
-	Com_Printf("Try loading \"%s\"...\n", name);
-	if(!(dllhandle = Sys_LoadLibrary(name)))
+
+	if(useSystemLib)
+		Com_Printf("Trying to load \"%s\"...\n", name);
+
+	if(!useSystemLib || !(dllhandle = Sys_LoadLibrary(name)))
 	{
 		const char *topDir;
 		char libPath[MAX_OSPATH];
@@ -443,7 +455,7 @@ void *Sys_LoadDll(const char *name)
 		if(!*topDir)
 			topDir = ".";
 
-		Com_Printf("Try loading \"%s\" from \"%s\"...\n", name, topDir);
+		Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, topDir);
 		Com_sprintf(libPath, sizeof(libPath), "%s%c%s", topDir, PATH_SEP, name);
 
 		if(!(dllhandle = Sys_LoadLibrary(libPath)))
@@ -455,7 +467,7 @@ void *Sys_LoadDll(const char *name)
 			
 			if(FS_FilenameCompare(topDir, basePath))
 			{
-				Com_Printf("Try loading \"%s\" from \"%s\"...\n", name, basePath);
+				Com_Printf("Trying to load \"%s\" from \"%s\"...\n", name, basePath);
 				Com_sprintf(libPath, sizeof(libPath), "%s%c%s", basePath, PATH_SEP, name);
 				dllhandle = Sys_LoadLibrary(libPath);
 			}
@@ -470,12 +482,12 @@ void *Sys_LoadDll(const char *name)
 
 /*
 =================
-Sys_LoadQVMDll
+Sys_LoadGameDll
 
 Used to load a development dll instead of a virtual machine
 =================
 */
-void *Sys_LoadQVMDll( const char *name,
+void *Sys_LoadGameDll( const char *name,
 						  intptr_t (QDECL **entryPoint)(int, ...),
 						  intptr_t (*systemcalls)(intptr_t, ...))
 {
@@ -497,7 +509,7 @@ void *Sys_LoadQVMDll( const char *name,
 
 	if(!libHandle)
 	{
-		Com_Printf("Sys_LoadQVMDll(%s) failed:\n\"%s\"\n", name, Sys_LibraryError());
+		Com_Printf("Sys_LoadGameDll(%s) failed:\n\"%s\"\n", name, Sys_LibraryError());
 		return NULL;
 	}
 
@@ -506,13 +518,13 @@ void *Sys_LoadQVMDll( const char *name,
 
 	if ( !*entryPoint || !dllEntry )
 	{
-		Com_Printf ( "Sys_LoadQVMDll(%s) failed to find vmMain function:\n\"%s\" !\n", name, Sys_LibraryError( ) );
+		Com_Printf ( "Sys_LoadGameDll(%s) failed to find vmMain function:\n\"%s\" !\n", name, Sys_LibraryError( ) );
 		Sys_UnloadLibrary(libHandle);
 
 		return NULL;
 	}
 
-	Com_Printf ( "Sys_LoadQVMDll(%s) found vmMain function at %p\n", name, *entryPoint );
+	Com_Printf ( "Sys_LoadGameDll(%s) found vmMain function at %p\n", name, *entryPoint );
 	dllEntry( systemcalls );
 
 	return libHandle;
@@ -570,7 +582,7 @@ void Sys_SigHandler( int signal )
 		VM_Forced_Unload_Start();
 
 #ifndef DEDICATED
-		CL_Shutdown(va("Received signal %d", signal), qtrue);
+		CL_Shutdown(va("Received signal %d", signal), qtrue, qtrue);
 #endif
 		SV_Shutdown(va("Received signal %d", signal) );
 		VM_Forced_Unload_Done();

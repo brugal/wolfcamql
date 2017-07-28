@@ -720,9 +720,9 @@ CG_RegisterClientModelname
 ==========================
 */
 qboolean CG_RegisterClientModelname( clientInfo_t *ci, const char *modelName, const char *skinName, const char *headModelName, const char *headSkinName, const char *teamName, qboolean dontForceTeamSkin ) {
-	char	filename[MAX_QPATH*2];
+	char	filename[MAX_QPATH];
 	const char		*headName;
-	char newTeamName[MAX_QPATH*2];
+	char newTeamName[MAX_QPATH];
 	qboolean status;
 
 	status = qtrue;

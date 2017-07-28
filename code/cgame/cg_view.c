@@ -597,9 +597,7 @@ double CG_CalcZoom (double fov_x)
 		} else {
 			f = 2.0;
 		}
-		if ( f > 1.0 ) {
-			fov_x = zoomFov;
-		} else {
+		if ( f <= 1.0) {
 			fov_x = fov_x + f * ( zoomFov - fov_x );
 			//Com_Printf("zooming up fov %f  f %f  ourTime %f  zoomTime %f  paused %d\n", fov_x, f, ourTime, zoomTime, cg.paused);
 		}
@@ -830,6 +828,13 @@ static void CG_DamageBlendBlob( void ) {
 	int attacker;
 	vmCvar_t colorCvar;
 	int alpha;
+
+	// ioquake3 disables this if com_blood is 0
+#if 0
+	if (!cg_blood.integer) {
+		return;
+	}
+#endif
 
 	if ( !cg.damageValue ) {
 		return;

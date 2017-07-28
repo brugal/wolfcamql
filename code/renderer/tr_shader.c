@@ -72,7 +72,7 @@ void R_RemapShader (const char *shaderName, const char *newShaderName, const cha
 	shader_t	*sh, *sh2;
 	qhandle_t	h;
 
-	//Com_Printf("renderer remapshader %s  %s\n", shaderName, newShaderName);
+	//ri.Printf(PRINT_ALL, "renderer remapshader %s  %s\n", shaderName, newShaderName);
 
 	sh = R_FindShaderByName( shaderName );
 	if (sh == NULL || sh == tr.defaultShader) {
@@ -163,7 +163,7 @@ void R_ClearAllRemappedShaders_f (void)
 		shader = tr.shaders[i];
 
 		if (shader->userRemappedShader) {
-			//Com_Printf("%4d %s -> %s\n", shader->name, shader->userRemappedShader->name);
+			//ri.Printf(PRINT_ALL, "%4d %s -> %s\n", shader->name, shader->userRemappedShader->name);
 			shader->userRemappedShader = NULL;
 			shader->remappedShaderKeepLightmap = qfalse;
 		}
@@ -1298,7 +1298,7 @@ static void ParseSkyParms( char **text ) {
 		ri.Printf( PRINT_WARNING, "WARNING: 'skyParms' missing parameter in shader '%s'\n", shader.name );
 		return;
 	}
-	//Com_Printf("ParseSkyParms()  '%s'\n", shader.name);
+	//ri.Printf(PRINT_ALL, "ParseSkyParms()  '%s'\n", shader.name);
 	if ( strcmp( token, "-" ) ) {
 		for (i=0 ; i<6 ; i++) {
 			Com_sprintf( pathname, sizeof(pathname), "%s_%s.tga"
@@ -1384,7 +1384,8 @@ void ParseSort( char **text ) {
 		shader.sort = val;
 
 		if (val > SS_NEAREST) {
-			Com_Printf("^3shader sort '%s' > SS_NEAREST for '%s'\n", token, shader.name);
+			//FIXME warning?
+			ri.Printf(PRINT_ALL, "^3shader sort '%s' > SS_NEAREST for '%s'\n", token, shader.name);
 		}
 	}
 }
@@ -1492,7 +1493,7 @@ static qboolean ParseShader( char **text )
 		return qfalse;
 	}
 
-	//Com_Printf("'%s' :  %s\n", shader.name, *text);
+	//ri.Printf(PRINT_ALL, "'%s' :  %s\n", shader.name, *text);
 
 	while ( 1 )
 	{
@@ -1503,7 +1504,7 @@ static qboolean ParseShader( char **text )
 			return qfalse;
 		}
 
-		//Com_Printf("token: %s\n", token);
+		//ri.Printf(PRINT_ALL, "token: %s\n", token);
 
 		// end of shader definition
 		if ( token[0] == '}' )
@@ -1534,14 +1535,14 @@ static qboolean ParseShader( char **text )
 		}
 
 		//else if (!Q_stricmp(token, "q3map_surfacelight")) {
-		//	Com_Printf("q3map_surfacelight\n");
+		//	ri.Printf(PRINT_ALL, "q3map_surfacelight\n");
 		//}
 
 		// sun parms
 		else if ( !Q_stricmp( token, "q3map_sun" ) || !Q_stricmp( token, "q3map_sunExt" ) ) {
 			float	a, b;
 
-			//Com_Printf("sunlight\n");
+			//ri.Printf(PRINT_ALL, "sunlight\n");
 
 			token = COM_ParseExt( text, qfalse );
 			tr.sunLight[0] = atof( token );
@@ -2106,12 +2107,13 @@ static shader_t *GeneratePermanentShader( void ) {
 	newShader = ri.Hunk_Alloc( sizeof( shader_t ), h_low );
 	//newShader = malloc(sizeof(shader_t));  //ri.Hunk_Alloc( sizeof( shader_t ), h_low );
 	if (!newShader) {
-		Com_Printf("^1GeneratePermananetShader() couldn't alloc memory for new shader\n");
+		//FIXME print error
+		ri.Printf(PRINT_ALL, "^1GeneratePermananetShader() couldn't alloc memory for new shader\n");
 		return tr.defaultShader;
 	}
 
 	*newShader = shader;
-	//Com_Printf("light %d\n", newShader->lightmapIndex);
+	//ri.Printf(PRINT_ALL, "light %d\n", newShader->lightmapIndex);
 
 	if ( shader.sort <= SS_OPAQUE ) {
 		newShader->fogPass = FP_EQUAL;
@@ -2129,7 +2131,8 @@ static shader_t *GeneratePermanentShader( void ) {
 
 	for ( i = 0 ; i < newShader->numUnfoggedPasses ; i++ ) {
 		if (i >= MAX_SHADER_STAGES) {
-			Com_Printf("^3GeneratePermananetShader() shader '%s' has  %d > MAX_SHADER_STAGES (%d)\n", newShader->name, newShader->numUnfoggedPasses, MAX_SHADER_STAGES);
+			//FIXME print warning
+			ri.Printf(PRINT_ALL, "^3GeneratePermananetShader() shader '%s' has  %d > MAX_SHADER_STAGES (%d)\n", newShader->name, newShader->numUnfoggedPasses, MAX_SHADER_STAGES);
 			break;
 		}
 
@@ -2149,7 +2152,7 @@ static shader_t *GeneratePermanentShader( void ) {
 	SortNewShader();
 
 	hash = generateHashValue(newShader->name, FILE_HASH_SIZE);
-	//Com_Printf("gen 0x%x %d  %s\n", hash, newShader->lightmapIndex, newShader->name);
+	//ri.Printf(PRINT_ALL, "gen 0x%x %d  %s\n", hash, newShader->lightmapIndex, newShader->name);
 	newShader->next = hashTable[hash];
 	hashTable[hash] = newShader;
 
@@ -2161,7 +2164,7 @@ static shader_t *GeneratePermanentShader( void ) {
 		i = 0;
 		sh = hashTable[hash];
 		while (sh) {
-			Com_Printf("%d  %d  %s\n", i, sh->lightmapIndex, sh->name);
+			ri.Printf(PRINT_ALL, "%d  %d  %s\n", i, sh->lightmapIndex, sh->name);
 			i++;
 			sh = sh->next;
 		}
@@ -2477,7 +2480,7 @@ static shader_t *FinishShader( void ) {
 	// determine which stage iterator function is appropriate
 	ComputeStageIteratorFunc();
 
-	//Com_Printf("%s  lightmap: %d\n", shader.name, hasLightmapStage);
+	//ri.Printf(PRINT_ALL, "%s  lightmap: %d\n", shader.name, hasLightmapStage);
 	return GeneratePermanentShader();
 }
 
@@ -2574,7 +2577,7 @@ shader_t *R_FindShaderByName( const char *name ) {
 		}
 	}
 
-	Com_Printf("^3Warning:  using default shader for '%s'\n", name);
+	ri.Printf(PRINT_WARNING, "using default shader for '%s'\n", name);
 
 	return tr.defaultShader;
 }
@@ -2625,7 +2628,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		return tr.defaultShader;
 	}
 
-	//Com_Printf("^2%s\n", name);
+	//ri.Printf(PRINT_ALL, "^2%s\n", name);
 #if 0
 	//if (sbegins(name, "textures/dfwc2012-kop4ik/tp_beam")) {
 	if (sbegins(name, "textures/dfwc2012-kop4ik/")) {
@@ -2656,14 +2659,14 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 			nn++;
 			//Q_strncpyz((char *)name, "textures/dfwc2012-kop4ik/wire_frame_64", sizeof(name));
 		} else {
-			Com_Printf("^6skipping '%s'\n", name);
+			ri.Printf(PRINT_ALL, "^6skipping '%s'\n", name);
 			return tr.defaultShader;
 		}
 	}
 #endif
 
 	if (lightmapIndex >= tr.numLightmaps) {
-		//Com_Printf("wtf %s\n", name);
+		//ri.Printf(PRINT_ALL, "wtf %s\n", name);
 	}
 
 	// use (fullbright) vertex lighting if the bsp file doesn't have
@@ -2679,7 +2682,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	COM_StripExtension(name, strippedName, sizeof(strippedName));
 
 	hash = generateHashValue(strippedName, FILE_HASH_SIZE);
-	//Com_Printf("hash 0x%x\n", hash);
+	//ri.Printf(PRINT_ALL, "hash 0x%x\n", hash);
 
 	//
 	// see if the shader is already loaded
@@ -2692,12 +2695,12 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		if ( (sh->lightmapIndex == lightmapIndex || sh->defaultShader) &&
 		     !Q_stricmp(sh->name, strippedName)) {
 			// match found
-			//Com_Printf("^3found match...\n");
+			//ri.Printf(PRINT_ALL, "^3found match...\n");
 			return sh;
 		}
 	}
-	//Com_Printf("new...\n");
-	//Com_Printf("^2new 0x%x light:%d '%s' '%s'\n", hash, lightmapIndex, name, strippedName);
+	//ri.Printf(PRINT_ALL, "new...\n");
+	//ri.Printf(PRINT_ALL, "^2new 0x%x light:%d '%s' '%s'\n", hash, lightmapIndex, name, strippedName);
 
 
 	// make sure the render thread is stopped, because we are probably
@@ -2719,29 +2722,29 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	//
 	shaderText = NULL;
 
-	//Com_Printf("%d\n", Cvar_VariableIntegerValue("cl_useq3gibs"));
+	//ri.Printf(PRINT_ALL, "%d\n", Cvar_VariableIntegerValue("cl_useq3gibs"));
 	//if (Cvar_VariableIntegerValue("cl_useq3gibs")  &&  !strcmp(strippedName, "models/gibs/gibs")) {
 	if (0) {  //(!strcmp(strippedName, "models/gibs/gibs")) {
-		Com_Printf("^2Ignoring models/gibs/gibs '%s'\n", LoadingModelName);
+		ri.Printf(PRINT_ALL, "^2Ignoring models/gibs/gibs '%s'\n", LoadingModelName);
 		if (!Q_stricmpn(strippedName, "models/gibs/", strlen("models/gibs/"))) {
-			//Com_Printf("yes\n");
+			//ri.Printf(PRINT_ALL, "yes\n");
 		}
 		// quakelive has a text shader that matches so gibs.tga not loaded
 		// want to avoid having to copy the shader file
 		// I don't think it's used, so just ignore it regardless of
 		// cl_useq3gibs setting
-		//} else if (Cvar_FindVar("cg_weather")  && !Cvar_VariableIntegerValue("cg_weather")  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snow_melting"))) {  //FIXME not here
-	} else if (Cvar_FindVar("cg_weather")  && !Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/sfx/rain")) {  //FIXME not here
+		//} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snow_melting"))) {  //FIXME not here
+	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/sfx/rain")) {  //FIXME not here
 		//FIXME snow qzctf8
-		//} else if (!Cvar_VariableIntegerValue("cg_weather")  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snowtiles"))) {  //FIXME not here
-		//Com_Printf("skipping rain texture\n");
-		//Com_Printf("skipping %s\n", strippedName);
+		//} else if (!ri.Cvar_VariableIntegerValue("cg_weather")  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snowtiles"))) {  //FIXME not here
+		//ri.Printf(PRINT_ALL, "skipping rain texture\n");
+		//ri.Printf(PRINT_ALL, "skipping %s\n", strippedName);
 		return R_FindShader("wc/empty", 0, 0);
 		//FIXME remap shader
-	} else if (Cvar_FindVar("cg_weather")  && !Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/proto2/snow01")) {  //FIXME not here
-		//Com_Printf("^4skipping snow\n");
+	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/proto2/snow01")) {  //FIXME not here
+		//ri.Printf(PRINT_ALL, "^4skipping snow\n");
 		return R_FindShader("wc/empty", 0, 0);
-	} else if (Cvar_FindVar("cg_weather")  && !Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "gfx/misc/snow")) {
+	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "gfx/misc/snow")) {
 		return R_FindShader("wc/empty", 0, 0);
 	} else {
 		shaderText = FindShaderInShaderText( strippedName );
@@ -2758,7 +2761,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 			shader.defaultShader = qtrue;
 		}
 		sh = FinishShader();
-		//Com_Printf("got shader text  %s\n", strippedName);
+		//ri.Printf(PRINT_ALL, "got shader text  %s\n", strippedName);
 		return sh;
 	}
 
@@ -2767,7 +2770,7 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	// if not defined in the in-memory shader descriptions,
 	// look for a single supported image file
 	//
-	//Com_Printf("^3using direct image file '%s'\n", name);
+	//ri.Printf(PRINT_ALL, "^3using direct image file '%s'\n", name);
 
 	image = R_FindImageFile( name, mipRawImage, mipRawImage, mipRawImage ? GL_REPEAT : GL_CLAMP_TO_EDGE );
 	if ( !image ) {
@@ -2947,7 +2950,7 @@ qhandle_t RE_RegisterShaderLightMap( const char *name, int lightmapIndex ) {
 	shader_t	*sh;
 
 	if ( strlen( name ) >= MAX_QPATH ) {
-		Com_Printf( "Shader name exceeds MAX_QPATH\n" );
+		ri.Printf(PRINT_WARNING, "Shader name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
@@ -2981,7 +2984,7 @@ qhandle_t RE_RegisterShader( const char *name ) {
 	shader_t	*sh;
 
 	if ( strlen( name ) >= MAX_QPATH ) {
-		Com_Printf( "Shader name exceeds MAX_QPATH\n" );
+		ri.Printf(PRINT_WARNING, "Shader name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
@@ -2993,7 +2996,8 @@ qhandle_t RE_RegisterShader( const char *name ) {
 	// something calls RE_RegisterShader again with
 	// the same name, we don't try looking for it again
 	if ( sh->defaultShader  ||  sh == tr.defaultShader) {
-		Com_Printf("^1RE_RegisterShader(%s) failed\n", name);
+		//FIXME print error
+		ri.Printf(PRINT_ALL, "^1RE_RegisterShader(%s) failed\n", name);
 		return 0;
 	}
 
@@ -3012,7 +3016,7 @@ qhandle_t RE_RegisterShaderNoMip( const char *name ) {
 	shader_t	*sh;
 
 	if ( strlen( name ) >= MAX_QPATH ) {
-		Com_Printf( "Shader name exceeds MAX_QPATH\n" );
+		ri.Printf(PRINT_WARNING, "Shader name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
@@ -3024,7 +3028,7 @@ qhandle_t RE_RegisterShaderNoMip( const char *name ) {
 	// something calls RE_RegisterShader again with
 	// the same name, we don't try looking for it again
 	if ( sh->defaultShader ) {
-		Com_Printf("RE_RegisterShaderNoMip(%s) failed\n", name);
+		ri.Printf(PRINT_WARNING, "RE_RegisterShaderNoMip(%s) failed\n", name);
 		return 0;
 	}
 
@@ -3141,7 +3145,7 @@ void R_ListRemappedShaders_f (void)
 		shader = tr.shaders[i];
 
 		if (shader->userRemappedShader) {
-			Com_Printf("%5d %s -> %s\n", i, shader->name, shader->userRemappedShader->name);
+			ri.Printf(PRINT_ALL, "%5d %s -> %s\n", i, shader->name, shader->userRemappedShader->name);
 		}
 	}
 }
@@ -3183,7 +3187,7 @@ static void ScanAndLoadShaderFiles (void)
 
 	if ((numShaderFiles + numOverrideShaderFiles) > MAX_SHADER_FILES) {
 		numShaderFiles = MAX_SHADER_FILES;
-		Com_Printf("numShaderFiles > MAX_SHADER_FILES\n");
+		ri.Printf(PRINT_WARNING, "numShaderFiles > MAX_SHADER_FILES\n");
 	}
 
 	// load and parse shader files
@@ -3203,7 +3207,7 @@ static void ScanAndLoadShaderFiles (void)
 		if ( !buffers[i] )
 			ri.Error( ERR_DROP, "Couldn't load %s", filename );
 
-		//Com_Printf("^3'%s'\n", buffers[i]);
+		//ri.Printf(PRINT_ALL, "^3'%s'\n", buffers[i]);
 		// Do a simple check on the shader structure in that file to make sure one bad shader file cannot fuck up all other shaders.
 		p = buffers[i];
 		COM_BeginParseSession(filename);
@@ -3315,7 +3319,7 @@ static void ScanAndLoadShaderFiles (void)
 	Com_Memset(shaderTextHashTableSizes, 0, sizeof(shaderTextHashTableSizes));
 
 	p = s_shaderText;
-	//Com_Printf("'%s'\n", p);
+	//ri.Printf(PRINT_ALL "'%s'\n", p);
 
 	// look for shader names
 	while ( 1 ) {
@@ -3325,7 +3329,7 @@ static void ScanAndLoadShaderFiles (void)
 			break;
 		}
 
-		//Com_Printf("^2name: '%s'\n", token);
+		//ri.Printf(PRINT_ALL, "^2name: '%s'\n", token);
 
 		hash = generateHashValue(token, MAX_SHADERTEXT_HASH);
 		shaderTextHashTable[hash][shaderTextHashTableSizes[hash]++] = oldp;
@@ -3400,7 +3404,7 @@ void R_CreateSingleShader (void)
 				}
 			}
 			if (!hasLightmap) {
-				Com_Printf("^3WARNING single shader has no lightmap stage\n");
+				ri.Printf(PRINT_WARNING, "WARNING single shader has no lightmap stage\n");
 				tr.singleShader = R_FindShader("wc/map/customlit", LIGHTMAP_NONE, qtrue);
 				if (!tr.singleShader  ||
 
@@ -3410,14 +3414,14 @@ void R_CreateSingleShader (void)
 					) {
 					// ql packs might not be installed and customlit
 					// references textures/base_wall/concrete_dark.tga
-					Com_Printf("^1customlit doesn't have an image\n");
+					ri.Printf(PRINT_ALL, "^1customlit doesn't have an image\n");
 					tr.singleShader = tr.defaultShader;
 					return;
 				}
 
 				tr.singleShader->stages[0]->bundle[0].image[0] = R_FindImageFile(r_singleShaderName->string, qtrue, qtrue, GL_REPEAT);
 				if (!tr.singleShader->stages[0]->bundle[0].image[0]) {
-					Com_Printf("^1couldn't create single shader\n");
+					ri.Printf(PRINT_ALL, "^1couldn't create single shader\n");
 					tr.singleShader = tr.defaultShader;
 				}
 			}
@@ -3482,9 +3486,9 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 	int sz;
 
 	shader = R_GetShaderByHandle(h);
-	//Com_Printf("RE_WriteToShaderImage %d  %s\n", h, shader->name);
+	//ri.Printf(PRINT_ALL, "RE_WriteToShaderImage %d  %s\n", h, shader->name);
 	if (shader == tr.defaultShader) {
-		Com_Printf("RE_ReplaceShaderImage default shader returning\n");
+		riPrintf(PRINT_ALL, "RE_ReplaceShaderImage default shader returning\n");
 		return;
 	}
 
@@ -3498,7 +3502,7 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 			//for (k = 0;  k < bundle->numImageAnimations;  k++) {
 			image = bundle->image[0];
 			if (1) {  //(*image) {
-				Com_Printf("image->texum %d  %s\n", image->texnum, image->imgName[0] != '\0' ? image->imgName : "");
+				ri.Printf(PRINT_ALL, "image->texum %d  %s\n", image->texnum, image->imgName[0] != '\0' ? image->imgName : "");
 			}
 			//}
 #if 0
@@ -3533,13 +3537,13 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 	image_t *image;
 
 	shader = R_GetShaderByHandle(h);
-	//Com_Printf("RE_ReplaceShaderImage %d  %s\n", h, shader->name);
+	//ri.Printf(PRINT_ALL, "RE_ReplaceShaderImage %d  %s\n", h, shader->name);
 	if (shader == tr.defaultShader) {
-		Com_Printf("RE_ReplaceShaderImage default shader returning\n");
+		ri.Printf(PRINT_ALL, "RE_ReplaceShaderImage default shader returning\n");
 		return;
 	}
 	image = shader->stages[0]->bundle[0].image[0];
-	//Com_Printf("image->texum %d  %s\n", image->texnum, image->imgName[0] != '\0' ? image->imgName : "");
+	//ri.Printf(PRINT_ALL, "image->texum %d  %s\n", image->texnum, image->imgName[0] != '\0' ? image->imgName : "");
 
 
 	if (r_smp->integer) {

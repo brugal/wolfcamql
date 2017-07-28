@@ -235,7 +235,7 @@ static void R_BindAnimatedImage( textureBundle_t *bundle ) {
 
 	// it is necessary to do this messy calc to make sure animations line up
 	// exactly with waveforms of the same frequency
-	index = Q_ftol(tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE);
+	index = ri.ftol(tess.shaderTime * bundle->imageAnimationSpeed * FUNCTABLE_SIZE);
 	index >>= FUNCTABLE_SIZE2;
 
 	if ( index < 0 ) {
@@ -353,7 +353,7 @@ void RB_BeginSurface( shader_t *shader, int fogNum ) {
 	} else if (shader->userRemappedShader) {
 		if (shader->remappedShaderKeepLightmap) {
 			tess.originalShader = shader;  // use lightmap of original shader
-			//Com_Printf("keep lightmap\n");
+			//ri.Printf(PRINT_ALL, "keep lightmap\n");
 		} else {
 			tess.originalShader = NULL;
 		}
@@ -408,7 +408,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 	// this is an ugly hack to work around a GeForce driver
 	// bug with multitexture and clip planes
 	if ( backEnd.viewParms.isPortal ) {
-		//Com_Printf("portal geforce hack\n");
+		//ri.Printf(PRINT_ALL, "portal geforce hack\n");
 		qglPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	}
 
@@ -445,7 +445,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 	if (tess.originalShader  &&  isLightmap) {
 		shaderStage_t *ost;
 		qboolean gotNewLightmap;
-		//Com_Printf("lightmap %d  stage %d\n", tess.originalShader->lightmapIndex, stage);
+		//ri.Printf(PRINT_ALL, "lightmap %d  stage %d\n", tess.originalShader->lightmapIndex, stage);
 		// pStage->bundle[0].isLightmap || pStage->bundle[1].isLightmap || pStage->bundle[0].vertexLightmap
 
 		// find lightmap in original shader
@@ -461,7 +461,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 		}
 
 		if (!gotNewLightmap) {
-			//Com_Printf("couldn't get new lightmap\n");
+			//ri.Printf(PRINT_ALL, "couldn't get new lightmap\n");
 			GL_Bind(tr.whiteImage);
 		} else if (ost->bundle[0].isLightmap) {
 			R_BindAnimatedImage(&ost->bundle[0]);
@@ -474,7 +474,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 		//R_DrawElements( input->numIndexes, input->indexes );
 	} else {
 		if (tess.originalShader) {
-			//Com_Printf("skipping\n");
+			//ri.Printf(PRINT_ALL, "skipping\n");
 		}
 
 		R_BindAnimatedImage( &pStage->bundle[1] );
@@ -786,9 +786,9 @@ static void ProjectDlightTexture_scalar( void ) {
 				}
 			}
 			clipBits[i] = clip;
-			colors[0] = Q_ftol(floatColor[0] * modulate);
-			colors[1] = Q_ftol(floatColor[1] * modulate);
-			colors[2] = Q_ftol(floatColor[2] * modulate);
+			colors[0] = ri.ftol(floatColor[0] * modulate);
+			colors[1] = ri.ftol(floatColor[1] * modulate);
+			colors[2] = ri.ftol(floatColor[2] * modulate);
 			colors[3] = 255;
 		}
 
@@ -1469,7 +1469,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 	input = &tess;
 	shader = input->shader;
 
-	//Com_Printf("%s\n", __FUNCTION__);
+	//ri.Printf(PRINT_ALL, "%s\n", __FUNCTION__);
 
 	//
 	// log this call
@@ -1537,7 +1537,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		}
 
 		if (!gotNewLightmap) {
-			//Com_Printf("couldn't get new lightmap\n");
+			//ri.Printf(PRINT_ALL, "couldn't get new lightmap\n");
 			GL_Bind(tr.whiteImage);
 		} else if (ost->bundle[0].isLightmap) {
 			R_BindAnimatedImage(&ost->bundle[0]);
@@ -1548,7 +1548,7 @@ void RB_StageIteratorLightmappedMultitexture( void ) {
 		}
 
 		//R_BindAnimatedImage(&tess.originalShader->stages[0]->bundle[1]);
-		//Com_Printf("ick\n");
+		//ri.Printf(PRINT_ALL, "ick\n");
 	} else {
 		R_BindAnimatedImage( &tess.xstages[0]->bundle[1] );
 	}

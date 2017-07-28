@@ -14,13 +14,22 @@ if not os.path.exists(packageDir):
 os.system("cp -a package-files/* %s/" % packageDir)
 os.system("cp COPYING.txt COPYING-backtrace.txt CREDITS-wolfcam.txt CREDITS-openarena.txt README-ioquake3.txt README-wolfcam.txt version.txt unifont-LICENSE.txt voip-readme.txt %s/" % packageDir)
 os.system("cp code/libs/SDL.dll code/libs/backtrace.dll %s/" % packageDir)
+
 os.system("cp build/release-linux-i386/ioquake3.i386 %s/wolfcamql.i386" % packageDir)
+os.system("cp build/release-linux-i386/renderer_opengl1_i386.so %s/" % packageDir)
 os.system("cp -a build/release-linux-i386/baseq3/*.so %s/wolfcam-ql/" % packageDir)
+
 os.system("cp build/release-mingw32-x86/ioquake3.x86.exe %s/wolfcamql.exe" % packageDir)
+os.system("cp build/release-mingw32-x86/renderer_opengl1_x86.dll %s/" % packageDir)
 os.system("cp build/release-mingw32-x86/baseq3/*.dll %s/wolfcam-ql/" % packageDir)
+
 os.system("cp code/libs/macosx/libSDL-1.2.0.dylib %s/" % packageDir)
 os.system("cp mac-binaries/wolfcamqlmac %s/" % packageDir)
-os.system("cp mac-binaries/*.dylib %s/wolfcam-ql/" % packageDir)
+os.system("cp mac-binaries/renderer_opengl1_i386.dylib %s/" % packageDir)
+os.system("cp mac-binaries/cgamei386.dylib %s/wolfcam-ql/" % packageDir)
+os.system("cp mac-binaries/qagamei386.dylib %s/wolfcam-ql/" % packageDir)
+os.system("cp mac-binaries/uii386.dylib %s/wolfcam-ql/" % packageDir)
+
 os.system("cp ui/wcmenudef.h %s/wolfcam-ql/ui/" % packageDir)
 
 os.system("rm -r /tmp/wolfcamql-src/")
@@ -38,4 +47,3 @@ os.system("cp -a /tmp/wolfcamql-src.tar.gz %s/" % packageDir)
 os.chdir(packageDir)
 os.chdir("..")
 os.system("zip -r wolfcamql-%s.zip wolfcamql%s" % (VERSIONSTRING, VERSIONSTRING))
-

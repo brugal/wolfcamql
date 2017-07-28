@@ -65,7 +65,7 @@ void R_RenderShadowEdges( void ) {
 #if 0
 	int		numTris;
 
-	//Com_Printf("old\n");
+	//ri.Printf(PRINT_ALL, "old\n");
 	// dumb way -- render every triangle's edges
 	numTris = tess.numIndexes / 3;
 
@@ -322,7 +322,7 @@ void RB_ProjectionShadowDeform( void ) {
 	if ( d < 0.5 ) {
 		VectorMA( lightDir, (0.5 - d), ground, lightDir );
 		d = DotProduct( lightDir, ground );
-		Com_Printf("wtf.... %f\n", d);
+		ri.Printf(PRINT_ALL, "wtf.... %f\n", d);
 	}
 #endif
 

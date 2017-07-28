@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "keys.h"
 #include "snd_local.h"
 #include "../sys/sys_local.h"
+#include "../sys/sys_loadlib.h"
 #include <limits.h>
 
 #ifdef USE_LOCAL_HEADERS
@@ -56,11 +57,17 @@ cvar_t	*cl_voipProtocol;
 cvar_t	*cl_voip;
 #endif
 
+#ifdef USE_RENDERER_DLOPEN
+cvar_t	*cl_renderer;
+#endif
+
 cvar_t	*cl_nodelta;
 cvar_t	*cl_debugMove;
 
 cvar_t	*cl_noprint;
+#ifdef UPDATE_SERVER_NAME
 cvar_t	*cl_motd;
+#endif
 
 cvar_t	*rcon_client_password;
 cvar_t	*rconAddress;
@@ -146,9 +153,14 @@ clientStatic_t		cls;
 vm_t				*cgvm;
 
 char                            cl_reconnectArgs[MAX_OSPATH];
+char		cl_oldGame[MAX_QPATH];
+qboolean	cl_oldGameSet;
 
 // Structure containing functions exported from refresh DLL
 refexport_t	re;
+#ifdef USE_RENDERER_DLOPEN
+static void		*rendererLib = NULL;
+#endif
 
 demoInfo_t di;
 rewindBackups_t *rewindBackups;
@@ -187,10 +199,11 @@ qboolean SplitVideo = qfalse;
 	void hA3Dg_ExportRenderGeom (refexport_t *incoming_re);
 #endif
 
+static int noGameRestart = qfalse;
+
 //extern dma_t dma;
 extern cvar_t *s_backend;
 
-extern void GLimp_Minimize (void);
 extern void SV_BotFrame( int time );
 
 static void CL_CheckForResend( void );
@@ -2520,12 +2533,12 @@ static void CL_UpdateGUID( const char *prefix, int prefix_len )
 
 static void CL_OldGame(void)
 {
-	if(cls.oldGameSet)
+	if(cl_oldGameSet)
 	{
 		// change back to previous fs_game
-		cls.oldGameSet = qfalse;
-		Cvar_Set("fs_game", cls.oldGame);
-		Com_GameRestart(0, qtrue);
+		cl_oldGameSet = qfalse;
+		Cvar_Set2("fs_game", cl_oldGame, qtrue);
+		FS_ConditionalRestart(clc.checksumFeed, qfalse);
 	}
 }
 
@@ -2697,7 +2710,10 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	CL_UpdateGUID( NULL, 0 );
 	CL_ShutdownCGame();
 
-	CL_OldGame();
+	if(!noGameRestart)
+		CL_OldGame();
+	else
+		noGameRestart = qfalse;
 
 	Cvar_Set("protocol", va("%i", SERVER_PROTOCOL));
 }
@@ -2743,6 +2759,7 @@ CL_RequestMotd
 ===================
 */
 void CL_RequestMotd( void ) {
+#ifdef UPDATE_SERVER_NAME
 	char		info[MAX_INFO_STRING];
 
 	if ( !cl_motd->integer ) {
@@ -2768,6 +2785,7 @@ void CL_RequestMotd( void ) {
 	Info_SetValueForKey( info, "version", com_version->string );
 
 	NET_OutOfBandPrint( NS_CLIENT, cls.updateServer, "getmotd \"%s\"\n", info );
+#endif
 }
 
 /*
@@ -2957,6 +2975,7 @@ void CL_Connect_f( void ) {
 	Cvar_Set( "sv_killserver", "1" );
 	SV_Frame( 0, 0 );
 
+	noGameRestart = qtrue;
 	CL_Disconnect( qtrue );
 	Con_Close();
 
@@ -3653,6 +3672,7 @@ CL_MotdPacket
 ===================
 */
 void CL_MotdPacket( netadr_t from ) {
+#ifdef UPDATE_SERVER_NAME
 	char	*challenge;
 	char	*info;
 
@@ -3673,6 +3693,7 @@ void CL_MotdPacket( netadr_t from ) {
 
 	Q_strncpyz( cls.updateInfoString, info, sizeof( cls.updateInfoString ) );
 	Cvar_Set( "cl_motdString", challenge );
+#endif
 }
 
 /*
@@ -4737,9 +4758,40 @@ CL_InitRef
 void CL_InitRef ( void ) {
 	refimport_t	ri;
 	refexport_t	*ret;
+#ifdef USE_RENDERER_DLOPEN
+	GetRefAPI_t	GetRefAPI;
+	char		dllName[MAX_OSPATH];
+#endif
 	vec4_t color;
 
 	Com_Printf( "----- Initializing Renderer ----\n" );
+
+#ifdef USE_RENDERER_DLOPEN
+	cl_renderer = Cvar_Get("cl_renderer", "opengl1", CVAR_ARCHIVE | CVAR_LATCH);
+
+	Com_sprintf(dllName, sizeof(dllName), "renderer_%s_" ARCH_STRING DLL_EXT, cl_renderer->string);
+
+	if(!(rendererLib = Sys_LoadDll(dllName, qfalse)) && strcmp(cl_renderer->string, cl_renderer->resetString))
+	{
+		Com_Printf("failed:\n\"%s\"\n", Sys_LibraryError());
+		Cvar_ForceReset("cl_renderer");
+
+		Com_sprintf(dllName, sizeof(dllName), "renderer_opengl1_" ARCH_STRING DLL_EXT);
+		rendererLib = Sys_LoadDll(dllName, qfalse);
+	}
+
+	if(!rendererLib)
+	{
+		Com_Printf("failed:\n\"%s\"\n", Sys_LibraryError());
+		Com_Error(ERR_FATAL, "Failed to load renderer");
+	}
+
+	GetRefAPI = Sys_LoadFunction(rendererLib, "GetRefAPI");
+	if(!GetRefAPI)
+	{
+		Com_Error(ERR_FATAL, "Can't load symbol GetRefAPI: '%s'",  Sys_LibraryError());
+	}
+#endif
 
 	ri.Cmd_AddCommand = Cmd_AddCommand;
 	ri.Cmd_RemoveCommand = Cmd_RemoveCommand;
@@ -4749,6 +4801,7 @@ void CL_InitRef ( void ) {
 	ri.Printf = CL_RefPrintf;
 	ri.Error = Com_Error;
 	ri.Milliseconds = CL_ScaledMilliseconds;
+	ri.RealMilliseconds = Sys_Milliseconds;
 	ri.Malloc = CL_RefMalloc;
 	ri.Free = Z_Free;
 #ifdef HUNK_DEBUG
@@ -4758,17 +4811,31 @@ void CL_InitRef ( void ) {
 #endif
 	ri.Hunk_AllocateTempMemory = Hunk_AllocateTempMemory;
 	ri.Hunk_FreeTempMemory = Hunk_FreeTempMemory;
+
+	ri.CM_ClusterPVS = CM_ClusterPVS;
 	ri.CM_DrawDebugSurface = CM_DrawDebugSurface;
+
 	ri.FS_ReadFile = FS_ReadFile;
 	ri.FS_FreeFile = FS_FreeFile;
 	ri.FS_WriteFile = FS_WriteFile;
+	ri.FS_Write = FS_Write;
 	ri.FS_FreeFileList = FS_FreeFileList;
 	ri.FS_ListFiles = FS_ListFiles;
 	ri.FS_FileIsInPAK = FS_FileIsInPAK;
 	ri.FS_FileExists = FS_FileExists;
+	ri.FS_FindSystemFile = FS_FindSystemFile;
+	ri.FS_FCloseFile = FS_FCloseFile;
+	ri.FS_FOpenFileWrite = FS_FOpenFileWrite;
+
 	ri.Cvar_Get = Cvar_Get;
 	ri.Cvar_Set = Cvar_Set;
+	ri.Cvar_SetValue = Cvar_SetValue;
+	ri.Cvar_ForceReset = Cvar_ForceReset;
 	ri.Cvar_CheckRange = Cvar_CheckRange;
+	ri.Cvar_FindVar = Cvar_FindVar;
+	ri.Cvar_VariableIntegerValue = Cvar_VariableIntegerValue;
+	ri.Cvar_VariableValue = Cvar_VariableValue;
+	ri.Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
 	ri.Cvar_SetDescription = Cvar_SetDescription;
 
 	// cinematic stuff
@@ -4778,6 +4845,34 @@ void CL_InitRef ( void ) {
 	ri.CIN_RunCinematic = CIN_RunCinematic;
 
 	ri.CL_WriteAVIVideoFrame = CL_WriteAVIVideoFrame;
+
+	ri.IN_Init = IN_Init;
+	ri.IN_Shutdown = IN_Shutdown;
+	ri.IN_Restart = IN_Restart;
+
+	ri.ftol = Q_ftol;
+
+	ri.Sys_SetEnv = Sys_SetEnv;
+	ri.Sys_GLimpSafeInit = Sys_GLimpSafeInit;
+	ri.Sys_GLimpInit = Sys_GLimpInit;
+	ri.Sys_LowPhysicalMemory = Sys_LowPhysicalMemory;
+
+	// video recording stuff
+	ri.SplitVideo = &SplitVideo;
+
+	ri.afdMain = &afdMain;
+	ri.afdLeft = &afdLeft;
+	ri.afdRight = &afdRight;
+
+	ri.afdDepth = &afdDepth;
+	ri.afdDepthLeft = &afdDepthLeft;
+	ri.afdDepthRight = &afdDepthRight;
+
+	ri.Video_DepthBuffer = &Video_DepthBuffer;
+	ri.ExtraVideoBuffer = &ExtraVideoBuffer;
+
+	// misc
+	ri.MapNames = MapNames;
 
 	ret = GetRefAPI( REF_API_VERSION, &ri );
 
@@ -4832,8 +4927,6 @@ void CL_SetHeadModel_f( void ) {
 
 //===========================================================================================
 
-
-extern cvar_t *r_anaglyphMode;  //FIXME
 
 /*
 ===============
@@ -4899,7 +4992,7 @@ void CL_Video_f( void )
 	  }
   }
 
-  if (r_anaglyphMode->integer == 19  &&  Cvar_VariableIntegerValue("test3d")) {
+  if (Cvar_VariableIntegerValue("r_anaglyphMode") == 19  &&  Cvar_VariableIntegerValue("test3d")) {
 	  SplitVideo = qtrue;
   }
 
@@ -4939,7 +5032,7 @@ void CL_Video_f( void )
 		  Com_Error(ERR_DROP, "Couldn't allocate memory for depth buffer");
 	  }
 
-	  if (SplitVideo  &&  r_anaglyphMode->integer == 19) {
+	  if (SplitVideo  &&  Cvar_VariableIntegerValue("r_anaglyphMode") == 19) {
 		  CL_OpenAVIForWriting(&afdDepthLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qtrue, qtrue);
 		  CL_OpenAVIForWriting(&afdDepthRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qtrue, qfalse);
 	  } else {
@@ -5528,7 +5621,7 @@ void CL_Init ( void ) {
 	{
 		CL_ClearState();
 		clc.state = CA_DISCONNECTED;	// no longer CA_UNINITIALIZED
-		cls.oldGameSet = qfalse;
+		cl_oldGameSet = qfalse;
 	}
 
 	cls.realtime = 0;
@@ -5539,7 +5632,9 @@ void CL_Init ( void ) {
 	// register our variables
 	//
 	cl_noprint = Cvar_Get( "cl_noprint", "0", 0 );
+#ifdef UPDATE_SERVER_NAME
 	cl_motd = Cvar_Get ("cl_motd", "1", 0);
+#endif
 
 	cl_timeout = Cvar_Get ("cl_timeout", "200", 0);
 
@@ -5589,7 +5684,7 @@ void CL_Init ( void ) {
 	cl_showMouseRate = Cvar_Get ("cl_showmouserate", "0", 0);
 
 	cl_allowDownload = Cvar_Get ("cl_allowDownload", "0", CVAR_ARCHIVE);
-#ifdef USE_CURL
+#ifdef USE_CURL_DLOPEN
 	cl_cURLLib = Cvar_Get("cl_cURLLib", DEFAULT_CURL_LIB, CVAR_ARCHIVE);
 #endif
 
@@ -5745,7 +5840,6 @@ void CL_Init ( void ) {
 	//Cmd_AddCommand ("headmodel", CL_SetHeadModel_f );
 	Cmd_AddCommand ("video", CL_Video_f );
 	Cmd_AddCommand ("stopvideo", CL_StopVideo_f );
-	Cmd_AddCommand("minimize", GLimp_Minimize);
 	Cmd_AddCommand("rewind", CL_Rewind_f);
 	Cmd_AddCommand("fastforward", CL_FastForward_f);
 	Cmd_AddCommand("seekservertime", CL_SeekServerTime_f);
@@ -5782,7 +5876,7 @@ CL_Shutdown
 
 ===============
 */
-void CL_Shutdown(char *finalmsg, qboolean disconnect)
+void CL_Shutdown(char *finalmsg, qboolean disconnect, qboolean quit)
 {
 	static qboolean recursive = qfalse;
 
@@ -5797,6 +5891,8 @@ void CL_Shutdown(char *finalmsg, qboolean disconnect)
 		return;
 	}
 	recursive = qtrue;
+
+	noGameRestart = quit;
 
 	if(disconnect)
 		CL_Disconnect(qtrue);
@@ -5828,7 +5924,6 @@ void CL_Shutdown(char *finalmsg, qboolean disconnect)
 	//Cmd_RemoveCommand ("headmodel");
 	Cmd_RemoveCommand ("video");
 	Cmd_RemoveCommand ("stopvideo");
-	Cmd_RemoveCommand ("minimize");
 	Cmd_RemoveCommand("stall");
 
 	CL_ShutdownInput();

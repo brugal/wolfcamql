@@ -900,16 +900,14 @@ client gets disconnected with download blocks in the queue
     checksum feed never changes and pak file order is not restored to server order again. With certain pak file constellations between client/server,
     this may result in an inability to load files from paks which are not correctly detected as referenced paks.
 
----- this ----
-
-2112 skip (rend2):
+2112
     Modular rendering system. Patch by use.less01
     This might break MSVC builds. I'll take care of it later
 
-2113 skip:  Add forgotten file for last rev
-2114 skip:  Don't search system directories for renderer lib
+2113 Add forgotten file for last rev
+2114 Don't search system directories for renderer lib
 
-2115 skip check:
+2115
     - Fix already defined command warnings for minimize
     - Fix recursive CL_Shutdown warning and "command already defined" warnings when quitting while playing on a server that changed the gamedir.
 
@@ -943,87 +941,87 @@ client gets disconnected with download blocks in the queue
     - A bunch of corrected comments and print lines ("\n").
     - Some regularity of expression and some small trivial bugs.
 
-2117 skip (rend2):  Remove unneeded library dependencies with new modular renderer
+2117 Remove unneeded library dependencies with new modular renderer
 
-2118 skip check:  Make client/server cflags configurable
+2118 Make client/server cflags configurable
 
-2119 skip (rend2):  Add patch by Zack Middleton to fix building for USE_RENDERER_DLOPEN=0
+2119 Add patch by Zack Middleton to fix building for USE_RENDERER_DLOPEN=0
 
-2120 skip (rend2):  Add SDL library to renderer lib
-2121 skip:  Fix compilation on MINGW
-2122 skip:  Fix ARCH_STRING macro for mingw64
+2120 Add SDL library to renderer lib
+2121 Fix compilation on MINGW
+2122 Fix ARCH_STRING macro for mingw64
 
-2123 skip:  [16:31:51] <ZTurtleMan> Thilo: two small fixes, one for r2112 and one for r2116. http://pastebin.com/raw.php?i=h19r211Z
+2123 [16:31:51] <ZTurtleMan> Thilo: two small fixes, one for r2112 and one for r2116. http://pastebin.com/raw.php?i=h19r211Z
 
 2124 Fixed some typos in the readme.
 
 2125 skip:  Fix crash bug introduced in r2116. traceEnt does not always have to be a client, so gauntlet attacking something that is not a client will crash the game. Thanks to Ensiform for reporting
 
 2126 Remove executable property from these files
-2127 skip:  Change x86_64 to x64 for mingw.
+2127 Change x86_64 to x64 for mingw.
 
-2128 skip:  Moved various per-platform ifs/defines to be only done once for all platforms.
+2128 Moved various per-platform ifs/defines to be only done once for all platforms.
 
-2129 skip check:  Fix game restart after curl download finished
+2129 Fix game restart after curl download finished
 
-2130 skip check:  Don't do game_restart if game directory changed from "" to "baseq3" or "baseq3" to ""
+2130 Don't do game_restart if game directory changed from "" to "baseq3" or "baseq3" to ""
 
-2131 skip:
+2131
     * Fix some grammar in DLL loading
     * s/Sys_LoadQVMDll/Sys_LoadGameDll/
 
-2132 skip:  Fixed viewing sv_master[3-5] in q3_ui server browser (don't give engine fake sources).
+2132 Fixed viewing sv_master[3-5] in q3_ui server browser (don't give engine fake sources).
 
-2133 skip:  Support five master servers in Team Arena server browser.
-2134 skip check:  Fix compilation on non-x86 platforms, by Simon McVittie
+2133 Support five master servers in Team Arena server browser.
+2134 Fix compilation on non-x86 platforms, by Simon McVittie
 
-2135 skip check:  Bug 5146  - Remove last of warnings under gcc 4.6.1 for Linux, patch by q3urt.undead@gmail.com
+2135 Bug 5146  - Remove last of warnings under gcc 4.6.1 for Linux, patch by q3urt.undead@gmail.com
 
 2136 Use STDOUT_FILENO instead of 1 in con_tty.c
 2137 Don't grab mouse till UI loads.
 
 2138 Don't create clientsmp directory (which is no longer used), pointed out by DevHC.
 
-2139 skip:  Simulate line buffering and fix the overflow bug in Com_ReadFromPipe(), patch from DevHC.
+2139 Simulate line buffering and fix the overflow bug in Com_ReadFromPipe(), patch from DevHC.
 
-2140 skip:  Add hack to allow server the setting of game cvar values that are important for playerstate prediction for legacy gamecode.
+2140 Add hack to allow server the setting of game cvar values that are important for playerstate prediction for legacy gamecode.
 
-2141 skip:
+2141
     - Add x86_64 platform for MacOSX
     - Fix compilation on MacOSX gcc
 
-2142 skip:
+2142
     - More MacOSX changes to Makefile
     - Ship libSDL-1.2.0.dylib with x86_64 platform support
 
-2143 skip:  Fix warning on MacOSX
+2143 Fix warning on MacOSX
 
-2144 skip check:  Removed "Color Depth" from q3_ui system settings, it didn't control anything.
+2144 Removed "Color Depth" from q3_ui system settings, it didn't control anything.
 
 2145
     - Added r_mode -2 for using display resolution.
     - Changed q3_ui's very high video settings use display resolution.
 
-2146 skip (rend2):  Fixed copyfiles when USE_RENDERER_DLOPEN is disabled.
+2146 Fixed copyfiles when USE_RENDERER_DLOPEN is disabled.
 2147 Reverted r2145 per Timbo's suggestion.
-2148 skip:  Disabled getting motd from update server in standalone build.
+2148 Disabled getting motd from update server in standalone build.
 
-2149 skip:  Fix auto game-restart when disconnecting from a server that explicitly set fs_game to "baseq3" instead of ""
+2149 Fix auto game-restart when disconnecting from a server that explicitly set fs_game to "baseq3" instead of ""
 
-2150 skip:  Don't include libcurl-4.dll or zlib1.dll in NSIS installer, they don't seemto be used.
+2150 Don't include libcurl-4.dll or zlib1.dll in NSIS installer, they don't seemto be used.
 
-2151 skip:  Somewhat fixed NSIS installer for win64, probably still installs with x86 programs.
+2151 Somewhat fixed NSIS installer for win64, probably still installs with x86 programs.
 
 2152 Added myself to the maintainer list in the README.
 
-2153 skip:
+2153
     - Only need cl_cURLLib cvar if USE_CURL_DLOPEN is defined.
     - Try to load libcurl-4.dll on win32 (it use to be included in the NSIS installer).
 
-2154 skip:  Include extra dlls in NSIS installer if needed (renderer, curl, speex, zlib, jpeg).
+2154 Include extra dlls in NSIS installer if needed (renderer, curl, speex, zlib, jpeg).
 
-2155 skip:  put the g where the g belongs
-2156 skip:  Require gamename if not supporting legacy protocol.
+2155 put the g where the g belongs
+2156 Require gamename if not supporting legacy protocol.
 
 2157 Changed the joystick axis to key remap to start at K_JOY17 (fits better with hat_keys and K_JOY16 is used by button).
 
@@ -1041,20 +1039,20 @@ client gets disconnected with download blocks in the queue
 
 2166 Use platform's path separator in FS_Path_f (for consistent output on Windows), reported by Ensiform.
 
-2167 skip:  Use correct variable for getting buffer length, reported by Ensiform.
+2167 Use correct variable for getting buffer length, reported by Ensiform.
 
 2168 Only include libmumblelink.h if USE_MUMBLE is defined, reported by Ensiform.
 
-2169 skip:  Fix missing return instruction for fpu ftol on msvc. Thanks to Ensiform forreporting.
+2169 Fix missing return instruction for fpu ftol on msvc. Thanks to Ensiform forreporting.
 
-2170 skip:  Implement Mathias Benthrup's suggestion for x86 ASM snapvector implementation which reduces cache misses.
+2170 Implement Mathias Benthrup's suggestion for x86 ASM snapvector implementation which reduces cache misses.
 
-2171 skip:  Fix latest commit for x86 msvc
-2172 skip (iqm):  Bug 5199  - IQM joint matrices wrong, patch by James Canete
+2171 Fix latest commit for x86 msvc
+2172 Bug 5199  - IQM joint matrices wrong, patch by James Canete
 
 2173 Bug 5178  - Sound quality menu option has no effect
 
-2174 skip check:
+2174
     Added option for selecting sound system (SDL or OpenAL) and option for setting SDL sound quality to q3_ui sound menu.
     Sound settings must now be applied before they take affect (needed for sound system and SDL sound quality changes).
 
@@ -1062,20 +1060,20 @@ client gets disconnected with download blocks in the queue
 
 2176 Bug 5238  - cURL wrong use of curl_easy_setopt property, by Adrian Fuhrmann
 
-2177 skip:  Fix q3vm execution on x86/x86_64 MacOSX
+2177 Fix q3vm execution on x86/x86_64 MacOSX
 
-2178 skip:  Set default rounding mode to FE_NEAREST again. Thanks to Matthias Bentrup for providing some explanations.
+2178 Set default rounding mode to FE_NEAREST again. Thanks to Matthias Bentrup for providing some explanations.
 
 2179 Throw error when making calls to empty VM
-2180 skip check:  Add some checks when reloading QVMs via VM_Restart()
+2180 Add some checks when reloading QVMs via VM_Restart()
 
-2181 skip check:
+2181
     Allow VM_Restart to load unpure qagame.qvm so that local server won't crash after map_restart if server operator has qagame.qvm residing outside pak file (#5196)
     Thanks to "rg3" for providing a shell account
 
-2182 skip:  Allow interpreted VM on pure servers
-2183 skip:  Fix a few string literals
-2184 skip:  BitBlt Patch #0000 (#5176)
+2182 Allow interpreted VM on pure servers
+2183 Fix a few string literals
+2184 BitBlt Patch #0000 (#5176)
 
 2185 Force unload of running VMs when quitting through signal handler
 
@@ -1085,35 +1083,35 @@ client gets disconnected with download blocks in the queue
     [18:58:15] <Thilo> Ensiform: it doesnt break anything?
     [18:59:20] <Ensiform> nah
 
-2187 skip:  * clang support
-2188 skip:  * Fix various warnings with GCC and clang
+2187 * clang support
+2188 * Fix various warnings with GCC and clang
 
-2189 skip:  * (bug #5283) Changes to the Makefile to make building standalone games easier (JBravo)
+2189 * (bug #5283) Changes to the Makefile to make building standalone games easier (JBravo)
 
-2190 done:  * I zigged when I should have zagged
-2191 skip:  * More Makefile configuration (ZTurtleMan)
+2190 * I zigged when I should have zagged
+2191 * More Makefile configuration (ZTurtleMan)
 
-2192 skip:  Fixed showing number of qvm jump table targets (r2180 caused it to show 0 on alloc).
+2192 Fixed showing number of qvm jump table targets (r2180 caused it to show 0 on alloc).
 
-2193 seems done:  My bad. Revert the FPU control word to old value instead of the new one of course. Thanks to marky for reporting this
+2193 My bad. Revert the FPU control word to old value instead of the new one of course. Thanks to marky for reporting this
 
 2194 Client no longer tries to run UI_SHUTDOWN on ui vms with an unsupported API version.
 
-2195 skip:  Print developer message when renderer runs out of free entities.
+2195 Print developer message when renderer runs out of free entities.
 
 2196 Fixed usage of various entity defines.
 2197 Added missing newlines to game dedicated chat messages.
 
-2198 skip:  Add color combination green-magenta for anaglyph
+2198 Add color combination green-magenta for anaglyph
 
-2199 skip maybe:  Disable blood on HUD when com_blood is 0.
+2199 Disable blood on HUD when com_blood is 0.
 
-2200 skip:
+2200
     I made an awful variant of the old make script, it removes everything universal. Just to get a quick .app build again.
 
     Don't use this for anything.
 
-2201 skip:  Fixed that, still do not run this. I'm not sure why but the video mode handling doesn't work today in Mac OS X 10.7 and recovering is difficult.
+2201 Fixed that, still do not run this. I'm not sure why but the video mode handling doesn't work today in Mac OS X 10.7 and recovering is difficult.
 
 2202 Removed duplicate setting of contents for trigger_hurt.
 2203 Fix net_restart when networking was temporarily disabled
@@ -1130,11 +1128,11 @@ client gets disconnected with download blocks in the queue
 
 2210 Reverted r2209
 
-2211 skip:  Fixed typo in Makefiles copyfiles directory path check.
+2211 Fixed typo in Makefiles copyfiles directory path check.
 
 2212 The mailing list sub e-mail address has been wrong for a depressingly long amount of time.
 
-2213 skip:  Fix build for new modular renderer on MacOSX
+2213 Fix build for new modular renderer on MacOSX
 
 2214
     bugzilla bug #5273
@@ -1144,11 +1142,11 @@ client gets disconnected with download blocks in the queue
 
 2215 Fixed UI to use MAX_QPATH for skin filename buffer length.
 
-2216 skip:  Changed three filename buffers to be MAX_QPATH (not MAX_QPATH*2), filename lengths are limited to MAX_QPATH by engine and elsewhere in game logic.
+2216 Changed three filename buffers to be MAX_QPATH (not MAX_QPATH*2), filename lengths are limited to MAX_QPATH by engine and elsewhere in game logic.
 
-2217 skip:  Add the new ioquake3 master server as standard for sv_master2
+2217 Add the new ioquake3 master server as standard for sv_master2
 
-2218 skip:  Unix clients can now enter commands from tty console. Patch by Rambetter with some edits by me. (#4799)
+2218 Unix clients can now enter commands from tty console. Patch by Rambetter with some edits by me. (#4799)
 
 2219
     Patches by symlink.
@@ -1156,14 +1154,14 @@ client gets disconnected with download blocks in the queue
     #5313 - EF_CONNECTION set on wrong eFlags
     #5314 - snc drawn in nirvana instead at lagometer
 
-2220 skip:  fix mingw64 installer
+2220 fix mingw64 installer
 
 2221 Allow analog joystick up axis to be remapped too.
 2222 Added new joystick cvars to README.
 2223 Support up to 16 joystick axes, select which to use with j_*_axis cvars.
 2224 Added range checks to j_*_axis cvars.
 
-2225 skip:
+2225
     - Added support for enabling FreeType Support (make USE_FREETYPE=1).
     - Fixed compiling tr_font.c for dynamic renderer.
 
@@ -1173,32 +1171,32 @@ client gets disconnected with download blocks in the queue
 
 2228 Make sure font glyph shader names are null-terminated.
 2229 Removed set but not used variable 'satLevels' from tr_font.c.
-2230 skip:  Use tabs in tr_font.c
-2231 skip:  Fixed up warning messages in tr_font.c
+2230 Use tabs in tr_font.c
+2231 Fixed up warning messages in tr_font.c
 
-2232 skip check:  Use FreeType include macros instead of filenames directly (per the API docs), patch by Radegast.
+2232 Use FreeType include macros instead of filenames directly (per the API docs), patch by Radegast.
 
-2233 skip (rend2):  #5484 - Remove unneeded tr_local.h include from sdl_input.c. Patch by Harley Laue.
+2233 #5484 - Remove unneeded tr_local.h include from sdl_input.c. Patch by Harley Laue.
 
-2234 skip:  #5485 - Use Sys_LoadDll to search in the local directory for the fallback default renderer. Patch by Harley Laue.
+2234 #5485 - Use Sys_LoadDll to search in the local directory for the fallback default renderer. Patch by Harley Laue.
 
 2235 #5439 - Potential memory leak in host name resolution. (Eugene C.)
 2236 #5453 - Tell command for server.
 
-2237 skip check:  Fixed some issues found using clang static analyzer.
-2238 skip check:  Moved dpi variable inside BUILD_FREETYPE ifdef.
-2239 done:  updating mac SDL stuff to 1.2.15
+2237 Fixed some issues found using clang static analyzer.
+2238 Moved dpi variable inside BUILD_FREETYPE ifdef.
+2239 updating mac SDL stuff to 1.2.15
 
-2240 skip check:
+2240
     updating SDL includes to 1.2.15
     Listen to this if this doesn't work out properly:
     http://timedoctor.org/fun/swf/starwars/tauntaun-soundboard.swf
 
-2241 skip:  Minor hack to SDL headers for building on Linux.
-2242 skip check:  specifying gcc to see if that fixes the mac build...
-2243 maybe skip:  Missing a - in the CC line
+2241 Minor hack to SDL headers for building on Linux.
+2242 specifying gcc to see if that fixes the mac build...
+2243 Missing a - in the CC line
 
-2244 maybe skip:  removing the smp stuff from the mac build script.
+2244 removing the smp stuff from the mac build script.
 
 2245 Fix (#5312) introduced by rev 2103
 
@@ -1208,14 +1206,14 @@ client gets disconnected with download blocks in the queue
 
 2248 #5503 - SIGSEGV with r_vertexlight 1 in missionpack (patch by Serge Belyshev).
 
-2249 skip check:  Don't use local SDL headers on Linux (need system sdl-config and SDL library anyway).
+2249 Don't use local SDL headers on Linux (need system sdl-config and SDL library anyway).
 
-2250 skip check:  gcc 4.0 specification on mac build script
+2250 gcc 4.0 specification on mac build script
 
 2251 In CheckTeamLeader, make sure to only set one client as team leader. Reported by Tobias Kuehnhammer.
 
 2252 Removed unnessicary "!!".
-2253 skip (not applicable):  CVE-2012-3345
+2253 CVE-2012-3345
 2254 Cleaned up game server command usage messages.
 2255 done:  Call sound files 'audio' not 'wav' in debug messages.
 2256 fix wrong socket ID comparison, from /dev/humancontroller
@@ -1331,9 +1329,9 @@ client gets disconnected with download blocks in the queue
 
     From /dev/humancontroller.
 
-2286 skip:  #5672 - Fixed incorrect type usage in NET_Sleep(), patch from Özkan Sezer.
+2286 #5672 - Fixed incorrect type usage in NET_Sleep(), patch from Özkan Sezer.
 
-2287 skip:
+2287
     - Have NET_Sleep work with Windows' INVALID_SOCKET again...
     - Use SOCKET_ERROR in NET_Sleep.
 
@@ -1372,24 +1370,24 @@ client gets disconnected with download blocks in the queue
 
 2299 Fixed G_LogPrintf format warning on 64 bit systems added in r2294.
 
-2300 skip (not implemented):  * (bug #5709) Fix crash when invoked with --version
+2300 * (bug #5709) Fix crash when invoked with --version
 
-2301 skip (not implemented):  Fix windows as well
-2302 skip (not implemented):  * Fix warning
-2303 skip:  switch mac to the framework SDL...
-2304 skip (not implemented):  Fix this for real now.
+2301 Fix windows as well
+2302 * Fix warning
+2303 switch mac to the framework SDL...
+2304 Fix this for real now.
 
-2305 skip (vm):  Move argument passing from VM to engine to global variables which allows to get rid of lots of OS specific stuff and also fixes errors that happens when compilers add lots of boilerplate to the DoSyscall() function
+2305 Move argument passing from VM to engine to global variables which allows to get rid of lots of OS specific stuff and also fixes errors that happens when compilers add lots of boilerplate to the DoSyscall() function
 
-2306 skip (vm):  Oops, still need this
+2306 Oops, still need this
 2307 Don't replay to status OOB requests in Team Arena single player.
 2308 Added MISSIONPACK ifdef around GT_1FCTF code.
 2309 More MISSIONPACK ifdeffery.
 2310 Removed a check that was made unnessicary by r1644.
 
-2311 skip (already have):  Added r_mode -2, uses desktop resolution. Bug #5408. Patch by Andrei Drexler and myself.
+2311 (already have):  Added r_mode -2, uses desktop resolution. Bug #5408. Patch by Andrei Drexler and myself.
 
-2312 skip:  Use correct fallback height and width for r_mode -2.
+2312 Use correct fallback height and width for r_mode -2.
 2313 Remove a redundant code statement.
 
 2314
@@ -1419,7 +1417,7 @@ client gets disconnected with download blocks in the queue
 
 2326 When in third person, don't play player's sounds as full volume in Base sound system. OpenAL already does this. (Related to bug 5741.)
 
-2327 skip (have, no) (done?:  changing ENTITY_WORLD constant):
+2327
 
     From /dev/humancontroller:
     really fix the confusion with game entity and refentity numbers
@@ -1475,7 +1473,7 @@ client gets disconnected with download blocks in the queue
     ENTITYNUM_WORLD is a game entity constant, and has nothing to do with refentities. a new REFENTITYNUM_WORLD constant should be added to denote the special number for the world, and that constant should be used in the renderer code in place of ENTITYNUM_WORLD. so define such a constant, and let it be equal to MAX_ENTITIES, which is 1023.
 
 
-2328 skip (have):
+2328
     From /dev/humancontroller:
     to further reduce confusion, rename constants like MAX_ENTITIES to MAX_REFENTITIES
 
@@ -1494,27 +1492,27 @@ client gets disconnected with download blocks in the queue
 
 2338 skip (rend2):  Fix FBO_*() usage when framebuffers are unavailable or undesired.
 
-2339 skip:  Remove ARRAY_SIZE, and use ARRAY_LEN instead.
+2339 skip (rend2):  Remove ARRAY_SIZE, and use ARRAY_LEN instead.
 
-2340 skip:
+2340 no (removed in later patch:  51df89ab132b8e05d9854df507c73e54fbd2884b)
     From /dev/humancontroller:
     fix the SMP functionality not being utilized (as of the import of Rend2)
 
-2341 skip:
+2341 skip (rend2):
     From /dev/humancontroller:
     when hard-linking renderers, put the old renderer (not the new one) into the "ioquake3" executable, and use a distinguished "ioquake3_rend2" executable for the new renderer
     (Fixes bug #5789.)
 
 2342 Remove initializing "sv_mapname" cvar in game. It's set to "" and never used.
 
-2343 skip:
+2343 skip (rend2):
     Fix some non-ASCII characters.
     Patch originally by /dev/humancontroller, modified by me.
 
-2344 skip (rend2):  Show reason non-default renderer failed to load.
+2344 Show reason non-default renderer failed to load.
 2345 skip (rend2):  Clean up getting pshadowMap in Rend2's R_DecomposeSort().
 
-2346 skip check:  Fix restoring old fs_game upon leaving a server. Patch by Ensiform.
+2346 Fix restoring old fs_game upon leaving a server. Patch by Ensiform.
 
 2347 Don't draw cursor during Team Arena's loading screen.
 
@@ -1594,7 +1592,7 @@ client gets disconnected with download blocks in the queue
 
 2382 skip (rend2):  Only declare var_SampleToView in lightall shader when it is actually used.
 
-2383 skip check:  Fix a couple files not ending with a newline.
+2383 skip (rend2):  Fix a couple files not ending with a newline.
 
 
 2384 Fix clients being able to reset their player state and respawn using donedl.
@@ -1613,10 +1611,10 @@ client gets disconnected with download blocks in the queue
     Save all arguments from connect for reconnect command.
     Remove unnecessary localhost check from reconnect command.
 
-2390  skip:  Support r_srgb even without hardware support.  Also tweak default autoexposure/tonemap settings to look good on both r_srgb 0 and 1.
+2390  skip (rend2):  Support r_srgb even without hardware support.  Also tweak default autoexposure/tonemap settings to look good on both r_srgb 0 and 1.
 
-2391  skip:  Missed a file in the previous commit.
-2392  skip:  Changed the MacOS-X build system to make UB's containing i386 and x86_64 arches and made make-macosx.sh not build UB's but only standard binaries
+2391  skip (rend2):  Missed a file in the previous commit.
+2392  Changed the MacOS-X build system to make UB's containing i386 and x86_64 arches and made make-macosx.sh not build UB's but only standard binaries
 
 2393
     - Fix spectator client being switched from follow to free after map_restart if following a client with a higher client number.
@@ -1631,13 +1629,13 @@ client gets disconnected with download blocks in the queue
 
 2395 Fix bot skill format so it doesn't always have a space at the beginning of it.
 
-2396 skip:  More fixes to the macosx buildsystem.  This removes the SDL Framework and makes use of a SDL library that is position independant.  This also brings back PPC builds into the UB and also as a standa alone build choice.
+2396 More fixes to the macosx buildsystem.  This removes the SDL Framework and makes use of a SDL library that is position independant.  This also brings back PPC builds into the UB and also as a standa alone build choice.
 
-2397 skip:  mv .svnignore .gitignore
+2397 mv .svnignore .gitignore
 
-2398 skip:  Have make-macosx.sh require the user to specify which architecture she/he wants to build for and suggest building UB's if the user is unaware of what architectures are
+2398 Have make-macosx.sh require the user to specify which architecture she/he wants to build for and suggest building UB's if the user is unaware of what architectures are
 
-2399 skip:  Lets list all the valid options.
+2399 Lets list all the valid options.
 
 
 ----------------------------------------------------------------------------
@@ -1649,21 +1647,21 @@ client gets disconnected with download blocks in the queue
 
 2013-01-05-01 Fix whitespace
 2013-01-05-02 Fix dist target and comment refering to svn
-2013-01-05-03 some:  Assorted whitespace fixes
+2013-01-05-03 Assorted whitespace fixes
 
 2013-01-06-01 Increase various arbitrary limits - Bug #5463
-2013-01-06-02 skip:  Fixed a small bug in my new version of this script.
+2013-01-06-02 Fixed a small bug in my new version of this script.
 
-2013-01-06-03 skip:
+2013-01-06-03
     Merge pull request #1 from richard-allen/master
 
     Fixing the make-macosx.sh script up a bit
 
-2013-01-06-04 skip:  Fixed a typo in a comment
+2013-01-06-04 Fixed a typo in a comment
 
-2013-01-07-01 skip:  #5818 - Modular renderer and Rend2 support for MSVC.
+2013-01-07-01 skip (rend2):  #5818 - Modular renderer and Rend2 support for MSVC.
 
-2013-01-07-02 skip:  #5863 - Use proper texture coordinates for alpha tested materials when doing depth prepass.
+2013-01-07-02 skip (rend2):  #5863 - Use proper texture coordinates for alpha tested materials when doing depth prepass.
 
 2013-01-08-01
     Colorize text on win32 console
@@ -1680,7 +1678,7 @@ client gets disconnected with download blocks in the queue
 
     "hi ^1guys" use to be shown as "hi guysys" in the console backlog.
 
-2013-01-09-02 skip:  Don't look for colors past win32 input line length
+2013-01-09-02 Don't look for colors past win32 input line length
 
 2013-01-09-03 skip (rend2):  #5866: Fix surface culling through portals, and use the correct number of frustum planes.
 
@@ -1689,7 +1687,7 @@ client gets disconnected with download blocks in the queue
 
     Snapvector was converting floats to 16 bit integers instead of 32 bit integers.
 
-2013-01-09-05 skip (rend2):  Merge branch 'master' of https://github.com/ioquake/ioq3
+2013-01-09-05 Merge branch 'master' of https://github.com/ioquake/ioq3
 
 2013-01-10-01
     Fix win32 input left on buffer and overwritten
@@ -1712,25 +1710,27 @@ client gets disconnected with download blocks in the queue
     in the case where file is NULL, we were returning the wrong value when
     the file didn't exist.
 
-2013-01-13-02 skip:
+2013-01-13-02
     Fix screwed up whitespace in files.c
 
     Apologies to anyone merging this :(
 
 2013-01-13-03 Fix error message in BG_EvaluateTrajectoryDelta
 
-2013-01-14-01 done:  Fix error message in BG_EvaluateTrajectory
+2013-01-14-01 Fix error message in BG_EvaluateTrajectory
 
-2013-01-16-01 skip:
+2013-01-16-01
     Add togglemenu command
 
     Allow togglemenu to be run in binds while in menu or message mode.
 
-2013-01-16-02 skip:  Add togglemenu to q3_ui controls menu
-2013-01-16-03 skip:  Run toggleconsole in binds while in menu or message mode
-2013-01-16-04 skip:  Fix typo in README
+2013-01-16-02 Add togglemenu to q3_ui controls menu
+2013-01-16-03 Run toggleconsole in binds while in menu or message mode
+2013-01-16-04 Fix typo in README
 
-2013-01-17-01 not needed:  Add vim stuff to .gitignore
+2013-01-17-01 Add vim stuff to .gitignore
+
+---- this ----
 
 2013-01-17-02 skip:  Use SDL 2 instead of SDL 1.2
 2013-01-17-03 skip:  Make the mousewheel work

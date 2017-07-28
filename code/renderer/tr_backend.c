@@ -64,7 +64,7 @@ void GL_Bind( image_t *image ) {
 		}
 		glState.currenttextures[glState.currenttmu] = texnum;
 		qglBindTexture (GL_TEXTURE_2D, texnum);
-		//Com_Printf("GL_Bind %d\n", texnum);
+		//ri.Printf(PRINT_ALL, "GL_Bind %d\n", texnum);
 	}
 }
 
@@ -121,14 +121,14 @@ void GL_BindMultitexture( image_t *image0, GLuint env0, image_t *image1, GLuint 
 		image1->frameUsed = tr.frameCount;
 		glState.currenttextures[1] = texnum1;
 		qglBindTexture( GL_TEXTURE_2D, texnum1 );
-		//Com_Printf("GL_BindMulti1 %d\n", texnum1);
+		//ri.Printf(PRINT_ALL, "GL_BindMulti1 %d\n", texnum1);
 	}
 	if ( glState.currenttextures[0] != texnum0 ) {
 		GL_SelectTextureUnit( 0 );
 		image0->frameUsed = tr.frameCount;
 		glState.currenttextures[0] = texnum0;
 		qglBindTexture( GL_TEXTURE_2D, texnum0 );
-		//Com_Printf("GL_BindMulti0 %d\n", texnum0);
+		//ri.Printf(PRINT_ALL, "GL_BindMulti0 %d\n", texnum0);
 	}
 }
 
@@ -581,7 +581,7 @@ static void RE_DrawPathLines (void)
 		return;
 	}
 
-	pcvar = Cvar_VariableIntegerValue("cg_drawCameraPath");
+	pcvar = ri.Cvar_VariableIntegerValue("cg_drawCameraPath");
 	if (!pcvar) {
 		return;
 	}
@@ -1026,7 +1026,7 @@ static void RB_PostProcessing (void)
 	//GLenum target;
 	//int width, height;
 
-	//Com_Printf("count %d\n", tr.drawSurfsCount);
+	//ri.Printf(PRINT_ALL, "count %d\n", tr.drawSurfsCount);
 	if (tr.drawSurfsCount != 0) {
 		//return;
 	}
@@ -1260,7 +1260,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 #if 0
 		if (backEnd.refdef.entities[entityNum].ePtr == NULL) {
-			Com_Printf("^1backend ent %d ePtr is NULL\n", entityNum);
+			ri.Printf(PRINT_ALL, "^1backend ent %d ePtr is NULL\n", entityNum);
 		}
 #endif
 
@@ -1271,7 +1271,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			depthRange = isCrosshair = qfalse;
 
 			if ( entityNum != REFENTITYNUM_WORLD  &&  backEnd.refdef.entities[entityNum].ePtr == NULL) {
-				Com_Printf("^1%s refent ptr == NULL for entity %d\n", __FUNCTION__, entityNum);
+				ri.Printf(PRINT_ALL, "^1%s refent ptr == NULL for entity %d\n", __FUNCTION__, entityNum);
 			}
 
 
@@ -1298,7 +1298,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 					{
 						shader_t *shader;
 						shader = R_GetShaderByHandle(backEnd.currentEntity->e.customShader);
-						//Com_Printf("%s has depthhack\n", shader->name);
+						//ri.Printf(PRINT_ALL, "%s has depthhack\n", shader->name);
 					}
 #endif
 					if(backEnd.currentEntity->ePtr->renderfx & RF_CROSSHAIR)
@@ -1354,7 +1354,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 						qglMatrixMode(GL_MODELVIEW);
 						qglDepthRange (0, 0.3);
 						//qglDepthRange (0, Cvar_VariableValue("depth"));
-						//Com_Printf("set depth %f\n", Cvar_VariableValue("depth"));
+						//ri.Printf(PRINT_ALL, "set depth %f\n", Cvar_VariableValue("depth"));
 						//qglDepthRange (0, 0.001);
 					}
 					//qglDisable(GL_DEPTH_TEST);
@@ -1801,7 +1801,7 @@ const void *RB_ColorMask(const void *data)
 	const colorMaskCommand_t *cmd = data;
 
 	qglColorMask(cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
-	//Com_Printf("RB_ColorMask %d %d %d %d\n", cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
+	//ri.Printf(PRINT_ALL, "RB_ColorMask %d %d %d %d\n", cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
 	return (const void *)(cmd + 1);
 }
 
@@ -1974,31 +1974,31 @@ const void	*RB_SwapBuffers (const void *data, qboolean endFrame)
 		if (status == GL_FRAMEBUFFER_COMPLETE_EXT) {
 			//tr.usingFrameBufferObject = qtrue;
 		} else {
-			Com_Printf("^1%s framebuffer error: 0x%x\n", __FUNCTION__, status);
+			ri.Printf(PRINT_ALL, "^1%s framebuffer error: 0x%x\n", __FUNCTION__, status);
 			switch(status) {
 			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-				Com_Printf("^1attachment\n");
+				ri.Printf(PRINT_ALL, "^1attachment\n");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-				Com_Printf("^1missing attachment\n");
+				ri.Printf(PRINT_ALL, "^1missing attachment\n");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
-				Com_Printf("^1dimensions\n");
+				ri.Printf(PRINT_ALL, "^1dimensions\n");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-				Com_Printf("^1formats\n");
+				ri.Printf(PRINT_ALL, "^1formats\n");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-				Com_Printf("^1draw buffer\n");
+				ri.Printf(PRINT_ALL, "^1draw buffer\n");
 				break;
 			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-				Com_Printf("^1read buffer\n");
+				ri.Printf(PRINT_ALL, "^1read buffer\n");
 				break;
 			case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-				Com_Printf("^1unsupported\n");
+				ri.Printf(PRINT_ALL, "^1unsupported\n");
 				break;
 			default:
-				Com_Printf("^1unknown error\n");
+				ri.Printf(PRINT_ALL, "^1unknown error\n");
 			}
 		}
 		}
@@ -2061,10 +2061,10 @@ static const void *RB_SkipRenderCommand (const void *data)
 			data += sizeof(clearDepthCommand_t);
 			break;
 		case RC_END_OF_LIST:
-			Com_Printf("^1RB_SkipRenderCommand():  called with RC_END_OF_LIST\n");
+			ri.Printf(PRINT_ALL, "^1RB_SkipRenderCommand():  called with RC_END_OF_LIST\n");
 			break;
 		default:
-			Com_Printf("^1RB_SkipRenderCommand():  unknown render command: %d\n", *(const int *)data);
+			ri.Printf(PRINT_ALL, "^1RB_SkipRenderCommand():  unknown render command: %d\n", *(const int *)data);
 			break;
 	}
 
@@ -2080,11 +2080,8 @@ smp extensions, or asynchronously by another thread.
 ====================
 */
 
-//byte *ExtraVideoBuffer1 = NULL;
-extern qboolean SplitVideo;
-
 #if 0
-  #define dprintf(format, varargs...) Com_Printf(format, ## varargs)
+#define dprintf(format, varargs...) ri.Printf(PRINT_ALL, format, ## varargs)
 #else
   #define dprintf(format, varargs...)
 #endif
@@ -2144,14 +2141,14 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 		case RC_CLEARDEPTH:
 			dprintf("r1 cleardepth\n");
-			//if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  videoCommand  &&  SplitVideo) {
+			//if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  videoCommand  &&  *ri.SplitVideo) {
 			//if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo) {
-			if (r_anaglyphMode->integer == 19  &&  videoCommand  &&  SplitVideo) {
+			if (r_anaglyphMode->integer == 19  &&  videoCommand  &&  *ri.SplitVideo) {
 				videoFrameCommand_t cmd;
 
-				//Com_Printf("yes\n");
+				//ri.Printf(PRINT_ALL, "yes\n");
 				if (!videoCommand) {
-					Com_Printf("^3wtf.......................\n");
+					ri.Printf(PRINT_ALL, "^3wtf.......................\n");
 				}
 
 				if ( tess.numIndexes ) {
@@ -2159,7 +2156,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 				}
 
 				//qglFinish();
-				//Com_Printf("%p\n", ExtraVideoBuffer);
+				//ri.Printf(PRINT_ALL, "%p\n", ExtraVideoBuffer);
 				//if (!ExtraVideoBuffer1) {
 				if (!shotDataLeft.workAlloc) {
 					//ExtraVideoBuffer1 = malloc(glConfig.vidHeight * glConfig.vidWidth * 4 + 18);
@@ -2167,7 +2164,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 					//if (!ExtraVideoBuffer1) {
 					//	Com_Error(ERR_DROP, "couldn't allocate extra video buffer\n");
 					//}
-					//Com_Printf("^5%p--------------  %d x %d\n", ExtraVideoBuffer1, glConfig.vidWidth, glConfig.vidHeight);
+					//ri.Printf(PRINT_ALL, "^5%p--------------  %d x %d\n", ExtraVideoBuffer1, glConfig.vidWidth, glConfig.vidHeight);
 					R_MME_InitMemory(qfalse, &shotDataLeft);
 				}
 #if 0
@@ -2192,7 +2189,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 						//dprintf("render1 hud commands stop ------------------------\n");
 						goto renderpass1huddone;
 					default:
-						//Com_Printf("^1RB_ExecuteRenderCommands():  unknown render command: %d\n", *(const int *)data2);
+						//ri.Printf(PRINT_ALL, "^1RB_ExecuteRenderCommands():  unknown render command: %d\n", *(const int *)data2);
 						data2 = RB_SkipRenderCommand(data2);
 						break;
 					}
@@ -2204,17 +2201,17 @@ void RB_ExecuteRenderCommands( const void *data ) {
 				RB_SwapBuffers(NULL, qfalse);
 
 				//FIXME hack
-				cmd.width = afdLeft.width;
-				cmd.height = afdLeft.height;
-				cmd.captureBuffer = afdLeft.cBuffer;
-				cmd.encodeBuffer = afdLeft.eBuffer;
-				cmd.motionJpeg = (afdLeft.codec == CODEC_MJPEG);
-				cmd.avi = afdLeft.avi;
-				cmd.tga = afdLeft.tga;
-				cmd.jpg = afdLeft.jpg;
-				cmd.png = afdLeft.png;
-				cmd.picCount = afdMain.picCount - 1;
-				Q_strncpyz(cmd.givenFileName, afdMain.givenFileName, MAX_QPATH);
+				cmd.width = ri.afdLeft->width;
+				cmd.height = ri.afdLeft->height;
+				cmd.captureBuffer = ri.afdLeft->cBuffer;
+				cmd.encodeBuffer = ri.afdLeft->eBuffer;
+				cmd.motionJpeg = (ri.afdLeft->codec == CODEC_MJPEG);
+				cmd.avi = ri.afdLeft->avi;
+				cmd.tga = ri.afdLeft->tga;
+				cmd.jpg = ri.afdLeft->jpg;
+				cmd.png = ri.afdLeft->png;
+				cmd.picCount = ri.afdMain->picCount - 1;
+				Q_strncpyz(cmd.givenFileName, ri.afdMain->givenFileName, MAX_QPATH);
 				RB_TakeVideoFrameCmd(&cmd, &shotDataLeft);
 			}
 			data = RB_ClearDepth(data);
@@ -2246,7 +2243,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			rgba[1] = cmd->rgba[1];
 			rgba[2] = cmd->rgba[2];
 			rgba[3] = cmd->rgba[3];
-			//Com_Printf("mask %d %d %d %d\n", rgba[0], rgba[1], rgba[2], rgba[3]);
+			//ri.Printf(PRINT_ALL, "mask %d %d %d %d\n", rgba[0], rgba[1], rgba[2], rgba[3]);
 			data = RB_ColorMask(data);
 			colorMaskSet = qtrue;
 			break;
@@ -2273,8 +2270,8 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			if (depthWasCleared) {
 				RB_PostProcessing();
 			} else {
-				//Com_Printf("skipping\n");
-				Com_Printf("3d 1stpass done\n");
+				//ri.Printf(PRINT_ALL, "skipping\n");
+				ri.Printf(PRINT_ALL, "3d 1stpass done\n");
 			}
 		} else {
 			RB_PostProcessing();
@@ -2341,7 +2338,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			//backEnd.pc.msec = t2 - t1;
 			goto secondpassdone;
 		default:
-			Com_Printf("^1RB_ExecuteRenderCommands():  unknown render command: %d\n", *(const int *)data);
+			ri.Printf(PRINT_ALL, "^1RB_ExecuteRenderCommands():  unknown render command: %d\n", *(const int *)data);
 			data = RB_SkipRenderCommand(data);
 			break;
 		}
@@ -2382,7 +2379,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	}
 #endif
 
-	//Com_Printf("done.\n");
+	//ri.Printf(PRINT_ALL, "done.\n");
 	return;
 }
 

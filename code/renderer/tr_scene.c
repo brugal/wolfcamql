@@ -207,14 +207,14 @@ RE_AddRefEntityToScene
 */
 void RE_AddRefEntityToScene( const refEntity_t *ent ) {
 
-	//Com_Printf("* ^3ent: %d -> %p\n", r_numentities, ent);
+	//ri.Printf(PRINT_ALL, "* ^3ent: %d -> %p\n", r_numentities, ent);
 
 	if ( !tr.registered ) {
 		return;
 	}
 
 	if ( r_numentities >= MAX_REFENTITIES ) {
-		//Com_Printf("RE_AddRefEntityToScene() r_numentities >= MAX_REFENTITIES  %d >= %d\n", r_numentities, MAX_REFENTITIES);
+		//ri.Printf(PRINT_ALL, "RE_AddRefEntityToScene() r_numentities >= MAX_REFENTITIES  %d >= %d\n", r_numentities, MAX_REFENTITIES);
 		return;
 	}
 
@@ -222,7 +222,7 @@ void RE_AddRefEntityToScene( const refEntity_t *ent ) {
 		static qboolean firstTime = qtrue;
 		if (firstTime) {
 			firstTime = qfalse;
-			Com_DPrintf(S_COLOR_YELLOW "WARNING: RE_AddRefEntityToScene passed a refEntity which has an origin with a NaN component\n");
+			ri.Printf(PRINT_DEVELOPER, S_COLOR_YELLOW "WARNING: RE_AddRefEntityToScene passed a refEntity which has an origin with a NaN component\n");
 		}
 		return;
 	}
@@ -244,14 +244,14 @@ void RE_AddRefEntityPtrToScene (refEntity_t *ent)
 	//RE_AddRefEntityToScene(ent);
 	//return;
 
-	//Com_Printf("* ^3ptr: %d -> %p\n", r_numentities, ent);
+	//ri.Printf(PRINT_ALL, "* ^3ptr: %d -> %p\n", r_numentities, ent);
 
 	if ( !tr.registered ) {
 		return;
 	}
 
 	if ( r_numentities >= MAX_REFENTITIES ) {
-		//Com_Printf("%s() r_numentities >= MAX_REFENTITIES  %d >= %d\n", __FUNCTION__, r_numentities, MAX_REFENTITIES);
+		//ri.Printf(PRINT_ALL, "%s() r_numentities >= MAX_REFENTITIES  %d >= %d\n", __FUNCTION__, r_numentities, MAX_REFENTITIES);
 		return;
 	}
 
@@ -259,7 +259,7 @@ void RE_AddRefEntityPtrToScene (refEntity_t *ent)
 		static qboolean firstTime = qtrue;
 		if (firstTime) {
 			firstTime = qfalse;
-			Com_DPrintf(S_COLOR_YELLOW "WARNING: %s passed a refEntity which has an origin with a NaN component\n", __FUNCTION__);
+			ri.Printf(PRINT_DEVELOPER, S_COLOR_YELLOW "WARNING: %s passed a refEntity which has an origin with a NaN component\n", __FUNCTION__);
 		}
 		return;
 	}
@@ -270,7 +270,7 @@ void RE_AddRefEntityPtrToScene (refEntity_t *ent)
 	//backEndData[tr.smpFrame]->entities[r_numentities].ent = *ent;
 
 	backEndData[tr.smpFrame]->entities[r_numentities].ePtr = ent;
-	//Com_Printf("%p\n", ent);
+	//ri.Printf(PRINT_ALL, "%p\n", ent);
 
 	//backEndData[tr.smpFrame]->entities[r_numentities].ePtr = &backEndData[tr.smpFrame]->entities[r_numentities].ent;
 

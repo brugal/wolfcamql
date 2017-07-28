@@ -189,10 +189,15 @@ int Cvar_Flags(const char *var_name)
 {
 	cvar_t *var;
 	
-	if(! (var = Cvar_FindVar(var_name)) )
+	if(!(var = Cvar_FindVar(var_name)))
 		return CVAR_NONEXISTENT;
 	else
-		return var->flags;
+	{
+		if(var->modified)
+			return var->flags | CVAR_MODIFIED;
+		else
+			return var->flags;
+	}
 }
 
 /*
@@ -667,7 +672,7 @@ void Cvar_SetSafe( const char *var_name, const char *value )
 {
 	int flags = Cvar_Flags( var_name );
 
-	if( flags != CVAR_NONEXISTENT && flags & CVAR_PROTECTED )
+	if((flags != CVAR_NONEXISTENT) && (flags & CVAR_PROTECTED))
 	{
 		if( value )
 			Com_Error( ERR_DROP, "Restricted source tried to set "

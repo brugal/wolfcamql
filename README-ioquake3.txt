@@ -83,10 +83,18 @@ Makefile.local:
   BUILD_SERVER       - build the 'ioq3ded' server binary
   BUILD_CLIENT       - build the 'ioquake3' client binary
   BUILD_CLIENT_SMP   - build the 'ioquake3-smp' client binary
+  BUILD_BASEGAME     - build the 'baseq3' binaries
+  BUILD_MISSIONPACK  - build the 'missionpack' binaries
   BUILD_GAME_SO      - build the game shared libraries
   BUILD_GAME_QVM     - build the game qvms
   BUILD_STANDALONE   - build binaries suited for stand-alone games
+  SERVERBIN          - rename 'ioq3ded' server binary
+  CLIENTBIN          - rename 'ioquake3' client binary
   USE_YACC           - use yacc to update code/tools/lcc/lburg/gram.c
+  BASEGAME           - rename 'baseq3'
+  BASEGAME_CFLAGS    - custom CFLAGS for basegame
+  MISSIONPACK        - rename 'missionpack'
+  MISSIONPACK_CFLAGS - custom CFLAGS for missionpack (default '-DMISSIONPACK')
   USE_OPENAL         - use OpenAL where available
   USE_OPENAL_DLOPEN  - link with OpenAL at runtime
   USE_CURL           - use libcurl for http/ftp download support
@@ -97,6 +105,7 @@ Makefile.local:
   USE_VOIP	     - enable build-in VoIP support
   USE_INTERNAL_SPEEX - build internal speex library instead of dynamically
   		       linking against system libspeex
+  USE_FREETYPE	     - enable FreeType support for rendering fonts
   USE_INTERNAL_ZLIB  - build and link against internal zlib
   USE_INTERNAL_JPEG  - build and link against internal JPEG library
   USE_INTERNAL_OGG   - build and link against internal ogg library
@@ -239,8 +248,9 @@ New cvars
                                       red-cyan glasses:    1
                                       red-blue:            2
                                       red-green:           3
+				      green-magenta:	   4
                                       To swap the colors for left and right eye
-                                      just add 3 to the value for the wanted
+                                      just add 4 to the value for the wanted
                                       color combination. For red-blue and
                                       red-green you probably want to enable
                                       r_greyscale
@@ -258,12 +268,16 @@ New cvars
                                       backend being used
   r_noborder                        - Remove window decoration from window
                                       managers, like borders and titlebar.
+  r_mode -2			    - This new video mode automatically uses the
+  	 			      desktop resolution.
 
 New commands
   video [filename]        - start video capture (use with demo command)
   stopvideo               - stop video capture
   stopmusic               - stop background music
   minimize                - Minimize the game and show desktop
+  togglemenu		  - causes escape key event for opening/closing menu, or
+  			    going to a previous menu. works in binds, even in UI
 
   print                   - print out the contents of a cvar
   unset                   - unset a user created cvar

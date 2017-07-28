@@ -191,7 +191,7 @@ static	void R_LoadLightmaps( lump_t *l ) {
 		tr.numLightmaps++;
 	}
 
-	//Com_Printf("number of lightmaps: %d\n", tr.numLightmaps);
+	//ri.Printf(PRINT_ALL, "number of lightmaps: %d\n", tr.numLightmaps);
 
 	// if we are in r_vertexLight mode, we don't need the lightmaps at all
 	if ( r_vertexLight->integer || glConfig.hardwareType == GLHW_PERMEDIA2 ) {
@@ -260,7 +260,7 @@ static	void R_LoadLightmaps( lump_t *l ) {
 					r = r * 255 / max;
 					g = g * 255 / max;
 					b = b * 255 / max;
-					//Com_Printf("max: %d\n", max);
+					//ri.Printf(PRINT_ALL, "max: %d\n", max);
 				}
 
 				//r = g = b = 255;
@@ -305,7 +305,7 @@ static	void R_LoadLightmaps( lump_t *l ) {
 					r = r * 255 / max;
 					g = g * 255 / max;
 					b = b * 255 / max;
-					//Com_Printf("max: %d\n", max);
+					//ri.Printf(PRINT_ALL, "max: %d\n", max);
 				}
 #endif
 				if (r > 255) {
@@ -460,11 +460,11 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
 	shader_t	*shader;
 	dshader_t	*dsh;
 
-	shaderNum = LittleLong( shaderNum );
-	if ( shaderNum < 0 || shaderNum >= s_worldData.numShaders ) {
-		ri.Error( ERR_DROP, "ShaderForShaderNum: bad num %i", shaderNum );
+	int _shaderNum = LittleLong( shaderNum );
+	if ( _shaderNum < 0 || _shaderNum >= s_worldData.numShaders ) {
+		ri.Error( ERR_DROP, "ShaderForShaderNum: bad num %i", _shaderNum );
 	}
-	dsh = &s_worldData.shaders[ shaderNum ];
+	dsh = &s_worldData.shaders[ _shaderNum ];
 
 	if ( r_vertexLight->integer || glConfig.hardwareType == GLHW_PERMEDIA2 ) {
 		lightmapNum = LIGHTMAP_BY_VERTEX;
@@ -478,7 +478,7 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
 
 	// if the shader had errors, just use default shader
 	if ( shader->defaultShader ) {
-		Com_Printf("^3WARNING %s: using default shader for '%s' (%d, %d)\n", __FUNCTION__, shader->name, shaderNum, lightmapNum);
+		ri.Printf(PRINT_ALL, "^3WARNING %s: using default shader for '%s' (%d, %d)\n", __FUNCTION__, shader->name, shaderNum, lightmapNum);
 		return tr.defaultShader;
 	}
 
@@ -508,7 +508,7 @@ static void ParseFace( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 
 #if 0
 	if (!Q_stricmpn(surf->shader->name, "textures/ad_content/", strlen("textures/ad_content/"))) {
-		Com_Printf("ParseFace '%s'\n", surf->shader->name);
+		ri.Printf(PRINT_ALL, "ParseFace '%s'\n", surf->shader->name);
 	}
 #endif
 
@@ -594,7 +594,7 @@ static void ParseMesh (dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 		return;
 	}
 
-	//Com_Printf("flags 0x%x  0x%x\n",  s_worldData.shaders[ LittleLong( ds->shaderNum ) ].surfaceFlags, surf->shader->surfaceFlags);
+	//ri.Printf(PRINT_ALL, "flags 0x%x  0x%x\n",  s_worldData.shaders[ LittleLong( ds->shaderNum ) ].surfaceFlags, surf->shader->surfaceFlags);
 
 	width = LittleLong( ds->patchWidth );
 	height = LittleLong( ds->patchHeight );
@@ -613,7 +613,7 @@ static void ParseMesh (dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 		R_ColorShiftLightingBytes( verts[i].color, points[i].color );
 	}
 
-	//Com_Printf("mesh numPoints %d  '%s' (%d)  %dx%d  lightmapNum:%d\n", numPoints, surf->shader->name, LittleLong(ds->shaderNum), width, height, lightmapNum);
+	//ri.Printf(PRINT_ALL, "mesh numPoints %d  '%s' (%d)  %dx%d  lightmapNum:%d\n", numPoints, surf->shader->name, LittleLong(ds->shaderNum), width, height, lightmapNum);
 
 	// ad hack
 #if 0
@@ -621,7 +621,7 @@ static void ParseMesh (dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 		int index;
 
 		index = (num - s_worldData.numsurfaces) + s_worldData.numAds;
-		Com_Printf("advert %d '%s' %d\n", index, surf->shader->name, LittleLong(ds->shaderNum));
+		ri.Printf(PRINT_ALL, "advert %d '%s' %d\n", index, surf->shader->name, LittleLong(ds->shaderNum));
 
         Q_strncpyz(s_worldData.ads[index].model, surf->shader->name, sizeof(s_worldData.ads[index].model));
 		s_worldData.ads[index].cellId = RE_RegisterShader(surf->shader->name);  //LittleLong(ds->shaderNum);
@@ -631,10 +631,10 @@ static void ParseMesh (dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 	if (!Q_stricmpn(surf->shader->name, "textures/ad_content/", strlen("textures/ad_content/"))  ||  !Q_stricmpn(surf->shader->name, "textures/ad_trim/", strlen("textures/ad_trim/"))) {
 		qboolean found = qfalse;
 
-		//Com_Printf("advert '%s'\n", surf->shader->name);
+		//ri.Printf(PRINT_ALL, "advert '%s'\n", surf->shader->name);
 
 		for (i = 0;  i < numPoints;  i++) {
-			//Com_Printf("%d: %f %f %f\n", i, verts[i].xyz[0], verts[i].xyz[1], verts[i].xyz[2]);
+			//ri.Printf(PRINT_ALL, "%d: %f %f %f\n", i, verts[i].xyz[0], verts[i].xyz[1], verts[i].xyz[2]);
 		}
 
 		for (i = 0;  i < s_worldData.numAds;  i++) {
@@ -661,7 +661,7 @@ static void ParseMesh (dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 
 			if (found) {
 				//FIXME fuck wait, what about transparent ads :(
-				//Com_Printf("found ad %d  lightmap:%d\n", i + 1, lightmapNum);
+				//ri.Printf(PRINT_ALL, "found ad %d  lightmap:%d\n", i + 1, lightmapNum);
 				//s_worldData.ads[i].cellId = RE_RegisterShader(surf->shader->name);
 				//FIXME always 0 :[
 				s_worldData.adsLightmap[i] = lightmapNum;  //1;  //lightmapNum;
@@ -671,7 +671,7 @@ static void ParseMesh (dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 		}
 
 		if (!found) {
-			Com_Printf("couldn't find add for mesh %d\n", num);
+			ri.Printf(PRINT_ALL, "couldn't find add for mesh %d\n", num);
 		}
 	}
 
@@ -692,10 +692,10 @@ static void ParseMesh (dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int 
 	grid->lodRadius = VectorLength( tmpVec );
 
 #if 0
-	Com_Printf("width %d  height %d  lightmap %d  fog %d  verts %d\n", width, height, lightmapNum, surf->fogIndex, LittleLong(ds->firstVert));
-	Com_Printf("localOrigin %f %f %f  radius %f  type %d\n", grid->localOrigin[0], grid->localOrigin[1], grid->localOrigin[2], grid->meshRadius, *(int *)surf->data);
-	Com_Printf("lodRadius %f  surftype %d  numverts %d firstIndex %d  numIndex %d\n", grid->lodRadius, LittleLong(ds->surfaceType), LittleLong(ds->numVerts), LittleLong(ds->firstIndex), LittleLong(ds->numIndexes));
-	Com_Printf("points.xyz[0] (%f %f %f)\n", points[0].xyz[0], points[0].xyz[1], points[0].xyz[2]);
+	ri.Printf(PRINT_ALL, "width %d  height %d  lightmap %d  fog %d  verts %d\n", width, height, lightmapNum, surf->fogIndex, LittleLong(ds->firstVert));
+	ri.Printf(PRINT_ALL, "localOrigin %f %f %f  radius %f  type %d\n", grid->localOrigin[0], grid->localOrigin[1], grid->localOrigin[2], grid->meshRadius, *(int *)surf->data);
+	ri.Printf(PRINT_ALL, "lodRadius %f  surftype %d  numverts %d firstIndex %d  numIndex %d\n", grid->lodRadius, LittleLong(ds->surfaceType), LittleLong(ds->numVerts), LittleLong(ds->firstIndex), LittleLong(ds->numIndexes));
+	ri.Printf(PRINT_ALL, "points.xyz[0] (%f %f %f)\n", points[0].xyz[0], points[0].xyz[1], points[0].xyz[2]);
 #endif
 }
 
@@ -716,7 +716,7 @@ static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, i
 	surf->shader = ShaderForShaderNum( ds->shaderNum, LIGHTMAP_BY_VERTEX );
 	surf->shader->mapShader = qtrue;
 
-	//Com_Printf("ParseTriSurf()  '%s'\n", surf->shader->name);
+	//ri.Printf(PRINT_ALL, "ParseTriSurf()  '%s'\n", surf->shader->name);
 
 	numVerts = LittleLong( ds->numVerts );
 	numIndexes = LittleLong( ds->numIndexes );
@@ -1522,7 +1522,7 @@ static	void R_LoadSurfaces( lump_t *surfs, lump_t *verts, lump_t *indexLump ) {
 	for ( i = 0 ; i < count ; i++, in++, out++ ) {
 		switch ( LittleLong( in->surfaceType ) ) {
 		case MST_PATCH:
-			//Com_Printf("%d / %d\n", i, count);
+			//ri.Printf(PRINT_ALL, "%d / %d\n", i, count);
 			ParseMesh(in, dv, out, i);
 			numMeshes++;
 			break;
@@ -1715,14 +1715,14 @@ static	void R_LoadShaders ( lump_t *l ) {
 	s_worldData.numShaders = count;
 
 	Com_Memcpy( out, in, count*sizeof(*out) );
-	Com_Printf("R_LoadShaders()\n");
+	ri.Printf(PRINT_ALL, "R_LoadShaders()\n");
 
 	for ( i=0 ; i<count ; i++ ) {
 		out[i].surfaceFlags = LittleLong( out[i].surfaceFlags );
 		out[i].contentFlags = LittleLong( out[i].contentFlags );
-		//Com_Printf("^6 %03d '%s'  surf: 0x%x  cont: 0x%x\n", i, out[i].shader, out[i].surfaceFlags, out[i].contentFlags);
+		//ri.Printf(PRINT_ALL, "^6 %03d '%s'  surf: 0x%x  cont: 0x%x\n", i, out[i].shader, out[i].surfaceFlags, out[i].contentFlags);
 		if (out[i].surfaceFlags & SURF_SKY  &&  *r_forceSky->string) {
-			Com_Printf("changing sky '%s' to '%s'\n", out[i].shader, r_forceSky->string);
+			ri.Printf(PRINT_ALL, "changing sky '%s' to '%s'\n", out[i].shader, r_forceSky->string);
 			Q_strncpyz(out[i].shader, r_forceSky->string, sizeof(out[i].shader));
 		}
 
@@ -1733,7 +1733,7 @@ static	void R_LoadShaders ( lump_t *l ) {
 #endif
 #if 0
 		if (!(out[i].surfaceFlags & SURF_SKY)) {
-			Com_Printf("map %d  --> %d\n", i, out[i].shader->mapShader);
+			ri.Printf(PRINT_ALL, "map %d  --> %d\n", i, out[i].shader->mapShader);
 		}
 #endif
 	}
@@ -1983,12 +1983,12 @@ void R_LoadEntities( lump_t *l ) {
 
 	p = (char *)(fileBase + l->fileofs);
 
-	if (Cvar_VariableIntegerValue("cl_printents")) {
+	if (ri.Cvar_VariableIntegerValue("cl_printents")) {
 		char *pos;
 		char c;
 		char str[2];
 
-		//Com_Printf("ents: %s\n", p);
+		//ri.Printf(PRINT_ALL, "ents: %s\n", p);
 		pos = p;
 
 		while(1) {
@@ -1998,9 +1998,9 @@ void R_LoadEntities( lump_t *l ) {
 
 			str[0] = c;
 			str[1] = '\0';
-			Com_Printf("%s", str);
+			ri.Printf(PRINT_ALL, "%s", str);
 			if (c == '{'  ||  c == '}') {
-				Com_Printf("\n");
+				ri.Printf(PRINT_ALL, "\n");
 			}
 
 			pos++;
@@ -2035,7 +2035,7 @@ void R_LoadEntities( lump_t *l ) {
 		}
 		Q_strncpyz(value, token, sizeof(value));
 
-		//Com_Printf("LoadEntities()  %s : %s\n", keyname, value);
+		//ri.Printf(PRINT_ALL, "LoadEntities()  %s : %s\n", keyname, value);
 
 		// check for remapping of shaders for vertex lighting
 		s = "vertexremapshader";
@@ -2047,7 +2047,7 @@ void R_LoadEntities( lump_t *l ) {
 			}
 			*s++ = 0;
 			if (r_vertexLight->integer) {
-				//Com_Printf("vertex remap: %s -> %s\n", value, s);
+				//ri.Printf(PRINT_ALL, "vertex remap: %s -> %s\n", value, s);
 				R_RemapShader(value, s, "0", qfalse, qfalse);
 			}
 			continue;
@@ -2061,7 +2061,7 @@ void R_LoadEntities( lump_t *l ) {
 				break;
 			}
 			*s++ = 0;
-			//Com_Printf("bsp remap shader: %s -> %s\n", value, s);
+			//ri.Printf(PRINT_ALL, "bsp remap shader: %s -> %s\n", value, s);
 			R_RemapShader(value, s, "0", qfalse, qfalse);
 			continue;
 		}
@@ -2087,10 +2087,10 @@ void R_LoadAdvertisements( lump_t *l )
 	s_worldData.numAds = 0;
 	Com_Memset(s_worldData.adShaders, 0, sizeof(s_worldData.adShaders));
 
-	//Com_Printf("%d ads in map\n", count);
+	//ri.Printf(PRINT_ALL, "%d ads in map\n", count);
 
 	if (count > MAX_MAP_ADVERTISEMENTS) {
-		Com_Printf("count > MAX_MAP_ADVERTISEMENTS\n");
+		ri.Printf(PRINT_ALL, "count > MAX_MAP_ADVERTISEMENTS\n");
 		return;
 	}
 
@@ -2102,14 +2102,14 @@ void R_LoadAdvertisements( lump_t *l )
 
 	for (i = 0;  i < count;  i++, ads++) {
 #if 1
-		Com_Printf("Advertisement %d:\n", i + 1);
-		Com_Printf("  cellId: %d\n", LittleLong(ads->cellId));
-		Com_Printf("  normal: %f %f %f\n", LittleFloat(ads->normal[0]), LittleFloat(ads->normal[1]), LittleFloat(ads->normal[2]));
-		Com_Printf("  rect[0]:  %f %f %f\n", LittleFloat(ads->rect[0][0]), LittleFloat(ads->rect[0][1]), LittleFloat(ads->rect[0][2]));
-		Com_Printf("  rect[1]:  %f %f %f\n", LittleFloat(ads->rect[1][0]), LittleFloat(ads->rect[1][1]), LittleFloat(ads->rect[1][2]));
-		Com_Printf("  rect[2]:  %f %f %f\n", LittleFloat(ads->rect[2][0]), LittleFloat(ads->rect[2][1]), LittleFloat(ads->rect[2][2]));
-		Com_Printf("  rect[3]:  %f %f %f\n", LittleFloat(ads->rect[3][0]), LittleFloat(ads->rect[3][1]), LittleFloat(ads->rect[3][2]));
-		Com_Printf("  model:  %s\n", ads->model);
+		ri.Printf(PRINT_ALL, "Advertisement %d:\n", i + 1);
+		ri.Printf(PRINT_ALL, "  cellId: %d\n", LittleLong(ads->cellId));
+		ri.Printf(PRINT_ALL, "  normal: %f %f %f\n", LittleFloat(ads->normal[0]), LittleFloat(ads->normal[1]), LittleFloat(ads->normal[2]));
+		ri.Printf(PRINT_ALL, "  rect[0]:  %f %f %f\n", LittleFloat(ads->rect[0][0]), LittleFloat(ads->rect[0][1]), LittleFloat(ads->rect[0][2]));
+		ri.Printf(PRINT_ALL, "  rect[1]:  %f %f %f\n", LittleFloat(ads->rect[1][0]), LittleFloat(ads->rect[1][1]), LittleFloat(ads->rect[1][2]));
+		ri.Printf(PRINT_ALL, "  rect[2]:  %f %f %f\n", LittleFloat(ads->rect[2][0]), LittleFloat(ads->rect[2][1]), LittleFloat(ads->rect[2][2]));
+		ri.Printf(PRINT_ALL, "  rect[3]:  %f %f %f\n", LittleFloat(ads->rect[3][0]), LittleFloat(ads->rect[3][1]), LittleFloat(ads->rect[3][2]));
+		ri.Printf(PRINT_ALL, "  model:  %s\n", ads->model);
 #endif
 
 		s_worldData.ads[i].cellId = LittleLong(ads->cellId);
@@ -2152,7 +2152,7 @@ void R_LoadAdvertisements( lump_t *l )
 			} else {
 				scale = 0;
 			}
-			Com_Printf("  %d x %d   (%f)\n", width, height, scale);
+			ri.Printf(PRINT_ALL, "  %d x %d   (%f)\n", width, height, scale);
 		}
 #endif
 	}
@@ -2168,19 +2168,19 @@ qboolean R_GetEntityToken( char *buffer, int size ) {
 	//char buf[1024];
 
 	//Q_strncpyz(buf, s_worldData.entityParsePoint, 30);
-	//Com_Printf("buf '%s'\n", buf);
+	//ri.Printf(PRINT_ALL, "buf '%s'\n", buf);
 
 	s = COM_Parse( &s_worldData.entityParsePoint );
 	Q_strncpyz( buffer, s, size );
 	if (!s[0]) {
-		Com_Printf("^2bsp:   !s[0]\n");
+		ri.Printf(PRINT_ALL, "^2bsp:   !s[0]\n");
 		//s_worldData.entityParsePoint = s_worldData.entityString;
 		//return qfalse;
 	}
 
 	//if ( !s_worldData.entityParsePoint || !s[0] ) {
 	if ( !s_worldData.entityParsePoint ) {  // || !s[0] ) {
-		//Com_Printf("%p '%c'\n", s_worldData.entityParsePoint, s[0]);
+		//ri.Printf(PRINT_ALL, "%p '%c'\n", s_worldData.entityParsePoint, s[0]);
 		s_worldData.entityParsePoint = s_worldData.entityString;
 		return qfalse;
 	} else {
@@ -2207,7 +2207,7 @@ void RE_LoadWorldMap( const char *name ) {
 	byte		*startMarker;
 	int bsp_version;
 
-	Com_Printf("RE_LoadWorldMap(%s)\n", name);
+	ri.Printf(PRINT_ALL, "RE_LoadWorldMap(%s)\n", name);
 	if ( tr.worldMapLoaded ) {
 		ri.Error( ERR_DROP, "ERROR: attempted to redundantly load world map" );
 	}
@@ -2232,11 +2232,11 @@ void RE_LoadWorldMap( const char *name ) {
 
 		i = 0;
 		while (1) {
-			if (MapNames[i].oldName == NULL) {
+			if (ri.MapNames[i].oldName == NULL) {
 				break;
 			}
-			if (!Q_stricmp(name, MapNames[i].oldName)) {
-				ri.FS_ReadFile(MapNames[i].newName, &buffer.v);
+			if (!Q_stricmp(name, ri.MapNames[i].oldName)) {
+				ri.FS_ReadFile(ri.MapNames[i].newName, &buffer.v);
 				if (!buffer.b) {
 					ri.Error (ERR_DROP, "RE_LoadWorldMap: %s not found", name);
 					LoadingWorld = qfalse;
@@ -2245,8 +2245,8 @@ void RE_LoadWorldMap( const char *name ) {
 				break;
 			}
 
-			if (!Q_stricmp(name, MapNames[i].newName)) {
-				ri.FS_ReadFile(MapNames[i].oldName, &buffer.v);
+			if (!Q_stricmp(name, ri.MapNames[i].newName)) {
+				ri.FS_ReadFile(ri.MapNames[i].oldName, &buffer.v);
 				if (!buffer.b) {
 					ri.Error (ERR_DROP, "RE_LoadWorldMap: %s not found", name);
 					LoadingWorld = qfalse;

@@ -5,7 +5,7 @@
 ; This file is used to automatically build the installers in the
 ; openSUSE build service, don't break this!
 ;
-; you have to copy SDL.dll and libcurl-4.dll here manually
+; you have to copy SDL.dll and OpenAL32.dll here manually
 
 !define MULTIUSER_MUI
 !define MULTIUSER_EXECUTIONLEVEL Highest
@@ -45,7 +45,6 @@ OutFile "ioquake3-XXXVERSIONXXX-XXXRELEASEXXX.x86.exe"
 
 !insertmacro MULTIUSER_PAGE_INSTALLMODE
 ;!insertmacro MUI_PAGE_LICENSE "../../COPYING.txt"
-
 !define MUI_COMPONENTSPAGE_NODESC
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
@@ -79,11 +78,23 @@ Section "ioquake3 (required)"
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
 
+!ifndef USE_INTERNAL_SPEEX
+  File "libspeex.dll"
+!endif
+!ifndef USE_INTERNAL_ZLIB
   File "zlib1.dll"
+!endif
+!ifndef USE_INTERNAL_JPEG
+  File "jpeg8c.dll"
+!endif
 
   ; Put file there
   File "../../build/release-mingw32-x86/ioq3ded.x86.exe"
   File "../../build/release-mingw32-x86/ioquake3.x86.exe"
+!ifdef USE_RENDERER_DLOPEN
+  File "../../build/release-mingw32-x86/renderer_opengl1_x86.dll"
+!endif
+
   File "../../COPYING.txt"
   File "/oname=README.txt" "../../README"
   File "../../id-readme.txt"
@@ -128,14 +139,7 @@ Section "SDL.dll"
 
 SectionEnd
 
-Section "libcurl"
-
-  SetOutPath $INSTDIR
-
-  File "libcurl-4.dll"
-
-SectionEnd
-
+!ifdef USE_OPENAL_DLOPEN
 Section "OpenAL-Soft library"
 
   SetOutPath $INSTDIR
@@ -143,6 +147,17 @@ Section "OpenAL-Soft library"
   File "OpenAL32.dll"
 
 SectionEnd
+!endif
+
+!ifdef USE_CURL_DLOPEN
+Section "libcurl"
+
+  SetOutPath $INSTDIR
+
+  File "libcurl-4.dll"
+
+SectionEnd
+!endif
 
 ;--------------------------------
 
@@ -163,19 +178,32 @@ Section "Uninstall"
   Delete $INSTDIR\missionpack\uix86.dll
   Delete $INSTDIR\ioquake3.x86.exe
   Delete $INSTDIR\ioq3ded.x86.exe
+!ifdef USE_RENDERER_DLOPEN
+  Delete $INSTDIR\renderer_opengl1_x86.dll
+!endif
 
   Delete $INSTDIR\COPYING.txt
   Delete $INSTDIR\README.txt
   Delete $INSTDIR\id-readme.txt
   Delete $INSTDIR\voip-readme.txt
 
+!ifndef USE_INTERNAL_SPEEX
+  Delete $INSTDIR\libspeex.dll
+!endif
+!ifndef USE_INTERNAL_ZLIB
   Delete $INSTDIR\zlib1.dll
+!endif
+!ifndef USE_INTERNAL_JPEG
+  Delete $INSTDIR\jpeg8c.dll
+!endif
 
   Delete $INSTDIR\SDL.dll
-
-  Delete $INSTDIR\libcurl-4.dll
-
+!ifdef USE_OPENAL_DLOPEN
   Delete $INSTDIR\OpenAL32.dll
+!endif
+!ifdef USE_CURL_DLOPEN
+  Delete $INSTDIR\libcurl-4.dll
+!endif
 
   Delete $INSTDIR\uninstall.exe
 

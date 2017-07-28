@@ -1760,7 +1760,7 @@ wolfcamql 11.0test15 client (Feb 17 2016)
 
 * R_GetCommandBuffer() command dropped
   with con_scale 0.00..1  --  CON_TEXTSIZE > MAX_RENDER_COMMANDS
-* utf8 with con_tty and con_win32 input
+* utf8 with con_win32 input
 * mark hud only refernced cvars like cg_drawSpecMessages
 * why the 'plus 1' for xSkip?  glyph.xSkip = (face->glyph->metrics.horiAdvance >> 6) + 1;
 * CG_Text_Paint_Limit() missing 'style'
@@ -2070,7 +2070,13 @@ No locals.
 * vid_restart / snd_restart doesn't reinit sound?  s_useOpenal 1
 * play demo, while playing /devmap campgrounds :  still shows workshops active
 * NAMEBUFSIZE == (MAX_DEMOS * 64)  name length assumed to be less than 64?
-
+* $(B)/missionpack/cgame/cg_particles.o  missing in mpack
+* ri.Cmd_ExecuteText = Cbuf_ExecuteText;   why 'Cmd_' ?
+* wtf..  - IMPORTANT BUGFIX: No killing for cheaters with Lightning gun and Gauntlet.
+* mac os x opus compile :  you appear to be compiling without optimization
+* option to disable console tty input
+* need USE_INTERNAL_FREETYPE
+* missing PRINT_ERROR
 
 ---------
 

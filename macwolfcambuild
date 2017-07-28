@@ -11,6 +11,7 @@ tar -zxvf ../share/wolfcam-build/macsrc.tar.gz
 mkdir bin
 make
 cp build/release-darwin-i386/ioquake3.i386 bin/wolfcamqlmac
+cp build/release-darwin-i386/renderer_opengl1_i386.dylib bin/
 cp build/release-darwin-i386/baseq3/*dylib bin/
 cd bin
 tar -zcvf bin.tar.gz *

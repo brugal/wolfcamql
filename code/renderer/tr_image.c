@@ -581,7 +581,7 @@ void R_Upload32( unsigned *data,
 		}
 
 		if (sw != scaled_width  ||  sh != scaled_height) {
-			//Com_Printf("^3'%s' had to be rounded down\n", CurrentBoundImage->imgName);
+			//ri.Printf(PRINT_ALL, "^3'%s' had to be rounded down\n", CurrentBoundImage->imgName);
 		}
 		resampledBuffer = ri.Hunk_AllocateTempMemory( scaled_width * scaled_height * 4 );
 		ResampleTexture (data, width, height, resampledBuffer, scaled_width, scaled_height);
@@ -864,7 +864,7 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	long		hash;
 
 	//mipmap = qfalse;  //test
-	//Com_Printf("R_CreateImage (mipmap:%d, allowpicmip:%d): %s\n", mipmap, allowPicmip, name);
+	//ri.Printf(PRINT_ALL, "R_CreateImage (mipmap:%d, allowpicmip:%d): %s\n", mipmap, allowPicmip, name);
 
 	if (strlen(name) >= MAX_QPATH ) {
 		ri.Error (ERR_DROP, "R_CreateImage: \"%s\" is too long", name);
@@ -1063,7 +1063,7 @@ void R_LoadLink ( const char *name, byte **pic, int *width, int *height)
 	*height = 0;
 	len = ri.FS_ReadFile(name, &buffer);
 	if (len < 0) {
-		Com_Printf("failed load link: %s\n", name);
+		ri.Printf(PRINT_ALL, "failed load link: %s\n", name);
 		return;
 	}
 	newname = (char *)Z_Malloc(len + 1);
@@ -1223,7 +1223,7 @@ image_t	*R_FindImageFile( const char *name, qboolean mipmap, qboolean allowPicmi
 		return NULL;
 	}
 
-	//Com_Printf("R_FindImageFile  %s\n", name);
+	//ri.Printf(PRINT_ALL, "R_FindImageFile  %s\n", name);
 
 #if 0
 	//FIXME testing grayscale
@@ -1481,7 +1481,7 @@ void R_SetColorMappings( void ) {
 
 	if ( !glConfig.deviceSupportsGamma ) {
 		tr.overbrightBits = 0;		// need hardware gamma for overbright
-		//Com_Printf("^1no hw gamma no overbrightbits\n");
+		//ri.Printf(PRINT_ALL, "^1no hw gamma no overbrightbits\n");
 	}
 
 	//tr.overbrightBits = 0;
@@ -1736,7 +1736,7 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 		}
 
 		if (rw == 0  ||  rh == 0  ||  rpic == NULL) {
-			Com_Printf("failed to open %s\n", va(Skin_Images[i][0] + strlen("cache/"), "red", ""));
+			ri.Printf(PRINT_ALL, "failed to open %s\n", va(Skin_Images[i][0] + strlen("cache/"), "red", ""));
 			continue;
 		}
 
@@ -1747,13 +1747,13 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 		}
 
 		if (bw == 0  ||  bh == 0  ||  bpic == NULL) {
-			Com_Printf("failed to open %s\n", va(Skin_Images[i][0] + strlen("cache/"), "blue", ""));
+			ri.Printf(PRINT_ALL, "failed to open %s\n", va(Skin_Images[i][0] + strlen("cache/"), "blue", ""));
 			ri.Free(rpic);
 			continue;
 		}
 
 		if (rw != bw  ||  rh != bh) {
-			Com_Printf("wtf  rw %d bw %d rh %d bh %d\n", rw, bw, rh, bh);
+			ri.Printf(PRINT_ALL, "wtf  rw %d bw %d rh %d bh %d\n", rw, bw, rh, bh);
 			goto finish;
 		}
 
@@ -1872,9 +1872,9 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 		}
 
 		ri.FS_WriteFile(va(Skin_Images[i][0], "color", ".tga"), ibuf, 18 + bw * bh * 4);
-		Com_Printf("created: ");
-		Com_Printf("%s", va(Skin_Images[i][0], "color", ".tga"));
-		Com_Printf("\n");
+		ri.Printf(PRINT_ALL, "created: ");
+		ri.Printf(PRINT_ALL, "%s", va(Skin_Images[i][0], "color", ".tga"));
+		ri.Printf(PRINT_ALL, "\n");
 
 finish:
 		ri.Free(rpic);
@@ -2062,12 +2062,12 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 	char *p;
 
 	if ( !name || !name[0] ) {
-		Com_Printf( "Empty name passed to RE_RegisterSkin\n" );
+		ri.Printf(PRINT_ALL,  "Empty name passed to RE_RegisterSkin\n" );
 		return 0;
 	}
 
 	if ( strlen( name ) >= MAX_QPATH ) {
-		Com_Printf( "Skin name exceeds MAX_QPATH\n" );
+		ri.Printf(PRINT_ALL,  "Skin name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 	Q_strncpyz(iname, name, sizeof(iname));
@@ -2088,12 +2088,12 @@ qhandle_t RE_RegisterSkin( const char *name ) {
 			if( skin->numSurfaces == 0 ) {
 				return 0;		// default skin
 			}
-			//Com_Printf("%s already loaded\n", name);
+			//ri.Printf(PRINT_ALL, "%s already loaded\n", name);
 			return hSkin;
 		}
 	}
 
-	//Com_Printf("^4going to allocate new skin %s\n", name);
+	//ri.Printf(PRINT_ALL, "^4going to allocate new skin %s\n", name);
 	// allocate a new skin
 	if ( tr.numSkins == MAX_SKINS ) {
 		ri.Printf( PRINT_WARNING, "WARNING: RE_RegisterSkin( '%s' ) MAX_SKINS hit\n", name );

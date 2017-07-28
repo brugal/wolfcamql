@@ -159,7 +159,7 @@ void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType_t **li
 		if (*listlength >= listsize) break;
 		//
 		surf = *mark;
-		//Com_Printf("^3surf: %s\n", surf->shader->name);
+		//ri.Printf(PRINT_ALL, "^3surf: %s\n", surf->shader->name);
 		// check if the surface has NOIMPACT or NOMARKS set
 		if ( ( surf->shader->surfaceFlags & ( SURF_NOIMPACT | SURF_NOMARKS ) )  ||  ( surf->shader->contentFlags & CONTENTS_FOG ) ) {
 			if (r_ignoreNoMarks->integer == 0) {
@@ -180,10 +180,10 @@ void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType_t **li
 				surf->viewCount = tr.viewCount;
 			} else if (DotProduct((( srfSurfaceFace_t * ) surf->data)->plane.normal, dir) > -0.5) {
 				// don't add faces that make sharp angles with the projection direction
-				//Com_Printf("^3sharp angle '%s'\n", surf->shader->name);
+				//ri.Printf(PRINT_ALL, "^3sharp angle '%s'\n", surf->shader->name);
 				surf->viewCount = tr.viewCount;
 			} else {
-				//Com_Printf("^3surf: %s\n", surf->shader->name);
+				//ri.Printf(PRINT_ALL, "^3surf: %s\n", surf->shader->name);
 			}
 		}
 		else if (*(surfaceType_t *) (surf->data) != SF_GRID &&
@@ -198,7 +198,7 @@ void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType_t **li
 			mxsurf[*listlength] = surf;
 			list[*listlength] = (surfaceType_t *) surf->data;
 			(*listlength)++;
-			//Com_Printf("^3surf: %s\n", surf->shader->name);
+			//ri.Printf(PRINT_ALL, "^3surf: %s\n", surf->shader->name);
 		}
 		mark++;
 	}
@@ -269,11 +269,11 @@ static void R_GotMarkSurfaceName (const char *type, const char *name)
 	if (Q_stricmp(name, tr.markSurfaceNames[1])) {
 		Q_strncpyz(tr.markSurfaceNames[0], tr.markSurfaceNames[1], sizeof(tr.markSurfaceNames[0]));
 		Q_strncpyz(tr.markSurfaceNames[1], name, sizeof(tr.markSurfaceNames[1]));
-		Com_Printf("0: %s\n1: %s\n", tr.markSurfaceNames[0], tr.markSurfaceNames[1]);
+		ri.Printf(PRINT_ALL, "0: %s\n1: %s\n", tr.markSurfaceNames[0], tr.markSurfaceNames[1]);
 	}
 
-	Com_Printf("^3%s mark %s\n", type, name);
-	Cbuf_ExecuteText(EXEC_NOW, va("addchatline ^3%s\n", name));
+	ri.Printf(PRINT_ALL, "^3%s mark %s\n", type, name);
+	ri.Cmd_ExecuteText(EXEC_NOW, va("addchatline ^3%s\n", name));
 }
 
 /*

@@ -26,6 +26,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../cgame/cg_camera.h"
 #include "../client/cl_avi.h"
 
+#ifdef USE_LOCAL_HEADERS
+  #include "SDL_opengl.h"
+#else
+  #include <SDL_opengl.h>
+#endif
+
 #define	REF_API_VERSION		601  // wolfcam don't know the point of this, but bumping anyway
 
 //
@@ -131,6 +137,7 @@ typedef struct {
 	// milliseconds should only be used for profiling, never
 	// for anything game related.  Get time from the refdef
 	int		(*Milliseconds)( void );
+	int		(*RealMilliseconds) (void);
 
 	// stack based memory allocation for per-level things that
 	// won't be freed
@@ -148,7 +155,13 @@ typedef struct {
 
 	cvar_t	*(*Cvar_Get)( const char *name, const char *value, int flags );
 	void	(*Cvar_Set)( const char *name, const char *value );
+	void	(*Cvar_SetValue) (const char *name, float value);
+	void	(*Cvar_ForceReset) (const char *var_name);
+	cvar_t	*(*Cvar_FindVar) (const char *var_name);
 	void	(*Cvar_CheckRange)( cvar_t *cv, float minVal, float maxVal, qboolean shouldBeIntegral );
+	int		(*Cvar_VariableIntegerValue) (const char *var_name);
+	float	(*Cvar_VariableValue) (const char *var_name);
+	void	(*Cvar_VariableStringBuffer) (const char *var_name, char *buffer, int bufsize);
 	void	(*Cvar_SetDescription)( cvar_t *cv, const char *description );
 
 	void	(*Cmd_AddCommand)( const char *name, void(*cmd)(void) );
@@ -158,6 +171,8 @@ typedef struct {
 	char	*(*Cmd_Argv) (int i);
 
 	void	(*Cmd_ExecuteText) (int exec_when, const char *text);
+
+	byte	*(*CM_ClusterPVS)(int cluster);
 
 	// visualization for debugging collision detection
 	void	(*CM_DrawDebugSurface)( void (*drawPoly)(int color, int numPoints, float *points) );
@@ -170,7 +185,11 @@ typedef struct {
 	char **	(*FS_ListFiles)( const char *name, const char *extension, int *numfilesfound );
 	void	(*FS_FreeFileList)( char **filelist );
 	void	(*FS_WriteFile)( const char *qpath, const void *buffer, int size );
+	int		(*FS_Write) (const void *buffer, int len, fileHandle_t f);
 	qboolean (*FS_FileExists)( const char *file );
+	const char	*(*FS_FindSystemFile) (const char *file);
+	void	(*FS_FCloseFile) (fileHandle_t f);
+	fileHandle_t	(*FS_FOpenFileWrite) (const char *qpath );
 
 	// cinematic stuff
 	void	(*CIN_UploadCinematic)(int handle);
@@ -178,12 +197,47 @@ typedef struct {
 	e_status (*CIN_RunCinematic) (int handle);
 
 	void	(*CL_WriteAVIVideoFrame)(aviFileData_t *afd, const byte *buffer, int size);
+
+	// input event handling
+	void	(*IN_Init)( void );
+	void    (*IN_Shutdown)( void );
+	void    (*IN_Restart)( void );
+
+	// math
+	long    (*ftol)(float f);
+
+	// system stuff
+	void    (*Sys_SetEnv)( const char *name, const char *value );
+	void    (*Sys_GLimpSafeInit)( void );
+	void    (*Sys_GLimpInit)( void );
+	qboolean (*Sys_LowPhysicalMemory)( void );
+
+	// video recording stuff
+	qboolean *SplitVideo;
+
+	aviFileData_t *afdMain;
+	aviFileData_t *afdLeft;
+	aviFileData_t *afdRight;
+
+	aviFileData_t *afdDepth;
+	aviFileData_t *afdDepthLeft;
+	aviFileData_t *afdDepthRight;
+
+	GLfloat **Video_DepthBuffer;
+	byte **ExtraVideoBuffer;
+
+	// misc
+	mapNames_t *MapNames;
 } refimport_t;
 
 
 // this is the only function actually exported at the linker level
 // If the module can't init to a valid rendering state, NULL will be
 // returned.
+#ifdef USE_RENDERER_DLOPEN
+typedef	refexport_t* (QDECL *GetRefAPI_t) (int apiVersion, refimport_t *rimp);
+#else
 refexport_t*GetRefAPI( int apiVersion, refimport_t *rimp );
+#endif
 
 #endif	// __TR_PUBLIC_H

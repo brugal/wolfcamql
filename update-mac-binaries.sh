@@ -1,5 +1,6 @@
 #!/bin/sh
 
+mkdir -p mac-binaries/
 
 cd mac-binaries/
 

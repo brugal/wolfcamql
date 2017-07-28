@@ -27,7 +27,8 @@
 * bug fix:  installer missing voip-readme.txt
 * version renamed to version.txt
 * bug fix:  png file depth capture incorrectly determined if alpha channel was present
-
+* bug fix:  Unix console tty buffer didn't store input key correctly
+* utf8 support for Unix console tty input
 
 ---------------------------------
 11.7  2017-06-07

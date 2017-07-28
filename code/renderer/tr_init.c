@@ -34,6 +34,10 @@ glstate_t	glState;
 
 static void GfxInfo_f( void );
 
+#ifdef USE_RENDERER_DLOPEN
+cvar_t	*com_altivec;
+#endif
+
 cvar_t	*r_flareSize;
 cvar_t	*r_flareFade;
 cvar_t	*r_flareCoeff;
@@ -248,10 +252,10 @@ static void InitFrameBufferAndRenderBuffer (void)
 
 #if 0  // pointless
 	if (glConfig.maxTextureSize > 0  &&  (width  > glConfig.maxTextureSize  ||  height > glConfig.maxTextureSize)) {
-		Com_Printf("^1can't create framebuffer object, selected fbo width (%d) or height (%d) is greater than the video card's max texture size (%d)\n", width, height, glConfig.maxTextureSize);
+		ri.Printf(PRINT_ALL, "^1can't create framebuffer object, selected fbo width (%d) or height (%d) is greater than the video card's max texture size (%d)\n", width, height, glConfig.maxTextureSize);
 		return;
 	}
-	//Com_Printf("max texture size: %d\n", glConfig.maxTextureSize);
+	//ri.Printf(PRINT_ALL, "max texture size: %d\n", glConfig.maxTextureSize);
 #endif
 
 	GL_SelectTextureUnit(0);
@@ -272,7 +276,7 @@ static void InitFrameBufferAndRenderBuffer (void)
 
 	err = qglGetError();
 	if (err != GL_NO_ERROR) {
-		Com_Printf("^1opengl error creating offscreen render texture:  0x%x\n", err);
+		ri.Printf(PRINT_ALL, "^1opengl error creating offscreen render texture:  0x%x\n", err);
 	}
 	qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -289,7 +293,7 @@ static void InitFrameBufferAndRenderBuffer (void)
 		qglTexImage2D(target, 0, GL_DEPTH24_STENCIL8_EXT, width, height, 0, GL_DEPTH_STENCIL_EXT, GL_UNSIGNED_INT_24_8_EXT, NULL);
 		err = qglGetError();
 		if (err != GL_NO_ERROR) {
-			Com_Printf("^1opengl error creating offscreen depth/stencil texture:  0x%x\n", err);
+			ri.Printf(PRINT_ALL, "^1opengl error creating offscreen depth/stencil texture:  0x%x\n", err);
 		}
 		qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -310,34 +314,34 @@ static void InitFrameBufferAndRenderBuffer (void)
 	if (status == GL_FRAMEBUFFER_COMPLETE_EXT) {
 		tr.usingFrameBufferObject = qtrue;
 	} else {
-		Com_Printf("^1%s  framebuffer error: 0x%x\n", __FUNCTION__, status);
+		ri.Printf(PRINT_ALL, "^1%s  framebuffer error: 0x%x\n", __FUNCTION__, status);
 		switch(status) {
 		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-			Com_Printf("^1attachment\n");
+			ri.Printf(PRINT_ALL, "^1attachment\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-			Com_Printf("^1missing attachment\n");
+			ri.Printf(PRINT_ALL, "^1missing attachment\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
-			Com_Printf("^1dimensions\n");
+			ri.Printf(PRINT_ALL, "^1dimensions\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-			Com_Printf("^1formats\n");
+			ri.Printf(PRINT_ALL, "^1formats\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-			Com_Printf("^1draw buffer\n");
+			ri.Printf(PRINT_ALL, "^1draw buffer\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-			Com_Printf("^1read buffer\n");
+			ri.Printf(PRINT_ALL, "^1read buffer\n");
 			break;
 		case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-			Com_Printf("^1unsupported\n");
+			ri.Printf(PRINT_ALL, "^1unsupported\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_EXT:
-			Com_Printf("^1incomplete multisample buffer\n");
+			ri.Printf(PRINT_ALL, "^1incomplete multisample buffer\n");
 			break;
 		default:
-			Com_Printf("^1unknown error\n");
+			ri.Printf(PRINT_ALL, "^1unknown error\n");
 		}
 
 		tr.usingFrameBufferObject = qfalse;
@@ -346,7 +350,7 @@ static void InitFrameBufferAndRenderBuffer (void)
 
 	err = qglGetError();
 	if (err != GL_NO_ERROR) {
-		Com_Printf("^1opengl error end of framebuffer init:  0x%x\n", err);
+		ri.Printf(PRINT_ALL, "^1opengl error end of framebuffer init:  0x%x\n", err);
 	}
 
 	if (!glConfig.fboMultiSample  ||  !tr.usingFrameBufferObject) {
@@ -378,13 +382,13 @@ static void InitFrameBufferAndRenderBuffer (void)
 	qglGenRenderbuffersEXT(1, &tr.renderBufferMultiSample);
 	qglBindRenderbufferEXT(GL_RENDERBUFFER_EXT, tr.renderBufferMultiSample);
 
-	Com_Printf("anti-alias samples: %d\n", samples);
+	ri.Printf(PRINT_ALL, "anti-alias samples: %d\n", samples);
 	qglRenderbufferStorageMultisampleEXT(GL_RENDERBUFFER_EXT, samples, GL_RGB8, width, height);
 	qglFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, tr.renderBufferMultiSample);
 
 	err = qglGetError();
 	if (err != GL_NO_ERROR) {
-		Com_Printf("^1opengl error creating framebuffer:  0x%x\n", err);
+		ri.Printf(PRINT_ALL, "^1opengl error creating framebuffer:  0x%x\n", err);
 	}
 
 	qglGenRenderbuffersEXT(1, &tr.depthBufferMultiSample);
@@ -402,13 +406,13 @@ static void InitFrameBufferAndRenderBuffer (void)
 	if (err) {
 		switch(err) {
 		case GL_INVALID_VALUE:
-			Com_Printf("^1opengl error creating multisample depth render buffer: (invalid values for width and/or height)\n");
+			ri.Printf(PRINT_ALL, "^1opengl error creating multisample depth render buffer: (invalid values for width and/or height)\n");
 			break;
 		case GL_OUT_OF_MEMORY:
-			Com_Printf("^1opengl error creating multisample depth render buffer: (gl out of memory)\n");
+			ri.Printf(PRINT_ALL, "^1opengl error creating multisample depth render buffer: (gl out of memory)\n");
 			break;
 		default:
-			Com_Printf("^1opengl error creating multisample depth render buffer:  0x%x\n", err);
+			ri.Printf(PRINT_ALL, "^1opengl error creating multisample depth render buffer:  0x%x\n", err);
 		}
 	}
 
@@ -417,34 +421,34 @@ static void InitFrameBufferAndRenderBuffer (void)
 		tr.usingFrameBufferObject = qtrue;
 		tr.usingMultiSample = qtrue;
 	} else {
-		Com_Printf("^1%s  multisample framebuffer error: 0x%x\n", __FUNCTION__, status);
+		ri.Printf(PRINT_ALL, "^1%s  multisample framebuffer error: 0x%x\n", __FUNCTION__, status);
 		switch(status) {
 		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
-			Com_Printf("^1attachment\n");
+			ri.Printf(PRINT_ALL, "^1attachment\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT:
-			Com_Printf("^1missing attachment\n");
+			ri.Printf(PRINT_ALL, "^1missing attachment\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:
-			Com_Printf("^1dimensions\n");
+			ri.Printf(PRINT_ALL, "^1dimensions\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:
-			Com_Printf("^1formats\n");
+			ri.Printf(PRINT_ALL, "^1formats\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:
-			Com_Printf("^1draw buffer\n");
+			ri.Printf(PRINT_ALL, "^1draw buffer\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:
-			Com_Printf("^1read buffer\n");
+			ri.Printf(PRINT_ALL, "^1read buffer\n");
 			break;
 		case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
-			Com_Printf("^1unsupported\n");
+			ri.Printf(PRINT_ALL, "^1unsupported\n");
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_EXT:
-			Com_Printf("^1incomplete multisample buffer\n");
+			ri.Printf(PRINT_ALL, "^1incomplete multisample buffer\n");
 			break;
 		default:
-			Com_Printf("^1unknown error\n");
+			ri.Printf(PRINT_ALL, "^1unknown error\n");
 		}
 
 		tr.usingFrameBufferObject = qfalse;
@@ -456,7 +460,7 @@ static void InitFrameBufferAndRenderBuffer (void)
 
 	err = qglGetError();
 	if (err != GL_NO_ERROR) {
-		Com_Printf("^1opengl error end of multisample framebuffer init:  0x%x\n", err);
+		ri.Printf(PRINT_ALL, "^1opengl error end of multisample framebuffer init:  0x%x\n", err);
 	}
 }
 
@@ -469,7 +473,7 @@ static void printGlslLog (GLhandleARB obj)
 	qglGetObjectParameterivARB(obj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &infoLogLength);
     if (infoLogLength > 0) {
 		qglGetInfoLogARB(obj, 1024, &len, infoLog);
-        Com_Printf("%s\n", infoLog);
+        ri.Printf(PRINT_ALL, "%s\n", infoLog);
 	}
 }
 
@@ -487,11 +491,11 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 		return;
 	}
 
-	Com_Printf("^5%s ->\n", filename);
+	ri.Printf(PRINT_ALL, "^5%s ->\n", filename);
 	*fragmentShader = qglCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
 	len = ri.FS_ReadFile(filename, &shaderSource);
 	if (len <= 0) {
-		Com_Printf("^1couldn't find file\n");
+		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
 		R_DeleteGlslShadersAndPrograms();
 		glConfig.glsl = qfalse;
 		return;
@@ -499,7 +503,7 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	slen = strlen(ShaderExtensions);
 	text = (char *)malloc(len + slen + 3);
 	if (!text) {
-		Com_Printf("R_InitFragmentShader() couldn't allocate memory for glsl shader file\n");
+		ri.Printf(PRINT_ALL, "R_InitFragmentShader() couldn't allocate memory for glsl shader file\n");
 		ri.FS_FreeFile(shaderSource);
 		qglDeleteObjectARB(*fragmentShader);
 		return;
@@ -517,7 +521,7 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	qglAttachObjectARB(*program, *fragmentShader);
 	qglLinkProgramARB(*program);
 	printGlslLog(*program);
-	//Com_Printf("\n");
+	//ri.Printf(PRINT_ALL, "\n");
 }
 
 static void InitGlslShadersAndPrograms (void)
@@ -568,7 +572,7 @@ static void InitGlslShadersAndPrograms (void)
 
 	GL_SelectTextureUnit(0);
 
-	Com_Printf("^5scripts/posteffect.vs ->\n");
+	ri.Printf(PRINT_ALL, "^5scripts/posteffect.vs ->\n");
 	ret = ri.FS_ReadFile("scripts/posteffect.vs", &shaderSource);
 
 	if (ret > 0) {
@@ -578,7 +582,7 @@ static void InitGlslShadersAndPrograms (void)
 		printGlslLog(tr.mainVs);
 		ri.FS_FreeFile(shaderSource);
 	} else {
-		Com_Printf("^1file not found\n");
+		ri.Printf(PRINT_ALL, "^1file not found\n");
 		glConfig.glsl = qfalse;
 		R_DeleteGlslShadersAndPrograms();
 	}
@@ -788,8 +792,8 @@ void GL_CheckErrors( void ) {
 
 #if 0
 	if (err == GL_OUT_OF_MEMORY) {
-		Com_Printf("^1gl out of memory: window or framebuffer possibly too big\n");
-		Com_Printf("^1setting r_mode 4, r_fullscreen 0, r_useFbo 0\n");
+		ri.Printf(PRINT_ALL, "^1gl out of memory: window or framebuffer possibly too big\n");
+		ri.Printf(PRINT_ALL, "^1setting r_mode 4, r_fullscreen 0, r_useFbo 0\n");
 		ri.Cvar_Set("r_mode", "4");
 		ri.Cvar_Set("r_fullscreen", "0");
 		ri.Cvar_Set("r_useFbo", "0");
@@ -1494,11 +1498,6 @@ static void swap_bgr (byte *buffer, int width, int height, qboolean hasAlpha)
 	}
 }
 
-extern GLfloat *Video_DepthBuffer;
-extern byte *ExtraVideoBuffer;
-extern qboolean SplitVideo;
-//extern byte *ExtraVideoBuffer1;
-
 /*
 ==================
 RB_TakeVideoFrameCmd
@@ -1526,17 +1525,17 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 	R_MME_CheckCvars(qfalse, shotData);
 	useBlur = qfalse;
-	blurFrames = Cvar_VariableIntegerValue("mme_blurFrames");
+	blurFrames = ri.Cvar_VariableIntegerValue("mme_blurFrames");
 	if (blurFrames == 0  ||  blurFrames == 1) {
 		useBlur = qfalse;
 	} else {
 		useBlur = qtrue;
 	}
-	blurOverlap = Cvar_VariableIntegerValue("mme_blurOverlap");
+	blurOverlap = ri.Cvar_VariableIntegerValue("mme_blurOverlap");
 	if (blurOverlap > 0) {
 		useBlur = qtrue;
 	}
-	frameRateDivider = Cvar_VariableIntegerValue("cl_aviFrameRateDivider");
+	frameRateDivider = ri.Cvar_VariableIntegerValue("cl_aviFrameRateDivider");
 	if (frameRateDivider < 1) {
 		frameRateDivider = 1;
 	}
@@ -1553,7 +1552,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		fetchBuffer = cmd->captureBuffer;
 	} else {  //  not png
 		sbuf = finalName;
-		Cvar_VariableStringBuffer("cl_aviFetchMode", sbuf, MAX_QPATH);
+		ri.Cvar_VariableStringBuffer("cl_aviFetchMode", sbuf, MAX_QPATH);
 		if (!Q_stricmp("gl_rgba", sbuf)) {
 			fetchBufferHasAlpha = qtrue;
 			fetchBufferNeedsBGRswap = qtrue;
@@ -1571,7 +1570,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			fetchBufferNeedsBGRswap = qfalse;
 			glMode = GL_BGRA;
 		} else {
-			Com_Printf("unknown glmode using GL_RGB\n");
+			ri.Printf(PRINT_ALL, "unknown glmode using GL_RGB\n");
 			fetchBufferHasAlpha = qfalse;
 			fetchBufferNeedsBGRswap = qtrue;
 			glMode = GL_RGB;
@@ -1597,18 +1596,18 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	}
 
 	if (!useBlur) {
-		//Com_Printf("no blur pic count: %d\n", cmd->picCount + 1);
+		//ri.Printf(PRINT_ALL, "no blur pic count: %d\n", cmd->picCount + 1);
 		if ((cmd->picCount + 1) % frameRateDivider != 0) {
-			//Com_Printf("    skipping %d\n", cmd->picCount + 1);
+			//ri.Printf(PRINT_ALL, "    skipping %d\n", cmd->picCount + 1);
 			goto dontwrite;
 		}
-		//Com_Printf("writing %d\n", cmd->picCount + 1);
+		//ri.Printf(PRINT_ALL, "writing %d\n", cmd->picCount + 1);
 		qglReadPixels(0, 0, cmd->width, cmd->height, glMode, GL_UNSIGNED_BYTE, fetchBuffer + 18);
 		R_GammaCorrect(fetchBuffer + 18, cmd->width * cmd->height * (3 + fetchBufferHasAlpha));
 	} else {  // use blur
 
 		if (shotData->allocFailed) {
-			Com_Printf("shotData->allocFailed\n");
+			ri.Printf(PRINT_ALL, "shotData->allocFailed\n");
 		}
 
 		if (shotData->blurTotal && !shotData->allocFailed) {
@@ -1619,7 +1618,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				if (shotData->blurIndex == 0) {
 					int i, index;
 					index = lapIndex;
-					//Com_Printf("first\n");
+					//ri.Printf(PRINT_ALL, "first\n");
 					accumClearMultiply( shotData->accumAlign, shotData->overlapAlign + (index * shotData->pixelCount/2), shotData->blurMultiply + 0, shotData->pixelCount );
 					for (i = 1; i < shotData->overlapTotal; i++) {
 						index = (index + 1 ) % shotData->overlapTotal;
@@ -1657,7 +1656,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				accumShift( shotData->accumAlign, outAlign, shotData->pixelCount );
 				//R_MME_SaveShot( &shotData->shot.main, glConfig.vidWidth, glConfig.vidHeight, shotData->shot.fps, doGamma && !mme_blurGamma->integer, (byte *)outAlign );
 				//shotData->frameCount++;
-				//Com_Printf("pic count: %d\n", cmd->picCount);
+				//ri.Printf(PRINT_ALL, "pic count: %d\n", cmd->picCount);
 				if (((cmd->picCount + 1) * blurFrames) % frameRateDivider != 0) {
 					goto dontwrite;
 				}
@@ -1712,12 +1711,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		}
 
 		//FIXME no ---  not yet
-		if (SplitVideo) {
+		if (*ri.SplitVideo) {
 			/*  1: (r)  (gb), 2: (r)  (b), 3: (r)  (g), 4: (gb)  (r),
 				5: (b)  (r), 6: (g)  (r), 7: (gb) (r)  >7 (gb) (r)
 			*/
-			memcpy(ExtraVideoBuffer, buffer, 18 + width * height * (3 + fetchBufferHasAlpha));
-			//Com_Printf("alpha %d\n", fetchBufferHasAlpha);
+			memcpy(*ri.ExtraVideoBuffer, buffer, 18 + width * height * (3 + fetchBufferHasAlpha));
+			//ri.Printf(PRINT_ALL, "alpha %d\n", fetchBufferHasAlpha);
 			Com_sprintf(finalName, MAX_QPATH, "videos/%s-left-%010d.tga", cmd->givenFileName, count);
 			c = 18 + width * height * (3 + fetchBufferHasAlpha);
 
@@ -1768,17 +1767,17 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				break;
 			case 1:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 2:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 1] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 1] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 3:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 4:
@@ -1787,12 +1786,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			case 7:
 			default:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 1] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 1] = 0;
 				}
 				break;
 			}
 
-			ri.FS_WriteFile(finalName, ExtraVideoBuffer, width * height * (3 + fetchBufferHasAlpha) + 18);
+			ri.FS_WriteFile(finalName, *ri.ExtraVideoBuffer, width * height * (3 + fetchBufferHasAlpha) + 18);
 		}
 		goto done;
 	}
@@ -1843,14 +1842,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			goto done;
 		}
 
-		if (SplitVideo) {
+		if (*ri.SplitVideo) {
 			int c;
 			const char *type = "png";
 
 			/*  1: (r)  (gb), 2: (r)  (b), 3: (r)  (g), 4: (gb)  (r),
 				5: (b)  (r), 6: (g)  (r), 7: (gb) (r)  >7 (gb) (r)
 			*/
-			memcpy(ExtraVideoBuffer, buffer, width * height * 4);
+			memcpy(*ri.ExtraVideoBuffer, buffer, width * height * 4);
 
 			if (cmd->jpg) {
 				type = "jpg";
@@ -1861,7 +1860,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				ri.FS_WriteFile(finalName, buffer, 1);  // create path
 			}
 
-			//buffer = ExtraVideoBuffer;
+			//buffer = *ri.ExtraVideoBuffer;
 
 			c = width * height * (3 + fetchBufferHasAlpha);
 			switch (r_anaglyphMode->integer) {
@@ -1922,17 +1921,17 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				break;
 			case 1:
 				for (i = 0;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = 0;
 				}
 				break;
 			case 2:
 				for (i = 0;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 1] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 1] = 0;
 				}
 				break;
 			case 3:
 				for (i = 0;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 4:
@@ -1941,23 +1940,23 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			case 7:
 			default:
 				for (i = 0;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 1] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 1] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			}
 
 			if (cmd->jpg) {
 				if (fetchBufferNeedsBGRswap) {
-					swap_bgr(ExtraVideoBuffer, width, height, fetchBufferHasAlpha);
+					swap_bgr(*ri.ExtraVideoBuffer, width, height, fetchBufferHasAlpha);
 				}
 
 				if (fetchBufferHasAlpha) {
-					convert_rgba_to_rgb(ExtraVideoBuffer, width, height);
+					convert_rgba_to_rgb(*ri.ExtraVideoBuffer, width, height);
 				}
 
-				RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, ExtraVideoBuffer, 0);
+				RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, *ri.ExtraVideoBuffer, 0);
 			} else {  // png
-				SavePNG(finalName, ExtraVideoBuffer, width, height, (3 + fetchBufferHasAlpha));
+				SavePNG(finalName, *ri.ExtraVideoBuffer, width, height, (3 + fetchBufferHasAlpha));
 			}
 		}
 		goto done;
@@ -1976,12 +1975,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->captureBuffer + 18, 0);
 		if (shotData == &shotDataLeft) {
 
-			ri.CL_WriteAVIVideoFrame(&afdLeft, cmd->encodeBuffer + 18, frameSize);
+			ri.CL_WriteAVIVideoFrame(ri.afdLeft, cmd->encodeBuffer + 18, frameSize);
 			goto done;
 		}
-		ri.CL_WriteAVIVideoFrame(&afdMain, cmd->encodeBuffer + 18, frameSize);
+		ri.CL_WriteAVIVideoFrame(ri.afdMain, cmd->encodeBuffer + 18, frameSize);
 
-		if (SplitVideo) {
+		if (*ri.SplitVideo) {
 			byte *buffer;
 			int width, height;
 			int c;
@@ -1992,7 +1991,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			width = cmd->width;
 			height = cmd->height;
 			buffer = cmd->captureBuffer;
-			memcpy(ExtraVideoBuffer, buffer, 18 + width * height * (3 + fetchBufferHasAlpha));
+			memcpy(*ri.ExtraVideoBuffer, buffer, 18 + width * height * (3 + fetchBufferHasAlpha));
 
 			c = 18 + width * height * (3 + fetchBufferHasAlpha);
 			switch (r_anaglyphMode->integer) {
@@ -2038,7 +2037,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				}
 
 				frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, buffer + 18, 0);
-				ri.CL_WriteAVIVideoFrame(&afdLeft, cmd->encodeBuffer + 18, frameSize);
+				ri.CL_WriteAVIVideoFrame(ri.afdLeft, cmd->encodeBuffer + 18, frameSize);
 			}
 
 			c = 18 + width * height * (3 + fetchBufferHasAlpha);
@@ -2047,17 +2046,17 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				break;
 			case 1:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = 0;
 				}
 				break;
 			case 2:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 1] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 1] = 0;
 				}
 				break;
 			case 3:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 4:
@@ -2066,21 +2065,21 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			case 7:
 			default:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 1] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 1] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			}
 
 			if (fetchBufferNeedsBGRswap) {
-				swap_bgr(ExtraVideoBuffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
+				swap_bgr(*ri.ExtraVideoBuffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
 			}
 
 			if (fetchBufferHasAlpha) {
-				convert_rgba_to_rgb(ExtraVideoBuffer + 18, cmd->width, cmd->height);
+				convert_rgba_to_rgb(*ri.ExtraVideoBuffer + 18, cmd->width, cmd->height);
 			}
 
-			frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, ExtraVideoBuffer + 18, 0);
-			ri.CL_WriteAVIVideoFrame(&afdRight, cmd->encodeBuffer + 18, frameSize);
+			frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, *ri.ExtraVideoBuffer + 18, 0);
+			ri.CL_WriteAVIVideoFrame(ri.afdRight, cmd->encodeBuffer + 18, frameSize);
 		}
 	} else if (cmd->avi) {
 		frameSize = cmd->width * cmd->height;
@@ -2116,13 +2115,13 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			// it's just gl_bgr, no change needed
 		}
 		if (shotData == &shotDataLeft) {
-			ri.CL_WriteAVIVideoFrame(&afdLeft, outBuffer + 18, frameSize * 3);
+			ri.CL_WriteAVIVideoFrame(ri.afdLeft, outBuffer + 18, frameSize * 3);
 			goto done;
 		}
 
-		ri.CL_WriteAVIVideoFrame(&afdMain, outBuffer + 18, frameSize * 3);
+		ri.CL_WriteAVIVideoFrame(ri.afdMain, outBuffer + 18, frameSize * 3);
 
-		if (SplitVideo) {
+		if (*ri.SplitVideo) {
 			byte *buffer;
 			int width, height;
 
@@ -2133,7 +2132,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			width = cmd->width;
 			height = cmd->height;
 			buffer = outBuffer;
-			memcpy(ExtraVideoBuffer, buffer, 18 + width * height * 3);
+			memcpy(*ri.ExtraVideoBuffer, buffer, 18 + width * height * 3);
 
 			c = 18 + width * height * 3;
 			switch (r_anaglyphMode->integer) {
@@ -2170,7 +2169,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			}
 
 			if (r_anaglyphMode->integer != 19) {
-				ri.CL_WriteAVIVideoFrame(&afdLeft, outBuffer + 18, frameSize * 3);
+				ri.CL_WriteAVIVideoFrame(ri.afdLeft, outBuffer + 18, frameSize * 3);
 			}
 
 			c = 18 + width * height * 3;
@@ -2179,17 +2178,17 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				break;
 			case 1:
 				for (i = 18;  i < c;  i += 3) {
-					ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 2:
 				for (i = 18;  i < c;  i += 3) {
-					ExtraVideoBuffer[i + 1] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 1] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 3:
 				for (i = 18;  i < c;  i += (3 + fetchBufferHasAlpha)) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 2] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 2] = 0;
 				}
 				break;
 			case 4:
@@ -2198,12 +2197,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			case 7:
 			default:
 				for (i = 18;  i < c;  i += 3) {
-					ExtraVideoBuffer[i + 0] = ExtraVideoBuffer[i + 1] = 0;
+					*ri.ExtraVideoBuffer[i + 0] = *ri.ExtraVideoBuffer[i + 1] = 0;
 				}
 				break;
 			}
 
-			ri.CL_WriteAVIVideoFrame(&afdRight, ExtraVideoBuffer + 18, frameSize * 3);
+			ri.CL_WriteAVIVideoFrame(ri.afdRight, *ri.ExtraVideoBuffer + 18, frameSize * 3);
 		}
 	}
 
@@ -2222,11 +2221,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		if (shotData == &shotDataLeft) {
 			Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-left-%010d.tga", cmd->givenFileName, count);
 		} else {
-			if (SplitVideo  &&  r_anaglyphMode->integer == 19) {
+			if (*ri.SplitVideo  &&  r_anaglyphMode->integer == 19) {
 				Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-right-%010d.tga", cmd->givenFileName, count);
-			} else if (SplitVideo  &&  r_anaglyphMode->integer > 0) {
+			} else if (*ri.SplitVideo  &&  r_anaglyphMode->integer > 0) {
 				//FIXME
-				//Com_Printf("FIXME split and r_anaglyphMode != 19\n");
+				//ri.Printf(PRINT_ALL, "FIXME split and r_anaglyphMode != 19\n");
 				Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.tga", cmd->givenFileName, count);
 			} else {
 				Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.tga", cmd->givenFileName, count);
@@ -2250,8 +2249,8 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			zAdd =  ( 2 * backEnd.viewParms.zFar * r_znear->value ) / zRange;
 
 			//outAlign = (__m64 *)(fetchBuffer + 18);
-			//outAlign = Video_DepthBuffer;
-			buffer = (byte *)Video_DepthBuffer;
+			//outAlign = *ri.Video_DepthBuffer;
+			buffer = (byte *)*ri.Video_DepthBuffer;
 			buffer += 18;
 			out = (GLfloat *)buffer;
 
@@ -2302,11 +2301,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				if (shotData == &shotDataLeft) {
 					Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-left-%010d.%s", cmd->givenFileName, count, type);
 				} else {
-					if (SplitVideo  &&  r_anaglyphMode->integer == 19) {
+					if (*ri.SplitVideo  &&  r_anaglyphMode->integer == 19) {
 						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-right-%010d.%s", cmd->givenFileName, count, type);
-					} else if (SplitVideo  &&  r_anaglyphMode->integer > 0) {
+					} else if (*ri.SplitVideo  &&  r_anaglyphMode->integer > 0) {
 						//FIXME
-						//Com_Printf("FIXME split and r_anaglyphMode != 19\n");
+						//ri.Printf(PRINT_ALL, "FIXME split and r_anaglyphMode != 19\n");
 						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.%s", cmd->givenFileName, count, type);
 					} else {
 						Com_sprintf(finalName, MAX_QPATH, "videos/%s-depth-%010d.%s", cmd->givenFileName, count, type);
@@ -2329,30 +2328,30 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				*/
 				frameSize = RE_SaveJPGToBuffer(cmd->captureBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->encodeBuffer + 18, 0);
 				if (shotData == &shotDataLeft) {
-					ri.CL_WriteAVIVideoFrame(&afdDepthLeft, cmd->captureBuffer + 18, frameSize);
+					ri.CL_WriteAVIVideoFrame(ri.afdDepthLeft, cmd->captureBuffer + 18, frameSize);
 				} else {
-					if (SplitVideo  &&  r_anaglyphMode->integer == 19) {
-						ri.CL_WriteAVIVideoFrame(&afdDepthRight, cmd->captureBuffer + 18, frameSize);
+					if (*ri.SplitVideo  &&  r_anaglyphMode->integer == 19) {
+						ri.CL_WriteAVIVideoFrame(ri.afdDepthRight, cmd->captureBuffer + 18, frameSize);
 					} else {
-						ri.CL_WriteAVIVideoFrame(&afdDepth, cmd->captureBuffer + 18, frameSize);
+						ri.CL_WriteAVIVideoFrame(ri.afdDepth, cmd->captureBuffer + 18, frameSize);
 					}
 				}
-				//ri.CL_WriteAVIVideoFrame(&afdDepth, cmd->captureBuffer + 18, frameSize);
+				//ri.CL_WriteAVIVideoFrame(ri.afdDepth, cmd->captureBuffer + 18, frameSize);
 			} else if (cmd->avi) {
 				if (shotData == &shotDataLeft) {
-					ri.CL_WriteAVIVideoFrame(&afdDepthLeft, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
+					ri.CL_WriteAVIVideoFrame(ri.afdDepthLeft, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
 				} else {
-					if (SplitVideo  &&  r_anaglyphMode->integer == 19) {
-						ri.CL_WriteAVIVideoFrame(&afdDepthRight, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
-					} else if (SplitVideo  &&  r_anaglyphMode->integer > 0) {
+					if (*ri.SplitVideo  &&  r_anaglyphMode->integer == 19) {
+						ri.CL_WriteAVIVideoFrame(ri.afdDepthRight, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
+					} else if (*ri.SplitVideo  &&  r_anaglyphMode->integer > 0) {
 						//FIXME
-						//Com_Printf("FIXME split and r_anaglyphMode != 19\n");
-						ri.CL_WriteAVIVideoFrame(&afdDepth, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
+						//ri.Printf(PRINT_ALL, "FIXME split and r_anaglyphMode != 19\n");
+						ri.CL_WriteAVIVideoFrame(ri.afdDepth, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
 					} else {
-						ri.CL_WriteAVIVideoFrame(&afdDepth, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
+						ri.CL_WriteAVIVideoFrame(ri.afdDepth, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
 					}
 				}
-				//ri.CL_WriteAVIVideoFrame(&afdDepth, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
+				//ri.CL_WriteAVIVideoFrame(ri.afdDepth, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
 			}
 		}
 	}
@@ -2568,23 +2567,23 @@ static void R_PrintViewParms_f (void)
 
 	p = &tr.viewParms;
 
-	Com_Printf("isPortal: %d\n", p->isPortal);
-	Com_Printf("viewport (x, y, w, h):  %d %d %d %d\n", p->viewportX, p->viewportY, p->viewportWidth, p->viewportHeight);
-	Com_Printf("fov x y:  %f %f\n", p->fovX, p->fovY);
-	Com_Printf("projectionMatrix:\n");
+	ri.Printf(PRINT_ALL, "isPortal: %d\n", p->isPortal);
+	ri.Printf(PRINT_ALL, "viewport (x, y, w, h):  %d %d %d %d\n", p->viewportX, p->viewportY, p->viewportWidth, p->viewportHeight);
+	ri.Printf(PRINT_ALL, "fov x y:  %f %f\n", p->fovX, p->fovY);
+	ri.Printf(PRINT_ALL, "projectionMatrix:\n");
 	for (i = 0;  i < 16;  i++) {
-		Com_Printf("%f ", p->projectionMatrix[i]);
+		ri.Printf(PRINT_ALL, "%f ", p->projectionMatrix[i]);
 	}
-	Com_Printf("\n");
+	ri.Printf(PRINT_ALL, "\n");
 
-	Com_Printf("visBounds: (%f %f %f)  (%f %f %f)\n", p->visBounds[0][0], p->visBounds[0][1], p->visBounds[0][2], p->visBounds[1][0], p->visBounds[1][1], p->visBounds[1][2]);
-	Com_Printf("zFar %f\n", p->zFar);
+	ri.Printf(PRINT_ALL, "visBounds: (%f %f %f)  (%f %f %f)\n", p->visBounds[0][0], p->visBounds[0][1], p->visBounds[0][2], p->visBounds[1][0], p->visBounds[1][1], p->visBounds[1][2]);
+	ri.Printf(PRINT_ALL, "zFar %f\n", p->zFar);
 }
 
 static void R_RemapLastTwoShaders_f (void)
 {
 	if (!*tr.markSurfaceNames[0]  &&  !*tr.markSurfaceNames[1]) {
-		Com_Printf("couldn't remap:  need two surfaces\n");
+		ri.Printf(PRINT_ALL, "couldn't remap:  need two surfaces\n");
 		return;
 	}
 
@@ -2598,6 +2597,10 @@ R_Register
 */
 void R_Register( void )
 {
+	#ifdef USE_RENDERER_DLOPEN
+	com_altivec = ri.Cvar_Get("com_altivec", "1", CVAR_ARCHIVE);
+	#endif
+
 	//
 	// latched and archived variables
 	//
@@ -2627,7 +2630,7 @@ void R_Register( void )
 	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_mode = ri.Cvar_Get( "r_mode", "11", CVAR_ARCHIVE | CVAR_LATCH );
 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "0", CVAR_ARCHIVE );
-	r_noborder = Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_noborder = ri.Cvar_Get("r_noborder", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_customwidth = ri.Cvar_Get( "r_customwidth", "1600", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customheight = ri.Cvar_Get( "r_customheight", "1024", CVAR_ARCHIVE | CVAR_LATCH );
 	r_customPixelAspect = ri.Cvar_Get( "r_customPixelAspect", "1", CVAR_ARCHIVE | CVAR_LATCH );
@@ -2834,7 +2837,7 @@ void R_Init( void ) {
 //	Swap_Init();
 
 	if ( (intptr_t)tess.xyz & 15 ) {
-		Com_Printf( "WARNING: tess.xyz not 16 byte aligned\n" );
+		ri.Printf(PRINT_ALL,  "WARNING: tess.xyz not 16 byte aligned\n" );
 	}
 	Com_Memset( tess.constantColor255, 255, sizeof( tess.constantColor255 ) );
 
@@ -2973,7 +2976,7 @@ Touch all images to make sure they are resident
 */
 void RE_EndRegistration( void ) {
 	R_SyncRenderThread();
-	if (!Sys_LowPhysicalMemory()) {
+	if (!ri.Sys_LowPhysicalMemory()) {
 		RB_ShowImages();
 	}
 }
@@ -2985,7 +2988,11 @@ GetRefAPI
 
 @@@@@@@@@@@@@@@@@@@@@
 */
+#ifdef USE_RENDERER_DLOPEN
+Q_EXPORT refexport_t QDECL *GetRefAPI ( int apiVersion, refimport_t *rimp) {
+#else
 refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
+#endif
 	static refexport_t	re;
 
 	ri = *rimp;

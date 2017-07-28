@@ -530,7 +530,7 @@ void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum)
 			stereoSep = 0;
 	}
 
-	//Com_Printf("zProj: %f\n", zProj);
+	//ri.Printf(PRINT_ALL, "zProj: %f\n", zProj);
 	ymax = zProj * tan(dest->fovY * M_PI / 360.0f);
 	ymin = -ymax;
 
@@ -1141,7 +1141,7 @@ void R_AddDrawSurf( surfaceType_t *surface, shader_t *shader,
 	// compared quickly during the qsorting process
 	tr.refdef.drawSurfs[index].sort = ((uint64_t)shader->sortedIndex << QSORT_SHADERNUM_SHIFT)
 		| (uint64_t)(tr.shiftedEntityNum | ( fogIndex << QSORT_FOGNUM_SHIFT ) | (int)dlightMap);
-	//Com_Printf("%llu\n", tr.refdef.drawSurfs[index].sort);
+	//ri.Printf(PRINT_ALL, "%llu\n", tr.refdef.drawSurfs[index].sort);
 	tr.refdef.drawSurfs[index].surface = surface;
 	tr.refdef.numDrawSurfs++;
 }
@@ -1186,7 +1186,7 @@ void R_SortDrawSurfs( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	for ( i = 0 ; i < numDrawSurfs ; i++ ) {
 		R_DecomposeSort( (drawSurfs+i)->sort, &entityNum, &shader, &fogNum, &dlighted );
 		if (!shader) {
-			Com_Printf("^3!shader for drawSurfs + %d\n", i);
+			ri.Printf(PRINT_ALL, "^3!shader for drawSurfs + %d\n", i);
 			return;
 		}
 
@@ -1265,7 +1265,7 @@ void R_AddEntitySurfaces (void) {
 				continue;
 			}
 			shader = R_GetShaderByHandle( ent->ePtr->customShader );
-			//Com_Printf("shader num %d  '%s'\n", ent->e.customShader, shader->name);
+			//ri.Printf(PRINT_ALL, "shader num %d  '%s'\n", ent->e.customShader, shader->name);
 			R_AddDrawSurf( &entitySurface, shader, R_SpriteFogNum( ent ), 0 );
 			break;
 
@@ -1337,9 +1337,9 @@ void R_GenerateDrawSurfs( void ) {
 	// dynamically compute far clip plane distance
 	R_SetFarClip();
 
-	if (Cvar_FindVar("debug_zfar")) {
-		Com_Printf("orig: %f\n", tr.viewParms.zFar);
-		tr.viewParms.zFar = Cvar_VariableValue("debug_zfar");
+	if (ri.Cvar_FindVar("debug_zfar")) {
+		ri.Printf(PRINT_ALL, "orig: %f\n", tr.viewParms.zFar);
+		tr.viewParms.zFar = ri.Cvar_VariableValue("debug_zfar");
 	}
 
 

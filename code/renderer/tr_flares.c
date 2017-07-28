@@ -314,7 +314,7 @@ void RB_TestFlare( flare_t *f ) {
 		fade = 1;
 	}
 
-	//Com_Printf("%p fade %f\n", f, fade);
+	//ri.Printf(PRINT_ALL, "%p fade %f\n", f, fade);
 
 	f->drawIntensity = fade;
 }

@@ -2063,7 +2063,7 @@ void R_LoadPNG(const char *name, byte **pic, int *width, int *height)
 	{
 		CloseBufferedFile(ThePNG);
 
-		Com_Printf(S_COLOR_YELLOW "%s: invalid image size\n", name);
+		ri.Printf(PRINT_ALL, S_COLOR_YELLOW "%s: invalid image size\n", name);
 
 		return; 
 	}
@@ -2499,25 +2499,25 @@ qboolean PNG_OutputChunk (fileHandle_t fp, ulong type, byte *data, ulong size)
 
 	// Output a standard PNG chunk - length, type, data, crc
 	little = BigLong(size);
-	outcount = FS_Write(&little, sizeof(little), fp);
+	outcount = ri.FS_Write(&little, sizeof(little), fp);
 
 	little = BigLong(type);
 	crc = crc32(0, (byte *)&little, sizeof(little));
-	outcount += FS_Write(&little, sizeof(little), fp);
+	outcount += ri.FS_Write(&little, sizeof(little), fp);
 
 	if(size)
 	{
 		crc = crc32(crc, data, size);
-		outcount += FS_Write(data, size, fp);
+		outcount += ri.FS_Write(data, size, fp);
 	}
 
 	little = BigLong(crc);
-	outcount += FS_Write(&little, sizeof(little), fp);
+	outcount += ri.FS_Write(&little, sizeof(little), fp);
 
 	if(outcount != (size + 12))
 	{
 		//png_error = PNG_ERROR_WRITE;
-		Com_Printf("^1error creating output chunk for png\n");
+		ri.Printf(PRINT_ALL, "^1error creating output chunk for png\n");
 		return qfalse;
 	}
 	return qtrue;
@@ -2671,7 +2671,7 @@ qboolean PNG_Pack (byte *out, ulong *size, ulong maxsize, byte *data, int width,
 	memset(&zdata, 0, sizeof(z_stream));
 	if (deflateInit(&zdata, zlibCompression) != Z_OK) {
 		//png_error = PNG_ERROR_COMP;
-		Com_Printf("^1couldn't initialize zlib\n");
+		ri.Printf(PRINT_ALL, "^1couldn't initialize zlib\n");
 		return qfalse;
 	}
 
@@ -2689,7 +2689,7 @@ qboolean PNG_Pack (byte *out, ulong *size, ulong maxsize, byte *data, int width,
 		zdata.next_in = workline;
 		zdata.avail_in = rowbytes + 1;
 		if (deflate(&zdata, Z_SYNC_FLUSH) != Z_OK) {
-			Com_Printf("^1couldn't refilter data\n");
+			ri.Printf(PRINT_ALL, "^1couldn't refilter data\n");
 			deflateEnd(&zdata);
 			//png_error = PNG_ERROR_COMP;
 			return qfalse;
@@ -2698,7 +2698,7 @@ qboolean PNG_Pack (byte *out, ulong *size, ulong maxsize, byte *data, int width,
 		source -= rowbytes;
 	}
 	if (deflate(&zdata, Z_FINISH) != Z_STREAM_END) {
-		Com_Printf("^1couldn't finish data\n");
+		ri.Printf(PRINT_ALL, "^1couldn't finish data\n");
 		//png_error = PNG_ERROR_COMP;
 		return qfalse;
 	}
@@ -2728,17 +2728,17 @@ qboolean SavePNG (const char *name, byte *data, int width, int height, int byted
 
 	//png_error = PNG_ERROR_OK;
 
-	fp = FS_FOpenFileWrite(name);
+	fp = ri.FS_FOpenFileWrite(name);
 	if (!fp) {
-		Com_Printf("^1couldn't open png file for saving: '%s'\n", name);
+		ri.Printf(PRINT_ALL, "^1couldn't open png file for saving: '%s'\n", name);
 		//png_error = PNG_ERROR_CREATE_FAIL;
 		return qfalse;
 	}
 	// Write out the PNG signature
-	outcount = FS_Write(PNG_Signature, strlen(PNG_Signature), fp);
+	outcount = ri.FS_Write(PNG_Signature, strlen(PNG_Signature), fp);
 	if (outcount != strlen(PNG_Signature)) {
-		FS_FCloseFile(fp);
-		Com_Printf("^1couldn't write png signature\n");
+		ri.FS_FCloseFile(fp);
+		ri.Printf(PRINT_ALL, "^1couldn't write png signature\n");
 		//png_error = PNG_ERROR_WRITE;
 		return qfalse;
 	}
@@ -2760,55 +2760,55 @@ qboolean SavePNG (const char *name, byte *data, int width, int height, int byted
 	header.InterlaceMethod = 0;
 
 	if(!PNG_OutputChunk(fp, PNG_ChunkType_IHDR, (byte *)&header, PNG_Chunk_IHDR_Size)) {
-		Com_Printf("^1couldn't write png header\n");
-		FS_FCloseFile(fp);
+		ri.Printf(PRINT_ALL, "^1couldn't write png header\n");
+		ri.FS_FCloseFile(fp);
 		return qfalse;
 	}
 
-	//Com_Printf("^2test done width: %lu   height: %lu\n", header.Width, header.Height);
-	//FS_FCloseFile(fp);
+	//ri.Printf(PRINT_ALL, "^2test done width: %lu   height: %lu\n", header.Width, header.Height);
+	//ri.FS_FCloseFile(fp);
 	//return qtrue;
 
 #if 0
 	// Create and output the copyright info
  	if(!PNG_OutputChunk(fp, PNG_ChunkType_TEXT, (byte *)png_copyright, sizeof(png_copyright))) {
-		Com_Printf("^1couldn't write copyright info\n");
-		FS_FCloseFile(fp);
+		ri.Printf(PRINT_ALL, "^1couldn't write copyright info\n");
+		ri.FS_FCloseFile(fp);
 		return qfalse;
 	}
 #endif
 
 	// Max size of compressed image (source size + 0.1% + 12)
 	maxsize = (width * height * bytedepth) + 4096;
-	work = (byte *)Z_Malloc(maxsize);
+	work = (byte *)ri.Malloc(maxsize);
 
 	if (!work) {
-		Com_Printf("^1error: couldn't allocate buffer for png saving\n");
-		FS_FCloseFile(fp);
+		ri.Printf(PRINT_ALL, "^1error: couldn't allocate buffer for png saving\n");
+		ri.FS_FCloseFile(fp);
 		return qfalse;
 	}
 
 	// Pack up the image data
 	if (!PNG_Pack(work, &size, maxsize, data, width, height, bytedepth)) {
-		Com_Printf("^1couldn't pack png image data\n");
-		Z_Free(work);
-		FS_FCloseFile(fp);
+		ri.Printf(PRINT_ALL, "^1couldn't pack png image data\n");
+		ri.Free(work);
+		ri.FS_FCloseFile(fp);
 		return qfalse;
 	}
 	// Write out the compressed image data
 	if(!PNG_OutputChunk(fp, PNG_ChunkType_IDAT, (byte *)work, size)) {
-		Com_Printf("^1couldn't write compressed data\n");
-		Z_Free(work);
-		FS_FCloseFile(fp);
+		ri.Printf(PRINT_ALL, "^1couldn't write compressed data\n");
+		ri.Free(work);
+		ri.FS_FCloseFile(fp);
 		return qfalse;
 	}
-	Z_Free(work);
+	ri.Free(work);
 	// Output terminating chunk
 	if(!PNG_OutputChunk(fp, PNG_ChunkType_IEND, NULL, 0)) {
-		Com_Printf("^1couldn't ouptut terminating marker\n");
-		FS_FCloseFile(fp);
+		ri.Printf(PRINT_ALL, "^1couldn't ouptut terminating marker\n");
+		ri.FS_FCloseFile(fp);
 		return qfalse;
 	}
-	FS_FCloseFile(fp);
+	ri.FS_FCloseFile(fp);
 	return qtrue;
 }

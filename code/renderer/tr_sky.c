@@ -463,7 +463,7 @@ static void FillCloudySkySide( const int mins[2], const int maxs[2], qboolean ad
 	tHeight = maxs[1] - mins[1] + 1;
 	sWidth = maxs[0] - mins[0] + 1;
 
-	//Com_Printf("^3%d -> %d   %d -> %d\n", mins[1], maxs[1], mins[0], maxs[0]);
+	//ri.Printf(PRINT_ALL, "^3%d -> %d   %d -> %d\n", mins[1], maxs[1], mins[0], maxs[0]);
 
 	for ( t = mins[1]+HALF_SKY_SUBDIVISIONS; t <= maxs[1]+HALF_SKY_SUBDIVISIONS; t++ )
 	{
@@ -553,14 +553,14 @@ static void FillCloudBox( const shader_t *shader, int stage )
 		if ( ( sky_mins[0][i] >= sky_maxs[0][i] ) ||
 			 ( sky_mins[1][i] >= sky_maxs[1][i] ) )
 		{
-			//Com_Printf("nope %d\n", i);
+			//ri.Printf(PRINT_ALL, "nope %d\n", i);
 			continue;
 		}
 
-		sky_mins_subd[0] = Q_ftol( sky_mins[0][i] * HALF_SKY_SUBDIVISIONS );
-		sky_mins_subd[1] = Q_ftol( sky_mins[1][i] * HALF_SKY_SUBDIVISIONS );
-		sky_maxs_subd[0] = Q_ftol( sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS );
-		sky_maxs_subd[1] = Q_ftol( sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS );
+		sky_mins_subd[0] = ri.ftol( sky_mins[0][i] * HALF_SKY_SUBDIVISIONS );
+		sky_mins_subd[1] = ri.ftol( sky_mins[1][i] * HALF_SKY_SUBDIVISIONS );
+		sky_maxs_subd[0] = ri.ftol( sky_maxs[0][i] * HALF_SKY_SUBDIVISIONS );
+		sky_maxs_subd[1] = ri.ftol( sky_maxs[1][i] * HALF_SKY_SUBDIVISIONS );
 
 		if ( sky_mins_subd[0] < -HALF_SKY_SUBDIVISIONS ) 
 			sky_mins_subd[0] = -HALF_SKY_SUBDIVISIONS;
@@ -580,7 +580,7 @@ static void FillCloudBox( const shader_t *shader, int stage )
 		else if ( sky_maxs_subd[1] > HALF_SKY_SUBDIVISIONS )
 			sky_maxs_subd[1] = HALF_SKY_SUBDIVISIONS;
 
-		//Com_Printf("%d -> %d   %d -> %d\n", sky_mins_subd[1], sky_maxs_subd[1], sky_mins_subd[0], sky_maxs_subd[0]);
+		//ri.Printf(PRINT_ALL, "%d -> %d   %d -> %d\n", sky_mins_subd[1], sky_maxs_subd[1], sky_mins_subd[0], sky_maxs_subd[0]);
 		//
 		// iterate through the subdivisions
 		//
@@ -623,7 +623,7 @@ void R_BuildCloudData( shaderCommands_t *input )
 	tess.numIndexes = 0;
 	tess.numVertexes = 0;
 
-	//Com_Printf("^1cloudHeight %f\n", input->shader->sky.cloudHeight);
+	//ri.Printf(PRINT_ALL, "^1cloudHeight %f\n", input->shader->sky.cloudHeight);
 
 	if ( shader->sky.cloudHeight )
 	{
@@ -632,7 +632,7 @@ void R_BuildCloudData( shaderCommands_t *input )
 			if ( !tess.xstages[i] ) {
 				break;
 			}
-			//Com_Printf("fill cloud box %d\n", i);
+			//ri.Printf(PRINT_ALL, "fill cloud box %d\n", i);
 			FillCloudBox( shader, i );
 		}
 	}
