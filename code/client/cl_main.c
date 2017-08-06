@@ -4658,11 +4658,18 @@ CL_ShutdownRef
 ============
 */
 void CL_ShutdownRef( void ) {
-	if ( !re.Shutdown ) {
-		return;
+	if ( re.Shutdown ) {
+		re.Shutdown( qtrue );
 	}
-	re.Shutdown( qtrue );
+
 	Com_Memset( &re, 0, sizeof( re ) );
+
+#ifdef USE_RENDERER_DLOPEN
+	if ( rendererLib ) {
+		Sys_UnloadLibrary( rendererLib );
+		rendererLib = NULL;
+	}
+#endif
 }
 
 /*
@@ -6385,9 +6392,13 @@ void CL_GlobalServers_f( void ) {
 		}
 		else
 		{
-			Com_sprintf(command, sizeof(command), "getserversExt %s %s ipv6", com_gamename->string, Cmd_Argv(2));
+			Com_sprintf(command, sizeof(command), "getserversExt %s %s ipv6",
+						com_gamename->string, Cmd_Argv(2));
 		}
 	}
+	else if ( !Q_stricmp( com_gamename->string, LEGACY_MASTER_GAMENAME ) )
+		Com_sprintf(command, sizeof(command), "getservers %s",
+					Cmd_Argv(2));
 	else
 		Com_sprintf(command, sizeof(command), "getservers %s %s",
 					com_gamename->string, Cmd_Argv(2));

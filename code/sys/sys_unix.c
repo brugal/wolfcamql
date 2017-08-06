@@ -301,6 +301,10 @@ char *Sys_GetClipboardData(void)
 
 char *Sys_GetClipboardData (void)
 {
+	//FIXME sdl2
+	return NULL;
+
+#if 0
 	SDL_SysWMinfo info;
 	int r;
 	Atom XA_CLIPBOARD;
@@ -450,6 +454,7 @@ char *Sys_GetClipboardData (void)
 	XDeleteProperty(dpy, ourWindow, ourAtom);
 
 	return retData;
+#endif
 }
 
 #endif

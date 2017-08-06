@@ -341,7 +341,7 @@ static void RB_SurfaceTriangles( srfTriangles_t *srf ) {
 	int			dlightBits;
 	qboolean	needsNormal;
 
-	dlightBits = srf->dlightBits[backEnd.smpFrame];
+	dlightBits = srf->dlightBits;
 	tess.dlightBits |= dlightBits;
 
 	RB_CHECKOVERFLOW( srf->numVerts, srf->numIndexes );
@@ -1286,7 +1286,7 @@ static void RB_SurfaceFace( srfSurfaceFace_t *surf ) {
 
 	RB_CHECKOVERFLOW( surf->numPoints, surf->numIndices );
 
-	dlightBits = surf->dlightBits[backEnd.smpFrame];
+	dlightBits = surf->dlightBits;
 	tess.dlightBits |= dlightBits;
 
 	indices = ( unsigned * ) ( ( ( char  * ) surf ) + surf->ofsIndices );
@@ -1380,7 +1380,7 @@ static void RB_SurfaceGrid( srfGridMesh_t *cv ) {
 
 	//ri.Printf(PRINT_ALL, "RB_SurfaceGrid '%s'\n", tess.shader->name);
 
-	dlightBits = cv->dlightBits[backEnd.smpFrame];
+	dlightBits = cv->dlightBits;
 	tess.dlightBits |= dlightBits;
 
 	// determine the allowable discrepance
@@ -1615,10 +1615,7 @@ void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])( void *) = {
 	(void(*)(void*))RB_SurfaceTriangles,		// SF_TRIANGLES,
 	(void(*)(void*))RB_SurfacePolychain,		// SF_POLY,
 	(void(*)(void*))RB_SurfaceMesh,			// SF_MD3,
-	(void(*)(void*))RB_SurfaceAnim,			// SF_MD4,
-#ifdef RAVENMD4
 	(void(*)(void*))RB_MDRSurfaceAnim,		// SF_MDR,
-#endif
 	(void(*)(void*))RB_IQMSurfaceAnim,		// SF_IQM,
 	(void(*)(void*))RB_SurfaceFlare,		// SF_FLARE,
 	(void(*)(void*))RB_SurfaceEntity		// SF_ENTITY

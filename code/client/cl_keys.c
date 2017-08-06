@@ -577,6 +577,8 @@ void Field_CharEvent( field_t *edit, int ch ) {
 	fieldChar_t *fc;
 	qboolean error;
 
+	//Com_Printf("field char event: %d\n", ch);
+
 	if ( ch == 'v' - 'a' + 1 ) {	// ctrl-v is paste
 		Field_Paste( edit );
 		return;
@@ -1522,6 +1524,9 @@ void CL_KeyDownEvent( int key, unsigned time )
 		break;
 	}
 
+	// send the bound action
+	CL_ParseBinding( key, qtrue, time );
+
 	// distribute the key down event to the apropriate handler
 	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) {
 		if (functionKey) {
@@ -1546,9 +1551,6 @@ void CL_KeyDownEvent( int key, unsigned time )
 	} else if ( clc.state == CA_DISCONNECTED ) {
 		Console_Key( key );
 	}
-
-	// send the bound action
-	CL_ParseBinding( key, qtrue, time );
 }
 
 /*

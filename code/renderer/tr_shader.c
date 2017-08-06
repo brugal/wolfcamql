@@ -1989,7 +1989,7 @@ sortedIndex.
 ==============
 */
 static void FixRenderCommandList( int newShader ) {
-	renderCommandList_t	*cmdList = &backEndData[tr.smpFrame]->commands;
+	renderCommandList_t	*cmdList = &backEndData->commands;
 
 	if ( cmdList ) {
 		const void *curCmd = cmdList->cmds;
@@ -2703,12 +2703,6 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	//ri.Printf(PRINT_ALL, "^2new 0x%x light:%d '%s' '%s'\n", hash, lightmapIndex, name, strippedName);
 
 
-	// make sure the render thread is stopped, because we are probably
-	// going to have to upload an image
-	if (r_smp->integer) {
-		R_SyncRenderThread();
-	}
-
 	InitShader( strippedName, lightmapIndex );
 
 	// FIXME: set these "need" values apropriately
@@ -2863,12 +2857,6 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 			// match found
 			return sh->index;
 		}
-	}
-
-	// make sure the render thread is stopped, because we are probably
-	// going to have to upload an image
-	if (r_smp->integer) {
-		R_SyncRenderThread();
 	}
 
 	InitShader( name, lightmapIndex );
@@ -3514,9 +3502,9 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 				buf[n] = n % 256;
 			}
 
-			if (r_smp->integer) {
-				R_SyncRenderThread();
-			}
+			//if (r_smp->integer) {
+			//	R_SyncRenderThread();
+			//}
 #endif
 			qglBindTexture(GL_TEXTURE_2D, image->texnum);
 #if 1
@@ -3546,9 +3534,9 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 	//ri.Printf(PRINT_ALL, "image->texum %d  %s\n", image->texnum, image->imgName[0] != '\0' ? image->imgName : "");
 
 
-	if (r_smp->integer) {
-		R_SyncRenderThread();
-	}
+	//if (r_smp->integer) {
+	//	R_SyncRenderThread();
+	//}
 
 	//FIXME lightmaps?
 	GL_SelectTextureUnit(0);
@@ -3623,9 +3611,9 @@ qhandle_t RE_RegisterShaderFromData (const char *name, const ubyte *data, int wi
 	image_t *image;
 	shader_t *shader;
 
-	if (r_smp->integer) {
-		R_SyncRenderThread();
-	}
+	//if (r_smp->integer) {
+	//	R_SyncRenderThread();
+	//}
 
 	image = R_CreateImage(name, data, width, height, mipmap, allowPicmip, wrapClampMode);
 	h = RE_RegisterShaderFromImage(name, lightmapIndex, image, qfalse);  //qfalse);
@@ -3657,9 +3645,10 @@ void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 	//image = &shader->stages[0].bundle[0].image;
 	image = shader->stages[0]->bundle[0].image[0];
 
-	if (r_smp->integer) {
-		R_SyncRenderThread();
-	}
+	//if (r_smp->integer) {
+	//	R_SyncRenderThread();
+	//}
+
 	qglBindTexture(GL_TEXTURE_2D, image->texnum);
 	qglGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 

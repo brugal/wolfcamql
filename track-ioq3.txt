@@ -1730,33 +1730,31 @@ client gets disconnected with download blocks in the queue
 
 2013-01-17-01 Add vim stuff to .gitignore
 
----- this ----
-
-2013-01-17-02 skip:  Use SDL 2 instead of SDL 1.2
-2013-01-17-03 skip:  Make the mousewheel work
+2013-01-17-02 Use SDL 2 instead of SDL 1.2
+2013-01-17-03 Make the mousewheel work
 
 2013-01-17-04
     Make UI_CVAR_CREATE use VM specific code
 
     Makes cvar be flagged as VM created and unset ROM if ARCHIVE is set.
 
-2013-01-18-01 skip:  Allow hardware gamma, in theory
+2013-01-18-01 Allow hardware gamma, in theory
 
-2013-01-19-01 skip:  Convert SDL text input to UTF-32
-2013-01-19-02 skip:  Fix wacky patch for r_ignorehwgamma
+2013-01-19-01 Convert SDL text input to UTF-32
+2013-01-19-02 Fix wacky patch for r_ignorehwgamma
 
-2013-01-21-01 skip:  Improve console key situation
-2013-01-21-02 skip:  Update bundled SDL headers/libs
+2013-01-21-01 Improve console key situation
+2013-01-21-02 Update bundled SDL headers/libs
 
-2013-01-24-01 skip:  Remove the SMP renderer feature
+2013-01-24-01 Remove the SMP renderer feature
 
-2013-01-25-01 skip:  Update README
+2013-01-25-01 Update README
 
-2013-01-26-01 skip:  Fix some SMP bits I missed
+2013-01-26-01 Fix some SMP bits I missed
 
-2013-01-28-01 skip:  The in_mouse stuff makes no sense in SDL2
+2013-01-28-01 The in_mouse stuff makes no sense in SDL2
 
-2013-01-30-01 skip:  Starting sunlight experimentation branch
+2013-01-30-01 skip (rend2):  Starting sunlight experimentation branch
 
 2013-01-30-02 skip:  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
 
@@ -1771,9 +1769,9 @@ client gets disconnected with download blocks in the queue
 2013-02-02-02 Use Q_strncpyz in G_AddRandomBot
 2013-02-02-03 Remove MSG_WriteDeltaUsercmd and MSG_ReadDeltaUsercmd
 
-2013-02-04-01 skip:  Merge Reaction renderer features, remove "#ifdef REACTION"s
+2013-02-04-01 skip (rend2):  Merge Reaction renderer features, remove "#ifdef REACTION"s
 
-2013-02-04-02 skip:  Merge branch 'reactionmerge'
+2013-02-04-02 skip (rend2):  Merge branch 'reactionmerge'
 
 2013-02-07-01
     Increase favorite address buffer size in Team Arena UI
@@ -1793,7 +1791,7 @@ client gets disconnected with download blocks in the queue
 
     This does however allow favorites to contain hostnames which was explicitly not allowed before.
 
-2013-02-11-01 skip:
+2013-02-11-01 skip (rend2):
     Fix renderering TrueType Fonts in Rend2
 
     Reported by Axel Isouard (exidl)
@@ -1803,11 +1801,12 @@ client gets disconnected with download blocks in the queue
 2013-02-11-04 Add missing traps to cg_local.h
 2013-02-11-05 skip (rend2):  Remove newlines from Rend2 error messages
 2013-02-11-06 Update invalid g_gametype right away
-2013-02-11-07 skip (need previous patches):  5289 - Support for .pk3dir
 
-2013-02-11-08 skip (need previous patches):  Change pk3dir README / comments to fit in better
+2013-02-11-07 5289 - Support for .pk3dir
 
-2013-02-11-09 skip (need previous patches):
+2013-02-11-08 Change pk3dir README / comments to fit in better
+
+2013-02-11-09
     Don't add pk3dirs if connecting to a pure server
 
     Only .cfg etc would be read from pk3dirs, but they should be treated like pk3s that are not on the pure list.
@@ -1818,9 +1817,9 @@ client gets disconnected with download blocks in the queue
 
 2013-02-12-01 skip (rend2):  #5878: Ensure surfaces are drawn before executing full-screen render
 
-2013-02-15-01 skip (renaming renderer dirs):  renderer -> renderergl1, rend2 -> renderergl2
+2013-02-15-01 skip (rend2):  renderer -> renderergl1, rend2 -> renderergl2
 
-2013-02-15-02 skip (renderer2):  Fixed build for mac (s/rend2/opengl2/)
+2013-02-15-02 skip (rend2):  Fixed build for mac (s/rend2/opengl2/)
 2013-02-15-03 5097 - Menu corrupted on start (on IRIX)
 2013-02-15-04 5717 - Gamecode can open file "" for reading
 2013-02-15-05 Remove unneeded variable extern
@@ -1833,12 +1832,12 @@ client gets disconnected with download blocks in the queue
     Dynamically allocate line buffer. (by ZTM)
 
 2013-02-16-01 Fix freeing source while parsing botfiles/items.c
-2013-02-16-02 skip (renderer2):  Move some things into renderercommon
+2013-02-16-02 skip (rend2):  Move some things into renderercommon
 2013-02-16-03 Change radiant URL in README
-2013-02-16-04 skip (renderer2):  Add renderercommon/tr_common.h
+2013-02-16-04 skip (rend2):  Add renderercommon/tr_common.h
 2013-02-16-05 skip:  Remove a few name tags
-2013-02-16-06 skip (renderer2):  Add GPL header to tr_common.h
-2013-02-16-07 skip (renderer2):  Fix zakk's screwups
+2013-02-16-06 skip (rend2):  Add GPL header to tr_common.h
+2013-02-16-07 skip (rend2):  Fix zakk's screwups
 
 2013-02-17-01 5882 - Update OpenAL Headers to OpenAL Soft 1.15.1
 
@@ -1860,7 +1859,7 @@ client gets disconnected with download blocks in the queue
 
 2013-02-27-01 Fix comment in snd_codec_opus.c
 
-2013-02-27-02 skip (renderer2):
+2013-02-27-02 skip (rend2):
     Move noise function declations to tr_common.h
 
     tr_noise.c is in renderercommon directory, so declare them in header there too.
@@ -1880,17 +1879,17 @@ client gets disconnected with download blocks in the queue
 2013-03-03-02 Show lowercased ascii in bind command
 2013-03-03-03 Fix vote Y/1 and teamvote Y/1
 
-2013-03-05-01 skip (renderer2):
+2013-03-05-01 skip (rend2):
     Calculate viewport and screen texture coordinates correctly for sun shadows.
  This fixes part of #5889.
 
-2013-03-05-02 skip (renderer2):  Simplify previous patch.
-2013-03-05-03 skip (renderer2):  Oops, fix typo.
-2013-03-05-04 skip (build):  Testing out autobuild stuff.
+2013-03-05-02 skip (rend2):  Simplify previous patch.
+2013-03-05-03 skip (rend2):  Oops, fix typo.
+2013-03-05-04 Testing out autobuild stuff.
 
-2013-03-05-05 skip (build):  Fixed the auto build, for details go here: https://travis-ci.org/ioquake/ioq3
+2013-03-05-05 Fixed the auto build, for details go here: https://travis-ci.org/ioquake/ioq3
 
-2013-03-06-01 skip (build):  updated travis file to notify us in our lonely IRC outpost of love.
+2013-03-06-01 updated travis file to notify us in our lonely IRC outpost of love.
 
 2013-03-06-01 skip (rend2):  Simplify RE_StretchRaw() with RE_UploadCinematic() and RB_InstantQuad2().
 
@@ -1898,70 +1897,70 @@ client gets disconnected with download blocks in the queue
 
 2013-03-06-01 skip (rend2):  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
 
-2013-03-06-02 skip (build):
+2013-03-06-02
     autobuild: Enable Ogg Vorbis, Freetype, and MDR model support
 
     Removed unneeded SDL packages.
 
-2013-03-06-03 skip (build):  autobuild: test default build, with extra options, and mingw
-2013-03-06-04 skip (build):  autobuild: try to fix extra options build and mingw builds
+2013-03-06-03 autobuild: test default build, with extra options, and mingw
+2013-03-06-04 autobuild: try to fix extra options build and mingw builds
 
-2013-03-06-05 skip (renderer2):  Fix RAVENMD4 warnings in OpenGL2
-2013-03-06-06 skip (build):  Improve build-test.sh for non-travis-ci usage
-2013-03-06-07 skip (build):  build-test.sh always run clean first, for non-travis-ci
+2013-03-06-05 skip (rend2):  Fix RAVENMD4 warnings in OpenGL2
+2013-03-06-06 Improve build-test.sh for non-travis-ci usage
+2013-03-06-07 build-test.sh always run clean first, for non-travis-ci
 
-2013-03-06-07 skip:  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
+2013-03-06-07 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
 
-2013-03-07-01 skip (build):  Use the mingw fork that gets maintained
-2013-03-07-02 skip (build):  Use -q instead of -qq on apt-get
-2013-03-07-03 skip (build):  One last try...
+2013-03-07-01 Use the mingw fork that gets maintained
+2013-03-07-02 Use -q instead of -qq on apt-get
+2013-03-07-03 One last try...
 
-2013-03-07-04 skip (renderer2):  Fix clampmapped images being always treated as sRGB.
+2013-03-07-04 skip (rend2):  Fix clampmapped images being always treated as sRGB.
 
-2013-03-07-05 skip (build):  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
+2013-03-07-05 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
 
-2013-03-07-06 skip (build):  Only spam IRC on failure
+2013-03-07-06 Only spam IRC on failure
 
-2013-03-08-01 skip (no iqm):
+2013-03-08-01
     Fix origin returned by IQM's LerpTag
 
     It use to return pose joint's offset from base at the lerped frame, now it returns the joint's origin at the lerped frame.
 
     Patch by Axel Isouard and Zack Middleton.
 
-2013-03-08-02 skip (no yml):  Merge branch 'master' of https://github.com/ioquake/ioq3
+2013-03-08-02 Merge branch 'master' of https://github.com/ioquake/ioq3
 
-2013-03-08-03 skip (no iqm):  Fix size reserved for IQM jointMats (allocated more than used)
+2013-03-08-03 Fix size reserved for IQM jointMats (allocated more than used)
 
 2013-03-09-01 Fix displaying demo name when loading demo
 
-2013-03-11-01 skip:  Remove old x86_64 JIT compiler
-2013-03-11-02 skip (not needed):  Remove README note about USE_OLD_VM64
+2013-03-11-01 Remove old x86_64 JIT compiler
+2013-03-11-02 Remove README note about USE_OLD_VM64
 
 2013-03-11-03 skip (rend2):  Always reset vertex attrib pointers with animated meshes.
 
 2013-03-12-01 skip (rend2):  Move renderers a bit closer together
 2013-03-12-02 skip (rend common):  Fix USE_FREETYPE breakage
 2013-03-12-03 skip (rend2):  Oops missed a bit
-2013-03-12-04 skip:  Move mingw to separate build job on travis-ci
-2013-03-12-05 skip (clang?):  Fix some clang warnings
-2013-03-12-06 skip:  Fix mingw gcc name in build-test.sh
+2013-03-12-04 Move mingw to separate build job on travis-ci
+2013-03-12-05 Fix some clang warnings
+2013-03-12-06 Fix mingw gcc name in build-test.sh
 
-2013-03-12-07 skip:
+2013-03-12-07
     Disable freetype and vorbis for mingw travis build
 
     Libs are missing.
 
-2013-03-12-08 skip:  Remove some more automatic sRGB image flags.
+2013-03-12-08 skip (rend2):  Remove some more automatic sRGB image flags.
 
-2013-03-14-01 skip:  Fix compilation in VS2008.
+2013-03-14-01 skip (rend2):  Fix compilation in VS2008.
 2013-03-14-02 skip (rend2):  Support more tcgens in lightall shader.
 
-2013-03-18-01 skip:  Remove RAVENMD4 #define
-2013-03-18-02 skip (iqm):  Fix loading and rendering IQMs with no joints
+2013-03-18-01 Remove RAVENMD4 #define
+2013-03-18-02 Fix loading and rendering IQMs with no joints
 2013-03-18-03 Use PATH_SEP for a debug message in FS_FOpenFileReadDir
 
-2013-03-18-04 skip (iqm):
+2013-03-18-04
     Always initialize joint_names in R_LoadIQM
 
     Reported by MAN-AT-ARMS
@@ -1973,7 +1972,7 @@ client gets disconnected with download blocks in the queue
 
 2013-03-20-01 skip (rend2):  Make all GLSL shaders use the same set of uniforms.
 
-2013-03-21-01 skip:
+2013-03-21-01
     Consolidate architecture names
 
     amd64, x64, x86_64 -> x86_64
@@ -1984,52 +1983,52 @@ client gets disconnected with download blocks in the queue
 
     Some exceptions are made for the actual build product names
 
-2013-03-21-02 skip:  Merge mingw build scripts
-2013-03-21-03 skip:  Add jenkins-ci-build.sh
-2013-03-21-04 skip:  Fix cross-make-mingw.sh when no ARCH is supplied
-2013-03-21-05 skip:  Fix comment grammar (and test jenkins)
+2013-03-21-02 Merge mingw build scripts
+2013-03-21-03 Add jenkins-ci-build.sh
+2013-03-21-04 Fix cross-make-mingw.sh when no ARCH is supplied
+2013-03-21-05 Fix comment grammar (and test jenkins)
 
-2013-03-22-01 skip:  Ditch 'historical compatibility' and use 'logic' instead
-2013-03-22-02 skip:  Add DEBUG_MAKEFILE to... debug the Makefile
+2013-03-22-01 Ditch 'historical compatibility' and use 'logic' instead
+2013-03-22-02 Add DEBUG_MAKEFILE to... debug the Makefile
 
-2013-03-22-03 skip:  Move cross-make-mingw.sh's functionality to the Makefile and remove it
+2013-03-22-03 Move cross-make-mingw.sh's functionality to the Makefile and remove it
 
-2013-03-22-04 skip:  Fix travis build
-2013-03-22-05 skip:  (Hopefully) fix the Jenkins build
-2013-03-22-06 skip:  Fix it more
-2013-03-22-07 skip:  Make travis silent
-2013-03-22-08 skip:  Use distclean for jenkins builds
+2013-03-22-04 Fix travis build
+2013-03-22-05 (Hopefully) fix the Jenkins build
+2013-03-22-06 Fix it more
+2013-03-22-07 Make travis silent
+2013-03-22-08 Use distclean for jenkins builds
 
-2013-03-23-01 skip:  (bug #5904) Fix OpenBSD and Solaris builds
+2013-03-23-01 (bug #5904) Fix OpenBSD and Solaris builds
 
-2013-03-24-01 skip:  Enable building QVMs when cross-compiling
+2013-03-24-01 Enable building QVMs when cross-compiling
 
 2013-03-25-01 skip (rend2):  s/enum/typedef enum/g on uniform_t for glorious fix of mac build. h/t...
 
-2013-03-25-02 skip:  Cross compiling for OS X
+2013-03-25-02 Cross compiling for OS X
 
-2013-03-25-02 skip:  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
+2013-03-25-02 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
 
 2013-03-26-01 Fix some of the things clang --analyze flagged
 2013-03-26-02 Fix the warning caused by fixing the warnings
-2013-03-26-03 skip:  Fix 'make -jX clean release'
-2013-03-26-04 skip:  Make the build summary more pretty
+2013-03-26-03 Fix 'make -jX clean release'
+2013-03-26-04 Make the build summary more pretty
 
-2013-03-27-01 skip:  Add option to create archive of build product
+2013-03-27-01 Add option to create archive of build product
 2013-03-27-02
     Change missionpack QVM build order in Makefile
 
     Now it matches native libs and baseq3 QVMs.
 
-2013-03-28-01 skip:  Fix OSX app/ub scripts
-2013-03-28-02 skip:  Fix typo preventing OSX native compiles
+2013-03-28-01 Fix OSX app/ub scripts
+2013-03-28-02 Fix typo preventing OSX native compiles
 
 2013-04-02-01 skip (rend2):
     Add sunlight/lightmap merging by multiply (r_sunlightMode 1)
     Merge additive sunlight and map lighting into one GLSL shader (r_sunlightMode 2)
     Change single lightmap blends to use lightall
 
-2013-04-02-02 skip (merge):  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
+2013-04-02-02 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
 
 2013-04-05-01
     Fix setting CVAR_VM_CREATED flag on user created cvars
@@ -2038,7 +2037,7 @@ client gets disconnected with download blocks in the queue
 
     trap_Cvar_Register called Cvar_Get which cleared CVAR_USER_CREATED flag, but CVAR_VM_CREATED wasn't set because the cvar already existed.
 
-2013-04-09-01 skip (not needed):  Fix shfolder.dll not getting freed
+2013-04-09-01 Fix shfolder.dll not getting freed
 
 2013-04-10-01 skip (rend2):
     Fix zone memory leak in OpenGL2 renderer
@@ -2065,7 +2064,7 @@ client gets disconnected with download blocks in the queue
     Using Debian gcc version 4.7.2 and clang 3.0-6.1 anyway.
 
 2013-04-22-01 Fix referencing pk3 with only qagame QVM
-2013-04-22-02 skip (never added com_basegame):
+2013-04-22-02
     Give botlib com_basegame for botlib.log path
 
     Before it always used BASEGAME fallback code.
@@ -2086,21 +2085,21 @@ client gets disconnected with download blocks in the queue
 
 2013-05-03-01 skip (rend2):  Use specular texture RGB as specular reflectance, multiplied by per-material value.
 
-2013-05-03-02 part:
+2013-05-03-02
     Show surface names in excessive vertexes and triangles warnings
 
     Add newlines to renderergl2's R_LoadMD3 vertex and triangle warnings.
 
 2013-05-04-01 dlopen libopenal.so not libopenal.so.1 on OpenBSD
 2013-05-04-02 correct the linked libs on OpenBSD
-2013-05-04-03 skip:  sync the OpenBSD cflags with Linux
+2013-05-04-03 sync the OpenBSD cflags with Linux
 
-2013-05-04-04 skip:
+2013-05-04-04
     Merge pull request #2 from jonathangray/openbsd_fixes
 
     OpenBSD fixes
 
-2013-05-08-01 skip:
+2013-05-08-01
     Merge branch 'master' into sdl2
 
     Conflicts:
@@ -2111,7 +2110,7 @@ client gets disconnected with download blocks in the queue
 
 2013-05-13-01 Remove unused renderCommandList variable from renderers
 
-2013-05-12-01 skip:
+2013-05-12-01
     Add USE_INTERNAL_LIBS, a default for USE_INTERNAL_*
 
     Linux distributions that want to link dependencies externally will
@@ -2125,7 +2124,7 @@ client gets disconnected with download blocks in the queue
     "make USE_INTERNAL_LIBS=0 USE_INTERNAL_OPUS=1" will use the system
     version of everything except Opus.
 
-2013-05-19-01 skip:
+2013-05-19-01
     Centralize checks for Freetype, with a user override
 
     This lets us find a library in a non-standard library directory
@@ -2138,28 +2137,26 @@ client gets disconnected with download blocks in the queue
     If pkg-config didn't work, assume that Freetype is in the default
     location.
 
-2013-05-19-02 skip:
+2013-05-19-02
     Allow libcurl to be in a non-standard location on all platforms
 
     We didn't add CURL_CFLAGS to CLIENT_CFLAGS on all platforms, and didn't
     use CURL_LIBS at all, so if "pkg-config --libs" returned "-L... -lcurl"
     or even "/.../libcurl.a", it wouldn't work.
 
-2013-05-19-03 skip:
+2013-05-19-03
     Allow OpenAL to be in a non-standard location on all platforms
 
     Similar to libcurl, we didn't use OPENAL_LIBS and assumed it was
     always "-lopenal".
 
-2013-05-19-04 skip:
+2013-05-19-04
     Allow system libjpeg to be in a non-standard location
 
     It doesn't have pkg-config metadata (at least on Debian), so if the
     user doesn't override it, assume normal system paths.
 
--------   this   --------------
-
-2013-05-19-05 skip:  Find system zlib via user override, pkg-config or in standard locations
+2013-05-19-05 Find system zlib via user override, pkg-config or in standard locations
 
 2013-05-19-06
     Look for system Vorbis, Opus and Ogg via pkg-config
@@ -2171,7 +2168,7 @@ client gets disconnected with download blocks in the queue
 
 2013-05-19-07 Find Speex via user override, pkg-config or default search path
 
-2013-05-12-01 skip:
+2013-05-12-01
     Add support for the GNU/Hurd architecture
 
     [As with GNU/kFreeBSD, it's treated as "Linux": all three use the GNU libc
@@ -2193,7 +2190,7 @@ client gets disconnected with download blocks in the queue
 
 2013-05-24-02 skip (rend2):  Clarify comment for OpenGL2's RDF_NOFOG
 
-2013-05-27-01 skip:  Fix Freetype build problems
+2013-05-27-01 Fix Freetype build problems
 
 2013-05-27-02
     Allow drawing sun in OpenGL1 renderer
@@ -2210,7 +2207,7 @@ client gets disconnected with download blocks in the queue
     drop erroneous "\n"s from some Error()-like calls (in Rend2)
     drop erroneous "\n" from a Com_Error() call (in vm_sparc.c)
 
-2013-05-30-02 skip:  add some noreturn annotations
+2013-05-30-02 add some noreturn annotations
 2013-05-30-03 remove some redundant exit() calls
 2013-05-30-04 remove some unused stuff
 
@@ -2273,7 +2270,7 @@ client gets disconnected with download blocks in the queue
 
     The last index is used to check for buffer overflows. See RB_CheckOverflow and RB_EndSurface.
 
-2013-06-18-02 skip:
+2013-06-18-02
     Fix IQM tess buffer overflow
 
     Set the variables that use tess.numVertexes after calling RB_CHECKOVERFLOW() as it may set tess.numVertexes to 0!
@@ -2294,9 +2291,9 @@ client gets disconnected with download blocks in the queue
 
     tr.fatLightmapStep was 0 and caused modulus division by 0.
 
-2013-06-26-01 skip (done differently):  Prevent the skip of the glyph if it does not fit
+2013-06-26-01 no (done differently):  Prevent the skip of the glyph if it does not fit
 
-2013-06-26-02 skip (no code):
+2013-06-26-02
     Merge pull request #5 from morturp/patch-1
 
     Prevent the skip of the glyph if it does not fit
@@ -2309,12 +2306,12 @@ low/high preference.
 
     May have caused other issues as well.
 
-2013-07-07-01 skip (LEGACY_MASTER_GAMENAME):
+2013-07-07-01
     Fix getting servers from and being listed on id's q3 master server
 
     Use q3 master protocol when com_gamename is Quake3Arena (the default), otherwise use dpmaster protocol.
 
-2013-07-08-01 skip (rend2):  (bug #5984) Unload renderer lib
+2013-07-08-01 (bug #5984) Unload renderer lib
 
 2013-07-09-01
     SDL Mouse Button clean up
@@ -2325,41 +2322,41 @@ low/high preference.
 
 2013-07-11-01 Remove unused models from server_t
 
-2013-07-12-01 skip (xcode):
+2013-07-12-01
     Initial Xcode workspace & project support (4.6.3).
     Updated .gitignore and ioquake3fe Xcode project.
     Added Retina-enabled QUAKE III logo icon files.
     Details in misc/xcode/xcode-readme.txt
 
-2013-07-17-01 skip (xcode):  Fix the speex Xcode project since it was missing its header search path.
+2013-07-17-01 Fix the speex Xcode project since it was missing its header search path.
 
-2013-07-17-02 skip (xcode):  Added "all game" and "all ioquake3" schemes to Xcode workspace so tha...
+2013-07-17-02 Added "all game" and "all ioquake3" schemes to Xcode workspace so tha...
 
-2013-07-17-03 (need to check):  out seems to be unnecessarily large for one byte per pixel
+2013-07-17-03 no:  out seems to be unnecessarily large for one byte per pixel
 
-2013-07-17-04 skip (no code):
+2013-07-17-04
     Merge pull request #6 from morturp/patch-2
 
     out seems to be unnecessarily large for one byte per pixel
 
-2013-07-17-05 skip (jenkins):
+2013-07-17-05
     bug 5986 - Configure jenkins to spit out mac .app
     https://bugzilla.icculus.org/show_bug.cgi?id=5986
     Created make-macosx-app.sh to handle manually creating an app bundle from other scripts.
     Updated make-macosx.sh to create bundle with make-macosx-app.sh (TODO: make-macosx-ub.sh support).
     Updated Makefile to create bundle with make-macosx-app.sh and zip up the resulting ioquake3.app if ARCHIVE is defined.
 
-2013-07-17-06 skip:  fix bug in make-macosx-app.sh with older shells
-2013-07-17-07 skip:  make-macosx-app.sh using single '=' comparisons
-2013-07-17-08 skip:  make-macosx-app.sh should use /bin/bash and not /bin/sh
-2013-07-17-09 skip:  Updated Makefile to only build release OS X app bundles
-2013-07-17-10 skip:  make-macosx-app.sh supports systems without libtool
+2013-07-17-06 fix bug in make-macosx-app.sh with older shells
+2013-07-17-07 make-macosx-app.sh using single '=' comparisons
+2013-07-17-08 make-macosx-app.sh should use /bin/bash and not /bin/sh
+2013-07-17-09 Updated Makefile to only build release OS X app bundles
+2013-07-17-10 make-macosx-app.sh supports systems without libtool
 
-2013-07-17-11 skip:  make-macosx-app.sh supports systems without libtool, part 2
+2013-07-17-11 make-macosx-app.sh supports systems without libtool, part 2
 
-2013-07-17-12 skip:  make-macosx-app.sh doesn't trust the output of 'which', so check for a hard-coded path
+2013-07-17-12 make-macosx-app.sh doesn't trust the output of 'which', so check for a hard-coded path
 
-2013-07-18-01 skip:
+2013-07-18-01
     Another pass at the Mac OS X make scripts.
 
     Ironed out issues with generating an application bundle with universal
@@ -2367,9 +2364,9 @@ low/high preference.
     architecture when support for universal binary generation is not
     available. Tested on Mac OS X 10.5.8 (and 10.5 SDK).
 
-2013-07-18-02 skip:  Fix make-macosx-app.sh to make bundle on non-Mac OS X platforms
+2013-07-18-02 Fix make-macosx-app.sh to make bundle on non-Mac OS X platforms
 
-2013-07-18-03 skip:  Makefile builds fall back to traditional archiving when Mac OS X application bundle generation fails
+2013-07-18-03 Makefile builds fall back to traditional archiving when Mac OS X application bundle generation fails
 
 2013-05-06-01 skip (rend2):  Misc fixes to IBO code to correctly use sizeof(glIndex_t)
 
@@ -2385,7 +2382,7 @@ low/high preference.
 
     Signed-off-by: Zack Middleton <zturtleman@gmail.com>
 
-2013-07-22-01 skip (check: no togglemenu command):
+2013-07-22-01
     Fix bind commands getting run when closing UI
 
     Introduced in commit "Add togglemenu command" bf2b04.
@@ -2395,7 +2392,7 @@ low/high preference.
     Example of issue: if mouse1 is bound to +attack when clicking Resume Game, player will shoot until releasing the mouse button.
     Mouse button should have to be released and pressed again before player will shoot.
 
-2013-08-03-01 skip:
+2013-08-03-01
     Fix creating symlinks in make-macosx-app.sh
 
     Create symlink if arch name is found anywhere in info printed by file command, not only if arch name is the last word.
@@ -2405,7 +2402,7 @@ low/high preference.
 
     I was getting unknown command "vid_restart-button2" warning on OSX when trying to use alt-return to toggle fullscreen.
 
-2013-08-04-01 skip:  Remove 5 unused variables from make-macosx scripts
+2013-08-04-01 Remove 5 unused variables from make-macosx scripts
 
 2013-08-16-01
     Fix OpenAL music stop issues using stream stop code
@@ -2418,18 +2415,18 @@ low/high preference.
 
     "bind X cmd; unbind X; bind X" now says '"x" is unbound' instead of '"x" = ""'
 
-2013-08-16-02 skip:
+2013-08-16-02
     Merge branch 'master' into sdl2
 
     Conflicts:
             code/sdl/sdl_input.c
 
-2013-08-18-01 skip:  SDL2 libs for OSX, thanks to MAN-AT-ARMS
-2013-08-18-02 skip:  Update prebuilt SDL2 libs for Windows
+2013-08-18-01 SDL2 libs for OSX, thanks to MAN-AT-ARMS
+2013-08-18-02 Update prebuilt SDL2 libs for Windows
 
-2013-08-19-01 skip:  More updates to SDL2 libs from MAN-AT-ARMS
+2013-08-19-01 More updates to SDL2 libs from MAN-AT-ARMS
 
-2013-08-20-01 skip:  Update SDL2 headers... oops
+2013-08-20-01 Update SDL2 headers... oops
 
 2013-08-23-01 skip (rend2):  #6004: OpenGL2: Make any CGEN_LIGHTING_DIFFUSE stages use lightall shader.
 
@@ -2439,11 +2436,11 @@ low/high preference.
 
 2013-08-25-01 Fix recursive crash when home path cannot be created
 
-2013-08-29-01 skip:  Fix initial window position being top left
+2013-08-29-01 Fix initial window position being top left
 
 2013-09-01-01 Fix targetNum check in cgame's tcmd
 
-2013-09-03-01 skip:
+2013-09-03-01
     Make cgame's tcmd use trap_SendClientCommand for "gc"
 
     gc command was forwarded to server after if wasn't recognized locally, but let's just send straight to server.
@@ -2464,7 +2461,7 @@ low/high preference.
 
     Introduced by commit a57a5cfd9b5dcc51696777c67b275c55c5b4b452.
 
-2013-09-15-01 skip:  Various fixes from Fuma
+2013-09-15-01 Various fixes from Fuma
 
 2013-09-16-01 skip (rend2):  #5979: Cubemap support for opengl2
 
@@ -2472,7 +2469,7 @@ low/high preference.
 
 2013-09-16-03 skip (rend2):  OpenGL2: Fix inaccurate RGBM calculation.
 
-2013-09-16-03 skip:  Merge branch 'master' into sdl2
+2013-09-16-03 Merge branch 'master' into sdl2
 2013-09-16-04 skip (rend2):  OpenGL2: Speed up fog shader slightly.
 2013-09-16-05 skip (rend2):  OpenGL2: Some shader cleanup
 
@@ -2487,22 +2484,22 @@ low/high preference.
 
 2013-09-20-01 skip (rend2):  OpenGL2: Disable GL_ARB_seamless_cube_map by default, caused huge frame drops on some hardware
 
-2013-09-21-01 skip:
+2013-09-21-01
     Fix building sdl2 branch on travis-ci
 
     Install libsdl2-dev from a PPA.
 
-2013-09-20-01 skip:  Don't set the window title twice
-2013-09-20-02 skip:  Set com_minimized to 0 when the window is restored
+2013-09-20-01 Don't set the window title twice
+2013-09-20-02 Set com_minimized to 0 when the window is restored
 
-2013-09-20-03 skip:
+2013-09-20-03
     Send key up events for the mouse wheel
 
     Previous versions of SDL would send SDL_MOUSEBUTTONUP events for the mouse wheel immediately following the corresponding SDL_MOUSEBUTTONDOWN event
 
 2013-09-24-01 skip (rend2):  OpenGL2: Remove AGEN_FRESNEL(superceded by cubemap patch), and some small fixes and optimizations
 
-2013-09-30-01 skip:
+2013-09-30-01
     Merge pull request #16 from cmf028/sdl2
 
     SDL2 fixes
@@ -2529,7 +2526,7 @@ low/high preference.
 
 2013-10-15-01 skip (rend2):  OpenGL2: Merge bsp surface structs into a single struct, and more cleanup.
 
-2013-10-18-01 skip:
+2013-10-18-01
     Fix SDL2 losing event subsystem
 
     Quiting SDL Video or Joystick subsystem implies quiting the Event subsystem
@@ -2543,9 +2540,9 @@ in SDL2.
 
     IN_ShutdownJoystick needs to check if joystick subsystem was inited before quitting it, otherwise we may cause SDL event subsystem to shutdown.
 
-2013-10-19-01 skip:  Fix warning that SDL_GetKeyboardState return value is used non-const
+2013-10-19-01 Fix warning that SDL_GetKeyboardState return value is used non-const
 
-2013-10-19-02 skip:
+2013-10-19-02
     Ignore -psn* arguments on Mac OS X
 
     Mac OS X adds an argument starting with "-psn" when launched using Finder, Dock,
@@ -2555,9 +2552,9 @@ in SDL2.
 
     This change mimics SDL 1.2.
 
-2013-10-19-03 skip:  Use bundle icon on Mac OS X instead of internal 32x32 window icon
+2013-10-19-03 Use bundle icon on Mac OS X instead of internal 32x32 window icon
 
-2013-10-20-01 skip:  Check #ifdef MACOS_X not #if MACOS_X
+2013-10-20-01 Check #ifdef MACOS_X not #if MACOS_X
 
 2013-10-28-01
     Clear more variables in CL_InitServerInfo
@@ -2567,28 +2564,28 @@ in SDL2.
 
     Note: server->visible is not cleared in CL_InitServerInfo, as stated by a comment below a place where CL_InitServerInfo is used.
 
-2013-10-29-01 skip (iqm):  Support IQMs with joints and no poses
+2013-10-29-01 Support IQMs with joints and no poses
 
-2013-10-29-02 skip (iqm):
+2013-10-29-02
     Add support for IQM int blend indices and float blend weights
 
     Integer blend indices are converted to bytes at load, ioq3 doesn't allow more than 128 joints.
 
     Heavily based on code by @zippers.
 
-2013-10-29-03 skip (iqm):  IQM int/float vertex arrays were already swapped
+2013-10-29-03 IQM int/float vertex arrays were already swapped
 
-2013-10-29-04 skip (iqm):  Fix IQM comments refering to IQM_BYTE instead of IQM_UBYTE
+2013-10-29-04 Fix IQM comments refering to IQM_BYTE instead of IQM_UBYTE
 
-2013-10-29-05 skip (iqm):  Initialize blendIndexesType and blendWeightsType
+2013-10-29-05 Initialize blendIndexesType and blendWeightsType
 2013-10-29-06 skip (rend2):  Merge last two commits into renderergl2
 
 2013-11-02-01 Remove unused shader state code from tr_local.h
 2013-11-02-02 Remove vertexLightmap from textureBundle_t, it's never qtrue
 
-2013-11-02-03 skip (check):  Fix video recording sync drift (patch refactored but original author unknown
+2013-11-02-03 no (different) (check):  Fix video recording sync drift (patch refactored but original author unknown
 
-2013-11-02-04 skip:  Merge branch 'master' into sdl2
+2013-11-02-04 Merge branch 'master' into sdl2
 
 2013-11-03-01 skip (rend2):  OpenGL2: Reduce glsl shader count by using a uniform to disable textures.
 
@@ -2600,7 +2597,7 @@ in SDL2.
 
 2013-11-05-02 skip (rend2):  OpenGL2: Prefer VBO/IBO sizes of around 4MB.
 
-2013-11-06-01 skip (not needed):
+2013-11-06-01 no (different):
     Fix running if built on OS X 10.9
 
     strncpy with in == out causes signal 6 if built on OS X 10.9.
@@ -2608,9 +2605,9 @@ in SDL2.
 
     It was happening in COM_StripExtension during map load.
 
-2013-11-07-01 skip:  OpenGL2: Small optimizations and comments in world VBO creation and surface merging.
+2013-11-07-01 skip (rend2):  OpenGL2: Small optimizations and comments in world VBO creation and surface merging.
 
-2013-11-08-01 skip:  OpenGL2: Remove srfTriangle_t, and use glIndex_t instead.
+2013-11-08-01 skip (rend2):  OpenGL2: Remove srfTriangle_t, and use glIndex_t instead.
 2013-11-08-02 Fix VM FOpenFile( FS_READ ) files seeking twice in FS_Seek
 2013-11-08-03 Remove unused variable baseOffset from fsh[]
 
@@ -2623,7 +2620,7 @@ in SDL2.
 2013-11-08-05 Remove old comment that FS_Seek doesn't work on zipped files
 2013-11-08-06 Remove function prototypes for non-existant Sys_* DLL functions
 
-2013-11-08-07 skip (rend2):  Merge branch 'glindex_size_fixes' of https://github.com/inolen/ioq3 into inolgen-glindex_size_fixes
+2013-11-08-07 Merge branch 'glindex_size_fixes' of https://github.com/inolen/ioq3 into inolgen-glindex_size_fixes
 
 2013-11-09-01
     Fix flares being invisible after vid_restart
@@ -2656,13 +2653,13 @@ in SDL2.
 
 2013-11-12-01 skip (rend2):  OpenGL2: Calculate bitangent in shader, and store normal/tangent as normalized byte arrays.
 
-2013-11-17-01 skip:  Merge branch 'master' into sdl2
+2013-11-17-01 Merge branch 'master' into sdl2
 
-2013-11-19-01 skip:  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
+2013-11-19-01 skip (rend2):  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
 
-2013-11-19-02 skip:  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
+2013-11-19-02 skip (rend2):  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
 
-2013-11-19-03 skip:  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
+2013-11-19-03 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
 
 2013-11-20-01 skip (rend2):  #6059: OpenGL2: Read depths from resolve fbo when msaa is on in RB_TestFlare().
 
@@ -2689,46 +2686,46 @@ in SDL2.
     Optimization. Many other loops use level.num_entities, there was no
     special reason that MAX_GENTITIES was used for these.
 
-2013-11-22-01 skip:
+2013-11-22-01
     Update and rename README to README.md
 
     adding analytics, I'm ready for DevHC to get upset.
 
-2013-11-23-01 skip:  Improve github interperation of README.md
-2013-11-23-02 skip:  Add header for standalone game licensing
+2013-11-23-01 Improve github interperation of README.md
+2013-11-23-02 Add header for standalone game licensing
 
 2013-11-25-01 skip (rend2):  Silence warnings about unused static functions in opengl2
 
-2013-11-25-02 skip:
+2013-11-25-02
     Updating the tracking code properly.
 
     Hopefully this new code will track properly.
 
-2013-11-26-01 skip:  Merge branch 'master' into sdl2
+2013-11-26-01 Merge branch 'master' into sdl2
 
-2013-11-26-02 skip:
+2013-11-26-02
     Readd backspace char event for UI VM text fields
 
     UI VMs expect a backspace char event, but sdl2 branch only was only sending a key event.
     Revert cl_keys.c to master branch (it would cause backspace to happen twice in console).
 
-2013-11-29-01 skip:  #6069: Remove md4 model support.
+2013-11-29-01 #6069: Remove md4 model support.
 
 2013-11-30-01 skip (rend2):
     OpenGL2: Remove redundant GLS_* enum.
 
     Thanks Xycaleth for pointing out.
 
-2013-11-30-02 skip (result of removing md4):  Remove R_AddAnimSurfaces and R_MakeAnimModel prototypes
+2013-11-30-02 Remove R_AddAnimSurfaces and R_MakeAnimModel prototypes
 
 2013-12-01-01 skip (rend2):  Fix glsl DEFORM_BULGE calculation
 
-2013-12-01-02 skip (rend2):
+2013-12-01-02
     Merge pull request #21 from cmf028/master
 
     Fix glsl DEFORM_BULGE calculation
 
-2013-12-02-01 skip (have /listcvarchanges):
+2013-12-02-01
     Add cvar_modified command
 
     Based on cvarlist command, it only lists modified cvars.
@@ -2744,15 +2741,12 @@ in SDL2.
 2013-12-07-02 r_noborder changes require a restart
 2013-12-07-03 Add latch to r_centerWindow and r_allowResize
 
-----  this  ----
-
-
-2013-12-07-04 skip:  Support spatialized raw streams in base sound, e.g. for VoIP
+2013-12-07-04 Support spatialized raw streams in base sound, e.g. for VoIP
 
 2013-12-07-05 Have ui_test cmd in missionpack ui return qtrue
 
-2013-12-08-01 skip:  Fix checking if MP dylibs exist in make-macosx-app.sh
-2013-12-09-01 skip:  Fix some file paths for msvc 2008
+2013-12-08-01 Fix checking if MP dylibs exist in make-macosx-app.sh
+2013-12-09-01 Fix some file paths for msvc 2008
 
 2013-12-09-02 skip (rend2):  OpenGL2: Support GL_ARB_vertex_type_2_10_10_10_rev for normals/tangents/lightdirs
 
@@ -2760,7 +2754,7 @@ in SDL2.
 
 2013-12-13-01 skip (rend2):  OpenGL2: Small glsl shader optimizations, fixes, and cleanup.
 
-2013-12-15-01 check:
+2013-12-15-01
     Fix playback of stereo sounds in Base sound system
 
     Already works correctly in OpenAL.
@@ -2801,7 +2795,7 @@ in SDL2.
 
     We make sure intro isn't NULL. Then if loop is NULL, set it to intro.
 
-2014-01-12-06 skip:
+2014-01-12-06
     Merge pull request #26 from andreyv/master
 
     Include opengl2 client in make copyfiles if USE_RENDERER_DLOPEN=0
@@ -2810,7 +2804,7 @@ in SDL2.
 
 2014-01-14-01 skip (rend2):  don't call va each frame in GLSL_VertexAttribPointers
 
-2014-01-14-02 skip:
+2014-01-14-02
     Merge pull request #30 from inolen/nova_fix
 
     don't call va each frame in GLSL_VertexAttribPointers
@@ -2841,12 +2835,12 @@ in SDL2.
 
 2014-02-01-01 restart the renderer after the hunk mark has been set
 
-2014-02-01-02 skip:
+2014-02-01-02
     Merge pull request #33 from inolen/widescreen_clear_fix
 
     don't clear screen during CA_LOADING and CA_PRIMED
 
-2014-02-01-03 skip:
+2014-02-01-03
     Merge pull request #35 from inolen/no_renderer_restart
 
     don't restart renderer in SV_SpawnServer unless client running dedicated
@@ -2859,7 +2853,7 @@ in SDL2.
 
     This is a minor bugfix release with few changes
 
-2014-02-07-04 skip:  When cross compiling on mingw32, make sure it finds a CC
+2014-02-07-04 When cross compiling on mingw32, make sure it finds a CC
 
 2014-02-07-05 Merge branch 'features/upgrade-opusfile-0.5' of https://github.com/xhairball/ioq3 into opus_update
 
@@ -2869,15 +2863,15 @@ in SDL2.
     Conflicts:
             Makefile
 
-2014-02-07-07 skip:
+2014-02-07-07
     Merge pull request #41 from xhairball/fixes/check-cc-when-cross-compiling-mingw32
 
     When cross compiling on mingw32, make sure it finds a CC
 
-2014-02-08-01 skip:  Merge branch 'master' into sdl2
+2014-02-08-01 Merge branch 'master' into sdl2
 2014-02-08-02 Add vorbis 1.3.4 build support
 
-2014-02-08-03 skip:
+2014-02-08-03
     Upgrade from libcurl 7.15.5 (2006-08-07) to 7.35.0 (2014-01-29)
 
     Note: This uses the generic curlbuild.h because it is used by multiple platforms.
@@ -2906,16 +2900,16 @@ in SDL2.
     cl_allowDownload enabled it would print "Need Paks: blah blah" and not play
 the demo.
 
-2014-02-09-01 skip:  Merge branch 'master' into features/upgrade-curl-7.35.0
+2014-02-09-01 Merge branch 'master' into features/upgrade-curl-7.35.0
 
-2014-02-09-02 skip (need other patches):
+2014-02-09-02
     Fix sending pk3 download error messages to clients
 
     Disabled in e52a492f615e1245d6d22a84d2cc100c6d2f9f88.
 
-2014-02-10-01 skip:  Add support for x86_64 cross compiling in Travis CI
+2014-02-10-01 Add support for x86_64 cross compiling in Travis CI
 
-2014-02-13-01 skip:
+2014-02-13-01
     Merge pull request #45 from xhairball/features/upgrade-curl-7.35.0
 
     Upgrade libcurl to the latest release (7.35.0).
@@ -2925,7 +2919,7 @@ the demo.
 2014-02-14-01 skip (rend2):  OpenGL2: Fix bug in ColorToRGBM().
 2014-02-14-02 skip (rend2):  OpenGL2: Oops, set lightmap alpha to 1.
 
-2014-02-14-03 skip:
+2014-02-14-03
     Rebuilt Windows libcurl-7.35.0 static libraries
 
     Fix linking with mingw32.
@@ -2933,7 +2927,7 @@ the demo.
 
 2014-02-15-01 skip (rend2):  OpenGL2: Fix rendering when r_hdr = 0 and r_floatLightmap = 1
 
-2014-02-18-01 skip:  Merge branch 'master' into sdl2
+2014-02-18-01 Merge branch 'master' into sdl2
 2014-02-20-01 skip (rend2):  OpenGL2: Remove and force r_softOverbright.
 
 2014-02-22-01 Replace deprecated alDopplerVelocity with alSpeedOfSound per OpenAL 1.1 spec
@@ -2958,7 +2952,7 @@ the demo.
 
 2014-03-04-02 skip (rend2):  OpenGL2: Set default normal/specular in RE_RegisterShaderFromImage
 
-2014-03-04-03 skip:
+2014-03-04-03
     Merge pull request #57 from MAN-AT-ARMS/specularScale
 
     OpenGL2: Set default normal/specular in RE_RegisterShaderFromImage
@@ -2979,10 +2973,10 @@ the demo.
 
     I had enabled this for non-HDR before, but now HDR needs it too.
 
-2014-03-08-01 skip:  Merge branch 'master' into sdl2
-2014-03-08-02 skip:  Update SDL2 to 2.0.2
+2014-03-08-01 Merge branch 'master' into sdl2
+2014-03-08-02 Update SDL2 to 2.0.2
 
-2014-03-09-01 skip:  Update SDL 1.2.15 to Revision 8040
+2014-03-09-01 Update SDL 1.2.15 to Revision 8040
 
 2014-03-10-01 skip (rend2):
     Fix error handling in R_ParseSpawnVars
@@ -2994,7 +2988,7 @@ the demo.
 
 2014-03-10-02 skip (rend2):  Don't say cubemap is outside lightgrid 6 times
 
-2014-03-10-03 skip (not needed - double check):
+2014-03-10-03 no (different - double check):
     Fix R_GetEntityToken ending prematurely
 
     If spawn var key or value is "" it caused R_GetEntityToken (available to
@@ -3027,16 +3021,16 @@ the demo.
 
 2014-03-12-01 Bunch of comment fixes
 
-2014-03-12-02 part (last typo: structures):
+2014-03-12-02
     Merge pull request #60 from smokin-guns/master
 
     Bunch of comment fixes
 
-2014-03-15-01 skip (not needed):  Don't crash when fail to create SDL window
+2014-03-15-01 Don't crash when fail to create SDL window
 
 2014-03-16-01 skip (rend2):  OpenGL2: Parallax corrected cubemap (cheaper trick)
 
-2014-03-17-01 skip (not needed):
+2014-03-17-01
     Fix multisampling on X11
 
     Setting SDL_GL_ACCELERATED_VISUAL was disabled for ioq3 SDL 1.2
@@ -3045,7 +3039,7 @@ the demo.
 
     Tested using nVidia proprietary driver on Debian 7.
 
-2014-03-18-02 skip (diff sdl):  Fix ctrl-c etc codes for edit fields
+2014-03-18-02 Fix ctrl-c etc codes for edit fields
 
 2014-03-18-03
     Revert "DMA 44100Hz needs more memory for sound buffers"
@@ -3054,7 +3048,7 @@ the demo.
 
     Cause crashes if com_soundMegs is 32.
 
-2014-03-18-04 skip (no FS_FOpenFileReadDir):
+2014-03-18-04
     Fix FS_FOpenFileReadDir non-zero file handle when file not found in pk3
 
     If a pk3 search path is passed to FS_FOpenFileReadDir, a non-zero
@@ -3066,12 +3060,12 @@ the demo.
 
 2014-03-19-01 skip (rend2):  #6095: OpenGL2: Use areamask and leaf cluster for PVS when VIS is missing.
 
-2014-03-24-01 skip:
+2014-03-24-01
     Merge pull request #59 from MAN-AT-ARMS/sdl_1215_hg
 
     Update SDL 1.2.15 to Revision 8040
 
-2014-03-24-02 skip:
+2014-03-24-02
     Merge pull request #55 from MAN-AT-ARMS/status_command
 
     Fix colored name padding and allow IPv6 address to fit in output of 'status' command
@@ -3081,7 +3075,7 @@ the demo.
 
     Add vorbis 1.3.4 support
 
-2014-03-24-04 skip:
+2014-03-24-04
     Merge pull request #56 from MAN-AT-ARMS/net_stop
 
     Release network bindings on shutdown
@@ -3091,7 +3085,7 @@ the demo.
 
     No variable even exists.
 
-2014-03-24-06 skip+check:
+2014-03-24-06
     Remove -falign-loops and -falign-jumps from Makefile
 
     Clang warns and errors because of them on various platforms.
@@ -3099,28 +3093,28 @@ the demo.
     Based on pull request #43 by @xhairball.
 
 2014-03-24-07 Fix compiling game VM with OBSTACLEDEBUG defined
-2014-03-24-08 skip:  Merge branch 'master' (early part) into sdl2
-2014-03-24-09 skip:  Skip merging sdl1.2 commit into sdl2
-2014-03-24-10 skip:  Merge branch 'master' into sdl2
-2014-03-24-11 skip:  Update SDL2 to 2.0.3
+2014-03-24-08 Merge branch 'master' (early part) into sdl2
+2014-03-24-09 Skip merging sdl1.2 commit into sdl2
+2014-03-24-10 Merge branch 'master' into sdl2
+2014-03-24-11 Update SDL2 to 2.0.3
 
-2014-03-24-12 skip:
+2014-03-24-12
     Merge pull request #65 from MAN-AT-ARMS/sdl2_203
 
     Update SDL2 to 2.0.3
 
-2014-03-24-13 skip:  Add misc/msvc12/ to support Microsoft Visual Studio 2012 Express Edition
+2014-03-24-13 Add misc/msvc12/ to support Microsoft Visual Studio 2012 Express Edition
 
-2014-03-24-14 skip:
+2014-03-24-14
     Merge pull request #63 from kungfooman/visualstudio
 
     Add misc/msvc11/ to support Microsoft Visual Studio 2012 Express Edition
 
-2014-04-07-01 skip:  Add MSVC SDL 1.2.15 Revision 8040 import libs
+2014-04-07-01 Add MSVC SDL 1.2.15 Revision 8040 import libs
 
 2014-04-16-01 skip (rend2):  OpenGL2: Remove sRGB support, replace with gamma cvars.
 
-2014-04-16-02 skip:  Rebuilt MSVC SDL 1.2.15 Revision 8040 import libs
+2014-04-16-02 Rebuilt MSVC SDL 1.2.15 Revision 8040 import libs
 
 2014-04-22-01 skip (rend2):  OpenGL2: Remove misleading documentation for gamma cvars.
 
@@ -3137,25 +3131,25 @@ the demo.
 
     So limit skull trails to valid entities (entity number < MAX_CLIENTS).
 
-2014-05-06-01 skip + check:
+2014-05-06-01
     Make R_LerpTag return qfalse if MDR tag does not exist
 
     Elite Force SDK has trap_R_LerpTag return void, so this shouldn't cause issues for iostvef.
     Allows new games to check if a tag exists in a MDR model.
 
-2014-05-07-01 skip:  Switched runtime library to Multithreaded DLL to fix build on VS2012.
+2014-05-07-01 Switched runtime library to Multithreaded DLL to fix build on VS2012.
 
-2014-05-07-02 skip:
+2014-05-07-02
     Merge pull request #69 from RobertoEstrada/master
 
     Switched runtime library to Multithreaded DLL to fix build on VS2012.
 
-2014-05-12-01 skip:
+2014-05-12-01
     Don't install libvorbis-dev on Travis
 
     The in-tree copy of vorbis is used. No reason to install the package anymore.
 
-2014-05-12-02 skip:  Merge branch 'features/add-x86_64-travis-ci-support' of github.com:xhairball/ioq3
+2014-05-12-02 Merge branch 'features/add-x86_64-travis-ci-support' of github.com:xhairball/ioq3
 
 2014-05-18-01
     Fix always switching back to mgun in Q3 controls menu
@@ -3172,7 +3166,7 @@ the demo.
     Making UI use the same *PositionRotatedEntityOnTag and axis as
     CGame fixes the Gauntlet blade being wobbly in controls menu.
 
-2014-05-19-01 skip (sdl2):
+2014-05-19-01
     Disable key repeat if key catcher is 0
 
     SDL1.2 branch disables key repeat when key catcher is 0.
@@ -3181,7 +3175,7 @@ the demo.
     SDL2 replaced being able to disabled key repeat using SDL_EnableKeyRepeat
     with a non-zero repeat value in the key event.
 
-2014-05-19-02 skip:
+2014-05-19-02
     Try to fix Travis CI MinGW builds
 
     Listing i686-w64-mingw32-gcc as a compiler stopped working.
@@ -3193,7 +3187,7 @@ the demo.
 
     The command "i686-w64-mingw32-gcc --version" failed and exited with 127 during setup.
 
-2014-05-25-01 skip (changed in newer patch):
+2014-05-25-01
     Fix potential out of bounds access caused by CM_GridPlane
 
     Coverity doesn't care if there is a warning, out of bounds access is bad.
@@ -3250,12 +3244,12 @@ the demo.
 
 2014-05-29-01 Fix an invalid null deref check in the slider code.
 
-2014-06-03-01 skip:  Merge branch 'master' (early part 1) into sdl2
-2014-06-03-02 skip:  Skip merging a SDL 1.2 commit into sdl2
-2014-06-03-03 skip:  Merge branch 'master' (early part 2) into sdl2
-2014-06-03-04 skip:  Skip merging a SDL 1.2 commit into sdl2
+2014-06-03-01 Merge branch 'master' (early part 1) into sdl2
+2014-06-03-02 Skip merging a SDL 1.2 commit into sdl2
+2014-06-03-03 Merge branch 'master' (early part 2) into sdl2
+2014-06-03-04 Skip merging a SDL 1.2 commit into sdl2
 
-2014-06-03-05 skip:
+2014-06-03-05
     Merge branch 'master' into sdl2
 
     Conflicts:
@@ -3309,6 +3303,8 @@ the demo.
     Fix fast-math optimize flag for MinGW x86_64 build
 
     Found by /dev/humancontroller.
+
+---- this ----
 
 2014-07-18-01 skip:  sayto cmd with player name completion
 

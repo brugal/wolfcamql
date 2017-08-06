@@ -33,142 +33,6 @@ frame.
 
 */
 
-/*
-==============
-R_AddAnimSurfaces
-==============
-*/
-void R_AddAnimSurfaces( trRefEntity_t *ent ) {
-	md4Header_t		*header;
-	md4Surface_t	*surface;
-	md4LOD_t		*lod;
-	shader_t		*shader;
-	int				i;
-
-	header = (md4Header_t *) tr.currentModel->modelData;
-	lod = (md4LOD_t *)( (byte *)header + header->ofsLODs );
-
-	surface = (md4Surface_t *)( (byte *)lod + lod->ofsSurfaces );
-	for ( i = 0 ; i < lod->numSurfaces ; i++ ) {
-		shader = R_GetShaderByHandle( surface->shaderIndex );
-		R_AddDrawSurf( (void *)surface, shader, 0 /*fogNum*/, qfalse );
-		surface = (md4Surface_t *)( (byte *)surface + surface->ofsEnd );
-	}
-}
-
-/*
-==============
-RB_SurfaceAnim
-==============
-*/
-void RB_SurfaceAnim( md4Surface_t *surface ) {
-	int				i, j, k;
-	float			frontlerp, backlerp;
-	int				*triangles;
-	int				indexes;
-	int				baseIndex, baseVertex;
-	int				numVerts;
-	md4Vertex_t		*v;
-	md4Bone_t		bones[MD4_MAX_BONES];
-	md4Bone_t		*bonePtr, *bone;
-	md4Header_t		*header;
-	md4Frame_t		*frame;
-	md4Frame_t		*oldFrame;
-	int				frameSize;
-
-
-	if (  backEnd.currentEntity->ePtr->oldframe == backEnd.currentEntity->ePtr->frame ) {
-		backlerp = 0;
-		frontlerp = 1;
-	} else  {
-		backlerp = backEnd.currentEntity->ePtr->backlerp;
-		frontlerp = 1.0f - backlerp;
-	}
-	header = (md4Header_t *)((byte *)surface + surface->ofsHeader);
-
-	frameSize = (size_t)( &((md4Frame_t *)0)->bones[ header->numBones ] );
-
-	frame = (md4Frame_t *)((byte *)header + header->ofsFrames + 
-			backEnd.currentEntity->ePtr->frame * frameSize );
-	oldFrame = (md4Frame_t *)((byte *)header + header->ofsFrames + 
-			backEnd.currentEntity->ePtr->oldframe * frameSize );
-
-	RB_CheckOverflow( surface->numVerts, surface->numTriangles * 3 );
-
-	triangles = (int *) ((byte *)surface + surface->ofsTriangles);
-	indexes = surface->numTriangles * 3;
-	baseIndex = tess.numIndexes;
-	baseVertex = tess.numVertexes;
-	for (j = 0 ; j < indexes ; j++) {
-		tess.indexes[baseIndex + j] = baseIndex + triangles[j];
-	}
-	tess.numIndexes += indexes;
-
-	//
-	// lerp all the needed bones
-	//
-	if ( !backlerp ) {
-		// no lerping needed
-		bonePtr = frame->bones;
-	} else {
-		bonePtr = bones;
-		for ( i = 0 ; i < header->numBones*12 ; i++ ) {
-			((float *)bonePtr)[i] = frontlerp * ((float *)frame->bones)[i]
-					+ backlerp * ((float *)oldFrame->bones)[i];
-		}
-	}
-
-	//
-	// deform the vertexes by the lerped bones
-	//
-	numVerts = surface->numVerts;
-	// FIXME
-	// This makes TFC's skeletons work.  Shouldn't be necessary anymore, but left
-	// in for reference.
-	//v = (md4Vertex_t *) ((byte *)surface + surface->ofsVerts + 12);
-	v = (md4Vertex_t *) ((byte *)surface + surface->ofsVerts);
-	for ( j = 0; j < numVerts; j++ ) {
-		vec3_t	tempVert, tempNormal;
-		md4Weight_t	*w;
-
-		VectorClear( tempVert );
-		VectorClear( tempNormal );
-		w = v->weights;
-		for ( k = 0 ; k < v->numWeights ; k++, w++ ) {
-			bone = bonePtr + w->boneIndex;
-
-			tempVert[0] += w->boneWeight * ( DotProduct( bone->matrix[0], w->offset ) + bone->matrix[0][3] );
-			tempVert[1] += w->boneWeight * ( DotProduct( bone->matrix[1], w->offset ) + bone->matrix[1][3] );
-			tempVert[2] += w->boneWeight * ( DotProduct( bone->matrix[2], w->offset ) + bone->matrix[2][3] );
-
-			tempNormal[0] += w->boneWeight * DotProduct( bone->matrix[0], v->normal );
-			tempNormal[1] += w->boneWeight * DotProduct( bone->matrix[1], v->normal );
-			tempNormal[2] += w->boneWeight * DotProduct( bone->matrix[2], v->normal );
-		}
-
-		tess.xyz[baseVertex + j][0] = tempVert[0];
-		tess.xyz[baseVertex + j][1] = tempVert[1];
-		tess.xyz[baseVertex + j][2] = tempVert[2];
-
-		tess.normal[baseVertex + j][0] = tempNormal[0];
-		tess.normal[baseVertex + j][1] = tempNormal[1];
-		tess.normal[baseVertex + j][2] = tempNormal[2];
-
-		tess.texCoords[baseVertex + j][0][0] = v->texCoords[0];
-		tess.texCoords[baseVertex + j][0][1] = v->texCoords[1];
-
-		// FIXME
-		// This makes TFC's skeletons work.  Shouldn't be necessary anymore, but left
-		// in for reference.
-		//v = (md4Vertex_t *)( ( byte * )&v->weights[v->numWeights] + 12 );
-		v = (md4Vertex_t *)&v->weights[v->numWeights];
-	}
-
-	tess.numVertexes += surface->numVerts;
-}
-
-
-#ifdef RAVENMD4
 
 // copied and adapted from tr_mesh.c
 
@@ -186,18 +50,18 @@ static int R_MDRCullModel( mdrHeader_t *header, trRefEntity_t *ent ) {
 	frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
 	
 	// compute frame pointers
-	newFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.frame);
-	oldFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.oldframe);
+	newFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->ePtr->frame);
+	oldFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->ePtr->oldframe);
 
 	// cull bounding sphere ONLY if this is not an upscaled entity
-	if ( !ent->e.nonNormalizedAxes )
+	if ( !ent->ePtr->nonNormalizedAxes )
 	{
-		if ( ent->e.frame == ent->e.oldframe )
+		if ( ent->ePtr->frame == ent->ePtr->oldframe )
 		{
 			switch ( R_CullLocalPointAndRadius( newFrame->localOrigin, newFrame->radius ) )
 			{
 				// Ummm... yeah yeah I know we don't really have an md3 here.. but we pretend
-				// we do. After all, the purpose of md4s are not that different, are they?
+				// we do. After all, the purpose of mdrs are not that different, are they?
 				
 				case CULL_OUT:
 					tr.pc.c_sphere_cull_md3_out++;
@@ -285,8 +149,8 @@ int R_MDRComputeFogNum( mdrHeader_t *header, trRefEntity_t *ent ) {
 	frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
 
 	// FIXME: non-normalized axis issues
-	mdrFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->e.frame);
-	VectorAdd( ent->e.origin, mdrFrame->localOrigin, localOrigin );
+	mdrFrame = ( mdrFrame_t * ) ( ( byte * ) header + header->ofsFrames + frameSize * ent->ePtr->frame);
+	VectorAdd( ent->ePtr->origin, mdrFrame->localOrigin, localOrigin );
 	for ( i = 1 ; i < tr.world->numfogs ; i++ ) {
 		fog = &tr.world->fogs[i];
 		for ( j = 0 ; j < 3 ; j++ ) {
@@ -328,12 +192,12 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent ) {
 
 	header = (mdrHeader_t *) tr.currentModel->modelData;
 	
-	personalModel = (ent->e.renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal;
+	personalModel = (ent->ePtr->renderfx & RF_THIRD_PERSON) && !tr.viewParms.isPortal;
 	
-	if ( ent->e.renderfx & RF_WRAP_FRAMES )
+	if ( ent->ePtr->renderfx & RF_WRAP_FRAMES )
 	{
-		ent->e.frame %= header->numFrames;
-		ent->e.oldframe %= header->numFrames;
+		ent->ePtr->frame %= header->numFrames;
+		ent->ePtr->oldframe %= header->numFrames;
 	}	
 	
 	//
@@ -342,15 +206,15 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent ) {
 	// when the surfaces are rendered, they don't need to be
 	// range checked again.
 	//
-	if ((ent->e.frame >= header->numFrames) 
-		|| (ent->e.frame < 0)
-		|| (ent->e.oldframe >= header->numFrames)
-		|| (ent->e.oldframe < 0) )
+	if ((ent->ePtr->frame >= header->numFrames) 
+		|| (ent->ePtr->frame < 0)
+		|| (ent->ePtr->oldframe >= header->numFrames)
+		|| (ent->ePtr->oldframe < 0) )
 	{
 		ri.Printf( PRINT_DEVELOPER, "R_MDRAddAnimSurfaces: no such frame %d to %d for '%s'\n",
-			   ent->e.oldframe, ent->e.frame, tr.currentModel->name );
-		ent->e.frame = 0;
-		ent->e.oldframe = 0;
+			   ent->ePtr->oldframe, ent->ePtr->frame, tr.currentModel->name );
+		ent->ePtr->frame = 0;
+		ent->ePtr->oldframe = 0;
 	}
 
 	//
@@ -390,11 +254,11 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent ) {
 	for ( i = 0 ; i < lod->numSurfaces ; i++ )
 	{
 		
-		if(ent->e.customShader)
-			shader = R_GetShaderByHandle(ent->e.customShader);
-		else if(ent->e.customSkin > 0 && ent->e.customSkin < tr.numSkins)
+		if(ent->ePtr->customShader)
+			shader = R_GetShaderByHandle(ent->ePtr->customShader);
+		else if(ent->ePtr->customSkin > 0 && ent->ePtr->customSkin < tr.numSkins)
 		{
-			skin = R_GetSkinByHandle(ent->e.customSkin);
+			skin = R_GetSkinByHandle(ent->ePtr->customSkin);
 			shader = tr.defaultShader;
 			
 			for(j = 0; j < skin->numSurfaces; j++)
@@ -417,7 +281,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent ) {
 		if ( !personalModel
 		        && r_shadows->integer == 2
 			&& fogNum == 0
-			&& !(ent->e.renderfx & ( RF_NOSHADOW | RF_DEPTHHACK ) )
+			&& !(ent->ePtr->renderfx & ( RF_NOSHADOW | RF_DEPTHHACK ) )
 			&& shader->sort == SS_OPAQUE )
 		{
 			R_AddDrawSurf( (void *)surface, tr.shadowShader, 0, qfalse );
@@ -426,7 +290,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent ) {
 		// projection shadows work fine with personal models
 		if ( r_shadows->integer == 3
 			&& fogNum == 0
-			&& (ent->e.renderfx & RF_SHADOW_PLANE )
+			&& (ent->ePtr->renderfx & RF_SHADOW_PLANE )
 			&& shader->sort == SS_OPAQUE )
 		{
 			R_AddDrawSurf( (void *)surface, tr.projectionShadowShader, 0, qfalse );
@@ -444,7 +308,7 @@ void R_MDRAddAnimSurfaces( trRefEntity_t *ent ) {
 RB_MDRSurfaceAnim
 ==============
 */
-void RB_MDRSurfaceAnim( md4Surface_t *surface )
+void RB_MDRSurfaceAnim( mdrSurface_t *surface )
 {
 	int				i, j, k;
 	float			frontlerp, backlerp;
@@ -456,20 +320,20 @@ void RB_MDRSurfaceAnim( md4Surface_t *surface )
 	mdrHeader_t		*header;
 	mdrFrame_t		*frame;
 	mdrFrame_t		*oldFrame;
-	mdrBone_t		bones[MD4_MAX_BONES], *bonePtr, *bone;
+	mdrBone_t		bones[MDR_MAX_BONES], *bonePtr, *bone;
 
 	int			frameSize;
 
 	// don't lerp if lerping off, or this is the only frame, or the last frame...
 	//
-	if (backEnd.currentEntity->e.oldframe == backEnd.currentEntity->e.frame) 
+	if (backEnd.currentEntity->ePtr->oldframe == backEnd.currentEntity->ePtr->frame) 
 	{
 		backlerp	= 0;	// if backlerp is 0, lerping is off and frontlerp is never used
 		frontlerp	= 1;
 	} 
 	else  
 	{
-		backlerp	= backEnd.currentEntity->e.backlerp;
+		backlerp	= backEnd.currentEntity->ePtr->backlerp;
 		frontlerp	= 1.0f - backlerp;
 	}
 
@@ -478,9 +342,9 @@ void RB_MDRSurfaceAnim( md4Surface_t *surface )
 	frameSize = (size_t)( &((mdrFrame_t *)0)->bones[ header->numBones ] );
 
 	frame = (mdrFrame_t *)((byte *)header + header->ofsFrames +
-		backEnd.currentEntity->e.frame * frameSize );
+		backEnd.currentEntity->ePtr->frame * frameSize );
 	oldFrame = (mdrFrame_t *)((byte *)header + header->ofsFrames +
-		backEnd.currentEntity->e.oldframe * frameSize );
+		backEnd.currentEntity->ePtr->oldframe * frameSize );
 
 	RB_CHECKOVERFLOW( surface->numVerts, surface->numTriangles * 3 );
 
@@ -655,4 +519,3 @@ void MC_UnCompress(float mat[3][4],const unsigned char * comp)
 	val-=1<<(MC_BITS_VECT-1);
 	mat[2][2]=((float)(val))*MC_SCALE_VECT;
 }
-#endif

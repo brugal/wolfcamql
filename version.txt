@@ -1,4 +1,4 @@
-11.8test4
+12.0test1
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -29,6 +29,7 @@
 * bug fix:  png file depth capture incorrectly determined if alpha channel was present
 * bug fix:  Unix console tty buffer didn't store input key correctly
 * utf8 support for Unix console tty input
+* update to SDL2
 
 ---------------------------------
 11.7  2017-06-07

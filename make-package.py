@@ -13,11 +13,11 @@ if not os.path.exists(packageDir):
     os.makedirs(packageDir)
 os.system("cp -a package-files/* %s/" % packageDir)
 os.system("cp COPYING.txt COPYING-backtrace.txt CREDITS-wolfcam.txt CREDITS-openarena.txt README-ioquake3.txt README-wolfcam.txt version.txt unifont-LICENSE.txt voip-readme.txt %s/" % packageDir)
-os.system("cp code/libs/SDL.dll code/libs/backtrace.dll %s/" % packageDir)
+os.system("cp code/libs/win32/SDL2.dll code/libs/win32/backtrace.dll %s/" % packageDir)
 
-os.system("cp build/release-linux-i386/ioquake3.i386 %s/wolfcamql.i386" % packageDir)
-os.system("cp build/release-linux-i386/renderer_opengl1_i386.so %s/" % packageDir)
-os.system("cp -a build/release-linux-i386/baseq3/*.so %s/wolfcam-ql/" % packageDir)
+os.system("cp build/release-linux-x86/ioquake3.x86 %s/wolfcamql.x86" % packageDir)
+os.system("cp build/release-linux-x86/renderer_opengl1_x86.so %s/" % packageDir)
+os.system("cp -a build/release-linux-x86/baseq3/*.so %s/wolfcam-ql/" % packageDir)
 
 os.system("cp build/release-mingw32-x86/ioquake3.x86.exe %s/wolfcamql.exe" % packageDir)
 os.system("cp build/release-mingw32-x86/renderer_opengl1_x86.dll %s/" % packageDir)

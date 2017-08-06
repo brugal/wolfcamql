@@ -70,22 +70,11 @@ const char *COM_GetExtension( const char *name )
 		return "";
 }
 
-#if 0
 /*
 ============
 COM_StripExtension
 ============
 */
-void COM_StripExtension( const char *in, char *out, int destsize )
-{
-	const char *dot = strrchr(in, '.'), *slash;
-	if (dot && (!(slash = strrchr(in, '/')) || slash < dot))
-		Q_strncpyz(out, in, (destsize < dot-in+1 ? destsize : dot-in+1));
-	else
-		Q_strncpyz(out, in, destsize);
-}
-#endif
-
 // allow overlapping array ranges
 void COM_StripExtension (const char *in, char *out, int destsize)
 {

@@ -95,18 +95,16 @@ char *Sys_DefaultHomePath( void )
 {
 	TCHAR szPath[MAX_PATH];
 	FARPROC qSHGetFolderPath;
-	HMODULE shfolder;
+	HMODULE shfolder = LoadLibrary("shfolder.dll");
+
+	if(shfolder == NULL)
+	{
+		Com_Printf("Unable to load SHFolder.dll\n");
+		return NULL;
+	}
 
 	if(!*homePath && com_homepath)
 	{
-		shfolder = LoadLibrary("shfolder.dll");
-
-		if(shfolder == NULL)
-		{
-			Com_Printf("Unable to load SHFolder.dll\n");
-			return NULL;
-		}
-
 		// SHGetFolderPath() is deprecated since Vista
 		qSHGetFolderPath = GetProcAddress(shfolder, "SHGetFolderPathA");
 		if(qSHGetFolderPath == NULL)
@@ -130,10 +128,9 @@ char *Sys_DefaultHomePath( void )
 			Q_strcat(homePath, sizeof(homePath), com_homepath->string);
 		else
 			Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_WIN);
-
-		FreeLibrary(shfolder);
 	}
 
+	FreeLibrary(shfolder);
 	return homePath;
 }
 
@@ -843,10 +840,6 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 	}
 }
 
-#ifndef DEDICATED
-static qboolean SDL_VIDEODRIVER_externallySet = qfalse;
-#endif
-
 /*
 ==============
 Sys_GLimpSafeInit
@@ -856,14 +849,6 @@ Windows specific "safe" GL implementation initialisation
 */
 void Sys_GLimpSafeInit( void )
 {
-#ifndef DEDICATED
-	if( !SDL_VIDEODRIVER_externallySet )
-	{
-		// Here, we want to let SDL decide what do to unless
-		// explicitly requested otherwise
-		_putenv( "SDL_VIDEODRIVER=" );
-	}
-#endif
 }
 
 /*
@@ -875,25 +860,6 @@ Windows specific GL implementation initialisation
 */
 void Sys_GLimpInit( void )
 {
-#ifndef DEDICATED
-	if( !SDL_VIDEODRIVER_externallySet )
-	{
-		// It's a little bit weird having in_mouse control the
-		// video driver, but from ioq3's point of view they're
-		// virtually the same except for the mouse input anyway
-		if( Cvar_VariableIntegerValue( "in_mouse" ) == -1 )
-		{
-			// Use the windib SDL backend, which is closest to
-			// the behaviour of idq3 with in_mouse set to -1
-			_putenv( "SDL_VIDEODRIVER=windib" );
-		}
-		else
-		{
-			// Use the DirectX SDL backend
-			_putenv( "SDL_VIDEODRIVER=directx" );
-		}
-	}
-#endif
 }
 
 static HANDLE HStdout = INVALID_HANDLE_VALUE;
@@ -919,7 +885,6 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 	const char *arch;  // = "x86";
 #ifndef DEDICATED
 	TIMECAPS ptc;
-	const char *SDL_VIDEODRIVER;
 #endif
 	HMODULE shcore = NULL;
 	HMODULE user32 = NULL;
@@ -1026,17 +991,6 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 	Sys_SetFloatEnv();
 
 #ifndef DEDICATED
-	SDL_VIDEODRIVER = getenv( "SDL_VIDEODRIVER" );
-
-	if( SDL_VIDEODRIVER )
-	{
-		Com_Printf( "SDL_VIDEODRIVER is externally set to \"%s\", "
-				"in_mouse -1 will have no effect\n", SDL_VIDEODRIVER );
-		SDL_VIDEODRIVER_externallySet = qtrue;
-	}
-	else
-		SDL_VIDEODRIVER_externallySet = qfalse;
-
 	if(timeGetDevCaps(&ptc, sizeof(ptc)) == MMSYSERR_NOERROR)
 	{
 		timerResolution = ptc.wPeriodMin;

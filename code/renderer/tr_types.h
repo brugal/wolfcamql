@@ -300,7 +300,7 @@ typedef struct {
 	// used CDS.
 	qboolean				isFullscreen;
 	qboolean				stereoEnabled;
-	qboolean				smpActive;		// dual processor
+	qboolean				smpActive;		// UNUSED
 	qboolean glsl;
 	qboolean fbo;  // framebuffer object
 	qboolean fboStencil;

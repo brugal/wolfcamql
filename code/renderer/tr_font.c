@@ -72,10 +72,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifdef BUILD_FREETYPE
 #include <ft2build.h>
+#include FT_FREETYPE_H
 //#include FT_ERRORS_H
 //#include FT_SYSTEM_H
 //#include FT_IMAGE_H
-#include FT_FREETYPE_H
 #include FT_OUTLINE_H
 
 #define _FLOOR(x)  ((x) & -64)
@@ -496,7 +496,7 @@ static void LoadQ3Font (const char *fontName, int pointSize, fontInfo_t *font)
 {
 	int i;
 
-	//R_SyncRenderThread();
+	//R_IssuePendingRenderCommands();
 
 	// see if it was loaded already
 	for (i = 0; i < registeredFontCount; i++) {
@@ -636,8 +636,7 @@ void RE_RegisterFont (const char *fontName, int pointSize, fontInfo_t *font)
 	}
 #endif
 
-	// make sure the render thread is stopped
-	//R_SyncRenderThread();
+	//R_IssuePendingRenderCommands();
 	syncRenderThread = qtrue;
 
 	if (registeredFontCount >= MAX_FONTS) {
@@ -726,7 +725,7 @@ void RE_RegisterFont (const char *fontName, int pointSize, fontInfo_t *font)
 
 	// make sure the render thread is stopped
 	if (!syncRenderThread) {
-		//R_SyncRenderThread();
+		//R_IssuePendingRenderCommands();
 		syncRenderThread = qtrue;
 	}
 
@@ -1090,7 +1089,7 @@ qboolean RE_GetGlyphInfo (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyp
 
 	g->charValue = charValue;
 
-	//R_SyncRenderThread();
+	//R_IssuePendingRenderCommands();
 
 	out = ri.Malloc(FONT_OUT_BUFFER_SIZE);
 	if (out == NULL) {

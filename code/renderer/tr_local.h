@@ -42,11 +42,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define GL_INDEX_TYPE		GL_UNSIGNED_INT
 typedef unsigned int glIndex_t;
 
-// everything that is needed by the backend needs
-// to be double buffered to allow it to run in
-// parallel on a dual cpu machine
-#define	SMP_FRAMES		2
-
 // 14 bits
 // can't be increased without changing bit packing for drawsurfs
 // see QSORT_SHADERNUM_SHIFT
@@ -527,10 +522,7 @@ typedef enum {
 	SF_TRIANGLES,
 	SF_POLY,
 	SF_MD3,
-	SF_MD4,
-#ifdef RAVENMD4
 	SF_MDR,
-#endif
 	SF_IQM,
 	SF_FLARE,
 	SF_ENTITY,				// beams, rails, lightning, etc that can be determined by entity
@@ -572,7 +564,7 @@ typedef struct srfGridMesh_s {
 	surfaceType_t	surfaceType;
 
 	// dynamic lighting information
-	int				dlightBits[SMP_FRAMES];
+	int				dlightBits;
 
 	// culling information
 	vec3_t			meshBounds[2];
@@ -602,7 +594,7 @@ typedef struct {
 	cplane_t	plane;
 
 	// dynamic lighting information
-	int			dlightBits[SMP_FRAMES];
+	int			dlightBits;
 
 	// triangle definitions (no normals at points)
 	int			numPoints;
@@ -618,7 +610,7 @@ typedef struct {
 	surfaceType_t	surfaceType;
 
 	// dynamic lighting information
-	int				dlightBits[SMP_FRAMES];
+	int				dlightBits;
 
 	// culling information (FIXME: use this!)
 	vec3_t			bounds[2];
@@ -640,6 +632,7 @@ typedef struct {
 	int             num_frames;
 	int             num_surfaces;
 	int             num_joints;
+	int				num_poses;
 	struct srfIQModel_s     *surfaces;
 
 	float           *positions;
@@ -647,11 +640,20 @@ typedef struct {
 	float           *normals;
 	float           *tangents;
 	byte            *blendIndexes;
-	byte            *blendWeights;
+	union {
+		float   *f;
+		byte    *b;
+	} blendWeights;
 	byte            *colors;
 	int             *triangles;
 
+	// depending upon the exporter, blend indices and weights might be int/float
+	// as opposed to the recommended byte/byte, for example Noesis exports
+	// int/float whereas the official IQM tool exports byte/byte
+	byte blendWeightsType; // IQM_UBYTE or IQM_FLOAT
+
 	int             *jointParents;
+	float			*jointMats;
 	float           *poseMats;
 	float           *bounds;
 	char            *names;
@@ -776,10 +778,7 @@ typedef enum {
 	MOD_BAD,
 	MOD_BRUSH,
 	MOD_MESH,
-	MOD_MD4,
-#ifdef RAVENMD4
 	MOD_MDR,
-#endif
 	MOD_IQM
 } modtype_t;
 
@@ -791,7 +790,7 @@ typedef struct model_s {
 	int			dataSize;				// just for listing purposes
 	bmodel_t	*bmodel;				// only if type == MOD_BRUSH
 	md3Header_t	*md3[MD3_MAX_LODS];		// only if type == MOD_MESH
-	void		*modelData;				// only if type == (MOD_MD4 | MOD_MDR | MOD_IQM)
+	void		*modelData;				// only if type == (MOD_MDR | MOD_IQM)
 
 	int			 numLods;
 } model_t;
@@ -860,7 +859,6 @@ typedef struct {
 // all state modified by the back end is seperated
 // from the front end state
 typedef struct {
-	int			smpFrame;
 	trRefdef_t	refdef;
 	viewParms_t	viewParms;
 	orientationr_t	or;
@@ -891,8 +889,6 @@ typedef struct {
 	int						sceneCount;		// incremented every scene
 	int						viewCount;		// incremented every view (twice a scene if portaled)
 											// and every R_MarkFragments call
-
-	int						smpFrame;		// toggles from 0 to 1 every endFrame
 
 	int						frameSceneNum;	// zeroed at RE_BeginFrame
 
@@ -1096,6 +1092,7 @@ extern cvar_t	*r_mode;				// video mode
 extern cvar_t	*r_fullscreen;
 extern cvar_t	*r_noborder;
 extern cvar_t	*r_gamma;
+extern cvar_t	*r_displayRefresh;		// optional display refresh option
 extern cvar_t	*r_ignorehwgamma;		// overrides hardware gamma capabilities
 
 extern cvar_t	*r_allowExtensions;				// global enable/disable of OpenGL extensions
@@ -1146,8 +1143,6 @@ extern	cvar_t	*r_portalOnly;
 
 extern	cvar_t	*r_subdivisions;
 extern	cvar_t	*r_lodCurveError;
-extern	cvar_t	*r_smp;
-extern	cvar_t	*r_showSmp;
 extern	cvar_t	*r_skipBackEnd;
 
 extern	cvar_t	*r_stereoEnabled;
@@ -1375,11 +1370,6 @@ void		GLimp_Init( void );
 void		GLimp_Shutdown( void );
 void		GLimp_EndFrame( void );
 
-qboolean	GLimp_SpawnRenderThread( void (*function)( void ) );
-void		*GLimp_RendererSleep( void );
-void		GLimp_FrontEndSleep( void );
-void		GLimp_WakeRenderer( void *data );
-
 void		GLimp_LogComment( char *comment );
 void		GLimp_Minimize(void);
 
@@ -1556,7 +1546,7 @@ SCENE GENERATION
 ============================================================
 */
 
-void R_ToggleSmpFrame( void );
+void R_InitNextFrame( void );
 
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
@@ -1567,7 +1557,6 @@ void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, fl
 void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b );
 void RE_RenderScene( const refdef_t *fd );
 
-#ifdef RAVENMD4
 /*
 =============================================================
 
@@ -1586,7 +1575,6 @@ UNCOMPRESSING BONES
 #define MC_SCALE_Z (1.0f/64)
 
 void MC_UnCompress(float mat[3][4],const unsigned char * comp);
-#endif
 
 /*
 =============================================================
@@ -1596,13 +1584,8 @@ ANIMATED MODELS
 =============================================================
 */
 
-// void R_MakeAnimModel( model_t *model );      haven't seen this one really, so not needed I guess.
-void R_AddAnimSurfaces( trRefEntity_t *ent );
-void RB_SurfaceAnim( md4Surface_t *surfType );
-#ifdef RAVENMD4
 void R_MDRAddAnimSurfaces( trRefEntity_t *ent );
-void RB_MDRSurfaceAnim( md4Surface_t *surface );
-#endif
+void RB_MDRSurfaceAnim( mdrSurface_t *surface );
 qboolean R_LoadIQM (model_t *mod, void *buffer, int filesize, const char *name);
 void R_AddIQMSurfaces( trRefEntity_t *ent );
 void RB_IQMSurfaceAnim( surfaceType_t *surface );
@@ -1662,7 +1645,6 @@ RENDERER BACK END FUNCTIONS
 =============================================================
 */
 
-void RB_RenderThread( void );
 void RB_ExecuteRenderCommands( const void *data );
 
 /*
@@ -1789,9 +1771,7 @@ typedef enum {
 #define	MAX_POLYVERTS	3000
 
 // all of the information needed by the back end must be
-// contained in a backEndData_t.  This entire structure is
-// duplicated so the front and back end can run in parallel
-// on an SMP machine
+// contained in a backEndData_t
 typedef struct {
 	drawSurf_t	drawSurfs[MAX_DRAWSURFS];
 	dlight_t	dlights[MAX_DLIGHTS];
@@ -1804,18 +1784,13 @@ typedef struct {
 extern	int		max_polys;
 extern	int		max_polyverts;
 
-extern	backEndData_t	*backEndData[SMP_FRAMES];	// the second one may not be allocated
-
-extern	volatile qboolean	renderThreadActive;
+extern	backEndData_t	*backEndData;	// the second one may not be allocated
 
 
 void *R_GetCommandBuffer( int bytes );
 void RB_ExecuteRenderCommands( const void *data );
 
-void R_InitCommandBuffers( void );
-void R_ShutdownCommandBuffers( void );
-
-void R_SyncRenderThread( void );
+void R_IssuePendingRenderCommands( void );
 
 void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, int numDrawSurfs );
 
