@@ -4858,7 +4858,7 @@ static void CG_DrawUpperRight( void ) {
 		y = CG_DrawTimer( y );
 	}
 	if ( cg_drawAttacker.integer ) {
-		y = CG_DrawAttacker( y );
+		CG_DrawAttacker( y );
 	}
 }
 
@@ -5400,7 +5400,7 @@ static void CG_DrawLowerRight( void ) {
 		y = CG_DrawPlayersLeft(y);
 	}
 	if (cg_drawPowerups.integer) {
-		y = CG_DrawPowerups( y );
+		CG_DrawPowerups( y );
 	}
 }
 #endif // MISSIONPACK
@@ -5651,7 +5651,7 @@ static void CG_DrawLowerLeft( void ) {
 	}
 
 	if (cg_drawItemPickups.integer) {
-		y = CG_DrawPickupItem( y );
+		CG_DrawPickupItem( y );
 	}
 }
 #endif // MISSIONPACK

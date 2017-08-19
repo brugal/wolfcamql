@@ -57,6 +57,7 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 	switch( type )
 	{
 		default:
+		  [alert runModal];
 		  result = DR_OK;
 		  break;
 
@@ -66,10 +67,9 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 			switch( [alert runModal] )
 			{
 				default:
-				case NSAlertFirstButtonReturn: result = DR_YES;
-				case NSAlertSecondButtonReturn: result = DR_NO;
+				case NSAlertFirstButtonReturn: result = DR_YES; break;
+				case NSAlertSecondButtonReturn: result = DR_NO; break;
 			}
-
 			break;
 
 		case DT_OK_CANCEL:

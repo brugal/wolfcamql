@@ -82,7 +82,9 @@ cvar_t	*com_showtrace;
 cvar_t	*com_version;
 cvar_t	*com_blood;
 cvar_t	*com_buildScript;	// for automated data building scripts
+#ifdef CINEMATICS_INTRO
 cvar_t	*com_introPlayed;
+#endif
 cvar_t *com_logo;
 cvar_t	*cl_paused;
 cvar_t	*sv_paused;
@@ -130,6 +132,7 @@ qboolean	com_errorEntered = qfalse;
 qboolean	com_fullyInitialized = qfalse;
 qboolean com_notInstalled = qfalse;
 qboolean	com_gameRestarting = qfalse;
+qboolean	com_gameClientRestarting = qfalse;
 
 char	com_errorMessage[MAX_PRINT_MSG];
 
@@ -350,6 +353,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	static int	lastErrorTime;
 	static int	errorCount;
 	int			currentTime;
+	qboolean	restartClient;
 
 	//Com_Printf(S_COLOR_RED "error\n");
 	//Sys_Error("sldkfjk\n");
@@ -390,9 +394,17 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	if (code != ERR_DISCONNECT && code != ERR_NEED_CD)
 		Cvar_Set("com_errorMessage", com_errorMessage);
 
+	restartClient = com_gameClientRestarting && !( com_cl_running && com_cl_running->integer );
+
+	com_gameRestarting = qfalse;
+	com_gameClientRestarting = qfalse;
+
 	if (code == ERR_DISCONNECT || code == ERR_SERVERDISCONNECT) {
 		VM_Forced_Unload_Start();
 		SV_Shutdown( "Server disconnected" );
+		if ( restartClient ) {
+			CL_Init();
+		}
 		CL_Disconnect( qtrue );
 		CL_FlushMemory( );
 		VM_Forced_Unload_Done();
@@ -404,6 +416,9 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		Com_Printf ("********************\nERROR: %s\n********************\n", com_errorMessage);
 		VM_Forced_Unload_Start();
 		SV_Shutdown (va("Server crashed: %s",  com_errorMessage));
+		if ( restartClient ) {
+			CL_Init();
+		}
 		CL_Disconnect( qtrue );
 		CL_FlushMemory( );
 		VM_Forced_Unload_Done();
@@ -413,6 +428,9 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 	} else if ( code == ERR_NEED_CD ) {
 		VM_Forced_Unload_Start();
 		SV_Shutdown( "Server didn't have CD" );
+		if ( restartClient ) {
+			CL_Init();
+		}
 		if ( com_cl_running && com_cl_running->integer ) {
 			CL_Disconnect( qtrue );
 			CL_FlushMemory( );
@@ -453,7 +471,7 @@ void Com_Quit_f( void ) {
 	char *p = Cmd_Args( );
 	if ( !com_errorEntered ) {
 		// Some VMs might execute "quit" command directly,
-		// which would trigger an unload of active CM error.
+		// which would trigger an unload of active VM error.
 		// Sys_Quit will kill this process anyways, so
 		// a corrupt call stack makes no difference
 		VM_Forced_Unload_Start();
@@ -2286,8 +2304,7 @@ sysEvent_t Com_GetSystemEvent (void)
 Com_GetRealEvent
 =================
 */
-sysEvent_t Com_GetRealEvent (void)
-{
+sysEvent_t	Com_GetRealEvent ( void ) {
 	int			r;
 	sysEvent_t	ev;
 
@@ -2381,8 +2398,7 @@ void Com_PushEvent( sysEvent_t *event ) {
 Com_GetEvent
 =================
 */
-sysEvent_t	Com_GetEvent (void)
-{
+sysEvent_t	Com_GetEvent (void) {
 	if ( com_pushedEventsHead > com_pushedEventsTail ) {
 		com_pushedEventsTail++;
 		return com_pushedEvents[ (com_pushedEventsTail-1) & (MAX_PUSHED_EVENTS-1) ];
@@ -2422,8 +2438,7 @@ Com_EventLoop
 Returns last event time
 =================
 */
-int Com_EventLoop (void)
-{
+int Com_EventLoop( void ) {
 	sysEvent_t	ev;
 	netadr_t	evFrom;
 	byte		bufData[MAX_MSGLEN];
@@ -2450,6 +2465,7 @@ int Com_EventLoop (void)
 
 			return ev.evTime;
 		}
+
 
 		switch(ev.evType)
 		{
@@ -2515,7 +2531,7 @@ Just throw a fatal error to
 test error shutdown procedures
 =============
 */
- static __attribute__((__noreturn__)) void Com_Error_f (void) {
+static void __attribute__((__noreturn__)) Com_Error_f (void) {
 	if ( Cmd_Argc() > 1 ) {
 		Com_Error( ERR_DROP, "Testing drop error" );
 	} else {
@@ -2635,16 +2651,14 @@ void Com_GameRestart(int checksumFeed, qboolean disconnect)
 	// make sure no recursion can be triggered
 	if(!com_gameRestarting && com_fullyInitialized)
 	{
-		int clWasRunning;
-
 		com_gameRestarting = qtrue;
-		clWasRunning = com_cl_running->integer;
+		com_gameClientRestarting = com_cl_running->integer;
 
 		// Kill server if we have one
 		if(com_sv_running->integer)
 			SV_Shutdown("Game directory changed");
 
-		if(clWasRunning)
+		if(com_gameClientRestarting)
 		{
 			if(disconnect)
 				CL_Disconnect(qfalse);
@@ -2660,19 +2674,20 @@ void Com_GameRestart(int checksumFeed, qboolean disconnect)
 
 		if(disconnect)
 		{
-			// We don't wat to change any network settings if gamedir
+			// We don't want to change any network settings if gamedir
 			// change was triggered by a connect to server because the
 			// new network settings might make the connection fail.
 			NET_Restart_f();
 		}
 
-		if(clWasRunning)
+		if(com_gameClientRestarting)
 		{
 			CL_Init();
 			CL_StartHunkUsers(qfalse);
 		}
 
 		com_gameRestarting = qfalse;
+		com_gameClientRestarting = qfalse;
 	}
 }
 
@@ -2871,7 +2886,7 @@ static void Com_DetectSSE(void)
 #endif
 			Q_VMftol = qvmftolsse;
 
-			Com_Printf("Have SSE support\n");
+			Com_Printf("SSE instruction set enabled\n");
 #if !idx64
         }
 	else
@@ -2880,7 +2895,7 @@ static void Com_DetectSSE(void)
 			Q_VMftol = qvmftolx87;
 			Q_SnapVector = qsnapvectorx87;
 
-			Com_Printf("No SSE support on this machine\n");
+			Com_Printf("SSE instruction set not available\n");
         }
 #endif
 }
@@ -3029,7 +3044,10 @@ void Com_Init( char *commandLine ) {
 
 	Cvar_Get("com_errorMessage", "", CVAR_ROM | CVAR_NORESTART);
 
+#ifdef CINEMATICS_INTRO
 	com_introPlayed = Cvar_Get( "com_introplayed", "1", CVAR_ARCHIVE);
+#endif
+
 	com_logo = Cvar_Get("com_logo", "0", CVAR_ARCHIVE);
 
 	s = va("%s %s %s", Q3_VERSION, PLATFORM_STRING, PRODUCT_DATE );
@@ -3065,17 +3083,7 @@ void Com_Init( char *commandLine ) {
 
 	Sys_Init();
 
-	if( Sys_WritePIDFile( ) ) {
-#ifndef DEDICATED
-		const char *message = "The last time " CLIENT_WINDOW_TITLE " ran, "
-			"it didn't exit properly. This may be due to inappropriate video "
-			"settings. Would you like to start with \"safe\" video settings?";
-
-		if( Sys_Dialog( DT_YES_NO, message, "Abnormal Exit" ) == DR_YES ) {
-			Cvar_Set( "com_abnormalExit", "1" );
-		}
-#endif
-	}
+	Sys_InitPIDFile( FS_GetCurrentGameDir() );
 
 	// Pick a random port value
 	Com_RandomBytes( (byte*)&qport, sizeof(int) );
@@ -3098,9 +3106,12 @@ void Com_Init( char *commandLine ) {
 	if ( !Com_AddStartupCommands() ) {
 		// if the user didn't give any commands, run default action
 		if ( !com_dedicated->integer ) {
+#ifdef CINEMATICS_LOGO
 			if (com_logo->integer) {
 				Cbuf_AddText ("cinematic " CINEMATICS_LOGO "\n");
 			}
+#endif
+#ifdef CINEMATICS_INTRO
 			if( !com_introPlayed->integer ) {
 				Cvar_Set( com_introPlayed->name, "1" );
 				if (com_logo->integer) {
@@ -3109,6 +3120,7 @@ void Com_Init( char *commandLine ) {
 					Cbuf_AddText("cinematic " CINEMATICS_INTRO "\n");
 				}
 			}
+#endif
 		}
 	}
 
@@ -3272,6 +3284,13 @@ void Com_WriteConfig_f( void ) {
 
 	Q_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
 	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
+
+	if (!COM_CompareExtension(filename, ".cfg"))
+	{
+		Com_Printf("Com_WriteConfig_f: Only the \".cfg\" extension is supported by this command!\n");
+		return;
+	}
+
 	Com_Printf( "Writing %s.\n", filename );
 	Com_WriteConfigToFile( filename );
 }
@@ -4152,7 +4171,7 @@ void Field_SetBuffer (field_t *field, const char *p, int len, int pos)
 ==================
 Com_RandomBytes
 
-fills string array with len random bytes, peferably from the OS randomizer
+fills string array with len random bytes, preferably from the OS randomizer
 ==================
 */
 void Com_RandomBytes( byte *string, int len )
@@ -4196,4 +4215,185 @@ qboolean Com_IsVoipTarget(uint8_t *voipTargets, int voipTargetsSize, int clientN
 		return (voipTargets[index] & (1 << (clientNum & 0x07)));
 
 	return qfalse;
+}
+
+/*
+===============
+Field_CompletePlayerName
+===============
+*/
+static qboolean Field_CompletePlayerNameFinal( qboolean whitespace )
+{
+	int completionOffset;
+
+	if( matchCount == 0 )
+		return qtrue;
+
+	//completionOffset = strlen( completionField->buffer ) - strlen( completionString );
+	//FIXME utf8 strlen(completionString)
+	completionOffset = Field_Strlen(completionField) - strlen(completionString);
+
+	//Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,
+	//	sizeof( completionField->buffer ) - completionOffset );
+	Field_SetBuffer(completionField, shortestMatch, strlen(shortestMatch), completionOffset);
+
+	//completionField->cursor = strlen( completionField->buffer );
+	completionField->cursor = Field_Strlen(completionField);
+
+	if( matchCount == 1 && whitespace )
+	{
+		//Q_strcat( completionField->buffer, sizeof( completionField->buffer ), " " );
+		Field_Insert(completionField, Field_Strlen(completionField), ' ');
+		completionField->cursor++;
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
+static void Name_PlayerNameCompletion( const char **names, int nameCount, void(*callback)(const char *s) ) 
+{
+	int i;
+
+	for( i = 0; i < nameCount; i++ ) {
+		callback( names[ i ] );
+	}
+}
+
+qboolean Com_FieldStringToPlayerName( char *name, int length, const char *rawname )
+{
+	char		hex[5];
+	int			i;
+	int			ch;
+
+	if( name == NULL || rawname == NULL )
+		return qfalse;
+
+	if( length <= 0 )
+		return qtrue;
+
+	for( i = 0; *rawname && i + 1 <= length; rawname++, i++ ) {
+		if( *rawname == '\\' ) {
+			Q_strncpyz( hex, rawname + 1, sizeof(hex) );
+			ch = Com_HexStrToInt( hex );
+			if( ch > -1 ) {
+				name[i] = ch;
+				rawname += 4; //hex string length, 0xXX
+			} else {
+				name[i] = *rawname;
+			}
+		} else {
+			name[i] = *rawname;
+		}
+	}
+	name[i] = '\0';
+
+	return qtrue;
+}
+
+qboolean Com_PlayerNameToFieldString( char *str, int length, const char *name )
+{
+	const char *p;
+	int i;
+	int x1, x2;
+
+	if( str == NULL || name == NULL )
+		return qfalse;
+
+	if( length <= 0 )
+		return qtrue;
+
+	*str = '\0';
+	p = name;
+
+	for( i = 0; *p != '\0'; i++, p++ )
+	{
+		if( i + 1 >= length )
+			break;
+
+		if( *p <= ' ' )
+		{
+			if( i + 5 + 1 >= length )
+				break;
+
+			x1 = *p >> 4;
+			x2 = *p & 15;
+
+			str[i+0] = '\\';
+			str[i+1] = '0';
+			str[i+2] = 'x';
+			str[i+3] = x1 > 9 ? x1 - 10 + 'a' : x1 + '0';
+			str[i+4] = x2 > 9 ? x2 - 10 + 'a' : x2 + '0';
+
+			i += 4;
+		} else {
+			str[i] = *p;
+		}		
+	}
+	str[i] = '\0';
+
+	return qtrue;
+}
+
+void Field_CompletePlayerName( const char **names, int nameCount )
+{
+	qboolean whitespace;
+
+	matchCount = 0;
+	shortestMatch[ 0 ] = 0;
+
+	if( nameCount <= 0 )
+		return;
+
+	Name_PlayerNameCompletion( names, nameCount, FindMatches );
+
+	if( completionString[0] == '\0' )
+	{
+		Com_PlayerNameToFieldString( shortestMatch, sizeof( shortestMatch ), names[ 0 ] );
+	}
+
+	//allow to tab player names
+	//if full player name switch to next player name
+	if( completionString[0] != '\0'
+		&& Q_stricmp( shortestMatch, completionString ) == 0 
+		&& nameCount > 1 ) 
+	{
+		int i;
+
+		for( i = 0; i < nameCount; i++ ) {
+			if( Q_stricmp( names[ i ], completionString ) == 0 ) 
+			{
+				i++;
+				if( i >= nameCount )
+				{
+					i = 0;
+				}
+
+				Com_PlayerNameToFieldString( shortestMatch, sizeof( shortestMatch ), names[ i ] );
+				break;
+			}
+		}
+	}
+
+	if( matchCount > 1 )
+	{
+		//Com_Printf( "]%s\n", completionField->buffer );
+		
+		Com_Printf( "]%s\n", Field_AsStr(completionField, 0, 0));
+		
+		Name_PlayerNameCompletion( names, nameCount, PrintMatches );
+	}
+
+	whitespace = nameCount == 1? qtrue: qfalse;
+	if( !Field_CompletePlayerNameFinal( whitespace ) )
+	{
+
+	}
+}
+
+int QDECL Com_strCompare( const void *a, const void *b )
+{
+    const char **pa = (const char **)a;
+    const char **pb = (const char **)b;
+    return strcmp( *pa, *pb );
 }

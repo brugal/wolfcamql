@@ -66,7 +66,7 @@ static field_t ttyEditLines[ CON_HISTORY ];
 static int hist_current = -1, hist_count = 0;
 
 #ifndef DEDICATED
-// Dont use "]" as it would be the same as in-game console,
+// Don't use "]" as it would be the same as in-game console,
 //   this makes it clear where input came from.
 #define TTY_CONSOLE_PROMPT "tty]"
 #else
@@ -424,7 +424,7 @@ char *CON_Input( void )
 					if (clc.state != CA_ACTIVE && TTY_con.cursor &&
 						TTY_con.xbuffer[0].codePoint != '/' && TTY_con.xbuffer[0].codePoint != '\\')
 					{
-						memmove(TTY_con.xbuffer + 1, TTY_con.xbuffer, sizeof(TTY_con.xbuffer) - 1);
+						memmove(TTY_con.xbuffer + 1, TTY_con.xbuffer, sizeof(TTY_con.xbuffer) - (1 * sizeof(fieldChar_t)));
 						TTY_con.xbuffer[0].codePoint = '\\';
 						TTY_con.xbuffer[0].numUtf8Bytes = 1;
 						TTY_con.xbuffer[0].utf8Bytes[0] = '\\';

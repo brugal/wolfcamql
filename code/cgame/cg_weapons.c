@@ -3433,9 +3433,6 @@ void CG_MissileHitWall( int weapon, int clientNum, const vec3_t origin, const ve
 		return;
 	}
 
-	mark = 0;
-	radius = 32;
-	sfx = 0;
 	mod = 0;
 	shader = 0;
 	light = 0;

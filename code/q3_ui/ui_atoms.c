@@ -137,9 +137,8 @@ void UI_PopMenu (void)
 
 	uis.menusp--;
 
-	if (uis.menusp < 0) {
+	if (uis.menusp < 0)
 		trap_Error ("UI_PopMenu: menu stack underflow");
-	}
 
 	if (uis.menusp) {
 		uis.activemenu = uis.stack[uis.menusp-1];

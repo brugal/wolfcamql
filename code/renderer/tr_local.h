@@ -454,6 +454,8 @@ typedef struct {
 
 	int			numDrawSurfs;
 	struct drawSurf_s	*drawSurfs;
+
+
 } trRefdef_t;
 
 
@@ -840,7 +842,6 @@ typedef struct {
 	int			faceCulling;
 	unsigned long	glStateBits;
 } glstate_t;
-
 
 typedef struct {
 	int		c_surfaces, c_shaders, c_vertexes, c_indexes, c_totalIndexes;
@@ -1586,7 +1587,7 @@ ANIMATED MODELS
 
 void R_MDRAddAnimSurfaces( trRefEntity_t *ent );
 void RB_MDRSurfaceAnim( mdrSurface_t *surface );
-qboolean R_LoadIQM (model_t *mod, void *buffer, int filesize, const char *name);
+qboolean R_LoadIQM (model_t *mod, void *buffer, int filesize, const char *name );
 void R_AddIQMSurfaces( trRefEntity_t *ent );
 void RB_IQMSurfaceAnim( surfaceType_t *surface );
 int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,
@@ -1799,10 +1800,10 @@ void RE_StretchPic ( float x, float y, float w, float h,
 					  float s1, float t1, float s2, float t2, qhandle_t hShader );
 void RE_BeginFrame (stereoFrame_t stereoFrame, qboolean recordingVideo);
 void RE_EndFrame( int *frontEndMsec, int *backEndMsec );
-void RE_SaveJPG(char * filename, int quality, int image_width, int image_height, unsigned char *image_buffer, int padding);
+void RE_SaveJPG(char * filename, int quality, int image_width, int image_height,
+				unsigned char *image_buffer, int padding);
 size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
-		int image_width, int image_height,
-						   byte *image_buffer, int padding);
+		int image_width, int image_height, byte *image_buffer, int padding);
 qboolean SavePNG (const char *name, byte *data, int width, int height, int bytedepth);
 void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, qboolean png, int picCount, char *givenFileName);
 void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);

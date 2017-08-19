@@ -100,7 +100,6 @@ qboolean CL_cURL_Init()
 #ifdef ALTERNATE_CURL_LIB
 		// On some linux distributions there is no libcurl.so.3, but only libcurl.so.4. That one works too.
 		if(!(cURLLib = Sys_LoadDll(ALTERNATE_CURL_LIB, qtrue)))
-			return qfalse;
 #endif
 		return qfalse;
 	}

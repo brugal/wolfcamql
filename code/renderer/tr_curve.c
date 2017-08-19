@@ -475,7 +475,6 @@ srfGridMesh_t *R_SubdividePatchToGrid( int width, int height,
 		if ( errorTable[0][i] != 999 ) {
 			continue;
 		}
-
 		for ( j = i+1 ; j < width ; j++ ) {
 			for ( k = 0 ; k < height ; k++ ) {
 				ctrl[k][j-1] = ctrl[k][j];

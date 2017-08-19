@@ -131,6 +131,8 @@ static void SV_Netchan_Decode( client_t *client, msg_t *msg ) {
 }
 #endif
 
+
+
 /*
 =================
 SV_Netchan_FreeQueue
@@ -190,6 +192,7 @@ Return number of ms until next message can be sent based on throughput given by 
 -1 if no packet was sent.
 =================
 */
+
 int SV_Netchan_TransmitNextFragment(client_t *client)
 {
 	if(client->netchan.unsentFragments)
@@ -205,6 +208,7 @@ int SV_Netchan_TransmitNextFragment(client_t *client)
 	
 	return -1;
 }
+
 
 /*
 ===============
@@ -239,7 +243,6 @@ void SV_Netchan_Transmit( client_t *client, msg_t *msg)
 		// insert it in the queue, the message will be encoded and sent later
 		*client->netchan_end_queue = netbuf;
 		client->netchan_end_queue = &(*client->netchan_end_queue)->next;
-		Netchan_Transmit( &client->netchan, msg->cursize, msg->data );
 	}
 	else
 	{

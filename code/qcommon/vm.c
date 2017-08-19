@@ -363,7 +363,8 @@ VM_LoadQVM
 Load a .qvm file
 =================
 */
-vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure ) {
+vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure )
+{
 	int					dataLength;
 	int					i;
 	char				filename[MAX_QPATH];
@@ -381,7 +382,9 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure ) {
 	if ( !header.h ) {
 		Com_Printf( "Failed.\n" );
 		VM_Free( vm );
+
 		Com_Printf(S_COLOR_YELLOW "Warning: Couldn't open VM file %s\n", filename);
+
 		return NULL;
 	}
 
@@ -448,13 +451,15 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure ) {
 	if(alloc)
 	{
 		// allocate zero filled space for initialized and uninitialized data
-		vm->dataBase = Hunk_Alloc(dataLength, h_high);
+		// leave some space beyond data mask so we can secure all mask operations
+		vm->dataAlloc = dataLength + 4;
+		vm->dataBase = Hunk_Alloc(vm->dataAlloc, h_high);
 		vm->dataMask = dataLength - 1;
 	}
 	else
 	{
 		// clear the data, but make sure we're not clearing more than allocated
-		if(vm->dataMask + 1 != dataLength)
+		if(vm->dataAlloc != dataLength + 4)
 		{
 			VM_Free(vm);
 			FS_FreeFile(header.v);
@@ -464,7 +469,7 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure ) {
 			return NULL;
 		}
 
-		Com_Memset(vm->dataBase, 0, dataLength);
+		Com_Memset(vm->dataBase, 0, vm->dataAlloc);
 	}
 
 	// copy the intialized data
@@ -623,7 +628,6 @@ vm_t *VM_Create( const char *module, intptr_t (*systemCalls)(intptr_t *),
 
 			Com_Printf("Failed loading dll, trying next\n");
 		}
-
 		else if(retval == VMI_COMPILED)
 		{
 			vm->searchPath = startSearch;
@@ -655,7 +659,8 @@ vm_t *VM_Create( const char *module, intptr_t (*systemCalls)(intptr_t *),
 		interpret = VMI_BYTECODE;
 	}
 #else
-	if(interpret != VMI_BYTECODE) {
+	if(interpret != VMI_BYTECODE)
+	{
 		vm->compiled = qtrue;
 		VM_Compile( vm, header );
 	}
@@ -816,12 +821,13 @@ locals from sp
 int CgvmMain (int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11);
 #endif
 
-intptr_t	QDECL VM_Call( vm_t *vm, int callnum, ... ) {
+intptr_t QDECL VM_Call( vm_t *vm, int callnum, ... )
+{
 	vm_t	*oldVM;
 	intptr_t r;
 	int i;
 
-	if (!vm  ||  !vm->name[0]) {
+	if(!vm || !vm->name[0]) {
 		Com_Error( ERR_FATAL, "VM_Call with NULL vm" );
 	}
 
@@ -854,7 +860,6 @@ intptr_t	QDECL VM_Call( vm_t *vm, int callnum, ... ) {
 #endif
 
 	++vm->callLevel;
-
 	// if we have a dll loaded, call it directly
 	if ( vm->entryPoint ) {
 		//rcg010207 -  see dissertation at top of VM_DllSyscall() in this file.

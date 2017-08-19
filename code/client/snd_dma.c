@@ -282,6 +282,7 @@ static sfx_t *S_FindName( const char *name ) {
 	if (!name) {
 		Com_Error(ERR_FATAL, "Sound name is NULL");
 	}
+
 	if (!name[0]) {
 		Com_Printf(S_COLOR_YELLOW "WARNING: Sound name is empty\n");
 		return NULL;
@@ -1606,7 +1607,7 @@ static void S_OpenBackgroundStream( const char *filename ) {
 	}
 
 	if(s_backgroundStream->info.channels != 2 || s_backgroundStream->info.rate != 22050) {
-		Com_Printf(S_COLOR_YELLOW "WARNING: music file %s is not 22k stereo\n", filename );
+		Com_Printf(S_COLOR_YELLOW "WARNING: music file %s is not 22k stereo and/or channels != 2\n", filename );
 		Com_Printf(S_COLOR_YELLOW "channels %d  rate %d\n", s_backgroundStream->info.channels, s_backgroundStream->info.rate);
 	}
 }

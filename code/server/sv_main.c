@@ -308,11 +308,11 @@ void SV_MasterHeartbeat(const char *message)
 				else
 					Com_Printf( "%s has no IPv6 address.\n", sv_master[i]->string);
 			}
+		}
 
-			if(adr[i][0].type == NA_BAD && adr[i][1].type == NA_BAD)
-			{
-				continue;
-			}
+		if(adr[i][0].type == NA_BAD && adr[i][1].type == NA_BAD)
+		{
+			continue;
 		}
 
 
@@ -322,9 +322,9 @@ void SV_MasterHeartbeat(const char *message)
 		// ever incompatably changes
 
 		if(adr[i][0].type != NA_BAD)
-			NET_OutOfBandPrint( NS_SERVER, adr[i][0], "heartbeat %s\n", message );
+			NET_OutOfBandPrint( NS_SERVER, adr[i][0], "heartbeat %s\n", message);
 		if(adr[i][1].type != NA_BAD)
-			NET_OutOfBandPrint( NS_SERVER, adr[i][1], "heartbeat %s\n", message );
+			NET_OutOfBandPrint( NS_SERVER, adr[i][1], "heartbeat %s\n", message);
 	}
 }
 
@@ -431,7 +431,8 @@ static leakyBucket_t *SVC_BucketForAddress( netadr_t address, int burst, int per
 		interval = now - bucket->lastTime;
 
 		// Reclaim expired buckets
-		if ( bucket->lastTime > 0 && (interval > ( burst * period )  ||  interval < 0 ) ) {
+		if ( bucket->lastTime > 0 && ( interval > ( burst * period )  ||
+									  interval < 0 ) ) {
 			if ( bucket->prev != NULL ) {
 				bucket->prev->next = bucket->next;
 			} else {
@@ -656,7 +657,7 @@ void SVC_Info( netadr_t from ) {
 	Info_SetValueForKey( infostring, "hostname", sv_hostname->string );
 	Info_SetValueForKey( infostring, "mapname", sv_mapname->string );
 	Info_SetValueForKey( infostring, "clients", va("%i", count) );
-	Info_SetValueForKey( infostring, "g_humanplayers", va("%i", humans ) );
+	Info_SetValueForKey(infostring, "g_humanplayers", va("%i", humans));
 	Info_SetValueForKey( infostring, "sv_maxclients", 
 		va("%i", sv_maxclients->integer - sv_privateClients->integer ) );
 	Info_SetValueForKey( infostring, "gametype", va("%i", sv_gametype->integer ) );

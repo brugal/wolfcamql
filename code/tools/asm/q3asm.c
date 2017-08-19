@@ -384,7 +384,7 @@ static void sort_symbols ()
   symbol_t *s;
   symbol_t **symlist;
 
-  if (!symbols)
+  if(!symbols)
 	  return;
 
 //crumb("sort_symbols: Constructing symlist array\n");

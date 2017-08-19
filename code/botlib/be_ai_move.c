@@ -1814,11 +1814,11 @@ bot_moveresult_t BotTravel_Jump(bot_movestate_t *ms, aas_reachability_t *reach)
 	//check for a gap
 	for (gapdist = 0; gapdist < 80; gapdist += 10)
 	{
-		VectorMA(start, gapdist1+10, hordir, end);
+		VectorMA(start, gapdist+10, hordir, end);
 		end[2] += 1;
 		if (AAS_PointAreaNum(end) != ms->reachareanum) break;
 	} //end for
-	if (gapdist1 < 80) VectorMA(reach->start, gapdist1, hordir, trace.endpos);
+	if (gapdist < 80) VectorMA(reach->start, gapdist, hordir, trace.endpos);
 //	dist1 = BotGapDistance(start, hordir, ms->entitynum);
 //	if (dist1 && dist1 <= trace.fraction * 80) VectorMA(reach->start, dist1-20, hordir, trace.endpos);
 	//
@@ -3033,7 +3033,7 @@ void BotMoveToGoal(bot_moveresult_t *result, int movestate, bot_goal_t *goal, in
 	ms = BotMoveStateFromHandle(movestate);
 	if (!ms) return;
 	//reset the grapple before testing if the bot has a valid goal
-	//because the bot could loose all its goals when stuck to a wall
+	//because the bot could lose all its goals when stuck to a wall
 	BotResetGrapple(ms);
 	//
 	if (!goal)
@@ -3509,7 +3509,8 @@ void BotResetLastAvoidReach(int movestate)
 			latest = i;
 		} //end if
 	} //end for
-	if (latesttime  &&  i < MAX_AVOIDREACH)  // i < MAX_AVOIDREACH silence gcc warning
+	//if (latesttime  &&  i < MAX_AVOIDREACH)  // i < MAX_AVOIDREACH silence gcc warning
+	if (latesttime)
 	{
 		ms->avoidreachtimes[latest] = 0;
 		if (ms->avoidreachtries[latest] > 0) ms->avoidreachtries[latest]--;

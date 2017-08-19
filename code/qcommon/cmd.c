@@ -909,7 +909,8 @@ void Cmd_Args_Sanitize( void )
 {
 	int i;
 
-	for ( i = 1 ; i < cmd_argc ; i++ ) {
+	for (i = 1; i < cmd_argc; i++)
+	{
 		char* c = cmd_argv[i];
 
 		if(strlen(c) > MAX_CVAR_VALUE_STRING - 1)
@@ -1198,6 +1199,7 @@ void Cmd_CompleteArgument( const char *command, char *args, int argNum ) {
 			if ( cmd->complete ) {
 				cmd->complete( args, argNum );
 			}
+			return;
 		}
 	}
 }

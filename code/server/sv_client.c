@@ -112,11 +112,11 @@ void SV_GetChallenge(netadr_t from)
 		{
 			wasfound = qtrue;
 
-			if (challenge->time < oldestClientTime)
+			if(challenge->time < oldestClientTime)
 				oldestClientTime = challenge->time;
 		}
 
-		if (wasfound && i >= MAX_CHALLENGES_MULTI)
+		if(wasfound && i >= MAX_CHALLENGES_MULTI)
 		{
 			i = MAX_CHALLENGES;
 			break;
@@ -199,7 +199,8 @@ void SV_GetChallenge(netadr_t from)
 #endif
 
 	challenge->pingTime = svs.time;
-	NET_OutOfBandPrint(NS_SERVER, challenge->adr, "challengeResponse %d %d %d", challenge->challenge, clientChallenge, com_protocol->integer);
+	NET_OutOfBandPrint(NS_SERVER, challenge->adr, "challengeResponse %d %d %d",
+					   challenge->challenge, clientChallenge, com_protocol->integer);
 }
 
 #ifndef STANDALONE
@@ -351,7 +352,7 @@ void SV_DirectConnect( netadr_t from ) {
 
 	Q_strncpyz( userinfo, Cmd_Argv(1), sizeof(userinfo) );
 
-	version = atoi( Info_ValueForKey( userinfo, "protocol" ) );
+	version = atoi(Info_ValueForKey(userinfo, "protocol"));
 
 #ifdef LEGACY_PROTOCOL
 	if(version > 0 && com_legacyprotocol->integer == version)
@@ -363,7 +364,7 @@ void SV_DirectConnect( netadr_t from ) {
 		{
 			NET_OutOfBandPrint(NS_SERVER, from, "print\nServer uses protocol version %i "
 								"(yours is %i).\n", com_protocol->integer, version);
-			Com_DPrintf ("    rejected connect from version %i\n", version);
+			Com_DPrintf("    rejected connect from version %i\n", version);
 			return;
 		}
 	}
@@ -566,9 +567,9 @@ gotnewcl:
 	// save the address
 #ifdef LEGACY_PROTOCOL
 	newcl->compat = compat;
-	Netchan_Setup(NS_SERVER, &newcl->netchan , from, qport, challenge, compat);
+	Netchan_Setup(NS_SERVER, &newcl->netchan, from, qport, challenge, compat);
 #else
-	Netchan_Setup(NS_SERVER, &newcl->netchan , from, qport, challenge, qfalse);
+	Netchan_Setup(NS_SERVER, &newcl->netchan, from, qport, challenge, qfalse);
 #endif
 	// init the netchan queue
 	newcl->netchan_end_queue = &newcl->netchan_start_queue;
@@ -817,7 +818,8 @@ void SV_ClientEnterWorld( client_t *client, usercmd_t *cmd ) {
 
 	client->deltaMessage = -1;
 	client->lastSnapshotTime = 0;	// generate a snapshot immediately
-	if (cmd)
+
+	if(cmd)
 		memcpy(&client->lastUsercmd, cmd, sizeof(client->lastUsercmd));
 	else
 		memset(&client->lastUsercmd, '\0', sizeof(client->lastUsercmd));
@@ -995,6 +997,7 @@ int SV_WriteDownloadToClient(client_t *cl, msg_t *msg)
 						idPack = missionPack;
 #endif
 						idPack = idPack || FS_idPak(pakbuf, BASEGAME, NUM_ID_PAKS);
+
 						break;
 					}
 				}
@@ -1031,7 +1034,7 @@ int SV_WriteDownloadToClient(client_t *cl, msg_t *msg)
 			else if ( !(sv_allowDownload->integer & DLF_ENABLE) ||
 				(sv_allowDownload->integer & DLF_NO_UDP) ) {
 
-				Com_Printf("clientDownload: %d : \"%s\" download disabled", (int) (cl - svs.clients), cl->downloadName);
+				Com_Printf("clientDownload: %d : \"%s\" download disabled\n", (int) (cl - svs.clients), cl->downloadName);
 				if (sv_pure->integer) {
 					Com_sprintf(errorMessage, sizeof(errorMessage), "Could not download \"%s\" because autodownloading is disabled on the server.\n\n"
 										"You will need to get this file elsewhere before you "
@@ -1474,7 +1477,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 	else
 #endif
 	{
-		val = Info_ValueForKey (cl->userinfo, "cl_voipProtocol");
+		val = Info_ValueForKey(cl->userinfo, "cl_voipProtocol");
 		cl->hasVoip = !Q_stricmp( val, "opus" );
 	}
 #endif
@@ -1795,6 +1798,7 @@ SV_ShouldIgnoreVoipSender
 Blocking of voip packets based on source client
 ==================
 */
+
 static qboolean SV_ShouldIgnoreVoipSender(const client_t *cl)
 {
 	if (!sv_voip->integer)

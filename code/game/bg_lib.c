@@ -1749,9 +1749,8 @@ static int dopr (char *buffer, size_t maxlen, const char *format, va_list args)
       break; /* some picky compilers need this */
     }
   }
-  if (maxlen > 0) {
+  if (maxlen > 0)
       buffer[currlen] = '\0';
-  }
   return total;
 }
 

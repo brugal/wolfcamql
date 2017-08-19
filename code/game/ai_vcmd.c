@@ -514,6 +514,7 @@ voiceCommand_t voiceCommands[] = {
 
 int BotVoiceChatCommand(bot_state_t *bs, int mode, char *voiceChat) {
 	int i, clientNum;
+	//int voiceOnly, color;
 	char *ptr, buf[MAX_MESSAGE_SIZE], *cmd;
 
 	if (!TeamPlayIsOn()) {
@@ -526,13 +527,13 @@ int BotVoiceChatCommand(bot_state_t *bs, int mode, char *voiceChat) {
 
 	Q_strncpyz(buf, voiceChat, sizeof(buf));
 	cmd = buf;
-	for (ptr = cmd; *cmd && *cmd > ' '; cmd++);
+	for (; *cmd && *cmd > ' '; cmd++);
 	while (*cmd && *cmd <= ' ') *cmd++ = '\0';
 	//voiceOnly = atoi(ptr);
 	for (ptr = cmd; *cmd && *cmd > ' '; cmd++);
 	while (*cmd && *cmd <= ' ') *cmd++ = '\0';
 	clientNum = atoi(ptr);
-	for (ptr = cmd; *cmd && *cmd > ' '; cmd++);
+	for (; *cmd && *cmd > ' '; cmd++);
 	while (*cmd && *cmd <= ' ') *cmd++ = '\0';
 	//color = atoi(ptr);
 

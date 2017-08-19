@@ -63,7 +63,7 @@ void RB_CheckOverflow( int verts, int indexes ) {
 		ri.Error(ERR_DROP, "RB_CheckOverflow: indices > MAX (%d > %d)", indexes, SHADER_MAX_INDEXES );
 	}
 
-	RB_BeginSurface(tess.shader, tess.fogNum);
+	RB_BeginSurface(tess.shader, tess.fogNum );
 }
 
 
@@ -244,8 +244,7 @@ RB_SurfaceSprite
 ==============
 */
 static void RB_SurfaceSprite( void ) {
-	vec3_t left;
-	vec3_t up;
+	vec3_t	left, up;
 	float radius;
 	int width, height;
 	float ratio;
@@ -272,18 +271,18 @@ static void RB_SurfaceSprite( void ) {
 		float ang;
 
 		ang = M_PI * re->rotation / 180.0;
-		s = sin(ang);
-		c = cos(ang);
+		s = sin( ang );
+		c = cos( ang );
 
-		VectorScale(backEnd.viewParms.or.axis[1], c * radius, left);
-		VectorMA(left, -s * radius, backEnd.viewParms.or.axis[2], left);
+		VectorScale( backEnd.viewParms.or.axis[1], c * radius, left );
+		VectorMA( left, -s * radius, backEnd.viewParms.or.axis[2], left );
 
-		VectorScale(backEnd.viewParms.or.axis[2], c * radius, up);
-		VectorMA(up, s * radius, backEnd.viewParms.or.axis[1], up);
+		VectorScale( backEnd.viewParms.or.axis[2], c * radius, up );
+		VectorMA( up, s * radius, backEnd.viewParms.or.axis[1], up );
 	}
 
-	if (backEnd.viewParms.isMirror) {
-		VectorSubtract(vec3_origin, left, left);
+	if ( backEnd.viewParms.isMirror ) {
+		VectorSubtract( vec3_origin, left, left );
 	}
 
 	if (re->stretch) {

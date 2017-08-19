@@ -775,7 +775,7 @@ void RB_CalcModulateAlphasByFog( unsigned char *colors ) {
 */
 void RB_CalcModulateRGBAsByFog( unsigned char *colors ) {
 	int		i;
-	float	texCoords[SHADER_MAX_VERTEXES][2];
+	float	texCoords[SHADER_MAX_VERTEXES][2] = {{0.0f}};
 
 	// calculate texcoords so we can derive density
 	// this is not wasted, because it would only have
@@ -1183,19 +1183,19 @@ static void RB_CalcDiffuseColor_scalar( unsigned char *colors )
 			*(int *)&colors[i*4] = ambientLightInt;
 			continue;
 		} 
-		j = ri.ftol( ambientLight[0] + incoming * directedLight[0] );
+		j = ri.ftol(ambientLight[0] + incoming * directedLight[0]);
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+0] = j;
 
-		j = ri.ftol( ambientLight[1] + incoming * directedLight[1] );
+		j = ri.ftol(ambientLight[1] + incoming * directedLight[1]);
 		if ( j > 255 ) {
 			j = 255;
 		}
 		colors[i*4+1] = j;
 
-		j = ri.ftol( ambientLight[2] + incoming * directedLight[2] );
+		j = ri.ftol(ambientLight[2] + incoming * directedLight[2]);
 		if ( j > 255 ) {
 			j = 255;
 		}

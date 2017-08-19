@@ -161,7 +161,8 @@ void R_BoxSurfaces_r(mnode_t *node, vec3_t mins, vec3_t maxs, surfaceType_t **li
 		surf = *mark;
 		//ri.Printf(PRINT_ALL, "^3surf: %s\n", surf->shader->name);
 		// check if the surface has NOIMPACT or NOMARKS set
-		if ( ( surf->shader->surfaceFlags & ( SURF_NOIMPACT | SURF_NOMARKS ) )  ||  ( surf->shader->contentFlags & CONTENTS_FOG ) ) {
+		if ( ( surf->shader->surfaceFlags & ( SURF_NOIMPACT | SURF_NOMARKS ) )
+			 ||  ( surf->shader->contentFlags & CONTENTS_FOG ) ) {
 			if (r_ignoreNoMarks->integer == 0) {
 				surf->viewCount = tr.viewCount;
 			} else if (r_ignoreNoMarks->integer == 1) {

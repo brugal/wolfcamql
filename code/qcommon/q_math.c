@@ -484,6 +484,8 @@ void RotateAroundDirection( vec3_t axis[3], float yaw ) {
 	CrossProduct( axis[0], axis[1], axis[2] );
 }
 
+
+
 void vectoangles( const vec3_t value1, vec3_t angles ) {
 	float	forward;
 	float	yaw, pitch;
@@ -704,8 +706,7 @@ LerpAngle
 
 ===============
 */
-float LerpAngle (float from, float to, float frac)
-{
+float LerpAngle (float from, float to, float frac) {
 	float a;
 
 	if ( to - from > 180 ) {
@@ -831,8 +832,7 @@ AngleSubtract
 Always returns a value from -180 to 180
 =================
 */
-float AngleSubtract (float a1, float a2)
-{
+float AngleSubtract (float a1, float a2) {
 	float a;
 
 	a = a1 - a2;
@@ -866,8 +866,7 @@ float AngleAdd (float a1, float a2)
 	return a;
 }
 
-float AngleMod (float a)
-{
+float AngleMod (float a) {
 	a = (360.0/65536) * ((int)(a*(65536/360.0)) & 65535);
 	return a;
 }
@@ -880,8 +879,7 @@ AngleNormalize360
 returns angle normalized to the range [0 <= angle < 360]
 =================
 */
-float AngleNormalize360 (float angle)
-{
+float AngleNormalize360 (float angle) {
 	return (360.0 / 65536) * ((int)(angle * (65536 / 360.0)) & 65535);
 }
 
@@ -893,8 +891,7 @@ AngleNormalize180
 returns angle normalized to the range [-180 < angle <= 180]
 =================
 */
-float AngleNormalize180 (float angle)
-{
+float AngleNormalize180 ( float angle ) {
 	angle = AngleNormalize360( angle );
 	if ( angle > 180.0 ) {
 		angle -= 360.0;
@@ -910,8 +907,7 @@ AngleDelta
 returns the normalized delta from angle1 to angle2
 =================
 */
-float AngleDelta (float angle1, float angle2)
-{
+float AngleDelta ( float angle1, float angle2 ) {
 	return AngleNormalize180( angle1 - angle2 );
 }
 
@@ -1148,6 +1144,7 @@ vec_t VectorNormalize2( const vec3_t v, vec3_t out) {
 	}
 
 	return length;
+
 }
 
 void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc) {

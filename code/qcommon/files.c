@@ -188,13 +188,13 @@ static const unsigned int pak_checksums[] = {
 	977125798u
 };
 
-static const unsigned int missionpak_checksums[] = {
+static const unsigned int missionpak_checksums[] =
+{
 	2430342401u,
 	511014160u,
 	2662638993u,
 	1438664554u
 };
-
 #endif
 
 // if this is defined, the executable positively won't work with any paks other
@@ -254,6 +254,10 @@ static cvar_t *fs_searchWorkshops;
 static  cvar_t          *fs_apppath;
 #endif
 
+// no, using quake live
+//static cvar_t		*fs_steampath;
+//static cvar_t		*fs_gogpath;
+
 static	cvar_t		*fs_basepath;
 static	cvar_t		*fs_basegame;
 static	cvar_t		*fs_gamedirvar;
@@ -312,6 +316,8 @@ static char		*fs_serverReferencedPakNames[MAX_SEARCH_PATHS];		// pk3 names
 
 // last valid game folder used
 char lastValidBase[MAX_OSPATH];
+char lastValidComBaseGame[MAX_OSPATH];
+char lastValidFsBaseGame[MAX_OSPATH];
 char lastValidGame[MAX_OSPATH];
 
 #ifdef FS_MISSING
@@ -785,6 +791,38 @@ long FS_SV_FOpenFileRead(const char *filename, fileHandle_t *fp)
 			fsh[f].handleSync = qfalse;
 		}
 
+#if 0  // using quake live
+		// Check fs_steampath
+		if (!fsh[f].handleFiles.file.o && fs_steampath->string[0])
+		{
+			ospath = FS_BuildOSPath( fs_steampath->string, filename, "" );
+			ospath[strlen(ospath)-1] = '\0';
+
+			if ( fs_debug->integer )
+			{
+				Com_Printf( "FS_SV_FOpenFileRead (fs_steampath): %s\n", ospath );
+			}
+
+			fsh[f].handleFiles.file.o = Sys_FOpen( ospath, "rb" );
+			fsh[f].handleSync = qfalse;
+		}
+
+		// Check fs_gogpath
+		if (!fsh[f].handleFiles.file.o && fs_gogpath->string[0])
+		{
+			ospath = FS_BuildOSPath( fs_gogpath->string, filename, "" );
+			ospath[strlen(ospath)-1] = '\0';
+
+			if ( fs_debug->integer )
+			{
+				Com_Printf( "FS_SV_FOpenFileRead (fs_gogpath): %s\n", ospath );
+			}
+
+			fsh[f].handleFiles.file.o = Sys_FOpen( ospath, "rb" );
+			fsh[f].handleSync = qfalse;
+		}
+#endif
+
 		if ( !fsh[f].handleFiles.file.o )
 		{
 			f = 0;
@@ -995,7 +1033,7 @@ fileHandle_t FS_FCreateOpenPipeFile( const char *filename ) {
 	fileHandle_t	f;
 
 	if ( !fs_searchpaths ) {
-		Com_Error( ERR_FATAL, "Filesystem call made without initialization\n" );
+		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
 
 	f = FS_HandleForFile();
@@ -1358,7 +1396,7 @@ long FS_FOpenFileReadDir(const char *filename, searchpath_t *search, fileHandle_
 			if(!FS_IsExt(filename, ".cfg", len) &&		// for config files
 			   !FS_IsExt(filename, ".menu", len) &&		// menu files
 			   !FS_IsExt(filename, ".game", len) &&		// menu files
-			   !FS_IsExt(filename, ".cfg", len) &&		// for journal files
+			   !FS_IsExt(filename, ".dat", len) &&		// for journal files
 			   !FS_IsDemoExt(filename, len))			// demos
 			{
 				*file = 0;
@@ -1416,7 +1454,7 @@ long FS_FOpenFileRead(const char *filename, fileHandle_t *file, qboolean uniqueF
 	isLocalConfig = !strcmp(filename, "autoexec.cfg") || !strcmp(filename, Q3CONFIG_CFG);
 	for(search = fs_searchpaths; search; search = search->next)
 	{
-		// autoexec.cfg and q3config.xfg can only be loaded outside of pk3 files.
+		// autoexec.cfg and q3config.cfg can only be loaded outside of pk3 files.
 		if (isLocalConfig && search->pack)
 			continue;
 
@@ -1440,10 +1478,17 @@ long FS_FOpenFileRead(const char *filename, fileHandle_t *file, qboolean uniqueF
 		fprintf(missingFiles, "%s\n", filename);
 #endif
 
-        if(file)
-        	*file = 0;
-
-	return -1;
+	if(file)
+	{
+		*file = 0;
+		return -1;
+	}
+	else
+	{
+		// When file is NULL, we're querying the existance of the file
+		// If we've got here, it doesn't exist
+		return 0;
+	}
 }
 
 /*
@@ -1463,7 +1508,7 @@ Return the searchpath in "startSearch".
 =================
 */
 
-vmInterpret_t FS_FindVM(void **startSearch, char *found, int foundlen, const char *name, int enableDll)
+int FS_FindVM(void **startSearch, char *found, int foundlen, const char *name, int enableDll)
 {
 	searchpath_t *search, *lastSearch;
 	directory_t *dir;
@@ -2654,7 +2699,7 @@ static char** Sys_ConcatenateFileLists( char **list0, char **list1 )
 FS_GetModDescription
 ================
 */
-static void FS_GetModDescription( const char *modDir, char *description, int descriptionLen ) {
+void FS_GetModDescription( const char *modDir, char *description, int descriptionLen ) {
 	fileHandle_t	descHandle;
 	char			descPath[MAX_QPATH];
 	int				nDescLen;
@@ -3042,7 +3087,6 @@ void FS_Which_f( void ) {
 	}
 
 	Com_Printf("File not found: \"%s\"\n", filename);
-	return;
 }
 
 
@@ -3543,11 +3587,21 @@ static void FS_Startup( const char *gameName )
 	fs_gamedirvar = Cvar_Get ("fs_game", "wolfcam-ql", CVAR_INIT|CVAR_SYSTEMINFO );
 
 	// add search path elements in reverse priority order
-
 	if (fs_searchWorkshops->integer > 0  &&  fs_searchWorkshops->integer != 2) {
 		// load before anything else to prevent overwriting files, this seems to match quake live
 		FS_AddWorkshopsToSearchPath();
 	}
+
+#if 0  // using quake live
+	fs_gogpath = Cvar_Get ("fs_gogpath", Sys_GogPath(), CVAR_INIT|CVAR_PROTECTED );
+	if (fs_gogpath->string[0]) {
+		FS_AddGameDirectory( fs_gogpath->string, gameName );
+	}
+	fs_steampath = Cvar_Get ("fs_steampath", Sys_SteamPath(), CVAR_INIT|CVAR_PROTECTED );
+	if (fs_steampath->string[0]) {
+		FS_AddGameDirectory( fs_steampath->string, gameName );
+	}
+#endif
 
 	if (fs_basepath->string[0]) {
 		FS_AddGameDirectory( fs_basepath->string, gameName );
@@ -3569,6 +3623,14 @@ static void FS_Startup( const char *gameName )
 
 	// check for additional base game so mods can be based upon other mods
 	if ( fs_basegame->string[0] && Q_stricmp( fs_basegame->string, gameName ) ) {
+#if 0  // using quake live
+		if (fs_gogpath->string[0]) {
+			FS_AddGameDirectory(fs_gogpath->string, fs_basegame->string);
+		}
+		if (fs_steampath->string[0]) {
+			FS_AddGameDirectory(fs_steampath->string, fs_basegame->string);
+		}
+#endif
 		if (fs_basepath->string[0]) {
 			FS_AddGameDirectory(fs_basepath->string, fs_basegame->string);
 		}
@@ -3623,6 +3685,14 @@ static void FS_Startup( const char *gameName )
 
 	// check for additional game folder for mods
 	if ( fs_gamedirvar->string[0] && Q_stricmp( fs_gamedirvar->string, gameName ) ) {
+#if 0  // using quakelive
+		if (fs_gogpath->string[0]) {
+			FS_AddGameDirectory(fs_gogpath->string, fs_gamedirvar->string);
+		}
+		if (fs_steampath->string[0]) {
+			FS_AddGameDirectory(fs_steampath->string, fs_gamedirvar->string);
+		}
+#endif
 		if (fs_basepath->string[0]) {
 			FS_AddGameDirectory(fs_basepath->string, fs_gamedirvar->string);
 		}
@@ -4245,6 +4315,8 @@ void FS_InitFilesystem( void ) {
 	}
 
 	Q_strncpyz(lastValidBase, fs_basepath->string, sizeof(lastValidBase));
+	Q_strncpyz(lastValidComBaseGame, com_basegame->string, sizeof(lastValidComBaseGame));
+	Q_strncpyz(lastValidFsBaseGame, fs_basegame->string, sizeof(lastValidFsBaseGame));
 	Q_strncpyz(lastValidGame, fs_gamedirvar->string, sizeof(lastValidGame));
 }
 
@@ -4255,6 +4327,7 @@ FS_Restart
 ================
 */
 void FS_Restart( int checksumFeed ) {
+	const char *lastGameDir;
 
 	// free anything we currently have loaded
 	FS_Shutdown(qfalse);
@@ -4266,7 +4339,7 @@ void FS_Restart( int checksumFeed ) {
 	FS_ClearPakReferences(0);
 
 	// try to start up normally
-	FS_Startup( BASEGAME );
+	FS_Startup(com_basegame->string);
 
 #ifndef STANDALONE
 	FS_CheckPak0( );
@@ -4281,8 +4354,12 @@ void FS_Restart( int checksumFeed ) {
 		if (lastValidBase[0]) {
 			FS_PureServerSetLoadedPaks("", "");
 			Cvar_Set("fs_basepath", lastValidBase);
+			Cvar_Set("com_basegame", lastValidComBaseGame);
+			Cvar_Set("fs_basegame", lastValidFsBaseGame);
 			Cvar_Set("fs_game", lastValidGame);
 			lastValidBase[0] = '\0';
+			lastValidComBaseGame[0] = '\0';
+			lastValidFsBaseGame[0] = '\0';
 			lastValidGame[0] = '\0';
 			//FIXME wtf?  recursive call
 			FS_Restart(checksumFeed);
@@ -4293,7 +4370,12 @@ void FS_Restart( int checksumFeed ) {
 		//Com_Printf("^1Couldn't load default.cfg\n");
 	}
 
-	if ( Q_stricmp(fs_gamedirvar->string, lastValidGame) ) {
+	lastGameDir = ( lastValidGame[0] ) ? lastValidGame : lastValidComBaseGame;
+
+	if ( Q_stricmp( FS_GetCurrentGameDir(), lastGameDir ) ) {
+		Sys_RemovePIDFile( lastGameDir );
+		Sys_InitPIDFile( FS_GetCurrentGameDir() );
+
 		// skip the q3config.cfg if "safe" is on the command line
 		if ( !Com_SafeMode() ) {
 			Cbuf_AddText ("exec  defaultwolfcam.cfg\n");
@@ -4304,6 +4386,8 @@ void FS_Restart( int checksumFeed ) {
 	}
 
 	Q_strncpyz(lastValidBase, fs_basepath->string, sizeof(lastValidBase));
+	Q_strncpyz(lastValidComBaseGame, com_basegame->string, sizeof(lastValidComBaseGame));
+	Q_strncpyz(lastValidFsBaseGame, fs_basegame->string, sizeof(lastValidFsBaseGame));
 	Q_strncpyz(lastValidGame, fs_gamedirvar->string, sizeof(lastValidGame));
 
 }

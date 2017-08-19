@@ -263,7 +263,7 @@ extern mapNames_t MapNames[];
 #define NUM_DEMO_PROTOCOLS 9  //FIXME err....  ARRAY_LEN()
 extern int demo_protocols[NUM_DEMO_PROTOCOLS];
 
-#if !defined UPDATE_SERVERNAME && !defined STANDALONE
+#if !defined UPDATE_SERVER_NAME && !defined STANDALONE
 #define	UPDATE_SERVER_NAME	"update.quake3arena.com"
 #endif
 // override on command line, config files etc.
@@ -601,8 +601,7 @@ issues.
 #define FS_GENERAL_REF	0x01
 #define FS_UI_REF		0x02
 #define FS_CGAME_REF	0x04
-
-// number of id paks that will never be autodownloaded from baseq3
+// number of id paks that will never be autodownloaded from baseq3/missionpack
 #define NUM_ID_PAKS		9
 #define NUM_TA_PAKS		4
 
@@ -638,7 +637,7 @@ qboolean FS_VirtualFileExists (const char *file);
 
 qboolean FS_CreatePath (char *OSPath);
 
-vmInterpret_t FS_FindVM(void **startSearch, char *found, int foundlen, const char *name, int enableDll);
+int FS_FindVM(void **startSearch, char *found, int foundlen, const char *name, int enableDll);
 
 char   *FS_BuildOSPath( const char *base, const char *game, const char *qpath );
 qboolean FS_CompareZipChecksum(const char *zipfile);
@@ -647,6 +646,8 @@ int		FS_LoadStack( void );
 
 int		FS_GetFileList(  const char *path, const char *extension, char *listbuf, int bufsize );
 int		FS_GetModList(  char *listbuf, int bufsize );
+
+void   FS_GetModDescription( const char *modDir, char *description, int descriptionLen );
 
 fileHandle_t	FS_FOpenFileWrite( const char *qpath );
 fileHandle_t	FS_FOpenFileAppend( const char *filename );
@@ -786,6 +787,7 @@ void Field_AutoComplete( field_t *edit );
 void Field_CompleteKeyname( void );
 void Field_CompleteFilename (const char *dir, const char *ext, qboolean stripExt, qboolean allowNonPureFilesOnDisk, qboolean *foundMatch);
 void Field_CompleteCommand( char *cmd, qboolean doCommands, qboolean doCvars );
+void Field_CompletePlayerName( const char **names, int count );
 size_t Field_Strlen (const field_t *field);
 
 // char *p must be able to hold at least MAX_EDIT_LINE * 4 (utf8 bytes) chars
@@ -875,6 +877,10 @@ void		Com_StartupVariable( const char *match );
 // checks for and removes command line "+set var arg" constructs
 // if match is NULL, all set commands will be executed, otherwise
 // only a set with the exact name.  Only used during startup.
+
+qboolean               Com_PlayerNameToFieldString( char *str, int length, const char *name );
+qboolean               Com_FieldStringToPlayerName( char *name, int length, const char *rawname );
+int QDECL      Com_strCompare( const void *a, const void *b );
 
 
 extern	cvar_t	*com_developer;
@@ -1143,6 +1149,8 @@ char	*Sys_Cwd( void );
 void	Sys_SetDefaultInstallPath(const char *path);
 char	*Sys_DefaultInstallPath(void);
 char *Sys_QuakeLiveDir (void);
+char	*Sys_SteamPath(void);
+char	*Sys_GogPath(void);
 
 #ifdef __APPLE__
 char    *Sys_DefaultAppPath(void);
@@ -1184,7 +1192,8 @@ typedef enum
 
 dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title );
 
-qboolean Sys_WritePIDFile( void );
+void Sys_RemovePIDFile( const char *gamedir );
+void Sys_InitPIDFile( const char *gamedir );
 
 /* This is based on the Adaptive Huffman algorithm described in Sayood's Data
  * Compression book.  The ranks are not actually stored, but implicitly defined

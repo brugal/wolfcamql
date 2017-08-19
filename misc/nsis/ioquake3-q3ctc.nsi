@@ -115,7 +115,7 @@ Section "${NAME}" sec_base
 !else
 !define ARGS "+set fs_game ${MODDIR}"
 !endif
-CreateShortCut "$SMPROGRAMS\ioquake3\${NAME}.lnk" "$INSTDIR\ioquake3.x86.exe" "${ARGS}" "$INSTDIR\ioquake3.x86.exe" 0 "" "" "${NAME}"
+  CreateShortCut "$SMPROGRAMS\ioquake3\${NAME}.lnk" "$INSTDIR\ioquake3.x86.exe" "${ARGS}" "$INSTDIR\ioquake3.x86.exe" 0 "" "" "${NAME}"
 
 SectionEnd
 

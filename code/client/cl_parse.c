@@ -1960,7 +1960,6 @@ void CL_ParseServerMessage( msg_t *msg ) {
 
 	// get the reliable sequence acknowledge number
 	clc.reliableAcknowledge = MSG_ReadLong( msg );
-
 	//
 	if ( clc.reliableAcknowledge < clc.reliableSequence - MAX_RELIABLE_COMMANDS ) {
 		//Com_Printf("^1***************** skipping reliable sequence: %d  %d\n", clc.reliableAcknowledge, clc.reliableSequence);

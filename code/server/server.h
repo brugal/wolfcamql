@@ -242,7 +242,7 @@ typedef struct {
 	challenge_t	challenges[MAX_CHALLENGES];	// to prevent invalid IPs from connecting
 	netadr_t	redirectAddress;			// for rcon return messages
 #ifndef STANDALONE
-	netadr_t	authorizeAddress;			// for rcon return messages
+	netadr_t	authorizeAddress;			// authorize server address
 #endif
 	int			masterResolveTime[MAX_MASTER_SERVERS]; // next svs.time that server should do dns lookup for master server
 } serverStatic_t;

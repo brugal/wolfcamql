@@ -545,7 +545,7 @@ void CG_DrawInformation (qboolean loading)
 		// strlen() check since it is sometimes a blank space ' '
 		if (p  && *p  &&  strlen(p) > 1) {
 			lines = UI_DrawProportionalString3(320, y, va("workshops: %s", p), UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorMdGrey);
-			y += PROP_HEIGHT * lines;
+			//y += PROP_HEIGHT * lines;
 		}
 	}  // end protocol ql
 

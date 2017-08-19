@@ -59,7 +59,7 @@ void GL_Bind( image_t *image ) {
 	}
 
 	if ( glState.currenttextures[glState.currenttmu] != texnum ) {
-		if (image) {
+		if ( image ) {
 			image->frameUsed = tr.frameCount;
 		}
 		glState.currenttextures[glState.currenttmu] = texnum;
@@ -1267,7 +1267,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		//
 		// change the modelview matrix if needed
 		//
-		if ( entityNum != oldEntityNum) {
+		if ( entityNum != oldEntityNum ) {
 			depthRange = isCrosshair = qfalse;
 
 			if ( entityNum != REFENTITYNUM_WORLD  &&  backEnd.refdef.entities[entityNum].ePtr == NULL) {
@@ -1326,7 +1326,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				{
 					if(backEnd.viewParms.stereoFrame != STEREO_CENTER)
 					{
-						if (isCrosshair)
+						if(isCrosshair)
 						{
 							if(oldDepthRange)
 							{
@@ -1477,7 +1477,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	}
 	R_IssuePendingRenderCommands();
 
-	if (tess.numIndexes) {
+	if ( tess.numIndexes ) {
 		RB_EndSurface();
 	}
 
@@ -2098,7 +2098,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 	videoCommand = qfalse;
 	data = dataOrig;
-	while (1) {
+	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
 		switch (*(const int *)data) {
 		case RC_VIDEOFRAME:
@@ -2121,7 +2121,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 	data = dataOrig;
 	dprintf("render1 commands start ----------------------------\n");
-	while (1) {
+	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
 		switch (*(const int *)data) {
 		case RC_DRAW_SURFS:
@@ -2165,7 +2165,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 				// draw hud
 				data2 = dataOrig;
-				while (1) {
+				while ( 1 ) {
 					data2 = PADP(data2, sizeof(void *));
 					switch (*(const int *)data2) {
 					case RC_SET_COLOR:
@@ -2275,7 +2275,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 	data = dataOrig;
 	dprintf("render2 commands start ------------------------------\n");
-	while (1) {
+	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
 		switch ( *(const int *)data ) {
 		case RC_SET_COLOR:
@@ -2339,7 +2339,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 	data = dataOrig;
 	dprintf("render3 commands start -------------------------\n");
-	while (1) {
+	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
 		switch (*(const int *)data) {
 		case RC_SCREENSHOT:

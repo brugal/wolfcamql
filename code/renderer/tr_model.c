@@ -173,7 +173,7 @@ qhandle_t R_RegisterIQM(const char *name, model_t *mod)
 	
 	if(!loaded)
 	{
-		ri.Printf(PRINT_WARNING,"R_RegisterIQM: couldn't load mdr file %s\n", name);
+		ri.Printf(PRINT_WARNING,"R_RegisterIQM: couldn't load iqm file %s\n", name);
 		mod->type = MOD_BAD;
 		return 0;
 	}
@@ -267,7 +267,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 	}
 
 	if ( strlen( name ) >= MAX_QPATH ) {
-		ri.Printf(PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
+		ri.Printf( PRINT_ALL, "Model name exceeds MAX_QPATH\n" );
 		return 0;
 	}
 
@@ -341,7 +341,7 @@ qhandle_t RE_RegisterModel( const char *name ) {
 		}
 	}
 
-	// try and find a suitable match using all
+	// Try and find a suitable match using all
 	// the model formats supported
 	for( i = 0; i < numModelLoaders; i++ )
 	{
@@ -465,14 +465,14 @@ static qboolean R_LoadMD3 (model_t *mod, int lod, void *buffer, const char *mod_
         LL(surf->ofsEnd);
 
 		if ( surf->numVerts >= SHADER_MAX_VERTEXES ) {
-			ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has more than %i verts on %s (%i)\n",
+			ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has more than %i verts on %s (%i).\n",
 					  mod_name, SHADER_MAX_VERTEXES - 1, surf->name[0] ? surf->name : "a surface",
 					  surf->numVerts );
 			return qfalse;
 		}
 		if ( surf->numTriangles*3 >= SHADER_MAX_INDEXES ) {
-			ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has more than %i triangles on %s (%i)\n",
-					  mod_name, (SHADER_MAX_INDEXES / 3) - 1, surf->name[0] ? surf->name : "a surface",
+			ri.Printf(PRINT_WARNING, "R_LoadMD3: %s has more than %i triangles on %s (%i).\n",
+					  mod_name, ( SHADER_MAX_INDEXES / 3 ) - 1, surf->name[0] ? surf->name : "a surface",
 					  surf->numTriangles );
 			return qfalse;
 		}
@@ -752,15 +752,15 @@ static qboolean R_LoadMDR( model_t *mod, void *buffer, int filesize, const char 
 			// now do the checks that may fail.
 			if ( surf->numVerts >= SHADER_MAX_VERTEXES ) 
 			{
-				ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has more than %i verts on %s (%i)\n",
+				ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has more than %i verts on %s (%i).\n",
 						  mod_name, SHADER_MAX_VERTEXES - 1, surf->name[0] ? surf->name : "a surface",
 						  surf->numVerts );
 				return qfalse;
 			}
 			if ( surf->numTriangles*3 >= SHADER_MAX_INDEXES ) 
 			{
-				ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has more than %i triangles on %s (%i)\n",
-						  mod_name, (SHADER_MAX_INDEXES / 3) - 1, surf->name[0] ? surf->name : "a surface",
+				ri.Printf(PRINT_WARNING, "R_LoadMDR: %s has more than %i triangles on %s (%i).\n",
+						  mod_name, ( SHADER_MAX_INDEXES / 3 ) - 1, surf->name[0] ? surf->name : "a surface",
 						  surf->numTriangles );
 				return qfalse;
 			}

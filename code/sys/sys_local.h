@@ -31,7 +31,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define MINSDL_MINOR 0
 #define MINSDL_PATCH 0
 
-
 // Input subsystem
 void IN_Init( void *windowData );
 void IN_Frame( void );
@@ -55,7 +54,7 @@ char *Sys_StripAppBundle( char *pwd );
 void Sys_GLimpSafeInit( void );
 void Sys_GLimpInit( void );
 void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolean useDpiAware);
-void Sys_PlatformExit (void);
+void Sys_PlatformExit( void );
 void Sys_SigHandler( int signal ) __attribute__ ((noreturn));
 void Sys_ErrorDialog( const char *error );
 void Sys_AnsiColorPrint( const char *msg );

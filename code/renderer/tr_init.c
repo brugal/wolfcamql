@@ -912,7 +912,7 @@ static void R_ModeList_f( void )
 
 
 /*
-===========================================================================
+==============================================================================
 
 						SCREEN SHOTS
 
@@ -927,7 +927,7 @@ we use statics to store a count and start writing the first screenshot/screensho
 (with FS_FileExists / FS_FOpenFileWrite calls)
 FIXME: the statics don't get a reinit between fs_game changes
 
-===========================================================================
+==============================================================================
 */
 
 /* 
@@ -2472,14 +2472,17 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "\nGL_VENDOR: %s\n", glConfig.vendor_string );
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
+	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
 	R_PrintLongString( glConfig.extensions_string );
+	ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "\n" );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_SIZE: %d\n", glConfig.maxTextureSize );
 	ri.Printf( PRINT_ALL, "GL_MAX_TEXTURE_UNITS_ARB: %d\n", glConfig.numTextureUnits );
 
 	//printf("%d  '%s'\n", strlen(glConfig.extensions_string), glConfig.extensions_string);
 
-	ri.Printf( PRINT_ALL, "\nMODE: %d, %d x %d %s hz:", r_mode->integer, glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen->integer == 1] );
+	ri.Printf( PRINT_ALL, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
+	ri.Printf( PRINT_ALL, "MODE: %d, %d x %d %s hz:", r_mode->integer, glConfig.vidWidth, glConfig.vidHeight, fsstrings[r_fullscreen->integer == 1] );
 	if ( glConfig.displayFrequency )
 	{
 		ri.Printf( PRINT_ALL, "%d\n", glConfig.displayFrequency );
@@ -2522,7 +2525,6 @@ void GfxInfo_f( void )
 		}
 	}
 
-	ri.Printf( PRINT_ALL, "\n^3PIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
 	ri.Printf( PRINT_ALL, "texturemode: %s\n", r_textureMode->string );
 	ri.Printf( PRINT_ALL, "picmip: %d\n", r_picmip->integer );
 	ri.Printf( PRINT_ALL, "texture bits: %d\n", r_texturebits->integer );
@@ -2545,8 +2547,6 @@ void GfxInfo_f( void )
 	if ( r_finish->integer ) {
 		ri.Printf( PRINT_ALL, "Forcing glFinish\n" );
 	}
-
-	//ri.Printf( PRINT_ALL, "\n^3PIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
 }
 
 void R_CreateColorSkins_f (void)
@@ -2640,6 +2640,7 @@ void R_Register( void )
 	r_mapGreyScale = ri.Cvar_Get("r_mapGreyScale", "0", CVAR_ARCHIVE);
 	r_picmipGreyScale = ri.Cvar_Get("r_picmipGreyScale", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_picmipGreyScaleValue = ri.Cvar_Get("r_picmipGreyScaleValue", "0.5", CVAR_ARCHIVE | CVAR_LATCH);
+
 	//
 	// temporary latched variables that can only change over a restart
 	//
@@ -2796,6 +2797,7 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
 	ri.Cmd_AddCommand("screenshotPNG", R_ScreenShotPNG_f);
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
+	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
 	ri.Cmd_AddCommand("createcolorskins", R_CreateColorSkins_f);
 	ri.Cmd_AddCommand("printviewparms", R_PrintViewParms_f);
 	ri.Cmd_AddCommand("remaplasttwoshaders", R_RemapLastTwoShaders_f);
@@ -2923,7 +2925,8 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand ("imagelist");
 	ri.Cmd_RemoveCommand ("shaderlist");
 	ri.Cmd_RemoveCommand ("skinlist");
-	ri.Cmd_RemoveCommand ("gfxinfo");
+	ri.Cmd_RemoveCommand( "gfxinfo" );
+	ri.Cmd_RemoveCommand( "minimize" );
 	ri.Cmd_RemoveCommand( "modelist" );
 	ri.Cmd_RemoveCommand("fontlist");
 	ri.Cmd_RemoveCommand( "shaderstate" );
@@ -2932,7 +2935,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	ri.Cmd_RemoveCommand("remaplasttwoshaders");
 	ri.Cmd_RemoveCommand("listremappedshaders");
 	ri.Cmd_RemoveCommand("clearallremappedshaders");
-	ri.Cmd_RemoveCommand("xxx");
+
 
 	if ( tr.registered ) {
 		R_IssuePendingRenderCommands();
@@ -2945,8 +2948,11 @@ void RE_Shutdown( qboolean destroyWindow ) {
 	R_DoneFreeType();
 
 	// shut down platform specific OpenGL stuff
-	if (destroyWindow) {
+	if ( destroyWindow ) {
 		GLimp_Shutdown();
+
+		Com_Memset( &glConfig, 0, sizeof( glConfig ) );
+		Com_Memset( &glState, 0, sizeof( glState ) );
 	}
 
 	tr.registered = qfalse;
@@ -2975,10 +2981,11 @@ GetRefAPI
 @@@@@@@@@@@@@@@@@@@@@
 */
 #ifdef USE_RENDERER_DLOPEN
-Q_EXPORT refexport_t QDECL *GetRefAPI ( int apiVersion, refimport_t *rimp) {
+Q_EXPORT refexport_t* QDECL GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 #else
 refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 #endif
+
 	static refexport_t	re;
 
 	ri = *rimp;

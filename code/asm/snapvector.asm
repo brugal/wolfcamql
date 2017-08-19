@@ -27,7 +27,6 @@
 IFNDEF idx64
 .686p
 .xmm
-
 .model flat, c
 ENDIF
 
@@ -36,10 +35,6 @@ ENDIF
   ALIGN 16
   ssemask DWORD 0FFFFFFFFh, 0FFFFFFFFh, 0FFFFFFFFh, 00000000h
   ssecw DWORD 00001F80h
-
-IFNDEF idx64
-  fpucw WORD 037Fh
-ENDIF
 
 .code
 

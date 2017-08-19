@@ -67,6 +67,12 @@ qboolean stdinIsATTY;
 static char homePath[ MAX_OSPATH ] = { 0 };
 static char QuakeLivePath[MAX_OSPATH] = { 0 };
 
+// Used to store the Steam Quake 3 installation path
+//static char steamPath[ MAX_OSPATH ] = { 0 };
+
+// Used to store the GOG Quake 3 installation path
+//static char gogPath[ MAX_OSPATH ] = { 0 };
+
 /*
 ==================
 Sys_DefaultHomePath
@@ -178,13 +184,54 @@ done:
 
 /*
 ================
+Sys_SteamPath
+================
+*/
+char *Sys_SteamPath( void )
+{
+	// Disabled since Steam doesn't let you install Quake 3 on Mac/Linux
+#if 0 //#ifdef STEAMPATH_NAME
+	char *p;
+
+	if( ( p = getenv( "HOME" ) ) != NULL )
+    {
+#ifdef __APPLE__
+		char *steamPathEnd = "/Library/Application Support/Steam/SteamApps/common/" STEAMPATH_NAME;
+#else
+		char *steamPathEnd = "/.steam/steam/SteamApps/common/" STEAMPATH_NAME;
+#endif
+		Com_sprintf(steamPath, sizeof(steamPath), "%s%s", p, steamPathEnd);
+	}
+#endif
+
+	//return steamPath;
+
+	return "";
+}
+
+/*
+================
+Sys_GogPath
+================
+*/
+char *Sys_GogPath( void )
+{
+#if 0  // disabled
+	// GOG also doesn't let you install Quake 3 on Mac/Linux
+	return gogPath;
+#endif
+
+	return "";
+}
+
+/*
+================
 Sys_Milliseconds
 ================
 */
 /* base time in seconds, that's our origin
    timeval:tv_sec is an int:
    assuming this wraps every 0x7fffffff - ~68 years since the Epoch (1970) - we're safe till 2038 */
-
 unsigned long sys_timeBase = 0;
 /* current time in ms, using sys_timeBase as origin
    NOTE: sys_timeBase*1000 + curtime -> ms since the Epoch
@@ -249,6 +296,8 @@ char *Sys_GetCurrentUser( void )
 	return p->pw_name;
 }
 
+//////////
+#if 0
 /*
 ==================
 Sys_GetClipboardData
@@ -458,6 +507,9 @@ char *Sys_GetClipboardData (void)
 }
 
 #endif
+
+#endif
+////////////
 
 #define MEM_THRESHOLD 96*1024*1024
 
@@ -852,9 +904,10 @@ void Sys_ErrorDialog( const char *error )
 #endif
 
 	// Make sure the write path for the crashlog exists...
+
 	if(!Sys_Mkdir(homepath))
 	{
-		Com_Printf( "ERROR: couldn't create path '%s' for crash log.\n", homepath);
+		Com_Printf("ERROR: couldn't create path '%s' for crash log.\n", homepath);
 		return;
 	}
 
@@ -1057,6 +1110,7 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 	qboolean                tried[ NUM_DIALOG_PROGRAMS ] = { qfalse };
 	dialogCommandBuilder_t  commands[ NUM_DIALOG_PROGRAMS ] = { NULL };
 	dialogCommandType_t     preferredCommandType = NONE;
+	int						i;
 
 	commands[ ZENITY ] = &Sys_ZenityCommand;
 	commands[ KDIALOG ] = &Sys_KdialogCommand;
@@ -1068,50 +1122,37 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 	else if( !Q_stricmp( session, "kde" ) )
 		preferredCommandType = KDIALOG;
 
-	while( 1 )
+	for( i = NONE + 1; i < NUM_DIALOG_PROGRAMS; i++ )
 	{
-		int i;
+		if( preferredCommandType != NONE && preferredCommandType != i )
+			continue;
 
-		for( i = NONE + 1; i < NUM_DIALOG_PROGRAMS; i++ )
+		if( !tried[ i ] )
 		{
-			if( preferredCommandType != NONE && preferredCommandType != i )
-				continue;
+			int exitCode;
 
-			if( !tried[ i ] )
+			commands[ i ]( type, message, title );
+			exitCode = Sys_Exec( );
+
+			if( exitCode >= 0 )
 			{
-				int exitCode;
-
-				commands[ i ]( type, message, title );
-				exitCode = Sys_Exec( );
-
-				if( exitCode >= 0 )
+				switch( type )
 				{
-					switch( type )
-					{
-					    case DT_YES_NO:    return exitCode ? DR_NO : DR_YES;
-					    case DT_OK_CANCEL: return exitCode ? DR_CANCEL : DR_OK;
-						default:           return DR_OK;
-					}
-				}
-
-				tried[ i ] = qtrue;
-
-				// The preference failed, so start again in order
-				if( preferredCommandType != NONE )
-				{
-					preferredCommandType = NONE;
-					break;
+				case DT_YES_NO:    return exitCode ? DR_NO : DR_YES;
+				case DT_OK_CANCEL: return exitCode ? DR_CANCEL : DR_OK;
+				default:           return DR_OK;
 				}
 			}
-		}
 
-		for( i = NONE + 1; i < NUM_DIALOG_PROGRAMS; i++ )
-		{
-			if( !tried[ i ] )
-				continue;
-		}
+			tried[ i ] = qtrue;
 
-		break;
+			// The preference failed, so start again in order
+			if( preferredCommandType != NONE )
+			{
+				preferredCommandType = NONE;
+				i = NONE + 1;
+			}
+		}
 	}
 
 	Com_DPrintf( S_COLOR_YELLOW "WARNING: failed to show a dialog\n" );
@@ -1464,6 +1505,8 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 		signal(SIGBUS, Sys_SigHandler);
 	}
 
+	Sys_SetFloatEnv();
+
 	stdinIsATTY = isatty( STDIN_FILENO ) &&
 		!( term && ( !strcmp( term, "raw" ) || !strcmp( term, "dumb" ) ) );
 
@@ -1528,8 +1571,7 @@ Sys_PlatformExit
 Unix specific deinitialisation
 ==============
 */
-
-void Sys_PlatformExit (void)
+void Sys_PlatformExit( void )
 {
 }
 

@@ -426,7 +426,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 	qglEnable( GL_TEXTURE_2D );
 	qglEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	if (r_lightmap->integer) {
+	if ( r_lightmap->integer ) {
 		GL_TexEnv( GL_REPLACE );
 	} else {
 		if (0) {  //(tess.originalShader) {
@@ -743,8 +743,9 @@ static void ProjectDlightTexture_scalar( void ) {
 			int		clip = 0;
 			vec3_t	dist;
 
-			backEnd.pc.c_dlightVertexes++;
 			VectorSubtract( origin, tess.xyz[i], dist );
+
+			backEnd.pc.c_dlightVertexes++;
 
 			texCoords[0] = 0.5f + dist[0] * scale;
 			texCoords[1] = 0.5f + dist[1] * scale;

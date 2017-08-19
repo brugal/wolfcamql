@@ -110,7 +110,6 @@ void R_IssuePendingRenderCommands( void ) {
 	if ( !tr.registered ) {
 		return;
 	}
-
 	R_IssueRenderCommands( qfalse );
 }
 
@@ -159,7 +158,7 @@ returns NULL if there is not enough space for important commands
 =============
 */
 void *R_GetCommandBuffer( int bytes ) {
-	return R_GetCommandBufferReserved( bytes, PAD( sizeof ( swapBuffersCommand_t ), sizeof(void *) ) );
+	return R_GetCommandBufferReserved( bytes, PAD( sizeof( swapBuffersCommand_t ), sizeof(void *) ) );
 }
 
 
@@ -384,7 +383,7 @@ void RE_BeginFrame (stereoFrame_t stereoFrame, qboolean recordingVideo)
 		}
 
 		if ((err = qglGetError()) != GL_NO_ERROR)
-			ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!\n", err);
+			ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", err);
 	}
 
 	if (glConfig.stereoEnabled) {

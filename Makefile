@@ -24,7 +24,7 @@ ifndef BUILD_GAME_SO
   BUILD_GAME_SO    =
 endif
 ifndef BUILD_GAME_QVM
-  BUILD_GAME_QVM   = 1
+  BUILD_GAME_QVM   =
 endif
 ifndef BUILD_BASEGAME
   BUILD_BASEGAME =
@@ -55,7 +55,6 @@ export PLATFORM
 ifeq ($(PLATFORM),mingw32)
   MINGW=1
 endif
-
 ifeq ($(PLATFORM),mingw64)
   MINGW=1
 endif
@@ -227,10 +226,13 @@ ifndef USE_RENDERER_DLOPEN
 USE_RENDERER_DLOPEN=1
 endif
 
+ifndef USE_YACC
+USE_YACC=0
+endif
+
 ifndef DEBUG_CFLAGS
 DEBUG_CFLAGS=-ggdb -O0
 endif
-
 
 EXTRA_C_WARNINGS = -Wimplicit -Wstrict-prototypes
 
@@ -238,7 +240,6 @@ EXTRA_C_WARNINGS = -Wimplicit -Wstrict-prototypes
 #EXTRA_C_WARNINGS += -Wstrict-aliasing=2 -Wmissing-format-attribute
 #EXTRA_C_WARNINGS += -Wdisabled-optimization
 #EXTRA_C_WARNINGS += -Werror-implicit-function-declaration
-
 
 ifdef CLANG
 CFLAGS=-Qunused-arguments
@@ -248,10 +249,6 @@ endif
 
 ifdef CGAME_HARD_LINKED
 CGAME_HARD_LINKED = -DCGAME_HARD_LINKED
-endif
-
-ifndef USE_YACC
-USE_YACC=0
 endif
 
 #############################################################################
@@ -297,24 +294,24 @@ ifneq ($(BUILD_CLIENT),0)
   # PKG_CONFIG_PATH=/opt/cross/i386-mingw32msvc/lib/pkgconfig
   #FIXME this sucks for cross compiling
   ifneq ($(call bin_path, pkg-config),)
-    CURL_CFLAGS=$(shell pkg-config --silence-errors --cflags libcurl)
-    CURL_LIBS=$(shell pkg-config --silence-errors --libs libcurl)
-    OPENAL_CFLAGS=$(shell pkg-config --silence-errors --cflags openal)
-    OPENAL_LIBS=$(shell pkg-config --silence-errors --libs openal)
+    CURL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags libcurl)
+    CURL_LIBS ?= $(shell pkg-config --silence-errors --libs libcurl)
+    OPENAL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags openal)
+    OPENAL_LIBS ?= $(shell pkg-config --silence-errors --libs openal)
     # FIXME: introduce CLIENT_CFLAGS
-    SDL_CFLAGS=$(shell pkg-config --silence-errors --cflags sdl2|sed 's/-Dmain=SDL_main//')
-    SDL_LIBS=$(shell pkg-config --silence-errors --libs sdl2)
+    SDL_CFLAGS ?= $(shell pkg-config --silence-errors --cflags sdl2|sed 's/-Dmain=SDL_main//')
+    SDL_LIBS ?= $(shell pkg-config --silence-errors --libs sdl2)
     FREETYPE_CFLAGS ?= $(shell pkg-config --silence-errors --cflags freetype2)
   else
     # assume they're in the system default paths (no -I or -L needed)
-    CURL_LIBS=-lcurl
-    OPENAL_LIBS=-lopenal
+    CURL_LIBS ?= -lcurl
+    OPENAL_LIBS ?= -lopenal
   endif
   # Use sdl-config if all else fails
   ifeq ($(SDL_CFLAGS),)
     ifneq ($(call bin_path, sdl2-config),)
-      SDL_CFLAGS=$(shell sdl2-config --cflags)
-      SDL_LIBS=$(shell sdl2-config --libs)
+      SDL_CFLAGS = $(shell sdl2-config --cflags)
+      SDL_LIBS = $(shell sdl2-config --libs)
     endif
   endif
 endif
@@ -323,10 +320,10 @@ endif
 USE_GIT=
 ifeq ($(wildcard .git),.git)
   GIT_REV=$(shell git show -s --pretty=format:%h-%ad --date=short)
-ifneq ($(GIT_REV),)
+  ifneq ($(GIT_REV),)
     VERSION:=$(VERSION)_GIT_$(GIT_REV)
     USE_GIT=1
-endif
+  endif
 endif
 
 CGAME_LIBS = -lpthread
@@ -335,9 +332,10 @@ CGAME_LIBS = -lpthread
 # SETUP AND BUILD -- LINUX
 #############################################################################
 
-## Defaults
 INSTALL=install
 MKDIR=mkdir
+EXTRA_FILES=
+CLIENT_EXTRA_FILES=
 
 ifneq (,$(findstring "$(COMPILE_PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu"))
   TOOLS_CFLAGS += -DARCH_STRING=\"$(COMPILE_ARCH)\"
@@ -371,18 +369,16 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
     FREETYPE_LIBS = -lfreetype
   endif
 
-  OPTIMIZEVM = -O3 -funroll-loops -fno-omit-frame-pointer
+  OPTIMIZEVM = -O3
   OPTIMIZE += $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -fno-omit-frame-pointer -funroll-loops \
-      -falign-functions=2 -fstrength-reduce -m64
+    OPTIMIZEVM = -O3
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   else
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer \
-      -funroll-loops -falign-functions=2 -fstrength-reduce
+    OPTIMIZEVM = -O3 -march=i586
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
@@ -397,6 +393,9 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   ifeq ($(ARCH),sparc)
     OPTIMIZE += -mtune=ultrasparc3 -mv8plus
     OPTIMIZEVM += -mtune=ultrasparc3 -mv8plus
+    HAVE_VM_COMPILED=true
+  endif
+  ifeq ($(ARCH),armv7l)
     HAVE_VM_COMPILED=true
   endif
   ifeq ($(ARCH),alpha)
@@ -423,7 +422,7 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
-      CLIENT_LIBS += $(OPENAL_LIBS)
+      CLIENT_LIBS += $(THREAD_LIBS) $(OPENAL_LIBS)
     endif
   endif
 
@@ -455,8 +454,6 @@ else # ifeq Linux
 GCC_IS_CLANG = $(shell gcc --version 2>/dev/null | grep clang)
 
 ifeq ($(PLATFORM),darwin)
-  MACOSX_DEPLOYMENT_TARGET=10.5
-  export MACOSX_DEPLOYMENT_TARGET
 
   ifneq ($(CXX),)
     CXX = g++
@@ -468,14 +465,27 @@ ifeq ($(PLATFORM),darwin)
   RENDERER_LIBS=
   OPTIMIZEVM=
 
+  #BASE_CFLAGS = -Wall -mmacosx-version-min=10.5
   BASE_CFLAGS = -Wall
 
+  # Default minimum Mac OS X version
+  ifeq ($(MACOSX_VERSION_MIN),)
+    MACOSX_VERSION_MIN=10.5
+  endif
+
+  # Multiply by 100 and then remove decimal. 10.7 -> 1070.0 -> 1070
+  MAC_OS_X_VERSION_MIN_REQUIRED=$(shell echo '$(MACOSX_VERSION_MIN) * 100' | bc | cut -d. -f1)
+
+  LDFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN)
+  BASE_CFLAGS += -mmacosx-version-min=$(MACOSX_VERSION_MIN) \
+                 -DMAC_OS_X_VERSION_MIN_REQUIRED=$(MAC_OS_X_VERSION_MIN_REQUIRED)
+
   ifeq ($(ARCH),ppc)
-    BASE_CFLAGS += -arch ppc -faltivec -mmacosx-version-min=10.2
+    BASE_CFLAGS += -arch ppc -faltivec
     OPTIMIZEVM += -O3
   endif
   ifeq ($(ARCH),ppc64)
-    BASE_CFLAGS += -arch ppc64 -faltivec -mmacosx-version-min=10.2
+    BASE_CFLAGS += -arch ppc64 -faltivec
   endif
   ifeq ($(ARCH),x86)
     OPTIMIZEVM += -march=prescott -mfpmath=sse
@@ -483,13 +493,10 @@ ifeq ($(PLATFORM),darwin)
     # used no matter what and they corrupt the frame pointer in VM calls
     #FIXME also min version?
     BASE_CFLAGS += -arch i386 -m32 -mstackrealign
-    ifeq ($(ARCH),x86_64)
-      OPTIMIZEVM += -mfpmath=sse
-    endif
   endif
-
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM += -arch x86_64 -mfpmath=sse
+    OPTIMIZEVM += -mfpmath=sse
+    BASE_CFLAGS += -arch x86_64
   endif
 
   # When compiling on OSX for OSX, we're not cross compiling as far as the
@@ -500,13 +507,13 @@ ifeq ($(PLATFORM),darwin)
   endif
 
   ifeq ($(CROSS_COMPILING),1)
-    ifeq ($(ARCH),ppc)
-      CC=powerpc-apple-darwin10-gcc
-      RANLIB=powerpc-apple-darwin10-ranlib
+    ifeq ($(ARCH),x86_64)
+        CC=x86_64-apple-darwin13-cc
+        RANLIB=x86_64-apple-darwin13-ranlib
     else
       ifeq ($(ARCH),x86)
-        CC=i686-apple-darwin10-gcc
-        RANLIB=i686-apple-darwin10-ranlib
+        CC=i386-apple-darwin13-cc
+        RANLIB=i386-apple-darwin13-ranlib
       else
         $(error Architecture $(ARCH) is not supported when cross compiling)
       endif
@@ -556,6 +563,7 @@ ifeq ($(PLATFORM),darwin)
   CLIENT_LIBS += -framework IOKit \
     $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
   RENDERER_LIBS += -framework OpenGL $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
+  CLIENT_EXTRA_FILES += $(LIBSDIR)/macosx/libSDL2-2.0.0.dylib
 
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
@@ -583,25 +591,30 @@ ifdef MINGW
 
     # We need to figure out the correct gcc and windres
     ifeq ($(ARCH),x86_64)
-      MINGW_PREFIXES=amd64-mingw32msvc x86_64-w64-mingw32
+      MINGW_PREFIXES=x86_64-w64-mingw32 amd64-mingw32msvc
     endif
     ifeq ($(ARCH),x86)
-      MINGW_PREFIXES=i586-mingw32msvc i686-w64-mingw32
+      MINGW_PREFIXES=i686-w64-mingw32 i586-mingw32msvc i686-pc-mingw32
     endif
 
     ifndef CC
-      CC=$(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-         $(call bin_path, $(MINGW_PREFIX)-gcc)))
+      CC=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
+         $(call bin_path, $(MINGW_PREFIX)-gcc))))
 
       # ifndef CXX not working (Debian Stable) unlike ifndef CC
-      CXX=$(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-         $(call bin_path, $(MINGW_PREFIX)-g++)))
+      CXX=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
+         $(call bin_path, $(MINGW_PREFIX)-g++))))
     endif
 
     ifndef WINDRES
-      WINDRES=$(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
-         $(call bin_path, $(MINGW_PREFIX)-windres)))
+      WINDRES=$(firstword $(strip $(foreach MINGW_PREFIX, $(MINGW_PREFIXES), \
+         $(call bin_path, $(MINGW_PREFIX)-windres))))
     endif
+  endif
+
+  # using generic windres if specific one is not present
+  ifndef WINDRES
+    WINDRES=windres
   endif
 
   ifeq ($(CC),)
@@ -640,19 +653,15 @@ ifdef MINGW
   endif
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -fno-omit-frame-pointer \
-      -funroll-loops -falign-functions=2 -fstrength-reduce -m64
+    OPTIMIZEVM = -O3
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer \
-      -funroll-loops -falign-functions=2 -fstrength-reduce -m32
+    OPTIMIZEVM = -O3 -march=i586
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   endif
-
-#  HAVE_VM_COMPILED = true
 
   SHLIBEXT=dll
   SHLIBCFLAGS=
@@ -720,12 +729,14 @@ ifdef MINGW
       RENDERER_LIBS += $(LIBSDIR)/win32/libSDL2main.a \
                       $(LIBSDIR)/win32/libSDL2.dll.a
       SDLDLL=SDL2.dll
+      CLIENT_EXTRA_FILES += $(LIBSDIR)/win32/SDL2.dll
     else
       CLIENT_LIBS += $(LIBSDIR)/win64/libSDL264main.a \
-                      $(LIBSDIR/win64/libSDL264.dll.a
+                      $(LIBSDIR)/win64/libSDL264.dll.a
       RENDERER_LIBS += $(LIBSDIR)/win64/libSDL264main.a \
-                      $(LIBSDIR/win64/libSDL264.dll.a
+                      $(LIBSDIR)/win64/libSDL264.dll.a
       SDLDLL=SDL264.dll
+      CLIENT_EXTRA_FILES += $(LIBSDIR)/win64/SDL264.dll
     endif
   else
     CLIENT_CFLAGS += $(SDL_CFLAGS)
@@ -749,7 +760,7 @@ ifeq ($(PLATFORM),freebsd)
   CLIENT_CFLAGS += $(SDL_CFLAGS)
   HAVE_VM_COMPILED = true
 
-  OPTIMIZEVM = -funroll-loops -fno-omit-frame-pointer
+  OPTIMIZEVM = -O3
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   SHLIBEXT=so
@@ -790,7 +801,6 @@ ifeq ($(PLATFORM),freebsd)
       BASE_CFLAGS += -m64
     endif
   endif
-
 else # ifeq freebsd
 
 #############################################################################
@@ -803,18 +813,16 @@ ifeq ($(PLATFORM),openbsd)
      -pipe -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
 
-  OPTIMIZEVM = -O3 -funroll-loops -fomit-frame-pointer
+  OPTIMIZEVM = -O3
   OPTIMIZE = $(OPTIMIZEVM) -ffast-math
 
   ifeq ($(ARCH),x86_64)
-    OPTIMIZEVM = -O3 -fomit-frame-pointer -funroll-loops \
-      -falign-functions=2 -fstrength-reduce
+    OPTIMIZEVM = -O3
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   else
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586 -fomit-frame-pointer \
-      -funroll-loops -falign-functions=2 -fstrength-reduce
+    OPTIMIZEVM = -O3 -march=i586
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED=true
   else
@@ -893,7 +901,6 @@ ifeq ($(PLATFORM),netbsd)
   endif
 
   BUILD_CLIENT = 0
-
 else # ifeq netbsd
 
 #############################################################################
@@ -902,6 +909,7 @@ else # ifeq netbsd
 
 ifeq ($(PLATFORM),irix64)
   LIB=lib
+
   ARCH=mips
 
   CC = c99
@@ -954,7 +962,7 @@ ifeq ($(PLATFORM),sunos)
     HAVE_VM_COMPILED=true
   else
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM += -march=i586 -fno-omit-frame-pointer \
+    OPTIMIZEVM += -march=i586 -fomit-frame-pointer \
       -falign-functions=2 -fstrength-reduce
     HAVE_VM_COMPILED=true
     BASE_CFLAGS += -m32
@@ -1325,14 +1333,37 @@ release:
 	  CLIENT_CFLAGS="$(CLIENT_CFLAGS)" CLIENT_CXXFLAGS="$(CLIENT_CXXFLAGS)" SERVER_CFLAGS="$(SERVER_CFLAGS)" V=$(V)
 
 ifneq ($(call bin_path, tput),)
-  TERM_COLUMNS=$(shell echo $$((`tput cols`-4)))
+  TERM_COLUMNS=$(shell if c=`tput cols`; then echo $$(($$c-4)); else echo 76; fi)
 else
   TERM_COLUMNS=76
 endif
 
+define ADD_COPY_TARGET
+TARGETS += $2
+$2: $1
+	$(echo_cmd) "CP $$<"
+	@cp $1 $2
+endef
+
+# These functions allow us to generate rules for copying a list of files
+# into the base directory of the build; this is useful for bundling libs,
+# README files or whatever else
+define GENERATE_COPY_TARGETS
+$(foreach FILE,$1, \
+  $(eval $(call ADD_COPY_TARGET, \
+    $(FILE), \
+    $(addprefix $(B)/,$(notdir $(FILE))))))
+endef
+
+$(call GENERATE_COPY_TARGETS,$(EXTRA_FILES))
+
+ifneq ($(BUILD_CLIENT),0)
+  $(call GENERATE_COPY_TARGETS,$(CLIENT_EXTRA_FILES))
+endif
+
 NAKED_TARGETS=$(shell echo $(TARGETS) | sed -e "s!$(B)/!!g")
 
-print_list=@for i in $(1); \
+print_list=-@for i in $(1); \
      do \
              echo "    $$i"; \
      done
@@ -1353,6 +1384,7 @@ targets: makedirs
 	@echo "  VERSION: $(VERSION)"
 	@echo "  COMPILE_PLATFORM: $(COMPILE_PLATFORM)"
 	@echo "  COMPILE_ARCH: $(COMPILE_ARCH)"
+	@echo "  HAVE_VM_COMPILED: $(HAVE_VM_COMPILED)"
 	@echo "  CXX: $(CXX)"
 	@echo "  CC: $(CC)"
 	@echo ""
@@ -1379,6 +1411,9 @@ targets: makedirs
 	@echo ""
 	@echo "  CLIENT_LIBS:"
 	$(call print_wrapped, $(CLIENT_LIBS))
+	@echo ""
+	@echo "  CLIENT_LDFLAGS:"
+	$(call print_wrapped, $(CLIENT_LDFLAGS))
 	@echo ""
 	@echo "  Output:"
 	$(call print_list, $(NAKED_TARGETS))
@@ -1448,9 +1483,6 @@ TOOLS_CFLAGS += $(TOOLS_OPTIMIZE) \
                 -DTEMPDIR=\"$(TEMPDIR)\" -DSYSTEM=\"\" \
                 -I$(Q3LCCSRCDIR) \
                 -I$(LBURGDIR)
-
-#-DPRODUCT_VERSION=\\\"$(VERSION)\\\"  -DWOLFCAM_VERSION=\\\"$(VERSION)\\\"
-
 TOOLS_LIBS =
 TOOLS_LDFLAGS =
 
@@ -2118,13 +2150,17 @@ endif
 
 ifeq ($(HAVE_VM_COMPILED),true)
   ifneq ($(findstring $(ARCH),x86 x86_64),)
-    Q3OBJ += $(B)/client/vm_x86.o
+    Q3OBJ += \
+      $(B)/client/vm_x86.o
   endif
   ifneq ($(findstring $(ARCH),ppc ppc64),)
     Q3OBJ += $(B)/client/vm_powerpc.o $(B)/client/vm_powerpc_asm.o
   endif
   ifeq ($(ARCH),sparc)
     Q3OBJ += $(B)/client/vm_sparc.o
+  endif
+  ifeq ($(ARCH),armv7l)
+    Q3OBJ += $(B)/client/vm_armv7l.o
   endif
 endif
 
@@ -2171,7 +2207,6 @@ $(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(Q3ROBJ) $(JPGOBJ) $(SPLINES) $(LIBSDL
 
 endif
 endif
-
 
 ifneq ($(strip $(LIBSDLMAIN)),)
 ifneq ($(strip $(LIBSDLMAINSRC)),)
@@ -2283,13 +2318,18 @@ endif
 
 ifeq ($(HAVE_VM_COMPILED),true)
   ifneq ($(findstring $(ARCH),x86 x86_64),)
-    Q3DOBJ += $(B)/ded/vm_x86.o
+    Q3DOBJ += \
+      $(B)/ded/vm_x86.o
   endif
   ifneq ($(findstring $(ARCH),ppc ppc64),)
     Q3DOBJ += $(B)/ded/vm_powerpc.o $(B)/ded/vm_powerpc_asm.o
   endif
   ifeq ($(ARCH),sparc)
     Q3DOBJ += $(B)/ded/vm_sparc.o
+  endif
+  ifeq ($(ARCH),armv7l)
+    #FIXME client/ or ded/ ?
+    Q3DOBJ += $(B)/client/vm_armv7l.o
   endif
 endif
 
@@ -2802,7 +2842,7 @@ $(B)/ded/%.o: $(SYSDIR)/%.rc
 $(B)/ded/%.o: $(NDIR)/%.c
 	$(DO_DED_CC)
 
-# Extra dependencies to ensure the SVN version is incorporated
+# Extra dependencies to ensure the git version is incorporated
 ifeq ($(USE_GIT),1)
   $(B)/client/cl_console.o : .git
   $(B)/client/common.o : .git
@@ -2912,7 +2952,7 @@ ifneq ($(BUILD_GAME_SO),0)
 endif
 
 ifneq ($(BUILD_CLIENT),0)
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(CLIENTBIN)$(FULLBINEXT) $(COPYBINDIR)/ioquake3$(FULLBINEXT)
+	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(CLIENTBIN)$(FULLBINEXT) $(COPYBINDIR)/$(CLIENTBIN)$(FULLBINEXT)
   ifneq ($(USE_RENDERER_DLOPEN),0)
 	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/renderer_opengl1_$(SHLIBNAME) $(COPYBINDIR)/renderer_opengl1_$(SHLIBNAME)
   endif
@@ -2920,7 +2960,7 @@ endif
 
 ifneq ($(BUILD_SERVER),0)
 	@if [ -f $(BR)/$(SERVERBIN)$(FULLBINEXT) ]; then \
-		$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(SERVERBIN)$(FULLBINEXT) $(COPYBINDIR)/ioq3ded$(FULLBINEXT); \
+		$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(SERVERBIN)$(FULLBINEXT) $(COPYBINDIR)/$(SERVERBIN)$(FULLBINEXT); \
 	fi
 endif
 
@@ -2976,7 +3016,8 @@ toolsclean2:
 	@rm -f $(LBURG) $(DAGCHECK_C) $(Q3RCC) $(Q3CPP) $(Q3LCC) $(Q3ASM)
 
 distclean: clean toolsclean
-	@rm -rf $(BUILD_DIR) mac-binaries/cgamei386.dylib mac-binaries/qagamei386.dylib mac-binaries/uii386.dylib mac-binaries/wolfcamqlmac
+	@rm -rf $(BUILD_DIR)
+	@rm -rf mac-binaries/cgamex86.dylib mac-binaries/qagamex86.dylib mac-binaries/uix86.dylib mac-binaries/wolfcamqlmac mac-binaries/renderer_opengl1_x86.dylib
 
 installer: release
 ifdef MINGW
@@ -2986,6 +3027,7 @@ ifdef MINGW
                USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
                USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \
                USE_INTERNAL_SPEEX=$(USE_INTERNAL_SPEEX) \
+               USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
                USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
                USE_INTERNAL_JPEG=$(USE_INTERNAL_JPEG)
 else
@@ -2994,7 +3036,6 @@ endif
 
 dist:
 	git archive --format zip --output $(CLIENTBIN)-$(VERSION).zip HEAD
-
 
 #############################################################################
 # DEPENDENCIES

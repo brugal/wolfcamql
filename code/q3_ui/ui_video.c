@@ -424,14 +424,14 @@ static void GraphicsOptions_GetAspectRatios( void )
 		char *x;
 		char str[ sizeof(ratioBuf[0]) ];
 
-		// calculate resolution's aspect ration
+		// calculate resolution's aspect ratio
 		x = strchr( resolutions[r], 'x' ) + 1;
 		Q_strncpyz( str, resolutions[r], x-resolutions[r] );
 		w = atoi( str );
 		h = atoi( x );
 		Com_sprintf( str, sizeof(str), "%.2f:1", (float)w / (float)h );
 
-		// rename common rations ("1.33:1" -> "4:3")
+		// rename common ratios ("1.33:1" -> "4:3")
 		for( i = 0; knownRatios[i][0]; i++ ) {
 			if( !Q_stricmp( str, knownRatios[i][0] ) ) {
 				Q_strncpyz( str, knownRatios[i][1], sizeof( str ) );
@@ -453,7 +453,7 @@ static void GraphicsOptions_GetAspectRatios( void )
 		}
 
 		ratios[r] = ratioBuf[r];
-		resToRatio[4] = i;
+		resToRatio[r] = i;
 	}
 
 	ratios[r] = NULL;
@@ -489,7 +489,7 @@ static void GraphicsOptions_GetResolutions( void )
 	{
 		char* s = resbuf;
 		unsigned int i = 0;
-		while( s && i < ARRAY_LEN(detectedResolutions) - 1)
+		while( s && i < ARRAY_LEN(detectedResolutions)-1 )
 		{
 			detectedResolutions[i++] = s;
 			s = strchr(s, ' ');
@@ -638,7 +638,7 @@ static void GraphicsOptions_ApplyChanges( void *unused, int notification )
 		// search for builtin mode that matches the detected mode
 		int mode;
 		if ( s_graphicsoptions.mode.curvalue == -1
-			 || s_graphicsoptions.mode.curvalue >= ARRAY_LEN(detectedResolutions) )
+			 || s_graphicsoptions.mode.curvalue >= ARRAY_LEN( detectedResolutions ) )
 			s_graphicsoptions.mode.curvalue = 0;
 
 		mode = GraphicsOptions_FindBuiltinResolution( s_graphicsoptions.mode.curvalue );
@@ -1138,7 +1138,6 @@ void GraphicsOptions_MenuInit( void )
 	s_graphicsoptions.driverinfo.string           = "Driver Info";
 	s_graphicsoptions.driverinfo.style            = UI_CENTER|UI_SMALLFONT;
 	s_graphicsoptions.driverinfo.color            = color_red;
-	y += BIGCHAR_HEIGHT+2;
 
 	s_graphicsoptions.back.generic.type	    = MTYPE_BITMAP;
 	s_graphicsoptions.back.generic.name     = GRAPHICSOPTIONS_BACK0;

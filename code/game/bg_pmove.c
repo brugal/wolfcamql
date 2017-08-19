@@ -257,7 +257,6 @@ static void PM_Accelerate( const vec3_t wishdir, float wishspeed, float accel ) 
 	for (i=0 ; i<3 ; i++) {
 		pm->ps->velocity[i] += accelspeed*wishdir[i];	
 	}
-
 #else
 	// proper way (avoids strafe jump maxspeed bug), but feels bad
 	vec3_t		wishVelocity;

@@ -28,7 +28,9 @@ DEMOS MENU
 =======================================================================
 */
 
+
 #include "ui_local.h"
+
 
 #define ART_BACK0			"menu/art/back_0"
 #define ART_BACK1			"menu/art/back_1"
@@ -53,6 +55,7 @@ DEMOS MENU
 #define ARROWS_WIDTH		128
 #define ARROWS_HEIGHT		48
 
+
 typedef struct {
 	menuframework_s	menu;
 
@@ -70,6 +73,7 @@ typedef struct {
 
 	int				numDemos;
 	char			names[NAMEBUFSIZE];
+
 	char			*demolist[MAX_DEMOS];
 	char dirName[MAX_OSPATH];
 } demos_t;
@@ -155,8 +159,7 @@ static void Demos_PlayDemoOrChangeDir (void)
 Demos_MenuEvent
 ===============
 */
-static void Demos_MenuEvent (void *ptr, int event)
-{
+static void Demos_MenuEvent( void *ptr, int event ) {
 	//Com_Printf("demos menuEvent %p event %d  id %d\n", ptr, event, ((menucommon_s *)ptr)->id);
 
 	if (event == QM_DOUBLECLICKED) {

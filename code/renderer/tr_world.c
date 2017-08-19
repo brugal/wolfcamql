@@ -308,7 +308,7 @@ static void R_AddWorldSurface( msurface_t *surf, int dlightBits ) {
 
 	// try to cull before dlighting or adding
 
-	if (R_CullSurface(surf->data, shader)) {
+	if ( R_CullSurface( surf->data, shader ) ) {
 		return;
 	}
 
@@ -318,7 +318,7 @@ static void R_AddWorldSurface( msurface_t *surf, int dlightBits ) {
 		dlightBits = ( dlightBits != 0 );
 	}
 
-	R_AddDrawSurf(surf->data, shader, surf->fogIndex, dlightBits);
+	R_AddDrawSurf( surf->data, shader, surf->fogIndex, dlightBits );
 }
 
 /*

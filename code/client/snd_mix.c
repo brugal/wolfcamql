@@ -36,8 +36,6 @@ int*     snd_p;
 int      snd_linear_count;
 short*   snd_out;
 
-
-
 #if	!id386                                        // if configured not to use asm
 
 void S_WriteLinearBlastStereo16 (void)
@@ -201,7 +199,6 @@ void S_TransferPaintBuffer(int endtime)
 	else
 	{	// general case
 		p = (int *) paintbuffer;
-
 		count = (endtime - s_paintedtime) * dma.channels;
 		out_mask = dma.samples - 1; 
 		out_idx = s_paintedtime * dma.channels & out_mask;
@@ -258,6 +255,10 @@ static void S_PaintChannelFrom16_altivec( channel_t *ch, const sfx_t *sc, int co
 	sndBuffer				*chunk;
 	short					*samples;
 	float					ooff, fdata[2], fdiv, fleftvol, frightvol;
+
+	if (sc->soundChannels <= 0) {
+		return;
+	}
 
 	samp = &paintbuffer[ bufferOffset ];
 

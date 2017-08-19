@@ -2070,9 +2070,13 @@ No locals.
 * option to disable console tty input
 * need USE_INTERNAL_FREETYPE
 * missing PRINT_ERROR
-* sdl2 broke unix clipboard data
 * macosx opengl load appears to fail
 * check example of stereo sound in 16_scalar
+* /sayto field complete utf8 fixes
+* /sayto field complete and different name coloring methods
+* no need to always treat background track as .ogg in quake live?
+  snd_main.c  // quakelive hack, all files default to ogg
+
 
 ---------
 

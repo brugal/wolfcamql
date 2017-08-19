@@ -85,7 +85,6 @@ void R_RemapShader (const char *shaderName, const char *newShaderName, const cha
 	}
 
 	sh2 = R_FindShaderByName( newShaderName );
-
 	if (sh2 == NULL || sh2 == tr.defaultShader) {
 		h = RE_RegisterShaderLightMap(newShaderName, 0);
 		sh2 = R_GetShaderByHandle(h);
@@ -880,6 +879,8 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 			else if ( !Q_stricmp( token, "const" ) )
 			{
 				vec3_t	color;
+
+				VectorClear( color );
 
 				ParseVector( text, 3, color );
 				stage->constantColor[0] = 255 * color[0];
@@ -1991,7 +1992,7 @@ sortedIndex.
 static void FixRenderCommandList( int newShader ) {
 	renderCommandList_t	*cmdList = &backEndData->commands;
 
-	if ( cmdList ) {
+	if( cmdList ) {
 		const void *curCmd = cmdList->cmds;
 
 		while ( 1 ) {
@@ -2506,11 +2507,13 @@ static char *FindShaderInShaderText( const char *shadername ) {
 
 	hash = generateHashValue(shadername, MAX_SHADERTEXT_HASH);
 
-	if (shaderTextHashTable[hash]) {
-		for (i = 0; shaderTextHashTable[hash][i]; i++) {
+	if(shaderTextHashTable[hash])
+	{
+		for (i = 0; shaderTextHashTable[hash][i]; i++)
+		{
 			p = shaderTextHashTable[hash][i];
 			token = COM_ParseExt(&p, qtrue);
-			if ( !Q_stricmp( token, shadername ) ) {
+			if(!Q_stricmp(token, shadername)) {
 				return p;
 			}
 		}
@@ -3147,11 +3150,11 @@ a single large text block that can be scanned for shader names
 =====================
 */
 #define	MAX_SHADER_FILES	4096
-static void ScanAndLoadShaderFiles (void)
+static void ScanAndLoadShaderFiles( void )
 {
 	char **shaderFiles;
 	char **overrideShaderFiles;
-	char *buffers[MAX_SHADER_FILES];
+	char *buffers[MAX_SHADER_FILES] = {0};
 	char *p;
 	int numShaderFiles;
 	int numOverrideShaderFiles;
@@ -3164,8 +3167,8 @@ static void ScanAndLoadShaderFiles (void)
 	long sum = 0, summand;
 
 	// scan for shader files
-	overrideShaderFiles = ri.FS_ListFiles("shaderoverride", ".shader", &numOverrideShaderFiles);
-	shaderFiles = ri.FS_ListFiles("scripts", ".shader", &numShaderFiles);
+	overrideShaderFiles = ri.FS_ListFiles( "shaderoverride", ".shader", &numOverrideShaderFiles );
+	shaderFiles = ri.FS_ListFiles( "scripts", ".shader", &numShaderFiles );
 
 	if ((!shaderFiles || !numShaderFiles)  &&  (!overrideShaderFiles  ||  !numOverrideShaderFiles))
 	{
@@ -3214,7 +3217,7 @@ static void ScanAndLoadShaderFiles (void)
 			{
 				ri.Printf(PRINT_WARNING, "WARNING: Ignoring shader file %s. Shader \"%s\" on line %d missing opening brace",
 					  filename, shaderName, shaderLine);
-				if ( token[0] )
+				if (token[0])
 				{
 					ri.Printf(PRINT_WARNING, " (found \"%s\" on line %d)", token, COM_GetCurrentParseLine());
 				}
@@ -3247,7 +3250,7 @@ static void ScanAndLoadShaderFiles (void)
 	// free in reverse order, so the temp files are all dumped
 	for ( i = numOverrideShaderFiles - 1; i >= 0 ; i-- )
 	{
-		if (!buffers[i]) {
+		if ( !buffers[i] ) {
 			continue;
 		}
 
@@ -3258,7 +3261,7 @@ static void ScanAndLoadShaderFiles (void)
 
 	for ( i = (numShaderFiles + numOverrideShaderFiles) - 1; i >= 0 ; i-- )
 	{
-		if (!buffers[i]) {
+		if ( !buffers[i] ) {
 			continue;
 		}
 
@@ -3272,11 +3275,11 @@ static void ScanAndLoadShaderFiles (void)
 		}
 	}
 
-	COM_Compress(s_shaderText);
+	COM_Compress( s_shaderText );
 
 	// free up memory
-	ri.FS_FreeFileList(shaderFiles);
-	ri.FS_FreeFileList(overrideShaderFiles);
+	ri.FS_FreeFileList( shaderFiles );
+	ri.FS_FreeFileList( overrideShaderFiles );
 
 	Com_Memset(shaderTextHashTableSizes, 0, sizeof(shaderTextHashTableSizes));
 	size = 0;

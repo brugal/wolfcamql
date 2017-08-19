@@ -841,7 +841,6 @@ int PS_ReadPrimitive(script_t *script, token_t *token)
 	//primitive reading successfull
 	return 1;
 } //end of the function PS_ReadPrimitive
-
 //============================================================================
 //
 // Parameter:				-
@@ -916,7 +915,6 @@ int PS_ReadToken(script_t *script, token_t *token)
 	//successfully read a token
 	return 1;
 } //end of the function PS_ReadToken
-
 //============================================================================
 //
 // Parameter:				-

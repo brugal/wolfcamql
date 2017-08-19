@@ -765,7 +765,6 @@ void Characteristic_String(int character, int index, char *buf, int size)
 	{
 		botimport.Print(PRT_ERROR, "characteristic %d is not a string\n", index);
 	} //end else if
-	return;
 } //end of the function Characteristic_String
 //===========================================================================
 //

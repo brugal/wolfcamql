@@ -320,7 +320,7 @@ static unsigned int sparc_assemble(enum sparc_iname iname, const int argc, const
 
 #define IN(inst, args...) \
 ({	const int argv[] = { args }; \
-    const int argc = ARRAY_LEN(argv);
+ 	const int argc = ARRAY_LEN(argv); \
 	sparc_assemble(inst, argc, argv); \
 })
 
@@ -704,6 +704,7 @@ static void ErrJump(void)
 	Com_Error(ERR_DROP, "program tried to execute code outside VM");
 	exit(1);
 }
+
 static void jump_insn_append(vm_t *vm, struct func_info * const fp, enum sparc_iname iname, int dest)
 {
 	struct jump_insn *jp = Z_Malloc(sizeof(*jp));

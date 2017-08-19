@@ -264,6 +264,7 @@ static void CON_Hide( void )
 	qconsole_linelen = realLen;
 }
 
+
 /*
 ==================
 CON_Shutdown

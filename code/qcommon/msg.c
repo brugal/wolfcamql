@@ -245,7 +245,8 @@ int MSG_ReadBits( msg_t *msg, int bits ) {
 		msg->readcount = (msg->bit>>3)+1;
 		//Com_Printf("^5msg->readcount %d\n", msg->readcount);
 	}
-	if ( sgn ) {
+	//if ( sgn ) {
+	if ( sgn && bits > 0 && bits < 32 ) {
 		if ( value & ( 1 << ( bits - 1 ) ) ) {
 			value |= -1 ^ ( ( 1 << bits ) - 1 );
 		}

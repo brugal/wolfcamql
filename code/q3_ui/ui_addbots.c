@@ -67,7 +67,6 @@ typedef struct {
 	menubitmap_s	up;
 	menubitmap_s	down;
 
-
 	menutext_s		bots[7];
 
 	menulist_s		skill;
@@ -221,7 +220,6 @@ static void UI_AddBotsMenu_GetSortedBotNums( void ) {
 
 	qsort( addBotsMenuInfo.sortedBotNums, addBotsMenuInfo.numBots, sizeof(addBotsMenuInfo.sortedBotNums[0]), UI_AddBotsMenu_SortCompare );
 }
-
 
 /*
 =================

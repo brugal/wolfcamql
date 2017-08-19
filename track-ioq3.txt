@@ -955,7 +955,7 @@ client gets disconnected with download blocks in the queue
 
 2124 Fixed some typos in the readme.
 
-2125 skip:  Fix crash bug introduced in r2116. traceEnt does not always have to be a client, so gauntlet attacking something that is not a client will crash the game. Thanks to Ensiform for reporting
+2125 Fix crash bug introduced in r2116. traceEnt does not always have to be a client, so gauntlet attacking something that is not a client will crash the game. Thanks to Ensiform for reporting
 
 2126 Remove executable property from these files
 2127 Change x86_64 to x64 for mingw.
@@ -1756,7 +1756,7 @@ client gets disconnected with download blocks in the queue
 
 2013-01-30-01 skip (rend2):  Starting sunlight experimentation branch
 
-2013-01-30-02 skip:  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
+2013-01-30-02 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
 
 2013-02-01-01
     Fix MSG_ReadDeltaKey setting bit 1<<bits often
@@ -1835,7 +1835,7 @@ client gets disconnected with download blocks in the queue
 2013-02-16-02 skip (rend2):  Move some things into renderercommon
 2013-02-16-03 Change radiant URL in README
 2013-02-16-04 skip (rend2):  Add renderercommon/tr_common.h
-2013-02-16-05 skip:  Remove a few name tags
+2013-02-16-05 Remove a few name tags
 2013-02-16-06 skip (rend2):  Add GPL header to tr_common.h
 2013-02-16-07 skip (rend2):  Fix zakk's screwups
 
@@ -3304,13 +3304,11 @@ the demo.
 
     Found by /dev/humancontroller.
 
----- this ----
+2014-07-18-01 sayto cmd with player name completion
 
-2014-07-18-01 skip:  sayto cmd with player name completion
+2014-07-20-01 -ffast-math for msvc
 
-2014-07-20-01 skip:  -ffast-math for msvc
-
-2014-07-20-02 skip:
+2014-07-20-02
     Merge branch 'pkg-config' of github.com:smcv/ioq3 into master
 
     Conflicts:
@@ -3323,10 +3321,8 @@ the demo.
 
     Pointed out by @MAN-AT-ARMS.
 
----------   this   -------------
-
-2014-07-20-05 skip:  Fix compiling on Linux Mint
-2014-07-20-06 skip:  Allow user override of cURL, OpenAL, and SDL libs/cflags
+2014-07-20-05 Fix compiling on Linux Mint
+2014-07-20-06 Allow user override of cURL, OpenAL, and SDL libs/cflags
 
 2014-07-22-01 skip (rend2):  OpenGL2: Replace R_MipMapsRGB() with faster version.
 
@@ -3344,7 +3340,7 @@ the demo.
 
     Thanks to stigmha for pointing out this doesn't work in Windows.
 
-2014-07-31-01  guard against out-of-bounds jump table targets
+2014-07-31-01 guard against out-of-bounds jump table targets
 
 2014-08-01-01 skip (rend2):  OpenGL2: Add fourth cascade for sun shadows, and adjust sun shadow cvar defaults.
 
@@ -3352,60 +3348,60 @@ the demo.
 
 2014-08-02-02 skip (rend2):  OpenGL2: Fix a glsl compile error on old hardware with r_shadowFilter 0.
 
-2014-08-25-01 skip:  Fix assorted warnings
+2014-08-25-01 Fix assorted warnings
 
-2014-08-25-02 skip:
+2014-08-25-02
     Merge branch 'master' into sdl2
 
     Conflicts:
             Makefile
             code/renderergl2/tr_image.c
 
-2014-08-25-03 skip:  Fix OSX build
+2014-08-25-03 Fix OSX build
 
-2014-08-26-01 skip:  Add SDL libraries to the builds
-2014-08-26-02 skip:  added systemd unit for easier server-deployment
+2014-08-26-01 Add SDL libraries to the builds
+2014-08-26-02 added systemd unit for easier server-deployment
 
-2014-08-26-03 skip:  removed a few defaults to make it completely usable out of the box
+2014-08-26-03 removed a few defaults to make it completely usable out of the box
 
-2014-08-26-04 skip (already there?):
+2014-08-26-04
     Fix binding KP_NUMLOCK
 
     Restore mapping SDL numlock to quake3 numlock.
 
-2014-08-27-01 skip (sdl2):
+2014-08-27-01
     Get clipboard data from SDL
 
     This makes pasting in client console and UI edit fields work on X11 and OS X.
 
     Sys_GetClipboardData is only used by client, so returning NULL in dedicated is fine.
 
-2014-08-27-02 skip:  Bullshit change to test jenkins configuration
+2014-08-27-02 Bullshit change to test jenkins configuration
 2014-08-27-03 Fix some warnings
 
 2014-08-27-04 There have been 0 days since the last compiler warning
 
-2014-08-27-05 skip:  removed absolute path to binary, removed sv_pure parameter
-2014-08-27-06 skip:  Add cppcheck stage to jenkins script
-2014-08-27-07 skip:  Link instead of copy
-2014-08-27-08 skip:  Show environment variables from jenkins
-2014-08-27-09 skip:  Use scan-build when invoking clang
+2014-08-27-05 removed absolute path to binary, removed sv_pure parameter
+2014-08-27-06 Add cppcheck stage to jenkins script
+2014-08-27-07 Link instead of copy
+2014-08-27-08 Show environment variables from jenkins
+2014-08-27-09 Use scan-build when invoking clang
 
-2014-08-27-10 skip:
+2014-08-27-10
     Merge pull request #80 from dictvm/master
 
     added systemd unit for easier server-deployment
 
-2014-08-27-11 skip:  Moved the systemd to /misc/linux
+2014-08-27-11 Moved the systemd to /misc/linux
 
-2014-08-27-12 skip:
+2014-08-27-12
     Remove unused functions from null_main.c and null_input.c
 
     Sys_mkdir is suppose to have a capital M, which is also in null_main.c.
 
 2014-08-27-13 Fix incorrect strncat usage in CL_ServerInfoPacket
 
-2014-08-27-14 skip:
+2014-08-27-14
     Fix incorrect rgbGen const reading uninitialized memory
 
     If ParseVector fails, color isn't fully set.
@@ -3415,7 +3411,7 @@ the demo.
 
     numIboIndexes is set to 0 inside the loop for each surface. Does not need to be set before loop.
 
-2014-08-28-01 skip:  Only run scan-build on one of the clang builds
+2014-08-28-01 Only run scan-build on one of the clang builds
 
 2014-08-28-02
     Don't scale cinematic time by timescale twice
@@ -3427,7 +3423,7 @@ the demo.
 
     Makes it easier to add more colors.
 
-2014-08-28-04 skip (sdl2):  SDL 2 scroll/caps/num lock keys send KEYUP event when key is released
+2014-08-28-04 SDL 2 scroll/caps/num lock keys send KEYUP event when key is released
 
 2014-08-28-05 Port COM_ParseExt fixes to CommaParse
 
@@ -3441,38 +3437,38 @@ the demo.
 
     Fixes shaders that use adjustColorsForFog. Impact wallmarks, blood sprites, flame textures and so on.
 
-2014-08-30-01 (only part):  Fix a few warnings
+2014-08-30-01 Fix a few warnings
 
-2014-09-01-01 (only part):  Fix cgame warnings
-2014-09-01-02 (only part):  Fix ui warnings
-2014-09-01-03 (only part):  Fix game warnings
-2014-09-01-04 skip:  Fix client warnings
+2014-09-01-01 Fix cgame warnings
+2014-09-01-02 Fix ui warnings
+2014-09-01-03 Fix game warnings
+2014-09-01-04 Fix client warnings
 
 2014-09-01-05 Suppress warning of (deliberate) null pointer deference
 
-2014-09-01-06 skip:  Fix renderergl1 warnings
+2014-09-01-06 Fix renderergl1 warnings
 2014-09-01-07 skip (rend2):  Fix renderergl2 warnings
-2014-09-01-08 skip:  Fix more warnings
+2014-09-01-08 Fix more warnings
 
 2014-09-01-09 Actually, that's not suppressing, that's changing behaviour
 
-2014-09-01-10 skip:  Coverity travis integration experiment
-2014-09-01-11 skip:  Fix .travis.yml indentation
+2014-09-01-10 Coverity travis integration experiment
+2014-09-01-11 Fix .travis.yml indentation
 
-2014-09-05-01 skip (rend2):  Add USE_RENDERER_DLOPEN note to README
-2014-09-05-02 skip:  Fix screwed up whitespace in README
+2014-09-05-01 Add USE_RENDERER_DLOPEN note to README
+2014-09-05-02 Fix screwed up whitespace in README
 
-2014-09-09-01 skip (not implemented):  Fix possible division by zero in S_PaintChannelFrom16_altivec
+2014-09-09-01 Fix possible division by zero in S_PaintChannelFrom16_altivec
 
-2014-09-09-02 skip:
+2014-09-09-02
     Merge pull request #81 from MAN-AT-ARMS/sndmix_altivec
 
     Fix possible division by zero in S_PaintChannelFrom16_altivec
 
 2014-09-09-03 Change default value for s_alDopplerSpeed
-2014-09-09-04 skip:  Fix building with curl on Linux PPC and Sparc
+2014-09-09-04 Fix building with curl on Linux PPC and Sparc
 
-2014-09-09-05 skip:
+2014-09-09-05
     Merge pull request #85 from MAN-AT-ARMS/curl_fixes
 
     Fix building with curl on Linux PPC and Sparc
@@ -3482,24 +3478,24 @@ the demo.
 
     Change default value for s_alDopplerSpeed
 
-2014-09-09-07 skip:
+2014-09-09-07
     Merge pull request #29 from inolen/shader_tidying
 
     misc shader fixes
 
-2014-09-11-01 skip (sdl2):
+2014-09-11-01
     Fix binding 'context menu' key using SDL2
 
     SDL 1.2 converted Windows' VK_APPS and X11 XK_Hyper_R to SDLK_MENU.
     SDL2 has it as a separate SDLK_APPLICATION key, so convert it to K_MENU too.
 
-2014-09-11-02 skip (sdl2):
+2014-09-11-02
     Fix Windows key bind name on non-Mac using SDL2
 
     SDL 1.2 sends SDKL_*META (command) and SDLK_*SUPER (windows key).
     SDL2 sends SDLK_*GUI for both.
 
-2014-09-20-01 skip:
+2014-09-20-01
     Don't add duplicate resolutions to r_availableModes
 
     SDL can give the same resolution with different refresh rates.
@@ -3517,7 +3513,7 @@ the demo.
 
 2014-09-29-02 skip (rend2):  OpenGL2: Don't segfault if r_ext_multitexture is disabled
 
-2014-10-03-01 skip (not implemented):  Add mingw prefix for cygwin32 and mingw32
+2014-10-03-01 Add mingw prefix for cygwin32 and mingw32
 
 2014-10-07-01 skip (rend2):  OpenGL2: Better BSP surface merging.
 
@@ -3538,9 +3534,9 @@ the demo.
 
 2014-10-23-01 skip (rend2):  OpenGL2: Fix corrupt models.
 
-2014-10-23-02 skip:  a VM for ARMv7l
+2014-10-23-02 a VM for ARMv7l
 
-2014-10-26-01 skip:  qcurl_multi_add_handle error check
+2014-10-26-01 qcurl_multi_add_handle error check
 
 2014-10-27-01 skip (rend2):  OpenGL2: Speed up tonemap shader.
 
@@ -3551,7 +3547,7 @@ the demo.
 
     Add EV_USE_ITEM15 to cg_event.c and ai_dmq3.c for consistency.
 
-2014-10-27-02 skip (not implemented):
+2014-10-27-02
     Fix pid file ignoring user set fs_homepath
 
     Create pid file in fs_homepath instead of (always) default homepath.
@@ -3567,7 +3563,7 @@ the demo.
 
 2014-11-04-01 skip (rend2):  Remove accidentally added increment.
 
-2014-11-07-01 skip (sdl2):
+2014-11-07-01
     Clear window buffer when it's created
 
     When starting the game in windowed mode, the window buffer used whatever
@@ -3600,7 +3596,7 @@ the demo.
     It seems unlikely anyone is going to do anything with this aside from stub
     it out in OpenGLES ports.
 
-2014-11-16-03 skip + check:
+2014-11-16-03
     Don't set fog image border color
 
     GL1's R_CreateImage sets GL texture to 0 before it ends, so border color is not
@@ -3618,7 +3614,7 @@ the demo.
 
 2014-12-01-01 skip (rend2):  OpenGL2: Fix face culling.
 
-2014-12-01-02 skip + check:
+2014-12-01-02 no (different) check:
     Fix saving/loading glyph 255 in RegisterFont
 
     The glyph for character 255 (lower case y with two dots above it) was
@@ -3651,9 +3647,9 @@ the demo.
     The barrels were rotated 90 degrees from what they should be.
     Used barrel code from CG_AddPlayerWeapon to fix them.
 
-2014-12-10-02 skip (implemented):  Add weapon barrel to gauntlet/mg/bfg items in baseq3 too
+2014-12-10-02 Add weapon barrel to gauntlet/mg/bfg items in baseq3 too
 
-2014-12-19-01 skip (sdl2):  Fix reading 4 byte UTF-8 text input
+2014-12-19-01 Fix reading 4 byte UTF-8 text input
 
 2014-12-19-02
     Don't use dead view angles after stop following a dead player
@@ -3687,10 +3683,10 @@ the demo.
     during the 1 second between intermission starting and switching to scoreboard
     (PM_INTERMISSION) and makes Team Arena voice chats not play.
 
-2014-12-28-01 skip (different):  Fix warning
-2014-12-28-02 skip (different):  Unfix warning
+2014-12-28-01 Fix warning
+2014-12-28-02 Unfix warning
 
-2014-12-28-03 skip:
+2014-12-28-03
     Merge pull request #94 from wombat23/asmfix
 
     Fix compile error with ml64 assembler
@@ -3701,7 +3697,7 @@ the demo.
     MSVC 2010 has stdint.h but not inttypes.h.
     Debian (GCC, MinGW) and OS X (Clang) can compile using stdint.h.
 
-2014-12-28-05 skip:
+2014-12-28-05
     Make travis do all the builds again
 
     Travis was only using the last env section, not merged them and was only doing
@@ -3721,7 +3717,7 @@ the demo.
     [18:00] <Jacker> since in that case if the bucket of that clients ip
     still exists it wont get checked correctly
 
-2015-01-02-01 skip:  rephrase SSE availability message
+2015-01-02-01 rephrase SSE availability message
 
 2015-01-06-01 q3lcc option -lcppdir and -lrccdir
 
@@ -3732,9 +3728,9 @@ the demo.
 
         warning: conversion from `pointer to void' to `pointer to void function(void)' is compiler dependent
 
-2015-01-07-01 skip:  Have custom intro cinematics for standalone game
+2015-01-07-01 Have custom intro cinematics for standalone game
 
-2015-01-07-02*
+2015-01-07-02
     Ensure that mbstowcs does not overflow its buffer
 
     Similar to one of the changes by Tim Angus in fd986da: mbstowcs' third
@@ -3747,19 +3743,19 @@ the demo.
 
     Spotted via compiler warnings.
 
-2015-01-07-03* skip (sdl2):  Don't crash if more than 128 modes are available
+2015-01-07-03 Don't crash if more than 128 modes are available
 
-2015-01-07-04 skip:
+2015-01-07-04
     Merge pull request #104 from smcv/mbstowcs
 
     Ensure that mbstowcs does not overflow its buffer
 
-2015-01-07-05 skip:
+2015-01-07-05
     Merge pull request #97 from Pan7/outp
 
     Renaming outp to outbufp because outp() is an existing function
 
-2015-01-07-06 skip:
+2015-01-07-06
     Merge pull request #98 from Pan7/lcc
 
     Windows header files for q3lcc
@@ -3771,19 +3767,19 @@ the demo.
     So use the marcos recommended by MSDN. MinGW also has the marcos, so apply
     to Windows builds in general.
 
-2015-01-07-08 skip:
+2015-01-07-08
     Merge pull request #100 from Pan7/q3lcc
 
     q3lcc option -lcppdir and -lrccdir.
 
     Enabled using `q3lcc -Wo-lrccdir=/path/to/dir -Wo-cppdir=/path/to/dir`.
 
-2015-01-07-09 skip:
+2015-01-07-09
     Merge pull request #22 from zturtleman/cvar_modified
 
     Add cvar_modified command
 
-2015-01-12-01 skip + check (Sys_SetFloatEnv not implemented):
+2015-01-12-01
     Set float rounding mode on non-Windows platforms
 
     Sys_SetFloatEnv in sys_unix.c existed but was not called. It sets the
@@ -3871,7 +3867,7 @@ the demo.
     bsp_trace_t is not part of the game VM API, so this does not affect VM compatibility.
     BotAI_Trace in game was changed to match server. surface.value/flags are not used in game.
 
-2015-02-28-01 skip:  Don't run vid_restart when "resized" to current size
+2015-02-28-01 Don't run vid_restart when "resized" to current size
 
 2015-03-13-01 skip (rend2):  OpenGL2: Fix culling again.
 
@@ -3890,7 +3886,7 @@ the demo.
 
     255 is valid for unsigned char too.
 
-2015-03-20-02 skip (not needed):
+2015-03-20-02 no (not needed):
     Clean up CG_DrawProxWarning design
 
     Hopefully fixes the following warning
@@ -3940,7 +3936,7 @@ the demo.
 
 2015-04-06 skip (rend2):  OpenGL2: Use signed value in case value goes below 0.
 
-2015-04-12-01 skip:
+2015-04-12-01
     Merge pull request #116 from smcv/system-minizip
 
     Enhancements for system libraries
@@ -3959,56 +3955,56 @@ the demo.
     Save the formation distance so they maintain proper distance and do not
     orbit around the player.
 
-2015-05-29-01 skip (sdl2):  Horizontal scroll should not cause K_MWHEELDOWN key press
+2015-05-29-01 Horizontal scroll should not cause K_MWHEELDOWN key press
 
-2015-06-01-01 skip (initial pass to convert readme to markdown):
+2015-06-01-01 skip (rend2):
     s/.txt/.md/
 
     Initial pass at moving the opengl readme from plaintext to markdown.
     Probably screwed up a lot of stuff.
 
-2015-06-06-01 skip:  clang gets upset by some of these compiler options (and they're probably pretty pointless in 2015 anyway)
+2015-06-06-01 clang gets upset by some of these compiler options (and they're probably pretty pointless in 2015 anyway)
 
 2015-06-06-02 Fix cppcheck warning
-2015-06-06-03 skip + check:  Commit newly generated gram.c
+2015-06-06-03 Commit newly generated gram.c
 
-2015-06-07-01 skip (need cross compiling additions):  use osxcross compilers
+2015-06-07-01 use osxcross compilers
 
-2015-06-12-01 skip:
+2015-06-12-01
     Merge pull request #110 from zsoltm/mingw64
 
     added mingw64 (msys2) platform support
 
-2015-06-12-02 skip:
+2015-06-12-02
     Merge pull request #105 from smcv/sdl-modes
 
     Don't crash if more than 128 modes are available
 
-2015-06-12-03 skip (sdl2):  Remove erroneous new line from error message
+2015-06-12-03 Remove erroneous new line from error message
 
-2015-06-12-04 skip (rend2 change):
+2015-06-12-04 skip (rend2):
     Move image load function prototypes to tr_common.h
 
     The functions themselves are in code/renderercommon/tr_image_*.c
 
 2015-06-12-05 Sort tr_image_*.c filenames in Makefile
 
-2015-06-18-01 skip:
+2015-06-18-01
     Merge pull request #118 from jkent/master
 
     fix buffer overflow in CL_CheckForResend
 
-2015-06-18-02 skip:
+2015-06-18-02
     Merge pull request #89 from bostick/master
 
     Add mingw prefix for cygwin32 and mingw32
 
-2015-06-18-03 skip:
+2015-06-18-03
     Merge pull request #108 from Pan7/memmove
 
     No unix memmove for MSVC
 
-2015-06-18-04 skip:
+2015-06-18-04
     Merge pull request #109 from Pan7/SIGABRT
 
     SIGABRT is in ANSI and POSIX.1, and SIGIOT isn't.
@@ -4018,21 +4014,21 @@ the demo.
 
     strcpy() arguments may not overlap !
 
-2015-06-18-06 skip:
+2015-06-18-06
     Merge pull request #125 from jkent/master
 
     fix a stupid use of strcpy()
 
-2015-06-28-01 skip (sdl2):  Check SDL_GetNumDisplayModes return value for errors
+2015-06-28-01 Check SDL_GetNumDisplayModes return value for errors
 
-2015-06-28-02 skip (sdl2):  Fix variable declaration for C89 compilers
+2015-06-28-02 Fix variable declaration for C89 compilers
 
 2015-06-28-03
     Remove check for cg_recordSPDemoName.string array address
 
     It will always be true.
 
-2015-06-28-04 skip (we do use it):  Remove unused function WRITE_1BYTES from cl_avi.c
+2015-06-28-04 no (we do use it):  Remove unused function WRITE_1BYTES from cl_avi.c
 
 2015-06-28-05
     Make cinematic times be int like CL_ScaledMilliseconds
@@ -4050,7 +4046,7 @@ the demo.
 
     Add support for Aarch64, the 64-bit ARM architecture.
 
-2015-06-30-02 skip:
+2015-06-30-02
     Merge pull request #128 from tbm/master
 
     Add support for Aarch64 (ARM64)
@@ -4087,25 +4083,25 @@ the demo.
 
     Example: "word.pk3omghacks" use to be loaded as a pk3 file.
 
-2015-07-06-01 skip:
+2015-07-06-01
     server_compile.sh & start_server.sh for Linux ioq3 sysadmins
 
     If your distribution doesn’t include such niceties, these could help a
     newbie get started with a compiled build of ioquake3 for servers and a
     short script to get started.
 
-2015-07-06-02 skip:
+2015-07-06-02
     Fix server_compile.sh to exit after completed
 
     Also, convert '\n's to real new lines because the literal '\n's were
     printed.
 
-2015-07-09-01 skip (depends on previous skipped patch):
+2015-07-09-01
     Remove unused fpucw from snapvector.asm
 
     It's usage was removed in commit 8a500d71.
 
-2015-07-09-02 part (gl1):
+2015-07-09-02 skip (rend2) (did gl1 part):
     Fix OpenGL2 ignoring last light grid point on each axis
 
     Also change light grid bounds clamping to make it more clear what invalid
@@ -4142,12 +4138,12 @@ the demo.
 
     Found by Coverity.
 
-2015-07-12-07 skip (different):
+2015-07-12-07 no (different):
     Fix cgs.teamVoteString buffer overflow in CG_ConfigStringModified
 
     Found by Coverity.
 
-2015-07-12-08 skip (not really dead code):
+2015-07-12-08
     Remove logically dead code from CL_GetServerStatus
 
     Found by Coverity.
@@ -4213,12 +4209,12 @@ the demo.
     (PLATFORM, ARCH), so define ARCH_STRING to COMPILE_ARCH on a GNU
     COMPILE_PLATFORM.
 
-2015-07-15-01 skip:
+2015-07-15-01
     Merge pull request #129 from smcv/generic-platform
 
     Implement Linux architecture support generically
 
-2015-07-22-01 skip (code is different):
+2015-07-22-01
     build: if tput fails, fall back to a reasonable text width
 
     If TERM is not set (which can happen in autobuilders and other
@@ -4228,70 +4224,70 @@ the demo.
     field width -4 to fmt, which is an error and causes fmt to
     produce no output.
 
-2015-07-22-02 skip:
+2015-07-22-02
     Merge pull request #131 from smcv/tput
 
     build: if tput fails, fall back to a reasonable text width
 
 2015-07-24-01 SDL_Init zero check
 
-2015-07-25-01 skip:
+2015-07-25-01
     Merge pull request #132 from Pan7/SDL_Init
 
     SDL_Init zero check
 
-2015-07-25-02 skip (sdl2):  SDL_FALSE/TRUE for SDL_SetWindowGrab
-2015-07-25-03 skip (sdl2):  SDL_SetWindowGammaRamp check
+2015-07-25-02 SDL_FALSE/TRUE for SDL_SetWindowGrab
+2015-07-25-03 SDL_SetWindowGammaRamp check
 
-2015-07-26-01 skip (sdl2):  SDL_GetWindowDisplayIndex check
-2015-07-26-02 skip (sdl2):  SDL_CreateWindow NULL check
-2015-07-26-03 skip (sdl2):  Added SDL_GetError()
-2015-07-26-04 skip (sdl2):  Added SDL_GetError()
+2015-07-26-01 SDL_GetWindowDisplayIndex check
+2015-07-26-02 SDL_CreateWindow NULL check
+2015-07-26-03 Added SDL_GetError()
+2015-07-26-04 Added SDL_GetError()
 
-2015-07-26-05 skip:
+2015-07-26-05
     Merge pull request #133 from Pan7/SDL_bool
 
     SDL_FALSE/TRUE for SDL_SetWindowGrab
 
-2015-07-26-06 skip:
+2015-07-26-06
     Merge pull request #134 from Pan7/GammaCheck
 
     SDL_SetWindowGammaRamp check
 
-2015-07-26-07 skip:
+2015-07-26-07
     Merge pull request #135 from Pan7/SDL_Index
 
     SDL_GetWindowDisplayIndex check
 
-2015-07-26-08 skip:
+2015-07-26-08
     Merge pull request #136 from Pan7/SDL_NULL
 
     SDL_CreateWindow NULL check
 
-2015-07-26-09 skip (sdl2):  SDL_GetWindowDisplayIndex() check2
-2015-07-26-10 skip (sdl2):  SDL_GL_SetSwapInterval() check
+2015-07-26-09 SDL_GetWindowDisplayIndex() check2
+2015-07-26-10 SDL_GL_SetSwapInterval() check
 
-2015-07-26-11 skip:
+2015-07-26-11
     Merge pull request #92 from Pan7/curl_error
 
     qcurl_multi_add_handle error check
 
-2015-07-26-12 skip:
+2015-07-26-12
     Merge pull request #137 from Pan7/SDL_display
 
     SDL_GetWindowDisplayIndex() check2
 
-2015-07-26-13 skip:
+2015-07-26-13
     Merge pull request #138 from Pan7/SDL_Swap
 
     SDL_GL_SetSwapInterval() check
 
-2015-07-26-14 skip (missing file):  Fix 'Invalid architecture' message in make-macosx-app.sh
+2015-07-26-14 Fix 'Invalid architecture' message in make-macosx-app.sh
 
 2015-07-27-01 qcurl_multi_remove_handle check
 2015-07-27-02 qcurl_multi_strerror not curl_multi_strerror
 
-2015-07-28-01 skip:
+2015-07-28-01
     Merge pull request #140 from Pan7/qcurl_remove
 
     qcurl_multi_remove_handle check
@@ -4300,12 +4296,12 @@ the demo.
 
 2015-07-29-01 qcurl_multi_cleanup check
 
-2015-07-29-02 skip:
+2015-07-29-02
     Merge pull request #142 from Pan7/qcurl_warn
 
     qcurl_easy_setopt dev warning
 
-2015-07-29-03 skip:
+2015-07-29-03
     Merge pull request #143 from Pan7/qcurl_cleanup
 
     qcurl_multi_cleanup check
@@ -4313,23 +4309,23 @@ the demo.
 2015-07-29-04 Return the result from qcurl_easy_setopt_warn
 2015-07-29-05 Add missing qcurl handle cleanup
 
-2015-07-29-06 skip:
+2015-07-29-06
     Merge pull request #144 from Pan7/qurl_handle2
 
     Add missing qcurl handle cleanup
 
 2015-07-30-01 Fix va_list warning
 
-2015-07-30-01 skip:
+2015-07-30-01
     Merge pull request #145 from Pan7/va_list
 
     Fix va_list warning
 
 2015-07-30-02 Fix (unused) watertype checks in PM_WaterMove
 
-2015-08-18-01 skip:  Remove MSVC user configuation files
+2015-08-18-01 Remove MSVC user configuation files
 
-2015-08-18-02 skip:
+2015-08-18-02
     Ignore MSVC non-project files
 
     Ignore auto generated or user configuration for MSVC projects.
@@ -4337,14 +4333,14 @@ the demo.
 
     Patch by @shearer12345.
 
-2015-08-18-03 skip:  Update msvc10 renderer filenames (copied from msvc11)
-2015-08-18-04 skip (msvc):  Fix msvc11 x86_64 runtime
-2015-08-18-05 skip:  Fix mscv11 libcurl include path
-2015-08-18-06 skip:  Copy msvc11 build changes to msvc10
+2015-08-18-03 Update msvc10 renderer filenames (copied from msvc11)
+2015-08-18-04 Fix msvc11 x86_64 runtime
+2015-08-18-05 Fix mscv11 libcurl include path
+2015-08-18-06 Copy msvc11 build changes to msvc10
 
-2015-08-18-07 skip:  Make msvc10/11 use UseOfMfc false and CharacterSet "NotSet"
+2015-08-18-07 Make msvc10/11 use UseOfMfc false and CharacterSet "NotSet"
 
-2015-08-18-08 skip:
+2015-08-18-08
     Update msvc10/11 for SDL2
 
     update AdditionalIncludeDirectories to use SDL2
@@ -4352,11 +4348,11 @@ the demo.
     add AdditionalLibraryDirectory to SDL2 libs
     set sub-system as console
 
-2015-08-18-09 skip:  add post-build event for msvc10/11 to copy SDL2.dll to build folder
+2015-08-18-09 add post-build event for msvc10/11 to copy SDL2.dll to build folder
 
-2015-08-18-10 skip:  Make msvc10/11 x86_64 copy SDL264.dll
+2015-08-18-10 Make msvc10/11 x86_64 copy SDL264.dll
 
-2015-08-19-01 skip:
+2015-08-19-01
     Update headers in VS (10 and 11) projects
 
     So VS doesn't always want to rebuild.
@@ -4370,11 +4366,11 @@ the demo.
 
     Can't find your pak0.pk3? Here's where we tried looking.
 
-2015-08-25-03 skip (not used):  Githalytics seems to have stopped being a thing.
+2015-08-25-03 Githalytics seems to have stopped being a thing.
 
-2015-08-25-04 skip:  Moving large chunks of README to wiki step 1
-2015-08-25-05 skip:  Point to the moved information
-2015-08-25-06 skip:  Removing more large chunks of outdated text
+2015-08-25-04 Moving large chunks of README to wiki step 1
+2015-08-25-05 Point to the moved information
+2015-08-25-06 Removing more large chunks of outdated text
 2015-08-25-07 Better language, less tense
 
 2015-09-07-01
@@ -4412,7 +4408,7 @@ the demo.
 
     Make add bots menu draw banner and background like remove bots menu.
 
-2015-09-17-01 skip:  Add Steam's Quake 3 Arena dir to game dirs on Windows.
+2015-09-17-01 Add Steam's Quake 3 Arena dir to game dirs on Windows.
 2015-09-18-02 Use correct array size for facets in cm_patch.c
 
 2015-09-20-01
@@ -4420,37 +4416,39 @@ the demo.
 
     Reported by Ensiform.
 
-2015-09-22-01 skip:  Align indent of defines at top of q_shared.h to 4 space tabs
+2015-09-22-01 Align indent of defines at top of q_shared.h to 4 space tabs
 
-2015-09-22-02 skip:  Make steam path optional at compile time for standalone games
+2015-09-22-02 Make steam path optional at compile time for standalone games
 
-2015-09-24-01 skip:  A mac dedicated server script
+2015-09-24-01 A mac dedicated server script
 
-2015-09-24-02 skip (mac ded script):  Fixed the os x path and now both scripts will take arguments
+2015-09-24-02 Fixed the os x path and now both scripts will take arguments
 
-2015-09-24-03 skip (mac ded script):  Don't quote me.
+2015-09-24-03 Don't quote me.
 
-2015-09-25-01 skip:  Search for mods in steam path as well as home and base paths.
+2015-09-25-01 Search for mods in steam path as well as home and base paths.
 
-2015-09-25-02 skip:
+2015-09-25-02
     Use Windows uninstall path to find Steam Quake 3 install.
     Thanks Pan- and Ensiform for pointing this out.
 
-2015-09-25-03 skip (curl stuff):  Effectively revert c2e146c
+2015-09-25-03 Effectively revert c2e146c
 
-2015-09-26-01 skip (curl stuff):  Now with less infinite recursion
-2015-09-26-02 skip:  Fix compiling on Windows without Steam path/appid
+2015-09-26-01 Now with less infinite recursion
+2015-09-26-02 Fix compiling on Windows without Steam path/appid
 
 2015-10-04-01 Fix check for empty rconpassword in CL_Rcon_f
 
 2015-09-28-01 Remove unused define MAC_EVENT_PUMP_MSEC
 
-2015-09-30-01 skip (not implemented):
+2015-09-30-01
     Maybe fix old MSYS when there is an empty for loop
 
     Based on ioquake3 svn r1485.
 
-2015-10-16-01 skip (image->flags not implemented):  Add support for uncompressed image upload flag to OpenGL1
+---- check ----
+
+2015-10-16-01 skip (rend2) (image->flags not implemented):  Add support for uncompressed image upload flag to OpenGL1
 
 2015-10-16-02
     Fix not swapping buffers because out of cmd buffer space
@@ -4471,7 +4469,7 @@ the demo.
 
 2015-10-17-01 Replace 4 with sizeof( int ) in R_GetCommandBufferReserved
 
-2015-12-02-01 skip (q3 steam):  Access 32-bit registry key from 64-bit Windows correctly.
+2015-12-02-01 Access 32-bit registry key from 64-bit Windows correctly.
 
 2015-12-02-02 skip (rend2):  OpenGL2: automatically load textures with a _s suffix as specular.
 
@@ -4513,7 +4511,7 @@ the demo.
 
     Have custom intro cinematics for standalone game
 
-2015-12-28-02 (need to check):
+2015-12-28-02
     Merge pull request #73 from Pan7/sayto
 
     sayto cmd with player name completion
@@ -4547,7 +4545,7 @@ the demo.
     Use Opus for VoIP [updated]
 
 2016-01-15-01 skip (rend2):  OpenGL2: Remove specular ambient.
-2016-01-15-02 skip (msvc12):  Add msvc12 project files.
+2016-01-15-02 Add msvc12 project files.
 
 2016-01-18-01 skip (rend2):  OpenGL2: Direct state access, part 1: Texture binds
 
@@ -4592,13 +4590,13 @@ the demo.
 
 2016-03-15-01 skip (rend2):  OpenGL2: Fix horribly broken metallic shader.
 
-2016-03-27-01 skip (not needed):  Sys_GetProcessorFeatures() didn't check for 3DNow! or Altivec.
+2016-03-27-01 Sys_GetProcessorFeatures() didn't check for 3DNow! or Altivec.
 
-2016-03-27-02 skip (not needed):  Fix typo of SDL_Has3DNow() in Sys_GetProcessorFeatures()
+2016-03-27-02 Fix typo of SDL_Has3DNow() in Sys_GetProcessorFeatures()
 
 2016-03-29-01 skip (rend2):  OpenGL2: Improve cubemap outside error.
 
-2016-04-04-01 skip (not implemented):
+2016-04-04-01
     Remove incorrect documentation from q3a.service
 
     rate, snaps, and cl_maxpackets cvars only affect client.
@@ -4607,7 +4605,7 @@ the demo.
 
 2016-04-05-02 skip (rend2):  OpenGL2: Some FBO cleanup, and add non-depth blur to blur shader.
 
-2016-05-08-01 skip (not implemented):
+2016-05-08-01
     Cross-compiling using mingw should only pick one gcc executable
 
     If multiple mingw toolchains are installed, the Makefile set CC to all
@@ -4616,7 +4614,7 @@ the demo.
 
     "CC: /usr/bin/i686-w64-mingw32-gcc /usr/bin/i686-pc-mingw32-gcc"
 
-2016-05-09-01 skip (not implemented):  Fix warnings that names passed to Name_PlayerNameCompletion is not const
+2016-05-09-01 Fix warnings that names passed to Name_PlayerNameCompletion is not const
 
 2016-05-09-02 skip (rend2):  OpenGL2: Fix specularScale override not being used in RB_IterateStagesGeneric
 
@@ -4648,13 +4646,13 @@ the demo.
 
 2016-05-23-02 Fix iamamonkey printing 'levels' instead of 'awards'
 
-2016-05-27-01 skip (not updated):
+2016-05-27-01
     Include SDL2 dll from repository in NSIS installer
 
     Before it required manually copying SDL 1.2 dll into misc/nsis/ which the
     engine no longer uses.
 
-2016-06-08-01 skip (ren2):  OpenGL2: Set cubemap mip selection to match output from ggxcc.
+2016-06-08-01 skip (rend2):  OpenGL2: Set cubemap mip selection to match output from ggxcc.
 
 2016-06-12-01
     Fix Makefile for OSX
@@ -4666,8 +4664,8 @@ the demo.
 
     Fix Makefile for OSX
 
-2016-06-15-01 skip (no git):  Add temporary backup text files to .gitignore
-2016-06-15-02 skip (no git):  Erroneously removed that line in .gitignore
+2016-06-15-01 Add temporary backup text files to .gitignore
+2016-06-15-02 Erroneously removed that line in .gitignore
 
 2016-06-10-01 skip (rend2):  OpenGL2: Remove loading (unused) glDrawBuffersARB
 
@@ -4693,9 +4691,9 @@ the demo.
 
 2016-02-04-01 Remove note that r_allowResize requires SDL backend
 
-2016-06-15-01 skip (com_logo):  Only play logo/intro if their filenames have been defined in q_shared.h
+2016-06-15-01 Only play logo/intro if their filenames have been defined in q_shared.h
 
-2016-06-15-02 skip (com_logo):  Missed this Cvar_Get() on com_introPlayed
+2016-06-15-02 Missed this Cvar_Get() on com_introPlayed
 
 2016-06-27-01 Fix typo of empty in ai_main.c
 
@@ -4739,13 +4737,15 @@ the demo.
 
 2016-07-25-01 skip (rend2):  OpenGL2: Require OpenGL 2.0
 
-2017-07-25-01 skip:  OpenGL2: Add new GL function loader.
+2017-07-25-01 skip (rend2):  OpenGL2: Add new GL function loader.
 
 2016-07-25-02 Remove 'abs(unsigned)', which is unnecessary and potentially wrong
 
+2016-07-26-02 [tools/asm/q3asm.c] Remove 'abs(unsigned)', which is unnecessary and potentially wrong
+
 2016-07-25-03 [botlib] Use floating point absolute value rather than truncate to integer
 
-2016-07-25-04 (merge):
+2016-07-25-04
     Merge pull request #195 from tkoeppe/intfix
 
     Fix signedness and float/int issues with abs()
@@ -4753,13 +4753,13 @@ the demo.
 2016-07-25-05 skip (rend2):  OpenGL2: Use loader for all extension funcs.
 2016-07-25-06 [null/null_glimp.c] Fix up bitrot in null impl
 
-2016-07-25-07 (merge):
+2016-07-25-07
     Merge pull request #197 from tkoeppe/null
 
     [null/null_glimp.c] Fix bitrot in null impl
 
-2017-07-26-01 skip:  Remove dead variables
-2017-07-26-02 skip:  Fix some typos in comments
+2017-07-26-01 Remove dead variables
+2017-07-26-02 Fix some typos in comments
 
 2016-07-28-01 skip (rend2):  OpenGL2: Fix GL_EXT_direct_state_access function names.
 
@@ -4772,7 +4772,7 @@ the demo.
 
     These changed from SDL1->SDL2 afaict.
 
-2016-08-05-02 skip (sdl2):  Controller hot plug support.
+2016-08-05-02 Controller hot plug support.
 
 2016-08-05-03
     Minor updates to README.md
@@ -4782,30 +4782,30 @@ the demo.
     wiki, updated reference to SDL.
     Zardoz speaks to you, His chosen ones.
 
-2016-08-08-01 skip (sdl2):  Better gamepad support.
-2016-08-08-02 skip (prev sdl2 patch):  Fix stricmp usage in previous commit.
-2016-08-08-03 skip (file not included):  Minor URL change.
+2016-08-08-01 Better gamepad support.
+2016-08-08-02 Fix stricmp usage in previous commit.
+2016-08-08-03 Minor URL change.
 
-2016-08-11-01 skip (sdl2):  Fix black screen when in_joystick disabled but controller connected.
+2016-08-11-01 Fix black screen when in_joystick disabled but controller connected.
 
 2016-08-15-01 skip (rend2):  OpenGL2: Preallocate grid surfaces like other BSP surfaces.
 
 2016-08-15-02 skip (rend2):  Missing bit of previous commit.
-2016-08-15-03 skip (sdl2):  Update SDL2 to 2.0.4
+2016-08-15-03 Update SDL2 to 2.0.4
 
-2016-08-16-01 skip (merge):
+2016-08-16-01
     Merge pull request #207 from MAN-AT-ARMS/sdl204
 
     Update SDL2 to 2.0.4
 
-2016-08-16-02 skip (sdl2):  Add stripped SDL2 reference dll's to repo
+2016-08-16-02 Add stripped SDL2 reference dll's to repo
 
-2016-08-16-03 skip (merge):
+2016-08-16-03
     Merge pull request #212 from MAN-AT-ARMS/sdl204-stripped
 
     Add stripped SLD2 reference dll's to repo
 
-2016-08-16-04 skip (sdl2):  Fix joystick w/o controller mapping not working with SDL update.
+2016-08-16-04 Fix joystick w/o controller mapping not working with SDL update.
 
 2016-08-23-01 [game/ai_main.c] Use floating-point fabs() for floating-point values
 
@@ -4831,27 +4831,27 @@ the demo.
 
 2016-09-12-01 [qcommon/msg.c] Remove dead code (which had undefined behaviour)
 
-2016-09-12-02 skip (merge):
+2016-09-12-02
     Merge pull request #220 from tkoeppe/shift
 
     [qcommon/msg.c] Remove dead code
 
 2016-09-13-01 skip (rend2):  OpenGL2: Fix more reversed VectorCopy4() usage.
 
-2016-09-13-02 skip (merge):
+2016-09-13-02
     Merge pull request #216 from tkoeppe/abs
 
     [renderergl2/tr_main.c] Use floating-point fabsf() for floating-point values
 
 2016-09-13-03 [code/botlib/l_precomp.c] Fix string buffer overflow
 
-2016-09-13-04 skip (merge):
+2016-09-13-04
     Merge pull request #221 from tkoeppe/strncpy
 
     [code/botlib/l_precomp.c] Fix string buffer overflow
 
-2016-09-14-01 skip (rend2):  OpenGL2:
-    Remove map color scaling and r_forceSunMapLightScale.
+2016-09-14-01 skip (rend2):
+    OpenGL2: Remove map color scaling and r_forceSunMapLightScale.
 
     Also simplify overbright code in ComputeShaderColors().
 
@@ -4932,22 +4932,22 @@ the demo.
     foundPlayerServerAddresses, so it was fine; but it's better to make
     it obvious that we are using the right array sizes.
 
-2016-09-27-01 skip (merge):
+2016-09-27-01
     Merge pull request #223 from smcv/seperating
 
     Fix mis-spellings of "separating" as "seperating"
 
-2016-09-27-02 skip (merge):
+2016-09-27-02
     Merge pull request #224 from smcv/notshlib
 
     Introduce NOTSHLIBLDFLAGS, used to link executables only
 
-2016-09-27-03 skip (merge):
+2016-09-27-03
     Merge pull request #225 from smcv/reproducible-date
 
     Pick up date from SOURCE_DATE_EPOCH, for reproducible builds
 
-2016-09-27-03 skip (merge):
+2016-09-27-03
     Merge pull request #226 from smcv/underflow
 
     Fix array underflow compiler warnings
@@ -4959,7 +4959,7 @@ the demo.
 
     issue: https://github.com/ioquake/ioq3/issues/106
 
-2016-10-09-02 skip:
+2016-10-09-02
     Offer post-crash safe settings on a per-mod basis
 
     Offer to restore settings when loading a mod that crashed, not the first
@@ -4977,7 +4977,7 @@ the demo.
 
 2016-10-09-03 Avoid shuting down opus voip codec multiple times
 
-2016-10-09-04 skip (skip prev commits):
+2016-10-09-04
     Handle ERR_DROP during Com_GameRestart
 
     If ERR_DROP during Com_GameRestart after shutting down client, Com_Error
@@ -5017,7 +5017,7 @@ the demo.
 
 2016-10-27-03 skip (rend2):  OpenGL2: Add more ambient to lightmapped materials.
 
-2016-10-27-04 skip (no pidfile):  Fix removing/creating PID file for base game when switching to/from mods
+2016-10-27-04 Fix removing/creating PID file for base game when switching to/from mods
 
 2016-09-29-01
     Avoid 'register' declarations
@@ -5038,9 +5038,9 @@ the demo.
     assembler (because I'm not 100% confident that it doesn't have
     some practical use there).
 
-2016-11-01-01 skip (no mingw_prefixes):  Prefer mingw-w64 for cross-compiling
+2016-11-01-01 Prefer mingw-w64 for cross-compiling
 
-2016-11-01-02 skip (file not updated):
+2016-11-01-02
     Allow overriding platform in NSIS installer
 
     MSYS2 and some mingw builds use mingw64 instead of mingw32. If you run
@@ -5068,7 +5068,7 @@ the demo.
 
     Also use qglCopyTextureSubImage2DEXT instead of qglCopyTextureImage2DEXT.
 
-2016-12-10-01 skip (sdl2):  GLimp_HaveExtension() -> SDL_GL_ExtensionSupported()
+2016-12-10-01 GLimp_HaveExtension() -> SDL_GL_ExtensionSupported()
 
 2016-12-12-01 skip (rend2):  OpenGL2: Fix bug in generating normal maps for non-square textures.
 
@@ -5077,27 +5077,27 @@ the demo.
 
     https://github.com/ioquake/ioq3/issues/246
 
-2017-01-25-01 skip (merge):
+2017-01-25-01
     Merge pull request #227 from smcv/old-style-declaration
 
     Don't use mostly obsolete 'register' keyword (Merge or get off the pot.)
 
-2017-01-25-02 skip (merge):
+2017-01-25-02
     Merge pull request #91 from lnussel/master
 
     a VM for ARMv7l (Thank you, Ludwig -zjs)
 
-2017-01-25-03 skip (merge):
+2017-01-25-03
     Merge pull request #99 from openmoh/ioq3-SSE-msg
 
     rephrase SSE availability message (thanks)
 
-2017-01-25-04 skip (merge):
+2017-01-25-04
     Merge pull request #230 from fmwviormv/patch-1
 
     reset samplefrac to 8-bits, to prevent overflow
 
-2017-01-25-05 skip (sdl2):
+2017-01-25-05
     Correct test for GL_EXT_texture_env_add support
 
     The test string is missing the initial "GL_" so it is always failing the test even when supported on newer hardware.
@@ -5107,12 +5107,12 @@ the demo.
 
     Original patch by https://github.com/inolen in https://github.com/ioquake/ioq3/pull/36
 
-2017-02-01-01 skip:
+2017-02-01-01
     Redundant #ifndef MISSIONPACK block
 
     MISSIONPACK define is already required for this file or else it triggers an #error at the top of the file - removing redundant test that will never occur.
 
-2017-02-02-01 skip:  ...too much MISSIONPACK ifdeffery.
+2017-02-02-01 ...too much MISSIONPACK ifdeffery.
 
 2017-02-19-01
     Fix source filename/includepath length in l_precomp.c
@@ -5142,7 +5142,7 @@ the demo.
 
     Found in RTCW SP.
 
-2017-03-12-01 skip:
+2017-03-12-01
     Don't include (mission)pak_checksums in standalone build
 
     Avoids a compiler warning
@@ -5151,7 +5151,7 @@ the demo.
 
 2017-03-13-02 Don't open .pk3 files as OpenAL drivers.
 
-2017-03-13-03 skip (use condump cgameboot.log):
+2017-03-13-03
     Merge some file writing extension checks from OpenJK.
 
     Thanks Ensiform.
@@ -5164,14 +5164,14 @@ the demo.
     Functionally the same as FS_Read().
     Streaming functionality was removed in https://github.com/ioquake/ioq3/commit/672cfbf16f83fb67f6ce9bb1d3571dc32a5b3083 but flag remained.
 
-2017-03-23-01 skip (not applicable):  Makefile: using generic windres if specific one is not present in mingw patform
+2017-03-23-01 Makefile: using generic windres if specific one is not present in mingw patform
 
-2017-03-23-02 skip (merge):
+2017-03-23-02
     Merge pull request #277 from em92/master
 
     Fallback to generic a windres if a cross compiler one cannot be found
 
-2017-03-27-01 skip (previous patch not applied):
+2017-03-27-01
     Fill in filename in Com_WriteConfig_f() before checking extension.
 
     Thanks BartoCH for pointing out.
@@ -5179,7 +5179,7 @@ the demo.
 2017-03-27-02 Do not pull CFLAGS into BASE_CFLAGS on FreeBSD
 2017-03-27-03 Use -On level from CFLAGS on FreeBSD
 
-2017-03-28-01 skip (merge):
+2017-03-28-01
     Merge pull request #279 from lonkamikaze/freebsd-build
 
     Freebsd build
@@ -5194,15 +5194,15 @@ the demo.
         cd ioq3
         make USE_GIT=1
 
-2017-03-30-02 skip (merge):
+2017-03-30-02
     Merge pull request #282 from h3xx/fix-git-dependency
 
     Fix build when cloned as submodule
 
-2017-04-07-01 skip (not implemented):  Add missing RegCloseKey to Sys_SteamPath
-2017-04-07-02 skip (check):  Detect GOG install path
+2017-04-07-01 Add missing RegCloseKey to Sys_SteamPath
+2017-04-07-02 Detect GOG install path
 
-2017-04-07-03 skip (merge):
+2017-04-07-03
     Merge pull request #286 from maxcrofts/install-path
 
     Update install path detection
@@ -5256,9 +5256,9 @@ the demo.
 
     Remove support for draw range elements, multi draw arrays, world vao creation, surface merging.
 
-2017-05-23-01 skip (still using speex for demo playback):  Remove libspeex from README
+2017-05-23-01 no (still using speex for demo playback):  Remove libspeex from README
 
-2017-05-23-02 skip (still using speex for demo playback):  Remove unused libspeex
+2017-05-23-02 no (still using speex for demo playback):  Remove unused libspeex
 
 2017-05-23-03 Update libogg from 1.3.1 to 1.3.2
 
@@ -5280,13 +5280,13 @@ the demo.
 
 2017-05-24-01 Fix compiling when KEY_WOW64_32KEY is missing from system headers
 
-2017-05-24-02 skip (partial dll loading different):
+2017-05-24-02
     Don't load libraries with non-standard file extensions
 
     Also don't allow writting files ending in a library extension such
     as ".so.0" or ".dylib.0".
 
-2017-05-24-03 skip (dll loading):
+2017-05-24-03
     Check for truncated paths in Sys_LoadDll
 
     Check for truncated paths which could allow loading a library with
@@ -5331,7 +5331,7 @@ the demo.
 
     ...too much MISSIONPACK ifdeffery.
 
-2017-05-24-10 skip (mac os x build):
+2017-05-24-10
     Fix compiling Mac OS 10.5 Universal App Bundle
 
     Need to be able to specify minimum Mac OS X version outside of the
@@ -5340,12 +5340,12 @@ the demo.
     Moved -arch x86_64 from OPTIMIZEVM to CFLAGS to fix linker errors
     (previously make-macosx-ub.sh passed it to CFLAGS manually).
 
-2017-05-25-01 skip (qvm):
+2017-05-25-01
     Allow unaligned load/store in QVM interpreter/x86 compiler
      constructions like (dataMask & ~3) was used to protect against out-of-bound load/store when address is 4-byte closer to dataMask
      but at the same time it effectively cut low address bits for ALL load/store operations which is totally wrong in terms of conformance to ALLOWED (i.e. generated by q3lcc from C sources) low-level operations like packed binary data parsing
 
-2017-05-25-02 skip (previous qvm):  Fix comment
+2017-05-25-02 Fix comment
 
 2017-05-25-03 skip (autoupdate):  Initial shot at writing an ioquake3 autoupdater.
 
@@ -5353,7 +5353,7 @@ the demo.
 
 2017-05-25-05 skip (autoupdate):  Removed extraneous '\' in Makefile in autoupdater source file list.
 
-2017-05-26-01 skip (dll loading):  Fix dllHandle possibly being uninitialized in Sys_LoadDll
+2017-05-26-01 Fix dllHandle possibly being uninitialized in Sys_LoadDll
 
 2017-05-29-01 Fix compiling debug code for writing VoIP data
 
@@ -5533,14 +5533,14 @@ the demo.
     new .menu UI. But since it didn't happen, go ahead and use the Q3
     tournament scoreboard.
 
-2017-06-02-12 skip (done):
+2017-06-02-12
     Draw disconnect icon over lagometer in Team Arena too
 
     The blinking disconnect icon is drawn over lagometer in Q3.
     Team Arena moved the lagometer location. Now let's draw the
     disconnect icon over lagometer in Team Arena too!
 
-2017-06-03-01 skip (autoupdate):
+2017-06-03-01
     Merge pull request #290 from rcgordon/autoupdater
 
     Initial shot at writing an ioquake3 autoupdater. Thank you icculus, and everyone who contributed to his patreon! https://www.patreon.com/icculus
@@ -5559,7 +5559,7 @@ the demo.
     mods are involved or config is reset. Let's check the server
     cache's internet server count directly.
 
-2017-06-03-05 skip (partial, mouse wheel already acts like arrow up/down, added to ui/ui_shared.c with this patch)
+2017-06-03-05 no (partial, mouse wheel already acts like arrow up/down, added to ui/ui_shared.c with this patch)
     Add mouse wheel support to UI list boxes
 
     Allows scrolling server browser list and some other lists.
@@ -5622,3 +5622,5 @@ the demo.
 2017-06-04-10 skip (autoupdate):  Use "x86_64" and not "x86-64" like everything else in ioq3.
 
 2017-06-04-11 skip (autoupdate):  Removed unnecessary trailing backslash.
+
+---- sync 2017-08-17 ----

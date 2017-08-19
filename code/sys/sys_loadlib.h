@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #		define Sys_LoadFunction(h,fn) (void*)GetProcAddress((HMODULE)h,fn)
 #		define Sys_LibraryError() "unknown"
 #	else
-#	ifndef _GNU_SOURCE
+#	ifndef _GNU_SOURCE  // wolfcam Linux backtracing
 #   	define _GNU_SOURCE
 #	endif
 #	include <dlfcn.h>
@@ -38,7 +38,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #		define Sys_LibraryError() dlerror()
 #	endif
 #else
-#	ifndef _GNU_SOURCE
+#	ifndef _GNU_SOURCE  // wolfcam Linux backtracing
 #   	define _GNU_SOURCE
 #	endif
 #	ifdef USE_LOCAL_HEADERS

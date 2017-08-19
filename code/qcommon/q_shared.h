@@ -31,29 +31,33 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SERVER_PROTOCOL 91  // devmap
 
 #ifdef STANDALONE
-  #define PRODUCT_NAME			"iofoo3"
-  #define BASEGAME			"foobar"
-  #define CLIENT_WINDOW_TITLE     	"changeme"
-  #define CLIENT_WINDOW_MIN_TITLE 	"changeme2"
-  #define HOMEPATH_NAME_UNIX	".foo"
-  #define HOMEPATH_NAME_WIN		"FooBar"
-  #define HOMEPATH_NAME_MACOSX	HOMEPATH_NAME_WIN
+  #define PRODUCT_NAME				"iofoo3"
+  #define BASEGAME					"foobar"
+  #define CLIENT_WINDOW_TITLE   	"changeme"
+  #define CLIENT_WINDOW_MIN_TITLE	"changeme2"
+  #define HOMEPATH_NAME_UNIX		".foo"
+  #define HOMEPATH_NAME_WIN			"FooBar"
+  #define HOMEPATH_NAME_MACOSX		HOMEPATH_NAME_WIN
+//  #define STEAMPATH_NAME			"Foo Bar"
+//  #define STEAMPATH_APPID			""
+  #define GAMENAME_FOR_MASTER		"foobar"	// must NOT contain whitespace
   #define CINEMATICS_LOGO		"foologo.roq"
   #define CINEMATICS_INTRO		"intro.roq"
-#define GAMENAME_FOR_MASTER	"foobar"		// must NOT contain whitespace
 //  #define LEGACY_PROTOCOL		// You probably don't need this for your standalone game
 #else
-  #define PRODUCT_NAME			"wolfcamql"
-  #define BASEGAME			"baseq3"
-  #define BASETA                          "missionpack"
-  #define CLIENT_WINDOW_TITLE     	"wolfcam quakelive demo player"
-  #define CLIENT_WINDOW_MIN_TITLE 	"wolfcamql"
-  #define HOMEPATH_NAME_UNIX	".wolfcamql"
-  #define HOMEPATH_NAME_WIN		"Wolfcamql"
-  #define HOMEPATH_NAME_MACOSX	HOMEPATH_NAME_WIN
-  #define GAMENAME_FOR_MASTER	"WolfcamqlGame"
-  #define CINEMATICS_LOGO		"idlogo.RoQ"
-  #define CINEMATICS_INTRO		"intro.RoQ"
+  #define PRODUCT_NAME				"wolfcamql"
+  #define BASEGAME					"baseq3"
+  #define CLIENT_WINDOW_TITLE		"wolfcam quakelive demo player"
+  #define CLIENT_WINDOW_MIN_TITLE	"wolfcamql"
+  #define HOMEPATH_NAME_UNIX		".wolfcamql"
+  #define HOMEPATH_NAME_WIN			"Wolfcamql"
+  #define HOMEPATH_NAME_MACOSX		HOMEPATH_NAME_WIN
+  #define STEAMPATH_NAME			"Quake Live"  // "Quake 3 Arena"
+  #define STEAMPATH_APPID			"2200"
+  #define GOGPATH_ID				"1441704920"
+  #define GAMENAME_FOR_MASTER		"WolfcamqlGame"
+  #define CINEMATICS_LOGO			"idlogo.RoQ"
+  #define CINEMATICS_INTRO			"intro.RoQ"
   #define LEGACY_PROTOCOL
 #endif
 
@@ -64,6 +68,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // You shouldn't change this unless you know what you're doing
 #define LEGACY_MASTER_GAMENAME         "Quake3Arena"
 #define LEGACY_HEARTBEAT_FOR_MASTER    "QuakeArena-1"
+
+#define BASETA			"missionpack"
 
 #ifndef PRODUCT_VERSION
   #define PRODUCT_VERSION "1.36"
@@ -105,7 +111,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #pragma warning(disable : 4220)		// varargs matches remaining parameters
 //#pragma intrinsic( memset, memcpy )
 #endif
-
 
 //Ignore __attribute__ on non-gcc platforms
 #ifndef __GNUC__
@@ -232,7 +237,6 @@ typedef int		clipHandle_t;
 
 #define PADP(base, alignment)   ((void *) PAD((intptr_t) (base), (alignment)))
 
-
 #ifdef __GNUC__
 #define QALIGN(x) __attribute__((aligned(x)))
 #else
@@ -246,7 +250,7 @@ typedef int		clipHandle_t;
 #define	MAX_QINT			0x7fffffff
 #define	MIN_QINT			(-MAX_QINT-1)
 
-#define ARRAY_LEN(x)                    (sizeof(x) / sizeof(*x))
+#define ARRAY_LEN(x)                   (sizeof(x) / sizeof(*(x)))
 #define STRARRAY_LEN(x)                      (ARRAY_LEN(x) - 1)
 
 #define SUBTIME_RESOLUTION ((double)1000000.0)
@@ -975,7 +979,7 @@ default values.
 #define CVAR_PROTECTED          0x2000  // prevent modifying this var from VMs or the server
 // These flags are only returned by the Cvar_Flags() function
 #define CVAR_MODIFIED			0x40000000	// Cvar was modified
-#define CVAR_NONEXISTENT		0X80000000	// Cvar doesn't exist.
+#define CVAR_NONEXISTENT       0x80000000      // Cvar doesn't exist.
 
 // nothing outside the Cvar_*() functions should modify these fields!
 typedef struct cvar_s cvar_t;

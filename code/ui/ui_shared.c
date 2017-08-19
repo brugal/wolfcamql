@@ -59,7 +59,6 @@ static scrollInfo_t scrollInfo;
 
 static void (*captureFunc) (void *p) = 0;
 static void *captureData = NULL;
-
 static itemDef_t *itemCapture = NULL;   // item that has the mouse captured ( if any )
 
 displayContextDef_t *DC = NULL;
@@ -145,6 +144,8 @@ void UI_InitMemory( void ) {
 qboolean UI_OutOfMemory( void ) {
 	return outOfMemory;
 }
+
+
 
 
 
@@ -412,7 +413,7 @@ void LerpColor(vec4_t a, vec4_t b, vec4_t c, float t)
 Float_Parse
 =================
 */
-qboolean Float_Parse (char **p, float *f) {
+qboolean Float_Parse(char **p, float *f) {
 	char	*token;
 	token = COM_ParseExt(p, qfalse);
 	if (token && token[0] != 0) {
@@ -552,8 +553,7 @@ qboolean Int_Parse(char **p, int *i) {
 PC_Int_Parse
 =================
 */
-qboolean PC_Int_Parse (int handle, int *i)
-{
+qboolean PC_Int_Parse(int handle, int *i) {
 	pc_token_t token;
 	char *p;
 	char buf[MAX_TOKENLENGTH];
@@ -1030,7 +1030,7 @@ static void Fade(int *flags, float *f, float clamp, int *nextTime, int offsetTim
 
 static void Window_Paint(Window *w, float fadeAmount, float fadeClamp, float fadeCycle, int widescreen, rectDef_t menuRect) {
   //float bordersize = 0;
-  vec4_t color;
+  vec4_t color = {0};
   rectDef_t fillRect;
 
   if ( w == NULL ) {
@@ -1902,7 +1902,6 @@ static qboolean Item_EnableShowViaCvar(itemDef_t *item, int flag) {
   memset(script, 0, sizeof(script));
   if (item && item->enableCvar && *item->enableCvar && item->cvarTest && *item->cvarTest) {
 		char buff[1024];
-
 		DC->getCVarString(item->cvarTest, buff, sizeof(buff));
 
     Q_strcat(script, 1024, item->enableCvar);
@@ -5181,10 +5180,10 @@ void Menu_HandleMouseMove(menuDef_t *menu, float x, float y) {
 						}
 					}
 				}
-      } else if (menu->items[i]->window.flags & WINDOW_MOUSEOVER) {
-          Item_MouseLeave(menu->items[i]);
-          Item_SetMouseOver(menu->items[i], qfalse);
-      }
+			} else if (menu->items[i] && menu->items[i]->window.flags & WINDOW_MOUSEOVER) {
+				Item_MouseLeave(menu->items[i]);
+				Item_SetMouseOver(menu->items[i], qfalse);
+			}
     }
   }
 

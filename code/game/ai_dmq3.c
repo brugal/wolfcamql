@@ -141,10 +141,12 @@ BotTeam
 ==================
 */
 int BotTeam(bot_state_t *bs) {
+
 	if (bs->client < 0 || bs->client >= MAX_CLIENTS) {
 		//BotAI_Print(PRT_ERROR, "BotCTFTeam: client out of range\n");
 		return qfalse;
 	}
+
 	if (level.clients[bs->client].sess.sessionTeam == TEAM_RED) {
 		return TEAM_RED;
 	} else if (level.clients[bs->client].sess.sessionTeam == TEAM_BLUE) {
@@ -1486,7 +1488,7 @@ EasyClientName
 char *EasyClientName(int client, char *buf, int size) {
 	int i;
 	char *str1, *str2, *ptr, c;
-	char name[128];
+	char name[128] = {0};
 
 	ClientName(client, name, sizeof(name));
 
@@ -1824,10 +1826,8 @@ void BotUseKamikaze(bot_state_t *bs) {
 	//if the bot has no kamikaze
 	if (bs->inventory[INVENTORY_KAMIKAZE] <= 0)
 		return;
-
 	if (bs->kamikaze_time > FloatTime())
 		return;
-
 	bs->kamikaze_time = FloatTime() + 0.2;
 	if (gametype == GT_CTF) {
 		//never use kamikaze if the team flag carrier is visible
@@ -1939,9 +1939,7 @@ void BotUseInvulnerability(bot_state_t *bs) {
 
 	if (bs->invulnerability_time > FloatTime())
 		return;
-
 	bs->invulnerability_time = FloatTime() + 0.2;
-
 	if (gametype == GT_CTF) {
 		//never use kamikaze if the team flag carrier is visible
 		if (BotCTFCarryingFlag(bs))
@@ -2781,6 +2779,7 @@ BotSameTeam
 ==================
 */
 int BotSameTeam(bot_state_t *bs, int entnum) {
+
 	if (bs->client < 0 || bs->client >= MAX_CLIENTS) {
 		return qfalse;
 	}
@@ -2788,9 +2787,11 @@ int BotSameTeam(bot_state_t *bs, int entnum) {
 	if (entnum < 0 || entnum >= MAX_CLIENTS) {
 		return qfalse;
 	}
+
 	if ( gametype >= GT_TEAM ) {
 		if (level.clients[bs->client].sess.sessionTeam == level.clients[entnum].sess.sessionTeam) return qtrue;
 	}
+
 	return qfalse;
 }
 

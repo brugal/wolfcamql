@@ -49,6 +49,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static char homePath[ MAX_OSPATH ] = { 0 };
 static char QuakeLivePath[MAX_OSPATH] = { 0 };
 
+// Used to store the Steam Quake 3 installation path
+//static char steamPath[ MAX_OSPATH ] = { 0 };
+
+// Used to store the GOG Quake 3 installation path
+//static char gogPath[ MAX_OSPATH ] = { 0 };
+
 #ifndef DEDICATED
 static UINT timerResolution = 0;
 #endif
@@ -250,6 +256,102 @@ char *Sys_QuakeLiveDir (void)
 
 /*
 ================
+Sys_SteamPath
+================
+*/
+char *Sys_SteamPath( void )
+{
+#if 0  // using quake live
+
+#if defined(STEAMPATH_NAME) || defined(STEAMPATH_APPID)
+	HKEY steamRegKey;
+	DWORD pathLen = MAX_OSPATH;
+	qboolean finishPath = qfalse;
+
+#ifdef STEAMPATH_APPID
+	// Assuming Steam is a 32-bit app
+	if (!steamPath[0] && !RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Steam App " STEAMPATH_APPID, 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &steamRegKey))
+	{
+		pathLen = MAX_OSPATH;
+		if (RegQueryValueEx(steamRegKey, "InstallLocation", NULL, NULL, (LPBYTE)steamPath, &pathLen))
+			steamPath[0] = '\0';
+
+		RegCloseKey(steamRegKey);
+	}
+#endif
+
+#ifdef STEAMPATH_NAME
+	if (!steamPath[0] && !RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Steam", 0, KEY_QUERY_VALUE, &steamRegKey))
+	{
+		pathLen = MAX_OSPATH;
+		if (RegQueryValueEx(steamRegKey, "SteamPath", NULL, NULL, (LPBYTE)steamPath, &pathLen))
+			if (RegQueryValueEx(steamRegKey, "InstallPath", NULL, NULL, (LPBYTE)steamPath, &pathLen))
+				steamPath[0] = '\0';
+
+		if (steamPath[0])
+			finishPath = qtrue;
+
+		RegCloseKey(steamRegKey);
+	}
+#endif
+
+	if (steamPath[0])
+	{
+		if (pathLen == MAX_OSPATH)
+			pathLen--;
+
+		steamPath[pathLen] = '\0';
+
+		if (finishPath)
+			Q_strcat(steamPath, MAX_OSPATH, "\\SteamApps\\common\\" STEAMPATH_NAME );
+	}
+#endif
+
+#endif
+
+	return "";
+}
+
+/*
+================
+Sys_GogPath
+================
+*/
+char *Sys_GogPath( void )
+{
+#if 0  // disabled
+
+#ifdef GOGPATH_ID
+	HKEY gogRegKey;
+	DWORD pathLen = MAX_OSPATH;
+
+	if (!gogPath[0] && !RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\GOG.com\\Games\\" GOGPATH_ID, 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &gogRegKey))
+	{
+		pathLen = MAX_OSPATH;
+		if (RegQueryValueEx(gogRegKey, "PATH", NULL, NULL, (LPBYTE)gogPath, &pathLen))
+			gogPath[0] = '\0';
+
+		RegCloseKey(gogRegKey);
+	}
+
+	if (gogPath[0])
+	{
+		if (pathLen == MAX_OSPATH)
+			pathLen--;
+
+		gogPath[pathLen] = '\0';
+	}
+#endif
+
+	return gogPath;
+
+#endif
+
+	return "";
+}
+
+/*
+================
 Sys_Milliseconds
 ================
 */
@@ -312,6 +414,8 @@ char *Sys_GetCurrentUser( void )
 	return s_userName;
 }
 
+////
+#if 0
 /*
 ================
 Sys_GetClipboardData
@@ -388,6 +492,9 @@ char *Sys_GetClipboardData( void )
 	}
 	return data;
 }
+#endif
+////////////
+
 
 #define MEM_THRESHOLD 96*1024*1024
 
@@ -866,8 +973,8 @@ static HANDLE HStdout = INVALID_HANDLE_VALUE;
 static CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
 static qboolean GotHandle = qfalse;
 
-typedef BOOL (*SetProcessDPIAwareFunc)(void);
-typedef HRESULT (*SetProcessDpiAwarenessFunc)(int);
+typedef BOOL WINAPI (*SetProcessDPIAwareFunc)(void);
+typedef HRESULT WINAPI (*SetProcessDpiAwarenessFunc)(int);
 
 /*
 ==============
@@ -901,6 +1008,8 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 	// manifest would allow reporting of the correct OSVERSIONINFO.
 	// It is suggested to call *DpiAware* functions as early as possible.
 	if (useDpiAware) {
+		//FIXME this crashes with SDL >= 2.0.2   ?
+#if 1
 		shcore = LoadLibrary("shcore.dll");
 		if (shcore == NULL) {
 			//FIXME printing
@@ -924,7 +1033,7 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 
 			FreeLibrary(shcore);
 		}
-
+#endif
 		if (!setDpiAware) {
 			// try SetProcessDPIAware()
 			user32 = LoadLibrary("user32.dll");
@@ -1180,12 +1289,10 @@ Sys_PlatformExit
 Windows specific initialisation
 ==============
 */
-
-
-void Sys_PlatformExit (void)
+void Sys_PlatformExit( void )
 {
 #ifndef DEDICATED
-	if (timerResolution)
+	if(timerResolution)
 		timeEndPeriod(timerResolution);
 #endif
 
@@ -1565,8 +1672,6 @@ popenData_t *Sys_PopenAsync (const char *command)
 	}
 
 
-
-	
 	// create child process
 
 	// testing
@@ -1611,11 +1716,11 @@ popenData_t *Sys_PopenAsync (const char *command)
 
 	//CloseHandle(pw->piProcInfo.hProcess);
 	//CloseHandle(pw->piProcInfo.hThread);
-	
+
 	//Sys_Sleep(15000);
 	CloseHandle(pw->hChildStdOutW);
 	CloseHandle(pw->hChildStdInW);
-	
+
 	pw->readMutex = CreateMutex(NULL, FALSE, NULL);
 	if (pw->readMutex == NULL) {
 		Com_Printf("^1%s couldn't create mutex %ld\n", __FUNCTION__, GetLastError());
@@ -1861,7 +1966,7 @@ qboolean Sys_PopenIsDone (popenData_t *p)
 
 const char *Sys_GetSteamCmd (void)
 {
-	const char *s;
+	static const char *s;
 
 	s = Cvar_VariableString("fs_steamcmd");
 

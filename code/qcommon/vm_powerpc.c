@@ -47,7 +47,6 @@ static clock_t time_total_vm = 0;
 /* exit() won't be called but use it because it is marked with noreturn */
 #define DIE( reason ) Com_Error( ERR_DROP, "vm_powerpc compiler error: " reason )
 
-
 /*
  * vm_powerpc uses large quantities of memory during compilation,
  * Z_Malloc memory may not be enough for some big qvm files

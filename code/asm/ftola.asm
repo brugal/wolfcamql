@@ -24,7 +24,6 @@
 IFNDEF idx64
 .686p
 .xmm
-
 .model flat, c
 ENDIF
 

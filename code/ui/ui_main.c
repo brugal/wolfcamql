@@ -43,7 +43,7 @@ static const char *skillLevels[] = {
   "Nightmare"
 };
 
-static const int numSkillLevels = ARRAY_LEN(skillLevels);
+static const int numSkillLevels = ARRAY_LEN( skillLevels );
 
 
 #define UIAS_LOCAL                             0
@@ -77,6 +77,7 @@ static const serverFilter_t serverFilters[] = {
 
 static const int numServerFilters = ARRAY_LEN( serverFilters );
 
+
 static const char *teamArenaGameTypes[] = {
 	"FFA",
 	"TOURNAMENT",
@@ -95,10 +96,11 @@ static const char *teamArenaGameTypes[] = {
 
 static int const numTeamArenaGameTypes = ARRAY_LEN( teamArenaGameTypes );
 
+
 static char* netnames[] = {
 	"???",
 	"UDP",
-	"UDP6",
+	"UDP6"
 };
 
 #ifndef MISSIONPACK
@@ -2272,6 +2274,7 @@ static qboolean UI_Handicap_HandleKey(int flags, float *special, int key) {
 	int select = UI_SelectForKey(key);
 	if (select != 0) {
 		int h;
+
 		h = Com_Clamp( 5, 100, trap_Cvar_VariableValue("handicap") );
 		h += 5 * select;
 
@@ -2280,6 +2283,7 @@ static qboolean UI_Handicap_HandleKey(int flags, float *special, int key) {
 		} else if (h < 5) {
 			h = 100;
 		}
+
 		trap_Cvar_SetValue( "handicap", h );
 		return qtrue;
   }
@@ -2322,6 +2326,7 @@ static qboolean UI_ClanName_HandleKey(int flags, float *special, int key) {
 		} else if (i < 0) {
 			i = uiInfo.teamCount - 1;
 		}
+
 		trap_Cvar_Set( "ui_teamName", uiInfo.teamList[i].teamName);
 		UI_HeadCountByTeam();
 		UI_FeederSelection(FEEDER_HEADS, 0);
@@ -2364,7 +2369,7 @@ static qboolean UI_GameType_HandleKey(int flags, float *special, int key, qboole
 		UI_SetCapFragLimits(qtrue);
 		UI_LoadBestScores(uiInfo.mapList[ui_currentMap.integer].mapLoadName, uiInfo.gameTypes[ui_gameType.integer].gtEnum);
 		if (resetMap && oldCount != UI_MapCountByGameType(qtrue)) {
-			trap_Cvar_SetValue( "ui_currentMap", 0 );
+			trap_Cvar_SetValue( "ui_currentMap", 0);
 			Menu_SetFeederSelection(NULL, FEEDER_MAPS, 0, NULL);
 		}
 		return qtrue;
@@ -2383,9 +2388,9 @@ static qboolean UI_NetGameType_HandleKey(int flags, float *special, int key) {
 			ui_netGameType.integer = 0;
 		}
 
-		trap_Cvar_SetValue( "ui_netGameType", ui_netGameType.integer );
-		trap_Cvar_SetValue( "ui_actualnetGameType", uiInfo.gameTypes[ui_netGameType.integer].gtEnum );
-		trap_Cvar_SetValue( "ui_currentNetMap", 0 );
+		trap_Cvar_SetValue( "ui_netGameType", ui_netGameType.integer);
+		trap_Cvar_SetValue( "ui_actualnetGameType", uiInfo.gameTypes[ui_netGameType.integer].gtEnum);
+		trap_Cvar_SetValue( "ui_currentNetMap", 0);
 		UI_MapCountByGameType(qfalse);
 		Menu_SetFeederSelection(NULL, FEEDER_ALLMAPS, 0, NULL);
 		return qtrue;
@@ -2404,7 +2409,7 @@ static qboolean UI_JoinGameType_HandleKey(int flags, float *special, int key) {
 			ui_joinGameType.integer = 0;
 		}
 
-		trap_Cvar_SetValue( "ui_joinGameType", ui_joinGameType.integer );
+		trap_Cvar_SetValue( "ui_joinGameType", ui_joinGameType.integer);
 		UI_BuildServerDisplayList(qtrue);
 		return qtrue;
 	}
@@ -2436,6 +2441,7 @@ static qboolean UI_TeamName_HandleKey(int flags, float *special, int key, qboole
 	int select = UI_SelectForKey(key);
 	if (select != 0) {
 		int i;
+
 		i = UI_TeamIndexFromName(UI_Cvar_VariableString((blue) ? "ui_blueTeam" : "ui_redTeam"));
 		i += select;
 
@@ -2446,7 +2452,6 @@ static qboolean UI_TeamName_HandleKey(int flags, float *special, int key, qboole
 		}
 
 		trap_Cvar_Set( (blue) ? "ui_blueTeam" : "ui_redTeam", uiInfo.teamList[i].teamName);
-
 		return qtrue;
 	}
 	return qfalse;
@@ -2488,7 +2493,7 @@ static qboolean UI_NetSource_HandleKey(int flags, float *special, int key) {
 	if (select != 0) {
 		ui_netSource.integer += select;
 
-		if (ui_netSource.integer >= UIAS_GLOBAL1 && ui_netSource.integer <= UIAS_GLOBAL5)
+		if(ui_netSource.integer >= UIAS_GLOBAL1 && ui_netSource.integer <= UIAS_GLOBAL5)
 		{
 			char masterstr[2], cvarname[sizeof("sv_master1")];
 
@@ -2511,7 +2516,7 @@ static qboolean UI_NetSource_HandleKey(int flags, float *special, int key) {
 
 		UI_BuildServerDisplayList(qtrue);
 		UI_StartServerRefresh(qtrue, qfalse);
-		trap_Cvar_SetValue( "ui_netSource", ui_netSource.integer );
+		trap_Cvar_SetValue( "ui_netSource", ui_netSource.integer);
 		return qtrue;
 	}
 	return qfalse;
@@ -2639,7 +2644,7 @@ static qboolean UI_SelectedPlayer_HandleKey(int flags, float *special, int key) 
 		} else {
 		 	trap_Cvar_Set( "cg_selectedPlayerName", uiInfo.teamNames[selected]);
 		}
-	 	trap_Cvar_SetValue( "cg_selectedPlayer", selected );
+	 	trap_Cvar_SetValue( "cg_selectedPlayer", selected);
 	}
 	return qfalse;
 }
@@ -2768,7 +2773,7 @@ static void UI_StartSinglePlayer(void) {
 	}
 
  	trap_Cvar_SetValue( "singleplayer", 1 );
- 	trap_Cvar_SetValue( "g_gametype", Com_Clamp( 0, GT_MAX_GAME_TYPE - 1, tierList[i].gameTypes[j] ) );
+ 	trap_Cvar_SetValue( "g_gametype", Com_Clamp( 0, GT_MAX_GAME_TYPE-1, tierList[i].gameTypes[j] ) );
 	trap_Cmd_ExecuteText( EXEC_APPEND, va( "wait ; wait ; map %s\n", tierList[i].maps[j] ) );
 	skill = trap_Cvar_VariableValue( "g_spSkill" );
 
@@ -2878,7 +2883,6 @@ static void UI_LoadMovies( void ) {
 	}
 
 }
-
 
 
 /*
@@ -3152,7 +3156,7 @@ static void UI_RunMenuScript(char **args) {
 			trap_Cvar_Set("cg_cameraOrbit", "0");
 			trap_Cvar_Set("ui_singlePlayerActive", "0");
 			trap_Cvar_SetValue( "dedicated", Com_Clamp( 0, 2, ui_dedicated.integer ) );
-			trap_Cvar_SetValue( "g_gametype", Com_Clamp( 0, GT_MAX_GAME_TYPE - 1, uiInfo.gameTypes[ui_netGameType.integer].gtEnum ) );
+			trap_Cvar_SetValue( "g_gametype", Com_Clamp( 0, GT_MAX_GAME_TYPE-1, uiInfo.gameTypes[ui_netGameType.integer].gtEnum ) );
 			trap_Cvar_Set("g_redTeam", UI_Cvar_VariableString("ui_teamName"));
 			trap_Cvar_Set("g_blueTeam", UI_Cvar_VariableString("ui_opponentName"));
 			trap_Cmd_ExecuteText( EXEC_APPEND, va( "wait ; wait ; map %s\n", uiInfo.mapList[ui_currentNetMap.integer].mapLoadName ) );
@@ -3214,7 +3218,9 @@ static void UI_RunMenuScript(char **args) {
 			trap_Cmd_ExecuteText(EXEC_APPEND, "exec defaultwolfcam.cfg\n");
 			trap_Cmd_ExecuteText( EXEC_APPEND, "cvar_restart\n");
 			Controls_SetDefaults();
+#ifdef CINEMATICS_INTRO
 			trap_Cvar_Set("com_introPlayed", "1" );
+#endif
 			trap_Cmd_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 		} else if (Q_stricmp(name, "getCDKey") == 0) {
 			char out[17];
@@ -3874,7 +3880,7 @@ static void UI_SortServerStatusInfo( serverStatusInfo_t *info ) {
 	int i, j, index;
 	char *tmp1, *tmp2;
 
-	// FIXME: if "gamename" == "baseq3" or BASETA then
+	// FIXME: if "gamename" == "baseq3" or "missionpack" then
 	// replace the gametype number by FFA, CTF etc.
 	//
 	index = 0;
@@ -4609,6 +4615,7 @@ static qboolean Character_Parse(char **p) {
 		  uiInfo.characterCount--;
 		  Com_Printf("Too many characters, last character replaced!\n");
 	  }
+
       // two tokens per line, character name and sex
       if (!String_Parse(p, &uiInfo.characterList[uiInfo.characterCount].name) || !String_Parse(p, &tempStr)) {
         return qfalse;
@@ -4664,6 +4671,7 @@ static qboolean Alias_Parse(char **p) {
 		  uiInfo.aliasCount--;
 		  Com_Printf("Too many aliases, last alias replaced!\n");
 	  }
+
       // three tokens per line, character name, bot alias, and preferred action a - all purpose, d - defense, o - offense
       if (!String_Parse(p, &uiInfo.aliasList[uiInfo.aliasCount].name) || !String_Parse(p, &uiInfo.aliasList[uiInfo.aliasCount].ai) || !String_Parse(p, &uiInfo.aliasList[uiInfo.aliasCount].action)) {
         return qfalse;
@@ -5866,6 +5874,10 @@ void UI_UpdateCvars( void ) {
 	cvarTable_t	*cv;
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
+		if ( !cv->vmCvar ) {
+			continue;
+		}
+
 		trap_Cvar_Update( cv->vmCvar );
 	}
 }

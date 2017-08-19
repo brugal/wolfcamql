@@ -614,9 +614,8 @@ static sfxHandle_t Slider_Key( menuslider_s *s, int key )
 			break;
 	}
 
-	if ( sound && s->generic.callback ) {
+	if ( sound && s->generic.callback )
 		s->generic.callback( s, QM_ACTIVATED );
-	}
 
 	return (sound);
 }

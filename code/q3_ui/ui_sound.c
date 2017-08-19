@@ -121,7 +121,6 @@ static void UI_SoundOptionsMenu_Event( void* ptr, int event ) {
 		UI_PopMenu();
 		UI_NetworkOptionsMenu();
 		break;
-
 /*
 	case ID_A3D:
 		if( soundOptionsInfo.a3d.curvalue ) {
@@ -172,6 +171,7 @@ static void UI_SoundOptionsMenu_Event( void* ptr, int event ) {
 
 			trap_Cvar_SetValue( "s_useOpenAL", (soundOptionsInfo.soundSystem.curvalue == UISND_OPENAL) );
 			soundOptionsInfo.soundSystem_original = soundOptionsInfo.soundSystem.curvalue;
+
 			UI_ForceMenuOff();
 			trap_Cmd_ExecuteText( EXEC_APPEND, "snd_restart\n" );
 		}

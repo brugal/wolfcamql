@@ -224,7 +224,7 @@ static cvarTable_t		cvarTable[] = {
 	{ &ui_doubleClickTime, "ui_doubleClickTime", "500", CVAR_ARCHIVE },
 };
 
-static int cvarTableSize = ARRAY_LEN(cvarTable);
+static int cvarTableSize = ARRAY_LEN( cvarTable );
 
 
 /*
@@ -251,6 +251,10 @@ void UI_UpdateCvars( void ) {
 	cvarTable_t	*cv;
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
+		if ( !cv->vmCvar ) {
+			continue;
+		}
+
 		trap_Cvar_Update( cv->vmCvar );
 	}
 }

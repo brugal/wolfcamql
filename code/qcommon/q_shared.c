@@ -70,6 +70,7 @@ const char *COM_GetExtension( const char *name )
 		return "";
 }
 
+
 /*
 ============
 COM_StripExtension
@@ -329,6 +330,7 @@ int COM_GetCurrentParseLine( void )
 	{
 		return com_tokenline;
 	}
+
 	return com_lines;
 }
 
@@ -1234,8 +1236,7 @@ key and returns the associated value, or an empty string.
 FIXME: overflow check?
 ===============
 */
-char *Info_ValueForKeyExt (const char *s, const char *key, qboolean *hasKey)
-{
+char *Info_ValueForKeyExt( const char *s, const char *key, qboolean *hasKey ) {
 	char	pkey[BIG_INFO_KEY];
 	static	char value[2][BIG_INFO_VALUE];	// use two buffers so compares
 											// work without stomping on each other
@@ -1475,7 +1476,6 @@ qboolean Info_Validate( const char *s ) {
 Info_SetValueForKey
 
 Changes or adds a key/value pair
-Includes and retains zero-length values
 ==================
 */
 void Info_SetValueForKey( char *s, const char *key, const char *value ) {
@@ -1496,7 +1496,7 @@ void Info_SetValueForKey( char *s, const char *key, const char *value ) {
 	}
 
 	Info_RemoveKey (s, key);
-	if (!value)
+	if (!value || !strlen(value))
 		return;
 
 	//Com_Printf("^2set value for key: '%s' '%s'\n", key, value);
@@ -1518,6 +1518,7 @@ void Info_SetValueForKey( char *s, const char *key, const char *value ) {
 Info_SetValueForKey_Big
 
 Changes or adds a key/value pair
+Includes and retains zero-length values
 ==================
 */
 void Info_SetValueForKey_Big( char *s, const char *key, const char *value ) {
@@ -1538,7 +1539,7 @@ void Info_SetValueForKey_Big( char *s, const char *key, const char *value ) {
 	}
 
 	Info_RemoveKey_Big (s, key);
-	if (!value || !strlen(value))
+	if (!value)
 		return;
 
 	Com_sprintf (newi, sizeof(newi), "\\%s\\%s", key, value);

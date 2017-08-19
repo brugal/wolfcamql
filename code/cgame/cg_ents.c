@@ -1765,8 +1765,7 @@ static void CG_Item ( centity_t *cent ) {
 	// add to refresh list
 	CG_AddRefEntity(&ent);
 
-#if 1  //def MPACK
-	if ( item->giType == IT_WEAPON && wi->barrelModel ) {
+	if ( item->giType == IT_WEAPON && wi && wi->barrelModel ) {
 		refEntity_t	barrel;
 		vec3_t angles;
 
@@ -1792,7 +1791,6 @@ static void CG_Item ( centity_t *cent ) {
 		}
 		CG_AddRefEntity(&barrel);
 	}
-#endif
 
 	// accompanying rings / spheres for powerups
 	if ( !cg_simpleItems.integer  &&  !(cgs.gametype == GT_CTF  &&  item->giTag == PW_FLIGHT) )

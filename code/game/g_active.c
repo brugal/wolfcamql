@@ -323,7 +323,6 @@ void	G_TouchTriggers( gentity_t *ent ) {
 SpectatorThink
 =================
 */
-
 void SpectatorThink( gentity_t *ent, usercmd_t *ucmd ) {
 	pmove_t	pm;
 	gclient_t	*client;

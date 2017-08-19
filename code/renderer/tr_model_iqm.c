@@ -144,7 +144,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	unsigned short		*framedata;
 	char			*str;
 	int			i, j;
-	float                   jointInvMats[IQM_MAX_JOINTS * 12];
+	float                   jointInvMats[IQM_MAX_JOINTS * 12] = {0.0f};
 	float                   *mat, *matInv;
 	size_t			size, joint_names;
 	iqmData_t		*iqmData;
@@ -374,7 +374,7 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	{
 		// check and swap joints
 		if( IQM_CheckRange( header, header->ofs_joints,
-							+                                       header->num_joints, sizeof(iqmJoint_t) ) ) {
+							header->num_joints, sizeof(iqmJoint_t) ) ) {
 			return qfalse;
 		}
 		joint = (iqmJoint_t *)((byte *)header + header->ofs_joints);
@@ -1006,6 +1006,7 @@ static void ComputeJointMats( iqmData_t *data, int frame, int oldframe,
 		Matrix34Multiply_OnlySetOrigin( outmat, data->jointMats + 12 * i, mat1 );
 	}
 }
+
 
 /*
 =================

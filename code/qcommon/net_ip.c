@@ -520,7 +520,6 @@ NET_GetPacket
 Receive one packet
 ==================
 */
-
 qboolean NET_GetPacket(netadr_t *net_from, msg_t *net_message, fd_set *fdr)
 {
 	int 	ret;
@@ -1269,7 +1268,7 @@ static void NET_AddLocalAddress(char *ifname, struct sockaddr *addr, struct sock
 	}
 }
 
-#if defined(__linux__) || defined(MACOSX) || defined(__BSD__)
+#if defined(__linux__) || defined(__APPLE__) || defined(__BSD__)
 static void NET_GetLocalAddress(void)
 {
 	struct ifaddrs *ifap, *search;
@@ -1620,7 +1619,7 @@ Called from NET_Sleep which uses select() to determine which sockets have seen a
 void NET_Event(fd_set *fdr)
 {
 	byte bufData[MAX_MSGLEN + 1];
-	netadr_t from;
+	netadr_t from = {0};
 	msg_t netmsg;
 	
 	while(1)
@@ -1659,6 +1658,9 @@ void NET_Sleep(int msec)
 	fd_set fdr;
 	int retval;
 	SOCKET highestfd = INVALID_SOCKET;
+
+	if(msec < 0)
+		msec = 0;
 
 	FD_ZERO(&fdr);
 
