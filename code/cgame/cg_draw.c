@@ -8608,8 +8608,8 @@ static void CG_DrawCrosshairTeammateHealth (void)
 	const float *fcolor;
 	const char *s;
 	vec4_t hcolor;
-	const clientInfo_t *ci;
 	float alpha;
+	int health, armor;
 
 	if (!cg_drawCrosshairTeammateHealth.integer) {
 		return;
@@ -8636,8 +8636,6 @@ static void CG_DrawCrosshairTeammateHealth (void)
 
 	//Com_Printf("yes.... %d\n", cg.crosshairClientNum);
 
-	ci = &cgs.clientinfo[cg.crosshairClientNum];
-
 	QLWideScreen = cg_drawCrosshairTeammateHealthWideScreen.integer;
 
 	alpha = (float)cg_drawCrosshairTeammateHealthAlpha.integer / 255.0;
@@ -8656,6 +8654,8 @@ static void CG_DrawCrosshairTeammateHealth (void)
 		return;
 	}
 
+	health = Wolfcam_PlayerHealth(cg.crosshairClientNum);
+	armor = Wolfcam_PlayerArmor(cg.crosshairClientNum);
 
 	align = cg_drawCrosshairTeammateHealthAlign.integer;
 	scale = cg_drawCrosshairTeammateHealthScale.value;
@@ -8671,7 +8671,7 @@ static void CG_DrawCrosshairTeammateHealth (void)
 
 	//s = "Waiting for players";
 	//FIXME check color
-	s = va("%3d / %3d", ci->health, ci->armor);
+	s = va("%3d / %3d", health, armor);
 
 	w = CG_Text_Width(s, scale, 0, font);
 	if (align == 1) {
@@ -8684,7 +8684,7 @@ static void CG_DrawCrosshairTeammateHealth (void)
 		CG_Text_Paint(x, y, scale, color, s, 0, 0, style, font);
 	} else {
 		//CG_GetColorForHealth(ci->health, ci->armor, hcolor);
-		CG_GetColorForHealth(ci->health, 0, hcolor);
+		CG_GetColorForHealth(health, 0, hcolor);
 		//hcolor[0] = 1;
 		//hcolor[2] = 0;
 		//hcolor[2] = 1;
@@ -8695,7 +8695,7 @@ static void CG_DrawCrosshairTeammateHealth (void)
 		//hcolor[1] = hcolor[1] / 255.0 * 227.0;
 		// 0xffe334
 
-		s = va("%3d ", ci->health);
+		s = va("%3d ", health);
 		w = CG_Text_Width(s, scale, 0, font);
 		//CG_Text_Paint_Bottom(x, y, scale, hcolor, s, 0, 0, style, font);
 		CG_Text_Paint(x, y, scale, hcolor, s, 0, 0, style, font);
@@ -8708,9 +8708,9 @@ static void CG_DrawCrosshairTeammateHealth (void)
 		CG_Text_Paint(x, y, scale, hcolor, s, 0, 0, style, font);
 		x += w;
 
-		CG_GetColorForHealth(ci->armor, 0, hcolor);
+		CG_GetColorForHealth(armor, 0, hcolor);
 		hcolor[3] = alpha;
-		s = va("%3d", ci->armor);
+		s = va("%3d", armor);
 		//CG_Text_Paint_Bottom(x, y, scale, hcolor, s, 0, 0, style, font);
 		CG_Text_Paint(x, y, scale, hcolor, s, 0, 0, style, font);
 	}
