@@ -2028,7 +2028,6 @@ No locals.
 * cpma ft frozen player shows harvester icons, thawing teammate shows as frag with watch your fire message, round starts
 * seeking register user country flag failed spam
 * dedicated win32 loadlibrary error always "unknown"
-* dead invisible demo taker shown in crosshair client scan :  invis-demo-taker-24-00.dm_91
 * /follow victim, switch to freecam [ENTER] and player is not visible
 * with protocol 91 demos and free spec can show team overlay for both teams
 * draw keypress:  walk (LEGS_WALK)

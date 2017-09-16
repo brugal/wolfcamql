@@ -8529,6 +8529,10 @@ static void CG_DrawCrosshairNames( void ) {
 		return;
 	}
 
+	if (cg_entities[cg.crosshairClientNum].currentState.eFlags & EF_DEAD) {
+		return;
+	}
+
 	if (*cg_drawCrosshairNamesFont.string) {
 		font = &cgs.media.crosshairNamesFont;
 	} else {
@@ -8614,7 +8618,12 @@ static void CG_DrawCrosshairTeammateHealth (void)
 	if (!cg_drawCrosshairTeammateHealth.integer) {
 		return;
 	}
+
 	if (cg.crosshairClientNum < 0  ||  cg.crosshairClientNum >= MAX_CLIENTS) {
+		return;
+	}
+
+	if (cg_entities[cg.crosshairClientNum].currentState.eFlags & EF_DEAD) {
 		return;
 	}
 
