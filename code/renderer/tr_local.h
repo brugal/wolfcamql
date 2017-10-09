@@ -1556,7 +1556,7 @@ void RE_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *nu
 void RE_AddPolyToScene( qhandle_t hShader , int numVerts, const polyVert_t *verts, int num, int lightmap );
 void RE_AddLightToScene( const vec3_t org, float intensity, float r, float g, float b );
 void RE_AddAdditiveLightToScene( const vec3_t org, float intensity, float r, float g, float b );
-void RE_RenderScene( const refdef_t *fd );
+void RE_RenderScene( const refdef_t *fd, const refdef_t *fd2 );
 
 /*
 =============================================================

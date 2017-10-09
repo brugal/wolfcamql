@@ -890,7 +890,7 @@ void UI_DrawPlayer( float x, float y, float w, float h, playerInfo_t *pi, int ti
 	origin[2] -= 100;
 	trap_R_AddLightToScene( origin, 500, 1.0, 0.0, 0.0 );
 
-	trap_R_RenderScene( &refdef );
+	trap_R_RenderScene( &refdef, NULL );
 }
 
 /*

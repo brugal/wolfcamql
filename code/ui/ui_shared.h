@@ -365,7 +365,7 @@ typedef struct {
 	void (*drawTopBottom) (float x, float y, float w, float h, float size, int widescreen, rectDef_t menuRect);
   void (*clearScene) ( void );
   void (*addRefEntityToScene) (const refEntity_t *re );
-  void (*renderScene) ( const refdef_t *fd );
+  void (*renderScene) ( const refdef_t *fd, const refdef_t *fd2 );
   void (*registerFont) (const char *pFontname, int pointSize, fontInfo_t *font);
 	void (*ownerDrawItem) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect);
 	//void (*ownerDrawItem2) (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int align, float special, float scale, vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect);

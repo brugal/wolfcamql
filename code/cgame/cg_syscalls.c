@@ -321,8 +321,8 @@ void	trap_R_AddAdditiveLightToScene( const vec3_t org, float intensity, float r,
 	syscall( CG_R_ADDADDITIVELIGHTTOSCENE, org, PASSFLOAT(intensity), PASSFLOAT(r), PASSFLOAT(g), PASSFLOAT(b) );
 }
 
-void	trap_R_RenderScene( const refdef_t *fd ) {
-	syscall( CG_R_RENDERSCENE, fd );
+void	trap_R_RenderScene( const refdef_t *fd, const refdef_t *fd2 ) {
+	syscall( CG_R_RENDERSCENE, fd, fd2 );
 }
 
 void	trap_R_SetColor( const float *rgba ) {

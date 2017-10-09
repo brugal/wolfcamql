@@ -2654,7 +2654,7 @@ static void CG_Draw3DModelExt (float x, float y, float w, float h, qhandle_t mod
 
 	trap_R_ClearScene();
 	CG_AddRefEntity(&ent);
-	trap_R_RenderScene( &refdef );
+	trap_R_RenderScene( &refdef, NULL );
 }
 
 /*
@@ -10634,7 +10634,8 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	if (0) {  //(cg.demoSeeking) {
 		trap_R_ClearScene();
 	} else {
-		trap_R_RenderScene( &cg.refdef );
+		trap_R_RenderScene( &cg.refdef, NULL );
+
 #if 0
 		if (Distance(lastOrigin, cg.refdef.vieworg)) {
 			Com_Printf("from %f %f %f  to  %f %f %f\n", lastOrigin[0], lastOrigin[1], lastOrigin[2], cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);

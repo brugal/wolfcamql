@@ -1096,7 +1096,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		return 0;
 	case CG_R_RENDERSCENE:
 		if (cl.draw) {
-			re.RenderScene( VMA(1) );
+			re.RenderScene( VMA(1), VMA(2) );
 		}
 		return 0;
 	case CG_R_SETCOLOR:
