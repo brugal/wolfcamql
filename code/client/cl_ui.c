@@ -813,7 +813,7 @@ intptr_t CL_UISystemCalls( intptr_t *args ) {
 		return 0;
 
 	case UI_R_RENDERSCENE:
-		re.RenderScene( VMA(1) );
+		re.RenderScene( VMA(1), VMA(2) );
 		return 0;
 
 	case UI_R_SETCOLOR:

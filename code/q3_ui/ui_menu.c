@@ -234,7 +234,7 @@ static void Main_MenuDraw( void ) {
 
 	//trap_R_AddRefEntityToScene( &ent );
 #endif
-	trap_R_RenderScene( &refdef );
+	trap_R_RenderScene( &refdef, NULL );
 
 	//UI_DrawProportionalString( 320, 372, "DEMO      FOR MATURE AUDIENCES      DEMO", UI_CENTER|UI_SMALLFONT, color );
 	if (uis.showErrorMenu) {

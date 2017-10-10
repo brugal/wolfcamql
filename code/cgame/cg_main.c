@@ -1154,6 +1154,18 @@ vmCvar_t cg_drawDominationPointStatusTextAlpha;
 vmCvar_t cg_drawDominationPointStatusTextStyle;
 vmCvar_t cg_drawDominationPointStatusWideScreen;
 
+vmCvar_t cg_drawPiP;
+vmCvar_t cg_drawPiPViewportX;
+vmCvar_t cg_drawPiPViewportY;
+vmCvar_t cg_drawPiPViewportWidth;
+vmCvar_t cg_drawPiPViewportHeight;
+vmCvar_t cg_drawPiPCameraX;
+vmCvar_t cg_drawPiPCameraY;
+vmCvar_t cg_drawPiPCameraZ;
+vmCvar_t cg_drawPiPCameraPitch;
+vmCvar_t cg_drawPiPCameraYaw;
+vmCvar_t cg_drawPiPCameraRoll;
+
 vmCvar_t cg_roundScoreBoard;
 vmCvar_t cg_headShots;
 
@@ -2232,7 +2244,19 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawDominationPointStatusTextAlpha, "cg_drawDominationPointStatusTextAlpha", "255", CVAR_ARCHIVE },
 	{ &cg_drawDominationPointStatusTextStyle, "cg_drawDominationPointStatusTextStyle", "3", CVAR_ARCHIVE },
 	{ cvp(cg_drawDominationPointStatusWideScreen), "2" },
-	
+
+	{ &cg_drawPiP, "cg_drawPiP", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPViewportX, "cg_drawPiPViewportX", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPViewportY, "cg_drawPiPViewportY", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPViewportWidth, "cg_drawPiPViewportWidth", "320", CVAR_ARCHIVE },
+	{ &cg_drawPiPViewportHeight, "cg_drawPiPViewportHeight", "180", CVAR_ARCHIVE },
+	{ &cg_drawPiPCameraX, "cg_drawPiPCameraX", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPCameraY, "cg_drawPiPCameraY", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPCameraZ, "cg_drawPiPCameraZ", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPCameraPitch, "cg_drawPiPCameraPitch", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPCameraYaw, "cg_drawPiPCameraYaw", "0", CVAR_ARCHIVE },
+	{ &cg_drawPiPCameraRoll, "cg_drawPiPCameraRoll", "0", CVAR_ARCHIVE },
+
 	{ &cg_roundScoreBoard, "cg_roundScoreBoard", "1", CVAR_ARCHIVE },
 	{ &cg_headShots, "cg_headShots", "1", CVAR_ARCHIVE },
 	{ cvp(cg_spectatorListSkillRating), "1", CVAR_ARCHIVE },

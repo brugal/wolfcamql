@@ -2654,7 +2654,7 @@ static void CG_Draw3DModelExt (float x, float y, float w, float h, qhandle_t mod
 
 	trap_R_ClearScene();
 	CG_AddRefEntity(&ent);
-	trap_R_RenderScene( &refdef );
+	trap_R_RenderScene( &refdef, NULL );
 }
 
 /*
@@ -10633,8 +10633,30 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 
 	if (0) {  //(cg.demoSeeking) {
 		trap_R_ClearScene();
+	} else if ( cg_drawPiP.integer ) {
+		refdef_t refdef2;
+		vec4_t rcolor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		vec3_t angles;
+		angles[0] = cg_drawPiPCameraPitch.value;
+		angles[1] = cg_drawPiPCameraYaw.value;
+		angles[2] = cg_drawPiPCameraRoll.value;
+
+		Com_Memcpy( &refdef2, &cg.refdef, sizeof(refdef_t) );
+		AnglesToAxis( angles, refdef2.viewaxis );
+		refdef2.vieworg[0] = cg_drawPiPCameraX.value;
+		refdef2.vieworg[1] = cg_drawPiPCameraY.value;
+		refdef2.vieworg[2] = cg_drawPiPCameraZ.value;
+
+		refdef2.x = cg_drawPiPViewportX.integer;
+		refdef2.y = cg_drawPiPViewportY.integer;
+		refdef2.width = cg_drawPiPViewportWidth.integer;
+		refdef2.height = cg_drawPiPViewportHeight.integer;
+
+		trap_R_RenderScene( &cg.refdef, &refdef2 );
+		cgDC.drawRect( refdef2.x, refdef2.y, refdef2.width, refdef2.height, 1.0f, rcolor, 1, MenuRect );
 	} else {
-		trap_R_RenderScene( &cg.refdef );
+		trap_R_RenderScene( &cg.refdef, NULL );
+
 #if 0
 		if (Distance(lastOrigin, cg.refdef.vieworg)) {
 			Com_Printf("from %f %f %f  to  %f %f %f\n", lastOrigin[0], lastOrigin[1], lastOrigin[2], cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2]);

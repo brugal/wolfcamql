@@ -334,7 +334,7 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 @@@@@@@@@@@@@@@@@@@@@
 */
-void RE_RenderScene( const refdef_t *fd ) {
+void RE_RenderScene( const refdef_t *fd, const refdef_t *fd2 ) {
 	viewParms_t		parms;
 	int				startTime;
 
@@ -449,6 +449,26 @@ void RE_RenderScene( const refdef_t *fd ) {
 	VectorCopy( fd->vieworg, parms.pvsOrigin );
 
 	R_RenderView( &parms );
+
+	if ( fd2 != NULL ) {
+		parms.viewportX = fd2->x;
+		parms.viewportY = glConfig.vidHeight - ( fd2->y + fd2->height);
+		parms.viewportWidth = fd2->width;
+		parms.viewportHeight = fd2->height;
+		parms.isPortal = qtrue;
+
+		parms.fovX = fd2->fov_x;
+		parms.fovY = fd2->fov_y;
+
+		VectorCopy( fd2->vieworg, parms.or.origin );
+		VectorCopy( fd2->viewaxis[0], parms.or.axis[0] );
+		VectorCopy( fd2->viewaxis[1], parms.or.axis[1] );
+		VectorCopy( fd2->viewaxis[2], parms.or.axis[2] );
+
+		VectorCopy( fd2->vieworg, parms.pvsOrigin );
+
+		R_RenderView( &parms );
+	}
 
 	// the next scene rendered in this frame will tack on after this one
 	r_firstSceneDrawSurf = tr.refdef.numDrawSurfs;
