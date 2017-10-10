@@ -3503,6 +3503,18 @@ extern vmCvar_t cg_drawDominationPointStatusTextAlpha;
 extern vmCvar_t cg_drawDominationPointStatusTextStyle;
 extern vmCvar_t cg_drawDominationPointStatusWideScreen;
 
+extern vmCvar_t cg_drawPiP;
+extern vmCvar_t cg_drawPiPViewportX;
+extern vmCvar_t cg_drawPiPViewportY;
+extern vmCvar_t cg_drawPiPViewportWidth;
+extern vmCvar_t cg_drawPiPViewportHeight;
+extern vmCvar_t cg_drawPiPCameraX;
+extern vmCvar_t cg_drawPiPCameraY;
+extern vmCvar_t cg_drawPiPCameraZ;
+extern vmCvar_t cg_drawPiPCameraPitch;
+extern vmCvar_t cg_drawPiPCameraYaw;
+extern vmCvar_t cg_drawPiPCameraRoll;
+
 extern vmCvar_t cg_roundScoreBoard;
 extern vmCvar_t cg_headShots;
 
