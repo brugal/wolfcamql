@@ -353,10 +353,10 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
 
   ifdef CGAME_HARD_LINKED
     BASE_CFLAGS = -p -g -rdynamic -Wall -fno-strict-aliasing \
-      -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -D_FILE_OFFSET_BITS=64 -msse $(CGAME_HARD_LINKED)
+      -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse $(CGAME_HARD_LINKED)
   else
     BASE_CFLAGS = -g -rdynamic -Wall -fno-strict-aliasing \
-      -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -D_FILE_OFFSET_BITS=64 -msse
+      -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse
   endif
 
   CLIENT_CFLAGS += $(SDL_CFLAGS)
@@ -1216,7 +1216,7 @@ ifdef SOURCE_DATE_EPOCH
   BASE_CFLAGS += -DPRODUCT_DATE=\\\"$(shell date --date="@$$SOURCE_DATE_EPOCH" "+%b %_d %Y" | sed -e 's/ /\\\ /'g)\\\"
 endif
 
-BASE_CFLAGS += -DPRODUCT_VERSION=\\\"$(VERSION)\\\" -DWOLFCAM_VERSION=\\\"$(VERSION)\\\"
+BASE_CFLAGS += -DPRODUCT_VERSION=\\\"$(VERSION)\\\" -DWOLFCAM_VERSION=\\\"$(VERSION)\\\" -D_FILE_OFFSET_BITS=64
 
 ifeq ($(V),1)
 echo_cmd=@:
