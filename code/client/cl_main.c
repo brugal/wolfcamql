@@ -181,6 +181,7 @@ typedef struct serverStatus_s
 serverStatus_t cl_serverStatusList[MAX_SERVERSTATUSREQUESTS];
 
 double Overf = 0.0;
+double blurFramesFactor = 1.0;
 
 aviFileData_t afdMain;
 aviFileData_t afdLeft;
@@ -4466,6 +4467,7 @@ void CL_Frame ( int msec, double fmsec ) {
 		return;
 	}
 
+	blurFramesFactor = 1.0;
 	//Com_Printf("CL_Frame msec: %d  fmsec: %f  timescale: %f\n", msec, fmsec, com_timescale->value);
 
 	re.GetGlConfig(&cls.glconfig);
@@ -4528,11 +4530,10 @@ void CL_Frame ( int msec, double fmsec ) {
 
 			// fixed time for next frame'
 			blurFrames = Cvar_VariableIntegerValue("mme_blurFrames");
-			if (blurFrames == 0  ||  blurFrames == 1) {
-				f = ( ((double)1000.0f / ((double)cl_aviFrameRate->value * frameRateDivider)) * (double)com_timescale->value );
-			} else {
-				f = ( ((double)1000.0f / ((double)cl_aviFrameRate->value * frameRateDivider * (double)blurFrames)) * (double)com_timescale->value);
+			if (blurFrames > 1) {
+				blurFramesFactor = 1.0 / (double)blurFrames;
 			}
+			f = ( ((double)1000.0f / ((double)cl_aviFrameRate->value * frameRateDivider)) * (double)com_timescale->value ) * blurFramesFactor;
 			//msec = (int)ceil(f);
 			msec = (int)floor(f);
 			//overf += ceil(f) - f;
@@ -4799,7 +4800,7 @@ void *CL_RefMalloc( int size ) {
 }
 
 int CL_ScaledMilliseconds(void) {
-	return Sys_Milliseconds()*com_timescale->value;
+	return Sys_Milliseconds()*com_timescale->value*blurFramesFactor;
 }
 
 /*
