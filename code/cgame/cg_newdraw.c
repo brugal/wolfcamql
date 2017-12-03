@@ -5154,31 +5154,19 @@ int CG_GetCurrentTimeWithDirection (void)
 
 	  if (cgs.protocol == PROTOCOL_Q3) {
 
-	  } else if ((cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG)  &&  cgs.realTimelimit) {
+	  } else if (cgs.realTimelimit) {
 		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
-			  numOverTimes = 1;
-			  overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
-			  overTimeAmount = cgs.timelimit;
+				overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+				if (overTimeAmount) {
+					numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
+				} else {
+					overTimeAmount = cgs.timelimit;
+					numOverTimes = 1;
+				}
+				overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
 		  } else {
 			  numOverTimes = 0;
 			  overTimeOffset = 0;
-		  }
-	  } else if (!cg.warmup) {
-		  //FIXME take out, use CG_NumOverTimes(args);
-		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
-			  //Com_Printf("timeplayed %d  >  timelimit %d\n", timePlayed, cgs.timelimit * 60 * 1000);
-			  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
-			  if (overTimeAmount) {
-				  numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
-			  } else {
-				  numOverTimes = 0;
-			  }
-			  if (overTimeAmount) {
-				  overTimeOffset = (timePlayed - (cgs.timelimit * 60 * 1000)) % overTimeAmount;
-			  } else {
-				  overTimeOffset = 0;
-			  }
-			  numOverTimes++;
 		  }
 	  }
 
