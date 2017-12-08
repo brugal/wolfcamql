@@ -649,7 +649,12 @@ ifdef MINGW
     #FIXME using internal freetype headers
     #FREETYPE_CFLAGS += -Ifreetype2
     FREETYPE_CFLAGS = -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2/freetype -I$(MOUNT_DIR)/freetype2/include/freetype2
-    FREETYPE_LIBS = $(LIBSDIR)/win32/libfreetype.a
+    ifeq ($(ARCH),x86)
+        FREETYPE_LIBS = $(LIBSDIR)/win32/libfreetype.a
+    endif
+    ifeq ($(ARCH),x86_64)
+        FREETYPE_LIBS = $(LIBSDIR)/win64/libfreetype.a
+    endif
   endif
 
   ifeq ($(ARCH),x86_64)
