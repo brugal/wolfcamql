@@ -5159,6 +5159,8 @@ int CG_GetCurrentTimeWithDirection (void)
 				overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
 				if (overTimeAmount) {
 					numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
+					// above value is zero based index
+					numOverTimes++;
 				} else {
 					overTimeAmount = cgs.timelimit;
 					numOverTimes = 1;
