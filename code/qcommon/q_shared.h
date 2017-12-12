@@ -1568,6 +1568,12 @@ typedef enum _flag_status {
 	FLAG_DROPPED        // One Flag CTF
 } flagStatus_t;
 
+typedef struct {
+	char *oldName;
+	char *newName;
+	char *altName;
+	char *none;
+} mapNames_t;
 
 
 #define	MAX_GLOBAL_SERVERS				4096

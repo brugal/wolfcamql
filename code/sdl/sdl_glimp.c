@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdlib.h>
 #include <math.h>
 
-#include "../renderer/tr_local.h"
+#include "../renderergl1/tr_local.h"
 #include "../sys/sys_local.h"
 #include "wolfcamql_icon.h"
 
@@ -508,8 +508,21 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder)
 			SDL_GL_SetAttribute( SDL_GL_ACCELERATED_VISUAL, 1 );
 #endif
 
+		//FIXME should check fbo extensions first
+		if (r_useFbo  &&  (*r_visibleWindowWidth->string  &&  *r_visibleWindowHeight->string  &&  r_visibleWindowWidth->integer > 0  &&  r_visibleWindowHeight->integer > 0)) {
+			vidWidth = r_visibleWindowWidth->integer;
+			vidHeight = r_visibleWindowHeight->integer;
+			glConfig.visibleWindowWidth = vidWidth;
+			glConfig.visibleWindowHeight = vidHeight;
+		} else {
+			vidWidth = glConfig.vidWidth;
+			vidHeight = glConfig.vidHeight;
+			glConfig.visibleWindowWidth = vidWidth;
+			glConfig.visibleWindowHeight = vidHeight;
+		}
+
 		if( ( SDL_window = SDL_CreateWindow( CLIENT_WINDOW_TITLE, x, y,
-											 glConfig.vidWidth, glConfig.vidHeight, flags ) ) == NULL )
+											 vidWidth, vidHeight, flags ) ) == NULL )
 		{
 			ri.Printf( PRINT_DEVELOPER, "SDL_CreateWindow failed: %s\n", SDL_GetError( ) );
 			continue;
@@ -526,8 +539,8 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder)
 			default: ri.Printf( PRINT_DEVELOPER, "testColorBits is %d, can't fullscreen\n", testColorBits ); continue;
 			}
 
-			mode.w = glConfig.vidWidth;
-			mode.h = glConfig.vidHeight;
+			mode.w = vidWidth;
+			mode.h = vidHeight;
 			mode.refresh_rate = glConfig.displayFrequency = ri.Cvar_VariableIntegerValue( "r_displayRefresh" );
 			mode.driverdata = NULL;
 
@@ -544,18 +557,6 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder)
 		{
 			ri.Printf( PRINT_DEVELOPER, "SDL_GL_CreateContext failed: %s\n", SDL_GetError( ) );
 			continue;
-		}
-
-		if (r_useFbo  &&  (*r_visibleWindowWidth->string  &&  *r_visibleWindowHeight->string  &&  r_visibleWindowWidth->integer > 0  &&  r_visibleWindowHeight->integer > 0)) {
-			vidWidth = r_visibleWindowWidth->integer;
-			vidHeight = r_visibleWindowHeight->integer;
-			glConfig.visibleWindowWidth = vidWidth;
-			glConfig.visibleWindowHeight = vidHeight;
-		} else {
-			vidWidth = glConfig.vidWidth;
-			vidHeight = glConfig.vidHeight;
-			glConfig.visibleWindowWidth = vidWidth;
-			glConfig.visibleWindowHeight = vidHeight;
 		}
 
 		qglClearColor( 0, 0, 0, 1 );

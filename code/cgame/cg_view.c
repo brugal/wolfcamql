@@ -597,7 +597,9 @@ double CG_CalcZoom (double fov_x)
 		} else {
 			f = 2.0;
 		}
-		if ( f <= 1.0) {
+		if ( f > 1.0 ) {
+			fov_x = zoomFov;
+		} else {
 			fov_x = fov_x + f * ( zoomFov - fov_x );
 			//Com_Printf("zooming up fov %f  f %f  ourTime %f  zoomTime %f  paused %d\n", fov_x, f, ourTime, zoomTime, cg.paused);
 		}

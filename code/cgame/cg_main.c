@@ -974,6 +974,7 @@ vmCvar_t cg_drawViewPointMark;
 vmCvar_t cg_levelTimerDirection;
 //vmCvar_t cg_levelTimerStyle;
 vmCvar_t cg_levelTimerDefaultTimeLimit;
+vmCvar_t cg_levelTimerOvertimeReset;
 vmCvar_t cg_checkForOfflineDemo;
 vmCvar_t cg_muzzleFlash;
 
@@ -2072,6 +2073,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_levelTimerDirection, "cg_levelTimerDirection", "0", CVAR_ARCHIVE },
 	//{ &cg_levelTimerStyle, "cg_levelTimerStyle", "0", CVAR_ARCHIVE },
 	{ &cg_levelTimerDefaultTimeLimit, "cg_levelTimerDefaultTimeLimit", "60", CVAR_ARCHIVE },
+	{ cvp(cg_levelTimerOvertimeReset), "0", CVAR_ARCHIVE },
 	{ &cg_checkForOfflineDemo, "cg_checkForOfflineDemo", "1", CVAR_ARCHIVE },
 	{ &cg_muzzleFlash, "cg_muzzleFlash", "1", CVAR_ARCHIVE },
 

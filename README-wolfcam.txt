@@ -201,13 +201,15 @@ cl_aviCodec  uncompressed, mjpeg, huffyuv
 
 cl_aviAllowLargeFiles 1  to allow opendml avi files (up to about 500 gigabytes)
 
-/video [avi, avins, tga, jpg, png, wav, name <file basename>]
+/video [avi, avins, tga, jpg, png, wav, split, name <file basename>]
   All files stored in video/
 
   ex:  /video tga wav    to dump tga screen-shots and a wav sound recording
   ex:  /video avins wav name myNewVideo     avi file with no sound and a wav file
 
   'name :demoname' will use the current demo filename as the video file basename
+
+  'split' option records extra right and left videos with r_anaglyphMode settings.  See extensions to r_anaglyphMode.
 
   r_jpegCompressionQuality   controls jpeg compression quality
   r_pngZlibCompression  choose between high speed or higher compression size
@@ -591,6 +593,9 @@ client options:
 
 * com_timescalesafe default 1  high timescales will skip demo snapshots and will break things like camera paths that are synced to server times.
 
+  In quake3 with really high timescale values, information from the demo starts to get discarded.  You can lose information about frags, chat, etc.  Having this set to 1 ensures that all the information (snapshots) in the demo get processed.
+
+
 * 'fixedtime' cvar can use values less than 1.0
 
 ----------------------------------------------------------------
@@ -935,6 +940,8 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
 * depth buffer saving:  mme_saveDepth, mme_depthRange, mme_depthFocus
 
+  With 'cl_renderer opengl2' use 'r_useFbo 1'.
+
 * cg_plasmaStyle same as quakelive (2: purple bubble trails)
 
 * r_jpegCompressionQuality 90 (default)  for screen-shots, jpg video dump, and 'cl_aviCodec mjpeg'
@@ -950,10 +957,13 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
 * cg_levelTimerDirection:  0, 1  same as quakelive, including bugs (always count up during overtimes regardless of the settings you have chosen), 2  count up and don't reset to 0 during overtimes  (ex:  14:53  is shown for duel 53 seconds into the second overtime), 3 countdown even during overtime and for matches with no time-limit use cg_levelTimerDefaultTimeLimit, 4 always count down and try to use the end of game time parsed from the demo -- otherwise use cg_levelTimerDefaultTimeLimit
 
+* cg_levelTimerOvertimeReset:  0: (default) shows total overtime about, 1: shows current overtime about
+
 * r_lightmapColor to tint the lightmap
   extreme example:  r_lightmapColor "0xff0000" to make all the lights red
   better example: r_lightmapcolor "0xffafaf" to turn down blue and green a bit, without completely eliminating them
 
+  With 'cl_renderer opengl2' you need to use 'r_mergelightmaps 0'.
 
 ----------------------------------------------------------------
 
@@ -1152,7 +1162,8 @@ Velocity:
     cg_mouseSeekPollInterval  how often to check for mouse movement and then issue rewind/fast-forward call.
     cg_mouseSeekUseTimescale (1:  will scale demo seeking based on timescale value, 2: (default) take timescale value into account only when less than 1.0)
 
-* framebuffer object support:  You can record a video in a different resolution from the visible window.
+* framebuffer object support:  This lets you render into a separate framebuffer not associated with the application window.  This can prevent clipping if you are recording in a resolution greater than your screen size and allows you to use a small view window while recording in a higher resolution.
+
     r_useFbo
     r_fboStencil  (an extension to enable stencil shadowing with fbo)
     r_fboAntiAlias (number of anti-aliasing samples)
@@ -1160,6 +1171,8 @@ Velocity:
     r_visibleWindowHeight
 
 * You can record a demo while viewing one.
+
+* r_portalBobbing
 
 * r_teleporterFlash [0: draw black screen, 1: draw white screen, 2: wait to draw until in new view]
 
@@ -1478,6 +1491,11 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 * r_mapGreyScale, r_greyscaleValue   load the map in grey, darken to
   taste, and players + items will be colorized.  good value for
   r_greyscaleValue is 0.9
+
+* r_picmipGreyScale "0"
+
+Same as r_greyScale but only apply when picmip is allowed.
+
 
 -----------------------------------------------------------
 
@@ -1894,8 +1912,7 @@ r_singleShader options and r_singleShaderName  to replace all the map textures
 * r_mapOverBrightBitsCap same as quakelive
 * r_darknessThreshold  control the brightness of map shadows and dark areas without changing too much the color and brightness levels of the lit portions
 
-In quake3 with really high timescale values information from the demo starts to get discarded.  You can lose information about frags, chat, etc.  Having this set to 1 ensures that all the information (snapshots) in the demo get processed.
-
+  With opengl2 this doesn't work with hdr lightmaps.
 
 * r_BloomTextureScale similar to r_BloomBlurScale.
 
@@ -2012,10 +2029,6 @@ For per kill accuracy stats they will be reset if this amount of time (in millis
 
 If this is set to 1 only weapons that are usually used by holding down +attack get a stat reset if the time amount in cg_perKillStatsClearNotFiringTime passes.  (ex:  rail, rocket launcher, etc.)
 
-* r_picmipGreyScale "0"
-
-Same as r_greyScale but only apply when picmip is allowed.
-
 * in_nograb
 
 You can use it in order to un-grab the mouse pointer without having to bring down the console.  Toggling it is bound by default to F2.  So, for example, you could start rendering a demo, hit F2, minimize the window, and then go off and do whatever until the rendering is done.
@@ -2055,11 +2068,12 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * r_dynamicLight  1 fixes square lights, 2 original q3 code (sometimes textures have light added to the wrong side), 3 testing only determine if lighting applies in one place in the source code
 
+  Not needed with cl_renderer opengl2.
+
 * shader override  In <app data>/wolfcam-ql place them in shaderoverride.
 
   ex:  shaderoverride/blah.shader
 
-* r_portalBobbing
 * cg_quadKillCounter (same as quakelive)
 * cg_battleSuitKillCounter (same as quakelive)
 
@@ -2111,6 +2125,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
   This doesn't apply if 'cg_wideScreen 5' is used.
 
 * r_anaglyph2d to allow or prevent splitting colors for the hud portion
+* r_anaglyphMode 19 uses full color for both left and right channels
 
 * cg_damagePlum  same as quakelive (string listing weapons that will show damage plums)  Also allows 'none' as token for kills without weapon numbers.  Ex:  "none g mg sg gl rl lg rg pg bfg gh cg ng pl hmg"
 * cg_damagePlumColorStyle  same as quake live (1: colored from white to red based on damage, 2:  crosshair hit colors for different damage amounts, 3:  colored based on weapon)
@@ -2245,6 +2260,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * wolfcam_firstPersonSwitchSoundStyle  (0: don't play cg_firstPersonSwitchSound when using '/follow'  1:  only play when switching back and forth from selected player, including /follow [victim|killer]  2:  always play switch sound when view changes)
 * com_execVerbose  default 0 to avoid spamming console when you execute a cfg file
 * cg_noTaunt  disable 'taunt' sound from players
+
 * r_showtris 2  will not have wallhack effect
 * r_shownormals 2  will not have wallhack effect
 * r_debugMarkSurface  when set to 1 will print the name of the map shader upon which impact marks are drawn
@@ -2262,7 +2278,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
   /clearremappedshader <shader name>
   /clearallremappedshaders
 
-  also, as a convenience:  /remaplasttwoshaders  which remaps the last two uniquely names shaders
+  also, as a convenience:  /remaplasttwoshaders  which remaps the last two uniquely named shaders
 
     ex:  'bind h /remaplasttwoshaders'  shoot surface with shader you want, shoot surface you want to change, hit 'h'  (maps 0 to 1 in console)
 
@@ -2450,6 +2466,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * windows version can echo console messages in the command prompt if --console-output is used in the command line.  Color output can be controlled with com_ansiColor.
 
+* --console-passive command line option to disable unix tty console
+
 * cg_useDemoFov  protocol 91 transmits player fov values and this can be used to view the demo using the players fov or to try and detect zoom changes.  Note that zoom isn't transmitted in the demo so it is detected using a fov change.  This will lead to a problem if the player uses a config that changes fov (ex:  per weapon).  Values (0:  ignore demo fov (default),  1:  use player's fov,  2:  detect zoom changes).
 * com_idleSleep (0:  full cpu usage while waiting for next frame, 1: (default) lower cpu usage if there's time available between frames, 2:  same as 1 with debugging output)
 * Linux and Mac OS X console paste support
@@ -2460,9 +2478,12 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_bleedTime to control the amount of time player bleeding is shown on screen
 * com_logo to control logo cinematic when the program starts
 * /unset command can use '*' at end of name to perform pattern matching.  Ex: /unset cg_*
+
 * r_debugScaledImages to show non power of two scaled images
-* cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
 * r_scaleImagesPowerOfTwo  (0:  don't scale images for hardware that supports it, 1:  scale images to power of two dimensions, -1:  force non scaling even if hardware doesn't support it)
+
+* cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
+
 * cg_debugServerCommands (0 (default):  only print message for unknown commands, 1:  print all commands and arguments, 2:  only print message and arguments for unknown commands)
 
 * cg_drawKeyPress  to enable drawing player key press information.  Also added WCG_PLAYER_KEY_PRESS_[FORWARD|BACK|RIGHT|LEFT|FIRE|JUMP|CROUCH] hud ownerdraws.  See ui/wckeypress.menu for an example.  '/loadmenu ui/wckeypress.menu' to test.
@@ -2473,10 +2494,12 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * cg_useScoresUpdateTeam  hack for ql/minqlx bug not updating player config strings correctly.  Players can be shown on the wrong team and this will update the player teams from the score commands.
 
+* r_opengl2_overbright  enables original opengl2 for overbright handling
+
 ----------
 
 brugal
 
 basturdo@yahoo.com
 
-Copyright 2012  Angelo Cano
+Copyright 2017  Angelo Cano

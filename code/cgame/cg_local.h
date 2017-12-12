@@ -4,7 +4,7 @@
 // Copyright (C) 1999-2000 Id Software, Inc.
 //
 #include "../qcommon/q_shared.h"
-#include "../renderer/tr_types.h"
+#include "../renderercommon/tr_types.h"
 #include "../game/bg_public.h"
 #include "cg_public.h"
 //#include "sc.h"
@@ -3323,6 +3323,7 @@ extern vmCvar_t cg_drawViewPointMark;
 extern vmCvar_t cg_levelTimerDirection;
 //extern vmCvar_t cg_levelTimerStyle;
 extern vmCvar_t cg_levelTimerDefaultTimeLimit;
+extern vmCvar_t cg_levelTimerOvertimeReset;
 extern vmCvar_t cg_checkForOfflineDemo;
 
 extern vmCvar_t cg_muzzleFlash;

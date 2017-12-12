@@ -1970,11 +1970,10 @@ No locals.
 * option to load all known workshops, for testing maps
 * cg_drawSelf and health changes and hit marker, maybe different shape for demo taker icons
 * option for info screen font
-* for clan areana /follow victim|killer if it returns to teammate just return to pov as main preference or check pvs
+* for clan arena /follow victim|killer if it returns to teammate just return to pov as main preference or check pvs
 * cg_thirdperson and team settings doesn't work
 * /follow *  and cg_thirdPerson 1 doesn't show player
 * /freecam stops /follow * from working, goes back to demo pov but /follow still says it's following someone else
-* own-player-when-dead-appears-as-crosshair-client.dm_91  crosshair scan entity pickup up invisible specs  10:00 ?
 * team equivalent to EM_Loaded?
 * /follow and cg_disallowEnemyModelForTeammates still uses enemy model for 1st person pov?
 * clean up CG_CheckForModelChange()
@@ -2038,11 +2037,9 @@ No locals.
 * R_GetCommandBuffer() command dropped : demo name with spaces?
   "thx i fixed the issu by replacing the spaces in the demo name with some -"
 * null127.dm_91  RB_RenderDrawSurfList refent ptr == NULL for entity 127
-* null127.dm_91  not showing teammates health/armor in crosshair info
 * invisible_player.dm_91  config string shows oppenent is team spectator  -- em92 hack to show specs and hack to update team from scores
 * angry.dm_91 config string has players on wrong team (maybe minqlx bug like invisible_player.dm_91)  -- hack to update team from scores
 * check *parsescores_ffa and reading past SCSIZE > 18?
-* ca not showing teamate health + armor crosshair scan entity
 * readpixels padding alignment  -- using pixelstore pack align 1
 * motion blur forces GL_RGBA fetch mode
 * png capture forces GL_RGBA fetch mode
@@ -2075,8 +2072,215 @@ No locals.
 * /sayto field complete and different name coloring methods
 * no need to always treat background track as .ogg in quake live?
   snd_main.c  // quakelive hack, all files default to ogg
+* opengl2:
+
+   - r_loadadvertisments common
+   - clean up glimp opengl1 postprocesing r_* cvars
+   - check MAX_ENTITIES and mask use
+   - better location for wolfcamql additions -- moving to renderercommon/
+
+   - opengl1 use renderercommon/  --  need to move backend video rendering, bsp load advertisements
+   - /vid_restart from opengl1 to opengl2 (or the other way around) messed up console shader
+
+   - video recording : depth buffer saving, move backend to renderercommon/  -- depth saving works with r_useFbo
+
+   - r_fboStencil
+   - r_fboAntiAlias
+
+   - r_overbrightBits not used in opengl2?  -- 2017-11-13 it is but working differently
+
+* Windows 10 r_fullscreen 1 keeps vid_restarting and can't fit image (r_mode 11)
+* check tr_noise.c R_NoiseGet4f last arg now double t?
+* opengl2 overbright setting in tr_shade.c ComputeShaderColors is incorrect?  -- have r_opengl2_overbright as a work around
+* r_enableColorCorrect needs to be latched?
+* r_visibleWindow* and fullscreen?
+* get particle speed in fx?
+* sdl_glimp.c visible window width|height should be checking that fbo is possible first
+* ql post processing and gamma:  save LOC and don't fetch each frame
+* opengl2:  bloom done before 3d icons in hud
+* opengl2:  r_usefbo toggle vid_restart crash  -- see below, not related to r_useFbo
+
+   crash:
 
 
----------
+C:\Share\wc\dev>
+C:\Share\wc\dev>wolfcamql --console-output +set r_ignoreglerrors 0 +devmap spidercrossings +set cl_renderer opengl1 +set cg_fxfile "scripts/q3mme.fx" +demo blurshader1
+
+
+toggle r_useFbo and try vid_restart  -- 2017-11-12  just vid_restart does it
+
+RE_RegisterShaderNoMip(icons/portal) failed
+WARNING: R_FindImageFile could not find 'icons/spawnarmor.tga' in shader 'icons/spawnarmor'
+Shader icons/spawnarmor has a stage with no image
+RE_RegisterShaderNoMip(icons/spawnarmor) failed
+RE_RegisterModel: failed to load models/powerups/keys/key_master.md3
+WARNING: R_FindImageFile could not find 'icons/key_master.tga' in shader 'icons/key_master'
+Shader icons/key_master has a stage with no image
+RE_RegisterShaderNoMip(icons/key_master) failed
+WARNING: R_FindImageFile could not find 'gfx/damageq3/blood_stain.tga' in shader 'q3bloodMark'
+Shader q3bloodMark has a stage with no image
+RE_RegisterShader(q3bloodMark) failed
+RE_RegisterShaderNoMip(icons/key_master) failed
+using default shader for 'textures/ctf2/redteam01'
+using default shader for 'team_icon/Red Team_red'
+WARNING: R_RemapShader: new shader team_icon/Red Team_red not found
+using default shader for 'textures/ctf2/redteam02'
+using default shader for 'textures/ctf2/blueteam01'
+using default shader for 'team_icon/Blue Team_blue'
+WARNING: R_RemapShader: new shader team_icon/Blue Team_blue not found
+using default shader for 'textures/ctf2/blueteam02'
+0:00 CG_EventHandling type: 4
+CG_EventHandling type: 4  not handled
+0x43c2b3 : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-player/code/qcommon/cm_test.c (41) : in function (CM_PointLeafnum_r)
+
+
+
+
+CG_EventHandling type: 4  not handled
+
+Program received signal SIGSEGV, Segmentation fault.
+CM_PointLeafnum_r (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
+) at code/qcommon/cm_test.c:41
+41      code/qcommon/cm_test.c: No such file or directory.
+        in code/qcommon/cm_test.c
+	(gdb) bt
+	#0  CM_PointLeafnum_r (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
+	) at code/qcommon/cm_test.c:41
+	#1  CM_PointContents (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
+	) at code/qcommon/cm_test.c:248
+	#2  0x0040ad15 in CL_CgameSystemCalls (args=0x363ac94) at code/client/cl_cgame.c:965
+	#3  0x00494ce2 in VM_DllSyscall (arg=<value optimized out>) at code/qcommon/vm.c:354
+	#4  0x39a122b0 in trap_CM_PointContents (p=0x363ad48, model=0) at code/cgame/cg_syscalls.c:148
+	#5  0x399b9bbf in CG_PointContents (point=0x363ad48, passEntityNum=0) at code/cgame/cg_predict.c:189
+	#6  0x399dac36 in CG_ParseSpawnVars () at code/cgame/cg_spawn.c:296
+	#7  0x3993e1ba in CG_Init (serverMessageNum=Unhandled dwarf expression opcode 0xf3
+	) at code/cgame/cg_main.c:7971
+	#8  0x3993f101 in vmMain (command=0, arg0=11489, arg1=66, arg2=1, arg3=1, arg4=0, arg5=4363247, arg6=0, arg7=0,
+	    arg8=21668, arg9=41880703, arg10=12, arg11=0) at code/cgame/cg_main.c:81
+	    #9  0x00496306 in VM_Call (vm=0x2d09280, callnum=<value optimized out>) at code/qcommon/vm.c:876
+	    #10 0x0040be95 in CL_InitCGame () at code/client/cl_cgame.c:1514
+	    #11 0x0042a6f5 in CL_Vid_Restart_f () at code/client/cl_main.c:3245
+	    #12 0x00442be3 in Cbuf_Execute () at code/qcommon/cmd.c:263
+	    #13 0x00447fc3 in Com_Frame () at code/qcommon/common.c:3535
+	    #14 0x004dfffc in SDL_main (argc=15, argv=0x3fe83c8) at code/sys/sys_main.c:830
+	    #15 0x005f2a30 in WinMain@16 ()
+	    #16 0x0060ca8d in main () at ./mingw-w64-crt/crt/crt0_c.c:18
+	    (gdb)
+
+  --console-output +devmap spidercrossings +demo blurshader1
+
+  --console-output +devmap spidercrossings
+
+    /demo blurshader1
+    /vid_restart
+
+* cg_useddemofov 1  and /devmap is zoomed in completely  -- how does ql modify usercmd_t with fov ?
+* https://github.com/brugal/wolfcamql/pull/19   CL_ScaledMilliseconds leads to wrong  time for 2d timer in render and cinematics when recording video
+* use of ri.Milliseconds() that shouldn't be scaled
+* opengl2:  r_greyscale  not working with lights and hud?
+* opengl2:  implement RB_SurfaceAxis()
+* opengl1:  why is r_greyscale applied in both CreateImage() and Upload32() ?
+* r_greyscale prevents explosion and particles from q3mme.fx  -- 2017-11-17 can't reproduce, maybe test/debug build
+* opengl2:  tr.renderImage = R_CreateImage("_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat);
+    *pic is null, check if that is checked correctly  -- added check before calling  RawImage_ScaleToPower2()
+* opengl2:  r_lightmap 1  disables sky
+* opengl2:  r_lightmapColor only works with r_mergelightmaps 0  check fat/deluxe maps
+* opengl2:  depth saving not working if r_useFbo 0
+* opengl2:  should fat/deluxe lightmaps use "*..." naming convention?
+* /devmap shows damage sprite number for self damage
+* crash:  opengl1  devmap campgrounds shut up to round area shoot floor of bottom area and /remaplasttwoshaders  --  2017-11-19
+
+   --console-output +devmap campgrounds +set cl_renderer opengl2
+
+     change shaders like above
+
+   /cl_renderer opengl1
+   /vid_restart
+
+   /listremappedshaders
+
+sv_fps 20  50 ms
+]\listremappedshaders
+0x544d1c20 : [unknown module] : [unknown file]
+0x442be3 : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-player/code/qcommon/cmd.c (187) : in function (Cbuf_Execute)
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atigktxx.dll)
+0x65fcac3c : C:\WINDOWS\SYSTEM32\atigktxx.dll : XopOpenLinkedAdapter
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x52c822a5 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x52c5d3dc : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x52c53ff6 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x539cd734 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x539c64d7 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+0x24b6b9c0 : [unknown module] : [unknown file]
+0x2276ed60 : [unknown module] : [unknown file]
+0x24b6b9c0 : [unknown module] : [unknown file]
+0x44280000 : C:\Share\wc\dev\wolfcam-ql\cgamex86.dll : c_pmove
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x54039970 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x54144ebc : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
+0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
+
+C:\Share\wc\dev>
+
+* opengl2:  check /remapshader with different lighting options  -- 2017-11-20 currently works with at least regular lightmaps and r_mergelightmaps 1
+* remap shader optimization:  check for light stage once
+* readme move to better place:
+
+    r_anaglyph2d
+    r_ignorehwgamma
+
+* opengl2:  r_darknessThresshold and hdr lightmaps
+* cg_weather optimize cvar lookup
+* opengl2:  r_shownormals 2 without wallhack effect
+* opengl2:  pass flag indicating that camera positions have changed so buffers don't have to be updated every frame
+* cg_demozoom and freespec is still zooming  CA-6plus-2017_11_01-17_18_12.dm_91
+* opengl2:  camera path drawing vao
+* opengl2:  r_anaglyphMode 19  and r_useFbo 1 gl error :
+^5ql ^5version 1069.0.0.0
+^1Com_Error(): GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_image.c at line 2150----- Client Shutdown (Client fatal crashed: GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_image.c at line 2150) -----
+disconnect
+
+* opengl2:  can't use check for RC_VIDEOFRAME with split video anaglyph 19, issuepending()?, same for opengl1
+* R_IssuePending() can prevent hud rendering with split analaglyph (opengl1)
+* opengl2:  r_debugSurface uses immediate mode ri.CM_DrawDebugSurface
+* 109176-SKrapha(POV)-vs-8PLAYevil-elder-2016_.dm_91  seeking zoom stays on
+
+
+----
+
 
 brugal

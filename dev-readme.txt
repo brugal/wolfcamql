@@ -18,6 +18,8 @@ compile freetype win32 (from linux):
   make
   cp objs/.libs/libfreetype.a ...
 
+  for 64 bit:  --host=x86_64-w64-mingw32
+
 ----
 
 6014:cc46e2efef98 ioquake3 patch:  2014-03-08-02 Update SDL2 to 2.0.2

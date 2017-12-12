@@ -5028,8 +5028,7 @@ void CL_Video_f( void )
 		  jpg = qtrue;
 	  } else if (!Q_stricmp(Cmd_Argv(i), "png")) {
 		  png = qtrue;
-	  } else if (!Q_stricmp(Cmd_Argv(i), "split")  &&  Cvar_VariableIntegerValue("test3d")) {
-		  //FIXME no -- still other stuff
+	  } else if (!Q_stricmp(Cmd_Argv(i), "split")) {
 		  SplitVideo = qtrue;
 	  } else if (!Q_stricmp(Cmd_Argv(i), "name")) {
 		  if (!Q_stricmp(Cmd_Argv(i + 1), ":demoname")) {
@@ -5042,10 +5041,6 @@ void CL_Video_f( void )
 		  }
 		  i++;
 	  }
-  }
-
-  if (Cvar_VariableIntegerValue("r_anaglyphMode") == 19  &&  Cvar_VariableIntegerValue("test3d")) {
-	  SplitVideo = qtrue;
   }
 
   if (!avi  &&  !tga  &&  !jpg  &&  !png) {

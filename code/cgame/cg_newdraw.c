@@ -5151,26 +5151,65 @@ int CG_GetCurrentTimeWithDirection (void)
 	  }
 
 		  //Com_Printf("timeplayed %d   cgs.timelimit %d\n", timePlayed, cgs.timelimit);
+#if 0
+	  if (cgs.protocol == PROTOCOL_Q3) {
 
+	  } else if ((cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTF)  &&  cgs.realTimelimit) {
+		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
+			  numOverTimes = 1;
+			  overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
+			  overTimeAmount = cgs.timelimit;
+		  } else {
+			  numOverTimes = 0;
+			  overTimeOffset = 0;
+		  }
+	  } else if (!cg.warmup) {
+		  //FIXME take out, use CG_NumOverTimes(args);
+		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
+			  //Com_Printf("timeplayed %d  >  timelimit %d\n", timePlayed, cgs.timelimit * 60 * 1000);
+			  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+			  if (overTimeAmount) {
+				  numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
+			  } else {
+				  numOverTimes = 0;
+			  }
+			  if (overTimeAmount) {
+				  overTimeOffset = (timePlayed - (cgs.timelimit * 60 * 1000)) % overTimeAmount;
+			  } else {
+				  overTimeOffset = 0;
+			  }
+			  numOverTimes++;
+		  }
+	  }
+#endif
+
+#if 1
 	  if (cgs.protocol == PROTOCOL_Q3) {
 
 	  } else if (cgs.realTimelimit) {
 		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
-				overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
-				if (overTimeAmount) {
-					numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
-					// above value is zero based index
-					numOverTimes++;
-				} else {
-					overTimeAmount = cgs.timelimit;
-					numOverTimes = 1;
-				}
-				overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
+			  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+			  if (overTimeAmount) {
+				  numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
+				  // above value is zero based index
+				  numOverTimes++;
+
+				  if (cg_levelTimerOvertimeReset.integer) {
+					  overTimeOffset = (timePlayed - (cgs.timelimit * 60 * 1000)) % overTimeAmount;
+				  } else {
+					  overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
+				  }
+			  } else {
+				  overTimeAmount = cgs.timelimit;
+				  numOverTimes = 1;
+				  overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
+			  }
 		  } else {
 			  numOverTimes = 0;
 			  overTimeOffset = 0;
 		  }
 	  }
+#endif
 
 	  //FIXME not here, what if this function isn't called
 	  cgs.numOverTimes = numOverTimes;
@@ -8624,7 +8663,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
   case CG_OVERTIME: {
 	  if (!cg.warmup  &&  cgs.numOverTimes  &&  !(cg.snap->ps.pm_type == PM_INTERMISSION)) {
-		  CG_Text_Paint_Align(&rect, scale, color, "Overtime", 0, 0, textStyle, font, align);
+		  if (cgs.numOverTimes < 2) {
+			  CG_Text_Paint_Align(&rect, scale, color, "Overtime", 0, 0, textStyle, font, align);
+		  } else {
+			  CG_Text_Paint_Align(&rect, scale, color, va("Overtime x%d", cgs.numOverTimes), 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   }

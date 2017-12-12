@@ -1,7 +1,7 @@
 #ifndef cg_syscalls_h_included
 #define cg_syscalls_h_included
 
-#include "../renderer/tr_types.h"  // refEntity_t
+#include "../renderercommon/tr_types.h"  // refEntity_t
 #include "cg_camera.h"  // cameraPoint_t
 #include "cg_public.h"  // snapshot_t, itemPickup_t, timeOut_t
 

@@ -2240,16 +2240,15 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
 	int destHeight;
 	int alpha;
 	int shadowOffset;
-	//int randIntr;
-	//int randIntg;
-	//int randIntb;
-
-
 
 	//Com_Printf("replace shader %d for '%s'\n", h, text);
 
-
 #if 0
+	{
+		int randIntr;
+		int randIntg;
+		int randIntb;
+
 	randIntr = rand() % 256;
 	randIntg = rand() % 256;
 	randIntb = rand() % 256;
@@ -2266,6 +2265,7 @@ void CG_CreateNameSprite (float xf, float yf, float scale, const vec4_t color, c
     trap_ReplaceShaderImage(h, finalImgBuff, 64, 64);
 
 	return;
+	}
 #endif
 
 	if (!cg.menusLoaded) {
@@ -8618,7 +8618,6 @@ static void CG_DrawCrosshairTeammateHealth (void)
 	if (!cg_drawCrosshairTeammateHealth.integer) {
 		return;
 	}
-
 	if (cg.crosshairClientNum < 0  ||  cg.crosshairClientNum >= MAX_CLIENTS) {
 		return;
 	}
@@ -8692,13 +8691,13 @@ static void CG_DrawCrosshairTeammateHealth (void)
 		//CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
 		CG_Text_Paint(x, y, scale, color, s, 0, 0, style, font);
 	} else {
-		//CG_GetColorForHealth(ci->health, ci->armor, hcolor);
+		//CG_GetColorForHealth(health, armor, hcolor);
 		CG_GetColorForHealth(health, 0, hcolor);
 		//hcolor[0] = 1;
 		//hcolor[2] = 0;
 		//hcolor[2] = 1;
 		hcolor[3] = alpha;
-		//if (ci->health < 66) {
+		//if (health < 66) {
 		//	hcolor[2] = 0;
 		//}
 		//hcolor[1] = hcolor[1] / 255.0 * 227.0;

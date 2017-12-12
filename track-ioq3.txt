@@ -1477,54 +1477,54 @@ client gets disconnected with download blocks in the queue
     From /dev/humancontroller:
     to further reduce confusion, rename constants like MAX_ENTITIES to MAX_REFENTITIES
 
-2329 skip (rend2):  Added Rend2, an alternate renderer. (Bug #4358)
+2329 Added Rend2, an alternate renderer. (Bug #4358)
 2330 Fix restoring fs_game when default.cfg is missing.
 2331 Added myself to the list of maintainers.
-2332 skip (rend2):  Fix gcc warnings in Rend2.
-2333 skip (rend2):  Remove gfxmeminfo command when shuting down Rend2.
+2332 Fix gcc warnings in Rend2.
+2333 Remove gfxmeminfo command when shuting down Rend2.
 2334 Add smiletheory to credits in q3_ui.
 
 2335 Split Rend2's printing OpenGL extensions string (> 1024 characters) into separate function and merged into opengl1 renderer. (Fixes bug #5559.)
 
 2336 Merge changes to GL_Cull from Rend2 into opengl1 renderer, behavior is the same.
 
-2337 skip (rend2):  Remove speed claim until Rend2 beats opengl1 under typical circumstances.
+2337 Remove speed claim until Rend2 beats opengl1 under typical circumstances.
 
-2338 skip (rend2):  Fix FBO_*() usage when framebuffers are unavailable or undesired.
+2338 Fix FBO_*() usage when framebuffers are unavailable or undesired.
 
-2339 skip (rend2):  Remove ARRAY_SIZE, and use ARRAY_LEN instead.
+2339 Remove ARRAY_SIZE, and use ARRAY_LEN instead.
 
 2340 no (removed in later patch:  51df89ab132b8e05d9854df507c73e54fbd2884b)
     From /dev/humancontroller:
     fix the SMP functionality not being utilized (as of the import of Rend2)
 
-2341 skip (rend2):
+2341
     From /dev/humancontroller:
     when hard-linking renderers, put the old renderer (not the new one) into the "ioquake3" executable, and use a distinguished "ioquake3_rend2" executable for the new renderer
     (Fixes bug #5789.)
 
 2342 Remove initializing "sv_mapname" cvar in game. It's set to "" and never used.
 
-2343 skip (rend2):
+2343
     Fix some non-ASCII characters.
     Patch originally by /dev/humancontroller, modified by me.
 
 2344 Show reason non-default renderer failed to load.
-2345 skip (rend2):  Clean up getting pshadowMap in Rend2's R_DecomposeSort().
+2345 Clean up getting pshadowMap in Rend2's R_DecomposeSort().
 
 2346 Fix restoring old fs_game upon leaving a server. Patch by Ensiform.
 
 2347 Don't draw cursor during Team Arena's loading screen.
 
-2348 skip (rend2):  Ensure the correct FBO is bound when drawing. (Fixes bug #5791.)
+2348 Ensure the correct FBO is bound when drawing. (Fixes bug #5791.)
 
 2349 Change more operator commands to require sv_running to be usable. Patch by Ensiform.
 
-2350 skip (rend2):  When calling qglDrawRangeElementsEXT(), use proper start and end parameters.
+2350 When calling qglDrawRangeElementsEXT(), use proper start and end parameters.
 
-2351 skip (rend2):  Fix bugs where some surfaces weren't merged and others were counted as merged in R_MergeLeafSurfaces().
+2351 Fix bugs where some surfaces weren't merged and others were counted as merged in R_MergeLeafSurfaces().
 
-2352 skip (rend2):  Various shader fixes and optimizations.
+2352 Various shader fixes and optimizations.
 
 2353 Fix some "> MAX_*" to be ">= MAX_*".
 
@@ -1550,7 +1550,7 @@ client gets disconnected with download blocks in the queue
 
 2362 Remove references to non-existent functions CM_MarkFragments and CM_LerpTag.
 
-2363 skip (rend2):  Make software overbright optional (cvar r_softOverbright) and reduce the number of FBOs and FBO blits when able.
+2363 Make software overbright optional (cvar r_softOverbright) and reduce the number of FBOs and FBO blits when able.
 
 2364
     Changes suggested by DevHC:
@@ -1564,23 +1564,23 @@ client gets disconnected with download blocks in the queue
 2368 In q3_ui if uis.demoversion is set, hide "Team Arena" and "Mods" in main menu. (They aren't shown in id's q3a demo and use to be drawn under demo message).
 
 2369 Add length check here as well, thanks Ensiform
-2370 skip (rend2):  #5808 - Include and use .glsl in source (rend2)
-2371 skip (rend2):  Oops, fix line endings in new files in previous commit
+2370 #5808 - Include and use .glsl in source (rend2)
+2371 Oops, fix line endings in new files in previous commit
 
-2372 skip (rend2):  #5812 - Use refdef's coordinates when drawing to screen shadow fbo, and separate depth texture and screen texture coordinates in glsl shaders.
+2372 #5812 - Use refdef's coordinates when drawing to screen shadow fbo, and separate depth texture and screen texture coordinates in glsl shaders.
 
-2373 skip (rend2):  From /dev/humancontroller: Typo.
+2373 From /dev/humancontroller: Typo.
 
-2374 skip (rend2):
+2374
     - Include Rend2 renderer in MacOSX bundle.
     - Include OpenGL1 and Rend2 renderers in MacOSX UB
 
-2375 skip (rend2):  Include Rend2 renderer in NSIS installer.
-2376 skip (rend2):  Include OpenGL1 and Rend2 renderers in Loki Setup Installer.
+2375 Include Rend2 renderer in NSIS installer.
+2376 Include OpenGL1 and Rend2 renderers in Loki Setup Installer.
 
-2377 skip (rend2):  Have NSIS uninstaller delete rend2.
+2377 Have NSIS uninstaller delete rend2.
 
-2378 skip (rend2):  Split light sample into direct and ambient parts when using deluxemaps or per-vertex light vectors.  Fixes #5813.
+2378 Split light sample into direct and ambient parts when using deluxemaps or per-vertex light vectors.  Fixes #5813.
 
 2379 Fix writting voip data in demos (broke in r2102).
 
@@ -1590,9 +1590,9 @@ client gets disconnected with download blocks in the queue
     - Allow changing cl_voip without restarting.
     - Fix assert failing in CL_ParseVoip() while flipping cl_voip off and on.
 
-2382 skip (rend2):  Only declare var_SampleToView in lightall shader when it is actually used.
+2382 Only declare var_SampleToView in lightall shader when it is actually used.
 
-2383 skip (rend2):  Fix a couple files not ending with a newline.
+2383 Fix a couple files not ending with a newline.
 
 
 2384 Fix clients being able to reset their player state and respawn using donedl.
@@ -1611,9 +1611,9 @@ client gets disconnected with download blocks in the queue
     Save all arguments from connect for reconnect command.
     Remove unnecessary localhost check from reconnect command.
 
-2390  skip (rend2):  Support r_srgb even without hardware support.  Also tweak default autoexposure/tonemap settings to look good on both r_srgb 0 and 1.
+2390  Support r_srgb even without hardware support.  Also tweak default autoexposure/tonemap settings to look good on both r_srgb 0 and 1.
 
-2391  skip (rend2):  Missed a file in the previous commit.
+2391  Missed a file in the previous commit.
 2392  Changed the MacOS-X build system to make UB's containing i386 and x86_64 arches and made make-macosx.sh not build UB's but only standard binaries
 
 2393
@@ -1659,9 +1659,9 @@ client gets disconnected with download blocks in the queue
 
 2013-01-06-04 Fixed a typo in a comment
 
-2013-01-07-01 skip (rend2):  #5818 - Modular renderer and Rend2 support for MSVC.
+2013-01-07-01  #5818 - Modular renderer and Rend2 support for MSVC.
 
-2013-01-07-02 skip (rend2):  #5863 - Use proper texture coordinates for alpha tested materials when doing depth prepass.
+2013-01-07-02  #5863 - Use proper texture coordinates for alpha tested materials when doing depth prepass.
 
 2013-01-08-01
     Colorize text on win32 console
@@ -1680,7 +1680,7 @@ client gets disconnected with download blocks in the queue
 
 2013-01-09-02 Don't look for colors past win32 input line length
 
-2013-01-09-03 skip (rend2):  #5866: Fix surface culling through portals, and use the correct number of frustum planes.
+2013-01-09-03  #5866: Fix surface culling through portals, and use the correct number of frustum planes.
 
 2013-01-09-04
     Fix #5849 - broken snapvector inverts player speed
@@ -1754,7 +1754,7 @@ client gets disconnected with download blocks in the queue
 
 2013-01-28-01 The in_mouse stuff makes no sense in SDL2
 
-2013-01-30-01 skip (rend2):  Starting sunlight experimentation branch
+2013-01-30-01 Starting sunlight experimentation branch
 
 2013-01-30-02 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git into suntest
 
@@ -1769,9 +1769,9 @@ client gets disconnected with download blocks in the queue
 2013-02-02-02 Use Q_strncpyz in G_AddRandomBot
 2013-02-02-03 Remove MSG_WriteDeltaUsercmd and MSG_ReadDeltaUsercmd
 
-2013-02-04-01 skip (rend2):  Merge Reaction renderer features, remove "#ifdef REACTION"s
+2013-02-04-01 Merge Reaction renderer features, remove "#ifdef REACTION"s
 
-2013-02-04-02 skip (rend2):  Merge branch 'reactionmerge'
+2013-02-04-02 Merge branch 'reactionmerge'
 
 2013-02-07-01
     Increase favorite address buffer size in Team Arena UI
@@ -1780,7 +1780,7 @@ client gets disconnected with download blocks in the queue
 
 2013-02-07-02 Fix creating favorite when not on view favorite servers
 
-2013-02-07-03 skip (rend2):  Merge branch 'master' of https://github.com/ioquake/ioq3
+2013-02-07-03 Merge branch 'master' of https://github.com/ioquake/ioq3
 
 2013-02-08-01 Fix resolving IPv6 favorites in Team Arena UI
 
@@ -1791,7 +1791,7 @@ client gets disconnected with download blocks in the queue
 
     This does however allow favorites to contain hostnames which was explicitly not allowed before.
 
-2013-02-11-01 skip (rend2):
+2013-02-11-01
     Fix renderering TrueType Fonts in Rend2
 
     Reported by Axel Isouard (exidl)
@@ -1799,7 +1799,7 @@ client gets disconnected with download blocks in the queue
 2013-02-11-02 Unify/cleanup max snapshot entities on client and server
 2013-02-11-03 Adds Z checking to CanDamage function.
 2013-02-11-04 Add missing traps to cg_local.h
-2013-02-11-05 skip (rend2):  Remove newlines from Rend2 error messages
+2013-02-11-05  Remove newlines from Rend2 error messages
 2013-02-11-06 Update invalid g_gametype right away
 
 2013-02-11-07 5289 - Support for .pk3dir
@@ -1815,11 +1815,11 @@ client gets disconnected with download blocks in the queue
 2013-02-11-11 Fix possible delta from invalid entity
 2013-02-11-12 Fix compiling
 
-2013-02-12-01 skip (rend2):  #5878: Ensure surfaces are drawn before executing full-screen render
+2013-02-12-01  #5878: Ensure surfaces are drawn before executing full-screen render
 
-2013-02-15-01 skip (rend2):  renderer -> renderergl1, rend2 -> renderergl2
+2013-02-15-01  renderer -> renderergl1, rend2 -> renderergl2
 
-2013-02-15-02 skip (rend2):  Fixed build for mac (s/rend2/opengl2/)
+2013-02-15-02  Fixed build for mac (s/rend2/opengl2/)
 2013-02-15-03 5097 - Menu corrupted on start (on IRIX)
 2013-02-15-04 5717 - Gamecode can open file "" for reading
 2013-02-15-05 Remove unneeded variable extern
@@ -1832,12 +1832,12 @@ client gets disconnected with download blocks in the queue
     Dynamically allocate line buffer. (by ZTM)
 
 2013-02-16-01 Fix freeing source while parsing botfiles/items.c
-2013-02-16-02 skip (rend2):  Move some things into renderercommon
+2013-02-16-02  Move some things into renderercommon
 2013-02-16-03 Change radiant URL in README
-2013-02-16-04 skip (rend2):  Add renderercommon/tr_common.h
+2013-02-16-04  Add renderercommon/tr_common.h
 2013-02-16-05 Remove a few name tags
-2013-02-16-06 skip (rend2):  Add GPL header to tr_common.h
-2013-02-16-07 skip (rend2):  Fix zakk's screwups
+2013-02-16-06  Add GPL header to tr_common.h
+2013-02-16-07  Fix zakk's screwups
 
 2013-02-17-01 5882 - Update OpenAL Headers to OpenAL Soft 1.15.1
 
@@ -1859,7 +1859,7 @@ client gets disconnected with download blocks in the queue
 
 2013-02-27-01 Fix comment in snd_codec_opus.c
 
-2013-02-27-02 skip (rend2):
+2013-02-27-02
     Move noise function declations to tr_common.h
 
     tr_noise.c is in renderercommon directory, so declare them in header there too.
@@ -1879,23 +1879,23 @@ client gets disconnected with download blocks in the queue
 2013-03-03-02 Show lowercased ascii in bind command
 2013-03-03-03 Fix vote Y/1 and teamvote Y/1
 
-2013-03-05-01 skip (rend2):
+2013-03-05-01
     Calculate viewport and screen texture coordinates correctly for sun shadows.
  This fixes part of #5889.
 
-2013-03-05-02 skip (rend2):  Simplify previous patch.
-2013-03-05-03 skip (rend2):  Oops, fix typo.
+2013-03-05-02  Simplify previous patch.
+2013-03-05-03  Oops, fix typo.
 2013-03-05-04 Testing out autobuild stuff.
 
 2013-03-05-05 Fixed the auto build, for details go here: https://travis-ci.org/ioquake/ioq3
 
 2013-03-06-01 updated travis file to notify us in our lonely IRC outpost of love.
 
-2013-03-06-01 skip (rend2):  Simplify RE_StretchRaw() with RE_UploadCinematic() and RB_InstantQuad2().
+2013-03-06-01  Simplify RE_StretchRaw() with RE_UploadCinematic() and RB_InstantQuad2().
 
-2013-03-06-01 skip (rend2):  Some minor cleanup.
+2013-03-06-01  Some minor cleanup.
 
-2013-03-06-01 skip (rend2):  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
+2013-03-06-01  Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
 
 2013-03-06-02
     autobuild: Enable Ogg Vorbis, Freetype, and MDR model support
@@ -1905,7 +1905,7 @@ client gets disconnected with download blocks in the queue
 2013-03-06-03 autobuild: test default build, with extra options, and mingw
 2013-03-06-04 autobuild: try to fix extra options build and mingw builds
 
-2013-03-06-05 skip (rend2):  Fix RAVENMD4 warnings in OpenGL2
+2013-03-06-05  Fix RAVENMD4 warnings in OpenGL2
 2013-03-06-06 Improve build-test.sh for non-travis-ci usage
 2013-03-06-07 build-test.sh always run clean first, for non-travis-ci
 
@@ -1915,7 +1915,7 @@ client gets disconnected with download blocks in the queue
 2013-03-07-02 Use -q instead of -qq on apt-get
 2013-03-07-03 One last try...
 
-2013-03-07-04 skip (rend2):  Fix clampmapped images being always treated as sRGB.
+2013-03-07-04  Fix clampmapped images being always treated as sRGB.
 
 2013-03-07-05 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
 
@@ -1937,11 +1937,11 @@ client gets disconnected with download blocks in the queue
 2013-03-11-01 Remove old x86_64 JIT compiler
 2013-03-11-02 Remove README note about USE_OLD_VM64
 
-2013-03-11-03 skip (rend2):  Always reset vertex attrib pointers with animated meshes.
+2013-03-11-03  Always reset vertex attrib pointers with animated meshes.
 
-2013-03-12-01 skip (rend2):  Move renderers a bit closer together
+2013-03-12-01 Move renderers a bit closer together
 2013-03-12-02 skip (rend common):  Fix USE_FREETYPE breakage
-2013-03-12-03 skip (rend2):  Oops missed a bit
+2013-03-12-03  Oops missed a bit
 2013-03-12-04 Move mingw to separate build job on travis-ci
 2013-03-12-05 Fix some clang warnings
 2013-03-12-06 Fix mingw gcc name in build-test.sh
@@ -1951,10 +1951,10 @@ client gets disconnected with download blocks in the queue
 
     Libs are missing.
 
-2013-03-12-08 skip (rend2):  Remove some more automatic sRGB image flags.
+2013-03-12-08 Remove some more automatic sRGB image flags.
 
-2013-03-14-01 skip (rend2):  Fix compilation in VS2008.
-2013-03-14-02 skip (rend2):  Support more tcgens in lightall shader.
+2013-03-14-01  Fix compilation in VS2008.
+2013-03-14-02  Support more tcgens in lightall shader.
 
 2013-03-18-01 Remove RAVENMD4 #define
 2013-03-18-02 Fix loading and rendering IQMs with no joints
@@ -1970,7 +1970,7 @@ client gets disconnected with download blocks in the queue
 
     It was causing a warning on Windows x64.
 
-2013-03-20-01 skip (rend2):  Make all GLSL shaders use the same set of uniforms.
+2013-03-20-01  Make all GLSL shaders use the same set of uniforms.
 
 2013-03-21-01
     Consolidate architecture names
@@ -2003,7 +2003,7 @@ client gets disconnected with download blocks in the queue
 
 2013-03-24-01 Enable building QVMs when cross-compiling
 
-2013-03-25-01 skip (rend2):  s/enum/typedef enum/g on uniform_t for glorious fix of mac build. h/t...
+2013-03-25-01  s/enum/typedef enum/g on uniform_t for glorious fix of mac build. h/t...
 
 2013-03-25-02 Cross compiling for OS X
 
@@ -2023,7 +2023,7 @@ client gets disconnected with download blocks in the queue
 2013-03-28-01 Fix OSX app/ub scripts
 2013-03-28-02 Fix typo preventing OSX native compiles
 
-2013-04-02-01 skip (rend2):
+2013-04-02-01
     Add sunlight/lightmap merging by multiply (r_sunlightMode 1)
     Merge additive sunlight and map lighting into one GLSL shader (r_sunlightMode 2)
     Change single lightmap blends to use lightall
@@ -2039,7 +2039,7 @@ client gets disconnected with download blocks in the queue
 
 2013-04-09-01 Fix shfolder.dll not getting freed
 
-2013-04-10-01 skip (rend2):
+2013-04-10-01
     Fix zone memory leak in OpenGL2 renderer
 
     meminfo command showed the dynamic renderer zone amount going up by 1824 bytes each time I reloaded map using map command.
@@ -2069,7 +2069,7 @@ client gets disconnected with download blocks in the queue
 
     Before it always used BASEGAME fallback code.
 
-2013-04-22-03 skip (rend2):  Don't scale shadow multipliers by overbrightbits, and improve documentation.
+2013-04-22-03  Don't scale shadow multipliers by overbrightbits, and improve documentation.
 
 2013-04-24-01
     Don't allow modifying qvms or pk3s
@@ -2081,9 +2081,9 @@ client gets disconnected with download blocks in the queue
 
 2013-04-26-01 Correct TeamCount return type and team argument type
 
-2013-04-26-02 skip (rend2):  #5889: Do post-processing only on viewport portion of frame buffer.
+2013-04-26-02  #5889: Do post-processing only on viewport portion of frame buffer.
 
-2013-05-03-01 skip (rend2):  Use specular texture RGB as specular reflectance, multiplied by per-material value.
+2013-05-03-01  Use specular texture RGB as specular reflectance, multiplied by per-material value.
 
 2013-05-03-02
     Show surface names in excessive vertexes and triangles warnings
@@ -2183,12 +2183,12 @@ client gets disconnected with download blocks in the queue
     In CTF, rail or plasma gun/ammo were not predicted for pickup depending on what team player is on. The rail and plasma values are the same as PW_REDFLAG and PW_BLUEFLAG.
     In 1FCTF, only neutral flag, BFG, and BFG ammo were predicted for pickup. WP_BFG is equal to PW_NEUTRALFLAG.
 
-2013-05-24-01 skip (rend2):
+2013-05-24-01
     Remove RF_SUNFLARE from OpenGL2 renderer
 
     RF_SUNFLARE didn't do anything after commit "Merge Reaction renderer features, remove "#ifdef REACTION"s".
 
-2013-05-24-02 skip (rend2):  Clarify comment for OpenGL2's RDF_NOFOG
+2013-05-24-02  Clarify comment for OpenGL2's RDF_NOFOG
 
 2013-05-27-01 Fix Freetype build problems
 
@@ -2198,9 +2198,9 @@ client gets disconnected with download blocks in the queue
     Removed #if 0 ... #endif around RB_DrawSun().
     Merged improvements and changes from OpenGL2 renderer.
 
-2013-05-29-01 skip (rend2):  Suppress warning
+2013-05-29-01  Suppress warning
 
-2013-05-30-01 skip (rend2):
+2013-05-30-01
     fix some "\n"-related stuff
 
     add missing "\n"s to some Printf()-like calls (in Rend2)
@@ -2278,15 +2278,15 @@ client gets disconnected with download blocks in the queue
     Could cause visual issues and error "RB_EndSurface() - SHADER_MAX_VERTEXES hit".
 
 
-2013-06-20-01 skip (rend2):  Fix r_speeds 4 in OpenGL2 renderer
+2013-06-20-01  Fix r_speeds 4 in OpenGL2 renderer
 
-2013-06-20-02 skip (rend2):
+2013-06-20-02
     Fix r_nocurves in OpenGL2 renderer
 
     Check r_nocurves in surface cull.
     While r_nocurves is enabled, don't use merged surfaces because merged curves would be renderer. (note: surface merging is enabled by r_mergeLeafSurfaces)
 
-2013-06-20-03 skip (rend2):
+2013-06-20-03
     Fix r_mergeLightmaps 0 crashing OpenGL2 renderer
 
     tr.fatLightmapStep was 0 and caused modulus division by 0.
@@ -2368,7 +2368,7 @@ low/high preference.
 
 2013-07-18-03 Makefile builds fall back to traditional archiving when Mac OS X application bundle generation fails
 
-2013-05-06-01 skip (rend2):  Misc fixes to IBO code to correctly use sizeof(glIndex_t)
+2013-05-06-01  Misc fixes to IBO code to correctly use sizeof(glIndex_t)
 
 2013-07-21-01
     Fix Windows server history scrolling
@@ -2377,7 +2377,7 @@ low/high preference.
     when going to previous a line is skipped.
     Don't let CON_HistPrev go to unused lines.
 
-2013-07-21-02 skip (rend2):
+2013-07-21-02
     Add assignment below declarations otherwise compiling fails with msvc
 
     Signed-off-by: Zack Middleton <zturtleman@gmail.com>
@@ -2428,11 +2428,11 @@ low/high preference.
 
 2013-08-20-01 Update SDL2 headers... oops
 
-2013-08-23-01 skip (rend2):  #6004: OpenGL2: Make any CGEN_LIGHTING_DIFFUSE stages use lightall shader.
+2013-08-23-01  #6004: OpenGL2: Make any CGEN_LIGHTING_DIFFUSE stages use lightall shader.
 
-2013-08-23-02 skip (rend2):  #5999: OpenGL2: Don't use lightall shader with deforms or adjustColorsForFog.
+2013-08-23-02  #5999: OpenGL2: Don't use lightall shader with deforms or adjustColorsForFog.
 
-2013-08-23-03 skip (rend2):  Fix upside-down SSAO.
+2013-08-23-03  Fix upside-down SSAO.
 
 2013-08-25-01 Fix recursive crash when home path cannot be created
 
@@ -2463,26 +2463,26 @@ low/high preference.
 
 2013-09-15-01 Various fixes from Fuma
 
-2013-09-16-01 skip (rend2):  #5979: Cubemap support for opengl2
+2013-09-16-01  #5979: Cubemap support for opengl2
 
-2013-09-16-02 skip (rend2):  OpenGL2: Use RGBM instead of RGBE encoding for lightmaps.
+2013-09-16-02  OpenGL2: Use RGBM instead of RGBE encoding for lightmaps.
 
-2013-09-16-03 skip (rend2):  OpenGL2: Fix inaccurate RGBM calculation.
+2013-09-16-03  OpenGL2: Fix inaccurate RGBM calculation.
 
 2013-09-16-03 Merge branch 'master' into sdl2
-2013-09-16-04 skip (rend2):  OpenGL2: Speed up fog shader slightly.
-2013-09-16-05 skip (rend2):  OpenGL2: Some shader cleanup
+2013-09-16-04  OpenGL2: Speed up fog shader slightly.
+2013-09-16-05  OpenGL2: Some shader cleanup
 
-2013-09-17-01 skip (rend2):  OpenGL2: Fix for "unsupported framebuffer format" bug
+2013-09-17-01  OpenGL2: Fix for "unsupported framebuffer format" bug
 
-2013-09-17-02 skip (rend2):  OpenGL2: reduce varying usage in lightall shader.
+2013-09-17-02  OpenGL2: reduce varying usage in lightall shader.
 
 2013-09-19-01
     Fix UI parse message for menu files
 
     Missing a space after colon.
 
-2013-09-20-01 skip (rend2):  OpenGL2: Disable GL_ARB_seamless_cube_map by default, caused huge frame drops on some hardware
+2013-09-20-01  OpenGL2: Disable GL_ARB_seamless_cube_map by default, caused huge frame drops on some hardware
 
 2013-09-21-01
     Fix building sdl2 branch on travis-ci
@@ -2497,14 +2497,14 @@ low/high preference.
 
     Previous versions of SDL would send SDL_MOUSEBUTTONUP events for the mouse wheel immediately following the corresponding SDL_MOUSEBUTTONDOWN event
 
-2013-09-24-01 skip (rend2):  OpenGL2: Remove AGEN_FRESNEL(superceded by cubemap patch), and some small fixes and optimizations
+2013-09-24-01  OpenGL2: Remove AGEN_FRESNEL(superceded by cubemap patch), and some small fixes and optimizations
 
 2013-09-30-01
     Merge pull request #16 from cmf028/sdl2
 
     SDL2 fixes
 
-2013-10-07-01 skip (rend2):  OpenGL2: default to RGBM lightmap, and add r_floatLightmap for old behaviour.
+2013-10-07-01  OpenGL2: default to RGBM lightmap, and add r_floatLightmap for old behaviour.
 
 2013-10-08-01
     Revert "5097 - Menu corrupted on start (on IRIX)"
@@ -2518,13 +2518,13 @@ low/high preference.
 
     Causes handle 0 to be returned by S_RegisterSound.
 
-2013-10-10-01 skip (rend2):  OpenGL2: Fix TCGEN_ENVIRONMENT stages not rendering correctly.
+2013-10-10-01  OpenGL2: Fix TCGEN_ENVIRONMENT stages not rendering correctly.
 
-2013-10-14-01 skip (rend2):  OpenGL2: Clean up texmod calculations, and improve vertex animation handling.
+2013-10-14-01  OpenGL2: Clean up texmod calculations, and improve vertex animation handling.
 
-2013-10-14-02 skip (rend2):  OpenGL2: Use an idea from ETXreal and separate world VBO into separate VBOs by shader.
+2013-10-14-02  OpenGL2: Use an idea from ETXreal and separate world VBO into separate VBOs by shader.
 
-2013-10-15-01 skip (rend2):  OpenGL2: Merge bsp surface structs into a single struct, and more cleanup.
+2013-10-15-01  OpenGL2: Merge bsp surface structs into a single struct, and more cleanup.
 
 2013-10-18-01
     Fix SDL2 losing event subsystem
@@ -2578,7 +2578,7 @@ in SDL2.
 2013-10-29-04 Fix IQM comments refering to IQM_BYTE instead of IQM_UBYTE
 
 2013-10-29-05 Initialize blendIndexesType and blendWeightsType
-2013-10-29-06 skip (rend2):  Merge last two commits into renderergl2
+2013-10-29-06  Merge last two commits into renderergl2
 
 2013-11-02-01 Remove unused shader state code from tr_local.h
 2013-11-02-02 Remove vertexLightmap from textureBundle_t, it's never qtrue
@@ -2587,15 +2587,15 @@ in SDL2.
 
 2013-11-02-04 Merge branch 'master' into sdl2
 
-2013-11-03-01 skip (rend2):  OpenGL2: Reduce glsl shader count by using a uniform to disable textures.
+2013-11-03-01  OpenGL2: Reduce glsl shader count by using a uniform to disable textures.
 
-2013-11-04-01 skip (rend2):  OpenGL2: Revisit fragment tangent space calculation, and remove tangent space lighting.
+2013-11-04-01  OpenGL2: Revisit fragment tangent space calculation, and remove tangent space lighting.
 
-2013-11-04-02 skip (rend2):  OpenGL2: Some small shader optimizations.
+2013-11-04-02  OpenGL2: Some small shader optimizations.
 
-2013-11-05-01 skip (rend2):  OpenGL2: Reimplement soft overbright to avoid a framebuffer blit.
+2013-11-05-01  OpenGL2: Reimplement soft overbright to avoid a framebuffer blit.
 
-2013-11-05-02 skip (rend2):  OpenGL2: Prefer VBO/IBO sizes of around 4MB.
+2013-11-05-02  OpenGL2: Prefer VBO/IBO sizes of around 4MB.
 
 2013-11-06-01 no (different):
     Fix running if built on OS X 10.9
@@ -2605,9 +2605,9 @@ in SDL2.
 
     It was happening in COM_StripExtension during map load.
 
-2013-11-07-01 skip (rend2):  OpenGL2: Small optimizations and comments in world VBO creation and surface merging.
+2013-11-07-01  OpenGL2: Small optimizations and comments in world VBO creation and surface merging.
 
-2013-11-08-01 skip (rend2):  OpenGL2: Remove srfTriangle_t, and use glIndex_t instead.
+2013-11-08-01  OpenGL2: Remove srfTriangle_t, and use glIndex_t instead.
 2013-11-08-02 Fix VM FOpenFile( FS_READ ) files seeking twice in FS_Seek
 2013-11-08-03 Remove unused variable baseOffset from fsh[]
 
@@ -2649,21 +2649,21 @@ in SDL2.
     So start the stream in S_AL_RawSamples.
 
 2013-11-10-04 Remove unused cvar_t variable cl_trn
-2013-11-10-05 skip (rend2):  Fix comparing unsigned values to < 0 in gl2
+2013-11-10-05  Fix comparing unsigned values to < 0 in gl2
 
-2013-11-12-01 skip (rend2):  OpenGL2: Calculate bitangent in shader, and store normal/tangent as normalized byte arrays.
+2013-11-12-01  OpenGL2: Calculate bitangent in shader, and store normal/tangent as normalized byte arrays.
 
 2013-11-17-01 Merge branch 'master' into sdl2
 
-2013-11-19-01 skip (rend2):  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
+2013-11-19-01  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
 
-2013-11-19-02 skip (rend2):  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
+2013-11-19-02  OpenGL2: Match glsl data type names: matrix_t -> mat4_t, vec*i_t -> ivec*_t
 
 2013-11-19-03 Merge branch 'HEAD' of https://github.com/ioquake/ioq3.git
 
-2013-11-20-01 skip (rend2):  #6059: OpenGL2: Read depths from resolve fbo when msaa is on in RB_TestFlare().
+2013-11-20-01  #6059: OpenGL2: Read depths from resolve fbo when msaa is on in RB_TestFlare().
 
-2013-11-20-02 skip (rend2):
+2013-11-20-02
     OpenGL2: Use RGBA16F format for HDR.
 
     RGB16F is not 4-byte aligned and not supported by certain hardware.
@@ -2694,7 +2694,7 @@ in SDL2.
 2013-11-23-01 Improve github interperation of README.md
 2013-11-23-02 Add header for standalone game licensing
 
-2013-11-25-01 skip (rend2):  Silence warnings about unused static functions in opengl2
+2013-11-25-01  Silence warnings about unused static functions in opengl2
 
 2013-11-25-02
     Updating the tracking code properly.
@@ -2711,14 +2711,14 @@ in SDL2.
 
 2013-11-29-01 #6069: Remove md4 model support.
 
-2013-11-30-01 skip (rend2):
+2013-11-30-01
     OpenGL2: Remove redundant GLS_* enum.
 
     Thanks Xycaleth for pointing out.
 
 2013-11-30-02 Remove R_AddAnimSurfaces and R_MakeAnimModel prototypes
 
-2013-12-01-01 skip (rend2):  Fix glsl DEFORM_BULGE calculation
+2013-12-01-01  Fix glsl DEFORM_BULGE calculation
 
 2013-12-01-02
     Merge pull request #21 from cmf028/master
@@ -2748,30 +2748,30 @@ in SDL2.
 2013-12-08-01 Fix checking if MP dylibs exist in make-macosx-app.sh
 2013-12-09-01 Fix some file paths for msvc 2008
 
-2013-12-09-02 skip (rend2):  OpenGL2: Support GL_ARB_vertex_type_2_10_10_10_rev for normals/tangents/lightdirs
+2013-12-09-02  OpenGL2: Support GL_ARB_vertex_type_2_10_10_10_rev for normals/tangents/lightdirs
 
 2013-12-09-03 Fix crash in OpenAL when no input devices are available
 
-2013-12-13-01 skip (rend2):  OpenGL2: Small glsl shader optimizations, fixes, and cleanup.
+2013-12-13-01  OpenGL2: Small glsl shader optimizations, fixes, and cleanup.
 
 2013-12-15-01
     Fix playback of stereo sounds in Base sound system
 
     Already works correctly in OpenAL.
 
-2013-12-16-01 skip (rend2):  Don't forget to install the renderer2 binary if USE_RENDERER_DLOPEN=0
+2013-12-16-01  Don't forget to install the renderer2 binary if USE_RENDERER_DLOPEN=0
 
-2013-12-17-01 skip (rend2):  #6077: OpenGL2: Add r_ignoreDstAlpha.
+2013-12-17-01  #6077: OpenGL2: Add r_ignoreDstAlpha.
 
 2014-01-10-01 Fix PNG tRNS length checks
-2014-01-10-02 skip (rend2):  Make GL2 MDR code use R_VboPackNormal for normal
+2014-01-10-02  Make GL2 MDR code use R_VboPackNormal for normal
 
 2014-01-11-01
     Remove extra client_t::csUpdated[] slot
 
     sv.configstrings[] is limited to 0 to MAX_CONFIGSTRINGS-1, make client_t::csUpdated[] the same.
 
-2014-01-11-02 skip (rend2):
+2014-01-11-02
     fixed formatting of a few GLSL float constants
     remove unneeded version number from texturecolor shader
     call GLSL_VertexAttribPointers after attribute arrays have been enabled
@@ -2783,7 +2783,7 @@ in SDL2.
 
     Maybe this is why demoName is a static global with the comment 'compiler bug workaround'?
 
-2014-01-12-03 skip (rend2):
+2014-01-12-03
     Fix GL2 deluxemap 0,0,0 to 127,127,127
 
     Checked if first byte was 0 twice instead of checking second byte.
@@ -2800,16 +2800,16 @@ in SDL2.
 
     Include opengl2 client in make copyfiles if USE_RENDERER_DLOPEN=0
 
-2014-01-12-06 skip (rend2):   Don't create images/framebuffers that won't be used, and add checks before use.
+2014-01-12-06   Don't create images/framebuffers that won't be used, and add checks before use.
 
-2014-01-14-01 skip (rend2):  don't call va each frame in GLSL_VertexAttribPointers
+2014-01-14-01  don't call va each frame in GLSL_VertexAttribPointers
 
 2014-01-14-02
     Merge pull request #30 from inolen/nova_fix
 
     don't call va each frame in GLSL_VertexAttribPointers
 
-2014-01-16-01 skip (rend2):
+2014-01-16-01
     Fix OpenGL2 non-HDR map surface over brighting
 
     Vertex lit map surfaces were saturating to white when
@@ -2914,10 +2914,10 @@ the demo.
 
     Upgrade libcurl to the latest release (7.35.0).
 
-2014-02-13-02 skip (rend2):  OpenGL2: Set RGBM to use a multiplier of 1, and only use it with HDR lightmaps.
+2014-02-13-02  OpenGL2: Set RGBM to use a multiplier of 1, and only use it with HDR lightmaps.
 
-2014-02-14-01 skip (rend2):  OpenGL2: Fix bug in ColorToRGBM().
-2014-02-14-02 skip (rend2):  OpenGL2: Oops, set lightmap alpha to 1.
+2014-02-14-01  OpenGL2: Fix bug in ColorToRGBM().
+2014-02-14-02  OpenGL2: Oops, set lightmap alpha to 1.
 
 2014-02-14-03
     Rebuilt Windows libcurl-7.35.0 static libraries
@@ -2925,10 +2925,10 @@ the demo.
     Fix linking with mingw32.
     Enable FTPS and HTTPS.
 
-2014-02-15-01 skip (rend2):  OpenGL2: Fix rendering when r_hdr = 0 and r_floatLightmap = 1
+2014-02-15-01  OpenGL2: Fix rendering when r_hdr = 0 and r_floatLightmap = 1
 
 2014-02-18-01 Merge branch 'master' into sdl2
-2014-02-20-01 skip (rend2):  OpenGL2: Remove and force r_softOverbright.
+2014-02-20-01  OpenGL2: Remove and force r_softOverbright.
 
 2014-02-22-01 Replace deprecated alDopplerVelocity with alSpeedOfSound per OpenAL 1.1 spec
 
@@ -2937,7 +2937,7 @@ the demo.
 
     Let's load driver even if it doesn't have the deprecated alDopplerVelocity.
 
-2014-02-22-03 skip (rend2):  OpenGL2: Fix pshadows for MDR models
+2014-02-22-03  OpenGL2: Fix pshadows for MDR models
 
 2014-02-22-04 Fix colored name padding and allow IPv6 address to fit in output of 'status' command
 
@@ -2946,18 +2946,18 @@ the demo.
 2014-03-02-01 Fix native trap_BotMutateGoalFuzzyLogic
 2014-03-02-02 Fix s_alDopplerSpeed default value
 
-2014-03-03-01 skip (rend2):  OpenGL2: Minor GLSL shader improvements.
+2014-03-03-01  OpenGL2: Minor GLSL shader improvements.
 
-2014-03-04-01 skip (rend2):  OpenGL2: Add normalScale and parallaxDepth stage keywords and helper cvars.
+2014-03-04-01  OpenGL2: Add normalScale and parallaxDepth stage keywords and helper cvars.
 
-2014-03-04-02 skip (rend2):  OpenGL2: Set default normal/specular in RE_RegisterShaderFromImage
+2014-03-04-02  OpenGL2: Set default normal/specular in RE_RegisterShaderFromImage
 
 2014-03-04-03
     Merge pull request #57 from MAN-AT-ARMS/specularScale
 
     OpenGL2: Set default normal/specular in RE_RegisterShaderFromImage
 
-2014-03-07-01 skip (rend2):
+2014-03-07-01
     Don't wash out HDR vertex lite surfaces in OpenGL2
 
     Vertex lite surfaces being brighter than light maps looks bad,
@@ -2978,7 +2978,7 @@ the demo.
 
 2014-03-09-01 Update SDL 1.2.15 to Revision 8040
 
-2014-03-10-01 skip (rend2):
+2014-03-10-01
     Fix error handling in R_ParseSpawnVars
 
     When R_GetEntityToken returns qfalse it resets pointer for parsing, by
@@ -2986,7 +2986,7 @@ the demo.
 
     Also add newlines to printfs.
 
-2014-03-10-02 skip (rend2):  Don't say cubemap is outside lightgrid 6 times
+2014-03-10-02  Don't say cubemap is outside lightgrid 6 times
 
 2014-03-10-03 no (different - double check):
     Fix R_GetEntityToken ending prematurely
@@ -3028,7 +3028,7 @@ the demo.
 
 2014-03-15-01 Don't crash when fail to create SDL window
 
-2014-03-16-01 skip (rend2):  OpenGL2: Parallax corrected cubemap (cheaper trick)
+2014-03-16-01  OpenGL2: Parallax corrected cubemap (cheaper trick)
 
 2014-03-17-01
     Fix multisampling on X11
@@ -3058,7 +3058,7 @@ the demo.
 
     I don't know of any issues in ioq3 caused by this.
 
-2014-03-19-01 skip (rend2):  #6095: OpenGL2: Use areamask and leaf cluster for PVS when VIS is missing.
+2014-03-19-01  #6095: OpenGL2: Use areamask and leaf cluster for PVS when VIS is missing.
 
 2014-03-24-01
     Merge pull request #59 from MAN-AT-ARMS/sdl_1215_hg
@@ -3112,11 +3112,11 @@ the demo.
 
 2014-04-07-01 Add MSVC SDL 1.2.15 Revision 8040 import libs
 
-2014-04-16-01 skip (rend2):  OpenGL2: Remove sRGB support, replace with gamma cvars.
+2014-04-16-01  OpenGL2: Remove sRGB support, replace with gamma cvars.
 
 2014-04-16-02 Rebuilt MSVC SDL 1.2.15 Revision 8040 import libs
 
-2014-04-22-01 skip (rend2):  OpenGL2: Remove misleading documentation for gamma cvars.
+2014-04-22-01  OpenGL2: Remove misleading documentation for gamma cvars.
 
 2014-05-01-01
     Fix cg.skulltrails out of bounds access in Team Arena Harvester mode
@@ -3192,7 +3192,7 @@ the demo.
 
     Coverity doesn't care if there is a warning, out of bounds access is bad.
 
-2014-05-25-02 skip (rend2):
+2014-05-25-02
     Don't use memset with non-zero value to fill ints
 
     Coverity reported using value -2 as a bad memset. Really doesn't make sense
@@ -3213,7 +3213,7 @@ the demo.
 
     Adding too many bans would write out of bounds. Found by Coverity.
 
-2014-05-25-06 skip (rend2):
+2014-05-25-06
     Have OpenGL2 "map $lightmap" check for NULL tr.lightmaps too
 
     Zero length lightmap lump will have NULL tr.lightmaps.
@@ -3238,9 +3238,9 @@ the demo.
 
     Found by Coverity.
 
-2014-05-27-02 skip (rend2):  OpenGL2: Reimplement MD3 tangent space calculation.
+2014-05-27-02  OpenGL2: Reimplement MD3 tangent space calculation.
 
-2014-05-27-03 skip (rend2):  OpenGL2: Really obvious optimization to previous commit.
+2014-05-27-03  OpenGL2: Really obvious optimization to previous commit.
 
 2014-05-29-01 Fix an invalid null deref check in the slider code.
 
@@ -3255,7 +3255,7 @@ the demo.
     Conflicts:
             .travis.yml
 
-2014-06-10-01 skip (rend2):
+2014-06-10-01
     OpenGL2 don't try to dlight surfaces that had all dlights culled
 
     In the renderers, dlightbits are never cleared from world surfaces.
@@ -3324,9 +3324,9 @@ the demo.
 2014-07-20-05 Fix compiling on Linux Mint
 2014-07-20-06 Allow user override of cURL, OpenAL, and SDL libs/cflags
 
-2014-07-22-01 skip (rend2):  OpenGL2: Replace R_MipMapsRGB() with faster version.
+2014-07-22-01  OpenGL2: Replace R_MipMapsRGB() with faster version.
 
-2014-07-26-01 skip (rend2):
+2014-07-26-01
     Don't load external GLSL files by default
 
     External GLSL should probably only be used for development testing,
@@ -3342,11 +3342,11 @@ the demo.
 
 2014-07-31-01 guard against out-of-bounds jump table targets
 
-2014-08-01-01 skip (rend2):  OpenGL2: Add fourth cascade for sun shadows, and adjust sun shadow cvar defaults.
+2014-08-01-01  OpenGL2: Add fourth cascade for sun shadows, and adjust sun shadow cvar defaults.
 
-2014-08-02-01 skip (rend2):  OpenGL2: Remove R_MipMap() and R_MipMap2(), and fix gamma conversion in R_MipMapsRGB()
+2014-08-02-01  OpenGL2: Remove R_MipMap() and R_MipMap2(), and fix gamma conversion in R_MipMapsRGB()
 
-2014-08-02-02 skip (rend2):  OpenGL2: Fix a glsl compile error on old hardware with r_shadowFilter 0.
+2014-08-02-02  OpenGL2: Fix a glsl compile error on old hardware with r_shadowFilter 0.
 
 2014-08-25-01 Fix assorted warnings
 
@@ -3406,7 +3406,7 @@ the demo.
 
     If ParseVector fails, color isn't fully set.
 
-2014-08-27-15 skip (rend2):
+2014-08-27-15
     Remove a numIboIndexes=0 that is not read from GL2 tr_bsp.c
 
     numIboIndexes is set to 0 inside the loop for each surface. Does not need to be set before loop.
@@ -3429,7 +3429,7 @@ the demo.
 
 2014-08-29-01 Use ColorIndexForNumber in Con_DrawSolidConsole
 
-2014-08-29-02 skip (rend2):
+2014-08-29-02
     Fix 6155: OpenGL2: some shader stages remains visible through fog volumes
 
     Fix CalcFog in generic_vp.glsl to fog fogged surfaces.
@@ -3447,7 +3447,7 @@ the demo.
 2014-09-01-05 Suppress warning of (deliberate) null pointer deference
 
 2014-09-01-06 Fix renderergl1 warnings
-2014-09-01-07 skip (rend2):  Fix renderergl2 warnings
+2014-09-01-07  Fix renderergl2 warnings
 2014-09-01-08 Fix more warnings
 
 2014-09-01-09 Actually, that's not suppressing, that's changing behaviour
@@ -3506,41 +3506,41 @@ the demo.
 
 2014-09-27-01 Add function for clearing global shader instead of duplicating the code
 
-2014-09-29-01 skip (rend2):
+2014-09-29-01
     Remove r_softOverbright from opengl2-readme.txt
 
     The cvar was removed and forced enabled.
 
-2014-09-29-02 skip (rend2):  OpenGL2: Don't segfault if r_ext_multitexture is disabled
+2014-09-29-02  OpenGL2: Don't segfault if r_ext_multitexture is disabled
 
 2014-10-03-01 Add mingw prefix for cygwin32 and mingw32
 
-2014-10-07-01 skip (rend2):  OpenGL2: Better BSP surface merging.
+2014-10-07-01  OpenGL2: Better BSP surface merging.
 
-2014-10-13-01 skip (rend2):  Correct too many parameters in q3gl2_sun description in docs.
+2014-10-13-01  Correct too many parameters in q3gl2_sun description in docs.
 
-2014-10-14-01 skip (rend2):  OpenGL2: VBO cleanup.
-2014-10-14-02 skip (rend2):  OpenGL2: Vertex array object support.
-2014-10-14-03 skip (rend2):  OpenGL2: Reduce redundant GL calls.
+2014-10-14-01  OpenGL2: VBO cleanup.
+2014-10-14-02  OpenGL2: Vertex array object support.
+2014-10-14-03  OpenGL2: Reduce redundant GL calls.
 
-2014-10-15-01 skip (rend2):  OpenGL2: Fix invalid texture parameter.
-2014-10-15-02 skip (rend2):  OpenGL2: Interleave vertex data for static MD3s.
+2014-10-15-01  OpenGL2: Fix invalid texture parameter.
+2014-10-15-02  OpenGL2: Interleave vertex data for static MD3s.
 
-2014-10-15-03 skip (rend2):  OpenGL2: Fix missing surfaces with r_mergeMultidraws 2.
+2014-10-15-03  OpenGL2: Fix missing surfaces with r_mergeMultidraws 2.
 
-2014-10-15-04 skip (rend2):  Fix a bug in previous commit.
+2014-10-15-04  Fix a bug in previous commit.
 
-2014-10-16-01 skip (rend2):  OpenGL2: Bit of multidraw optimization.
+2014-10-16-01  OpenGL2: Bit of multidraw optimization.
 
-2014-10-23-01 skip (rend2):  OpenGL2: Fix corrupt models.
+2014-10-23-01  OpenGL2: Fix corrupt models.
 
 2014-10-23-02 a VM for ARMv7l
 
 2014-10-26-01 qcurl_multi_add_handle error check
 
-2014-10-27-01 skip (rend2):  OpenGL2: Speed up tonemap shader.
+2014-10-27-01  OpenGL2: Speed up tonemap shader.
 
-2014-10-28-01 skip (rend2):  OpenGL2: Change normal/tangent vertex encoding.
+2014-10-28-01  OpenGL2: Change normal/tangent vertex encoding.
 
 2014-10-27-01
     Add missing EV_USE_ITEM15 cases
@@ -3559,9 +3559,9 @@ the demo.
     Manually changing cull state can cause later GL_Cull calls to not change
     the cull state.
 
-2014-11-03-01 skip (rend2):  OpenGL2: Support half floats for texcoords and vertex colors.
+2014-11-03-01  OpenGL2: Support half floats for texcoords and vertex colors.
 
-2014-11-04-01 skip (rend2):  Remove accidentally added increment.
+2014-11-04-01  Remove accidentally added increment.
 
 2014-11-07-01
     Clear window buffer when it's created
@@ -3576,13 +3576,13 @@ the demo.
 
     Credit to theinvsblman for the code.
 
-2014-11-11-01 skip (rend2):
+2014-11-11-01
     OpenGL2: remove lightmap support from generic glsl shader.
     This path was barely used and doing this compiles fewer shaders.
 
-2014-11-11-02 skip (rend2):  OpenGL2: Add support for parallax occlusion mapping.
+2014-11-11-02  OpenGL2: Add support for parallax occlusion mapping.
 
-2014-11-14-01 skip (rend2):  OpenGL2: Bit more parallax optimization.
+2014-11-14-01  OpenGL2: Bit more parallax optimization.
 
 2014-11-16-01
     Correct a few OpenGL variable types
@@ -3610,9 +3610,9 @@ the demo.
     entity and shader, have more than 500 vertexes. The issue is caused by storing
     the projected positions in the tess vertex buffer. Use a new array instead.
 
-2014-11-21-01 skip (rend2):  OpenGL2: Ensure tess VAO is bound before using it.
+2014-11-21-01  OpenGL2: Ensure tess VAO is bound before using it.
 
-2014-12-01-01 skip (rend2):  OpenGL2: Fix face culling.
+2014-12-01-01  OpenGL2: Fix face culling.
 
 2014-12-01-02 no (different) check:
     Fix saving/loading glyph 255 in RegisterFont
@@ -3847,7 +3847,7 @@ the demo.
     Error is loop argument is NULL.
     Ensure that s_backgroundTrack is a null terminated string.
 
-2015-02-07-01 skip (rend2):  OpenGL2: Remove unused function prototype from tr_fbo.c
+2015-02-07-01  OpenGL2: Remove unused function prototype from tr_fbo.c
 
 2015-02-08-01
     Fix AAS_Reachability_Grapple's sky surface check
@@ -3869,7 +3869,7 @@ the demo.
 
 2015-02-28-01 Don't run vid_restart when "resized" to current size
 
-2015-03-13-01 skip (rend2):  OpenGL2: Fix culling again.
+2015-03-13-01  OpenGL2: Fix culling again.
 
 2015-03-15-01
     Use pkg-config for a system libjpeg if available: libjpeg-turbo has it
@@ -3906,7 +3906,7 @@ the demo.
     With cg_draw3dicons 0 if attacker is kicked or disconnects, the
     attacker icon becomes the default image.
 
-2015-03-23-03 skip (rend2):  OpenGL2: Fix shadow cubemap size
+2015-03-23-03  OpenGL2: Fix shadow cubemap size
 
 2015-03-23-04
     Fix return values in nested system calls from QVMs
@@ -3923,7 +3923,7 @@ the demo.
 
 2015-03-23-05 Add a comment about non-functional bot code
 
-2015-03-24-01 skip (rend2):
+2015-03-24-01
     OpenGL2: Fix shadow cubemap segfault
 
     Changed image size to 512, but 'data' buffer is only 16x16 resulting
@@ -3934,7 +3934,7 @@ the demo.
 
     Also, use the check overflow macro like everywhere else.
 
-2015-04-06 skip (rend2):  OpenGL2: Use signed value in case value goes below 0.
+2015-04-06  OpenGL2: Use signed value in case value goes below 0.
 
 2015-04-12-01
     Merge pull request #116 from smcv/system-minizip
@@ -3957,7 +3957,7 @@ the demo.
 
 2015-05-29-01 Horizontal scroll should not cause K_MWHEELDOWN key press
 
-2015-06-01-01 skip (rend2):
+2015-06-01-01
     s/.txt/.md/
 
     Initial pass at moving the opengl readme from plaintext to markdown.
@@ -3982,7 +3982,7 @@ the demo.
 
 2015-06-12-03 Remove erroneous new line from error message
 
-2015-06-12-04 skip (rend2):
+2015-06-12-04
     Move image load function prototypes to tr_common.h
 
     The functions themselves are in code/renderercommon/tr_image_*.c
@@ -4101,7 +4101,7 @@ the demo.
 
     It's usage was removed in commit 8a500d71.
 
-2015-07-09-02 skip (rend2) (did gl1 part):
+2015-07-09-02
     Fix OpenGL2 ignoring last light grid point on each axis
 
     Also change light grid bounds clamping to make it more clear what invalid
@@ -4128,7 +4128,7 @@ the demo.
 
 2015-07-12-04 Don't segfault in FS_CreatePath when there are no path seperators
 
-2015-07-12-05 skip (rend2):
+2015-07-12-05
     Remove logically dead code in R_CheckFBO
 
     Found by Coverity.
@@ -4446,9 +4446,7 @@ the demo.
 
     Based on ioquake3 svn r1485.
 
----- check ----
-
-2015-10-16-01 skip (rend2) (image->flags not implemented):  Add support for uncompressed image upload flag to OpenGL1
+2015-10-16-01 Add support for uncompressed image upload flag to OpenGL1
 
 2015-10-16-02
     Fix not swapping buffers because out of cmd buffer space
@@ -4471,40 +4469,40 @@ the demo.
 
 2015-12-02-01 Access 32-bit registry key from 64-bit Windows correctly.
 
-2015-12-02-02 skip (rend2):  OpenGL2: automatically load textures with a _s suffix as specular.
+2015-12-02-02  OpenGL2: automatically load textures with a _s suffix as specular.
 
-2015-12-03-01 skip (rend2):  OpenGL2: Remove some rendering options for simplicity.
+2015-12-03-01  OpenGL2: Remove some rendering options for simplicity.
 
-2015-12-08-01 skip (rend2):  OpenGL2: Add option in code for alternate overbright method.
+2015-12-08-01  OpenGL2: Add option in code for alternate overbright method.
 
-2015-12-09-01 skip (rend2):  OpenGL2: Add r_glossIsRoughness.
+2015-12-09-01  OpenGL2: Add r_glossIsRoughness.
 
-2015-12-09-02 skip (rend2):  OpenGL2: Parse radius entries from misc_cubemap entities.
+2015-12-09-02  OpenGL2: Parse radius entries from misc_cubemap entities.
 
-2015-12-09-03 skip (rend2):  OpenGL2: Forgot a multiply.
+2015-12-09-03  OpenGL2: Forgot a multiply.
 
-2015-12-09-04 skip (rend2):  OpenGL2: Use correct sunlight color for sunlight specular.
+2015-12-09-04  OpenGL2: Use correct sunlight color for sunlight specular.
 
-2015-12-15-01 skip (rend2):
+2015-12-15-01
     OpenGL2: Switch to RGTC from LATC for normal maps.
     Also added a RGTC compressor as a workaround on Intel graphics.
 
-2015-12-16-01 skip (rend2):  OpenGL2: Some tr_image.c cleanup.
+2015-12-16-01  OpenGL2: Some tr_image.c cleanup.
 
-2015-12-18-01 skip (rend2):  OpenGL2: DDS (compressed textures) support.
+2015-12-18-01  OpenGL2: DDS (compressed textures) support.
 
-2015-12-18-02 skip (rend2):  OpenGL2: Add null dereference checks to DDS loader.
+2015-12-18-02  OpenGL2: Add null dereference checks to DDS loader.
 
 2015-12-20-01 Make jpeg loading errors non-fatal.
 
 2015-12-21-01 Fix error handling in RE_SaveJPGToBuffer().
-2015-12-21-02 skip (rend2):  OpenGL2: Support picmip for DDS textures.
+2015-12-21-02  OpenGL2: Support picmip for DDS textures.
 
-2015-12-22-01 skip (rend2):  OpenGL2: Add r_exportCubemaps for saving cubemaps on map load.
+2015-12-22-01  OpenGL2: Add r_exportCubemaps for saving cubemaps on map load.
 
-2015-12-23-01 skip (rend2):  OpenGL2: Replace r_exportCubemaps cvar with exportCubemaps command.
+2015-12-23-01  OpenGL2: Replace r_exportCubemaps cvar with exportCubemaps command.
 
-2015-12-24-01 skip (rend2):  OpenGL2: Add r_cubemapSize.
+2015-12-24-01  OpenGL2: Add r_cubemapSize.
 
 2015-12-28-01
     Merge pull request #103 from openmoh/ioq3-intro
@@ -4544,66 +4542,66 @@ the demo.
 
     Use Opus for VoIP [updated]
 
-2016-01-15-01 skip (rend2):  OpenGL2: Remove specular ambient.
+2016-01-15-01  OpenGL2: Remove specular ambient.
 2016-01-15-02 Add msvc12 project files.
 
-2016-01-18-01 skip (rend2):  OpenGL2: Direct state access, part 1: Texture binds
+2016-01-18-01  OpenGL2: Direct state access, part 1: Texture binds
 
-2016-01-19-01 skip (rend2):  OpenGL2: Direct state access, part 2: Uniforms.
+2016-01-19-01  OpenGL2: Direct state access, part 2: Uniforms.
 
-2016-01-20-01 skip (rend2):  OpenGL2: Direct state access, part 3: Framebuffers.
+2016-01-20-01  OpenGL2: Direct state access, part 3: Framebuffers.
 
-2016-01-22-01 skip (rend2):  OpenGL2: Some FBO related cleanup/fixes.
+2016-01-22-01  OpenGL2: Some FBO related cleanup/fixes.
 
-2016-01-28-01 skip (rend2):  OpenGL2: Load existing per-map cubemaps.
+2016-01-28-01  OpenGL2: Load existing per-map cubemaps.
 
 2016-01-29-01
     Fix frame_msec possibly being zero in cl_input.c.
 
     This fixes a mouse freezing bug.
 
-2016-02-02-01 skip (rend2):
+2016-02-02-01
     OpenGL2: Merge several cvars into r_pbr.
 
     r_glossIsRoughness, r_specularIsMetallic, r_framebufferGamma, r_tonemapGamma, r_materialGamma, r_lightGamma
 
-2016-02-10-01 skip (rend2):  OpenGL2: Add named cubemaps and per-map env.json parsing.
+2016-02-10-01  OpenGL2: Add named cubemaps and per-map env.json parsing.
 
-2016-02-12-01 skip (rend2):  OpenGL2: Typos.
+2016-02-12-01  OpenGL2: Typos.
 
-2016-02-17-01 skip (rend2):  OpenGL2: Fix some GL errors and no sun shadows on older OpenGLs.
+2016-02-17-01  OpenGL2: Fix some GL errors and no sun shadows on older OpenGLs.
 
-2016-02-17-02 skip (rend2):  OpenGL2: Shader optimization, and add dither to tonemap.
+2016-02-17-02  OpenGL2: Shader optimization, and add dither to tonemap.
 
-2016-03-07-01 skip (rend2):  OpenGL2: Add r_shadowBlur.
-2016-03-07-02 skip (rend2):  OpenGL2: Add r_glossType.
+2016-03-07-01  OpenGL2: Add r_shadowBlur.
+2016-03-07-02  OpenGL2: Add r_glossType.
 
-2016-03-08-01 skip (rend2):  OpenGL2: Speedup for SSAO & blur shaders, fix sunlight normals in lightall.
+2016-03-08-01  OpenGL2: Speedup for SSAO & blur shaders, fix sunlight normals in lightall.
 
-2016-03-09-01 skip (rend2):  OpenGL2: Create FBOs if target image exists, not cvar settings.
+2016-03-09-01  OpenGL2: Create FBOs if target image exists, not cvar settings.
 
-2016-03-10-01 skip (rend2):  OpenGL2: Fixes to depth blur and ssao.
+2016-03-10-01  OpenGL2: Fixes to depth blur and ssao.
 
-2016-03-11-01 skip (rend2):  OpenGL2: More ssao/depth blur improvements.
+2016-03-11-01  OpenGL2: More ssao/depth blur improvements.
 
-2016-03-14-01 skip (rend2):  OpenGL2: Fix r_lightmap.
+2016-03-14-01  OpenGL2: Fix r_lightmap.
 
-2016-03-15-01 skip (rend2):  OpenGL2: Fix horribly broken metallic shader.
+2016-03-15-01  OpenGL2: Fix horribly broken metallic shader.
 
 2016-03-27-01 Sys_GetProcessorFeatures() didn't check for 3DNow! or Altivec.
 
 2016-03-27-02 Fix typo of SDL_Has3DNow() in Sys_GetProcessorFeatures()
 
-2016-03-29-01 skip (rend2):  OpenGL2: Improve cubemap outside error.
+2016-03-29-01  OpenGL2: Improve cubemap outside error.
 
 2016-04-04-01
     Remove incorrect documentation from q3a.service
 
     rate, snaps, and cl_maxpackets cvars only affect client.
 
-2016-04-05-01 skip (rend2):  OpenGL2: Render metals as nonmetal on cubemaps, and some ComputeShaderColors cleanup.
+2016-04-05-01  OpenGL2: Render metals as nonmetal on cubemaps, and some ComputeShaderColors cleanup.
 
-2016-04-05-02 skip (rend2):  OpenGL2: Some FBO cleanup, and add non-depth blur to blur shader.
+2016-04-05-02  OpenGL2: Some FBO cleanup, and add non-depth blur to blur shader.
 
 2016-05-08-01
     Cross-compiling using mingw should only pick one gcc executable
@@ -4616,7 +4614,7 @@ the demo.
 
 2016-05-09-01 Fix warnings that names passed to Name_PlayerNameCompletion is not const
 
-2016-05-09-02 skip (rend2):  OpenGL2: Fix specularScale override not being used in RB_IterateStagesGeneric
+2016-05-09-02  OpenGL2: Fix specularScale override not being used in RB_IterateStagesGeneric
 
 2016-05-16-01
     Explicitly set cull type for skybox
@@ -4626,7 +4624,7 @@ the demo.
     not being visible due to only drawing back faces). The sky cloud stages
     set the cull type so they are not affected by previous cull type.
 
-2016-05-19-01 skip (rend2):  OpenGL2: Speed up surface merging.
+2016-05-19-01  OpenGL2: Speed up surface merging.
 
 2016-05-23-01
     Improve keyboard/joystick input in Team Arena UI
@@ -4652,7 +4650,7 @@ the demo.
     Before it required manually copying SDL 1.2 dll into misc/nsis/ which the
     engine no longer uses.
 
-2016-06-08-01 skip (rend2):  OpenGL2: Set cubemap mip selection to match output from ggxcc.
+2016-06-08-01  OpenGL2: Set cubemap mip selection to match output from ggxcc.
 
 2016-06-12-01
     Fix Makefile for OSX
@@ -4667,9 +4665,9 @@ the demo.
 2016-06-15-01 Add temporary backup text files to .gitignore
 2016-06-15-02 Erroneously removed that line in .gitignore
 
-2016-06-10-01 skip (rend2):  OpenGL2: Remove loading (unused) glDrawBuffersARB
+2016-06-10-01  OpenGL2: Remove loading (unused) glDrawBuffersARB
 
-2016-06-10-02 skip (rend2):
+2016-06-10-02
     OpenGL2: Remove duplicate textureFloat = qfalse
 
     glRefConfig.textureFloat is set to qfalse near wrong extension and then
@@ -4733,11 +4731,11 @@ the demo.
     problems it causes. It doesn't really seem like a good idea to recommend
     others do that instead of disabling Yacc the Makefile though.
 
-2016-07-11-01 skip (rend2):  Fix OpenGL2 readme missing text in md
+2016-07-11-01  Fix OpenGL2 readme missing text in md
 
-2016-07-25-01 skip (rend2):  OpenGL2: Require OpenGL 2.0
+2016-07-25-01  OpenGL2: Require OpenGL 2.0
 
-2017-07-25-01 skip (rend2):  OpenGL2: Add new GL function loader.
+2017-07-25-01  OpenGL2: Add new GL function loader.
 
 2016-07-25-02 Remove 'abs(unsigned)', which is unnecessary and potentially wrong
 
@@ -4750,7 +4748,7 @@ the demo.
 
     Fix signedness and float/int issues with abs()
 
-2016-07-25-05 skip (rend2):  OpenGL2: Use loader for all extension funcs.
+2016-07-25-05  OpenGL2: Use loader for all extension funcs.
 2016-07-25-06 [null/null_glimp.c] Fix up bitrot in null impl
 
 2016-07-25-07
@@ -4761,11 +4759,11 @@ the demo.
 2017-07-26-01 Remove dead variables
 2017-07-26-02 Fix some typos in comments
 
-2016-07-28-01 skip (rend2):  OpenGL2: Fix GL_EXT_direct_state_access function names.
+2016-07-28-01  OpenGL2: Fix GL_EXT_direct_state_access function names.
 
-2016-07-29-01 skip (rend2):  OpenGL2: Let unlit materials use parallax maps.
+2016-07-29-01  OpenGL2: Let unlit materials use parallax maps.
 
-2016-08-04-01 skip (rend2):  OpenGL2: Fix shader error logs.
+2016-08-04-01  OpenGL2: Fix shader error logs.
 
 2016-08-05-01
     Better defaults for joystick axes.
@@ -4788,9 +4786,9 @@ the demo.
 
 2016-08-11-01 Fix black screen when in_joystick disabled but controller connected.
 
-2016-08-15-01 skip (rend2):  OpenGL2: Preallocate grid surfaces like other BSP surfaces.
+2016-08-15-01  OpenGL2: Preallocate grid surfaces like other BSP surfaces.
 
-2016-08-15-02 skip (rend2):  Missing bit of previous commit.
+2016-08-15-02  Missing bit of previous commit.
 2016-08-15-03 Update SDL2 to 2.0.4
 
 2016-08-16-01
@@ -4814,20 +4812,20 @@ the demo.
 
     [game/ai_main.c] Use floating-point fabs() for floating-point values
 
-2016-09-01-01 skip (rend2):  [renderergl2/tr_main.c] Use floating-point fabsf() for floating-point
+2016-09-01-01  [renderergl2/tr_main.c] Use floating-point fabsf() for floating-point
 
-2016-09-06-01 skip (rend2):  OpenGL2: Store normals/tangents as int16_t[4].
+2016-09-06-01  OpenGL2: Store normals/tangents as int16_t[4].
 
-2016-09-06-02 skip (rend2):  OpenGL2: Fix missing bounds calculation when loading BSP surfaces.
+2016-09-06-02  OpenGL2: Fix missing bounds calculation when loading BSP surfaces.
 
-2016-09-07-01 skip (rend2):  OpenGL2: Make R_FreeSurfaceGridMeshData() static.
+2016-09-07-01  OpenGL2: Make R_FreeSurfaceGridMeshData() static.
 
 2016-09-07-02
     Fix undefined behavior when shifting left by 32.
 
     https://bugzilla.icculus.org/show_bug.cgi?id=6432
 
-2016-09-11-01 skip (rend2):  OpenGL2: Fix reversed VectorCopy4() usage.
+2016-09-11-01  OpenGL2: Fix reversed VectorCopy4() usage.
 
 2016-09-12-01 [qcommon/msg.c] Remove dead code (which had undefined behaviour)
 
@@ -4836,7 +4834,7 @@ the demo.
 
     [qcommon/msg.c] Remove dead code
 
-2016-09-13-01 skip (rend2):  OpenGL2: Fix more reversed VectorCopy4() usage.
+2016-09-13-01  OpenGL2: Fix more reversed VectorCopy4() usage.
 
 2016-09-13-02
     Merge pull request #216 from tkoeppe/abs
@@ -4850,14 +4848,14 @@ the demo.
 
     [code/botlib/l_precomp.c] Fix string buffer overflow
 
-2016-09-14-01 skip (rend2):
+2016-09-14-01
     OpenGL2: Remove map color scaling and r_forceSunMapLightScale.
 
     Also simplify overbright code in ComputeShaderColors().
 
-2016-09-14-02 skip (rend2):  OpenGL2: Remove per fragment tangent space calculation code.
+2016-09-14-02  OpenGL2: Remove per fragment tangent space calculation code.
 
-2016-09-14-03 skip (rend2):  OpenGL2: Clamp entity lighting to more resemble OpenGL1.
+2016-09-14-03  OpenGL2: Clamp entity lighting to more resemble OpenGL1.
 
 2016-09-21-01
     Fix mis-spellings of "separating" as "seperating"
@@ -4888,7 +4886,7 @@ the demo.
     Please see https://reproducible-builds.org/ for more information about
     reproducible builds.
 
-2016-09-23-01 skip (rend2):  OpenGL2: Some tr_image refactoring/cleanup.
+2016-09-23-01  OpenGL2: Some tr_image refactoring/cleanup.
 
 2016-09-25-01
     snd_wavelet: avoid undefined pointer below array bounds
@@ -4952,7 +4950,7 @@ the demo.
 
     Fix array underflow compiler warnings
 
-2016-10-02-01 skip (rend2):  Default cl_renderer to opengl2.
+2016-10-02-01  Default cl_renderer to opengl2.
 
 2016-10-09-01
     reset samplefrac to 8-bits, to prevent overflow
@@ -4989,33 +4987,33 @@ the demo.
     without engine changes however.
 
 
-2016-10-10-01 skip (rend2):  OpenGL2: Non-square merged lightmaps.
+2016-10-10-01  OpenGL2: Non-square merged lightmaps.
 
-2016-10-10-02 skip (rend2):  OpenGL2: Store vertex colors and hdr lightmaps/lightgrid as RGBA16.
+2016-10-10-02  OpenGL2: Store vertex colors and hdr lightmaps/lightgrid as RGBA16.
 
-2016-10-11-01 skip (rend2):
+2016-10-11-01
     OpenGL2: Workaround for multiple deforms on MD3 mesh.
     https://github.com/ioquake/ioq3/issues/122
 
-2016-10-13-01 skip (rend2):  OpenGL2: Fix fog color.
+2016-10-13-01  OpenGL2: Fix fog color.
 
-2016-10-20-01 skip (rend2):
+2016-10-20-01
     OpenGL2: Remove half float support.
 
     Not enough accuracy for textures larger than 1024x1024, such as merged light maps.
 
-2016-10-21-01 skip (rend2):
+2016-10-21-01
     OpenGL2: Remove check for GL_ARB_texture_non_power_of_two.
 
     Core in OpenGL 2.0.
 
-2016-10-21-02 skip (rend2):  OpenGL2: Faster mipmap generation.
+2016-10-21-02  OpenGL2: Faster mipmap generation.
 
-2016-10-27-01 skip (rend2):  OpenGL2: Load images with "_nh" suffix as parallax normalmaps.
+2016-10-27-01  OpenGL2: Load images with "_nh" suffix as parallax normalmaps.
 
-2016-10-27-02 skip (rend2):  OpenGL2: Prioritize loading .png images over all others besides .dds.
+2016-10-27-02  OpenGL2: Prioritize loading .png images over all others besides .dds.
 
-2016-10-27-03 skip (rend2):  OpenGL2: Add more ambient to lightmapped materials.
+2016-10-27-03  OpenGL2: Add more ambient to lightmapped materials.
 
 2016-10-27-04 Fix removing/creating PID file for base game when switching to/from mods
 
@@ -5047,32 +5045,32 @@ the demo.
     `make installer` from the top-level, PLATFORM should be set correctly
     when building the installer.
 
-2016-11-25-01 skip (rend2):  OpenGL2: Don't interleave texCoords and lightCoords in tess.
+2016-11-25-01  OpenGL2: Don't interleave texCoords and lightCoords in tess.
 
-2016-11-25-02 skip (rend2):
+2016-11-25-02
     OpenGL2: Don't draw viewmodels in portal views.
 
     Thanks Cyrax for pointing out, should fix https://bugzilla.icculus.org/show_bug.cgi?id=6363.
 
-2016-11-25-03 skip (rend2):
+2016-11-25-03
     OpenGL2: glGetIntegerv -> qglGetIntegerv
 
     Thanks to Cyrax for pointing this out.
 
 2016-05-16-01 Don't have clients use private slots when sv_privatePassword is unset
 
-2016-12-07-01 skip (rend2):  OpenGL2: Don't bind null framebuffers when not using framebuffers.
+2016-12-07-01  OpenGL2: Don't bind null framebuffers when not using framebuffers.
 
-2016-12-08-01 skip (rend2):
+2016-12-08-01
     OpenGL2: Detect Intel graphics and avoid/use certain operations there.
 
     Also use qglCopyTextureSubImage2DEXT instead of qglCopyTextureImage2DEXT.
 
 2016-12-10-01 GLimp_HaveExtension() -> SDL_GL_ExtensionSupported()
 
-2016-12-12-01 skip (rend2):  OpenGL2: Fix bug in generating normal maps for non-square textures.
+2016-12-12-01  OpenGL2: Fix bug in generating normal maps for non-square textures.
 
-2017-01-24-01 skip (rend2):
+2017-01-24-01
     OpenGL2: Render dlights only when r_lightmap is 0.
 
     https://github.com/ioquake/ioq3/issues/246
@@ -5102,7 +5100,7 @@ the demo.
 
     The test string is missing the initial "GL_" so it is always failing the test even when supported on newer hardware.
 
-2017-01-26-01 skip (rend2):
+2017-01-26-01
     OpenGL2: Generate less shaders when r_sunlightMode is disabled.
 
     Original patch by https://github.com/inolen in https://github.com/ioquake/ioq3/pull/36
@@ -5251,7 +5249,7 @@ the demo.
 
     This is also an antiquated notion.
 
-2017-04-28-01 skip (rend2):
+2017-04-28-01
     Add vao cache for static surfaces
 
     Remove support for draw range elements, multi draw arrays, world vao creation, surface merging.
@@ -5547,7 +5545,7 @@ the demo.
 
 2017-06-03-02 skip (autoupdate):  autoupdater: Fixed up GCC/clang printf function attribute.
 
-2017-06-03-03 skip (rend2):
+2017-06-03-03
     Remove unneeded code from OpenGL2's RB_RenderDrawSurfList
 
     Make it more similar to OpenGL1.
@@ -5624,3 +5622,557 @@ the demo.
 2017-06-04-11 skip (autoupdate):  Removed unnecessary trailing backslash.
 
 ---- sync 2017-08-17 ----
+
+---- this ----
+
+2017-06-07-01 Use const char pointers when possible in botlib's libvar code
+2017-06-07-02 skip:  Stop caching sv_maxclients in bot code
+
+2017-06-07-03 skip:
+    Don't use uninitialized ps from BotAI_GetClientState
+
+    If BotAI_GetPlayerState returns qfalse, ps is untouched and in
+    some cases means uninitialized. So don't use it if not valid.
+
+2017-06-07-04 skip:  Fix 'missing token' in parsers for animations.cfg
+2017-06-07-05 skip:  Unify checks for missing COM_Parse() token
+2017-06-07-06 skip:  Fix comment for CG_SetInitialSnapshot
+
+2017-06-07-07 skip:  Fix (unused) check for map restart in CG_TransitionSnapshot
+
+2017-06-07-08 skip:  Fix Coverity warning that endVelocity is uninitialized
+2017-06-07-09 skip:  Don't build score info for bots, they don't parse it
+
+2017-06-07-10 skip:
+    Fix score info being dropped by server
+
+    Server drops reliable command string if it's length is more than 1022.
+
+2017-06-07-11 skip:
+    Show client's name in callvote clientkick vote display message
+
+    Make callvote always kick by client num so player can't rename to
+    avoid being kicked. Don't allow calling a vote to kick host or
+    non-existent players.
+
+2017-06-07-12 skip:  Don't start game entity loops at index 1
+2017-06-07-13 skip:  Range check client number for trap_BotUserCommand
+
+2017-06-07-14 skip:
+    Fix overdraw in CG_DrawRect
+
+    It was noticeable in the corners when alpha was less than 1.
+
+2017-06-07-15 skip:  Fix comment in BotAIPredictObstacles
+2017-06-07-16 skip:  Remove unneeded 'angles' variables/clearing in ai_dmq3.c
+2017-06-07-17 skip:  Don't copy p->org to itself in cg_particles.c
+2017-06-07-18 skip:  Remove unused define MAX_COMMANDARGUMENTS from be_ea.c
+
+2017-06-07-19 skip:
+    Make bots stop attacking player after disconnect
+
+    Bots did not notice player disconnected, so they kept attacking
+    the last known position.
+
+    Checking if entity is valid in BotEntityVisible might fix other
+    similar issues too.
+
+2017-06-07-20 skip:
+    Fix notarget cheat
+
+    Bots no longer target players in 'no target mode'.
+
+2017-06-07-21 skip:
+    Fix strncpy usage in botlib
+
+    All usage of strncpy in botlib should now either set string
+    terminator or use Q_strncpyz.
+
+2017-06-07-22 skip:  Add con_autochat and con_autoclear cvars
+
+2017-06-10-01 skip:
+    Only allow connectionless print/echo from server/rcon address
+
+    Reported by Ensiform.
+
+2017-06-10-02 Merge pull request #293 from rcgordon/autoupdater-rsa-signature
+
+2017-06-16-01 skip (rend2):  OpenGL2: Remove SF_VAO_MESH.
+
+2017-06-22-01 skip:
+    Fix g_teamAutoJoin and g_teamForceBalance
+
+    There are various issues caused by not knowing the initial team for
+    the local client and bots when they connect. This is can be reproduced
+    by starting a team game from the main menu.
+
+    When g_teamAutoJoin is enabled, bots and local client join a random
+    team at connect and then execute their team command a few frames
+    later. This may result in the player being killed if they specify a
+    different team. In Team Arena's Harvester mode this causes harvester
+    skulls to be spawned at the beginning of the game.
+
+    When g_teamForceBalance is enabled, the local client and bots may not
+    be able to join their desired team. This may result in them being
+    spectators. If g_teamAutoJoin is also enabled they may be left on
+    the opposite (red/blue) team they were meant to join.
+
+    There is a hack for including bot's team in their player info string
+    (used by cgame for which team skin to use) before the bot joins
+    their desired team. Bots aren't guaranteed to join their desired team
+    (as may happen when both g_teamAutoJoin and g_teamForceBalance are
+    enabled) so clients may see them as being on the wrong team!
+
+    ----
+
+    Add teampref userinfo option for team preference. If teampref is set
+    it will be used for attempting to join the team immediately at connect.
+
+    Bots now join team at connect using teampref userinfo. So remove
+    the hack for setting bot's team in player info string before the bot
+    joins the team.
+
+    To avoid the client sending teampref userinfo to all network servers,
+    the local client uses a g_localTeamPref cvar. The g_localTeamPref
+    cvar is cleared after it's used so it doesn't get used when starting
+    another server later. Another reason not to use a teampref userinfo
+    cvar is there isn't a reliable way to clear it in CGame/UI which are
+    likely loaded from baseq3 pk3.
+
+    Make it so g_teamAutoJoin doesn't affect clients who specify
+    teampref. If teampref is invalid, the client will join a random team
+    like g_teamAutoJoin.
+
+    Don't apply g_teamForceBalance to the local client or bots. Otherwise
+    they may be left as spectators when starting team game from menu.
+
+    The start server menus use team command and g_localTeamPref to set
+    the human player's team. This way it's compatible with vanilla Q3
+    game VMs and the new setting team at connect feature.
+
+2017-06-24-01 skip:
+    Fix Team Arena team base models not dropping to floor
+
+    Team Arena's Overload gametype has red and blue team Obelisk base
+    objects. It uses separate entities for visual and damage. Only the
+    damageable entity was dropped to floor. Leaving model floating off
+    the ground.
+
+    Team Arena's Harvester base has the same problem. Model entity
+    floats in air but trigger entity drops to floor.
+
+    Drop all Team Arena team base models to floor. Fixes CTF, 1Flag,
+    Overload, and Harvester base models.
+
+2017-06-24-02 skip:
+    Make cg_teamChatsOnly only affect team gametypes
+
+    Also made it so that 'tell voice chats' are always allowed for
+    consistancy with 'tell chat'.
+
+    Reported by Tobias Kuehnhammer.
+
+2017-06-24-03 skip:
+    Check for unlimited time power up using INT_MAX
+
+    It is possible for a power up to exceed 999 seconds without it being
+    unlimited time.
+
+2017-06-24-04 skip:
+    Have spectator always be in first person
+
+    Flying around in third person with no body is weird.
+
+2017-06-24-05 skip:  Allow spectators to use noclip cheat
+
+2017-06-24-06 skip:
+    travis-ci: Don't run coverity_scan on master branch
+
+    Once the weekly limit for Coverity scan is reached all builds exit
+    success without compiling.
+
+2017-06-24-07 skip:  travis-ci: Upgrade to docker build system
+
+2017-06-29-01 skip:  Split G_AddRandomBot into multiple functions
+
+2017-06-29-02 skip:
+    Make 'addbot random' command select a random bot info
+
+    It reuses the random bot selection code for bot_minplayers cvar.
+
+2017-06-29-03 skip:
+    Fix random bot not looking for bots by funname
+
+    Quake 3's Anarki bot has a 'funname' with colors in it.
+    This commit fixes Anarki not being detected as in use.
+
+2017-06-29-04 skip:  Fix bot_minplayers passing delay as team to addbot in non-team gametypes
+
+2017-06-29-05 skip:
+    Fix not adding random bot when all bot info are in use on team
+
+    If there are two bot infos in scripts/bots.txt then each team can
+    only add two random bots via bot_minplayers or addbot random.
+
+    Pick random bot info from least used bot infos instead of only ones
+    that are used by zero players. That way a random bot can always be
+    added to the game.
+
+    This rarely affected Quake 3 since there is 32 bot infos. It could
+    easily affect new games though.
+
+2017-06-29-06 skip:
+    Check delayed bot's team when counting bots for bot_minplayers
+
+    note: This requires my previous commit that added teampref userinfo
+    so that bots choose correct team in ClientConnect.
+
+2017-06-29-07 skip:
+    Fix duplicate (delayed) random bots being choosen
+
+    Count delayed bots when looking for least used bot infos for deciding
+    which bot to add.
+
+2017-06-29-08 skip:
+    Don't pick duplicate random bots until all bot types are added
+
+    Don't add the same bot to multiple teams until there are as many
+    bots on the server as there are bot types.
+
+    Previously each team would have unique bots until all bot types
+    were added to the team but other teams may have the same bot. Now
+    there will not be any duplicate bots until there are more bots than
+    bot types.
+
+    Now Quake 3 (32 bot types) in 16 vs 16 bot CTF will not contain
+    duplicate bot types. (You have to increase memory in code/game/
+    g_mem.c in order to add 32 bots though.)
+
+    I had to change G_AddRandomBot() to use 'addbot random' or else the
+    same bot could be added to red and blue teams. The bot was selected
+    and stored in console command buffer so game doesn't know not to
+    select the bot again.
+
+2017-06-29-09 skip:
+    Add range check for bot skill in addbot command
+
+    Adding a bot with skill of 0 doesn't show icon on hud.
+
+2017-06-29-10 skip:  Add 'addbot random' to README
+
+2017-06-29-11 skip (rend2):  OpenGL2: Fix checking r_shadowCascadeZFar pointer instead of value
+
+2017-06-30-01 skip (rend2):
+    OpenGL2: Fix black planar projection shadows (cg_shadows 3)
+
+    Restore MD3 code for cg_shadows 2 and 3 like other model formats.
+    Fix planar projection shadow deform (cg_shadows 3) to use correct
+    light direction. I fixed light direction for stencil shadows
+    (cg_shadows 2) but it's still broken.
+
+2017-06-30-02 skip (rend2):
+    OpenGL2: Draw sun shadows for first person IQM player models
+
+    This makes IQM have the same behavior as MD3 and MDR.
+
+2017-07-01-01 skip:  Fix q3_ui cursor going off screen in widescreen
+2017-07-01-02 skip:  Make Team Arena UI aspect correct in widescreen
+
+2017-07-01-03 skip:
+    Make UI continue searching for local servers until found
+
+    When refreshing local servers, Team Arean UI never changed the status
+    message when it timed out. This gave a false impression it was still
+    looking for servers.
+
+    Let's continue looking for local servers in q3_ui and Team Arena UI
+    until one is found.
+
+2017-07-01-04 skip:
+    Allow changing q3_ui server source during refresh
+
+    This makes it easier to scroll through the list, especially since
+    "Local" source now refreshes until a local server is found.
+
+2017-07-01-05 skip:
+    Fix nonresponsive favorites in q3_ui having no hostname
+
+    ArenaServers_InsertFavorites() fails to do anything because favorites
+    are added to the server list even if nonresponsive.
+
+    Set nonresponsive favorite server hostname to address.
+
+2017-07-02-01 skip:  OpenGL2: Remove two unused cvars and update readme
+2017-07-02-02 skip:  Add warnings for animMap and videoMap shader keywords
+
+2017-07-04-01 skip:
+    Allow more than 32 surfaces in skin files
+
+    Models don't have a surface limit; skins shouldn't either. Some player
+    models require more than 32 surfaces since vanilla Quake 3 did not
+    enforce the limit.
+
+    Skins are now limited to 256 surfaces because having no limit would
+    require parsing the skin file twice. The skin surfaces are dynamically
+    allocated so it doesn't increase memory usage when less surfaces
+    are used.
+
+2017-07-04-02 skip:  Improve warning for too many skin surfaces
+
+2017-07-08-01 skip:
+    Fix set-but-not-used variable warnings in vm_armv7l.c
+
+    offsidx and const_value were set but not used.
+
+2017-07-09-01 skip:  Fix warning about using abs() with floats (#222)
+2017-07-09-02 skip:  Fix more maybe-uninitialized warnings in opusfile
+2017-07-09-03 skip:  Fix misleading-indentation warnings in cl_cin.c
+
+2017-07-13-01 skip (rend2):  OpenGL2: Use an OpenGL 3.2 core context if available.
+
+2017-07-13-02 skip (rend2):
+    OpenGL2: Remove GLSL_ValidateProgram().
+
+    https://stackoverflow.com/questions/39761456/why-does-glvalidateprogram-fail-when-no-vao-is-bound
+
+2017-07-14-01 skip (rend2):  OpenGL2: Don't do MSAA resolve/shadow mask/SSAO on shadow views.
+
+2017-07-14-02 skip (rend2):  OpenGL2: "Fix" cg_shadows 4.
+2017-07-14-03 skip (rend2):  whoops, left a bit of debugging enabled
+
+2017-07-14-04 skip:
+    Fix score bonus for defending the flag carrier in CTF
+
+    Fix copy-paste error in the original Quake 3 code. The wrong values
+    are used for v1 and v2. v2 was previously set to distance of attacker
+    to flag base; which should be handled already.
+
+    The game now gives defense score bonus to player when they frag an
+    enemy near their team's flag carrier while the player is more than
+    1000 units from the flag carrier.
+
+    This may also fix not giving defense bonus when near carrier due to
+    checking if carrier and enemy (instead of attacker) are in PVS.
+
+    Found by @Razish.
+
+2017-07-14-05 skip:
+    Restore not giving defense score bonus to flag carrier
+
+    The Team Arena code for giving defense bonus for fragging player
+    who recently damaged a skull carrier unintentionally applied to
+    the flag carrier.
+
+    The skull carrier case would of been handled by the flag carrier
+    block above it. However, Harvest mode doesn't call
+    Team_CheckHurtCarrier() so the skull carrier defense bonus does
+    not work.
+
+    This restores the pre-Team Arena behavior of not giving defense
+    score bonus to flag carrier.
+
+2017-07-14-05 skip:
+    Add score bonus for defending the flag carrier in 1 Flag CTF
+
+    Set flag_pw to neutral flag instead of using CTF value for red or
+    blue flag so that flag carrier is detected correctly.
+
+2017-07-14-06 skip:  Move CON_Init ahead of Com_Init to avoid Windows dedicated server crash
+
+2017-07-20-01 skip:
+    Make 'globalservers 0' fetch all masters
+
+    This commit fixes the vanilla Q3 UI VMs not displaying a server list
+    when id Software's master server is down.
+
+    Originally master 0 for the globalservers command was Internet and
+    master 1 was MPlayer (defunct). In 2008 ioquake3 changed it so that
+    master 0 to 4 were five separate master servers with no affect on
+    original Quake3/Team Arena UI VMs; they continued to get the server
+    list from master.quake3arena.com.
+
+    id Software's master server (master.quake3arena.com) goes down
+    occasionally. Using ioq3's UI VM additional master servers can be
+    accessed but players using the original UI VMs are unable to get a
+    server list.
+
+    In order to fix the original UI VMs in Quake3/Team Arena's pk3s this
+    commit makes 'globalservers 0' fetch all master servers. So players
+    get a combined list of id Software's and ioquake3's master list. Or
+    just ioquake3's list if id Software's master is down.
+
+    Getting lists from individual master servers using globalservers has
+    changed from 0 through 4 to 1 through 5 to accommodate using 0 for
+    other purposes. This commit modifies ioq3's UI code to support the new
+    values for globalservers command.
+
+    A side affect of these changes is that UI VMs based on ioq3 since 2008
+    will have Internet1 fetch all master servers and Internet2 request
+    sv_master1 instead of sv_master2 and so on. It may be worth noting that
+    getting server list from masters 3-5 could not be done using ioq3's UI
+    before 2011.
+
+2017-07-20-02 skip:
+    Escape quotes for sv_dlURL in shell so it doesn't become "http:"
+
+        q3ded +set sv_dlURL "http://example.org"
+
+    The shell removes the quotes but makes the content be a single argument
+    for progam args. Quake 3 concatenates all the program args and splits
+    lines at + or newlines. Then Quake 3 parses them using a tokenizer
+    that skips unquoted C comments beginning with //. This results in
+    the cvar being set to "http:".
+
+    Escape the quotes so they are passed to the program and the tokenizer
+    knows not to skip C comments.
+
+        q3ded +set sv_dlURL \"http://example.org\"
+
+2017-07-24-01 skip (rend2):
+    OpenGL2: Don't use initialized arrays in glsl shaders.
+
+    Unsupported in GLSL 1.20 (Mac OS X 10.6)
+
+2017-07-24-02 skip:  Echo server say/tell/sayto message to console
+
+2017-07-27-01 skip:
+    Don't try to remove non-existant command 'shaderstate'
+
+    Remove commands in the order they are added because the different
+    orders is annoying.
+
+2017-07-28-01 skip:  Update internal curl to 7.54.0
+2017-07-28-02 skip:  Workaround Travis-CI MinGW builds failing with new cURL
+
+2017-07-28-03 skip:
+    Silence g_util.c warning about set but not read variable
+
+    Probably caused by my commit on June 2 2017.
+
+      commit 4006358492b800db0602ed0eca600166caec22e4
+      Fix spawn/freed entity logic (specifically harvester skulls)
+
+2017-07-30-01 Remove unused imgFlag_t value IMGFLAG_SRGB
+
+2017-07-31-01 skip:
+    Make warmup in Team Deathmatch wait for players to join both teams
+
+    Reported by Cyrax.
+
+2017-08-01-01 skip:
+    Remove CVAR_PROTECTED from cl_renderer
+
+    Setting cl_renderer isn't a security concern and valid behavior for
+    a menu to provide. Sys_LoadDLL ensures only libries are loaded and
+    engine prevents QVMs from writing them.
+
+2017-08-02-01 skip:
+    Fix/improve buffer overflow in MSG_ReadBits/MSG_WriteBits
+
+    Prevent reading past end of message in MSG_ReadBits. If read past
+    end of msg->data buffer (16348 bytes) the engine could SEGFAULT.
+    Make MSG_WriteBits use an exact buffer overflow check instead of
+    possibly failing with a few bytes left.
+
+2017-08-02-02 skip:
+    Fix friction in AAS_ClientMovementPrediction
+
+    Ground and water friction were reversed.
+
+2017-08-02-03 skip (rend2):
+    Fix floating point precision loss in renderer [part 1]
+
+    Patch for https://bugzilla.icculus.org/show_bug.cgi?id=5931 by
+    Eugene C. from 2013 plus recent fix for tcMod rotate.
+
+    I merged the changes into the OpenGL2 renderer though the fix for
+    tcMod turb doesn't translate.
+
+2017-08-02-04 skip:
+    Fix floating point precision loss in renderer [part 2]
+
+    Fix floatTime using float precision instead of double using GCC.
+    Fix R_BindAnimatedImage to be in sync with function table.
+    Fix vertexDeform bulge, vertexDeform normals, noise wave function
+    at high level time.
+
+    Revert unnecessary float -> double conversions.
+
+2017-08-03-01 skip:  Reject OpenGL contexts w/ software renderer when core context requested.
+
+2017-08-07-01 skip:  Update arch in misc/setup for ioq3 changing from i386 to x86
+
+2017-08-07-02 skip (rend2):  OpenGL2: Use extension functions with OpenGL versions before 3.0.
+
+2017-08-08-01 skip (rend2):  OpenGL2: Force VAO usage on OpenGL 3.0+
+
+2017-08-09-01 skip:  Add spawnflags to QUAKED for trigger_multiple
+
+2017-08-09-02 skip:
+    Check for all command separators in callTeamVote
+
+    Make callTeamVote check for all command separators like in callVote.
+    It's not exploitable as the only vote option (leader) always uses an
+    integer argument.
+
+    Also the ioquake3 engine remove command separators from client game
+    commands in Cmd_Args_Sanitize().
+
+2017-08-09-03 skip:
+    Remove newlines from chat messages in Game VM
+
+    This has no affect due to ioquake3 engine already removing command
+    separators (which includes newlines) in Cmd_Args_Sanitize().
+
+2017-08-09-04 skip:  Fix compiling Cmd_CallTeamVote_f
+
+2017-08-16-01 skip:
+    Only allow safe protocols for cURL downloads
+
+    A malicious server could abuse dangerous protocols such as gopher:// to,
+    for instance, send mail via SMTP.
+
+2017-08-19-01 skip:
+    Fix crash when pmove_msec is 0
+
+    When pmove_fixed is set to 1, setting pmove_msec to 0 would crash.
+
+2017-08-21-01 skip:
+    Combine mouse movement events in event queue
+
+    Fixes 'Com_QueueEvent: overflow' spam after hitch / map load.
+
+    Based on patch by @ec-.
+
+2017-08-21-02 skip:
+    Improve keys using international key layouts
+
+    Always map number row to number keys for AZERTY.
+    Map Unicode character keys to world keys using scan code.
+
+    Based on patches by @mickael9.
+
+2017-08-21-03 skip:
+    Improve client input responsiveness
+
+    Move sampling input to the other side of framerate limiter.
+
+    Thanks to Alexander "wareya" Nadeau and Juraj "youurayy" Vitko for
+    pointing this out.
+
+2017-08-21-04 skip:
+    Removing input functions from sys_local.h for last commit
+
+    It helps to actually save files before making commits.
+
+2017-08-21-05 skip:
+    Make input events use earliest possible time
+
+    SDL doesn't provide exact the exact time that input events happen
+    so use the earliest possible time that an event could happen.
+
+    This make sub-frame input actions such as walking take affect
+    immediately instead of in the next frame.
+
+    Based on patch by Alexander "wareya" Nadeau.
+

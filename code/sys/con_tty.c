@@ -44,6 +44,8 @@ called before and after a stdout or stderr output
 =============================================================
 */
 
+extern qboolean ConsoleIsPassive;
+
 extern qboolean stdinIsATTY;
 static qboolean stdin_active;
 // general flag to tell about tty console mode
@@ -188,6 +190,10 @@ Never exit without calling this, or your terminal will be left in a pretty bad s
 */
 void CON_Shutdown( void )
 {
+	if (ConsoleIsPassive) {
+		return;
+	}
+
 	if (ttycon_on)
 	{
 		CON_Hide();
@@ -295,6 +301,10 @@ void CON_Init( void )
 {
 	struct termios tc;
 
+	if (ConsoleIsPassive) {
+		return;
+	}
+
 	// If the process is backgrounded (running non interactively)
 	// then SIGTTIN or SIGTOU is emitted, if not caught, turns into a SIGSTP
 	signal(SIGTTIN, SIG_IGN);
@@ -359,6 +369,10 @@ char *CON_Input( void )
 	size_t UNUSED_VAR size;
 	int i;
 	static int needUtf8Bytes = 0;
+
+	if (ConsoleIsPassive) {
+		return NULL;
+	}
 
 	if(ttycon_on)
 	{
@@ -607,12 +621,18 @@ void CON_Print( const char *msg )
 	if (!msg[0])
 		return;
 
-	CON_Hide( );
+	if (!ConsoleIsPassive) {
+		CON_Hide( );
+	}
 
 	if( com_ansiColor && com_ansiColor->integer )
 		Sys_AnsiColorPrint( msg );
 	else
 		fputs( msg, stderr );
+
+	if (ConsoleIsPassive) {
+		return;
+	}
 
 	if (!ttycon_on) {
 		// CON_Hide didn't do anything.

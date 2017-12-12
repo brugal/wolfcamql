@@ -1,4 +1,4 @@
-12.0test2
+12.0test3
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -33,6 +33,23 @@
 * bug fix:  stack corruption setting dpi awareness in Windows
 * bug fix:  possible corruption reading value of fs_steamcmd
 * bug fix:  /minimize command didn't work
+* bug fix:  crosshair health and armor for teammates was showing 0/0 with protocol 91 demos
+* --console-passive command line option to disable unix tty console
+* bug fix:  don't show crosshair scan name and info for dead players
+* bug fix:  overbright was disabled for screenshots and videos if video card didn't support gamma correction
+* bug fix:  error setting glsl variable would cause an infinite video restart loop
+* compile fix:  add -D_FILE_OFFSET_BITS=64 to all platforms (em92 Eugene Molotov)
+* bug fix:  r_mapGreyScale and r_greyscaleValue not latched
+* bug fix:  grapple chain could render null axis
+* doc fix:  com_timescalesafe documentation in wrong place
+* remove console spamming when r_anaglyphMode is used
+* bug fix:  split analaglyph video recording would sometimes only record one channel
+* test3d variable doesn't need to be set to record split anaglyph video
+* ioquake3 opengl2 renderer
+* include 64-bit Windows libfreetype.a (em92 Eugene Molotov)
+* bug fix:  overtime clock stayed at zero for game types besided duel, tdm, ca, and ft (em92 Eugene Molotov)
+* CG_OVERTIME owner draw also shows number of overtimes (matches quake live)
+* cg_levelTimerOvertimeReset  0: (default) shows total overtime about, 1: shows current overtime about
 
 ---------------------------------
 11.7  2017-06-07

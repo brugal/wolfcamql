@@ -47,6 +47,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 
+qboolean ConsoleIsPassive = qfalse;
+
 int StartTime = 0;
 
 static char binaryPath[ MAX_OSPATH ] = { 0 };
@@ -747,6 +749,8 @@ int main( int argc, char **argv )
 			useBacktrace = qfalse;
 		} else if (!strcmp(argv[i], "--console-output")) {
 			useConsoleOutput = qtrue;
+		} else if (!strcmp(argv[i], "--console-passive")) {
+			ConsoleIsPassive = qtrue;
 		} else if (!strcmp(argv[i], "--no-dpi-aware")) {
 			useDpiAware = qfalse;
 		} else if (!strcmp(argv[i], "--no-demo-arg")) {
@@ -774,6 +778,8 @@ int main( int argc, char **argv )
 		if (!strcmp(argv[i], "--nobacktrace")) {
 			continue;
 		} else if (!strcmp(argv[i], "--console-output")) {
+			continue;
+		} else if (!strcmp(argv[i], "--console-passive")) {
 			continue;
 		} else if (!strcmp(argv[i], "--no-dpi-aware")) {
 			continue;

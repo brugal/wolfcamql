@@ -3,7 +3,7 @@
 
 #include "../game/bg_public.h"
 #include "../qcommon/q_shared.h"
-#include "../renderer/tr_types.h"  // stereoFrame_t
+#include "../renderercommon/tr_types.h"  // stereoFrame_t
 #include "cg_public.h"
 
 #define TEXT_PIC_PAINT_ICON 256

@@ -243,13 +243,6 @@ PROTOCOL
 ==============================================================
 */
 
-typedef struct {
-	char *oldName;
-	char *newName;
-	char *altName;
-	char *none;
-} mapNames_t;
-
 extern mapNames_t MapNames[];
 
 //#define	PROTOCOL_VERSION	73
