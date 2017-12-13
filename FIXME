@@ -1511,7 +1511,6 @@ name sprites?
 
 * with nocull change might be able to use id's shaders -- lightmap
 * double check that default widescreen is 2
-* overtime check in a separate function
 * /devmap coldcathode missing texture
 * missing scores_ffa (doesn't appear to be used)
 * spectator scrolling and widescreen?  overwrites
@@ -2089,7 +2088,6 @@ No locals.
 
    - r_overbrightBits not used in opengl2?  -- 2017-11-13 it is but working differently
 
-* Windows 10 r_fullscreen 1 keeps vid_restarting and can't fit image (r_mode 11)
 * check tr_noise.c R_NoiseGet4f last arg now double t?
 * opengl2 overbright setting in tr_shade.c ComputeShaderColors is incorrect?  -- have r_opengl2_overbright as a work around
 * r_enableColorCorrect needs to be latched?

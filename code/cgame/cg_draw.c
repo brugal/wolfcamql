@@ -4186,7 +4186,7 @@ static float CG_DrawTimer( float y ) {
 		return y;
 	}
 
-	msec = CG_GetCurrentTimeWithDirection();
+	msec = CG_GetCurrentTimeWithDirection(NULL);
 
 	seconds = msec / 1000;
 	mins = seconds / 60;

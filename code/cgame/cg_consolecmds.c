@@ -909,7 +909,7 @@ static void CG_SeekClock_f (void)
 		clockTimeWanted = Q_ParseClockTime(timeString);
 	}
 
-	currentTime = CG_GetCurrentTimeWithDirection();
+	currentTime = CG_GetCurrentTimeWithDirection(NULL);
 	//overTime = CG_NumOverTimes();
 	if (cg.warmup) {
 		if (!warmupTime) {

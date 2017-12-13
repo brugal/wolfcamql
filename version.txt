@@ -50,6 +50,8 @@
 * bug fix:  overtime clock stayed at zero for game types besided duel, tdm, ca, and ft (em92 Eugene Molotov)
 * CG_OVERTIME owner draw also shows number of overtimes (matches quake live)
 * cg_levelTimerOvertimeReset  0: (default) shows total overtime about, 1: shows current overtime about
+* bug fix:  CG_OVERTIME ownerdraw required CG_LEVELTIMER to be used
+* bug fix:  r_fullscreen 1 wouldn't fit game screen correctly (em92 Eugene Molotov : via ioquake3 patch)
 
 ---------------------------------
 11.7  2017-06-07

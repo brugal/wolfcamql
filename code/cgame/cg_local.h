@@ -2454,8 +2454,6 @@ typedef struct {
 
 	int numberOfRaceCheckPoints;
 
-	int numOverTimes;
-
 } cgs_t;
 
 

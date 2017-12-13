@@ -1940,8 +1940,8 @@ client gets disconnected with download blocks in the queue
 2013-03-11-03  Always reset vertex attrib pointers with animated meshes.
 
 2013-03-12-01 Move renderers a bit closer together
-2013-03-12-02 skip (rend common):  Fix USE_FREETYPE breakage
-2013-03-12-03  Oops missed a bit
+2013-03-12-02 Fix USE_FREETYPE breakage
+2013-03-12-03 Oops missed a bit
 2013-03-12-04 Move mingw to separate build job on travis-ci
 2013-03-12-05 Fix some clang warnings
 2013-03-12-06 Fix mingw gcc name in build-test.sh
@@ -6175,4 +6175,148 @@ the demo.
     immediately instead of in the next frame.
 
     Based on patch by Alexander "wareya" Nadeau.
+
+2017-08-26-01 skip:
+    Make bots use crusher on other q3tourney6 maps
+
+    Make bots activate crusher on q3tourney6_ctf and mpq3tourney6.
+
+    Check if player is inside the crush bounds instead of below the
+    crusher. There is a jumppad the goes under it in mpq3tourney6.
+
+2017-08-26-02 skip:
+    Make bots only use q3tourney6 crusher to kill their enemy
+
+    Only use the crusher for killing the bot's enemy. This doesn't
+    affect 1v1 very much but prevents the whole team of bots in CTF
+    from suddenly shooting at the crusher button. Entering the crusher
+    bounds was basically instant death.
+
+2017-09-02-01 skip:
+    Fix going to previous browser source in q3_ui
+
+    It wasn't possible to go to previous source from favorites if
+    sv_master5 cvar wasn't set.
+
+2017-09-02-02 skip:
+    Make map names in q3_ui map select menu be uppercase
+
+    Makes map names match on both pages of start server menu.
+
+2017-09-02-03 skip:
+    Limit ui_smallFont/ui_bigFont/cg_noTaunt cvars to missionpack
+
+    ui_smallFont and ui_bigFont are for missionpack HUD font size
+    selection. cg_noTaunt disables missionpack taunt voice chats.
+
+2017-09-02-04 skip:
+    Fix team chat box for spectators
+
+    Make spectators use green background for team chat box when following
+    players. The team chat messages are from spectators not the team of
+    the followed player.
+
+    Make spectators draw team chat box even when not following a player.
+
+2017-09-02-05 skip:
+    Don't draw crosshair 0 in Team Arena setup menu
+
+    Don't draw crosshair 0 in Team Arena setup menu. It isn't drawn
+    in CGame. Wrap cg_drawCrosshair in missionpack menu like CGame
+    instead of treating as index 0 which is no longer drawn.
+
+2017-09-04-01 skip:
+    Make client for Windows x86_64 use OpenAL64.dll by default
+
+    ioquake3.x86_64.exe can't load x86 OpenAL32.dll. Using separate
+    library names allows shipping OpenAL for both architectures.
+
+    Though since the dll name is saved in the config file, using both
+    clients on the same computer will cause one client arch to always
+    try to load the wrong OpenAL dll and then fallback to the correct
+    default OpenAL dll. I guess it could be fixed by using separate
+    cvar names for s_alDriver.
+
+2017-09-07-01 skip:
+    Fix loading renderer DLLs on Windows x86
+
+    After 'Fix floating point precision loss in renderer', Windows x86
+    client won't load the renderer DLLs. The problem is a 64 bit modulus.
+    I couldn't find any reports of this online. However, client with
+    built-in renderer worked with the 64 bit modulus.
+
+    Only tested with mingw-w64.
+
+2017-09-07-02 skip:
+    Add Windows application manifest
+
+    - Use common controls 6 so error dialogs use correct visuals on
+    Windows XP or later!
+    - Specify running as invoker so Windows doesn't guess if it should
+    prompt for admin permission on Vista or later.
+    - Specify compatible with Vista through Windows 10. Tells Windows
+    not to emulate Vista behavior, not sure if it affects anything.
+
+    Makefile automatically runs windres when manifest changes.
+
+2017-09-07-03 skip:
+    Disable DPI scaling on Windows
+
+    Windows DPI scaling prevents using full monitor resolution in
+    fullscreen mode.
+
+2017-09-10-01 ignore window resize event on fullscreen
+
+2017-09-10-02
+    Merge pull request #310 from em92/sceenlooping-bugfix
+
+    ignore window resize event on fullscreen
+
+2017-09-09-01 skip:
+    Don't reload arenas.txt/*.arena files in Team Arena UI
+
+    Entering Team Arena's start server or in-game callvote menu causes
+    arenas to be reloaded. The existing memory is not freed so after
+    a entering the menus a few times the UI runs out of memory and
+    crashes.
+
+    Just load arenas once when the UI loads like in q3_ui.
+
+2017-09-09-02 skip:  Fix crash when out of memory in Team Arena's String_Alloc
+
+2017-09-10-01 skip:
+    Fix in_nograb not releasing the mouse cursor
+
+    Disable SDL relative mouse mode when in_nograb is enabled. Relative
+    mouse mode hides the cursor and it cannot exit the window regardless
+    of the window's grab state.
+
+    This wasn't always the case. SDL before 2.0.4 on GNU/Linux released
+    the mouse cursor in relative mode. However, SDL 2.0.3/4 on Windows
+    does not. (I did not test other Windows versions.) So I think SDL
+    2.0.4 made GNU/Linux X11 behavior consistent with other platforms.
+
+    This fixes mouse input being unusable when debuging client crashes
+    in gdb.
+
+2017-09-10-02 skip:
+    Update UI player animation handling to match CGame
+
+    Fix "Error parsing animation file" messages in UI. Caused by fixing the
+    handling of missing tokens in animation.cfg parser in a past commit.
+    Fix new Team Arena torso animation frame numbers in UI.
+    Add support for fixedtorso and fixedlegs keywords.
+    Add support for reversed animations (negative numframes).
+
+2017-09-14-01 skip:
+    Fix specifying minimum mac os version in make-macosx.sh
+
+    Use newer method of telling Makefile instead of specifying CFLAGS
+    and LDFLAGS which results in using both Makefile's and scripts flags.
+
+2017-09-14-02 skip:
+    Fix minimum macOS version not being set in AppBundle Info.plist
+
+    make-macosx-app.sh reads MACOSX_DEPLOYMENT_TARGET variable but
+    it wasn't ever set.
 

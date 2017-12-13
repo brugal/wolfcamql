@@ -2719,7 +2719,7 @@ void QDECL CG_Printf( const char *msg, ... ) {
         }
 
 		if (cg.snap) {
-			msec = CG_GetCurrentTimeWithDirection();
+			msec = CG_GetCurrentTimeWithDirection(NULL);
 		} else {
 			msec = 0;
 		}
@@ -2742,7 +2742,7 @@ void QDECL CG_Printf( const char *msg, ... ) {
         }
 
 		if (cg.snap) {
-			msec = CG_GetCurrentTimeWithDirection();
+			msec = CG_GetCurrentTimeWithDirection(NULL);
 		} else {
 			msec = 0;
 		}

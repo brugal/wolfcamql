@@ -5119,7 +5119,7 @@ static int CG_NumOverTimes (void)
 }
 #endif
 
-int CG_GetCurrentTimeWithDirection (void)
+int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 {
 	  int numOverTimes = 0;
 	  int overTimeAmount = 0;
@@ -5130,6 +5130,10 @@ int CG_GetCurrentTimeWithDirection (void)
 	  int gameStartTime;
 
 	  //return cg.time - cgs.levelStartTime;
+
+	  if (numberOfOvertimes) {
+		  *numberOfOvertimes = 0;
+	  }
 
 	  //gameStartTime = trap_GetGameStartTime();
 	  gameStartTime = cgs.levelStartTime;
@@ -5150,40 +5154,8 @@ int CG_GetCurrentTimeWithDirection (void)
 		  cgtime = cg.time;
 	  }
 
-		  //Com_Printf("timeplayed %d   cgs.timelimit %d\n", timePlayed, cgs.timelimit);
-#if 0
-	  if (cgs.protocol == PROTOCOL_Q3) {
+	  //Com_Printf("timeplayed %d   cgs.timelimit %d\n", timePlayed, cgs.timelimit);
 
-	  } else if ((cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTF)  &&  cgs.realTimelimit) {
-		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
-			  numOverTimes = 1;
-			  overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
-			  overTimeAmount = cgs.timelimit;
-		  } else {
-			  numOverTimes = 0;
-			  overTimeOffset = 0;
-		  }
-	  } else if (!cg.warmup) {
-		  //FIXME take out, use CG_NumOverTimes(args);
-		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
-			  //Com_Printf("timeplayed %d  >  timelimit %d\n", timePlayed, cgs.timelimit * 60 * 1000);
-			  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
-			  if (overTimeAmount) {
-				  numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
-			  } else {
-				  numOverTimes = 0;
-			  }
-			  if (overTimeAmount) {
-				  overTimeOffset = (timePlayed - (cgs.timelimit * 60 * 1000)) % overTimeAmount;
-			  } else {
-				  overTimeOffset = 0;
-			  }
-			  numOverTimes++;
-		  }
-	  }
-#endif
-
-#if 1
 	  if (cgs.protocol == PROTOCOL_Q3) {
 
 	  } else if (cgs.realTimelimit) {
@@ -5209,87 +5181,87 @@ int CG_GetCurrentTimeWithDirection (void)
 			  overTimeOffset = 0;
 		  }
 	  }
-#endif
 
-	  //FIXME not here, what if this function isn't called
-	  cgs.numOverTimes = numOverTimes;
+	  if (numberOfOvertimes) {
+		  *numberOfOvertimes = numOverTimes;
+	  }
 
-    //
-    if (cg_levelTimerDirection.integer == 0) {
-		if (numOverTimes) {
-			msec = overTimeOffset;
-		} else {
-			msec = cgtime - gameStartTime;
-		}
-		cg.timerGoesUp = qtrue;
-	} else if (cg_levelTimerDirection.integer == 1) {
-		if (numOverTimes) {
-			msec = overTimeOffset;
-			cg.timerGoesUp = qtrue;
-		} else {
-			msec = (gameStartTime + (cgs.timelimit * 60 * 1000)) - cgtime;
-			cg.timerGoesUp = qfalse;
-		}
+	  //
+	  if (cg_levelTimerDirection.integer == 0) {
+		  if (numOverTimes) {
+			  msec = overTimeOffset;
+		  } else {
+			  msec = cgtime - gameStartTime;
+		  }
+		  cg.timerGoesUp = qtrue;
+	  } else if (cg_levelTimerDirection.integer == 1) {
+		  if (numOverTimes) {
+			  msec = overTimeOffset;
+			  cg.timerGoesUp = qtrue;
+		  } else {
+			  msec = (gameStartTime + (cgs.timelimit * 60 * 1000)) - cgtime;
+			  cg.timerGoesUp = qfalse;
+		  }
 
-		if (cgs.realTimelimit == 0) {
-			if (numOverTimes) {
-				msec = overTimeOffset;
-			} else {
-				msec = cgtime - gameStartTime;
-			}
-			cg.timerGoesUp = qtrue;
-		}
-	} else if (cg_levelTimerDirection.integer == 2) {
-		msec = cgtime - gameStartTime;
-		cg.timerGoesUp = qtrue;
-	} else if (cg_levelTimerDirection.integer == 3) {
-		if (numOverTimes) {
-			//Com_Printf("yes overtime\n");
-			msec = overTimeAmount - overTimeOffset;
-			//Com_Printf("m %d\n", msec);
-			if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
-				//msec += (numOverTimes * cg_levelTimerDefaultTimeLimit.integer * 60 * 1000);
-				msec = -overTimeOffset;
-				while (msec < 0) {
-					if (cg_levelTimerDefaultTimeLimit.integer > 0) {
-						msec += cg_levelTimerDefaultTimeLimit.integer * 60 * 1000;
-					} else {
-						msec += 60 * 60 * 1000;
-					}
-				}
-				//Com_Printf("x %d\n", msec);
-			}
-		} else {
-			msec = (gameStartTime + (cgs.timelimit * 60 * 1000)) - cgtime;
-		}
-		cg.timerGoesUp = qfalse;
-	} else if (cg_levelTimerDirection.integer == 4) {
-		msec = trap_GetGameEndTime() - cgtime;
-		if (msec < 0) {  // defaults to dir 3 behavior
-			if (numOverTimes) {
-				msec = overTimeAmount - overTimeOffset;
-				if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
-					msec = -overTimeOffset;
-					while (msec < 0) {
-						if (cg_levelTimerDefaultTimeLimit.integer > 0) {
-							msec += cg_levelTimerDefaultTimeLimit.integer * 60 * 1000;
-						} else {
-							msec += 60 * 60 * 1000;
-						}
-					}
-				}
-			} else {
-				msec = (gameStartTime + (cgs.timelimit * 60 * 1000)) - cgtime;
-			}
-		}
-		cg.timerGoesUp = qfalse;
-	} else {
-		msec = cgtime - gameStartTime;
-		cg.timerGoesUp = qtrue;
-	}
+		  if (cgs.realTimelimit == 0) {
+			  if (numOverTimes) {
+				  msec = overTimeOffset;
+			  } else {
+				  msec = cgtime - gameStartTime;
+			  }
+			  cg.timerGoesUp = qtrue;
+		  }
+	  } else if (cg_levelTimerDirection.integer == 2) {
+		  msec = cgtime - gameStartTime;
+		  cg.timerGoesUp = qtrue;
+	  } else if (cg_levelTimerDirection.integer == 3) {
+		  if (numOverTimes) {
+			  //Com_Printf("yes overtime\n");
+			  msec = overTimeAmount - overTimeOffset;
+			  //Com_Printf("m %d\n", msec);
+			  if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
+				  //msec += (numOverTimes * cg_levelTimerDefaultTimeLimit.integer * 60 * 1000);
+				  msec = -overTimeOffset;
+				  while (msec < 0) {
+					  if (cg_levelTimerDefaultTimeLimit.integer > 0) {
+						  msec += cg_levelTimerDefaultTimeLimit.integer * 60 * 1000;
+					  } else {
+						  msec += 60 * 60 * 1000;
+					  }
+				  }
+				  //Com_Printf("x %d\n", msec);
+			  }
+		  } else {
+			  msec = (gameStartTime + (cgs.timelimit * 60 * 1000)) - cgtime;
+		  }
+		  cg.timerGoesUp = qfalse;
+	  } else if (cg_levelTimerDirection.integer == 4) {
+		  msec = trap_GetGameEndTime() - cgtime;
+		  if (msec < 0) {  // defaults to dir 3 behavior
+			  if (numOverTimes) {
+				  msec = overTimeAmount - overTimeOffset;
+				  if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
+					  msec = -overTimeOffset;
+					  while (msec < 0) {
+						  if (cg_levelTimerDefaultTimeLimit.integer > 0) {
+							  msec += cg_levelTimerDefaultTimeLimit.integer * 60 * 1000;
+						  } else {
+							  msec += 60 * 60 * 1000;
+						  }
+					  }
+				  }
+			  } else {
+				  msec = (gameStartTime + (cgs.timelimit * 60 * 1000)) - cgtime;
+			  }
+		  }
+		  cg.timerGoesUp = qfalse;
+	  } else {
+		  msec = cgtime - gameStartTime;
+		  cg.timerGoesUp = qtrue;
+	  }
 
-    //Com_Printf("msec: %d\n", msec);
-    return msec;
+	  //Com_Printf("msec: %d\n", msec);
+	  return msec;
 }
 
 const char *CG_GetLevelTimerString (void)
@@ -5299,7 +5271,7 @@ const char *CG_GetLevelTimerString (void)
 	int hours, mins, seconds;
 	int msec;
 
-	msec = CG_GetCurrentTimeWithDirection();
+	msec = CG_GetCurrentTimeWithDirection(NULL);
 
 	//Com_Printf("msec %d\n", msec);
 
@@ -6310,7 +6282,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  int hours, mins, seconds;
 	  int msec;
 
-	  msec = CG_GetCurrentTimeWithDirection();
+	  msec = CG_GetCurrentTimeWithDirection(NULL);
 
 	  hours = (msec / 1000) / 3600;
 	  msec -= (hours * 3600 * 1000);
@@ -8662,11 +8634,15 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
 
   case CG_OVERTIME: {
-	  if (!cg.warmup  &&  cgs.numOverTimes  &&  !(cg.snap->ps.pm_type == PM_INTERMISSION)) {
-		  if (cgs.numOverTimes < 2) {
+	  int numOverTimes = 0;
+
+	  CG_GetCurrentTimeWithDirection(&numOverTimes);
+
+	  if (!cg.warmup  &&  numOverTimes  &&  !(cg.snap->ps.pm_type == PM_INTERMISSION)) {
+		  if (numOverTimes < 2) {
 			  CG_Text_Paint_Align(&rect, scale, color, "Overtime", 0, 0, textStyle, font, align);
 		  } else {
-			  CG_Text_Paint_Align(&rect, scale, color, va("Overtime x%d", cgs.numOverTimes), 0, 0, textStyle, font, align);
+			  CG_Text_Paint_Align(&rect, scale, color, va("Overtime x%d", numOverTimes), 0, 0, textStyle, font, align);
 		  }
 	  }
 	  break;

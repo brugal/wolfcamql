@@ -27,7 +27,7 @@ void CG_Text_Paint_Limit_Bottom(float *maxX, float x, float y, float scale, cons
 void CG_Text_Paint_Align (const rectDef_t *rect, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *fontOrig, int align);
 
 void CG_DrawWeaponBar (void);
-int CG_GetCurrentTimeWithDirection (void);
+int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes);
 const char *CG_GetLevelTimerString (void);
 double CG_GetServerTimeFromClockString (const char *timeString);
 
