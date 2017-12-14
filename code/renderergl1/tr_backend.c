@@ -1492,7 +1492,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 
 	start = 0;
 	if ( r_speeds->integer ) {
-		start = ri.Milliseconds();
+		start = ri.RealMilliseconds();
 	}
 
 	// make sure rows and cols are powers of 2
@@ -1524,7 +1524,7 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	}
 
 	if ( r_speeds->integer ) {
-		end = ri.Milliseconds();
+		end = ri.RealMilliseconds();
 		ri.Printf( PRINT_ALL, "qglTexSubImage2D %i, %i: %i msec\n", cols, rows, end - start );
 	}
 
@@ -1760,7 +1760,7 @@ void RB_ShowImages( void ) {
 
 	qglFinish();
 
-	start = ri.Milliseconds();
+	start = ri.RealMilliseconds();
 
 	for ( i=0 ; i<tr.numImages ; i++ ) {
 		image = tr.images[i];
@@ -1791,7 +1791,7 @@ void RB_ShowImages( void ) {
 
 	qglFinish();
 
-	end = ri.Milliseconds();
+	end = ri.RealMilliseconds();
 	ri.Printf( PRINT_ALL, "%i msec to draw all images\n", end - start );
 
 }
@@ -2100,7 +2100,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	qboolean videoCommand;
 	const void *data2;
 
-	t1 = ri.Milliseconds ();
+	t1 = ri.RealMilliseconds();
 	dataOrig = data;
 
 	videoCommand = qfalse;
@@ -2333,7 +2333,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_END_OF_LIST:
 			//dprintf("render2 commands stop ------------------------\n");
 			// stop rendering
-			//t2 = ri.Milliseconds ();
+			//t2 = ri.RealMilliseconds();
 			//backEnd.pc.msec = t2 - t1;
 			goto secondpassdone;
 		default:
@@ -2359,7 +2359,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			data = RB_TakeVideoFrameCmd(data, &shotDataMain);
 			break;
 		case RC_END_OF_LIST:
-			t2 = ri.Milliseconds ();
+			t2 = ri.RealMilliseconds();
 			backEnd.pc.msec = t2 - t1;
 			goto thirdpassdone;
 		default:

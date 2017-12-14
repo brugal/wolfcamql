@@ -957,7 +957,7 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
 * cg_levelTimerDirection:  0, 1  same as quakelive, including bugs (always count up during overtimes regardless of the settings you have chosen), 2  count up and don't reset to 0 during overtimes  (ex:  14:53  is shown for duel 53 seconds into the second overtime), 3 countdown even during overtime and for matches with no time-limit use cg_levelTimerDefaultTimeLimit, 4 always count down and try to use the end of game time parsed from the demo -- otherwise use cg_levelTimerDefaultTimeLimit
 
-* cg_levelTimerOvertimeReset:  0: (default) shows total overtime about, 1: shows current overtime about
+* cg_levelTimerOvertimeReset:  0: (default) shows total overtime amount, 1: shows current overtime amount
 
 * r_lightmapColor to tint the lightmap
   extreme example:  r_lightmapColor "0xff0000" to make all the lights red

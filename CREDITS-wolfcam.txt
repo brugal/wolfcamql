@@ -21,7 +21,7 @@ em92 (Eugene Molotov):
   * bug fix:  don't show crosshair scan name and info for dead players
   * compile fix:  add -D_FILE_OFFSET_BITS=64 to all platforms
   * include 64-bit Windows libfreetype.a
-  * bug fix:  overtime clock stayed at zero for game types besided duel, tdm, ca, and ft (em92 Eugene Molotov)
+  * bug fix:  overtime clock stayed at zero for game types besides duel, tdm, ca, and ft (em92 Eugene Molotov)
   * bug fix:  r_fullscreen 1 wouldn't fit game screen correctly (via ioquake3 patch)
 
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program

@@ -2276,6 +2276,7 @@ disconnect
 * R_IssuePending() can prevent hud rendering with split analaglyph (opengl1)
 * opengl2:  r_debugSurface uses immediate mode ri.CM_DrawDebugSurface
 * 109176-SKrapha(POV)-vs-8PLAYevil-elder-2016_.dm_91  seeking zoom stays on
+* opengl2: R_GetCommandBufferReserved don't drop and don't spam like opengl1
 
 
 ----

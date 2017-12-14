@@ -47,11 +47,12 @@
 * test3d variable doesn't need to be set to record split anaglyph video
 * ioquake3 opengl2 renderer
 * include 64-bit Windows libfreetype.a (em92 Eugene Molotov)
-* bug fix:  overtime clock stayed at zero for game types besided duel, tdm, ca, and ft (em92 Eugene Molotov)
+* bug fix:  overtime clock stayed at zero for game types besides duel, tdm, ca, and ft (em92 Eugene Molotov)
 * CG_OVERTIME owner draw also shows number of overtimes (matches quake live)
-* cg_levelTimerOvertimeReset  0: (default) shows total overtime about, 1: shows current overtime about
+* cg_levelTimerOvertimeReset  0: (default) shows total overtime amount, 1: shows current overtime amount
 * bug fix:  CG_OVERTIME ownerdraw required CG_LEVELTIMER to be used
 * bug fix:  r_fullscreen 1 wouldn't fit game screen correctly (em92 Eugene Molotov : via ioquake3 patch)
+* bug fix:  rendering timing debug values were incorrect if timescale was used
 
 ---------------------------------
 11.7  2017-06-07

@@ -1548,7 +1548,7 @@ static qboolean RawImage_ScaleToPower2( byte **data, int *inout_width, int *inou
 		int finalwidth, finalheight;
 		//int startTime, endTime;
 
-		//startTime = ri.Milliseconds();
+		//startTime = ri.RealMilliseconds();
 
 		finalwidth = scaled_width << r_imageUpsample->integer;
 		finalheight = scaled_height << r_imageUpsample->integer;
@@ -1599,7 +1599,7 @@ static qboolean RawImage_ScaleToPower2( byte **data, int *inout_width, int *inou
 		else if (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT)
 			FillInNormalizedZ(*resampledBuffer, *resampledBuffer, scaled_width, scaled_height);
 
-		//endTime = ri.Milliseconds();
+		//endTime = ri.RealMilliseconds();
 
 		//ri.Printf(PRINT_ALL, "upsampled %dx%d to %dx%d in %dms\n", width, height, scaled_width, scaled_height, endTime - startTime);
 

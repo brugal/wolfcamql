@@ -893,7 +893,7 @@ void GLSL_InitGPUShaders(void)
 
 	R_IssuePendingRenderCommands();
 
-	startTime = ri.Milliseconds();
+	startTime = ri.RealMilliseconds();
 
 	for (i = 0; i < GENERICDEF_COUNT; i++)
 	{	
@@ -1340,7 +1340,7 @@ void GLSL_InitGPUShaders(void)
 #endif
 
 
-	endTime = ri.Milliseconds();
+	endTime = ri.RealMilliseconds();
 
 	ri.Printf(PRINT_ALL, "loaded %i GLSL shaders (%i gen %i light %i etc) in %5.2f seconds\n", 
 		numGenShaders + numLightShaders + numEtcShaders, numGenShaders, numLightShaders, 
