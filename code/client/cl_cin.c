@@ -1370,24 +1370,22 @@ e_status CIN_RunCinematic (int handle)
 	}
 
 	if (cl_freezeDemo->integer) {
-		thisTime = 0;
-	} else {
-		thisTime = CL_ScaledMilliseconds();
+		return FMV_IDLE;
 	}
 
-	if (cinTable[currentHandle].shader && (abs(thisTime - cinTable[currentHandle].lastTime))>100) {
+	thisTime = CL_ScaledMilliseconds();
+
+	if (cinTable[currentHandle].shader && ( (abs(thisTime - cinTable[currentHandle].lastTime))>100  ||  thisTime < cinTable[currentHandle].lastTime )) {
 		cinTable[currentHandle].startTime += thisTime - cinTable[currentHandle].lastTime;
 	}
-	//cinTable[currentHandle].tfps = ((((CL_ScaledMilliseconds()*com_timescale->value) - cinTable[currentHandle].startTime)*3)/100);
 	cinTable[currentHandle].tfps = ((((thisTime) - cinTable[currentHandle].startTime)*3)/100);
 
 	start = cinTable[currentHandle].startTime;
 	while(  (cinTable[currentHandle].tfps != cinTable[currentHandle].numQuads)
-		&& (cinTable[currentHandle].status == FMV_PLAY) ) 
+		&& (cinTable[currentHandle].status == FMV_PLAY) )
 	{
 		RoQInterrupt();
 		if (start != cinTable[currentHandle].startTime) {
-			//cinTable[currentHandle].tfps = ((((CL_ScaledMilliseconds()*com_timescale->value) - cinTable[currentHandle].startTime)*3)/100);
 		  cinTable[currentHandle].tfps = ((((thisTime) - cinTable[currentHandle].startTime)*3)/100);
 			start = cinTable[currentHandle].startTime;
 		}
@@ -1642,9 +1640,8 @@ void CL_PlayCinematic_f(void) {
 
 	CL_handle = CIN_PlayCinematic( arg, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, bits );
 	if (CL_handle >= 0) {
-		do {
-			SCR_RunCinematic();
-		} while (cinTable[currentHandle].buf == NULL && cinTable[currentHandle].status == FMV_PLAY);		// wait for first frame (load codebook and sound)
+		// don't loop this since like quake3 since CL_ScaledMilliseconds() will not advance
+		SCR_RunCinematic();
 	}
 }
 

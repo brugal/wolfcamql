@@ -4623,6 +4623,8 @@ void CL_Frame ( int msec, double fmsec ) {
 
 	cls.realtime += cls.frametime;
 
+	//Com_Printf("^5cls.realtime %d\n", cls.realtime);
+
 	if ( cl_timegraph->integer ) {
 		SCR_DebugGraph ( cls.realFrametime * 0.25 );
 	}
@@ -4799,8 +4801,13 @@ void *CL_RefMalloc( int size ) {
 	return Z_TagMalloc( size, TAG_RENDERER );
 }
 
+// for renderer shader/cinematic times
 int CL_ScaledMilliseconds(void) {
-	return Sys_Milliseconds()*com_timescale->value*blurFramesFactor;
+	// Use cls.realtime instead of Sys_Milliseconds()*com_timescale->value
+	// since fake frame times are generated while recording video.
+	// cls.realtime is also adjusted by timescale.
+
+	return cls.realtime;
 }
 
 /*
@@ -4853,7 +4860,7 @@ void CL_InitRef ( void ) {
 	ri.Cmd_ExecuteText = Cbuf_ExecuteText;
 	ri.Printf = CL_RefPrintf;
 	ri.Error = Com_Error;
-	ri.Milliseconds = CL_ScaledMilliseconds;
+	ri.ScaledMilliseconds = CL_ScaledMilliseconds;
 	ri.RealMilliseconds = Sys_Milliseconds;
 	ri.Malloc = CL_RefMalloc;
 	ri.Free = Z_Free;

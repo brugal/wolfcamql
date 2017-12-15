@@ -2277,6 +2277,23 @@ disconnect
 * opengl2:  r_debugSurface uses immediate mode ri.CM_DrawDebugSurface
 * 109176-SKrapha(POV)-vs-8PLAYevil-elder-2016_.dm_91  seeking zoom stays on
 * opengl2: R_GetCommandBufferReserved don't drop and don't spam like opengl1
+* with no wc-glsl.pk3 and r_ignoreglerrors 0  :
+
+------- R_InitVaos -------
+glsl/cameraline.vs ->
+file not found
+glsl/cameraline.fs ->
+file not found
+camera path shader program ->
+Initializing Shaders
+Com_Error(): GL_CheckErrors: GL_INVALID_VALUE in code/renderergl2/tr_image.c at line 2150----- Client Shutdown (Client fatal crashed: GL_CheckErrors: GL_INVALID_VALUE in code/renderergl2/tr_image.c at line 2150) -----
+disconnect
+RE_Shutdown( 1 )
+R_DoneFreeType
+Hunk_Clear: reset the hunk ok
+-----------------------
+GL_CheckErrors: GL_INVALID_VALUE in code/renderergl2/tr_image.c at line 2150
+* function key binds don't work in console during cinematics
 
 
 ----

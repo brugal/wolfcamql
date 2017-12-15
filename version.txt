@@ -1,4 +1,4 @@
-12.0test3
+12.0test6
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -53,6 +53,8 @@
 * bug fix:  CG_OVERTIME ownerdraw required CG_LEVELTIMER to be used
 * bug fix:  r_fullscreen 1 wouldn't fit game screen correctly (em92 Eugene Molotov : via ioquake3 patch)
 * bug fix:  rendering timing debug values were incorrect if timescale was used
+* bug fix:  pausing would cause cinematic videos to exit
+* bug fix:  renderer shader times incorrect when recording videos (em92 Eugene Molotov)
 
 ---------------------------------
 11.7  2017-06-07

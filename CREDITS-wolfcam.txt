@@ -23,6 +23,7 @@ em92 (Eugene Molotov):
   * include 64-bit Windows libfreetype.a
   * bug fix:  overtime clock stayed at zero for game types besides duel, tdm, ca, and ft (em92 Eugene Molotov)
   * bug fix:  r_fullscreen 1 wouldn't fit game screen correctly (via ioquake3 patch)
+  * bug fix:  renderer shader times incorrect when recording videos
 
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program
 KittenIgnition:  helping others, ideas and suggestions, beta testing

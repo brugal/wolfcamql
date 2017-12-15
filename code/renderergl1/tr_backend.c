@@ -1461,7 +1461,7 @@ void	RB_SetGL2D (void) {
 	qglDisable( GL_CLIP_PLANE0 );
 
 	// set time for 2D shaders
-	backEnd.refdef.time = ri.Milliseconds();
+	backEnd.refdef.time = ri.ScaledMilliseconds();
 	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001f;
 }
 
@@ -1929,7 +1929,7 @@ const void	*RB_SwapBuffers (const void *data, qboolean endFrame)
 		qglDepthMask(GL_FALSE);
 
 		// set time for 2D shaders
-		backEnd.refdef.time = ri.Milliseconds();
+		backEnd.refdef.time = ri.ScaledMilliseconds();
 		backEnd.refdef.floatTime = backEnd.refdef.time * 0.001f;
 
 		GL_State(GLS_DEPTHTEST_DISABLE);

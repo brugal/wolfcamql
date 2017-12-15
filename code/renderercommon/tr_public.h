@@ -134,9 +134,9 @@ typedef struct {
 	// abort the game
 	void	(QDECL *Error)( int errorLevel, const char *fmt, ...) __attribute__ ((noreturn, format (printf, 2, 3)));
 
-	// milliseconds should only be used for profiling, never
+	// RealMilliseconds should only be used for profiling, never
 	// for anything game related.  Get time from the refdef
-	int		(*Milliseconds)( void );
+	int		(*ScaledMilliseconds)( void );
 	int		(*RealMilliseconds) (void);
 
 	// stack based memory allocation for per-level things that
