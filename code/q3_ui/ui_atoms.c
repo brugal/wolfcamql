@@ -848,6 +848,47 @@ void UI_KeyEvent( int key, int down ) {
 	sfxHandle_t		s;
 
 	if (!uis.activemenu) {
+		char buf[MAX_STRING_CHARS];
+
+		if (!down) {
+			return;
+		}
+
+		// menu is NULL but we could be playing cinematic
+		// check for binds to function keys
+
+		//FIXME check if pause already works
+
+		switch (key) {
+		case K_F1:
+		case K_F2:
+		case K_F3:
+		case K_F4:
+		case K_F5:
+		case K_F6:
+		case K_F7:
+		case K_F8:
+		case K_F9:
+		case K_F10:
+		case K_F11:
+		case K_F12:
+		case K_F13:
+		case K_F14:
+		case K_F15:
+			// got a function key
+			break;
+		default:
+			// no function key
+			return;
+		}
+
+		buf[0] = '\0';
+		trap_Key_GetBindingBuf(key, buf, sizeof(buf));
+		if (!*buf  ||  buf[0] == '+'  ||  buf[1] == '-'  ||  !Q_stricmpn(buf, "vstr", strlen("vstr") - 1)) {
+			return;
+		}
+		trap_Cmd_ExecuteText(EXEC_NOW, buf);
+
 		return;
 	}
 

@@ -181,7 +181,6 @@ typedef struct serverStatus_s
 serverStatus_t cl_serverStatusList[MAX_SERVERSTATUSREQUESTS];
 
 double Overf = 0.0;
-double blurFramesFactor = 1.0;
 
 aviFileData_t afdMain;
 aviFileData_t afdLeft;
@@ -4462,6 +4461,7 @@ CL_Frame
 */
 void CL_Frame ( int msec, double fmsec ) {
 	double f;
+	double blurFramesFactor;
 
 	if ( !com_cl_running->integer ) {
 		return;
@@ -4488,6 +4488,7 @@ void CL_Frame ( int msec, double fmsec ) {
 			cls.realFrametime = msec;
 			cls.frametime = msec;
 			cls.realtime += cls.frametime;
+			cls.scaledtime += cls.frametime;
 			SCR_UpdateScreen();
 			S_Update();
 			Con_RunConsole();
@@ -4622,6 +4623,7 @@ void CL_Frame ( int msec, double fmsec ) {
 	cls.frametime = msec;
 
 	cls.realtime += cls.frametime;
+	cls.scaledtime += cls.frametime;
 
 	//Com_Printf("^5cls.realtime %d\n", cls.realtime);
 
@@ -4803,11 +4805,11 @@ void *CL_RefMalloc( int size ) {
 
 // for renderer shader/cinematic times
 int CL_ScaledMilliseconds(void) {
-	// Use cls.realtime instead of Sys_Milliseconds()*com_timescale->value
+	// Use cls.scaledtime instead of Sys_Milliseconds()*com_timescale->value
 	// since fake frame times are generated while recording video.
-	// cls.realtime is also adjusted by timescale.
+	// cls.scaledtime is also adjusted by timescale.
 
-	return cls.realtime;
+	return cls.scaledtime;
 }
 
 /*
@@ -5730,6 +5732,7 @@ void CL_Init ( void ) {
 	}
 
 	cls.realtime = 0;
+	cls.scaledtime = 0;
 
 	CL_InitInput ();
 
@@ -5929,6 +5932,8 @@ void CL_Init ( void ) {
 	Cmd_AddCommand ("demo", CL_PlayDemo_f);
 	Cmd_SetCommandCompletionFunc( "demo", CL_CompleteDemoName );
 	Cmd_AddCommand ("cinematic", CL_PlayCinematic_f);
+	Cmd_AddCommand ("cinematic_restart", CL_RestartCinematic_f);
+	Cmd_AddCommand ("cinematiclist", CL_ListCinematic_f);
 	Cmd_AddCommand ("stoprecord", CL_StopRecord_f);
 	Cmd_AddCommand ("connect", CL_Connect_f);
 	Cmd_AddCommand ("reconnect", CL_Reconnect_f);
@@ -6020,6 +6025,8 @@ void CL_Shutdown(char *finalmsg, qboolean disconnect, qboolean quit)
 	Cmd_RemoveCommand ("record");
 	Cmd_RemoveCommand ("demo");
 	Cmd_RemoveCommand ("cinematic");
+	Cmd_RemoveCommand ("cinematic_restart");
+	Cmd_RemoveCommand ("cinematiclist");
 	Cmd_RemoveCommand ("stoprecord");
 	Cmd_RemoveCommand ("connect");
 	Cmd_RemoveCommand ("reconnect");

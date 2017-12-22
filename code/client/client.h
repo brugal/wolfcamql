@@ -341,10 +341,15 @@ typedef struct {
 	qboolean	cgameStarted;
 
 	int			framecount;
-	int			frametime;			// msec since last frame
+	int			frametime;			// msec since last frame, affected by timescale and artificial video recording frame times, can be 0 if demo is paused
 
-	int			realtime;			// ignores pause
-	int			realFrametime;		// ignoring pause, so console always works
+	// note: these are not 'real' since they, like frametime above, will be
+	// affected by timescale and also artificial frame times used for video
+	// recording
+	int			realtime;			// doesn't advance if demo is paused, value can be reset with demo seeking, does advance for ingame pause
+	int			realFrametime;		// ignoring both ingame pause and demo pause, so console always works
+
+	int			scaledtime;  		// same as realtime above but doesn't get reset with demo seeking, this always advances or stays the same, used for renderer shaders and cinematics
 
 	int			numlocalservers;
 	serverInfo_t	localServers[MAX_OTHER_SERVERS];
@@ -745,6 +750,8 @@ void SCR_Text_Paint (float x, float y, float scale, vec4_t color, const char *te
 //
 
 void CL_PlayCinematic_f( void );
+void CL_RestartCinematic_f (void);
+void CL_ListCinematic_f (void);
 void SCR_DrawCinematic (void);
 void SCR_RunCinematic (void);
 void SCR_StopCinematic (void);

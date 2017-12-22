@@ -2151,6 +2151,9 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
     nopicmip
     {
       map somePic.jpg
+
+      // or play a video (if directory isn't specified looks in 'video/') :
+      //videoMap video/intro.roq
     }
   }
 
@@ -2477,6 +2480,9 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * In Windows dpi awareness is set to prevent scaling.  This can be disabled with '--no-dpi-aware' command line option.
 * cg_bleedTime to control the amount of time player bleeding is shown on screen
 * com_logo to control logo cinematic when the program starts
+* /cinematic_restart [all | <cinematic number>] to restart videos (applies to current cinematic video and videoMap shaders)
+* /cinematiclist command to list currently loaded cinematics
+* more than one videoMap shader can be played at the same time
 * /unset command can use '*' at end of name to perform pattern matching.  Ex: /unset cg_*
 
 * r_debugScaledImages to show non power of two scaled images

@@ -1,4 +1,4 @@
-12.0test6
+12.0test7
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -55,6 +55,14 @@
 * bug fix:  rendering timing debug values were incorrect if timescale was used
 * bug fix:  pausing would cause cinematic videos to exit
 * bug fix:  renderer shader times incorrect when recording videos (em92 Eugene Molotov)
+* /cinematic_restart [all | <cinematic number>] to restart videos (applies to current cinematic video and videoMap shaders)
+* /cinematiclist command to list currently loaded cinematics
+* bug fix:  loading an ingame videoMap shader would close the console
+* bug fix:  initial cinematic playing didn't check if a video handle was available
+* bug fix:  function key binds in console didn't work if cinematic was playing
+* bug fix:  large cinematic frame size could overflow buffer
+* bug fix:  initial cinematic frame size wasn't validated
+* more than one videoMap shader can be played at the same time
 
 ---------------------------------
 11.7  2017-06-07
