@@ -857,8 +857,6 @@ void UI_KeyEvent( int key, int down ) {
 		// menu is NULL but we could be playing cinematic
 		// check for binds to function keys
 
-		//FIXME check if pause already works
-
 		switch (key) {
 		case K_F1:
 		case K_F2:

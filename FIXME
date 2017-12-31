@@ -142,8 +142,8 @@
 ***** viewpoint stuff is fucked, you need to look ahead to see if it's a viewpoint or viewent, likewise if the cam point is viewent it needs to look head to see if it's viewent of viewpoint
 * how are angles treated before going to ent
 * select cam points and /transition viewpoints  will change all selected to have viewpoints and move evenly from the first to the last
-* add, edit, basiccly anything stops camera playing -- also need to stop camera playing  CG_TimeChange()
-* changecamerapoint is messedup -- changes origin to spline
+* add, edit, basically anything stops camera playing -- also need to stop camera playing  CG_TimeChange()
+* changecamerapoint is messed up -- changes origin to spline
 * cg.demoPlaying checks for camera stuff
 * for /chase option to follow behind:  /chase 123 <time> xoffset yoffset zoffset
 * /follow victim gets messed up with rewind and ca spec demo
@@ -2295,9 +2295,8 @@ Hunk_Clear: reset the hunk ok
 GL_CheckErrors: GL_INVALID_VALUE in code/renderergl2/tr_image.c at line 2150
 * reset cinematic shader times
 * option to also seek in cinematic videoMap shaders (default is to just ignore seek and keep playing as if time hadn't changed)
-* roq playback hardcoded to 30fps?  -- 2017-12-18 yes, be design
-* more than one videomap ad shader locks them all
-* seeking for cinematics
+* roq playback hardcoded to 30fps?  -- 2017-12-18 yes, by design
+* seeking for cinematics -- need videoMap shaders have regular cinematics
 * can roq frame size be zero?
 * /cvarsearch time shows cg_levelTimerOvertimeReset twice
 * renderer shader time reset when seeking

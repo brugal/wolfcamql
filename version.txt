@@ -1,4 +1,4 @@
-12.0test7
+12.0test8
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -63,6 +63,9 @@
 * bug fix:  large cinematic frame size could overflow buffer
 * bug fix:  initial cinematic frame size wasn't validated
 * more than one videoMap shader can be played at the same time
+* fast forward and rewind works for cinematic videos
+* cl_cinematicIgnoreSeek to allow or disable seeking with videoMap shaders
+
 
 ---------------------------------
 11.7  2017-06-07

@@ -568,6 +568,7 @@ extern	cvar_t	*cl_allowDownload;
 extern  cvar_t  *cl_downloadMethod;
 extern	cvar_t	*cl_conXOffset;
 extern	cvar_t	*cl_inGameVideo;
+extern cvar_t *cl_cinematicIgnoreSeek;
 
 extern	cvar_t	*cl_lanForcePackets;
 extern	cvar_t	*cl_autoRecordDemo;
@@ -763,6 +764,7 @@ void CIN_SetExtents (int handle, int x, int y, int w, int h);
 void CIN_SetLooping (int handle, qboolean loop);
 void CIN_UploadCinematic(int handle);
 void CIN_CloseAllVideos(void);
+void CIN_SeekCinematic (double offset);
 
 //
 // cl_cgame.c

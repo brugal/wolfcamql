@@ -2483,6 +2483,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * /cinematic_restart [all | <cinematic number>] to restart videos (applies to current cinematic video and videoMap shaders)
 * /cinematiclist command to list currently loaded cinematics
 * more than one videoMap shader can be played at the same time
+* cl_cinematicIgnoreSeek to allow or disable seeking with videoMap shaders
+
 * /unset command can use '*' at end of name to perform pattern matching.  Ex: /unset cg_*
 
 * r_debugScaledImages to show non power of two scaled images

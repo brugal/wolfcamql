@@ -126,6 +126,7 @@ cvar_t	*cl_motdString;
 cvar_t	*cl_allowDownload;
 cvar_t	*cl_conXOffset;
 cvar_t	*cl_inGameVideo;
+cvar_t *cl_cinematicIgnoreSeek;
 
 cvar_t	*cl_serverStatusResendTime;
 
@@ -5219,6 +5220,7 @@ static void rewind_demo (double wantedTime)
 	int i;
 	rewindBackups_t *rb;
 	int j;
+	int scaledtimeOrig;
 
 	if (wantedTime < (double)di.firstServerTime) {
 		wantedTime = di.firstServerTime;
@@ -5268,7 +5270,11 @@ static void rewind_demo (double wantedTime)
 
 	memcpy(&cl, &rb->cl, sizeof(clientActive_t));
 	memcpy(&clc, &rb->clc, sizeof(clientConnection_t));
+
+	scaledtimeOrig = cls.scaledtime;
 	memcpy(&cls, &rb->cls, sizeof(clientStatic_t));
+	cls.scaledtime = scaledtimeOrig;
+
 	Overf = 0;
 	//Com_Printf("%s clc.state %d\n", __FUNCTION__, clc.state);
 	//FIXME hack
@@ -5279,11 +5285,7 @@ static void rewind_demo (double wantedTime)
 void CL_Rewind_f (void)
 {
 	double t;
-
-	if (!clc.demoplaying) {
-		Com_Printf("not playing demo can't rewind\n");
-		return;
-	}
+	double wantedTime;
 
 	if (Cmd_Argc() < 2) {
 		Com_Printf("usage:  rewind <time in seconds>\n");
@@ -5296,7 +5298,27 @@ void CL_Rewind_f (void)
 		t = atof(Cmd_Argv(1)) * 1000.0;
 	}
 
-	rewind_demo((double)cl.serverTime + Overf - t);
+	if (!(clc.demoplaying  ||  clc.state == CA_CINEMATIC)) {
+		Com_Printf("not playing demo or cinematic, can't rewind\n");
+		return;
+	}
+
+	wantedTime = (double)cl.serverTime + Overf - t;
+
+	// cinematics first since times can be changed with demo rewind/fastforward
+	if (clc.demoplaying) {
+		if (wantedTime < (double)di.firstServerTime) {
+			// don't seek cinematic past demo start
+			t -= (double)di.firstServerTime - wantedTime;
+		}
+	}
+
+	// don't call CIN_SeekCinematic() from fast_forward_demo() or rewind_demo() since those functions call each other
+	CIN_SeekCinematic(-t);
+
+	if (clc.demoplaying) {
+		rewind_demo(wantedTime);
+	}
 }
 
 
@@ -5304,11 +5326,6 @@ void CL_FastForward_f (void)
 {
 	double t;
 	double wantedTime;
-
-	if (!clc.demoplaying) {
-		Com_Printf("not playing demo can't fast forward\n");
-		return;
-	}
 
 	if (Cmd_Argc() < 2) {
 		Com_Printf("usage:  fastforward <time in seconds>\n");
@@ -5328,12 +5345,31 @@ void CL_FastForward_f (void)
 		wantedTime = (double)di.firstServerTime + t;
 	}
 
-	fast_forward_demo(wantedTime);
+	if (!(clc.demoplaying  ||  clc.state == CA_CINEMATIC)) {
+		Com_Printf("not playing demo or cinematic, can't fast forward\n");
+		return;
+	}
+
+	// cinematics first since times can be changed with demo rewind/fastforward
+	if (clc.demoplaying) {
+		if (wantedTime >= (double)di.lastServerTime) {
+			// don't seek cinematic past demo end
+			t = 0;
+		}
+	}
+
+	// don't call CIN_SeekCinematic() from fast_forward_demo() or rewind_demo() since those functions call each other
+	CIN_SeekCinematic(t);
+
+	if (clc.demoplaying) {
+		fast_forward_demo(wantedTime);
+	}
 }
 
 static void demo_seek (double ms, int exactServerTime)  // server time in milliseconds
 {
 	double wantedTime;
+	double cinSeekTime;
 
 	if (!clc.demoplaying) {
 		Com_Printf("not playing demo can't seek\n");
@@ -5346,13 +5382,29 @@ static void demo_seek (double ms, int exactServerTime)  // server time in millis
 		wantedTime = exactServerTime;
 	}
 
+	cinSeekTime = wantedTime - (double)cl.serverTime;
+
 	if (Cvar_VariableIntegerValue("debug_seek")) {
 		Com_Printf("demo_seek(): seek want %f\n", wantedTime);
 	}
 
 	if (wantedTime > (double)cl.serverTime + Overf) {
+		// cinematic before demo seek since times can change
+		if (wantedTime >= (double)di.lastServerTime) {
+			// don't seek cinematic past demo end
+			cinSeekTime = 0;
+		}
+		CIN_SeekCinematic(cinSeekTime);
+
 		fast_forward_demo(wantedTime);
 	} else {
+		// cinematic before demo seek since times can change
+		if (wantedTime < (double)di.firstServerTime) {
+			// don't seek cinematic past demo start
+			cinSeekTime -= (double)di.firstServerTime - wantedTime;
+		}
+		CIN_SeekCinematic(cinSeekTime);
+
 		rewind_demo(wantedTime);
 	}
 }
@@ -5803,6 +5855,8 @@ void CL_Init ( void ) {
 #else
 	cl_inGameVideo = Cvar_Get ("r_inGameVideo", "1", CVAR_ARCHIVE);
 #endif
+
+	cl_cinematicIgnoreSeek = Cvar_Get("cl_cinematicIgnoreSeek", "0", CVAR_ARCHIVE);
 
 	cl_serverStatusResendTime = Cvar_Get ("cl_serverStatusResendTime", "750", 0);
 

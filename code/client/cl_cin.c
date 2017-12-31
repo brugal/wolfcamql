@@ -88,7 +88,6 @@ typedef struct {
 
 	long				oldXOff, oldYOff, oldysize, oldxsize;
 
-	//int					currentHandle;
 } cinematics_t;
 
 typedef struct {
@@ -98,9 +97,9 @@ typedef struct {
 	qboolean			looping, holdAtEnd, dirty, alterGameState, silent, shader;
 	fileHandle_t		iFile;
 	e_status			status;
-	int		startTime;
-	int		lastTime;
-	int playCallStartTime;  // time when the play called was issued
+	double		startTime;
+	double		lastTime;
+	double playCallStartTime;  // time when the play call was issued
 	long				tfps;
 	long				RoQPlayed;
 	long				ROQSize;
@@ -1414,7 +1413,7 @@ e_status CIN_RunCinematic (int handle)
 
 	if (thisTime < cinTable[currentHandle].lastTime) {
 		// shouldn't happen with cls.scaledtime
-		Com_Printf("^3%s: thisTime (%d) < lastTime (%d)\n", __FUNCTION__, thisTime, cinTable[currentHandle].lastTime);
+		Com_Printf("^3%s: thisTime (%d) < lastTime (%f)\n", __FUNCTION__, thisTime, cinTable[currentHandle].lastTime);
 	}
 
 	// check for game hitch?
@@ -1425,6 +1424,12 @@ e_status CIN_RunCinematic (int handle)
 
 	//FIXME hardcoded to 30fps
 	cinTable[currentHandle].tfps = ((((thisTime) - cinTable[currentHandle].startTime)*3)/100);
+
+#if 0  // debugging
+	if (cinTable[currentHandle].tfps > cinTable[currentHandle].totalQuads) {
+		Com_Printf("^5%s:  greater total wanted time %ld > %ld  :  startTime:%f  timeNow:%d\n", __FUNCTION__, cinTable[currentHandle].tfps, cinTable[currentHandle].totalQuads, cinTable[currentHandle].startTime, CL_ScaledMilliseconds());
+	}
+#endif
 
 	start = cinTable[currentHandle].startTime;
 	while(  (cinTable[currentHandle].tfps != cinTable[currentHandle].numQuads)
@@ -1482,7 +1487,6 @@ int CIN_PlayCinematic( const char *arg, int x, int y, int w, int h, int systemBi
 
 	Com_DPrintf("CIN_PlayCinematic( %s )\n", arg);
 
-	//Com_Memset(&cin, 0, sizeof(cinematics_t) );
 	currentHandle = CIN_HandleForVideo();
 
 	if (currentHandle == -1) {
@@ -1491,8 +1495,6 @@ int CIN_PlayCinematic( const char *arg, int x, int y, int w, int h, int systemBi
 	}
 
 	Com_Memset(&cin[currentHandle], 0, sizeof(cinematics_t));
-
-	//cin[currentHandle].currentHandle = currentHandle;
 
 	strcpy(cinTable[currentHandle].fileName, name);
 
@@ -1579,6 +1581,116 @@ int CIN_PlayCinematic( const char *arg, int x, int y, int w, int h, int systemBi
 
 	RoQShutdown();
 	return -1;
+}
+
+// milliseconds from current position
+void CIN_SeekCinematic (double offset)
+{
+	long int wantQuadCount;
+	qboolean silentOrig;
+	long int currentQuads;
+	int currentHandleOrig;
+	// debugging
+	//int startTimeOrig;
+	int i;
+	double totalWantedTime;
+	double totalVideoTimeLength;
+
+	currentHandleOrig = currentHandle;
+
+	for (i = 0;  i < MAX_VIDEO_HANDLES;  i++) {
+		currentHandle = i;
+
+		if (cinTable[currentHandle].fileName[0] == 0) {
+			continue;
+		}
+
+		if (cinTable[currentHandle].totalQuads < 2) {
+			// avoid infinite loop with empty roq and not enough precision with low number of quads
+			continue;
+		}
+
+		if (cinTable[currentHandle].shader  &&  cl_cinematicIgnoreSeek->integer) {
+			continue;
+		}
+
+		totalWantedTime = (double)cinTable[currentHandle].lastTime - (double)cinTable[currentHandle].startTime + offset;
+
+		totalVideoTimeLength = (double)cinTable[currentHandle].totalQuads * (1000.0 / 30.0);
+
+		if (totalWantedTime < 0.0) {
+			if (!cinTable[currentHandle].looping) {
+				// ignore seek before start time
+				continue;
+			}
+
+			// loop it
+			while (totalWantedTime < 0.0) {
+				totalWantedTime += totalVideoTimeLength;
+			}
+		} else if (totalWantedTime > totalVideoTimeLength) {
+			if (!cinTable[currentHandle].looping) {
+				// ignore seek after end time
+				continue;
+			}
+
+			// loop it
+			while (totalWantedTime > totalVideoTimeLength) {
+				totalWantedTime -= totalVideoTimeLength;
+			}
+		}
+
+		wantQuadCount = totalWantedTime * 30.0 / 1000.0;
+
+		// note:  numQuads can be -1 at beginning of cinematic
+		currentQuads = cinTable[currentHandle].numQuads;
+		if (currentQuads < 0) {
+			currentQuads = 0;
+		}
+
+		// debugging
+		//startTimeOrig = cinTable[currentHandle].startTime;
+
+		if (wantQuadCount > currentQuads) {  // fast forward
+			if (Cvar_VariableIntegerValue("debug_seek")) {
+				Com_Printf("cinematic fast forward %ld -> %ld\n", cinTable[currentHandle].numQuads, wantQuadCount);
+			}
+
+			silentOrig = cinTable[currentHandle].silent;
+			cinTable[currentHandle].silent = qtrue;
+
+			while (wantQuadCount > cinTable[currentHandle].numQuads  &&  cinTable[currentHandle].status == FMV_PLAY) {
+				RoQInterrupt();
+			}
+
+			cinTable[currentHandle].silent = silentOrig;
+		} else if (wantQuadCount < currentQuads) {  // rewind
+			if (Cvar_VariableIntegerValue("debug_seek")) {
+				Com_Printf("cinematic rewind %ld -> %ld\n", cinTable[currentHandle].numQuads, wantQuadCount);
+			}
+
+			silentOrig = cinTable[currentHandle].silent;
+
+			RoQReset();
+
+			cinTable[currentHandle].silent = qtrue;
+			cinTable[currentHandle].status = FMV_PLAY;
+
+			while (wantQuadCount > cinTable[currentHandle].numQuads  &&  cinTable[currentHandle].status == FMV_PLAY) {
+				RoQInterrupt();
+			}
+
+			cinTable[currentHandle].silent = silentOrig;
+		} else {
+			// quad counts the same, still need to update time
+		}
+
+		cinTable[currentHandle].startTime = (double)CL_ScaledMilliseconds() - totalWantedTime;
+		cinTable[currentHandle].lastTime = (double)CL_ScaledMilliseconds();
+		//Com_Printf("^5setting time  startTimeOrig:%f  startTime:%f  now:%d\n", startTimeOrig, cinTable[currentHandle].startTime, CL_ScaledMilliseconds());
+	}
+
+	currentHandle = currentHandleOrig;
 }
 
 void CIN_SetExtents (int handle, int x, int y, int w, int h) {
@@ -1718,7 +1830,7 @@ void CL_PlayCinematic_f(void) {
 
 	CL_handle = CIN_PlayCinematic( arg, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, bits );
 	if (CL_handle >= 0) {
-		// don't loop this like quake3 since CL_ScaledMilliseconds() will not advance untill CL_Frame() is called again
+		// don't loop this like quake3 since CL_ScaledMilliseconds() will not advance until CL_Frame() is called again
 		SCR_RunCinematic();
 	}
 }
@@ -1771,7 +1883,7 @@ void CL_ListCinematic_f (void)
 		if (cinTable[i].fileName[0] != 0) {
 			const cin_cache *c = &cinTable[i];
 
-			Com_Printf("%02d: '%s' status:%d file:%d totalFrames:%ld frameCount:%ld startTime:%d lastTime:%d playStartTime:%d\n", i, c->fileName, c->status, c->iFile, c->totalQuads, c->numQuads, c->startTime, c->lastTime, c->playCallStartTime);
+			Com_Printf("%02d: '%s' status:%d file:%d totalFrames:%ld frameCount:%ld startTime:%f lastTime:%f playStartTime:%f\n", i, c->fileName, c->status, c->iFile, c->totalQuads, c->numQuads, c->startTime, c->lastTime, c->playCallStartTime);
 		}
 	}
 }
