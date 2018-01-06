@@ -5160,7 +5160,18 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 
 	  } else if (cgs.realTimelimit) {
 		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
-			  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+				switch(cgs.gametype) {
+					case GT_CA:
+					case GT_CTFS:
+					case GT_RED_ROVER:
+					case GT_FREEZETAG:
+						overTimeAmount = 0;
+						break;
+
+					default:
+						overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+						break;
+				}
 			  if (overTimeAmount) {
 				  numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
 				  // above value is zero based index
