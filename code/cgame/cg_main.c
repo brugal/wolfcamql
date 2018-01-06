@@ -2975,7 +2975,7 @@ static void CG_RegisterAnnouncerSounds (void)
 		cgs.media.eCapturedSound = trap_S_RegisterSound(va("%s/e_captured.ogg", baseDir), qtrue);
 
 
-		if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) || cg_buildScript.integer) {
+		if ((cgs.gametype == GT_CTF ||  cgs.gametype == GT_CTFS || cgs.gametype == GT_NTF) || cg_buildScript.integer) {
 			cgs.media.redFlagReturnedSound = trap_S_RegisterSound( va("%s/red_flag_returned.wav", baseDir), qtrue );
 			cgs.media.blueFlagReturnedSound = trap_S_RegisterSound( va("%s/blue_flag_returned.wav", baseDir), qtrue );
 			cgs.media.yourFlagReturnedSound = trap_S_RegisterSound(va("%s/your_flag_returned.ogg", baseDir), qtrue);
@@ -3617,7 +3617,7 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_taken.png");
 	cgs.media.flagShader[4] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_dropped.png");
 
-	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF || cgs.gametype == GT_HARVESTER || cgs.gametype == GT_CTFS   ||  cg_buildScript.integer) {
+	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF || cgs.gametype == GT_HARVESTER || cgs.gametype == GT_CTFS || cgs.gametype == GT_NTF ||  cg_buildScript.integer) {
 #else
 	if ( cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  || cg_buildScript.integer ) {
 #endif
