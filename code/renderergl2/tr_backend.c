@@ -490,6 +490,10 @@ static void RE_DrawPathLines (void)
 	}
 #endif
 
+	if (!tr.cpshaderprogram) {
+		return;
+	}
+
 	if (!PLnumCameraPoints  ||  *PLnumCameraPoints < 2) {
 		return;
 	}
@@ -682,18 +686,9 @@ static void RB_QLBloomDownSample (void)
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
 
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		GL_BindNullFramebuffers();
-	}
+	//ri.Printf(PRINT_ALL, "qglActiveTextureARB: %p\n", qglActiveTextureARB);
 
-	//GL_BindNullProgram();
-	//GL_BindNullTextures();
-
-	//GL_SelectTextureUnit(0);
-	qglActiveTextureARB( GL_TEXTURE0_ARB );
-	qglClientActiveTextureARB( GL_TEXTURE0_ARB );
+	qglActiveTexture( GL_TEXTURE0 );
 
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
@@ -706,9 +701,7 @@ static void RB_QLBloomDownSample (void)
 
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
-	//GL_SelectTextureUnit(1);
-	qglActiveTextureARB( GL_TEXTURE1_ARB );
-	qglClientActiveTextureARB( GL_TEXTURE1_ARB );
+	qglActiveTexture( GL_TEXTURE1 );
 
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
@@ -806,9 +799,7 @@ static void RB_QLBloomDownSample (void)
 	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
 	qglDisable(GL_TEXTURE_2D);
 
-	//GL_SelectTextureUnit(0);
-	qglActiveTextureARB( GL_TEXTURE0_ARB );
-	qglClientActiveTextureARB( GL_TEXTURE0_ARB );
+	qglActiveTexture( GL_TEXTURE0 );
 
 	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
 	qglEnable(GL_TEXTURE_2D);
@@ -834,12 +825,6 @@ static void RB_QLBloomBrightness (void)
 	GLint loc;
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
-
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		GL_BindNullFramebuffers();
-	}
 
 	RB_SetGL2D();
 
@@ -936,17 +921,10 @@ static void RB_QLBloomBlurHorizontal (void)
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
 
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		GL_BindNullFramebuffers();
-	}
-
 	RB_SetGL2D();
 
 	qglFinish();
 
-	//GL_SelectTextureUnit(0);
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 	target = GL_TEXTURE_RECTANGLE_ARB;
@@ -1030,17 +1008,10 @@ static void RB_QLBloomBlurVertical (void)
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
 
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		GL_BindNullFramebuffers();
-	}
-
 	RB_SetGL2D();
 
 	qglFinish();
 
-	//GL_SelectTextureUnit(0);
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 	target = GL_TEXTURE_RECTANGLE_ARB;
@@ -1124,18 +1095,10 @@ static void RB_QLBloomCombine (void)
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
 
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		GL_BindNullFramebuffers();
-	}
-
 	RB_SetGL2D();
 	qglFinish();
 
-	//GL_SelectTextureUnit(0);
-	qglActiveTextureARB( GL_TEXTURE0_ARB );
-	qglClientActiveTextureARB( GL_TEXTURE0_ARB );
+	qglActiveTexture( GL_TEXTURE0 );
 
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
@@ -1157,9 +1120,7 @@ static void RB_QLBloomCombine (void)
 	}
 	qglUniform1iARB(loc, 0);
 
-	//GL_SelectTextureUnit(1);
-	qglActiveTextureARB( GL_TEXTURE1_ARB );
-	qglClientActiveTextureARB( GL_TEXTURE1_ARB );
+	qglActiveTexture( GL_TEXTURE1 );
 
 	qglDisable(GL_TEXTURE_2D);
 	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
@@ -1284,9 +1245,7 @@ static void RB_QLBloomCombine (void)
 	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
 	qglDisable(GL_TEXTURE_2D);
 
-	//GL_SelectTextureUnit(0);
-	qglActiveTextureARB( GL_TEXTURE0_ARB );
-	qglClientActiveTextureARB( GL_TEXTURE0_ARB );
+	qglActiveTexture( GL_TEXTURE0 );
 
 	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
 	qglEnable(GL_TEXTURE_2D);
@@ -1310,6 +1269,13 @@ static void RB_QLBloom (void)
 	int i;
 
 	//ri.Printf(PRINT_ALL, "^5bloom...\n");
+
+	if (tr.usingFinalFrameBufferObject) {
+		FBO_Bind(tr.finalFbo);
+	} else {
+		//FIXME wolfcam: GL_BindNullFramebuffers() doesn't work, it shows a black screen in the first main menu, if you enter another menu the rendering is correct
+		FBO_Bind(NULL);
+	}
 
 	for (i = 0;  i < r_BloomPasses->integer;  i++) {
 		RB_QLBloomDownSample();
@@ -1335,10 +1301,10 @@ static void RB_QLPostProcessing (void)
 		//return;
 	}
 
-	//ri.Printf(PRINT_ALL, "en: %d  glsl: %d  enbl: %d\n", r_enablePostProcess->integer, glConfig.glsl, r_enableBloom->integer);
+	//ri.Printf(PRINT_ALL, "en: %d  glsl: %d  enbl: %d\n", r_enablePostProcess->integer, glConfig.qlGlsl, r_enableBloom->integer);
 
 
-	if (!r_enablePostProcess->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 
@@ -1410,7 +1376,7 @@ static void RB_ColorCorrect (void)
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
 
-	if (!r_enablePostProcess->integer  ||  !r_enableColorCorrect->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !r_enableColorCorrect->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 

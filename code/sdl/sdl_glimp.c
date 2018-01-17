@@ -259,7 +259,7 @@ static void GLimp_DetectAvailableModes(void)
 GLimp_SetMode
 ===============
 */
-static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder)
+static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qboolean coreContext)
 {
 	const char *glstring;
 	int perChannelColorBits;
@@ -553,7 +553,52 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder)
 
 		SDL_SetWindowIcon( SDL_window, icon );
 
-		if( ( SDL_glContext = SDL_GL_CreateContext( SDL_window ) ) == NULL )
+		if (coreContext)
+		{
+			int profileMask, majorVersion, minorVersion;
+			SDL_GL_GetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, &profileMask);
+			SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &majorVersion);
+			SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &minorVersion);
+
+			ri.Printf(PRINT_ALL, "Trying to get an OpenGL 3.2 core context\n");
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+			if ((SDL_glContext = SDL_GL_CreateContext(SDL_window)) == NULL)
+			{
+				ri.Printf(PRINT_ALL, "SDL_GL_CreateContext failed: %s\n", SDL_GetError());
+				ri.Printf(PRINT_ALL, "Reverting to default context\n");
+
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profileMask);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, majorVersion);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
+			}
+			else
+			{
+				const char *renderer;
+
+				ri.Printf(PRINT_ALL, "SDL_GL_CreateContext succeeded.\n");
+
+				renderer = (const char *)qglGetString(GL_RENDERER);
+				if (renderer && (strstr(renderer, "Software Renderer") || strstr(renderer, "Software Rasterizer")))
+				{
+					ri.Printf(PRINT_ALL, "GL_RENDERER is %s, rejecting context\n", renderer);
+
+					SDL_GL_DeleteContext(SDL_glContext);
+					SDL_glContext = NULL;
+
+					SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profileMask);
+					SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, majorVersion);
+					SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
+				}
+			}
+		}
+		else
+		{
+			SDL_glContext = NULL;
+		}
+
+		if( !SDL_glContext && ( SDL_glContext = SDL_GL_CreateContext( SDL_window ) ) == NULL )
 		{
 			ri.Printf( PRINT_DEVELOPER, "SDL_GL_CreateContext failed: %s\n", SDL_GetError( ) );
 			continue;
@@ -603,7 +648,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder)
 GLimp_StartDriverAndSetMode
 ===============
 */
-static qboolean GLimp_StartDriverAndSetMode(int mode, qboolean fullscreen, qboolean noborder)
+static qboolean GLimp_StartDriverAndSetMode(int mode, qboolean fullscreen, qboolean noborder, qboolean gl3Core)
 {
 	rserr_t err;
 
@@ -630,7 +675,7 @@ static qboolean GLimp_StartDriverAndSetMode(int mode, qboolean fullscreen, qbool
 		fullscreen = qfalse;
 	}
 
-	err = GLimp_SetMode(mode, fullscreen, noborder);
+	err = GLimp_SetMode(mode, fullscreen, noborder, gl3Core);
 
 	switch ( err )
 	{
@@ -835,7 +880,7 @@ static void GLimp_InitExtensions( void )
 	//if (SDL_GL_ExtensionSupported("GL_ARB_shader_objects")) {
 	if (1) {  //if (SDL_GL_ExtensionSupported("GL_ARB_fragment_shader")  &&  SDL_GL_ExtensionSupported("GL_ARB_vertex_shader")  &&  (SDL_GL_ExtensionSupported("GL_ARB_texture_rectangle")  ||  SDL_GL_ExtensionSupported("GL_EXT_texture_rectangle")  ||  SDL_GL_ExtensionSupported("GL_NV_texture_rectangle"))) {
 		if (r_enablePostProcess->integer) {
-			glConfig.glsl = qtrue;
+			glConfig.qlGlsl = qtrue;
 
 			qglCreateShaderObjectARB = (GLhandleARB (APIENTRY *)(GLenum)) SDL_GL_GetProcAddress("glCreateShaderObjectARB");
 			qglShaderSourceARB = (void (APIENTRY *)(GLhandleARB, int, const char **, int *)) SDL_GL_GetProcAddress("glShaderSourceARB");
@@ -855,7 +900,7 @@ static void GLimp_InitExtensions( void )
 			qglUniform1iARB = (void (APIENTRY *)(GLint, GLint)) SDL_GL_GetProcAddress("glUniform1iARB");
 
 			if (!qglCreateShaderObjectARB  ||  !qglShaderSourceARB  ||  !qglCompileShaderARB  ||  !qglCreateProgramObjectARB  ||  !qglAttachObjectARB  ||  !qglLinkProgramARB  ||  !qglUseProgramObjectARB  ||  !qglGetObjectParameterivARB  || !qglGetInfoLogARB  ||  !qglGetObjectParameterivARB  ||  !qglDetachObjectARB  ||  !qglDeleteObjectARB  ||  !qglGetUniformLocationARB  ||  !qglUniform1fARB  ||  !qglUniform1iARB) {
-				glConfig.glsl = qfalse;
+				glConfig.qlGlsl = qfalse;
 				ri.Printf(PRINT_ALL, "^1...error: ignoring fragment shaders some proc addresses not found\n");
 				ri.Printf(PRINT_ALL, "qglCreateShaderObjectARB %p\n", qglCreateShaderObjectARB);
 				ri.Printf(PRINT_ALL, "qglShaderSourceARB %p\n", qglShaderSourceARB);
@@ -876,11 +921,11 @@ static void GLimp_InitExtensions( void )
 				ri.Printf(PRINT_ALL, "...using fragment shaders\n");
 			}
 		} else {
-			glConfig.glsl = qfalse;
+			glConfig.qlGlsl = qfalse;
 			ri.Printf(PRINT_ALL, "...ignoring fragment shaders\n");
 		}
 	} else {
-		glConfig.glsl = qfalse;
+		glConfig.qlGlsl = qfalse;
 		qglUniform1fARB = NULL;
 
 		ri.Printf(PRINT_ALL, "...no fragment shader support\n");
@@ -966,7 +1011,7 @@ This routine is responsible for initializing the OS specific portions
 of OpenGL
 ===============
 */
-void GLimp_Init( void )
+void GLimp_Init( qboolean coreContext )
 {
 	ri.Printf( PRINT_DEVELOPER, "GLimp_Init( )\n" );
 
@@ -989,14 +1034,14 @@ void GLimp_Init( void )
 	ri.Sys_GLimpInit( );
 
 	// Create the window and set up the context
-	if(GLimp_StartDriverAndSetMode(r_mode->integer, r_fullscreen->integer, r_noborder->integer))
+	if(GLimp_StartDriverAndSetMode(r_mode->integer, r_fullscreen->integer, r_noborder->integer, coreContext))
 		goto success;
 
 	// Try again, this time in a platform specific "safe mode"
 	ri.Printf(PRINT_ALL, "^1GLimp_StartDriverAndSetMode() failed, reverting to safe values\n");
 	ri.Sys_GLimpSafeInit( );
 
-	if(GLimp_StartDriverAndSetMode(r_mode->integer, r_fullscreen->integer, qfalse))
+	if(GLimp_StartDriverAndSetMode(r_mode->integer, r_fullscreen->integer, qfalse, coreContext))
 		goto success;
 
 	// Finally, try the default screen resolution
@@ -1005,7 +1050,7 @@ void GLimp_Init( void )
 		ri.Printf( PRINT_ALL, "Setting r_mode %d failed, falling back on r_mode %d\n",
 				r_mode->integer, R_MODE_FALLBACK );
 
-		if(GLimp_StartDriverAndSetMode(R_MODE_FALLBACK, qfalse, qfalse))
+		if(GLimp_StartDriverAndSetMode(R_MODE_FALLBACK, qfalse, qfalse, coreContext))
 			goto success;
 	}
 
@@ -1033,7 +1078,10 @@ success:
 	}
 
 	ExtensionString = (const char *)qglGetString(GL_EXTENSIONS);
-	Q_strncpyz( glConfig.extensions_string, ExtensionString, sizeof( glConfig.extensions_string ) );
+	if (ExtensionString)
+		Q_strncpyz( glConfig.extensions_string, ExtensionString, sizeof( glConfig.extensions_string ) );
+	else
+		Q_strncpyz( glConfig.extensions_string, "Not available (core context, fixme)", sizeof( glConfig.extensions_string ) );
 
 	// initialize extensions
 	GLimp_InitExtensions( );

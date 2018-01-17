@@ -1038,7 +1038,7 @@ static void RB_QLPostProcessing (void)
 	}
 
 
-	if (!r_enablePostProcess->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 
@@ -1097,7 +1097,7 @@ static void RB_ColorCorrect (void)
 	int shift;
 	float mul;
 
-	if (!r_enablePostProcess->integer  ||  !r_enableColorCorrect->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !r_enableColorCorrect->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 
@@ -1190,7 +1190,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	//int				oldSort;
 	uint64_t oldSort;
 	//int64_t oldSort;
-	float			originalTime;
+	double			originalTime;
 	//GLint loc;
 	//trRefEntity_t *ent;
 
@@ -1283,7 +1283,8 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 			if ( entityNum != REFENTITYNUM_WORLD  &&  backEnd.refdef.entities[entityNum].ePtr != NULL) {
 				backEnd.currentEntity = &backEnd.refdef.entities[entityNum];
-				backEnd.refdef.floatTime = originalTime - backEnd.currentEntity->ePtr->shaderTime;
+				// FIXME: e.shaderTime must be passed as into to avoid fp-precision loss issues
+				backEnd.refdef.floatTime = originalTime - (double)backEnd.currentEntity->ePtr->shaderTime;
 				// we have to reset the shaderTime as well otherwise image animations start
 				// from the wrong frame
 				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;

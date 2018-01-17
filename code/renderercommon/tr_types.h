@@ -295,7 +295,7 @@ typedef struct {
 	qboolean				isFullscreen;
 	qboolean				stereoEnabled;
 	qboolean				smpActive;		// UNUSED
-	qboolean glsl;
+	qboolean qlGlsl;
 	qboolean fbo;  // framebuffer object
 	qboolean fboStencil;
 	qboolean fboMultiSample;

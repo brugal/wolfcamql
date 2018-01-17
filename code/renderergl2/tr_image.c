@@ -39,7 +39,7 @@ static	image_t*		hashTable[FILE_HASH_SIZE];
 void R_GammaCorrect( byte *buffer, int bufSize ) {
 	int i;
 
-	if (r_enablePostProcess->integer  &&  r_enableColorCorrect->integer  &&  glConfig.glsl) {
+	if (r_enablePostProcess->integer  &&  r_enableColorCorrect->integer  &&  glConfig.qlGlsl) {
 		return;
 	}
 
@@ -3258,8 +3258,7 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 		// update screen
 
 		////GL_SelectTextureUnit(0);
-		qglActiveTextureARB(GL_TEXTURE0_ARB);
-		qglClientActiveTextureARB(GL_TEXTURE0_ARB);
+		qglActiveTexture(GL_TEXTURE0);
 
 		GL_State(GLS_DEPTHTEST_DISABLE);
 

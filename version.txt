@@ -1,4 +1,4 @@
-12.0test8
+12.0test9
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -65,7 +65,8 @@
 * more than one videoMap shader can be played at the same time
 * fast forward and rewind works for cinematic videos
 * cl_cinematicIgnoreSeek to allow or disable seeking with videoMap shaders
-
+* bug fix:  round based games didn't ignore g_overtime value (em92 Eugene Molotov)
+* --no-dpi-aware option removed.  DPI awareness is set through program manifest
 
 ---------------------------------
 11.7  2017-06-07

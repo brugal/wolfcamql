@@ -1099,10 +1099,14 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 		}
 		//Com_Printf("powerup: %d\n", i);
 
-		t = ps->powerups[ i ] - cg.time;
-		// ZOID--don't draw if the power up has unlimited time (999 seconds)
+		// ZOID--don't draw if the power up has unlimited time
 		// This is true of the CTF flags
-		if ( t <= 0 || t >= 999000) {
+		if ( ps->powerups[ i ] == INT_MAX ) {
+			continue;
+		}
+
+		t = ps->powerups[ i ] - cg.time;
+		if ( t <= 0 ) {
 			continue;
 		}
 
@@ -5160,18 +5164,19 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 
 	  } else if (cgs.realTimelimit) {
 		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
-				switch(cgs.gametype) {
-					case GT_CA:
-					case GT_CTFS:
-					case GT_RED_ROVER:
-					case GT_FREEZETAG:
-						overTimeAmount = 0;
-						break;
+			  // ignore g_overtime value for round based games
+			  switch(cgs.gametype) {
+			  case GT_CA:
+			  case GT_CTFS:
+			  case GT_RED_ROVER:
+			  case GT_FREEZETAG:
+				  overTimeAmount = 0;
+				  break;
 
-					default:
-						overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
-						break;
-				}
+			  default:
+				  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+				  break;
+			  }
 			  if (overTimeAmount) {
 				  numOverTimes = (timePlayed - (cgs.timelimit * 60 * 1000)) / overTimeAmount;
 				  // above value is zero based index

@@ -66,6 +66,7 @@ typedef struct {
 static console_t	con;
 
 static cvar_t		*con_conspeed;
+static cvar_t		*con_autoclear;
 static cvar_t		*con_notifytime;
 static cvar_t		*con_transparency;
 static cvar_t *con_fracSize;
@@ -89,7 +90,10 @@ void Con_ToggleConsole_f (void) {
 		return;
 	}
 
-	Field_Clear( &g_consoleField );
+	if ( con_autoclear->integer ) {
+		Field_Clear( &g_consoleField );
+	}
+
 	g_consoleField.widthInChars = g_console_field_width;
 
 	Con_ClearNotify ();
@@ -445,6 +449,7 @@ void Con_Init (void) {
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_ARCHIVE);
 	con_conspeed = Cvar_Get ("con_conspeed", "3", CVAR_ARCHIVE);
+	con_autoclear = Cvar_Get("con_autoclear", "1", CVAR_ARCHIVE);
 	con_transparency = Cvar_Get ("con_transparency", "0.04", CVAR_ARCHIVE);
 	con_fracSize = Cvar_Get ("con_fracSize", "0", CVAR_ARCHIVE);
 	con_rgb = Cvar_Get("con_rgb", "", CVAR_ARCHIVE);

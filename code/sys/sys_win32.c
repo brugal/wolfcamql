@@ -973,9 +973,6 @@ static HANDLE HStdout = INVALID_HANDLE_VALUE;
 static CONSOLE_SCREEN_BUFFER_INFO ScreenBufferInfo;
 static qboolean GotHandle = qfalse;
 
-typedef BOOL WINAPI (*SetProcessDPIAwareFunc)(void);
-typedef HRESULT WINAPI (*SetProcessDpiAwarenessFunc)(int);
-
 /*
 ==============
 Sys_PlatformInit
@@ -983,7 +980,7 @@ Sys_PlatformInit
 Windows specific initialisation
 ==============
 */
-void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolean useDpiAware)
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 {
 	HMODULE bt;
 	OSVERSIONINFO vi;
@@ -993,74 +990,7 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolea
 #ifndef DEDICATED
 	TIMECAPS ptc;
 #endif
-	HMODULE shcore = NULL;
-	HMODULE user32 = NULL;
-	HRESULT hr;
-	SetProcessDpiAwarenessFunc fpSetProcessDpiAwareness;
-	SetProcessDPIAwareFunc fpSetProcessDPIAware;
-	qboolean setDpiAware = qfalse;
 	const char *envVal;
-
-	// set dpi awareness
-
-	//FIXME as option?
-	// Not using manifest since it might not run with Windows XP.  Using a
-	// manifest would allow reporting of the correct OSVERSIONINFO.
-	// It is suggested to call *DpiAware* functions as early as possible.
-	if (useDpiAware) {
-		//FIXME this crashes with SDL >= 2.0.2   ?
-#if 1
-		shcore = LoadLibrary("shcore.dll");
-		if (shcore == NULL) {
-			//FIXME printing
-			Com_Printf("shcore.dll not available\n");
-		} else {
-			fpSetProcessDpiAwareness = (SetProcessDpiAwarenessFunc)GetProcAddress(shcore, "SetProcessDpiAwareness");
-			if (fpSetProcessDpiAwareness == NULL) {
-				//FIXME printing
-				Com_Printf("couldn't get function SetProcessDpiAwareness\n");
-			} else {
-				hr = fpSetProcessDpiAwareness(2 /*PROCESS_PER_MONITOR_DPI_AWARE*/);
-				if (hr != S_OK) {
-					//FIXME  printing
-					// this can happen if the application property has already been set with a dpi awareness value
-					Com_Printf("couldn't use SetProcessDpiAwareness (%ld) : %lu\n", hr, GetLastError());
-				} else {
-					Com_Printf("SetProcessDpiAwareness\n");
-					setDpiAware = qtrue;
-				}
-			}
-
-			FreeLibrary(shcore);
-		}
-#endif
-		if (!setDpiAware) {
-			// try SetProcessDPIAware()
-			user32 = LoadLibrary("user32.dll");
-			if (user32 == NULL) {
-				//FIXME printing
-				Com_Printf("user32.dll not available\n");
-			} else {
-				fpSetProcessDPIAware = (SetProcessDPIAwareFunc)GetProcAddress(user32, "SetProcessDPIAware");
-				if (fpSetProcessDPIAware == NULL) {
-					//FIXME printing
-					Com_Printf("couldn't get function SetProcessDPIAware\n");
-				} else {
-					BOOL r;
-
-					r = fpSetProcessDPIAware();
-					if (r == 0) {
-						//FIXME printing
-						Com_Printf("SetProcessDPIAware failed (%d) : %ld\n", r, GetLastError());
-					} else {
-						Com_Printf("SetProcessDPIAware\n");
-						setDpiAware = qtrue;
-					}
-				}
-				FreeLibrary(user32);
-			}
-		}
-	}
 
 	// sdl redirects output, steal it back
 	if (useConsoleOutput) {

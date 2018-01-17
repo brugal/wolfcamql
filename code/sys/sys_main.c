@@ -701,7 +701,6 @@ int main( int argc, char **argv )
 	char  commandLine[ MAX_STRING_CHARS ] = { 0 };
 	qboolean useBacktrace;
 	qboolean useConsoleOutput;
-	qboolean useDpiAware;
 	qboolean demoNameAsArg;
 	qboolean gotFirstArg;
 
@@ -742,7 +741,6 @@ int main( int argc, char **argv )
 
 	useBacktrace = qtrue;
 	useConsoleOutput = qfalse;
-	useDpiAware = qtrue;
 	demoNameAsArg = qtrue;
 	for (i = 1;  i < argc;  i++) {
 		if (!strcmp(argv[i], "--nobacktrace")) {
@@ -751,13 +749,11 @@ int main( int argc, char **argv )
 			useConsoleOutput = qtrue;
 		} else if (!strcmp(argv[i], "--console-passive")) {
 			ConsoleIsPassive = qtrue;
-		} else if (!strcmp(argv[i], "--no-dpi-aware")) {
-			useDpiAware = qfalse;
 		} else if (!strcmp(argv[i], "--no-demo-arg")) {
 			demoNameAsArg = qfalse;
 		}
 	}
-	Sys_PlatformInit(useBacktrace, useConsoleOutput, useDpiAware);
+	Sys_PlatformInit(useBacktrace, useConsoleOutput);
 
 #ifdef __APPLE__
 	// This is passed if we are launched by double-clicking
@@ -780,8 +776,6 @@ int main( int argc, char **argv )
 		} else if (!strcmp(argv[i], "--console-output")) {
 			continue;
 		} else if (!strcmp(argv[i], "--console-passive")) {
-			continue;
-		} else if (!strcmp(argv[i], "--no-dpi-aware")) {
 			continue;
 		} else if (!strcmp(argv[i], "--no-demo-arg")) {
 			continue;
@@ -811,10 +805,9 @@ int main( int argc, char **argv )
 		Q_strcat( commandLine, sizeof( commandLine ), " " );
 	}
 
+	CON_Init( );
 	Com_Init( commandLine );
 	NET_Init( );
-
-	CON_Init( );
 
 	if (!useBacktrace) {
 		signal( SIGILL, Sys_SigHandler );
@@ -826,7 +819,6 @@ int main( int argc, char **argv )
 
 	while( 1 )
 	{
-		IN_Frame( );
 		Com_Frame( );
 	}
 

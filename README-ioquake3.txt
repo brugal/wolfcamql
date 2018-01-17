@@ -142,6 +142,9 @@ The defaults for these variables differ depending on the target platform.
                                       behaviour, 0 for standard q3
   cl_mouseAccelOffset               - Tuning the acceleration curve, see below
 
+  con_autoclear			    - Set to 0 to disable clearing console
+  				      input text when console is closed
+
   in_joystickUseAnalog              - Do not translate joystick axis events
                                       to keyboard commands
 
@@ -322,6 +325,8 @@ The defaults for these variables differ depending on the target platform.
 
   cvar_modified [filter]  - list modified cvars, can filter results (such as "r*"
   		            for renderer cvars) like cvarlist which lists all cvars
+
+  addbot random		  - the bot name "random" now selects a random bot
 ```
 
 

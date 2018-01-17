@@ -706,9 +706,9 @@ ifdef MINGW
       ifeq ($(USE_LOCAL_HEADERS),1)
         CLIENT_CFLAGS += -DCURL_STATICLIB
 	ifeq ($(ARCH),x86_64)
-	  CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a
+	  CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a -lcrypt32
 	else
-	  CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a
+	  CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a -lcrypt32
 	endif
       else
         CLIENT_LIBS += $(CURL_LIBS)
@@ -2921,7 +2921,7 @@ $(B)/client/%.o: $(SYSDIR)/%.c
 $(B)/client/%.o: $(SYSDIR)/%.m
 	$(DO_CC)
 
-$(B)/client/%.o: $(SYSDIR)/%.rc
+$(B)/client/win_resource.o: $(SYSDIR)/win_resource.rc $(SYSDIR)/win_manifest.xml
 	$(DO_WINDRES)
 
 $(B)/renderergl1/%.o: $(CMDIR)/%.c
@@ -2983,7 +2983,7 @@ $(B)/ded/%.o: $(SYSDIR)/%.c
 $(B)/ded/%.o: $(SYSDIR)/%.m
 	$(DO_DED_CC)
 
-$(B)/ded/%.o: $(SYSDIR)/%.rc
+$(B)/ded/win_resource.o: $(SYSDIR)/win_resource.rc $(SYSDIR)/win_manifest.xml
 	$(DO_WINDRES)
 
 $(B)/ded/%.o: $(NDIR)/%.c

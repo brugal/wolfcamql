@@ -81,6 +81,7 @@ vmCvar_t	pmove_fixed;
 vmCvar_t	pmove_msec;
 vmCvar_t	g_rankings;
 vmCvar_t	g_listEntity;
+vmCvar_t	g_localTeamPref;
 #if 1  //def MPACK
 vmCvar_t	g_obeliskHealth;
 vmCvar_t	g_obeliskRegenPeriod;
@@ -185,6 +186,7 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &pmove_msec, "pmove_msec", "8", CVAR_SYSTEMINFO, 0, qfalse },
 
 	{ &g_rankings, "g_rankings", "0", 0, 0, qfalse },
+	{ &g_localTeamPref, "g_localTeamPref", "", 0, 0, qfalse },
 	{ &g_levelStartTime, "g_levelStartTime", "0", CVAR_SERVERINFO, 0, qfalse },
 	{ &g_weapon_rocket_speed, "g_weapon_rocket_speed", "900", CVAR_ARCHIVE, 0, qfalse },
 	{ &g_weapon_plasma_speed, "g_weapon_plasma_speed", "2000", CVAR_ARCHIVE, 0, qfalse },
@@ -288,7 +290,7 @@ void G_FindTeams( void ) {
 
 	c = 0;
 	c2 = 0;
-	for ( i=1, e=g_entities+i ; i < level.num_entities ; i++,e++ ){
+	for ( i=MAX_CLIENTS, e=g_entities+i ; i < level.num_entities ; i++,e++ ) {
 		if (!e->inuse)
 			continue;
 		if (!e->team)
@@ -1556,7 +1558,7 @@ void CheckTournament( void ) {
 		int		counts[TEAM_NUM_TEAMS];
 		qboolean	notEnough = qfalse;
 
-		if ( g_gametype.integer > GT_TEAM ) {
+		if ( g_gametype.integer >= GT_TEAM ) {  //FIXME need something like G_IsTeamGame()
 			counts[TEAM_BLUE] = TeamCount( -1, TEAM_BLUE );
 			counts[TEAM_RED] = TeamCount( -1, TEAM_RED );
 

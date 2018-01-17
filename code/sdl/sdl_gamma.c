@@ -41,7 +41,7 @@ void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 	Uint16 table[3][256];
 	int i, j;
 
-	if (!r_enablePostProcess->integer  ||  !r_enableColorCorrect->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !r_enableColorCorrect->integer  ||  !glConfig.qlGlsl) {
 		if( !glConfig.deviceSupportsGamma || r_ignorehwgamma->integer > 0 ) {
 			return;
 		}
@@ -91,7 +91,7 @@ void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned 
 		}
 	}
 
-	if (!r_enablePostProcess->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		if (SDL_SetWindowGammaRamp(SDL_window, table[0], table[1], table[2]) < 0)
 		{
 			ri.Printf( PRINT_DEVELOPER, "SDL_SetWindowGammaRamp() failed: %s\n", SDL_GetError() );

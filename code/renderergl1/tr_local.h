@@ -433,8 +433,8 @@ typedef struct shader_s {
 
 	void		(*optimalStageIteratorFunc)( void );
 
-  float clampTime;                                  // time this shader is clamped to
-  float timeOffset;                                 // current time offset for this shader
+  double clampTime;                                  // time this shader is clamped to
+  double timeOffset;                                 // current time offset for this shader
 
   struct shader_s *gameRemappedShader;                  // current shader this one is remapped too
   struct shader_s *userRemappedShader;
@@ -461,7 +461,7 @@ typedef struct {
 	byte		areamask[MAX_MAP_AREA_BYTES];
 	qboolean	areamaskModified;	// qtrue if areamask changed since last scene
 
-	float		floatTime;			// tr.refdef.time / 1000.0
+	double		floatTime;			// tr.refdef.time / 1000.0
 
 	// text messages for deform text shaders
 	char		text[MAX_RENDER_STRINGS][MAX_RENDER_STRING_LENGTH];
@@ -490,10 +490,16 @@ typedef struct {
 	shader_t	*shader;
 } skinSurface_t;
 
+// max surfaces per-skin
+// This is an arbitry limit. Vanilla Q3 only supported 32 surfaces in skins but failed to
+// enforce the maximum limit when reading skin files. It was possile to use more than 32
+// surfaces which accessed out of bounds memory past end of skin->surfaces hunk block.
+#define MAX_SKIN_SURFACES      256
+
 typedef struct skin_s {
 	char		name[MAX_QPATH];		// game path, including extension
 	int			numSurfaces;
-	skinSurface_t	*surfaces[MD3_MAX_SURFACES];
+	skinSurface_t	*surfaces;			// dynamically allocated array of surfaces
 } skin_t;
 
 
@@ -1499,7 +1505,7 @@ typedef struct shaderCommands_s
 
 	shader_t	*shader;
 	shader_t *originalShader;  // if set 'shader' is a remapped shader, use this shader for the original lightmap
-  float   shaderTime;
+	double		shaderTime;
 	int			fogNum;
 
 	int			dlightBits;	// or together of all vertexDlightBits

@@ -701,7 +701,7 @@ if desired.
 */
 void ClientUserinfoChanged( int clientNum ) {
 	gentity_t *ent;
-	int		teamTask, teamLeader, team, health;
+	int		teamTask, teamLeader, health;
 	char	*s;
 	char	model[MAX_QPATH];
 	char	headModel[MAX_QPATH];
@@ -723,12 +723,6 @@ void ClientUserinfoChanged( int clientNum ) {
 		strcpy (userinfo, "\\name\\badinfo");
 		// don't keep those clients and userinfo
 		trap_DropClient(clientNum, "Invalid userinfo");
-	}
-
-	// check for local client
-	s = Info_ValueForKey( userinfo, "ip" );
-	if ( !strcmp( s, "localhost" ) ) {
-		client->pers.localClient = qtrue;
 	}
 
 	// check the item prediction
@@ -787,25 +781,6 @@ void ClientUserinfoChanged( int clientNum ) {
 		Q_strncpyz( model, Info_ValueForKey (userinfo, "model"), sizeof( model ) );
 		Q_strncpyz( headModel, Info_ValueForKey (userinfo, "headmodel"), sizeof( headModel ) );
 		//}
-
-	// bots set their team a few frames later
-	if (g_gametype.integer >= GT_TEAM && g_entities[clientNum].r.svFlags & SVF_BOT) {
-		s = Info_ValueForKey( userinfo, "team" );
-#if 1
-		if ( !Q_stricmp( s, "red" ) || !Q_stricmp( s, "r" ) ) {
-			team = TEAM_RED;
-		} else if ( !Q_stricmp( s, "blue" ) || !Q_stricmp( s, "b" ) ) {
-			team = TEAM_BLUE;
-		} else {
-			// pick the team with the least number of players
-			team = PickTeam( clientNum );
-		}
-#endif
-		//team = atoi(s);
-	}
-	else {
-		team = client->sess.sessionTeam;
-	}
 
 /*	NOTE: all client side now
 
@@ -875,7 +850,7 @@ void ClientUserinfoChanged( int clientNum ) {
 	if (ent->r.svFlags & SVF_BOT)
 	{
 		s = va("n\\%s\\t\\%i\\model\\%s\\hmodel\\%s\\c1\\%s\\c2\\%s\\hc\\%i\\w\\%i\\l\\%i\\skill\\%s\\tt\\%d\\tl\\%d",
-			client->pers.netname, team, model, headModel, c1, c2, 
+			   client->pers.netname, client->sess.sessionTeam, model, headModel, c1, c2,
 			client->pers.maxHealth, client->sess.wins, client->sess.losses,
 			Info_ValueForKey( userinfo, "skill" ), teamTask, teamLeader );
 	}
@@ -960,11 +935,11 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 
 	client->pers.connected = CON_CONNECTING;
 
-	// read or initialize the session data
-	if ( firstTime || level.newSession ) {
-		G_InitSessionData( client, userinfo );
+	// check for local client
+	value = Info_ValueForKey( userinfo, "ip" );
+	if ( !strcmp( value, "localhost" ) ) {
+		client->pers.localClient = qtrue;
 	}
-	G_ReadSessionData( client );
 
 	if( isBot ) {
 		ent->r.svFlags |= SVF_BOT;
@@ -973,6 +948,12 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 			return "BotConnectfailed";
 		}
 	}
+
+	// read or initialize the session data
+	if ( firstTime || level.newSession ) {
+		G_InitSessionData( client, userinfo );
+	}
+	G_ReadSessionData( client );
 
 	// get and distribute relevent paramters
 	G_LogPrintf( "ClientConnect: %i\n", clientNum );

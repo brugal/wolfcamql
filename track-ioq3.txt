@@ -5621,54 +5621,52 @@ the demo.
 
 2017-06-04-11 skip (autoupdate):  Removed unnecessary trailing backslash.
 
----- sync 2017-08-17 ----
-
----- this ----
+---- sync 2017-08-17  (rend2?) ----
 
 2017-06-07-01 Use const char pointers when possible in botlib's libvar code
-2017-06-07-02 skip:  Stop caching sv_maxclients in bot code
+2017-06-07-02 Stop caching sv_maxclients in bot code
 
-2017-06-07-03 skip:
+2017-06-07-03
     Don't use uninitialized ps from BotAI_GetClientState
 
     If BotAI_GetPlayerState returns qfalse, ps is untouched and in
     some cases means uninitialized. So don't use it if not valid.
 
-2017-06-07-04 skip:  Fix 'missing token' in parsers for animations.cfg
-2017-06-07-05 skip:  Unify checks for missing COM_Parse() token
-2017-06-07-06 skip:  Fix comment for CG_SetInitialSnapshot
+2017-06-07-04 Fix 'missing token' in parsers for animations.cfg
+2017-06-07-05 Unify checks for missing COM_Parse() token
+2017-06-07-06 Fix comment for CG_SetInitialSnapshot
 
-2017-06-07-07 skip:  Fix (unused) check for map restart in CG_TransitionSnapshot
+2017-06-07-07 Fix (unused) check for map restart in CG_TransitionSnapshot
 
-2017-06-07-08 skip:  Fix Coverity warning that endVelocity is uninitialized
-2017-06-07-09 skip:  Don't build score info for bots, they don't parse it
+2017-06-07-08 Fix Coverity warning that endVelocity is uninitialized
+2017-06-07-09 Don't build score info for bots, they don't parse it
 
-2017-06-07-10 skip:
+2017-06-07-10
     Fix score info being dropped by server
 
     Server drops reliable command string if it's length is more than 1022.
 
-2017-06-07-11 skip:
+2017-06-07-11
     Show client's name in callvote clientkick vote display message
 
     Make callvote always kick by client num so player can't rename to
     avoid being kicked. Don't allow calling a vote to kick host or
     non-existent players.
 
-2017-06-07-12 skip:  Don't start game entity loops at index 1
-2017-06-07-13 skip:  Range check client number for trap_BotUserCommand
+2017-06-07-12 Don't start game entity loops at index 1
+2017-06-07-13 Range check client number for trap_BotUserCommand
 
-2017-06-07-14 skip:
+2017-06-07-14
     Fix overdraw in CG_DrawRect
 
     It was noticeable in the corners when alpha was less than 1.
 
-2017-06-07-15 skip:  Fix comment in BotAIPredictObstacles
-2017-06-07-16 skip:  Remove unneeded 'angles' variables/clearing in ai_dmq3.c
-2017-06-07-17 skip:  Don't copy p->org to itself in cg_particles.c
-2017-06-07-18 skip:  Remove unused define MAX_COMMANDARGUMENTS from be_ea.c
+2017-06-07-15 Fix comment in BotAIPredictObstacles
+2017-06-07-16 Remove unneeded 'angles' variables/clearing in ai_dmq3.c
+2017-06-07-17 Don't copy p->org to itself in cg_particles.c
+2017-06-07-18 Remove unused define MAX_COMMANDARGUMENTS from be_ea.c
 
-2017-06-07-19 skip:
+2017-06-07-19
     Make bots stop attacking player after disconnect
 
     Bots did not notice player disconnected, so they kept attacking
@@ -5677,29 +5675,29 @@ the demo.
     Checking if entity is valid in BotEntityVisible might fix other
     similar issues too.
 
-2017-06-07-20 skip:
+2017-06-07-20
     Fix notarget cheat
 
     Bots no longer target players in 'no target mode'.
 
-2017-06-07-21 skip:
+2017-06-07-21
     Fix strncpy usage in botlib
 
     All usage of strncpy in botlib should now either set string
     terminator or use Q_strncpyz.
 
-2017-06-07-22 skip:  Add con_autochat and con_autoclear cvars
+2017-06-07-22 (not con_autochat, have cl_consoleAsChat):  Add con_autochat and con_autoclear cvars
 
-2017-06-10-01 skip:
+2017-06-10-01
     Only allow connectionless print/echo from server/rcon address
 
     Reported by Ensiform.
 
 2017-06-10-02 Merge pull request #293 from rcgordon/autoupdater-rsa-signature
 
-2017-06-16-01 skip (rend2):  OpenGL2: Remove SF_VAO_MESH.
+2017-06-16-01 OpenGL2: Remove SF_VAO_MESH.
 
-2017-06-22-01 skip:
+2017-06-22-01
     Fix g_teamAutoJoin and g_teamForceBalance
 
     There are various issues caused by not knowing the initial team for
@@ -5750,7 +5748,7 @@ the demo.
     the human player's team. This way it's compatible with vanilla Q3
     game VMs and the new setting team at connect feature.
 
-2017-06-24-01 skip:
+2017-06-24-01
     Fix Team Arena team base models not dropping to floor
 
     Team Arena's Overload gametype has red and blue team Obelisk base
@@ -5764,7 +5762,7 @@ the demo.
     Drop all Team Arena team base models to floor. Fixes CTF, 1Flag,
     Overload, and Harvester base models.
 
-2017-06-24-02 skip:
+2017-06-24-02
     Make cg_teamChatsOnly only affect team gametypes
 
     Also made it so that 'tell voice chats' are always allowed for
@@ -5772,43 +5770,43 @@ the demo.
 
     Reported by Tobias Kuehnhammer.
 
-2017-06-24-03 skip:
+2017-06-24-03
     Check for unlimited time power up using INT_MAX
 
     It is possible for a power up to exceed 999 seconds without it being
     unlimited time.
 
-2017-06-24-04 skip:
+2017-06-24-04 no:
     Have spectator always be in first person
 
     Flying around in third person with no body is weird.
 
-2017-06-24-05 skip:  Allow spectators to use noclip cheat
+2017-06-24-05 Allow spectators to use noclip cheat
 
-2017-06-24-06 skip:
+2017-06-24-06
     travis-ci: Don't run coverity_scan on master branch
 
     Once the weekly limit for Coverity scan is reached all builds exit
     success without compiling.
 
-2017-06-24-07 skip:  travis-ci: Upgrade to docker build system
+2017-06-24-07 travis-ci: Upgrade to docker build system
 
-2017-06-29-01 skip:  Split G_AddRandomBot into multiple functions
+2017-06-29-01 Split G_AddRandomBot into multiple functions
 
-2017-06-29-02 skip:
+2017-06-29-02
     Make 'addbot random' command select a random bot info
 
     It reuses the random bot selection code for bot_minplayers cvar.
 
-2017-06-29-03 skip:
+2017-06-29-03
     Fix random bot not looking for bots by funname
 
     Quake 3's Anarki bot has a 'funname' with colors in it.
     This commit fixes Anarki not being detected as in use.
 
-2017-06-29-04 skip:  Fix bot_minplayers passing delay as team to addbot in non-team gametypes
+2017-06-29-04 Fix bot_minplayers passing delay as team to addbot in non-team gametypes
 
-2017-06-29-05 skip:
+2017-06-29-05
     Fix not adding random bot when all bot info are in use on team
 
     If there are two bot infos in scripts/bots.txt then each team can
@@ -5821,19 +5819,19 @@ the demo.
     This rarely affected Quake 3 since there is 32 bot infos. It could
     easily affect new games though.
 
-2017-06-29-06 skip:
+2017-06-29-06
     Check delayed bot's team when counting bots for bot_minplayers
 
     note: This requires my previous commit that added teampref userinfo
     so that bots choose correct team in ClientConnect.
 
-2017-06-29-07 skip:
+2017-06-29-07
     Fix duplicate (delayed) random bots being choosen
 
     Count delayed bots when looking for least used bot infos for deciding
     which bot to add.
 
-2017-06-29-08 skip:
+2017-06-29-08
     Don't pick duplicate random bots until all bot types are added
 
     Don't add the same bot to multiple teams until there are as many
@@ -5853,16 +5851,16 @@ the demo.
     and stored in console command buffer so game doesn't know not to
     select the bot again.
 
-2017-06-29-09 skip:
+2017-06-29-09
     Add range check for bot skill in addbot command
 
     Adding a bot with skill of 0 doesn't show icon on hud.
 
-2017-06-29-10 skip:  Add 'addbot random' to README
+2017-06-29-10 Add 'addbot random' to README
 
-2017-06-29-11 skip (rend2):  OpenGL2: Fix checking r_shadowCascadeZFar pointer instead of value
+2017-06-29-11 OpenGL2: Fix checking r_shadowCascadeZFar pointer instead of value
 
-2017-06-30-01 skip (rend2):
+2017-06-30-01
     OpenGL2: Fix black planar projection shadows (cg_shadows 3)
 
     Restore MD3 code for cg_shadows 2 and 3 like other model formats.
@@ -5870,15 +5868,15 @@ the demo.
     light direction. I fixed light direction for stencil shadows
     (cg_shadows 2) but it's still broken.
 
-2017-06-30-02 skip (rend2):
+2017-06-30-02
     OpenGL2: Draw sun shadows for first person IQM player models
 
     This makes IQM have the same behavior as MD3 and MDR.
 
-2017-07-01-01 skip:  Fix q3_ui cursor going off screen in widescreen
-2017-07-01-02 skip:  Make Team Arena UI aspect correct in widescreen
+2017-07-01-01 Fix q3_ui cursor going off screen in widescreen
+2017-07-01-02 Make Team Arena UI aspect correct in widescreen
 
-2017-07-01-03 skip:
+2017-07-01-03
     Make UI continue searching for local servers until found
 
     When refreshing local servers, Team Arean UI never changed the status
@@ -5888,13 +5886,13 @@ the demo.
     Let's continue looking for local servers in q3_ui and Team Arena UI
     until one is found.
 
-2017-07-01-04 skip:
+2017-07-01-04
     Allow changing q3_ui server source during refresh
 
     This makes it easier to scroll through the list, especially since
     "Local" source now refreshes until a local server is found.
 
-2017-07-01-05 skip:
+2017-07-01-05
     Fix nonresponsive favorites in q3_ui having no hostname
 
     ArenaServers_InsertFavorites() fails to do anything because favorites
@@ -5902,10 +5900,10 @@ the demo.
 
     Set nonresponsive favorite server hostname to address.
 
-2017-07-02-01 skip:  OpenGL2: Remove two unused cvars and update readme
-2017-07-02-02 skip:  Add warnings for animMap and videoMap shader keywords
+2017-07-02-01 OpenGL2: Remove two unused cvars and update readme
+2017-07-02-02 Add warnings for animMap and videoMap shader keywords
 
-2017-07-04-01 skip:
+2017-07-04-01
     Allow more than 32 surfaces in skin files
 
     Models don't have a surface limit; skins shouldn't either. Some player
@@ -5917,30 +5915,30 @@ the demo.
     allocated so it doesn't increase memory usage when less surfaces
     are used.
 
-2017-07-04-02 skip:  Improve warning for too many skin surfaces
+2017-07-04-02 Improve warning for too many skin surfaces
 
-2017-07-08-01 skip:
+2017-07-08-01
     Fix set-but-not-used variable warnings in vm_armv7l.c
 
     offsidx and const_value were set but not used.
 
-2017-07-09-01 skip:  Fix warning about using abs() with floats (#222)
-2017-07-09-02 skip:  Fix more maybe-uninitialized warnings in opusfile
-2017-07-09-03 skip:  Fix misleading-indentation warnings in cl_cin.c
+2017-07-09-01 (done: using Q_fabs() instead of fabs()):  Fix warning about using abs() with floats (#222)
+2017-07-09-02 Fix more maybe-uninitialized warnings in opusfile
+2017-07-09-03 (done):  Fix misleading-indentation warnings in cl_cin.c
 
-2017-07-13-01 skip (rend2):  OpenGL2: Use an OpenGL 3.2 core context if available.
+2017-07-13-01 OpenGL2: Use an OpenGL 3.2 core context if available.
 
-2017-07-13-02 skip (rend2):
+2017-07-13-02
     OpenGL2: Remove GLSL_ValidateProgram().
 
     https://stackoverflow.com/questions/39761456/why-does-glvalidateprogram-fail-when-no-vao-is-bound
 
-2017-07-14-01 skip (rend2):  OpenGL2: Don't do MSAA resolve/shadow mask/SSAO on shadow views.
+2017-07-14-01 OpenGL2: Don't do MSAA resolve/shadow mask/SSAO on shadow views.
 
-2017-07-14-02 skip (rend2):  OpenGL2: "Fix" cg_shadows 4.
-2017-07-14-03 skip (rend2):  whoops, left a bit of debugging enabled
+2017-07-14-02 OpenGL2: "Fix" cg_shadows 4.
+2017-07-14-03 whoops, left a bit of debugging enabled
 
-2017-07-14-04 skip:
+2017-07-14-04
     Fix score bonus for defending the flag carrier in CTF
 
     Fix copy-paste error in the original Quake 3 code. The wrong values
@@ -5956,7 +5954,7 @@ the demo.
 
     Found by @Razish.
 
-2017-07-14-05 skip:
+2017-07-14-05
     Restore not giving defense score bonus to flag carrier
 
     The Team Arena code for giving defense bonus for fragging player
@@ -5971,15 +5969,15 @@ the demo.
     This restores the pre-Team Arena behavior of not giving defense
     score bonus to flag carrier.
 
-2017-07-14-05 skip:
+2017-07-14-05
     Add score bonus for defending the flag carrier in 1 Flag CTF
 
     Set flag_pw to neutral flag instead of using CTF value for red or
     blue flag so that flag carrier is detected correctly.
 
-2017-07-14-06 skip:  Move CON_Init ahead of Com_Init to avoid Windows dedicated server crash
+2017-07-14-06 Move CON_Init ahead of Com_Init to avoid Windows dedicated server crash
 
-2017-07-20-01 skip:
+2017-07-20-01
     Make 'globalservers 0' fetch all masters
 
     This commit fixes the vanilla Q3 UI VMs not displaying a server list
@@ -6012,7 +6010,7 @@ the demo.
     getting server list from masters 3-5 could not be done using ioq3's UI
     before 2011.
 
-2017-07-20-02 skip:
+2017-07-20-02
     Escape quotes for sv_dlURL in shell so it doesn't become "http:"
 
         q3ded +set sv_dlURL "http://example.org"
@@ -6028,23 +6026,23 @@ the demo.
 
         q3ded +set sv_dlURL \"http://example.org\"
 
-2017-07-24-01 skip (rend2):
+2017-07-24-01
     OpenGL2: Don't use initialized arrays in glsl shaders.
 
     Unsupported in GLSL 1.20 (Mac OS X 10.6)
 
-2017-07-24-02 skip:  Echo server say/tell/sayto message to console
+2017-07-24-02 Echo server say/tell/sayto message to console
 
-2017-07-27-01 skip:
+2017-07-27-01
     Don't try to remove non-existant command 'shaderstate'
 
     Remove commands in the order they are added because the different
     orders is annoying.
 
-2017-07-28-01 skip:  Update internal curl to 7.54.0
-2017-07-28-02 skip:  Workaround Travis-CI MinGW builds failing with new cURL
+2017-07-28-01 Update internal curl to 7.54.0
+2017-07-28-02 Workaround Travis-CI MinGW builds failing with new cURL
 
-2017-07-28-03 skip:
+2017-07-28-03
     Silence g_util.c warning about set but not read variable
 
     Probably caused by my commit on June 2 2017.
@@ -6054,19 +6052,19 @@ the demo.
 
 2017-07-30-01 Remove unused imgFlag_t value IMGFLAG_SRGB
 
-2017-07-31-01 skip:
+2017-07-31-01
     Make warmup in Team Deathmatch wait for players to join both teams
 
     Reported by Cyrax.
 
-2017-08-01-01 skip:
+2017-08-01-01
     Remove CVAR_PROTECTED from cl_renderer
 
     Setting cl_renderer isn't a security concern and valid behavior for
     a menu to provide. Sys_LoadDLL ensures only libries are loaded and
     engine prevents QVMs from writing them.
 
-2017-08-02-01 skip:
+2017-08-02-01
     Fix/improve buffer overflow in MSG_ReadBits/MSG_WriteBits
 
     Prevent reading past end of message in MSG_ReadBits. If read past
@@ -6074,12 +6072,12 @@ the demo.
     Make MSG_WriteBits use an exact buffer overflow check instead of
     possibly failing with a few bytes left.
 
-2017-08-02-02 skip:
+2017-08-02-02
     Fix friction in AAS_ClientMovementPrediction
 
     Ground and water friction were reversed.
 
-2017-08-02-03 skip (rend2):
+2017-08-02-03
     Fix floating point precision loss in renderer [part 1]
 
     Patch for https://bugzilla.icculus.org/show_bug.cgi?id=5931 by
@@ -6088,7 +6086,8 @@ the demo.
     I merged the changes into the OpenGL2 renderer though the fix for
     tcMod turb doesn't translate.
 
-2017-08-02-04 skip:
+2017-08-02-04
+
     Fix floating point precision loss in renderer [part 2]
 
     Fix floatTime using float precision instead of double using GCC.
@@ -6098,17 +6097,17 @@ the demo.
 
     Revert unnecessary float -> double conversions.
 
-2017-08-03-01 skip:  Reject OpenGL contexts w/ software renderer when core context requested.
+2017-08-03-01 Reject OpenGL contexts w/ software renderer when core context requested.
 
-2017-08-07-01 skip:  Update arch in misc/setup for ioq3 changing from i386 to x86
+2017-08-07-01 Update arch in misc/setup for ioq3 changing from i386 to x86
 
-2017-08-07-02 skip (rend2):  OpenGL2: Use extension functions with OpenGL versions before 3.0.
+2017-08-07-02 OpenGL2: Use extension functions with OpenGL versions before 3.0.
 
-2017-08-08-01 skip (rend2):  OpenGL2: Force VAO usage on OpenGL 3.0+
+2017-08-08-01 OpenGL2: Force VAO usage on OpenGL 3.0+
 
-2017-08-09-01 skip:  Add spawnflags to QUAKED for trigger_multiple
+2017-08-09-01 Add spawnflags to QUAKED for trigger_multiple
 
-2017-08-09-02 skip:
+2017-08-09-02
     Check for all command separators in callTeamVote
 
     Make callTeamVote check for all command separators like in callVote.
@@ -6118,33 +6117,35 @@ the demo.
     Also the ioquake3 engine remove command separators from client game
     commands in Cmd_Args_Sanitize().
 
-2017-08-09-03 skip:
+2017-08-09-03
     Remove newlines from chat messages in Game VM
 
     This has no affect due to ioquake3 engine already removing command
     separators (which includes newlines) in Cmd_Args_Sanitize().
 
-2017-08-09-04 skip:  Fix compiling Cmd_CallTeamVote_f
+2017-08-09-04 Fix compiling Cmd_CallTeamVote_f
 
-2017-08-16-01 skip:
+2017-08-16-01
     Only allow safe protocols for cURL downloads
 
     A malicious server could abuse dangerous protocols such as gopher:// to,
     for instance, send mail via SMTP.
 
-2017-08-19-01 skip:
+----------------------
+
+2017-08-19-01
     Fix crash when pmove_msec is 0
 
     When pmove_fixed is set to 1, setting pmove_msec to 0 would crash.
 
-2017-08-21-01 skip:
+2017-08-21-01
     Combine mouse movement events in event queue
 
     Fixes 'Com_QueueEvent: overflow' spam after hitch / map load.
 
     Based on patch by @ec-.
 
-2017-08-21-02 skip:
+2017-08-21-02
     Improve keys using international key layouts
 
     Always map number row to number keys for AZERTY.
@@ -6152,7 +6153,7 @@ the demo.
 
     Based on patches by @mickael9.
 
-2017-08-21-03 skip:
+2017-08-21-03
     Improve client input responsiveness
 
     Move sampling input to the other side of framerate limiter.
@@ -6160,12 +6161,12 @@ the demo.
     Thanks to Alexander "wareya" Nadeau and Juraj "youurayy" Vitko for
     pointing this out.
 
-2017-08-21-04 skip:
+2017-08-21-04
     Removing input functions from sys_local.h for last commit
 
     It helps to actually save files before making commits.
 
-2017-08-21-05 skip:
+2017-08-21-05
     Make input events use earliest possible time
 
     SDL doesn't provide exact the exact time that input events happen
@@ -6176,7 +6177,7 @@ the demo.
 
     Based on patch by Alexander "wareya" Nadeau.
 
-2017-08-26-01 skip:
+2017-08-26-01
     Make bots use crusher on other q3tourney6 maps
 
     Make bots activate crusher on q3tourney6_ctf and mpq3tourney6.
@@ -6184,7 +6185,7 @@ the demo.
     Check if player is inside the crush bounds instead of below the
     crusher. There is a jumppad the goes under it in mpq3tourney6.
 
-2017-08-26-02 skip:
+2017-08-26-02
     Make bots only use q3tourney6 crusher to kill their enemy
 
     Only use the crusher for killing the bot's enemy. This doesn't
@@ -6192,24 +6193,24 @@ the demo.
     from suddenly shooting at the crusher button. Entering the crusher
     bounds was basically instant death.
 
-2017-09-02-01 skip:
+2017-09-02-01
     Fix going to previous browser source in q3_ui
 
     It wasn't possible to go to previous source from favorites if
     sv_master5 cvar wasn't set.
 
-2017-09-02-02 skip:
+2017-09-02-02
     Make map names in q3_ui map select menu be uppercase
 
     Makes map names match on both pages of start server menu.
 
-2017-09-02-03 skip:
+2017-09-02-03
     Limit ui_smallFont/ui_bigFont/cg_noTaunt cvars to missionpack
 
     ui_smallFont and ui_bigFont are for missionpack HUD font size
     selection. cg_noTaunt disables missionpack taunt voice chats.
 
-2017-09-02-04 skip:
+2017-09-02-04
     Fix team chat box for spectators
 
     Make spectators use green background for team chat box when following
@@ -6218,14 +6219,14 @@ the demo.
 
     Make spectators draw team chat box even when not following a player.
 
-2017-09-02-05 skip:
+2017-09-02-05
     Don't draw crosshair 0 in Team Arena setup menu
 
     Don't draw crosshair 0 in Team Arena setup menu. It isn't drawn
     in CGame. Wrap cg_drawCrosshair in missionpack menu like CGame
     instead of treating as index 0 which is no longer drawn.
 
-2017-09-04-01 skip:
+2017-09-04-01
     Make client for Windows x86_64 use OpenAL64.dll by default
 
     ioquake3.x86_64.exe can't load x86 OpenAL32.dll. Using separate
@@ -6237,7 +6238,7 @@ the demo.
     default OpenAL dll. I guess it could be fixed by using separate
     cvar names for s_alDriver.
 
-2017-09-07-01 skip:
+2017-09-07-01
     Fix loading renderer DLLs on Windows x86
 
     After 'Fix floating point precision loss in renderer', Windows x86
@@ -6247,7 +6248,7 @@ the demo.
 
     Only tested with mingw-w64.
 
-2017-09-07-02 skip:
+2017-09-07-02
     Add Windows application manifest
 
     - Use common controls 6 so error dialogs use correct visuals on
@@ -6259,7 +6260,7 @@ the demo.
 
     Makefile automatically runs windres when manifest changes.
 
-2017-09-07-03 skip:
+2017-09-07-03
     Disable DPI scaling on Windows
 
     Windows DPI scaling prevents using full monitor resolution in
@@ -6272,7 +6273,7 @@ the demo.
 
     ignore window resize event on fullscreen
 
-2017-09-09-01 skip:
+2017-09-09-01
     Don't reload arenas.txt/*.arena files in Team Arena UI
 
     Entering Team Arena's start server or in-game callvote menu causes
@@ -6282,9 +6283,9 @@ the demo.
 
     Just load arenas once when the UI loads like in q3_ui.
 
-2017-09-09-02 skip:  Fix crash when out of memory in Team Arena's String_Alloc
+2017-09-09-02 Fix crash when out of memory in Team Arena's String_Alloc
 
-2017-09-10-01 skip:
+2017-09-10-01
     Fix in_nograb not releasing the mouse cursor
 
     Disable SDL relative mouse mode when in_nograb is enabled. Relative
@@ -6299,7 +6300,7 @@ the demo.
     This fixes mouse input being unusable when debuging client crashes
     in gdb.
 
-2017-09-10-02 skip:
+2017-09-10-02
     Update UI player animation handling to match CGame
 
     Fix "Error parsing animation file" messages in UI. Caused by fixing the
@@ -6308,15 +6309,166 @@ the demo.
     Add support for fixedtorso and fixedlegs keywords.
     Add support for reversed animations (negative numframes).
 
-2017-09-14-01 skip:
+2017-09-14-01
     Fix specifying minimum mac os version in make-macosx.sh
 
     Use newer method of telling Makefile instead of specifying CFLAGS
     and LDFLAGS which results in using both Makefile's and scripts flags.
 
-2017-09-14-02 skip:
+2017-09-14-02
     Fix minimum macOS version not being set in AppBundle Info.plist
 
     make-macosx-app.sh reads MACOSX_DEPLOYMENT_TARGET variable but
     it wasn't ever set.
+
+---- this ----
+
+2017-09-15-01 skip:
+    Fix listen server sending snapshots each client frame
+
+    Running a server using the client engine would send server snapshots
+    to loopback and LAN clients each client frame (com_maxfps).
+
+    This causes excessive network traffic and likely does not provide new
+    information to the clients because SV_Frame() won't have run between
+    the extra snapshots.
+
+    This commit restores the original behavior of respecting local/LAN
+    client's snaps userinfo and sv_fps. The issue was introduced by the
+    following commit:
+
+        Commit ac30d86db01a43130d2c9ff6fe31d6135d8e2592
+        From: Thilo Schulz
+        Date: Wed, 13 Jul 2011 17:11:30 +0000
+        Subject: - Improve snapshot rate and data rate control
+
+    Reported by Eugene C.
+
+2017-09-23-01 skip:
+    Enable Ogg Vorbis support by default
+
+    libvorbis is included in-tree so this doesn't require additional
+    dependencies.
+
+2017-09-26-01 skip:
+    Statically link libgcc on Windows
+
+    Fix for ioq3 test builds for Windows x86 (cross-compiled from Ubuntu
+    using mingw-w64) requiring libgcc_s_sjlj-1.dll. I'm unable to reproduce
+    the issue using mingw-w64 in Debian or Cygwin.
+
+2017-09-29-01 skip:
+    Fix hit accuracy stats for lightning gun and shotgun kills
+
+    If a lightning bolt killed a player or the first shotgun pellet that
+    hit a player killed them, the shot was not counted as accurate.
+
+    Check if shot player is alive for hit accuracy before dealing damage.
+
+2017-10-01-01 skip:
+    Don't link to libGL at compile time
+
+    Get all OpenGL functions using SDL_GL_GetProcAddress(). This makes it
+    easier to cross-arch compile on Linux and add support for OpenGL ES
+    in the future.
+
+    Users still have to supply their own libSDL2 for cross-arch compiling
+    on Linux. But now the user does not have to re-install libgl1-mesa-dev
+    package for i386 or amd64 on Debian when switching between compiling
+    ioquake3 for x86 and x86_64.
+
+2017-10-01-02 skip:
+    Add common OpenGL version parsing + OpenGL 3 fixes
+
+    - Parse OpenGL version in sdl_glimp.c to share with both renderers.
+    - Add GL_VERSION_ATLEAST(major, minor) macro.
+    - Get address of glGetStringi if using OpenGL 3.
+    - Fix glConfig.extensions_string when using GL3 core context in
+    opengl2 renderer.
+    - Make opengl1 renderer's gfxinfo support qglGetStringi too.
+
+2017-10-01-03 skip:
+    Support parsing OpenGL ES version strings
+
+    The renderers don't support OpenGL ES though.
+
+2017-10-02-01 skip:
+    Fix setting cflags/libs from sdl2-config
+
+    SDL_CFLAGS and SDL_LIBS assignment was "only if absent". However due
+    to previously assigning them to "pkg-config sdl2" values, the values
+    from sdl2-config were ignored.
+
+2017-10-02-02 skip:  Load OpenGL ES 1.1 function procs
+
+2017-10-03-01 skip:
+    [qcommon] Use unsigned types where wrapping arithmetic is intended
+
+    The use of signed types in these expressions lead to overflow, hence undefined behaviour. The "sum" aggregator in Com_TouchMemory isn't even used (and presumbably just exists to inhibit optimizations from removing the memory access).
+
+2017-10-02-01 skip:
+    OpenGL2: Fix brightness when r_autoExposure is disabled
+
+    The game world is too dark when r_autoExposure is disabled. It can be
+    fixed by setting (cheat) r_cameraExposure to 1 but then the game is
+    too bright when r_autoExposure is enabled. So default r_cameraExposure
+    to 1 and make auto exposure subtract 1 from r_cameraExposure value.
+
+2017-10-04-01 skip:
+    OpenGL2: Fix MD3 surface with zero shaders dividing by zero
+
+    Reported by @DescX.
+
+2017-10-05-01 skip:
+    [botlib/be_aas_def.h] Change array size from MAX_PATH to MAX_QPATH
+
+    The array is part of a structure and should have a fixed size that does
+    not depend on inclusion order.
+
+2017-10-04-01 skip:  Don't redefine MAX_PATH in bot code
+
+2017-10-07-01 skip:  Fix memory leak in (unused) AAS_FloodAreas()
+
+2017-10-07-02 skip:
+    Fix compiling GLSL shaders under Windows.
+
+    Now the `sed` command cope with files using Windows-style line endings.
+
+2017-10-07-03 skip:
+    Only draw cm_patch/bot debug polygons in world scenes
+
+    Fixes debug polygons appearing in HUD head model scene.
+
+2017-10-08-01 skip:  Fix reading crash log when log wraps around buffer
+
+2017-10-08-02 skip:  Don't send team overlay info to bots
+
+2017-10-16-01 skip:
+    Fix a race condition in the makedirs target
+
+    A race condition can happen when running "make all" with parallel jobs.
+
+    The issue is that the build directory can be created by another
+    concurrent job between the moment it was detected as missing and the
+    moment mkdir is called (which fails if the directory already exists).
+
+    This fixes the problem by always using `mkdir -p` which doesn't fail if
+    the directory already exists.
+
+2017-10-16-02 skip:
+    Fix shader corruption on OpenBSD
+
+    OpenBSD's sed (and possibly other platforms') interprets `\r` as a
+    literal `r` rather than a carriage return, which leads to all `r`
+    letters being stripped from the shaders' source.
+
+    This fixes the issue by using the POSIX-compliant `tr -d '\r'` to remove
+    carriage returns.
+
+    Thanks to @ryan-sg for reporting the issue
+
+2017-11-05-01 skip:
+    OpenGL2: Use ri.Error instead of Com_Error in tr_vbo.c
+
+    Com_Error is a wrapper for ri.Error. Use it directly.
 

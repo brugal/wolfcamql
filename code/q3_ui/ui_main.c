@@ -220,6 +220,7 @@ static cvarTable_t		cvarTable[] = {
 
 	{ &ui_cdkeychecked, "ui_cdkeychecked", "0", CVAR_ROM },
 	{ &ui_ioq3, "ui_ioq3", "1", CVAR_ROM },
+	{ NULL, "g_localTeamPref", "", 0 },
 
 	{ &ui_doubleClickTime, "ui_doubleClickTime", "500", CVAR_ARCHIVE },
 };

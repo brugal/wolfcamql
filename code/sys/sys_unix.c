@@ -1459,7 +1459,7 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 
 #endif
 
-void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput, qboolean useDpiAware)
+void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 {
 	struct sigaction action;
 	const char *term = getenv("TERM");

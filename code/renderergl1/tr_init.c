@@ -487,7 +487,7 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	void *shaderSource;
 	char *text;
 
-	if (!glConfig.glsl) {
+	if (!glConfig.qlGlsl) {
 		return;
 	}
 
@@ -497,7 +497,7 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	if (len <= 0) {
 		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
 		R_DeleteQLGlslShadersAndPrograms();
-		glConfig.glsl = qfalse;
+		glConfig.qlGlsl = qfalse;
 		return;
 	}
 	slen = strlen(ShaderExtensions);
@@ -505,7 +505,8 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	if (!text) {
 		ri.Printf(PRINT_ALL, "R_InitFragmentShader() couldn't allocate memory for glsl shader file\n");
 		ri.FS_FreeFile(shaderSource);
-		qglDeleteObjectARB(*fragmentShader);
+		R_DeleteQLGlslShadersAndPrograms();
+		glConfig.qlGlsl = qfalse;
 		return;
 	}
 	Com_sprintf(text, len + slen + 3, "%s\n%s\n", ShaderExtensions, (char *)shaderSource);
@@ -531,7 +532,7 @@ static void InitQLGlslShadersAndPrograms (void)
 	float bloomTextureScale;
 	int ret;
 
-	if (!r_enablePostProcess->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 
@@ -583,8 +584,8 @@ static void InitQLGlslShadersAndPrograms (void)
 		ri.FS_FreeFile(shaderSource);
 	} else {
 		ri.Printf(PRINT_ALL, "^1file not found\n");
-		glConfig.glsl = qfalse;
 		R_DeleteQLGlslShadersAndPrograms();
+		glConfig.qlGlsl = qfalse;
 	}
 
 	R_InitFragmentShader("scripts/colorcorrect.fs", &tr.colorCorrectFs, &tr.colorCorrectSp, tr.mainVs);
@@ -597,7 +598,7 @@ static void InitQLGlslShadersAndPrograms (void)
 
 static void R_DeleteQLGlslShadersAndPrograms (void)
 {
-	if (!r_enablePostProcess->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 
@@ -745,7 +746,7 @@ static void InitOpenGL( void )
 	{
 		GLint		temp;
 
-		GLimp_Init();
+		GLimp_Init( qfalse );
 
 		strcpy( renderer_buffer, glConfig.renderer_string );
 		Q_strlwr( renderer_buffer );
@@ -1891,17 +1892,17 @@ void R_Register( void )
 	ri.Cmd_AddCommand( "skinlist", R_SkinList_f );
 	ri.Cmd_AddCommand( "modellist", R_Modellist_f );
 	ri.Cmd_AddCommand( "modelist", R_ModeList_f );
-	ri.Cmd_AddCommand("fontlist", R_FontList_f);
+	ri.Cmd_AddCommand( "fontlist", R_FontList_f);
 	ri.Cmd_AddCommand( "screenshot", R_ScreenShot_f );
 	ri.Cmd_AddCommand( "screenshotJPEG", R_ScreenShotJPEG_f );
-	ri.Cmd_AddCommand("screenshotPNG", R_ScreenShotPNG_f);
+	ri.Cmd_AddCommand( "screenshotPNG", R_ScreenShotPNG_f );
 	ri.Cmd_AddCommand( "gfxinfo", GfxInfo_f );
 	ri.Cmd_AddCommand( "minimize", GLimp_Minimize );
-	ri.Cmd_AddCommand("createcolorskins", R_CreateColorSkins_f);
-	ri.Cmd_AddCommand("printviewparms", R_PrintViewParms_f);
-	ri.Cmd_AddCommand("remaplasttwoshaders", R_RemapLastTwoShaders_f);
-	ri.Cmd_AddCommand("listremappedshaders", R_ListRemappedShaders_f);
-	ri.Cmd_AddCommand("clearallremappedshaders", R_ClearAllRemappedShaders_f);
+	ri.Cmd_AddCommand( "createcolorskins", R_CreateColorSkins_f );
+	ri.Cmd_AddCommand( "printviewparms", R_PrintViewParms_f );
+	ri.Cmd_AddCommand( "remaplasttwoshaders", R_RemapLastTwoShaders_f );
+	ri.Cmd_AddCommand( "listremappedshaders", R_ListRemappedShaders_f );
+	ri.Cmd_AddCommand( "clearallremappedshaders", R_ClearAllRemappedShaders_f );
 }
 
 /*
@@ -2017,23 +2018,22 @@ void RE_Shutdown( qboolean destroyWindow ) {
 
 	ri.Printf( PRINT_ALL, "RE_Shutdown( %i )\n", destroyWindow );
 
-	ri.Cmd_RemoveCommand ("modellist");
-	ri.Cmd_RemoveCommand ("screenshotJPEG");
-	ri.Cmd_RemoveCommand("screenshotPNG");
-	ri.Cmd_RemoveCommand ("screenshot");
-	ri.Cmd_RemoveCommand ("imagelist");
-	ri.Cmd_RemoveCommand ("shaderlist");
-	ri.Cmd_RemoveCommand ("skinlist");
+	ri.Cmd_RemoveCommand( "imagelist" );
+	ri.Cmd_RemoveCommand( "shaderlist" );
+	ri.Cmd_RemoveCommand( "skinlist" );
+	ri.Cmd_RemoveCommand( "modellist" );
+	ri.Cmd_RemoveCommand( "modelist" );
+	ri.Cmd_RemoveCommand( "fontlist" );
+	ri.Cmd_RemoveCommand( "screenshot" );
+	ri.Cmd_RemoveCommand( "screenshotJPEG" );
+	ri.Cmd_RemoveCommand( "screenshotPNG" );
 	ri.Cmd_RemoveCommand( "gfxinfo" );
 	ri.Cmd_RemoveCommand( "minimize" );
-	ri.Cmd_RemoveCommand( "modelist" );
-	ri.Cmd_RemoveCommand("fontlist");
-	ri.Cmd_RemoveCommand( "shaderstate" );
-	ri.Cmd_RemoveCommand("createcolorskins");
-	ri.Cmd_RemoveCommand("printviewparms");
-	ri.Cmd_RemoveCommand("remaplasttwoshaders");
-	ri.Cmd_RemoveCommand("listremappedshaders");
-	ri.Cmd_RemoveCommand("clearallremappedshaders");
+	ri.Cmd_RemoveCommand( "createcolorskins" );
+	ri.Cmd_RemoveCommand( "printviewparms" );
+	ri.Cmd_RemoveCommand( "remaplasttwoshaders" );
+	ri.Cmd_RemoveCommand( "listremappedshaders" );
+	ri.Cmd_RemoveCommand( "clearallremappedshaders" );
 
 
 	if ( tr.registered ) {

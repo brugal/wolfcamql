@@ -2477,7 +2477,6 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * If the first command line option doesn't begin with '-' or '+' it is automatically treated as a demo name.  This should make it easier to associate file name extensions (.dm_xx) with the wolfcamql executable.  This can be disabled with '--no-demo-arg' command line option.
 * console page up/down keys scroll faster while CTRL or SHIFT keys are also pressed
 * console HOME key scrolls the display to the top of the entire buffer
-* In Windows dpi awareness is set to prevent scaling.  This can be disabled with '--no-dpi-aware' command line option.
 * cg_bleedTime to control the amount of time player bleeding is shown on screen
 * com_logo to control logo cinematic when the program starts
 * /cinematic_restart [all | <cinematic number>] to restart videos (applies to current cinematic video and videoMap shaders)

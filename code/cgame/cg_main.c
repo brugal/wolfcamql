@@ -535,9 +535,11 @@ vmCvar_t	cg_cameraOrbitDelay;
 vmCvar_t	cg_timescaleFadeEnd;
 vmCvar_t	cg_timescaleFadeSpeed;
 vmCvar_t	cg_timescale;
+#if 1  //def MPACK
 vmCvar_t	cg_smallFont;
 vmCvar_t	cg_bigFont;
 vmCvar_t	cg_noTaunt;
+#endif
 vmCvar_t	cg_noProjectileTrail;
 vmCvar_t cg_smokeRadius_SG;
 vmCvar_t cg_smokeRadius_GL;
@@ -1628,8 +1630,6 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &pmove_msec, "pmove_msec", "8", CVAR_SYSTEMINFO },
 	//{ &g_weapon_plasma_rate, "g_weapon_plasma_rate", "100", 0 },
 
-	{ &cg_noTaunt, "cg_noTaunt", "0", CVAR_ARCHIVE},
-	{ &cg_noProjectileTrail, "cg_noProjectileTrail", "0", CVAR_ARCHIVE},
 	{ &cg_smokeRadius_SG, "cg_smokeRadius_SG", "32", CVAR_ARCHIVE },
 	{ &cg_smokeRadius_GL, "cg_smokeRadius_GL", "32", CVAR_ARCHIVE },
 	{ &cg_smokeRadius_NG, "cg_smokeRadius_NG", "16", CVAR_ARCHIVE },
@@ -1641,8 +1641,13 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_enableDust, "cg_enableDust", "1", CVAR_ARCHIVE },
 	{ &cg_smokeRadius_flight, "cg_smokeRadius_flight", "8", CVAR_ARCHIVE },
 	{ &cg_smokeRadius_haste, "cg_smokeRadius_haste", "8", CVAR_ARCHIVE },
+#if 1  //def MPACK
 	{ &cg_smallFont, "ui_smallFont", "0.25", CVAR_ARCHIVE},
 	{ &cg_bigFont, "ui_bigFont", "0.4", CVAR_ARCHIVE},
+	{ &cg_noTaunt, "cg_noTaunt", "0", CVAR_ARCHIVE},
+#endif
+	{ &cg_noProjectileTrail, "cg_noProjectileTrail", "0", CVAR_ARCHIVE},
+
 	//{ &cg_oldRail, "cg_oldRail", "1", CVAR_ARCHIVE},
 	{ &cg_oldRocket, "cg_oldRocket", "1", CVAR_ARCHIVE},
 	//{ &cg_oldPlasma, "cg_oldPlasma", "1", CVAR_ARCHIVE},
@@ -5064,7 +5069,7 @@ static qboolean CG_Load_Menu(char **p) {
 			return qtrue;
 		}
 
-		if ( !token || token[0] == 0 ) {
+		if ( !token[0] ) {
 			return qfalse;
 		}
 
@@ -5117,7 +5122,7 @@ void CG_LoadMenus(const char *menuFile) {
 
 	while ( 1 ) {
 		token = COM_ParseExt( &p, qtrue );
-		if( !token || token[0] == 0 || token[0] == '}') {
+		if( !token[0] ) {
 			break;
 		}
 

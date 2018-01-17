@@ -7,7 +7,7 @@ if [ ! -f Makefile ]; then
 	exit 1
 fi
 
-# we want to use the oldest available SDK for max compatiblity. However 10.4 and older
+# we want to use the oldest available SDK for max compatibility. However 10.4 and older
 # can not build 64bit binaries, making 10.5 the minimum version.   This has been tested 
 # with xcode 3.1 (xcode31_2199_developerdvd.dmg).  It contains the 10.5 SDK and a decent
 # enough gcc to actually compile ioquake3
@@ -19,7 +19,7 @@ unset X86_64_MACOSX_VERSION_MIN
 unset X86_SDK
 unset X86_CFLAGS
 unset X86_MACOSX_VERSION_MIN
-unset PPC_64_SDK
+unset PPC_SDK
 unset PPC_CFLAGS
 unset PPC_MACOSX_VERSION_MIN
 
@@ -88,4 +88,5 @@ echo;echo
 echo
 
 # use the following shell script to build a universal application bundle
+export MACOSX_DEPLOYMENT_TARGET="10.5"
 "./make-macosx-app.sh" release

@@ -297,6 +297,7 @@ static void printGlslLog (GLhandleARB obj)
     char infoLog[1024];
 	int len;
 
+	//FIXME ARB
 	qglGetObjectParameterivARB(obj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &infoLogLength);
     if (infoLogLength > 0) {
 		qglGetInfoLogARB(obj, 1024, &len, infoLog);
@@ -304,8 +305,45 @@ static void printGlslLog (GLhandleARB obj)
 	}
 }
 
-//static char ShaderExtensions[] = "#version 140\n#extension GL_ARB_texture_rectangle : enable";
-static char ShaderExtensions[] = "#extension GL_ARB_texture_rectangle : enable";
+// like tr_glsl.c: GLSL_GetShaderHeader
+
+//FIXME version 150:  gl_TexCoord in ql shaders avaialble only in compatibility profile
+
+static const char ShaderExtensions_120[] =
+"#version 120\n"
+"#extension GL_ARB_texture_rectangle : enable\n"
+	;
+
+static const char ShaderExtensionsVertex_130[] =
+"#version 130\n"
+"#extension GL_ARB_texture_rectangle : enable\n"
+"#define attribute in\n"
+	//"#define varying out\n"
+	;
+
+static const char ShaderExtensionsVertex_150[] =
+"#version 150\n"
+"#extension GL_ARB_texture_rectangle : enable\n"
+"#define attribute in\n"
+	//"#define varying out\n"
+	;
+
+
+static const char ShaderExtensionsFragment_130[] =
+"#version 130\n"
+"#extension GL_ARB_texture_rectangle : enable\n"
+"out vec4 out_Color;\n"
+"#define gl_FragColor out_Color\n"
+"#define texture2DRect texture\n"
+	;
+
+static const char ShaderExtensionsFragment_150[] =
+"#version 150\n"
+"#extension GL_ARB_texture_rectangle : enable\n"
+"out vec4 out_Color;\n"
+"#define gl_FragColor out_Color\n"
+"#define texture2DRect texture\n"
+	;
 
 static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentShader, GLhandleARB *program, GLhandleARB vertexShader)
 {
@@ -313,9 +351,21 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	int slen;
 	void *shaderSource;
 	char *text;
+	const char *shaderExtensions;
 
-	if (!glConfig.glsl) {
+	if (!glConfig.qlGlsl) {
 		return;
+	}
+
+	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
+		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
+			//shaderExtensions = ShaderExtensionsFragment_150;
+			shaderExtensions = ShaderExtensionsFragment_130;
+		} else {
+			shaderExtensions = ShaderExtensionsFragment_130;
+		}
+	} else {
+		shaderExtensions = ShaderExtensions_120;
 	}
 
 	ri.Printf(PRINT_ALL, "^5%s ->\n", filename);
@@ -324,10 +374,10 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	if (len <= 0) {
 		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
 		R_DeleteQLGlslShadersAndPrograms();
-		glConfig.glsl = qfalse;
+		glConfig.qlGlsl = qfalse;
 		return;
 	}
-	slen = strlen(ShaderExtensions);
+	slen = strlen(shaderExtensions);
 	text = (char *)malloc(len + slen + 3);
 	if (!text) {
 		ri.Printf(PRINT_ALL, "R_InitFragmentShader() couldn't allocate memory for glsl shader file\n");
@@ -335,8 +385,7 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 		qglDeleteObjectARB(*fragmentShader);
 		return;
 	}
-	Com_sprintf(text, len + slen + 3, "%s\n%s\n", ShaderExtensions, (char *)shaderSource);
-	//qglShaderSourceARB(*fragmentShader, 1, (const char **)&shaderSource, NULL);
+	Com_sprintf(text, len + slen + 3, "%s\n%s\n", shaderExtensions, (char *)shaderSource);
 	qglShaderSourceARB(*fragmentShader, 1, (const char **)&text, NULL);
 	qglCompileShaderARB(*fragmentShader);
 	printGlslLog(*fragmentShader);
@@ -361,9 +410,12 @@ static void InitQLGlslShadersAndPrograms (void)
 	void *shaderSource;
 	GLenum target;
 	float bloomTextureScale;
-	int ret;
+	int len;
+	char *text;
+	int slen;
+	const char *shaderExtensions;
 
-	if (!r_enablePostProcess->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 
@@ -405,20 +457,47 @@ static void InitQLGlslShadersAndPrograms (void)
 	//FIXME wc GL_SelectTextureUnit(0);
 
 	// scripts/posteffect.vs is the original quake live one which depends on immediate mode
-	ri.Printf(PRINT_ALL, "^5glsl/ql-compat.vs ->\n");
-	ret = ri.FS_ReadFile("glsl/ql-compat.vs", &shaderSource);
 
-	if (ret > 0) {
-		tr.mainVs = qglCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-		qglShaderSourceARB(tr.mainVs, 1, (const char **)&shaderSource, NULL);
-		qglCompileShaderARB(tr.mainVs);
-		printGlslLog(tr.mainVs);
-		ri.FS_FreeFile(shaderSource);
+	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
+		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
+			//shaderExtensions = ShaderExtensionsVertex_150;
+			shaderExtensions = ShaderExtensionsVertex_130;
+		} else {
+			shaderExtensions = ShaderExtensionsVertex_130;
+		}
 	} else {
-		ri.Printf(PRINT_ALL, "^1file not found\n");
-		glConfig.glsl = qfalse;
-		R_DeleteQLGlslShadersAndPrograms();
+		shaderExtensions = ShaderExtensions_120;
 	}
+
+	ri.Printf(PRINT_ALL, "^5glsl/ql-compat.vs ->\n");
+	len = ri.FS_ReadFile("glsl/ql-compat.vs", &shaderSource);
+
+	if (len <= 0) {
+		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
+		//FIXME why?
+		R_DeleteQLGlslShadersAndPrograms();
+		glConfig.qlGlsl = qfalse;
+		return;
+	}
+
+	slen = strlen(shaderExtensions);
+	text = (char *)malloc(len + slen + 3);
+	if (!text) {
+		ri.Printf(PRINT_ALL, "^1%s: couldn't allocate memory for glsl vertex shader file\n", __FUNCTION__);
+		ri.FS_FreeFile(shaderSource);
+		R_DeleteQLGlslShadersAndPrograms();
+		//FIXME why
+		glConfig.qlGlsl = qfalse;
+		return;
+	}
+	Com_sprintf(text, len + slen + 3, "%s\n%s\n", shaderExtensions, (char *)shaderSource);
+
+	tr.mainVs = qglCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+	qglShaderSourceARB(tr.mainVs, 1, (const char **)&text, NULL);
+	qglCompileShaderARB(tr.mainVs);
+	printGlslLog(tr.mainVs);
+	ri.FS_FreeFile(shaderSource);
+	free(text);
 
 	R_InitFragmentShader("scripts/colorcorrect.fs", &tr.colorCorrectFs, &tr.colorCorrectSp, tr.mainVs);
 	R_InitFragmentShader("scripts/blurhoriz.fs", &tr.blurHorizFs, &tr.blurHorizSp, tr.mainVs);
@@ -431,7 +510,10 @@ static void InitQLGlslShadersAndPrograms (void)
 static void InitCameraPathShadersAndProgram (void)
 {
 	void *shaderSource;
-	int ret;
+	int len;
+	char *text;
+	int slen;
+	const char *shaderExtensions;
 
 	// hack, cpvbo added to tess.vao
 	R_BindVao(tess.vao);
@@ -441,34 +523,81 @@ static void InitCameraPathShadersAndProgram (void)
 	qglBindBuffer(GL_ARRAY_BUFFER, tr.cpvbo);
 	qglBufferData(GL_ARRAY_BUFFER, 3 * MAX_CAMERAPOINTS * sizeof(float), tr.cpverts, GL_DYNAMIC_DRAW);
 
+	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
+		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
+			//shaderExtensions = ShaderExtensionsVertex_150;
+			shaderExtensions = ShaderExtensionsVertex_130;
+		} else {
+			shaderExtensions = ShaderExtensionsVertex_130;
+		}
+	} else {
+		shaderExtensions = ShaderExtensions_120;
+	}
 
 	ri.Printf(PRINT_ALL, "^5glsl/cameraline.vs ->\n");
-	ret = ri.FS_ReadFile("glsl/cameraline.vs", &shaderSource);
+	len = ri.FS_ReadFile("glsl/cameraline.vs", &shaderSource);
 
-	if (ret > 0) {
-		tr.cpvertexshader = qglCreateShader(GL_VERTEX_SHADER);
-		qglShaderSource(tr.cpvertexshader, 1, (const char **)&shaderSource, NULL);
-		qglCompileShader(tr.cpvertexshader);
-		printGlslLog(tr.cpvertexshader);
+	if (len <= 0) {
+		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
+		//FIXME clean up
+		qglBindBuffer(GL_ARRAY_BUFFER, tess.vao->vertexesVBO);
+		return;
+	}
+	slen = strlen(shaderExtensions);
+	text = (char *)malloc(len + slen + 3);
+	if (!text) {
+		ri.Printf(PRINT_ALL, "^1%s: couldn't allocate memory for glsl vertex shader file\n", __FUNCTION__);
 		ri.FS_FreeFile(shaderSource);
+		qglBindBuffer(GL_ARRAY_BUFFER, tess.vao->vertexesVBO);
+		//FIXME other clean up?
+		return;
+	}
+	Com_sprintf(text, len + slen + 3, "%s\n%s\n", shaderExtensions, (char *)shaderSource);
+
+	tr.cpvertexshader = qglCreateShader(GL_VERTEX_SHADER);
+	qglShaderSource(tr.cpvertexshader, 1, (const char **)&text, NULL);
+	qglCompileShader(tr.cpvertexshader);
+	printGlslLog(tr.cpvertexshader);
+	ri.FS_FreeFile(shaderSource);
+	free(text);
+
+	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
+		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
+			//shaderExtensions = ShaderExtensionsFragment_150;
+			shaderExtensions = ShaderExtensionsFragment_130;
+		} else {
+			shaderExtensions = ShaderExtensionsFragment_130;
+		}
 	} else {
-		ri.Printf(PRINT_ALL, "^1file not found\n");
-		//FIXME cleanup
+		shaderExtensions = ShaderExtensions_120;
 	}
 
 	ri.Printf(PRINT_ALL, "^5glsl/cameraline.fs ->\n");
-	ret = ri.FS_ReadFile("glsl/cameraline.fs", &shaderSource);
+	len = ri.FS_ReadFile("glsl/cameraline.fs", &shaderSource);
 
-	if (ret > 0) {
-		tr.cpfragmentshader = qglCreateShader(GL_FRAGMENT_SHADER);
-		qglShaderSource(tr.cpfragmentshader, 1, (const char **)&shaderSource, NULL);
-		qglCompileShader(tr.cpfragmentshader);
-		printGlslLog(tr.cpfragmentshader);
-		ri.FS_FreeFile(shaderSource);
-	} else {
-		ri.Printf(PRINT_ALL, "^1file not found\n");
-		//FIXME cleanup
+	if (len <= 0) {
+		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
+		//FIXME clean up
+		qglBindBuffer(GL_ARRAY_BUFFER, tess.vao->vertexesVBO);
+		return;
 	}
+	slen = strlen(shaderExtensions);
+	text = (char *)malloc(len + slen + 3);
+	if (!text) {
+		ri.Printf(PRINT_ALL, "^1%s: couldn't allocate memory for glsl fragment shader file\n", __FUNCTION__);
+		ri.FS_FreeFile(shaderSource);
+		//FIXME other clean up?
+		qglBindBuffer(GL_ARRAY_BUFFER, tess.vao->vertexesVBO);
+		return;
+	}
+	Com_sprintf(text, len + slen + 3, "%s\n%s\n", shaderExtensions, (char *)shaderSource);
+
+	tr.cpfragmentshader = qglCreateShader(GL_FRAGMENT_SHADER);
+	qglShaderSource(tr.cpfragmentshader, 1, (const char **)&text, NULL);
+	qglCompileShader(tr.cpfragmentshader);
+	printGlslLog(tr.cpfragmentshader);
+	ri.FS_FreeFile(shaderSource);
+	free(text);
 
 	tr.cpshaderprogram = qglCreateProgram();
 
@@ -491,7 +620,7 @@ static void InitCameraPathShadersAndProgram (void)
 
 static void R_DeleteQLGlslShadersAndPrograms (void)
 {
-	if (!r_enablePostProcess->integer  ||  !glConfig.glsl) {
+	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
 
@@ -559,12 +688,23 @@ static void R_DeleteCameraPathShadersAndProgram (void)
 	// hack, cpvbo added to tess.vao
 	R_BindVao(tess.vao);
 
-	qglDetachObjectARB(tr.cpshaderprogram, tr.cpfragmentshader);
-	qglDetachObjectARB(tr.cpshaderprogram, tr.cpvertexshader);
+	if (tr.cpshaderprogram) {
+		if (tr.cpfragmentshader) {
+			qglDetachShader(tr.cpshaderprogram, tr.cpfragmentshader);
+		}
+		if (tr.cpvertexshader) {
+			qglDetachShader(tr.cpshaderprogram, tr.cpvertexshader);
+		}
 
-	qglDeleteObjectARB(tr.cpshaderprogram);
-	qglDeleteObjectARB(tr.cpfragmentshader);
-	qglDeleteObjectARB(tr.cpvertexshader);
+		qglDeleteProgram(tr.cpshaderprogram);
+	}
+
+	if (tr.cpfragmentshader) {
+		qglDeleteShader(tr.cpfragmentshader);
+	}
+	if (tr.cpvertexshader) {
+		qglDeleteShader(tr.cpvertexshader);
+	}
 
 	qglDeleteBuffers(1, &tr.cpvbo);
 
@@ -600,9 +740,9 @@ static void InitOpenGL( void )
 	if ( glConfig.vidWidth == 0 )
 	{
 		GLint		temp;
-		
-		//GLimp_Init( qtrue );
-		GLimp_Init();
+
+		//FIXME wolfcam:  don't use core profile because of older quake live glsl shader compatibility:  *ARB functions and ql shaders needing updates?
+		GLimp_Init( qtrue );
 		GLimp_InitExtraExtensions();
 
 		strcpy( renderer_buffer, glConfig.renderer_string );
@@ -1877,6 +2017,9 @@ void R_ShutDownQueries(void)
 		qglDeleteQueries(ARRAY_LEN(tr.sunFlareQuery), tr.sunFlareQuery);
 }
 
+// to show update for color skins
+void RB_SetGL2D (void);
+
 /*
 ===============
 R_Init
@@ -1991,6 +2134,11 @@ void R_Init( void ) {
 	R_InitQueries();
 
 	R_MME_Init();
+
+	// to show update for color skins
+	FBO_Bind(NULL);
+	RB_SetGL2D();
+	R_CreatePlayerColorSkinImages(qfalse);
 
 	err = qglGetError();
 	if ( err != GL_NO_ERROR )
