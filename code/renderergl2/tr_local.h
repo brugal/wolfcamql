@@ -445,6 +445,7 @@ typedef struct shader_s {
 	qboolean mapShader;  // loaded from map
 
 	qboolean	noVertexLightingCollapse;
+	qboolean	realTime;  // use real time for shaders instead of scaled time
 
 	qboolean	explicitlyDefined;		// found in a .shader file
 
@@ -712,6 +713,8 @@ typedef struct {
 	stereoFrame_t	stereoFrame;
 
 	int			time;				// time in milliseconds for shader effects and other time dependent rendering issues
+	int			realTime;
+
 	int			rdflags;			// RDF_NOWORLDMODEL, etc
 
 	// 1 bits will prevent the associated area from rendering at all
@@ -719,6 +722,7 @@ typedef struct {
 	qboolean	areamaskModified;	// qtrue if areamask changed since last scene
 
 	double		floatTime;			// tr.refdef.time / 1000.0
+	double		realFloatTime;
 
 	float		blurFactor;
 

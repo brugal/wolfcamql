@@ -1,4 +1,4 @@
-12.0test9
+12.0test10
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -67,6 +67,9 @@
 * cl_cinematicIgnoreSeek to allow or disable seeking with videoMap shaders
 * bug fix:  round based games didn't ignore g_overtime value (em92 Eugene Molotov)
 * --no-dpi-aware option removed.  DPI awareness is set through program manifest
+* bug fix:  Windows version didn't disable screen blanking correctly
+* 'wcrealtime' general shader keyword added.  This allows shader time updated using real time instead of time adjusted for timescale, pause, and video frames.
+
 
 ---------------------------------
 11.7  2017-06-07

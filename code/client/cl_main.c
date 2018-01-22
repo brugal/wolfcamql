@@ -4474,10 +4474,10 @@ void CL_Frame ( int msec, double fmsec ) {
 		return;
 	}
 
+	Sys_DisableScreenBlanking();
+
 	blurFramesFactor = 1.0;
 	//Com_Printf("CL_Frame msec: %d  fmsec: %f  timescale: %f\n", msec, fmsec, com_timescale->value);
-
-	re.GetGlConfig(&cls.glconfig);
 
 	if (di.seeking) {
 		goto seeking;

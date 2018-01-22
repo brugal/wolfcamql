@@ -1935,3 +1935,8 @@ qboolean Sys_DllExtension( const char *name ) {
 
 	return qfalse;
 }
+
+void Sys_DisableScreenBlanking (void)
+{
+	// nothing
+}

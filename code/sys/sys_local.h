@@ -77,4 +77,6 @@ qboolean Sys_PopenIsDone (popenData_t *p);
 
 const char *Sys_GetSteamCmd (void);
 
+void Sys_DisableScreenBlanking (void);
+
 #endif  //  sys_local_h_included

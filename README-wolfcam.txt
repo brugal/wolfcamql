@@ -2074,6 +2074,10 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
   ex:  shaderoverride/blah.shader
 
+* 'wcrealtime' general shader keyword added.  This allows shader time updated using real time instead of time adjusted for timescale, pause, and video frames.
+
+  This was added mostly to allow the console shader to run at the same rate regardless of the settings listed above.
+
 * cg_quadKillCounter (same as quakelive)
 * cg_battleSuitKillCounter (same as quakelive)
 

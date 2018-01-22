@@ -55,6 +55,8 @@ static char QuakeLivePath[MAX_OSPATH] = { 0 };
 // Used to store the GOG Quake 3 installation path
 //static char gogPath[ MAX_OSPATH ] = { 0 };
 
+static qboolean DisableScreenBlanking = qfalse;
+
 #ifndef DEDICATED
 static UINT timerResolution = 0;
 #endif
@@ -1047,10 +1049,10 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 #endif
 
 	envVal = getenv("SDL_VIDEO_ALLOW_SCREENSAVER");
-	if (envVal == NULL  ||  strlen(envVal) == 0  ||  atoi(envVal) != 0) {
-		// don't disable screen blanking
+	if (envVal == NULL  ||  strlen(envVal) == 0  ||  envVal[0] == '0') {  //atoi(envVal) == 0) {
+		DisableScreenBlanking = qtrue;
 	} else {
-		SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
+		DisableScreenBlanking = qfalse;
 	}
 
 	memset(&vi, 0, sizeof(vi));
@@ -1916,4 +1918,20 @@ Check if filename should be allowed to be loaded as a DLL.
 */
 qboolean Sys_DllExtension( const char *name ) {
 	return COM_CompareExtension( name, DLL_EXT );
+}
+
+void Sys_DisableScreenBlanking (void)
+{
+	static int lastTime = 0;
+	int currentTime;
+
+	if (!DisableScreenBlanking) {
+		return;
+	}
+
+	currentTime = Sys_Milliseconds();
+	if (currentTime - lastTime > 5000) {
+		SetThreadExecutionState(ES_CONTINUOUS | ES_DISPLAY_REQUIRED);
+		lastTime = currentTime;
+	}
 }

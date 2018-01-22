@@ -2304,7 +2304,6 @@ RE_Shutdown( 1 )
 
     --  2018-01-06 corecontext and qglGetString(GL_EXTENSIONS)
 
-* windows 10 laptop still dimming screen
 * infinity.bsp ad 4 z fighting
 * need something like G_IsTeamGame()
 * ioquake3 patch 2017-09-02-04  check :  is team chat being shown with cg_qlhud 0 ?
@@ -2406,8 +2405,8 @@ trying default ql font fallbacks
 
 
 * is player model shown in setup screen?
-* rend2: glsl gl_texCoord deprecated
 * why can't rend2 use GL_BindNullFramebuffers()?  main menu screen renders black
+* VM_Call( uivm, UI_CONSOLE_COMMAND, cls.realtime )  :  don't use cls.realtime?
 
 ----
 

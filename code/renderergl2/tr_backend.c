@@ -1519,11 +1519,13 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	//int				oldSort;
 	uint64_t 		oldSort;
 	double			originalTime;
+	double			realOriginalTime;
 	FBO_t*			fbo = NULL;
 	qboolean		inQuery = qfalse;
 
 	// save original time for entity shader offsets
 	originalTime = backEnd.refdef.floatTime;
+	realOriginalTime = backEnd.refdef.realFloatTime;
 
 	fbo = glState.currentFBO;
 
@@ -1607,10 +1609,15 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 				// FIXME: e.shaderTime must be passed as int to avoid fp-precision loss issues
 				backEnd.refdef.floatTime = originalTime - (double)backEnd.currentEntity->e.shaderTime;
+				backEnd.refdef.realFloatTime = realOriginalTime - (double)backEnd.currentEntity->e.shaderTime;
 
 				// we have to reset the shaderTime as well otherwise image animations start
 				// from the wrong frame
-				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+				if (tess.shader->realTime) {
+					tess.shaderTime = backEnd.refdef.realFloatTime - tess.shader->timeOffset;
+				} else {
+					tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+				}
 
 				// set up the transformation matrix
 				R_RotateForEntity( backEnd.currentEntity, &backEnd.viewParms, &backEnd.or );
@@ -1631,10 +1638,15 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			} else {
 				backEnd.currentEntity = &tr.worldEntity;
 				backEnd.refdef.floatTime = originalTime;
+				backEnd.refdef.realFloatTime = realOriginalTime;
 				backEnd.or = backEnd.viewParms.world;
 				// we have to reset the shaderTime as well otherwise image animations on
 				// the world (like water) continue with the wrong frame
-				tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+				if (tess.shader->realTime) {
+					tess.shaderTime = backEnd.refdef.realFloatTime - tess.shader->timeOffset;
+				} else {
+					tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
+				}
 				R_TransformDlights( backEnd.refdef.num_dlights, backEnd.refdef.dlights, &backEnd.or );
 			}
 
@@ -1693,6 +1705,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	}
 
 	backEnd.refdef.floatTime = originalTime;
+	backEnd.refdef.realFloatTime = realOriginalTime;
 
 	// draw the contents of the last shader batch
 	if (oldShader != NULL) {
@@ -1773,6 +1786,9 @@ void	RB_SetGL2D (void) {
 	// set time for 2D shaders
 	backEnd.refdef.time = ri.ScaledMilliseconds();
 	backEnd.refdef.floatTime = backEnd.refdef.time * 0.001;
+
+	backEnd.refdef.realTime = ri.RealMilliseconds();
+	backEnd.refdef.realFloatTime = backEnd.refdef.realTime * 0.001f;
 }
 
 

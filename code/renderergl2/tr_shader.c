@@ -2067,6 +2067,10 @@ static qboolean ParseShader( char **text )
 			shader.noVertexLightingCollapse = qtrue;
 			continue;
 		}
+		else if ( !Q_stricmp( token, "wcrealtime" ) )
+		{
+			shader.realTime = qtrue;
+		}
 		else
 		{
 			ri.Printf( PRINT_WARNING, "WARNING: unknown general shader parameter '%s' in '%s'\n", token, shader.name );

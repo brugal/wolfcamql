@@ -11,6 +11,9 @@
 #include "cg_localents.h"
 #include "cg_main.h"
 #include "cg_marks.h"
+#ifdef MISSIONPACK
+  #include "cg_newdraw.h"  // CG_ShowResponseHead()
+#endif
 #include "cg_players.h"
 #include "cg_servercmds.h"
 #include "cg_sound.h"

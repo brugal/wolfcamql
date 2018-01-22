@@ -13,7 +13,9 @@
 #include "cg_players.h"
 #include "cg_playerstate.h"
 #include "cg_predict.h"
-//#include "cg_servercmds.h"  // CG_VoiceChatLocal()
+#ifdef MISSIONPACK
+  #include "cg_servercmds.h"  // CG_VoiceChatLocal()
+#endif
 #include "cg_sound.h"
 #include "cg_syscalls.h"  // trap_R_RegisterSound, trap_S_StopLoopingSound
 #include "cg_view.h"

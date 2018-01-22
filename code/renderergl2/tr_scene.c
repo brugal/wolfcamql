@@ -403,6 +403,7 @@ void RE_BeginScene(const refdef_t *fd)
 	// derived info
 
 	tr.refdef.floatTime = tr.refdef.time * 0.001;
+	tr.refdef.realFloatTime = tr.refdef.realTime * 0.001;
 
 	tr.refdef.numDrawSurfs = r_firstSceneDrawSurf;
 	tr.refdef.drawSurfs = backEndData->drawSurfs;

@@ -318,14 +318,18 @@ static const char ShaderExtensionsVertex_130[] =
 "#version 130\n"
 "#extension GL_ARB_texture_rectangle : enable\n"
 "#define attribute in\n"
-	//"#define varying out\n"
+"#define gl_TexCoord mvTexCoord\n"
+"#define varying out\n"
+"out vec4 mvTexCoord[2];\n"
 	;
 
 static const char ShaderExtensionsVertex_150[] =
 "#version 150\n"
 "#extension GL_ARB_texture_rectangle : enable\n"
 "#define attribute in\n"
-	//"#define varying out\n"
+"#define gl_TexCoord mvTexCoord\n"
+"#define varying out\n"
+"out vec4 mvTexCoord[2];\n"
 	;
 
 
@@ -335,6 +339,9 @@ static const char ShaderExtensionsFragment_130[] =
 "out vec4 out_Color;\n"
 "#define gl_FragColor out_Color\n"
 "#define texture2DRect texture\n"
+"#define gl_TexCoord mvTexCoord\n"
+"in vec4 mvTexCoord[2];\n"
+"#define varying in\n"
 	;
 
 static const char ShaderExtensionsFragment_150[] =
@@ -343,6 +350,9 @@ static const char ShaderExtensionsFragment_150[] =
 "out vec4 out_Color;\n"
 "#define gl_FragColor out_Color\n"
 "#define texture2DRect texture\n"
+"#define gl_TexCoord mvTexCoord\n"
+"in vec4 mvTexCoord[2];\n"
+"#define varying in\n"
 	;
 
 static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentShader, GLhandleARB *program, GLhandleARB vertexShader)
@@ -359,8 +369,7 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 
 	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
 		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
-			//shaderExtensions = ShaderExtensionsFragment_150;
-			shaderExtensions = ShaderExtensionsFragment_130;
+			shaderExtensions = ShaderExtensionsFragment_150;
 		} else {
 			shaderExtensions = ShaderExtensionsFragment_130;
 		}
@@ -460,8 +469,7 @@ static void InitQLGlslShadersAndPrograms (void)
 
 	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
 		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
-			//shaderExtensions = ShaderExtensionsVertex_150;
-			shaderExtensions = ShaderExtensionsVertex_130;
+			shaderExtensions = ShaderExtensionsVertex_150;
 		} else {
 			shaderExtensions = ShaderExtensionsVertex_130;
 		}
@@ -525,8 +533,7 @@ static void InitCameraPathShadersAndProgram (void)
 
 	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
 		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
-			//shaderExtensions = ShaderExtensionsVertex_150;
-			shaderExtensions = ShaderExtensionsVertex_130;
+			shaderExtensions = ShaderExtensionsVertex_150;
 		} else {
 			shaderExtensions = ShaderExtensionsVertex_130;
 		}
@@ -563,8 +570,7 @@ static void InitCameraPathShadersAndProgram (void)
 
 	if (glRefConfig.glslMajorVersion > 1  ||  (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 30)) {
 		if (glRefConfig.glslMajorVersion > 1  || (glRefConfig.glslMajorVersion == 1  &&  glRefConfig.glslMinorVersion >= 50)) {
-			//shaderExtensions = ShaderExtensionsFragment_150;
-			shaderExtensions = ShaderExtensionsFragment_130;
+			shaderExtensions = ShaderExtensionsFragment_150;
 		} else {
 			shaderExtensions = ShaderExtensionsFragment_130;
 		}

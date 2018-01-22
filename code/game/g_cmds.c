@@ -1153,7 +1153,7 @@ static void Cmd_VoiceTell_f( gentity_t *ent, qboolean voiceonly ) {
 
 	id = ConcatArgs( 2 );
 
-	SanitizeChatText( p );
+	SanitizeChatText( id );
 
 	G_LogPrintf( "vtell: %s to %s: %s\n", ent->client->pers.netname, target->client->pers.netname, id );
 	G_Voice( ent, target, SAY_TELL, id, voiceonly );
