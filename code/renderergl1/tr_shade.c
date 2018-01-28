@@ -226,6 +226,11 @@ static void R_BindAnimatedImage( textureBundle_t *bundle ) {
 		return;
 	}
 
+	if ( bundle->isScreenMap ) {
+		GL_Bind(tr.screenMapImage);
+		return;
+	}
+
 	if ( bundle->numImageAnimations <= 1 ) {
 		if (bundle->image[0]) {
 			GL_Bind( bundle->image[0] );
@@ -379,7 +384,7 @@ void RB_BeginSurface( shader_t *shader, int fogNum ) {
 	tess.numPasses = state->numUnfoggedPasses;
 	tess.currentStageIteratorFunc = state->optimalStageIteratorFunc;
 
-	if (tess.shader->realTime) {
+	if (tess.shader->useRealTime) {
 		tess.shaderTime = backEnd.refdef.realFloatTime - tess.shader->timeOffset;
 	} else {
 		tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;

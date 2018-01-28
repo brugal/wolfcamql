@@ -1900,6 +1900,25 @@ r_singleShader options and r_singleShaderName  to replace all the map textures
   You can edit or replace wolfcam-ql/gfx/wc/custom.tga to choose the color.
 --------------------------------------
 
+* 'screenMap' shader keyword from Quake3e.  This uses a screenshot of the previous frame as a texture.  Can be used for mirror like surfaces.  The size of the texture used can be controlled with r_screenMapTextureSize.  Example
+
+  models/weapons2/rocketl/rocketl
+  {
+          cull none
+          {
+  	        map models/weapons2/rocketl/rocketl.tga
+                rgbGen lightingDiffuse
+          }
+          {
+                  screenMap
+  	          rgbGen lightingDiffuse
+                  tcGen environment
+                  blendfunc add
+          }
+  }
+
+  Note:  Unlike Quake3e, 'screenMap' doesn't accept an image fallback option and 'tcGen environment' doesn't have a 'firstPerson' option.
+
 * r_fastSkyColor  hex:  0xff0000  if using r_fastSky 1
 * r_forceSky
 
@@ -2077,6 +2096,8 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * 'wcrealtime' general shader keyword added.  This allows shader time updated using real time instead of time adjusted for timescale, pause, and video frames.
 
   This was added mostly to allow the console shader to run at the same rate regardless of the settings listed above.
+
+* quake live 'novlcollapse' shader option to prevent ignoring of lightmaps with r_vertexLight option
 
 * cg_quadKillCounter (same as quakelive)
 * cg_battleSuitKillCounter (same as quakelive)

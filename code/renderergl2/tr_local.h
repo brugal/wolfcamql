@@ -344,6 +344,7 @@ typedef struct {
 	int				videoMapHandle;
 	qboolean		isLightmap;
 	qboolean		isVideoMap;
+	qboolean		isScreenMap;
 } textureBundle_t;
 
 enum
@@ -445,7 +446,7 @@ typedef struct shader_s {
 	qboolean mapShader;  // loaded from map
 
 	qboolean	noVertexLightingCollapse;
-	qboolean	realTime;  // use real time for shaders instead of scaled time
+	qboolean	useRealTime;  // use real time for shaders instead of scaled time
 
 	qboolean	explicitlyDefined;		// found in a .shader file
 
@@ -477,6 +478,8 @@ typedef struct shader_s {
 	shaderStage_t	*stages[MAX_SHADER_STAGES];		
 
 	void		(*optimalStageIteratorFunc)( void );
+
+	qboolean	hasScreenMap;
 
   double clampTime;                                  // time this shader is clamped to
   double timeOffset;                                 // current time offset for this shader
@@ -1656,6 +1659,9 @@ typedef struct {
 	int bloomWidth;
 	int bloomHeight;
 	GLuint backBufferTexture;
+	image_t *screenMapFullImage;
+	image_t *screenMapImage;
+	image_t *screenMapImageScratchBuffer;
 	int drawSurfsCount;
 
 	GLuint frameBuffer;
@@ -1680,6 +1686,8 @@ typedef struct {
 	qboolean recordingVideo;
 
 	char markSurfaceNames[2][MAX_QPATH];
+
+	qboolean needScreenMap;
 } trGlobals_t;
 
 extern backEndState_t	backEnd;

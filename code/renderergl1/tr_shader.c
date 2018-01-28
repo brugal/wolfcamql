@@ -807,6 +807,17 @@ static qboolean ParseStage( shaderStage_t *stage, char **text )
 				ri.Printf( PRINT_WARNING, "WARNING: could not load '%s' for 'videoMap' keyword in shader '%s'\n", token, shader.name );
 			}
 		}
+		else if ( !Q_stricmp( token, "screenMap" ) )
+		{
+			// need to set something in order to make sure that R_BindAnimatedImage() is called
+			stage->bundle[0].image[0] = tr.scratchImage[0];
+
+			stage->bundle[0].isScreenMap = qtrue;
+			shader.hasScreenMap = qtrue;
+
+			//FIXME should be set if shader is used, not just defined
+			tr.needScreenMap = qtrue;
+		}
 		//
 		// alphafunc <func>
 		//
@@ -1755,7 +1766,7 @@ static qboolean ParseShader( char **text )
 		}
 		else if ( !Q_stricmp( token, "wcrealtime" ) )
 		{
-			shader.realTime = qtrue;
+			shader.useRealTime = qtrue;
 		}
 		else
 		{

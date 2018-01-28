@@ -2407,6 +2407,13 @@ trying default ql font fallbacks
 * is player model shown in setup screen?
 * why can't rend2 use GL_BindNullFramebuffers()?  main menu screen renders black
 * VM_Call( uivm, UI_CONSOLE_COMMAND, cls.realtime )  :  don't use cls.realtime?
+* check screenMap and r_anaglyphMode
+* option for first person weapon shader
+* screenmap just re-use ql backBufferTexture
+* screenmap fallback
+* screenmap rgbgen enironment firstperson  'firstperson' arg from quake3e?
+* screenmap only take screenshot if shader is used in same frame
+
 
 ----
 

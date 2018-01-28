@@ -74,6 +74,11 @@ static void R_BindAnimatedImageToTMU( textureBundle_t *bundle, int tmu ) {
 		return;
 	}
 
+	if ( bundle->isScreenMap ) {
+		GL_BindToTMU(tr.screenMapImage, tmu);
+		return;
+	}
+
 	if ( bundle->numImageAnimations <= 1 ) {
 		GL_BindToTMU( bundle->image[0], tmu);
 		return;
@@ -201,7 +206,7 @@ void RB_BeginSurface( shader_t *shader, int fogNum, int cubemapIndex ) {
 	tess.useInternalVao = qtrue;
 	tess.useCacheVao = qfalse;
 
-	if (tess.shader->realTime) {
+	if (tess.shader->useRealTime) {
 		tess.shaderTime = backEnd.refdef.realFloatTime - tess.shader->timeOffset;
 	} else {
 		tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;

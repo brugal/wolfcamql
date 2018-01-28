@@ -23,7 +23,7 @@ wc/console
 {
         nomipmaps
         nopicmip
-	wcrealtime
+        wcrealtime
         {
                 map textures/sfx2/screen01.tga
                 blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA

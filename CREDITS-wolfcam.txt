@@ -26,6 +26,8 @@ em92 (Eugene Molotov):
   * bug fix:  renderer shader times incorrect when recording videos
   * bug fix:  round based games didn't ignore g_overtime value
 
+Cyrax (Eugene C.):  screenMap shader directive from Quake3e
+
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program
 KittenIgnition:  helping others, ideas and suggestions, beta testing
 mccormic:  making movies, letting me know what features are needed/helpful for movie makers, beta testing

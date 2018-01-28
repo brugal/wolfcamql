@@ -1291,7 +1291,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 
 				// we have to reset the shaderTime as well otherwise image animations start
 				// from the wrong frame
-				if (tess.shader->realTime) {
+				if (tess.shader->useRealTime) {
 					tess.shaderTime = backEnd.refdef.realFloatTime - tess.shader->timeOffset;
 				} else {
 					tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
@@ -1326,7 +1326,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 				backEnd.or = backEnd.viewParms.world;
 				// we have to reset the shaderTime as well otherwise image animations on
 				// the world (like water) continue with the wrong frame
-				if (tess.shader->realTime) {
+				if (tess.shader->useRealTime) {
 					tess.shaderTime = backEnd.refdef.realFloatTime - tess.shader->timeOffset;
 				} else {
 					tess.shaderTime = backEnd.refdef.floatTime - tess.shader->timeOffset;
@@ -2286,6 +2286,83 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	// take place
 
 	if (tr.drawSurfsCount) {
+		// screen map texture
+		if (tr.needScreenMap) {
+			float x, y, w, h;
+
+			RB_SetGL2D();
+
+			// get original area that is going to be overwritten
+			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+			qglBindTexture(GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
+			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapImageScratchBuffer->uploadWidth, tr.screenMapImageScratchBuffer->uploadHeight);
+
+			// get big screen image, note: it might clip parts since the texture might not be as big as the screen
+			qglBindTexture(GL_TEXTURE_2D, tr.screenMapFullImage->texnum);
+			// this will be a flipped image, but it is flipped again by the other call to qlCopyTexSubImage2D()
+			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapFullImage->uploadWidth, tr.screenMapFullImage->uploadHeight);
+
+			// draw scaled down version
+			x = 0;
+			y = 0;
+			w = tr.screenMapFullImage->uploadWidth;
+			h = tr.screenMapFullImage->uploadHeight;
+
+			qglViewport(0, 0, tr.screenMapImage->uploadWidth, tr.screenMapImage->uploadHeight);
+			qglBegin (GL_QUADS);
+
+			qglTexCoord2f( 0, 0 );
+			qglVertex2f( x, y );
+
+			qglTexCoord2f( 1, 0 );
+			qglVertex2f( x + w, y );
+
+			qglTexCoord2f( 1, 1 );
+			qglVertex2f( x + w, y + h );
+
+			qglTexCoord2f( 0, 1 );
+			qglVertex2f( x, y + h );
+
+			qglEnd();
+
+			// get scaled version
+			qglBindTexture(GL_TEXTURE_2D, tr.screenMapImage->texnum);
+			// flipped back
+
+			//FIXME here.............. uploawidth/height
+			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapImage->uploadWidth, tr.screenMapImage->uploadHeight);
+
+			// restore original image
+			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+
+			qglBindTexture(GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
+			qglBegin (GL_QUADS);
+
+			x = 0;
+			y = glConfig.vidHeight - tr.screenMapImageScratchBuffer->uploadHeight;
+			w = tr.screenMapImageScratchBuffer->uploadWidth;
+			h = tr.screenMapImageScratchBuffer->uploadHeight;
+
+			// render a flipped image
+			qglTexCoord2f( 0, 0 );
+			qglVertex2f( x, y + h );
+
+			qglTexCoord2f( 1, 0 );
+			qglVertex2f( x + w, y + h );
+
+			qglTexCoord2f( 1, 1 );
+			qglVertex2f( x + w, y );
+
+			qglTexCoord2f( 0, 1 );
+			qglVertex2f( x, y );
+
+			qglEnd();
+
+			//qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+
+			qglBindTexture(GL_TEXTURE_2D, 0);
+		}
+
 		if (r_anaglyphMode->integer) {
 			if (depthWasCleared) {
 				RB_QLPostProcessing();

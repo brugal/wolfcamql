@@ -1487,6 +1487,9 @@ R_CreateBuiltinImages
 void R_CreateBuiltinImages( void ) {
 	int		x,y;
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
+	int screenMapFullWidth, screenMapFullHeight;
+	int screenMapTextureSize;
+	byte *screenMapData;
 
 	R_CreateDefaultImage();
 
@@ -1512,6 +1515,42 @@ void R_CreateBuiltinImages( void ) {
 		// scratchimage is usually used for cinematic drawing
 		tr.scratchImage[x] = R_CreateImage("*scratch", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
 	}
+
+	screenMapFullWidth = glConfig.vidWidth;
+	screenMapFullHeight = glConfig.vidHeight;
+
+	screenMapData = ri.Hunk_AllocateTempMemory(screenMapFullWidth * screenMapFullHeight * 4);
+
+	// testing
+#if 0
+	for (x = 0;  x < screenMapFullWidth;  x++) {
+		for (y = 0; y < screenMapFullHeight; y++) {
+			screenMapData[(y * screenMapFullWidth * 4) + x + 0] = 0;
+			screenMapData[(y * screenMapFullWidth * 4) + x + 1] = 255;
+			screenMapData[(y * screenMapFullWidth * 4) + x + 2] = 90;
+			screenMapData[(y * screenMapFullWidth * 4) + x + 3] = 255;
+		}
+	}
+#endif
+
+	tr.screenMapFullImage = R_CreateImage("*screenMapFull", screenMapData, screenMapFullWidth, screenMapFullHeight, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
+
+	screenMapTextureSize = r_screenMapTextureSize->integer;
+
+	// make sure it doesn't exceed screen dimensions, take into account that it might be upsampled because of power of two size
+	if (screenMapTextureSize > (MIN(glConfig.vidWidth, glConfig.vidHeight) / 2)) {
+		screenMapTextureSize = MIN(glConfig.vidWidth, glConfig.vidHeight) / 2;
+	}
+
+	if (screenMapTextureSize <= 0) {
+		//FIXME use fallback ?
+		screenMapTextureSize = MIN(glConfig.vidWidth, glConfig.vidHeight) / 2;
+	}
+
+	tr.screenMapImage = R_CreateImage("*screenMap", screenMapData, screenMapTextureSize, screenMapTextureSize, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
+	tr.screenMapImageScratchBuffer = R_CreateImage("*screenMapScratch", screenMapData, screenMapTextureSize, screenMapTextureSize, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
+
+	ri.Hunk_FreeTempMemory(screenMapData);
 
 	R_CreateDlightImage();
 	R_CreateFogImage();
