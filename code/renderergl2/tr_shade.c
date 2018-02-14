@@ -465,7 +465,37 @@ static void ComputeShaderColors( shaderStage_t *pStage, vec4_t baseColor, vec4_t
 
 	//overbright = 3.0f;
 	//overbright = 0.5f;
-	
+
+	if (is2DDraw  &&  r_opengl2_overbright->integer == 0) {
+		if (pStage->rgbGen == CGEN_IDENTITY_LIGHTING) {
+			baseColor[0] =
+			baseColor[1] =
+			baseColor[2] = 1.0f / (float)(1 << tr.overbrightBits);
+			baseColor[3] = 1.0f;
+
+			vertColor[0] =
+			vertColor[1] =
+			vertColor[2] =
+			vertColor[3] = 0.0f;
+
+			return;
+		} else if (pStage->rgbGen == CGEN_VERTEX) {
+			baseColor[0] =
+			baseColor[1] =
+			baseColor[2] =
+			baseColor[3] = 0.0f;
+
+			vertColor[0] =
+			vertColor[1] =
+			vertColor[2] = 1.0f / (float)(1 << tr.overbrightBits);
+			vertColor[3] = 1.0f;
+
+			return;
+		} else {
+			//ri.Printf(PRINT_ALL, "^3handle rgbGen for 2DDraw %d\n", pStage->rgbGen);
+		}
+	}
+
 	baseColor[0] = 
 	baseColor[1] =
 	baseColor[2] =

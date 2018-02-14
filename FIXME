@@ -2089,7 +2089,7 @@ No locals.
    - r_overbrightBits not used in opengl2?  -- 2017-11-13 it is but working differently
 
 * check tr_noise.c R_NoiseGet4f last arg now double t?
-* opengl2 overbright setting in tr_shade.c ComputeShaderColors is incorrect?  -- have r_opengl2_overbright as a work around
+* opengl2 overbright setting in tr_shade.c ComputeShaderColors is incorrect?  -- have r_opengl2_overbright as a work around  -- 2018-02-14 added additional 2d hack
 * r_enableColorCorrect needs to be latched?
 * r_visibleWindow* and fullscreen?
 * get particle speed in fx?
