@@ -151,6 +151,9 @@ int CG_GetAmmoWarning (int weapon, int style, int ammoOffset)
 			if ( ! ( weapons & ( 1 << i ) ) ) {
 				continue;
 			}
+			if ( cg.snap->ps.ammo[i] < 0 ) {
+				continue;
+			}
 			switch ( i ) {
 			case WP_ROCKET_LAUNCHER:
 			case WP_GRENADE_LAUNCHER:

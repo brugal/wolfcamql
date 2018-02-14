@@ -450,7 +450,7 @@ static void DrawMultitextured( shaderCommands_t *input, int stage ) {
 		} else {
 			GL_TexEnv( tess.shader->multitextureEnv );
 		}
-		//glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_ADD);
+		//qglTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_ADD);
 	}
 
 	qglTexCoordPointer( 2, GL_FLOAT, 0, input->svars.texcoords[1] );

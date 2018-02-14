@@ -2307,7 +2307,6 @@ RE_Shutdown( 1 )
 * infinity.bsp ad 4 z fighting
 * need something like G_IsTeamGame()
 * ioquake3 patch 2017-09-02-04  check :  is team chat being shown with cg_qlhud 0 ?
-* check if windows manifest is loading wolfcamql icon instead of ioquake3 one  -- 2018-01-15  need to update quake3.ico
 * if you rename wolfcamql.exe to wtest1.exe (that's without explicitly setting version in shaders):
 
   ^5scripts/brightpass.fs ->
@@ -2413,6 +2412,24 @@ trying default ql font fallbacks
 * screenmap fallback
 * screenmap rgbgen enironment firstperson  'firstperson' arg from quake3e?
 * screenmap only take screenshot if shader is used in same frame
+* screenmap:
+
+if (screenMapTextureSize <= 0) {
++  			 //FIXME use fallback ?
++			 	 screenMapTextureSize = MIN(glConfig.vidWidth, glConfig.vidHeight) / 2;
++				 }
+
+could still be zero size
+* no wc-glsl.pk3 linux vm cl_renderer opengl2 crash :
+
+#5  0x00000000 in ?? ()
+No symbol table info available.
+#6  0xa0a50a5e in GL_BindNullFramebuffers () at code/renderergl2/tr_dsa.c:210
+No locals.
+#7  0xa0a40fdb in RB_SwapBuffers (data=0xa55687d8, endFrame=qtrue) at code/renderergl2/tr_backend.c:2620
+        cmd = 0xa55687d8
+	#8  0xa0a42582 in RB_ExecuteRenderCommands (data=<optimized out>) at code/renderergl2/tr_backend.c:3465
+
 
 
 ----

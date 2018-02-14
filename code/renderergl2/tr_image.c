@@ -1513,7 +1513,7 @@ static qboolean RawImage_ScaleToPower2( byte **data, int *inout_width, int *inou
 	 * for pre-DX10."
 	 */
 
-	if (glConfig.openGLMajorVersion >= 3  &&  r_scaleImagesPowerOfTwo->integer == 0) {
+	if (QGL_VERSION_ATLEAST( 3, 0 )  &&  r_scaleImagesPowerOfTwo->integer == 0) {
 		powerOfTwoScale = qfalse;
 	}
 

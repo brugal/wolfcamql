@@ -308,8 +308,6 @@ static void printGlslLog (GLhandleARB obj)
 
 // like tr_glsl.c: GLSL_GetShaderHeader
 
-//FIXME version 150:  gl_TexCoord in ql shaders avaialble only in compatibility profile
-
 static const char ShaderExtensions_120[] =
 "#version 120\n"
 "#extension GL_ARB_texture_rectangle : enable\n"
@@ -748,7 +746,7 @@ static void InitOpenGL( void )
 	{
 		GLint		temp;
 
-		//FIXME wolfcam:  don't use core profile because of older quake live glsl shader compatibility:  *ARB functions and ql shaders needing updates?
+		//FIXME wolfcam:  core profile *ARB functions?
 		GLimp_Init( qtrue );
 		GLimp_InitExtraExtensions();
 
@@ -1573,15 +1571,15 @@ void GfxInfo_f( void )
 	ri.Printf( PRINT_ALL, "GL_RENDERER: %s\n", glConfig.renderer_string );
 	ri.Printf( PRINT_ALL, "GL_VERSION: %s\n", glConfig.version_string );
 	ri.Printf( PRINT_ALL, "GL_EXTENSIONS: " );
-	if (glRefConfig.openglMajorVersion >= 3)
+	if ( qglGetStringi )
 	{
 		GLint numExtensions;
 		int i;
 
-		glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
-		for (i = 0; i < numExtensions; i++)
+		qglGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
+		for ( i = 0; i < numExtensions; i++ )
 		{
-			ri.Printf(PRINT_ALL, "%s ", qglGetStringi(GL_EXTENSIONS, i));
+			ri.Printf( PRINT_ALL, "%s ", qglGetStringi( GL_EXTENSIONS, i ) );
 		}
 	}
 	else
@@ -1799,7 +1797,7 @@ void R_Register( void )
 	r_forceAutoExposureMin = ri.Cvar_Get( "r_forceAutoExposureMin", "-2.0", CVAR_CHEAT );
 	r_forceAutoExposureMax = ri.Cvar_Get( "r_forceAutoExposureMax", "2.0", CVAR_CHEAT );
 
-	r_cameraExposure = ri.Cvar_Get( "r_cameraExposure", "0", CVAR_CHEAT );
+	r_cameraExposure = ri.Cvar_Get( "r_cameraExposure", "1", CVAR_CHEAT );
 
 	r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_ARCHIVE );
 	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_LATCH | CVAR_ARCHIVE );

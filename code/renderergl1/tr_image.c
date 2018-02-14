@@ -609,7 +609,7 @@ void R_Upload32( unsigned *data,
 	 * for pre-DX10."
 	 */
 
-	if (glConfig.openGLMajorVersion >= 3  &&  r_scaleImagesPowerOfTwo->integer == 0) {
+	if (QGL_VERSION_ATLEAST( 3, 0 )  &&  r_scaleImagesPowerOfTwo->integer == 0) {
 		powerOfTwoScale = qfalse;
 	}
 
@@ -1893,10 +1893,10 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 
 		qglBegin(GL_QUADS);
 
-		glTexCoord2d(0.0, 0.0);  glVertex2d(0.0, 0.0);
-		glTexCoord2d(1.0, 0.0);  glVertex2d(1.0, 0.0);
-		glTexCoord2d(1.0, 1.0);  glVertex2d(1.0, 1.0);
-		glTexCoord2d(0.0, 1.0);  glVertex2d(0.0, 1.0);
+		qglTexCoord2d(0.0, 0.0);  qglVertex2d(0.0, 0.0);
+		qglTexCoord2d(1.0, 0.0);  qglVertex2d(1.0, 0.0);
+		qglTexCoord2d(1.0, 1.0);  qglVertex2d(1.0, 1.0);
+		qglTexCoord2d(0.0, 1.0);  qglVertex2d(0.0, 1.0);
 
         qglEnd();
 

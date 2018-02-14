@@ -804,7 +804,7 @@ void ClientUserinfoChanged( int clientNum ) {
 */
 
 #if 1  //MISSIONPACK
-	if (g_gametype.integer >= GT_TEAM) {
+	if (g_gametype.integer >= GT_TEAM && !(ent->r.svFlags & SVF_BOT)) {
 		client->pers.teamInfo = qtrue;
 	} else {
 		s = Info_ValueForKey( userinfo, "teamoverlay" );

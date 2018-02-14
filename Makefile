@@ -312,7 +312,7 @@ ifneq ($(BUILD_CLIENT),0)
     CURL_LIBS ?= -lcurl
     OPENAL_LIBS ?= -lopenal
   endif
-  # Use sdl-config if all else fails
+  # Use sdl2-config if all else fails
   ifeq ($(SDL_CFLAGS),)
     ifneq ($(call bin_path, sdl2-config),)
       SDL_CFLAGS = $(shell sdl2-config --cflags)
@@ -338,7 +338,7 @@ CGAME_LIBS = -lpthread
 #############################################################################
 
 INSTALL=install
-MKDIR=mkdir
+MKDIR=mkdir -p
 EXTRA_FILES=
 CLIENT_EXTRA_FILES=
 
@@ -419,10 +419,10 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   LIBS=-ldl -lm
 
   CLIENT_LIBS=$(SDL_LIBS) -lX11
-  RENDERER_LIBS += $(SDL_LIBS) -lGL
+  RENDERER_LIBS += $(SDL_LIBS)
 
   ifeq ($(ARCH),x86_64)
-     #CLIENT_LIBS=-L/usr/lib/x86_64-linux-gnu -lSDL -lGL
+     #CLIENT_LIBS=-L/usr/lib/x86_64-linux-gnu -lSDL
   endif
 
   ifeq ($(USE_OPENAL),1)
@@ -696,7 +696,7 @@ ifdef MINGW
   endif
 
   CLIENT_LIBS += -lgdi32 -lole32
-  RENDERER_LIBS += -lgdi32 -lole32 -lopengl32
+  RENDERER_LIBS += -lgdi32 -lole32 -static-libgcc
 
   ifeq ($(USE_CURL),1)
     #FIXME disabling since pkg-config adds wrong include:
@@ -784,7 +784,7 @@ ifeq ($(PLATFORM),freebsd)
   CLIENT_LIBS =
 
   CLIENT_LIBS += $(SDL_LIBS)
-  RENDERER_LIBS += $(SDL_LIBS) -lGL
+  RENDERER_LIBS += $(SDL_LIBS)
 
   # optional features/libraries
   ifeq ($(USE_OPENAL),1)
@@ -876,7 +876,7 @@ ifeq ($(PLATFORM),openbsd)
   #CLIENT_LIBS =
 
   CLIENT_LIBS += $(SDL_LIBS)
-  RENDERER_LIBS += $(SDL_LIBS) -lGL
+  RENDERER_LIBS += $(SDL_LIBS)
 
   ifeq ($(USE_OPENAL),1)
     ifneq ($(USE_OPENAL_DLOPEN),1)
@@ -923,7 +923,6 @@ ifeq ($(PLATFORM),irix64)
   ARCH=mips
 
   CC = c99
-  MKDIR = mkdir -p
 
   BASE_CFLAGS=-Dstricmp=strcasecmp -Xcpluscomm -woff 1185 \
     -I. -I$(ROOT)/usr/include
@@ -938,7 +937,7 @@ ifeq ($(PLATFORM),irix64)
   # FIXME: The X libraries probably aren't necessary?
   CLIENT_LIBS=-L/usr/X11/$(LIB) $(SDL_LIBS) \
     -lX11 -lXext -lm
-  RENDERER_LIBS += $(SDL_LIBS) -lGL
+  RENDERER_LIBS += $(SDL_LIBS)
 
 else # ifeq IRIX
 
@@ -950,7 +949,7 @@ ifeq ($(PLATFORM),sunos)
 
   CC=gcc
   INSTALL=ginstall
-  MKDIR=gmkdir
+  MKDIR=gmkdir -p
   COPYDIR="/usr/local/share/games/quake3"
 
   ifneq ($(ARCH),x86)
@@ -993,7 +992,7 @@ ifeq ($(PLATFORM),sunos)
   BOTCFLAGS=-O0
 
   CLIENT_LIBS +=$(SDL_LIBS) -lX11 -lXext -liconv -lm
-  RENDERER_LIBS += $(SDL_LIBS) -lGL
+  RENDERER_LIBS += $(SDL_LIBS)
 
 else # ifeq sunos
 
@@ -1264,7 +1263,7 @@ define DO_REF_STR
 $(echo_cmd) "REF_STR $<"
 $(Q)rm -f $@
 $(Q)echo "const char *fallbackShader_$(notdir $(basename $<)) =" >> $@
-$(Q)cat $< | sed 's/^/\"/;s/$$/\\n\"/' >> $@
+$(Q)cat $< | sed -e 's/^/\"/;s/$$/\\n\"/' | tr -d '\r' >> $@
 $(Q)echo ";" >> $@
 endef
 
@@ -1464,34 +1463,29 @@ ifneq ($(PLATFORM),darwin)
 endif
 
 makedirs:
-	@if [ ! -d $(BUILD_DIR) ];then $(MKDIR) $(BUILD_DIR);fi
-	@if [ ! -d $(B) ];then $(MKDIR) $(B);fi
-	@if [ ! -d $(B)/client ];then $(MKDIR) $(B)/client;fi
-	@if [ ! -d $(B)/client/opus ];then $(MKDIR) $(B)/client/opus;fi
-	@if [ ! -d $(B)/client/vorbis ];then $(MKDIR) $(B)/client/vorbis;fi
-	@if [ ! -d $(B)/splines ];then $(MKDIR) $(B)/splines;fi
-	@if [ ! -d $(B)/renderergl1 ];then $(MKDIR) $(B)/renderergl1;fi
-	@if [ ! -d $(B)/renderergl2 ];then $(MKDIR) $(B)/renderergl2;fi
-	@if [ ! -d $(B)/renderergl2/glsl ];then $(MKDIR) $(B)/renderergl2/glsl;fi
-	@if [ ! -d $(B)/ded ];then $(MKDIR) $(B)/ded;fi
-	@if [ ! -d $(B)/$(BASEGAME) ];then $(MKDIR) $(B)/$(BASEGAME);fi
-	@if [ ! -d $(B)/$(BASEGAME)/cgame ];then $(MKDIR) $(B)/$(BASEGAME)/cgame;fi
-	@if [ ! -d $(B)/$(BASEGAME)/game ];then $(MKDIR) $(B)/$(BASEGAME)/game;fi
-	@if [ ! -d $(B)/$(BASEGAME)/ui ];then $(MKDIR) $(B)/$(BASEGAME)/ui;fi
-	@if [ ! -d $(B)/$(BASEGAME)/qcommon ];then $(MKDIR) $(B)/$(BASEGAME)/qcommon;fi
-	@if [ ! -d $(B)/$(BASEGAME)/vm ];then $(MKDIR) $(B)/$(BASEGAME)/vm;fi
-	@if [ ! -d $(B)/$(MISSIONPACK) ];then $(MKDIR) $(B)/$(MISSIONPACK);fi
-	@if [ ! -d $(B)/$(MISSIONPACK)/cgame ];then $(MKDIR) $(B)/$(MISSIONPACK)/cgame;fi
-	@if [ ! -d $(B)/$(MISSIONPACK)/game ];then $(MKDIR) $(B)/$(MISSIONPACK)/game;fi
-	@if [ ! -d $(B)/$(MISSIONPACK)/ui ];then $(MKDIR) $(B)/$(MISSIONPACK)/ui;fi
-	@if [ ! -d $(B)/$(MISSIONPACK)/qcommon ];then $(MKDIR) $(B)/$(MISSIONPACK)/qcommon;fi
-	@if [ ! -d $(B)/$(MISSIONPACK)/vm ];then $(MKDIR) $(B)/$(MISSIONPACK)/vm;fi
-	@if [ ! -d $(B)/tools ];then $(MKDIR) $(B)/tools;fi
-	@if [ ! -d $(B)/tools/asm ];then $(MKDIR) $(B)/tools/asm;fi
-	@if [ ! -d $(B)/tools/etc ];then $(MKDIR) $(B)/tools/etc;fi
-	@if [ ! -d $(B)/tools/rcc ];then $(MKDIR) $(B)/tools/rcc;fi
-	@if [ ! -d $(B)/tools/cpp ];then $(MKDIR) $(B)/tools/cpp;fi
-	@if [ ! -d $(B)/tools/lburg ];then $(MKDIR) $(B)/tools/lburg;fi
+	#@$(MKDIR) $(B)/autoupdater
+	@$(MKDIR) $(B)/client/opus
+	@$(MKDIR) $(B)/client/vorbis
+	@$(MKDIR) $(B)/splines
+	@$(MKDIR) $(B)/renderergl1
+	@$(MKDIR) $(B)/renderergl2
+	@$(MKDIR) $(B)/renderergl2/glsl
+	@$(MKDIR) $(B)/ded
+	@$(MKDIR) $(B)/$(BASEGAME)/cgame
+	@$(MKDIR) $(B)/$(BASEGAME)/game
+	@$(MKDIR) $(B)/$(BASEGAME)/ui
+	@$(MKDIR) $(B)/$(BASEGAME)/qcommon
+	@$(MKDIR) $(B)/$(BASEGAME)/vm
+	@$(MKDIR) $(B)/$(MISSIONPACK)/cgame
+	@$(MKDIR) $(B)/$(MISSIONPACK)/game
+	@$(MKDIR) $(B)/$(MISSIONPACK)/ui
+	@$(MKDIR) $(B)/$(MISSIONPACK)/qcommon
+	@$(MKDIR) $(B)/$(MISSIONPACK)/vm
+	@$(MKDIR) $(B)/tools/asm
+	@$(MKDIR) $(B)/tools/etc
+	@$(MKDIR) $(B)/tools/rcc
+	@$(MKDIR) $(B)/tools/cpp
+	@$(MKDIR) $(B)/tools/lburg
 
 #############################################################################
 # QVM BUILD TOOLS
@@ -3092,10 +3086,10 @@ copyfiles: release
 	@if [ ! -d $(COPYDIR)/$(BASEGAME) ]; then echo "You need to set COPYDIR to where your Quake3 data is!"; fi
 ifneq ($(BUILD_GAME_SO),0)
   ifneq ($(BUILD_BASEGAME),0)
-	-$(MKDIR) -p -m 0755 $(COPYDIR)/$(BASEGAME)
+	-$(MKDIR) -m 0755 $(COPYDIR)/$(BASEGAME)
   endif
   ifneq ($(BUILD_MISSIONPACK),0)
-	-$(MKDIR) -p -m 0755 $(COPYDIR)/$(MISSIONPACK)
+	-$(MKDIR) -m 0755 $(COPYDIR)/$(MISSIONPACK)
   endif
 endif
 

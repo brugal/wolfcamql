@@ -1906,12 +1906,12 @@ r_singleShader options and r_singleShaderName  to replace all the map textures
   {
           cull none
           {
-  	        map models/weapons2/rocketl/rocketl.tga
-                rgbGen lightingDiffuse
+                  map models/weapons2/rocketl/rocketl.tga
+                  rgbGen lightingDiffuse
           }
           {
                   screenMap
-  	          rgbGen lightingDiffuse
+                  rgbGen lightingDiffuse
                   tcGen environment
                   blendfunc add
           }

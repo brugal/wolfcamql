@@ -1436,7 +1436,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 #if 0  // testing
 	{
 		GLfloat lightpos[] = { 0.5, 1.0, 1.0, 0 };
-		glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
+		qglLightfv(GL_LIGHT0, GL_POSITION, lightpos);
 	}
 #endif
 }
@@ -2329,7 +2329,6 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			qglBindTexture(GL_TEXTURE_2D, tr.screenMapImage->texnum);
 			// flipped back
 
-			//FIXME here.............. uploawidth/height
 			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapImage->uploadWidth, tr.screenMapImage->uploadHeight);
 
 			// restore original image

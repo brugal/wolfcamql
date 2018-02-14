@@ -6321,9 +6321,7 @@ the demo.
     make-macosx-app.sh reads MACOSX_DEPLOYMENT_TARGET variable but
     it wasn't ever set.
 
----- this ----
-
-2017-09-15-01 skip:
+2017-09-15-01
     Fix listen server sending snapshots each client frame
 
     Running a server using the client engine would send server snapshots
@@ -6344,20 +6342,20 @@ the demo.
 
     Reported by Eugene C.
 
-2017-09-23-01 skip:
+2017-09-23-01
     Enable Ogg Vorbis support by default
 
     libvorbis is included in-tree so this doesn't require additional
     dependencies.
 
-2017-09-26-01 skip:
+2017-09-26-01
     Statically link libgcc on Windows
 
     Fix for ioq3 test builds for Windows x86 (cross-compiled from Ubuntu
     using mingw-w64) requiring libgcc_s_sjlj-1.dll. I'm unable to reproduce
     the issue using mingw-w64 in Debian or Cygwin.
 
-2017-09-29-01 skip:
+2017-09-29-01
     Fix hit accuracy stats for lightning gun and shotgun kills
 
     If a lightning bolt killed a player or the first shotgun pellet that
@@ -6365,7 +6363,7 @@ the demo.
 
     Check if shot player is alive for hit accuracy before dealing damage.
 
-2017-10-01-01 skip:
+2017-10-01-01
     Don't link to libGL at compile time
 
     Get all OpenGL functions using SDL_GL_GetProcAddress(). This makes it
@@ -6377,7 +6375,7 @@ the demo.
     package for i386 or amd64 on Debian when switching between compiling
     ioquake3 for x86 and x86_64.
 
-2017-10-01-02 skip:
+2017-10-01-02
     Add common OpenGL version parsing + OpenGL 3 fixes
 
     - Parse OpenGL version in sdl_glimp.c to share with both renderers.
@@ -6387,26 +6385,26 @@ the demo.
     opengl2 renderer.
     - Make opengl1 renderer's gfxinfo support qglGetStringi too.
 
-2017-10-01-03 skip:
+2017-10-01-03
     Support parsing OpenGL ES version strings
 
     The renderers don't support OpenGL ES though.
 
-2017-10-02-01 skip:
+2017-10-02-01
     Fix setting cflags/libs from sdl2-config
 
     SDL_CFLAGS and SDL_LIBS assignment was "only if absent". However due
     to previously assigning them to "pkg-config sdl2" values, the values
     from sdl2-config were ignored.
 
-2017-10-02-02 skip:  Load OpenGL ES 1.1 function procs
+2017-10-02-02 Load OpenGL ES 1.1 function procs
 
-2017-10-03-01 skip:
+2017-10-03-01
     [qcommon] Use unsigned types where wrapping arithmetic is intended
 
     The use of signed types in these expressions lead to overflow, hence undefined behaviour. The "sum" aggregator in Com_TouchMemory isn't even used (and presumbably just exists to inhibit optimizations from removing the memory access).
 
-2017-10-02-01 skip:
+2017-10-02-01
     OpenGL2: Fix brightness when r_autoExposure is disabled
 
     The game world is too dark when r_autoExposure is disabled. It can be
@@ -6414,36 +6412,36 @@ the demo.
     too bright when r_autoExposure is enabled. So default r_cameraExposure
     to 1 and make auto exposure subtract 1 from r_cameraExposure value.
 
-2017-10-04-01 skip:
+2017-10-04-01
     OpenGL2: Fix MD3 surface with zero shaders dividing by zero
 
     Reported by @DescX.
 
-2017-10-05-01 skip:
+2017-10-05-01
     [botlib/be_aas_def.h] Change array size from MAX_PATH to MAX_QPATH
 
     The array is part of a structure and should have a fixed size that does
     not depend on inclusion order.
 
-2017-10-04-01 skip:  Don't redefine MAX_PATH in bot code
+2017-10-04-01 Don't redefine MAX_PATH in bot code
 
-2017-10-07-01 skip:  Fix memory leak in (unused) AAS_FloodAreas()
+2017-10-07-01 Fix memory leak in (unused) AAS_FloodAreas()
 
-2017-10-07-02 skip:
+2017-10-07-02
     Fix compiling GLSL shaders under Windows.
 
     Now the `sed` command cope with files using Windows-style line endings.
 
-2017-10-07-03 skip:
+2017-10-07-03
     Only draw cm_patch/bot debug polygons in world scenes
 
     Fixes debug polygons appearing in HUD head model scene.
 
-2017-10-08-01 skip:  Fix reading crash log when log wraps around buffer
+2017-10-08-01 Fix reading crash log when log wraps around buffer
 
-2017-10-08-02 skip:  Don't send team overlay info to bots
+2017-10-08-02 Don't send team overlay info to bots
 
-2017-10-16-01 skip:
+2017-10-16-01
     Fix a race condition in the makedirs target
 
     A race condition can happen when running "make all" with parallel jobs.
@@ -6455,7 +6453,7 @@ the demo.
     This fixes the problem by always using `mkdir -p` which doesn't fail if
     the directory already exists.
 
-2017-10-16-02 skip:
+2017-10-16-02
     Fix shader corruption on OpenBSD
 
     OpenBSD's sed (and possibly other platforms') interprets `\r` as a
@@ -6467,8 +6465,308 @@ the demo.
 
     Thanks to @ryan-sg for reporting the issue
 
-2017-11-05-01 skip:
+2017-11-05-01
     OpenGL2: Use ri.Error instead of Com_Error in tr_vbo.c
 
     Com_Error is a wrapper for ri.Error. Use it directly.
 
+2017-11-10-01
+    Fix Team Arena server refresh time format
+
+    Make minute less than 10 have a leading 0. Change '7:1' to '7:01'.
+
+2017-11-10-02
+    Fix -1 (unlimited) ammo decreasing ammo time remaining
+
+    Gauntlet and Grappling Hook use -1 ammo. Gauntlet is excluded from
+    the check ammo loop but Grappling Hook causes ammo time remaining
+    to decrease 200 milliseconds.
+
+    The out of ammo check tests time remaining is equal to zero. This
+    means carrying Grappling Hook and out of ammo will have negative
+    time remaining which results in the low ammo message being displayed
+    instead of out of ammo.
+
+2017-11-20-03 Fix my previous commit about -1 ammo
+
+2017-11-22-01
+    Improvements to the linux build script
+
+    In no particular order:
+
+    * Use `set -e`, because it prevents accidents, and means we can avoid
+      lengthy &&-joined command chains.
+    * Override defaults by setting env vars; this means people don't have to
+      edit the script to change things.
+    * Use an unpredictable and safely-created tmpdir for building; ain't nobody
+      wants to cleanup from a tmpdir race condition attack.
+    * Test for the presence of `git` and `make` *before* asking questions, and
+      only prompt the user about them if they're missing.  No need to bother
+      people with unnecessary reading.
+    * Automatically clean up the build directory after use.
+    * Tidy up some indenting that had come asunder.
+
+--- this ----
+
+2017-11-22-02 skip:  Correct spelling mistakes.
+
+2017-11-22-03 skip:
+    Correct spelling of two more words
+
+    Thanks Undeference for pointing out abreviations.
+
+2017-11-22-04 skip:
+    Fix invalid model frame developer warnings in Team Arena
+
+    Models for Team Arena's holdable medkit and invulnerability effects use
+    the frames numbers from the player's torso but the actual models only
+    have one frame (0).
+
+2017-12-03-01 skip:  Fix GCC 6 misleading-indentation warning
+
+2017-12-05-01 skip:  add SECURITY.md
+
+2017-12-15-01 skip:
+    OpenGL2: Restore adding fixed ambient light when HDR is enabled
+
+    Use opengl1 renderer behavior of adding fixed amount of ambient light
+    to all models regardless of HDR setting. It fixes the view weapon
+    having zero ambient light on pillcity map.
+
+2017-12-16-01 skip:  Few LCC memory fixes.
+
+2017-12-16-02 skip:  fix a few potential buffer overwrite in Game VM
+
+2017-12-16-03 skip:
+    Enable compiler optimization on all macOS architectures
+
+    It seems to improve framerate and still work on x86 and x86_64. I
+    haven't tested ppc64 as I don't have the hardware. ppc64 isn't built
+    into the universal bundle either.
+
+    I noticed this because compiling opus warns it may be slow due to
+    optimization being disabled.
+
+2017-12-24-01 skip:  Don't allow qagame module to create "botlib.log" at ANY filesystem location
+
+2017-12-23-01 skip:
+    Make FS_BuildOSPath for botlib.log consistent with typical usage
+
+    I don't think anywhere else uses "" to mean current game directory.
+    Though it's only an issue for my fork where I removed that behavior.
+
+2018-01-07-01 skip:  tiny readme thing
+
+2018-01-14-01 skip:
+    Remove extra plus sign from Huff_Compress()
+
+    There was an extra plus sign in Huff_Compress(). It wasn't causing any
+    issues as it does not affect the generated code. Removing it makes the
+    source code the same as Huff_Decompress().
+
+    The odd source code was brought to my attention by Tobias Kuehnhammer.
+
+2018-01-16-01 skip:
+    Change shift expressions to unsigned types. Shifting signed values to
+    a result that is not representable has undefined behaviour.
+
+2018-01-16-02 skip:
+    Use standard offsetof facility. Dereferencing a null pointer results
+    in undefined behaviour.
+
+2018-01-21-01 skip:
+    Fix VMs being able to change CVAR_PROTECTED cvars
+
+    VM could use Cvar_Register to set a protected cvar as user created and
+    was then able to use Cvar_Register with CVAR_ROM to change the value.
+
+    Don't allow Cvar_Register to affect protected cvars and prevent VMs
+    from adding internal flags to any cvars (creator, modified, protected,
+    nonexistent).
+
+    Reported by Noah Metzger (Chomenor).
+
+2018-01-21-02 skip:  Don't register fs_game cvar everywhere just to get the value
+
+2018-01-21-03 skip (reverted):
+    Don't let VMs change engine latch cvars immediately
+
+    If a VM increases sv_maxclients while a server is running the engine
+    will crash. The value should be latched until engine decides to update
+    the cvar; the same as when a user sets it.
+
+2018-01-21-04 skip:
+    Fix fs_game '..' reading outside of home and base path
+
+    VMs could set fs_game to '..' at anytime to access files outside of home
+    and base path. fs_game sent by server to clients could also be '..' to
+    access files outside of home and base path.
+
+    '..' was not caught by FS_CheckDirTraversal() as it expects filenames
+    not a single directory.
+
+    I've made fs_game be latched to prevent VMs from changing it with no
+    good way to validate it before it's used. com_basegame and fs_basegame
+    are now latched as well.
+
+    Additionally, it's now possible to change com_basegame while the engine
+    is running. game_restart or vid_restart will make it take affect.
+    com_homepath is now CVAR_PROTECTED to prevent VMs from changing it
+    to a directory traversal.
+
+    This requires my two previous commits for preventing VMs from changing
+    engine latch cvars and only Cvar_Get fs_game in FS_Startup (so CVAR_INIT
+    isn't added in serveral other places).
+
+    Reported by Noah Metzger (Chomenor).
+
+2018-01-21-05 skip (reverted):
+    Fix VMs forcing engine latch cvar to update to latched value
+
+    A few commits ago I stopped VM's Cvar_Set() from instantly updating
+    latched values. Now VM can't call Cvar_Register() afterword to force
+    latched value to be used.
+
+    Reported by Noah Metzger (Chomenor).
+
+2018-01-21-06 skip:
+    Revert my recent cvar latch changes
+
+    My cvar latch system changes prevent the Game VM from changing
+    g_gametype when the value is out of range due to it being registed in
+    the engine. It's been pointed out as fragile method of security, which
+    was still exploitable, by Noah Metzger (Chomenor). It doesn't seem like
+    this is working out to be a good solution.
+
+    The issue of fs_game '..' on server being relicated on client via
+    systeminfo exploit is still fixed as it's not affected by latch.
+    There are a few cases from current values of fs_game are used which
+    ideally should use fs_gamedir char array which has been validated.
+
+    Revert "Don't let VMs change engine latch cvars immediately"
+    Partially revert "Fix fs_game '..' reading outside of home and base path"
+    Revert "Fix VMs forcing engine latch cvar to update to latched value"
+
+2018-01-30-01 skip:
+    Fix building msvc12 project
+
+    * Don't try to embed manifest (it causes build to fail because it's
+      specified in win_resource.rc).
+    * Fix curl include path.
+    * Compile sys_autoupdater.c.
+    * Make quake3 debug link to msvcrtd.lib instead of msvcrt.lib to fix
+      unresolved external symbol __imp___CrtDbgReportW.
+    * Fix q3_ui dll output directory.
+    * Fix opus path filter.
+    * Use UseOfMfc false and CharacterSet NotSet.
+    * Fix header paths and remove non-existent files.
+
+2018-01-30-02 skip:
+    Fix exploit to bypass filename restrictions on Windows
+
+    Windows API ignores all trailing spaces and periods which can get around
+    Quake 3 file system restrictions. QVM opening 'uix86.dll.' actually
+    opens 'uix86.dll' which allows QVM to write native code.
+
+    This is done in the low-level Sys_FOpen() instead of the function
+    directly used by VMs ( FS_FOpenFileByMode() ) in case there are engine
+    commands now or in the future that can read or write arbitrary files.
+
+    Reported by Noah Metzger (Chomenor).
+
+2018-02-04-01 skip:
+    Changes to systemd q3a.service
+
+    Use an absolute path as required by systemd. Distro packages will need
+    to change it. (Reported by @andreyv and @zeroxfourc.)
+    Link to server documentation on the wiki instead of maintaining a subset
+    in the service file.
+
+2018-02-04-02 skip:
+    Fix Q_vsnprintf for mingw-w64
+
+    By default mingw-w64 uses Microsoft's broken _vsnprintf() in msvcrt.dll.
+    It can be overriden by defining __USE_MINGW_ANSI_STDIO but let's just
+    use the same behavior for both MSVC and mingw-w64.
+
+    Reported by @birdstakes.
+
+2018-02-04-03 skip:
+    Fix timelimit causing an infinite map ending loop
+
+    A negative timelimit value or a value that would overflow the
+    multiplication by 60000 caused an endless map change/reload.
+
+    Based on patch and description by @vloup.
+
+2018-02-04-04 skip:
+    Fix invalid access to cluster 0 in AAS_AreaRouteToGoalArea()
+
+    Newer versions of BSPC such as 2.1h included with the Quake 3 GPL source
+    code create AAS files containing areas in cluster 0 if the area has no
+    reachabilities.
+
+    The AAS files included with Quake 3 and Team Arena do not contain areas
+    in cluster 0. It's apparent that BSPC would not create them. Instead it
+    created clusters with no reachability areas.
+
+    It seems the intention was to check if the areanum and goalareanum have
+    reachable areas using AAS_AreaReachability(areanum) everywhere before
+    calling AAS_AreaRouteToGoalArea(). This prevents adding cluster 0 to
+    the routing cache and portal cache. However, it is not checked
+    everywhere and including some places in the Game VM.
+
+    Fix AAS_AreaRouteToGoalArea() instead of trying to wack-a-mole with all
+    the places that call it.
+
+    Cluster 0 access reported by Thomas Köppe (github @tkoeppe) as causing
+    crashes in rare cases.
+
+2018-02-04-05 skip:
+    Fix negative frag/capturelimit causing an infinite map end loop
+
+    Reported by @vloup.
+
+2018-02-04-06 skip:
+    OpenGL2: Fix dark lightmap on shader in mpteam6
+
+    Team Arena's mpteam6 map has a shader textures/base_wall2/space_concrete
+    that contains an opaque stage, two non-lightmap blendfunc filter stages,
+    a blendfunc add stage, and a lightmap stage. The lightmap was attached
+    to all four of the non-lightmap stages causing the filter stages to
+    darken the lightmap multiple times.
+
+    Change setting up the lightall GLSL shader to only use lightmap if it's
+    the first stage or not a blendfunc filter stage. Now only the opaque
+    and blendfunc add stages of the mpteam6 shader use the lightmap.
+
+    Reported by Alexander Nadeau (wareya).
+
+2018-02-04-07 skip:
+    Make FS_InvalidGameDir() consider subdirectories invalid
+
+    fs_game shouldn't be a subdirectory and it simplifies the code.
+
+2018-02-05-01 skip:  [qcommon] Remove dead serialization code
+
+2018-02-07-01 skip:  [qcommon] Make several zone variables and functions static.
+
+2018-02-08-01 skip:
+    Fix MAC_OS_X_VERSION_MIN_REQUIRED for macOS 10.10 and later
+
+    Manually specifying MACOSX_VERSION_MIN=10.10 or later would use the
+    wrong value for MAC_OS_X_VERSION_MIN_REQUIRED define. 1100 instead of
+    101000.
+
+2018-02-11-01 skip:
+    Increase q3_ui .arena filename list buffer size to 4096 bytes
+
+    Allow listing about 273 .arena filenames for loading in q3_ui instead
+    of only about 136 that fit in a 2048 byte buffer (average 15 bytes per
+    file name).
+
+    The buffer for filename list runs out of space long before the buffer
+    for arena file content does. There is no warning for file list out of
+    space but there is a warning for arena file content.
+
+    This was requested by a user with many maps.

@@ -261,8 +261,6 @@ typedef struct {
 	char					version_string[MAX_STRING_CHARS];
 	char					extensions_string[BIG_INFO_STRING * 2];
 
-	int openGLMajorVersion;
-	int openGLMinorVersion;
 	int						maxTextureSize;			// queried from GL
 	int						numTextureUnits;		// multitexture ability
 
