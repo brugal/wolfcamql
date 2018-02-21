@@ -2430,6 +2430,8 @@ No locals.
         cmd = 0xa55687d8
 	#8  0xa0a42582 in RB_ExecuteRenderCommands (data=<optimized out>) at code/renderergl2/tr_backend.c:3465
 
+* Windows /vid_restart shows blank program icon  -- 2018-02-15 Windows 10 specific?  also happens with original quake3.ico
+* color skins should be in baseq3 so that it isn't created for every new mod dir?
 
 
 ----

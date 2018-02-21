@@ -513,7 +513,7 @@ typedef enum {
 	//STAT_DEAD_YAW,					// look this direction when dead (FIXME: get rid of?)  // not used in quakelive
 	STAT_BATTLE_SUIT_KILL_COUNT,
 	STAT_CLIENTS_READY,				// bit mask of clients wishing to exit the intermission (FIXME: configstring?)
-	STAT_MAX_HEALTH,					// health / armor limit, changable by handicap
+	STAT_MAX_HEALTH,					// health / armor limit, changeable by handicap
 	STAT_UNKNOWN_8,  // chaingun spin rate?
 	STAT_UNKNOWN_9,  // flight powerup?
 	STAT_UNKNOWN_10, // flight powerup?

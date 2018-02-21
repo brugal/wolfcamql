@@ -1,7 +1,7 @@
 // Copyright (C) 1999-2000 Id Software, Inc.
 //
 // cg_servercmds.c -- reliably sequenced text commands sent by the server
-// these are processed at snapshot transition time, so there will definately
+// these are processed at snapshot transition time, so there will definitely
 // be a valid snapshot this frame
 
 #include "cg_local.h"

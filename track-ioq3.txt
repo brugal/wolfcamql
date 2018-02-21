@@ -6506,38 +6506,36 @@ the demo.
     * Automatically clean up the build directory after use.
     * Tidy up some indenting that had come asunder.
 
---- this ----
+2017-11-22-02 Correct spelling mistakes.
 
-2017-11-22-02 skip:  Correct spelling mistakes.
-
-2017-11-22-03 skip:
+2017-11-22-03
     Correct spelling of two more words
 
     Thanks Undeference for pointing out abreviations.
 
-2017-11-22-04 skip:
+2017-11-22-04
     Fix invalid model frame developer warnings in Team Arena
 
     Models for Team Arena's holdable medkit and invulnerability effects use
     the frames numbers from the player's torso but the actual models only
     have one frame (0).
 
-2017-12-03-01 skip:  Fix GCC 6 misleading-indentation warning
+2017-12-03-01 Fix GCC 6 misleading-indentation warning
 
-2017-12-05-01 skip:  add SECURITY.md
+2017-12-05-01 add SECURITY.md
 
-2017-12-15-01 skip:
+2017-12-15-01
     OpenGL2: Restore adding fixed ambient light when HDR is enabled
 
     Use opengl1 renderer behavior of adding fixed amount of ambient light
     to all models regardless of HDR setting. It fixes the view weapon
     having zero ambient light on pillcity map.
 
-2017-12-16-01 skip:  Few LCC memory fixes.
+2017-12-16-01 Few LCC memory fixes.
 
-2017-12-16-02 skip:  fix a few potential buffer overwrite in Game VM
+2017-12-16-02 fix a few potential buffer overwrite in Game VM
 
-2017-12-16-03 skip:
+2017-12-16-03
     Enable compiler optimization on all macOS architectures
 
     It seems to improve framerate and still work on x86 and x86_64. I
@@ -6547,17 +6545,17 @@ the demo.
     I noticed this because compiling opus warns it may be slow due to
     optimization being disabled.
 
-2017-12-24-01 skip:  Don't allow qagame module to create "botlib.log" at ANY filesystem location
+2017-12-24-01 Don't allow qagame module to create "botlib.log" at ANY filesystem location
 
-2017-12-23-01 skip:
+2017-12-23-01
     Make FS_BuildOSPath for botlib.log consistent with typical usage
 
     I don't think anywhere else uses "" to mean current game directory.
     Though it's only an issue for my fork where I removed that behavior.
 
-2018-01-07-01 skip:  tiny readme thing
+2018-01-07-01 tiny readme thing
 
-2018-01-14-01 skip:
+2018-01-14-01
     Remove extra plus sign from Huff_Compress()
 
     There was an extra plus sign in Huff_Compress(). It wasn't causing any
@@ -6566,15 +6564,15 @@ the demo.
 
     The odd source code was brought to my attention by Tobias Kuehnhammer.
 
-2018-01-16-01 skip:
+2018-01-16-01
     Change shift expressions to unsigned types. Shifting signed values to
     a result that is not representable has undefined behaviour.
 
-2018-01-16-02 skip:
+2018-01-16-02
     Use standard offsetof facility. Dereferencing a null pointer results
     in undefined behaviour.
 
-2018-01-21-01 skip:
+2018-01-21-01
     Fix VMs being able to change CVAR_PROTECTED cvars
 
     VM could use Cvar_Register to set a protected cvar as user created and
@@ -6586,16 +6584,16 @@ the demo.
 
     Reported by Noah Metzger (Chomenor).
 
-2018-01-21-02 skip:  Don't register fs_game cvar everywhere just to get the value
+2018-01-21-02 Don't register fs_game cvar everywhere just to get the value
 
-2018-01-21-03 skip (reverted):
+2018-01-21-03 (reverted):
     Don't let VMs change engine latch cvars immediately
 
     If a VM increases sv_maxclients while a server is running the engine
     will crash. The value should be latched until engine decides to update
     the cvar; the same as when a user sets it.
 
-2018-01-21-04 skip:
+2018-01-21-04
     Fix fs_game '..' reading outside of home and base path
 
     VMs could set fs_game to '..' at anytime to access files outside of home
@@ -6620,7 +6618,7 @@ the demo.
 
     Reported by Noah Metzger (Chomenor).
 
-2018-01-21-05 skip (reverted):
+2018-01-21-05 (reverted):
     Fix VMs forcing engine latch cvar to update to latched value
 
     A few commits ago I stopped VM's Cvar_Set() from instantly updating
@@ -6629,7 +6627,7 @@ the demo.
 
     Reported by Noah Metzger (Chomenor).
 
-2018-01-21-06 skip:
+2018-01-21-06
     Revert my recent cvar latch changes
 
     My cvar latch system changes prevent the Game VM from changing
@@ -6647,7 +6645,7 @@ the demo.
     Partially revert "Fix fs_game '..' reading outside of home and base path"
     Revert "Fix VMs forcing engine latch cvar to update to latched value"
 
-2018-01-30-01 skip:
+2018-01-30-01
     Fix building msvc12 project
 
     * Don't try to embed manifest (it causes build to fail because it's
@@ -6661,7 +6659,9 @@ the demo.
     * Use UseOfMfc false and CharacterSet NotSet.
     * Fix header paths and remove non-existent files.
 
-2018-01-30-02 skip:
+---- this ----
+
+2018-01-30-02
     Fix exploit to bypass filename restrictions on Windows
 
     Windows API ignores all trailing spaces and periods which can get around
@@ -6674,7 +6674,7 @@ the demo.
 
     Reported by Noah Metzger (Chomenor).
 
-2018-02-04-01 skip:
+2018-02-04-01
     Changes to systemd q3a.service
 
     Use an absolute path as required by systemd. Distro packages will need
@@ -6682,7 +6682,7 @@ the demo.
     Link to server documentation on the wiki instead of maintaining a subset
     in the service file.
 
-2018-02-04-02 skip:
+2018-02-04-02
     Fix Q_vsnprintf for mingw-w64
 
     By default mingw-w64 uses Microsoft's broken _vsnprintf() in msvcrt.dll.
@@ -6691,7 +6691,7 @@ the demo.
 
     Reported by @birdstakes.
 
-2018-02-04-03 skip:
+2018-02-04-03
     Fix timelimit causing an infinite map ending loop
 
     A negative timelimit value or a value that would overflow the
@@ -6699,7 +6699,7 @@ the demo.
 
     Based on patch and description by @vloup.
 
-2018-02-04-04 skip:
+2018-02-04-04
     Fix invalid access to cluster 0 in AAS_AreaRouteToGoalArea()
 
     Newer versions of BSPC such as 2.1h included with the Quake 3 GPL source
@@ -6722,12 +6722,12 @@ the demo.
     Cluster 0 access reported by Thomas Köppe (github @tkoeppe) as causing
     crashes in rare cases.
 
-2018-02-04-05 skip:
+2018-02-04-05
     Fix negative frag/capturelimit causing an infinite map end loop
 
     Reported by @vloup.
 
-2018-02-04-06 skip:
+2018-02-04-06
     OpenGL2: Fix dark lightmap on shader in mpteam6
 
     Team Arena's mpteam6 map has a shader textures/base_wall2/space_concrete
@@ -6742,23 +6742,23 @@ the demo.
 
     Reported by Alexander Nadeau (wareya).
 
-2018-02-04-07 skip:
+2018-02-04-07
     Make FS_InvalidGameDir() consider subdirectories invalid
 
     fs_game shouldn't be a subdirectory and it simplifies the code.
 
-2018-02-05-01 skip:  [qcommon] Remove dead serialization code
+2018-02-05-01 [qcommon] Remove dead serialization code
 
-2018-02-07-01 skip:  [qcommon] Make several zone variables and functions static.
+2018-02-07-01 [qcommon] Make several zone variables and functions static.
 
-2018-02-08-01 skip:
+2018-02-08-01
     Fix MAC_OS_X_VERSION_MIN_REQUIRED for macOS 10.10 and later
 
     Manually specifying MACOSX_VERSION_MIN=10.10 or later would use the
     wrong value for MAC_OS_X_VERSION_MIN_REQUIRED define. 1100 instead of
     101000.
 
-2018-02-11-01 skip:
+2018-02-11-01
     Increase q3_ui .arena filename list buffer size to 4096 bytes
 
     Allow listing about 273 .arena filenames for loading in q3_ui instead
@@ -6770,3 +6770,8 @@ the demo.
     space but there is a warning for arena file content.
 
     This was requested by a user with many maps.
+
+2018-02-18-01
+    OpenGL2: Fix crash when BSP has deluxe maps and vertex lit surfaces
+
+    Reported by Mickaël Thomas (mickael9).
