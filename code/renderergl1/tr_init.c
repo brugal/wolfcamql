@@ -605,45 +605,107 @@ static void R_DeleteQLGlslShadersAndPrograms (void)
 
 	// detach
 
-	qglDetachObjectARB(tr.blurHorizSp, tr.blurHorizFs);
-	qglDetachObjectARB(tr.blurHorizSp, tr.mainVs);
+	if (tr.blurHorizSp) {
+		if (tr.blurHorizFs) {
+			qglDetachObjectARB(tr.blurHorizSp, tr.blurHorizFs);
+		}
+		if (tr.mainVs) {
+			qglDetachObjectARB(tr.blurHorizSp, tr.mainVs);
+		}
+	}
 
-	qglDetachObjectARB(tr.blurVerticalSp, tr.blurVerticalFs);
-	qglDetachObjectARB(tr.blurVerticalSp, tr.mainVs);
+	if (tr.blurVerticalSp) {
+		if (tr.blurVerticalFs) {
+			qglDetachObjectARB(tr.blurVerticalSp, tr.blurVerticalFs);
+		}
+		if (tr.mainVs) {
+			qglDetachObjectARB(tr.blurVerticalSp, tr.mainVs);
+		}
+	}
 
-	qglDetachObjectARB(tr.brightPassSp, tr.brightPassFs);
-	qglDetachObjectARB(tr.brightPassSp, tr.mainVs);
+	if (tr.brightPassSp) {
+		if (tr.brightPassFs) {
+			qglDetachObjectARB(tr.brightPassSp, tr.brightPassFs);
+		}
+		if (tr.mainVs) {
+			qglDetachObjectARB(tr.brightPassSp, tr.mainVs);
+		}
+	}
 
-	qglDetachObjectARB(tr.downSample1Sp, tr.downSample1Fs);
-	qglDetachObjectARB(tr.downSample1Sp, tr.mainVs);
+	if (tr.downSample1Sp) {
+		if (tr.downSample1Fs) {
+			qglDetachObjectARB(tr.downSample1Sp, tr.downSample1Fs);
+		}
+		if (tr.mainVs) {
+			qglDetachObjectARB(tr.downSample1Sp, tr.mainVs);
+		}
+	}
 
-	qglDetachObjectARB(tr.combineSp, tr.combineFs);
-	qglDetachObjectARB(tr.combineSp, tr.mainVs);
+	if (tr.combineSp) {
+		if (tr.combineFs) {
+			qglDetachObjectARB(tr.combineSp, tr.combineFs);
+		}
+		if (tr.mainVs) {
+			qglDetachObjectARB(tr.combineSp, tr.mainVs);
+		}
+	}
 
-	qglDetachObjectARB(tr.colorCorrectSp, tr.colorCorrectFs);
-	qglDetachObjectARB(tr.colorCorrectSp, tr.mainVs);
+	if (tr.colorCorrectSp) {
+		if (tr.colorCorrectFs) {
+			qglDetachObjectARB(tr.colorCorrectSp, tr.colorCorrectFs);
+		}
+		if (tr.mainVs) {
+			qglDetachObjectARB(tr.colorCorrectSp, tr.mainVs);
+		}
+	}
 
 	// delete
 
-	qglDeleteObjectARB(tr.blurHorizSp);
-	qglDeleteObjectARB(tr.blurHorizFs);
+	if (tr.blurHorizSp) {
+		qglDeleteObjectARB(tr.blurHorizSp);
+	}
+	if (tr.blurHorizFs) {
+		qglDeleteObjectARB(tr.blurHorizFs);
+	}
 
-	qglDeleteObjectARB(tr.blurVerticalSp);
-	qglDeleteObjectARB(tr.blurVerticalFs);
+	if (tr.blurVerticalSp) {
+		qglDeleteObjectARB(tr.blurVerticalSp);
+	}
+	if (tr.blurVerticalFs) {
+		qglDeleteObjectARB(tr.blurVerticalFs);
+	}
 
-	qglDeleteObjectARB(tr.brightPassSp);
-	qglDeleteObjectARB(tr.brightPassFs);
+	if (tr.brightPassSp) {
+		qglDeleteObjectARB(tr.brightPassSp);
+	}
+	if (tr.brightPassFs) {
+		qglDeleteObjectARB(tr.brightPassFs);
+	}
 
-	qglDeleteObjectARB(tr.downSample1Sp);
-	qglDeleteObjectARB(tr.downSample1Fs);
+	if (tr.downSample1Sp) {
+		qglDeleteObjectARB(tr.downSample1Sp);
+	}
+	if (tr.downSample1Fs) {
+		qglDeleteObjectARB(tr.downSample1Fs);
+	}
 
-	qglDeleteObjectARB(tr.combineSp);
-	qglDeleteObjectARB(tr.combineFs);
+	if (tr.combineSp) {
+		qglDeleteObjectARB(tr.combineSp);
+	}
+	if (tr.combineFs) {
+		qglDeleteObjectARB(tr.combineFs);
+	}
 
-	qglDeleteObjectARB(tr.colorCorrectSp);
-	qglDeleteObjectARB(tr.colorCorrectFs);
+	if (tr.colorCorrectSp) {
+		qglDeleteObjectARB(tr.colorCorrectSp);
+	}
+	if (tr.colorCorrectFs) {
+		qglDeleteObjectARB(tr.colorCorrectFs);
+	}
 
-	qglDeleteObjectARB(tr.mainVs);
+	if (tr.mainVs) {
+		qglDeleteObjectARB(tr.mainVs);
+	}
 
 	// reset
 

@@ -690,8 +690,6 @@ static void RB_QLBloomDownSample (void)
 
 	qglActiveTexture( GL_TEXTURE0 );
 
-	qglDisable(GL_TEXTURE_2D);
-	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 	target = GL_TEXTURE_RECTANGLE_ARB;
 
 	width = glConfig.vidWidth;
@@ -703,8 +701,6 @@ static void RB_QLBloomDownSample (void)
 
 	qglActiveTexture( GL_TEXTURE1 );
 
-	qglDisable(GL_TEXTURE_2D);
-	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 	qglBindTexture(target, tr.bloomTexture);
 
 #if 0
@@ -796,13 +792,7 @@ static void RB_QLBloomDownSample (void)
 
 	qglFinish();
 
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglDisable(GL_TEXTURE_2D);
-
 	qglActiveTexture( GL_TEXTURE0 );
-
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglEnable(GL_TEXTURE_2D);
 
 	// restore cull
 	{
@@ -894,9 +884,6 @@ static void RB_QLBloomBrightness (void)
 
 	qglFinish();
 
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglEnable(GL_TEXTURE_2D);
-
 	// restore cull
 	{
 		int current = glState.faceCulling;
@@ -925,8 +912,6 @@ static void RB_QLBloomBlurHorizontal (void)
 
 	qglFinish();
 
-	qglDisable(GL_TEXTURE_2D);
-	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 	target = GL_TEXTURE_RECTANGLE_ARB;
 
 	width = tr.bloomWidth;
@@ -983,9 +968,6 @@ static void RB_QLBloomBlurHorizontal (void)
 
 	qglFinish();
 
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglEnable(GL_TEXTURE_2D);
-
 	// restore cull
 	{
 		int current = glState.faceCulling;
@@ -1012,8 +994,6 @@ static void RB_QLBloomBlurVertical (void)
 
 	qglFinish();
 
-	qglDisable(GL_TEXTURE_2D);
-	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 	target = GL_TEXTURE_RECTANGLE_ARB;
 
 	width = tr.bloomWidth;
@@ -1070,9 +1050,6 @@ static void RB_QLBloomBlurVertical (void)
 
 	qglFinish();
 
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglEnable(GL_TEXTURE_2D);
-
 	// restore cull
 	{
 		int current = glState.faceCulling;
@@ -1100,8 +1077,6 @@ static void RB_QLBloomCombine (void)
 
 	qglActiveTexture( GL_TEXTURE0 );
 
-	qglDisable(GL_TEXTURE_2D);
-	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 	target = GL_TEXTURE_RECTANGLE_ARB;
 
 	width = tr.bloomWidth;
@@ -1121,9 +1096,6 @@ static void RB_QLBloomCombine (void)
 	qglUniform1iARB(loc, 0);
 
 	qglActiveTexture( GL_TEXTURE1 );
-
-	qglDisable(GL_TEXTURE_2D);
-	qglEnable(GL_TEXTURE_RECTANGLE_ARB);
 
 	qglBindTexture(target, tr.bloomTexture);
 	loc = qglGetUniformLocationARB(tr.combineSp, "bloomTex");
@@ -1242,13 +1214,7 @@ static void RB_QLBloomCombine (void)
 
 	qglFinish();
 
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglDisable(GL_TEXTURE_2D);
-
 	qglActiveTexture( GL_TEXTURE0 );
-
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglEnable(GL_TEXTURE_2D);
 
 	// restore cull
 	{
@@ -1483,9 +1449,6 @@ static void RB_ColorCorrect (void)
 	RB_InstantQuad2(quadVerts, texCoords);
 
 	qglFinish();
-
-	qglDisable(GL_TEXTURE_RECTANGLE_ARB);
-	qglEnable(GL_TEXTURE_2D);
 
 	// restore cull
 	{

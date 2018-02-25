@@ -49,6 +49,7 @@ typedef enum
 
 SDL_Window *SDL_window = NULL;
 static SDL_GLContext SDL_glContext = NULL;
+static qboolean HaveCoreContext = qfalse;
 
 //static const char *ExtensionString = NULL;
 
@@ -465,6 +466,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 		GLimp_ClearProcAddresses();
 		SDL_GL_DeleteContext( SDL_glContext );
 		SDL_glContext = NULL;
+		HaveCoreContext = qfalse;
 	}
 
 	if( SDL_window != NULL )
@@ -674,6 +676,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 				ri.Printf(PRINT_ALL, "SDL_GL_CreateContext failed: %s\n", SDL_GetError());
 				ri.Printf(PRINT_ALL, "Reverting to default context\n");
 
+				HaveCoreContext = qfalse;
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profileMask);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, majorVersion);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
@@ -702,16 +705,20 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 					GLimp_ClearProcAddresses();
 					SDL_GL_DeleteContext(SDL_glContext);
 					SDL_glContext = NULL;
+					HaveCoreContext = qfalse;
 
 					SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, profileMask);
 					SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, majorVersion);
 					SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minorVersion);
+				} else {
+					HaveCoreContext = qtrue;
 				}
 			}
 		}
 		else
 		{
 			SDL_glContext = NULL;
+			HaveCoreContext = qfalse;
 		}
 
 		if ( !SDL_glContext )
@@ -719,6 +726,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 			if( ( SDL_glContext = SDL_GL_CreateContext( SDL_window ) ) == NULL )
 			{
 				ri.Printf( PRINT_DEVELOPER, "SDL_GL_CreateContext failed: %s\n", SDL_GetError( ) );
+				HaveCoreContext = qfalse;
 				continue;
 			}
 
@@ -728,6 +736,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 				GLimp_ClearProcAddresses();
 				SDL_GL_DeleteContext( SDL_glContext );
 				SDL_glContext = NULL;
+				HaveCoreContext = qfalse;
 				SDL_DestroyWindow( SDL_window );
 				SDL_window = NULL;
 				continue;
@@ -917,7 +926,14 @@ static void GLimp_InitExtensions( void )
 			if ( qglActiveTextureARB )
 			{
 				GLint glint = 0;
-				qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
+
+				if (HaveCoreContext) {
+					// GL_MAX_TEXTURE_UNITS_ARB is invalid enum
+					glint = 0;
+				} else {
+					qglGetIntegerv( GL_MAX_TEXTURE_UNITS_ARB, &glint );
+				}
+
 				glConfig.numTextureUnits = (int) glint;
 				if ( glConfig.numTextureUnits > 1 )
 				{
@@ -1007,6 +1023,10 @@ static void GLimp_InitExtensions( void )
 	qglUniform1fARB = NULL;
 	qglUniform1iARB = NULL;
 
+	// used outside of post processing:  opengl2 camera path shader
+	qglGetObjectParameterivARB = (void (APIENTRY *)(GLhandleARB, GLenum, int *)) SDL_GL_GetProcAddress("glGetObjectParameterivARB");
+	qglGetInfoLogARB = (void (APIENTRY *)(GLhandleARB, int, int *, char *)) SDL_GL_GetProcAddress("glGetInfoLogARB");
+
 	//if (SDL_GL_ExtensionSupported("GL_ARB_shader_objects")) {
 	if (1) {  //if (SDL_GL_ExtensionSupported("GL_ARB_fragment_shader")  &&  SDL_GL_ExtensionSupported("GL_ARB_vertex_shader")  &&  (SDL_GL_ExtensionSupported("GL_ARB_texture_rectangle")  ||  SDL_GL_ExtensionSupported("GL_EXT_texture_rectangle")  ||  SDL_GL_ExtensionSupported("GL_NV_texture_rectangle"))) {
 		if (r_enablePostProcess->integer) {
@@ -1019,8 +1039,6 @@ static void GLimp_InitExtensions( void )
 			qglAttachObjectARB = (void (APIENTRY *)(GLhandleARB, GLhandleARB)) SDL_GL_GetProcAddress("glAttachObjectARB");
 			qglLinkProgramARB = (void (APIENTRY *)(GLhandleARB)) SDL_GL_GetProcAddress("glLinkProgramARB");
 			qglUseProgramObjectARB = (void (APIENTRY *)(GLhandleARB)) SDL_GL_GetProcAddress("glUseProgramObjectARB");
-			qglGetObjectParameterivARB = (void (APIENTRY *)(GLhandleARB, GLenum, int *)) SDL_GL_GetProcAddress("glGetObjectParameterivARB");
-			qglGetInfoLogARB = (void (APIENTRY *)(GLhandleARB, int, int *, char *)) SDL_GL_GetProcAddress("glGetInfoLogARB");
 
 			qglDetachObjectARB = (void (APIENTRY *)(GLhandleARB, GLhandleARB)) SDL_GL_GetProcAddress("glDetachObjectARB");
 			qglDeleteObjectARB = (void (APIENTRY *)(GLhandleARB)) SDL_GL_GetProcAddress("glDeleteObjectARB");

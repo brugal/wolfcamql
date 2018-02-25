@@ -2267,142 +2267,19 @@ C:\Share\wc\dev>
 * opengl2:  pass flag indicating that camera positions have changed so buffers don't have to be updated every frame
 * cg_demozoom and freespec is still zooming  CA-6plus-2017_11_01-17_18_12.dm_91
 * opengl2:  camera path drawing vao
-* opengl2:  r_anaglyphMode 19  and r_useFbo 1 gl error :
-^5ql ^5version 1069.0.0.0
-^1Com_Error(): GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_image.c at line 2150----- Client Shutdown (Client fatal crashed: GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_image.c at line 2150) -----
-disconnect
-
 * opengl2:  can't use check for RC_VIDEOFRAME with split video anaglyph 19, issuepending()?, same for opengl1
 * R_IssuePending() can prevent hud rendering with split analaglyph (opengl1)
 * opengl2:  r_debugSurface uses immediate mode ri.CM_DrawDebugSurface
 * 109176-SKrapha(POV)-vs-8PLAYevil-elder-2016_.dm_91  seeking zoom stays on
 * opengl2: R_GetCommandBufferReserved don't drop and don't spam like opengl1
-* with no wc-glsl.pk3 and r_ignoreglerrors 0  :
-
-------- R_InitVaos -------
-glsl/cameraline.vs ->
-file not found
-glsl/cameraline.fs ->
-file not found
-camera path shader program ->
-Initializing Shaders
-Com_Error(): GL_CheckErrors: GL_INVALID_VALUE in code/renderergl2/tr_image.c at line 2150----- Client Shutdown (Client fatal crashed: GL_CheckErrors: GL_INVALID_VALUE in code/renderergl2/tr_image.c at line 2150) -----
-disconnect
-RE_Shutdown( 1 )
-R_DoneFreeType
-Hunk_Clear: reset the hunk ok
------------------------
-GL_CheckErrors: GL_INVALID_VALUE in code/renderergl2/tr_image.c at line 2150
 * roq playback hardcoded to 30fps?  -- 2017-12-18 yes, by design
 * can roq frame size be zero?
 * /cvarsearch time shows cg_levelTimerOvertimeReset twice
 * renderer shader time reset when seeking
 * check connectionless echo/print address checking, cls.rconAddress only set if rcon_f called?
-* with 2017-07-13-01 OpenGL2: Use an OpenGL 3.2 core context if available :  ^1Com_Error(): GL_CheckErrors: GL_INVALID_ENUM in code/renderergl2/tr_image.c at line 2150----- Client Shutdown (Client fatal crashed: GL_CheckErrors: GL_INVALID_ENUM in code/renderergl2/tr_image.c at line 2150) -----
-disconnect
-RE_Shutdown( 1 )
-
-    --  2018-01-06 corecontext and qglGetString(GL_EXTENSIONS)
-
 * infinity.bsp ad 4 z fighting
 * need something like G_IsTeamGame()
 * ioquake3 patch 2017-09-02-04  check :  is team chat being shown with cg_qlhud 0 ?
-* if you rename wolfcamql.exe to wtest1.exe (that's without explicitly setting version in shaders):
-
-  ^5scripts/brightpass.fs ->
-  Fragment shader failed to compile with the following errors:
-  ERROR: error(#272) Implicit version number 110 not supported by GL3 forward compatible context
-  ERROR: error(#273) 1 compilation errors.  No code generated
-
-* macbook pro with ati (using 'version 130' for glsl shaders):
-
-------- GLSL_InitGPUShaders -------
-loaded 80 GLSL shaders (32 gen 28 light 20 etc) in  0.09 seconds
-glsl/ql-compat.vs ->
-WARNING: 0:3: deprecated130(#55) "attribute" is deprecated since GLSL1.3. We
-suggest usage of "in"
-WARNING: 0:4: deprecated130(#55) "attribute" is deprecated since GLSL1.3. We
-suggest usage of "in"
-WARNING: 0:5: deprecated130(#55) "attribute" is deprecated since GLSL1.3. We
-suggest usage of "in"
-
-scripts/colorcorrect.fs ->
-WARNING: 0:20: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:26: deprecated130(#55) "gl_FragColor" is deprecated since GLSL1.3.
-We suggest usage of "user defined out variables"
-
-scripts/blurhoriz.fs ->
-WARNING: 0:9: deprecated130(#55) "texture2DRect" is deprecated since GLSL1.3.
-We suggest usage of "texture"
-WARNING: 0:12: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:15: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:18: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:21: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:24: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:27: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:30: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:33: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:36: deprecated130(#55) "texture2
-scripts/blurvertical.fs ->
-WARNING: 0:9: deprecated130(#55) "texture2DRect" is deprecated since GLSL1.3.
-We suggest usage of "texture"
-WARNING: 0:12: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:15: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:18: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:21: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:24: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:27: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:30: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:33: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:36: deprecated130(#55) "texture2
-scripts/brightpass.fs ->
-WARNING: 0:8: deprecated130(#55) "texture2DRect" is deprecated since GLSL1.3.
-We suggest usage of "texture"
-WARNING: 0:9: deprecated130(#55) "gl_FragColor" is deprecated since GLSL1.3.
-We suggest usage of "user defined out variables"
-
-scripts/combine.fs ->
-WARNING: 0:15: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:16: deprecated130(#55) "texture2DRect" is deprecated since
-GLSL1.3. We suggest usage of "texture"
-WARNING: 0:22: deprecated130(#55) "gl_FragColor" is deprecated since GLSL1.3.
-We suggest usage of "user defined out variables"
-
-scripts/downsample1.fs ->
-WARNING: 0:8: deprecated130(#55) "texture2DRect" is deprecated since GLSL1.3.
-We suggest usage of "texture"
-WARNING: 0:9: deprecated130(#55) "gl_FragColor" is deprecated since GLSL1.3.
-We suggest usage of "user defined out variables"
-
-------- R_InitVaos -------
-glsl/cameraline.vs ->
-glsl/cameraline.fs ->
-WARNING: 0:6: deprecated130(#55) "gl_FragColor" is deprecated since GLSL1.3.
-We suggest usage of "user defined out variables"
-
-camera path shader program ->
-Initializing Shaders
-trying default ql font fallbacks
-
-
 * is player model shown in setup screen?
 * why can't rend2 use GL_BindNullFramebuffers()?  main menu screen renders black
 * VM_Call( uivm, UI_CONSOLE_COMMAND, cls.realtime )  :  don't use cls.realtime?
@@ -2420,18 +2297,10 @@ if (screenMapTextureSize <= 0) {
 +				 }
 
 could still be zero size
-* no wc-glsl.pk3 linux vm cl_renderer opengl2 crash :
-
-#5  0x00000000 in ?? ()
-No symbol table info available.
-#6  0xa0a50a5e in GL_BindNullFramebuffers () at code/renderergl2/tr_dsa.c:210
-No locals.
-#7  0xa0a40fdb in RB_SwapBuffers (data=0xa55687d8, endFrame=qtrue) at code/renderergl2/tr_backend.c:2620
-        cmd = 0xa55687d8
-	#8  0xa0a42582 in RB_ExecuteRenderCommands (data=<optimized out>) at code/renderergl2/tr_backend.c:3465
 
 * Windows /vid_restart shows blank program icon  -- 2018-02-15 Windows 10 specific?  also happens with original quake3.ico
 * color skins should be in baseq3 so that it isn't created for every new mod dir?
+* rename wolfcamql.exe to quake3.exe and it crashes in Windows (mac book pro ati) with rend2
 
 
 ----
