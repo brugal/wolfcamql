@@ -3310,7 +3310,7 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 		qglClear(GL_DEPTH_BUFFER_BIT);
 		qglClearColor(0, 0, 0, 1);
 		qglGenTextures(1, &texture);
-        qglBindTexture(GL_TEXTURE_2D, texture);
+		GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, texture);
         qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -3321,7 +3321,7 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 			qglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rw, rh, 0, GL_RGBA, GL_UNSIGNED_BYTE, rpic);
 		}
 
-        qglBindTexture(GL_TEXTURE_2D, texture);
+		GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, texture);
 		qglColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 		//width = rw;
 		//height = rh;

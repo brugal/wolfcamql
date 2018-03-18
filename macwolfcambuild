@@ -12,6 +12,7 @@ mkdir bin
 make
 cp build/release-darwin-x86/ioquake3.x86 bin/wolfcamqlmac
 cp build/release-darwin-x86/renderer_opengl1_x86.dylib bin/
+cp build/release-darwin-x86/renderer_opengl2_x86.dylib bin/
 cp build/release-darwin-x86/baseq3/*dylib bin/
 cd bin
 tar -zcvf bin.tar.gz *

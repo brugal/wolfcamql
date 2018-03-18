@@ -43,6 +43,14 @@ typedef unsigned int glIndex_t;
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
+typedef enum
+{
+	GLSL_PRINTLOG_PROGRAM_INFO,
+	GLSL_PRINTLOG_SHADER_INFO,
+	GLSL_PRINTLOG_SHADER_SOURCE
+}
+glslPrintLog_t;
+
 // 14 bits
 // can't be increased without changing bit packing for drawsurfs
 // see QSORT_SHADERNUM_SHIFT
@@ -1630,27 +1638,27 @@ typedef struct {
 	float					fogTable[FOG_TABLE_SIZE];
 
 	// quake live glsl shader programs and shaders
-	GLhandleARB blurHorizSp;
-	GLhandleARB blurHorizFs;
+	GLuint blurHorizSp;
+	GLuint blurHorizFs;
 
-	GLhandleARB blurVerticalSp;
-	GLhandleARB blurVerticalFs;
+	GLuint blurVerticalSp;
+	GLuint blurVerticalFs;
 
-	GLhandleARB brightPassSp;
-	GLhandleARB brightPassFs;
+	GLuint brightPassSp;
+	GLuint brightPassFs;
 
-	GLhandleARB downSample1Sp;
-	GLhandleARB downSample1Fs;
+	GLuint downSample1Sp;
+	GLuint downSample1Fs;
 
-	GLhandleARB combineSp;
-	GLhandleARB combineFs;
+	GLuint combineSp;
+	GLuint combineFs;
 
-	GLhandleARB colorCorrectSp;
-	GLhandleARB colorCorrectFs;
+	GLuint colorCorrectSp;
+	GLuint colorCorrectFs;
 
 	// main vertex shader, used for all above
 
-	GLhandleARB mainVs;
+	GLuint mainVs;
 
 	GLuint bloomTexture;
 	int bloomWidth;
@@ -1890,6 +1898,7 @@ extern cvar_t *r_BloomDebug;
 
 extern cvar_t *r_portalBobbing;
 extern cvar_t *r_useFbo;
+extern cvar_t *r_useCoreContext;
 
 extern cvar_t *r_opengl2_overbright;
 
@@ -2608,4 +2617,7 @@ void R_MME_Init (void);
 void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);
 
 void R_CreateSingleShader (void);
+
+void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean developerOnly);
+
 #endif //TR_LOCAL_H

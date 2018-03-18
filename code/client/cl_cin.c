@@ -1417,7 +1417,7 @@ e_status CIN_RunCinematic (int handle)
 	}
 
 	// check for game hitch?
-	if (cinTable[currentHandle].shader && ( (abs(thisTime - cinTable[currentHandle].lastTime))>100 )) {
+	if (cinTable[currentHandle].shader && ( (fabs(thisTime - cinTable[currentHandle].lastTime))>100.0 )) {
 
 		cinTable[currentHandle].startTime += thisTime - cinTable[currentHandle].lastTime;
 	}

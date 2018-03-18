@@ -2527,6 +2527,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_useScoresUpdateTeam  hack for ql/minqlx bug not updating player config strings correctly.  Players can be shown on the wrong team and this will update the player teams from the score commands.
 
 * r_opengl2_overbright  enables original opengl2 overbright handling
+* r_allowSoftwareGLCoreContext  Mac OS X hack to disable software renderer with core context
+* r_useCoreContext enables core context with opengl2
 
 ----------
 

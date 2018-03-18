@@ -150,15 +150,7 @@ static uniformInfo_t uniformsInfo[] =
 	{ "u_AlphaTest", GLSL_INT },
 };
 
-typedef enum
-{
-	GLSL_PRINTLOG_PROGRAM_INFO,
-	GLSL_PRINTLOG_SHADER_INFO,
-	GLSL_PRINTLOG_SHADER_SOURCE
-}
-glslPrintLog_t;
-
-static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean developerOnly)
+void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean developerOnly)
 {
 	char           *msg;
 	static char     msgPart[1024];
@@ -1353,8 +1345,10 @@ void GLSL_ShutdownGPUShaders(void)
 
 	ri.Printf(PRINT_ALL, "------- GLSL_ShutdownGPUShaders -------\n");
 
+#if 0  // wc: not valid, called after R_ShutdownVaos()
 	for (i = 0; i < ATTR_INDEX_COUNT; i++)
 		qglDisableVertexAttribArray(i);
+#endif
 
 	GL_BindNullProgram();
 

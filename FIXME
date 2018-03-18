@@ -2301,7 +2301,26 @@ could still be zero size
 * Windows /vid_restart shows blank program icon  -- 2018-02-15 Windows 10 specific?  also happens with original quake3.ico
 * color skins should be in baseq3 so that it isn't created for every new mod dir?
 * rename wolfcamql.exe to quake3.exe and it crashes in Windows (mac book pro ati) with rend2
+* rend2:  mac os x  post process (color correct and ql bloom) not working
+* rend2:  main menu flickering with r_enablePostProcess 0, r_useFbo 0, r_anaglyphmode 19
+* cl_ option to allow core context with software renderer
+* ql glsl  check for GL_ARB_texture_rectangle
+* rend2: desktop linux vm
 
+GL_VENDOR: Humper
+GL_RENDERER: Chromium
+GL_VERSION: 2.1 Chromium 1.9
+
+ crosshair has repeats at the top
+ cg_drawcrosshair 4
+
+ r_customwidth 1400
+ r_customheight 500
+
+ r_picmip 0
+ r_mode 11
+
+*
 
 ----
 

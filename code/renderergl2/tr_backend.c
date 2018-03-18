@@ -514,7 +514,7 @@ static void RE_DrawPathLines (void)
 	GL_State(GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE);
 
 	//qglDepthRange(0, 1);	// occluded
-	qglUseProgram(tr.cpshaderprogram);
+	GL_UseProgram(tr.cpshaderprogram);
 
 	//qglBindVertexArray(tr.cpvao);
 	qglBindBuffer(GL_ARRAY_BUFFER, tr.cpvbo);
@@ -686,22 +686,16 @@ static void RB_QLBloomDownSample (void)
 	vec4_t quadVerts[4];
 	vec2_t texCoords[4];
 
-	//ri.Printf(PRINT_ALL, "qglActiveTextureARB: %p\n", qglActiveTextureARB);
-
-	qglActiveTexture( GL_TEXTURE0 );
-
 	target = GL_TEXTURE_RECTANGLE_ARB;
 
 	width = glConfig.vidWidth;
 	height = glConfig.vidHeight;
 
-	qglBindTexture(target, tr.backBufferTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.backBufferTexture);
 
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
-	qglActiveTexture( GL_TEXTURE1 );
-
-	qglBindTexture(target, tr.bloomTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB + 1, target, tr.bloomTexture);
 
 #if 0
 	GL_State( GLS_DEPTHTEST_DISABLE |
@@ -719,14 +713,14 @@ static void RB_QLBloomDownSample (void)
 	qglDepthMask(GL_FALSE);
 
 
-	qglUseProgramObjectARB(tr.downSample1Sp);
-	loc = qglGetUniformLocationARB(tr.downSample1Sp, "backBufferTex");
+	GL_UseProgram(tr.downSample1Sp);
+	loc = qglGetUniformLocation(tr.downSample1Sp, "backBufferTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
 	}
-	qglUniform1iARB(loc, 0);
+	qglUniform1i(loc, 0);
 
-	loc = qglGetUniformLocationARB(tr.downSample1Sp, "u_ModelViewProjectionMatrix");
+	loc = qglGetUniformLocation(tr.downSample1Sp, "u_ModelViewProjectionMatrix");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
 	}
@@ -792,8 +786,6 @@ static void RB_QLBloomDownSample (void)
 
 	qglFinish();
 
-	qglActiveTexture( GL_TEXTURE0 );
-
 	// restore cull
 	{
 		int current = glState.faceCulling;
@@ -825,25 +817,25 @@ static void RB_QLBloomBrightness (void)
  	width = tr.bloomWidth;
  	height = tr.bloomHeight;
 
-	qglBindTexture(target, tr.bloomTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.bloomTexture);
 
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, glConfig.vidHeight - height, width, height);
 
-	qglUseProgramObjectARB(tr.brightPassSp);
+	GL_UseProgram(tr.brightPassSp);
 
-	loc = qglGetUniformLocationARB(tr.brightPassSp, "backBufferTex");
+	loc = qglGetUniformLocation(tr.brightPassSp, "backBufferTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
 	}
-	qglUniform1iARB(loc, 0);
+	qglUniform1i(loc, 0);
 
-	loc = qglGetUniformLocationARB(tr.brightPassSp, "p_brightthreshold");
+	loc = qglGetUniformLocation(tr.brightPassSp, "p_brightthreshold");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_brightthreshold", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)r_BloomBrightThreshold->value);
+	qglUniform1f(loc, (GLfloat)r_BloomBrightThreshold->value);
 
-	loc = qglGetUniformLocationARB(tr.brightPassSp, "u_ModelViewProjectionMatrix");
+	loc = qglGetUniformLocation(tr.brightPassSp, "u_ModelViewProjectionMatrix");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
 	}
@@ -917,17 +909,18 @@ static void RB_QLBloomBlurHorizontal (void)
 	width = tr.bloomWidth;
 	height = tr.bloomHeight;
 
-	qglBindTexture(target, tr.bloomTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.bloomTexture);
+
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, glConfig.vidHeight - height, width, height);
 
-	qglUseProgramObjectARB(tr.blurHorizSp);
-	loc = qglGetUniformLocationARB(tr.blurHorizSp, "backBufferTex");
+	GL_UseProgram(tr.blurHorizSp);
+	loc = qglGetUniformLocation(tr.blurHorizSp, "backBufferTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
 	}
-	qglUniform1iARB(loc, 0);
+	qglUniform1i(loc, 0);
 
-	loc = qglGetUniformLocationARB(tr.blurHorizSp, "u_ModelViewProjectionMatrix");
+	loc = qglGetUniformLocation(tr.blurHorizSp, "u_ModelViewProjectionMatrix");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
 	}
@@ -999,17 +992,18 @@ static void RB_QLBloomBlurVertical (void)
 	width = tr.bloomWidth;
 	height = tr.bloomHeight;
 
-	qglBindTexture(target, tr.bloomTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.bloomTexture);
+
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, glConfig.vidHeight - height, width, height);
 
-	qglUseProgramObjectARB(tr.blurVerticalSp);
-	loc = qglGetUniformLocationARB(tr.blurVerticalSp, "backBufferTex");
+	GL_UseProgram(tr.blurVerticalSp);
+	loc = qglGetUniformLocation(tr.blurVerticalSp, "backBufferTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
 	}
-	qglUniform1iARB(loc, 0);
+	qglUniform1i(loc, 0);
 
-	loc = qglGetUniformLocationARB(tr.blurVerticalSp, "u_ModelViewProjectionMatrix");
+	loc = qglGetUniformLocation(tr.blurVerticalSp, "u_ModelViewProjectionMatrix");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
 	}
@@ -1075,60 +1069,58 @@ static void RB_QLBloomCombine (void)
 	RB_SetGL2D();
 	qglFinish();
 
-	qglActiveTexture( GL_TEXTURE0 );
-
 	target = GL_TEXTURE_RECTANGLE_ARB;
 
 	width = tr.bloomWidth;
 	height = tr.bloomHeight;
 
-	qglBindTexture(target, tr.bloomTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.bloomTexture);
 
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, glConfig.vidHeight - height, width, height);
 
-	qglUseProgramObjectARB(tr.combineSp);
+	GL_UseProgram(tr.combineSp);
 
-	qglBindTexture(target, tr.backBufferTexture);
-	loc = qglGetUniformLocationARB(tr.combineSp, "backBufferTex");
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.backBufferTexture);
+
+	loc = qglGetUniformLocation(tr.combineSp, "backBufferTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
 	}
-	qglUniform1iARB(loc, 0);
+	qglUniform1i(loc, 0);
 
-	qglActiveTexture( GL_TEXTURE1 );
+	GL_BindMultiTexture(GL_TEXTURE0_ARB + 1, target, tr.bloomTexture);
 
-	qglBindTexture(target, tr.bloomTexture);
-	loc = qglGetUniformLocationARB(tr.combineSp, "bloomTex");
+	loc = qglGetUniformLocation(tr.combineSp, "bloomTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get bloomTex", __FUNCTION__);
 	}
-	qglUniform1iARB(loc, 1);
+	qglUniform1i(loc, 1);
 
-	loc = qglGetUniformLocationARB(tr.combineSp, "p_bloomsaturation");
+	loc = qglGetUniformLocation(tr.combineSp, "p_bloomsaturation");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_bloomsaturation", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)r_BloomSaturation->value);
+	qglUniform1f(loc, (GLfloat)r_BloomSaturation->value);
 
-	loc = qglGetUniformLocationARB(tr.combineSp, "p_scenesaturation");
+	loc = qglGetUniformLocation(tr.combineSp, "p_scenesaturation");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_scenesaturation", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)r_BloomSceneSaturation->value);
+	qglUniform1f(loc, (GLfloat)r_BloomSceneSaturation->value);
 
-	loc = qglGetUniformLocationARB(tr.combineSp, "p_bloomintensity");
+	loc = qglGetUniformLocation(tr.combineSp, "p_bloomintensity");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_bloomintensity", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)r_BloomIntensity->value);
+	qglUniform1f(loc, (GLfloat)r_BloomIntensity->value);
 
-	loc = qglGetUniformLocationARB(tr.combineSp, "p_sceneintensity");
+	loc = qglGetUniformLocation(tr.combineSp, "p_sceneintensity");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_sceneintensity", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)r_BloomSceneIntensity->value);
+	qglUniform1f(loc, (GLfloat)r_BloomSceneIntensity->value);
 
-	loc = qglGetUniformLocationARB(tr.combineSp, "u_ModelViewProjectionMatrix");
+	loc = qglGetUniformLocation(tr.combineSp, "u_ModelViewProjectionMatrix");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
 	}
@@ -1214,8 +1206,6 @@ static void RB_QLBloomCombine (void)
 
 	qglFinish();
 
-	qglActiveTexture( GL_TEXTURE0 );
-
 	// restore cull
 	{
 		int current = glState.faceCulling;
@@ -1236,11 +1226,13 @@ static void RB_QLBloom (void)
 
 	//ri.Printf(PRINT_ALL, "^5bloom...\n");
 
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		//FIXME wolfcam: GL_BindNullFramebuffers() doesn't work, it shows a black screen in the first main menu, if you enter another menu the rendering is correct
-		FBO_Bind(NULL);
+	if (glRefConfig.framebufferObject) {
+		if (tr.usingFinalFrameBufferObject) {
+			FBO_Bind(tr.finalFbo);
+		} else {
+			//FIXME wolfcam: GL_BindNullFramebuffers() doesn't work, it shows a black screen in the first main menu, if you enter another menu the rendering is correct
+			FBO_Bind(NULL);
+		}
 	}
 
 	for (i = 0;  i < r_BloomPasses->integer;  i++) {
@@ -1346,10 +1338,13 @@ static void RB_ColorCorrect (void)
 		return;
 	}
 
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		GL_BindNullFramebuffers();
+	if (glRefConfig.framebufferObject) {
+		if (tr.usingFinalFrameBufferObject) {
+			FBO_Bind(tr.finalFbo);
+		} else {
+			//GL_BindNullFramebuffers();
+			FBO_Bind(NULL);
+		}
 	}
 
 	width = glConfig.vidWidth;
@@ -1367,18 +1362,17 @@ static void RB_ColorCorrect (void)
 	width = glConfig.vidWidth;
 	height = glConfig.vidHeight;
 
-	qglBindTexture(target, tr.backBufferTexture);
-	//qglBindMultiTextureEXT(GL_TEXTURE0_ARB, target, tr.backBufferTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.backBufferTexture);
 
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
-    qglUseProgramObjectARB(tr.colorCorrectSp);
+    GL_UseProgram(tr.colorCorrectSp);
 
-	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "p_gammaRecip");
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_gammaRecip");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_gammaRecip", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)(1.0 / r_gamma->value));
+	qglUniform1f(loc, (GLfloat)(1.0 / r_gamma->value));
 
 	mul = r_overBrightBitsValue->value;
 	if (mul < 0.0) {
@@ -1386,28 +1380,28 @@ static void RB_ColorCorrect (void)
 	}
 	shift = tr.overbrightBits;
 
-	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "p_overbright");
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_overbright");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_overbright", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)((float)(1 << shift) * mul));
+	qglUniform1f(loc, (GLfloat)((float)(1 << shift) * mul));
 
-	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "p_contrast");
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_contrast");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get p_contrast", __FUNCTION__);
 	}
-	qglUniform1fARB(loc, (GLfloat)r_contrast->value);
+	qglUniform1f(loc, (GLfloat)r_contrast->value);
 
-	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "backBufferTex");
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "backBufferTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
 	}
 
-	//qglUniform1iARB(loc, GL_TEXTURE0 + TB_COLORMAP);
+	//qglUniform1i(loc, GL_TEXTURE0 + TB_COLORMAP);
 	//ri.Printf(PRINT_ALL, "^5GL_TEXTURE0 : %d\n", GL_TEXTURE0);
-	qglUniform1iARB(loc, 0);
+	qglUniform1i(loc, 0);
 
-	loc = qglGetUniformLocationARB(tr.colorCorrectSp, "u_ModelViewProjectionMatrix");
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "u_ModelViewProjectionMatrix");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
 	}
@@ -2556,14 +2550,17 @@ const void	*RB_SwapBuffers( const void *data, qboolean endFrame ) {
 
 	qglEnable(GL_SCISSOR_TEST);
 
-	if (tr.usingFinalFrameBufferObject) {
-		GL_BindNullFramebuffers();
+	if (glRefConfig.framebufferObject) {
+		if (tr.usingFinalFrameBufferObject) {
+			//GL_BindNullFramebuffers();
+			FBO_Bind(NULL);
 
-		//ri.Printf(PRINT_ALL, "finalfbo %p\n", tr.finalFbo);
-		FBO_Blit(tr.finalFbo, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+			//ri.Printf(PRINT_ALL, "finalfbo %p\n", tr.finalFbo);
+			FBO_Blit(tr.finalFbo, NULL, NULL, NULL, NULL, NULL, NULL, 0);
 
-		// this
-		//FBO_FastBlit(tr.finalFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			// this
+			//FBO_FastBlit(tr.finalFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		}
 	}
 
 	if ( !glState.finishCalled ) {
@@ -2577,10 +2574,13 @@ const void	*RB_SwapBuffers( const void *data, qboolean endFrame ) {
 	}
 
 	// videos and screenshots
-	if (tr.usingFinalFrameBufferObject) {
-		FBO_Bind(tr.finalFbo);
-	} else {
-		GL_BindNullFramebuffers();
+	if (glRefConfig.framebufferObject) {
+		if (tr.usingFinalFrameBufferObject) {
+			FBO_Bind(tr.finalFbo);
+		} else {
+			//GL_BindNullFramebuffers();
+			FBO_Bind(NULL);
+		}
 	}
 
 	backEnd.framePostProcessed = qfalse;
@@ -3310,23 +3310,26 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			vec2_t texCoords[4];
 			int x, y, w, h;
 
-			if (tr.usingFinalFrameBufferObject) {
-				FBO_Bind(tr.finalFbo);
-			} else {
-				//FIXME wolfcam: GL_BindNullFramebuffers() doesn't work, it shows a black screen in the first main menu, if you enter another menu the rendering is correct
-				FBO_Bind(NULL);
+			if (glRefConfig.framebufferObject) {
+				if (tr.usingFinalFrameBufferObject) {
+					FBO_Bind(tr.finalFbo);
+				} else {
+					//FIXME wolfcam: GL_BindNullFramebuffers() doesn't work, it shows a black screen in the first main menu, if you enter another menu the rendering is correct
+					FBO_Bind(NULL);
+				}
 			}
 
 			RB_SetGL2D();
 
 			// get original area that is going to be ovewritten
 			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-			qglBindTexture(GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
+			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
 			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapImageScratchBuffer->uploadWidth, tr.screenMapImageScratchBuffer->uploadHeight);
 
 
 			// get big screen image, note: it might clip parts since the texture might not be as big as the screen
-			qglBindTexture(GL_TEXTURE_2D, tr.screenMapFullImage->texnum);
+			//FIXME bindtotmmu
+			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.screenMapFullImage->texnum);
 			// this will be a flipped image, but it is flipped again by the other call to glCopyTexSubImage2D()
 			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapFullImage->uploadWidth, tr.screenMapFullImage->uploadHeight);
 
@@ -3346,13 +3349,13 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			RB_InstantQuad(quadVerts);
 
 			// get scaled version
-			qglBindTexture(GL_TEXTURE_2D, tr.screenMapImage->texnum);
+			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.screenMapImage->texnum);
 			// flipped back
 			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapImage->uploadWidth, tr.screenMapImage->uploadHeight);
 
 			// restore original image, need to flip
 			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-			qglBindTexture(GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
+			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
 
 			x = 0;
 			y = glConfig.vidHeight - tr.screenMapImageScratchBuffer->uploadHeight;
@@ -3373,7 +3376,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 			// done
 			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
-			qglBindTexture(GL_TEXTURE_2D, 0);
+			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, 0);
 		}
 		if (r_anaglyphMode->integer) {
 			if (depthWasCleared) {

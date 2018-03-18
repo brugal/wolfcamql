@@ -17,18 +17,21 @@ os.system("cp code/libs/win32/SDL2.dll code/libs/win32/backtrace.dll %s/" % pack
 
 os.system("cp build/release-linux-x86/ioquake3.x86 %s/wolfcamql.x86" % packageDir)
 os.system("cp build/release-linux-x86/renderer_opengl1_x86.so %s/" % packageDir)
+os.system("cp build/release-linux-x86/renderer_opengl2_x86.so %s/" % packageDir)
 os.system("cp -a build/release-linux-x86/baseq3/*.so %s/wolfcam-ql/" % packageDir)
 
 os.system("cp build/release-mingw32-x86/ioquake3.x86.exe %s/wolfcamql.exe" % packageDir)
 os.system("cp build/release-mingw32-x86/renderer_opengl1_x86.dll %s/" % packageDir)
+os.system("cp build/release-mingw32-x86/renderer_opengl2_x86.dll %s/" % packageDir)
 os.system("cp build/release-mingw32-x86/baseq3/*.dll %s/wolfcam-ql/" % packageDir)
 
-os.system("cp code/libs/macosx/libSDL-1.2.0.dylib %s/" % packageDir)
+os.system("cp code/libs/macosx/libSDL2-2.0.0.dylib %s/" % packageDir)
 os.system("cp mac-binaries/wolfcamqlmac %s/" % packageDir)
-os.system("cp mac-binaries/renderer_opengl1_i386.dylib %s/" % packageDir)
-os.system("cp mac-binaries/cgamei386.dylib %s/wolfcam-ql/" % packageDir)
-os.system("cp mac-binaries/qagamei386.dylib %s/wolfcam-ql/" % packageDir)
-os.system("cp mac-binaries/uii386.dylib %s/wolfcam-ql/" % packageDir)
+os.system("cp mac-binaries/renderer_opengl1_x86.dylib %s/" % packageDir)
+os.system("cp mac-binaries/renderer_opengl2_x86.dylib %s/" % packageDir)
+os.system("cp mac-binaries/cgamex86.dylib %s/wolfcam-ql/" % packageDir)
+os.system("cp mac-binaries/qagamex86.dylib %s/wolfcam-ql/" % packageDir)
+os.system("cp mac-binaries/uix86.dylib %s/wolfcam-ql/" % packageDir)
 
 os.system("cp ui/wcmenudef.h %s/wolfcam-ql/ui/" % packageDir)
 

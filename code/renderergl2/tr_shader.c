@@ -20,6 +20,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "tr_local.h"
+#include "tr_dsa.h"  // GL_BindMultiTexture()
 
 // tr_shader.c -- this file deals with the parsing and definition of shaders
 
@@ -4164,11 +4165,11 @@ void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 	//	R_SyncRenderThread();
 	//}
 
-	qglBindTexture(GL_TEXTURE_2D, image->texnum);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, image->texnum);
 	qglGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	//FIXME
-	qglBindTexture(GL_TEXTURE_2D, 0);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, 0);
 
 	GL_CheckErrors();
 }

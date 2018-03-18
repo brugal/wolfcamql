@@ -278,6 +278,7 @@ cvar_t *r_BloomDebug;
 
 cvar_t *r_portalBobbing;
 cvar_t *r_useFbo;
+cvar_t *r_useCoreContext;
 
 cvar_t *r_opengl2_overbright;
 
@@ -292,19 +293,6 @@ cvar_t *r_screenMapTextureSize;
 
 static void R_DeleteQLGlslShadersAndPrograms (void);
 
-static void printGlslLog (GLhandleARB obj)
-{
-    int infoLogLength = 0;
-    char infoLog[1024];
-	int len;
-
-	//FIXME ARB
-	qglGetObjectParameterivARB(obj, GL_OBJECT_INFO_LOG_LENGTH_ARB, &infoLogLength);
-    if (infoLogLength > 0) {
-		qglGetInfoLogARB(obj, 1024, &len, infoLog);
-        ri.Printf(PRINT_ALL, "%s\n", infoLog);
-	}
-}
 
 // like tr_glsl.c: GLSL_GetShaderHeader
 
@@ -354,13 +342,15 @@ static const char ShaderExtensionsFragment_150[] =
 "#define varying in\n"
 	;
 
-static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentShader, GLhandleARB *program, GLhandleARB vertexShader)
+static void R_InitFragmentShader (const char *filename, GLuint *fragmentShader, GLuint *program, GLuint vertexShader)
 {
 	int len;
 	int slen;
 	void *shaderSource;
 	char *text;
 	const char *shaderExtensions;
+	GLint compiled;
+	GLint linked;
 
 	if (!glConfig.qlGlsl) {
 		return;
@@ -377,7 +367,7 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	}
 
 	ri.Printf(PRINT_ALL, "^5%s ->\n", filename);
-	*fragmentShader = qglCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+	*fragmentShader = qglCreateShader(GL_FRAGMENT_SHADER);
 	len = ri.FS_ReadFile(filename, &shaderSource);
 	if (len <= 0) {
 		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
@@ -390,26 +380,35 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 	if (!text) {
 		ri.Printf(PRINT_ALL, "R_InitFragmentShader() couldn't allocate memory for glsl shader file\n");
 		ri.FS_FreeFile(shaderSource);
-		qglDeleteObjectARB(*fragmentShader);
+		qglDeleteShader(*fragmentShader);
 		return;
 	}
 	Com_sprintf(text, len + slen + 3, "%s\n%s\n", shaderExtensions, (char *)shaderSource);
-	qglShaderSourceARB(*fragmentShader, 1, (const char **)&text, NULL);
-	qglCompileShaderARB(*fragmentShader);
-	printGlslLog(*fragmentShader);
+	qglShaderSource(*fragmentShader, 1, (const char **)&text, NULL);
+	qglCompileShader(*fragmentShader);
+	qglGetShaderiv(*fragmentShader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		GLSL_PrintLog(*fragmentShader, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
+		GLSL_PrintLog(*fragmentShader, GLSL_PRINTLOG_SHADER_INFO, qfalse);
+	}
+
 	ri.FS_FreeFile(shaderSource);
 	free(text);
 
-	*program = qglCreateProgramObjectARB();
-	qglAttachObjectARB(*program, vertexShader);
-	qglAttachObjectARB(*program, *fragmentShader);
+	*program = qglCreateProgram();
+	qglAttachShader(*program, vertexShader);
+	qglAttachShader(*program, *fragmentShader);
 
 	//FIXME testing
 	//qglBindAttribLocation(*program, ATTR_INDEX_POSITION, "attr_Position");
 	//qglBindAttribLocation(*program, ATTR_INDEX_TEXCOORD, "attr_TexCoord0");
 
-	qglLinkProgramARB(*program);
-	printGlslLog(*program);
+	qglLinkProgram(*program);
+	qglGetProgramiv(*program, GL_LINK_STATUS, &linked);
+	if (!linked) {
+		GLSL_PrintLog(*program, GLSL_PRINTLOG_PROGRAM_INFO, qfalse);
+	}
+
 	//ri.Printf(PRINT_ALL, "\n");
 }
 
@@ -422,6 +421,7 @@ static void InitQLGlslShadersAndPrograms (void)
 	char *text;
 	int slen;
 	const char *shaderExtensions;
+	GLint compiled;
 
 	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
@@ -440,7 +440,7 @@ static void InitQLGlslShadersAndPrograms (void)
 	tr.bloomWidth = glConfig.vidWidth * bloomTextureScale;
 	tr.bloomHeight = glConfig.vidHeight * bloomTextureScale;
 	qglGenTextures(1, &tr.bloomTexture);
-	qglBindTexture(target, tr.bloomTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.bloomTexture);
 	qglTexImage2D(target, 0, GL_RGBA8, tr.bloomWidth, tr.bloomHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 	qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -449,7 +449,7 @@ static void InitQLGlslShadersAndPrograms (void)
 
 	target = GL_TEXTURE_RECTANGLE_ARB;
 	qglGenTextures(1, &tr.backBufferTexture);
-	qglBindTexture(target, tr.backBufferTexture);
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.backBufferTexture);
 
 	qglTexImage2D(target, 0, GL_RGB8, glConfig.vidWidth, glConfig.vidHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 	qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -494,10 +494,15 @@ static void InitQLGlslShadersAndPrograms (void)
 	}
 	Com_sprintf(text, len + slen + 3, "%s\n%s\n", shaderExtensions, (char *)shaderSource);
 
-	tr.mainVs = qglCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-	qglShaderSourceARB(tr.mainVs, 1, (const char **)&text, NULL);
-	qglCompileShaderARB(tr.mainVs);
-	printGlslLog(tr.mainVs);
+	tr.mainVs = qglCreateShader(GL_VERTEX_SHADER);
+	qglShaderSource(tr.mainVs, 1, (const char **)&text, NULL);
+	qglCompileShader(tr.mainVs);
+	qglGetShaderiv(tr.mainVs, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		GLSL_PrintLog(tr.mainVs, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
+		GLSL_PrintLog(tr.mainVs, GLSL_PRINTLOG_SHADER_INFO, qfalse);
+	}
+
 	ri.FS_FreeFile(shaderSource);
 	free(text);
 
@@ -516,6 +521,8 @@ static void InitCameraPathShadersAndProgram (void)
 	char *text;
 	int slen;
 	const char *shaderExtensions;
+	GLint compiled;
+	GLint linked;
 
 	// hack, cpvbo added to tess.vao
 	R_BindVao(tess.vao);
@@ -558,7 +565,12 @@ static void InitCameraPathShadersAndProgram (void)
 	tr.cpvertexshader = qglCreateShader(GL_VERTEX_SHADER);
 	qglShaderSource(tr.cpvertexshader, 1, (const char **)&text, NULL);
 	qglCompileShader(tr.cpvertexshader);
-	printGlslLog(tr.cpvertexshader);
+	qglGetShaderiv(tr.cpvertexshader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		GLSL_PrintLog(tr.cpvertexshader, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
+		GLSL_PrintLog(tr.cpvertexshader, GLSL_PRINTLOG_SHADER_INFO, qfalse);
+	}
+
 	ri.FS_FreeFile(shaderSource);
 	free(text);
 
@@ -595,7 +607,12 @@ static void InitCameraPathShadersAndProgram (void)
 	tr.cpfragmentshader = qglCreateShader(GL_FRAGMENT_SHADER);
 	qglShaderSource(tr.cpfragmentshader, 1, (const char **)&text, NULL);
 	qglCompileShader(tr.cpfragmentshader);
-	printGlslLog(tr.cpfragmentshader);
+	qglGetShaderiv(tr.cpfragmentshader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		GLSL_PrintLog(tr.cpfragmentshader, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
+		GLSL_PrintLog(tr.cpfragmentshader, GLSL_PRINTLOG_SHADER_INFO, qfalse);
+	}
+
 	ri.FS_FreeFile(shaderSource);
 	free(text);
 
@@ -613,7 +630,10 @@ static void InitCameraPathShadersAndProgram (void)
 	qglBindAttribLocation(tr.cpshaderprogram, 0, "vp");
 	qglLinkProgram(tr.cpshaderprogram);
 	ri.Printf(PRINT_ALL, "^5camera path shader program ->\n");
-	printGlslLog(tr.cpshaderprogram);
+	qglGetProgramiv(tr.cpshaderprogram, GL_LINK_STATUS, &linked);
+	if (!linked) {
+		GLSL_PrintLog(tr.cpshaderprogram, GLSL_PRINTLOG_PROGRAM_INFO, qfalse);
+	}
 
 	qglBindBuffer(GL_ARRAY_BUFFER, tess.vao->vertexesVBO);
 }
@@ -628,104 +648,104 @@ static void R_DeleteQLGlslShadersAndPrograms (void)
 
 	if (tr.blurHorizSp) {
 		if (tr.blurHorizFs) {
-			qglDetachObjectARB(tr.blurHorizSp, tr.blurHorizFs);
+			qglDetachShader(tr.blurHorizSp, tr.blurHorizFs);
 		}
 		if (tr.mainVs) {
-			qglDetachObjectARB(tr.blurHorizSp, tr.mainVs);
+			qglDetachShader(tr.blurHorizSp, tr.mainVs);
 		}
 	}
 
 	if (tr.blurVerticalSp) {
 		if (tr.blurVerticalFs) {
-			qglDetachObjectARB(tr.blurVerticalSp, tr.blurVerticalFs);
+			qglDetachShader(tr.blurVerticalSp, tr.blurVerticalFs);
 		}
 		if (tr.mainVs) {
-			qglDetachObjectARB(tr.blurVerticalSp, tr.mainVs);
+			qglDetachShader(tr.blurVerticalSp, tr.mainVs);
 		}
 	}
 
 	if (tr.brightPassSp) {
 		if (tr.brightPassFs) {
-			qglDetachObjectARB(tr.brightPassSp, tr.brightPassFs);
+			qglDetachShader(tr.brightPassSp, tr.brightPassFs);
 		}
 		if (tr.mainVs) {
-			qglDetachObjectARB(tr.brightPassSp, tr.mainVs);
+			qglDetachShader(tr.brightPassSp, tr.mainVs);
 		}
 	}
 
 	if (tr.downSample1Sp) {
 		if (tr.downSample1Fs) {
-			qglDetachObjectARB(tr.downSample1Sp, tr.downSample1Fs);
+			qglDetachShader(tr.downSample1Sp, tr.downSample1Fs);
 		}
 		if (tr.mainVs) {
-			qglDetachObjectARB(tr.downSample1Sp, tr.mainVs);
+			qglDetachShader(tr.downSample1Sp, tr.mainVs);
 		}
 	}
 
 	if (tr.combineSp) {
 		if (tr.combineFs) {
-			qglDetachObjectARB(tr.combineSp, tr.combineFs);
+			qglDetachShader(tr.combineSp, tr.combineFs);
 		}
 		if (tr.mainVs) {
-			qglDetachObjectARB(tr.combineSp, tr.mainVs);
+			qglDetachShader(tr.combineSp, tr.mainVs);
 		}
 	}
 
 	if (tr.colorCorrectSp) {
 		if (tr.colorCorrectFs) {
-			qglDetachObjectARB(tr.colorCorrectSp, tr.colorCorrectFs);
+			qglDetachShader(tr.colorCorrectSp, tr.colorCorrectFs);
 		}
 		if (tr.mainVs) {
-			qglDetachObjectARB(tr.colorCorrectSp, tr.mainVs);
+			qglDetachShader(tr.colorCorrectSp, tr.mainVs);
 		}
 	}
 
 	// delete
 
 	if (tr.blurHorizSp) {
-		qglDeleteObjectARB(tr.blurHorizSp);
+		qglDeleteProgram(tr.blurHorizSp);
 	}
 	if (tr.blurHorizFs) {
-		qglDeleteObjectARB(tr.blurHorizFs);
+		qglDeleteShader(tr.blurHorizFs);
 	}
 
 	if (tr.blurVerticalSp) {
-		qglDeleteObjectARB(tr.blurVerticalSp);
+		qglDeleteProgram(tr.blurVerticalSp);
 	}
 	if (tr.blurVerticalFs) {
-		qglDeleteObjectARB(tr.blurVerticalFs);
+		qglDeleteShader(tr.blurVerticalFs);
 	}
 
 	if (tr.brightPassSp) {
-		qglDeleteObjectARB(tr.brightPassSp);
+		qglDeleteProgram(tr.brightPassSp);
 	}
 	if (tr.brightPassFs) {
-		qglDeleteObjectARB(tr.brightPassFs);
+		qglDeleteShader(tr.brightPassFs);
 	}
 
 	if (tr.downSample1Sp) {
-		qglDeleteObjectARB(tr.downSample1Sp);
+		qglDeleteProgram(tr.downSample1Sp);
 	}
 	if (tr.downSample1Fs) {
-		qglDeleteObjectARB(tr.downSample1Fs);
+		qglDeleteShader(tr.downSample1Fs);
 	}
 
 	if (tr.combineSp) {
-		qglDeleteObjectARB(tr.combineSp);
+		qglDeleteProgram(tr.combineSp);
 	}
 	if (tr.combineFs) {
-		qglDeleteObjectARB(tr.combineFs);
+		qglDeleteShader(tr.combineFs);
 	}
 
 	if (tr.colorCorrectSp) {
-		qglDeleteObjectARB(tr.colorCorrectSp);
+		qglDeleteProgram(tr.colorCorrectSp);
 	}
 	if (tr.colorCorrectFs) {
-		qglDeleteObjectARB(tr.colorCorrectFs);
+		qglDeleteShader(tr.colorCorrectFs);
 	}
 
 	if (tr.mainVs) {
-		qglDeleteObjectARB(tr.mainVs);
+		qglDeleteShader(tr.mainVs);
 	}
 
 	// reset
@@ -803,8 +823,7 @@ static void InitOpenGL( void )
 	{
 		GLint		temp;
 
-		//FIXME wolfcam:  core profile *ARB functions?
-		GLimp_Init( qtrue );
+		GLimp_Init( r_useCoreContext->integer );
 		GLimp_InitExtraExtensions();
 
 		strcpy( renderer_buffer, glConfig.renderer_string );
@@ -1897,6 +1916,7 @@ void R_Register( void )
 
 	r_portalBobbing = ri.Cvar_Get("r_portalBobbing", "1", CVAR_ARCHIVE);
 	r_useFbo = ri.Cvar_Get("r_useFbo", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_useCoreContext = ri.Cvar_Get("r_useCoreContext", "1", CVAR_ARCHIVE | CVAR_LATCH);
 
 	//
 	// temporary latched variables that can only change over a restart
@@ -2199,7 +2219,9 @@ void R_Init( void ) {
 	R_MME_Init();
 
 	// to show update for color skins
-	FBO_Bind(NULL);
+	if (glRefConfig.framebufferObject) {
+		FBO_Bind(NULL);
+	}
 	RB_SetGL2D();
 	R_CreatePlayerColorSkinImages(qfalse);
 

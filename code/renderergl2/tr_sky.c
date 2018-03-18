@@ -850,7 +850,7 @@ void RB_StageIteratorSky( void ) {
 	int clearBits = 0;
 
 	if ( r_fastsky->integer ) {
-		if (r_fastsky->integer == 2  &&  (!backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
+		if (r_fastsky->integer == 2  &&  !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
 			clearBits |= GL_COLOR_BUFFER_BIT;	// FIXME: only if sky shaders have been used
 			if (*r_fastSkyColor->string) {
 				int v, tr, tg, tb;

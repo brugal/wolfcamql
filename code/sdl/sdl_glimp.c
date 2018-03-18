@@ -54,6 +54,7 @@ static qboolean HaveCoreContext = qfalse;
 //static const char *ExtensionString = NULL;
 
 cvar_t *r_allowSoftwareGL; // Don't abort out if a hardware visual can't be obtained
+cvar_t *r_allowSoftwareGLCoreContext;  // Mac OS X hack to disable core context if software renderer used
 cvar_t *r_allowResize; // make window resizable
 cvar_t *r_centerWindow;
 cvar_t *r_sdlDriver;
@@ -697,7 +698,10 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 					renderer = NULL;
 				}
 
-				if (!renderer || (strstr(renderer, "Software Renderer") || strstr(renderer, "Software Rasterizer")))
+				if (!renderer || (!r_allowSoftwareGLCoreContext->integer  &&
+								  ((strstr(renderer, "Software Renderer") || strstr(renderer, "Software Rasterizer")))
+								 )
+				   )
 				{
 					if ( renderer )
 						ri.Printf(PRINT_ALL, "GL_RENDERER is %s, rejecting context\n", renderer);
@@ -1023,10 +1027,6 @@ static void GLimp_InitExtensions( void )
 	qglUniform1fARB = NULL;
 	qglUniform1iARB = NULL;
 
-	// used outside of post processing:  opengl2 camera path shader
-	qglGetObjectParameterivARB = (void (APIENTRY *)(GLhandleARB, GLenum, int *)) SDL_GL_GetProcAddress("glGetObjectParameterivARB");
-	qglGetInfoLogARB = (void (APIENTRY *)(GLhandleARB, int, int *, char *)) SDL_GL_GetProcAddress("glGetInfoLogARB");
-
 	//if (SDL_GL_ExtensionSupported("GL_ARB_shader_objects")) {
 	if (1) {  //if (SDL_GL_ExtensionSupported("GL_ARB_fragment_shader")  &&  SDL_GL_ExtensionSupported("GL_ARB_vertex_shader")  &&  (SDL_GL_ExtensionSupported("GL_ARB_texture_rectangle")  ||  SDL_GL_ExtensionSupported("GL_EXT_texture_rectangle")  ||  SDL_GL_ExtensionSupported("GL_NV_texture_rectangle"))) {
 		if (r_enablePostProcess->integer) {
@@ -1039,6 +1039,8 @@ static void GLimp_InitExtensions( void )
 			qglAttachObjectARB = (void (APIENTRY *)(GLhandleARB, GLhandleARB)) SDL_GL_GetProcAddress("glAttachObjectARB");
 			qglLinkProgramARB = (void (APIENTRY *)(GLhandleARB)) SDL_GL_GetProcAddress("glLinkProgramARB");
 			qglUseProgramObjectARB = (void (APIENTRY *)(GLhandleARB)) SDL_GL_GetProcAddress("glUseProgramObjectARB");
+			qglGetObjectParameterivARB = (void (APIENTRY *)(GLhandleARB, GLenum, int *)) SDL_GL_GetProcAddress("glGetObjectParameterivARB");
+			qglGetInfoLogARB = (void (APIENTRY *)(GLhandleARB, int, int *, char *)) SDL_GL_GetProcAddress("glGetInfoLogARB");
 
 			qglDetachObjectARB = (void (APIENTRY *)(GLhandleARB, GLhandleARB)) SDL_GL_GetProcAddress("glDetachObjectARB");
 			qglDeleteObjectARB = (void (APIENTRY *)(GLhandleARB)) SDL_GL_GetProcAddress("glDeleteObjectARB");
@@ -1164,6 +1166,7 @@ void GLimp_Init( qboolean coreContext )
 	ri.Printf( PRINT_DEVELOPER, "GLimp_Init( )\n" );
 
 	r_allowSoftwareGL = ri.Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
+	r_allowSoftwareGLCoreContext = ri.Cvar_Get( "r_allowSoftwareGLCoreContext", "0", CVAR_LATCH );
 	r_sdlDriver = ri.Cvar_Get( "r_sdlDriver", "", CVAR_ROM );
 	r_allowResize = ri.Cvar_Get( "r_allowResize", "0", CVAR_ARCHIVE | CVAR_LATCH );
 	r_centerWindow = ri.Cvar_Get( "r_centerWindow", "1", CVAR_ARCHIVE | CVAR_LATCH );
