@@ -3301,9 +3301,6 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 
 		// update screen
 
-		////GL_SelectTextureUnit(0);
-		qglActiveTexture(GL_TEXTURE0);
-
 		GL_State(GLS_DEPTHTEST_DISABLE);
 
 		qglClear(GL_COLOR_BUFFER_BIT);

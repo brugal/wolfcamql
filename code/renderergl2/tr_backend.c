@@ -1366,7 +1366,7 @@ static void RB_ColorCorrect (void)
 
 	qglCopyTexSubImage2D(target, 0, 0, 0, 0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
-    GL_UseProgram(tr.colorCorrectSp);
+	GL_UseProgram(tr.colorCorrectSp);
 
 	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_gammaRecip");
 	if (loc < 0) {

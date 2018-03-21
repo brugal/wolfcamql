@@ -1659,6 +1659,7 @@ typedef struct {
 	// main vertex shader, used for all above
 
 	GLuint mainVs;
+	GLuint mainMultiVs;
 
 	GLuint bloomTexture;
 	int bloomWidth;

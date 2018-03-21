@@ -399,9 +399,12 @@ static void R_InitFragmentShader (const char *filename, GLuint *fragmentShader, 
 	qglAttachShader(*program, vertexShader);
 	qglAttachShader(*program, *fragmentShader);
 
-	//FIXME testing
-	//qglBindAttribLocation(*program, ATTR_INDEX_POSITION, "attr_Position");
-	//qglBindAttribLocation(*program, ATTR_INDEX_TEXCOORD, "attr_TexCoord0");
+	qglBindAttribLocation(*program, ATTR_INDEX_POSITION, "attr_Position");
+	qglBindAttribLocation(*program, ATTR_INDEX_TEXCOORD, "attr_TexCoord0");
+
+	if (vertexShader == tr.mainMultiVs) {
+		qglBindAttribLocation(*program, ATTR_INDEX_LIGHTCOORD, "attr_TexCoord1");
+	}
 
 	qglLinkProgram(*program);
 	qglGetProgramiv(*program, GL_LINK_STATUS, &linked);
@@ -426,8 +429,6 @@ static void InitQLGlslShadersAndPrograms (void)
 	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
 	}
-
-	//FIXME wc GL_SelectTextureUnit(0);
 
 	bloomTextureScale = r_BloomTextureScale->value;
 	if (bloomTextureScale < 0.01) {
@@ -456,8 +457,6 @@ static void InitQLGlslShadersAndPrograms (void)
 	qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-	//FIXME wc GL_SelectTextureUnit(0);
 
 	// scripts/posteffect.vs is the original quake live one which depends on immediate mode
 
@@ -506,12 +505,49 @@ static void InitQLGlslShadersAndPrograms (void)
 	ri.FS_FreeFile(shaderSource);
 	free(text);
 
+	// multi texture version
+
+	ri.Printf(PRINT_ALL, "^5glsl/ql-compat-multi.vs ->\n");
+	len = ri.FS_ReadFile("glsl/ql-compat-multi.vs", &shaderSource);
+
+	if (len <= 0) {
+		ri.Printf(PRINT_ALL, "^1couldn't find file\n");
+		//FIXME why?
+		R_DeleteQLGlslShadersAndPrograms();
+		glConfig.qlGlsl = qfalse;
+		return;
+	}
+
+	slen = strlen(shaderExtensions);
+	text = (char *)malloc(len + slen + 3);
+	if (!text) {
+		ri.Printf(PRINT_ALL, "^1%s: couldn't allocate memory for glsl multi texture vertex shader file\n", __FUNCTION__);
+		ri.FS_FreeFile(shaderSource);
+		R_DeleteQLGlslShadersAndPrograms();
+		//FIXME why
+		glConfig.qlGlsl = qfalse;
+		return;
+	}
+	Com_sprintf(text, len + slen + 3, "%s\n%s\n", shaderExtensions, (char *)shaderSource);
+
+	tr.mainMultiVs = qglCreateShader(GL_VERTEX_SHADER);
+	qglShaderSource(tr.mainMultiVs, 1, (const char **)&text, NULL);
+	qglCompileShader(tr.mainMultiVs);
+	qglGetShaderiv(tr.mainMultiVs, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		GLSL_PrintLog(tr.mainMultiVs, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
+		GLSL_PrintLog(tr.mainMultiVs, GLSL_PRINTLOG_SHADER_INFO, qfalse);
+	}
+
+	ri.FS_FreeFile(shaderSource);
+	free(text);
+
 	R_InitFragmentShader("scripts/colorcorrect.fs", &tr.colorCorrectFs, &tr.colorCorrectSp, tr.mainVs);
 	R_InitFragmentShader("scripts/blurhoriz.fs", &tr.blurHorizFs, &tr.blurHorizSp, tr.mainVs);
 	R_InitFragmentShader("scripts/blurvertical.fs", &tr.blurVerticalFs, &tr.blurVerticalSp, tr.mainVs);
 	R_InitFragmentShader("scripts/brightpass.fs", &tr.brightPassFs, &tr.brightPassSp, tr.mainVs);
-	R_InitFragmentShader("scripts/combine.fs", &tr.combineFs, &tr.combineSp, tr.mainVs);
-	R_InitFragmentShader("scripts/downsample1.fs", &tr.downSample1Fs, &tr.downSample1Sp, tr.mainVs);
+	R_InitFragmentShader("scripts/combine.fs", &tr.combineFs, &tr.combineSp, tr.mainMultiVs);
+	R_InitFragmentShader("scripts/downsample1.fs", &tr.downSample1Fs, &tr.downSample1Sp, tr.mainMultiVs);
 }
 
 static void InitCameraPathShadersAndProgram (void)
@@ -677,8 +713,8 @@ static void R_DeleteQLGlslShadersAndPrograms (void)
 		if (tr.downSample1Fs) {
 			qglDetachShader(tr.downSample1Sp, tr.downSample1Fs);
 		}
-		if (tr.mainVs) {
-			qglDetachShader(tr.downSample1Sp, tr.mainVs);
+		if (tr.mainMultiVs) {
+			qglDetachShader(tr.downSample1Sp, tr.mainMultiVs);
 		}
 	}
 
@@ -686,8 +722,8 @@ static void R_DeleteQLGlslShadersAndPrograms (void)
 		if (tr.combineFs) {
 			qglDetachShader(tr.combineSp, tr.combineFs);
 		}
-		if (tr.mainVs) {
-			qglDetachShader(tr.combineSp, tr.mainVs);
+		if (tr.mainMultiVs) {
+			qglDetachShader(tr.combineSp, tr.mainMultiVs);
 		}
 	}
 
@@ -748,6 +784,10 @@ static void R_DeleteQLGlslShadersAndPrograms (void)
 		qglDeleteShader(tr.mainVs);
 	}
 
+	if (tr.mainMultiVs) {
+		qglDeleteShader(tr.mainMultiVs);
+	}
+
 	// reset
 
 	tr.blurHorizSp = 0;
@@ -763,6 +803,7 @@ static void R_DeleteQLGlslShadersAndPrograms (void)
 	tr.colorCorrectSp = 0;
 	tr.colorCorrectFs = 0;
 	tr.mainVs = 0;
+	tr.mainMultiVs = 0;
 }
 
 static void R_DeleteCameraPathShadersAndProgram (void)
