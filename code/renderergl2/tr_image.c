@@ -3319,7 +3319,7 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 		}
 
 		GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, texture);
-		qglColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
 		//width = rw;
 		//height = rh;
 

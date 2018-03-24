@@ -6659,8 +6659,6 @@ the demo.
     * Use UseOfMfc false and CharacterSet NotSet.
     * Fix header paths and remove non-existent files.
 
----- this ----
-
 2018-01-30-02
     Fix exploit to bypass filename restrictions on Windows
 
@@ -6775,3 +6773,66 @@ the demo.
     OpenGL2: Fix crash when BSP has deluxe maps and vertex lit surfaces
 
     Reported by Mickaël Thomas (mickael9).
+
+2018-02-22-01
+    Support Unicode characters greater than 0xFF in cl_consoleKeys
+
+    Unrelated: make '0x' value be -1 (invalid) instead of 0.
+
+    Reported by MAN-AT-ARMS.
+
+2018-03-04-01 Fix macOS app bundle with space in name
+
+2018-03-13-01
+    OpenGL1: Use glGenTextures instead of hardcoded values
+
+    It's the proper way to use the OpenGL API. It's already done in the
+    OpenGL2 renderer.
+
+2018-03-13-02 Remove CON_FlushIn function and where STDIN needs flushing, use tcflush POSIX function
+
+2018-03-16-01 Update libogg from 1.3.2 to 1.3.3
+
+2018-03-16-02 Rename (already updated) libogg-1.3.2 to libogg-1.3.3
+
+2018-03-16-03
+    Update libvorbis from 1.3.5 to 1.3.6
+
+    * Fix CVE-2018-5146 - out-of-bounds write on codebook decoding.
+    * Fix CVE-2017-14632 - free() on unitialized data
+    * Fix CVE-2017-14633 - out-of-bounds read
+
+2018-03-16-04 Rename (already updated) libvorbis-1.3.5 to libvorbis-1.3.6
+
+2018-03-16-05 Update opus from 1.1.4 to 1.2.1
+
+2018-03-16-06 Rename (already updated) opus-1.1.4 to opus-1.2.1
+
+2018-03-16-07 Update opusfile from 0.8 to 0.9
+
+2018-03-16-08 Rename (already updated) opusfile-0.8 to opusfile-0.9
+
+2018-03-12-01
+    First swing at a CONTRIBUTING.md
+
+    Thanks to Timbo for the suggestion. This one is mostly based on the one
+    from Atom.
+
+2018-03-19-01
+    Feedback from the PR
+
+    minor edits based on feedback to the PR
+
+2018-03-22-01
+    Allow loading system OpenAL library on macOS again
+
+    In May 2017 the library loading was limited to *.dylib but the macOS
+    system OpenAL framework does not have dylib extension. So allow loading
+    files from /System/Library/Frameworks/ as libraries even without dylib
+    extension.
+
+    This is checked in Sys_DllExtension() so that QVM filesystem access will
+    not allow writing files to /System/Library/Frameworks/ even if homepath
+    is changed to include it. (Admittedly it doesn't fit the function name
+    but fits the function description and current usage.)
+

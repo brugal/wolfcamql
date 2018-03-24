@@ -2186,7 +2186,7 @@ CM_PointLeafnum_r (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
 * opengl2:  depth saving not working if r_useFbo 0
 * opengl2:  should fat/deluxe lightmaps use "*..." naming convention?
 * /devmap shows damage sprite number for self damage
-* crash:  opengl1  devmap campgrounds shut up to round area shoot floor of bottom area and /remaplasttwoshaders  --  2017-11-19
+* crash:  opengl1  devmap campgrounds shoot up to round area shoot floor of bottom area and /remaplasttwoshaders  --  2017-11-19
 
    --console-output +devmap campgrounds +set cl_renderer opengl2
 
