@@ -2318,7 +2318,10 @@ GL_VERSION: 2.1 Chromium 1.9
  r_picmip 0
  r_mode 11
 
-*
+* voip in demo of demo:
+  - wait for non delta messages before writing?
+  - voip data added to demo that already has voip data leads to garbled sound output
+  - check CL_Voip_f() command
 
 ----
 

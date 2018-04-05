@@ -306,7 +306,7 @@ void CL_Voip_f( void )
 		reason = "Not connected to a server";
 	else if (!clc.voipCodecInitialized)
 		reason = "Voip codec not initialized";
-	else if (!clc.voipEnabled)
+	else if (!clc.voipEnabled  &&  !clc.demoplaying)
 		reason = "Server doesn't support VoIP";
 	else if (!clc.demoplaying && (Cvar_VariableValue( "g_gametype" ) == GT_SINGLE_PLAYER || Cvar_VariableValue("ui_singlePlayerActive")))
 		reason = "running in single-player mode";
@@ -503,10 +503,10 @@ void CL_CaptureVoip(void)
 		qboolean dontCapture = qfalse;
 		if (clc.state != CA_ACTIVE)
 			dontCapture = qtrue;  // not connected to a server.
-		else if (!clc.voipEnabled)
+		else if (!clc.voipEnabled  &&  !clc.demoplaying)
 			dontCapture = qtrue;  // server doesn't support VoIP.
-		else if (clc.demoplaying)
-			dontCapture = qtrue;  // playing back a demo.
+		else if (clc.demoplaying  &&  !clc.demorecording)
+			dontCapture = qtrue;  // playing back a demo and not recording another demo.
 		else if ( cl_voip->integer == 0 )
 			dontCapture = qtrue;  // client has VoIP support disabled.
 		else if ( audioMult == 0.0f )
@@ -1377,8 +1377,57 @@ keep_reading:
 		if (cl.snap.deltaNum < di.firstNonDeltaMessageNumWritten  ||  di.firstNonDeltaMessageNumWritten == -1) {
 			CL_WriteNonDeltaDemoMessage(&buf);
 		} else {
+			// write demo of demo message
 			CL_WriteDemoMessage(&buf, 0);
 		}
+
+		//FIXME duplicate code
+#ifdef USE_VOIP
+		//FIXME if demo already contains voip packets sound playback is garbled
+		if (clc.voipOutgoingDataSize > 0)
+		{
+			if((clc.voipFlags & VOIP_SPATIAL) || Com_IsVoipTarget(clc.voipTargets, sizeof(clc.voipTargets), -1))
+			{
+				// If we're recording a demo, we have to fake a server packet with
+				//  this VoIP data so it gets to disk; the server doesn't send it
+				//  back to us, and we might as well eliminate concerns about dropped
+				//  and misordered packets here.
+
+				//FIXME wait for non delta writing?
+				if(clc.demorecording) // && !clc.demowaiting)
+				{
+					const int voipSize = clc.voipOutgoingDataSize;
+					msg_t fakemsg;
+					byte fakedata[MAX_MSGLEN];
+					MSG_Init (&fakemsg, fakedata, sizeof (fakedata));
+					MSG_Bitstream (&fakemsg);
+					MSG_WriteLong (&fakemsg, clc.reliableAcknowledge);
+					MSG_WriteByte (&fakemsg, svc_voip);
+					MSG_WriteShort (&fakemsg, clc.clientNum);
+					//FIXME hack in case demo already has voip
+					MSG_WriteShort(&fakemsg, MAX_CLIENTS - 1);
+					MSG_WriteByte (&fakemsg, clc.voipOutgoingGeneration);
+					MSG_WriteLong (&fakemsg, clc.voipOutgoingSequence);
+					MSG_WriteByte (&fakemsg, clc.voipOutgoingDataFrames);
+					MSG_WriteShort (&fakemsg, clc.voipOutgoingDataSize );
+					MSG_WriteBits (&fakemsg, clc.voipFlags, VOIP_FLAGCNT);
+					MSG_WriteData (&fakemsg, clc.voipOutgoingData, voipSize);
+					MSG_WriteByte (&fakemsg, svc_EOF);
+					CL_WriteDemoMessage (&fakemsg, 0);
+				}
+
+				clc.voipOutgoingSequence += clc.voipOutgoingDataFrames;
+				clc.voipOutgoingDataSize = 0;
+				clc.voipOutgoingDataFrames = 0;
+			}
+			else
+			{
+				// We have data, but no targets. Silently discard all data
+				clc.voipOutgoingDataSize = 0;
+				clc.voipOutgoingDataFrames = 0;
+			}
+		}
+#endif
 	}
 
 	if (!di.testParse  &&  clc.demoplaying) {

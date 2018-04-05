@@ -1171,6 +1171,12 @@ Velocity:
     r_visibleWindowHeight
 
 * You can record a demo while viewing one.
+* voip data can be added to demo recorded from another demo (see voip-readme.txt)
+
+  The client number for the new voip packets is 63 (MAX_CLIENTS - 1).
+  If the original demo already contains voip data from the same client number,
+  the playback will become corrupted.
+
 
 * r_portalBobbing
 
@@ -2529,6 +2535,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_opengl2_overbright  enables original opengl2 overbright handling
 * r_allowSoftwareGLCoreContext  Mac OS X hack to disable software renderer with core context
 * r_useCoreContext enables core context with opengl2
+
+
 
 ----------
 
