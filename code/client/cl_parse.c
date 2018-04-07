@@ -1186,9 +1186,34 @@ qboolean CL_ShouldIgnoreVoipSender(int sender)
 	return qfalse;
 }
 
+// this is done outside of sound backend since VOIP_SPATIAL will ignore gain if sender >= 0
+static void CL_VoipGain (int sender, int samplecnt, short int *sndData, int flags)
+{
+	float volume = 1.0f;
+	int i;
+
+	volume *= cl_voipOverallGain->value;
+
+	if (flags & VOIP_DIRECT) {
+		volume *= clc.voipGain[sender];
+	} else if (flags & VOIP_SPATIAL) {
+		//FIXME should spatial ignore this like original ioq3 code?
+		volume *= clc.voipGain[sender];
+	}
+
+	if (volume == 1.0f) {
+		return;
+	}
+
+	// data is mono 16-bit
+	for (i = 0;  i < samplecnt;  i++) {
+		sndData[i] *= volume;
+	}
+}
+
 /*
 =====================
-CL_PlayVoip
+CL_PlayVoipSpeex
 
 Play raw data
 =====================
@@ -1199,7 +1224,7 @@ static void CL_PlayVoipSpeex (int sender, int samplecnt, const byte *data, int f
 	if(flags & VOIP_DIRECT)
 	{
 			S_RawSamples(sender + 1, samplecnt, clc.speexSampleRate, 2, 1,
-						 data, clc.voipGain[sender], -1);
+						 data, 1.0f, -1);
 	}
 
 	if(flags & VOIP_SPATIAL)
@@ -1222,7 +1247,7 @@ static void CL_PlayVoip(int sender, int samplecnt, const byte *data, int flags)
 	if(flags & VOIP_DIRECT)
 	{
 			S_RawSamples(sender + 1, samplecnt, 48000, 2, 1,
-						 data, clc.voipGain[sender], -1);
+						 data, 1.0f, -1);
 	}
 
 	if(flags & VOIP_SPATIAL)
@@ -1230,6 +1255,8 @@ static void CL_PlayVoip(int sender, int samplecnt, const byte *data, int flags)
 			S_RawSamples(sender + MAX_CLIENTS + 1, samplecnt, 48000, 2, 1,
 						 data, 1.0f, sender);
 	}
+
+	//Com_Printf("^3voip %d %f  direct:%d  spatial:%d  overall: %f\n", sender, clc.voipGain[sender], flags & VOIP_DIRECT, flags & VOIP_SPATIAL, cl_voipOverallGain->value);
 }
 
 static void CL_ParseExtraVoip (demoFile_t *df, msg_t *msg)
@@ -1385,6 +1412,7 @@ void CL_ParseVoipSpeex (msg_t *msg, qboolean checkForFlags, qboolean justPeek)
 		if ((written + clc.speexFrameSize) * 2 > sizeof (decoded)) {
 			Com_DPrintf("VoIP: playback %d bytes, %d samples, %d frames\n",
 			            written * 2, written, i);
+			CL_VoipGain(sender, written, decoded, flags);
 			CL_PlayVoipSpeex(sender, written, (const byte *) decoded, flags);
 			written = 0;
 			Com_Printf("^3voip written size (shouldn't happen)\n");
@@ -1411,8 +1439,10 @@ void CL_ParseVoipSpeex (msg_t *msg, qboolean checkForFlags, qboolean justPeek)
 	Com_DPrintf("VoIP: playback %d bytes, %d samples, %d frames\n",
 	            written * 2, written, i);
 
-	if(written > 0)
+	if(written > 0) {
+		CL_VoipGain(sender, written, decoded, flags);
 		CL_PlayVoipSpeex(sender, written, (const byte *) decoded, flags);
+	}
 
 	clc.voipIncomingSequence[sender] = sequence + frames;
 }
@@ -1539,8 +1569,10 @@ void CL_ParseVoip ( msg_t *msg, qboolean ignoreData ) {
 	Com_DPrintf("VoIP: playback %d bytes, %d samples, %d frames\n",
 	            written * 2, written, frames);
 
-	if(written > 0)
+	if(written > 0) {
+		CL_VoipGain(sender, written, decoded, flags);
 		CL_PlayVoip(sender, written, (const byte *) decoded, flags);
+	}
 
 	clc.voipIncomingSequence[sender] = sequence + frames;
 }

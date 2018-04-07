@@ -55,6 +55,7 @@ cvar_t	*cl_voipCaptureMult;
 cvar_t	*cl_voipShowMeter;
 cvar_t	*cl_voipProtocol;
 cvar_t	*cl_voip;
+cvar_t	*cl_voipOverallGain;
 #endif
 
 #ifdef USE_RENDERER_DLOPEN
@@ -1173,7 +1174,49 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			}
 		case svc_voip: {
 			if (!dataFollowsEOF  &&  cmd == svc_voip) {  // opus voip
-				Com_Printf("^3%s FIXME voip opus\n", __FUNCTION__);
+				int sender;
+				int generation;
+				int sequence;
+				int frames;
+				int packetsize;
+				int flags;
+				unsigned char encoded[4000];
+				int bytesleft;
+
+				sender = MSG_ReadShort(inMsg);
+				generation = MSG_ReadByte(inMsg);
+				sequence = MSG_ReadLong(inMsg);
+				frames = MSG_ReadByte(inMsg);
+				packetsize = MSG_ReadShort(inMsg);
+				flags = MSG_ReadBits(inMsg, VOIP_FLAGCNT);
+
+				// write
+
+				MSG_WriteShort(&outMsg, sender);
+				MSG_WriteByte(&outMsg, generation);
+				MSG_WriteLong(&outMsg, sequence);
+				MSG_WriteByte(&outMsg, frames);
+				MSG_WriteShort(&outMsg, packetsize);
+				MSG_WriteBits(&outMsg, flags, VOIP_FLAGCNT);
+
+				if (packetsize < 0) {
+					Com_Printf("^1%s voip opus invalid packetsize %d\n", __FUNCTION__, packetsize);
+					// skip this and the rest of the demo message
+					goto done;
+				}
+
+				bytesleft = packetsize;
+				while (bytesleft) {
+					int br = bytesleft;
+					if (br > sizeof(encoded)) {
+						br = sizeof(encoded);
+					}
+					MSG_ReadData(inMsg, encoded, br);
+					MSG_WriteData(&outMsg, encoded, br);
+					bytesleft -= br;
+				}
+
+				break;
 			} else {  // speex
 				int sender;
 				int generation;
@@ -1403,7 +1446,7 @@ keep_reading:
 					MSG_Bitstream (&fakemsg);
 					MSG_WriteLong (&fakemsg, clc.reliableAcknowledge);
 					MSG_WriteByte (&fakemsg, svc_voip);
-					MSG_WriteShort (&fakemsg, clc.clientNum);
+					//MSG_WriteShort (&fakemsg, clc.clientNum);
 					//FIXME hack in case demo already has voip
 					MSG_WriteShort(&fakemsg, MAX_CLIENTS - 1);
 					MSG_WriteByte (&fakemsg, clc.voipOutgoingGeneration);
@@ -5276,6 +5319,7 @@ static void rewind_demo (double wantedTime)
 	rewindBackups_t *rb;
 	int j;
 	int scaledtimeOrig;
+	clientConnection_t clcOrig;
 
 	if (wantedTime < (double)di.firstServerTime) {
 		wantedTime = di.firstServerTime;
@@ -5323,8 +5367,26 @@ static void rewind_demo (double wantedTime)
 	di.numSnaps = rb->numSnaps;
 	di.snapCount = i + 1;  //FIXME hack
 
+	//FIXME check if demo has voip
+	memcpy(&clcOrig, &clc, sizeof(clientConnection_t));
+
 	memcpy(&cl, &rb->cl, sizeof(clientActive_t));
 	memcpy(&clc, &rb->clc, sizeof(clientConnection_t));
+
+	// voip stuff
+	//FIXME check if demo even has voip
+	clc.voipEnabled = clcOrig.voipEnabled;
+	clc.speexInitialized = clcOrig.speexInitialized;
+	clc.speexFrameSize = clcOrig.speexFrameSize;
+	clc.speexSampleRate = clcOrig.speexSampleRate;
+	clc.voipCodecInitialized = clcOrig.voipCodecInitialized;
+	memcpy(&clc.speexDecoderBits, &clcOrig.speexDecoderBits, sizeof(SpeexBits) * MAX_CLIENTS);
+	memcpy(&clc.speexDecoder, &clcOrig.speexDecoder, sizeof(void *) * MAX_CLIENTS);
+	memcpy(&clc.opusDecoder, &clcOrig.opusDecoder, sizeof(OpusDecoder *) * MAX_CLIENTS);
+	// incoming ... skip
+	memcpy(&clc.voipGain, &clcOrig.voipGain, sizeof(float) * MAX_CLIENTS);
+	memcpy(&clc.voipIgnore, &clcOrig.voipIgnore, sizeof(qboolean) * MAX_CLIENTS);
+	clc.voipMuteAll = clcOrig.voipMuteAll;
 
 	scaledtimeOrig = cls.scaledtime;
 	memcpy(&cls, &rb->cls, sizeof(clientStatic_t));
@@ -5997,6 +6059,7 @@ void CL_Init ( void ) {
 	cl_voip = Cvar_Get ("cl_voip", "1", CVAR_ARCHIVE);
 	Cvar_CheckRange( cl_voip, 0, 1, qtrue );
 	cl_voipProtocol = Cvar_Get ("cl_voipProtocol", cl_voip->integer ? "opus" : "", CVAR_USERINFO | CVAR_ROM);
+	cl_voipOverallGain = Cvar_Get ("cl_voipOverallGain", "1.0", CVAR_ARCHIVE);
 #endif
 
 	// cgame might not be initialized before menu is used

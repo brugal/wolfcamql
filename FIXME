@@ -2319,9 +2319,9 @@ GL_VERSION: 2.1 Chromium 1.9
  r_mode 11
 
 * voip in demo of demo:
-  - wait for non delta messages before writing?
-  - voip data added to demo that already has voip data leads to garbled sound output
-  - check CL_Voip_f() command
+  - voip data added to demo that already has voip data leads to garbled sound output  -- 2017-04-07 using hacked client number == MAX_CLIENTS - 1 to try and avoid
+
+* voip /devmap playback choppy without s_useopenal 1  -- 2018-04-06 poor downsampling from 48000 to 22050
 
 ----
 

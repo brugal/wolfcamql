@@ -1177,6 +1177,8 @@ Velocity:
   If the original demo already contains voip data from the same client number,
   the playback will become corrupted.
 
+* cl_voipOverallGain to control voip volume for all senders
+* /voip gain also works with spatial clients
 
 * r_portalBobbing
 

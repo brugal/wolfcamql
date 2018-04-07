@@ -1,4 +1,4 @@
-12.0test19
+12.0test20
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -71,7 +71,8 @@
 * 'wcrealtime' general shader keyword added.  This allows shader time updated using real time instead of time adjusted for timescale, pause, and video frames.
 * 'screenMap' shader option from Quake3e.  This allows mirror like effects.  See README-wolfcamql.txt for more information.
 * voip data can be added to demo recorded from another demo
-
+* cl_voipOverallGain to control voip volume for all senders
+* /voip gain also works with spatial clients
 
 ---------------------------------
 11.7  2017-06-07
