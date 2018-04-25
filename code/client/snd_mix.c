@@ -860,7 +860,7 @@ void S_PaintChannels( int endtime ) {
 	else
 		snd_vol = s_volume->value*255;
 
-	//Com_Printf ("%i to %i\n", s_paintedtime, endtime);
+	//Com_Printf ("%i to %i,  samples: %d\n", s_paintedtime, endtime, endtime - s_paintedtime);
 
 	if (s_useTimescale->integer) {
 		scale = com_timescale->value;
@@ -896,6 +896,8 @@ void S_PaintChannels( int endtime ) {
 					paintbuffer[i-s_paintedtime].left += rawsamples[s].left;
 					paintbuffer[i-s_paintedtime].right += rawsamples[s].right;
 				}
+
+				//Com_Printf("^5stream %d count: %d\n", stream, stop - s_paintedtime);
 			}
 		}
 

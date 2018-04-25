@@ -1556,6 +1556,7 @@ void CL_ParseVoip ( msg_t *msg, qboolean ignoreData ) {
 	}
 
 	#if 0
+	// sox -r 48k -e signed -b 16 -c 1 decoded.raw test.wav
 	static FILE *encio = NULL;
 	if (encio == NULL) encio = fopen("voip-incoming-encoded.bin", "wb");
 	if (encio != NULL) { fwrite(encoded, packetsize, 1, encio); fflush(encio); }

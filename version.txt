@@ -1,4 +1,4 @@
-12.0test20
+12.0test21
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -73,6 +73,8 @@
 * voip data can be added to demo recorded from another demo
 * cl_voipOverallGain to control voip volume for all senders
 * /voip gain also works with spatial clients
+* bug fix:  sound stream playback was choppy
+
 
 ---------------------------------
 11.7  2017-06-07

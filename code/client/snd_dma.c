@@ -1168,9 +1168,11 @@ static void S_Base_RawSamples( int stream, int samples, int rate, int width, int
 		intVolumeRight = rightvol * volume * s_volume->value;
 	}
 
-	if ( s_rawend[stream] < s_soundtime ) {
-		Com_DPrintf( "S_Base_RawSamples: resetting minimum: %i < %i\n", s_rawend[stream], s_soundtime );
-		s_rawend[stream] = s_soundtime;
+	// compare to s_paintedtime instead of s_soundtime otherwise the data
+	// between the two will be skipped during playback
+	if ( s_rawend[stream] < s_paintedtime ) {
+		Com_DPrintf( "S_Base_RawSamples: resetting minimum: %i < %i\n", s_rawend[stream], s_paintedtime );
+		s_rawend[stream] = s_paintedtime;
 	}
 
 	scale = (float)rate / dma.speed;
@@ -1492,6 +1494,7 @@ static void S_GetSoundtime(void)
 	}
 #endif
 
+	// with sdl audio, dma.submission_chunk is always 1
 	if ( dma.submission_chunk < 256 ) {
 		//Com_Printf("dma.submission_chunk < 256\n");
 		s_paintedtime = s_soundtime + s_mixPreStep->value * dma.speed;
