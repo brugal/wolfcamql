@@ -563,6 +563,7 @@ extern cvar_t *cl_aviAllowLargeFiles;
 extern cvar_t *cl_aviFetchMode;
 extern cvar_t *cl_aviExtension;
 extern cvar_t *cl_freezeDemoPauseVideoRecording;
+extern cvar_t *cl_freezeDemoPauseMusic;
 
 extern	cvar_t	*cl_activeAction;
 

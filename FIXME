@@ -231,7 +231,6 @@
 * cg_vibrate need to reset roll after vibrate done -- screws up freecam
 * fx bounce (option to select velocity threshold before it is marked as TR_STATIONARY) (gibs)
 * crosshairnames/teammatehealth alpha 255 in newer ql I think
-* libfreetype vuln -- update
 * tab automatically pauses and fetches info from quakelive.com
 * quad sound volume firing
 * setup menu hidden menu pics
@@ -2303,13 +2302,14 @@ could still be zero size
 * rename wolfcamql.exe to quake3.exe and it crashes in Windows (mac book pro ati) with rend2
 * rend2:  main menu flickering with r_enablePostProcess 0, r_useFbo 0, r_anaglyphmode 19
 * ql glsl  check for GL_ARB_texture_rectangle
-* rend2: desktop linux vm
+* rend2:  crosshair has repeats at the top
+
+desktop linux vm
 
 GL_VENDOR: Humper
 GL_RENDERER: Chromium
 GL_VERSION: 2.1 Chromium 1.9
 
- crosshair has repeats at the top
  cg_drawcrosshair 4
 
  r_customwidth 1400
@@ -2321,12 +2321,6 @@ GL_VERSION: 2.1 Chromium 1.9
 * voip in demo of demo:
   - voip data added to demo that already has voip data leads to garbled sound output  -- 2017-04-07 using hacked client number == MAX_CLIENTS - 1 to try and avoid
 
-* voip /devmap playback choppy without s_useopenal 1  -- 2018-04-06 poor downsampling from 48000 to 22050  -- 2018-04-07 no, still choppy with s_sdlSpeed 48000, something with dma stream playing  -- 2018-04-17 snd_mix streams  --2018-04-18 s_mixprestep 0.05 (default), 0 works
-
-* /cinematic intro.roq  "S_Base_RawSamples: overflowed ..." towards the end
-* voip in demo:  /video not recording voip sounds  -- 2018-04-19 can write with s_mixahead 0 and s_mixprestep 0
-* s_mixprestep causing distortion with streams
-* cl_cin.c zasoundmono no check for current handle == -1 like stereo code?
 * s_mixahead 0, s_mixprestep 0, /demo ratelpa...  /video  :
 
 0:23 rat: :)
@@ -2337,6 +2331,15 @@ ERROR: SafeFS_Write()  failed to write to file 0 < 2773440  f:2
 disconnect
   -- 2018-04-19 ok, ran out of disk space
 
+* s_usetimescale and streams
+  timescale 2  :  last part of voip stream repeats sound
+* timescale and sound streams:  s_usetimescale 0  and timescale 2 skips every second number in cound (camp2.dm_*)  -- expected or buffer size reached?
+
+* instead of resetting sound streams after fast_forward(), check if demo is seeking before adding sound stream data
+* still a little bit of old voip sound buffer data when you seek back 10 seconds  -- 2018-04-27 doesn't do it with s_mixprestep 0
+* cpma mvd:
+  - weapon info
+  - powerups
 
 ----
 

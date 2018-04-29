@@ -6836,3 +6836,201 @@ the demo.
     is changed to include it. (Admittedly it doesn't fit the function name
     but fits the function description and current usage.)
 
+---- here ----
+
+2018-04-03-01 skip:  Remove duplicate setting of FREETYPE_CFLAGS in Makefile
+
+2018-04-03-02 skip:
+    Fix exploit to reset player by sending wrong serverId
+
+    If client sends wrong serverId but is already active in the world
+    (CS_ACTIVE) don't resend initial gamestate for the map. This isn't a
+    valid situation. The player should be CS_CONNECTED or CS_PRIMED.
+
+    Resending gamestate to an active player will cause them to respawn
+    without dying or disconnecting. If the player had a CTF flag it gets
+    lost until the map is changed or restarted.
+
+    Reported by Ensiform at:
+
+        https://bugzilla.icculus.org/show_bug.cgi?id=6324
+
+2018-04-03-03 skip:
+    Fix "Going to CS_ZOMBIE for [clientname]" developer message
+
+    Client name was cleared before printing the message resulting in
+    a blank name.
+
+2018-04-04-01 skip:
+    Fix MSG_Read*String*() functions not being able to read last byte from message
+
+    This is exact root of q3msgboom bug http://aluigi.altervista.org/adv/q3msgboom-adv.txt
+    Unfortunately, server still need this ugly '1022 char limit' hack to support unfixed clients in some degree.
+    And as it affects MSG_ReadBigString() - unfixed clients can still be crashed by 8191-chars long configstrings that comes with gamestate
+
+2018-04-08-01 skip:
+    Fix nullptr dereference in front of nullptr check in FS_CheckPak0
+
+    Found using LLVM sanitizer. Reported by Dominic "lonkamikaze" Fandrey
+    and David "devnexen" CARLIER.
+
+2016-11-26-01 skip:  Fix undefined behaviour due to shifting signed in snd_mem.c
+
+2018-04-08-02 skip:
+    Fix shifting bits out of byte in tr_font.c
+
+    Found using LLVM sanitizer. Reported by Dominic "lonkamikaze" Fandrey.
+
+2016-11-26-02 skip:  Fix shift into sign in cl_cin.c
+
+2016-11-26-03 skip:  Fix signed bit operations in MSG_ReadBits
+
+2016-11-26-04 skip:
+    Add missing address operator in cm_polylib.c
+
+    Also avoid nullptr dereference.
+
+2016-11-26-05 skip:  OpenGL1: Decay float[8] to float * in tr_marks.c
+
+2016-11-27-01 skip:  Avoid srcList[-1] in snd_openal.c
+
+2018-04-09-01 skip:
+    Fix the behaviour of CVAR_LATCH|CVAR_CHEAT cvars
+
+    Fix the output/behaviour of CVAR_CHEAT flagged cvars in case they are
+    also of type CVAR_LATCH (avoid the early latch case return to make it
+    work as intended).
+
+2018-04-09-02 skip:
+    Maximize cURL buffer size
+
+    Allows higher download throughput (from ~2 MB/s to ~60 MB/s at 120FPS)
+
+    This has no effect for curl versions older than 7.53.0 (for which the
+    buffer can only be shrunk below 16k)
+
+2018-04-08-01 skip:
+    Fix mouse grab after toggling fullscreen
+
+    cls.glconfig.isFullscreen was not updated when changing r_fullscreen
+    without a vid_restart. Starting in fullscreen and switching to
+    windowed mode would not release the mouse.
+
+    Mods calling trap_GetGlconfig() after a fullscreen toggle now get
+    the correct value for isFullscreen. (Note: Mods already got the
+    correct value at start up and after vid_restart.)
+
+    Reported by Mickaël "mickael9" Thomas.
+
+2018-04-09-01 skip:
+    Fix q3history buffer not cleared between mods and OOB-access
+
+    Loading a 1024-byte q3history file will fill the whole consoleSaveBuffer
+    leaving no space for a string terminator. Com_Parse will read at least
+    one byte beyond the end of consoleSaveBuffer. The written console
+    history file can only be 1023 bytes (enforced by Q_strcat) so don't
+    allow loading size of 1024.
+
+    If switching to a mod with a shorter q3history file, the data in
+    consoleSaveBuffer that isn't overwritten will be parsed. So always
+    add a string terminator.
+
+    String not terminated reported by David "devnexen" CARLIER.
+
+2018-04-09-02 skip:
+    Revert "Removed "Color Depth" from q3_ui system settings, it didn't control
+    anything."
+
+    The r_colorbits cvar still exists and gfxinfo reports it works on
+    Debian Jessie in both git master and building the commit where I
+    removed r_colorbits from q3_ui. So it does indeed control something.
+    Maybe I expected 16-bit color to look different? I don't know.
+
+    This reverts my commit 8e689739f426e01b696ff346b54a6eb9a198e42e
+    from August 11 2011.
+
+2018-04-11-01 skip:
+    Fix displayed color/depth/stencil bits values
+
+    The values passed to SDL are just the minimum required. Get actually
+    values of colorbits, depthbits, and stencilbits from SDL instead of
+    assuming that the engine got exactly what it asked for.
+
+2018-04-11-02 skip:
+    Restore setting r_colorbits in q3_ui
+
+    In 2007 in ioquake3 unified-sdl branch (revision 1144) setting
+    r_colorbits in q3_ui was removed but the Color Depth menu option was
+    still kept. Setting r_colorbits was not removed from the Team Arena UI.
+
+    In 2011 I removed the Color Depth menu option from q3_ui as it did not
+    change any cvars. Yesterday I restored the option not realizing this
+    and thinking that requesting 16-bit color depth worked.
+
+    Add setting r_colorbits back to q3_ui so Color Depth menu option works
+    again. I changed Color Depth options 'Default' to reset r_stencilbits
+    instead of 0 and '32 bit' to use r_stencilbits 8 instead of not changing
+    the value.
+
+    However I discovered r_colorbits 16 does not actually work on my system
+    (Debian Jessie x86_64 nvidia). ioquake3 was reporting the requested
+    value instead of the actual obtained value. Fixed in my previous commit.
+
+2018-04-11-03 skip:
+    Make setting r_stencilbits more consistent in Team Arena UI
+
+    I changed Color Depth options 'Default' to reset r_stencilbits instead
+    of 0 and '32 bit' to use r_stencilbits 8 instead of not changing the
+    value. (This matches my q3_ui changes in the previous commit.)
+
+    Set r_stencilbits when changing graphics presets like when changing
+    Color Depth.
+
+2018-04-12-01 skip:
+    Fix map list in Team Arena start server menu after entering SP menu
+
+    In September 2017 I moved loading arenas.txt/*.arena files from entering
+    start server menu to at startup to fix running out of memory in Team Arena
+    UI after opening the start server menu several times.
+
+    However, Team Arena completely replaces the uiInfo.mapList array when
+    switching between single player and start server menus. So after my
+    change, entering single player and then entering start server would only
+    display single player maps. It caused SP endofgame menu to use MP map
+    list for replay/next map since arenas were loaded after gameinfo.txt.
+
+    Continue loading arena info at start up to avoid reallocating arena info
+    but move setting up uiInfo.mapList to when entering the start server
+    menu.
+
+2018-04-13-01 skip:
+    Support SDL audio devices that require float32 samples.
+
+    Fixes missing audio when playing on Windows with SDL 2.0.7, which started
+    using WASAPI, which demands floating point audio.
+
+2018-04-13-02 skip:
+    sdl_snd.c should just initialize SDL audio without checking SDL_WasInit().
+
+    In SDL2, the initialized subsystems are referenced counted, so it's safe to
+    initialize them twice, and it makes the SDL_QuitSubSystem during our shutdown
+    correctly decrement the count. Before (as a probably-harmless bug), it would
+    not increment the refcount if the subsystem was already initialized, causing
+    problems when it decremented it later.
+
+2018-04-13-03 skip:  There's no need to SDL_PauseAudio(1) before calling SDL_CloseAudio().
+
+2018-04-13-04 skip:
+    Added audio capture support to SDL backend.
+
+    This lets you speak through VoIP when not using OpenAL. Previously you could
+    listen but not speak.
+
+2018-04-13-05 skip:
+    Use the SDL2 audio device interface instead of the legacy 1.2 API.
+
+    This is a little bit of future-proofing, but also gives us a little more
+    flexibility in general; now we can add in the cvars to open a specific
+    device, etc, that the OpenAL codepath does.
+
+2018-04-14-01 skip:  Disable SDL audio capture until prebuilt SDL libraries are updated to 2.0.8.

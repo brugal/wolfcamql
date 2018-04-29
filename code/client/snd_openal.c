@@ -2300,7 +2300,10 @@ void S_AL_Update( void )
 	// Update streams
 	for (i = 0; i < MAX_RAW_STREAMS; i++)
 		S_AL_StreamUpdate(i);
-	S_AL_MusicUpdate();
+
+	if (!cl_freezeDemo->integer  ||  (cl_freezeDemo->integer  &&  !cl_freezeDemoPauseMusic->integer)) {
+		S_AL_MusicUpdate();
+	}
 
 	// Doppler
 	if(s_doppler->modified)

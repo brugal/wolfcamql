@@ -1405,7 +1405,9 @@ static void S_Base_Update( void ) {
 	}
 
 	// add raw data from streamed samples
-	S_UpdateBackgroundTrack();
+	if (!cl_freezeDemo->integer  ||  (cl_freezeDemo->integer  &&  !cl_freezeDemoPauseMusic->integer)) {
+		S_UpdateBackgroundTrack();
+	}
 
 	// mix some sound
 	S_Update_();

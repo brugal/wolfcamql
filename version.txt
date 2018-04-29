@@ -1,4 +1,4 @@
-12.0test21
+12.0test22
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -74,7 +74,10 @@
 * cl_voipOverallGain to control voip volume for all senders
 * /voip gain also works with spatial clients
 * bug fix:  sound stream playback was choppy
-
+* bug fix:  initial playback of mono cinematic sound stream missing reset
+* cl_freezeDemoPauseMusic to control whether music is stopped when demo is paused
+* bug fix:  demo seeking could cause random sound stream data to be played
+* cpma mvd support for health and armor information
 
 ---------------------------------
 11.7  2017-06-07

@@ -1242,3 +1242,39 @@ qboolean CG_CpmaIsRoundWarmup (void)
 
 	return qfalse;
 }
+
+/*
+  mvd
+
+  weapon info in ps.ammo[clientNum]
+  health/armor in ps.powerups[clientNum]
+
+  ----
+
+  ps.powerups:
+
+  0000 0000 0000 0000 0000 0000 0000 0000
+  XXXX XXXX .... .... .... .... .... ....  health
+  .... .... XXXX XXXX .... .... .... ....  armor
+
+ */
+qboolean CG_IsCpmaMvd (void)
+{
+	if (cgs.protocol != PROTOCOL_Q3  ||  !cgs.cpma) {
+		return qfalse;
+	}
+
+	if (!cg.snap) {
+		return qfalse;
+	}
+
+	if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR) {
+		return qfalse;
+	}
+
+	if (cg.snap->ps.pm_type == PM_FREEZE) {
+		return qtrue;
+	}
+
+	return qfalse;
+}

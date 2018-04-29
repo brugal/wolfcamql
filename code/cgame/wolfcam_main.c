@@ -339,9 +339,21 @@ int Wolfcam_PlayerHealth (int clientNum)
 		return INVALID_WOLFCAM_HEALTH;
 	}
 
+	if (CG_IsCpmaMvd()) {
+		unsigned int val;
+
+		//   XXXX XXXX .... .... .... .... .... ....  health
+		val = (unsigned int)cg.snap->ps.powerups[clientNum];
+		val = val >> 24;
+		val &= 0xff;
+
+		return val;
+	}
+
 	if (clientNum == cg.snap->ps.clientNum) {
 		return cg.snap->ps.stats[STAT_HEALTH];
 	}
+
 
 	if (cgs.realProtocol >= 91  &&  cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR) {
 		// we have info for all players
@@ -393,6 +405,18 @@ int Wolfcam_PlayerArmor (int clientNum) {
 	ci = &cgs.clientinfo[clientNum];
 	if (!ci->infoValid) {
 		return -1;
+	}
+
+	if (CG_IsCpmaMvd()) {
+		unsigned int val;
+
+		//  .... .... XXXX XXXX .... .... .... ....   armor
+		val = (unsigned int)cg.snap->ps.powerups[clientNum];
+		val = val >> 16;
+		val &= 0xff;
+
+		return val;
+
 	}
 
 	if (clientNum == cg.snap->ps.clientNum) {

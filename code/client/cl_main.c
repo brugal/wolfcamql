@@ -94,6 +94,7 @@ cvar_t *cl_aviExtension;
 cvar_t *cl_aviNoAudioHWOutput;
 cvar_t	*cl_forceavidemo;
 cvar_t *cl_freezeDemoPauseVideoRecording;
+cvar_t *cl_freezeDemoPauseMusic;
 
 cvar_t	*cl_freelook;
 cvar_t	*cl_sensitivity;
@@ -5242,6 +5243,7 @@ void CL_StopVideo_f( void )
 static void fast_forward_demo (double wantedTime)
 {
 	int loopCount;
+	int stream;
 
 	if ( clc.state < CA_CONNECTED ) {
 		return;
@@ -5310,6 +5312,13 @@ static void fast_forward_demo (double wantedTime)
 	if (Cvar_VariableIntegerValue("debug_seek")) {
 		Com_Printf("fastforward:  read %d demo messages, cl.snap.serverTime %d, wantedTime %f\n", loopCount, cl.snap.serverTime, wantedTime);
 	}
+
+	// reset sound streams that might have had data added in CL_ReadDemoMessage() above
+	//FIXME better to check if demo is seeking before even adding stream data
+	for (stream = 0;  stream < MAX_RAW_STREAMS;  stream++) {
+		s_rawend[stream] = 0;
+	}
+
 	cl.serverTime = floor(wantedTime);
 	cls.realtime = floor(wantedTime);
 	Overf = wantedTime - floor(wantedTime);
@@ -5940,6 +5949,7 @@ void CL_Init ( void ) {
 	cl_aviExtension = Cvar_Get("cl_aviExtension", "avi", CVAR_ARCHIVE);
 	cl_aviNoAudioHWOutput = Cvar_Get("cl_aviNoAudioHWOutput", "1", CVAR_ARCHIVE);
 	cl_freezeDemoPauseVideoRecording = Cvar_Get("cl_freezeDemoPauseVideoRecording", "0", CVAR_ARCHIVE);
+	cl_freezeDemoPauseMusic = Cvar_Get("cl_freezeDemoPauseMusic", "1", CVAR_ARCHIVE);
 	cl_forceavidemo = Cvar_Get ("cl_forceavidemo", "0", 0);
 
 	rconAddress = Cvar_Get ("rconAddress", "", 0);

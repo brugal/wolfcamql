@@ -1476,6 +1476,8 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
 * cl_freezeDemo [1/0]  to pause demo playback.  You can also use the pause command to toggle playback on and off.
 
+* cl_freezeDemoPauseMusic to control whether music is stopped when demo is paused
+
 * /wcstatsall  or /wcstats <player number> to show client side stats (k/d,
   accuracy, lag, etc.)
 

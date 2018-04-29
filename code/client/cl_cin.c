@@ -1190,6 +1190,10 @@ redump:
 			}
 
 			if (!cinTable[currentHandle].silent) {
+				if (cinTable[currentHandle].numQuads == -1) {
+					S_Update();
+					s_rawend[0] = s_soundtime;
+				}
 				ssize = RllDecodeMonoToStereo( framedata, sbuf, cinTable[currentHandle].RoQFrameSize, 0, (unsigned short)cinTable[currentHandle].roq_flags);
 				S_RawSamples(0, ssize, 22050, 2, 1, (byte *)sbuf, 1.0f, -1);
 			}
