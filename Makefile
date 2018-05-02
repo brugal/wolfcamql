@@ -1875,6 +1875,8 @@ Q3R2STRINGOBJ = \
   $(B)/renderergl2/glsl/ssao_vp.o \
   $(B)/renderergl2/glsl/texturecolor_fp.o \
   $(B)/renderergl2/glsl/texturecolor_vp.o \
+  $(B)/renderergl2/glsl/texturenocolor_fp.o \
+  $(B)/renderergl2/glsl/texturenocolor_vp.o \
   $(B)/renderergl2/glsl/tonemap_fp.o \
   $(B)/renderergl2/glsl/tonemap_vp.o
 

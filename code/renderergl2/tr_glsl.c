@@ -50,6 +50,8 @@ extern const char *fallbackShader_ssao_vp;
 extern const char *fallbackShader_ssao_fp;
 extern const char *fallbackShader_texturecolor_vp;
 extern const char *fallbackShader_texturecolor_fp;
+extern const char *fallbackShader_texturenocolor_vp;
+extern const char *fallbackShader_texturenocolor_fp;
 extern const char *fallbackShader_tonemap_vp;
 extern const char *fallbackShader_tonemap_fp;
 
@@ -944,6 +946,19 @@ void GLSL_InitGPUShaders(void)
 
 	numEtcShaders++;
 
+	if (!GLSL_InitGPUShader(&tr.textureNoColorShader, "texturenocolor", attribs, qtrue, extradefines, qtrue, fallbackShader_texturenocolor_vp, fallbackShader_texturenocolor_fp))
+	{
+		ri.Error(ERR_FATAL, "Could not load texturecolor shader!");
+	}
+	
+	GLSL_InitUniforms(&tr.textureNoColorShader);
+
+	GLSL_SetUniformInt(&tr.textureNoColorShader, UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
+
+	GLSL_FinishGPUShader(&tr.textureNoColorShader);
+
+	numEtcShaders++;
+
 	for (i = 0; i < FOGDEF_COUNT; i++)
 	{
 		attribs = ATTR_POSITION | ATTR_POSITION2 | ATTR_NORMAL | ATTR_NORMAL2 | ATTR_TEXCOORD;
@@ -1356,6 +1371,7 @@ void GLSL_ShutdownGPUShaders(void)
 		GLSL_DeleteGPUShader(&tr.genericShader[i]);
 
 	GLSL_DeleteGPUShader(&tr.textureColorShader);
+	GLSL_DeleteGPUShader(&tr.textureNoColorShader);
 
 	for ( i = 0; i < FOGDEF_COUNT; i++)
 		GLSL_DeleteGPUShader(&tr.fogShader[i]);

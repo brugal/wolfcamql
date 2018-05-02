@@ -3323,9 +3323,13 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 			// get original area that is going to be ovewritten
 			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+			qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+
+			GL_State(GLS_DEPTHTEST_DISABLE);
+			qglDepthMask(GL_FALSE);
+
 			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
 			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapImageScratchBuffer->uploadWidth, tr.screenMapImageScratchBuffer->uploadHeight);
-
 
 			// get big screen image, note: it might clip parts since the texture might not be as big as the screen
 			//FIXME bindtotmmu
@@ -3350,12 +3354,13 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 			// get scaled version
 			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.screenMapImage->texnum);
-			// flipped back
+			// this is flipped back
 			qglCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, tr.screenMapImage->uploadWidth, tr.screenMapImage->uploadHeight);
 
 			// restore original image, need to flip
 			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.screenMapImageScratchBuffer->texnum);
+			//GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, tr.whiteImage->texnum);
 
 			x = 0;
 			y = glConfig.vidHeight - tr.screenMapImageScratchBuffer->uploadHeight;
@@ -3372,11 +3377,20 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			VectorSet2(texCoords[2], 1.0f, 0.0f);
 			VectorSet2(texCoords[3], 0.0f, 0.0f);
 
+			// can't use tr.textureColorShader since, even with colorWhite,
+			// there's slight color differences
+			GLSL_BindProgram(&tr.textureNoColorShader);
+
+			GLSL_SetUniformMat4(&tr.textureNoColorShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
+			//GLSL_SetUniformVec4(&tr.textureColorShader, UNIFORM_COLOR, colorWhite);
+			//GLSL_SetUniformVec4(&tr.textureColorShader, UNIFORM_COLOR, colorRed);
+
 			RB_InstantQuad2(quadVerts, texCoords);
 
 			// done
 			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 			GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, 0);
+			backEnd.projection2D = qfalse;
 		}
 		if (r_anaglyphMode->integer) {
 			if (depthWasCleared) {

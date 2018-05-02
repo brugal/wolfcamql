@@ -643,6 +643,18 @@ vmCvar_t cg_drawFollowingColor;
 vmCvar_t cg_drawFollowingAlpha;
 vmCvar_t cg_drawFollowingWideScreen;
 
+vmCvar_t cg_drawCpmaMvdIndicator;
+vmCvar_t cg_drawCpmaMvdIndicatorX;
+vmCvar_t cg_drawCpmaMvdIndicatorY;
+vmCvar_t cg_drawCpmaMvdIndicatorAlign;
+vmCvar_t cg_drawCpmaMvdIndicatorStyle;
+vmCvar_t cg_drawCpmaMvdIndicatorFont;
+vmCvar_t cg_drawCpmaMvdIndicatorPointSize;
+vmCvar_t cg_drawCpmaMvdIndicatorScale;
+vmCvar_t cg_drawCpmaMvdIndicatorColor;
+vmCvar_t cg_drawCpmaMvdIndicatorAlpha;
+vmCvar_t cg_drawCpmaMvdIndicatorWideScreen;
+
 vmCvar_t cg_testQlFont;
 vmCvar_t cg_qlhud;
 vmCvar_t cg_qlFontScaling;
@@ -1713,7 +1725,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawItemPickupsFadeTime, "cg_drawItemPickupsFadeTime", "3000", CVAR_ARCHIVE },
 	{ &cg_drawItemPickupsCount, "cg_drawItemPickupsCount", "1", CVAR_ARCHIVE },
 	{ cvp(cg_drawItemPickupsWideScreen), "1", CVAR_ARCHIVE },
-	
+
 	{ &cg_drawFollowing, "cg_drawFollowing", "1", CVAR_ARCHIVE },
 	{ &cg_drawFollowingX, "cg_drawFollowingX", "320", CVAR_ARCHIVE },
 	{ &cg_drawFollowingY, "cg_drawFollowingY", "50", CVAR_ARCHIVE },
@@ -1725,6 +1737,18 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawFollowingColor, "cg_drawFollowingColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawFollowingAlpha, "cg_drawFollowingAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawFollowingWideScreen), "2", CVAR_ARCHIVE },
+
+	{ &cg_drawCpmaMvdIndicator, "cg_drawCpmaMvdIndicator", "1", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorX, "cg_drawCpmaMvdIndicatorX", "320", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorY, "cg_drawCpmaMvdIndicatorY", "80", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorAlign, "cg_drawCpmaMvdIndicatorAlign", "1", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorStyle, "cg_drawCpmaMvdIndicatorStyle", "6", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorFont, "cg_drawCpmaMvdIndicatorFont", DEFAULT_SANS_FONT, CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorPointSize, "cg_drawCpmaMvdIndicatorPointSize", "24", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorScale, "cg_drawCpmaMvdIndicatorScale", "0.4", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorColor, "cg_drawCpmaMvdIndicatorColor", "0x00ffff", CVAR_ARCHIVE },
+	{ &cg_drawCpmaMvdIndicatorAlpha, "cg_drawCpmaMvdIndicatorAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawCpmaMvdIndicatorWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_testQlFont, "cg_testQlFont", "0", CVAR_ARCHIVE },
 	//{ &cg_deathSparkRadius, "cg_deathSparkRadius", "8.0", CVAR_ARCHIVE },
@@ -2590,6 +2614,7 @@ void CG_CheckFontUpdates (void)
 	CG_CheckIndividualFontUpdate(&cgs.media.voteFont, cg_drawVotePointSize.integer, &cg_drawVoteFont, &cgs.media.voteFontModificationCount, &cg_drawVotePointSize, &cgs.media.voteFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.teamVoteFont, cg_drawTeamVotePointSize.integer, &cg_drawTeamVoteFont, &cgs.media.teamVoteFontModificationCount, &cg_drawTeamVotePointSize, &cgs.media.teamVoteFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.followingFont, cg_drawFollowingPointSize.integer, &cg_drawFollowingFont, &cgs.media.followingFontModificationCount, &cg_drawFollowingPointSize, &cgs.media.followingFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.cpmaMvdIndicatorFont, cg_drawCpmaMvdIndicatorPointSize.integer, &cg_drawCpmaMvdIndicatorFont, &cgs.media.followingFontModificationCount, &cg_drawCpmaMvdIndicatorPointSize, &cgs.media.cpmaMvdIndicatorFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.weaponBarFont, cg_weaponBarPointSize.integer, &cg_weaponBarFont, &cgs.media.weaponBarFontModificationCount, &cg_weaponBarPointSize, &cgs.media.weaponBarFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.itemPickupsFont, cg_drawItemPickupsPointSize.integer, &cg_drawItemPickupsFont, &cgs.media.itemPickupsFontModificationCount, &cg_drawItemPickupsPointSize, &cgs.media.itemPickupsFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.originFont, cg_drawOriginPointSize.integer, &cg_drawOriginFont, &cgs.media.originFontModificationCount, &cg_drawOriginPointSize, &cgs.media.originFontPointSizeModificationCount);
@@ -3395,6 +3420,7 @@ static void CG_RegisterFonts (void)
 	cgs.media.voteFontModificationCount = -100;
 	cgs.media.teamVoteFontModificationCount = -100;
 	cgs.media.followingFontModificationCount = -100;
+	cgs.media.cpmaMvdIndicatorFontModificationCount = -100;
 	cgs.media.weaponBarFontModificationCount = -100;
 	cgs.media.itemPickupsFontModificationCount = -100;
 	cgs.media.originFontModificationCount = -100;
@@ -3429,6 +3455,7 @@ static void CG_RegisterFonts (void)
 	cgs.media.voteFontPointSizeModificationCount = -100;
 	cgs.media.teamVoteFontPointSizeModificationCount = -100;
 	cgs.media.followingFontPointSizeModificationCount = -100;
+	cgs.media.cpmaMvdIndicatorFontPointSizeModificationCount = -100;
 	cgs.media.weaponBarFontPointSizeModificationCount = -100;
 	cgs.media.itemPickupsFontPointSizeModificationCount = -100;
 	cgs.media.originFontPointSizeModificationCount = -100;

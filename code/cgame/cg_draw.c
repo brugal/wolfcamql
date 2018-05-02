@@ -1193,6 +1193,65 @@ static void Wolfcam_DrawFollowing (void)
 	return;
 }
 
+static void CG_DrawCpmaMvdIndicator (void)
+{
+    const char *s;
+	float x, y, w;
+	int style, align;
+	float scale;
+	const fontInfo_t *font;
+	vec4_t color;
+
+	if (!cg_drawCpmaMvdIndicator.integer) {
+		return;
+	}
+
+    if (wolfcam_following) {
+		return;
+	}
+
+	if (!cg.snap) {
+		return;
+	}
+
+	// only with demo taker view
+	if (cg.snap->ps.clientNum != cg.clientNum) {
+		return;
+	}
+
+	if (!CG_IsCpmaMvd()) {
+		return;
+	}
+
+	SC_Vec4ColorFromCvars(color, &cg_drawCpmaMvdIndicatorColor, &cg_drawCpmaMvdIndicatorAlpha);
+	align = cg_drawCpmaMvdIndicatorAlign.integer;
+	scale = cg_drawCpmaMvdIndicatorScale.value;
+	style = cg_drawCpmaMvdIndicatorStyle.integer;
+	QLWideScreen = cg_drawCpmaMvdIndicatorWideScreen.integer;
+
+	if (*cg_drawCpmaMvdIndicatorFont.string) {
+		font = &cgs.media.cpmaMvdIndicatorFont;
+	} else {
+		font = &cgDC.Assets.textFont;
+	}
+
+	s = ("[CPMA MVD]");
+
+	x = cg_drawCpmaMvdIndicatorX.value;
+	y = cg_drawCpmaMvdIndicatorY.value;
+
+	w = CG_Text_Width(s, scale, 0, font);
+	if (align == 1) {
+		x -= w / 2;
+	} else if (align == 2) {
+		x -= w;
+	}
+	//CG_Text_Paint_Bottom(x, y, scale, colorWhite, s, 0, 0, style, font);
+	CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
+
+	return;
+}
+
 #if 1  //def MPACK
 
 //FIXME depends on textHeight
@@ -3021,12 +3080,24 @@ static void CG_DrawStatusBar( void ) {
 	//
 	// ammo
 	//
-	if (cent->currentState.weapon  &&  !wolfcam_following) {
-		value = ps->ammo[cent->currentState.weapon];
+	if (cent->currentState.weapon) {
+		value = -1;
+
+		if (CG_IsCpmaMvd()) {
+			if (wolfcam_following) {
+				if (cent->currentState.weapon != WP_GAUNTLET  &&  cent->currentState.weapon != WP_GRAPPLING_HOOK) {
+					value = (unsigned int)ps->ammo[wcg.clientNum] & 0xff;
+				}
+			}
+		} else {
+			if (!wolfcam_following) {
+				value = ps->ammo[cent->currentState.weapon];
+			}
+		}
 
 		if ( value > -1 ) {
-			if ( cg.predictedPlayerState.weaponstate == WEAPON_FIRING
-				&& cg.predictedPlayerState.weaponTime > 100 ) {
+			if ( !wolfcam_following  &&  (cg.predictedPlayerState.weaponstate == WEAPON_FIRING
+										  && cg.predictedPlayerState.weaponTime > 100) ) {
 				// draw as dark grey when reloading
 				color = 2;	// dark grey
 			} else {
@@ -3040,12 +3111,14 @@ static void CG_DrawStatusBar( void ) {
 
 			CG_DrawField (0, 432, 3, value);
 			trap_R_SetColor( NULL );
+		}
 
+		if (wolfcam_following  ||  (!wolfcam_following  &&  value > -1)) {
 			// if we didn't draw a 3D icon, draw a 2D icon for ammo
 			if ( !cg_draw3dIcons.integer && cg_drawIcons.integer ) {
 				qhandle_t	icon;
 
-				icon = cg_weapons[ cg.predictedPlayerState.weapon ].ammoIcon;
+				icon = cg_weapons[cent->currentState.weapon].ammoIcon;
 				if ( icon ) {
 					CG_DrawPic( CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE, icon );
 				}
@@ -5296,6 +5369,15 @@ static float CG_DrawPowerups( float y ) {
 	}
 
 	QLWideScreen = WIDESCREEN_RIGHT;
+
+	if (wolfcam_following) {
+		return y;
+	}
+
+	//FIXME might be able to work with /follow
+	if (CG_IsCpmaMvd()) {
+		return y;
+	}
 
 	ps = &cg.snap->ps;
 	//ci = &cgs.clientinfo[ps->clientNum];
@@ -9352,6 +9434,13 @@ static void CG_DrawAmmoWarning( void ) {
 		return;
 	}
 
+	//FIXME might be able to with mvd info
+	if (CG_IsCpmaMvd()) {
+		if (cg.snap->ps.clientNum == cg.clientNum) {
+			return;
+		}
+	}
+
 	//FIXME what if the person you are speccing is low on ammo
 	if (cg.snap->ps.pm_type == PM_SPECTATOR  &&  cgs.gametype == GT_CA  && cg.snap->ps.clientNum == cg.clientNum)
 		return;
@@ -10501,6 +10590,7 @@ static void CG_Draw2D( void ) {
 		//CG_DrawWarmup();
 	}
 	Wolfcam_DrawFollowing();
+	CG_DrawCpmaMvdIndicator();
 
 	CG_WarmupAnnouncements();
 	CG_DrawWarmup();

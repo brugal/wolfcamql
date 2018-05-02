@@ -2338,8 +2338,11 @@ disconnect
 * instead of resetting sound streams after fast_forward(), check if demo is seeking before adding sound stream data
 * still a little bit of old voip sound buffer data when you seek back 10 seconds  -- 2018-04-27 doesn't do it with s_mixprestep 0
 * cpma mvd:
-  - weapon info
+  - weapon info:  wcweaponbar and W_AMMO_UNKNOWN, cg_draw.c ammo warning, regular weaponbar
   - powerups
+
+* screenmap images don't need IMGFLAG_PICMIP
+* rend2 ql postprocessing reset setgl2d like screenmap
 
 ----
 

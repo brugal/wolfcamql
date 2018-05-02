@@ -1,4 +1,4 @@
-12.0test22
+12.0test23
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -77,7 +77,11 @@
 * bug fix:  initial playback of mono cinematic sound stream missing reset
 * cl_freezeDemoPauseMusic to control whether music is stopped when demo is paused
 * bug fix:  demo seeking could cause random sound stream data to be played
-* cpma mvd support for health and armor information
+* cpma mvd support for health, armor, and ammo hud information
+* bug fix:  with /follow q3 hud would still draw powerup information for demo taker
+* cg_drawCpmaMvdIndicator*
+* bug fix:  /follow q3 hud wouldn't show weapon icon if cg_draw3dIcons == 0
+
 
 ---------------------------------
 11.7  2017-06-07

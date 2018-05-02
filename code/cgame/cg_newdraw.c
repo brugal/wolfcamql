@@ -285,21 +285,37 @@ static void CG_DrawPlayerAmmoValue (const rectDef_t *rect, float scale, const ve
 {
 	char	num[16];
 	int value;
-	const centity_t	*cent;
-	const playerState_t	*ps;
 	rectDef_t r;
+	int weapon;
 
-	if (wolfcam_following) {
-		return;
+	if (CG_IsCpmaMvd()) {
+		if (!wolfcam_following) {
+			return;
+		}
+	} else {
+		if (wolfcam_following) {
+			return;
+		}
 	}
 
 	memcpy(&r, rect, sizeof(rectDef_t));
 
-	cent = &cg_entities[cg.snap->ps.clientNum];
-	ps = &cg.snap->ps;
+	if (wolfcam_following) {
+		weapon = cg_entities[wcg.clientNum].currentState.weapon;
+	} else {
+		weapon = cg_entities[cg.snap->ps.clientNum].currentState.weapon;
+	}
 
-	if ( cent->currentState.weapon  &&  cent->currentState.weapon != WP_GAUNTLET ) {
-		value = ps->ammo[cent->currentState.weapon];
+	if (weapon > 0  &&  weapon < MAX_WEAPONS  &&  weapon != WP_GAUNTLET) {
+		if (wolfcam_following) {
+			value = -1;
+			if (CG_IsCpmaMvd()) {
+				value = (unsigned int)cg.snap->ps.ammo[wcg.clientNum] & 0xff;
+			}
+		} else {
+			value = cg.snap->ps.ammo[weapon];
+		}
+
 		if ( value > -1 ) {
 			if (shader) {
 				trap_R_SetColor( color );
@@ -1077,6 +1093,11 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 		return;  //FIXME
 	}
 
+	//FIXME following might be able to show
+	if (CG_IsCpmaMvd()) {
+		return;
+	}
+
 	r2.x = rect->x;
 	r2.y = rect->y;
 	r2.w = rect->w;
@@ -1221,6 +1242,11 @@ static int CG_NumHeldWeapons (void)
 
 static int CG_WeaponAmmo (int weapon)
 {
+	if (CG_IsCpmaMvd()) {
+		//FIXME can show current weapon, and need indicator for have weapon but don't know ammo
+		return W_AMMO_UNKNOWN;
+	}
+
 	if (wolfcam_following) {
 		return W_AMMO_UNKNOWN;  //FIXME hack
 	}
@@ -1277,6 +1303,14 @@ float CG_GetValue(int ownerDraw) {
 	  }
     break;
   case CG_PLAYER_AMMO_VALUE:
+	  if (CG_IsCpmaMvd()) {
+		  if (wolfcam_following) {
+			  return (unsigned int)ps->ammo[wcg.clientNum] & 0xff;
+		  } else {
+			  return -1;
+		  }
+	  }
+
 	  if (wolfcam_following) {
 		  return -1;  //FIXME  see if any side effects
 	  } else {
@@ -4803,6 +4837,16 @@ void CG_DrawWeaponBar( void ) {
 	int style;
 	int ammoOffset;
 
+	if (!cg.snap) {
+		return;
+	}
+
+	if (CG_IsCpmaMvd()) {
+		if (cg.snap->ps.clientNum == cg.clientNum) {
+			return;
+		}
+	}
+
 	if (cg_weaponBar.integer == 4  ||  cg_weaponBar.integer == 5) {
 		CG_DrawWeaponSelect();
 		return;
@@ -4938,6 +4982,11 @@ void CG_DrawWeaponBar( void ) {
 		}
 
 		if (wolfcam_following) {
+			goto finishLoop;
+		}
+
+		//FIXME might be able to work with /follow
+		if (CG_IsCpmaMvd()) {
 			goto finishLoop;
 		}
 

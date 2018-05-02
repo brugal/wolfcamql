@@ -2289,8 +2289,17 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		// screen map texture
 		if (tr.needScreenMap) {
 			float x, y, w, h;
+			int currentTexEnv;
 
 			RB_SetGL2D();
+
+			GL_SelectTextureUnit(0);
+			currentTexEnv = glState.texEnv[glState.currenttmu];
+
+			GL_TexEnv(GL_REPLACE);
+
+			GL_State(GLS_DEPTHTEST_DISABLE);
+			qglDepthMask(GL_FALSE);
 
 			// get original area that is going to be overwritten
 			qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
@@ -2359,6 +2368,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 			//qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
+			GL_TexEnv(currentTexEnv);
 			qglBindTexture(GL_TEXTURE_2D, 0);
 		}
 

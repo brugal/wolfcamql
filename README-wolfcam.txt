@@ -1849,6 +1849,8 @@ One of the side effects of using cg_useOriginalInterpolation 0, is that it will 
 
   in quakelive 'server center print' messages include things like 'player switched teams'
 
+* cg_drawCpmaMvdIndicator  show on screeen message if demo taker view is using cpma mvd mode
+
 * cg_drawFollowing:  2 will always draw the following text even if it's the demo taker
 
 * cg_printSkillRating  Add a message to the chat area indicating a player's skill rating when they connect or disconnect.

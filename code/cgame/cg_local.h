@@ -2166,6 +2166,9 @@ typedef struct {
 	fontInfo_t followingFont;
 	int followingFontModificationCount;
 	int followingFontPointSizeModificationCount;
+	fontInfo_t cpmaMvdIndicatorFont;
+	int cpmaMvdIndicatorFontModificationCount;
+	int cpmaMvdIndicatorFontPointSizeModificationCount;
 	fontInfo_t weaponBarFont;
 	int weaponBarFontModificationCount;
 	int weaponBarFontPointSizeModificationCount;
@@ -2980,6 +2983,18 @@ extern vmCvar_t cg_drawFollowingScale;
 extern vmCvar_t cg_drawFollowingColor;
 extern vmCvar_t cg_drawFollowingAlpha;
 extern vmCvar_t cg_drawFollowingWideScreen;
+
+extern vmCvar_t cg_drawCpmaMvdIndicator;
+extern vmCvar_t cg_drawCpmaMvdIndicatorX;
+extern vmCvar_t cg_drawCpmaMvdIndicatorY;
+extern vmCvar_t cg_drawCpmaMvdIndicatorAlign;
+extern vmCvar_t cg_drawCpmaMvdIndicatorStyle;
+extern vmCvar_t cg_drawCpmaMvdIndicatorFont;
+extern vmCvar_t cg_drawCpmaMvdIndicatorPointSize;
+extern vmCvar_t cg_drawCpmaMvdIndicatorScale;
+extern vmCvar_t cg_drawCpmaMvdIndicatorColor;
+extern vmCvar_t cg_drawCpmaMvdIndicatorAlpha;
+extern vmCvar_t cg_drawCpmaMvdIndicatorWideScreen;
 
 extern vmCvar_t cg_testQlFont;
 //extern vmCvar_t cg_deathSparkRadius;
