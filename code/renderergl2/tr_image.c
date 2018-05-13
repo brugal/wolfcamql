@@ -2980,7 +2980,7 @@ void R_CreateBuiltinImages( void ) {
 	}
 #endif
 
-	tr.screenMapFullImage = R_CreateImage("*screenMapFull", screenMapData, screenMapFullWidth, screenMapFullHeight, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
+	tr.screenMapFullImage = R_CreateImage("*screenMapFull", screenMapData, screenMapFullWidth, screenMapFullHeight, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0);
 
 	screenMapTextureSize = r_screenMapTextureSize->integer;
 	if (r_imageUpsample->integer) {
@@ -2994,11 +2994,11 @@ void R_CreateBuiltinImages( void ) {
 
 	if (screenMapTextureSize <= 0) {
 		//FIXME use fallback ?
-		screenMapTextureSize = MIN(glConfig.vidWidth, glConfig.vidHeight) / 2;
+		screenMapTextureSize = 1;
 	}
 
-	tr.screenMapImage = R_CreateImage("*screenMap", screenMapData, screenMapTextureSize, screenMapTextureSize, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
-	tr.screenMapImageScratchBuffer = R_CreateImage("*screenMapScratch", screenMapData, screenMapTextureSize, screenMapTextureSize, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
+	tr.screenMapImage = R_CreateImage("*screenMap", screenMapData, screenMapTextureSize, screenMapTextureSize, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0);
+	tr.screenMapImageScratchBuffer = R_CreateImage("*screenMapScratch", screenMapData, screenMapTextureSize, screenMapTextureSize, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0);
 	ri.Hunk_FreeTempMemory(screenMapData);
 
 	R_CreateDlightImage();

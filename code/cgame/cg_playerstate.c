@@ -127,23 +127,33 @@ int CG_GetAmmoWarning (int weapon, int style, int ammoOffset)
 	int ammoWarning;
 	int total;
 	int maxAmmo;
+	int currentAmmo;
 
 	ammoWarning = AMMO_WARNING_OK;
 
-	//FIXME other gametypes
-	if (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
-		//return;
-	}
-
 	if (wolfcam_following) {
-		return AMMO_WARNING_OK;
+		if (CG_IsCpmaMvd()) {
+			if (cgs.clientinfo[wcg.clientNum].team == TEAM_SPECTATOR) {
+				//FIXME check who they are following
+				return AMMO_WARNING_OK;
+			}
+
+			weapon = cg_entities[wcg.clientNum].currentState.weapon;
+			currentAmmo = cg.snap->ps.ammo[wcg.clientNum] & 0xff;
+			if (currentAmmo == 255) {  // infinite (ex: gaunt)
+				return AMMO_WARNING_OK;
+			}
+		} else {
+			return AMMO_WARNING_OK;
+		}
+	} else {
+		currentAmmo = cg.snap->ps.ammo[weapon];
+		if (currentAmmo < 0) {  // infinite
+			return AMMO_WARNING_OK;
+		}
 	}
 
-	if (cg.snap->ps.ammo[weapon] < 0) {
-		return AMMO_WARNING_OK;
-	}
-
-	if (style == 0) {  // old q3 (broken) style
+	if (style == 0  &&  !wolfcam_following) {  // old q3 (broken) style
 		// see about how many seconds of ammo we have remaining
 		weapons = cg.snap->ps.stats[ STAT_WEAPONS ];
 		total = 0;
@@ -180,8 +190,9 @@ int CG_GetAmmoWarning (int weapon, int style, int ammoOffset)
 			ammoWarning = AMMO_WARNING_LOW;
 		}
 	} else if (style == 1) {  // quake live style bassed on low ammo percentage
-		total = cg.snap->ps.ammo[weapon] + ammoOffset;
+		total = currentAmmo + ammoOffset;
 
+		//FIXME armorTiered and non ql demos
 		if (cgs.armorTiered) {
 			switch (weapon) {
 			case WP_MACHINEGUN:
@@ -268,7 +279,7 @@ int CG_GetAmmoWarning (int weapon, int style, int ammoOffset)
 			return AMMO_WARNING_OK;
 		}
 
-		total = cg.snap->ps.ammo[weapon];
+		total = currentAmmo;
 
 		if (total == 0) {
 			ammoWarning = AMMO_WARNING_EMPTY;
@@ -291,45 +302,79 @@ If the ammo has gone low enough to generate the warning, play a sound
 */
 static void CG_CheckAmmo( void ) {
 	int		previous;
+	int health;
+	int ammo;
+	int clientNum;
 
 	previous = cg.lowAmmoWarning;
 
 	cg.lowAmmoWarning = AMMO_WARNING_OK;
 
-	if (cg.snap->ps.stats[STAT_HEALTH] <= 0) {
+	if (wolfcam_following) {
+		if (CG_IsCpmaMvd()) {
+			health = (unsigned int)(cg.snap->ps.powerups[wcg.clientNum]) >> 24;
+			health &= 0xff;
+
+			ammo = cg.snap->ps.ammo[wcg.clientNum] & 0xff;
+			if (ammo == 255) {  // infinite
+				return;
+			}
+
+			clientNum = wcg.clientNum;
+		} else {
+			if (wcg.clientNum == cg.snap->ps.clientNum) {
+				health = cg.snap->ps.stats[STAT_HEALTH];
+				ammo = cg.snap->ps.ammo[cg.snap->ps.weapon];
+				clientNum = wcg.clientNum;
+			} else {
+				return;
+			}
+		}
+	} else {
+		if (CG_IsCpmaMvd()) {
+			return;
+		}
+		health = cg.snap->ps.stats[STAT_HEALTH];
+		ammo = cg.snap->ps.ammo[cg.snap->ps.weapon];
+		clientNum = cg.snap->ps.clientNum;
+	}
+
+	if (health <= 0) {
 		return;
 	}
 
-	//FIXME other gametypes
-	if (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
-		//return;
+	//FIXME cpma frozen check
+	if (!wolfcam_following  &&  !CG_IsCpmaMvd()) {
+		if (cgs.gametype == GT_FREEZETAG  &&  CG_FreezeTagFrozen(clientNum)) {
+			return;
+		}
 	}
 
-	if (cgs.gametype == GT_FREEZETAG  &&  CG_FreezeTagFrozen(cg.snap->ps.clientNum)) {
+	if (ammo < 0) {
 		return;
 	}
 
-	if (cg.snap->ps.ammo[cg.snap->ps.weapon] < 0) {
-		return;
-	}
-
+	// CG_GetAmmoWarning() will use correct weapon if following someone else
 	cg.lowAmmoWarning = CG_GetAmmoWarning(cg.snap->ps.weapon, cg_lowAmmoWarningStyle.integer, 0);
+
 	if (cg.lowAmmoWarning == AMMO_WARNING_OK) {
 		return;
 	}
 
+	if (cg.freecam) {
+		return;
+	}
+
 	// play a sound on transitions
-	if ((!wolfcam_following  ||  (wolfcam_following  && wcg.clientNum == cg.snap->ps.clientNum))  &&  !cg.freecam) {
-		if (cg_lowAmmoWarningSound.integer == 0) {
-			return;
-		} else if (cg_lowAmmoWarningSound.integer == 1) {  // only out of ammo
-			if (cg.lowAmmoWarning != previous  &&  cg.lowAmmoWarning == AMMO_WARNING_EMPTY) {
-				CG_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
-			}
-		} else {  // both out of ammo and low ammo
-			if (cg.lowAmmoWarning != previous) {
-				CG_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
-			}
+	if (cg_lowAmmoWarningSound.integer == 0) {
+		return;
+	} else if (cg_lowAmmoWarningSound.integer == 1) {  // only out of ammo
+		if (cg.lowAmmoWarning != previous  &&  cg.lowAmmoWarning == AMMO_WARNING_EMPTY) {
+			CG_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
+		}
+	} else {  // both out of ammo and low ammo
+		if (cg.lowAmmoWarning != previous) {
+			CG_StartLocalSound(cgs.media.noAmmoSound, CHAN_LOCAL_SOUND);
 		}
 	}
 }

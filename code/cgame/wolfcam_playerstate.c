@@ -2,6 +2,7 @@
 
 //#include "cg_playerstate.h"
 #include "cg_syscalls.h"
+#include "sc.h"
 #include "wolfcam_playerstate.h"
 
 #include "wolfcam_local.h"
@@ -21,6 +22,11 @@ int wolfcam_find_client_to_follow (void)
     int hoverTime = wolfcam_hoverTime.integer;
 
     if (!cg.snap) {
+        return wcg.selectedClientNum;
+    }
+
+    if (CG_IsCpmaMvd()  &&  wcg.followMode == WOLFCAM_FOLLOW_SELECTED_PLAYER) {
+        // no need to switch even if selected client isn't in world
         return wcg.selectedClientNum;
     }
 

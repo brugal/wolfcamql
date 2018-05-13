@@ -814,6 +814,10 @@ Fonts can also be used for hud config elements:
     only 'd', 'f', and 'x' accepted as format conversions and a hud script variable is used to get the value
     's' will check the string value of a cvar
 
+* itemdef command 'textReset' to remove text entry in menu
+
+* itemdef and menudef command 'backgroundReset' to remove background image
+
 * printval for debugging
 
   ex:  printval (@rectWidth)
@@ -2541,7 +2545,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_opengl2_overbright  enables original opengl2 overbright handling
 * r_allowSoftwareGLCoreContext  Mac OS X hack to disable software renderer with core context
 * r_useCoreContext enables core context with opengl2
-
+* /debugcpmamvd
 
 
 ----------

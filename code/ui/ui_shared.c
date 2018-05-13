@@ -5512,6 +5512,12 @@ static qboolean ItemParse_textExt( itemDef_t *item, int handle ) {
 	return qtrue;
 }
 
+static qboolean ItemParse_textReset( itemDef_t *item, int handle ) {
+	//FIXME free previous string?
+	item->text = NULL;
+	return qtrue;
+}
+
 // group <string>
 static qboolean ItemParse_group( itemDef_t *item, int handle ) {
 	if (!PC_String_Parse(handle, &item->window.group)) {
@@ -5936,6 +5942,13 @@ static qboolean ItemParse_background( itemDef_t *item, int handle ) {
 		item->window.background = DC->registerShaderNoMip(name);
 		item->window.backgroundName = String_Alloc(name);
 	}
+
+	return qtrue;
+}
+
+static qboolean ItemParse_backgroundReset( itemDef_t *item, int handle ) {
+	item->window.background = 0;
+	item->window.backgroundName = NULL;
 
 	return qtrue;
 }
@@ -7116,6 +7129,7 @@ keywordHash_t itemParseKeywords[] = {
 	{"name", ItemParse_name, NULL},
 	{"text", ItemParse_text, NULL},
 	{"textext", ItemParse_textExt, NULL},
+	{"textreset", ItemParse_textReset, NULL},
 	{"group", ItemParse_group, NULL},
 	{"asset_model", ItemParse_asset_model, NULL},
 	{"asset_shader", ItemParse_asset_shader, NULL},
@@ -7155,6 +7169,7 @@ keywordHash_t itemParseKeywords[] = {
 	{"bordercolor", ItemParse_bordercolor, NULL},
 	{"outlinecolor", ItemParse_outlinecolor, NULL},
 	{"background", ItemParse_background, NULL},
+	{"backgroundreset", ItemParse_backgroundReset, NULL},
 	{"onFocus", ItemParse_onFocus, NULL},
 	{"leaveFocus", ItemParse_leaveFocus, NULL},
 	{"mouseEnter", ItemParse_mouseEnter, NULL},
@@ -7677,6 +7692,15 @@ static qboolean MenuParse_background( itemDef_t *item, int handle ) {
 	return qtrue;
 }
 
+static qboolean MenuParse_backgroundReset( itemDef_t *item, int handle ) {
+	menuDef_t *menu = (menuDef_t*)item;
+
+	menu->window.background = 0;
+	menu->window.backgroundName = NULL;
+
+	return qtrue;
+}
+
 static qboolean MenuParse_cinematic( itemDef_t *item, int handle ) {
 	menuDef_t *menu = (menuDef_t*)item;
 
@@ -7837,6 +7861,7 @@ keywordHash_t menuParseKeywords[] = {
 	{"disablecolor", MenuParse_disablecolor, NULL},
 	{"outlinecolor", MenuParse_outlinecolor, NULL},
 	{"background", MenuParse_background, NULL},
+	{"backgroundreset", MenuParse_backgroundReset, NULL},
 	{"ownerdraw", MenuParse_ownerdraw, NULL},
 	{"ownerdrawFlag", MenuParse_ownerdrawFlag, NULL},
 	{"ownerdrawFlag2", MenuParse_ownerdrawFlag2, NULL},

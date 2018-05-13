@@ -1,4 +1,4 @@
-12.0test23
+12.0test24
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -81,7 +81,12 @@
 * bug fix:  with /follow q3 hud would still draw powerup information for demo taker
 * cg_drawCpmaMvdIndicator*
 * bug fix:  /follow q3 hud wouldn't show weapon icon if cg_draw3dIcons == 0
-
+* bug fix:  /follow <client number>  could still switch away to another view with cpma mvd
+* bug fix:  ui/wcweaponbar.menu didn't show infinite ammo icon
+* bug fix:  ui/wcweaponbar.menu incorrect visibility settings for ammo values
+* 'textReset' itemdef command to remove text entry in menu
+* 'backgroundReset' itemdef and menudef command to remove background image
+* bug fix:  team overlay wasn't showing with /follow in free spec demos
 
 ---------------------------------
 11.7  2017-06-07

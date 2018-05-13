@@ -11,7 +11,6 @@
 * also for +scores check if the client has pressed it (sim. to acc), but what about spec demos?
 * +scores wolfcam highlight player being followed
 * dead body color applies to teammates?
-* wolfcam team overlay disable (or enable for only team)
 * bother making font data for giant,big,small,tiny ?
 * option to disable impact sparks made by other players
 * impact sparks for own player ok in 3rd person
@@ -70,7 +69,6 @@
 * player names q3 font xy scaling
 * cg_deadbodydarken 2  transitions model to original
 * hunter has crap above her lips, james has stuff on chest, ranger shit on his arms, sarge arm, slash left of mouth, sorlag stuff on mouth, tankjr stuff on head, uriel stuff on legs, visor green in hair, xaero arms and feet -- fix with fuzz  -- color skins
-* low ammo warning is returning if ca and spec -- what if speccing someone
 * update scores in client info change last scores time in scoreboard
 * /seekclock check for ready up (as opposed to warmup)
 * /time is better to print both server time demo time(from beginning of demo), clock time and real time
@@ -355,7 +353,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * need cg_checkforofflinedemo when filling in wcg.snaps
 * parse hex allow alpha
 * r_ext_texture_env_add 0  doesn't seem to work in ioquake3
-* see if low ammo warning can be enabled for ca spec
 * im dm_73 10593275 dead body transitioning color (flashing)  demo taker I think
 * anims when rewinding in small increments (snapshot backups to find last anim)
 * fx did you forget trails for machinegun etc. ?
@@ -536,7 +533,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * http://cdn.quakelive.com/assets/20110315/game/baseq3/aerowalk.pk3
 * CG_[RED | BLUE]_SCORE alignment issue in new update
 * /follow keep track of attacker when parsing demo
-* teamoverlay and spec demos
 * /devmap nailgun projectiles reflect
 * cg_wh  also give prox mines shader
 * /placeplayer /savepos
@@ -2026,7 +2022,6 @@ No locals.
 * seeking register user country flag failed spam
 * dedicated win32 loadlibrary error always "unknown"
 * /follow victim, switch to freecam [ENTER] and player is not visible
-* with protocol 91 demos and free spec can show team overlay for both teams
 * draw keypress:  walk (LEGS_WALK)
 * WCG_ for following
 * accuracy against player
@@ -2288,15 +2283,6 @@ C:\Share\wc\dev>
 * screenmap fallback
 * screenmap rgbgen enironment firstperson  'firstperson' arg from quake3e?
 * screenmap only take screenshot if shader is used in same frame
-* screenmap:
-
-if (screenMapTextureSize <= 0) {
-+  			 //FIXME use fallback ?
-+			 	 screenMapTextureSize = MIN(glConfig.vidWidth, glConfig.vidHeight) / 2;
-+				 }
-
-could still be zero size
-
 * Windows /vid_restart shows blank program icon  -- 2018-02-15 Windows 10 specific?  also happens with original quake3.ico
 * color skins should be in baseq3 so that it isn't created for every new mod dir?
 * rename wolfcamql.exe to quake3.exe and it crashes in Windows (mac book pro ati) with rend2
@@ -2321,16 +2307,6 @@ GL_VERSION: 2.1 Chromium 1.9
 * voip in demo of demo:
   - voip data added to demo that already has voip data leads to garbled sound output  -- 2017-04-07 using hacked client number == MAX_CLIENTS - 1 to try and avoid
 
-* s_mixahead 0, s_mixprestep 0, /demo ratelpa...  /video  :
-
-0:23 rat: :)
-FS_Write: 0 bytes written
-Com_Error(): SafeFS_Write()  failed to write to file 0 < 2773440  f:2********************
-ERROR: SafeFS_Write()  failed to write to file 0 < 2773440  f:2
-********************
-disconnect
-  -- 2018-04-19 ok, ran out of disk space
-
 * s_usetimescale and streams
   timescale 2  :  last part of voip stream repeats sound
 * timescale and sound streams:  s_usetimescale 0  and timescale 2 skips every second number in cound (camp2.dm_*)  -- expected or buffer size reached?
@@ -2338,11 +2314,17 @@ disconnect
 * instead of resetting sound streams after fast_forward(), check if demo is seeking before adding sound stream data
 * still a little bit of old voip sound buffer data when you seek back 10 seconds  -- 2018-04-27 doesn't do it with s_mixprestep 0
 * cpma mvd:
-  - weapon info:  wcweaponbar and W_AMMO_UNKNOWN, cg_draw.c ammo warning, regular weaponbar
-  - powerups
+  - weapon info:  cg_draw.c ammo warning check cpma freeze tag -- 2018-05-11 ok, cpma sets health to 0 and avoids warning
+  - powerups indicator in hud
+  - mvd indicator blink style
 
-* screenmap images don't need IMGFLAG_PICMIP
 * rend2 ql postprocessing reset setgl2d like screenmap
+* ui scripting 'textExt' and 'text' free previous string?
+* cpma freezetag shows frozen players with harvester skulls
+* FT-MVD-cpm3a-2018_05_09-00_35_24.dm_71  random "Fight!" message at :30
+* CG_IsTeamGame() check before drawing team overlay  -- need to check if games like red rover are ok
+* tox cpma mvd lg hits over 100%
+
 
 ----
 

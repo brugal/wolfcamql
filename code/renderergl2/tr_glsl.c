@@ -948,7 +948,7 @@ void GLSL_InitGPUShaders(void)
 
 	if (!GLSL_InitGPUShader(&tr.textureNoColorShader, "texturenocolor", attribs, qtrue, extradefines, qtrue, fallbackShader_texturenocolor_vp, fallbackShader_texturenocolor_fp))
 	{
-		ri.Error(ERR_FATAL, "Could not load texturecolor shader!");
+		ri.Error(ERR_FATAL, "Could not load texturenocolor shader!");
 	}
 	
 	GLSL_InitUniforms(&tr.textureNoColorShader);

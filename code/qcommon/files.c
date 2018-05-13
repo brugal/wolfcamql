@@ -33,6 +33,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "qcommon.h"
 #include "unzip.h"
 
+// errno
+#include <errno.h>
+#include <string.h>
+
 /*
 =============================================================================
 
@@ -1762,13 +1766,13 @@ int FS_Write( const void *buffer, int len, fileHandle_t h ) {
 			if (!tries) {
 				tries = 1;
 			} else {
-				Com_Printf( "FS_Write: 0 bytes written\n" );
+				Com_Printf( "FS_Write: 0 bytes written, %s\n", strerror(errno) );
 				return 0;
 			}
 		}
 
 		if (written == -1) {
-			Com_Printf( "FS_Write: -1 bytes written\n" );
+			Com_Printf( "FS_Write: -1 bytes written, %s\n", strerror(errno) );
 			return 0;
 		}
 

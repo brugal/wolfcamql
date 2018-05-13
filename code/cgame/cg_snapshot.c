@@ -253,7 +253,7 @@ static void CG_TransitionSnapshot( void ) {
 	//Com_Printf("^6armor:  %d\n", cg_entities[cg.snap->ps.clientNum].currentState.armor);
 	cg_entities[ cg.snap->ps.clientNum ].interpolate = qfalse;
 
-	if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)) {
+	if ((cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype))  ||  CG_IsCpmaMvd()) {
 		numSortedTeamPlayers = 0;
 
 		if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR) {
@@ -293,20 +293,32 @@ static void CG_TransitionSnapshot( void ) {
 					   );
 #endif
 
-			if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)) {
+			if ((cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype))  ||  CG_IsCpmaMvd()) {
 				const clientInfo_t *ci;
+				int ourTeam;
+
+				if (wolfcam_following) {
+					ourTeam = cgs.clientinfo[wcg.clientNum].team;
+				} else {
+					if (CG_IsCpmaMvd()) {
+						ourTeam = TEAM_SPECTATOR;
+					} else {
+						ourTeam = cg.snap->ps.persistant[PERS_TEAM];
+					}
+				}
 
 				ci = cgs.clientinfo + cg.snap->entities[i].number;
-				if (ci->infoValid  &&  ci->team == cg.snap->ps.persistant[PERS_TEAM]) {
+				if (ci->infoValid  &&  ci->team == ourTeam  &&  ourTeam != TEAM_SPECTATOR) {
 					if (numSortedTeamPlayers < TEAM_MAXOVERLAY) {
 						numSortedTeamPlayers++;
 						sortedTeamPlayers[numSortedTeamPlayers - 1] = cg.snap->entities[i].number;
+						//Com_Printf("^2numSorted added: %s\n", ci->name);
 					}
 				}
 			}
         }
 
-		if (cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype)) {
+		if ((cgs.realProtocol >= 91  &&  CG_IsTeamGame(cgs.gametype))  ||  CG_IsCpmaMvd()) {
 			qsort(sortedTeamPlayers, numSortedTeamPlayers, sizeof(sortedTeamPlayers[0]), SortClients);
 		}
 

@@ -1131,10 +1131,13 @@ void CheckTeamStatus(void) {
 
 			if (ent->inuse && (ent->client->sess.sessionTeam == TEAM_RED ||	ent->client->sess.sessionTeam == TEAM_BLUE)) {
 				loc = Team_GetLocation( ent );
-				if (loc)
+				if (loc) {
 					ent->client->pers.teamState.location = loc->health;
-				else
+					// protocol 91
+					ent->client->ps.location = loc->health;
+				} else {
 					ent->client->pers.teamState.location = 0;
+				}
 			}
 		}
 

@@ -1202,12 +1202,29 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 static qboolean CG_HaveWeapon (int weapon)
 {
 	if (wolfcam_following) {
+		//FIXME also other non team games?
+		if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_TOURNAMENT) {
+			unsigned int bits;
+
+			bits = cg.snap->ps.ammo[wcg.clientNum] >> 6;
+			bits &= (0xffff - 1);
+
+			if (bits & (1 << weapon)) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
+		}
+
 		if (cg_entities[wcg.clientNum].currentState.weapon == weapon) {
 			return qtrue;
 		} else {
 			return qfalse;
 		}
 	} else {
+		if (CG_IsCpmaMvd()) {
+			return qfalse;
+		}
 		if (cg.snap->ps.stats[STAT_WEAPONS] & (1 << weapon)) {
 			return qtrue;
 		} else {
@@ -1224,14 +1241,24 @@ static int CG_NumHeldWeapons (void)
 	int i;
 
 	if (wolfcam_following) {
-		bits = (1 << cg_entities[wcg.clientNum].currentState.weapon);
+		//FIXME other game types
+		if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_TOURNAMENT) {
+			// .... .... XXXX XXXX XXXX XXXX .... ....   doesn't include gaunt
+			bits = cg.snap->ps.ammo[wcg.clientNum] >> 8;
+			bits &= 0xffff;
+
+			// add gaunt and WEAP_NONE
+			bits <<= 2;
+			bits |= 0x3;
+		} else {
+			bits = (1 << cg_entities[wcg.clientNum].currentState.weapon);
+		}
 	} else {
 		bits = cg.snap->ps.stats[STAT_WEAPONS];
 	}
 
 	count = 0;
-	//FIXME i < 16
-	for (i = 1;  i < 16;  i++) {
+	for (i = 1;  i < MAX_WEAPONS;  i++) {
 		if (bits & (1 << i)) {
 			count++;
 		}
@@ -1242,8 +1269,32 @@ static int CG_NumHeldWeapons (void)
 
 static int CG_WeaponAmmo (int weapon)
 {
+	if (weapon < 0  ||  weapon >= MAX_WEAPONS) {
+		Com_Printf("^3CG_WeaponAmmo:  invalid weapon number: %d\n", weapon);
+		return W_AMMO_UNKNOWN;
+	}
+
+	if (!cg.snap) {
+		return W_AMMO_UNKNOWN;
+	}
+
 	if (CG_IsCpmaMvd()) {
-		//FIXME can show current weapon, and need indicator for have weapon but don't know ammo
+		if (wolfcam_following) {
+			int ammo;
+
+			ammo = W_AMMO_UNKNOWN;
+			if (weapon == cg_entities[wcg.clientNum].currentState.weapon) {
+				ammo = cg.snap->ps.ammo[wcg.clientNum] & 0xff;
+			}
+
+			if (ammo == 255) {
+				return W_AMMO_INFINITE;
+				//return W_AMMO_UNKNOWN;
+			}
+
+			return ammo;
+		}
+
 		return W_AMMO_UNKNOWN;
 	}
 
@@ -4841,10 +4892,8 @@ void CG_DrawWeaponBar( void ) {
 		return;
 	}
 
-	if (CG_IsCpmaMvd()) {
-		if (cg.snap->ps.clientNum == cg.clientNum) {
-			return;
-		}
+	if (CG_IsCpmaMvd()  &&  !wolfcam_following) {
+		return;
 	}
 
 	if (cg_weaponBar.integer == 4  ||  cg_weaponBar.integer == 5) {
@@ -4861,7 +4910,7 @@ void CG_DrawWeaponBar( void ) {
 		font = &cgDC.Assets.textFont;
 	}
 	QLWideScreen = cg_weaponBarWideScreen.integer;
-	
+
 	// don't display if dead
 	if (wolfcam_following) {
 		if (cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD) {
@@ -4884,7 +4933,17 @@ void CG_DrawWeaponBar( void ) {
 
 	// count the number of weapons owned
 	if (wolfcam_following) {
-		weapons = (1 << cg_entities[wcg.clientNum].currentState.weapon);
+		//FIXME other game types
+		if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_TOURNAMENT) {
+			weapons = cg.snap->ps.ammo[wcg.clientNum] >> 8;
+			weapons &= 0xffff;
+
+			// add gaunt and WEAP_NONE
+			weapons <<= 2;
+			weapons |= 0x3;
+		} else {
+			weapons = (1 << cg_entities[wcg.clientNum].currentState.weapon);
+		}
 	} else {
 		weapons = cg.snap->ps.stats[ STAT_WEAPONS ];
 	}
@@ -4981,16 +5040,22 @@ void CG_DrawWeaponBar( void ) {
 			goto finishLoop;
 		}
 
-		if (wolfcam_following) {
-			goto finishLoop;
-		}
-
-		//FIXME might be able to work with /follow
-		if (CG_IsCpmaMvd()) {
-			goto finishLoop;
-		}
-
 		ammo = cg.snap->ps.ammo[i];
+
+		if (wolfcam_following) {
+			if (CG_IsCpmaMvd()) {
+				//FIXME ............
+				if (i == cg_entities[wcg.clientNum].currentState.weapon) {
+					ammo = cg.snap->ps.ammo[wcg.clientNum] & 0xff;
+				} else {
+					goto finishLoop;
+				}
+			} else {
+				goto finishLoop;
+			}
+		}
+
+
 		Vector4Copy(colorWhite, textColor);
 
 		ammoOffset = 0;

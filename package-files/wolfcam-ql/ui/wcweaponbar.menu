@@ -559,15 +559,17 @@ menuDef {
 		       	  visible 0  // wolfcam following someone other than demo pov
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
-			  style WINDOW_STYLE_FILLED
+  			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -585,14 +587,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -610,14 +614,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -635,14 +641,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -660,14 +668,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -685,14 +695,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -710,14 +722,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -735,14 +749,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -760,14 +776,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -785,14 +803,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -810,14 +830,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -835,14 +857,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -860,14 +884,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}
@@ -885,14 +911,16 @@ menuDef {
 		       } else if (@ammo = W_AMMO_INFINITE) {
 		       	  background "icons/infinite"
 			  style WINDOW_STYLE_FILLED
+			  backcolor 1 1 1 1
+			  visible 1
 		       } else {
 		       	  textExt "%0d{@ammo}"
 		       	  textScale 0.25
 			  setvar @newY (@newY + 15)
+			  visible 1
  		       }
 		       rect @weaponBarX @newY @weaponBarW @weaponBarH
 		       setvar @weaponBarY (@weaponBarY + 20)
-		       visible 1
 		    }
 		}
        	}

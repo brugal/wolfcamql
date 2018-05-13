@@ -1124,7 +1124,7 @@ static void Wolfcam_DrawFollowing (void)
     else
         visible = qfalse;
 
-    if (visible)
+    if (visible  ||  CG_IsCpmaMvd())
         scolor = S_COLOR_WHITE;
     else
 		scolor = S_COLOR_RED;
@@ -1913,7 +1913,28 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 					colorBlack[3] = 1.0;
 					trap_R_SetColor( newColor );
 				}
-#if 1
+
+#if 0
+				if (style == ITEM_TEXTSTYLE_BLINK) {  //  &&  !((cg.realTime/BLINK_DIVISOR) & 1)) {
+					vec4_t blinkColor;
+					vec4_t lowLight;
+
+					lowLight[0] = 0.8 * newColor[0];
+					lowLight[1] = 0.8 * newColor[1];
+					lowLight[2] = 0.8 * newColor[2];
+					lowLight[3] = 0.8 * newColor[3];
+
+					//Vector4Set(lowLight, newColor[0], newColor[1], newColor[2], 0);
+					Vector4Set(lowLight, 0, 0, 0, 0);
+
+					//LerpColor(newColor, lowLight, blinkColor, 0.5 + 0.5*sin(cg.realTime / PULSE_DIVISOR));
+					LerpColor(newColor, lowLight, blinkColor, 0.5 + 0.5*sin(cg.realTime / 1000));
+					//Vector4Set(blinkColor, 1, 0, 0, 1);
+
+					trap_R_SetColor(blinkColor);
+				}
+#endif
+
 				CG_Text_PaintCharScale(
 									   x + xadj,
 									   y - yadj,
@@ -1927,15 +1948,15 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 													glyph.t2,
 													glyph.glyph);
 
-#endif
+
 				x += (glyph.xSkip * useScale * xscale) + adjust;
 				//Com_Printf("%c  xSkip %d\n", s[0], glyph->xSkip);
 				s += bytes;
 				byteCount += bytes;
 				charCount++;
 			}
-    }
-	  trap_R_SetColor( NULL );
+		}
+		trap_R_SetColor( NULL );
   }
 }
 
@@ -4527,15 +4548,21 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	qboolean q3font = qfalse;
 	float lineOffset;
 	int ourClientNum;
+	int ourTeam;
 
 	if ( !cg_drawTeamOverlay.integer ) {
 		return y;
 	}
 
+#if 0  // can be a free float spec with protocol 91 or cpma mvd
 	//FIXME can skip this check with protocol >= 91 ?
 	if ( cg.snap->ps.persistant[PERS_TEAM] != TEAM_RED && cg.snap->ps.persistant[PERS_TEAM] != TEAM_BLUE ) {
 		return y; // Not on any team
 	}
+#endif
+
+	//FIXME quicker short circuit here...
+
 
 	//SC_Vec4ColorFromCvars(color, &cg_drawTeamOverlayColor, &cg_drawTeamOverlayAlpha);
 	scale = cg_drawTeamOverlayScale.value;
@@ -4587,8 +4614,19 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 
 	if (wolfcam_following) {
 		ourClientNum = wcg.clientNum;
+		ourTeam = cgs.clientinfo[wcg.clientNum].team;
+
+		if (cgs.realProtocol >= 91) {
+			// information not available for other team, but it is available for both teams in free spec
+			if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR) {
+				if (ourTeam != cg.snap->ps.persistant[PERS_TEAM]) {
+					return y;
+				}
+			}
+		}
 	} else {
 		ourClientNum = cg.snap->ps.clientNum;
+		ourTeam = cg.snap->ps.persistant[PERS_TEAM];
 	}
 
 	for (i = 0; i < count; i++) {
@@ -4597,7 +4635,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 		}
 
 		ci = cgs.clientinfo + sortedTeamPlayers[i];
-		if ( ci->infoValid && ci->team == cg.snap->ps.persistant[PERS_TEAM]) {
+		if ( ci->infoValid && ci->team == ourTeam ) {
 			plyrs++;
 			//FIXME width
 			//len = CG_DrawStrlen(ci->name, &cgs.media.tinychar) / TINYCHAR_WIDTH;
@@ -4674,12 +4712,12 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 	//FIXME
 	//y += 2;
 
-	if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_RED ) {
+	if ( ourTeam == TEAM_RED ) {
 		hcolor[0] = 1.0f;
 		hcolor[1] = 0.0f;
 		hcolor[2] = 0.0f;
 		hcolor[3] = 0.33f * alpha;
-	} else { // if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE )
+	} else { // if ( ourTeam == TEAM_BLUE )
 		hcolor[0] = 0.0f;
 		hcolor[1] = 0.0f;
 		hcolor[2] = 1.0f;
@@ -4754,9 +4792,20 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 			armor = SIGNED_16_BIT(es->armor);
 
 			curWeapon = es->weapon;
+		} else if (CG_IsCpmaMvd()) {
+			int cn;
+
+			cn = sortedTeamPlayers[i];
+			powerups = es->powerups;
+			location = ((unsigned int)cg.snap->ps.ammo[cn] >> 8) & 0x3f;
+
+			health = ((unsigned int)cg.snap->ps.powerups[cn] >> 24) & 0xff;
+			armor = ((unsigned int)cg.snap->ps.powerups[cn] >> 16) & 0xff;
+
+			curWeapon = es->weapon;
 		}
 
-		if ( ci->infoValid && ci->team == cg.snap->ps.persistant[PERS_TEAM]) {
+		if ( ci->infoValid && ci->team == ourTeam ) {
 			//Com_Printf("%d %s\n", i, ci->name);
 			if (get_player_ping(sortedTeamPlayers[i]) < 0) {
 				VectorCopy(colorYellow, hcolor);
@@ -9421,6 +9470,8 @@ static void CG_DrawAmmoWarning( void ) {
 	int align;
 	vec4_t color;
 	const fontInfo_t *font;
+	int weapon;
+	int clientNum;
 
 	if (cg_drawAmmoWarning.integer == 0) {
 		return;
@@ -9430,26 +9481,45 @@ static void CG_DrawAmmoWarning( void ) {
 		return;
 	}
 
-	if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
+	if (cg.freecam) {
 		return;
 	}
 
-	//FIXME might be able to with mvd info
+	weapon = cg.snap->ps.weapon;
+	clientNum = cg.snap->ps.clientNum;
+
+	if (wolfcam_following) {
+		weapon = cg_entities[wcg.clientNum].currentState.weapon;
+		clientNum = wcg.clientNum;
+
+		if (CG_IsCpmaMvd()) {
+			if (cgs.clientinfo[wcg.clientNum].team == TEAM_SPECTATOR) {
+				return;
+			}
+		} else {
+			if (wcg.clientNum != cg.snap->ps.clientNum) {
+				return;
+			}
+		}
+	}
+
+	if (cg.snap->ps.pm_type == PM_SPECTATOR  &&  cg.snap->ps.clientNum == cg.clientNum) {
+		return;
+	}
+
 	if (CG_IsCpmaMvd()) {
-		if (cg.snap->ps.clientNum == cg.clientNum) {
+		//FIXME need check for cpma frozen player
+		if (cgs.gametype == GT_FREEZETAG) {
+			//return;
+		}
+	} else {
+		if (cgs.gametype == GT_FREEZETAG  &&  CG_FreezeTagFrozen(clientNum)) {
 			return;
 		}
 	}
 
-	//FIXME what if the person you are speccing is low on ammo
-	if (cg.snap->ps.pm_type == PM_SPECTATOR  &&  cgs.gametype == GT_CA  && cg.snap->ps.clientNum == cg.clientNum)
-		return;
-
-	if (cgs.gametype == GT_FREEZETAG  &&  CG_FreezeTagFrozen(cg.snap->ps.clientNum)) {
-		return;
-	}
-
-	if (cg.snap->ps.weapon == WP_GAUNTLET) {
+	//FIXME is this check needed, should be done in CG_CheckAmmo() ?
+	if (weapon == WP_GAUNTLET) {
 		return;
 	}
 
@@ -10459,6 +10529,8 @@ static void CG_Draw2D( void ) {
 		CG_DrawCrosshairNames();
 		CG_DrawCrosshairTeammateHealth();
 		CG_DrawKeyPress();
+		// draw this last so it's not obscured
+		CG_DrawAmmoWarning();
 	} else if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR  ||  (cgs.gametype == GT_CA  &&  cg.snap->ps.pm_type == PM_SPECTATOR  &&  cg.clientNum == cg.snap->ps.clientNum) ) {
 
 		//FIXME ql hud?

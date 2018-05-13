@@ -7928,6 +7928,55 @@ static void CG_SeekPrevRound_f (void)
 	}
 }
 
+static void print_int_bits (unsigned int number)
+{
+	int i;
+	unsigned int mask;
+
+	// 1000 0000 0000 0000 0000 0000 0000 0000
+	mask = 1 << 31;
+
+	for (i = 0;  i < 32;  i++) {
+		Com_Printf("%c", number & mask ? '1' : '0');
+		if (i > 0  &&  i % 4 == 3) {
+			Com_Printf(" ");
+		}
+
+		mask >>= 1;
+	}
+}
+
+static void CG_DebugCpmaMvd_f (void)
+{
+	int i;
+
+	if (!cg.snap) {
+		return;
+	}
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		if (!cgs.clientinfo[i].infoValid) {
+			continue;
+		}
+		if (cgs.clientinfo[i].team == TEAM_SPECTATOR) {
+			continue;
+		}
+
+		Com_Printf("^5%d  ^7%s\n", i, cgs.clientinfo[i].name);
+
+		Com_Printf("  ^1ps.powerups %u    ^3%u\n", cg.snap->ps.powerups[i], cg.snap->ps.powerups[i] & 0xffff);
+		Com_Printf(" ");
+		print_int_bits(cg.snap->ps.powerups[i]);
+		Com_Printf("\n");
+
+		Com_Printf("  ^1ps.ammo     %u    ^5%u  ^2%u\n", cg.snap->ps.ammo[i], ((unsigned int)cg.snap->ps.ammo[i] >> 8) & 0xff, ((unsigned int)cg.snap->ps.ammo[i] >> 24) & 0xff);
+		Com_Printf(" ");
+		print_int_bits(cg.snap->ps.ammo[i]);
+		Com_Printf("\n");
+
+		Com_Printf("\n");
+	}
+}
 
 typedef struct {
 	const char *cmd;
@@ -8120,6 +8169,7 @@ static consoleCommand_t	commands[] = {
 	//{ "+back", CG_BackDown_f },
 	{ "seeknextround", CG_SeekNextRound_f },
 	{ "seekprevround", CG_SeekPrevRound_f },
+	{ "debugcpmamvd", CG_DebugCpmaMvd_f },
 
 };
 

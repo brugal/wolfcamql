@@ -1256,6 +1256,17 @@ qboolean CG_CpmaIsRoundWarmup (void)
   0000 0000 0000 0000 0000 0000 0000 0000
   XXXX XXXX .... .... .... .... .... ....  health
   .... .... XXXX XXXX .... .... .... ....  armor
+  .... .... .... .... XXXX XXXX XXXX XXXX  damage done
+
+  ----
+
+  ps.ammo:
+
+  0000 0000 0000 0000 0000 0000 0000 0000
+  .... .... .... .... .... .... XXXX XXXX  ammo, 255 represents infinite?
+  .... .... XXXX XXXX XXXX XXXX .... ....  weapons held in duel (others like
+                                           ffa?)
+  .... .... .... .... ..xx xxxx .... ....  location in team games
 
  */
 qboolean CG_IsCpmaMvd (void)
