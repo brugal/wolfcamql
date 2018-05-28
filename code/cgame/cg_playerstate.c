@@ -189,7 +189,7 @@ int CG_GetAmmoWarning (int weapon, int style, int ammoOffset)
 		} else {
 			ammoWarning = AMMO_WARNING_LOW;
 		}
-	} else if (style == 1) {  // quake live style bassed on low ammo percentage
+	} else if (style == 1) {  // quake live style based on low ammo percentage
 		total = currentAmmo + ammoOffset;
 
 		//FIXME armorTiered and non ql demos

@@ -745,8 +745,13 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
 	if (cgs.protocol == PROTOCOL_QL) {
-		cgs.dominationRedPoints = atoi(CG_ConfigString(CS_DOMINATION_RED_POINTS));
-		cgs.dominationBluePoints = atoi(CG_ConfigString(CS_DOMINATION_BLUE_POINTS));
+		if (cgs.realProtocol < 91) {
+			cgs.dominationRedPoints = atoi(CG_ConfigString(CS_DOMINATION_RED_POINTS));
+			cgs.dominationBluePoints = atoi(CG_ConfigString(CS_DOMINATION_BLUE_POINTS));
+		} else {
+			cgs.dominationRedPoints = atoi(CG_ConfigString(CS91_GENERIC_COUNT_RED));
+			cgs.dominationBluePoints = atoi(CG_ConfigString(CS91_GENERIC_COUNT_BLUE));
+		}
 	} else {
 		cgs.dominationRedPoints = 0;
 		cgs.dominationBluePoints = 0;

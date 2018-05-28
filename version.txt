@@ -1,4 +1,4 @@
-12.0test24
+12.0test25
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -87,6 +87,20 @@
 * 'textReset' itemdef command to remove text entry in menu
 * 'backgroundReset' itemdef and menudef command to remove background image
 * bug fix:  team overlay wasn't showing with /follow in free spec demos
+* bug fix:  q3 hud didn't show players left with red rover and ad/ctfs game types
+* bug fix:  q3 hud didn't show number of captured domination control points
+* bug fix:  hud didn't show number of captured domination control points for protocol 91 demos
+* bug fix:  q3 hud didn't use millisecond precision for race scores
+* cg_drawRaceTime to show race score in q3 hud
+* draw scores in q3 hud uses latest score info for /follow
+* bug fix:  q3 scoreboard not showing score and ping in cpma duel
+* bug fix:  free float spectator not showing second score in q3 hud
+* bug fix:  q3 hud incorrectly calculated first place score
+* bug fix:  free spec demos and cpma mvd demos would draw spectators as first and second place
+* cpma mvd ffa shows rank for followed player
+* CG_SHOW_IF_PLYR[12] evaulates to true for demo playback to allow showing pickups for both duel players
+* /follow improvements:  When possible use CG_SHOW_HEALTHCRITICAL, CG_SHOW_IF_PLYR_IS_NOT_FIRST_PLACE, CG_SHOW_IF_PLYR_IS_FIRST_PLACE.  Support for CG_SHOW_IF_PLYR_IS_ON_*_SPEC, CG_SHOW_IF_PLAYER_HAS_FLAG
+* bug fix:  gametype set incorrectly for older cpma demos
 
 ---------------------------------
 11.7  2017-06-07

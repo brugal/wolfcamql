@@ -1202,8 +1202,7 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 static qboolean CG_HaveWeapon (int weapon)
 {
 	if (wolfcam_following) {
-		//FIXME also other non team games?
-		if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_TOURNAMENT) {
+		if (CG_IsCpmaMvd()  &&  !CG_IsTeamGame(cgs.gametype)) {
 			unsigned int bits;
 
 			bits = cg.snap->ps.ammo[wcg.clientNum] >> 6;
@@ -1241,8 +1240,7 @@ static int CG_NumHeldWeapons (void)
 	int i;
 
 	if (wolfcam_following) {
-		//FIXME other game types
-		if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_TOURNAMENT) {
+		if (CG_IsCpmaMvd()  &&  !CG_IsTeamGame(cgs.gametype)) {
 			// .... .... XXXX XXXX XXXX XXXX .... ....   doesn't include gaunt
 			bits = cg.snap->ps.ammo[wcg.clientNum] >> 8;
 			bits &= 0xffff;
@@ -1285,11 +1283,12 @@ static int CG_WeaponAmmo (int weapon)
 			ammo = W_AMMO_UNKNOWN;
 			if (weapon == cg_entities[wcg.clientNum].currentState.weapon) {
 				ammo = cg.snap->ps.ammo[wcg.clientNum] & 0xff;
+			} else {
+				return W_AMMO_UNKNOWN;
 			}
 
 			if (ammo == 255) {
 				return W_AMMO_INFINITE;
-				//return W_AMMO_UNKNOWN;
 			}
 
 			return ammo;
@@ -1299,7 +1298,7 @@ static int CG_WeaponAmmo (int weapon)
 	}
 
 	if (wolfcam_following) {
-		return W_AMMO_UNKNOWN;  //FIXME hack
+		return W_AMMO_UNKNOWN;
 	}
 
 	return cg.snap->ps.ammo[weapon];
@@ -2873,6 +2872,11 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	int cs;
 
 	if (flags & CG_SHOW_IF_PLYR1) {
+		// this is only used in duel scoreboard to prevent seeing pickups from other player
+		if (cgs.protocol != PROTOCOL_QL  ||  wolfcam_following  ||  cg.demoPlayback) {
+			return qtrue;
+		}
+
 		if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
 			cs = CS_FIRST_PLACE_CLIENT_NUM2;
 		} else {
@@ -2887,6 +2891,11 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_PLYR2) {
+		// this is only used in duel scoreboard to prevent seeing pickups from other player
+		if (cgs.protocol != PROTOCOL_QL  ||  wolfcam_following  ||  cg.demoPlayback) {
+			return qtrue;
+		}
+
 		if (CG_CheckQlVersion(0, 1, 0, 495)  ||  cgs.realProtocol >= 91) {
 			cs = CS_SECOND_PLACE_CLIENT_NUM2;
 		} else {
@@ -3018,7 +3027,11 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_PLYR_IS_ON_RED_OR_SPEC) {
-		clientNum = cg.snap->ps.clientNum;  //FIXME wolfcam
+		if (wolfcam_following) {
+			clientNum = wcg.clientNum;
+		} else {
+			clientNum = cg.snap->ps.clientNum;
+		}
 		team = cgs.clientinfo[clientNum].team;
 		if (team == TEAM_RED  ||  team == TEAM_SPECTATOR) {
 			return qtrue;
@@ -3028,7 +3041,11 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_PLYR_IS_ON_BLUE_OR_SPEC) {
-		clientNum = cg.snap->ps.clientNum;  //FIXME wolfcam
+		if (wolfcam_following) {
+			clientNum = wcg.clientNum;
+		} else {
+			clientNum = cg.snap->ps.clientNum;
+		}
 		team = cgs.clientinfo[clientNum].team;
 		if (team == TEAM_BLUE  ||  team == TEAM_SPECTATOR) {
 			return qtrue;
@@ -3038,7 +3055,11 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_PLYR_IS_ON_RED_NO_SPEC) {
-		clientNum = cg.snap->ps.clientNum;  //FIXME wolfcam
+		if (wolfcam_following) {
+			clientNum = wcg.clientNum;
+		} else {
+			clientNum = cg.snap->ps.clientNum;
+		}
 		team = cgs.clientinfo[clientNum].team;
 		if (team == TEAM_RED) {
 			return qtrue;
@@ -3048,7 +3069,11 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_PLYR_IS_ON_BLUE_NO_SPEC) {
-		clientNum = cg.snap->ps.clientNum;  //FIXME wolfcam
+		if (wolfcam_following) {
+			clientNum = wcg.clientNum;
+		} else {
+			clientNum = cg.snap->ps.clientNum;
+		}
 		team = cgs.clientinfo[clientNum].team;
 		if (team == TEAM_BLUE) {
 			return qtrue;
@@ -3058,6 +3083,9 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_1ST_PLYR_FOLLOWED) {
+		// only in com_spectator_follow.menu and duel
+		//FIXME wolfcam
+
 		if (cgs.realProtocol >= 91) {
 			if (atoi(CG_ConfigString(CS91_CLIENTNUM1STPLAYER)) == cg.snap->ps.clientNum) {
 				return qtrue;
@@ -3082,6 +3110,9 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 	}
 
 	if (flags & CG_SHOW_IF_2ND_PLYR_FOLLOWED) {
+		// only in com_spectator_follow.menu and duel
+		//FIXME wolfcam
+
 		if (cgs.realProtocol >= 91) {
 			if (atoi(CG_ConfigString(CS91_CLIENTNUM2NDPLAYER)) == cg.snap->ps.clientNum) {
 				return qtrue;
@@ -3210,22 +3241,28 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 
 	if (flags & CG_SHOW_HEALTHCRITICAL) {
 		if (wolfcam_following) {
-			//return qfalse;  //FIXME
-			if (0) { //(wclients[wcg.clientNum].eventHealth < 25) {
+			int health;
+
+			health = Wolfcam_PlayerHealth(wcg.clientNum);
+			if (health == INVALID_WOLFCAM_HEALTH) {
+				return qfalse;
+			}
+
+			if (health < 25) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
+		} else {
+			if (cg.snap->ps.stats[STAT_HEALTH] < 25) {
 				return qtrue;
 			} else {
 				return qfalse;
 			}
 		}
-
-		if (cg.snap->ps.stats[STAT_HEALTH] < 25) {
-			return qtrue;
-		} else {
-			return qfalse;
-		}
 	}
 
-#if 0
+#if 0  //FIXME check, same as CG_SHOW_HEALTHCRITICAL ?
 	if (flags & CG_SHOW_HEALTHOK) {
 		if (wolfcam_following) {
 			//return qtrue;  //FIXME
@@ -3244,7 +3281,6 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 	}
 #endif
 
-#if 1
 	if (flags & CG_SHOW_DOMINATION) {
 		if (cgs.gametype == GT_DOMINATION) {
 			return qtrue;
@@ -3252,8 +3288,6 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			return qfalse;
 		}
 	}
-
-#endif
 
 #if 0
 	if (flags & CG_SHOW_SINGLEPLAYER) {
@@ -3286,7 +3320,17 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 
 	if (flags & CG_SHOW_IF_PLAYER_HAS_FLAG) {
 		if (wolfcam_following) {
-			return qfalse;  //FIXME
+			const entityState_t *ent;
+
+			ent = &cg_entities[wcg.clientNum].currentState;
+			if ( (ent->powerups & (1 << PW_REDFLAG))  ||
+				 (ent->powerups & (1 << PW_BLUEFLAG)) ||
+				 (ent->powerups & (1 << PW_NEUTRALFLAG)
+				  )) {
+				return qtrue;
+			}
+
+			return qfalse;
 		}
 
 		if (cg.snap->ps.powerups[PW_REDFLAG] || cg.snap->ps.powerups[PW_BLUEFLAG] || cg.snap->ps.powerups[PW_NEUTRALFLAG]) {
@@ -3351,11 +3395,45 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			}
 		}
 
-		if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) != 0) {
-			return qtrue;
-		} else {
-			return qfalse;
+		// duel and ffa
+
+		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum  &&  cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR)) {
+			if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) != 0) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
 		}
+
+		// wolfcam_following
+
+		if (CG_IsCpmaMvd()) {
+			// can use clientinfo score since it is updated at the same time as cgs.scores1 and cgs.scores2
+			if (cgs.clientinfo[wcg.clientNum].score != cgs.scores1) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
+		}
+
+		if (cgs.gametype == GT_TOURNAMENT) {
+			// if following someone in game it means we are following the player the demo taker is playing against
+			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
+				if (cg.snap->ps.persistant[PERS_RANK] & RANK_TIED_FLAG) {
+					return qfalse;
+				} else if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) != 0) {
+					return qfalse;
+				} else {
+					return qtrue;
+				}
+			} else {
+				// we don't know
+				return qfalse;
+			}
+		}
+
+		// other game types and cases:  we don't know, we don't have enough information in demo
+		return qfalse;
 	}
 
 	if (flags & CG_SHOW_IF_RED_IS_FIRST_PLACE) {
@@ -3433,11 +3511,45 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			}
 		}
 
-		if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
-			return qtrue;
-		} else {
-			return qfalse;
+		// duel and ffa
+
+		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum  &&  cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR)) {
+			if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
 		}
+
+		// wolfcam_following
+
+		if (CG_IsCpmaMvd()) {
+			// can use clientinfo score since it is updated at the same time as cgs.scores1 and cgs.scores2
+			if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {
+				return qtrue;
+			} else {
+				return qfalse;
+			}
+		}
+
+		if (cgs.gametype == GT_TOURNAMENT) {
+			// if following someone in game it means we are following the player the demo taker is playing against
+			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
+				if (cg.snap->ps.persistant[PERS_RANK] & RANK_TIED_FLAG) {
+					return qtrue;
+				} else if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
+					return qfalse;
+				} else {
+					return qtrue;
+				}
+			} else {
+				// we don't know
+				return qfalse;
+			}
+		}
+
+		// other game types and cases:  we don't know, we don't have enough information in demo
+		return qfalse;
 	}
 
 	if (flags & CG_SHOW_IF_MSG_PRESENT) {  //FIXME don't know  -- friend bullshit
@@ -4315,6 +4427,7 @@ static void CG_OspCalcPlacements (void)
 
 	//FIXME non duel games
 
+	//FIXME free spec demos
 	if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
 		//FIXME should be storing clientNum
 		Q_strncpyz(cgs.firstPlace, cgs.clientinfo[cg.snap->ps.clientNum].name, sizeof(cgs.firstPlace));
@@ -4380,14 +4493,6 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 		team = cg.snap->ps.persistant[PERS_TEAM];
 	}
 
-	if (cgs.cpma) {
-		if (CG_IsTeamGame(cgs.gametype)) {
-
-		} else {
-
-		}
-	}
-
 	if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
 		if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
 			//FIXME free cam
@@ -4426,9 +4531,13 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 		}
 
 		teamSpacing = rect->h / 2;
-	} else {
-		//if (cgs.scores1 == cg.snap->ps.persistant[PERS_SCORE]) {  //FIXME wolfcam
-		if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
+	} else {  // non team games
+
+		// special case when we are following main demo view and they are an ingame player
+		if
+			((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))
+			 &&  cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR
+			 &&  CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {  // first person ingame demo view
 			const char *clanTag;
 
 			clanTag = cgs.clientinfo[cg.snap->ps.clientNum].clanTag;
@@ -4437,8 +4546,70 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 			} else {
 				s = va("1. ^7%s", cgs.clientinfo[cg.snap->ps.clientNum].name);
 			}
-		} else {
-			s = va("1. %s", cgs.firstPlace);  //CG_ConfigString(CS_FIRSTPLACE));
+		} else {  // /follow someone (other than main client view) and/or free spec demo
+
+			// special case for cpma ffa, they update client scores as often as cgs.scores[12] so we can check against that.  For other ffa/rr games (ql, q3, etc..) scores might not be updated enough.
+			if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_FFA) {
+				int i;
+
+				s = "";
+
+				if (wolfcam_following) {
+					// check us first
+					if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {
+						s = va("1. %s", cgs.clientinfo[wcg.clientNum].name);
+					}
+				}
+
+				if (!*s) {
+					// draw first person who matches
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						if (!cgs.clientinfo[i].infoValid) {
+							continue;
+						}
+						if (cgs.clientinfo[i].team != TEAM_FREE) {
+							continue;
+						}
+
+						if (cgs.clientinfo[i].score == cgs.scores1) {
+							s = va("1. %s", cgs.clientinfo[i].name);
+							break;
+						}
+					}
+				}
+			} else {  // not cpma ffa
+				if (CG_ScoresEqual(cgs.scores2, cgs.scores1)  &&  wolfcam_following  &&  cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR) {
+
+					// draw us first if possible
+					if (cgs.gametype == GT_TOURNAMENT) {
+						const char *clanTag;
+
+						clanTag = cgs.clientinfo[wcg.clientNum].clanTag;
+						if (*clanTag) {
+							s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[wcg.clientNum].name);
+						} else {
+							s = va("1. ^7%s", cgs.clientinfo[wcg.clientNum].name);
+						}
+					} else {  // ffa, red rover
+
+						//FIXME don't use client info score since it doesn't update often enough
+						if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {
+							const char *clanTag;
+
+							clanTag = cgs.clientinfo[wcg.clientNum].clanTag;
+							if (*clanTag) {
+								s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[wcg.clientNum].name);
+							} else {
+								s = va("1. ^7%s", cgs.clientinfo[wcg.clientNum].name);
+							}
+						} else {
+							s = va("1. %s", cgs.firstPlace);
+						}
+					}
+				} else {  // cgs.scores1 not equal to cgs.scores2 or not /follow or free spec
+					s = va("1. %s", cgs.firstPlace);  //CG_ConfigString(CS_FIRSTPLACE));
+				}
+			}
 		}
 		teamSpacing = 0;
 		score = cgs.scores1;
@@ -4502,8 +4673,6 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	//CG_Text_Paint(rect->x + rect->w - spacing - CG_Text_Width(scoreString, scale, 0, font), rect->y, scale, color, scoreString, 0, 0, textStyle, font);
 	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, color, scoreString, 0, 0, textStyle, font);
 }
-
-//FIXME duplicate with CG_Draw1stPlaceScore
 
 static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font)
 {
@@ -4585,63 +4754,218 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 			CG_Printf("^3FIXME CG_Draw2ndPlaceScore() warning shouldn't happen 1\n");
 			score = -100;  // gcc warning
 		}
+	} else {  // non team games
 
-		//score = cgs.scores2;
-		//} else if (cgs.scores1 == cg.snap->ps.persistant[PERS_SCORE]) {
-	} else if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
-		//FIXME wolfcam
-		if (CG_ScoresEqual(cgs.scores2, cgs.scores1)) {
-			qboolean secondPlaceIsUs = qfalse;
+		// special case when we are following main demo view and they are a an ingame player
+		if (
+			   (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))
+			   &&  cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR
+			   &&  CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
 
-			//sname = CG_ConfigString(CS_SECONDPLACE);
-			sname = cgs.secondPlace;  //CG_ConfigString(CS_SECONDPLACE);
-			ourName = Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.snap->ps.clientNum), "n");
-			snameLen = strlen(sname);
-			ourNameLen = strlen(ourName);
+			// we are drawn as 1st place but might be listed as second place player, need to check who the other player is
+			// note, name compare only works when cgs.secondPlace is set
+			if (CG_ScoresEqual(cgs.scores2, cgs.scores1)) {
+				qboolean secondPlaceIsUs = qfalse;
 
-			if (snameLen >= ourNameLen) {
-				sname = sname + snameLen - ourNameLen;
+				//sname = CG_ConfigString(CS_SECONDPLACE);
+				sname = cgs.secondPlace;  //CG_ConfigString(CS_SECONDPLACE);
+				ourName = Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.snap->ps.clientNum), "n");
+				snameLen = strlen(sname);
+				ourNameLen = strlen(ourName);
 
-				if (!Q_stricmp(sname, ourName)) {
-					secondPlaceIsUs = qtrue;
+				if (snameLen >= ourNameLen) {
+					sname = sname + snameLen - ourNameLen;
+
+					if (!Q_stricmp(sname, ourName)) {
+						secondPlaceIsUs = qtrue;
+					}
 				}
-			}
-			if (snameLen > ourNameLen) {
-				// check for something like 'blah'  and  'sssblah'
-				if ((sname - 1)[0] != ' ') {
-					secondPlaceIsUs = qfalse;
+				if (snameLen > ourNameLen) {
+					// check for something like 'blah'  and  'sssblah'
+					if ((sname - 1)[0] != ' ') {
+						secondPlaceIsUs = qfalse;
+					}
 				}
-			}
 
-			//if (!Q_stricmp(CG_ConfigString(CS_SECONDPLACE), cgs.clientinfo[cg.snap->ps.clientNum].name)) {
-			//if (!Q_stricmp(CG_ConfigString(CS_SECONDPLACE), Info_ValueForKey(CG_ConfigString(CS_PLAYERS + cg.snap->ps.clientNum), "n"))) {
-			if (secondPlaceIsUs) {
-				s = va("%d. %s", 1, cgs.firstPlace);  //CG_ConfigString(CS_FIRSTPLACE));
+				if (secondPlaceIsUs) {
+					s = va("%d. %s", 1, cgs.firstPlace);  //CG_ConfigString(CS_FIRSTPLACE));
+				} else {
+					s = va("%d. %s", 1, cgs.secondPlace);  //CG_ConfigString(CS_SECONDPLACE));
+				}
+			} else {  // cgs.scores1 not equal to cgs.scores2
+				s = va("2. %s",  cgs.secondPlace);
+			}
+			score = cgs.scores2;
+			teamSpacing = 0;
+		} else 	if (
+			   (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))
+			   &&  cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR
+			   ) {
+			// draw us in second slot even if we are not first place
+			const char *clanTag;
+
+			clanTag = cgs.clientinfo[cg.snap->ps.clientNum].clanTag;
+			if (*clanTag) {
+				s = va("%d. ^7%s ^7%s", rank, clanTag, cgs.clientinfo[cg.snap->ps.clientNum].name);
 			} else {
-				s = va("%d. %s", 1, cgs.secondPlace);  //CG_ConfigString(CS_SECONDPLACE));
+				s = va("%d. ^7%s", rank, cgs.clientinfo[cg.snap->ps.clientNum].name);
 			}
-		} else {
-			//s = va("%d. %s   %d", cgs.scores2 == cgs.scores1 ? 1 : 2, CG_ConfigString(CS_SECONDPLACE), cgs.scores2);
-			//s = va("%d. %s", cgs.scores2 == cgs.scores1 ? 1 : 2, CG_ConfigString(CS_SECONDPLACE));
-			//s = va("%d. %s", cgs.scores2 == cgs.scores1 ? 1 : 2, cgs.secondPlace);
-			s = va("%d. %s", CG_ScoresEqual(cgs.scores2, cgs.scores1) ? 1 : 2, cgs.secondPlace);
-		}
-		score = cgs.scores2;
-		teamSpacing = 0;
-	} else {
-		const char *clanTag;
+			score = cg.snap->ps.persistant[PERS_SCORE];
+			teamSpacing = 0;
+		} else {  // /follow someone (other than main client view) and/or free spec demo
+			// special case for cpma ffa, they update client scores as often as cgs.scores[12] so we can check against that.  For other ffa/rr games (ql, q3, etc..) scores might not be updated enough.
+			if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_FFA) {
+				int i;
 
-		// we go into second place
-		//FIXME placement num
-		clanTag = cgs.clientinfo[cg.snap->ps.clientNum].clanTag;
-		if (*clanTag) {
-			s = va("%d. ^7%s ^7%s", rank, clanTag, cgs.clientinfo[cg.snap->ps.clientNum].name);
-		} else {
-			s = va("%d. ^7%s", rank, cgs.clientinfo[cg.snap->ps.clientNum].name);
-		}
+				s = "";
+				score = cgs.scores2;
 
-		score = cg.snap->ps.persistant[PERS_SCORE];
-		teamSpacing = 0;
+				if (wolfcam_following) {
+					// check us first
+
+					// special case when cgs.scores1 == cgs.scores2, we would have been drawn in first place already
+					if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {
+						// draw second person who matches
+						for (i = 0;  i < MAX_CLIENTS;  i++) {
+							if (i == wcg.clientNum) {
+								continue;
+							}
+							if (!cgs.clientinfo[i].infoValid) {
+								continue;
+							}
+							if (cgs.clientinfo[i].team != TEAM_FREE) {
+								continue;
+							}
+
+							if (cgs.clientinfo[i].score == cgs.scores2) {
+								s = va("2. %s", cgs.clientinfo[i].name);
+								break;
+							}
+						}
+					} else if (cgs.clientinfo[wcg.clientNum].score == cgs.scores2) {
+						s = va("2. %s", cgs.clientinfo[wcg.clientNum].name);
+					} else {
+						int rank;
+
+						rank = 1;
+						for (i = 0;  i < MAX_CLIENTS;  i++) {
+							if (!cgs.clientinfo[i].infoValid) {
+								continue;
+							}
+							if (cgs.clientinfo[i].team != TEAM_FREE) {
+								continue;
+							}
+
+							if (cgs.clientinfo[i].score > cgs.clientinfo[wcg.clientNum].score) {
+								rank++;
+							}
+						}
+						s = va("%d. %s", rank, cgs.clientinfo[wcg.clientNum].name);
+						score = cgs.clientinfo[wcg.clientNum].score;
+					}
+				} else {  // not /follow
+					qboolean skipFirst = qfalse;
+
+					if (cgs.scores1 == cgs.scores2) {
+						skipFirst = qtrue;
+					}
+
+					// draw first or possibly second person who matches
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						if (!cgs.clientinfo[i].infoValid) {
+							continue;
+						}
+						if (cgs.clientinfo[i].team != TEAM_FREE) {
+							continue;
+						}
+
+						if (cgs.clientinfo[i].score == cgs.scores2) {
+							if (skipFirst) {
+								skipFirst = qfalse;
+								continue;
+							}
+							s = va("2. %s", cgs.clientinfo[i].name);
+							break;
+						}
+					}
+				}
+			} else {  // not cpma ffa
+
+				if (CG_ScoresEqual(cgs.scores2, cgs.scores1)  &&  wolfcam_following  &&  cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR) {
+
+					score = cgs.scores2;
+
+					// we might have been drawn in first place
+
+					if (cgs.gametype == GT_TOURNAMENT) {  // we were, find the other guy
+						int i;
+						const char *clanTag;
+
+						s = "";
+
+						for (i = 0;  i < MAX_CLIENTS;  i++) {
+							if (!cgs.clientinfo[i].infoValid) {
+								continue;
+							}
+							if (cgs.clientinfo[i].team != TEAM_FREE) {
+								continue;
+							}
+							if (i == wcg.clientNum) {
+								continue;
+							}
+
+							// got it
+							clanTag = cgs.clientinfo[i].clanTag;
+							if (*clanTag) {
+								s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[i].name);
+							} else {
+								s = va("1. ^7%s", cgs.clientinfo[i].name);
+							}
+							break;
+						}
+					} else {  // ffa, red rover
+						if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {  // we were already drawn as first place, find anyone else who matches
+							const char *clanTag;
+							int i;
+
+							s = "";
+							for (i = 0;  i < MAX_CLIENTS;  i++) {
+								if (!cgs.clientinfo[i].infoValid) {
+									continue;
+								}
+								if (cgs.clientinfo[i].team == TEAM_SPECTATOR) {
+									continue;
+								}
+								if (i == wcg.clientNum) {
+									continue;
+								}
+								if (cgs.clientinfo[i].score != cgs.scores1) {
+									continue;
+								}
+
+								// got it
+								clanTag = cgs.clientinfo[i].clanTag;
+								if (*clanTag) {
+									s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[i].name);
+								} else {
+									s = va("1. ^7%s", cgs.clientinfo[i].name);
+								}
+
+								break;
+							}
+						} else {
+							s = va("1. %s", cgs.secondPlace);
+						}
+					}
+				} else {  // cgs.scores1 not equal to cgs.scores2 or not /follow or free spec
+					//FIXME ffa should show us always in second place slot?  -- no, score might not be accurate
+					s = va("2. ^7%s", cgs.secondPlace);  //CG_ConfigString(CS_SECONDPLACE));
+					score = cgs.scores2;
+				}
+			}
+
+			teamSpacing = 0;
+		}
 	}
 
 	//if (cgs.scores2 == SCORE_NOT_PRESENT) {
@@ -4933,8 +5257,7 @@ void CG_DrawWeaponBar( void ) {
 
 	// count the number of weapons owned
 	if (wolfcam_following) {
-		//FIXME other game types
-		if (CG_IsCpmaMvd()  &&  cgs.gametype == GT_TOURNAMENT) {
+		if (CG_IsCpmaMvd()  &&  !CG_IsTeamGame(cgs.gametype)) {
 			weapons = cg.snap->ps.ammo[wcg.clientNum] >> 8;
 			weapons &= 0xffff;
 

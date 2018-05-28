@@ -481,6 +481,19 @@ vmCvar_t cg_drawJumpSpeedsTimeColor;
 vmCvar_t cg_drawJumpSpeedsTimeAlpha;
 vmCvar_t cg_drawJumpSpeedsTimeWideScreen;
 
+vmCvar_t cg_drawRaceTime;
+vmCvar_t cg_drawRaceTimeNoText;
+vmCvar_t cg_drawRaceTimeX;
+vmCvar_t cg_drawRaceTimeY;
+vmCvar_t cg_drawRaceTimeAlign;
+vmCvar_t cg_drawRaceTimeStyle;
+vmCvar_t cg_drawRaceTimeFont;
+vmCvar_t cg_drawRaceTimePointSize;
+vmCvar_t cg_drawRaceTimeScale;
+vmCvar_t cg_drawRaceTimeColor;
+vmCvar_t cg_drawRaceTimeAlpha;
+vmCvar_t cg_drawRaceTimeWideScreen;
+
 vmCvar_t	cg_drawFriend;
 vmCvar_t cg_drawFriendStyle;
 vmCvar_t cg_drawFriendMinWidth;
@@ -1571,6 +1584,19 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawJumpSpeedsTimeAlpha, "cg_drawJumpSpeedsTimeAlpha", "255", CVAR_ARCHIVE },
 	{ cvp(cg_drawJumpSpeedsTimeWideScreen), "1", CVAR_ARCHIVE },
 
+	{ &cg_drawRaceTime, "cg_drawRaceTime", "1", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeNoText, "cg_drawRaceTimeNoText", "0", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeX, "cg_drawRaceTimeX", "5", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeY, "cg_drawRaceTimeY", "420", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeAlign, "cg_drawRaceTimeAlign", "0", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeStyle, "cg_drawRaceTimeStyle", "0", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeFont, "cg_drawRaceTimeFont", "q3big", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimePointSize, "cg_drawRaceTimePointSize", "24", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeScale, "cg_drawRaceTimeScale", "0.25", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeColor, "cg_drawRaceTimeColor", "0xffff99", CVAR_ARCHIVE },
+	{ &cg_drawRaceTimeAlpha, "cg_drawRaceTimeAlpha", "255", CVAR_ARCHIVE },
+	{ cvp(cg_drawRaceTimeWideScreen), "1", CVAR_ARCHIVE },
+
 	{ &cg_stats, "cg_stats", "0", 0 },
 	{ &cg_drawFriend, "cg_drawFriend", "3", CVAR_ARCHIVE },
 	{ cvp(cg_drawFriendStyle), "1", CVAR_ARCHIVE },
@@ -2625,6 +2651,7 @@ void CG_CheckFontUpdates (void)
 	CG_CheckIndividualFontUpdate(&cgs.media.cameraPointInfoFont, cg_drawCameraPointInfoPointSize.integer, &cg_drawCameraPointInfoFont, &cgs.media.cameraPointInfoFontModificationCount, &cg_drawCameraPointInfoPointSize, &cgs.media.cameraPointInfoFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.jumpSpeedsFont, cg_drawJumpSpeedsPointSize.integer, &cg_drawJumpSpeedsFont, &cgs.media.jumpSpeedsFontModificationCount, &cg_drawJumpSpeedsPointSize, &cgs.media.jumpSpeedsFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.jumpSpeedsTimeFont, cg_drawJumpSpeedsTimePointSize.integer, &cg_drawJumpSpeedsTimeFont, &cgs.media.jumpSpeedsTimeFontModificationCount, &cg_drawJumpSpeedsTimePointSize, &cgs.media.jumpSpeedsTimeFontPointSizeModificationCount);
+	CG_CheckIndividualFontUpdate(&cgs.media.raceTimeFont, cg_drawRaceTimePointSize.integer, &cg_drawRaceTimeFont, &cgs.media.raceTimeFontModificationCount, &cg_drawRaceTimePointSize, &cgs.media.raceTimeFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.proxWarningFont, cg_drawProxWarningPointSize.integer, &cg_drawProxWarningFont, &cgs.media.proxWarningFontModificationCount, &cg_drawProxWarningPointSize, &cgs.media.proxWarningFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.dominationPointStatusFont, cg_drawDominationPointStatusPointSize.integer, &cg_drawDominationPointStatusFont, &cgs.media.dominationPointStatusFontModificationCount, &cg_drawDominationPointStatusPointSize, &cgs.media.dominationPointStatusFontPointSizeModificationCount);
 	CG_CheckIndividualFontUpdate(&cgs.media.damagePlumFont, cg_damagePlumPointSize.integer, &cg_damagePlumFont, &cgs.media.damagePlumFontModificationCount, &cg_damagePlumPointSize, &cgs.media.damagePlumFontPointSizeModificationCount);

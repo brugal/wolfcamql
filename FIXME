@@ -2324,7 +2324,18 @@ GL_VERSION: 2.1 Chromium 1.9
 * FT-MVD-cpm3a-2018_05_09-00_35_24.dm_71  random "Fight!" message at :30
 * CG_IsTeamGame() check before drawing team overlay  -- need to check if games like red rover are ok
 * tox cpma mvd lg hits over 100%
-
+* cpma cg_qlhud 0 not showing score info  -- main view for duel? (shows in tdm)
+* check cpma mvd grapple ammo
+* team-overlay-powerups.dm_73  wrong map? or map has changed
+* other CS_ like domination point count might need to check protocol 91
+* cpma check if GT_TOURNAMENT should also check GT_HM
+* cpma q3 hud draw head needs color (xaero)
+* cpma mvd armor show armortiered -- red, yellow, ..
+* q3 can show 2nd place rank in ffa?
+* /follow show scoreboard when dead (cpma mvd)?
+* demo parsing could get ranks for q3 ffa
+* /follow not showing flag icon for player
+* 69Daler-vs-ZeRo4(MVD)-cpm3-2002.08.24-22.33.03.dm_67 not working
 
 ----
 

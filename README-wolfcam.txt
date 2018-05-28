@@ -2047,6 +2047,10 @@ It pushes the impact location this amount towards you in order to increase visib
 
 * cg_drawScores cg_drawPlayersLeft cg_drawPowerups to enable/disable in the original quake3 hud (cg_qlhud 0).
 
+    Note:  cg_drawPlayersLeft also displays the number of captured control points in Domination
+
+* cg_drawRaceTime  to show race score in q3 hud
+
 * cg_testQlFont  Replaces all uses of quake3 mono-space font with quakelive's font.  Used for testing.
 
 * wolfcam  cg_perKillStatsExcludePostKillSpam "1"

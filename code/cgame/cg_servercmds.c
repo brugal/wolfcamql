@@ -1146,33 +1146,7 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 	cgs.gametype = atoi( Info_ValueForKey( info, "g_gametype" ) );
 	if (cgs.protocol == PROTOCOL_Q3) {
 		if (cgs.cpma) {
-			switch (cgs.gametype) {
-			case 4:
-				cgs.gametype = GT_CTF;
-				break;
-			case 5:
-				//cgs.gametype = GT_1FCTF;
-				cgs.gametype = GT_CA;
-				break;
-			case 6:
-				//cgs.gametype = GT_OBELISK;
-				cgs.gametype = GT_FREEZETAG;
-				break;
-			case 7:
-				cgs.gametype = GT_CTFS;
-				break;
-			case 8:
-				cgs.gametype = GT_NTF;
-				break;
-			case 9:
-				cgs.gametype = GT_2V2;
-				break;
-			case -1:
-				cgs.gametype = GT_HM;
-				break;
-			default:
-				break;
-			}
+			// done in CG_CpmaParseGameState()
 		} else {
 			switch (cgs.gametype) {
 			case 2:
@@ -1198,10 +1172,6 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 			cgs.gametype = GT_RACE;
 		}
 	}
-
-	trap_Cvar_Set("cg_gametype", va("%i", cgs.gametype));
-
-	trap_Cvar_Set("g_gametype", va("%i", cgs.gametype));
 
 	//FIXME q3 and ql differences
 	cgs.dmflags = atoi( Info_ValueForKey( info, "dmflags" ) );
@@ -1232,6 +1202,9 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 			cgs.roundTurn = atoi(Info_ValueForKey(str, "turn"));
 		}
 	}
+
+	trap_Cvar_Set("cg_gametype", va("%i", cgs.gametype));
+	trap_Cvar_Set("g_gametype", va("%i", cgs.gametype));
 
 	if (cgs.timelimit == 0) {
 		if (cg_levelTimerDirection.integer == 4) {
@@ -1837,7 +1810,6 @@ void CG_CpmaParseScores (qboolean seeking)
 {
 	const char *str;
 	int i;
-	const clientInfo_t *ci;
 
 	str = CG_ConfigStringNoConvert(CSCPMA_SCORES);
 
@@ -1883,45 +1855,6 @@ void CG_CpmaParseScores (qboolean seeking)
 			i = cgs.scores1;
 			cgs.scores1 = cgs.scores2;
 			cgs.scores2 = i;
-		}
-
-		//FIXME firstPlace not working with mvd demos:  50478-czm-viju-hub.dm_68
-		if (cgs.gametype == GT_TOURNAMENT  &&  cg.nextSnap) {
-			if (cgs.scores1 == cg.nextSnap->ps.persistant[PERS_SCORE]) {
-				Q_strncpyz(cgs.firstPlace, cgs.clientinfo[cg.nextSnap->ps.clientNum].name, sizeof(cgs.firstPlace));
-				for (i = 0;  i < MAX_CLIENTS;  i++) {
-					ci = &cgs.clientinfo[i];
-					if (!ci->infoValid) {
-						continue;
-					}
-					if (i == cg.nextSnap->ps.clientNum) {
-						continue;
-					}
-					if (ci->team != TEAM_FREE) {
-						continue;
-					}
-					Q_strncpyz(cgs.secondPlace, ci->name, sizeof(cgs.secondPlace));
-					//Com_Printf("^5we are first (%d):  %s\n", cg.nextSnap->ps.persistant[PERS_SCORE], ci->name);
-					break;
-				}
-			} else if (cgs.scores2 == cg.nextSnap->ps.persistant[PERS_SCORE]) {
-				Q_strncpyz(cgs.secondPlace, cgs.clientinfo[cg.nextSnap->ps.clientNum].name, sizeof(cgs.secondPlace));
-				for (i = 0;  i < MAX_CLIENTS;  i++) {
-					ci = &cgs.clientinfo[i];
-					if (!ci->infoValid) {
-						continue;
-					}
-					if (i == cg.nextSnap->ps.clientNum) {
-						continue;
-					}
-					if (ci->team != TEAM_FREE) {
-						continue;
-					}
-					Q_strncpyz(cgs.firstPlace, ci->name, sizeof(cgs.firstPlace));
-					//Com_Printf("^5we are second (%d):  %s\n", cg.nextSnap->ps.persistant[PERS_SCORE], ci->name);
-					break;
-				}
-			}
 		}
 	}
 	//Com_Printf("^5FIXME red %d  blue %d\n", cgs.scores1, cgs.scores2);
@@ -1985,9 +1918,54 @@ te + ts + td == serverTime
 		  pb  max blue players?
 		  pr  max red players?
 
-		  t   ?  seen 5 for pub ca,  teamsize?
+		  t   gametype
 
 		**********/
+
+		// older cpma demos don't set g_gametype in CS_SERVERINFO, always get it from here
+		x = atoi(Info_ValueForKey(str, "t"));
+
+		switch (x) {
+		case 0:
+			cgs.gametype = GT_FFA;
+			break;
+		case 1:
+			cgs.gametype = GT_TOURNAMENT;
+			break;
+		case 2:
+			//FIME this possible with cpma?
+			cgs.gametype = GT_SINGLE_PLAYER;
+			break;
+		case 3:
+			cgs.gametype = GT_TEAM;
+			break;
+		case 4:
+			cgs.gametype = GT_CTF;
+			break;
+		case 5:
+			cgs.gametype = GT_CA;
+			break;
+		case 6:
+			cgs.gametype = GT_FREEZETAG;
+			break;
+		case 7:
+			cgs.gametype = GT_CTFS;
+			break;
+		case 8:
+			cgs.gametype = GT_NTF;
+			break;
+		case 9:
+			cgs.gametype = GT_2V2;
+			break;
+		case -1:
+			cgs.gametype = GT_HM;
+			break;
+		default:
+			Com_Printf("^3unknown cpma game type: %d\n", x);
+			cgs.gametype = GT_FFA;
+			break;
+		}
+
 
 		cgs.fraglimit = atoi(Info_ValueForKey(str, "sl"));  // score limit
 		//cgs.capturelimit = cgs.fraglimit;
@@ -2156,7 +2134,7 @@ static void CG_ConfigStringModified( void ) {
 		}
 	}
 	*/
-	
+
 	// do something with it if necessary
 	if ( num == CS_MUSIC ) {
 		CG_StartMusic();
@@ -2288,6 +2266,7 @@ static void CG_ConfigStringModified( void ) {
 				return;
 			}
 		}
+
 		// the rest are quake live specific
 		CG_Printf("%d unknown q3 config string modified  %d: %s\n", cg.time, num, str);
 	} else if (num == CS_FIRSTPLACE) {
@@ -2363,9 +2342,9 @@ static void CG_ConfigStringModified( void ) {
 	} else if (num == CS_MOST_DAMAGE_DEALT2  &&  newcs) {
 	} else if (num == CS_MOST_ACCURATE2  &&  newcs) {
 	} else if (num == CS_BEST_ITEM_CONTROL2  &&  newcs) {
-	} else if (num == CS_MVP_OFFENSE) {
-	} else if (num == CS_MVP_DEFENSE) {
-	} else if (num == CS_MVP) {
+	} else if (num == CS_MVP_OFFENSE  &&  cgs.realProtocol < 91) {
+	} else if (num == CS_MVP_DEFENSE  &&  cgs.realProtocol < 91) {
+	} else if (num == CS_MVP &&  cgs.realProtocol < 91) {
 	} else if (cgs.realProtocol >= 91  &&  (num == CS91_MOST_ACCURATE_PLYR  ||  num == CS91_MOST_DAMAGEDEALT_PLYR  ||  num == CS91_BEST_ITEMCONTROL_PLYR  ||  num == CS91_MOST_VALUABLE_OFFENSIVE_PLYR  ||  num == CS91_MOST_VALUABLE_DEFENSIVE_PLYR  ||  num == CS91_MOST_VALUABLE_PLYR  ||  num == CS91_BEST_ITEMCONTROL_PLYR)) {
 		// pass, handled in cg_newdraw.c
 	} else if (num == CS_RED_TEAM_CLAN_NAME  &&  cgs.realProtocol < 91) {
@@ -2429,9 +2408,9 @@ static void CG_ConfigStringModified( void ) {
 		}
 
 		//Com_Printf("^1server scale:  model %f  head %f  headoffset %f\n", cgs.serverModelScale, cgs.serverHeadModelScale, cgs.serverHeadModelScaleOffset);
-	} else if (num == CS_DOMINATION_RED_POINTS) {
+	} else if ((num == CS_DOMINATION_RED_POINTS  &&  cgs.realProtocol < 91)  ||  (num == CS91_GENERIC_COUNT_RED  &&  cgs.realProtocol >= 91)) {
 		cgs.dominationRedPoints = atoi(str);
-	} else if (num == CS_DOMINATION_BLUE_POINTS) {
+	} else if ((num == CS_DOMINATION_BLUE_POINTS  &&  cgs.realProtocol < 91)  ||  (num == CS91_GENERIC_COUNT_BLUE  &&  cgs.realProtocol >= 91)) {
 		cgs.dominationBluePoints = atoi(str);
 	} else if (num == CS_ROUND_WINNERS) {
 	} else if (num == CS_MAP_VOTE_INFO) {
@@ -2636,9 +2615,35 @@ static void CG_MapRestart( void ) {
 		}
 
 		if (cgs.cpma) {
+			int duelPlayer;
+			int i;
+
 			cgs.roundBeginTime = 0;
 			cgs.roundStarted = qtrue;
 			cgs.countDownSoundPlayed = 0;
+
+			if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+				duelPlayer = 1;
+				for (i = 0;  i < MAX_CLIENTS;  i++) {
+					if (!cgs.clientinfo[i].infoValid) {
+						continue;
+					}
+					if (cgs.clientinfo[i].team == TEAM_FREE) {
+						if (duelPlayer == 1) {
+							Q_strncpyz(cgs.firstPlace, cgs.clientinfo[i].name, sizeof(cgs.firstPlace));
+							//Com_Printf("map restart duel first: %s\n", cgs.firstPlace);
+							duelPlayer++;
+						} else if (duelPlayer == 2) {
+							Q_strncpyz(cgs.secondPlace, cgs.clientinfo[i].name, sizeof(cgs.secondPlace));
+							//Com_Printf("map restart duel second: %s\n", cgs.secondPlace);
+							duelPlayer++;
+						}
+					}
+				}
+			} else {
+				cgs.firstPlace[0] = '\0';
+				cgs.secondPlace[0] = '\0';
+			}
 		}
 
 		if (cg_drawFightMessage.integer) {
@@ -3535,14 +3540,43 @@ static qboolean CG_CpmaParseMstats (void)
 		ds->awardHumiliation = -1;
 	}
 
+	// for old scoreboard
+	for (i = 0;  i < cg.numScores;  i++) {
+		if (cg.scores[i].client != clientNum) {
+			continue;
+		}
+
+		cg.scores[i].ping = ds->ping;
+		cg.scores[i].score = cgs.clientinfo[clientNum].score;
+		break;
+	}
+
 	return qtrue;
 }
 
 static qboolean CG_CpmaParseDmscores (void)
 {
+	int clientNum;
 
 	// 1  first place client number
 	// 2  second place client number
+
+	clientNum = atoi(CG_Argv(1));
+	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^3CG_CpmaParseDmscores: invalid first place client number: %d\n", clientNum);
+		return qtrue;
+	}
+	Q_strncpyz(cgs.firstPlace, cgs.clientinfo[clientNum].name, sizeof(cgs.firstPlace));
+
+	clientNum = atoi(CG_Argv(2));
+	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+		CG_Printf("^3CG_CpmaParseDmscores: invalid second place client number: %d\n", clientNum);
+		return qtrue;
+	}
+	Q_strncpyz(cgs.secondPlace, cgs.clientinfo[clientNum].name, sizeof(cgs.secondPlace));
+
+	//Com_Printf("first place: %s\n", cgs.firstPlace);
+	//Com_Printf("second place: %s\n", cgs.secondPlace);
 
 	return qtrue;
 }
@@ -3575,7 +3609,7 @@ static qboolean CG_CpmaXscores (void)
 	int i;
 	int n;
 	int clientNum;
-	const clientInfo_t *ci;
+	clientInfo_t *ci;
 	const char *s;
 	//const char *s2;
 	//int x;
@@ -3605,6 +3639,7 @@ static qboolean CG_CpmaXscores (void)
 
 		ci = &cgs.clientinfo[clientNum];
 		sc->score = atoi(CG_Argv(n));  n++;  // score
+		ci->score = sc->score;
 
 		s = CG_Argv(n);  n++;  // text
 #if 0
@@ -3936,6 +3971,20 @@ static void CG_ParseScores_Duel (void)
 			ws->damage = atoi(CG_Argv(n));  n++;
 			ws->kills = atoi(CG_Argv(n));  n++;
 		}
+
+		// for old scoreboard
+		for (j = 0;  j < cg.numScores;  j++) {
+			if (cg.scores[j].client != ds->clientNum) {
+				continue;
+			}
+
+			//Com_Printf("^5score set for %d  ^3%d %d %d\n", j, ds->ping, ds->score, ds->time);
+			cg.scores[j].ping = ds->ping;
+			cg.scores[j].score = ds->score;
+			cg.scores[j].time = ds->time;
+			break;
+		}
+
 	}
 
 	CG_SetDuelPlayers();

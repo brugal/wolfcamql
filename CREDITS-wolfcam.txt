@@ -42,3 +42,4 @@ Maverick and quake live developers for information regarding dm90 and dm91 proto
 Dmitry 'qrealka' Loginov:  cpma pro-sound description
 Ravensoft:  png output from Jedi Academy
 GNU Unifont:  font files
+Gian 'myT' Schellenbaum:  information regarding cpma 1.5[01] changes

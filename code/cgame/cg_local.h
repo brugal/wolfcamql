@@ -2199,6 +2199,9 @@ typedef struct {
 	fontInfo_t jumpSpeedsTimeFont;
 	int jumpSpeedsTimeFontModificationCount;
 	int jumpSpeedsTimeFontPointSizeModificationCount;
+	fontInfo_t raceTimeFont;
+	int raceTimeFontModificationCount;
+	int raceTimeFontPointSizeModificationCount;
 	fontInfo_t proxWarningFont;
 	int proxWarningFontModificationCount;
 	int proxWarningFontPointSizeModificationCount;
@@ -2693,6 +2696,19 @@ extern vmCvar_t cg_drawJumpSpeedsTimeScale;
 extern vmCvar_t cg_drawJumpSpeedsTimeColor;
 extern vmCvar_t cg_drawJumpSpeedsTimeAlpha;
 extern vmCvar_t cg_drawJumpSpeedsTimeWideScreen;
+
+extern vmCvar_t cg_drawRaceTime;
+extern vmCvar_t cg_drawRaceTimeNoText;
+extern vmCvar_t cg_drawRaceTimeX;
+extern vmCvar_t cg_drawRaceTimeY;
+extern vmCvar_t cg_drawRaceTimeAlign;
+extern vmCvar_t cg_drawRaceTimeStyle;
+extern vmCvar_t cg_drawRaceTimeFont;
+extern vmCvar_t cg_drawRaceTimePointSize;
+extern vmCvar_t cg_drawRaceTimeScale;
+extern vmCvar_t cg_drawRaceTimeColor;
+extern vmCvar_t cg_drawRaceTimeAlpha;
+extern vmCvar_t cg_drawRaceTimeWideScreen;
 
 extern	vmCvar_t		cg_crosshairX;
 extern	vmCvar_t		cg_crosshairY;

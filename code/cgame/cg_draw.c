@@ -1000,6 +1000,86 @@ static void CG_DrawJumpSpeedsTime (void)
 	CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
 }
 
+static void CG_DrawRaceTime (void)
+{
+	vec4_t color;
+	float x, y, w;
+	int style, align;
+	float scale;
+	const fontInfo_t *font;
+	const char *s;
+	int nextCheckPointEnt;
+	int start;
+	int end;
+	const char *timeString;
+
+	if (cg_qlhud.integer) {
+		return;
+	}
+
+	if (cgs.gametype != GT_RACE) {
+		return;
+	}
+
+	if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
+		return;
+	}
+
+	SC_Vec4ColorFromCvars(color, &cg_drawRaceTimeColor, &cg_drawRaceTimeAlpha);
+	if (color[3] <= 0.0) {
+		return;
+	}
+
+	align = cg_drawRaceTimeAlign.integer;
+	scale = cg_drawRaceTimeScale.value;
+	style = cg_drawRaceTimeStyle.integer;
+	QLWideScreen = cg_drawRaceTimeWideScreen.integer;
+
+	if (*cg_drawRaceTimeFont.string) {
+		font = &cgs.media.raceTimeFont;
+	} else {
+		font = &cgDC.Assets.textFont;
+	}
+
+	x = cg_drawRaceTimeX.value;
+	y = cg_drawRaceTimeY.value;
+
+	//FIXME duplicate code in cg_newdraw.c CG_RACE_TIMES
+	if (wolfcam_following) {
+		nextCheckPointEnt = cg_entities[wcg.clientNum].pe.raceCheckPointNextEnt;
+		start = cg_entities[wcg.clientNum].pe.raceStartTime;
+		end = cg_entities[wcg.clientNum].pe.raceEndTime;
+	} else {
+		nextCheckPointEnt = cg.predictedPlayerEntity.pe.raceCheckPointNextEnt;
+		start = cg.predictedPlayerEntity.pe.raceStartTime;
+		end = cg.predictedPlayerEntity.pe.raceEndTime;
+	}
+
+	if (nextCheckPointEnt > 0) {
+		timeString = CG_GetTimeString(cg.time - start);
+		if (cg_drawRaceTimeNoText.integer) {
+			s = timeString;
+		} else {
+			s = va("CURRENT RUN: %s", timeString);
+		}
+	} else {
+		timeString = CG_GetTimeString(end);
+		if (cg_drawRaceTimeNoText.integer) {
+			s = timeString;
+		} else {
+			s = va("LAST TIME: %s", timeString);
+		}
+	}
+
+	w = CG_Text_Width(s, scale, 0, font);
+	if (align == 1) {
+		x -= w / 2;
+	} else if (align == 2) {
+		x -= w;
+	}
+	CG_Text_Paint_Bottom(x, y, scale, color, s, 0, 0, style, font);
+}
+
 static float Wolfcam_DrawMouseSpeed (float y)
 {
     //char *s;
@@ -5002,6 +5082,54 @@ static void CG_DrawUpperLeft( void ) {
 ===========================================================================================
 */
 
+static float CG_DrawPlayersLeft (float y)
+{
+	const char *s;
+	int s1, s2;
+	float x, w;
+	float y1;
+
+	if (cg_qlhud.integer) {
+		return y;
+	}
+
+	if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG  &&  cgs.gametype != GT_RED_ROVER  &&  cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_DOMINATION) {
+		return y;
+	}
+
+	QLWideScreen = WIDESCREEN_RIGHT;
+
+	if (cgs.gametype == GT_DOMINATION) {
+		s1 = cgs.dominationRedPoints;
+		s2 = cgs.dominationBluePoints;
+	} else {
+		s1 = cgs.redPlayersLeft;
+		s2 = cgs.bluePlayersLeft;
+	}
+
+	y -=  BIGCHAR_HEIGHT + 8;
+
+	y1 = y;
+
+	// draw from the right side to left
+	x = 640;
+	s = va( "%2i", s2 );
+	w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
+	x -= w;
+
+	CG_DrawPic(x, y - 4, w, BIGCHAR_HEIGHT + 8, cgs.media.caScoreBlue);
+	CG_DrawBigString( x + 4, y, s, 1.0F);
+
+	s = va( "%2i", s1 );
+	w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
+	x -= w;
+
+	CG_DrawPic(x, y - 4, w, BIGCHAR_HEIGHT + 8, cgs.media.caScoreRed);
+	CG_DrawBigString( x + 4, y, s, 1.0F);
+
+	return y1 - 8;
+}
+
 /*
 =================
 CG_DrawScores
@@ -5010,185 +5138,6 @@ Draw the small two score display
 =================
 */
 #ifndef MISSIONPACK
-
-static float CG_DrawPlayersLeft( float y ) {
-	const char	*s;
-	int			s1, s2, score;
-	float x, w;
-	int			v;
-	vec4_t		color;
-	float		y1;
-	const gitem_t *item;
-
-	if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG)
-		return y;
-
-	if (cg_qlhud.integer) {  //  &&  !wolfcam_following) {  //FIXME
-		return y;
-	}
-
-	QLWideScreen = WIDESCREEN_RIGHT;
-
-	s1 = cgs.redPlayersLeft;  //cgs.scores1;
-	s2 = cgs.bluePlayersLeft;  //cgs.scores2;
-
-	y -=  BIGCHAR_HEIGHT + 8;
-
-	y1 = y;
-
-	// draw from the right side to left
-	if ( cgs.gametype >= GT_TEAM ) {
-		x = 640;
-		color[0] = 0.0f;
-		color[1] = 0.0f;
-		color[2] = 1.0f;
-		color[3] = 0.33f;
-		s = va( "%2i", s2 );
-		w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
-		x -= w;
-		//CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-		CG_DrawPic(x, y - 4, w, BIGCHAR_HEIGHT + 8, cgs.media.caScoreBlue);
-		if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE ) {
-			//CG_DrawPic( x, y-4, w, BIGCHAR_HEIGHT+8, cgs.media.selectShader );
-		}
-		CG_DrawBigString( x + 4, y, s, 1.0F);
-
-		if ( cgs.gametype == GT_CTF ) {
-			// Display flag status
-			item = BG_FindItemForPowerup( PW_BLUEFLAG );
-
-			if (item) {
-				y1 = y - BIGCHAR_HEIGHT - 8;
-				if( cgs.blueflag >= 0 && cgs.blueflag <= 2 ) {
-					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, cgs.media.blueFlagShader[cgs.blueflag] );
-				}
-			}
-		}
-		color[0] = 1.0f;
-		color[1] = 0.0f;
-		color[2] = 0.0f;
-		color[3] = 0.33f;
-		s = va( "%2i", s1 );
-		w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
-		x -= w;
-		//CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-		CG_DrawPic(x, y - 4, w, BIGCHAR_HEIGHT + 8, cgs.media.caScoreRed);
-		if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_RED ) {
-			//CG_DrawPic( x, y-4, w, BIGCHAR_HEIGHT+8, cgs.media.selectShader );
-		}
-		CG_DrawBigString( x + 4, y, s, 1.0F);
-
-		if ( cgs.gametype == GT_CTF ) {
-			// Display flag status
-			item = BG_FindItemForPowerup( PW_REDFLAG );
-
-			if (item) {
-				y1 = y - BIGCHAR_HEIGHT - 8;
-				if( cgs.redflag >= 0 && cgs.redflag <= 2 ) {
-					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, cgs.media.redFlagShader[cgs.redflag] );
-				}
-			}
-		}
-
-		// brugal:  wtf??  players left?
-
-#if 1  //def MPACK
-		if ( cgs.gametype == GT_1FCTF ) {
-			// Display flag status
-			item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
-
-			if (item) {
-				y1 = y - BIGCHAR_HEIGHT - 8;
-				if( cgs.flagStatus >= 0 && cgs.flagStatus <= 4 ) {
-					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, cgs.media.flagShader[cgs.flagStatus] );
-				}
-			}
-		}
-#endif
-		if ( cgs.gametype >= GT_CTF  &&  cgs.gametype < GT_FREEZETAG) {
-			v = cgs.capturelimit;
-		} else if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
-			v = cgs.roundlimit;
-		} else {
-			v = cgs.fraglimit;
-		}
-		if ( v ) {
-			s = va( "%2i", v );
-			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
-			x -= w;
-			//CG_DrawBigString( x + 4, y, s, 1.0F);
-		}
-
-	} else {
-		qboolean	spectator;
-
-		x = 640;
-		score = cg.snap->ps.persistant[PERS_SCORE];
-		spectator = ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR );
-
-		// always show your score in the second box if not in first place
-		if ( s1 != score ) {
-			s2 = score;
-		}
-		if ( s2 != SCORE_NOT_PRESENT ) {
-			s = va( "%2i", s2 );
-			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
-			x -= w;
-			if ( !spectator && score == s2 && score != s1 ) {
-				color[0] = 1.0f;
-				color[1] = 0.0f;
-				color[2] = 0.0f;
-				color[3] = 0.33f;
-				CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-				CG_DrawPic( x, y-4, w, BIGCHAR_HEIGHT+8, cgs.media.selectShader );
-			} else {
-				color[0] = 0.5f;
-				color[1] = 0.5f;
-				color[2] = 0.5f;
-				color[3] = 0.33f;
-				CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-			}
-			CG_DrawBigString( x + 4, y, s, 1.0F);
-		}
-
-		// first place
-		if ( s1 != SCORE_NOT_PRESENT ) {
-			s = va( "%2i", s1 );
-			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
-			x -= w;
-			if ( !spectator && score == s1 ) {
-				color[0] = 0.0f;
-				color[1] = 0.0f;
-				color[2] = 1.0f;
-				color[3] = 0.33f;
-				CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-				CG_DrawPic( x, y-4, w, BIGCHAR_HEIGHT+8, cgs.media.selectShader );
-			} else {
-				color[0] = 0.5f;
-				color[1] = 0.5f;
-				color[2] = 0.5f;
-				color[3] = 0.33f;
-				CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
-			}
-			CG_DrawBigString( x + 4, y, s, 1.0F);
-		}
-
-		if ( cgs.fraglimit ) {
-			s = va( "%2i", cgs.fraglimit );
-			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
-			x -= w;
-			CG_DrawBigString( x + 4, y, s, 1.0F);
-		} else  if ( cgs.roundlimit ) {
-			s = va( "%2i", cgs.roundlimit );
-			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
-			x -= w;
-			//CG_DrawBigString( x + 4, y, s, 1.0F);
-		}
-
-	}
-
-	return y1 - 8;
-}
 
 static float CG_DrawScores( float y ) {
 	const char	*s;
@@ -5199,9 +5148,8 @@ static float CG_DrawScores( float y ) {
 	float		y1;
 	const gitem_t*item;
 	int ourTeam;
-	char c;
 
-	if (cg_qlhud.integer) {  //  &&  !wolfcam_following) {  //FIXME
+	if (cg_qlhud.integer) {
 		return y;
 	}
 
@@ -5211,32 +5159,26 @@ static float CG_DrawScores( float y ) {
 		ourTeam = cgs.clientinfo[wcg.clientNum].team;
 	} else {
 		ourTeam = cg.snap->ps.persistant[PERS_TEAM];
+		if (CG_IsCpmaMvd()) {
+			ourTeam = TEAM_SPECTATOR;
+		}
 	}
 
 	s1 = cgs.scores1;
 	s2 = cgs.scores2;
-
-	if (cgs.gametype == GT_RACE) {
-		s1 = round(s1 / 1000.0);
-		s2 = round(s2 / 1000.0);
-		c = 's';
-	} else {
-		c = '\0';
-	}
 
 	y -=  BIGCHAR_HEIGHT + 8;
 
 	y1 = y;
 
 	// draw from the right side to left
-	//if ( cgs.gametype >= GT_TEAM ) {
 	if (CG_IsTeamGame(cgs.gametype)) {
 		x = 640;
 		color[0] = 0.0f;
 		color[1] = 0.0f;
 		color[2] = 1.0f;
 		color[3] = 0.33f;
-		s = va( "%2i%c", s2, c );
+		s = va( "%2i", s2 );
 		w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 		x -= w;
 		CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
@@ -5260,7 +5202,7 @@ static float CG_DrawScores( float y ) {
 		color[1] = 0.0f;
 		color[2] = 0.0f;
 		color[3] = 0.33f;
-		s = va( "%2i%c", s1, c );
+		s = va( "%2i", s1 );
 		w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 		x -= w;
 		CG_FillRect( x, y-4,  w, BIGCHAR_HEIGHT+8, color );
@@ -5281,7 +5223,7 @@ static float CG_DrawScores( float y ) {
 			}
 		}
 
-#if 1  // MISSIONPACK
+#if 1  // MPACK
 		if ( cgs.gametype == GT_1FCTF ) {
 			// Display flag status
 			item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
@@ -5302,33 +5244,49 @@ static float CG_DrawScores( float y ) {
 			v = cgs.fraglimit;
 		}
 		if ( v ) {
-			s = va( "%2i%c", v, c );
+			s = va( "%2i", v );
 			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 			x -= w;
 			CG_DrawBigString( x + 4, y, s, 1.0F);
 		}
 
 	} else {
-		qboolean	spectator;
+		qboolean spectator;
+		int ourClientNum;
 
 		x = 640;
-		if (cgs.gametype == GT_RACE) {
-			score = cgs.clientinfo[cg.snap->ps.clientNum].score;
-			score = round(score / 1000.0);
-		} else {
-			score = cg.snap->ps.persistant[PERS_SCORE];
-		}
-		spectator = ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR );
+
 		if (wolfcam_following) {
-			spectator = 1;
+			ourClientNum = wcg.clientNum;
+
+			//FIXME when will this not be valid?  what games don't update cgs.clientinfo score?
+			if (wcg.clientNum == cg.snap->ps.clientNum) {
+				score = cg.snap->ps.persistant[PERS_SCORE];
+			} else {
+				score = cgs.clientinfo[wcg.clientNum].score;
+			}
+		} else {
+			ourClientNum = cg.snap->ps.clientNum;
+			// free float spec
+			if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) {
+				score = s2;
+			} else {
+				score = cg.snap->ps.persistant[PERS_SCORE];
+			}
 		}
 
+		spectator = (cgs.clientinfo[ourClientNum].team == TEAM_SPECTATOR);
+
 		// always show your score in the second box if not in first place
-		if (!CG_ScoresEqual(s1, s2)) {
+		if (!CG_ScoresEqual(s1, score)) {
 			s2 = score;
 		}
 		if ( s2 != SCORE_NOT_PRESENT ) {
-			s = va( "%2i%c", s2, c );
+			if (cgs.gametype == GT_RACE) {
+				s = va( " %.3fs ", (float)s2 / 1000.0f);
+			} else {
+				s = va( "%2i", s2 );
+			}
 			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 			x -= w;
 			if ( !spectator && score == s2 && score != s1 ) {
@@ -5350,7 +5308,11 @@ static float CG_DrawScores( float y ) {
 
 		// first place
 		if ( s1 != SCORE_NOT_PRESENT ) {
-			s = va( "%2i%c", s1, c );
+			if (cgs.gametype == GT_RACE) {
+				s = va( " %.3fs ", (float)s1 / 1000.0f);
+			} else {
+				s = va( "%2i", s1 );
+			}
 			w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 			x -= w;
 			if ( !spectator && score == s1 ) {
@@ -5372,12 +5334,12 @@ static float CG_DrawScores( float y ) {
 
 		if (cgs.gametype != GT_TOURNAMENT  &&  cgs.gametype != GT_RACE) {
 			if ( cgs.fraglimit ) {
-				s = va( "%2i%c", cgs.fraglimit, c );
+				s = va( "%2i", cgs.fraglimit );
 				w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 				x -= w;
 				CG_DrawBigString( x + 4, y, s, 1.0F);
 			} else  if ( cgs.roundlimit ) {
-				s = va( "%2i%c", cgs.roundlimit, c );
+				s = va( "%2i", cgs.roundlimit );
 				w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
 				x -= w;
 				CG_DrawBigString( x + 4, y, s, 1.0F);
@@ -10649,6 +10611,10 @@ static void CG_Draw2D( void ) {
 	}
 	if (cg_drawJumpSpeedsTime.integer) {
 		CG_DrawJumpSpeedsTime();
+	}
+
+	if (cg_drawRaceTime.integer) {
+		CG_DrawRaceTime();
 	}
 
 #ifndef MISSIONPACK
