@@ -127,6 +127,7 @@ cg_t				cg;
 cgs_t				cgs;
 centity_t			cg_entities[MAX_GENTITIES + 1];
 weaponInfo_t		cg_weapons[MAX_WEAPONS];
+//qhandle_t cg_firstPersonWeaponShaders[MAX_WEAPONS];
 itemInfo_t			cg_items[MAX_ITEMS];
 
 int					EM_Loaded = 0;
@@ -1021,6 +1022,36 @@ vmCvar_t cg_weaponNailGun;
 vmCvar_t cg_weaponProximityLauncher;
 vmCvar_t cg_weaponChainGun;
 vmCvar_t cg_weaponHeavyMachineGun;
+
+vmCvar_t cg_firstPersonShaderWeaponGauntlet;
+vmCvar_t cg_firstPersonShaderWeaponMachineGun;
+vmCvar_t cg_firstPersonShaderWeaponShotgun;
+vmCvar_t cg_firstPersonShaderWeaponGrenadeLauncher;
+vmCvar_t cg_firstPersonShaderWeaponRocketLauncher;
+vmCvar_t cg_firstPersonShaderWeaponLightningGun;
+vmCvar_t cg_firstPersonShaderWeaponRailGun;
+vmCvar_t cg_firstPersonShaderWeaponPlasmaGun;
+vmCvar_t cg_firstPersonShaderWeaponBFG;
+vmCvar_t cg_firstPersonShaderWeaponGrapplingHook;
+vmCvar_t cg_firstPersonShaderWeaponNailGun;
+vmCvar_t cg_firstPersonShaderWeaponProximityLauncher;
+vmCvar_t cg_firstPersonShaderWeaponChainGun;
+vmCvar_t cg_firstPersonShaderWeaponHeavyMachineGun;
+
+vmCvar_t cg_thirdPersonShaderWeaponGauntlet;
+vmCvar_t cg_thirdPersonShaderWeaponMachineGun;
+vmCvar_t cg_thirdPersonShaderWeaponShotgun;
+vmCvar_t cg_thirdPersonShaderWeaponGrenadeLauncher;
+vmCvar_t cg_thirdPersonShaderWeaponRocketLauncher;
+vmCvar_t cg_thirdPersonShaderWeaponLightningGun;
+vmCvar_t cg_thirdPersonShaderWeaponRailGun;
+vmCvar_t cg_thirdPersonShaderWeaponPlasmaGun;
+vmCvar_t cg_thirdPersonShaderWeaponBFG;
+vmCvar_t cg_thirdPersonShaderWeaponGrapplingHook;
+vmCvar_t cg_thirdPersonShaderWeaponNailGun;
+vmCvar_t cg_thirdPersonShaderWeaponProximityLauncher;
+vmCvar_t cg_thirdPersonShaderWeaponChainGun;
+vmCvar_t cg_thirdPersonShaderWeaponHeavyMachineGun;
 
 vmCvar_t cg_spawnArmorTime;
 vmCvar_t cg_fxfile;
@@ -2149,6 +2180,36 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_weaponProximityLauncher, "cg_weaponProximityLauncher", "", CVAR_ARCHIVE },
 	{ &cg_weaponChainGun, "cg_weaponChainGun", "", CVAR_ARCHIVE },
 	{ cvp(cg_weaponHeavyMachineGun), "", CVAR_ARCHIVE },
+
+	{ cvp(cg_firstPersonShaderWeaponGauntlet), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponMachineGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponShotgun), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponGrenadeLauncher), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponRocketLauncher), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponLightningGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponRailGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponPlasmaGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponBFG), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponGrapplingHook), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponNailGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponProximityLauncher), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponChainGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_firstPersonShaderWeaponHeavyMachineGun), "", CVAR_ARCHIVE },
+
+	{ cvp(cg_thirdPersonShaderWeaponGauntlet), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponMachineGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponShotgun), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponGrenadeLauncher), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponRocketLauncher), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponLightningGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponRailGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponPlasmaGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponBFG), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponGrapplingHook), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponNailGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponProximityLauncher), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponChainGun), "", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonShaderWeaponHeavyMachineGun), "", CVAR_ARCHIVE },
 
 	{ &cg_spawnArmorTime, "cg_spawnArmorTime", "500", CVAR_ARCHIVE },
 	{ &cg_fxfile, "cg_fxfile", "", CVAR_ARCHIVE },
@@ -7774,13 +7835,16 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		cgs.rocketSpeed = 800;
 		if (!Q_stricmp("cpma-1", CG_ConfigString(CS_GAME_VERSION))) {  //FIXME hack
 			cgs.cpma = qtrue;
+			s = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "gameversion");
+			cgs.cpmaVersionRevision[0] = '\0';
+			sscanf(s, "%d.%d%10s", &cgs.cpmaVersionMajor, &cgs.cpmaVersionMinor, cgs.cpmaVersionRevision);  // note: only 10 chars read since revision is 11 chars
 			memcpy(&bg_itemlist, &bg_itemlistCpma, sizeof(gitem_t) * bg_numItemsCpma);
 			bg_numItems = bg_numItemsCpma;
 			//GT_CTFS = 7;
 
 			STAT_ARMOR_TIER = 9;
 
-			Com_Printf("^5cpma\n");
+			Com_Printf("^5cpma: %d.%d %s\n", cgs.cpmaVersionMajor, cgs.cpmaVersionMinor, cgs.cpmaVersionRevision);
 		} else if (!Q_stricmp("osp", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "gamename"))  ||  !Q_stricmpn(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "gameversion"), "osp", strlen("osp") - 1)) {
 			cgs.osp = qtrue;
 			cgs.ospEncrypt = atoi(CG_ConfigString(872));

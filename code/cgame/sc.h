@@ -47,7 +47,7 @@ const char *CG_GetLocalTimeString (void);
 const char *CG_GetTimeString (int ms);
 
 qboolean CG_CheckQlVersion (int n0, int n1, int n2, int n3);
-
+qboolean CG_CheckCpmaVersion (int major, int minor, const char *revision);
 qboolean CG_EntityFrozen (const centity_t *cent);
 
 qboolean CG_GameTimeout (void);

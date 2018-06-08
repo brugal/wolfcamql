@@ -183,10 +183,6 @@ static void CG_DrawPlayerArmorIcon( const rectDef_t *rect, qboolean draw2D ) {
 		return;
 	}
 
-	if (wolfcam_following) {
-		return;
-	}
-
 	if ( draw2D || ( !cg_draw3dIcons.integer && cg_drawIcons.integer) ) { // bk001206 - parentheses
 		CG_DrawPic( rect->x, rect->y + rect->h/2 + 1, rect->w, rect->h, cgs.media.yellowArmorIcon );
 	} else if (cg_draw3dIcons.integer) {
@@ -208,8 +204,6 @@ static void CG_DrawPlayerArmorValue (const rectDef_t *rect, float scale, const v
 	rectDef_t r;
 
 	if (wolfcam_following) {
-		//Com_Printf("wolfcam\n");
-		//return;
 		value = Wolfcam_PlayerArmor(wcg.clientNum);
 		if (value < 0)
 			return;
@@ -362,6 +356,7 @@ static void CG_DrawPlayerHead (const rectDef_t *rect, qboolean draw2D, qboolean 
 	float		frac;
 	float		x = rect->x;
 	int clientNum;
+	qboolean useDamageTime;
 
 	if (!cg.snap) {
 		return;
@@ -369,14 +364,16 @@ static void CG_DrawPlayerHead (const rectDef_t *rect, qboolean draw2D, qboolean 
 
 	if (wolfcam_following) {
 		clientNum = wcg.clientNum;
-		return;  //FIXME  damage time
+		//FIXME damage time for followed player
+		useDamageTime = qfalse;
 	} else {
 		clientNum = cg.snap->ps.clientNum;
+		useDamageTime = qtrue;
 	}
 
 	VectorClear( angles );
 
-	if ( cg.damageTime && cg.time - cg.damageTime < DAMAGE_TIME ) {
+	if ( useDamageTime  &&  (cg.damageTime && cg.time - cg.damageTime < DAMAGE_TIME) ) {
 		frac = (float)(cg.time - cg.damageTime ) / DAMAGE_TIME;
 		size = rect->w * 1.25 * ( 1.5 - frac * 0.5 );
 
@@ -581,9 +578,36 @@ static void CG_DrawSelectedPlayerWeapon( const rectDef_t *rect ) {
 static void CG_DrawPlayerScore (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
 {
 	int scores = cg.snap->ps.persistant[PERS_SCORE];
+	int clientNum;
 
 	if (wolfcam_following) {
-		return;
+		clientNum = wcg.clientNum;
+
+		if (wcg.clientNum == cg.snap->ps.clientNum) {
+			// pass use PERS_SCORE
+		} else {
+			if (CG_IsCpmaMvd()) {
+				scores = cgs.clientinfo[clientNum].score;
+			} else if (cgs.gametype == GT_TOURNAMENT) {
+				// if demo taker is viewing ingame player we can use cgs.scores[12]
+				if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR) {
+					// we don't know
+					//FIXME for some versions of ql you can:  CS_FIRST_PLACE_CLIENT_NUM and CS_SECOND_PLACE_CLIENT_NUM
+					return;
+				}
+
+			    // we are viewing ingame player, case were wcg.clientNum == cg.snap->ps.clientNum already handled above so this is the other dueler
+				if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
+					scores = cgs.scores2;
+				} else {
+					scores = cgs.scores1;
+				}
+			} else {
+				return;
+			}
+		}
+	} else {
+		clientNum = cg.snap->ps.clientNum;
 	}
 
 	if (shader) {
@@ -592,15 +616,18 @@ static void CG_DrawPlayerScore (const rectDef_t *rect, float scale, const vec4_t
 		trap_R_SetColor( NULL );
 	} else {
 		if (cgs.gametype == GT_RACE) {
-			//FIXME wolfcam_following
+			// 2018-05-30:  ql seems to always just show '-' in race?
 
-			// doesn't fit in PERS_SCORE ?
-			scores = cgs.clientinfo[cg.snap->ps.clientNum].score;
+			// doesn't fit in PERS_SCORE ?  -- 2018-05-30 FIXME check
+			scores = cgs.clientinfo[clientNum].score;
 
 			if (scores <= 0  ||  scores >= MAX_RACE_SCORE) {
 				CG_Text_Paint_Align(rect, scale, color, va("-"), 0, 0, textStyle, font, align);
 			} else {
 				CG_Text_Paint_Align(rect, scale, color, va("%is", (int)(round(scores / 1000.0))), 0, 0, textStyle, font, align);
+
+				//FIXME drawing full score will overflow the box
+				//CG_Text_Paint_Align(rect, scale, color, va("%i ms", scores), 0, 0, textStyle, font, align);
 			}
         } else {
 			CG_Text_Paint_Align(rect, scale, color, va("%i", scores), 0, 0, textStyle, font, align);
@@ -613,7 +640,7 @@ static void CG_DrawPlayerItem( const rectDef_t *rect, float scale, qboolean draw
   vec3_t origin, angles;
 
   if (wolfcam_following) {
-	  return;
+	  return;  //FIXME powerups?
   }
 
 	value = cg.snap->ps.stats[STAT_HOLDABLE_ITEM];
@@ -752,7 +779,7 @@ static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_
 	memcpy(&r, rect, sizeof(rectDef_t));
 
 	//CG_FillRect(rect->x, rect->y, rect->w, rect->h, colorYellow);
-	
+
 	if (shader) {
 		trap_R_SetColor( color );
 		CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
@@ -772,7 +799,7 @@ static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_
 		r.h = rect->h;
 
 		height = CG_Text_Height(num, scale, 0, font);
-		
+
 		//r.y += r.h;
 		r.y += height;
 
@@ -975,6 +1002,13 @@ static void CG_HarvesterSkulls(const rectDef_t *rect, float scale, const vec4_t 
 static void CG_OneFlagStatus(const rectDef_t *rect) {
 	int yoffset = 0;
 	qboolean blueIsFirst;
+	int team;
+
+	if (wolfcam_following) {
+		team = cgs.clientinfo[wcg.clientNum].team;
+	} else {
+		team = cg.snap->ps.persistant[PERS_TEAM];
+	}
 
 	if (cgs.gametype != GT_1FCTF) {
 		return;
@@ -984,15 +1018,15 @@ static void CG_OneFlagStatus(const rectDef_t *rect) {
 		blueIsFirst = qfalse;
 
 		if (CG_ScoresEqual(cgs.scores2, cgs.scores1)) {
-			if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE) {
+			if (team == TEAM_BLUE) {
 				blueIsFirst = qtrue;
 			}
 		} else if (cgs.scores2 > cgs.scores1) {
 			blueIsFirst = qtrue;
 		} else if (cgs.scores2 < cgs.scores1) {
 			blueIsFirst = qfalse;
-		} else {  // scores tied, so demo pov is first
-			if (cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE) {
+		} else {  // scores tied, so followed pov is first
+			if (team == TEAM_BLUE) {
 				blueIsFirst = qtrue;
 			}
 		}
@@ -1032,31 +1066,53 @@ static void CG_OneFlagStatus(const rectDef_t *rect) {
 static void CG_DrawCTFPowerUp(const rectDef_t *rect) {
 	int		value;
 
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocol == PROTOCOL_Q3) {  //FIXME team arena
 		return;
-	}
-
-	if (wolfcam_following) {
-		return;  //FIXME
 	}
 
 	if (cgs.gametype < GT_CTF  ||  cgs.gametype == GT_FREEZETAG) {
 		return;
 	}
-	value = cg.snap->ps.stats[STAT_PERSISTANT_POWERUP];
-	if ( value ) {
-		//Com_Printf("ctf powerup %d\n", value);
-		if (cgs.protocol == PROTOCOL_QL) {
-			//FIXME  this is absolutely fucked up, why is this happening?????
 
-			if (value == 0) {
-				value = 39;
-			} else {
-				value += 42;
+	if (!wolfcam_following) {
+		value = cg.snap->ps.stats[STAT_PERSISTANT_POWERUP];
+		if ( value ) {
+			//Com_Printf("ctf powerup %d\n", value);
+			if (cgs.protocol == PROTOCOL_QL) {
+				//FIXME  this is absolutely fucked up, why is this happening?????
+
+				if (value == 0) {
+					value = 39;
+				} else {
+					value += 42;
+				}
 			}
+			CG_RegisterItemVisuals( value );
+			CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cg_items[ value ].icon );
 		}
-		CG_RegisterItemVisuals( value );
-		CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cg_items[ value ].icon );
+	} else {
+		// check for PW_GUARD PW_ARMORREGEN PW_SCOUT PW_DOUBLER
+		const gitem_t *item;
+		int powerups;
+
+		item = NULL;
+		powerups = cg_entities[wcg.clientNum].currentState.powerups;
+
+		if (powerups & (1 << PW_GUARD)) {
+			item = BG_FindItemForPowerup(PW_GUARD);
+		} else if (powerups & (1 << PW_ARMORREGEN)) {
+			item = BG_FindItemForPowerup(PW_ARMORREGEN);
+		} else if (powerups & (1 << PW_SCOUT)) {
+			item = BG_FindItemForPowerup(PW_SCOUT);
+		} else if (powerups & (1 << PW_DOUBLER)) {
+			item = BG_FindItemForPowerup(PW_DOUBLER);
+		}
+
+		if (item) {
+			//FIXME  register item visuals and using trap_R_RegisterShader()
+			//CG_RegisterItemVisuals(item)
+			CG_DrawPic( rect->x, rect->y, rect->w, rect->h, trap_R_RegisterShader(item->icon));
+		}
 	}
 }
 
@@ -1085,16 +1141,7 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 	int origX;
 	int origY;
 
-	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_TOURNAMENT) {
-		//return;
-	}
-
-	if (wolfcam_following) {
-		return;  //FIXME
-	}
-
-	//FIXME following might be able to show
-	if (CG_IsCpmaMvd()) {
+	if (CG_IsCpmaMvd()  &&  !wolfcam_following) {
 		return;
 	}
 
@@ -1105,45 +1152,69 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 
 	inc = (align == HUD_VERTICAL) ? &r2.y : &r2.x;
 
-	ps = &cg.snap->ps;
+	if (!wolfcam_following) {
+		ps = &cg.snap->ps;
 
-	if ( ps->stats[STAT_HEALTH] <= 0  ||  ps->eFlags & EF_DEAD) {
-		//Com_Printf("returning\n");
-		//return;
-	}
-
-	// sort the list by time remaining
-	active = 0;
-	for ( i = 0 ; i < MAX_POWERUPS ; i++ ) {
-		if ( !ps->powerups[ i ] ) {
-			continue;
-		}
-		//Com_Printf("powerup: %d\n", i);
-
-		// ZOID--don't draw if the power up has unlimited time
-		// This is true of the CTF flags
-		if ( ps->powerups[ i ] == INT_MAX ) {
-			continue;
+		if ( ps->stats[STAT_HEALTH] <= 0  ||  ps->eFlags & EF_DEAD) {
+			//Com_Printf("returning\n");
+			//return;
 		}
 
-		t = ps->powerups[ i ] - cg.time;
-		if ( t <= 0 ) {
-			continue;
-		}
+		// sort the list by time remaining
+		active = 0;
+		for ( i = 0 ; i < MAX_POWERUPS ; i++ ) {
+			if ( !ps->powerups[ i ] ) {
+				continue;
+			}
+			//Com_Printf("powerup: %d\n", i);
 
-		// insert into the list
-		for ( j = 0 ; j < active ; j++ ) {
-			if ( sortedTime[j] >= t ) {
-				for ( k = active - 1 ; k >= j ; k-- ) {
-					sorted[k+1] = sorted[k];
-					sortedTime[k+1] = sortedTime[k];
+			// ZOID--don't draw if the power up has unlimited time
+			// This is true of the CTF flags
+			if ( ps->powerups[ i ] == INT_MAX ) {
+				continue;
+			}
+
+			t = ps->powerups[ i ] - cg.time;
+			if ( t <= 0 ) {
+				continue;
+			}
+
+			// insert into the list
+			for ( j = 0 ; j < active ; j++ ) {
+				if ( sortedTime[j] >= t ) {
+					for ( k = active - 1 ; k >= j ; k-- ) {
+						sorted[k+1] = sorted[k];
+						sortedTime[k+1] = sortedTime[k];
+					}
+					break;
 				}
-				break;
+			}
+			sorted[j] = i;
+			sortedTime[j] = t;
+			active++;
+		}
+	} else {  // wolfcam_following
+		int powerups;
+		int *powerupsCheck[] = { &PW_QUAD, &PW_BATTLESUIT, &PW_HASTE, &PW_INVIS, &PW_REGEN, &PW_FLIGHT, &PW_INVULNERABILITY };  // PW_ not static values
+
+		ps = NULL;
+		powerups = cg_entities[wcg.clientNum].currentState.powerups;
+
+		if (ARRAY_LEN(powerupsCheck) >= MAX_POWERUPS) {
+			Com_Printf("^1invalid number of powerups to check: %d\n", ARRAY_LEN(powerupsCheck));
+			return;
+		}
+
+		active = 0;
+		for (i = 0;  i < ARRAY_LEN(powerupsCheck);  i++) {
+			if (powerups & (1 << *(powerupsCheck[i]))) {
+				sorted[active] = *(powerupsCheck[i]);
+
+				//FIXME can we get this?
+				sortedTime[active] = -1;
+				active++;
 			}
 		}
-		sorted[j] = i;
-		sortedTime[j] = t;
-		active++;
 	}
 
 	// draw the icons and timers
@@ -1151,7 +1222,23 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 		item = BG_FindItemForPowerup( sorted[i] );
 
 		if (item) {
-			t = ps->powerups[ sorted[i] ];
+			if (wolfcam_following) {
+				t = -1;
+				if (sorted[i] == PW_QUAD) {
+					if (cg.numQuads == 1) {  //FIXME more than one?
+						t = cg.quads[0].pickupTime;
+						sortedTime[i] = (cg.quads[0].pickupTime + (item->quantity * 1000)) - cg.time;
+					}
+				} else if (sorted[i] == PW_BATTLESUIT) {
+					if (cg.numBattleSuits == 1) {  //FIXME more than one?
+						t = cg.battleSuits[0].pickupTime;
+						sortedTime[i] = (cg.battleSuits[0].pickupTime + (item->quantity * 1000)) - cg.time;
+					}
+				}
+			} else {
+				t = ps->powerups[ sorted[i] ];
+			}
+
 			if ( t - cg.time >= POWERUP_BLINKS * POWERUP_BLINK_TIME ) {
 				trap_R_SetColor( NULL );
 			} else {
@@ -1163,40 +1250,51 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 				trap_R_SetColor( modulate );
 			}
 
+			if (wolfcam_following) {
+				//trap_R_SetColor(colorWhite);
+			}
 
 			//Com_Printf("drawing powerup %s  sorted[i] %d\n", item->icon, sorted[i]);
 			if (sorted[i] != 0) {  // 2010-08-08 new spawn protection powerup
 				CG_DrawPic( r2.x, r2.y, r2.w * .75, r2.h, trap_R_RegisterShader( item->icon ) );
-				Com_sprintf (num, sizeof(num), "%i", sortedTime[i] / 1000);
+
+				if (sortedTime[i] >= 0) {
+					Com_sprintf (num, sizeof(num), "%i", sortedTime[i] / 1000);
+				} else {
+					num[0] = '\0';
+				}
+
 				CG_Text_Paint(r2.x + (r2.w * .75) + 3 , r2.y + r2.h, scale, color, num, 0, 0, 0, font);
 				origX = r2.x;
 				origY = r2.y;
 				*inc += r2.w + special;
 
-				if (item->giTag == PW_QUAD  &&  cgs.protocol == PROTOCOL_QL  &&  cg_quadKillCounter.integer == 1  &&  ps->stats[STAT_QUAD_KILL_COUNT] > 0) {
-					float sc;
+				// kill counters
+				if (!wolfcam_following) {
+					if (item->giTag == PW_QUAD  &&  cgs.protocol == PROTOCOL_QL  &&  cg_quadKillCounter.integer == 1  &&  ps->stats[STAT_QUAD_KILL_COUNT] > 0) {
+						float sc;
 
-					sc = 0.25;
-					//Com_Printf("%d\n", ps->stats[STAT_QUAD_KILL_COUNT]);
-					CG_DrawPic(origX + (r2.w * 0.75) + 3, (float)origY + (float)r2.w * 0.10, r2.w * sc, r2.h * sc, cgs.media.redCubeIcon);
-					//CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + r2.h, scale * 0.25, color, va("x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
-					CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + (float)r2.h * (sc + 0.10), scale * 0.33, color, va(" x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
-				}
-				if (item->giTag == PW_BATTLESUIT  &&  cgs.protocol == PROTOCOL_QL  &&  cg_battleSuitKillCounter.integer == 1  &&  ps->stats[STAT_BATTLE_SUIT_KILL_COUNT] > 0) {
-					float sc;
+						sc = 0.25;
+						//Com_Printf("%d\n", ps->stats[STAT_QUAD_KILL_COUNT]);
+						CG_DrawPic(origX + (r2.w * 0.75) + 3, (float)origY + (float)r2.w * 0.10, r2.w * sc, r2.h * sc, cgs.media.redCubeIcon);
+						//CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + r2.h, scale * 0.25, color, va("x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
+						CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + (float)r2.h * (sc + 0.10), scale * 0.33, color, va(" x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
+					}
+					if (item->giTag == PW_BATTLESUIT  &&  cgs.protocol == PROTOCOL_QL  &&  cg_battleSuitKillCounter.integer == 1  &&  ps->stats[STAT_BATTLE_SUIT_KILL_COUNT] > 0) {
+						float sc;
 
-					sc = 0.25;
-					//Com_Printf("%d\n", ps->stats[STAT_QUAD_KILL_COUNT]);
-					CG_DrawPic(origX + (r2.w * 0.75) + 3, (float)origY + (float)r2.w * 0.10, r2.w * sc, r2.h * sc, cgs.media.redCubeIcon);
-					//CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + r2.h, scale * 0.25, color, va("x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
-					CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + (float)r2.h * (sc + 0.10), scale * 0.33, color, va(" x %d", ps->stats[STAT_BATTLE_SUIT_KILL_COUNT]), 0, 0, 0, font);
+						sc = 0.25;
+						//Com_Printf("%d\n", ps->stats[STAT_QUAD_KILL_COUNT]);
+						CG_DrawPic(origX + (r2.w * 0.75) + 3, (float)origY + (float)r2.w * 0.10, r2.w * sc, r2.h * sc, cgs.media.redCubeIcon);
+						//CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + r2.h, scale * 0.25, color, va("x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
+						CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + (float)r2.h * (sc + 0.10), scale * 0.33, color, va(" x %d", ps->stats[STAT_BATTLE_SUIT_KILL_COUNT]), 0, 0, 0, font);
+					}
 				}
 			}
 		}
-
 	}
-	trap_R_SetColor( NULL );
 
+	trap_R_SetColor( NULL );
 }
 
 static qboolean CG_HaveWeapon (int weapon)
@@ -1635,7 +1733,7 @@ float CG_GetValue(int ownerDraw) {
 	  break;
 
   case CG_1ST_PLYR_SCORE:
-	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  return cg.duelScores[0].score;
 	  } else {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
@@ -1722,7 +1820,7 @@ float CG_GetValue(int ownerDraw) {
 	//CG_1ST_PLYR_TIMEOUT_COUNT
 
   case CG_2ND_PLYR_SCORE:
-	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  return cg.duelScores[1].score;
 	  } else {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
@@ -3623,17 +3721,33 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 
 
 static void CG_DrawPlayerHasFlag(const rectDef_t *rect, qboolean force2D) {
+	qboolean haveRedFlag = qfalse;
+	qboolean haveBlueFlag = qfalse;
+	qboolean haveNeutralFlag = qfalse;
 	int adj = (force2D) ? 0 : 2;
 
-	if (wolfcam_following) {
-		return;  //FIXME
+	if (CG_IsCpmaMvd()  &&  !wolfcam_following) {
+		return;
 	}
 
-	if( cg.predictedPlayerState.powerups[PW_REDFLAG] ) {
+	if (wolfcam_following) {
+		int powerups;
+
+		powerups = cg_entities[wcg.clientNum].currentState.powerups;
+		haveRedFlag = powerups & (1 << PW_REDFLAG);
+		haveBlueFlag = powerups & (1 << PW_BLUEFLAG);
+		haveNeutralFlag = powerups & (1 << PW_NEUTRALFLAG);
+	} else {
+		haveRedFlag = cg.predictedPlayerState.powerups[PW_REDFLAG];
+		haveBlueFlag = cg.predictedPlayerState.powerups[PW_BLUEFLAG];
+		haveNeutralFlag = cg.predictedPlayerState.powerups[PW_NEUTRALFLAG];
+	}
+
+	if (haveRedFlag) {
   	CG_DrawFlagModel( rect->x + adj, rect->y + adj, rect->w - adj, rect->h - adj, TEAM_RED, force2D);
-	} else if( cg.predictedPlayerState.powerups[PW_BLUEFLAG] ) {
+	} else if (haveBlueFlag) {
   	CG_DrawFlagModel( rect->x + adj, rect->y + adj, rect->w - adj, rect->h - adj, TEAM_BLUE, force2D);
-	} else if( cg.predictedPlayerState.powerups[PW_NEUTRALFLAG] ) {
+	} else if (haveNeutralFlag) {
   	CG_DrawFlagModel( rect->x + adj, rect->y + adj, rect->w - adj, rect->h - adj, TEAM_FREE, force2D);
 	}
 }
@@ -3653,10 +3767,6 @@ static void CG_DrawAreaChat(const rectDef_t *rect, float scale, const vec4_t col
 const char *CG_GetKillerText(void) {
 	const char *s = "";
 
-	if (wolfcam_following) {
-		return s;  //FIXME
-	}
-
 	if ( cg.killerName[0] ) {
 		s = va("Fragged by %s", cg.killerName );
 	}
@@ -3671,10 +3781,6 @@ static void CG_DrawKiller (const rectDef_t *rect, float scale, const vec4_t colo
 	const char *s;
 
 	// fragged by ... line
-
-	if (wolfcam_following) {
-		return;  //FIXME
-	}
 
 	if ( cg.killerName[0] ) {
 		//int x = rect->x + rect->w / 2;
@@ -3791,9 +3897,56 @@ const char *CG_GetGameStatusText (vec4_t color)
 	const char *s = "";
 
 	if (!CG_IsTeamGame(cgs.gametype)) {
-		//FIXME wolfcam
-		if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
-			s = va("%s ^7place with %i",CG_PlaceString( cg.snap->ps.persistant[PERS_RANK] + 1 ),cg.snap->ps.persistant[PERS_SCORE] );
+		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
+			if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
+				s = va("%s ^7place with %i",CG_PlaceString( cg.snap->ps.persistant[PERS_RANK] + 1 ),cg.snap->ps.persistant[PERS_SCORE] );
+			}
+		} else {  // wolfcam_following
+			if (cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR) {
+				if (CG_IsCpmaMvd()) {
+					int rank;
+					int i;
+
+					rank = 1;
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						if (!cgs.clientinfo[i].infoValid) {
+							continue;
+						}
+						if (cgs.clientinfo[i].team == TEAM_SPECTATOR) {
+							continue;
+						}
+						if (cgs.clientinfo[i].score > cgs.clientinfo[wcg.clientNum].score) {
+							rank++;
+						}
+					}
+
+					s = va("%s ^7place with %i", CG_PlaceString(rank), cgs.clientinfo[wcg.clientNum].score);
+
+					return s;
+				}
+
+				// following someone who is ingame but not the main demo view
+
+				if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+					// we are following the other dueler
+					if (cgs.scores1 == cgs.scores2) {
+						s = va("%s ^7place with %i", CG_PlaceString(1), cgs.scores1);
+					} else {
+						if (cg.snap->ps.persistant[PERS_RANK] == 0) {
+							// we are second
+							s = va("%s ^7place with %i", CG_PlaceString(2), cgs.scores2);
+						} else {
+							// we are first
+							s = va("%s ^7place with %i", CG_PlaceString(1), cgs.scores1);
+						}
+					}
+					return s;
+				}
+
+				// we don't have enough information
+				s = "";
+				return s;
+			}
 		}
 	} else {
 		if ( cg.teamScores[0] == cg.teamScores[1] ) {
@@ -3813,7 +3966,6 @@ static void CG_DrawGameStatus (const rectDef_t *rect, float scale, const vec4_t 
 {
 	const char *s;
 	vec4_t statusColor;
-	float w;
 	rectDef_t newRect;
 
 	newRect = *rect;
@@ -3824,11 +3976,6 @@ static void CG_DrawGameStatus (const rectDef_t *rect, float scale, const vec4_t 
 	//CG_Text_Paint_Align(rect, scale, colorWhite, s, 0, 0, textStyle, font, align);
 	CG_Text_Paint_Align(&newRect, scale, statusColor, s, 0, 0, textStyle, font, align);
 	//CG_Text_Paint_Align(rect, scale, color, s, 0, 0, textStyle, font, align);
-	if (cgs.gametype != GT_TOURNAMENT  &&  cgs.gametype != GT_TEAM) {
-		w = CG_Text_Width(s, scale, 0, font);
-		newRect.x += w;
-		CG_Text_Paint_Align(&newRect, scale, colorWhite, va("       %s", CG_GetLocalTimeString()), 0, 0, textStyle, font, align);
-	}
 }
 
 const char *CG_GameTypeString(void) {
@@ -4083,6 +4230,10 @@ static void CG_DrawNewTeamInfo(const rectDef_t *rect, float text_x, float text_y
 	const clientInfo_t *ci;
 	gitem_t	*item;
 	qhandle_t h;
+
+	if (wolfcam_following  &&  cgs.clientinfo[wcg.clientNum].team != cgs.clientinfo[cg.snap->ps.clientNum].team) {
+		return;  //FIXME wolfcam
+	}
 
 	// max player name width
 	pwidth = 0;
@@ -4534,8 +4685,7 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	} else {  // non team games
 
 		// special case when we are following main demo view and they are an ingame player
-		if
-			((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))
+		if ((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))
 			 &&  cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR
 			 &&  CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {  // first person ingame demo view
 			const char *clanTag;
@@ -5257,6 +5407,7 @@ void CG_DrawWeaponBar( void ) {
 
 	// count the number of weapons owned
 	if (wolfcam_following) {
+		// cpma mvd only has ammo for current weapon in team games
 		if (CG_IsCpmaMvd()  &&  !CG_IsTeamGame(cgs.gametype)) {
 			weapons = cg.snap->ps.ammo[wcg.clientNum] >> 8;
 			weapons &= 0xffff;
@@ -6388,7 +6539,18 @@ static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int sty
 
 static void CG_SetArmorColor (void)
 {
+	if (cgs.protocol != PROTOCOL_QL  &&  !cgs.cpma) {
+		return;
+	}
+
 	if (wolfcam_following) {
+		if (CG_IsCpmaMvd()) {
+			if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM  || cgs.gametype == GT_FFA) {
+				//FIXME information is shown by cpma, where is it stored?  -- based on item pickups?  then why would it be shown for tdm?
+				return;
+			}
+		}
+
 		return;
 	}
 
@@ -6775,8 +6937,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  ival = cg.snap->ps.stats[STAT_HEALTH];
 
 	  if (wolfcam_following) {
-		  //break;  //FIXME
-		  //ival = wclients[wcg.clientNum].eventHealth;  //FIXME time, team info
 		  ival = Wolfcam_PlayerHealth(wcg.clientNum);
 		  if (ival <= INVALID_WOLFCAM_HEALTH) {
 			  break;
@@ -6805,8 +6965,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  ival = cg.snap->ps.stats[STAT_HEALTH];
 
 	  if (wolfcam_following) {
-		  //break;  //FIXME
-		  //ival = wclients[wcg.clientNum].eventHealth;  //FIXME time, team info
 		  ival = Wolfcam_PlayerHealth(wcg.clientNum);
 		  if (ival <= INVALID_WOLFCAM_HEALTH) {
 			  break;
@@ -6833,7 +6991,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  ival = cg.snap->ps.stats[STAT_ARMOR];
 
 	  if (wolfcam_following) {
-		  //break;  //FIXME team info
 		  ival = Wolfcam_PlayerArmor(wcg.clientNum);
 		  if (ival < 0) {
 			  break;
@@ -6859,7 +7016,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  ival = cg.snap->ps.stats[STAT_ARMOR];
 
 	  if (wolfcam_following) {
-		  //break;  //FIXME team info
 		  ival = Wolfcam_PlayerArmor(wcg.clientNum);
 		  if (ival < 0) {
 			  break;
@@ -6914,13 +7070,21 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  if (!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER) {
 		  float w;
 
-		  //w = CG_Text_Width(CG_ConfigString(CS_FIRSTPLACE), scale, 0, font);
-		  w = CG_Text_Width(cgs.firstPlace, scale, 0, font);
-		  //CG_Text_Paint_Align(&rect, scale, color, va("%s", CG_ConfigString(CS_FIRSTPLACE)), 0, 0, textStyle, font, align);
-		  CG_Text_Paint_Align(&rect, scale, color, va("%s", cgs.firstPlace), 0, 0, textStyle, font, align);
+		  if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")  &&  (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM)) {
+			  // use "duelendscores" values
+			  w = CG_Text_Width(cg.cpmaDuelPlayerWinner, scale, 0, font);
+			  CG_Text_Paint_Align(&rect, scale, color, va("%s", cg.cpmaDuelPlayerWinner), 0, 0, textStyle, font, align);
+		  } else {
+			  w = CG_Text_Width(cgs.firstPlace, scale, 0, font);
+			  CG_Text_Paint_Align(&rect, scale, color, va("%s", cgs.firstPlace), 0, 0, textStyle, font, align);
+		  }
 		  rect.x += w;
 		  ourColor[3] = color[3];
-		  if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT  &&  cg.duelForfeit) {
+
+		  if ((cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT  &&  cg.duelForfeit)
+			    ||
+			  (cgs.cpma  &&  (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM)  &&  cg.duelForfeit)
+			  ) {
 			  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS by forfeit", 0, 0, textStyle, font, align);
 		  } else {
 			  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS", 0, 0, textStyle, font, align);
@@ -7018,7 +7182,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 				  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 			  }
 		  }	else {
-			  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d.", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+			  if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")  &&  cg.duelForfeit) {
+			  //FIXME cpma
+			  } else {
+				  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d.", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+			  }
 		  }
 	  }
 	  break;
@@ -7314,7 +7482,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
 		  break;
 	  }
-	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].score), 0, 0, textStyle, font, align);
 	  } else {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
@@ -7453,11 +7621,14 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
   case CG_2ND_PLYR_SCORE:
-	  if (cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 2) {
+	  if ((cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 2)  ||
+		  /* with cpma we are always placing forfeiting player in second duel slot */
+		  (cgs.cpma  &&  cg.duelForfeit)
+		  ) {
 		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
 		  break;
 	  }
-	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
+	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].score), 0, 0, textStyle, font, align);
 	  } else {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
@@ -8623,6 +8794,19 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_notready");
 		  }
+	  } else if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")) {
+		  // with mstatsa we don't have client numbers
+		  if (cg.duelScoresValid) {
+			  if (cg.duelScores[0].score > cg.duelScores[1].score  ||  cg.duelForfeit) {
+				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_leads");
+			  } else if (cg.duelScores[0].score < cg.duelScores[1].score) {
+				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_trails");
+			  } else {
+				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
+			  }
+		  } else {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
+		  }
 	  } else {
 		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
@@ -8649,6 +8833,19 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_ready");
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_notready");
+		  }
+	  } else if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")) {
+		  // with mstatsa we don't have client numbers
+		  if (cg.duelScoresValid) {
+			  if (cg.duelScores[1].score < cg.duelScores[0].score  ||  cg.duelForfeit) {
+				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_trails");
+			  } else if (cg.duelScores[1].score > cg.duelScores[0].score) {
+				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_leads");
+			  } else {
+				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
+			  }
+		  } else {
+			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
 		  }
 	  } else {
 		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {

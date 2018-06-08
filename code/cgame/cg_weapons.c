@@ -2386,6 +2386,22 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 	} else {
 		CG_ScaleModel(&gun, cg_gunSizeThirdPerson.value);
 	}
+
+	// custom weapon shaders
+	if (ps) {
+		vmCvar_t *firstPersonShaders[MAX_WEAPONS] = { NULL, &cg_firstPersonShaderWeaponGauntlet, &cg_firstPersonShaderWeaponMachineGun, &cg_firstPersonShaderWeaponShotgun, &cg_firstPersonShaderWeaponGrenadeLauncher, &cg_firstPersonShaderWeaponRocketLauncher, &cg_firstPersonShaderWeaponLightningGun, &cg_firstPersonShaderWeaponRailGun, &cg_firstPersonShaderWeaponPlasmaGun, &cg_firstPersonShaderWeaponBFG, &cg_firstPersonShaderWeaponGrapplingHook, &cg_firstPersonShaderWeaponNailGun, &cg_firstPersonShaderWeaponProximityLauncher, &cg_firstPersonShaderWeaponChainGun, &cg_firstPersonShaderWeaponHeavyMachineGun };
+
+		if (firstPersonShaders[weaponNum]  &&  *(firstPersonShaders[weaponNum]->string)) {
+			gun.customShader = trap_R_RegisterShader(firstPersonShaders[weaponNum]->string);
+		}
+	} else {
+		vmCvar_t *thirdPersonShaders[MAX_WEAPONS] = { NULL, &cg_thirdPersonShaderWeaponGauntlet, &cg_thirdPersonShaderWeaponMachineGun, &cg_thirdPersonShaderWeaponShotgun, &cg_thirdPersonShaderWeaponGrenadeLauncher, &cg_thirdPersonShaderWeaponRocketLauncher, &cg_thirdPersonShaderWeaponLightningGun, &cg_thirdPersonShaderWeaponRailGun, &cg_thirdPersonShaderWeaponPlasmaGun, &cg_thirdPersonShaderWeaponBFG, &cg_thirdPersonShaderWeaponGrapplingHook, &cg_thirdPersonShaderWeaponNailGun, &cg_thirdPersonShaderWeaponProximityLauncher, &cg_thirdPersonShaderWeaponChainGun, &cg_thirdPersonShaderWeaponHeavyMachineGun };
+
+		if (thirdPersonShaders[weaponNum]  &&  *(thirdPersonShaders[weaponNum]->string)) {
+			gun.customShader = trap_R_RegisterShader(thirdPersonShaders[weaponNum]->string);
+		}
+	}
+
 	if (gun.hModel) {
 		if (ps  &&  cg_drawGun.integer > 2) {
 			gun.customShader = cgs.media.ghostWeaponShader;

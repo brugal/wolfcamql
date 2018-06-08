@@ -523,7 +523,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 	if (attacker < 0  ||  attacker >= MAX_CLIENTS) {  //( !attackerInfo ) {
 		attacker = ENTITYNUM_WORLD;
 		strcpy( attackerName, "noname" );
-		if (target == cg.snap->ps.clientNum) {
+		if (target == ourClientNum) {
 			cg.killerName[0] = 0;
 			cg.killerWeaponIcon = icon;
 			cg.killerClientNum = attacker;
@@ -533,7 +533,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 		Q_strncpyz(attackerName, cgs.clientinfo[attacker].name, sizeof(attackerName) - 2);
 		strcat( attackerName, S_COLOR_WHITE );
 		// check for kill messages about the current clientNum
-		if ( target == cg.snap->ps.clientNum ) {
+		if ( target == ourClientNum ) {
 			vec3_t forward;
 
 			Q_strncpyz( cg.killerName, attackerName, sizeof( cg.killerName ) );
@@ -1477,13 +1477,11 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	}
 	ci = &cgs.clientinfo[ clientNum ];
 
-#if 1
 	if (wolfcam_following) {
 		ourClientNum = wcg.clientNum;
 	} else {
 		ourClientNum = cg.snap->ps.clientNum;
 	}
-#endif
 
     wolfcam_log_event (cent, position);
 
@@ -1736,14 +1734,18 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			wclients[es->number].jumpTime = cg.time;
 		}
 
-		if (es->number == cg.snap->ps.clientNum) {
+		if (es->number == ourClientNum) {
 			if (cg.jumpsNeedClearing) {
 				cg.numJumps = 0;
 				cg.jumpsNeedClearing = qfalse;
 				//CG_Printf("cleared jump info %d\n", cg.time);
 			}
 			cg.jumps[cg.numJumps % MAX_JUMPS_INFO].time = cg.snap->serverTime;
-			cg.jumps[cg.numJumps % MAX_JUMPS_INFO].speed = sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]);
+			if (!wolfcam_following  ||  wcg.clientNum == cg.snap->ps.clientNum) {
+				cg.jumps[cg.numJumps % MAX_JUMPS_INFO].speed = sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]);
+			} else {
+				cg.jumps[cg.numJumps % MAX_JUMPS_INFO].speed = sqrt(cg_entities[wcg.clientNum].currentState.pos.trDelta[0] * cg_entities[wcg.clientNum].currentState.pos.trDelta[0] + cg_entities[wcg.clientNum].currentState.pos.trDelta[1] * cg_entities[wcg.clientNum].currentState.pos.trDelta[1]);
+			}
 			//Com_Printf("jump %d\n", cg.jumps[cg.numJumps].speed);
 			if (cg.numJumps == 0) {
 				cg.jumpsFirstTime = cg.snap->serverTime;

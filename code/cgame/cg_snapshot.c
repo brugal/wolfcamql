@@ -263,8 +263,10 @@ static void CG_TransitionSnapshot( void ) {
 		}
 	}
 
-	if (cg_drawJumpSpeeds.integer == 1  &&  sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]) < 1.0) {
-		cg.jumpsNeedClearing = qtrue;
+	if (!wolfcam_following  ||  wcg.clientNum == cg.snap->ps.clientNum) {
+		if (cg_drawJumpSpeeds.integer == 1  &&  sqrt(cg.snap->ps.velocity[0] * cg.snap->ps.velocity[0] + cg.snap->ps.velocity[1] * cg.snap->ps.velocity[1]) < 1.0) {
+			cg.jumpsNeedClearing = qtrue;
+		}
 	}
 
 	for ( i = 0 ; i < cg.snap->numEntities ; i++ ) {
@@ -324,6 +326,12 @@ static void CG_TransitionSnapshot( void ) {
 
 		CG_TransitionEntity( cent );
 
+		if (wolfcam_following  &&  cg.snap->entities[i].number == wcg.clientNum) {
+			if (cg_drawJumpSpeeds.integer == 1  &&  sqrt(cent->currentState.pos.trDelta[0] * cent->currentState.pos.trDelta[0] + cent->currentState.pos.trDelta[1] * cent->currentState.pos.trDelta[1]) < 1.0) {
+				cg.jumpsNeedClearing = qtrue;
+			}
+		}
+
 		// remember time of snapshot this entity was last updated in
 		cent->snapShotTime = cg.snap->serverTime;
 	}
@@ -368,6 +376,41 @@ static void CG_TransitionSnapshot( void ) {
 		memset(&wc->perKillwstats, 0, sizeof(wc->perKillwstats));
 	}
 
+	// set first and second place names if possible
+	if (cgs.protocol != PROTOCOL_QL) {
+		if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
+				int otherDuelPlayer;
+
+				// we can figure it out
+				otherDuelPlayer = -1;
+				for (i = 0;  i < MAX_CLIENTS;  i++) {
+					if (!cgs.clientinfo[i].infoValid) {
+						continue;
+					}
+					if (cgs.clientinfo[i].team != TEAM_FREE) {
+						continue;
+					}
+					if (i == cg.snap->ps.clientNum) {
+						continue;
+					}
+
+					otherDuelPlayer = i;
+					break;
+				}
+
+				if (otherDuelPlayer != -1) {
+					if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
+						Q_strncpyz(cgs.firstPlace, cgs.clientinfo[cg.snap->ps.clientNum].name, sizeof(cgs.firstPlace));
+						Q_strncpyz(cgs.secondPlace, cgs.clientinfo[otherDuelPlayer].name, sizeof(cgs.secondPlace));
+					} else {
+						Q_strncpyz(cgs.firstPlace, cgs.clientinfo[otherDuelPlayer].name, sizeof(cgs.firstPlace));
+						Q_strncpyz(cgs.secondPlace, cgs.clientinfo[cg.snap->ps.clientNum].name, sizeof(cgs.secondPlace));
+					}
+				}
+			}
+		}
+	}
 }
 
 

@@ -25,7 +25,8 @@ int wolfcam_find_client_to_follow (void)
         return wcg.selectedClientNum;
     }
 
-    if (CG_IsCpmaMvd()  &&  wcg.followMode == WOLFCAM_FOLLOW_SELECTED_PLAYER) {
+    // don't switch for cpma mvd or ql protocol 91 free spec
+    if ((CG_IsCpmaMvd()  ||  (cgs.realProtocol >= 91  &&  cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR))  &&  wcg.followMode == WOLFCAM_FOLLOW_SELECTED_PLAYER) {
         // no need to switch even if selected client isn't in world
         return wcg.selectedClientNum;
     }

@@ -3238,7 +3238,7 @@ static int CG_CpmaStringScore (char c)
 	return x;
 }
 
-static qboolean CG_CpmaParseMstats (void)
+static qboolean CG_CpmaParseMstats (qboolean intermission)
 {
 	int n;
 	int wflags;
@@ -3256,49 +3256,91 @@ static qboolean CG_CpmaParseMstats (void)
 	// none -- 26 args
 
 	//FIXME saw it in a tdm demo as well
-	if (cgs.gametype != GT_TOURNAMENT) {
+	if (cgs.gametype != GT_TOURNAMENT  &&  cgs.gametype != GT_HM) {
 		return qfalse;
 	}
 
 	n = 1;
 	clientNum = atoi(CG_Argv(n));  n++; // player num
-	if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
-		CG_Printf("^1CG_CpmaParseMstats() invalid client number %d\n", clientNum);
-		return qtrue;
+
+	if (intermission) {
+		// mstatsa
+		// 0: winner
+		// 1: loser
+
+		if (clientNum != 0  &&  clientNum != 1) {
+			CG_Printf("^1CG_CpmaParseMstats() invalid mstatsa client number %d\n", clientNum);
+			return qtrue;
+		}
+
+		//FIXME try to get real client numbers?
+
+		if (clientNum == 0) {  // winner
+			duelPlayer = 0;
+			cg.duelPlayer1 = 0;  //FIXME
+		} else {
+			duelPlayer = 1;
+			cg.duelPlayer2 = 1;  //FIXME
+		}
+
+		wc = NULL;
+	} else {
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_CpmaParseMstats() invalid client number %d\n", clientNum);
+			return qtrue;
+		}
+
+		wc = &wclients[clientNum];
+
+		//FIXME
+		// with cpma >= 1.50 one player might have forfeited and they might have disconnected or moved to spec
+		duelPlayer = -1;
+		for (i = 0;  i < MAX_CLIENTS;  i++) {
+			if (!cgs.clientinfo[i].infoValid  ||  cgs.clientinfo[i].team != TEAM_FREE) {
+				continue;
+			}
+
+			duelPlayer++;
+
+			if (i == clientNum) {
+				break;
+			}
+		}
+
+		if (duelPlayer < 0) {
+			// disconnected or spec, make them the second player
+			duelPlayer = 1;
+		} else if (duelPlayer >= 1) {
+			duelPlayer = 1;
+		} else {
+			// duelPlayer is 0
+		}
+
+		if (duelPlayer == 0) {
+			cg.duelPlayer1 = clientNum;
+		} else {
+			cg.duelPlayer2 = clientNum;
+		}
 	}
 
-	wc = &wclients[clientNum];
+	//Com_Printf("^5duel player %d %s\n", duelPlayer, cgs.clientinfo[clientNum].name);
+
+	ds = &cg.duelScores[duelPlayer];
+	memset(ds, 0, sizeof(duelScore_t));
+
+	ds->ci = cgs.clientinfo[clientNum];
+
+	if (intermission) {
+		// client info set above is bs
+		if (clientNum == 0) {  // winner
+			Q_strncpyz(ds->ci.name, cg.cpmaDuelPlayerWinner, sizeof(ds->ci.name));
+		} else {  // loser
+			Q_strncpyz(ds->ci.name, cg.cpmaDuelPlayerLoser, sizeof(ds->ci.name));
+		}
+	}
 
 	cg.duelScoresValid = qtrue;
 	cg.duelScoresServerTime = cg.snap->serverTime;
-
-	//FIXME
-	duelPlayer = 0;
-	for (i = 0;  i < MAX_CLIENTS;  i++) {
-		if (!cgs.clientinfo[i].infoValid  ||  cgs.clientinfo[i].team != TEAM_FREE) {
-			continue;
-		}
-		if (i == clientNum) {
-			break;
-		}
-		duelPlayer++;
-	}
-
-	if (duelPlayer > 1) {
-		duelPlayer = 1;
-	}
-
-	if (duelPlayer == 0) {
-		cg.duelPlayer1 = clientNum;
-	} else {
-		cg.duelPlayer2 = clientNum;
-	}
-
-	//Com_Printf("duel player %d %s\n", duelPlayer, cgs.clientinfo[duelPlayer].name);
-	//Com_Printf("duel player %d %s\n", duelPlayer, cgs.clientinfo[clientNum].name);
-
-	ds = &cg.duelScores[duelPlayer];
-	ds->ci = cgs.clientinfo[clientNum];
 
 	totalHits = 0;
 	totalAtts = 0;
@@ -3507,10 +3549,20 @@ static qboolean CG_CpmaParseMstats (void)
 	} else {
 		ds->ping = 0;
 	}
-	wc->serverPingAccum += ds->ping;
-	wc->serverPingSamples++;
 
-	cgs.clientinfo[clientNum].score = atoi(CG_Argv(n));  n++;  // score?
+	// with mstatsa we don't know wc
+	if (!intermission) {
+		wc->serverPingAccum += ds->ping;
+		wc->serverPingSamples++;
+	}
+
+	ds->score = atoi(CG_Argv(n));  n++;  // score
+
+	// with mstatsa we don't have real clientNum
+	if (!intermission) {
+		cgs.clientinfo[clientNum].score = ds->score;
+	}
+
 	ds->kills = atoi(CG_Argv(n));  n++;  // frags?
 	atoi(CG_Argv(n));  n++;  // deaths?
 	atoi(CG_Argv(n));  n++;  // ?
@@ -3530,25 +3582,31 @@ static qboolean CG_CpmaParseMstats (void)
 		ds->accuracy = 0;
 	}
 
-	if (clientNum == cg.snap->ps.clientNum) {
-		ds->awardExcellent = cg.snap->ps.persistant[PERS_EXCELLENT_COUNT];
-		ds->awardImpressive = cg.snap->ps.persistant[PERS_IMPRESSIVE_COUNT];
-		ds->awardHumiliation = cg.snap->ps.persistant[PERS_GAUNTLET_FRAG_COUNT];
-	} else {
-		ds->awardExcellent = -1;
-		ds->awardImpressive = -1;
-		ds->awardHumiliation = -1;
+	// with mstats we don't have real clientNum
+	if (!intermission) {
+		if (clientNum == cg.snap->ps.clientNum) {
+			ds->awardExcellent = cg.snap->ps.persistant[PERS_EXCELLENT_COUNT];
+			ds->awardImpressive = cg.snap->ps.persistant[PERS_IMPRESSIVE_COUNT];
+			ds->awardHumiliation = cg.snap->ps.persistant[PERS_GAUNTLET_FRAG_COUNT];
+		} else {
+			ds->awardExcellent = -1;
+			ds->awardImpressive = -1;
+			ds->awardHumiliation = -1;
+		}
 	}
 
-	// for old scoreboard
-	for (i = 0;  i < cg.numScores;  i++) {
-		if (cg.scores[i].client != clientNum) {
-			continue;
-		}
+	// with mstatsa we don't have real clientNum
+	if (!intermission) {
+		// for old scoreboard
+		for (i = 0;  i < cg.numScores;  i++) {
+			if (cg.scores[i].client != clientNum) {
+				continue;
+			}
 
-		cg.scores[i].ping = ds->ping;
-		cg.scores[i].score = cgs.clientinfo[clientNum].score;
-		break;
+			cg.scores[i].ping = ds->ping;
+			cg.scores[i].score = cgs.clientinfo[clientNum].score;
+			break;
+		}
 	}
 
 	return qtrue;
@@ -3716,6 +3774,26 @@ static qboolean CG_CpmaXscores (void)
 
 	return qtrue;
 	//return qfalse;
+}
+
+static qboolean CG_CpmaParseDuelEndScores (void)
+{
+	int winMode;
+
+	Q_strncpyz(cg.cpmaDuelPlayerWinner, CG_Argv(1), sizeof(cg.cpmaDuelPlayerWinner));
+	Q_strncpyz(cg.cpmaDuelPlayerLoser, CG_Argv(2), sizeof(cg.cpmaDuelPlayerLoser));
+
+	winMode = atoi(CG_Argv(3));
+
+	if (winMode == 0) {
+		cg.duelForfeit = qfalse;
+	} else {
+		// this precedes mstatsa / xstats2a so we don't know who cg.duelPlayer[12] are yet
+		cg.duelForfeit = qtrue;
+	}
+
+
+	return qtrue;
 }
 
 static void CG_ParseCtfsRoundScores (void)
@@ -5295,10 +5373,18 @@ static void CG_ServerCommand( void ) {
 
 	if (cgs.cpma) {
 		if (!Q_stricmp(cmd, "mstats")) {
-			if (CG_CpmaParseMstats()) {
+			if (CG_CpmaParseMstats(qfalse)) {
 				return;
 			}
 		}
+
+		if (!Q_stricmp(cmd, "mstatsa")) {
+			// during intermission, same as mstats
+			if (CG_CpmaParseMstats(qtrue)) {
+				return;
+			}
+		}
+
 		if (!Q_stricmp(cmd, "dmscores")) {
 			if (CG_CpmaParseDmscores()) {
 				return;
@@ -5321,7 +5407,22 @@ static void CG_ServerCommand( void ) {
 				return;
 			}
 		}
+
+		if (!Q_stricmp(cmd, "xstats2a")) {
+			if (CG_CpmaXstats2()) {
+				return;
+			}
+		}
 #endif
+		if (!Q_stricmp(cmd, "specs")) {
+			// spec data with info indicating whether they are referee
+			return;
+		}
+		if (!Q_stricmp(cmd, "duelendscores")) {
+			if (CG_CpmaParseDuelEndScores()) {
+				return;
+			}
+		}
 	}
 
 	if (cgs.protocol == PROTOCOL_QL) {

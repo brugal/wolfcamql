@@ -285,7 +285,7 @@ Some additions to q3mme fx scripting:
 
 * soundlocal, soundlistlocal, soundweapon, and soundlistweapon in addition
    to sound and souldlist to allow local (not placed inside 3d world) and
-   weapon (always 'inside player head) channels.
+   weapon (always 'inside player head') channels.
 * modulus math operator '%'.  Note: both input values are rounded to the nearest integer
 * player/head/trail, player/torso/trail, player/legs/trail, player/flight
 * the following are passed on to the scripting system where appropriate:  team, clientnum (less than 0 signifies non-player), enemy, teammate, ineyes, surfacetype (for impacts).  You could have something like custom rails and rockets per team or different settings for enemies and also first person view.  See wolfcam-ql/scripts/q3mme.fx for more info.
@@ -390,7 +390,7 @@ Ex:
 * /runfx and /runfxat to run arbitrary scripts and add effects independent of game events and can be used as a generic scripting system
 
   /runfx <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]
-       if origin0 --> dir2 not given will uses current freecam or 1st person view settings.
+       if origin, dir, or velocity not given, it will use current freecam or 1st person view values.
 
   /runfxat <'now' | server time | clock time> <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]
 
@@ -414,6 +414,8 @@ Ex:
         }
     }
 
+  Note:  /runfix might not work correctly run when the game or demo is paused since fx emitter blocks are not evaulated when paused.
+
 * /runfxall <script name>  will run script against all present fx entities
   see scripts/alltest.fx :
 
@@ -421,7 +423,7 @@ Ex:
   bind z "runfxall moveup"
   /devmap campgrounds
   /give all
-  shoot some lg and hit 'z'
+  shoot some lg to generate impact particles and then and hit 'z'
 
 * /listfxscripts
 * /printdirvector  (prints current viewangles as a dir vector)
@@ -958,6 +960,12 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
   ex:  set cg_weaponRailGun "cg_fov 90; cg_drawCrosshair 1"
        set cg_weaponDefault "cg_fov 110; cg_drawCrosshair 4"
+
+* custom first and third person shaders for weapons:
+
+  cg_[first|third]PersonShaderWeapon[ Gauntlet | MachineGun | Shotgun | GrenadeLauncher | RocketLauncher | LightningGun | RailGun | PlasmaGun | BFG | GrapplingHook | NailGun | ProximityLauncher | ChainGun | HeavyMachineGun ]
+
+  ex:  set cg_firstPersonShaderWeaponRocketLauncher "myCustomShader/rocketl"
 
 * cg_levelTimerDirection:  0, 1  same as quakelive, including bugs (always count up during overtimes regardless of the settings you have chosen), 2  count up and don't reset to 0 during overtimes  (ex:  14:53  is shown for duel 53 seconds into the second overtime), 3 countdown even during overtime and for matches with no time-limit use cg_levelTimerDefaultTimeLimit, 4 always count down and try to use the end of game time parsed from the demo -- otherwise use cg_levelTimerDefaultTimeLimit
 
@@ -1916,7 +1924,7 @@ r_singleShader options and r_singleShaderName  to replace all the map textures
   You can edit or replace wolfcam-ql/gfx/wc/custom.tga to choose the color.
 --------------------------------------
 
-* 'screenMap' shader keyword from Quake3e.  This uses a screenshot of the previous frame as a texture.  Can be used for mirror like surfaces.  The size of the texture used can be controlled with r_screenMapTextureSize.  Example
+* 'screenMap' shader keyword from Quake3e.  This uses a screenshot of the previous frame as a texture.  Can be used for mirror like surfaces.  The size of the texture used can be controlled with r_screenMapTextureSize.  Example:
 
   models/weapons2/rocketl/rocketl
   {
@@ -1932,6 +1940,8 @@ r_singleShader options and r_singleShaderName  to replace all the map textures
                   blendfunc add
           }
   }
+
+  This will use the above shader for all rockets rendered.  If you would like to use it only for the first or third person view you can rename it and use cg_firstPersonShaderWeaponRocketLauncher or cg_thirdPersonShaderWeaponRocketLauncher.  Ex:  set cg_thirdPersonShaderWeaponRocketLauncher "myCustomShader/rocketl".
 
   Note:  Unlike Quake3e, 'screenMap' doesn't accept an image fallback option and 'tcGen environment' doesn't have a 'firstPerson' option.
 
@@ -2541,6 +2551,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_drawKeyPress  to enable drawing player key press information.  Also added WCG_PLAYER_KEY_PRESS_[FORWARD|BACK|RIGHT|LEFT|FIRE|JUMP|CROUCH] hud ownerdraws.  See ui/wckeypress.menu for an example.  '/loadmenu ui/wckeypress.menu' to test.
 
   Note that demos don't record key press information.  Demos do record movement direction which can be used to extract some of the values.  'right', 'left', and 'back' can be accurately extracted from the movement direction but 'forward' is an estimate based on the player's velocity.
+
+ cpma version >= 1.50 does record key press information so none of the values need to be guessed.
 
 * In Windows screen blanking is disabled.  It can be re-enabled by setting the SDL_VIDEO_ALLOW_SCREENSAVER environment variable.
 

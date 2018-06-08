@@ -11,6 +11,7 @@
 #include "cg_players.h"
 #include "cg_scoreboard.h"
 #include "cg_syscalls.h"
+#include "sc.h"
 
 #include "wolfcam_local.h"
 
@@ -333,7 +334,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 	int topBorderSize, bottomBorderSize;
 
 	QLWideScreen = 2;
-	
+
 	// don't draw amuthing if the menu or console is up
 	if ( cg_paused.integer ) {
 		cg.deferredPlayerLoading = 0;
@@ -356,7 +357,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 		fadeColor = colorWhite;
 	} else {
 		fadeColor = CG_FadeColor( cg.scoreFadeTime, FADE_TIME );
-		
+
 		if ( !fadeColor ) {
 			// next time scoreboard comes up, don't print killer
 			cg.deferredPlayerLoading = 0;
@@ -377,15 +378,68 @@ qboolean CG_DrawOldScoreboard( void ) {
 	}
 
 	// current rank
-	if ( cgs.gametype < GT_TEAM) {
-		if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
-			s = va("%s place with %i",
-				CG_PlaceString( cg.snap->ps.persistant[PERS_RANK] + 1 ),
-				cg.snap->ps.persistant[PERS_SCORE] );
-			w = CG_DrawStrlen( s, &cgs.media.bigchar );
-			x = ( SCREEN_WIDTH - w ) / 2;
-			y = 60;
-			CG_DrawBigString( x, y, s, fade );
+	if (!CG_IsTeamGame(cgs.gametype)) {
+		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
+			if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
+				s = va("%s place with %i",
+					   CG_PlaceString( cg.snap->ps.persistant[PERS_RANK] + 1 ),
+					   cg.snap->ps.persistant[PERS_SCORE] );
+				w = CG_DrawStrlen( s, &cgs.media.bigchar );
+				x = ( SCREEN_WIDTH - w ) / 2;
+				y = 60;
+				CG_DrawBigString( x, y, s, fade );
+			}
+		} else {  // wolfcam_following
+			if (cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR) {
+				if (CG_IsCpmaMvd()) {
+					int rank;
+					int i;
+
+					rank = 1;
+					for (i = 0;  i < MAX_CLIENTS;  i++) {
+						if (!cgs.clientinfo[i].infoValid) {
+							continue;
+						}
+						if (cgs.clientinfo[i].team == TEAM_SPECTATOR) {
+							continue;
+						}
+						if (cgs.clientinfo[i].score > cgs.clientinfo[wcg.clientNum].score) {
+							rank++;
+						}
+					}
+
+					s = va("%s ^7place with %i", CG_PlaceString(rank), cgs.clientinfo[wcg.clientNum].score);
+
+					w = CG_DrawStrlen( s, &cgs.media.bigchar );
+					x = ( SCREEN_WIDTH - w ) / 2;
+					y = 60;
+					CG_DrawBigString( x, y, s, fade );
+				} else {  // not cpma mvd
+					// following someone who is ingame but not the main demo view
+
+					if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+						// we are following the other dueler
+						if (cgs.scores1 == cgs.scores2) {
+							s = va("%s ^7place with %i", CG_PlaceString(1), cgs.scores1);
+						} else {
+							if (cg.snap->ps.persistant[PERS_RANK] == 0) {
+								// we are second
+								s = va("%s ^7place with %i", CG_PlaceString(2), cgs.scores2);
+							} else {
+								// we are first
+								s = va("%s ^7place with %i", CG_PlaceString(1), cgs.scores1);
+							}
+						}
+						w = CG_DrawStrlen( s, &cgs.media.bigchar );
+						x = ( SCREEN_WIDTH - w ) / 2;
+						y = 60;
+						CG_DrawBigString( x, y, s, fade );
+					} else {
+						// we don't have enough information
+						// pass, don't draw ranking
+					}
+				}
+			}
 		}
 	} else {
 		if ( cg.teamScores[0] == cg.teamScores[1] ) {

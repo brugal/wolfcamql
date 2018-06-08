@@ -1429,6 +1429,8 @@ typedef struct {
 	int duelPlayer2;
 	qboolean duelForfeit;
 	int duelPlayerForfeit;
+	char cpmaDuelPlayerWinner[MAX_QPATH * 2];
+	char cpmaDuelPlayerLoser[MAX_QPATH * 2];
 
 	caStats_t caStats[MAX_CLIENTS];
 
@@ -2426,6 +2428,9 @@ typedef struct {
 	int realProtocol;
 	int protocol;
 	qboolean cpma;
+	int cpmaVersionMajor;
+	int cpmaVersionMinor;
+	char cpmaVersionRevision[11];
 	qboolean cpm;
 	qboolean osp;
 	qboolean ospEncrypt;
@@ -2470,6 +2475,8 @@ extern	cgs_t			cgs;
 extern	cg_t			cg;
 extern	centity_t		cg_entities[MAX_GENTITIES + 1];  //FIXME hack for viewEnt
 extern	weaponInfo_t	cg_weapons[MAX_WEAPONS];
+//extern qhandle_t cg_firstPersonWeaponShaders[MAX_WEAPONS];
+
 extern	itemInfo_t		cg_items[MAX_ITEMS];
 //extern	markPoly_t		cg_markPolys[MAX_MARK_POLYS];
 
@@ -3375,6 +3382,36 @@ extern vmCvar_t cg_weaponNailGun;
 extern vmCvar_t cg_weaponProximityLauncher;
 extern vmCvar_t cg_weaponChainGun;
 extern vmCvar_t cg_weaponHeavyMachineGun;
+
+extern vmCvar_t cg_firstPersonShaderWeaponGauntlet;
+extern vmCvar_t cg_firstPersonShaderWeaponMachineGun;
+extern vmCvar_t cg_firstPersonShaderWeaponShotgun;
+extern vmCvar_t cg_firstPersonShaderWeaponGrenadeLauncher;
+extern vmCvar_t cg_firstPersonShaderWeaponRocketLauncher;
+extern vmCvar_t cg_firstPersonShaderWeaponLightningGun;
+extern vmCvar_t cg_firstPersonShaderWeaponRailGun;
+extern vmCvar_t cg_firstPersonShaderWeaponPlasmaGun;
+extern vmCvar_t cg_firstPersonShaderWeaponBFG;
+extern vmCvar_t cg_firstPersonShaderWeaponGrapplingHook;
+extern vmCvar_t cg_firstPersonShaderWeaponNailGun;
+extern vmCvar_t cg_firstPersonShaderWeaponProximityLauncher;
+extern vmCvar_t cg_firstPersonShaderWeaponChainGun;
+extern vmCvar_t cg_firstPersonShaderWeaponHeavyMachineGun;
+
+extern vmCvar_t cg_thirdPersonShaderWeaponGauntlet;
+extern vmCvar_t cg_thirdPersonShaderWeaponMachineGun;
+extern vmCvar_t cg_thirdPersonShaderWeaponShotgun;
+extern vmCvar_t cg_thirdPersonShaderWeaponGrenadeLauncher;
+extern vmCvar_t cg_thirdPersonShaderWeaponRocketLauncher;
+extern vmCvar_t cg_thirdPersonShaderWeaponLightningGun;
+extern vmCvar_t cg_thirdPersonShaderWeaponRailGun;
+extern vmCvar_t cg_thirdPersonShaderWeaponPlasmaGun;
+extern vmCvar_t cg_thirdPersonShaderWeaponBFG;
+extern vmCvar_t cg_thirdPersonShaderWeaponGrapplingHook;
+extern vmCvar_t cg_thirdPersonShaderWeaponNailGun;
+extern vmCvar_t cg_thirdPersonShaderWeaponProximityLauncher;
+extern vmCvar_t cg_thirdPersonShaderWeaponChainGun;
+extern vmCvar_t cg_thirdPersonShaderWeaponHeavyMachineGun;
 
 extern vmCvar_t cg_spawnArmorTime;
 extern vmCvar_t cg_fxfile;

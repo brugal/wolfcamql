@@ -892,10 +892,6 @@ static void CG_DrawJumpSpeeds (void)
 		return;
 	}
 
-	if (wolfcam_following) {
-		return;
-	}
-
 	SC_Vec4ColorFromCvars(color, &cg_drawJumpSpeedsColor, &cg_drawJumpSpeedsAlpha);
 	if (color[3] <= 0.0) {
 		return;
@@ -954,10 +950,6 @@ static void CG_DrawJumpSpeedsTime (void)
 	char buffer[1024];
 
 	if (!cg.numJumps) {
-		return;
-	}
-
-	if (wolfcam_following) {
 		return;
 	}
 
@@ -3100,6 +3092,9 @@ static void CG_DrawStatusBar( void ) {
 #ifdef MISSIONPACK
 	qhandle_t	handle;
 #endif
+	qboolean haveRedFlag = qfalse;
+	qboolean haveBlueFlag = qfalse;
+	qboolean haveNeutralFlag = qfalse;
 	const static float colors[4][4] = {
 //		{ 0.2, 1.0, 0.2, 1.0 } , { 1.0, 0.2, 0.2, 1.0 }, {0.5, 0.5, 0.5, 1} };
 		{ 1.0f, 0.69f, 0.0f, 1.0f },    // normal
@@ -3145,15 +3140,27 @@ static void CG_DrawStatusBar( void ) {
 
 	CG_DrawStatusBarHead( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE );
 
-	if (!wolfcam_following) {  //FIXME
-		if( cg.predictedPlayerState.powerups[PW_REDFLAG] ) {
-			CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED );
-		} else if( cg.predictedPlayerState.powerups[PW_BLUEFLAG] ) {
-			CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE );
-		} else if( cg.predictedPlayerState.powerups[PW_NEUTRALFLAG] ) {
-			CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE );
-		}
+	if (wolfcam_following) {
+		int powerups;
+
+		powerups = cg_entities[wcg.clientNum].currentState.powerups;
+		haveRedFlag = powerups & (1 << PW_REDFLAG);
+		haveBlueFlag = powerups & (1 << PW_BLUEFLAG);
+		haveNeutralFlag = powerups & (1 << PW_NEUTRALFLAG);
+	} else {
+		haveRedFlag = cg.predictedPlayerState.powerups[PW_REDFLAG];
+		haveBlueFlag = cg.predictedPlayerState.powerups[PW_BLUEFLAG];
+		haveNeutralFlag = cg.predictedPlayerState.powerups[PW_NEUTRALFLAG];
 	}
+
+	if (haveRedFlag) {
+		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED );
+	} else if (haveBlueFlag) {
+		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE );
+	} else if (haveNeutralFlag) {
+		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE );
+	}
+
 
 	if (armor > 0) {
 		origin[0] = 90;
@@ -5381,53 +5388,72 @@ static float CG_DrawPowerups( float y ) {
 
 	QLWideScreen = WIDESCREEN_RIGHT;
 
-	if (wolfcam_following) {
+	if (CG_IsCpmaMvd()  &&  !wolfcam_following) {
 		return y;
 	}
 
-	//FIXME might be able to work with /follow
-	if (CG_IsCpmaMvd()) {
-		return y;
-	}
+	if (!wolfcam_following) {
+		ps = &cg.snap->ps;
+		//ci = &cgs.clientinfo[ps->clientNum];
 
-	ps = &cg.snap->ps;
-	//ci = &cgs.clientinfo[ps->clientNum];
-
-	if ( ps->stats[STAT_HEALTH] <= 0 ) {
-		return y;
-	}
-
-	// sort the list by time remaining
-	active = 0;
-	for ( i = 0 ; i < MAX_POWERUPS ; i++ ) {
-		if ( !ps->powerups[ i ] ) {
-			continue;
+		if ( ps->stats[STAT_HEALTH] <= 0 ) {
+			return y;
 		}
 
-		// ZOID--don't draw if the power up has unlimited time
-		// This is true of the CTF flags
-		if ( ps->powerups[ i ] == INT_MAX ) {
-			continue;
-		}
+		// sort the list by time remaining
+		active = 0;
+		for ( i = 0 ; i < MAX_POWERUPS ; i++ ) {
+			if ( !ps->powerups[ i ] ) {
+				continue;
+			}
 
-		t = ps->powerups[ i ] - cg.time;
-		if ( t <= 0 ) {
-			continue;
-		}
+			// ZOID--don't draw if the power up has unlimited time
+			// This is true of the CTF flags
+			if ( ps->powerups[ i ] == INT_MAX ) {
+				continue;
+			}
 
-		// insert into the list
-		for ( j = 0 ; j < active ; j++ ) {
-			if ( sortedTime[j] >= t ) {
-				for ( k = active - 1 ; k >= j ; k-- ) {
-					sorted[k+1] = sorted[k];
-					sortedTime[k+1] = sortedTime[k];
+			t = ps->powerups[ i ] - cg.time;
+			if ( t <= 0 ) {
+				continue;
+			}
+
+			// insert into the list
+			for ( j = 0 ; j < active ; j++ ) {
+				if ( sortedTime[j] >= t ) {
+					for ( k = active - 1 ; k >= j ; k-- ) {
+						sorted[k+1] = sorted[k];
+						sortedTime[k+1] = sortedTime[k];
+					}
+					break;
 				}
-				break;
+			}
+			sorted[j] = i;
+			sortedTime[j] = t;
+			active++;
+		}
+	} else {  // wolfcam_following
+		int powerups;
+		int *powerupsCheck[] = { &PW_QUAD, &PW_BATTLESUIT, &PW_HASTE, &PW_INVIS, &PW_REGEN, &PW_FLIGHT, &PW_INVULNERABILITY };  // PW_ not static values
+
+		ps = NULL;
+		powerups = cg_entities[wcg.clientNum].currentState.powerups;
+
+		if (ARRAY_LEN(powerupsCheck) >= MAX_POWERUPS) {
+			Com_Printf("^1invalid number of powerups to check: %d\n", ARRAY_LEN(powerupsCheck));
+			return y;
+		}
+
+		active = 0;
+		for (i = 0;  i < ARRAY_LEN(powerupsCheck);  i++) {
+			if (powerups & (1 << *(powerupsCheck[i]))) {
+				sorted[active] = *(powerupsCheck[i]);
+
+				//FIXME can we get this?
+				sortedTime[active] = -1;
+				active++;
 			}
 		}
-		sorted[j] = i;
-		sortedTime[j] = t;
-		active++;
 	}
 
 	// draw the icons and timers
@@ -5437,15 +5463,32 @@ static float CG_DrawPowerups( float y ) {
 
 		// item 0 is ql spawn protection
 		if (item  &&  sorted[i] != 0)  {  //!(ci->powerups & PWEX_SPAWNPROTECTION)) {
-
-		  color = 1;
-
 		  y -= ICON_SIZE;
 
-		  trap_R_SetColor( colors[color] );
-		  CG_DrawField( x, y, 2, sortedTime[ i ] / 1000 );
+		  if (wolfcam_following) {
+			  t = -1;
+			  if (sorted[i] == PW_QUAD) {
+				  if (cg.numQuads == 1) {  //FIXME more than one?
+					  t = cg.quads[0].pickupTime;
+					  sortedTime[i] = (cg.quads[0].pickupTime + (item->quantity * 1000)) - cg.time;
+				  }
+			  } else if (sorted[i] == PW_BATTLESUIT) {
+				  if (cg.numBattleSuits == 1) {  //FIXME more than one?
+					  t = cg.battleSuits[0].pickupTime;
+					  sortedTime[i] = (cg.battleSuits[0].pickupTime + (item->quantity * 1000)) - cg.time;
+				  }
+			  }
+		  } else {
+			  t = ps->powerups[ sorted[i] ];
+		  }
 
-		  t = ps->powerups[ sorted[i] ];
+		  color = 1;
+		  trap_R_SetColor( colors[color] );
+
+		  if (sortedTime[i] >= 0) {
+			  CG_DrawField( x, y, 2, sortedTime[ i ] / 1000 );
+		  }
+
 		  if ( t - cg.time >= POWERUP_BLINKS * POWERUP_BLINK_TIME ) {
 			  trap_R_SetColor( NULL );
 		  } else {
@@ -5468,7 +5511,9 @@ static float CG_DrawPowerups( float y ) {
 		  //Com_Printf("%d  %s %d\n", trap_R_RegisterShader( item->icon ), item->pickup_name, sorted[i]);
 		  CG_DrawPic( 640 - size, y + ICON_SIZE / 2 - size / 2,
 			  size, size, trap_R_RegisterShader( item->icon ) );
-    }
+
+		  //FIXME ql kill counters
+		}
 	}
 	trap_R_SetColor( NULL );
 
@@ -5533,6 +5578,8 @@ static float CG_DrawPickupItem (float y)
 	if (cg.snap->ps.stats[STAT_HEALTH] <= 0) {
 		return y;
 	}
+
+	//FIXME wolfcam  -- currently disabled for /follow in cg_event.c EV_ITEM_PICKUP
 
 	//FIXME testing
 	//cg.itemPickupTime = cg.time;
@@ -5834,6 +5881,9 @@ static void CG_DrawHoldableItem( void ) {
 	if (cg_qlhud.integer) {
 		return;
 	}
+
+	// wolfcam_following check done before this function is called
+
 
 	QLWideScreen = WIDESCREEN_RIGHT;
 
@@ -8558,7 +8608,9 @@ static void CG_ScanForCrosshairEntity( void ) {
 		skipNum = cg.snap->ps.clientNum;
 	}
 
-	//FIXME wolfcam freecam
+	//Com_Printf("^3skip %d   following %d\n", skipNum, wolfcam_following);
+
+	//FIXME wolfcam freecam  --  2018-06-05 switching to freecam while /following currently disables following
 	//CG_Trace( &trace, start, vec3_origin, vec3_origin, end, skipNum, CONTENTS_SOLID|CONTENTS_BODY );
 	Wolfcam_WeaponTrace( &trace, start, vec3_origin, vec3_origin, end, skipNum, CONTENTS_SOLID|CONTENTS_BODY );
 	if ( trace.entityNum >= MAX_CLIENTS ) {
@@ -8837,7 +8889,13 @@ static void CG_DrawKeyPress (void)
 	h = 16;
 
 	if (cg.playerKeyPressForward) {
-		trap_R_SetColor(colorYellow);
+		if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")) {
+			// this is accurate
+			trap_R_SetColor(colorGreen);
+		} else {
+			// this is a guess so color it differently
+			trap_R_SetColor(colorYellow);
+		}
 		CG_DrawPic(640/2 - w/2, 480/2 - h * 3 - h, w, h, cgs.media.playerKeyPressForwardShader);
 	}
 
@@ -9367,7 +9425,7 @@ static qboolean CG_DrawFollow( void ) {
 	const char *clanTag;
 
 	if (wolfcam_following) {
-		return qfalse;  //FIXME wolfcam
+		return qfalse;  //FIXME wolfcam  -- 2018-06-05 duplicate code Wolfcam_DrawFollowing()
 	}
 
 	if (!cg_drawFollowing.integer) {
@@ -9543,7 +9601,7 @@ static void CG_DrawProxWarning (void)
 	}
 
 	if (wolfcam_following) {
-		return;
+		return;  //FIXME wolfcam
 	}
 
 	if (!cg_drawProxWarning.integer) {

@@ -4955,6 +4955,35 @@ static void CG_CheckPlayerKeyPress (void)
 	int movementDir;
 	int legsAnim;
 
+	if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")) {
+		int generic1;
+		int eflags;
+
+		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
+			generic1 = cg.snap->ps.generic1;
+			eflags = cg.snap->ps.eFlags;
+		} else {
+			generic1 = cg_entities[wcg.clientNum].currentState.generic1;
+			eflags = cg_entities[wcg.clientNum].currentState.eFlags;
+		}
+
+		// these are encoded in generic1
+		cg.playerKeyPressForward = generic1 & (1 << 0);
+		cg.playerKeyPressBack = generic1 & (1 << 1);
+		cg.playerKeyPressLeft = generic1 & (1 << 2);
+		cg.playerKeyPressRight = generic1 & (1 << 3);
+		cg.playerKeyPressJump = generic1 & (1 << 4);
+		cg.playerKeyPressCrouch = generic1 & (1 << 5);
+
+		if (eflags & EF_FIRING) {
+			cg.playerKeyPressFire = qtrue;
+		} else {
+			cg.playerKeyPressFire = qfalse;
+		}
+
+		return;
+	}
+
 	cg.playerKeyPressCrouch = qfalse;
 	cg.playerKeyPressFire = qfalse;
 	cg.playerKeyPressJump = qfalse;
@@ -5366,6 +5395,10 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		}
 
 		if (wolfcamLastClientNum != wcg.clientNum) {
+			cg.killerName[0] = '\0';
+			cg.jumpsNeedClearing = qtrue;
+			cg.numJumps = 0;
+
 			if (*cg_firstPersonSwitchSound.string) {
 				sfxHandle_t sfx;
 				qboolean play = qfalse;

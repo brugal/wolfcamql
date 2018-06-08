@@ -291,6 +291,15 @@ void Wolfcam_AddPlayerWeapon (const refEntity_t *parent, centity_t *cent, int te
 
     CG_ScaleModel(&gun, cg_gunSize.value);
 
+	// custom weapon shaders
+	{
+		vmCvar_t *firstPersonShaders[MAX_WEAPONS] = { NULL, &cg_firstPersonShaderWeaponGauntlet, &cg_firstPersonShaderWeaponMachineGun, &cg_firstPersonShaderWeaponShotgun, &cg_firstPersonShaderWeaponGrenadeLauncher, &cg_firstPersonShaderWeaponRocketLauncher, &cg_firstPersonShaderWeaponLightningGun, &cg_firstPersonShaderWeaponRailGun, &cg_firstPersonShaderWeaponPlasmaGun, &cg_firstPersonShaderWeaponBFG, &cg_firstPersonShaderWeaponGrapplingHook, &cg_firstPersonShaderWeaponNailGun, &cg_firstPersonShaderWeaponProximityLauncher, &cg_firstPersonShaderWeaponChainGun, &cg_firstPersonShaderWeaponHeavyMachineGun };
+
+		if (firstPersonShaders[weaponNum]  &&  *(firstPersonShaders[weaponNum]->string)) {
+			gun.customShader = trap_R_RegisterShader(firstPersonShaders[weaponNum]->string);
+		}
+	}
+
 	if (gun.hModel) {
 		if (cg_drawGun.integer > 2) {
 			gun.customShader = cgs.media.ghostWeaponShader;

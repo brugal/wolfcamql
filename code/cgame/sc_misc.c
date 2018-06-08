@@ -969,6 +969,29 @@ qboolean CG_CheckQlVersion (int n0, int n1, int n2, int n3)
 	return qtrue;
 }
 
+qboolean CG_CheckCpmaVersion (int major, int minor, const char *revision)
+{
+	if (!cgs.cpma) {
+		return qfalse;
+	}
+
+	if (major < cgs.cpmaVersionMajor) {
+		return qtrue;
+	} else if (major > cgs.cpmaVersionMajor) {
+		return qfalse;
+	} else {  // major version equal
+		if (minor <= cgs.cpmaVersionMinor) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+
+	//FIXME revision if needed
+
+	return qfalse;
+}
+
 // not freezetag
 qboolean CG_EntityFrozen (const centity_t *cent)
 {
