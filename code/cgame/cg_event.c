@@ -2693,7 +2693,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			}
 
 			team = cgs.clientinfo[cn].team;
-			if (cgs.cpma  &&  (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS)) {
+			if (cgs.cpma  &&  (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF)) {
 #if 0
 				if (team == TEAM_RED) {
 					team = TEAM_BLUE;
