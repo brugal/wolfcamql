@@ -626,7 +626,7 @@ static int CM_EdgePlaneNum( cGrid_t *grid, int gridPlanes[MAX_GRID_SIZE][MAX_GRI
 		p1 = grid->points[i][j];
 		p2 = grid->points[i+1][j];
 		p = CM_GridPlane( gridPlanes, i, j, 0 );
-		if (p == -1) {
+		if ( p == -1 ) {
 			return -1;
 		}
 		VectorMA( p1, 4, planes[ p ].plane, up );
@@ -636,7 +636,7 @@ static int CM_EdgePlaneNum( cGrid_t *grid, int gridPlanes[MAX_GRID_SIZE][MAX_GRI
 		p1 = grid->points[i][j+1];
 		p2 = grid->points[i+1][j+1];
 		p = CM_GridPlane( gridPlanes, i, j, 1 );
-		if (p == -1) {
+		if ( p == -1 ) {
 			return -1;
 		}
 		VectorMA( p1, 4, planes[ p ].plane, up );
@@ -646,7 +646,7 @@ static int CM_EdgePlaneNum( cGrid_t *grid, int gridPlanes[MAX_GRID_SIZE][MAX_GRI
 		p1 = grid->points[i][j];
 		p2 = grid->points[i][j+1];
 		p = CM_GridPlane( gridPlanes, i, j, 1 );
-		if (p == -1) {
+		if ( p == -1 ) {
 			return -1;
 		}
 		VectorMA( p1, 4, planes[ p ].plane, up );
@@ -656,7 +656,7 @@ static int CM_EdgePlaneNum( cGrid_t *grid, int gridPlanes[MAX_GRID_SIZE][MAX_GRI
 		p1 = grid->points[i+1][j];
 		p2 = grid->points[i+1][j+1];
 		p = CM_GridPlane( gridPlanes, i, j, 0 );
-		if (p == -1) {
+		if ( p == -1 ) {
 			return -1;
 		}
 		VectorMA( p1, 4, planes[ p ].plane, up );
@@ -666,7 +666,7 @@ static int CM_EdgePlaneNum( cGrid_t *grid, int gridPlanes[MAX_GRID_SIZE][MAX_GRI
 		p1 = grid->points[i+1][j+1];
 		p2 = grid->points[i][j];
 		p = CM_GridPlane( gridPlanes, i, j, 0 );
-		if (p == -1) {
+		if ( p == -1 ) {
 			return -1;
 		}
 		VectorMA( p1, 4, planes[ p ].plane, up );
@@ -676,7 +676,7 @@ static int CM_EdgePlaneNum( cGrid_t *grid, int gridPlanes[MAX_GRID_SIZE][MAX_GRI
 		p1 = grid->points[i][j];
 		p2 = grid->points[i+1][j+1];
 		p = CM_GridPlane( gridPlanes, i, j, 1 );
-		if (p == -1) {
+		if ( p == -1 ) {
 			return -1;
 		}
 		VectorMA( p1, 4, planes[ p ].plane, up );
@@ -875,8 +875,8 @@ void CM_AddFacetBevels( facet_t *facet ) {
 			}
 
 			if ( i == facet->numBorders ) {
-				if (facet->numBorders >= 4 + 6 + 16) {
-					Com_Printf("ERROR: too many bevels\n");
+				if ( facet->numBorders >= 4 + 6 + 16 ) {
+					Com_Printf( "ERROR: too many bevels\n" );
 					continue;
 				}
 				facet->borderPlanes[facet->numBorders] = CM_FindPlane2(plane, &flipped);
@@ -940,8 +940,8 @@ void CM_AddFacetBevels( facet_t *facet ) {
 				}
 
 				if ( i == facet->numBorders ) {
-					if (facet->numBorders >= 4 + 6 + 16) {
-						Com_Printf("ERROR: too many bevels\n");
+					if ( facet->numBorders >= 4 + 6 + 16 ) {
+						Com_Printf( "ERROR: too many bevels\n" );
 						continue;
 					}
 					facet->borderPlanes[facet->numBorders] = CM_FindPlane2(plane, &flipped);

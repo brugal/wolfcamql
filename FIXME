@@ -2327,15 +2327,13 @@ GL_VERSION: 2.1 Chromium 1.9
 * check cpma mvd grapple ammo
 * team-overlay-powerups.dm_73  wrong map? or map has changed
 * other CS_ like domination point count might need to check protocol 91
-* cpma check if GT_TOURNAMENT should also check GT_HM
 * cpma q3 hud draw head needs color (xaero)
 * cpma mvd armor show armortiered -- red, yellow, ..
 * q3 can show 2nd place rank in ffa?
 * /follow show scoreboard when dead (cpma mvd)?
 * demo parsing could get ranks for q3 ffa
-* 69Daler-vs-ZeRo4(MVD)-cpm3-2002.08.24-22.33.03.dm_67 not working
+* 69Daler-vs-ZeRo4(MVD)-cpm3-2002.08.24-22.33.03.dm_67 not working  -- cpma 0.99x7 :  eType and weapon number wrong
 * cpma mvd ctf main view showing has flag
-* cpma honey mode:  missing hud icon, not showing tournament score box and scoreboard
 * for q3 ffa could guess cg.scores* player based on obit
 * cg_whShader, cg_[first|third]PersonShaderWeapon*, etc.. cvars with shader names should store values instead of always calling trap_R_RegisterShader()
 * ql race unknown event 99
@@ -2344,20 +2342,19 @@ GL_VERSION: 2.1 Chromium 1.9
 * font for info screen and stats
 * powerup time for /follow -- cpma mvd shows (could be based on item pickup events)  --  what if there's more than one of the same powerup on the map? -- 2018-05-31 added based on item pickups but it's only enabled if there's only one of the same powerup type on the map
 * option to draw full score for GT_RACE and CG_PLAYER_SCORE  -- maybe just use CG_GetValue(CG_PLAYER_SCORE) and do it in scriptable hud
-* seeking in cpma mvd leads to empty names in ql hud scorebox -- maybe get last duelscores command?
+* seeking in cpma mvd ffa leads to empty names in ql hud scorebox -- maybe get last stats/scores command?
 * /follow with q3 scoreboard not highlighting followed player
 * timeline scrubber?
 * Doom-vs-Crash-lostworld-2018_05_15-06_57_24.dm_91  /follow doom  scoreboard always showing '2nd place with 0'  -- 2018-06-05 based on scores command which isn't being updated
-* cg_draw.c /follow check at CG_DrawJumpSpeeds()
 * /follow : draw attacker
 * /follow : CG_ItemPickup()   cg_draw:CG_DrawPickupItem()
 * /follow [id] , /freecam, then /freecam again switches to main demo view but /players still shows as following the other player
 * /follow CG_DrawProxWarning()
 * cpma mstatsa get real clientNum ?  -- 2018-06-08 end game scoreboard uses it (wins/losses, etc..)
-* cpma xstats2[a]
-* cpma mstatsa q3 endgame scoreboard doesn't show scores
-* spacing:  diff -Naur ~/ioq3/code/qcommon/vm_x86.c ...
-
+* /follow check CG_DrawTourneyScoreboard()
+* program abort if condump can't create file:  condump C:\share\tmp\test.txt
+* function to copy current console to clipboard
+* check cpma custom modes
 
 ----
 

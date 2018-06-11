@@ -95,9 +95,20 @@ static void CG_TransitionEntity( centity_t *cent ) {
 		//Com_Printf("not resetting: %d\n", cent - cg_entities);
 	}
 
+#if 0  // testing
 	if (SC_Cvar_Get_Int("debugabort")) {
 		CG_Abort();  // testing crash
 	}
+#endif
+
+#if 0  //FIXME testing cpma mvd 0.99x7
+	//if (cent->currentState.eType == 70) {
+	if (cent->currentState.number < MAX_CLIENTS) {
+		cent->currentState.eType = ET_PLAYER;
+		cent->currentState.weapon = WP_GAUNTLET;
+		cent->currentState.eFlags &= ~EF_NODRAW;
+	}
+#endif
 
 	// clear the next state.  if will be set by the next CG_SetNextSnap
 	//Com_Printf("transition %d interp false\n", cent->currentState.number);
@@ -378,7 +389,7 @@ static void CG_TransitionSnapshot( void ) {
 
 	// set first and second place names if possible
 	if (cgs.protocol != PROTOCOL_QL) {
-		if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+		if (CG_IsDuelGame(cgs.gametype)) {
 			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
 				int otherDuelPlayer;
 
@@ -966,7 +977,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	//cgs.cpmaTimeoutTime = 0;
 	cg.duelForfeit = qfalse;
 
-	if (cgs.gametype == GT_TOURNAMENT) {
+	if (CG_IsDuelGame(cgs.gametype)) {
 		CG_SetDuelPlayers();
 	}
 	//cg.echoPopupStartTime = 0;

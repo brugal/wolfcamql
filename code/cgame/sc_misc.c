@@ -491,6 +491,15 @@ qboolean CG_IsTeamGame (int gametype)
 	return qfalse;
 }
 
+qboolean CG_IsDuelGame (int gametype)
+{
+	if (gametype == GT_TOURNAMENT  ||  gametype == GT_HM) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
 char *CG_FS_ReadLine (qhandle_t f, int *len)
 {
     static char buffer[1024];

@@ -103,7 +103,7 @@ void CG_ScoresDown_f( void ) {
 		// so request new ones
 		cg.scoresRequestTime = cg.time;
 		trap_SendClientCommand( "score" );
-		if (cgs.gametype == GT_TOURNAMENT) {
+		if (CG_IsDuelGame(cgs.gametype)) {
 			trap_SendClientCommand("dscores");
 		}
 
@@ -1353,7 +1353,7 @@ static void CG_DumpStats_f (void)
 
 	Com_Printf("game stats:\n\n");
 
-	if (cgs.gametype == GT_TOURNAMENT  &&  cg.duelScoresValid) {
+	if (CG_IsDuelGame(cgs.gametype)  &&  cg.duelScoresValid) {
 		fallbackToOldScores = qfalse;
 
 		for (i = 0;  i < 2;  i++) {

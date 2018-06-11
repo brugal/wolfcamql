@@ -5339,7 +5339,7 @@ static float CG_DrawScores( float y ) {
 			CG_DrawBigString( x + 4, y, s, 1.0F);
 		}
 
-		if (cgs.gametype != GT_TOURNAMENT  &&  cgs.gametype != GT_RACE) {
+		if (!CG_IsDuelGame(cgs.gametype)  &&  cgs.gametype != GT_RACE) {
 			if ( cgs.fraglimit ) {
 				s = va( "%2i", cgs.fraglimit );
 				w = CG_DrawStrlen( s, &cgs.media.bigchar ) + 8;
@@ -8947,7 +8947,7 @@ static void CG_DrawSpectator(void) {
 	QLWideScreen = WIDESCREEN_CENTER;
 
 	CG_DrawBigString(320 - 9 * 8, 440, "SPECTATOR", 1.0F);
-	if ( cgs.gametype == GT_TOURNAMENT ) {
+	if (CG_IsDuelGame(cgs.gametype)) {
 		CG_DrawBigString(320 - 15 * 8, 460, "waiting to play", 1.0F);
 	}
 	else if ( cgs.gametype >= GT_TEAM ) {
@@ -9251,7 +9251,7 @@ static qboolean CG_DrawScoreboard (void)
 		if (cg.snap->ps.pm_type == PM_INTERMISSION) {
 			if (cgs.gametype == GT_FFA  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endscore_menu_ffa");
-			} else if (cgs.gametype == GT_TOURNAMENT  &&  !cg_scoreBoardOld.integer) {
+			} else if (CG_IsDuelGame(cgs.gametype)  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endscore_menu_duel");
 			} else if (cgs.gametype == GT_TEAM  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endteamscore_menu_tdm");
@@ -9289,7 +9289,7 @@ static qboolean CG_DrawScoreboard (void)
 		} else {
 			if (cgs.gametype == GT_FFA  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("score_menu_ffa");
-			} else if (cgs.gametype == GT_TOURNAMENT  &&  !cg_scoreBoardOld.integer) {
+			} else if (CG_IsDuelGame(cgs.gametype)  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("score_menu_duel");
 			} else if (cgs.gametype == GT_TEAM  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("teamscore_menu_tdm");
@@ -9805,7 +9805,7 @@ static void CG_DrawWarmup( void ) {
 	align = cg_drawWarmupStringAlign.integer;
 	SC_Vec4ColorFromCvars(color, &cg_drawWarmupStringColor, &cg_drawWarmupStringAlpha);
 
-	if (cgs.gametype == GT_TOURNAMENT) {
+	if (CG_IsDuelGame(cgs.gametype)) {
 		// find the two active players
 		ci1 = NULL;
 		ci2 = NULL;

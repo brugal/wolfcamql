@@ -3093,7 +3093,7 @@ static void CG_RegisterAnnouncerSounds (void)
 		cgs.media.eCapturedSound = trap_S_RegisterSound(va("%s/e_captured.ogg", baseDir), qtrue);
 
 
-		if ((cgs.gametype == GT_CTF ||  cgs.gametype == GT_CTFS || cgs.gametype == GT_NTF) || cg_buildScript.integer) {
+		if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) || cg_buildScript.integer) {
 			cgs.media.redFlagReturnedSound = trap_S_RegisterSound( va("%s/red_flag_returned.wav", baseDir), qtrue );
 			cgs.media.blueFlagReturnedSound = trap_S_RegisterSound( va("%s/blue_flag_returned.wav", baseDir), qtrue );
 			cgs.media.yourFlagReturnedSound = trap_S_RegisterSound(va("%s/your_flag_returned.ogg", baseDir), qtrue);
@@ -4172,6 +4172,7 @@ static void CG_RegisterGraphics( void ) {
 
 	cgs.media.gametypeIcon[GT_FFA] = trap_R_RegisterShader("ui/assets/hud/ffa");
 	cgs.media.gametypeIcon[GT_TOURNAMENT] = trap_R_RegisterShader("ui/assets/hud/duel");
+	cgs.media.gametypeIcon[GT_HM] = trap_R_RegisterShader("ui/assets/hud/duel");
 	cgs.media.gametypeIcon[GT_TEAM] = trap_R_RegisterShader("ui/assets/hud/tdm");
 	cgs.media.gametypeIcon[GT_CA] = trap_R_RegisterShader("ui/assets/hud/ca");
 	cgs.media.gametypeIcon[GT_CTF] = trap_R_RegisterShader("ui/assets/hud/ctf");
@@ -4288,7 +4289,7 @@ void CG_BuildSpectatorString(void) {
 			if (cg_spectatorListScore.integer) {
 				Q_strcat(slist, sizeof(slist), va("^3(%d)", sc->score));
 			}
-			if (cg_spectatorListQue.integer  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT) {
+			if (cg_spectatorListQue.integer  &&  cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)) {
 				if (cgs.clientinfo[sc->client].spectatorOnly) {
 					Q_strcat(slist, sizeof(slist), "^7(^5s^7)");
 				} else {
@@ -7354,7 +7355,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 			}
 			break;
 		case 4:
-			if (cgs.gametype == GT_TOURNAMENT) {
+			if (CG_IsDuelGame(cgs.gametype)) {
 				return va("%d/%d", info->wins, info->losses);
 			} else if (cgs.gametype == GT_FFA) {
 				return "";
@@ -7362,7 +7363,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 
 			return va("%d", sp->score);
 		case 5:
-			if (cgs.gametype == GT_TOURNAMENT) {
+			if (CG_IsDuelGame(cgs.gametype)) {
 				return va("%d", sp->score);
 			} else if (cgs.gametype == GT_FFA) {
 				return va("%d", sp->score);
@@ -7370,7 +7371,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 
 			return va("%d", sp->frags);
 		case 6:
-			if (cgs.gametype == GT_TOURNAMENT) {
+			if (CG_IsDuelGame(cgs.gametype)) {
 				return va("%d", sp->frags);
 			} else if (cgs.gametype == GT_FFA) {
 				return va("%d", sp->frags);
@@ -7378,7 +7379,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 
 			return va("%d", sp->deaths);
 		case 7:
-			if (cgs.gametype == GT_TOURNAMENT) {
+			if (CG_IsDuelGame(cgs.gametype)) {
 				return va("%d", sp->deaths);
 			} else if (cgs.gametype == GT_FFA) {
 				return va("%d", sp->deaths);
@@ -7386,7 +7387,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 
 			return va("%d", sp->ping);
 		case 8:
-			if (cgs.gametype == GT_TOURNAMENT) {
+			if (CG_IsDuelGame(cgs.gametype)) {
 				return va("%d", sp->time);
 			} else if (cgs.gametype == GT_FFA) {
 				return va("%d", sp->time);
@@ -7394,7 +7395,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 
 			return "7";
 		case 9:
-			if (cgs.gametype == GT_TOURNAMENT) {
+			if (CG_IsDuelGame(cgs.gametype)) {
 				return va("%d", sp->ping);
 			} else if (cgs.gametype == GT_FFA) {
 				return va("%d", sp->ping);
@@ -8134,7 +8135,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		cgs.processedSnapshotNum--;
 	}
 
-	if (cgs.gametype == GT_TOURNAMENT) {
+	if (CG_IsDuelGame(cgs.gametype)) {
 		CG_SetDuelPlayers();
 	}
 
@@ -8207,7 +8208,7 @@ void CG_LoadDefaultMenus (void)
 	if (cgs.gametype == GT_FFA) {
 		CG_ParseMenu("ui/ingame_scoreboard_ffa.menu");
 		CG_ParseMenu("ui/end_scoreboard_ffa.menu");
-	} else if (cgs.gametype == GT_TOURNAMENT) {
+	} else if (CG_IsDuelGame(cgs.gametype)) {
 		CG_ParseMenu("ui/ingame_scoreboard_duel.menu");
 		CG_ParseMenu("ui/end_scoreboard_duel.menu");
 	} else if (cgs.gametype == GT_TEAM) {

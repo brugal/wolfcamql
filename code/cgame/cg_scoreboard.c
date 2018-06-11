@@ -133,14 +133,14 @@ static void CG_DrawClientScore( int y, const score_t *score, const float *color,
 			}
 		} else if ( ci->handicap < 100 ) {
 			Com_sprintf( string, sizeof( string ), "%i", ci->handicap );
-			if ( cgs.gametype == GT_TOURNAMENT )
+			if ( CG_IsDuelGame(cgs.gametype) )
 				CG_DrawSmallStringColor( iconx, y - SMALLCHAR_HEIGHT/2, string, color );
 			else
 				CG_DrawSmallStringColor( iconx, y, string, color );
 		}
 
 		// draw the wins / losses
-		if ( cgs.gametype == GT_TOURNAMENT ) {
+		if ( CG_IsDuelGame(cgs.gametype) ) {
 			Com_sprintf( string, sizeof( string ), "%i/%i", ci->wins, ci->losses );
 			if( ci->handicap < 100 && !ci->botSkill ) {
 				CG_DrawSmallStringColor( iconx, y + SMALLCHAR_HEIGHT/2, string, color );
@@ -244,6 +244,62 @@ static void CG_DrawClientScore( int y, const score_t *score, const float *color,
 	}
 }
 
+static void CG_DrawClientScoreCpmaMstatsa (int y, int player, float fade)
+{
+	char	string[1024];
+	const duelScore_t *ds;
+
+
+	if (player != 0  &&  player != 1) {
+		Com_Printf("CG_DrawClientScoreCpmaMstatsa():  invalid player %d\n", player);
+		return;
+	}
+
+	ds = &cg.duelScores[player];
+
+	// draw the score line
+	if (cg.duelForfeit  &&  player == 1) {
+		Com_sprintf(string, sizeof(string),
+					"    - %4i %4i %s", ds->ping, ds->time, ds->ci.name);
+
+	} else {
+		Com_sprintf(string, sizeof(string),
+					"%5i %4i %4i %s", ds->score, ds->ping, ds->time, ds->ci.name);
+	}
+
+	CG_DrawBigString( SB_SCORELINE_X + (SB_RATING_WIDTH / 2), y, string, fade );
+}
+
+static void CG_DrawClientScoreQlForfeit (int y, int player, float fade)
+{
+	char	string[1024];
+	const duelScore_t *ds;
+	int forfeitPlayer;
+
+	if (player != 0  &&  player != 1) {
+		Com_Printf("CG_DrawClientScoreCpmaMstatsa():  invalid player %d\n", player);
+		return;
+	}
+
+	// indexed at 1
+	forfeitPlayer = cg.duelPlayerForfeit - 1;
+
+	ds = &cg.duelScores[player];
+
+
+	// draw the score line
+	if (player == forfeitPlayer) {
+		Com_sprintf(string, sizeof(string),
+					"    - %4i %4i %s", ds->ping, ds->time, ds->ci.name);
+
+	} else {
+		Com_sprintf(string, sizeof(string),
+					"%5i %4i %4i %s", ds->score, ds->ping, ds->time, ds->ci.name);
+	}
+
+	CG_DrawBigString( SB_SCORELINE_X + (SB_RATING_WIDTH / 2), y, string, fade );
+}
+
 /*
 =================
 CG_TeamScoreboard
@@ -260,6 +316,69 @@ static int CG_TeamScoreboard( int y, team_t team, float fade, int maxClients, in
 	color[3] = fade;
 
 	count = 0;
+
+	// cpma mstatsa doesn't transmit client numbers
+	if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.snap->ps.pm_type == PM_INTERMISSION) {
+		if (team == TEAM_FREE) {
+			CG_DrawClientScoreCpmaMstatsa(y + lineHeight * count, 0, fade);
+			count++;
+			CG_DrawClientScoreCpmaMstatsa(y + lineHeight * count, 1, fade);
+			count++;
+
+			return count;
+		} else {  // specs
+			for (i = 0;  i < MAX_CLIENTS;  i++) {
+				score_t sc;
+
+				ci = &cgs.clientinfo[i];
+				if (!ci->infoValid)
+					continue;
+
+				if (team != ci->team)
+					continue;
+
+				memset(&sc, 0, sizeof(sc));
+				sc.client = i;
+				sc.team = ci->team;
+
+				CG_DrawClientScore( y + lineHeight * count, &sc, color, fade, lineHeight == SB_NORMAL_HEIGHT );
+				count++;
+			}
+
+			return count;
+		}
+	}
+
+	if (cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.snap->ps.pm_type == PM_INTERMISSION  &&  cg.duelForfeit) {
+		if (team == TEAM_FREE) {
+			CG_DrawClientScoreQlForfeit(y + lineHeight * count, 0, fade);
+			count++;
+			CG_DrawClientScoreQlForfeit(y + lineHeight * count, 1, fade);
+			count++;
+
+			return count;
+		} else {  // specs
+			for (i = 0;  i < MAX_CLIENTS;  i++) {
+				score_t sc;
+
+				ci = &cgs.clientinfo[i];
+				if (!ci->infoValid)
+					continue;
+
+				if (team != ci->team)
+					continue;
+
+				memset(&sc, 0, sizeof(sc));
+				sc.client = i;
+				sc.team = ci->team;
+
+				CG_DrawClientScore( y + lineHeight * count, &sc, color, fade, lineHeight == SB_NORMAL_HEIGHT );
+				count++;
+			}
+
+			return count;
+		}
+	}
 
 	if (cg.numScores == 0) {
 		for (i = 0;  i < MAX_CLIENTS;  i++) {
@@ -417,7 +536,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 				} else {  // not cpma mvd
 					// following someone who is ingame but not the main demo view
 
-					if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+					if (CG_IsDuelGame(cgs.gametype)) {
 						// we are following the other dueler
 						if (cgs.scores1 == cgs.scores2) {
 							s = va("%s ^7place with %i", CG_PlaceString(1), cgs.scores1);

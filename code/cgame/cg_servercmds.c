@@ -221,7 +221,7 @@ static void CG_ParseScores( void ) {
 	CG_SetScoreSelection(NULL);
 #endif
 
-	if (cgs.gametype == GT_TOURNAMENT) {
+	if (CG_IsDuelGame(cgs.gametype)) {
 		CG_SetDuelPlayers();
 	}
 
@@ -2591,7 +2591,7 @@ static void CG_MapRestart( void ) {
 	//Com_Printf("map restart: %d\n", cg.time);
 
 	// play the "fight" sound if this is a restart without warmup
-	if ( cg.warmup == 0   &&  cgs.gametype != GT_FREEZETAG /* && cgs.gametype == GT_TOURNAMENT */) {
+	if ( cg.warmup == 0   &&  cgs.gametype != GT_FREEZETAG /* && CG_IsDuelGame(cgs.gametype) */) {
 		if (cg_audioAnnouncerWarmup.integer) {
 			if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
 				int ourClientNum;
@@ -2622,7 +2622,7 @@ static void CG_MapRestart( void ) {
 			cgs.roundStarted = qtrue;
 			cgs.countDownSoundPlayed = 0;
 
-			if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+			if (CG_IsDuelGame(cgs.gametype)) {
 				duelPlayer = 1;
 				for (i = 0;  i < MAX_CLIENTS;  i++) {
 					if (!cgs.clientinfo[i].infoValid) {
@@ -3242,6 +3242,7 @@ static qboolean CG_CpmaParseMstats (qboolean intermission)
 {
 	int n;
 	int wflags;
+	int powerupFlags;
 	duelScore_t *ds;
 	duelWeaponStats_t *ws;
 	int clientNum;
@@ -3256,7 +3257,7 @@ static qboolean CG_CpmaParseMstats (qboolean intermission)
 	// none -- 26 args
 
 	//FIXME saw it in a tdm demo as well
-	if (cgs.gametype != GT_TOURNAMENT  &&  cgs.gametype != GT_HM) {
+	if (!CG_IsDuelGame(cgs.gametype)) {
 		return qfalse;
 	}
 
@@ -3540,8 +3541,22 @@ static qboolean CG_CpmaParseMstats (qboolean intermission)
 	ds->redArmorPickups = atoi(CG_Argv(n));  n++;
 	ds->yellowArmorPickups = atoi(CG_Argv(n));  n++;
 	atoi(CG_Argv(n));  n++;  // green armor?
-	atoi(CG_Argv(n));  n++;
-	atoi(CG_Argv(n));  n++;  // 2
+
+	// skip powerup info
+	powerupFlags = atoi(CG_Argv(n));  n++;
+	for (i = 0;  i < 16;  i++) {
+		if (powerupFlags & (1 << i)) {
+			atoi(CG_Argv(n));  // pickups
+			//Com_Printf("^2powerup pickups: %d\n", val);
+			n++;
+
+			atoi(CG_Argv(n));  // time
+			//Com_Printf("^2powerup time: %d\n", val);
+			n++;
+		}
+	}
+
+	atoi(CG_Argv(n));  n++;  // 2?
 	s = CG_Argv(n);  n++;  // abataiayaaaa
 	//Com_Printf("^3%s\n", s);
 	if (s[0] != '-') {
@@ -3958,7 +3973,7 @@ static void CG_ParseScores_Ffa (void)
 	CG_SetScoreSelection(NULL);
 #endif
 
-	if (cgs.gametype == GT_TOURNAMENT) {
+	if (CG_IsDuelGame(cgs.gametype)) {
 		CG_SetDuelPlayers();
 	}
 
@@ -5241,7 +5256,7 @@ static void CG_ServerCommand( void ) {
 			CG_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
 		} else if (!Q_stricmpn(cmd, "team vote passed", 16)  &&  cg_audioAnnouncerTeamVote.integer) {
 			CG_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
-		} else if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT  &&  !Q_stricmpn(cmd, "Game has been forfeited", 23)) {
+		} else if (cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  !Q_stricmpn(cmd, "Game has been forfeited", 23)) {
 			//FIXME bad hack
 			Com_Printf("^5forfeit...\n");
 			cg.duelForfeit = qtrue;
@@ -5401,27 +5416,41 @@ static void CG_ServerCommand( void ) {
 				return;
 			}
 		}
-#if 0
+
+		// xstats2[a] same as mstats[a], sent at the end of the game
 		if (!Q_stricmp(cmd, "xstats2")) {
-			if (CG_CpmaXstats2()) {
+			if (CG_CpmaParseMstats(qfalse)) {
 				return;
 			}
 		}
 
 		if (!Q_stricmp(cmd, "xstats2a")) {
-			if (CG_CpmaXstats2()) {
+			if (CG_CpmaParseMstats(qtrue)) {
 				return;
 			}
 		}
-#endif
+
 		if (!Q_stricmp(cmd, "specs")) {
 			// spec data with info indicating whether they are referee
 			return;
 		}
+
 		if (!Q_stricmp(cmd, "duelendscores")) {
 			if (CG_CpmaParseDuelEndScores()) {
 				return;
 			}
+		}
+
+		// ignored commands
+
+		if (!Q_stricmp(cmd, "ss")) {
+			// screenshot
+			return;
+		}
+
+		if (!Q_stricmp(cmd, "stuff")) {
+			// misc commands, stoprecord ...
+			return;
 		}
 	}
 

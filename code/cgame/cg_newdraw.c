@@ -588,7 +588,7 @@ static void CG_DrawPlayerScore (const rectDef_t *rect, float scale, const vec4_t
 		} else {
 			if (CG_IsCpmaMvd()) {
 				scores = cgs.clientinfo[clientNum].score;
-			} else if (cgs.gametype == GT_TOURNAMENT) {
+			} else if (CG_IsDuelGame(cgs.gametype)) {
 				// if demo taker is viewing ingame player we can use cgs.scores[12]
 				if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR) {
 					// we don't know
@@ -1610,7 +1610,7 @@ float CG_GetValue(int ownerDraw) {
 
 	  if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER) {
 		  limit = cgs.roundlimit;
-	  } else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
+	  } else if (CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
 		  limit = cgs.timelimit;
 	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF) {
 		  if (cgs.capturelimit) {
@@ -3406,7 +3406,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 	}
 
 	if (flags & CG_SHOW_TOURNAMENT) {
-		if( cgs.gametype == GT_TOURNAMENT ) {
+		if( CG_IsDuelGame(cgs.gametype) ) {
 			return qtrue;
 		} else {
 			return qfalse;
@@ -3514,7 +3514,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			}
 		}
 
-		if (cgs.gametype == GT_TOURNAMENT) {
+		if (CG_IsDuelGame(cgs.gametype)) {
 			// if following someone in game it means we are following the player the demo taker is playing against
 			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
 				if (cg.snap->ps.persistant[PERS_RANK] & RANK_TIED_FLAG) {
@@ -3630,7 +3630,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 			}
 		}
 
-		if (cgs.gametype == GT_TOURNAMENT) {
+		if (CG_IsDuelGame(cgs.gametype)) {
 			// if following someone in game it means we are following the player the demo taker is playing against
 			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
 				if (cg.snap->ps.persistant[PERS_RANK] & RANK_TIED_FLAG) {
@@ -3819,7 +3819,7 @@ static void CG_DrawCapFragLimit (const rectDef_t *rect, float scale, const vec4_
 
 	if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER) {
 		limit = cgs.roundlimit;
-	} else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
+	} else if (CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
 		limit = cgs.timelimit;
 	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF) {
 		if (cgs.capturelimit) {
@@ -3927,7 +3927,7 @@ const char *CG_GetGameStatusText (vec4_t color)
 
 				// following someone who is ingame but not the main demo view
 
-				if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
+				if (CG_IsDuelGame(cgs.gametype)) {
 					// we are following the other dueler
 					if (cgs.scores1 == cgs.scores2) {
 						s = va("%s ^7place with %i", CG_PlaceString(1), cgs.scores1);
@@ -4568,7 +4568,7 @@ static void CG_OspCalcPlacements (void)
 	const clientInfo_t *ci;
 	int i;
 
-	if (cgs.gametype != GT_TOURNAMENT) {
+	if (!CG_IsDuelGame(cgs.gametype)) {
 		return;
 	}
 
@@ -4731,7 +4731,7 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 				if (CG_ScoresEqual(cgs.scores2, cgs.scores1)  &&  wolfcam_following  &&  cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR) {
 
 					// draw us first if possible
-					if (cgs.gametype == GT_TOURNAMENT) {
+					if (CG_IsDuelGame(cgs.gametype)) {
 						const char *clanTag;
 
 						clanTag = cgs.clientinfo[wcg.clientNum].clanTag;
@@ -5047,7 +5047,7 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 
 					// we might have been drawn in first place
 
-					if (cgs.gametype == GT_TOURNAMENT) {  // we were, find the other guy
+					if (CG_IsDuelGame(cgs.gametype)) {  // we were, find the other guy
 						int i;
 						const char *clanTag;
 
@@ -6545,7 +6545,7 @@ static void CG_SetArmorColor (void)
 
 	if (wolfcam_following) {
 		if (CG_IsCpmaMvd()) {
-			if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM  || cgs.gametype == GT_FFA) {
+			if (CG_IsDuelGame(cgs.gametype)  || cgs.gametype == GT_FFA) {
 				//FIXME information is shown by cpma, where is it stored?  -- based on item pickups?  then why would it be shown for tdm?
 				return;
 			}
@@ -7070,7 +7070,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  if (!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER) {
 		  float w;
 
-		  if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")  &&  (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM)) {
+		  if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")  &&  CG_IsDuelGame(cgs.gametype)) {
 			  // use "duelendscores" values
 			  w = CG_Text_Width(cg.cpmaDuelPlayerWinner, scale, 0, font);
 			  CG_Text_Paint_Align(&rect, scale, color, va("%s", cg.cpmaDuelPlayerWinner), 0, 0, textStyle, font, align);
@@ -7081,9 +7081,9 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  rect.x += w;
 		  ourColor[3] = color[3];
 
-		  if ((cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_TOURNAMENT  &&  cg.duelForfeit)
+		  if ((cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
 			    ||
-			  (cgs.cpma  &&  (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM)  &&  cg.duelForfeit)
+			  (cgs.cpma  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
 			  ) {
 			  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS by forfeit", 0, 0, textStyle, font, align);
 		  } else {
@@ -7106,7 +7106,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
   case CG_MATCH_END_CONDITION:  // 85
 	  //FIXME GT_CTFS
-	  if (cgs.gametype == GT_FFA  ||  cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_TEAM) {
+	  if (cgs.gametype == GT_FFA  ||  CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM) {
 		  s = "Highest score within the time limit";  // not really true for ffa, but used in ql
 	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CA) {
 		  s = "First to reach the round limit";

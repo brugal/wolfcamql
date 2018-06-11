@@ -1839,7 +1839,7 @@ static void CG_DrawSpawns (void)
 		ent.shaderRGBA[1] = 0;
 		ent.shaderRGBA[2] = 0;
 
-		//if (cgs.gametype == GT_TOURNAMENT) {
+		//if (CG_IsDuelGame(cgs.gametype)) {
 		if (cgs.gametype <= GT_TEAM) {  //  ||  cgs.gametype == GT_FREEZETAG) {
 			if (sp->spawnflags & 0x1) {
 				if (cg_drawSpawnsInitial.integer) {
@@ -4962,9 +4962,21 @@ static void CG_CheckPlayerKeyPress (void)
 		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
 			generic1 = cg.snap->ps.generic1;
 			eflags = cg.snap->ps.eFlags;
+
+			if (CG_IsCpmaMvd()) {
+				// this is main view with random data
+				generic1 = 0;
+				eflags = 0;
+			}
 		} else {
 			generic1 = cg_entities[wcg.clientNum].currentState.generic1;
 			eflags = cg_entities[wcg.clientNum].currentState.eFlags;
+
+			if (!cg_entities[wcg.clientNum].currentValid) {
+				// not in snapshot
+				generic1 = 0;
+				eflags = 0;
+			}
 		}
 
 		// these are encoded in generic1
@@ -4988,7 +5000,27 @@ static void CG_CheckPlayerKeyPress (void)
 	cg.playerKeyPressFire = qfalse;
 	cg.playerKeyPressJump = qfalse;
 
+	if (CG_IsCpmaMvd()) {
+		if (!wolfcam_following  ||  (wolfcam_following  &&  cgs.clientinfo[wcg.clientNum].team == TEAM_SPECTATOR)) {
+			// possibly random data, reset and return
+			cg.playerKeyPressForward = qfalse;
+			cg.playerKeyPressBack = qfalse;
+			cg.playerKeyPressLeft = qfalse;
+			cg.playerKeyPressRight = qfalse;
+			return;
+		}
+	}
+
 	if (wolfcam_following) {
+		if (!cg_entities[wcg.clientNum].currentValid  ||  cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD) {
+			// not in snapshot or dead
+			cg.playerKeyPressForward = qfalse;
+			cg.playerKeyPressBack = qfalse;
+			cg.playerKeyPressLeft = qfalse;
+			cg.playerKeyPressRight = qfalse;
+			return;
+		}
+
 		legsAnim = cg_entities[wcg.clientNum].currentState.legsAnim & ~ANIM_TOGGLEBIT;
 
 		if (cg_entities[wcg.clientNum].currentState.eFlags & EF_FIRING) {
@@ -5014,6 +5046,15 @@ static void CG_CheckPlayerKeyPress (void)
 			cg.playerKeyPressJump = qtrue;
 		}
 	} else {
+		if (cg.snap->ps.eFlags & EF_DEAD) {
+			// dead
+			cg.playerKeyPressForward = qfalse;
+			cg.playerKeyPressBack = qfalse;
+			cg.playerKeyPressLeft = qfalse;
+			cg.playerKeyPressRight = qfalse;
+			return;
+		}
+
 		legsAnim = cg.snap->ps.legsAnim & ~ANIM_TOGGLEBIT;
 
 		if (cg.snap->ps.eFlags & EF_FIRING) {

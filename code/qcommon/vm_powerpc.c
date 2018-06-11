@@ -669,7 +669,7 @@ static const long int gpr_list[] = {
 	r7, r8, r9, r10,
 };
 static const long int gpr_vstart = 8; /* position of first volatile register */
-static const long int gpr_total = ARRAY_LEN(gpr_list);
+static const long int gpr_total = ARRAY_LEN( gpr_list );
 
 static const long int fpr_list[] = {
 	/* static registers, normally none is used */
@@ -683,7 +683,7 @@ static const long int fpr_list[] = {
 	f12, f13,
 };
 static const long int fpr_vstart = 8;
-static const long int fpr_total = ARRAY_LEN(fpr_list);
+static const long int fpr_total = ARRAY_LEN( fpr_list );
 
 /*
  * prepare some dummy structures and emit init code

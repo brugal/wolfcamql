@@ -453,7 +453,7 @@ qboolean CG_ParseSpawnVars( void ) {
                     // try alternate quake live gametype names
                     if (cgs.gametype == GT_TEAM) {
                         s = strstr(value, "tdm");
-                    } else if (cgs.gametype == GT_TOURNAMENT) {
+                    } else if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
                         s = strstr(value, "duel");
                     } else if (cgs.gametype == GT_HARVESTER) {
                         s = strstr(value, "har");
@@ -505,7 +505,7 @@ qboolean CG_ParseSpawnVars( void ) {
                             skipItem = 0;
                         }
                     } else if (!Q_stricmp(token, "duel")) {
-                        if (cgs.gametype == GT_TOURNAMENT) {
+                        if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
                             skipItem = 0;
                         }
                     } else if (!Q_stricmp(token, "har")) {
@@ -538,7 +538,7 @@ qboolean CG_ParseSpawnVars( void ) {
 #endif
         } else if (!Q_stricmp(keyname, "notfree")) {
             val = atoi(com_token);
-            if (val  &&  (cgs.gametype == GT_FFA ||  cgs.gametype == GT_TOURNAMENT)) {
+            if (val  &&  (cgs.gametype == GT_FFA ||  cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM)) {
                 skipItem = 1;
             }
         } else if (!Q_stricmp(keyname, "notsingle")) {

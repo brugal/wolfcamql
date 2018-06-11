@@ -1,4 +1,4 @@
-12.0test26
+12.0test27
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -109,6 +109,15 @@
 * cg_drawJumpSpeeds and cg_drawJumpSpeedsTime work with /follow
 * cpma >= 1.50 key press information supported
 * cpma >= 1.50 duel forfeit information
+* bug fix:  cpma Hoony Mode missing gametype icon in hud
+* bug fix:  cpma Hoony Mode not treated as a duel game type
+* add duel forfeit indicator for q3 hud endgame scoreboard
+* bug fix:  use correct flag sounds for cpma NTF (em92 Eugene Molotov)
+* bug fix:  loading flag models and sounds for cpma NTF gametype (em92 Eugene Molotov)
+* remove console spamming for some known cpma server commands
+* bug fix:  invalid cpma score if powerups were used in duel
+* bug fix:  don't draw key press info for dead or invalid players
+
 
 ---------------------------------
 11.7  2017-06-07

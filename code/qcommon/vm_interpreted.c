@@ -192,9 +192,8 @@ void VM_PrepareInterpreter( vm_t *vm, vmHeader_t *header ) {
 
 		op = (int)code[ byte_pc ];
 		codeBase[int_pc] = op;
-		if(byte_pc > header->codeLength) {
+		if(byte_pc > header->codeLength)
 			Com_Error(ERR_DROP, "VM_PrepareInterpreter: pc > header->codeLength");
-		}
 
 		byte_pc++;
 		int_pc++;
@@ -238,7 +237,7 @@ void VM_PrepareInterpreter( vm_t *vm, vmHeader_t *header ) {
 	}
 	int_pc = 0;
 	instruction = 0;
-
+	
 	// Now that the code has been expanded to int-sized opcodes, we'll translate instruction index
 	//into an index into codeBase[], which contains opcodes and operands.
 	while ( instruction < header->instructionCount ) {
@@ -317,9 +316,9 @@ locals from sp
 #define	DEBUGSTR va("%s%i", VM_Indent(vm), opStackOfs)
 
 int	VM_CallInterpreted( vm_t *vm, int *args ) {
-	byte	stack[OPSTACK_SIZE + 15];
+	byte		stack[OPSTACK_SIZE + 15];
 	int		*opStack;
-	uint8_t	opStackOfs;
+	uint8_t 	opStackOfs;
 	int		programCounter;
 	int		programStack;
 	int		stackOnEntry;
@@ -327,7 +326,7 @@ int	VM_CallInterpreted( vm_t *vm, int *args ) {
 	int		*codeImage;
 	int		v1;
 	int		dataMask;
-	int             arg;
+	int		arg;
 #ifdef DEBUG_VM
 	vmSymbol_t	*profileSymbol;
 #endif
@@ -504,7 +503,7 @@ nextInstruction2:
 					// pointers so we might have to convert it
 					if (sizeof(intptr_t) != sizeof(int)) {
 						intptr_t argarr[ MAX_VMSYSCALL_ARGS ];
-						int *imagePtr = (int *)&image[programStack];
+						int *imagePtr = (int *)&image[ programStack ];
 						int i;
 						for (i = 0; i < ARRAY_LEN(argarr); ++i) {
 							argarr[i] = *(++imagePtr);
@@ -716,7 +715,7 @@ nextInstruction2:
 
 		case OP_EQF:
 			opStackOfs -= 2;
-
+			
 			if(((float *) opStack)[(uint8_t) (opStackOfs + 1)] == ((float *) opStack)[(uint8_t) (opStackOfs + 2)])
 			{
 				programCounter = r2;	//vm->instructionPointers[r2];

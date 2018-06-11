@@ -25,6 +25,8 @@ em92 (Eugene Molotov):
   * bug fix:  r_fullscreen 1 wouldn't fit game screen correctly (via ioquake3 patch)
   * bug fix:  renderer shader times incorrect when recording videos
   * bug fix:  round based games didn't ignore g_overtime value
+  * bug fix:  use correct flag sounds for cpma NTF
+  * bug fix:  loading flag models and sounds for cpma NTF gametype
 
 Cyrax (Eugene C.):  screenMap shader directive from Quake3e
 

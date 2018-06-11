@@ -204,7 +204,7 @@ static void EmitRexString(byte rex, const char *string)
 
 #define MASK_REG(modrm, mask) \
 	do { \
-	    EmitString("81");	 \
+		EmitString("81"); \
 		EmitString((modrm)); \
 		Emit4((mask)); \
 	} while(0)
@@ -212,14 +212,14 @@ static void EmitRexString(byte rex, const char *string)
 // add bl, bytes
 #define STACK_PUSH(bytes) \
 	do { \
-	    EmitString("80 C3"); \
+		EmitString("80 C3"); \
 		Emit1(bytes); \
 	} while(0)
 
 // sub bl, bytes
 #define STACK_POP(bytes) \
 	do { \
-	    EmitString("80 EB"); \
+		EmitString("80 EB"); \
 		Emit1(bytes); \
 	} while(0)
 
@@ -498,25 +498,25 @@ int EmitCallDoSyscall(vm_t *vm)
 
 	// write arguments to global vars
 	// syscall number
-	EmitString("A3");                       // mov [0x12345678], eax
+	EmitString("A3");			// mov [0x12345678], eax
 	EmitPtr(&vm_syscallNum);
 	// vm_programStack value
-	EmitString("89 F0");                    // mov eax, esi
-	EmitString("A3");                       // mov [0x12345678], eax
+	EmitString("89 F0");			// mov eax, esi
+	EmitString("A3");			// mov [0x12345678], eax
 	EmitPtr(&vm_programStack);
-	// vm_opStackOfs
-	EmitString("88 D8");                    // mov al, bl
-	EmitString("A2");                       // mov [0x12345678], al
+	// vm_opStackOfs 
+	EmitString("88 D8");			// mov al, bl
+	EmitString("A2");			// mov [0x12345678], al
 	EmitPtr(&vm_opStackOfs);
 	// vm_opStackBase
-	EmitRexString(0x48, "89 F8");           // mov eax, edi
-	EmitRexString(0x48, "A3");              // mov [0x12345678], eax
+	EmitRexString(0x48, "89 F8");		// mov eax, edi
+	EmitRexString(0x48, "A3");		// mov [0x12345678], eax
 	EmitPtr(&vm_opStackBase);
 	// vm_arg
-	EmitString("89 C8");                    // mov eax, ecx
-	EmitString("A3");                       // mov [0x12345678], eax
+	EmitString("89 C8");			// mov eax, ecx
+	EmitString("A3");			// mov [0x12345678], eax
 	EmitPtr(&vm_arg);
-
+	
 	// align the stack pointer to a 16-byte-boundary
 	EmitString("55");			// push ebp
 	EmitRexString(0x48, "89 E5");		// mov ebp, esp
@@ -1125,7 +1125,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 	{
 		if(compiledOfs > maxLength - 16)
 		{
-			VMFREE_BUFFERS();
+	        	VMFREE_BUFFERS();
 			Com_Error(ERR_DROP, "VM_CompileX86: maxLength exceeded");
 		}
 
@@ -1140,7 +1140,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 
 		if(pc > header->codeLength)
 		{
-			VMFREE_BUFFERS();
+		        VMFREE_BUFFERS();
 			Com_Error(ERR_DROP, "VM_CompileX86: pc > header->codeLength");
 		}
 
@@ -1637,7 +1637,7 @@ void VM_Compile(vm_t *vm, vmHeader_t *header)
 			EmitCallErrJump(vm, callDoSyscallOfs);
 			break;
 		default:
-			VMFREE_BUFFERS();
+		        VMFREE_BUFFERS();
 			Com_Error(ERR_DROP, "VM_CompileX86: bad opcode %i at offset %i", op, pc);
 		}
 		pop0 = pop1;
@@ -1710,7 +1710,7 @@ This function is called directly by the generated code
 */
 
 #if defined(_MSC_VER) && defined(idx64)
-extern uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instruction Pointers, byte *dataBase);
+extern uint8_t qvmcall64(int *programStack, int *opStack, intptr_t *instructionPointers, byte *dataBase);
 #endif
 
 int VM_CallCompiled(vm_t *vm, int *args)
@@ -1721,7 +1721,7 @@ int VM_CallCompiled(vm_t *vm, int *args)
 	byte	*image;
 	int	*opStack;
 	int		opStackOfs;
-	int             arg;
+	int		arg;
 
 	currentVM = vm;
 
