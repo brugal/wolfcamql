@@ -191,7 +191,7 @@ New commands
 
 see README-ioquake3.txt for more stuff.
 
-Note: it's not mentioned in the ioquake3 documentation but you need to disable openal in order to have sound recorded in the avi file.   +set s_useopenal 0
+Note: it's not mentioned in the ioquake3 documentation but you need to disable openal in order to have sound recorded in the avi file.   +set s_useopenal 0.  You also need to have s_sdlWindowsForceDirectSound 1.
 
 added features:
 
@@ -2562,6 +2562,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_allowSoftwareGLCoreContext  Mac OS X hack to disable software renderer with core context
 * r_useCoreContext enables core context with opengl2
 * /debugcpmamvd
+* s_sdlWindowsForceDirectSound, needed for video recording and playback if wsapi reports more than 2 channels
 
 
 ----------

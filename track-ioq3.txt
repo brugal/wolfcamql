@@ -5345,11 +5345,11 @@ the demo.
 
 2017-05-25-02 Fix comment
 
-2017-05-25-03 skip (autoupdate):  Initial shot at writing an ioquake3 autoupdater.
+2017-05-25-03 Initial shot at writing an ioquake3 autoupdater.
 
-2017-05-25-04 skip (autoupdate):  autoupdater should build with $(CC), not $(TOOLS_CC), in Makefile.
+2017-05-25-04 autoupdater should build with $(CC), not $(TOOLS_CC), in Makefile.
 
-2017-05-25-05 skip (autoupdate):  Removed extraneous '\' in Makefile in autoupdater source file list.
+2017-05-25-05 Removed extraneous '\' in Makefile in autoupdater source file list.
 
 2017-05-26-01 Fix dllHandle possibly being uninitialized in Sys_LoadDll
 
@@ -5360,11 +5360,11 @@ the demo.
 
     Holding alt+enter should not continuously toggle fullscreen mode.
 
-2017-05-30-01 skip (autoupdate):  Fixed -Wstrict-prototypes warning.
+2017-05-30-01 Fixed -Wstrict-prototypes warning.
 
-2017-05-30-02 skip (autoupdate):  Fixed failure to link libcurl on some platforms.
+2017-05-30-02 Fixed failure to link libcurl on some platforms.
 
-2017-05-30-03 skip (autoupdate):  Cleanup in failures a little better.
+2017-05-30-03 Cleanup in failures a little better.
 
 2017-05-30-04
     Refresh master server address cache every 24 hours
@@ -5373,7 +5373,7 @@ the demo.
     result forever. Don't clear sv_master[1-5] cvar if the address fails
     to resolve; it might work later.
 
-2017-05-30-05 skip (autoupdate):
+2017-05-30-05
     Don't link directly to libcurl.
 
     Lots of Linux distros have different names (libcurl-gnutls.so vs etc), and
@@ -5384,25 +5384,26 @@ the demo.
     Alternately: we'll use our own libcurl build, but we'll probably have to dump
     SSL support to make this sane to do.
 
-2017-05-30-06 skip (autoupdate):  Don't fclose(NULL) if a file doesn't exist.
+2017-05-30-06 Don't fclose(NULL) if a file doesn't exist.
 
-2017-05-31-01 skip (autoupdate):
+2017-05-31-01
     Initial Windows autoupdater support: the ioq3 internal bits.
 
     This is just the piece that will launch the autoupdater; the autoupdater
     itself will be a separate commit.
 
-2017-05-31-02 skip (autoupdate):  Fix tabs vs spaces.
+2017-05-31-02 Fix tabs vs spaces.
 
-2017-05-31-03 skip (autoupdate):
+2017-05-31-03
     Move the autoupdater launcher into its own public domain source file.
 
     So other games can steal this piece if they want.
 
-2017-05-31-04 skip (autoupdate):  Fixed up some types in sha256.*
+2017-05-31-04 Fixed up some types in sha256.*
 
-2017-06-01-01 skip (autoupdate):  ioquake3 calls this arch "x86" and not "i386".
-2017-06-01-02 skip (autoupdate):  Fully initialize ManifestItems (rollback, etc, was uninitialized before!).
+2017-06-01-01 ioquake3 calls this arch "x86" and not "i386".
+
+2017-06-01-02 Fully initialize ManifestItems (rollback, etc, was uninitialized before!).
 
 2017-06-01-03
     Make server browser default to Internet
@@ -5479,17 +5480,17 @@ the demo.
     with MAX_SERVERSTATUSREQUESTS (16) blank host names. So just ignore
     them in UI_GetServerStatusInfo().
 
-2017-06-02-01 skip (autoupdate):  Working Windows port of the autoupdater!
+2017-06-02-01 Working Windows port of the autoupdater!
 
-2017-06-02-02 skip (autoupdate):  Use stdint.h on Visual C if >= Visual Studio 2010.
+2017-06-02-02 Use stdint.h on Visual C if >= Visual Studio 2010.
 
-2017-06-02-03 skip (autoupdate):  Don't fail if the game process went away before we were ready to wait for it.
+2017-06-02-03 Don't fail if the game process went away before we were ready to wait for it.
 
-2017-06-02-04 skip (autoupdate):  Fixed linking on things that need -ldl, and compiler warnings.
+2017-06-02-04 Fixed linking on things that need -ldl, and compiler warnings.
 
-2017-06-02-05 skip (autoupdate):  Disable the autoupdater; enable only if intentional, like for official builds.
+2017-06-02-05 Disable the autoupdater; enable only if intentional, like for official builds.
 
-2017-06-02-06 skip (autoupdate):  Fixed comment typo: s/until/under
+2017-06-02-06 Fixed comment typo: s/until/under
 
 2017-06-02-07
     Fix joining team when starting local team play server
@@ -5543,7 +5544,7 @@ the demo.
 
     Initial shot at writing an ioquake3 autoupdater. Thank you icculus, and everyone who contributed to his patreon! https://www.patreon.com/icculus
 
-2017-06-03-02 skip (autoupdate):  autoupdater: Fixed up GCC/clang printf function attribute.
+2017-06-03-02 autoupdater: Fixed up GCC/clang printf function attribute.
 
 2017-06-03-03
     Remove unneeded code from OpenGL2's RB_RenderDrawSurfList
@@ -5562,7 +5563,7 @@ the demo.
 
     Allows scrolling server browser list and some other lists.
 
-2017-06-03-06 skip (autoupdate):
+2017-06-03-06
     Initial add of rsa_tools.
 
     This is just a simple RSA public key digital signature thing built on
@@ -5600,26 +5601,26 @@ the demo.
     you end up with a few hundred kilobytes of binary code to verify a signature
     and no external dependencies, so it seems like a win.
 
-2017-06-04-01 skip (autoupdate):  Verify libTom source archives aren't tampered with.
+2017-06-04-01 Verify libTom source archives aren't tampered with.
 
-2017-06-04-02 skip (autoupdate):  Wire up libTom stuff to build system.
+2017-06-04-02 Wire up libTom stuff to build system.
 
-2017-06-04-03 skip (autoupdate):  Replace sha256.c with libTomCrypt equivalent, since we'll be using it anyway.
+2017-06-04-03 Replace sha256.c with libTomCrypt equivalent, since we'll be using it anyway.
 
-2017-06-04-04 skip (autoupdate):  Autoupdater now checks RSA digital signature for manifest.
+2017-06-04-04 Autoupdater now checks RSA digital signature for manifest.
 
-2017-06-04-05 skip (autoupdate):  Updated autoupdater-readme.txt with manifest signing details.
+2017-06-04-05 Updated autoupdater-readme.txt with manifest signing details.
 
-2017-06-04-06 skip (autoupdate):  build-rsa-tools.sh now works on Linux.
-2017-06-04-07 skip (autoupdate):  Added .gitignore for rsa_tools directory.
+2017-06-04-06 build-rsa-tools.sh now works on Linux.
+2017-06-04-07 Added .gitignore for rsa_tools directory.
 
-2017-06-04-08 skip (autoupdate):  Windows support for autoupdater manifest signatures.
+2017-06-04-08 Windows support for autoupdater manifest signatures.
 
-2017-06-04-09 skip (autoupdate):  Add a log message if manifest is valid.
+2017-06-04-09 Add a log message if manifest is valid.
 
-2017-06-04-10 skip (autoupdate):  Use "x86_64" and not "x86-64" like everything else in ioq3.
+2017-06-04-10 Use "x86_64" and not "x86-64" like everything else in ioq3.
 
-2017-06-04-11 skip (autoupdate):  Removed unnecessary trailing backslash.
+2017-06-04-11 Removed unnecessary trailing backslash.
 
 ---- sync 2017-08-17  (rend2?) ----
 
@@ -6836,11 +6837,9 @@ the demo.
     is changed to include it. (Admittedly it doesn't fit the function name
     but fits the function description and current usage.)
 
----- here ----
+2018-04-03-01 Remove duplicate setting of FREETYPE_CFLAGS in Makefile
 
-2018-04-03-01 skip:  Remove duplicate setting of FREETYPE_CFLAGS in Makefile
-
-2018-04-03-02 skip:
+2018-04-03-02
     Fix exploit to reset player by sending wrong serverId
 
     If client sends wrong serverId but is already active in the world
@@ -6855,53 +6854,53 @@ the demo.
 
         https://bugzilla.icculus.org/show_bug.cgi?id=6324
 
-2018-04-03-03 skip:
+2018-04-03-03
     Fix "Going to CS_ZOMBIE for [clientname]" developer message
 
     Client name was cleared before printing the message resulting in
     a blank name.
 
-2018-04-04-01 skip:
+2018-04-04-01
     Fix MSG_Read*String*() functions not being able to read last byte from message
 
     This is exact root of q3msgboom bug http://aluigi.altervista.org/adv/q3msgboom-adv.txt
     Unfortunately, server still need this ugly '1022 char limit' hack to support unfixed clients in some degree.
     And as it affects MSG_ReadBigString() - unfixed clients can still be crashed by 8191-chars long configstrings that comes with gamestate
 
-2018-04-08-01 skip:
+2018-04-08-01
     Fix nullptr dereference in front of nullptr check in FS_CheckPak0
 
     Found using LLVM sanitizer. Reported by Dominic "lonkamikaze" Fandrey
     and David "devnexen" CARLIER.
 
-2016-11-26-01 skip:  Fix undefined behaviour due to shifting signed in snd_mem.c
+2016-11-26-01 Fix undefined behaviour due to shifting signed in snd_mem.c
 
-2018-04-08-02 skip:
+2018-04-08-02
     Fix shifting bits out of byte in tr_font.c
 
     Found using LLVM sanitizer. Reported by Dominic "lonkamikaze" Fandrey.
 
-2016-11-26-02 skip:  Fix shift into sign in cl_cin.c
+2016-11-26-02 Fix shift into sign in cl_cin.c
 
-2016-11-26-03 skip:  Fix signed bit operations in MSG_ReadBits
+2016-11-26-03 Fix signed bit operations in MSG_ReadBits
 
-2016-11-26-04 skip:
+2016-11-26-04
     Add missing address operator in cm_polylib.c
 
     Also avoid nullptr dereference.
 
-2016-11-26-05 skip:  OpenGL1: Decay float[8] to float * in tr_marks.c
+2016-11-26-05 OpenGL1: Decay float[8] to float * in tr_marks.c
 
-2016-11-27-01 skip:  Avoid srcList[-1] in snd_openal.c
+2016-11-27-01 Avoid srcList[-1] in snd_openal.c
 
-2018-04-09-01 skip:
+2018-04-09-01
     Fix the behaviour of CVAR_LATCH|CVAR_CHEAT cvars
 
     Fix the output/behaviour of CVAR_CHEAT flagged cvars in case they are
     also of type CVAR_LATCH (avoid the early latch case return to make it
     work as intended).
 
-2018-04-09-02 skip:
+2018-04-09-02
     Maximize cURL buffer size
 
     Allows higher download throughput (from ~2 MB/s to ~60 MB/s at 120FPS)
@@ -6909,7 +6908,7 @@ the demo.
     This has no effect for curl versions older than 7.53.0 (for which the
     buffer can only be shrunk below 16k)
 
-2018-04-08-01 skip:
+2018-04-08-01
     Fix mouse grab after toggling fullscreen
 
     cls.glconfig.isFullscreen was not updated when changing r_fullscreen
@@ -6922,7 +6921,7 @@ the demo.
 
     Reported by Mickaël "mickael9" Thomas.
 
-2018-04-09-01 skip:
+2018-04-09-01
     Fix q3history buffer not cleared between mods and OOB-access
 
     Loading a 1024-byte q3history file will fill the whole consoleSaveBuffer
@@ -6937,7 +6936,7 @@ the demo.
 
     String not terminated reported by David "devnexen" CARLIER.
 
-2018-04-09-02 skip:
+2018-04-09-02
     Revert "Removed "Color Depth" from q3_ui system settings, it didn't control
     anything."
 
@@ -6949,14 +6948,14 @@ the demo.
     This reverts my commit 8e689739f426e01b696ff346b54a6eb9a198e42e
     from August 11 2011.
 
-2018-04-11-01 skip:
+2018-04-11-01
     Fix displayed color/depth/stencil bits values
 
     The values passed to SDL are just the minimum required. Get actually
     values of colorbits, depthbits, and stencilbits from SDL instead of
     assuming that the engine got exactly what it asked for.
 
-2018-04-11-02 skip:
+2018-04-11-02
     Restore setting r_colorbits in q3_ui
 
     In 2007 in ioquake3 unified-sdl branch (revision 1144) setting
@@ -6976,7 +6975,7 @@ the demo.
     (Debian Jessie x86_64 nvidia). ioquake3 was reporting the requested
     value instead of the actual obtained value. Fixed in my previous commit.
 
-2018-04-11-03 skip:
+2018-04-11-03
     Make setting r_stencilbits more consistent in Team Arena UI
 
     I changed Color Depth options 'Default' to reset r_stencilbits instead
@@ -6986,7 +6985,7 @@ the demo.
     Set r_stencilbits when changing graphics presets like when changing
     Color Depth.
 
-2018-04-12-01 skip:
+2018-04-12-01
     Fix map list in Team Arena start server menu after entering SP menu
 
     In September 2017 I moved loading arenas.txt/*.arena files from entering
@@ -7003,13 +7002,13 @@ the demo.
     but move setting up uiInfo.mapList to when entering the start server
     menu.
 
-2018-04-13-01 skip:
+2018-04-13-01
     Support SDL audio devices that require float32 samples.
 
     Fixes missing audio when playing on Windows with SDL 2.0.7, which started
     using WASAPI, which demands floating point audio.
 
-2018-04-13-02 skip:
+2018-04-13-02
     sdl_snd.c should just initialize SDL audio without checking SDL_WasInit().
 
     In SDL2, the initialized subsystems are referenced counted, so it's safe to
@@ -7018,19 +7017,238 @@ the demo.
     not increment the refcount if the subsystem was already initialized, causing
     problems when it decremented it later.
 
-2018-04-13-03 skip:  There's no need to SDL_PauseAudio(1) before calling SDL_CloseAudio().
+2018-04-13-03 There's no need to SDL_PauseAudio(1) before calling SDL_CloseAudio().
 
-2018-04-13-04 skip:
+2018-04-13-04
     Added audio capture support to SDL backend.
 
     This lets you speak through VoIP when not using OpenAL. Previously you could
     listen but not speak.
 
-2018-04-13-05 skip:
+2018-04-13-05
     Use the SDL2 audio device interface instead of the legacy 1.2 API.
 
     This is a little bit of future-proofing, but also gives us a little more
     flexibility in general; now we can add in the cvars to open a specific
     device, etc, that the OpenAL codepath does.
 
-2018-04-14-01 skip:  Disable SDL audio capture until prebuilt SDL libraries are updated to 2.0.8.
+2018-04-14-01 Disable SDL audio capture until prebuilt SDL libraries are updated to 2.0.8.
+
+2018-04-14-02 Update SDL2 to 2.0.8
+
+2018-04-24-01
+    Add SDL 2.0.1 headers for macOS PPC
+
+    code/libs/macosx/libSDL2-2.0.0.dylib has 2.0.8 for x86 and x86_64 and
+    2.0.1 for PPC. Add 2.0.1 headers for PPC with modifed SDL_platform.h to
+    allow compiling using macOS 10.5 SDK. Using separate headers allows the
+    engine to check the SDL version for enabling newer SDL features.
+
+2018-04-24-02
+    Enable SDL audio capture for SDL 2.0.5 and newer
+
+    The version check is required for supporting macOS PPC with SDL 2.0.1
+    and Travis-CI (Ubuntu Trusty) with SDL 2.0.2.
+
+    The client now requires SDL 2.0.5 runtime if compiled against SDL 2.0.5
+    or newer.
+
+2018-04-24-03
+    Make macOS Universal Bundle target 10.6 for x86 and x86_64
+
+    SDL 2.0.5 dropped support for macOS 10.5 so target 10.6 instead. The
+    PPC build uses SDL 2.0.1 so it still targets 10.5. macOS 10.5 (x86,
+    x86_64) should automatically run the PPC build using Rosetta.
+
+    Revert MAN-AT-ARMS' change to SDL 2.0.8 SDL_platform.h that allowed
+    targeting macOS 10.5 for the sake of PPC. It also incorrectly allowed
+    x86 and x86_64 to target 10.5 as well. (Also macOS PPC uses separate
+    headers now.)
+
+---- here ----
+
+2018-04-21-01 skip:  Fix possible bot goal state NULL pointer dereference
+
+2018-04-21-02 skip:  Fix uninitialized bot_goal_t fields
+
+2018-04-22-01 skip:  Remove unnecessary NULL pointer check in Cmd_RemoveCommand
+
+2018-04-22-02 skip:
+    Make UI_DrawProportionalString handle NULL string
+
+    This makes the function consistent with UI_DrawString.
+
+2018-04-24-01 skip:  Fix compiling against macOS system OpenAL and SDL2 frameworks
+
+2018-04-26-01 skip:
+    Fix array index in CanDamage() function - discovered by MARTY
+
+    The wrong array element was accessed. However the correct element is the
+    same value so fixing it does not affect gameplay.
+
+2018-04-26-02 skip:  Fix compiling Makefile (broke in macOS frameworks commit)
+
+2018-04-26-03 skip:
+    Fix clearing keys for control in Team Arena UI
+
+    When a control is selected for binding a key, pressing backspace would
+    clear the displayed keys in the menu but not actually unbind the keys.
+
+2018-04-26-04 skip:
+    Make s_useOpenAL be CVAR_LATCH
+
+    After changing s_useOpenAL the sound needs to be restarted (snd_restart)
+    for it to take affect.
+
+2018-04-29-01 skip:
+    Improvements for dedicated camera followers (team follow1/2)
+
+    Switching to dedicated camera follower with no possible players to
+    follow would spawn at the intermission point and display "connection
+    interrupted" HUD message. Pmove() was not run for the client so
+    ps.commandTime was too far behind. I made it so that dedicated camera
+    followers and scoreboard run Pmove() but cannot move (PM_FREEZE).
+
+    When all players possible to follow leave, the dedicated camera follower
+    would continue to display the old player state of the player they were
+    following (along with "connection interrupted" HUD message). Unlike the
+    regular case of a spectator following a specific player, dedicated
+    camera followers did not reset their player state to the intermission
+    point after the followed player was no longer valid.
+
+    Now a client can be set as 'team follow1' to automatically switch
+    between displaying the intermission point and following a player when
+    possible.
+
+2018-05-03-01 skip:
+    Fix not closing description.txt and fix path seperator
+
+    0 length description.txt files were not closed.
+
+2018-05-06-01 skip:
+    Fix duplicate bots displayed in Team Arena ingame add bot menu
+
+    The key handler allowed going 2 beyond the end of the bot list and the
+    display function clamped to 0 causing the first bot to be shown 3 times.
+
+    Attempting to add the bot in gametypes < GT_TEAM would fallback to
+    Sarge in UI_GetBotNameByNumber() (who isn't the first bot) and gametypes
+    >= GT_TEAM would access characterList past known values (typically NULL
+    but if teaminfo.txt contained 63 characters it would access out of
+    bounds memory).
+
+2018-05-11-01 skip:
+    OpenGL2: Fix parsing specularScale in shaders
+
+    Fix specularScale <metallic> <smoothness> with r_pbr 1 which has been
+    broken since r_pbr was implemented in 2016.
+
+    Fix specularScale <r> <g> <b> <gloss> setting b to gloss and leaving
+    gloss as 0 since it was implemented in 2014.
+
+2018-05-12-01 skip:
+    Don't allow SDL audio capture using pulseaudio
+
+    When you start recording using SDL pulseaudio driver the client sends
+    all audio captured while not recording. 240 milliseconds of audio is
+    sent each frame until the capture buffer is empty. This is a problem for
+    privacy and causes confusing to debug VoIP playback issues on other
+    clients connected to server and when playing back demos.
+
+2018-05-12-02 skip:
+    Isolate the Altivec code so non-Altivec PPC targets can use the same binary.
+
+    Moved all the code using Altivec intrinsics to separate files. This
+    means we can optionally use GCC's -maltivec on just these files, which
+    are chosen at runtime if the CPU supports Altivec, and compile the rest
+    without it, making a single binary that has Altivec optimizations but
+    can still work on G3.
+
+    Unlike SSE and similar extensions on x86, there does not seem to be
+    a way to enable conditional, targeted use of Altivec based on runtime
+    detection (which is what ioquake3 wants to do) without also giving the
+    compiler permission to use Altivec in code generation; so to not crash
+    on CPUs that do not implement Altivec, we'll have to turn it off
+    altogether, except in translation units that are only entered when
+    runtime Altivec detection is successful.
+
+    This has been tested on Linux PPC (on an Altivec-enabled CPU),
+    but we may need further work after testing trickles out to other
+    PowerPC devices and ancient Mac OS X builds.
+
+    I did a little work on this patch, but the majority of the effort belongs
+    to Simon McVittie (thanks!).
+
+2018-05-12-03 skip:  Limit -maltivec to specific source files on OpenBSD too (untested)
+
+2018-05-12-04 skip:
+    Use SDL 2.0.1 headers for macOS ppc64
+
+    The libSDL2-2.0.0.dylib in repo doesn't support ppc64 though.
+
+    Based on patch by MAN-AT-ARMS.
+
+2018-05-14-01 skip:
+    Fix console offset while Team Arena voiceMenu is open
+
+    Fix console text being on top of the Tema Arena voice chat head in
+    screen resolutions higher than 640x480.
+
+2018-05-14-02 skip:
+    OpenGL2: Readd r_deluxeSpecular.
+
+    https://github.com/ioquake/ioq3/issues/369
+
+2018-05-22-01 skip:
+    Fix client kicked as unpure when missing the latest cgame/ui pk3s
+
+    In 2013 ioquake3 stopped referencing the pk3 file that qagame.qvm was
+    loaded from. This had the unintended side affect of causing
+    non-dedicated pure servers to no longer reference a pk3 that only
+    contains the three QVM files.
+
+    Non-dedicated pure servers did not reference the pk3 containing the
+    latest cgame.qvm so if client did not have the pk3 file they were kicked
+    as unpure instead of the client trying to download the pk3 file.
+
+    Also make server touch ui.qvm since it's required to pass pure check and
+    may be separate from cgame.qvm.
+
+2018-05-28-01 skip:  Don't create multiple windows when GL context creation fails
+
+2018-05-28-02 skip:  Require OpenGL 1.2 for GL_CLAMP_TO_EDGE
+
+2018-06-03-01 skip:
+    Fix Linux uninstaller requiring Bash
+
+    Linux loki-setup uninstaller is failing on distros that have /bin/sh
+    linked to Dash instead of Bash. Use standard shell method for
+    redirecting stdout and stderr instead of a Bash specific method.
+
+2018-06-03-02 skip:
+    Fix Linux uninstaller redirecting stderr to stdout in preuninstall.sh
+
+    Last commit accidently made stderr redirect to stdout tty instead of
+    /dev/null.
+
+    Reported by @illwieckz.
+
+2018-06-10-01 skip:
+    Fix in_restart causing fatal error while video is shutdown
+
+    Connecting to a server running a different fs_game and using a
+    autoexec.cfg containing in_restart would hit a fatal error in IN_Init().
+
+        IN_Init called before SDL_Init( SDL_INIT_VIDEO )
+
+    Reported by smokey2k on the ioquake3 forum.
+
+2018-06-12-01 skip:
+    Allow pkg-config binary to be overridden with PKG_CONFIG
+
+    This is one of the de facto standard interfaces used in Linux
+    distributions for cross-compilation (alongside overriding CC and
+    similar variables), and in particular is used in Debian and its
+    derivatives.
+
+    Signed-off-by: Simon McVittie <smcv@debian.org>

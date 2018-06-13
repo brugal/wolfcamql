@@ -2340,7 +2340,7 @@ GL_VERSION: 2.1 Chromium 1.9
 * ql race shows message every so often showing how far/behind top score you are
 * /follow can use cgs.scores[12] for scores with ql (check version?) since first and second place client numbers are config strings
 * font for info screen and stats
-* powerup time for /follow -- cpma mvd shows (could be based on item pickup events)  --  what if there's more than one of the same powerup on the map? -- 2018-05-31 added based on item pickups but it's only enabled if there's only one of the same powerup type on the map
+* powerup time for /follow -- cpma mvd shows (could be based on item pickup events)  --  what if there's more than one of the same powerup on the map? -- 2018-05-31 added based on item pickups but it's only enabled if there's only one of the same powerup type on the map  -- 2018-06-11 disable check for only one powerup of the same time since it will be based on event pickup?
 * option to draw full score for GT_RACE and CG_PLAYER_SCORE  -- maybe just use CG_GetValue(CG_PLAYER_SCORE) and do it in scriptable hud
 * seeking in cpma mvd ffa leads to empty names in ql hud scorebox -- maybe get last stats/scores command?
 * /follow with q3 scoreboard not highlighting followed player
@@ -2355,6 +2355,31 @@ GL_VERSION: 2.1 Chromium 1.9
 * program abort if condump can't create file:  condump C:\share\tmp\test.txt
 * function to copy current console to clipboard
 * check cpma custom modes
+* check msg.c :  if(c == '%') { c = '.'; }  and utf-8
+* regular q3 duel forfeit scoreboard support
+* diff ioq3/Makefile Makefile:  ifneq ($(BUILD_BASEGAME),0)  /renderergl1/jdatadst.o  $(B)/$(MISSIONPACK)/cgame/cg_particles.o  @echo "  WINDRES: $(WINDRES)"  $(RANLIB) $@
+* sdl update to 2.0.8:  wasapi sound driver produces just a buzzing sound  -- 4 channels
+
+------ Initializing Sound ------
+SDL_Init( SDL_INIT_AUDIO )... OK
+SDL audio driver is "wasapi".
+SDL_AudioSpec:
+  Format:   AUDIO_F32LSB
+  Freq:     22050
+  Samples:  512
+  Channels: 4
+SDL capture device opened.
+Starting SDL audio callback...
+SDL audio initialized.
+----- Sound Info -----
+    3 stereo
+32768 samples
+    32 samplebits (float)
+    1 submission_chunk
+22050 speed
+248F9CB8 dma buffer
+No background file.
+----------------------
 
 ----
 

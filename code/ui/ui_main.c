@@ -3050,7 +3050,7 @@ static void UI_Update(const char *name) {
 		switch (val) {
 			case 0:
 				trap_Cvar_SetValue( "r_depthbits", 0 );
-				trap_Cvar_SetValue( "r_stencilbits", 0 );
+				trap_Cvar_Reset( "r_stencilbits" );
 			break;
 			case 16:
 				trap_Cvar_SetValue( "r_depthbits", 16 );
@@ -3058,6 +3058,7 @@ static void UI_Update(const char *name) {
 			break;
 			case 32:
 				trap_Cvar_SetValue( "r_depthbits", 24 );
+				trap_Cvar_SetValue( "r_stencilbits", 8 );
 			break;
 		}
 	} else if (Q_stricmp(name, "r_lodbias") == 0) {
@@ -3081,6 +3082,7 @@ static void UI_Update(const char *name) {
 				trap_Cvar_SetValue( "r_lodbias", 0 );
 				trap_Cvar_SetValue( "r_colorbits", 32 );
 				trap_Cvar_SetValue( "r_depthbits", 24 );
+				trap_Cvar_SetValue( "r_stencilbits", 8 );
 				trap_Cvar_SetValue( "r_picmip", 0 );
 				trap_Cvar_SetValue( "r_mode", 4 );
 				trap_Cvar_SetValue( "r_texturebits", 32 );
@@ -3096,7 +3098,8 @@ static void UI_Update(const char *name) {
 				trap_Cvar_SetValue( "r_vertexlight", 0 );
 				trap_Cvar_SetValue( "r_lodbias", 0 );
 				trap_Cvar_SetValue( "r_colorbits", 0 );
-				trap_Cvar_SetValue( "r_depthbits", 24 );
+				trap_Cvar_SetValue( "r_depthbits", 0 );
+				trap_Cvar_Reset( "r_stencilbits" );
 				trap_Cvar_SetValue( "r_picmip", 1 );
 				trap_Cvar_SetValue( "r_mode", 3 );
 				trap_Cvar_SetValue( "r_texturebits", 0 );
@@ -3113,6 +3116,7 @@ static void UI_Update(const char *name) {
 				trap_Cvar_SetValue( "r_lodbias", 1 );
 				trap_Cvar_SetValue( "r_colorbits", 0 );
 				trap_Cvar_SetValue( "r_depthbits", 0 );
+				trap_Cvar_Reset( "r_stencilbits" );
 				trap_Cvar_SetValue( "r_picmip", 1 );
 				trap_Cvar_SetValue( "r_mode", 3 );
 				trap_Cvar_SetValue( "r_texturebits", 0 );
@@ -3129,6 +3133,7 @@ static void UI_Update(const char *name) {
 				trap_Cvar_SetValue( "r_lodbias", 2 );
 				trap_Cvar_SetValue( "r_colorbits", 16 );
 				trap_Cvar_SetValue( "r_depthbits", 16 );
+				trap_Cvar_SetValue( "r_stencilbits", 0 );
 				trap_Cvar_SetValue( "r_mode", 3 );
 				trap_Cvar_SetValue( "r_picmip", 2 );
 				trap_Cvar_SetValue( "r_texturebits", 16 );
@@ -3258,6 +3263,7 @@ static void UI_RunMenuScript(char **args) {
 				trap_Cvar_Set("ui_cdkeyvalid", "CD Key does not appear to be valid.");
 			}
 		} else if (Q_stricmp(name, "loadArenas") == 0) {
+			UI_LoadArenasIntoMapList();
 			UI_MapCountByGameType(qfalse);
 			Menu_SetFeederSelection(NULL, FEEDER_ALLMAPS, 0, "createserver");
 		} else if (Q_stricmp(name, "saveControls") == 0) {
@@ -4714,7 +4720,7 @@ static void UI_ParseTeamInfo(const char *teamFile) {
 
 	while ( 1 ) {
 		token = COM_ParseExt( &p, qtrue );
-		if( !token[0] || token[0] == '}') {
+		if (!token[0] || token[0] == '}') {
 			break;
 		}
 
@@ -4884,7 +4890,7 @@ static void UI_ParseGameInfo(const char *teamFile) {
 
 	while ( 1 ) {
 		token = COM_ParseExt( &p, qtrue );
-		if(!token[0] || token[0] == '}') {
+		if (!token[0] || token[0] == '}') {
 			break;
 		}
 
@@ -5282,7 +5288,7 @@ void _UI_SetActiveMenu( uiMenuCommand_t menu ) {
 	char buf[256];
 
 	// this should be the ONLY way the menu system is brought up
-	// ensure minumum menu data is cached
+	// ensure minimum menu data is cached
   if (Menu_Count() > 0) {
 		vec3_t v;
 		v[0] = v[1] = v[2] = 0;

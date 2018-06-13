@@ -521,6 +521,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 	for (i = 0; i < 16; i++)
 	{
 		int testColorBits, testDepthBits, testStencilBits;
+		int realColorBits[3];
 
 		// 0 - default
 		// 1 - minus colorBits
@@ -761,9 +762,13 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 		glConfig.maxViewPortHeight = maxViewPortWidthAndHeight[1];
 		//Com_Printf("max viewport: %d x %d\n", glConfig.maxViewPortWidth, glConfig.maxViewPortHeight);
 
-		glConfig.colorBits = testColorBits;
-		glConfig.depthBits = testDepthBits;
-		glConfig.stencilBits = testStencilBits;
+		SDL_GL_GetAttribute( SDL_GL_RED_SIZE, &realColorBits[0] );
+		SDL_GL_GetAttribute( SDL_GL_GREEN_SIZE, &realColorBits[1] );
+		SDL_GL_GetAttribute( SDL_GL_BLUE_SIZE, &realColorBits[2] );
+		SDL_GL_GetAttribute( SDL_GL_DEPTH_SIZE, &glConfig.depthBits );
+		SDL_GL_GetAttribute( SDL_GL_STENCIL_SIZE, &glConfig.stencilBits );
+
+		glConfig.colorBits = realColorBits[0] + realColorBits[1] + realColorBits[2];
 
 		ri.Printf( PRINT_ALL, "Using %d color bits, %d depth, %d stencil display.\n",
 				   glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );

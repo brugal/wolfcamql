@@ -1,4 +1,4 @@
-12.0test27
+12.0test28
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -8,6 +8,7 @@
     - third person player sounds don't play at full volume
     - OpenAL fixes (crash, ogg fallback)
     - IQM model support
+    - SDL audio capture
 
 * bug fix:  disconnect icon didn't match lagometer x, y, scale, and align settings
 * bug fix:  draw selected player name didn't detect clan tag correctly
@@ -117,7 +118,7 @@
 * remove console spamming for some known cpma server commands
 * bug fix:  invalid cpma score if powerups were used in duel
 * bug fix:  don't draw key press info for dead or invalid players
-
+* s_sdlWindowsForceDirectSound, needed for video recording and playback if wsapi reports more than 2 channels
 
 ---------------------------------
 11.7  2017-06-07
