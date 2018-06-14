@@ -2381,6 +2381,11 @@ SDL audio initialized.
 No background file.
 ----------------------
 
+* option to lower other volume when voip is playing
+* s_announcerVolume for openal
+* cl_voipGainOtherPlayback for openal
+
+
 ----
 
 

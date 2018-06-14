@@ -56,6 +56,7 @@ cvar_t	*cl_voipShowMeter;
 cvar_t	*cl_voipProtocol;
 cvar_t	*cl_voip;
 cvar_t	*cl_voipOverallGain;
+cvar_t	*cl_voipGainOtherPlayback;
 #endif
 
 #ifdef USE_RENDERER_DLOPEN
@@ -6076,6 +6077,7 @@ void CL_Init ( void ) {
 	Cvar_CheckRange( cl_voip, 0, 1, qtrue );
 	cl_voipProtocol = Cvar_Get ("cl_voipProtocol", cl_voip->integer ? "opus" : "", CVAR_USERINFO | CVAR_ROM);
 	cl_voipOverallGain = Cvar_Get ("cl_voipOverallGain", "1.0", CVAR_ARCHIVE);
+	cl_voipGainOtherPlayback = Cvar_Get ("cl_voipGainOtherPlayback", "0.2", CVAR_ARCHIVE);
 #endif
 
 	// cgame might not be initialized before menu is used

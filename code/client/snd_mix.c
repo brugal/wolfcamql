@@ -869,6 +869,8 @@ void S_PaintChannels( int endtime ) {
 	int soundLength;
 	float soundLengthf;
 	float scale;
+	qboolean paintedVoip;
+	float voipGainOtherPlayback;
 
 	if(s_muted->integer)
 		snd_vol = 0;
@@ -876,6 +878,12 @@ void S_PaintChannels( int endtime ) {
 		snd_vol = s_volume->value*255;
 
 	//Com_Printf ("%i to %i,  samples: %d\n", s_paintedtime, endtime, endtime - s_paintedtime);
+
+#ifdef USE_VOIP
+	voipGainOtherPlayback = cl_voipGainOtherPlayback->value;
+#else
+	voipGainOtherPlayback = 1.0f;
+#endif
 
 	if (s_useTimescale->integer) {
 		scale = com_timescale->value;
@@ -897,6 +905,17 @@ void S_PaintChannels( int endtime ) {
 		// clear the paint buffer and mix any raw samples...
 		Com_Memset(paintbuffer, 0, sizeof (paintbuffer));
 
+
+		// check if there is voip data
+		paintedVoip = qfalse;
+
+		for (stream = 1; stream < MAX_RAW_STREAMS; stream++) {
+			if ( s_rawend[stream] >= s_paintedtime ) {
+				paintedVoip = qtrue;
+				break;
+			}
+		}
+
 		for (stream = 0; stream < MAX_RAW_STREAMS; stream++) {
 			if ( s_rawend[stream] >= s_paintedtime ) {
 				// copy from the streaming sound source
@@ -908,21 +927,44 @@ void S_PaintChannels( int endtime ) {
 					//const int s = i&(MAX_RAW_SAMPLES-1);
 					s = (int)floor((float)i * scale) & (MAX_RAW_SAMPLES - 1);
 					//s = i & (MAX_RAW_SAMPLES - 1);
-					paintbuffer[i-s_paintedtime].left += rawsamples[s].left;
-					paintbuffer[i-s_paintedtime].right += rawsamples[s].right;
+
+					if (stream == 0) {  // music
+						if (paintedVoip) {
+							paintbuffer[i-s_paintedtime].left += rawsamples[s].left * voipGainOtherPlayback;
+							paintbuffer[i-s_paintedtime].right += rawsamples[s].right * voipGainOtherPlayback;
+
+						} else {
+							paintbuffer[i-s_paintedtime].left += rawsamples[s].left;
+							paintbuffer[i-s_paintedtime].right += rawsamples[s].right;
+						}
+					} else {  // voip
+						paintbuffer[i-s_paintedtime].left += rawsamples[s].left;
+						paintbuffer[i-s_paintedtime].right += rawsamples[s].right;
+					}
 				}
 
 				//Com_Printf("^5stream %d count: %d\n", stream, stop - s_paintedtime);
 			}
 		}
 
+		if (paintedVoip) {
+			//goto transfer;
+			//Com_Printf("^2voip painted\n");
+		}
+
 		// paint in the channels.
 		ch = s_channels;
 		for ( i = 0; i < MAX_CHANNELS ; i++, ch++ ) {
+			int leftVolOrig, rightVolOrig;
+
 			//if ( !ch->thesfx || (ch->leftvol<0.25 && ch->rightvol<0.25 )) {
 			if (!ch->thesfx) {
 				continue;
 			}
+
+			leftVolOrig = ch->leftvol;
+			rightVolOrig = ch->rightvol;
+
 			if (ch->entchannel == CHAN_ANNOUNCER) {
 				//Com_Printf("audio announcer  %d  %d\n", ch->leftvol, ch->rightvol);
 				//FIXME wolfcam hack when announcer is playing and you switch views (origin stays with origin pov)
@@ -938,6 +980,7 @@ void S_PaintChannels( int endtime ) {
 			} else if (ch->entchannel == CHAN_LOCAL_SOUND) {
 				ch->leftvol = ch->rightvol = 127;
 			}
+
 			//FIXME uhm, leftvol and rightvol are ints
 			if (ch->leftvol < 0.25  &&  ch->rightvol < 0.25) {
 #if 0
@@ -981,6 +1024,11 @@ void S_PaintChannels( int endtime ) {
 				continue;
 			}
 
+			if (paintedVoip) {
+				ch->leftvol *= voipGainOtherPlayback;
+				ch->rightvol *= voipGainOtherPlayback;
+			}
+
 			if ( count > 0 ) {
 				if( sc->soundCompressionMethod == SND_COMPRESSION_ADPCM) {
 					S_PaintChannelFromADPCM		(ch, sc, count, sampleOffset, ltime - s_paintedtime);
@@ -992,14 +1040,22 @@ void S_PaintChannels( int endtime ) {
 					S_PaintChannelFrom16		(ch, sc, count, sampleOffset, sampleOffsetf, ltime - s_paintedtime);
 				}
 			}
+
+			ch->leftvol = leftVolOrig;
+			ch->rightvol = rightVolOrig;
 		}
 
 		// paint in the looped channels.
 		ch = loop_channels;
-		for ( i = 0; i < numLoopChannels ; i++, ch++ ) {		
+		for ( i = 0; i < numLoopChannels ; i++, ch++ ) {
+			int leftVolOrig, rightVolOrig;
+
 			if ( !ch->thesfx || (!ch->leftvol && !ch->rightvol )) {
 				continue;
 			}
+
+			leftVolOrig = ch->leftvol;
+			rightVolOrig = ch->rightvol;
 
 			ltime = s_paintedtime;
 			sc = ch->thesfx;
@@ -1060,6 +1116,10 @@ void S_PaintChannels( int endtime ) {
 					break;
 				}
 
+				if (paintedVoip) {
+					ch->leftvol *= voipGainOtherPlayback;
+					ch->rightvol *= voipGainOtherPlayback;
+				}
 
 				if ( count > 0 ) {
 					if( sc->soundCompressionMethod == SND_COMPRESSION_ADPCM) {
@@ -1077,8 +1137,12 @@ void S_PaintChannels( int endtime ) {
 					break;
 				}
 			} while ( ltime < end);
+
+			ch->leftvol = leftVolOrig;
+			ch->rightvol = rightVolOrig;
 		}
 
+//transfer:
 		// transfer out according to DMA format
 		S_TransferPaintBuffer( end );
 		s_paintedtime = end;

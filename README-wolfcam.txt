@@ -928,7 +928,7 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 
 * cg_attackDefendVoiceStyle (0: 'fight!',  1: like quake live -- 'attack/defend the flag')
 
-* s_announcerVolume
+* s_announcerVolume (only with sdl audio)
 
 ------------------------------------------------------------
 
@@ -1191,6 +1191,7 @@ Velocity:
 
 * cl_voipOverallGain to control voip volume for all senders
 * /voip gain also works with spatial clients
+* cl_voipGainOtherPlayback  to control the volume of other sounds while voip is playing back  (only with sdl audio)
 
 * r_portalBobbing
 
