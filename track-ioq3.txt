@@ -7065,42 +7065,40 @@ the demo.
     x86 and x86_64 to target 10.5 as well. (Also macOS PPC uses separate
     headers now.)
 
----- here ----
+2018-04-21-01 Fix possible bot goal state NULL pointer dereference
 
-2018-04-21-01 skip:  Fix possible bot goal state NULL pointer dereference
+2018-04-21-02 Fix uninitialized bot_goal_t fields
 
-2018-04-21-02 skip:  Fix uninitialized bot_goal_t fields
+2018-04-22-01 Remove unnecessary NULL pointer check in Cmd_RemoveCommand
 
-2018-04-22-01 skip:  Remove unnecessary NULL pointer check in Cmd_RemoveCommand
-
-2018-04-22-02 skip:
+2018-04-22-02
     Make UI_DrawProportionalString handle NULL string
 
     This makes the function consistent with UI_DrawString.
 
-2018-04-24-01 skip:  Fix compiling against macOS system OpenAL and SDL2 frameworks
+2018-04-24-01 Fix compiling against macOS system OpenAL and SDL2 frameworks
 
-2018-04-26-01 skip:
+2018-04-26-01
     Fix array index in CanDamage() function - discovered by MARTY
 
     The wrong array element was accessed. However the correct element is the
     same value so fixing it does not affect gameplay.
 
-2018-04-26-02 skip:  Fix compiling Makefile (broke in macOS frameworks commit)
+2018-04-26-02 Fix compiling Makefile (broke in macOS frameworks commit)
 
-2018-04-26-03 skip:
+2018-04-26-03
     Fix clearing keys for control in Team Arena UI
 
     When a control is selected for binding a key, pressing backspace would
     clear the displayed keys in the menu but not actually unbind the keys.
 
-2018-04-26-04 skip:
+2018-04-26-04
     Make s_useOpenAL be CVAR_LATCH
 
     After changing s_useOpenAL the sound needs to be restarted (snd_restart)
     for it to take affect.
 
-2018-04-29-01 skip:
+2018-04-29-01
     Improvements for dedicated camera followers (team follow1/2)
 
     Switching to dedicated camera follower with no possible players to
@@ -7120,12 +7118,12 @@ the demo.
     between displaying the intermission point and following a player when
     possible.
 
-2018-05-03-01 skip:
+2018-05-03-01
     Fix not closing description.txt and fix path seperator
 
     0 length description.txt files were not closed.
 
-2018-05-06-01 skip:
+2018-05-06-01
     Fix duplicate bots displayed in Team Arena ingame add bot menu
 
     The key handler allowed going 2 beyond the end of the bot list and the
@@ -7137,7 +7135,7 @@ the demo.
     but if teaminfo.txt contained 63 characters it would access out of
     bounds memory).
 
-2018-05-11-01 skip:
+2018-05-11-01
     OpenGL2: Fix parsing specularScale in shaders
 
     Fix specularScale <metallic> <smoothness> with r_pbr 1 which has been
@@ -7146,7 +7144,7 @@ the demo.
     Fix specularScale <r> <g> <b> <gloss> setting b to gloss and leaving
     gloss as 0 since it was implemented in 2014.
 
-2018-05-12-01 skip:
+2018-05-12-01
     Don't allow SDL audio capture using pulseaudio
 
     When you start recording using SDL pulseaudio driver the client sends
@@ -7155,7 +7153,7 @@ the demo.
     privacy and causes confusing to debug VoIP playback issues on other
     clients connected to server and when playing back demos.
 
-2018-05-12-02 skip:
+2018-05-12-02
     Isolate the Altivec code so non-Altivec PPC targets can use the same binary.
 
     Moved all the code using Altivec intrinsics to separate files. This
@@ -7179,27 +7177,27 @@ the demo.
     I did a little work on this patch, but the majority of the effort belongs
     to Simon McVittie (thanks!).
 
-2018-05-12-03 skip:  Limit -maltivec to specific source files on OpenBSD too (untested)
+2018-05-12-03 Limit -maltivec to specific source files on OpenBSD too (untested)
 
-2018-05-12-04 skip:
+2018-05-12-04
     Use SDL 2.0.1 headers for macOS ppc64
 
     The libSDL2-2.0.0.dylib in repo doesn't support ppc64 though.
 
     Based on patch by MAN-AT-ARMS.
 
-2018-05-14-01 skip:
+2018-05-14-01
     Fix console offset while Team Arena voiceMenu is open
 
     Fix console text being on top of the Tema Arena voice chat head in
     screen resolutions higher than 640x480.
 
-2018-05-14-02 skip:
+2018-05-14-02
     OpenGL2: Readd r_deluxeSpecular.
 
     https://github.com/ioquake/ioq3/issues/369
 
-2018-05-22-01 skip:
+2018-05-22-01
     Fix client kicked as unpure when missing the latest cgame/ui pk3s
 
     In 2013 ioquake3 stopped referencing the pk3 file that qagame.qvm was
@@ -7214,18 +7212,18 @@ the demo.
     Also make server touch ui.qvm since it's required to pass pure check and
     may be separate from cgame.qvm.
 
-2018-05-28-01 skip:  Don't create multiple windows when GL context creation fails
+2018-05-28-01 Don't create multiple windows when GL context creation fails
 
-2018-05-28-02 skip:  Require OpenGL 1.2 for GL_CLAMP_TO_EDGE
+2018-05-28-02 Require OpenGL 1.2 for GL_CLAMP_TO_EDGE
 
-2018-06-03-01 skip:
+2018-06-03-01
     Fix Linux uninstaller requiring Bash
 
     Linux loki-setup uninstaller is failing on distros that have /bin/sh
     linked to Dash instead of Bash. Use standard shell method for
     redirecting stdout and stderr instead of a Bash specific method.
 
-2018-06-03-02 skip:
+2018-06-03-02
     Fix Linux uninstaller redirecting stderr to stdout in preuninstall.sh
 
     Last commit accidently made stderr redirect to stdout tty instead of
@@ -7233,7 +7231,7 @@ the demo.
 
     Reported by @illwieckz.
 
-2018-06-10-01 skip:
+2018-06-10-01
     Fix in_restart causing fatal error while video is shutdown
 
     Connecting to a server running a different fs_game and using a
@@ -7243,7 +7241,7 @@ the demo.
 
     Reported by smokey2k on the ioquake3 forum.
 
-2018-06-12-01 skip:
+2018-06-12-01
     Allow pkg-config binary to be overridden with PKG_CONFIG
 
     This is one of the de facto standard interfaces used in Linux

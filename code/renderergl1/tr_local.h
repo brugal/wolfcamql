@@ -1939,4 +1939,13 @@ void R_TakeScreenshot( int x, int y, int width, int height, char *name, int type
 mnode_t *R_PointInLeaf (const vec3_t p);
 void R_CreateSingleShader (void);
 
+void R_DrawElements( int numIndexes, const glIndex_t *indexes );
+void VectorArrayNormalize( vec4_t *normals, unsigned int count );
+
+#ifdef idppc_altivec
+void LerpMeshVertexes_altivec( md3Surface_t *surf, float backlerp );
+void ProjectDlightTexture_altivec( void );
+void RB_CalcDiffuseColor_altivec( unsigned char *colors );
+#endif
+
 #endif //TR_LOCAL_H

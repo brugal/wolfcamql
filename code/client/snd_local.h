@@ -284,3 +284,9 @@ typedef enum
 typedef int srcHandle_t;
 
 qboolean S_AL_Init( soundInterface_t *si );
+
+#if 0  // disabled wolfcam
+#ifdef idppc_altivec
+void S_PaintChannelFrom16_altivec( portable_samplepair_t paintbuffer[PAINTBUFFER_SIZE], int snd_vol, channel_t *ch, const sfx_t *sc, int count, int sampleOffset, int bufferOffset );
+#endif
+#endif

@@ -2357,7 +2357,6 @@ GL_VERSION: 2.1 Chromium 1.9
 * check cpma custom modes
 * check msg.c :  if(c == '%') { c = '.'; }  and utf-8
 * regular q3 duel forfeit scoreboard support
-* diff ioq3/Makefile Makefile:  ifneq ($(BUILD_BASEGAME),0)  /renderergl1/jdatadst.o  $(B)/$(MISSIONPACK)/cgame/cg_particles.o  @echo "  WINDRES: $(WINDRES)"  $(RANLIB) $@
 * sdl update to 2.0.8:  wasapi sound driver produces just a buzzing sound  -- 4 channels
 
 ------ Initializing Sound ------
@@ -2381,7 +2380,6 @@ SDL audio initialized.
 No background file.
 ----------------------
 
-* option to lower other volume when voip is playing
 * s_announcerVolume for openal
 * cl_voipGainOtherPlayback for openal
 
