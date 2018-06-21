@@ -1,4 +1,4 @@
-12.0test31
+12.0  2018-06-21
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
