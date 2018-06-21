@@ -364,6 +364,8 @@ void MSG_WriteString( msg_t *sb, const char *s ) {
 			if (com_protocol->integer < 91  &&  ((byte *)string)[i] > 127) {
 				string[i] = '.';
 			}
+
+			// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
 			if (string[i] == '%') {
 				string[i] = '.';
 			}
@@ -394,6 +396,8 @@ void MSG_WriteBigString( msg_t *sb, const char *s ) {
 			if (com_protocol->integer < 91  &&  ((byte *)string)[i] > 127) {
 				string[i] = '.';
 			}
+
+			// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
 			if (string[i] == '%') {
 				string[i] = '.';
 			}
@@ -503,6 +507,7 @@ char *MSG_ReadString( msg_t *msg ) {
 			break;
 		}
 		// translate all fmt spec to avoid crash bugs
+		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
 		if ( c == '%' ) {
 			c = '.';
 		}
@@ -538,6 +543,7 @@ char *MSG_ReadBigString( msg_t *msg ) {
 			break;
 		}
 		// translate all fmt spec to avoid crash bugs
+		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
 		if ( c == '%' ) {
 			c = '.';
 		}
@@ -573,6 +579,7 @@ char *MSG_ReadStringLine( msg_t *msg ) {
 			break;
 		}
 		// translate all fmt spec to avoid crash bugs
+		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
 		if ( c == '%' ) {
 			c = '.';
 		}
@@ -616,10 +623,20 @@ int MSG_HashKey(const char *string, int maxlen) {
 
 	hash = 0;
 	for (i = 0; i < maxlen && string[i] != '\0'; i++) {
-		if (string[i] & 0x80 || string[i] == '%')
-			hash += '.' * (119 + i);
-		else
+		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
+		if (string[i] & 0x80 || string[i] == '%') {
+			if (com_protocol->integer < 91) {
+				hash += '.' * (119 + i);
+			} else {
+				if (string[i] == '%') {
+					hash += '.' * (119 + i);
+				} else {
+					hash += string[i] * (119 + i);
+				}
+			}
+		} else {
 			hash += string[i] * (119 + i);
+		}
 	}
 	hash = (hash ^ (hash >> 10) ^ (hash >> 20));
 	return hash;

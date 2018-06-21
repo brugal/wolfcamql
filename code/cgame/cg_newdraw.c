@@ -1201,7 +1201,7 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 		powerups = cg_entities[wcg.clientNum].currentState.powerups;
 
 		if (ARRAY_LEN(powerupsCheck) >= MAX_POWERUPS) {
-			Com_Printf("^1invalid number of powerups to check: %d\n", ARRAY_LEN(powerupsCheck));
+			Com_Printf("^1invalid number of powerups to check: %d\n", (int)ARRAY_LEN(powerupsCheck));
 			return;
 		}
 

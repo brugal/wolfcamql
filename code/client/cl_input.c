@@ -882,6 +882,9 @@ void CL_WritePacket( void ) {
 		// also use the last acknowledged server command in the key
 		key ^= MSG_HashKey(clc.serverCommands[ clc.serverCommandSequence & (MAX_RELIABLE_COMMANDS-1) ], 32);
 
+		// testing hash
+		//Com_Printf("^5hash: %x  '%s'\n", MSG_HashKey(clc.serverCommands[ clc.serverCommandSequence & (MAX_RELIABLE_COMMANDS-1) ], 32), clc.serverCommands[ clc.serverCommandSequence & (MAX_RELIABLE_COMMANDS-1)]);
+
 		// write all the commands, including the predicted command
 		for ( i = 0 ; i < count ; i++ ) {
 			j = (cl.cmdNumber - count + i + 1) & CMD_MASK;

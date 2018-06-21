@@ -1,4 +1,4 @@
-12.0test30
+12.0test31
 
 * update to jpeg-8c
 * bug fix:  videos and screenshots could be corrupted if video width wasn't divisible by 4
@@ -120,6 +120,7 @@
 * bug fix:  don't draw key press info for dead or invalid players
 * s_sdlWindowsForceDirectSound, needed for video recording and playback if wsapi reports more than 2 channels
 * cl_voipGainOtherPlayback  to control the volume of other sounds while voip is playing back  (only with sdl audio)
+* ui_demoSortDirFirst to list directories first in demo listing
 
 ---------------------------------
 11.7  2017-06-07

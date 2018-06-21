@@ -213,9 +213,50 @@ static sfxHandle_t UI_DemosMenu_Key (int key)
 }
 
 
-static int CmpStrings (const void *p1, const void *p2)
+static int CmpDemoNameStrings (const void *p1, const void *p2)
 {
-	return Q_stricmp(*(char * const *)p1, *(char * const *)p2);
+	int lens1, lens2;
+	char lastp1, lastp2;
+	const char *s1, *s2;
+
+	s1 = *(const char **)p1;
+	s2 = *(const char **)p2;
+
+	// special case for '../' to make it always appear as the first entry
+	if (!Q_stricmp(s1, "../")) {
+		return -1;
+	} else if (!Q_stricmp(s2, "../")) {
+		return 1;
+	}
+
+	if (!ui_demoSortDirFirst.integer) {
+		return Q_stricmp(s1, s2);
+	}
+
+	// sort directories first
+
+	lens1 = strlen(s1);
+	lens2 = strlen(s2);
+
+	if (lens1 < 1) {
+		lastp1 = '\0';
+	} else {
+		lastp1 = s1[strlen(s1) - 1];
+	}
+
+	if (lens2 < 1) {
+		lastp2 = '\0';
+	} else {
+		lastp2 = s2[strlen(s2) - 1];
+	}
+
+	if (lastp1 == '/'  &&  lastp2 != '/') {
+		return -1;
+	} else if (lastp1 != '/'  &&  lastp2 == '/') {
+		return 1;
+	}
+
+	return Q_stricmp(s1, s2);
 }
 
 /*
@@ -364,7 +405,7 @@ static void Demos_MenuInit (const char *dirName)
 		demoname += len + 1;
 	}
 
-	qsort(s_demos.list.itemnames, s_demos.list.numitems, sizeof(char *), CmpStrings);
+	qsort(s_demos.list.itemnames, s_demos.list.numitems, sizeof(char *), CmpDemoNameStrings);
 
 #if 0
 	for (i = 0;  i < s_demos.list.numitems;  i++) {

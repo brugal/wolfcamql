@@ -487,7 +487,7 @@ ifeq ($(PLATFORM),darwin)
 
   # Default minimum Mac OS X version
   ifeq ($(MACOSX_VERSION_MIN),)
-    MACOSX_VERSION_MIN=10.5
+    MACOSX_VERSION_MIN=10.7
   endif
 
   MACOSX_MAJOR=$(shell echo $(MACOSX_VERSION_MIN) | cut -d. -f1)
@@ -1173,8 +1173,8 @@ ifeq ($(USE_VOIP),1)
   ifeq ($(USE_INTERNAL_SPEEX),1)
     SPEEX_CFLAGS += -DFLOATING_POINT -DUSE_ALLOCA -I$(SPEEXDIR)/include
   else
-    SPEEX_CFLAGS ?= $(shell pkg-config --silence-errors --cflags speex speexdsp || true)
-    SPEEX_LIBS ?= $(shell pkg-config --silence-errors --libs speex speexdsp || echo -lspeex -lspeexdsp)
+    SPEEX_CFLAGS ?= $(shell $(PKG_CONFIG) --silence-errors --cflags speex speexdsp || true)
+    SPEEX_LIBS ?= $(shell $(PKG_CONFIG) --silence-errors --libs speex speexdsp || echo -lspeex -lspeexdsp)
   endif
   CLIENT_CFLAGS += $(SPEEX_CFLAGS)
   CLIENT_LIBS += $(SPEEX_LIBS)

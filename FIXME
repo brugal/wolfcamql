@@ -2001,7 +2001,7 @@ No locals.
 * /at now+3sec  (offset for 'now' and also option to run only once)
 * option for /wait with exact time instead of frame time
 * q3mme command time based demo smoothing
-* q3mme video pipe
+* q3mme video pipe -- https://github.com/brugal/wolfcamql/issues/27
 * /follow duel player maybe play hitsounds if damage plum present
 * vm cgame create failed:  not enough storage to process this command
 * doc for cg_roundScoreBoard
@@ -2344,7 +2344,7 @@ GL_VERSION: 2.1 Chromium 1.9
 * option to draw full score for GT_RACE and CG_PLAYER_SCORE  -- maybe just use CG_GetValue(CG_PLAYER_SCORE) and do it in scriptable hud
 * seeking in cpma mvd ffa leads to empty names in ql hud scorebox -- maybe get last stats/scores command?
 * /follow with q3 scoreboard not highlighting followed player
-* timeline scrubber?
+* kitten:  timeline scrubber?
 * Doom-vs-Crash-lostworld-2018_05_15-06_57_24.dm_91  /follow doom  scoreboard always showing '2nd place with 0'  -- 2018-06-05 based on scores command which isn't being updated
 * /follow : draw attacker
 * /follow : CG_ItemPickup()   cg_draw:CG_DrawPickupItem()
@@ -2355,7 +2355,6 @@ GL_VERSION: 2.1 Chromium 1.9
 * program abort if condump can't create file:  condump C:\share\tmp\test.txt
 * function to copy current console to clipboard
 * check cpma custom modes
-* check msg.c :  if(c == '%') { c = '.'; }  and utf-8
 * regular q3 duel forfeit scoreboard support
 * sdl update to 2.0.8:  wasapi sound driver produces just a buzzing sound  -- 4 channels
 
@@ -2382,6 +2381,19 @@ No background file.
 
 * s_announcerVolume for openal
 * cl_voipGainOtherPlayback for openal
+* mac osx vm lockup with s_useOpenal 0  -- even with r:7301 before Altivec separation  -- seems to be s_sdlCapture 1  -- works with direct hw probably vm error/bug with capturing audio
+* 2018-06-18 uber dm_91 17:09 8 to 5 and scoreboard message is Red Leads Blue 7 to 5
+* kitten:  q3mme depth-lock
+* kitten:  output sky transparency
+* kitten:  lg beam in a different program?
+* kitten:  defrag timer
+* kitten:  demo listing:  protocol filter
+* kitten:  demo listing:  click demo show player list, demo taker, length of demo, game type, ...
+* kitten:  weapon fov to control the size of the weapon individually from the view pov
+* kitten:  autocomplete cvar and command descriptions, ex: /chase missing help
+* kitten:  chase like cg_thirdPerson ..  movement keys
+* kitten:  negative timescales :\
+
 
 
 ----

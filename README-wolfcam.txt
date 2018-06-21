@@ -1833,7 +1833,7 @@ Player Models:
 * cg_itemSize
 * cg_itemFx same as quake live
 
-* quake3 demo playback support
+* quake3 demo playback support (vanilla q3 and specific support for cpma, osp, and defrag)
    ex:  copy map_cpm3a.pk3 into wolfcamql/wolfcam-ql/
         wolfcamql.exe +demo ratelpajuo
 
@@ -2564,7 +2564,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_useCoreContext enables core context with opengl2
 * /debugcpmamvd
 * s_sdlWindowsForceDirectSound, needed for video recording and playback if wsapi reports more than 2 channels
-
+* ui_demoSortDirFirst to list directories first in demo listing
 
 ----------
 

@@ -97,6 +97,8 @@ extern vmCvar_t	ui_ioq3;
 
 extern vmCvar_t ui_doubleClickTime;
 
+extern vmCvar_t ui_demoSortDirFirst;
+
 //
 // ui_qmenu.c
 //

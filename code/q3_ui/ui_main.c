@@ -162,6 +162,8 @@ vmCvar_t	ui_ioq3;
 
 vmCvar_t ui_doubleClickTime;
 
+vmCvar_t ui_demoSortDirFirst;
+
 static cvarTable_t		cvarTable[] = {
 	{ &ui_ffa_fraglimit, "ui_ffa_fraglimit", "20", CVAR_ARCHIVE },
 	{ &ui_ffa_timelimit, "ui_ffa_timelimit", "0", CVAR_ARCHIVE },
@@ -223,6 +225,7 @@ static cvarTable_t		cvarTable[] = {
 	{ NULL, "g_localTeamPref", "", 0 },
 
 	{ &ui_doubleClickTime, "ui_doubleClickTime", "500", CVAR_ARCHIVE },
+	{ &ui_demoSortDirFirst, "ui_demoSortDirFirst", "1", CVAR_ARCHIVE },
 };
 
 static int cvarTableSize = ARRAY_LEN( cvarTable );
