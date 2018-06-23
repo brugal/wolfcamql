@@ -372,14 +372,16 @@ void CL_KeyMove( usercmd_t *cmd ) {
 CL_MouseEvent
 =================
 */
-void CL_MouseEvent( int dx, int dy, int time ) {
+void CL_MouseEvent( int dx, int dy, int time, qboolean active ) {
 	if ( Key_GetCatcher( ) & KEYCATCH_UI ) {
-		VM_Call( uivm, UI_MOUSE_EVENT, dx, dy );
+		VM_Call( uivm, UI_MOUSE_EVENT, dx, dy, active );
 	} else if (Key_GetCatcher( ) & KEYCATCH_CGAME) {
-		VM_Call (cgvm, CG_MOUSE_EVENT, dx, dy);
+		VM_Call (cgvm, CG_MOUSE_EVENT, dx, dy, active );
 	} else {
-		cl.mouseDx[cl.mouseIndex] += dx;
-		cl.mouseDy[cl.mouseIndex] += dy;
+		if (active) {
+			cl.mouseDx[cl.mouseIndex] += dx;
+			cl.mouseDy[cl.mouseIndex] += dy;
+		}
 	}
 }
 

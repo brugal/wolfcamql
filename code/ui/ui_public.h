@@ -175,7 +175,7 @@ typedef enum {
 //	void	UI_KeyEvent( int key );
 
 	UI_MOUSE_EVENT,
-//	void	UI_MouseEvent( int dx, int dy );
+//	void	UI_MouseEvent( int dx, int dy, qboolean active );
 
 	UI_REFRESH,
 //	void	UI_Refresh( int time );

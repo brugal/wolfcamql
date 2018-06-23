@@ -1520,7 +1520,6 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
 * old demos don't work with new endgame stats
 * "Overtime" shown right after game ends
 * need changes for clientinfo score valid and new scores?
-* mouse no grab and menu items
 * "Overtime" and non ql demos
 * ctf end scoreboard shows flag caps instead of score
 * draw following and race covers 'current time' in hud
@@ -2393,7 +2392,8 @@ No background file.
 * kitten:  autocomplete cvar and command descriptions, ex: /chase missing help
 * kitten:  chase like cg_thirdPerson ..  movement keys
 * kitten:  negative timescales :\
-
+* scriptable hud:  key press, player info (playerstate and entitystate?), speed
+* don't show cursor with in_nograb 1
 
 
 ----

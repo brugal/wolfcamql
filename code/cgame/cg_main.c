@@ -99,11 +99,11 @@ Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3, i
 		CG_KeyEvent(arg0, arg1);
 		return 0;
 	case CG_MOUSE_EVENT:
+		CG_MouseEvent(arg0, arg1, arg2);
 #if 1  //def MPACK
 		cgDC.cursorx = cgs.cursorX;
 		cgDC.cursory = cgs.cursorY;
 #endif
-		CG_MouseEvent(arg0, arg1);
 		return 0;
 	case CG_EVENT_HANDLING:
 		CG_EventHandling(arg0);

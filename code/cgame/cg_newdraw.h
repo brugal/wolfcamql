@@ -33,7 +33,7 @@ double CG_GetServerTimeFromClockString (const char *timeString);
 
 void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect);
 
-void CG_MouseEvent(int x, int y);
+void CG_MouseEvent(int x, int y, qboolean active);
 void CG_EventHandling(int type);
 void CG_KeyEvent(int key, qboolean down);
 void CG_ShowResponseHead(void);

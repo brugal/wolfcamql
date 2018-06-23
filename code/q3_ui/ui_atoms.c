@@ -912,7 +912,7 @@ void UI_KeyEvent( int key, int down ) {
 UI_MouseEvent
 =================
 */
-void UI_MouseEvent( int dx, int dy )
+void UI_MouseEvent( int dx, int dy, qboolean active )
 {
 	int				i;
 	int				bias;
@@ -925,17 +925,22 @@ void UI_MouseEvent( int dx, int dy )
 	bias = uis.bias / uis.xscale;
 
 	// update mouse screen position
-	uis.cursorx += dx;
-	if (uis.cursorx < -bias)
-		uis.cursorx = -bias;
-	else if (uis.cursorx > SCREEN_WIDTH+bias)
-		uis.cursorx = SCREEN_WIDTH+bias;
+	if (active) {
+		uis.cursorx += dx;
+		if (uis.cursorx < -bias)
+			uis.cursorx = -bias;
+		else if (uis.cursorx > SCREEN_WIDTH+bias)
+			uis.cursorx = SCREEN_WIDTH+bias;
 
-	uis.cursory += dy;
-	if (uis.cursory < 0)
-		uis.cursory = 0;
-	else if (uis.cursory > SCREEN_HEIGHT)
-		uis.cursory = SCREEN_HEIGHT;
+		uis.cursory += dy;
+		if (uis.cursory < 0)
+			uis.cursory = 0;
+		else if (uis.cursory > SCREEN_HEIGHT)
+			uis.cursory = SCREEN_HEIGHT;
+	} else {
+		uis.cursorx = -bias + (dx * (float)((float)(SCREEN_WIDTH + 2 * bias) / (float)uis.glconfig.vidWidth));
+		uis.cursory = dy * (float)((float)SCREEN_HEIGHT / (float)uis.glconfig.vidHeight);
+	}
 
 	// region test the active menu items
 	for (i=0; i<uis.activemenu->nitems; i++)
@@ -1268,7 +1273,7 @@ void UI_Refresh( int realtime )
 			Menu_Draw( uis.activemenu );
 
 		if( uis.firstdraw ) {
-			UI_MouseEvent( 0, 0 );
+			UI_MouseEvent( 0, 0, qtrue );
 			uis.firstdraw = qfalse;
 		}
 	}

@@ -2246,7 +2246,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
     (float)velocity[1] (float)velocity[2]"  ex:  "4 0 5000 0.0 0.0 4.0"
     times are in milliseconds
 
-  example to fix missing pillar texture/models in campgrounds pillars when freecaming and demo taker is out of range:
+  example to fix missing pillar texture/models in campgrounds.bsp pillars when freecaming and demo taker is out of range:
 
   ffa and duel:
       set cg_forceBModel1 13
@@ -2255,7 +2255,6 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
   other game types:
       set cg_forceBModel1 12
       set cg_forceBModel2 11
-
 
 
   note:  to find the model index find the entity number using 'cg_drawEntNumbers 1', then /printentitystate <ent number>,  and use the value given for 'modelindex'
@@ -2306,6 +2305,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
         WP_NAILGUN = 11
         WP_PROX_LAUNCHER = 12
         WP_CHAINGUN = 13
+	WP_HEAVY_MACHINEGUN = 14
 
   You can use 'fixedtime' cvar to guarantee write times:  ex: /set fixedtime 8  will write info at 125 frames per second without frame drops
 
@@ -2405,8 +2405,11 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
   /printviewparms
   /printdatadir
   /listentities
+  /debugcpmamvd
 
-  cg_debugEvents > 1 also prints entity information
+  - cg_debugEvents > 1 also prints entity information
+
+  - cg_debugServerCommands (0 (default):  only print message for unknown commands, 1:  print all commands and arguments, 2:  only print message and arguments for unknown commands)
 
 * some server debugging and test commands (/devmap <map>) :
 
@@ -2547,8 +2550,6 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * cg_specOffsetQL (0:  use first person view like quake3, 1 (default):  no adjustment like quakelive, 2:  use third person offsets)
 
-* cg_debugServerCommands (0 (default):  only print message for unknown commands, 1:  print all commands and arguments, 2:  only print message and arguments for unknown commands)
-
 * cg_drawKeyPress  to enable drawing player key press information.  Also added WCG_PLAYER_KEY_PRESS_[FORWARD|BACK|RIGHT|LEFT|FIRE|JUMP|CROUCH] hud ownerdraws.  See ui/wckeypress.menu for an example.  '/loadmenu ui/wckeypress.menu' to test.
 
   Note that demos don't record key press information.  Demos do record movement direction which can be used to extract some of the values.  'right', 'left', and 'back' can be accurately extracted from the movement direction but 'forward' is an estimate based on the player's velocity.
@@ -2562,7 +2563,6 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_opengl2_overbright  enables original opengl2 overbright handling
 * r_allowSoftwareGLCoreContext  Mac OS X hack to disable software renderer with core context
 * r_useCoreContext enables core context with opengl2
-* /debugcpmamvd
 * s_sdlWindowsForceDirectSound, needed for video recording and playback if wsapi reports more than 2 channels
 * ui_demoSortDirFirst to list directories first in demo listing
 
@@ -2572,4 +2572,4 @@ brugal
 
 basturdo@yahoo.com
 
-Copyright 2017  Angelo Cano
+Copyright 2018  Angelo Cano

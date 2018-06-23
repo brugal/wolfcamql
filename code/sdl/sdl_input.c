@@ -1080,6 +1080,10 @@ static void IN_ProcessEvents( void )
 						break;
 					Com_QueueEvent( in_eventTime, SE_MOUSE, e.motion.xrel, e.motion.yrel, 0, NULL );
 				}
+				else
+				{
+					Com_QueueEvent( in_eventTime, SE_MOUSE_INACTIVE, e.motion.x, e.motion.y, 0, NULL );
+				}
 				break;
 
 			case SDL_MOUSEBUTTONDOWN:

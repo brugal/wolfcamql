@@ -295,7 +295,7 @@ typedef enum {
 //	void	(*CG_KeyEvent)( int key, qboolean down );
 
 	CG_MOUSE_EVENT,
-//	void	(*CG_MouseEvent)( int dx, int dy );
+//	void	(*CG_MouseEvent)( int dx, int dy, qboolean active );
 	CG_EVENT_HANDLING,
 //	void (*CG_EventHandling)(int type);
 	CG_TIME_CHANGE,

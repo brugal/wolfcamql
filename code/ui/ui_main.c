@@ -148,7 +148,7 @@ vmCvar_t  ui_teamArenaFirstRun;
 void _UI_Init( qboolean );
 void _UI_Shutdown( void );
 void _UI_KeyEvent( int key, qboolean down );
-void _UI_MouseEvent( int dx, int dy );
+void _UI_MouseEvent( int dx, int dy, qboolean active );
 void _UI_Refresh( int realtime );
 qboolean _UI_IsFullscreen( void );
 Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7, int arg8, int arg9, int arg10, int arg11  ) {
@@ -169,7 +169,7 @@ Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3, i
 		  return 0;
 
 	  case UI_MOUSE_EVENT:
-		  _UI_MouseEvent( arg0, arg1 );
+		  _UI_MouseEvent( arg0, arg1, arg2 );
 		  return 0;
 
 	  case UI_REFRESH:
@@ -5241,32 +5241,36 @@ void _UI_KeyEvent( int key, qboolean down ) {
 UI_MouseEvent
 =================
 */
-void _UI_MouseEvent( int dx, int dy )
+void _UI_MouseEvent( int dx, int dy, qboolean active )
 {
 	int bias;
 
-	// convert X bias to 640 coords
-	bias = uiInfo.uiDC.bias / uiInfo.uiDC.xscale;
+	if (active) {
+		// convert X bias to 640 coords
+		bias = uiInfo.uiDC.bias / uiInfo.uiDC.xscale;
 
-	// update mouse screen position
-	uiInfo.uiDC.cursorx += dx;
-	if (uiInfo.uiDC.cursorx < -bias)
-		uiInfo.uiDC.cursorx = -bias;
-	else if (uiInfo.uiDC.cursorx > SCREEN_WIDTH+bias)
-		uiInfo.uiDC.cursorx = SCREEN_WIDTH+bias;
+		// update mouse screen position
+		uiInfo.uiDC.cursorx += dx;
+		if (uiInfo.uiDC.cursorx < -bias)
+			uiInfo.uiDC.cursorx = -bias;
+		else if (uiInfo.uiDC.cursorx > SCREEN_WIDTH+bias)
+			uiInfo.uiDC.cursorx = SCREEN_WIDTH+bias;
 
-	uiInfo.uiDC.cursory += dy;
-	if (uiInfo.uiDC.cursory < 0)
-		uiInfo.uiDC.cursory = 0;
-	else if (uiInfo.uiDC.cursory > SCREEN_HEIGHT)
-		uiInfo.uiDC.cursory = SCREEN_HEIGHT;
+		uiInfo.uiDC.cursory += dy;
+		if (uiInfo.uiDC.cursory < 0)
+			uiInfo.uiDC.cursory = 0;
+		else if (uiInfo.uiDC.cursory > SCREEN_HEIGHT)
+			uiInfo.uiDC.cursory = SCREEN_HEIGHT;
+	} else {
+		uiInfo.uiDC.cursorx = -bias + (dx * (float)((float)(SCREEN_WIDTH + 2 * bias) / (float)uiInfo.uiDC.glconfig.vidWidth));
+		uiInfo.uiDC.cursory = dy * (float)((float)SCREEN_HEIGHT / (float)uiInfo.uiDC.glconfig.vidHeight);
+	}
 
-  if (Menu_Count() > 0) {
-    //menuDef_t *menu = Menu_GetFocused();
-    //Menu_HandleMouseMove(menu, uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory);
+	if (Menu_Count() > 0) {
+		//menuDef_t *menu = Menu_GetFocused();
+		//Menu_HandleMouseMove(menu, uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory);
 		Display_MouseMove(NULL, uiInfo.uiDC.cursorx, uiInfo.uiDC.cursory);
-  }
-
+	}
 }
 
 void UI_LoadNonIngame( void ) {

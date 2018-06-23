@@ -9516,14 +9516,16 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   QLWideScreen = 0;
 }
 
-void CG_MouseEvent(int x, int y) {
+void CG_MouseEvent(int x, int y, qboolean active) {
 	int n;
 
     switch (cgs.eventHandling) {
     case CGAME_EVENT_DEMO:
         //FIXME wolfcam
-		cg.mousex += x;
-		cg.mousey += y;
+		if (active) {
+			cg.mousex += x;
+			cg.mousey += y;
+		}
 		//Com_Printf("mouse event demo\n");
         //return;
 		break;
@@ -9541,7 +9543,7 @@ void CG_MouseEvent(int x, int y) {
 		}
 	}
 
-	if (cg.mouseSeeking) {
+	if (cg.mouseSeeking  &&  active) {
 		double scale;
 
 		if (cg.realTime - cg.lastMouseSeekTime < cg_mouseSeekPollInterval.integer) {
@@ -9584,17 +9586,22 @@ void CG_MouseEvent(int x, int y) {
 		return;
 	}
 
-	cgs.cursorX += x;
-	if (cgs.cursorX < 0)
-		cgs.cursorX = 0;
-	else if (cgs.cursorX > 640)
-		cgs.cursorX = 640;
+	if (active) {
+		cgs.cursorX += x;
+		if (cgs.cursorX < 0)
+			cgs.cursorX = 0;
+		else if (cgs.cursorX > 640)
+			cgs.cursorX = 640;
 
-	cgs.cursorY += y;
-	if (cgs.cursorY < 0)
-		cgs.cursorY = 0;
-	else if (cgs.cursorY > 480)
-		cgs.cursorY = 480;
+		cgs.cursorY += y;
+		if (cgs.cursorY < 0)
+			cgs.cursorY = 0;
+		else if (cgs.cursorY > 480)
+			cgs.cursorY = 480;
+	} else {
+		cgs.cursorX = x * (float)((float)SCREEN_WIDTH / (float)cgs.glconfig.vidWidth);
+		cgs.cursorY = y * (float)((float)SCREEN_HEIGHT / (float)cgs.glconfig.vidHeight);
+	}
 
 	n = Display_CursorType(cgs.cursorX, cgs.cursorY);
 	cgs.activeCursor = 0;
