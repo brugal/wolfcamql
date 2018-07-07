@@ -1,7 +1,20 @@
-12.1test1
+12.1test2
 
 * menus work even if window doesn't have mouse grab
-
+* bug fix:  info screen calculated string widths incorrectly
+* info screen centered messages use entire screen width
+* long info screen messages try to break at space points instead of inside a word
+* identify defrag demo in info and loading screen
+* bug fix:  CG_LEVELTIMER, CG_[RED|BLUE]_PLAYER_COUNT, CG_FOLLOW_PLAYER_NAME, CG_ROUNDTIMER, CG_FOLLOW_PLAYER_NAME_EX, CG_SPEEDOMETER didn't use textalign setting
+* removed 'RED - ' and 'BLUE - ' prefixes for CG_[RED|BLUE]_PLAYER_COUNT to match quake live
+* use 'Players' instead of 'PLAYERS' for CG_[RED|BLUE]_PLAYER_COUNT to match quake live
+* prepend 'Following - ' string to CG_FOLLOW_PLAYER_NAME to match quake live
+* don't draw count for CG_[RED|BLUE]_CLAN_PLYRS in non-team games to match quake live
+* bug fix:  CG_GAME_LIMIT didn't take gametype into account
+* bug fix:  demo seeking didn't calculate correctly if round had started with newer quake live demos
+* CG_[RED|BLUE]_TIMEOUT_COUNT only draw if g_timeoutcount is greater than zero to match quake live
+* bug fix:  remove console spamming if CG_[RED|BLUE]_TEAM_MAP_PICKUPS used outside of tdm or ctf
+* bug fix:  if camera is set to update freecam position, mouse movements during camera playback would change view after playback is done
 
 ---------------------------------
 12.0  2018-06-21

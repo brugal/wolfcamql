@@ -266,7 +266,7 @@ void CG_DrawInformation (qboolean loading)
 	sysInfo = CG_ConfigString( CS_SYSTEMINFO );
 
 	if (loading) {
-		QLWideScreen = 0;
+		QLWideScreen = WIDESCREEN_NONE;
 
 		s = Info_ValueForKey( info, "mapname" );
 		if (CG_FileExists(va("levelshots/%s.tga", s))  ||  CG_FileExists(va("levelshots/%s.jpg", s))) {
@@ -291,7 +291,7 @@ void CG_DrawInformation (qboolean loading)
 		}
 
 		// draw the icons of things as they are loaded
-		QLWideScreen = 2;
+		QLWideScreen = WIDESCREEN_CENTER;
 		CG_DrawLoadingIcons();
 
 		// the first 150 rows are reserved for the client connection
@@ -305,11 +305,12 @@ void CG_DrawInformation (qboolean loading)
 		}
 	}  // loading
 
-	QLWideScreen = 1;
+	QLWideScreen = WIDESCREEN_LEFT;
 	//CG_DrawStringExt(2, 2, va("wolfcamql version %s Τη γλώσσα μου έδωσαν ελληνική test test", WOLFCAM_VERSION), colorYellow, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.smallchar);
 	//CG_DrawStringExt(2, 2, va("wolfcamql version %s Τη γλώσσα μου έδωσαν ελληνική test test", WOLFCAM_VERSION), colorYellow, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
 	CG_DrawStringExt(2, 2, va("wolfcamql version %s", WOLFCAM_VERSION), colorYellow, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
-	QLWideScreen = 2;
+
+	QLWideScreen = WIDESCREEN_CENTER;
 
 	// draw info string information
 
@@ -351,6 +352,8 @@ void CG_DrawInformation (qboolean loading)
 				Com_sprintf(buf, sizeof(buf), "osp");
 			} else if (cgs.cpma) {
 				Com_sprintf(buf, sizeof(buf), "cpma: %s", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"));
+			} else if (cgs.defrag) {
+				Com_sprintf(buf, sizeof(buf), "defrag");
 			} else {
 				Com_sprintf(buf, sizeof(buf), "%s", CG_ConfigString(CS_GAME_VERSION));
 			}
@@ -558,7 +561,7 @@ void CG_DrawInformation (qboolean loading)
 
 		trap_Cvar_VariableStringBuffer("cl_demoFileBaseName", buf, sizeof(buf));
 
-		QLWideScreen = 1;
+		QLWideScreen = WIDESCREEN_LEFT;
 		CG_DrawStringExt(2, 480 - 64,
 						 va("^3demo: ^7%s", buf),
 						 colorWhite, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
@@ -568,7 +571,7 @@ void CG_DrawInformation (qboolean loading)
 						 colorWhite, qfalse, qtrue, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, 0, &cgs.media.bigchar);
 
 
-		QLWideScreen = 2;
+		QLWideScreen = WIDESCREEN_CENTER;
 
 	}
 }

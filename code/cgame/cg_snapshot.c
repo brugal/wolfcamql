@@ -832,8 +832,11 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	}
 
 	if (cgs.protocol == PROTOCOL_QL) {
+		//Com_Printf("^2 round status: '%s'\n", CG_ConfigString(CS_ROUND_STATUS));
 		if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER) {
-			if (CG_ConfigString(CS_ROUND_STATUS)[0] == '\0') {
+			if (CG_ConfigString(CS_ROUND_STATUS)[0] == '\0'  /* dm_73 */
+				||  Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "time")[0] == '\0'  /* newer ql demos */
+				) {
 				cgs.roundStarted = qtrue;
 				cgs.roundBeginTime = -999;
 				cgs.roundNum = 0;  //-999;

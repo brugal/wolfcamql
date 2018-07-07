@@ -9355,6 +9355,10 @@ static void CG_DrawScoreboardMenuCursor (void)
 	float x = cgs.cursorX - 16;
 	float y = cgs.cursorY - 16;
 
+	if (!cgs.glconfig.isFullscreen  &&  SC_Cvar_Get_Int("in_nograb")) {
+		return;
+	}
+
 	QLWideScreen = WIDESCREEN_NONE;  //cg_scoreBoardCursorAreaWideScreen.integer;
 	// don't stretch the cursor in widescreen mode
 	if (cg_wideScreen.integer == 5) {

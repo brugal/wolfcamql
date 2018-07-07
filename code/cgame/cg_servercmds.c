@@ -2260,6 +2260,7 @@ static void CG_ConfigStringModified( void ) {
 	}
 	else if ( num == CS_SHADERSTATE ) {
 		CG_ShaderStateChanged();
+
 	} else if (cgs.protocol == PROTOCOL_Q3) {
 		if (cgs.cpma) {
 			if (CG_CpmaCs(num)) {
@@ -2279,7 +2280,7 @@ static void CG_ConfigStringModified( void ) {
 		cgs.bluePlayersLeft = atoi(str);
 	} else if (num == CS_ROUND_STATUS  &&  (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER)) {
 		//Com_Printf("^3%d FIXME %d CS_ROUND_STATUS  %s\n", cg.time, num, str);
-		if (str[0] == '\0') {
+		if (str[0] == '\0') {  // older q3 demos dm_73
 			cgs.roundStarted = qtrue;
 			for (i = 0;  i < cg.numScores;  i++) {
 				cg.scores[i].alive = qtrue;
@@ -2287,6 +2288,7 @@ static void CG_ConfigStringModified( void ) {
 			for (i = 0;  i < MAX_CLIENTS;  i++) {
 				memset(&wclients[i].perKillwstats, 0, sizeof(wclients[i].perKillwstats));
 			}
+			//Com_Printf("^2 ROUND STARTED...\n");
 			cgs.thirtySecondWarningPlayed = qfalse;
 		} else {
 			//cgs.roundStarted = qfalse;

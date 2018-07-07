@@ -452,7 +452,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 	int lineHeight;
 	int topBorderSize, bottomBorderSize;
 
-	QLWideScreen = 2;
+	QLWideScreen = WIDESCREEN_CENTER;
 
 	// don't draw amuthing if the menu or console is up
 	if ( cg_paused.integer ) {

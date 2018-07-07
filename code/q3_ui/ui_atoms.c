@@ -1280,7 +1280,9 @@ void UI_Refresh( int realtime )
 
 	// draw cursor
 	UI_SetColor( NULL );
-	UI_DrawHandlePic( uis.cursorx-16, uis.cursory-16, 32, 32, uis.cursor);
+	if (uis.glconfig.isFullscreen  ||  (int)trap_Cvar_VariableValue("in_nograb") == 0) {
+		UI_DrawHandlePic( uis.cursorx-16, uis.cursory-16, 32, 32, uis.cursor);
+	}
 
 #ifndef NQDEBUG
 	if (uis.debug)

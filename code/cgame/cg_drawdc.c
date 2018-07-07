@@ -6,7 +6,7 @@
 #include "cg_syscalls.h"
 
 #define wsset() QLWideScreen = widescreen; MenuWidescreen = widescreen; MenuRect = menuRect
-#define wsoff() QLWideScreen = 0;  MenuWidescreen = 0
+#define wsoff() QLWideScreen = WIDESCREEN_NONE;  MenuWidescreen = WIDESCREEN_NONE
 
 void CG_DrawHandlePicDc (float x, float y, float w, float h, qhandle_t asset, int widescreen, rectDef_t menuRect)
 {

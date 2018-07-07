@@ -733,7 +733,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * fx gib -- weapon?
 * fx death
 * just one big score structure for all
-* change screen print function in cg_info.c
 * put fight sound in cg_draw.c ?
 * cpma max delag?
 * check eye map and hud fraglimit/roundlimit for diff game types
@@ -796,7 +795,7 @@ GLimp_Shutdown: mode 4 lastMode 4
 * cpm  callvote  --  don't draw vote string if it passed or failed
 * option to draw all ents...  green screening / no map drawn
 * clientoverride allow hex for rail colors
-* cpma new game types in info screen
+* cpma custom game types in info screen
 * doc:  map shaders... blend and lightmap  include example (r_singleShader)
 * doc:  decals   point to example shader
 * doc:  ad shader ^^
@@ -2393,8 +2392,37 @@ No background file.
 * kitten:  chase like cg_thirdPerson ..  movement keys
 * kitten:  negative timescales :\
 * scriptable hud:  key press, player info (playerstate and entitystate?), speed
-* don't show cursor with in_nograb 1
+* ql has cvarTest2
+* check other CG_OwnerDraw() which are missing textalign like CG_LEVELTIMER
+* CG_DrawPlayerAmmoValue() infinite icon and textalign
+* problem with separating 2d rendering in backend:  3d icons will always draw below window backgrounds.  Ex:
 
+menuDef {
+  name "test menu"
+  visible MENU_TRUE
+  widescreen WIDESCREEN_CENTER
+  rect 100 300 450 100
+  style WINDOW_STYLE_FILLED
+  backcolor 1 1 1 0.5
+
+  itemDef {
+    name "test item"
+    //rect 296 96 230 30
+    rect 0 0 230 30
+    style WINDOW_STYLE_FILLED
+    backcolor 0.10 0.2 0.7 1
+    visible 1
+    decoration
+    textscale .3125
+    ownerdraw CG_PLAYER_AMMO_ICON
+    //text "Hello World"
+    align ITEM_ALIGN_RIGHT
+    textalign ITEM_ALIGN_RIGHT
+  }
+}
+
+* check CG_DrawAreaPowerUp() alignment
+* check CS_ROUND_STATUS and CS_ROUND_TIME mess
 
 ----
 

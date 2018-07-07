@@ -629,8 +629,10 @@ void _UI_Refresh( int realtime )
 	
 	// draw cursor
 	UI_SetColor( NULL );
-	if (Menu_Count() > 0 && (trap_Key_GetCatcher() & KEYCATCH_UI)) {
-		UI_DrawHandlePic( uiInfo.uiDC.cursorx-16, uiInfo.uiDC.cursory-16, 32, 32, uiInfo.uiDC.Assets.cursor);
+	if (uiInfo.uiDC.glconfig.isFullscreen  ||  (int)trap_Cvar_VariableValue("in_nograb") == 0) {
+		if (Menu_Count() > 0 && (trap_Key_GetCatcher() & KEYCATCH_UI)) {
+			UI_DrawHandlePic( uiInfo.uiDC.cursorx-16, uiInfo.uiDC.cursory-16, 32, 32, uiInfo.uiDC.Assets.cursor);
+		}
 	}
 
 #ifndef NQDEBUG

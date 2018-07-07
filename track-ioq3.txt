@@ -7250,3 +7250,5 @@ the demo.
     derivatives.
 
     Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2018-06-24-01 Make testgun command without argument disable test gun model

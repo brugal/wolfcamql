@@ -1111,6 +1111,9 @@ static int UI_ProportionalStringWidth( const char* str ) {
 			if ( charWidth != -1 ) {
 				width += charWidth;
 				width += PROP_GAP_WIDTH;
+			} else {
+				// control character, skip it
+				continue;
 			}
 		} else {
 			glyphInfo_t glyph;
@@ -1198,7 +1201,7 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 			}
 			continue;
 		} else if (codePoint <= 127  &&  ch == ' ') {  // ! q3color string
-			aw = (float)PROP_SPACE_WIDTH * cgs.screenXScale * sizeScale;
+			aw = (float)PROP_SPACE_WIDTH * sizeScale;
 		} else if (codePoint <= 127  &&   propMap[ch][2] != -1) {
 			fcol = (float)propMap[ch][0] / 256.0f;
 			frow = (float)propMap[ch][1] / 256.0f;
@@ -1206,6 +1209,10 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 			fheight = (float)PROP_HEIGHT / 256.0f;
 			aw = (float)propMap[ch][2] * sizeScale;
 			ah = (float)PROP_HEIGHT * sizeScale;
+
+			//FIXME testing
+			//CG_DrawPic(ax, ay, aw, ah, cgs.media.redCubeIcon);
+
 			CG_DrawStretchPic(ax, ay, aw, ah, fcol, frow, fcol + fwidth, frow + fheight, charset);
 		} else if (codePoint > 127) {
 			float my;
@@ -1322,22 +1329,45 @@ int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const 
 	char *b;
 	int lines;
 	char lastColorString[9];
+	char lastColorStringBeforeSpace[9];
 	int ch;
 	const char *s;
 	int width;
 	int charWidth;
 	float fontScale;
+	int virtualWidth;
+	char *lastSpaceB;
+	const char *lastSpaceS;
 
 	// make sure buffer[] is big enough
 	if (sizeof(buffer) < 21) {
 		Com_Printf("^1UI_DrawProportionalString3: buffer is not big enough (%d)\n", (unsigned int)sizeof(buffer));
+		return 1;
 	}
 
 	fontScale = UI_ProportionalSizeScale(style);
 
+	// hack to allow centered messages to go past limited width for WIDESCREEN_CENTER
+	if (QLWideScreen == WIDESCREEN_CENTER) {
+		virtualWidth = 640.0 / ((640.0 / 480.0) / ((float)cgs.glconfig.vidWidth / (float)(cgs.glconfig.vidHeight)));
+
+		// avoid infinite loop in line breaking code below
+		if (virtualWidth < 640) {
+			virtualWidth = 640;
+		}
+	} else {
+		virtualWidth = 640;
+	}
+
+	//FIXME testing
+	//style = UI_RIGHT|UI_SMALLFONT|UI_DROPSHADOW;
+
 	s = str;
 	width = 0;
 	lastColorString[0] = '\0';
+	lastColorStringBeforeSpace[0] = '\0';
+	lastSpaceB = NULL;
+	lastSpaceS = NULL;
 	buffer[0] = '\0';
 	b = buffer;
 	lines = 1;
@@ -1379,7 +1409,7 @@ int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const 
 		ch = *s & 127;
 		codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
 		Com_Memcpy(b, s, numUtf8Bytes);
-		b+= numUtf8Bytes;
+		b += numUtf8Bytes;
 		s += numUtf8Bytes;
 
 		if (codePoint <= 127) {
@@ -1387,6 +1417,15 @@ int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const 
 			if (charWidth != -1) {
 				width += charWidth;
 				width += PROP_GAP_WIDTH;
+			} else {
+				//Com_Printf("^1invalid char width %d '%c'\n", charWidth, codePoint);
+				// control character, skip it
+				continue;
+			}
+			if (codePoint == ' ') {
+				lastSpaceB = b - 1;
+				lastSpaceS = s - 1;
+				memcpy(lastColorStringBeforeSpace, lastColorString, sizeof(lastColorStringBeforeSpace));
 			}
 		} else {
 			glyphInfo_t glyph;
@@ -1397,13 +1436,25 @@ int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const 
 
 		// each while loop uses potentially 13 bytes in buffer[]:  ^xafafaf + (4 utf8 bytes) + '\0'
 		// 30: max prop width 'W'
-		//FIXME allow going past widescreen dimensions
-		if ((width * fontScale) >= (640 - (30 * fontScale))
-			  ||  ((b - buffer) >= (sizeof(buffer) - 13))) {
-			b[0] = '\0';
-			UI_DrawProportionalString(x, y, buffer, style, color);
-			Q_strncpyz(buffer, lastColorString, 9);
-			b = buffer + strlen(buffer);
+		if ((width * fontScale) >= (virtualWidth - (30 * fontScale))
+			||  ((b - buffer) >= (sizeof(buffer) - 13))) {
+
+			if (lastSpaceB != NULL) {
+				lastSpaceB[0] = '\0';
+				UI_DrawProportionalString(x, y, buffer, style, color);
+				Q_strncpyz(buffer, lastColorStringBeforeSpace, 9);
+				b = buffer + strlen(buffer);
+				s = lastSpaceS + 1;
+
+				lastSpaceB = NULL;
+				lastSpaceS = NULL;
+			} else {  // have to break within word
+				b[0] = '\0';
+				UI_DrawProportionalString(x, y, buffer, style, color);
+				Q_strncpyz(buffer, lastColorString, 9);
+				b = buffer + strlen(buffer);
+			}
+
 			y += PROP_HEIGHT;
 			width = 0;
 			lines++;
