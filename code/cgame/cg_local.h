@@ -12,7 +12,7 @@
 #include "../ui/ui_shared.h"
 
 #include "cg_camera.h"
-//#include "cg_q3mme_scripts.h"
+//#include "cg_fx_scripts.h"
 
 // The entire cgame module is unloaded and reloaded on each level change,
 // so there is NO persistant data between levels on the client side.
@@ -1071,6 +1071,7 @@ typedef struct {
 	menuDef_t *menuScoreboard;
 
 	char		killerName[MAX_NAME_LENGTH];
+	char		killerNameHud[MAX_NAME_LENGTH];  // 2018-07-15 for ql hud, kept persistant after scoreboard is shown
 	qhandle_t killerWeaponIcon;
 	int killerClientNum;
 	vec3_t killerOrigin;
@@ -1588,6 +1589,7 @@ typedef struct {
 #endif
 
 	qhandle_t worldDeathIcon;
+	qhandle_t killCounterIcon;
 
 	qhandle_t	redFlagModel;
 	qhandle_t	blueFlagModel;
@@ -1596,9 +1598,21 @@ typedef struct {
 	qhandle_t	blueFlagModel2;
 	qhandle_t	neutralFlagModel2;
 	qhandle_t   neutralFlagModel3;
-	qhandle_t	redFlagShader[3];
-	qhandle_t	blueFlagShader[3];
-	qhandle_t	flagShader[5];
+
+	qhandle_t redFlagAtBaseShader;
+	qhandle_t redFlagTakenShader;
+	qhandle_t redFlagDroppedShader;
+
+	qhandle_t blueFlagAtBaseShader;
+	qhandle_t blueFlagTakenShader;
+	qhandle_t blueFlagDroppedShader;
+
+	qhandle_t neutralFlagAtBaseShader;
+	qhandle_t neutralFlagTakenShader;
+	qhandle_t neutralFlagStolenShader;
+	qhandle_t neutralFlagDroppedShader;
+
+	qhandle_t flagDroppedArrowShader;
 
 	qhandle_t	flagPoleModel;
 	qhandle_t	flagFlapModel;
@@ -2074,7 +2088,6 @@ typedef struct {
 	qhandle_t teamLeaderShader;
 	qhandle_t retrieveShader;
 	qhandle_t escortShader;
-	qhandle_t flagShaders[3];
 	sfxHandle_t	countPrepareTeamSound;
 
 	sfxHandle_t armorRegenSound;
@@ -3025,6 +3038,7 @@ extern vmCvar_t cg_qlhud;
 extern vmCvar_t cg_qlFontScaling;
 extern vmCvar_t cg_autoFontScaling;
 extern vmCvar_t cg_autoFontScalingThreshold;
+extern vmCvar_t cg_overallFontScale;
 
 extern vmCvar_t cg_weaponBar;
 extern vmCvar_t cg_weaponBarX;
@@ -3164,6 +3178,8 @@ extern vmCvar_t cg_weaponBlueTeamColor;
 extern vmCvar_t cg_hudRedTeamColor;
 extern vmCvar_t cg_hudBlueTeamColor;
 extern vmCvar_t cg_hudNoTeamColor;
+extern vmCvar_t cg_hudNeutralTeamColor;
+
 extern vmCvar_t cg_hudForceRedTeamClanTag;
 extern vmCvar_t cg_hudForceBlueTeamClanTag;
 
@@ -3297,11 +3313,12 @@ extern vmCvar_t cg_drawFragMessageWideScreen;
 
 extern vmCvar_t cg_obituaryTokens;
 extern vmCvar_t cg_obituaryIconScale;
-extern vmCvar_t cg_obituaryRedTeamColor;
-extern vmCvar_t cg_obituaryBlueTeamColor;
 extern vmCvar_t cg_obituaryTime;
 extern vmCvar_t cg_obituaryFadeTime;
 extern vmCvar_t cg_obituaryStack;
+
+extern vmCvar_t cg_textRedTeamColor;
+extern vmCvar_t cg_textBlueTeamColor;
 
 extern vmCvar_t cg_fragTokenAccuracyStyle;
 extern vmCvar_t cg_fragIconHeightFixed;
@@ -3539,6 +3556,9 @@ extern vmCvar_t cg_playerModelAllowServerOverride;
 extern vmCvar_t cg_allowServerOverride;
 
 extern vmCvar_t cg_powerupLight;
+extern vmCvar_t cg_powerupBlink;
+extern vmCvar_t cg_powerupKillCounter;
+
 extern vmCvar_t cg_buzzerSound;
 extern vmCvar_t cg_flagStyle;
 extern vmCvar_t cg_flagTakenSound;
@@ -3615,6 +3635,8 @@ extern vmCvar_t cg_specOffsetQL;
 
 extern vmCvar_t cg_drawKeyPress;
 extern vmCvar_t cg_useScoresUpdateTeam;
+extern vmCvar_t cg_colorCodeWhiteUseForegroundColor;
+extern vmCvar_t cg_colorCodeUseForegroundAlpha;
 
 // end cvar_t
 

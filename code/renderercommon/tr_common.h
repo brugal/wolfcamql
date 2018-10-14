@@ -143,8 +143,11 @@ qhandle_t RE_RegisterShaderFromImage(const char *name, int lightmapIndex, image_
 void R_InitFreeType( void );
 void R_DoneFreeType( void );
 void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
+qboolean RE_GetGlyphInfo (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
+qboolean RE_GetFontInfo (int fontId, fontInfo_t *font);
 
 void R_LoadAdvertisements( lump_t *l );
+void RE_UpdateDof (float viewFocus, float viewRadius);
 
 /*
 =============================================================

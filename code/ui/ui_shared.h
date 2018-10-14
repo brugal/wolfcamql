@@ -112,10 +112,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define SLIDER_THUMB_WIDTH 12.0
 #define SLIDER_THUMB_HEIGHT 20.0
 
-#define WIDESCREEN_NONE 0
+#define WIDESCREEN_STRETCH 0
 #define WIDESCREEN_LEFT 1
 #define WIDESCREEN_CENTER 2
 #define WIDESCREEN_RIGHT 3
+
+extern int DefaultWideScreenValue;
 
 // unused
 /*
@@ -243,8 +245,8 @@ typedef struct itemDef_s {
   Window window;                 // common positional, border, style, layout info
   Rectangle textRect;            // rectangle the text ( if any ) consumes     
   int type;                      // text, button, radiobutton, checkbox, textfield, listbox, combo
-  int alignment;                 // left center right
-  int textalignment;             // ( optional ) alignment for text within rect based on text width
+  int alignment;                 // left center right, this is passed to ownerdraw items
+  int textalignment;             // ( optional ) alignment for text within rect based on text width, this is only for the value specified by 'text' and is not passed to ownerdraw items
   float textalignx;              // ( optional ) text alignment x coord
   float textaligny;              // ( optional ) text alignment x coord
   float textscale;               // scale percentage from 72pts

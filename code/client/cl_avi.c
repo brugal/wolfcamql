@@ -729,11 +729,12 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   }
 
   if (!us) {
-      afd->cBuffer = malloc(afd->width * afd->height * 4 + 18);
+      // 18: header info, 16: alignment spacing
+      afd->cBuffer = malloc(afd->width * afd->height * 4 + 18 + 16);
       if (!afd->cBuffer) {
           Com_Error(ERR_DROP, "%s couldn't allocate memory for cBuffer", __FUNCTION__);
       }
-      afd->eBuffer = malloc(afd->width * afd->height * 4 + 18);
+      afd->eBuffer = malloc(afd->width * afd->height * 4 + 18 + 16);
       if (!afd->eBuffer) {
           Com_Error(ERR_DROP, "%s couldn't allocate memory for eBuffer", __FUNCTION__);
       }

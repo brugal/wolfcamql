@@ -191,6 +191,9 @@ void		trap_Key_SetCatcher( int catcher );
 int			trap_Key_GetKey( const char *binding );
 void		trap_Key_GetBinding(int keynum, char *buffer);
 void		trap_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);
+void		trap_R_BeginHud (void);
+void trap_R_UpdateDof (float viewFocus, float viewRadius);
+
 void		trap_R_DrawConsoleLines (void);
 int			trap_GetLastExecutedServerCommand (void);
 qboolean trap_GetNextKiller (int us, int serverTime, int *killer, int *foundServerTime, qboolean onlyOtherClient);

@@ -1,5 +1,5 @@
-#ifndef cg_q3mme_scripts_h_included
-#define cg_q3mme_scripts_h_included
+#ifndef cg_fx_scripts_h_included
+#define cg_fx_scripts_h_included
 
 //#include "cg_localents.h"
 
@@ -286,4 +286,4 @@ void CG_ResetFXIntervalAndDistance (centity_t *cent);
 
 void CG_FreeFxJitTokens (void);
 
-#endif  // cg_q3mme_scripts_h_included
+#endif  // cg_fx_scripts_h_included

@@ -1254,6 +1254,8 @@ void UI_Refresh( int realtime )
 
 	UI_UpdateCvars();
 
+	trap_R_BeginHud();
+
 	if ( uis.activemenu )
 	{
 		if (uis.activemenu->fullscreen)

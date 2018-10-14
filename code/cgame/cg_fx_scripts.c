@@ -1,11 +1,11 @@
 #include "cg_local.h"
 
+#include "cg_fx_scripts.h"
 #include "cg_localents.h"
 #include "cg_main.h"
 #include "cg_marks.h"
 #include "cg_mem.h"
 #include "cg_predict.h"
-#include "cg_q3mme_scripts.h"
 #include "cg_sound.h"
 #include "cg_syscalls.h"
 #include "sc.h"

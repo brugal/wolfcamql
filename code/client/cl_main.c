@@ -4956,6 +4956,7 @@ void CL_InitRef ( void ) {
 	}
 #endif
 
+	ri.sse2_supported = com_sse2_supported;
 	ri.Cmd_AddCommand = Cmd_AddCommand;
 	ri.Cmd_RemoveCommand = Cmd_RemoveCommand;
 	ri.Cmd_Argc = Cmd_Argc;

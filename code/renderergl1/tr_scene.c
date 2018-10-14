@@ -36,15 +36,7 @@ int			r_firstScenePoly;
 int			r_numpolyverts;
 
 
-/*
-====================
-R_InitNextFrame
-
-====================
-*/
-void R_InitNextFrame( void ) {
-	backEndData->commands.used = 0;
-
+void R_InitNextFrameNoCommands ( void ) {
 	r_firstSceneDrawSurf = 0;
 
 	r_numdlights = 0;
@@ -57,6 +49,17 @@ void R_InitNextFrame( void ) {
 	r_firstScenePoly = 0;
 
 	r_numpolyverts = 0;
+}
+
+/*
+====================
+R_InitNextFrame
+
+====================
+*/
+void R_InitNextFrame( void ) {
+	R_InitNextFrameNoCommands();
+	backEndData->commands.used = 0;
 }
 
 

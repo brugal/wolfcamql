@@ -800,6 +800,10 @@ intptr_t CL_UISystemCalls( intptr_t *args ) {
 		re.ClearScene();
 		return 0;
 
+	case UI_R_BEGIN_HUD:
+		re.BeginHud();
+		return 0;
+
 	case UI_R_ADDREFENTITYTOSCENE:
 		re.AddRefEntityToScene( VMA(1) );
 		return 0;

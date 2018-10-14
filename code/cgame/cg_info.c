@@ -31,12 +31,30 @@ CG_DrawLoadingIcons
 static void CG_DrawLoadingIcons( void ) {
 	int		n;
 	int		x, y;
+	int wideScreenOrig;
+	int virtualWidth;
+	int maxPlayerIcons;
+	int maxItemIcons;
+
+	wideScreenOrig = QLWideScreen;
+
+	// hack to fit entire screen
+	QLWideScreen = WIDESCREEN_LEFT;
+	virtualWidth = 640.0 / ((640.0 / 480.0) / ((float)cgs.glconfig.vidWidth / (float)(cgs.glconfig.vidHeight)));
+
+	// avoid infinite loop in line breaking code below
+	if (virtualWidth < 640) {
+		virtualWidth = 640;
+	}
+
+	maxPlayerIcons = (virtualWidth - 16) / 78;  // orig 8
+	maxItemIcons = (virtualWidth - 16) / 48;  // orig 13
 
 	for( n = 0; n < loadingPlayerIconCount; n++ ) {
 		if (!loadingPlayerIcons[n]) {
 			continue;
 		}
-		x = 16 + n % 8 * 78;
+		x = 16 + n % maxPlayerIcons * 78;
 		y = 324-40;
 		//CG_DrawPic( x, y, 64, 64, loadingPlayerIcons[n] );
 		CG_DrawPic( x, 480 - 32 - 32, 32, 32, loadingPlayerIcons[n] );
@@ -50,10 +68,12 @@ static void CG_DrawLoadingIcons( void ) {
 		if( n >= 13 ) {
 			y += 40;
 		}
-		x = 16 + n % 13 * 48;
+		x = 16 + n % maxItemIcons * 48;
 		//CG_DrawPic( x, y, 32, 32, loadingItemIcons[n] );
 		CG_DrawPic( x, 480 - 32, 32, 32, loadingItemIcons[n] );
 	}
+
+	QLWideScreen = wideScreenOrig;
 }
 
 
@@ -244,7 +264,7 @@ static char *clockString (int timems)
 /*
 ====================
 CG_DrawInformation
- 
+
 Draw all the status / pacifier stuff during level loading and ingame
 ====================
 **/
@@ -266,7 +286,7 @@ void CG_DrawInformation (qboolean loading)
 	sysInfo = CG_ConfigString( CS_SYSTEMINFO );
 
 	if (loading) {
-		QLWideScreen = WIDESCREEN_NONE;
+		QLWideScreen = WIDESCREEN_STRETCH;
 
 		s = Info_ValueForKey( info, "mapname" );
 		if (CG_FileExists(va("levelshots/%s.tga", s))  ||  CG_FileExists(va("levelshots/%s.jpg", s))) {

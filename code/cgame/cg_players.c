@@ -41,8 +41,6 @@ char	*cg_customSoundNames[MAX_CUSTOM_SOUNDS] = {
 };
 
 
-static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_t *legs, refEntity_t *torso, refEntity_t *head);
-
 
 /*
 ================
@@ -2309,8 +2307,8 @@ PLAYER ANGLES
 CG_SwingAngles
 ==================
 */
-static void CG_SwingAngles( float destination, float swingTolerance, float clampTolerance,
-					float speed, float *angle, qboolean *swinging ) {
+static void CG_SwingAngles (float destination, float swingTolerance, float clampTolerance,	float speed, float *angle, qboolean *swinging)
+{
 	float	swing;
 	float	move;
 	float	scale;
@@ -4619,7 +4617,7 @@ static void CG_LoadAltOurSkins (clientInfo_t *ci)
 
 // modifies ci-> head|torso|legs models and skins and ci-> alt team|enemy skins
 
-static void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_t *legs, refEntity_t *torso, refEntity_t *head)
+void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_t *legs, refEntity_t *torso, refEntity_t *head)
 {
 	qboolean usingFallbackTeamModel = qfalse;
 

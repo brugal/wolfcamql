@@ -18,7 +18,7 @@ qboolean CG_OtherTeamHasFlag(void);
 qboolean CG_YourTeamHasFlag(void);
 qboolean CG_OwnerDrawVisible(int flags, int flags2);
 const char *CG_GetKillerText(void);
-const char *CG_GetGameStatusText (vec4_t color);
+const char *CG_GetGameStatusText (void);
 const char *CG_GameTypeString(void);
 
 int CG_Text_Length (const char *s);

@@ -899,6 +899,17 @@ static void GLimp_InitExtensions( void )
 		}
 	}
 
+	// GL_ARB_texture_rectangle
+	glConfig.textureRectangleAvailable = qfalse;
+	if ( SDL_GL_ExtensionSupported( "GL_ARB_texture_rectangle" ) )
+	{
+		glConfig.textureRectangleAvailable = qtrue;
+		ri.Printf( PRINT_ALL, "...using GL_ARB_texture_rectangle\n" );
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...ignoring GL_ARB_texture_rectangle\n" );
+	}
 
 	// GL_EXT_texture_env_add
 	glConfig.textureEnvAddAvailable = qfalse;

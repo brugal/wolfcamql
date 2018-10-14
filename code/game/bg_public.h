@@ -883,6 +883,7 @@ typedef enum {
 	EV_DAMAGEPLUM = 96,
 	EV_AWARD = 97,
 	EV_INFECTED = 98,
+	EV_NEW_HIGH_SCORE = 99,
 
 	// just to allow compiling  -- no it's used with predicted player state
 	EV_STEP_4 = 196,

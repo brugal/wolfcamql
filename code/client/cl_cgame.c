@@ -1239,6 +1239,15 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	case CG_GET_ADVERTISEMENTS:
 		re.Get_Advertisements(VMA(1), VMA(2), VMA(3));
 		return 0;
+
+	case CG_R_BEGIN_HUD:
+		re.BeginHud();
+		return 0;
+
+	case CG_R_UPDATE_DOF:
+		re.UpdateDof(VMF(1), VMF(2));
+		return 0;
+
 	case CG_DRAW_CONSOLE_LINES:
 		Con_DrawNotify();
 		return 0;

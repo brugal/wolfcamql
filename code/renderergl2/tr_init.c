@@ -2432,6 +2432,7 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.SetPathLines = RE_SetPathLines;
 	re.GetGlConfig = RE_GetGlConfig;
 	re.GetGlyphInfo = RE_GetGlyphInfo;
+	re.GetFontInfo = RE_GetFontInfo;
 
 	re.GetSingleShader = RE_GetSingleShader;
 
@@ -2441,6 +2442,8 @@ refexport_t *GetRefAPI ( int apiVersion, refimport_t *rimp ) {
 	re.GetShaderImageDimensions = RE_GetShaderImageDimensions;
 	re.GetShaderImageData = RE_GetShaderImageData;
 	re.AddRefEntityPtrToScene = RE_AddRefEntityPtrToScene;
+	re.BeginHud = RE_BeginHud;
+	re.UpdateDof = RE_UpdateDof;
 
 	return &re;
 }

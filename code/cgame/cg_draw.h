@@ -29,7 +29,9 @@ float CG_Text_Width_old(const char *text, float scale, int limit, int fontIndex)
 float CG_Text_Height(const char *text, float scale, int limit, const fontInfo_t *font);
 float CG_Text_Height_old(const char *text, float scale, int limit, int fontIndex);
 
-void CG_Text_PaintChar(float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader);
+// unused
+//void CG_Text_PaintChar(float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader);
+
 void CG_Text_PaintCharScale (float x, float y, float width, float height, float xscale, float yscale, float s, float t, float s2, float t2, qhandle_t hShader);
 
 void CG_Text_Paint(float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, const fontInfo_t *font);

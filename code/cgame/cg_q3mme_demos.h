@@ -1,11 +1,10 @@
-#ifndef cg_q3mme_camera_h_included
-#define cg_q3mme_camera_h_included
+#ifndef cg_q3mme_demos_h_included
+#define cg_q3mme_demos_h_included
 
 #include "../qcommon/q_shared.h"
 #include "../game/bg_xmlparser.h"
 #include "cg_local.h"
-#include "cg_q3mme_math.h"
-
+#include "cg_q3mme_demos_math.h"
 
 typedef struct demoCameraPoint_s {
 	struct			demoCameraPoint_s *next, *prev;
@@ -14,6 +13,12 @@ typedef struct demoCameraPoint_s {
 	int				time, flags;
 	float			len;
 } demoCameraPoint_t;
+
+typedef struct demoDofPoint_s {
+        struct                  demoDofPoint_s *next, *prev;
+        float                   focus, radius;
+        int                             time;
+} demoDofPoint_t;
 
 typedef struct demoMain_s {
 	int serverTime;
@@ -34,6 +39,16 @@ typedef struct demoMain_s {
     } camera;
 
 	struct {
+        int                     start, end;
+		int                     target;
+		int                     shiftWarn;
+		float           timeShift;
+		float           focus, radius;
+		qboolean        locked;
+		demoDofPoint_t *points;
+    } dof;
+
+	struct {
 		int time;
 		float fraction;
 	} play;
@@ -43,24 +58,14 @@ typedef struct demoMain_s {
 	//vec3_t viewFov;
 	float viewFov;
 
+	int viewTarget;
+	float viewFocus, viewFocusOld, viewRadius;
+
 } demoMain_t;
 
 extern demoMain_t demo;
 
-//qboolean cameraOriginAt (int time, float timeFraction, vec3_t origin);
-//qboolean cameraAnglesAt (int time, float timeFraction, vec3_t angles);
-//qboolean cameraFovAt (int time, float timeFraction, float *fov);
+void demoCommandValue( const char *cmd, float * oldVal );
+void CG_DemosAddLog (const char *fmt, ...);
 
-demoCameraPoint_t *CG_Q3mmeCameraPointAdd (int time, int flags);
-qboolean CG_Q3mmeCameraOriginAt (int time, float timeFraction, vec3_t origin);
-qboolean CG_Q3mmeCameraAnglesAt (int time, float timeFraction, vec3_t angles);
-qboolean CG_Q3mmeCameraFovAt (int time, float timeFraction, float *fov);
-void CG_Q3mmeCameraDrawPath (demoCameraPoint_t *point, const vec4_t color);
-
-
-void CG_Q3mmeDemoCameraCommand_f (void);
-void CG_Q3mmeCameraSave (fileHandle_t fileHandle);
-qboolean CG_Q3mmeCameraParse (BG_XMLParse_t *parse, const struct BG_XMLParseBlock_s *fromBlock, void *data);
-void CG_Q3mmeCameraResetInternalLengths (void);
-
-#endif  // cg_q3mme_camera_h_included
+#endif  // cg_q3mme_demos_h_included

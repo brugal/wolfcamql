@@ -81,6 +81,18 @@ void R_IssueRenderCommands( qboolean runPerformanceCounters ) {
 
 	cmdList = &backEndData->commands;
 	assert(cmdList);
+
+	if (cmdList->used == 0) {
+		// nothing to do
+		return;
+	}
+
+	// 2018-08-10 this function used to be R_SyncRenderThread() and it was used mostly to make sure the thread made all its opengl calls before main thread used opengl
+	if (!runPerformanceCounters) {
+		// hack to make sure render command list is complete for each frame, in tr_backend.c we separate the list betwen world and hud so we want everything in the list, this ignores R_IssuePendingRenderCommands()
+		return;
+	}
+
 	// add an end-of-list command
 	*(int *)(cmdList->cmds + cmdList->used) = RC_END_OF_LIST;
 
@@ -552,6 +564,22 @@ void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *capture
 	cmd->png = png;
 	cmd->picCount = picCount;
 	Q_strncpyz(cmd->givenFileName, givenFileName, MAX_QPATH);
+}
+
+void RE_BeginHud (void)
+{
+	beginHudCommand_t *cmd;
+
+	if( !tr.registered ) {
+		return;
+	}
+
+	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if( !cmd ) {
+		return;
+	}
+
+	cmd->commandId = RC_BEGIN_HUD;
 }
 
 void RE_Get_Advertisements (int *num, float *verts, char shaders[][MAX_QPATH])

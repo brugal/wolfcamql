@@ -157,6 +157,10 @@ void TossClientCubes( gentity_t *self ) {
 		item = BG_FindItem( "Blue Cube" );
 	}
 
+	if (!item) {
+		return;
+	}
+
 	angles[YAW] = (float)(level.time % 360);
 	angles[PITCH] = 0;	// always forward
 	angles[ROLL] = 0;

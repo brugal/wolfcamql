@@ -156,6 +156,7 @@ static void SV_Map_f( void ) {
 	qboolean	killBots, cheat;
 	char		expanded[MAX_QPATH];
 	char		mapname[MAX_QPATH];
+	char gameType[16];
 	int i;
 	qboolean foundAlternateMap;
 
@@ -171,6 +172,12 @@ static void SV_Map_f( void ) {
 	map = Cmd_Argv(1);
 	if ( !map ) {
 		return;
+	}
+
+	if (Cmd_Argv(2)) {
+		Q_strncpyz(gameType, Cmd_Argv(2), sizeof(gameType));
+	} else {
+		gameType[0] = '\0';
 	}
 
 	// make sure the level exists before trying to change, so that
@@ -227,6 +234,38 @@ static void SV_Map_f( void ) {
 		}
 		if( sv_gametype->integer == GT_SINGLE_PLAYER ) {
 			Cvar_SetValue( "g_gametype", GT_FFA );
+		}
+
+		// allow game type string like quake live
+		// actf ad ca ctf dom duel oneflag ffa ft har race rr tdm quadhog infected, ...
+		if (gameType[0] != '\0') {
+			if (!Q_stricmp(gameType, "ffa")) {
+				Cvar_SetValue("g_gametype", GT_FFA);
+			} else if (!Q_stricmp(gameType, "duel")) {
+				Cvar_SetValue("g_gametype", GT_TOURNAMENT);
+			} else if (!Q_stricmp(gameType, "race")) {
+				Cvar_SetValue("g_gametype", GT_RACE);
+			} else if (!Q_stricmp(gameType, "tdm")) {
+				Cvar_SetValue("g_gametype", GT_TEAM);
+			} else if (!Q_stricmp(gameType, "ca")) {
+				Cvar_SetValue("g_gametype", GT_CA);
+			} else if (!Q_stricmp(gameType, "ctf")) {
+				Cvar_SetValue("g_gametype", GT_CTF);
+			} else if (!Q_stricmp(gameType, "oneflag")) {
+				Cvar_SetValue("g_gametype", GT_1FCTF);
+			} else if (!Q_stricmp(gameType, "ob")) {
+				Cvar_SetValue("g_gametype", GT_OBELISK);
+			} else if (!Q_stricmp(gameType, "har")) {
+				Cvar_SetValue("g_gametype", GT_HARVESTER);
+			} else if (!Q_stricmp(gameType, "ft")) {
+				Cvar_SetValue("g_gametype", GT_FREEZETAG);
+			} else if (!Q_stricmp(gameType, "dom")) {
+				Cvar_SetValue("g_gametype", GT_DOMINATION);
+			} else if (!Q_stricmp(gameType, "ad")) {
+				Cvar_SetValue("g_gametype", GT_CTFS);
+			} else if (!Q_stricmp(gameType, "rr")) {
+				Cvar_SetValue("g_gametype", GT_RED_ROVER);
+			}
 		}
 	}
 

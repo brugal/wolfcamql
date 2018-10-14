@@ -57,6 +57,12 @@ glslPrintLog_t;
 #define SHADERNUM_BITS	14
 #define MAX_SHADERS		(1<<SHADERNUM_BITS)
 
+#define	MAX_DRAWIMAGES			2048
+#define	MAX_SKINS				1024
+
+#define	MAX_DRAWSURFS			0x10000
+#define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
+
 #define	MAX_FBOS      64
 #define MAX_VISCOUNTS 5
 #define MAX_VAOS      4096
@@ -336,7 +342,7 @@ typedef struct {
 } texModInfo_t;
 
 
-#define	MAX_IMAGE_ANIMATIONS	8
+#define	MAX_IMAGE_ANIMATIONS	MAX_DRAWIMAGES  // credit to Cyberstorm, suggested by KittenIgnition and mccormic
 
 typedef struct {
 	image_t			*image[MAX_IMAGE_ANIMATIONS];
@@ -1269,13 +1275,6 @@ void		R_Modellist_f (void);
 
 //====================================================
 
-#define	MAX_DRAWIMAGES			2048
-#define	MAX_SKINS				1024
-
-
-#define	MAX_DRAWSURFS			0x10000
-#define	DRAWSURF_MASK			(MAX_DRAWSURFS-1)
-
 /*
 
 the drawsurf sort data is packed into a single 32 bit value so it can be
@@ -1671,13 +1670,13 @@ typedef struct {
 	image_t *screenMapImageScratchBuffer;
 	int drawSurfsCount;
 
-	GLuint frameBuffer;
-	GLuint frameBufferMultiSample;
-	GLuint renderBufferMultiSample;
-	GLuint sceneTexture;
-	GLuint depthTexture;
-	GLuint depthBuffer;
-	GLuint depthBufferMultiSample;
+	//GLuint frameBuffer;
+	//GLuint frameBufferMultiSample;
+	//GLuint renderBufferMultiSample;
+	//GLuint sceneTexture;
+	//GLuint depthTexture;
+	//GLuint depthBuffer;
+	//GLuint depthBufferMultiSample;
 	qboolean usingFinalFrameBufferObject;
 	qboolean usingMultiSample;
 	qboolean usingFboStencil;
@@ -1690,7 +1689,10 @@ typedef struct {
 	GLuint cpfragmentshader;
 	GLfloat cpverts[3 * MAX_SPLINEPOINTS];
 
+	GLuint rectScreenTexture;
+
 	qboolean recordingVideo;
+	qboolean leftRecorded;
 
 	char markSurfaceNames[2][MAX_QPATH];
 
@@ -1981,6 +1983,7 @@ int R_CullLocalPointAndRadius( const vec3_t origin, float radius );
 
 void R_SetupProjection(viewParms_t *dest, float zProj, float zFar, qboolean computeFrustum);
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
+void R_RotateForWorld ( const orientationr_t* input, orientationr_t* world );
 
 /*
 ** GL wrapper/helper functions
@@ -2339,6 +2342,7 @@ SCENE GENERATION
 */
 
 void R_InitNextFrame( void );
+void R_InitNextFrameNoCommands( void );
 
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
@@ -2537,6 +2541,14 @@ typedef struct {
 	int commandId;
 } exportCubemapsCommand_t;
 
+typedef struct {
+	int commandId;
+} beginHudCommand_t;
+
+typedef struct {
+	int commandId;
+} debugGraphicsCommand_t;
+
 typedef enum {
 	RC_END_OF_LIST,
 	RC_SET_COLOR,
@@ -2548,9 +2560,11 @@ typedef enum {
 	RC_VIDEOFRAME,
 	RC_COLORMASK,
 	RC_CLEARDEPTH,
+	RC_BEGIN_HUD,
 	RC_CAPSHADOWMAP,
 	RC_POSTPROCESS,
-	RC_EXPORT_CUBEMAPS
+	RC_EXPORT_CUBEMAPS,
+	RC_DEBUG_GRAPHICS,
 } renderCommand_t;
 
 
@@ -2579,7 +2593,6 @@ extern	backEndData_t	*backEndData;	// the second one may not be allocated
 
 
 void *R_GetCommandBuffer( int bytes );
-void RB_ExecuteRenderCommands( const void *data );
 
 void R_IssuePendingRenderCommands( void );
 
@@ -2604,9 +2617,8 @@ qboolean SavePNG (const char *name, byte *data, int width, int height, int byted
 
 void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, qboolean png, int picCount, char *givenFileName);
 
-// wolfcamql
-qboolean RE_GetGlyphInfo (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
 
+// wolfcamql
 void RE_GetShaderImageDimensions (qhandle_t h, int *width, int *height);
 void RE_GetShaderImageData (qhandle_t h, ubyte *data);
 qhandle_t RE_RegisterShaderFromData (const char *name, ubyte *data, int width, int height, qboolean mipmap, qboolean allowPicmip, int wrapClampMode, int lightmapIndex);
@@ -2618,9 +2630,12 @@ void RE_SetPathLines (int *numCameraPoints, cameraPoint_t *cameraPoints, int *nu
 void R_CreatePlayerColorSkinImages (qboolean force);
 void R_MME_Init (void);
 void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);
+void RE_BeginHud (void);
 
 void R_CreateSingleShader (void);
 
 void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean developerOnly);
+
+void R_DebugPolygon( int color, int numPoints, float *points );
 
 #endif //TR_LOCAL_H

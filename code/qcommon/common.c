@@ -136,6 +136,8 @@ qboolean	com_gameClientRestarting = qfalse;
 
 char	com_errorMessage[MAX_PRINT_MSG];
 
+qboolean com_sse2_supported = qfalse;
+
 void Com_WriteConfig_f( void );
 void CIN_CloseAllVideos( void );
 static void Com_Crash_f (void);
@@ -2877,6 +2879,8 @@ Find out whether we have SSE support for Q_ftol function
 
 static void Com_DetectSSE(void)
 {
+	qboolean sse2_detected = qtrue;
+
 #if !idx64
 	cpuFeatures_t feat;
 
@@ -2884,16 +2888,22 @@ static void Com_DetectSSE(void)
 
 	if(feat & CF_SSE)
         {
-			if(feat & CF_SSE2)
+			if(feat & CF_SSE2) {
 				Q_SnapVector = qsnapvectorsse;
-			else
+			} else {
 				Q_SnapVector = qsnapvectorx87;
+				sse2_detected = qfalse;
+			}
 
 			Q_ftol = qftolsse;
 #endif
 			Q_VMftol = qvmftolsse;
 
 			Com_Printf("SSE instruction set enabled\n");
+			if(sse2_detected) {
+				Com_Printf("SSE2 instruction set enabled\n");
+				com_sse2_supported = qtrue;
+			}
 #if !idx64
         }
 	else

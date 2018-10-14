@@ -149,3 +149,6 @@ equ trap_GetLastServerTime -152
 equ trap_R_GetFontInfo -153
 equ trap_GetRoundStartTimes -154
 equ trap_GetTeamSwitchTime -155
+equ trap_R_BeginHud -156
+equ trap_R_UpdateDof -157
+

@@ -1566,10 +1566,20 @@ typedef enum {
 typedef enum _flag_status {
 	FLAG_ATBASE = 0,
 	FLAG_TAKEN,			// CTF
-	FLAG_TAKEN_RED,		// One Flag CTF
+	FLAG_TAKEN_RED,		// One Flag CTF, 2 == dropped in CTF
 	FLAG_TAKEN_BLUE,	// One Flag CTF
 	FLAG_DROPPED        // One Flag CTF
 } flagStatus_t;
+
+// 2018-07-21 quake live changed DROPPED to be consistent for ctf and 1fctf
+//FIXME 2018-07-21 not sure which ql version made the change
+typedef enum _flag_statusQL {
+	FLAG_QL_ATBASE = 0,
+	FLAG_QL_TAKEN,			// CTF
+	FLAG_QL_DROPPED,		// CTF and One Flag CTF
+	FLAG_QL_TAKEN_RED,		// One Flag CTF
+	FLAG_QL_TAKEN_BLUE		// One Flag CTF
+} flagStatusQL_t;
 
 typedef struct {
 	char *oldName;

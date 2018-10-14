@@ -966,6 +966,14 @@ void RE_RegisterFont (const char *fontName, int pointSize, fontInfo_t *font)
 
 	registeredFont[registeredFontCount].glyphScale = glyphScale;
 	font->glyphScale = 48.0 / (float)pointSize;  //glyphScale * 1;
+
+	// hack scaling to match quake live
+	if (!Q_stricmp(baseName, "notosans-regular")) {
+		font->glyphScale *= 0.8;
+	} else if (!Q_stricmp(baseName, "droidsansmono")) {
+		font->glyphScale *= 0.8;
+	}
+
 	Q_strncpyz(font->name, va("fonts2/%s_%i.dat", baseName, pointSize), sizeof(font->name));
 	Q_strncpyz(font->registerName, fontName, sizeof(font->name));
 

@@ -1442,7 +1442,6 @@ WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 
 
 
     FIXME CG_OwnerDraw()  331 332 332
-        CG_VOTEGAMETYPE1, ...
 
     sound/items/damage2.wav sound/items/damage3.wav   damage2 taken out
 
@@ -1544,10 +1543,9 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
 * /devmap still getting double pickup sounds, like that before?
 * giant water bubble trails in new ql
 * mod 31 seems to be lightning discharge.  demo?
-* ql events:  EV_NEW_HIGH_SCORE  EV_MISSILE_MISS_DMGTHROUGH   EV_SHOTGUN_KILL
+* ql events:  EV_MISSILE_MISS_DMGTHROUGH   EV_SHOTGUN_KILL
 * infected.. 321 'bite' !  sound
 * avi not writing max rate size   afd->maxRecordSize, also in main header maxRecordSize, maxRecordSize also missing from "strh"
-* race unknown event 99
 * race scoreboard showing demo taker in 1st and 2nd scorebox
 * fixme FIGHT/GO/RUN/ETC text drawn in two different places
 * new icon for powerup available not listed by ql (ex:  flight)
@@ -1561,7 +1559,6 @@ WARNING ShaderForShaderNum: using default shader for 'textures/common/weapclip' 
 * flag capture/return sounds (not vo) for specs?
 * ctft1.dm_90  2:22  do not pickup icon
 * frag message shadowed
-* chat/status/  font shadowed  	CG_AREA_NEW_CHAT in ql doesn't set textStyle in menu it seems to be hardcoded in cgame
 * team overlay font shadowed
 * "sound/teamplay/flagcapture_yourteam.wav"  same cgs.media.captureAwardSound cgs.media.captureYourTeamSound
 * check from ql update april 21 2015:     - Specified a sort order on liquids/glass/flares/lightbeams shaders; Simple items and similar transparent objects should correctly sort over them now (in most cases).
@@ -1665,7 +1662,7 @@ FIXME ui execute text:  2  'cmd team red ; '
 * check font used in scoreboard spec list
 * caim ca demo long name in scoreboard -- use limit
 * hud WCG_ ql version and protocol/mod (q3, cpma, ...)
-* right align with var width font not stable
+* right align with var width font not stable  -- 2018-07-16 text_pic_paint() ?
 * team overlay text style
 * team overlay order (name, armor, powerup, etc..)
 * register sound:  sound/world/hockey_horn.ogg fails even though hockey_horn.wav is there..  fallback for .wav ?
@@ -2259,8 +2256,8 @@ C:\Share\wc\dev>
 * opengl2:  pass flag indicating that camera positions have changed so buffers don't have to be updated every frame
 * cg_demozoom and freespec is still zooming  CA-6plus-2017_11_01-17_18_12.dm_91
 * opengl2:  camera path drawing vao
-* opengl2:  can't use check for RC_VIDEOFRAME with split video anaglyph 19, issuepending()?, same for opengl1
-* R_IssuePending() can prevent hud rendering with split analaglyph (opengl1)
+* opengl2:  can't use check for RC_VIDEOFRAME with split video anaglyph 19, R_IssuePendingRenderCommands()?, same for opengl1  -- 2018-08-10 hack added to only run R_IssuePendingRenderCommands() at the end of frame
+* R_IssuePendingRenderCommands() can prevent hud rendering with split analaglyph (opengl1)  -- 2018-08-10 hack added to only run R_IssuePendingRenderCommands() at the end of frame
 * opengl2:  r_debugSurface uses immediate mode ri.CM_DrawDebugSurface
 * 109176-SKrapha(POV)-vs-8PLAYevil-elder-2016_.dm_91  seeking zoom stays on
 * opengl2: R_GetCommandBufferReserved don't drop and don't spam like opengl1
@@ -2334,7 +2331,6 @@ GL_VERSION: 2.1 Chromium 1.9
 * cpma mvd ctf main view showing has flag
 * for q3 ffa could guess cg.scores* player based on obit
 * cg_whShader, cg_[first|third]PersonShaderWeapon*, etc.. cvars with shader names should store values instead of always calling trap_R_RegisterShader()
-* ql race unknown event 99
 * ql race shows message every so often showing how far/behind top score you are
 * /follow can use cgs.scores[12] for scores with ql (check version?) since first and second place client numbers are config strings
 * font for info screen and stats
@@ -2381,10 +2377,11 @@ No background file.
 * cl_voipGainOtherPlayback for openal
 * mac osx vm lockup with s_useOpenal 0  -- even with r:7301 before Altivec separation  -- seems to be s_sdlCapture 1  -- works with direct hw probably vm error/bug with capturing audio
 * 2018-06-18 uber dm_91 17:09 8 to 5 and scoreboard message is Red Leads Blue 7 to 5
+
 * kitten:  q3mme depth-lock
 * kitten:  output sky transparency
 * kitten:  lg beam in a different program?
-* kitten:  defrag timer
+* kitten:  defrag timer  -- 2018-08-01  encrypted
 * kitten:  demo listing:  protocol filter
 * kitten:  demo listing:  click demo show player list, demo taker, length of demo, game type, ...
 * kitten:  weapon fov to control the size of the weapon individually from the view pov
@@ -2393,36 +2390,79 @@ No background file.
 * kitten:  negative timescales :\
 * scriptable hud:  key press, player info (playerstate and entitystate?), speed
 * ql has cvarTest2
-* check other CG_OwnerDraw() which are missing textalign like CG_LEVELTIMER
 * CG_DrawPlayerAmmoValue() infinite icon and textalign
-* problem with separating 2d rendering in backend:  3d icons will always draw below window backgrounds.  Ex:
 
-menuDef {
-  name "test menu"
-  visible MENU_TRUE
-  widescreen WIDESCREEN_CENTER
-  rect 100 300 450 100
-  style WINDOW_STYLE_FILLED
-  backcolor 1 1 1 0.5
-
-  itemDef {
-    name "test item"
-    //rect 296 96 230 30
-    rect 0 0 230 30
-    style WINDOW_STYLE_FILLED
-    backcolor 0.10 0.2 0.7 1
-    visible 1
-    decoration
-    textscale .3125
-    ownerdraw CG_PLAYER_AMMO_ICON
-    //text "Hello World"
-    align ITEM_ALIGN_RIGHT
-    textalign ITEM_ALIGN_RIGHT
-  }
-}
-
-* check CG_DrawAreaPowerUp() alignment
 * check CS_ROUND_STATUS and CS_ROUND_TIME mess
+* ui_main.c cg_wideScreen, utf8, quake live WIDESCREEN_STRETCH text paint hack
+* check how CG_CreateNameSprite() uses default menus and if name sprites need to be reset with menu reset as well
+* CG_Text_Pic_Paint() allow changing alpha color value
+* if text paint with alpha change added change CG_MATCH_WINNER own alignment hacking
+* /devmap cgs.[first|second]Place
+* update q3 duel scoreboard with cgs.scores[12]
+* ql draws reward icons below the hud
+* CG_SPECTATORS option to scroll like quake live
+* CG_SPECTATORS drawing to the left of rectangle
+* CG_DrawMedal() textscale bug like quake live
+* other ownerdraws (like CG_KILLER) that use fixed icon size
+* ingame ffa scoreboard not showing 'MATCH IN PROGRESS'
+* CG_MATCH_DETAILS match quake live
+
+* is CG_SHOW_2DONLY used in ql, maybe it means info/loading screen?  -- 2018-07-18 check team arena and ql web_pak.pk3
+* check other ownerdraw 'shader' uses which are ignored
+* kitten:  fisheye http://strlen.com/gfxengine/fisheyequake/
+
+
+* check textalignx and textaligny
+* check other instances where cg_hud[Red|Blue|No|Neutral]TeamColor can be used:  ex: cg_draw.c , team overlay background color, armor/ammo status
+
+* ql flag status enum changed find out which ql version changed it -- 2018-07-21 right now using protocol 91 check
+
+* cg_flagstyle and cg_hud*TeamColor
+* help icons and cg_hud*TeamColor
+* CG_AREA_POWERUP time offset off by 1 compared to quake live
+* check ITEM_TEXTSTYLE_SHADOWED with default fallback ... a little blurry
+* ui owner draws to implement:  UI_CROSSHAIR_COLOR, UI_NEXTMAP, UI_VOTESTRING, UI_SERVER_SETTINGS,
+* ui owner draws check:  UI_KEYBINDSTATUS (old implementation?)
+* CG_1ST_PLYR (and others) that use '...' if name doesn't fit
+* 's' in smaller fonts seems compressed down compared to ql which scales it correctly, ex:  CG_MATCH_END_CONDITION "Highest score..." textScale 0.3125
+* weapon bar individual weapon spacing based on text size or separate cvar
+* red rover using ingame and end scoreboard ffa?
+* not setting cg.selectedScore consistently after score has been received
+* kitten:  q3e supersampling, hdr, etc..
+* rapha-ot1 damage plum color lg -- 2018-08-06 colorstyle 3 lg yellow, full white instead of yellowish, disable blend? -- 2018-08-06 opengl2 blending
+* for doc:  which older ownerdraws are still supported
+* CG_[1ST|2ND]_PLACE_SCORE dots (...) with MONO font bleeds into score : speclist.dm_91 har...1
+* CG_[1ST|2ND]_PLACE_SCORE player doesn't match ql (also doesn't match CG_MATCH_WINNER which does match ql) : speclist.dm_91 check
+* CG_MATCHWINNER also uses '...' if player name is large (can be due to textscale increase)
+* test BUILD_MISSIONPACK=1
+* /devmap parse strings - weapons
+* R_IssuePendingRenderCommands() added in 51df89ab132b8e05d9854df507c73e54fbd2884b  'Remove the SMP renderer feature'  -- 2018-08-10 hack added to only run R_IssuePendingRenderCommands() at the end of frame
+* most of tr_mme* not renderercommon/ should be client/
+* conditional compilation for mmx q3mme blur code
+* documentation:  depth saving doesn't blur
+* opengl2 seeking after vid_restart with mode change still rendering with old mode:  ex:  +demo rapha-ot1 +set r_mode 5, in console /r_mode -1  (1365 x 768), /vid_restart, seek ...
+* opengl2 elder outside purple sky not being rendered (drawn as white texture), also longestyard sky incorrect  -- 2018-08-23 it's r_picmip >= 9 and it happens with 12.0 release
+
+* q3mme dof blit renderer2 don't reuse colorcorrect program
+* q3mme dof blit renderer1 doesn't work with non power of two dimensions : 1365 x 768  -- not blit, dof doesn't work when width isn't divisible by 4
+* add warning for blur and dof if vid width/height not divisible by 4  -- 2018-08-30 older q3mme blur could do it correctly  -- 2018-09-07 because it gets screenshot as rgba which will always have width divisible by 4
+* q3mme dof blit use 2d textures for screen blit -- array of as many textures as needed, or one texture that gets updated repeatedly to fill screen
+
+* check uses of rectangle arb
+* check max texture size and rectngel
+    GL_MAX_RECTANGLE_TEXTURE_SIZE_ARB
+* cg_autoFontScalingThreshold 24 looks bad in Windows 7 desktop, 1600 x 600
+* mega health in client item timer not working with cpma mvd demos
+* glConfig.stereoEnabled doesn't call clear depth so anaglyph mode can't be detected that way
+* kitten:  /vid_restart save camera and client override
+* tr.drawSurfsCount check now that render command list is complete and hud can now draw surfs
+* get screenmap texture before q3mme dof blur
+* kitten:  undo for camera edit/insert
+* font mono 'textScale 0.6' drawn lighter
+* cg_autoFontScalingThreshold 300 leads to max images error
+* screenmap grab after anaglyph mode 19 split video will capture hud
+* CG_1STPLACE_PLYR_MODEL doesn't render anything if client info isn't valid
+
 
 ----
 

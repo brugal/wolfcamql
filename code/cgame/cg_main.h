@@ -34,6 +34,7 @@ float CG_Cvar_Get (const char *cvar);
 void CG_ResetTimedItemPickupTimes (void);
 void CG_CreateScoresFromClientInfo (void);
 void CG_LoadDefaultMenus (void);
+void CG_LoadHudFile (const char *menuFile);
 void CG_SetDuelPlayers (void);
 void CG_ForceModelChange (void);
 

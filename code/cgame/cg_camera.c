@@ -1,7 +1,7 @@
 #include "cg_camera.h"
 #include "cg_local.h"  // cg.
-//#include "cg_q3mme_math.h"
-#include "cg_q3mme_camera.h"  // CAM_ORIGIN, CAM_ANGLES, CAM_FOV
+//#include "cg_q3mme_demos_math.h"
+#include "cg_q3mme_demos_camera.h"  // CAM_ORIGIN, CAM_ANGLES, CAM_FOV
 
 void CG_CameraResetInternalLengths (void)
 {

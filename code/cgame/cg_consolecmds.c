@@ -11,14 +11,15 @@
 #include "cg_consolecmds.h"
 #include "cg_draw.h"  // cg_fade...
 #include "cg_ents.h"
+#include "cg_fx_scripts.h"
 #include "cg_localents.h"
 #include "cg_main.h"
 #include "cg_marks.h"
 #include "cg_newdraw.h"
 #include "cg_players.h"
 #include "cg_playerstate.h"
-#include "cg_q3mme_camera.h"
-#include "cg_q3mme_scripts.h"
+#include "cg_q3mme_demos_camera.h"
+#include "cg_q3mme_demos_dof.h"
 #include "cg_syscalls.h"
 #include "cg_view.h"
 #include "cg_weapons.h"
@@ -140,38 +141,15 @@ void Menu_Reset (void);			// FIXME: add to right include file
 
 static void CG_LoadHud_f (void)
 {
-	char buff[1024];
-	const char *hudSet;
-
-	memset(buff, 0, sizeof(buff));
-	String_Init();
-
-	//FIXME hack for fx scripts using String_Alloc()
-	//memset(&EffectScripts.jitToken, 0, sizeof(EffectScripts.jitToken));
-	CG_FreeFxJitTokens();
-
-	Menu_Reset();
-
-	if (cg_loadDefaultMenus.integer) {
-		CG_LoadDefaultMenus();
-	}
+	const char *hudFile;
 
 	if (CG_Argc() < 2) {
-		trap_Cvar_VariableStringBuffer("cg_hudFiles", buff, sizeof(buff));
-		hudSet = buff;
+		hudFile = SC_Cvar_Get_String("cg_hudFiles");
 	} else {
-		hudSet = CG_Argv(1);
+		hudFile = CG_Argv(1);
 	}
 
-	if (hudSet[0] == '\0') {
-		hudSet = "ui/hud.txt";
-	}
-
-	CG_LoadMenus(hudSet);
-	//FIXME
-	//CG_LoadDefaultMenus();
-	//CG_LoadMenus(hudSet);
-	cg.menuScoreboard = NULL;
+	CG_LoadHudFile(hudFile);
 }
 
 #if 1  //def MPACK
@@ -7850,6 +7828,91 @@ static void CG_LoadQ3mmeCamera_f (void)
 	}
 }
 
+static void CG_SaveQ3mmeDof_f (void)
+{
+	fileHandle_t f;
+	int i;
+	const char *fname;
+	qboolean useDefaultFolder = qtrue;
+
+	if (CG_Argc() < 2) {
+		Com_Printf("usage: saveq3mmedof <filename>\n");
+		return;
+	}
+
+	if (!demo.dof.points) {
+		Com_Printf("need at least one dof point\n");
+		return;
+	}
+
+	fname = CG_Argv(1);
+	for (i = 0;  i < strlen(fname);  i++) {
+		if (fname[i] == '/') {
+			useDefaultFolder = qfalse;
+			break;
+		}
+	}
+
+	if (useDefaultFolder) {
+		trap_FS_FOpenFile(va("cameras/%s.q3mmeDof", CG_Argv(1)), &f, FS_WRITE);
+	} else {
+		trap_FS_FOpenFile(va("%s.q3mmeDof", fname), &f, FS_WRITE);
+	}
+
+	if (!f) {
+		Com_Printf("^1couldn't create %s.q3mmeDof\n", CG_Argv(1));
+		return;
+	}
+
+	CG_Q3mmeDofSave(f);
+	trap_FS_FCloseFile(f);
+}
+
+static void CG_LoadQ3mmeDof_f (void)
+{
+	qboolean useDefaultFolder = qtrue;
+	const char *fname;
+	int i;
+	BG_XMLParse_t xmlParse;
+	char filename[MAX_OSPATH];
+	BG_XMLParseBlock_t loadBlock[] = {
+		{ "dof", CG_Q3mmeDofParse, 0 },
+		{ 0, 0, 0 },
+	};
+
+	if (CG_Argc() < 2) {
+		Com_Printf("usage: loadq3mmedof <dof name>\n");
+		return;
+	}
+
+	fname = CG_Argv(1);
+	for (i = 0;  i < strlen(fname);  i++) {
+		if (fname[i] == '/') {
+			useDefaultFolder = qfalse;
+			break;
+		}
+	}
+
+	if (useDefaultFolder) {
+		//trap_FS_FOpenFile(va("cameras/%s.q3mmeDof", CG_Argv(1)), &f, FS_READ);
+		//ret = BG_XMLOpen(&xmlParse, va("cameras/%s.q3mmeDof", CG_Argv(1)));
+		Com_sprintf(filename, sizeof(filename), "cameras/%s.q3mmeDof", CG_Argv(1));
+	} else {
+		//trap_FS_FOpenFile(va("%s.q3mmeDof", fname), &f, FS_READ);
+		Com_sprintf(filename, sizeof(filename), "%s.q3mmeDof", CG_Argv(1));
+	}
+
+	if (!BG_XMLOpen(&xmlParse, filename)) {
+		Com_Printf("^1couldn't open %s\n", CG_Argv(1));
+		return;
+	}
+
+	if (!BG_XMLParse(&xmlParse, 0, loadBlock, 0)) {
+		Com_Printf("^1Errors while loading q3mme dof\n");
+		return;
+	}
+}
+
 // testing
 #if 0
 static void CG_BackDown_f (void)
@@ -8166,6 +8229,9 @@ static consoleCommand_t	commands[] = {
 	{ "stopq3mmecamera", CG_StopQ3mmeCamera_f },
 	{ "saveq3mmecamera", CG_SaveQ3mmeCamera_f },
 	{ "loadq3mmecamera", CG_LoadQ3mmeCamera_f },
+	{ "dof", CG_Q3mmeDemoDofCommand_f },
+	{ "saveq3mmedof", CG_SaveQ3mmeDof_f },
+	{ "loadq3mmedof", CG_LoadQ3mmeDof_f },
 	//{ "+back", CG_BackDown_f },
 	{ "seeknextround", CG_SeekNextRound_f },
 	{ "seekprevround", CG_SeekPrevRound_f },

@@ -14,6 +14,7 @@
 #include "cg_players.h"
 #include "cg_playerstate.h"
 #include "cg_predict.h"
+#include "cg_q3mme_demos_camera.h"  // demo.play.time, demo.play.fraction, demo.serverTime
 #include "cg_servercmds.h"
 #include "cg_snapshot.h"
 #include "cg_syscalls.h"
@@ -641,6 +642,11 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cg.foverf = (double)ioverf / SUBTIME_RESOLUTION;
 	cg.ftime = (double)cg.time + cg.foverf;
 
+	// q3mme camera and dof
+	demo.play.time = cg.time;
+	demo.play.fraction = (float)cg.foverf;
+	demo.serverTime = serverTime;
+
 	timeDiff = cg.ftime - lastftime;
 
 	if (cg.snap  &&  cg.nextSnap) {
@@ -796,40 +802,17 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cgs.lastConnectedDisconnectedPlayer = -1;
 	cgs.needToCheckSkillRating = qfalse;
 	cgs.serverCommandSequence = trap_GetLastExecutedServerCommand();
+
+	CG_SetConfigValues();
+
+	//FIXME should be in CG_SetConfigValues()
 	cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 	cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
-	if (cgs.protocol == PROTOCOL_QL) {
-		if (cgs.realProtocol < 91) {
-			cgs.dominationRedPoints = atoi(CG_ConfigString(CS_DOMINATION_RED_POINTS));
-			cgs.dominationBluePoints = atoi(CG_ConfigString(CS_DOMINATION_BLUE_POINTS));
-		} else {
-			cgs.dominationRedPoints = atoi(CG_ConfigString(CS91_GENERIC_COUNT_RED));
-			cgs.dominationBluePoints = atoi(CG_ConfigString(CS91_GENERIC_COUNT_BLUE));
-		}
-	} else {
-		cgs.dominationRedPoints = 0;
-		cgs.dominationBluePoints = 0;
-	}
 
 	cg.warmup = 0;
 	CG_ParseWarmup();
 	cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME));
 	cg.intermissionStarted = atoi(CG_ConfigString(CS_INTERMISSION));
-	if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF) {
-		cgs.redflag = CG_ConfigString(CS_FLAGSTATUS)[0] - '0';
-		cgs.blueflag = CG_ConfigString(CS_FLAGSTATUS)[1] - '0';
-		if (cgs.gametype == GT_1FCTF) {
-			cgs.flagStatus = atoi(CG_ConfigString(CS_FLAGSTATUS));
-		}
-	}
-	//FIXME GT_1FCTF see cg_servercmds.c
-	if (cgs.protocol == PROTOCOL_QL) {
-		cgs.redPlayersLeft = atoi(CG_ConfigString(CS_RED_PLAYERS_LEFT));
-		cgs.bluePlayersLeft = atoi(CG_ConfigString(CS_BLUE_PLAYERS_LEFT));
-	} else {
-		cgs.redPlayersLeft = 0;
-		cgs.bluePlayersLeft = 0;
-	}
 
 	if (cgs.protocol == PROTOCOL_QL) {
 		//Com_Printf("^2 round status: '%s'\n", CG_ConfigString(CS_ROUND_STATUS));

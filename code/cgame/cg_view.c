@@ -15,7 +15,8 @@
 #include "cg_marks.h"
 #include "cg_players.h"  // CG_Q3ColorFromString()
 #include "cg_predict.h"
-#include "cg_q3mme_camera.h"
+#include "cg_q3mme_demos_camera.h"
+#include "cg_q3mme_demos_dof.h"
 #include "cg_servercmds.h"  // CG_PlayBufferedVoiceChats()
 #include "cg_snapshot.h"
 #include "cg_sound.h"
@@ -2365,6 +2366,7 @@ static qboolean CG_PlayQ3mmeCamera (void)
 			VectorCopy(cg.refdef.vieworg, cg.fpos);
 			cg.fpos[2] -= DEFAULT_VIEWHEIGHT;
 			VectorCopy(cg.refdefViewAngles, cg.fang);
+			// reset mouse accum values so they arent' added to view once camera playback ends
 			cg.mousex = 0;
 			cg.mousey = 0;
 			cg.freecamSet = qtrue;
@@ -3746,6 +3748,7 @@ cameraFinish:
 		VectorCopy(cg.refdef.vieworg, cg.fpos);
 		cg.fpos[2] -= DEFAULT_VIEWHEIGHT;
 		VectorCopy(cg.refdefViewAngles, cg.fang);
+		// reset mouse accum values so they arent' added to view once camera playback ends
 		cg.mousex = 0;
 		cg.mousey = 0;
 		cg.freecamSet = qtrue;
@@ -5260,6 +5263,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	int currentWeapon;
 	//int startTime;
 	int oldClientNum;
+	qboolean behindView = qfalse;
 
 	//cg.drawActiveFrameCount++;
 
@@ -5321,6 +5325,11 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	cg.time = serverTime;
 	cg.ftime = (double)cg.time + cg.foverf;
 	cgDC.cgTime = cg.ftime;
+
+	// q3mme camera and dof
+	demo.play.time = cg.time;
+	demo.play.fraction = (float)cg.foverf;
+	demo.serverTime = serverTime;
 
 	//Com_Printf("%d  %f  %f\n", cg.time, cg.ftime, cg.foverf);
 
@@ -5446,6 +5455,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 		if (wolfcamLastClientNum != wcg.clientNum) {
 			cg.killerName[0] = '\0';
+			cg.killerNameHud[0] = '\0';
 			cg.jumpsNeedClearing = qtrue;
 			cg.numJumps = 0;
 
@@ -5936,6 +5946,66 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	if (draw) {
 		CG_DrawActive( stereoView );
 	}
+
+	// q3mme dof
+
+	demo.viewFocus = 0;
+	demo.viewTarget = cg.viewEnt;  //-1;
+
+	CG_Q3mmeDofUpdate(demo.play.time, demo.play.fraction);
+
+	/* find focus distance to certain target but don't apply if dof is not locked, use for drawing */
+	if ( demo.dof.target >= 0 ) {
+		centity_t* targetCent = demoTargetEntity( demo.dof.target );
+		if ( targetCent ) {
+			vec3_t targetOrigin;
+			chaseEntityOrigin( targetCent, targetOrigin );
+			//Find distance betwene plane of camera and this target
+			demo.viewFocus = DotProduct( cg.refdef.viewaxis[0], targetOrigin ) - DotProduct( cg.refdef.viewaxis[0], cg.refdef.vieworg  );
+			demo.dof.focus = demo.viewFocusOld = demo.viewFocus;
+		} else {
+			demo.dof.focus = demo.viewFocus = demo.viewFocusOld;
+		}
+		if (demo.dof.focus < 0.001f) {
+			behindView = qtrue;
+		}
+	}
+
+	if ( demo.dof.locked ) {
+		if (!behindView) {
+			demo.viewFocus = demo.dof.focus;
+			demo.viewRadius = demo.dof.radius;
+		} else {
+			demo.viewFocus = 0.002f;                // no matter what value, just not less or equal zero
+			demo.viewRadius = 0.0f;
+		}
+	} else if ( demo.viewTarget >= 0 ) {
+		centity_t* targetCent = demoTargetEntity( demo.viewTarget );
+		if ( targetCent ) {
+			vec3_t targetOrigin;
+			chaseEntityOrigin( targetCent, targetOrigin );
+			//Find distance betwene plane of camera and this target
+			demo.viewFocus = DotProduct( cg.refdef.viewaxis[0], targetOrigin ) - DotProduct( cg.refdef.viewaxis[0], cg.refdef.vieworg  );
+			demo.viewRadius = CG_Cvar_Get( "mme_dofRadius" );
+		}
+	} else if ( demo.dof.target >= 0 ) {
+		demo.viewFocus = 0;
+		demo.viewRadius = 0;
+	}
+
+	trap_R_UpdateDof(demo.viewFocus, demo.viewRadius);
+
+	if (SC_Cvar_Get_Int("debug_mme_dof")) {
+		static int lastTime = 0;
+		int t;
+
+		t = trap_Milliseconds();
+		if (t - lastTime > 1500) {
+			Com_Printf("viewFocus: %f    viewRadius: %f\n", demo.viewFocus, demo.viewRadius);
+			lastTime = t;
+		}
+	}
+
 
 	if ( cg_stats.integer ) {
 		CG_Printf( "cg.clientFrame:%i\n", cg.clientFrame );

@@ -2,11 +2,11 @@
 
 #include "cg_main.h"
 #include "cg_mem.h"
-#include "cg_q3mme_camera.h"
+#include "cg_q3mme_demos.h"
+#include "cg_q3mme_demos_camera.h"
+#include "cg_q3mme_demos_capture.h"  // demoSaveLine
 #include "cg_syscalls.h"  // trap_Print, trap_FS_Write
 #include "../game/bg_xmlparser.h"
-
-demoMain_t demo;
 
 // mov_smoothCamPos renamed to cg_q3mmeCameraSmoothPos
 
@@ -19,31 +19,6 @@ void CG_Q3mmeCameraResetInternalLengths (void)
 		p->len = -1;
 		p = p->next;
 	}
-}
-
-static void CG_DemosAddLog (const char *fmt, ...)
-{
-	va_list args;
-	char text[MAX_PRINT_MSG];
-
-	va_start(args, fmt);
-	Q_vsnprintf(text, sizeof(text), fmt, args);
-	va_end(args);
-
-	trap_Print(va("^6q3mme camera: ^7%s\n", text));
-}
-
-static void demoSaveLine (fileHandle_t fileHandle, const char *fmt, ...)
-{
-	va_list args;
-	char buf[1024];
-	int len;
-
-	va_start(args, fmt);
-	len = Q_vsnprintf(buf, sizeof(buf), fmt, args);
-	va_end(args);
-
-	trap_FS_Write(buf, len, fileHandle);
 }
 
 static void cameraPointMatch( const demoCameraPoint_t *point, int mask, const demoCameraPoint_t *match[4] ) {
@@ -898,7 +873,7 @@ static void cameraRotateAll( const vec3_t origin, const vec3_t angles ) {
 
 // from q3mme:  game/bg_demos.c
 
-static void demoCommandValue( const char *cmd, float * oldVal ) {
+void demoCommandValue( const char *cmd, float * oldVal ) {
 	if (!cmd[0])
 		return;
 	if (cmd[0] == 'a') {
@@ -922,12 +897,6 @@ void CG_Q3mmeDemoCameraCommand_f (void)
 	} else {
 		demo.viewFov = cg_fov.value;
 	}
-
-	//FIXME wolfcamql
-	demo.play.time = cg.time;
-	demo.play.fraction = (float)cg.foverf;
-
-	demo.serverTime = cg.snap->serverTime;
 
 	if (!Q_stricmp(cmd, "smooth")) {
 		cameraSmooth( );

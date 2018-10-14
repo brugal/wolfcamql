@@ -1251,6 +1251,8 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 		}
 	}
 
+	//FIXME these shouldn't be in CG_ParseServerInfo()
+
 	if (!cgs.cpma) {
 		cgs.voteModified = qfalse;
 		cgs.voteTime = atoi(CG_ConfigString(CS_VOTE_TIME));
@@ -1451,8 +1453,6 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 		cgs.serverHeadModelOverride[0] = '\0';
 	}
 
-	cgs.numberOfRaceCheckPoints = atoi(CG_ConfigString(CS_NUMBER_OF_RACE_CHECKPOINTS));
-
 	//FIXME check for first call
 	cgs.timeoutBeginTime = atoi(CG_ConfigString(CS_TIMEOUT_BEGIN_TIME));
 	cgs.timeoutEndTime = atoi(CG_ConfigString(CS_TIMEOUT_END_TIME));
@@ -1540,13 +1540,9 @@ void CG_SetConfigValues( void ) {
 	if (cgs.protocol == PROTOCOL_QL) {
 		cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 		cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
-		cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
-		cg.warmup = atoi(Info_ValueForKey(CG_ConfigString(CS_WARMUP), "time"));
 	} else if (!cgs.cpma) {
 		cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 		cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
-		cgs.levelStartTime = atoi( CG_ConfigString( CS_LEVEL_START_TIME ) );
-		cg.warmup = atoi(CG_ConfigString(CS_WARMUP));
 	}
 
 	if(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
@@ -1561,7 +1557,36 @@ void CG_SetConfigValues( void ) {
 	}
 #endif
 
-	//Com_Printf("setconfigvalues() cg.warmup: %d   %d\n", cg.warmup, cg.time);
+	if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.realProtocol < 91) {
+			cgs.dominationRedPoints = atoi(CG_ConfigStringNoConvert(CS_DOMINATION_RED_POINTS));
+			cgs.dominationBluePoints = atoi(CG_ConfigStringNoConvert(CS_DOMINATION_BLUE_POINTS));
+		} else {
+			cgs.dominationRedPoints = atoi(CG_ConfigStringNoConvert(CS91_GENERIC_COUNT_RED));
+			cgs.dominationBluePoints = atoi(CG_ConfigStringNoConvert(CS91_GENERIC_COUNT_BLUE));
+		}
+	} else {
+		cgs.dominationRedPoints = 0;
+		cgs.dominationBluePoints = 0;
+	}
+
+	//FIXME GT_1FCTF see cg_servercmds.c
+	if (cgs.protocol == PROTOCOL_QL) {
+		cgs.redPlayersLeft = atoi(CG_ConfigString(CS_RED_PLAYERS_LEFT));
+		cgs.bluePlayersLeft = atoi(CG_ConfigString(CS_BLUE_PLAYERS_LEFT));
+	} else {
+		cgs.redPlayersLeft = 0;
+		cgs.bluePlayersLeft = 0;
+	}
+
+	if (cgs.protocol != PROTOCOL_QL) {
+		return;
+	}
+
+	//////////////////////////////////////////////////
+	// from here on only PROTOCOL_QL
+
+	cgs.numberOfRaceCheckPoints = atoi(CG_ConfigString(CS_NUMBER_OF_RACE_CHECKPOINTS));
 }
 
 /*
@@ -2254,7 +2279,7 @@ static void CG_ConfigStringModified( void ) {
 		}
 #if 1  //def MPACK
 		else if( cgs.gametype == GT_1FCTF ) {
-			cgs.flagStatus = atoi(str);
+			cgs.flagStatus = str[0] - '0';
 		}
 #endif
 	}

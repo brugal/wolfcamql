@@ -1994,6 +1994,35 @@ void	R_InitImages( void ) {
 	// create default texture and white texture
 	R_CreateBuiltinImages();
 	R_CreatePlayerColorSkinImages(qfalse);
+
+	if (glConfig.textureRectangleAvailable) {
+		GLenum target;
+		GLenum err;
+
+		target = GL_TEXTURE_RECTANGLE_ARB;
+
+		qglDisable(GL_TEXTURE_2D);
+		qglEnable(target);
+
+		qglGenTextures(1, &tr.rectScreenTexture);
+		qglBindTexture(target, tr.rectScreenTexture);
+        //qglTexImage2D(target, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		//FIXME bgr
+		qglTexImage2D(target, 0, GL_RGB8, glConfig.vidWidth, glConfig.vidHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+		err = qglGetError();
+        if (err != GL_NO_ERROR) {
+                ri.Printf(PRINT_ALL, "^1opengl error creating raw rect texture:  0x%x\n", err);
+        }
+
+        qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		qglDisable(target);
+		qglEnable(GL_TEXTURE_2D);
+	}
 }
 
 /*
@@ -2014,6 +2043,9 @@ void R_DeleteTextures( void ) {
 	Com_Memset( glState.currenttextures, 0, sizeof( glState.currenttextures ) );
 	qglDeleteTextures(1, &tr.backBufferTexture);
 	qglDeleteTextures(1, &tr.bloomTexture);
+	if (tr.rectScreenTexture) {
+		qglDeleteTextures(1, &tr.rectScreenTexture);
+	}
 
 	if ( qglActiveTextureARB ) {
 		GL_SelectTextureUnit( 1 );

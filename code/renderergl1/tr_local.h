@@ -1097,7 +1097,10 @@ typedef struct {
 	qboolean usingMultiSample;
 	qboolean usingFboStencil;
 
+	GLuint rectScreenTexture;
+
 	qboolean recordingVideo;
+	qboolean leftRecorded;
 
 	char markSurfaceNames[2][MAX_QPATH];
 
@@ -1346,6 +1349,7 @@ int R_CullLocalPointAndRadius( vec3_t origin, float radius );
 
 void R_SetupProjection(viewParms_t *dest, float zProj, qboolean computeFrustum);
 void R_RotateForEntity( const trRefEntity_t *ent, const viewParms_t *viewParms, orientationr_t *or );
+void R_RotateForWorld ( const orientationr_t* input, orientationr_t* world );
 
 /*
 ** GL wrapper/helper functions
@@ -1652,6 +1656,7 @@ SCENE GENERATION
 */
 
 void R_InitNextFrame( void );
+void R_InitNextFrameNoCommands( void );
 
 void RE_ClearScene( void );
 void RE_AddRefEntityToScene( const refEntity_t *ent );
@@ -1858,6 +1863,16 @@ typedef struct
 	int commandId;
 } clearDepthCommand_t;
 
+typedef struct
+{
+	int commandId;
+} beginHudCommand_t;
+
+typedef struct
+{
+	int commandId;
+} debugGraphicsCommand_t;
+
 typedef enum {
 	RC_END_OF_LIST,
 	RC_SET_COLOR,
@@ -1868,7 +1883,9 @@ typedef enum {
 	RC_SCREENSHOT,
 	RC_VIDEOFRAME,
 	RC_COLORMASK,
-	RC_CLEARDEPTH
+	RC_CLEARDEPTH,
+	RC_BEGIN_HUD,
+	RC_DEBUG_GRAPHICS,
 } renderCommand_t;
 
 
@@ -1896,7 +1913,6 @@ extern	backEndData_t	*backEndData;	// the second one may not be allocated
 
 
 void *R_GetCommandBuffer( int bytes );
-void RB_ExecuteRenderCommands( const void *data );
 
 void R_IssuePendingRenderCommands( void );
 
@@ -1913,14 +1929,10 @@ size_t RE_SaveJPGToBuffer(byte *buffer, size_t bufSize, int quality,
 		int image_width, int image_height, byte *image_buffer, int padding);
 qboolean SavePNG (const char *name, byte *data, int width, int height, int bytedepth);
 void RE_TakeVideoFrame (aviFileData_t *afd, int width, int height, byte *captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, qboolean png, int picCount, char *givenFileName);
-void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);
 
-// font stuff
-//void R_InitFreeType( void );
-//void R_DoneFreeType( void );
-//void RE_RegisterFont(const char *fontName, int pointSize, fontInfo_t *font);
-qboolean RE_GetGlyphInfo (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyphOut);
-qboolean RE_GetFontInfo (int fontId, fontInfo_t *font);
+void RE_Get_Advertisements(int *num, float *verts, char shaders[][MAX_QPATH]);
+void RE_BeginHud (void);
+
 void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int height);
 qhandle_t RE_RegisterShaderFromData (const char *name, ubyte *data, int width, int height, qboolean mipmap, qboolean allowPicmip, int wrapClampMode, int lightmapIndex);
 void RE_GetShaderImageDimensions (qhandle_t h, int *width, int *height);
@@ -1947,5 +1959,7 @@ void LerpMeshVertexes_altivec( md3Surface_t *surf, float backlerp );
 void ProjectDlightTexture_altivec( void );
 void RB_CalcDiffuseColor_altivec( unsigned char *colors );
 #endif
+
+void R_DebugPolygon( int color, int numPoints, float *points );
 
 #endif //TR_LOCAL_H

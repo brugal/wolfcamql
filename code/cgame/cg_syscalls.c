@@ -503,6 +503,16 @@ void trap_Get_Advertisements (int *num, float *verts, char shaders[][MAX_QPATH])
 	syscall(CG_GET_ADVERTISEMENTS, num, verts, shaders);
 }
 
+void trap_R_BeginHud (void)
+{
+	syscall(CG_R_BEGIN_HUD);
+}
+
+void trap_R_UpdateDof (float viewFocus, float viewRadius)
+{
+	syscall(CG_R_UPDATE_DOF, PASSFLOAT(viewFocus), PASSFLOAT(viewRadius));
+}
+
 void trap_R_DrawConsoleLines (void)
 {
 	syscall(CG_DRAW_CONSOLE_LINES);

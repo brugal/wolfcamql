@@ -370,9 +370,11 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   ifdef CGAME_HARD_LINKED
     BASE_CFLAGS = -p -g -rdynamic -Wall -fno-strict-aliasing \
       -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse $(CGAME_HARD_LINKED)
+    SSE2_CFLAGS = -msse2
   else
     BASE_CFLAGS = -g -rdynamic -Wall -fno-strict-aliasing \
       -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse
+    SSE2_CFLAGS = -msse2
   endif
 
   CLIENT_CFLAGS += $(SDL_CFLAGS)
@@ -669,9 +671,13 @@ ifdef MINGW
   #  -D__USE_MINGW_ANSI_STDIO
   BASE_CFLAGS = -g -gdwarf-3 -Wall -fno-strict-aliasing \
     -DUSE_ICON -msse
+  SSE2_CFLAGS = -msse2
 
   #CLIENT_CFLAGS = -D__MINGW32__
-  LDFLAGS += -Xlinker --large-address-aware
+  ifeq ($(ARCH),x86)
+    LDFLAGS += -Xlinker --large-address-aware
+  endif
+
   CLIENT_LIBS =
   # don't use pthreads with win32
   CGAME_LIBS =
@@ -1332,6 +1338,11 @@ $(echo_cmd) "REF_CC $<"
 $(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(ALTIVEC_CFLAGS) -o $@ -c $<
 endef
 
+define DO_REF_CC_SSE2
+$(echo_cmd) "REF_CC $<"
+$(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(SSE2_CFLAGS) -o $@ -c $<
+endef
+
 define DO_REF_STR
 $(echo_cmd) "REF_STR $<"
 $(Q)rm -f $@
@@ -1926,6 +1937,8 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_marks.o \
   $(B)/renderergl2/tr_mesh.o \
   $(B)/renderergl2/tr_mme.o \
+  $(B)/renderergl2/tr_mme_common.o \
+  $(B)/renderergl2/tr_mme_sse2.o \
   $(B)/renderergl2/tr_model.o \
   $(B)/renderergl2/tr_model_iqm.o \
   $(B)/renderergl2/tr_noise.o \
@@ -1996,6 +2009,8 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_marks.o \
   $(B)/renderergl1/tr_mesh.o \
   $(B)/renderergl1/tr_mme.o \
+  $(B)/renderergl1/tr_mme_common.o \
+  $(B)/renderergl1/tr_mme_sse2.o \
   $(B)/renderergl1/tr_model.o \
   $(B)/renderergl1/tr_model_iqm.o \
   $(B)/renderergl1/tr_noise.o \
@@ -2601,6 +2616,7 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/$(BASEGAME)/cgame/cg_ents.o \
   $(B)/$(BASEGAME)/cgame/cg_event.o \
   $(B)/$(BASEGAME)/cgame/cg_freeze.o \
+  $(B)/$(BASEGAME)/cgame/cg_fx_scripts.o \
   $(B)/$(BASEGAME)/cgame/cg_info.o \
   $(B)/$(BASEGAME)/cgame/cg_localents.o \
   $(B)/$(BASEGAME)/cgame/cg_marks.o \
@@ -2610,9 +2626,11 @@ Q3CGOBJHARDLINKED_ = \
   $(B)/$(BASEGAME)/cgame/cg_players.o \
   $(B)/$(BASEGAME)/cgame/cg_playerstate.o \
   $(B)/$(BASEGAME)/cgame/cg_predict.o \
-  $(B)/$(BASEGAME)/cgame/cg_q3mme_camera.o \
-  $(B)/$(BASEGAME)/cgame/cg_q3mme_math.o \
-  $(B)/$(BASEGAME)/cgame/cg_q3mme_scripts.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_camera.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_capture.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_dof.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_math.o \
   $(B)/$(BASEGAME)/cgame/cg_scoreboard.o \
   $(B)/$(BASEGAME)/cgame/cg_servercmds.o \
   $(B)/$(BASEGAME)/cgame/cg_snapshot.o \
@@ -2652,6 +2670,7 @@ Q3CGOBJ_ = \
   $(B)/$(BASEGAME)/cgame/cg_ents.o \
   $(B)/$(BASEGAME)/cgame/cg_event.o \
   $(B)/$(BASEGAME)/cgame/cg_freeze.o \
+  $(B)/$(BASEGAME)/cgame/cg_fx_scripts.o \
   $(B)/$(BASEGAME)/cgame/cg_info.o \
   $(B)/$(BASEGAME)/cgame/cg_localents.o \
   $(B)/$(BASEGAME)/cgame/cg_marks.o \
@@ -2661,9 +2680,11 @@ Q3CGOBJ_ = \
   $(B)/$(BASEGAME)/cgame/cg_players.o \
   $(B)/$(BASEGAME)/cgame/cg_playerstate.o \
   $(B)/$(BASEGAME)/cgame/cg_predict.o \
-  $(B)/$(BASEGAME)/cgame/cg_q3mme_camera.o \
-  $(B)/$(BASEGAME)/cgame/cg_q3mme_math.o \
-  $(B)/$(BASEGAME)/cgame/cg_q3mme_scripts.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_camera.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_capture.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_dof.o \
+  $(B)/$(BASEGAME)/cgame/cg_q3mme_demos_math.o \
   $(B)/$(BASEGAME)/cgame/cg_scoreboard.o \
   $(B)/$(BASEGAME)/cgame/cg_servercmds.o \
   $(B)/$(BASEGAME)/cgame/cg_snapshot.o \
@@ -3046,6 +3067,12 @@ $(B)/renderergl1/%.o: $(RGL1DIR)/%.c
 
 $(B)/renderergl1/tr_altivec.o: $(RGL1DIR)/tr_altivec.c
 	$(DO_REF_CC_ALTIVEC)
+
+$(B)/renderergl1/tr_mme_sse2.o: $(RCOMMONDIR)/tr_mme_sse2.c
+	$(DO_REF_CC_SSE2)
+
+$(B)/renderergl2/tr_mme_sse2.o: $(RCOMMONDIR)/tr_mme_sse2.c
+	$(DO_REF_CC_SSE2)
 
 $(B)/renderergl2/glsl/%.c: $(RGL2DIR)/glsl/%.glsl
 	$(DO_REF_STR)

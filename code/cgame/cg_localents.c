@@ -1646,7 +1646,7 @@ static void CG_AddDamagePlum (localEntity_t *le)
 			break;
 		case WP_LIGHTNING:
 			// yellowish white
-			VectorSet(re->shaderRGBA, 0xff, 0xff, 0xaf);
+			VectorSet(re->shaderRGBA, 0xff, 0xff, 0xaf);  // ff ff af
 			break;
 		case WP_RAILGUN:
 			VectorSet(re->shaderRGBA, 0x00, 0xff, 0x00);

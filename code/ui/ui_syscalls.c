@@ -421,3 +421,8 @@ void trap_DrawConsoleLinesOver (int xpos, int ypos, int numLines)
 {
 	syscall(UI_DRAW_CONSOLE_LINES_OVER, xpos, ypos, numLines);
 }
+
+void trap_R_BeginHud (void)
+{
+	syscall(UI_R_BEGIN_HUD);
+}

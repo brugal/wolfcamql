@@ -20,8 +20,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 
-#ifndef cg_q3mme_math_h_included
-#define cg_q3mme_math_h_included
+#ifndef cg_q3mme_demos_math_h_included
+#define cg_q3mme_demos_math_h_included
 
 //#include "cg_local.h"
 #include "../renderercommon/tr_types.h"  // polyVert_t
@@ -241,4 +241,4 @@ void demoTransposeMatrix(const vec3_t matrix[3], vec3_t transpose[3]);
 void demoCreateRotationMatrix(const vec3_t angles, vec3_t matrix[3]);
 void demoJitterCreate( float *jitarr, int num );
 
-#endif  // cg_q3mme_math_h_included
+#endif  // cg_q3mme_demos_math_h_included

@@ -142,6 +142,7 @@ typedef enum {
 	UI_DRAW_CONSOLE_LINES_OVER,
 
 	UI_CVAR_EXISTS,
+	UI_R_BEGIN_HUD,
 
 } uiImport_t;
 

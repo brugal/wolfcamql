@@ -605,6 +605,47 @@ void R_RotateForViewer (void)
 
 }
 
+// q3mme
+void R_RotateForWorld ( const orientationr_t* input, orientationr_t* world ) 
+{
+	float	viewerMatrix[16];
+	const float	*origin = input->origin;
+
+	Com_Memset ( world, 0, sizeof(*world));
+	world->axis[0][0] = 1;
+	world->axis[1][1] = 1;
+	world->axis[2][2] = 1;
+
+	// transform by the camera placement
+	VectorCopy( origin, world->viewOrigin );
+//	VectorCopy( origin, world->viewOrigin );
+
+	viewerMatrix[0] = input->axis[0][0];
+	viewerMatrix[4] = input->axis[0][1];
+	viewerMatrix[8] = input->axis[0][2];
+	viewerMatrix[12] = -origin[0] * viewerMatrix[0] + -origin[1] * viewerMatrix[4] + -origin[2] * viewerMatrix[8];
+
+	viewerMatrix[1] = input->axis[1][0];
+	viewerMatrix[5] = input->axis[1][1];
+	viewerMatrix[9] = input->axis[1][2];
+	viewerMatrix[13] = -origin[0] * viewerMatrix[1] + -origin[1] * viewerMatrix[5] + -origin[2] * viewerMatrix[9];
+
+	viewerMatrix[2] = input->axis[2][0];
+	viewerMatrix[6] = input->axis[2][1];
+	viewerMatrix[10] = input->axis[2][2];
+	viewerMatrix[14] = -origin[0] * viewerMatrix[2] + -origin[1] * viewerMatrix[6] + -origin[2] * viewerMatrix[10];
+
+	viewerMatrix[3] = 0;
+	viewerMatrix[7] = 0;
+	viewerMatrix[11] = 0;
+	viewerMatrix[15] = 1;
+
+	// convert from our coordinate system (looking down X)
+	// to OpenGL's coordinate system (looking down -Z)
+	myGlMultMatrix( viewerMatrix, s_flipMatrix, world->modelMatrix );
+
+}
+
 /*
 ** SetFarClip
 */
@@ -754,6 +795,8 @@ void R_SetupProjection(viewParms_t *dest, float zProj, float zFar, qboolean comp
 {
 	float	xmin, xmax, ymin, ymax;
 	float	width, height, stereoSep = r_stereoSeparation->value;
+	float	dx, dy;
+	vec2_t	pixelJitter, eyeJitter;
 
 	/*
 	 * offset the view origin of the viewer for stereo rendering 
@@ -778,7 +821,29 @@ void R_SetupProjection(viewParms_t *dest, float zProj, float zFar, qboolean comp
 
 	width = xmax - xmin;
 	height = ymax - ymin;
-	
+
+	if (tr.recordingVideo  ||  mme_dofVisualize->integer) {
+		pixelJitter[0] = pixelJitter[1] = 0;
+		eyeJitter[0] = eyeJitter[1] = 0;
+
+		/* Jitter the view */
+		if (mme_dofFrames->integer > 0) {
+			if (r_anaglyphMode->integer == 19  &&  *ri.SplitVideo  &&  !tr.leftRecorded) {
+				R_MME_JitterView( pixelJitter, eyeJitter, qfalse );
+			} else {
+				R_MME_JitterView( pixelJitter, eyeJitter, qtrue );
+			}
+		}
+
+		dx = ( pixelJitter[0]*width ) / backEnd.viewParms.viewportWidth;
+		dy = ( pixelJitter[1]*height ) / backEnd.viewParms.viewportHeight;
+		dx += eyeJitter[0];
+		dy += eyeJitter[1];
+
+		xmin += dx; xmax += dx;
+		ymin += dy; ymax += dy;
+	}
+
 	dest->projectionMatrix[0] = 2 * zProj / width;
 	dest->projectionMatrix[4] = 0;
 	dest->projectionMatrix[8] = (xmax + xmin + 2 * stereoSep) / width;
@@ -1728,6 +1793,8 @@ Visualization aid for movement clipping debugging
 ====================
 */
 void R_DebugGraphics( void ) {
+	debugGraphicsCommand_t *cmd;
+
 	if ( tr.refdef.rdflags & RDF_NOWORLDMODEL ) {
 		return;
 	}
@@ -1735,11 +1802,12 @@ void R_DebugGraphics( void ) {
 		return;
 	}
 
-	R_IssuePendingRenderCommands();
+	cmd = R_GetCommandBuffer(sizeof(*cmd));
+	if (!cmd) {
+		return;
+	}
 
-	GL_BindToTMU(tr.whiteImage, TB_COLORMAP);
-	GL_Cull( CT_FRONT_SIDED );
-	ri.CM_DrawDebugSurface( R_DebugPolygon );
+	cmd->commandId = RC_DEBUG_GRAPHICS;
 }
 
 

@@ -1,7 +1,7 @@
 #ifndef cg_localents_h_included
 #define cg_localents_h_included
 
-#include "cg_q3mme_scripts.h"
+#include "cg_fx_scripts.h"
 
 //#define ENABLE_THREADS 1
 

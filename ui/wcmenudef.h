@@ -83,6 +83,16 @@
 #define WCG_PLAYER_KEY_PRESS_CROUCH 7041
 #define WCG_PLAYER_KEY_PRESS_JUMP 7042
 
+#define WCG_PLAYER_OBIT 7043  // CG_PLAYER_OBIT that supports align
+#define WCG_AREA_NEW_CHAT 7044  // CG_AREA_NEW_CHAT that supports align
+#define WCG_ONEFLAG_STATUS_COLOR 7045
+#define WCG_RED_FLAGSTATUS_COLOR 7046
+#define WCG_BLUE_FLAGSTATUS_COLOR 7047
+#define WCG_ROUNDTIMER 7048  // CG_ROUNDTIMER that doesn't force red color
+#define WCG_FOLLOW_PLAYER_NAME_EX 7049  // CG_FOLLOW_PLAYER_NAME_EX that doesn't force team colors
+#define WCG_1ST_PLYR_READY 7050  // CG_1ST_PLYR_READY without status text
+#define WCG_2ND_PLYR_READY 7051  // CG_2ND_PLYR_READY without status text
+
 // older quakelive dm73 ownerdraws
 #define CG_SELECTEDPLAYER_ARMOR 66666
 #define CG_SELECTEDPLAYER_HEALTH 66667
@@ -123,5 +133,3 @@
 #define CG_1ST_PLYR_FULLCLAN 66700
 #define CG_2ND_PLYR_FULLCLAN 66701
 #define UI_SERVER_OWNER 66702
-
-

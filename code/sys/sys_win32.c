@@ -1034,7 +1034,7 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 
 	if (useBacktrace) {
 		bt = LoadLibraryA("backtrace.dll");
-		Com_Printf("backtrace: %d\n", (int)bt);
+		Com_Printf("backtrace: %p\n", bt);
 	}
 
 	Sys_SetFloatEnv();

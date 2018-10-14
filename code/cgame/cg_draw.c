@@ -15,7 +15,7 @@
 #include "cg_main.h"
 #include "cg_players.h"  // color from string
 #include "cg_predict.h"
-#include "cg_q3mme_camera.h"
+#include "cg_q3mme_demos_camera.h"
 #include "cg_scoreboard.h"
 #include "cg_sound.h"
 #include "cg_syscalls.h"
@@ -1360,6 +1360,17 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 		xscale = 2.0;
 	}
 
+	// hack to match quakelive behavior of not scaling text even if WIDESCREEN_STRETCH is set
+	if ((cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 7)  &&  QLWideScreen == WIDESCREEN_STRETCH) {
+		float ratio;
+
+		ratio = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+
+		if (ratio > (640.0f / 480.0f)) {
+			xscale /= ratio / (640.0f / 480.0f);
+		}
+	}
+
 	useScale = scale * font->glyphScale;
 
 	font = CG_ScaleFont(font, &scale, &useScale);
@@ -1380,9 +1391,10 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 			}
 			if (s[0].i < 0  ||  s[0].i > 255) {
 				s += 2;
-				i++;
+				i += 2;
 				continue;
 			}
+			//Com_Printf("^1  count '%c' : %d\n", s[0].i, i);
 			s++;
 			i++;
 		}
@@ -1437,6 +1449,17 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 						//yscale = 3.0;
 					}
 
+					// hack to match quakelive behavior of not scaling text even if WIDESCREEN_STRETCH is set
+					if ((cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 7)  &&  QLWideScreen == WIDESCREEN_STRETCH) {
+						float ratio;
+
+						ratio = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+
+						if (ratio > (640.0f / 480.0f)) {
+							xscale /= ratio / (640.0f / 480.0f);
+						}
+					}
+
 					useScale = scale * font->glyphScale;
 
 					font = CG_ScaleFont(font, &scale, &useScale);
@@ -1449,6 +1472,8 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 				} else {
 					//Com_Printf("^1CG_Text_Pic_Paint_Width:  unknown command: %d\n", s[0].i);
 				}
+
+				//Com_Printf("^5cp: command %d\n", s[0].i);
 				s += 2;
 				byteCount += 2;
 				continue;
@@ -1491,6 +1516,7 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 						byteCount += 2;
 					}
 				} else {
+					//Com_Printf("^6cp: color %c\n", s[1].i);
 					s += 2;
 					byteCount += 2;
 				}
@@ -1499,6 +1525,8 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 
 				out += ((float)glyph.xSkip * useScale * xscale);
 				//FIXME adjust?
+
+				//Com_Printf("^2cp: '%c'  byteCount:%d  len:%d\n", cp, byteCount, len);
 
 				s += bytes;
 				byteCount += bytes;
@@ -1544,6 +1572,25 @@ static float CG_Text_Width_orig (const char *text, float scale, int limit, const
 		xscale = 0.5;
 	} else if (!Q_stricmp(font->name, "q3giant")) {
 		xscale = 2.0;
+	}
+
+#if 0  // debugging widescreen
+	if (!Q_stricmp(text, "hello world")) {
+		Com_Printf("^2hello:  widescreen: %d\n", QLWideScreen);
+	}
+#endif
+
+	// quake live bug with WIDESCREEN_STRETCH and right + center align can be simulated by not running this block (cg_wideScreen.integer == 7)
+
+	// hack to match quakelive behavior of not scaling text even if WIDESCREEN_STRETCH is set
+	if (cg_wideScreen.integer == 5  &&  QLWideScreen == WIDESCREEN_STRETCH) {
+		float ratio;
+
+		ratio = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+
+		if (ratio > (640.0f / 480.0f)) {
+			xscale /= ratio / (640.0f / 480.0f);
+		}
 	}
 
 	useScale = scale * font->glyphScale;
@@ -1738,6 +1785,7 @@ float CG_Text_Height_old(const char *text, float scale, int limit, int fontIndex
 	return CG_Text_Height(text, scale, limit, font);
 }
 
+#if 0  // unused
 void CG_Text_PaintChar(float x, float y, float width, float height, float scale, float s, float t, float s2, float t2, qhandle_t hShader) {
   float w, h;
 
@@ -1746,6 +1794,7 @@ void CG_Text_PaintChar(float x, float y, float width, float height, float scale,
   CG_AdjustFrom640( &x, &y, &w, &h );
   trap_R_DrawStretchPic( x, y, w, h, s, t, s2, t2, hShader );
 }
+#endif
 
 void CG_Text_PaintCharScale (float x, float y, float width, float height, float xscale, float yscale, float s, float t, float s2, float t2, qhandle_t hShader)
 {
@@ -1764,10 +1813,12 @@ const fontInfo_t *CG_ScaleFont (const fontInfo_t *font, float *scale, float *use
 	int threshold;
 
 	if (!cg_autoFontScaling.integer) {
+		*useScale *= cg_overallFontScale.value;
 		return font;
 	}
 
 	if (font->bitmapFont) {
+		*useScale *= cg_overallFontScale.value;
 		return font;
 	}
 
@@ -1825,6 +1876,8 @@ const fontInfo_t *CG_ScaleFont (const fontInfo_t *font, float *scale, float *use
 		}
 	}
 
+	*useScale *= cg_overallFontScale.value;
+
 	return font;
 }
 
@@ -1866,12 +1919,28 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 		yscale = 3.0;
 	}
 
+	// hack to match quakelive behavior of not scaling text even if WIDESCREEN_STRETCH is set
+	if ((cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 7)  &&  QLWideScreen == WIDESCREEN_STRETCH) {
+		float ratio;
+
+		ratio = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+
+		if (ratio > (640.0f / 480.0f)) {
+			xscale /= ratio / (640.0f / 480.0f);
+		}
+	}
+
 	useScale = scale * font->glyphScale;
 
 	//FIXME eliminate font->glyphScale hack
 
 	font = CG_ScaleFont(font, &scale, &useScale);
 
+#if 0  // testing
+	if (DebugFont) {
+		Com_Printf("'%s' scale:%f  useScale:%f\n", font->name, scale, useScale);
+	}
+#endif
 
   if (text) {
 		const char *s = text;
@@ -1921,8 +1990,12 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 				}
 				// g_color_table_ql_0_1_0_303
 				//memcpy( newColor, g_color_table_ql_0_1_0_303[ColorIndex(*(s+1))], sizeof( newColor ) );
-				newColor[3] = color[3];
-				if (s[1] == '7') {
+
+				if (cg_colorCodeUseForegroundAlpha.integer) {
+					newColor[3] = color[3];
+				}
+
+				if (s[1] == '7'  &&  cg_colorCodeWhiteUseForegroundColor.integer) {
 					VectorCopy(color, newColor);
 				}
 				trap_R_SetColor( newColor );
@@ -2089,6 +2162,17 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 		yscale = 3.0;
 	}
 
+	// hack to match quakelive behavior of not scaling text even if WIDESCREEN_STRETCH is set
+	if ((cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 7)  &&  QLWideScreen == WIDESCREEN_STRETCH) {
+		float ratio;
+
+		ratio = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+
+		if (ratio > (640.0f / 480.0f)) {
+			xscale /= ratio / (640.0f / 480.0f);
+		}
+	}
+
 	useScale = scale * font->glyphScale;
 
 	font = CG_ScaleFont(font, &scale, &useScale);
@@ -2203,6 +2287,17 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 						yscale = 3.0;
 					}
 
+					// hack to match quakelive behavior of not scaling text even if WIDESCREEN_STRETCH is set
+					if ((cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 7)  &&  QLWideScreen == WIDESCREEN_STRETCH) {
+						float ratio;
+
+						ratio = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+
+						if (ratio > (640.0f / 480.0f)) {
+							xscale /= ratio / (640.0f / 480.0f);
+						}
+					}
+
 					useScale = scale * font->glyphScale;
 
 					font = CG_ScaleFont(font, &scale, &useScale);
@@ -2268,8 +2363,11 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					memcpy( newColor, g_color_table[ColorIndex(s[1].i)], sizeof( newColor ) );
 				}
 				//memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
-				newColor[3] = color[3];
-				if (s[1].i == '7') {
+				if (cg_colorCodeUseForegroundAlpha.integer) {
+					newColor[3] = color[3];
+				}
+
+				if (s[1].i == '7'  &&  cg_colorCodeWhiteUseForegroundColor.integer) {
 					VectorCopy(color, newColor);
 				}
 				trap_R_SetColor( newColor );
@@ -3766,7 +3864,9 @@ static float CG_DrawFPS( float y ) {
 		rect.x = x;
 		rect.y = y + h + (12.0f *  scale);
 
+		//DebugFont = qtrue;
 		CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, cg_drawFPSStyle.integer, font, align);
+		//DebugFont = qfalse;
 	}
 
 	lastFtime = cg.ftime;
@@ -5201,7 +5301,30 @@ static float CG_DrawScores( float y ) {
 			if (item) {
 				y1 = y - BIGCHAR_HEIGHT - 8;
 				if( cgs.blueflag >= 0 && cgs.blueflag <= 2 ) {
-					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, cgs.media.blueFlagShader[cgs.blueflag] );
+					qhandle_t shader;
+
+					switch (cgs.blueflag) {
+					default:
+					case 0:
+						shader = cgs.media.blueFlagAtBaseShader;
+						break;
+					case 1:
+						shader = cgs.media.blueFlagTakenShader;
+						break;
+					case 2:
+						shader = cgs.media.blueFlagDroppedShader;
+						break;
+					}
+
+					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, shader );
+
+#if 0  // if cg_hudBlueTeamColor implemented for q3 hud, above shader would be neutral flag but colorized
+					if (cgs.blueflag == 2) {
+						// little white arrow like quake live original icon
+						trap_R_SetColor(colorWhite);
+						CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagDroppedArrowShader );
+					}
+#endif
 				}
 			}
 		}
@@ -5225,7 +5348,30 @@ static float CG_DrawScores( float y ) {
 			if (item) {
 				y1 = y - BIGCHAR_HEIGHT - 8;
 				if( cgs.redflag >= 0 && cgs.redflag <= 2 ) {
-					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, cgs.media.redFlagShader[cgs.redflag] );
+					qhandle_t shader;
+
+					switch (cgs.redflag) {
+					default:
+					case 0:
+						shader = cgs.media.redFlagAtBaseShader;
+						break;
+					case 1:
+						shader = cgs.media.redFlagTakenShader;
+						break;
+					case 2:
+						shader = cgs.media.redFlagDroppedShader;
+						break;
+					}
+
+					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, shader );
+
+#if 0  // if cg_hudRedTeamColor implemented for q3 hud, above shader would be neutral flag but colorized
+					if (cgs.redflag == 2) {
+						// little white arrow like quake live original icon
+						trap_R_SetColor(colorWhite);
+						CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagDroppedArrowShader );
+					}
+#endif
 				}
 			}
 		}
@@ -5237,8 +5383,63 @@ static float CG_DrawScores( float y ) {
 
 			if (item) {
 				y1 = y - BIGCHAR_HEIGHT - 8;
+
 				if( cgs.flagStatus >= 0 && cgs.flagStatus <= 4 ) {
-					CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, cgs.media.flagShader[cgs.flagStatus] );
+					if (cgs.realProtocol < 91) {
+						qhandle_t shader;
+
+						// like q3
+						switch (cgs.flagStatus) {
+						default:
+						case 0:
+							shader = cgs.media.neutralFlagAtBaseShader;
+							break;
+						case 1:  // unused
+							shader = 0;
+							break;
+						case 2:
+							shader = cgs.media.redFlagTakenShader;
+							break;
+						case 3:
+							shader = cgs.media.blueFlagTakenShader;
+							break;
+						}
+
+						CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, shader );
+					} else {
+						qhandle_t shader;
+
+						// 2018-07-20  now
+						// 0:  at base
+						// 1:  unused
+						// 2:  dropped
+						// 3:  red taken
+						// 4:  blue taken
+
+						switch (cgs.flagStatus) {
+						default:
+						case 0:
+							shader = cgs.media.neutralFlagAtBaseShader;
+							break;
+						case 1:  // unused
+							shader = 0;
+							break;
+						case 2:
+							shader = cgs.media.neutralFlagDroppedShader;
+							break;
+						case 3:
+							shader = cgs.media.redFlagTakenShader;
+							break;
+						case 4:
+							shader = cgs.media.blueFlagTakenShader;
+							break;
+						}
+
+						CG_DrawPic( x, y1-4, w, BIGCHAR_HEIGHT+8, shader );
+					}
+
+					// debugging
+					//CG_Text_Paint(x, y - 10, 0.3, colorGreen, va("%d", cgs.flagStatus), 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont);
 				}
 			}
 		}
@@ -5489,21 +5690,29 @@ static float CG_DrawPowerups( float y ) {
 			  CG_DrawField( x, y, 2, sortedTime[ i ] / 1000 );
 		  }
 
-		  if ( t - cg.time >= POWERUP_BLINKS * POWERUP_BLINK_TIME ) {
-			  trap_R_SetColor( NULL );
-		  } else {
-			  vec4_t	modulate;
+		  if (cg_powerupBlink.integer) {
+			  if ( t - cg.time >= POWERUP_BLINKS * POWERUP_BLINK_TIME ) {
+				  trap_R_SetColor( NULL );
+			  } else {
+				  vec4_t	modulate;
 
-			  f = (float)( t - cg.time ) / POWERUP_BLINK_TIME;
-			  f -= (int)f;
-			  modulate[0] = modulate[1] = modulate[2] = modulate[3] = f;
-			  trap_R_SetColor( modulate );
+				  f = (float)( t - cg.time ) / POWERUP_BLINK_TIME;
+				  f -= (int)f;
+				  modulate[0] = modulate[1] = modulate[2] = modulate[3] = f;
+				  trap_R_SetColor( modulate );
+			  }
+		  } else {
+			  trap_R_SetColor(colorWhite);
 		  }
 
+		  //Com_Printf("^5active %d sorted %d  time %d\n", cg.powerupActive, sorted[i], cg.powerupTime);
+
+		  // 2018-07-22 doesn't work very well since powerups might only be sent as EV_GLOBAL_ITEM_PICKUP which doesn't set cg.powerupActive or cg.powerupTime.  Doesn't look very good anyways.
 		  if ( cg.powerupActive == sorted[i] &&
 			  cg.time - cg.powerupTime < PULSE_TIME ) {
 			  f = 1.0 - ( ( (float)cg.time - cg.powerupTime ) / PULSE_TIME );
 			  size = ICON_SIZE * ( 1.0 + ( PULSE_SCALE - 1.0 ) * f );
+			  Com_Printf("^5pulse size: %f\n", size);
 		  } else {
 			  size = ICON_SIZE;
 		  }
@@ -7329,9 +7538,9 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			extString[j].i = TEXT_PIC_PAINT_COLOR;
 			j++;
 			if (team == TEAM_RED) {
-				extString[j].i = Com_HexStrToInt(cg_obituaryRedTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_textRedTeamColor.string);
 			} else if (team == TEAM_BLUE) {
-				extString[j].i = Com_HexStrToInt(cg_obituaryBlueTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_textBlueTeamColor.string);
 			} else {
 				extString[j].i = Com_HexStrToInt("0xffffff");
 			}
@@ -7355,9 +7564,9 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum)
 			extString[j].i = TEXT_PIC_PAINT_COLOR;
 			j++;
 			if (team == TEAM_RED) {
-				extString[j].i = Com_HexStrToInt(cg_obituaryRedTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_textRedTeamColor.string);
 			} else if (team == TEAM_BLUE) {
-				extString[j].i = Com_HexStrToInt(cg_obituaryBlueTeamColor.string);
+				extString[j].i = Com_HexStrToInt(cg_textBlueTeamColor.string);
 			} else {
 				extString[j].i = Com_HexStrToInt("0xffffff");
 			}
@@ -7391,9 +7600,9 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum)
 					extString[j - 1].i = -1;
 					extString[j].i = 0;
 				} else if (team == TEAM_RED) {
-					extString[j].i = cgs.media.redFlagShader[0];
+					extString[j].i = cgs.media.redFlagAtBaseShader;
 				} else if (team == TEAM_BLUE) {
-					extString[j].i = cgs.media.blueFlagShader[0];
+					extString[j].i = cgs.media.blueFlagAtBaseShader;
 				} else {
 					extString[j].i = 0;
 				}
@@ -7433,9 +7642,9 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum)
 					extString[j - 1].i = -1;
 					extString[j].i = 0;
 				} else if (team == TEAM_RED) {
-					extString[j].i = cgs.media.redFlagShader[0];
+					extString[j].i = cgs.media.redFlagAtBaseShader;
 				} else if (team == TEAM_BLUE) {
-					extString[j].i = cgs.media.blueFlagShader[0];
+					extString[j].i = cgs.media.blueFlagAtBaseShader;
 				} else {
 					extString[j].i = 0;
 				}
@@ -8170,7 +8379,7 @@ static void Wolfcam_DrawCrosshair (void)
     y = cg_crosshairY.value;
 	//QLWideScreen = cg_crosshairWideScreen.integer;
 	//FIXME change?
-	QLWideScreen = WIDESCREEN_NONE;
+	QLWideScreen = WIDESCREEN_STRETCH;
 
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
@@ -8450,7 +8659,7 @@ static void CG_DrawCrosshair(void) {
 	y = cg_crosshairY.value;
 	//QLWideScreen = cg_crosshairWideScreen.integer;
 	//FIXME change?
-	QLWideScreen = WIDESCREEN_NONE;
+	QLWideScreen = WIDESCREEN_STRETCH;
 
 	CG_AdjustFrom640( &x, &y, &w, &h );
 
@@ -9223,6 +9432,7 @@ static qboolean CG_DrawScoreboard (void)
 		if ( !CG_FadeColor( cg.scoreFadeTime, FADE_TIME ) ) {
 			// next time scoreboard comes up, don't print killer
 			cg.deferredPlayerLoading = 0;
+			// 2018-07-15 ql doesn't reset the name and it can be used in the other parts of the hud with CG_KILLER so cg.killerNameHud not reset
 			cg.killerName[0] = 0;
 			firstTime = qtrue;
 			//Com_Printf("%f nope\n", cg.ftime);
@@ -9359,9 +9569,9 @@ static void CG_DrawScoreboardMenuCursor (void)
 		return;
 	}
 
-	QLWideScreen = WIDESCREEN_NONE;  //cg_scoreBoardCursorAreaWideScreen.integer;
+	QLWideScreen = WIDESCREEN_STRETCH;  //cg_scoreBoardCursorAreaWideScreen.integer;
 	// don't stretch the cursor in widescreen mode
-	if (cg_wideScreen.integer == 5) {
+	if (cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 6  ||  cg_wideScreen.integer == 7) {
 		float aspect;
 		float width43;
 		float newXScale;
@@ -10705,6 +10915,13 @@ static void CG_Draw2D( void ) {
 			cg.scoreBoardShowing = qfalse;
     }
 
+#if 0  // testing
+	if (cg.scoreBoardShowing  &&  cg.demoPlayback) {
+		Menu_HandleCapture();
+		CG_DrawScoreboardMenuCursor();
+	}
+#endif
+
 	CG_RoundAnnouncements();
 	CG_DrawCenter();
 
@@ -10764,6 +10981,7 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 
 	// optionally draw the info screen instead
 	if ( !cg.snap ) {
+		trap_R_BeginHud();
 		CG_DrawInformation(qtrue);
 		return;
 	}
@@ -10771,6 +10989,7 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	// optionally draw the tournement scoreboard instead
 	if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR &&
 		( cg.snap->ps.pm_flags & PMF_SCOREBOARD ) ) {
+		trap_R_BeginHud();
 		CG_DrawTourneyScoreboard();
 		return;
 	}
@@ -10841,6 +11060,8 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	if ( separation != 0 ) {
 		VectorCopy( baseOrg, cg.refdef.vieworg );
 	}
+
+	trap_R_BeginHud();
 
 	if (cg.drawInfo) {
 		CG_DrawInformation(qfalse);

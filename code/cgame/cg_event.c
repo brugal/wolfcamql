@@ -525,6 +525,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 		strcpy( attackerName, "noname" );
 		if (target == ourClientNum) {
 			cg.killerName[0] = 0;
+			cg.killerNameHud[0] = 0;
 			cg.killerWeaponIcon = icon;
 			cg.killerClientNum = attacker;
 		}
@@ -537,6 +538,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 			vec3_t forward;
 
 			Q_strncpyz( cg.killerName, attackerName, sizeof( cg.killerName ) );
+			Q_strncpyz( cg.killerNameHud, attackerName, sizeof( cg.killerNameHud ) );
 			cg.killerWeaponIcon = icon;
 			cg.killerClientNum = attacker;
 			VectorCopy(cg_entities[attacker].lerpOrigin, cg.killerOrigin);
@@ -1917,6 +1919,16 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			item = &bg_itemlist[ index ];
 
 			CG_TimedItemPickup(index, es->pos.trBase, clientNum, cg.time, qfalse);
+
+#if 0  // testing powerupBlink
+			if (1) {  //(clientNum == cg.snap->ps.clientNum) {
+				if (item->giTag == PW_QUAD  ||  item->giTag == PW_BATTLESUIT  ||  item->giTag == PW_REGEN  ||  item->giTag == PW_ARMORREGEN) {
+					cg.powerupActive = item->giTag;
+					cg.powerupTime = cg.time;
+				}
+			}
+#endif
+
 			// powerup pickups are global
 			play = qtrue;
 			if (cg_audioAnnouncer.integer == 0  ||  cg_audioAnnouncerPowerup.integer == 0) {
@@ -3794,7 +3806,11 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		break;
 	}
 
-		//FIXME EV_NEW_HIGH_SCORE
+	case EV_NEW_HIGH_SCORE: {
+		DEBUGNAME("EV_NEW_HIGH_SCORE");
+		// new race high score
+		// 2018-07-28 is this ever used?
+	}
 
 	default: {
 		static int lastUnknownEvent = 0;

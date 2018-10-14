@@ -1562,6 +1562,106 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	qglEnd ();
 }
 
+// glConfig.vidWidth x glConfig.vidHeight rgb data
+static void RE_StretchRawRectScreen (const byte *data)
+{
+	int start, end;
+	GLenum target;
+	GLenum err;
+	int width;
+	int height;
+
+	if ( !tr.registered ) {
+		return;
+	}
+
+	if (!glConfig.textureRectangleAvailable) {
+		static qboolean warningIssued = qfalse;
+
+		if (!warningIssued) {
+			ri.Printf(PRINT_ALL, "^3%s: rectangle texture not supported\n", __FUNCTION__);
+			warningIssued = qtrue;
+		}
+
+		return;
+	}
+
+	width = glConfig.vidWidth;
+	height = glConfig.vidHeight;
+
+	//R_IssuePendingRenderCommands();
+
+	if ( tess.numIndexes ) {
+		RB_EndSurface();
+	}
+
+	// we definitely want to sync every frame for the cinematics
+	qglFinish();
+
+	start = 0;
+	if ( r_speeds->integer ) {
+		start = ri.RealMilliseconds();
+	}
+
+	qglMatrixMode(GL_PROJECTION);
+	qglLoadIdentity();
+	qglMatrixMode(GL_MODELVIEW);
+	qglLoadIdentity();
+
+	RB_SetGL2D();
+	GL_State(GLS_DEPTHTEST_DISABLE);
+
+	GL_SelectTextureUnit(0);
+
+	target = GL_TEXTURE_RECTANGLE_ARB;
+
+	qglDisable(GL_TEXTURE_2D);
+	qglEnable(target);
+
+	qglBindTexture(target, tr.rectScreenTexture);
+
+	qglTexSubImage2D( target, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data );
+
+	err = qglGetError();
+	if (err != GL_NO_ERROR) {
+		ri.Printf(PRINT_ALL, "^1opengl error updating rect texture:  0x%x\n", err);
+	}
+
+	if ( r_speeds->integer ) {
+		end = ri.RealMilliseconds();
+		ri.Printf( PRINT_ALL, "rect: qglTexSubImage2D %i, %i: %i msec\n", width, height, end - start );
+	}
+
+	//RB_SetGL2D();
+
+	//qglColor3f( tr.identityLight, tr.identityLight, tr.identityLight );
+
+	qglBegin (GL_QUADS);
+
+	//FIXME testing
+	//width /= 2;
+	//height /= 2;
+
+	qglTexCoord2i(0, 0);
+	qglVertex2i(0, height);
+
+	qglTexCoord2i(width, 0);
+	qglVertex2i(width, height);
+
+	qglTexCoord2i(width, height);
+	qglVertex2i(width, 0);
+
+	qglTexCoord2i(0, height);
+	qglVertex2i(0, 0);
+
+	qglEnd();
+
+	qglDisable(target);
+	qglEnable(GL_TEXTURE_2D);
+
+	//qglFinish();
+}
+
 void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty) {
 
 	GL_Bind( tr.scratchImage[client] );
@@ -1698,6 +1798,47 @@ const void	*RB_DrawSurfs( const void *data ) {
 
 	backEnd.refdef = cmd->refdef;
 	backEnd.viewParms = cmd->viewParms;
+
+	// from q3mme
+
+	//Jitter the camera origin
+	if ( !backEnd.viewParms.isPortal && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) ) {
+		int i;
+		float x, y;
+		qboolean adjustOrigin = qfalse;
+
+		if ((tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  mme_dofFrames->integer > 0) {
+			if (r_anaglyphMode->integer == 19  &&  *ri.SplitVideo  &&  !tr.leftRecorded) {
+				adjustOrigin = R_MME_JitterOrigin(&x, &y, qfalse);
+			} else {
+				adjustOrigin = R_MME_JitterOrigin(&x, &y, qtrue);
+			}
+		}
+
+		if (adjustOrigin) {
+			orientationr_t* or = &backEnd.viewParms.or;
+			orientationr_t* world = &backEnd.viewParms.world;
+
+//			VectorScale( or->axis[0], 0.5, or->axis[0] );
+//			VectorScale( or->axis[1], 0.3, or->axis[1] );
+//			VectorScale( or->axis[2], 0.8, or->axis[2] );
+			VectorMA( or->origin, x, or->axis[1], or->origin );
+			VectorMA( or->origin, y, or->axis[2], or->origin );
+//			or->origin[2] += 4000;
+//			or->origin[2] += 0.1 * x;
+			R_RotateForWorld( or, world );
+			for ( i = 0; i < 16; i++ ) {
+				////int r = (rand() & 0xffff ) - 0x4000;
+				//world->modelMatrix[i] *= (0.9 + r * 0.0001);
+				//or->modelMatrix[i] *= (0.9 + r * 0.0001);
+			}
+		} else {
+			for ( i = 0; i < 16; i++ ) {
+//				int r = (rand() & 0xffff ) - 0x4000;
+//				backEnd.viewParms.world.modelMatrix[i] *= (0.9 + r * 0.0001);
+			}
+		}
+	}
 
 	RB_RenderDrawSurfList( cmd->drawSurfs, cmd->numDrawSurfs );
 
@@ -1857,6 +1998,8 @@ RB_SwapBuffers
 
 =============
 */
+
+byte BufferTest[256 * 356 * 3];
 const void	*RB_SwapBuffers (const void *data, qboolean endFrame)
 {
 	const swapBuffersCommand_t	*cmd;
@@ -2057,6 +2200,19 @@ const void	*RB_SwapBuffers (const void *data, qboolean endFrame)
 	return (const void *)(cmd + 1);
 }
 
+static const void *RB_DebugGraphics (const void *data)
+{
+	const debugGraphicsCommand_t *cmd;
+
+	cmd = (const debugGraphicsCommand_t *)data;
+
+	GL_Bind( tr.whiteImage);
+	GL_Cull( CT_FRONT_SIDED );
+	ri.CM_DrawDebugSurface( R_DebugPolygon );
+
+	return (const void *)(cmd + 1);
+}
+
 static const void *RB_SkipRenderCommand (const void *data)
 {
 	data = PADP(data, sizeof(void *));
@@ -2088,11 +2244,17 @@ static const void *RB_SkipRenderCommand (const void *data)
 		case RC_CLEARDEPTH:
 			data += sizeof(clearDepthCommand_t);
 			break;
+		case RC_BEGIN_HUD:
+			data += sizeof(beginHudCommand_t);
+			break;
+		case RC_DEBUG_GRAPHICS:
+			data += sizeof(debugGraphicsCommand_t);
+			break;
 		case RC_END_OF_LIST:
 			ri.Printf(PRINT_ALL, "^1RB_SkipRenderCommand():  called with RC_END_OF_LIST\n");
 			break;
 		default:
-			ri.Printf(PRINT_ALL, "^1RB_SkipRenderCommand():  unknown render command: %d\n", *(const int *)data);
+			ri.Printf(PRINT_ALL, "^1RB_SkipRenderCommand():  unknown render xcommand: %d\n", *(const int *)data);
 			break;
 	}
 
@@ -2120,6 +2282,22 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	GLboolean rgba[4];
 	qboolean videoCommand;
 	const void *data2;
+	qboolean renderingHud;
+	qboolean renderingHud2;
+
+	// silence compiler warning
+	rgba[0] = rgba[1] = rgba[2] = rgba[3] = GL_FALSE;
+
+	tr.leftRecorded = qfalse;  // to break outer dof loop
+
+	//FIXME splitting rendering between world and hud will not work correctly when R_IssuePendingRenderCommands() is used  -- 2018-08-10 hack added to only run R_IssuePendingRenderCommands() at the end of frame
+
+	if (tr.recordingVideo  ||  mme_dofVisualize->integer) {
+		R_MME_CheckCvars(qfalse, &shotDataMain);
+		if (r_anaglyphMode->integer == 19  &&  *ri.SplitVideo) {
+			R_MME_CheckCvars(qfalse, &shotDataLeft);
+		}
+	}
 
 	t1 = ri.RealMilliseconds();
 	dataOrig = data;
@@ -2147,6 +2325,8 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	colorMaskSet = qfalse;
 	tr.drawSurfsCount = 0;
 
+	renderingHud = qfalse;
+
 	data = dataOrig;
 	dprintf("render1 commands start ----------------------------\n");
 	while ( 1 ) {
@@ -2154,49 +2334,65 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		switch (*(const int *)data) {
 		case RC_DRAW_SURFS:
 			dprintf("r1 drawsurfs\n");
-			data = RB_DrawSurfs(data);  //FIXME others are hud? you sure?
-			tr.drawSurfsCount++;
+			if (!renderingHud) {
+				data = RB_DrawSurfs(data);  //FIXME others are hud? you sure?
+				tr.drawSurfsCount++;
+			} else {
+				data = RB_SkipRenderCommand(data);
+			}
 			break;
 
 		case RC_CLEARDEPTH:
 			dprintf("r1 cleardepth\n");
-			//if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  videoCommand  &&  *ri.SplitVideo) {
-			//if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo) {
-			//if (r_anaglyphMode->integer == 19  &&  videoCommand  &&  *ri.SplitVideo) {
-			if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  *ri.SplitVideo) {
+
+			if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  *ri.SplitVideo  &&  !tr.leftRecorded) {
 				videoFrameCommand_t cmd;
 
-				//ri.Printf(PRINT_ALL, "yes\n");
 				if (!videoCommand) {
-					//ri.Printf(PRINT_ALL, "^3wtf.......................\n");
+					//FIXME 'videoCommand' not used
+					// shouldn't happen
 				}
 
 				if ( tess.numIndexes ) {
 					RB_EndSurface();
 				}
 
-				//qglFinish();
-				//ri.Printf(PRINT_ALL, "%p\n", ExtraVideoBuffer);
-				//if (!ExtraVideoBuffer1) {
 				if (!shotDataLeft.workAlloc) {
-					//ExtraVideoBuffer1 = malloc(glConfig.vidHeight * glConfig.vidWidth * 4 + 18);
-
-					//if (!ExtraVideoBuffer1) {
-					//	ri.Error(ERR_FATAL, "couldn't allocate extra video buffer\n");
-					//}
-					//ri.Printf(PRINT_ALL, "^5%p--------------  %d x %d\n", ExtraVideoBuffer1, glConfig.vidWidth, glConfig.vidHeight);
-					R_MME_InitMemory(qfalse, &shotDataLeft);
+					ri.Error(ERR_DROP, "shotDataLeft memory not allocated");
 				}
-#if 0
-				qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, ExtraVideoBuffer1 + 18);
-				R_GammaCorrect(ExtraVideoBuffer1 + 18, glConfig.vidWidth * glConfig.vidHeight * 4);
-#endif
+
+				if (tr.drawSurfsCount) {
+					if (R_MME_MultiPassNext(qfalse)) {
+						R_InitNextFrameNoCommands();
+						goto videoCommandCheckDone;
+					}
+
+					// blit mme dof
+					if (mme_dofFrames->integer > 0  &&  tr.recordingVideo  &&  R_MME_GetPassData(qfalse)) {
+						byte *buffer;
+
+						buffer = R_MME_GetPassData(qfalse);
+						RE_StretchRawRectScreen(buffer);
+					}
+				}
 
 				// draw hud
+				renderingHud2 = qfalse;
+
 				data2 = dataOrig;
 				while ( 1 ) {
 					data2 = PADP(data2, sizeof(void *));
 					switch (*(const int *)data2) {
+					case RC_DRAW_SURFS:
+						dprintf("r1 -- depth drawsurfs\n");
+						if (renderingHud2) {
+							data2 = RB_DrawSurfs(data2);  // 3d hud models
+							tr.drawSurfsCount++;
+						} else {
+							data2 = RB_SkipRenderCommand(data2);
+						}
+						break;
+
 					case RC_SET_COLOR:
 						//dprintf("r1 hud setcolor\n");
 						data2 = RB_SetColor(data2);
@@ -2205,6 +2401,15 @@ void RB_ExecuteRenderCommands( const void *data ) {
 						//dprintf("r1 hud stretchpic\n");
 						data2 = RB_StretchPic(data2);
 						break;
+
+					case RC_BEGIN_HUD:
+						data2 = RB_SkipRenderCommand(data2);
+						renderingHud2 = qtrue;
+						break;
+
+					case RC_CLEARDEPTH:
+						goto renderpass1huddone;
+
 					case RC_END_OF_LIST:
 						//dprintf("render1 hud commands stop ------------------------\n");
 						goto renderpass1huddone;
@@ -2233,10 +2438,12 @@ void RB_ExecuteRenderCommands( const void *data ) {
 				cmd.picCount = ri.afdMain->picCount - 1;
 				Q_strncpyz(cmd.givenFileName, ri.afdMain->givenFileName, MAX_QPATH);
 				RB_TakeVideoFrameCmd(&cmd, &shotDataLeft);
+				tr.leftRecorded = qtrue;
 			}
+
 			data = RB_ClearDepth(data);
-			//data = RB_SkipRenderCommand(data);
 			depthWasCleared = qtrue;
+			renderingHud = qfalse;
 			break;
 
 		case RC_DRAW_BUFFER:
@@ -2268,6 +2475,14 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			colorMaskSet = qtrue;
 			break;
 
+		case RC_BEGIN_HUD:
+			data = RB_SkipRenderCommand(data);
+			renderingHud = qtrue;
+			break;
+
+		case RC_DEBUG_GRAPHICS:
+			data = RB_DebugGraphics(data);
+			break;
 		case RC_END_OF_LIST:
 			goto firstpassdone;
 		default:
@@ -2282,8 +2497,47 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	}
 
+	/* Take and merge DOF frames */
+	if ((tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  tr.drawSurfsCount) {
+		if (R_MME_MultiPassNext(qtrue)) {
+			R_InitNextFrameNoCommands();
+			goto videoCommandCheckDone;
+		}
+
+		// blit mme dof
+
+		//if (mme_dofFrames->integer > 0  &&  R_MME_GetPassData()) {
+		if (mme_dofFrames->integer > 0  &&  (tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  R_MME_GetPassData(qtrue)) {
+			byte *buffer;
+			//int i, j;
+
+			buffer = R_MME_GetPassData(qtrue);
+
+#if 0  // testing
+			for (i = 0;  i < glConfig.vidHeight;  i++) {
+				for (j = 0;  j < glConfig.vidWidth;  j++) {
+					byte *p;
+					p = buffer + i * glConfig.vidWidth * 3 + j * 3;
+					if (j == glConfig.vidWidth / 2) {
+						p[0] = 255;
+						p[1] = 0;
+						p[2] = 0;
+					} else {
+						//p[0] = 0;
+						//p[1] = 0;
+						//p[2] = 0;
+					}
+				}
+			}
+#endif
+
+			RE_StretchRawRectScreen(buffer);
+		}
+	}
+
 	// video command is in it's own render list, so drawing doesn't always
 	// take place
+
 
 	if (tr.drawSurfsCount) {
 		// screen map texture
@@ -2388,11 +2642,18 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		qglColorMask(rgba[0], rgba[1], rgba[2], rgba[3]);
 	}
 
+	// draw hud
+	renderingHud = qfalse;
+
 	data = dataOrig;
 	dprintf("render2 commands start ------------------------------\n");
 	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
 		switch ( *(const int *)data ) {
+		case RC_BEGIN_HUD:
+			data = RB_SkipRenderCommand(data);
+			renderingHud = qtrue;
+			break;
 		case RC_SET_COLOR:
 			//dprintf("r2 setcolor\n");
 			data = RB_SetColor( data );
@@ -2404,8 +2665,12 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			break;
 		case RC_DRAW_SURFS:
 			//dprintf("r2 drawsurfs\n");
-			//data = RB_DrawSurfs( data );
-			data = RB_SkipRenderCommand(data);
+			if (renderingHud) {
+				data = RB_DrawSurfs(data);  // 3d hud models
+				tr.drawSurfsCount++;
+			} else {
+				data = RB_SkipRenderCommand(data);
+			}
 			break;
 		case RC_DRAW_BUFFER:
 			//dprintf("r2 drawbuffer\n");
@@ -2436,7 +2701,12 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			//dprintf("r2 cleardepth\n");
 			//data = RB_ClearDepth(data);
 			data = RB_SkipRenderCommand(data);
+			renderingHud = qfalse;
 			break;
+		case RC_DEBUG_GRAPHICS:
+			data = RB_SkipRenderCommand(data);
+			break;
+
 		case RC_END_OF_LIST:
 			//dprintf("render2 commands stop ------------------------\n");
 			// stop rendering

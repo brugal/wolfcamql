@@ -1,4 +1,4 @@
-12.1test2
+12.1test3
 
 * menus work even if window doesn't have mouse grab
 * bug fix:  info screen calculated string widths incorrectly
@@ -15,6 +15,98 @@
 * CG_[RED|BLUE]_TIMEOUT_COUNT only draw if g_timeoutcount is greater than zero to match quake live
 * bug fix:  remove console spamming if CG_[RED|BLUE]_TEAM_MAP_PICKUPS used outside of tdm or ctf
 * bug fix:  if camera is set to update freecam position, mouse movements during camera playback would change view after playback is done
+* bug fix:  don't spam console if itemDef widescreen is WIDESCREEN_STRETCH and menuDef widescreen is not the same
+* cg_wideScreen 5 (Quake Live widescreen setting) doesn't stretch text even if WIDESCREEN_STRETCH is used.  This matches Quake Live's behavior.  Previous behavior of stretching text can be enabled with cg_wideScreen 6.
+* cg_wideScreen 7 added which works like Quake Live setting (5) but is also bug compatible
+* default 'widescreen' value for user huds (cg_hudFiles) changed from WIDESCREEN_CENTER to WIDESCREEN_STRETCH to match Quake Live's behavior.  Other menus (ex: scoreboards, etc.) use WIDESCREEN_CENTER as the default.
+* bug fix:  CG_MATCH_WINNER had incorrect word spacing with center and right alignment
+* bug fix:  CG_MATCH_WINNER not showing lead message outside of intermission
+* bug fix:  invalid hud align value would prevent drawing text
+* bug fix:  CG_GAME_STATUS not rendering status for non-team games
+* CG_KILLER value isn't reset after first scoreboard after death is shown to match quake live
+* bug fix:  CG_KILLER ITEM_ALIGN_CENTER used incorrect vertical position
+* bug fix:  CG_KILLER drew weapon icon in incorrect position with ITEM_ALIGN_RIGHT
+* bug fix:  CG_[ACCURACY|ASSISTS|DEFEND|EXCELLENT|IMPRESSIVE|PERFECT|GAUNTLET|CAPTURES] incorrectly based text spacing on the rectangle size
+* added WCG_PLAYER_OBIT which is the same as CG_PLAYER_OBIT but supports align setting
+* added WCG_AREA_NEW_CHAT which is the same as CG_AREA_NEW_CHAT but supports align setting
+* bug fix:  incorrect right and center alignment for frag/obit token rendering
+* bug fix:  CG_MATCH_END_CONDITION text didn't match quake live
+* bug fix:  CG_[BLUE|RED]_FLAGSTATUS rendered in Harvester game type
+* bug fix:  /follow didn't show harvester skulls in hud
+* bug fix:  CG_PLAYER_SCORE, CG_[BLUE|RED]_FLAGSTATUS ignore 'shader' to match quake live
+* bug fix:  CG_ONEFLAG_STATUS used 'taken' instead of 'stolen' icon
+* bug fix:  incorrect 1fctf flags status detection with ql protocol 91 demos
+* bug fix:  CG_ONEFLAG_STATUS added blue or red color to icon
+* WCG_[BLUE|RED]_FLAGSTATUS_COLOR, WCG_ONEFLAG_STATUS_COLOR same as CG_[BLUE|RED]_FLAGSTATUS, CG_ONEFLAG_STATUS but colorize icon according to cg_hud[Blue|Red|No]TeamColor
+* bug fix:  cg_flagStyle 1 was only being applied to carried flags, not dropped ones or at base
+* bug fix:  ctf used 'stolen' instead of 'taken' shader
+* bug fix:  CG_AREA_POWERUP incorrect scale for powerup icon
+* bug fix:  CG_AREA_POWERUP incorrect icon for kill counter
+* bug fix:  default texscale was 0.22 instead of 0.55 (matches quake live)
+* cg_powerupBlink  (enable or disable icon blinking when time is running out)
+* bug fix:  CG_AREA_POWERUP would always use rectangle width to increment distance between multiple powerups (for both HUD_VERTICAL and HUD_HORIZONTAL)
+* cg_powerupBlink  (enable or disable icon blinking when time is running out)
+* bug fix:  CG_AREA_POWERUP kill counter icon size based on textscale instead of rectangle size
+* bug fix:  CG_AREA_POWERUP kill counter icon position and text weren't connected to countdown text
+* bug fix:  CG_PLAYER_HEALTH_BAR_200 and CG_PLAYER_ARMOR_BAR_200 drawing incorrect value
+* bug fix:  CG_TEAM_COLORIZED didn't use alpha value
+* cg_overallFontScale  scaling value applied to all fonts before rendering
+* bug fix:  CG_PLYR_END_GAME_SCORE didn't ignore 'rank tied' status for duel and ffa
+* bug fix:  /devamp with harvester game type would crash when player dies
+* don't add server skill rating to CG_MAP_NAME in scoreboards for older demos
+* bug fix:  CG_SELECTED_PLYR_TEAM_COLOR used current player instead of selected one
+* bug fix:  CG_SELECTED_PLYR_TEAM_COLOR didn't use alpha color value
+* bug fix:  CG_SELECTED_PLYR_TEAM_COLOR only worked for blue and red teams
+* CG_SELECTED_PLYR_TEAM_COLOR uses cg_hud[Blue|Red|No]TeamColor
+* bug fix:  CG_PLAYER_COUNTS use max clients instead of max team size for team games
+* WCG_ROUNDTIMER same as CG_ROUNDTIMER but it doesn't ignore text color and alpha
+* doc fix:  cg_hud[Blue|Red|No]TeamColor is applied with CT_TEAM_COLORIZED not CG_TEAM_COLOR
+* bug fix:  CG_FOLLOW_PLAYER_NAME_EX didn't colorize name
+* WCG_FOLLOW_PLAYER_NAME_EX same as CG_FOLLOW_PLAYER_NAME_EX but it doesn't colorize name in team games
+* cg_hud[Blue|Red|No]TeamColor defaults changed to match quake live
+* cg_hudNeutralTeamColor added for WCG_ONEFLAG_STATUS_COLOR and neutral flag
+* cg_obituary[Red|Blue]TeamColor renamed to cg_text[Red|Blue]TeamColor since it is also used outside of obituaries, default colors changed to match quake live
+* but fix:  "notosans-regular" and "droidsansmono" fonts scaled by an addtional 0.8 value to match quake live
+* cg_autoFontScalingThreshold default changed to 24 to match quake live
+* bug fix:  ownerdrawvalue for CG_HARVESTER_SKULLS didn't return correct value for /follow'ed player
+* bug fix:  ownerdrawvalue didn't use selected score for CG_ACCURACY, CG_ASSISTS, CG_DEFEND, CG_EXCELLENT, CG_IMPRESSIVE, CG_PERFECT, CG_GAUNTLET, CG_CAPTURES
+* bug fix:  ownerdrawvalue didn't use correct value for /follow'ed player in duel or with cpma mvd
+* support for CG_1STPLACE_PLYR_MODEL
+* bug fix:  3d hud models were always drawn below other hud elements and missing in menu screens
+* bug fix:  debug commands, image and model loading could corrupt video recording
+* bug fix:  r_debugSurface wasn't working in opengl1 renderer (note: not implemented in opengl2 renderer)
+* mme_blurType default changed to gaussian
+* update q3mme blur code.  Added mme_blurStrength, mme_cpuSSE2, mme_blurJitter
+* mme_blurFrames and mme_blurOverlap limited to 256
+* bug fix:  changing mme_blurType would only reset one of 'left' or 'right' with split video saving
+* bug fix:  memory corruption if mme_blurFrames + mme_blurOverlap were greater than 256
+* bug fix:  renderergl2 shutdown didn't delete bloom and backbuffer textures
+* q3mme dof.  Added mme_dofFrames and mme_dofRadius, new : mme_dofVisualize, /saveq3mmedof /loadq3mmedof
+
+  /dof [list|info]
+
+  '/dof target' changed to accept integer value (-1 clears target)
+
+* bug fix:  opengl2 renderer crash if '{font}' frag token used
+* cg_colorCodeWhiteUseForegroundColor  in huds, this controls whether white ('^7') color code forces white or uses foreground color.
+* cg_colorCodeUseForegroundAlpha  in huds, this controls whether use of of color codes overrides foreground alpha setting.
+* bug fix:  missing support for CG_VOTEMAP1, CG_VOTEMAP2, CG_VOTEMAP3, CG_VOTEGAMETYPE1, CG_VOTEGAMETYPE2, CG_VOTEGAMETYPE3, CG_WP_VERTICAL, CG_ACC_VERTICAL, and CG_MATCH_STATE
+* bug fix:  CG_MATCH_DETAILS missing game type
+* bug fix:  CG_MATCH_DETAILS truncated long text
+* bug fix:  CG_1ST_PLYR_READY and CG_2ND_PLYR_READY missing status text
+* WCG_1ST_PLYR_READY and WCG_2ND_PLYR_READY which are the same as CG_1ST_PLYR_READY and CG_2ND_PLYR_READY but don't add the status text
+* bug fix:  CG_ARMORTIERED_COLORIZED didn't set foreground alpha correctly
+* bug fix:  CG_[BLUE|RED]_TEAM_MAP_PICKUPS didn't use text style correctly
+* bug fix:  CG_[BLUE|RED]_TEAM_MAP_PICKUPS didn't use foreground text color
+* bug fix:  CG_[1ST|2ND]_PLYR_PICKUPS didn't use text style for timer info
+* bug fix:  CG_[1ST|2ND]_PLYR_PICKUPS didn't use foreground text color
+* bug fix:  CG_[1ST|2ND]_PLYR_PICKUPS didn't use align
+* bug fix:  CG_[1ST|2ND]_PLYR_PICKUPS used height instead of width to calculate count x position
+* bug fix:  CG_[1ST|2ND]_PLYR_PICKUPS used width instead of text scale to calculate timing x position
+* bug fix:  CG_[BLUE|RED]_OWNED_FLAGS didn't check game type
+* bug fix:  CG_ROUND, CG_TEAM_PLYR_COUNT, CG_ENEMY_PLYR_COUNT, CG_RACE_STATUS, and CG_RACE_TIMES rendering didn't check for valid game types
+* bug fix:  domination control point count and red/blue player alive count not set when demo playback starts or video is reset
+* bug fix:  opengl2 renderer 'animMap' limit 8 instead of 2048 (em92 Eugene Molotov)
 
 ---------------------------------
 12.0  2018-06-21

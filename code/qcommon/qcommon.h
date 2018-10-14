@@ -931,6 +931,8 @@ extern	qboolean	com_fullyInitialized;
 extern	fileHandle_t	com_journalFile;
 extern	fileHandle_t	com_journalDataFile;
 
+extern qboolean com_sse2_supported;
+
 typedef enum {
 	TAG_FREE,
 	TAG_GENERAL,

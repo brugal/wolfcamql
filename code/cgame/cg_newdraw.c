@@ -1,12 +1,14 @@
 #include "cg_local.h"
 
+#include "../game/bg_local.h"  // bg_player[Maxs|Mins]
 #include "cg_consolecmds.h"  // CG_AdjustTimeForTimeouts
 #include "cg_draw.h"
 #include "cg_drawtools.h"
+#include "cg_ents.h"  // CG_PositionRotatedEntityOnTag
 #include "cg_event.h"
 #include "cg_newdraw.h"
 #include "cg_main.h"
-#include "cg_players.h"  // color from string
+#include "cg_players.h"  // color from string, CG_CheckForModelChange
 #include "cg_playerstate.h"
 #include "cg_syscalls.h"
 #include "cg_weapons.h"
@@ -174,6 +176,75 @@ void CG_SelectPrevPlayer(void) {
 	CG_SetSelectedPlayerName();
 }
 
+//FIXME accept client number
+static qboolean CG_PlayerIsFirstPlace (void)
+{
+	int team;
+
+	if (wolfcam_following) {
+		team = cgs.clientinfo[wcg.clientNum].team;
+	} else {
+		team = cg.snap->ps.persistant[PERS_TEAM];
+	}
+
+	if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
+		if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
+			return qtrue;
+		} else if (cgs.scores1 < cgs.scores2) {
+			if (team == TEAM_RED) {
+				return qfalse;
+			} else {
+				return qtrue;
+			}
+		} else {  // cgs.scores2 < cgs.scores1
+			if (team == TEAM_BLUE) {
+				return qfalse;
+			} else {
+				return qtrue;
+			}
+		}
+	}
+
+	// duel and ffa
+
+	if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum  &&  cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR)) {
+		if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+
+	// wolfcam_following
+
+	if (CG_IsCpmaMvd()) {
+		// can use clientinfo score since it is updated at the same time as cgs.scores1 and cgs.scores2
+		if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {
+			return qtrue;
+		} else {
+			return qfalse;
+		}
+	}
+
+	if (CG_IsDuelGame(cgs.gametype)) {
+		// if following someone in game it means we are following the player the demo taker is playing against
+		if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
+			if (cg.snap->ps.persistant[PERS_RANK] & RANK_TIED_FLAG) {
+				return qtrue;
+			} else if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
+				return qfalse;
+			} else {
+				return qtrue;
+			}
+		} else {
+			// we don't know
+			return qfalse;
+		}
+	}
+
+	// other game types and cases:  we don't know, we don't have enough information in demo
+	return qfalse;
+}
 
 static void CG_DrawPlayerArmorIcon( const rectDef_t *rect, qboolean draw2D ) {
 	vec3_t		angles;
@@ -617,28 +688,30 @@ static void CG_DrawPlayerScore (const rectDef_t *rect, float scale, const vec4_t
 		clientNum = cg.snap->ps.clientNum;
 	}
 
+#if 0  // 2018-07-19 ignored in ql
 	if (shader) {
 		trap_R_SetColor( color );
 		CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
 		trap_R_SetColor( NULL );
+	}
+#endif
+
+	if (cgs.gametype == GT_RACE) {
+		// 2018-05-30:  ql seems to always just show '-' in race?
+
+		// doesn't fit in PERS_SCORE ?  -- 2018-05-30 FIXME check
+		scores = cgs.clientinfo[clientNum].score;
+
+		if (scores <= 0  ||  scores >= MAX_RACE_SCORE) {
+			CG_Text_Paint_Align(rect, scale, color, va("-"), 0, 0, textStyle, font, align);
+		} else {
+			CG_Text_Paint_Align(rect, scale, color, va("%is", (int)(round(scores / 1000.0))), 0, 0, textStyle, font, align);
+
+			//FIXME drawing full score will overflow the box
+			//CG_Text_Paint_Align(rect, scale, color, va("%i ms", scores), 0, 0, textStyle, font, align);
+		}
 	} else {
-		if (cgs.gametype == GT_RACE) {
-			// 2018-05-30:  ql seems to always just show '-' in race?
-
-			// doesn't fit in PERS_SCORE ?  -- 2018-05-30 FIXME check
-			scores = cgs.clientinfo[clientNum].score;
-
-			if (scores <= 0  ||  scores >= MAX_RACE_SCORE) {
-				CG_Text_Paint_Align(rect, scale, color, va("-"), 0, 0, textStyle, font, align);
-			} else {
-				CG_Text_Paint_Align(rect, scale, color, va("%is", (int)(round(scores / 1000.0))), 0, 0, textStyle, font, align);
-
-				//FIXME drawing full score will overflow the box
-				//CG_Text_Paint_Align(rect, scale, color, va("%i ms", scores), 0, 0, textStyle, font, align);
-			}
-        } else {
-			CG_Text_Paint_Align(rect, scale, color, va("%i", scores), 0, 0, textStyle, font, align);
-        }
+		CG_Text_Paint_Align(rect, scale, color, va("%i", scores), 0, 0, textStyle, font, align);
 	}
 }
 
@@ -787,6 +860,7 @@ static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_
 
 	//CG_FillRect(rect->x, rect->y, rect->w, rect->h, colorYellow);
 
+	// 2018-07-19 ql uses 'shader' and doesn't draw health
 	if (shader) {
 		trap_R_SetColor( color );
 		CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
@@ -846,14 +920,10 @@ static void CG_DrawBlueScore (const rectDef_t *rect, float scale, const vec4_t c
 
 // FIXME: team name support
 static void CG_DrawRedName(const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font, int align ) {
-	//CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, cg_redTeamName.string , 0, 0, textStyle, font);
-	//Com_Printf("red team name\n");
 	CG_Text_Paint_Align(rect, scale, color, cg_redTeamName.string , 0, 0, textStyle, font, align);
-	//CG_Text_Paint_Align(rect, scale, color, "fuck you" , 0, 0, textStyle, font, align);
 }
 
 static void CG_DrawBlueName(const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font, int align ) {
-	//CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, cg_blueTeamName.string, 0, 0, textStyle, font);
 	CG_Text_Paint_Align(rect, scale, color, cg_blueTeamName.string, 0, 0, textStyle, font, align);
 }
 
@@ -867,30 +937,81 @@ static void CG_DrawBlueFlagName( const rectDef_t *rect, float scale, const vec4_
   }
 }
 
-static void CG_DrawBlueFlagStatus(const rectDef_t *rect, qhandle_t shader) {
+static void CG_DrawBlueFlagStatus (const rectDef_t *rect, qhandle_t shader, qboolean colorize)
+{
+	const gitem_t *item;
+
 	if (cgs.gametype != GT_CTF  &&  cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS) {
+
+#if 0  // 2018-07-18 ql doesn't draw anything for harvester
 		if (cgs.gametype == GT_HARVESTER) {
-		  vec4_t color = {0, 0, 1, 1};
-		  trap_R_SetColor(color);
-	    CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.blueCubeIcon );
+			vec4_t color = {0, 0, 1, 1};
+			trap_R_SetColor(color);
+			CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.blueCubeIcon );
 		  trap_R_SetColor(NULL);
 		}
+#endif
 		return;
 	}
+
+#if 0  // 2018-07-19 ql ignores 'shader'
   if (shader) {
 		CG_DrawPic( rect->x, rect->y, rect->w, rect->h, shader );
-  } else {
-	  const gitem_t *item = BG_FindItemForPowerup( PW_BLUEFLAG );
-    if (item) {
-		  vec4_t color = {0, 0, 1, 1};
+		return;
+  }
+#endif
+
+  item = BG_FindItemForPowerup( PW_BLUEFLAG );
+  if (item) {
+	  vec4_t color = {0, 0, 1, 1};
+
+	  if (colorize) {
+		  SC_Vec3ColorFromCvar(color, &cg_hudBlueTeamColor);
 		  trap_R_SetColor(color);
-	    if( cgs.blueflag >= 0 && cgs.blueflag <= 2 ) {
-		    CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagShaders[cgs.blueflag] );
-			} else {
-		    CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagShaders[0] );
-			}
-		  trap_R_SetColor(NULL);
+	  } else {
+		  trap_R_SetColor(colorWhite);
 	  }
+
+	  if( cgs.blueflag >= 0 && cgs.blueflag <= 2 ) {
+		  qhandle_t flagShader;
+
+		  switch (cgs.blueflag) {
+		  default:
+		  case 0:
+			  if (colorize) {
+				  flagShader = cgs.media.neutralFlagAtBaseShader;
+			  } else {
+				  flagShader = cgs.media.blueFlagAtBaseShader;
+			  }
+			  break;
+		  case 1:
+			  if (colorize) {
+				  flagShader = cgs.media.neutralFlagTakenShader;
+			  } else {
+				  flagShader = cgs.media.blueFlagTakenShader;
+			  }
+			  break;
+		  case 2:
+			  if (colorize) {
+				  flagShader = cgs.media.neutralFlagDroppedShader;
+			  } else {
+				  flagShader = cgs.media.blueFlagDroppedShader;
+			  }
+			  break;
+		  }
+
+		  CG_DrawPic( rect->x, rect->y, rect->w, rect->h, flagShader );
+
+		  if (colorize  &&  cgs.blueflag == 2) {
+			  // little white arrow like quake live original icon
+			  trap_R_SetColor(colorWhite);
+			  CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagDroppedArrowShader );
+		  }
+	  } else {  // shouldn't happen
+		  CG_DrawPic( rect->x, rect->y, rect->w, rect->h, 0 /* null shader */ );
+	  }
+
+	  trap_R_SetColor(NULL);
   }
 }
 
@@ -917,30 +1038,81 @@ static void CG_DrawRedFlagName( const rectDef_t *rect, float scale, const vec4_t
   }
 }
 
-static void CG_DrawRedFlagStatus(const rectDef_t *rect, qhandle_t shader) {
+static void CG_DrawRedFlagStatus (const rectDef_t *rect, qhandle_t shader, qboolean colorize)
+{
+	const gitem_t *item;
+
 	if (cgs.gametype != GT_CTF && cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS) {
+
+#if 0  // 2018-07-18 ql doesn't draw anything for harvester
 		if (cgs.gametype == GT_HARVESTER) {
 		  vec4_t color = {1, 0, 0, 1};
 		  trap_R_SetColor(color);
 	    CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.redCubeIcon );
 		  trap_R_SetColor(NULL);
 		}
+#endif
 		return;
 	}
+
+#if 0  // 2018-07-19 ql ignores 'shader'
   if (shader) {
 		CG_DrawPic( rect->x, rect->y, rect->w, rect->h, shader );
-  } else {
-	  const gitem_t *item = BG_FindItemForPowerup( PW_REDFLAG );
-    if (item) {
-		  vec4_t color = {1, 0, 0, 1};
+		return;
+  }
+#endif
+
+  item = BG_FindItemForPowerup( PW_REDFLAG );
+  if (item) {
+	  vec4_t color = {1, 0, 0, 1};
+
+	  if (colorize) {
+		  SC_Vec3ColorFromCvar(color, &cg_hudRedTeamColor);
 		  trap_R_SetColor(color);
-	    if( cgs.redflag >= 0 && cgs.redflag <= 2) {
-		    CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagShaders[cgs.redflag] );
-			} else {
-		    CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagShaders[0] );
-			}
-		  trap_R_SetColor(NULL);
+	  } else {
+		  trap_R_SetColor(colorWhite);
 	  }
+
+	  if( cgs.redflag >= 0 && cgs.redflag <= 2) {
+		  qhandle_t flagShader;
+
+		  switch (cgs.redflag) {
+		  default:
+		  case 0:
+			  if (colorize) {
+				  flagShader = cgs.media.neutralFlagAtBaseShader;
+			  } else {
+				  flagShader = cgs.media.redFlagAtBaseShader;
+			  }
+			  break;
+		  case 1:
+			  if (colorize) {
+				  flagShader = cgs.media.neutralFlagTakenShader;
+			  } else {
+				  flagShader = cgs.media.redFlagTakenShader;
+			  }
+			  break;
+		  case 2:
+			  if (colorize) {
+				  flagShader = cgs.media.neutralFlagDroppedShader;
+			  } else {
+				  flagShader = cgs.media.redFlagDroppedShader;
+			  }
+			  break;
+		  }
+
+		  CG_DrawPic( rect->x, rect->y, rect->w, rect->h, flagShader );
+
+		  if (colorize  &&  cgs.redflag == 2) {
+			  // little white arrow like quake live original icon
+			  trap_R_SetColor(colorWhite);
+			  CG_DrawPic( rect->x, rect->y, rect->w, rect->h, cgs.media.flagDroppedArrowShader );
+		  }
+	  } else {  // shouldn't happen
+		  CG_DrawPic( rect->x, rect->y, rect->w, rect->h, 0 /* null shader */ );
+	  }
+
+	  trap_R_SetColor(NULL);
   }
 }
 
@@ -957,19 +1129,373 @@ static void CG_DrawRedFlagHead(const rectDef_t *rect) {
   }
 }
 
+static void CG_Draw1stPlacePlayerModel (float x, float y, float w, float h)
+{
+	refdef_t refdef;
+	refEntity_t legs, torso, head;
+	refEntity_t gun, barrel;
+	vec3_t origin;
+	int renderfx;
+	float len;
+	float xx;
+	clientInfo_t *ci;
+	int weaponNum;
+	const weaponInfo_t *weapon;
+	float xscale, yscale;
+	int torsoAnim;
+	int clientNum;
+	qboolean firstPlace;
+	int i;
+	vec3_t legsAngles, torsoAngles, headAngles;
+
+	memset(&refdef, 0, sizeof(refdef));
+	memset(&legs, 0, sizeof(legs));
+	memset(&torso, 0, sizeof(torso));
+	memset(&head, 0, sizeof(head));
+
+	if (wolfcam_following) {
+		clientNum = wcg.clientNum;
+	} else {
+		clientNum = cg.snap->ps.clientNum;
+	}
+
+	weaponNum = WP_MACHINEGUN;
+
+	// this checks wolfcam_following
+	firstPlace = CG_PlayerIsFirstPlace();
+
+	// testing
+	//firstPlace = qfalse;
+
+	if (firstPlace) {
+		ci = &cgs.clientinfo[clientNum];
+
+		CG_CheckForModelChange(&cg_entities[clientNum], ci, &legs, &torso, &head);
+
+		legs.hModel = ci->legsModel;
+		legs.customSkin = ci->legsSkin;
+
+		torso.hModel = ci->torsoModel;
+		torso.customSkin = ci->torsoSkin;
+
+		head.hModel = ci->headModel;
+		head.customSkin = ci->headSkin;
+
+		if (cgs.protocol == PROTOCOL_QL) {
+			weaponNum = WP_NONE;
+
+			if (cgs.gametype == GT_TOURNAMENT) {
+				if (cg.duelScoresValid) {
+					if (cg.duelScores[0].clientNum == clientNum) {
+						weaponNum = cg.duelScores[0].bestWeapon;
+					} else {
+						weaponNum = cg.duelScores[1].bestWeapon;
+					}
+				}
+			} else {
+				for (i = 0;  i < cg.numScores;  i++) {
+					if (cg.scores[i].client == clientNum) {
+						weaponNum = cg.scores[i].bestWeapon;
+						break;
+					}
+				}
+			}
+		}
+	} else {
+		int enemyClientNum;
+		qboolean teamGame;
+
+		if (CG_IsTeamGame(cgs.gametype)) {
+			teamGame = qtrue;
+		}  else {
+			teamGame = qfalse;
+		}
+
+		if (cgs.realProtocol >= 91) {
+			enemyClientNum = atoi(CG_ConfigStringNoConvert(CS91_CLIENTNUM1STPLAYER));
+		} else {
+			// just pick the first we find
+			enemyClientNum = -1;
+			for (i = 0;  i < MAX_CLIENTS;  i++) {
+				if (!cgs.clientinfo[i].infoValid) {
+					continue;
+				}
+
+				if (cgs.clientinfo[i].team == TEAM_SPECTATOR) {
+					continue;
+				}
+
+				if (teamGame) {
+					if (cgs.clientinfo[i].team != cgs.clientinfo[clientNum].team) {
+						// got it
+						enemyClientNum = i;
+						break;
+					}
+				} else {
+					if (i != clientNum) {
+						enemyClientNum = i;
+						break;
+					}
+				}
+			}
+		}
+
+		// 2018-10-06 ql doesn't draw anything if 1st place player disconnected
+
+		//FIXME for ql this doesn't work if enemy is first place and disconnects during intermission, we are flagged as first place in CG_PlayerIsFirstPlace()
+		if (enemyClientNum < 0  ||  !cgs.clientinfo[enemyClientNum].infoValid) {
+			return;
+		}
+
+		ci = &cgs.clientinfo[enemyClientNum];
+
+		CG_CheckForModelChange(&cg_entities[enemyClientNum], ci, &legs, &torso, &head);
+
+		legs.hModel = ci->legsModel;
+		legs.customSkin = ci->legsSkin;
+
+		torso.hModel = ci->torsoModel;
+		torso.customSkin = ci->torsoSkin;
+
+		head.hModel = ci->headModel;
+		head.customSkin = ci->headSkin;
+
+		if (cgs.protocol == PROTOCOL_QL) {
+			weaponNum = WP_NONE;
+
+			if (cgs.gametype == GT_TOURNAMENT) {
+				if (cg.duelScoresValid) {
+					if (cg.duelScores[0].clientNum == enemyClientNum) {
+						weaponNum = cg.duelScores[0].bestWeapon;
+					} else {
+						weaponNum = cg.duelScores[1].bestWeapon;
+					}
+				}
+			} else {
+				for (i = 0;  i < cg.numScores;  i++) {
+					if (cg.scores[i].client == enemyClientNum) {
+						weaponNum = cg.scores[i].bestWeapon;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// testing
+	//weaponNum = WP_NONE;
+
+	if (weaponNum == WP_NONE  ||  weaponNum == WP_GAUNTLET) {
+		torsoAnim = TORSO_ATTACK2;
+	} else {
+		torsoAnim = TORSO_ATTACK;
+	}
+
+	CG_AdjustFrom640(&x, &y, &w, &h);
+
+	refdef.rdflags = RDF_NOWORLDMODEL;
+
+	AxisClear(refdef.viewaxis);
+
+	refdef.x = x;
+	refdef.y = y;
+	refdef.width = w;
+	refdef.height = h;
+
+	// 2018-08-03  match quake live and use fixed values to prevent x or y stretching with change of screen dimensions, taking values calculated from screensize 1365 x 768
+	xscale = 1365.0 / 640.0;
+	// 2018-08-05 make a little bigger to widden models a bit
+	xscale *= 1.05;
+	yscale = 768.0 / 480.0;
+
+	refdef.fov_x = (int)((float)refdef.width / xscale / 640.0f * 90.0f);
+	xx = refdef.width / xscale / tan( refdef.fov_x / 360 * M_PI );
+	refdef.fov_y = atan2( refdef.height / yscale, xx );
+	refdef.fov_y *= ( 360 / M_PI );
+
+	// 2018-08-03 match quake live, based on fixed values at 1365 x 768
+	refdef.fov_y *= 0.7;
+
+	// calculate distance so the player nearly fills the box
+	len = 0.7 * ( ci->playerModelHeight );  // 2018-08-13 tested with sarge, xaero, keel, but orbb a little bigger compared to quake live
+
+	// 2018-08-03 match quake live, based on fixed values at 1365 x 768
+	len *= 2.0;
+	len *= 0.78;
+
+	origin[0] = len / tan( DEG2RAD(refdef.fov_x) * 0.5 );
+	origin[1] = 0.5 * ( bg_playerMins[1] + bg_playerMaxs[1] );
+	origin[2] = -0.5 * ( bg_playerMins[2] + bg_playerMaxs[2] );
+
+	// 2018-08-05 match quake live
+	origin[2] -= 3;
+
+	refdef.time = cg.time;
+
+	trap_R_ClearScene();
+
+	headAngles[YAW] = 0;
+	headAngles[PITCH] = 0;
+	headAngles[ROLL] = 0;
+
+	if (weaponNum == WP_NONE  ||  weaponNum == WP_GAUNTLET) {
+		torsoAngles[YAW] = 0;
+		torsoAngles[PITCH] = -10;
+		torsoAngles[ROLL] = 0;
+	} else {
+		torsoAngles[YAW] = -5;
+		torsoAngles[PITCH] = -10;
+		torsoAngles[ROLL] = 0;
+	}
+
+	legsAngles[YAW] = 160;
+	legsAngles[PITCH] = 10;
+	legsAngles[ROLL] = 0;
+
+	AnglesToAxis( legsAngles, legs.axis );
+	AnglesToAxis( torsoAngles, torso.axis );
+	AnglesToAxis( headAngles, head.axis );
+
+	legs.oldframe = legs.frame = ci->animations[LEGS_IDLE].firstFrame + 0;
+	torso.oldframe = torso.frame = ci->animations[torsoAnim].firstFrame + 0;
+
+	//renderfx = RF_LIGHTING_ORIGIN | RF_NOSHADOW;
+	//renderfx = RF_NOSHADOW;  // | RF_MINLIGHT;
+	//renderfx = RF_MINLIGHT | RF_NOSHADOW;
+
+	renderfx = RF_NOSHADOW;
+
+	//
+	// add the legs
+	//
+
+	VectorCopy(origin, legs.origin);
+	VectorCopy(origin, legs.lightingOrigin);
+	legs.renderfx = renderfx;
+	VectorCopy(legs.origin, legs.oldorigin);
+
+	trap_R_AddRefEntityToScene(&legs);
+
+	// if the model failed, allow the default nullmodel to be displayed
+	if (!legs.hModel) {
+		return;
+	}
+
+	//
+	// add the torso
+	//
+
+	if (!torso.hModel) {
+		return;
+	}
+
+	VectorCopy(origin, torso.lightingOrigin);
+	CG_PositionRotatedEntityOnTag(&torso, &legs, ci->legsModel, "tag_torso");
+	torso.renderfx = renderfx;
+
+	trap_R_AddRefEntityToScene(&torso);
+
+	//
+	// add the head
+	//
+
+	if (!head.hModel) {
+		return;
+	}
+
+	VectorCopy(origin, head.lightingOrigin);
+
+	CG_PositionRotatedEntityOnTag(&head, &torso, ci->torsoModel, "tag_head");
+
+	head.renderfx = renderfx;
+
+	trap_R_AddRefEntityToScene(&head);
+
+	//
+	// add the gun
+	//
+
+	CG_RegisterWeapon(weaponNum);
+	weapon = &cg_weapons[weaponNum];
+
+	if (weaponNum != WP_NONE) {
+		memset(&gun, 0, sizeof(gun));
+		gun.hModel = weapon->weaponModel;
+		//FIXME railgun shader color
+		gun.shaderRGBA[0] = 255;
+		gun.shaderRGBA[1] = 255;
+		gun.shaderRGBA[2] = 255;
+		gun.shaderRGBA[3] = 255;
+
+		VectorCopy(origin, gun.origin);
+		VectorCopy(origin, gun.lightingOrigin);
+
+		CG_PositionEntityOnTag(&gun, &torso, ci->torsoModel, "tag_weapon");
+		gun.renderfx = renderfx;
+		trap_R_AddRefEntityToScene(&gun);
+	}
+
+	//
+	// add the spinning barrel
+	//
+
+	if (weapon->barrelModel) {
+		vec3_t angles;
+
+		memset(&barrel, 0, sizeof(barrel));
+		VectorCopy(origin, barrel.lightingOrigin);
+		barrel.renderfx = renderfx;
+
+		barrel.hModel = weapon->barrelModel;
+		angles[YAW] = 0;
+		angles[PITCH] = 0;
+		angles[ROLL] = 60;  //UI_MachinegunSpinAngle( pi );
+		AnglesToAxis(angles, barrel.axis);
+
+		CG_PositionRotatedEntityOnTag(&barrel, &gun, weapon->weaponModel, "tag_barrel");
+
+		trap_R_AddRefEntityToScene(&barrel);
+	}
+
+	// flash
+	// skipping ...
+
+	//
+	// add an accent light
+	//
+	origin[0] -= 100;       // + = behind, - = in front
+	origin[1] += 100;       // + = left, - = right
+	origin[2] += 100;       // + = above, - = below
+
+	trap_R_AddLightToScene( origin, 400, 1.0, 1.0, 1.0 );  // 500
+
+	origin[0] -= 100;
+	origin[1] -= 100;
+	origin[2] -= 100;
+
+	trap_R_AddLightToScene( origin, 500, 1.0, 0.0, 0.0 );
+
+	trap_R_RenderScene(&refdef);
+}
+
 static void CG_HarvesterSkulls(const rectDef_t *rect, float scale, const vec4_t color, qboolean force2D, int textStyle, const fontInfo_t *font ) {
 	char num[16];
 	vec3_t origin, angles;
 	qhandle_t handle;
-	int value = cg.snap->ps.generic1 & 0x3f;
+	int value;
 	float w;
-
-	if (wolfcam_following) {
-		return;
-	}
+	int ourTeam;
 
 	if (cgs.gametype != GT_HARVESTER) {
 		return;
+	}
+
+	if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
+		value = cg.snap->ps.generic1 & 0x3f;
+		ourTeam = cg.snap->ps.persistant[PERS_TEAM];
+	} else {
+		value = cg_entities[wcg.clientNum].currentState.generic1 & 0x3f;
+		ourTeam = cgs.clientinfo[wcg.clientNum].team;
 	}
 
 	if( value > 99 ) {
@@ -987,14 +1513,14 @@ static void CG_HarvesterSkulls(const rectDef_t *rect, float scale, const vec4_t 
 			origin[1] = 0;
 			origin[2] = -10;
 			angles[YAW] = ( cg.time & 2047 ) * 360 / 2048.0;
-			if( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE ) {
+			if( ourTeam == TEAM_BLUE ) {
 				handle = cgs.media.redCubeModel;
 			} else {
 				handle = cgs.media.blueCubeModel;
 			}
 			CG_Draw3DModel( rect->x, rect->y, 35, 35, handle, 0, origin, angles );
 		} else {
-			if( cg.snap->ps.persistant[PERS_TEAM] == TEAM_BLUE ) {
+			if( ourTeam == TEAM_BLUE ) {
 				handle = cgs.media.redCubeIcon;
 			} else {
 				handle = cgs.media.blueCubeIcon;
@@ -1006,10 +1532,12 @@ static void CG_HarvesterSkulls(const rectDef_t *rect, float scale, const vec4_t 
 
 #define FLAG_OFFSET 9
 
-static void CG_OneFlagStatus(const rectDef_t *rect) {
+static void CG_OneFlagStatus (const rectDef_t *rect, qboolean colorize)
+{
 	int yoffset = 0;
 	qboolean blueIsFirst;
 	int team;
+	gitem_t *item;
 
 	if (wolfcam_following) {
 		team = cgs.clientinfo[wcg.clientNum].team;
@@ -1019,51 +1547,118 @@ static void CG_OneFlagStatus(const rectDef_t *rect) {
 
 	if (cgs.gametype != GT_1FCTF) {
 		return;
-	} else {
-		gitem_t *item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
+	}
 
-		blueIsFirst = qfalse;
+	// 2018-07-19 ignore 'shader' like CG_Draw[Blue|Red]FlagStatus()
 
-		if (CG_ScoresEqual(cgs.scores2, cgs.scores1)) {
-			if (team == TEAM_BLUE) {
-				blueIsFirst = qtrue;
-			}
-		} else if (cgs.scores2 > cgs.scores1) {
+	item = BG_FindItemForPowerup( PW_NEUTRALFLAG );
+
+	blueIsFirst = qfalse;
+
+	if (CG_ScoresEqual(cgs.scores2, cgs.scores1)) {
+		if (team == TEAM_BLUE) {
 			blueIsFirst = qtrue;
-		} else if (cgs.scores2 < cgs.scores1) {
-			blueIsFirst = qfalse;
-		} else {  // scores tied, so followed pov is first
-			if (team == TEAM_BLUE) {
-				blueIsFirst = qtrue;
-			}
 		}
+	} else if (cgs.scores2 > cgs.scores1) {
+		blueIsFirst = qtrue;
+	} else if (cgs.scores2 < cgs.scores1) {
+		blueIsFirst = qfalse;
+	} else {  // shouldn't happen
+		if (team == TEAM_BLUE) {
+			blueIsFirst = qtrue;
+		}
+	}
 
-		if (item) {
-			if( cgs.flagStatus >= 0 && cgs.flagStatus <= 4 ) {
-				vec4_t color = {1, 1, 1, 1};
-				int index = 0;
-				if (cgs.flagStatus == FLAG_TAKEN_RED) {
-					color[1] = color[2] = 0;
-					index = 1;
+	if (item) {
+		if( cgs.flagStatus >= 0 && cgs.flagStatus <= 4 ) {
+			vec4_t color = {1, 1, 1, 1};
+			qhandle_t shader = 0;
+
+			// cg_hudNoTeamColor
+			if (colorize) {
+				SC_Vec3ColorFromCvar(color, &cg_hudNeutralTeamColor);
+			}
+
+			if (cgs.realProtocol < 91) {
+				// like q3
+
+				if (cgs.flagStatus == FLAG_ATBASE) {
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudNeutralTeamColor);
+					}
+					shader = cgs.media.neutralFlagAtBaseShader;
+				} else if (cgs.flagStatus == FLAG_TAKEN_RED) {
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudRedTeamColor);
+					}
+					shader = cgs.media.neutralFlagStolenShader;
 					if (blueIsFirst) {
 						yoffset = FLAG_OFFSET;
 					} else {
 						yoffset = -FLAG_OFFSET;
 					}
 				} else if (cgs.flagStatus == FLAG_TAKEN_BLUE) {
-					color[0] = color[1] = 0;
-					index = 1;
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudBlueTeamColor);
+					}
+					shader = cgs.media.neutralFlagStolenShader;
 					if (blueIsFirst) {
 						yoffset = -FLAG_OFFSET;
 					} else {
 						yoffset = FLAG_OFFSET;
 					}
 				} else if (cgs.flagStatus == FLAG_DROPPED) {
-					index = 2;
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudNeutralTeamColor);
+					}
+					shader = cgs.media.neutralFlagDroppedShader;
 				}
-			  trap_R_SetColor(color);
-				CG_DrawPic( rect->x, rect->y + yoffset, rect->w, rect->h, cgs.media.flagShaders[index] );
+			} else {  // protocol 91
+				// 2018-07-20 when did this change in ql?
+				// 0:  at base
+				// 1:  unused?
+				// 2:  flag dropped
+				// 3:  red taken
+				// 4:  blue taken
+
+				if (cgs.flagStatus == FLAG_QL_ATBASE) {
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudNeutralTeamColor);
+					}
+					shader = cgs.media.neutralFlagAtBaseShader;
+				} else if (cgs.flagStatus == FLAG_QL_TAKEN_RED) {
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudRedTeamColor);
+					}
+					shader = cgs.media.neutralFlagStolenShader;
+					if (blueIsFirst) {
+						yoffset = FLAG_OFFSET;
+					} else {
+						yoffset = -FLAG_OFFSET;
+					}
+				} else if (cgs.flagStatus == FLAG_QL_TAKEN_BLUE) {
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudBlueTeamColor);
+					}
+					shader = cgs.media.neutralFlagStolenShader;
+					if (blueIsFirst) {
+						yoffset = -FLAG_OFFSET;
+					} else {
+						yoffset = FLAG_OFFSET;
+					}
+				} else if (cgs.flagStatus == FLAG_QL_DROPPED) {
+					if (colorize) {
+						SC_Vec3ColorFromCvar(color, &cg_hudNeutralTeamColor);
+					}
+					shader = cgs.media.neutralFlagDroppedShader;
+				}
 			}
+
+			trap_R_SetColor(color);
+			CG_DrawPic( rect->x, rect->y + yoffset, rect->w, rect->h, shader );
+
+			// debugging:
+			//CG_Text_Paint_Align(rect, 1.0, colorGreen, va("%d", cgs.flagStatus), 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont, ITEM_ALIGN_LEFT);
 		}
 	}
 }
@@ -1246,15 +1841,19 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 				t = ps->powerups[ sorted[i] ];
 			}
 
-			if ( t - cg.time >= POWERUP_BLINKS * POWERUP_BLINK_TIME ) {
-				trap_R_SetColor( NULL );
-			} else {
-				vec4_t	modulate;
+			if (cg_powerupBlink.integer) {
+				if ( t - cg.time >= POWERUP_BLINKS * POWERUP_BLINK_TIME ) {
+					trap_R_SetColor( NULL );
+				} else {
+					vec4_t	modulate;
 
-				f = (float)( t - cg.time ) / POWERUP_BLINK_TIME;
-				f -= (int)f;
-				modulate[0] = modulate[1] = modulate[2] = modulate[3] = f;
-				trap_R_SetColor( modulate );
+					f = (float)( t - cg.time ) / POWERUP_BLINK_TIME;
+					f -= (int)f;
+					modulate[0] = modulate[1] = modulate[2] = modulate[3] = f;
+					trap_R_SetColor( modulate );
+				}
+			} else {
+				trap_R_SetColor(colorWhite);
 			}
 
 			if (wolfcam_following) {
@@ -1263,7 +1862,7 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 
 			//Com_Printf("drawing powerup %s  sorted[i] %d\n", item->icon, sorted[i]);
 			if (sorted[i] != 0) {  // 2010-08-08 new spawn protection powerup
-				CG_DrawPic( r2.x, r2.y, r2.w * .75, r2.h, trap_R_RegisterShader( item->icon ) );
+				CG_DrawPic( r2.x, r2.y, r2.w, r2.h, trap_R_RegisterShader( item->icon ) );
 
 				if (sortedTime[i] >= 0) {
 					Com_sprintf (num, sizeof(num), "%i", sortedTime[i] / 1000);
@@ -1271,30 +1870,84 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 					num[0] = '\0';
 				}
 
-				CG_Text_Paint(r2.x + (r2.w * .75) + 3 , r2.y + r2.h, scale, color, num, 0, 0, 0, font);
+				CG_Text_Paint(r2.x + r2.w + 4 + 2, r2.y + r2.h, scale, color, num, 0, 0, 0, font);
 				origX = r2.x;
 				origY = r2.y;
-				*inc += r2.w + special;
+				if (cg_wideScreen.integer == 7) {  // bug compatibility
+					*inc += r2.w + special;
+				} else {
+					if (align == HUD_VERTICAL) {
+						*inc += r2.h + special;
+					} else {  // HUD_HORIZONTAL
+						//FIXME font max text width
+						*inc += r2.w + special + 6 + CG_Text_Width("00", scale, 0, font);
+					}
+				}
 
 				// kill counters
-				if (!wolfcam_following) {
+				if (cg_powerupKillCounter.integer  &&  !wolfcam_following) {
 					if (item->giTag == PW_QUAD  &&  cgs.protocol == PROTOCOL_QL  &&  cg_quadKillCounter.integer == 1  &&  ps->stats[STAT_QUAD_KILL_COUNT] > 0) {
 						float sc;
 
 						sc = 0.25;
-						//Com_Printf("%d\n", ps->stats[STAT_QUAD_KILL_COUNT]);
-						CG_DrawPic(origX + (r2.w * 0.75) + 3, (float)origY + (float)r2.w * 0.10, r2.w * sc, r2.h * sc, cgs.media.redCubeIcon);
-						//CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + r2.h, scale * 0.25, color, va("x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
-						CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + (float)r2.h * (sc + 0.10), scale * 0.33, color, va(" x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
+
+						if (cg_wideScreen.integer == 7) {  // bug compatibility
+							// 2018-07-23 use of r2.x is broken with HUD_HORIZONTAL since it has already been incremented for use with next powerup
+							// 2018-07-23 assumes 35 width
+							// 2018-07-23 icon scale based on rectangle scale and not text size of countdown text
+							CG_DrawPic(r2.x + 35 + 4, r2.y - r2.h, r2.w * sc, r2.h * sc, cgs.media.killCounterIcon);
+							// 2018-07-23 ql forces color to white
+							// 2018-07-23 ql uses fixed scale
+							CG_Text_Paint(r2.x + 35 + 4 + 10, r2.y - r2.h + (r2.h * sc) - 1, 0.16296, colorWhite, va(" x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
+						} else {
+							// counter:
+							// origX + r2.w + 4 + 2, r2.y + r2.h
+							int picSize;
+
+							// based on textscale
+							// default textscale 0.55
+							// (0.55 * 1.0) * x = 8.75
+							picSize = (scale * 1.0) * (8.75 / (0.55 * 1.0));
+
+							CG_DrawPic(origX + r2.w + 3, (float)origY + (float)r2.h - CG_Text_Height("0123456789", scale * 1.0, 0, font) - picSize - 3, picSize, picSize, cgs.media.killCounterIcon);
+
+							CG_Text_Paint(
+										  origX + r2.w + 3 + picSize + 1,
+										  origY + (float)r2.h - CG_Text_Height("0123456799", scale * 1.0, 0, font) - 4,
+										  scale * 0.29333, color, va(" x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
+						}
 					}
 					if (item->giTag == PW_BATTLESUIT  &&  cgs.protocol == PROTOCOL_QL  &&  cg_battleSuitKillCounter.integer == 1  &&  ps->stats[STAT_BATTLE_SUIT_KILL_COUNT] > 0) {
 						float sc;
 
 						sc = 0.25;
-						//Com_Printf("%d\n", ps->stats[STAT_QUAD_KILL_COUNT]);
-						CG_DrawPic(origX + (r2.w * 0.75) + 3, (float)origY + (float)r2.w * 0.10, r2.w * sc, r2.h * sc, cgs.media.redCubeIcon);
-						//CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + r2.h, scale * 0.25, color, va("x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
-						CG_Text_Paint(origX + (r2.w * 0.75) + 3 + r2.w * sc, origY + (float)r2.h * (sc + 0.10), scale * 0.33, color, va(" x %d", ps->stats[STAT_BATTLE_SUIT_KILL_COUNT]), 0, 0, 0, font);
+
+						if (cg_wideScreen.integer == 7) {  // bug compatibility
+							// 2018-07-23 use of r2.x is broken with HUD_HORIZONTAL since it has already been incremented for use with next powerup
+							// 2018-07-23 assumes 35 width
+							// 2018-07-23 icon scale based on rectangle scale and not text size of countdown text
+							CG_DrawPic(r2.x + 35 + 4, r2.y - r2.h, r2.w * sc, r2.h * sc, cgs.media.killCounterIcon);
+							// 2018-07-23 ql forces color to white
+							// 2018-07-23 ql uses fixed scale
+							CG_Text_Paint(r2.x + 35 + 4 + 10, r2.y - r2.h + (r2.h * sc) - 1, 0.16296, colorWhite, va(" x %d", ps->stats[STAT_BATTLE_SUIT_KILL_COUNT]), 0, 0, 0, font);
+						} else {
+							// counter:
+							// origX + r2.w + 4 + 2, r2.y + r2.h
+							int picSize;
+
+							// based on textscale
+							// default textscale 0.55
+							// (0.55 * 1.0) * x = 8.75
+							picSize = (scale * 1.0) * (8.75 / (0.55 * 1.0));
+
+							CG_DrawPic(origX + r2.w + 3, (float)origY + (float)r2.h - CG_Text_Height("0123456789", scale * 1.0, 0, font) - picSize - 3, picSize, picSize, cgs.media.killCounterIcon);
+
+							CG_Text_Paint(
+										  origX + r2.w + 3 + picSize + 1,
+										  origY + (float)r2.h - CG_Text_Height("0123456799", scale * 1.0, 0, font) - 4,
+										  scale * 0.29333, color, va(" x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
+
+						}
 					}
 				}
 			}
@@ -1414,7 +2067,8 @@ float CG_GetValue(int ownerDraw) {
  	const clientInfo_t *ci;
 	const playerState_t	*ps;
 	int ourClientNum;
-	const score_t *score;
+	//const score_t *score;
+	const score_t *selectedScore;
 	int i;
 	int count;
 	float f;
@@ -1423,7 +2077,7 @@ float CG_GetValue(int ownerDraw) {
 		return 0;
 	}
 
-  cent = &cg_entities[cg.snap->ps.clientNum];
+	cent = &cg_entities[cg.snap->ps.clientNum];
 	ps = &cg.snap->ps;
 
 	if (wolfcam_following) {
@@ -1432,7 +2086,9 @@ float CG_GetValue(int ownerDraw) {
 		ourClientNum = cg.snap->ps.clientNum;
 	}
 	ci = &cgs.clientinfo[ourClientNum];
-	score = &cg.scores[ci->scoreIndexNum];
+	//score = &cg.scores[ci->scoreIndexNum];
+
+	selectedScore = &cg.scores[cg.selectedScore];
 
   switch (ownerDraw) {
   case CG_SELECTEDPLAYER_ARMOR:
@@ -1474,13 +2130,42 @@ float CG_GetValue(int ownerDraw) {
 		}
 	  }
     break;
-  case CG_PLAYER_SCORE:
+  case CG_PLAYER_SCORE: {  //FIXME duplicate code
+	  int scores = cg.snap->ps.persistant[PERS_SCORE];
+	  int clientNum;
+
 	  if (wolfcam_following) {
+		  clientNum = wcg.clientNum;
+
+		  if (wcg.clientNum == cg.snap->ps.clientNum) {
+			  // pass use PERS_SCORE
+		  } else {
+			  if (CG_IsCpmaMvd()) {
+				  scores = cgs.clientinfo[clientNum].score;
+			  } else if (CG_IsDuelGame(cgs.gametype)) {
+				  // if demo taker is viewing ingame player we can use cgs.scores[12]
+				  if (cgs.clientinfo[cg.snap->ps.clientNum].team == TEAM_SPECTATOR) {
+					  // we don't know
+					  //FIXME for some versions of ql you can:  CS_FIRST_PLACE_CLIENT_NUM and CS_SECOND_PLACE_CLIENT_NUM
+					  return scores;
+				  }
+
+				  // we are viewing ingame player, case were wcg.clientNum == cg.snap->ps.clientNum already handled above so this is the other dueler
+				  if (CG_ScoresEqual(cgs.scores1, cg.snap->ps.persistant[PERS_SCORE])) {
+					  scores = cgs.scores2;
+				  } else {
+					  scores = cgs.scores1;
+				  }
+			  } else {
+				  return 0;
+			  }
+		  }
 		  return -1;
-	  } else {
-		  return cg.snap->ps.persistant[PERS_SCORE];
 	  }
+
+	  return scores;
     break;
+  }
   case CG_PLAYER_HEALTH:
 	  if (wolfcam_following) {
 		  int value;
@@ -1528,7 +2213,7 @@ float CG_GetValue(int ownerDraw) {
 
   case CG_HARVESTER_SKULLS:
 	  if (wolfcam_following) {
-		  return 0;
+		  return cg_entities[wcg.clientNum].currentState.generic1 & 0x3f;
 	  } else {
 		  if (cg.snap) {
 			  return (cg.snap->ps.generic1 & 0x3f);
@@ -1549,67 +2234,35 @@ float CG_GetValue(int ownerDraw) {
 	  break;
 
   case CG_ACCURACY:
-	  if (ci->scoreValid) {
-		  return score->accuracy;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->accuracy;
 	  break;
 
   case CG_ASSISTS:
-	  if (ci->scoreValid) {
-		  return score->assistCount;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->assistCount;
 	  break;
 
   case CG_DEFEND:
-	  if (ci->scoreValid) {
-		  return score->defendCount;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->defendCount;
 	  break;
 
   case CG_CAPTURES:
-	  if (ci->scoreValid) {
-		  return score->captures;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->captures;
 	  break;
 
   case CG_EXCELLENT:
-	  if (ci->scoreValid) {
-		  return score->excellentCount;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->excellentCount;
 	  break;
 
   case CG_IMPRESSIVE:
-	  if (ci->scoreValid) {
-		  return score->impressiveCount;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->impressiveCount;
 	  break;
 
   case CG_PERFECT:
-	  if (ci->scoreValid) {
-		  return score->perfect;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->perfect;
 	  break;
 
   case CG_GAUNTLET:
-	  if (ci->scoreValid) {
-		  return score->gauntletCount;
-	  } else {
-		  return 0;
-	  }
+	  return selectedScore->gauntletCount;
 	  break;
 
   case CG_CAPFRAGLIMIT: {
@@ -1659,7 +2312,15 @@ float CG_GetValue(int ownerDraw) {
 		  if (!cgs.clientinfo[i].infoValid) {
 			  continue;
 		  }
-		  // ql includes the specs in player count
+
+		  if (cgs.clientinfo[i].team == TEAM_SPECTATOR) {
+			  // ql includes the specs in player count
+			  if (cg_wideScreen.integer == 7) {  // bug compatibility
+				  // pass, count as player
+			  } else {
+				  continue;
+			  }
+		  }
 		  count++;
 	  }
 	  return count;
@@ -1740,6 +2401,7 @@ float CG_GetValue(int ownerDraw) {
 	  break;
 
   case CG_1ST_PLYR_SCORE:
+	  //FIXME duelForfeit
 	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  return cg.duelScores[0].score;
 	  } else {
@@ -1827,6 +2489,7 @@ float CG_GetValue(int ownerDraw) {
 	//CG_1ST_PLYR_TIMEOUT_COUNT
 
   case CG_2ND_PLYR_SCORE:
+	  //FIXME duelForfeit
 	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  return cg.duelScores[1].score;
 	  } else {
@@ -2920,12 +3583,22 @@ qboolean CG_OtherTeamHasFlag(void) {
 		}
 
 		if (cgs.gametype == GT_1FCTF) {
-			if (team == TEAM_RED && cgs.flagStatus == FLAG_TAKEN_BLUE) {
-				return qtrue;
-			} else if (team == TEAM_BLUE && cgs.flagStatus == FLAG_TAKEN_RED) {
-				return qtrue;
-			} else {
-				return qfalse;
+			if (cgs.realProtocol < 91) {
+				if (team == TEAM_RED && cgs.flagStatus == FLAG_TAKEN_BLUE) {
+					return qtrue;
+				} else if (team == TEAM_BLUE && cgs.flagStatus == FLAG_TAKEN_RED) {
+					return qtrue;
+				} else {
+					return qfalse;
+				}
+			} else {  // protocol >= 91
+				if (team == TEAM_RED && cgs.flagStatus == FLAG_QL_TAKEN_BLUE) {
+					return qtrue;
+				} else if (team == TEAM_BLUE && cgs.flagStatus == FLAG_QL_TAKEN_RED) {
+					return qtrue;
+				} else {
+					return qfalse;
+				}
 			}
 		} else {
 			if (team == TEAM_RED && cgs.redflag == FLAG_TAKEN) {
@@ -2949,12 +3622,22 @@ qboolean CG_YourTeamHasFlag(void) {
 		}
 
 		if (cgs.gametype == GT_1FCTF) {
-			if (team == TEAM_RED && cgs.flagStatus == FLAG_TAKEN_RED) {
-				return qtrue;
-			} else if (team == TEAM_BLUE && cgs.flagStatus == FLAG_TAKEN_BLUE) {
-				return qtrue;
-			} else {
-				return qfalse;
+			if (cgs.realProtocol < 91) {
+				if (team == TEAM_RED && cgs.flagStatus == FLAG_TAKEN_RED) {
+					return qtrue;
+				} else if (team == TEAM_BLUE && cgs.flagStatus == FLAG_TAKEN_BLUE) {
+					return qtrue;
+				} else {
+					return qfalse;
+				}
+			} else {  // protocol >= 91
+				if (team == TEAM_RED && cgs.flagStatus == FLAG_QL_TAKEN_RED) {
+					return qtrue;
+				} else if (team == TEAM_BLUE && cgs.flagStatus == FLAG_QL_TAKEN_BLUE) {
+					return qtrue;
+				} else {
+					return qfalse;
+				}
 			}
 		} else {
 			if (team == TEAM_RED && cgs.blueflag == FLAG_TAKEN) {
@@ -3281,10 +3964,18 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 
 	if (flags & (CG_SHOW_BLUE_TEAM_HAS_REDFLAG | CG_SHOW_RED_TEAM_HAS_BLUEFLAG)) {
 		if (cgs.gametype == GT_1FCTF) {
-			if (flags & CG_SHOW_BLUE_TEAM_HAS_REDFLAG  &&  cgs.flagStatus == FLAG_TAKEN_BLUE) {
-				return qtrue;
-			} else if (flags & CG_SHOW_RED_TEAM_HAS_BLUEFLAG  &&  cgs.flagStatus == FLAG_TAKEN_RED) {
-				return qtrue;
+			if (cgs.realProtocol < 91) {
+				if (flags & CG_SHOW_BLUE_TEAM_HAS_REDFLAG  &&  cgs.flagStatus == FLAG_TAKEN_BLUE) {
+					return qtrue;
+				} else if (flags & CG_SHOW_RED_TEAM_HAS_BLUEFLAG  &&  cgs.flagStatus == FLAG_TAKEN_RED) {
+					return qtrue;
+				}
+			} else {  // protocol >= 91
+				if (flags & CG_SHOW_BLUE_TEAM_HAS_REDFLAG  &&  cgs.flagStatus == FLAG_QL_TAKEN_BLUE) {
+					return qtrue;
+				} else if (flags & CG_SHOW_RED_TEAM_HAS_BLUEFLAG  &&  cgs.flagStatus == FLAG_QL_TAKEN_RED) {
+					return qtrue;
+				}
 			}
 		} else {
 			if (flags & CG_SHOW_BLUE_TEAM_HAS_REDFLAG  &&  cgs.redflag == FLAG_TAKEN) {
@@ -3592,69 +4283,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 	}
 
 	if (flags & CG_SHOW_IF_PLYR_IS_FIRST_PLACE) {
-		if (wolfcam_following) {
-			team = cgs.clientinfo[wcg.clientNum].team;
-		} else {
-			team = cg.snap->ps.persistant[PERS_TEAM];
-		}
-
-		if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
-			if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
-				return qtrue;
-			} else if (cgs.scores1 < cgs.scores2) {
-				if (team == TEAM_RED) {
-					return qfalse;
-				} else {
-					return qtrue;
-				}
-			} else {  // cgs.scores2 < cgs.scores1
-				if (team == TEAM_BLUE) {
-					return qfalse;
-				} else {
-					return qtrue;
-				}
-			}
-		}
-
-		// duel and ffa
-
-		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum  &&  cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR)) {
-			if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
-				return qtrue;
-			} else {
-				return qfalse;
-			}
-		}
-
-		// wolfcam_following
-
-		if (CG_IsCpmaMvd()) {
-			// can use clientinfo score since it is updated at the same time as cgs.scores1 and cgs.scores2
-			if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {
-				return qtrue;
-			} else {
-				return qfalse;
-			}
-		}
-
-		if (CG_IsDuelGame(cgs.gametype)) {
-			// if following someone in game it means we are following the player the demo taker is playing against
-			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
-				if (cg.snap->ps.persistant[PERS_RANK] & RANK_TIED_FLAG) {
-					return qtrue;
-				} else if ((cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG) == 0) {
-					return qfalse;
-				} else {
-					return qtrue;
-				}
-			} else {
-				// we don't know
-				return qfalse;
-			}
-		}
-
-		// other game types and cases:  we don't know, we don't have enough information in demo
-		return qfalse;
+		return CG_PlayerIsFirstPlace();
 	}
 
 	if (flags & CG_SHOW_IF_MSG_PRESENT) {  //FIXME don't know  -- friend bullshit
@@ -3712,6 +4341,11 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 		} else {
 			return qfalse;
 		}
+	}
+
+	if (flags & CG_SHOW_2DONLY) {
+		// 2018-07-18 not supported by ql?  could mean info/loading screen?
+		return qfalse;
 	}
 
 	//FIXME ac other ones
@@ -3774,8 +4408,8 @@ static void CG_DrawAreaChat(const rectDef_t *rect, float scale, const vec4_t col
 const char *CG_GetKillerText(void) {
 	const char *s = "";
 
-	if ( cg.killerName[0] ) {
-		s = va("Fragged by %s", cg.killerName );
+	if ( cg.killerNameHud[0] ) {
+		s = va("Fragged by %s", cg.killerNameHud );
 	}
 	return s;
 }
@@ -3786,12 +4420,13 @@ static void CG_DrawKiller (const rectDef_t *rect, float scale, const vec4_t colo
 	float w, h;
 	float tw;
 	const char *s;
+	float picy;
+	float picSize;
 
 	// fragged by ... line
 
-	if ( cg.killerName[0] ) {
-		//int x = rect->x + rect->w / 2;
-
+	if ( cg.killerNameHud[0] ) {
+		// 2018-07-15 use CG_Text_Pic_Paint() ?
 		//CG_Text_Pic_Paint(rect->x, rect->y, scale, newColor, extString, 0, 0, cg_drawFragMessageStyle.integer, font, th, cg_obituaryIconScale.value);
 
 		s = CG_GetKillerText();
@@ -3802,19 +4437,26 @@ static void CG_DrawKiller (const rectDef_t *rect, float scale, const vec4_t colo
 		tw = w;
 		w += h * 1.5;
 
+		if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+			picy = rect->y - 5;
+			picSize = 15;
+		} else {
+			picy = rect->y + rect->h - h - (h * 1.5 - h) / 2;
+			picSize = h * 1.5;
+		}
+
 		if (align == ITEM_ALIGN_CENTER) {
-			//CG_Text_Paint(x - w / 2, rect->y + rect->h, scale, color, s, 0, 0, textStyle, font);
-			//  - h2 - (picHeight - h2) / 2
-			//CG_DrawPic(x + w / 2 + CG_Text_Width(" ", scale, 0, font), rect->y + rect->h - h - (h * 1.5 - h) / 2, h * 1.5, h * 1.5, cg.killerWeaponIcon);
-			CG_Text_Paint(rect->x - w / 2, rect->y, scale, color, s, 0, 0, textStyle, font);
-			CG_DrawPic(rect->x - w / 2 + tw, rect->y + rect->h - h - (h * 1.5 - h) / 2, h * 1.5, h * 1.5, cg.killerWeaponIcon);
+			CG_Text_Paint(rect->x - w / 2, rect->y + rect->h, scale, color, s, 0, 0, textStyle, font);
+			CG_DrawPic(rect->x - w / 2 + tw, picy, picSize, picSize, cg.killerWeaponIcon);
 		} else if (align == ITEM_ALIGN_RIGHT) {
-			CG_Text_Paint(rect->x + rect->y - w, rect->y + rect->h, scale, color, s, 0, 0, textStyle, font);
-			CG_DrawPic(rect->x - (h * 1.5), rect->y + rect->h - h - (h * 1.5 - h) / 2, h * 1.5, h * 1.5, cg.killerWeaponIcon);
+			CG_Text_Paint(rect->x - w, rect->y + rect->h, scale, color, s, 0, 0, textStyle, font);
+			CG_DrawPic(rect->x - (h * 1.5), picy, picSize, picSize, cg.killerWeaponIcon);
 		} else if (align == ITEM_ALIGN_LEFT) {
 			CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, s, 0, 0, textStyle, font);
-			CG_DrawPic(rect->x + tw, rect->y + rect->h - h - (h * 1.5 - h) / 2, h * 1.5, h * 1.5, cg.killerWeaponIcon);
+			CG_DrawPic(rect->x + tw, picy, picSize, picSize, cg.killerWeaponIcon);
 		} else {
+			CG_Text_Paint(rect->x, rect->y + rect->h, scale, color, s, 0, 0, textStyle, font);
+			CG_DrawPic(rect->x + tw, picy, picSize, picSize, cg.killerWeaponIcon);
 			Com_Printf("^3CG_DrawKiller() unknown alignment value\n");
 		}
 	}
@@ -3899,7 +4541,7 @@ static void CG_Draw2ndPlace (const rectDef_t *rect, float scale, const vec4_t co
 	}
 }
 
-const char *CG_GetGameStatusText (vec4_t color)
+const char *CG_GetGameStatusText (void)
 {
 	const char *s = "";
 
@@ -3907,6 +4549,8 @@ const char *CG_GetGameStatusText (vec4_t color)
 		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
 			if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
 				s = va("%s ^7place with %i",CG_PlaceString( cg.snap->ps.persistant[PERS_RANK] + 1 ),cg.snap->ps.persistant[PERS_SCORE] );
+			} else {
+				//FIXME 2018-07-14 check
 			}
 		} else {  // wolfcam_following
 			if (cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR) {
@@ -3960,10 +4604,8 @@ const char *CG_GetGameStatusText (vec4_t color)
 			s = va("Teams are tied at %i", cg.teamScores[0] );
 		} else if ( cg.teamScores[0] >= cg.teamScores[1] ) {
 			s = va("^1Red ^7leads ^4Blue, ^7%i to %i", cg.teamScores[0], cg.teamScores[1] );
-			Vector4Set(color, 1, 1, 1, 1);  // quakelive ignoring color
 		} else {
 			s = va("^4Blue ^7leads ^1Red, ^7%i to %i", cg.teamScores[1], cg.teamScores[0] );
-			Vector4Set(color, 1, 1, 1, 1);  // qaukelive ignoring color
 		}
 	}
 	return s;
@@ -3972,17 +4614,30 @@ const char *CG_GetGameStatusText (vec4_t color)
 static void CG_DrawGameStatus (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
 {
 	const char *s;
-	vec4_t statusColor;
 	rectDef_t newRect;
+	vec4_t ourColor;
 
 	newRect = *rect;
-	s = CG_GetGameStatusText(statusColor);
-	//CG_Text_Paint(rect->x, rect->y + rect->h, scale, colorWhite, s, 0, 0, textStyle, font);
+	s = CG_GetGameStatusText();
+
+	// 2018-07-14 quake live still applies extra height offset, matching
 	newRect.y += rect->h;
-	// quake live ignoring color
-	//CG_Text_Paint_Align(rect, scale, colorWhite, s, 0, 0, textStyle, font, align);
-	CG_Text_Paint_Align(&newRect, scale, statusColor, s, 0, 0, textStyle, font, align);
-	//CG_Text_Paint_Align(rect, scale, color, s, 0, 0, textStyle, font, align);
+
+	if (cg_wideScreen.integer == 7) {  // bug compatibility
+		align = ITEM_ALIGN_LEFT;
+
+		// 2018-07-14 quake live ignoring color except for 'Teams are tied...'
+		if (s  &&  s[0] != 'T') {
+			Vector4Set(ourColor, 1, 1, 1, 1);
+		} else {
+			Vector4Copy(color, ourColor);
+		}
+	} else {
+		Vector4Copy(color, ourColor);
+	}
+
+
+	CG_Text_Paint_Align(&newRect, scale, ourColor, s, 0, 0, textStyle, font, align);
 }
 
 const char *CG_GameTypeString(void) {
@@ -4075,6 +4730,17 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 		yscale = 3.0;
 	}
 
+	// hack to match quakelive behavior of not scaling text even if WIDESCREEN_STRETCH is set
+	if ((cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 7)  &&  QLWideScreen == WIDESCREEN_STRETCH) {
+		float ratio;
+
+		ratio = (float)cgs.glconfig.vidWidth / (float)cgs.glconfig.vidHeight;
+
+		if (ratio > (640.0f / 480.0f)) {
+			xscale /= ratio / (640.0f / 480.0f);
+		}
+	}
+
 	if (text) {
 	    const char *s = text;
 	    float max = *maxX;
@@ -4120,8 +4786,11 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 				}
 				//memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
 				//FIXME double check, did it for spec list in ql scoreboard
-				newColor[3] = color[3];
-				if (s[1] == '7') {
+				if (cg_colorCodeUseForegroundAlpha.integer) {
+					newColor[3] = color[3];
+				}
+
+				if (s[1] == '7'  &&  cg_colorCodeWhiteUseForegroundColor.integer) {
 					VectorCopy(color, newColor);
 				}
 				trap_R_SetColor( newColor );
@@ -4219,6 +4888,9 @@ void CG_Text_Paint_Align (const rectDef_t *rect, float scale, const vec4_t color
 		//CG_Text_Paint(rect->x + rect->w - w, rect->y, scale, color, text, adjust, limit, style, fontOrig);
 		CG_Text_Paint(rect->x - w, rect->y, scale, color, text, adjust, limit, style, fontOrig);
 		return;
+	} else {
+		// default to align left
+		CG_Text_Paint(rect->x, rect->y, scale, color, text, adjust, limit, style, fontOrig);
 	}
 
 	Com_Printf("CG_Text_Paint_Align() unknown align option: %d\n", align);
@@ -4467,7 +5139,6 @@ static void CG_DrawTeamSpectators(const rectDef_t *rect, float scale, const vec4
 static void CG_DrawMedal(int ownerDraw, const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, const fontInfo_t *font) {
 	const score_t *score = &cg.scores[cg.selectedScore];
 	float value = 0;
-	//int tw;
 	float th;
 	const char *text = NULL;
 	vec4_t colorNew;
@@ -4525,19 +5196,37 @@ static void CG_DrawMedal(int ownerDraw, const rectDef_t *rect, float scale, cons
 	CG_DrawPic( rect->x, rect->y, rect->w, rect->h, shader );
 
 	if (text) {
+		float textSpacing;
+
 		th = CG_Text_Height(text, scale, 0, font);
+		textSpacing = 0;
+
+		// 2018-07-15 a bit of spacing is added before the text and quake live seems to used a fixed amount
+		if (cg_wideScreen.integer == 7) {  // compatible as much with quake live as possible
+			textSpacing = 3;
+		} else {
+			// 2018-07-15 use the size of a space character so that it scales correctly
+			//textSpacing = CG_Text_Width(" ", scale, 0, font);
+
+			// 2018-07-15 just use spacing like quake live
+			textSpacing = 3;
+		}
 
 		colorNew[3] = 1.0;
 		trap_R_SetColor(color);
-		//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h + 10 , scale, color, text, 0, 0, 0, font);
-		//CG_Text_Paint_Bottom(rect->x + ((float)rect->w * 1.5), rect->y , scale, color, text, 0, 0, 0, font);
-		CG_Text_Paint(rect->x + ((float)rect->w * 1.5), rect->y + rect->h / 2 + th / 2, scale, color, text, 0, 0, 0, font);
+
+		if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+			// 2018-08-07 text is drawn at the bottom right of rectangle - text height
+			CG_Text_Paint(rect->x + rect->w + textSpacing, rect->y + rect->h - (49.0f * scale), scale, color, text, 0, 0, 0, font);
+		} else {
+			CG_Text_Paint(rect->x + rect->w + textSpacing, rect->y + rect->h / 2 + th / 2, scale, color, text, 0, 0, 0, font);
+		}
 	}
 	trap_R_SetColor(NULL);
 
 }
 
-static void CG_SetTeamColor (void)
+static void CG_SetTeamColor (float alpha)
 {
 	vec4_t color;
 	int clientNum;
@@ -4563,7 +5252,8 @@ static void CG_SetTeamColor (void)
 		SC_Vec3ColorFromCvar(color, &cg_hudNoTeamColor);
 	}
 
-	color[3] = 1.0;
+	//color[3] = 1.0;
+	color[3] = alpha;
 
 	trap_R_SetColor(color);
 
@@ -4640,6 +5330,7 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	char scoreString[128];
 	const char *tmpString;
 	int scoreStringLength;
+	vec4_t scoreColor;
 
 	if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
 		CG_OspCalcPlacements();
@@ -4701,7 +5392,8 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 			if (*clanTag) {
 				s = va("1. ^7%s ^7%s", clanTag, cgs.clientinfo[cg.snap->ps.clientNum].name);
 			} else {
-				s = va("1. ^7%s", cgs.clientinfo[cg.snap->ps.clientNum].name);
+				// + 2 skip ^7 added with CG_SafeColorName()
+				s = va("1. %s", cgs.clientinfo[cg.snap->ps.clientNum].name + 2);
 			}
 		} else {  // /follow someone (other than main client view) and/or free spec demo
 
@@ -4714,7 +5406,8 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 				if (wolfcam_following) {
 					// check us first
 					if (cgs.clientinfo[wcg.clientNum].score == cgs.scores1) {
-						s = va("1. %s", cgs.clientinfo[wcg.clientNum].name);
+						// + 2 skip ^7 added with CG_SafeColorName()
+						s = va("1. %s", cgs.clientinfo[wcg.clientNum].name + 2);
 					}
 				}
 
@@ -4729,7 +5422,8 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 						}
 
 						if (cgs.clientinfo[i].score == cgs.scores1) {
-							s = va("1. %s", cgs.clientinfo[i].name);
+							// + 2 skip ^7 added with CG_SafeColorName()
+							s = va("1. %s", cgs.clientinfo[i].name + 2);
 							break;
 						}
 					}
@@ -4745,7 +5439,8 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 						if (*clanTag) {
 							s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[wcg.clientNum].name);
 						} else {
-							s = va("1. ^7%s", cgs.clientinfo[wcg.clientNum].name);
+							// + 2 skip ^7 added with CG_SafeColorName()
+							s = va("1. %s", cgs.clientinfo[wcg.clientNum].name + 2);
 						}
 					} else {  // ffa, red rover
 
@@ -4757,7 +5452,8 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 							if (*clanTag) {
 								s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[wcg.clientNum].name);
 							} else {
-								s = va("1. ^7%s", cgs.clientinfo[wcg.clientNum].name);
+								// + 2 skip ^7 added with CG_SafeColorName()
+								s = va("1. %s", cgs.clientinfo[wcg.clientNum].name + 2);
 							}
 						} else {
 							s = va("1. %s", cgs.firstPlace);
@@ -4827,8 +5523,17 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	//FIXME spacing for scores
 	CG_Text_Paint(rect->x + teamSpacing, rect->y, scale, color, s, 0, rect->w - teamSpacing - spacing - 6, textStyle, font);
 
+	Vector4Copy(color, scoreColor);
+
+	// 2018-09-26 ql ignores alpha for score for non team games
+	if (cg_wideScreen.integer == 7) {
+		if (!(CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER)) {
+			scoreColor[3] = 1.0f;
+		}
+	}
+
 	//CG_Text_Paint(rect->x + rect->w - spacing - CG_Text_Width(scoreString, scale, 0, font), rect->y, scale, color, scoreString, 0, 0, textStyle, font);
-	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, color, scoreString, 0, 0, textStyle, font);
+	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, scoreColor, scoreString, 0, 0, textStyle, font);
 }
 
 static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4_t color, int textStyle, const fontInfo_t *font)
@@ -4849,6 +5554,7 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 	char scoreString[128];
 	const char *tmpString;
 	int scoreStringLength;
+	vec4_t scoreColor;
 
 	if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
 		CG_OspCalcPlacements();
@@ -4965,7 +5671,8 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 			if (*clanTag) {
 				s = va("%d. ^7%s ^7%s", rank, clanTag, cgs.clientinfo[cg.snap->ps.clientNum].name);
 			} else {
-				s = va("%d. ^7%s", rank, cgs.clientinfo[cg.snap->ps.clientNum].name);
+				// + 2 skip ^7 added with CG_SafeColorName()
+				s = va("%d. %s", rank, cgs.clientinfo[cg.snap->ps.clientNum].name + 2);
 			}
 			score = cg.snap->ps.persistant[PERS_SCORE];
 			teamSpacing = 0;
@@ -4995,12 +5702,14 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 							}
 
 							if (cgs.clientinfo[i].score == cgs.scores2) {
-								s = va("2. %s", cgs.clientinfo[i].name);
+								// + 2 skip ^7 added with CG_SafeColorName()
+								s = va("2. %s", cgs.clientinfo[i].name + 2);
 								break;
 							}
 						}
 					} else if (cgs.clientinfo[wcg.clientNum].score == cgs.scores2) {
-						s = va("2. %s", cgs.clientinfo[wcg.clientNum].name);
+						// + 2 skip ^7 added with CG_SafeColorName()
+						s = va("2. %s", cgs.clientinfo[wcg.clientNum].name + 2);
 					} else {
 						int rank;
 
@@ -5017,7 +5726,8 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 								rank++;
 							}
 						}
-						s = va("%d. %s", rank, cgs.clientinfo[wcg.clientNum].name);
+						// + 2 skip ^7 added with CG_SafeColorName()
+						s = va("%d. %s", rank, cgs.clientinfo[wcg.clientNum].name + 2);
 						score = cgs.clientinfo[wcg.clientNum].score;
 					}
 				} else {  // not /follow
@@ -5041,7 +5751,8 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 								skipFirst = qfalse;
 								continue;
 							}
-							s = va("2. %s", cgs.clientinfo[i].name);
+							// + 2 skip ^7 added with CG_SafeColorName()
+							s = va("2. %s", cgs.clientinfo[i].name + 2);
 							break;
 						}
 					}
@@ -5076,7 +5787,8 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 							if (*clanTag) {
 								s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[i].name);
 							} else {
-								s = va("1. ^7%s", cgs.clientinfo[i].name);
+								// + 2 skip ^7 added with CG_SafeColorName()
+								s = va("1. %s", cgs.clientinfo[i].name + 2);
 							}
 							break;
 						}
@@ -5105,7 +5817,8 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 								if (*clanTag) {
 									s = va("1. ^7%s ^7^%s", clanTag, cgs.clientinfo[i].name);
 								} else {
-									s = va("1. ^7%s", cgs.clientinfo[i].name);
+									// + 2 skip ^7 added with CG_SafeColorName()
+									s = va("1. %s", cgs.clientinfo[i].name + 2);
 								}
 
 								break;
@@ -5116,7 +5829,7 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 					}
 				} else {  // cgs.scores1 not equal to cgs.scores2 or not /follow or free spec
 					//FIXME ffa should show us always in second place slot?  -- no, score might not be accurate
-					s = va("2. ^7%s", cgs.secondPlace);  //CG_ConfigString(CS_SECONDPLACE));
+					s = va("2. %s", cgs.secondPlace);
 					score = cgs.scores2;
 				}
 			}
@@ -5183,13 +5896,22 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 	//CG_Text_Paint(rect->x + teamSpacing, rect->y, scale, color, s, 0, rect->h - teamSpacing - spacing - 6, textStyle, font);
 	CG_Text_Paint(rect->x + teamSpacing, rect->y, scale, color, s, 0, rect->w - teamSpacing - spacing - 6, textStyle, font);
 
+	Vector4Copy(color, scoreColor);
+
+	// 2018-09-26 ql ignores alpha for score for non team games
+	if (cg_wideScreen.integer == 7) {
+		if (!(CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER)) {
+			scoreColor[3] = 1.0f;
+		}
+	}
+
 	//CG_Text_Paint(rect->x + rect->w - spacing - CG_Text_Width(scoreString, scale, 0, font), rect->y, scale, color, scoreString, 0, 0, textStyle, font);
-	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, color, scoreString, 0, 0, textStyle, font);
+	CG_Text_Paint(rect->x + rect->w - scoreStringLength, rect->y, scale, scoreColor, scoreString, 0, 0, textStyle, font);
 }
 
 
 
-static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font)
+static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align)
 {
 	const char *text;
 	const floatint_t *extString;
@@ -5249,6 +5971,8 @@ static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color,
 			floatint_t *ts;
 			qboolean haveNewLineAmount = qfalse;
 			float newLineAmount = 0;
+			float xoffset;
+			float tw;
 
 			if (extString[0].i == 0) {
 				break;
@@ -5317,17 +6041,20 @@ static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color,
 				newColor[3] *= fade;
 			}
 
-			//tw = CG_Text_Width(text, scale, 0, font);
 			th = CG_Text_Height(text, scale, 0, font);
+			tw = CG_Text_Pic_Width(tmpExtString, scale, cg_obituaryIconScale.value, 0, th, font);
 
-			//tw += ((float)th * cg_obituaryIconScale.value) * (float)numIcons;
-
-			//tw = CG_Text_Pic_Width(extString, scale, cg_obituaryIconScale.value, /*limit*/ 0, th, font);
+			xoffset = 0;
+			if (align == ITEM_ALIGN_CENTER) {
+				xoffset = -(tw / 2);
+			} else if (align == ITEM_ALIGN_RIGHT) {
+				xoffset = -tw;
+			}
 
 			//Com_Printf("^2string: ");
 			//CG_PrintPicString(tmpExtString);
 
-			CG_Text_Pic_Paint(rect->x, rect->y - yOffset, scale, newColor, tmpExtString, 0, 0, cg_drawFragMessageStyle.integer, font, th, cg_obituaryIconScale.value);
+			CG_Text_Pic_Paint(rect->x + xoffset, rect->y - yOffset, scale, newColor, tmpExtString, 0, 0, cg_drawFragMessageStyle.integer, font, th, cg_obituaryIconScale.value);
 
 			if (haveNewLineAmount) {
 				yOffset -= newLineAmount;
@@ -5598,7 +6325,10 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 	float scale;
 	int count;
 	int lines;
+	rectDef_t rect;
 	int firstLine = -1;  // silence gcc warning
+	vec4_t ourColor;
+	int textStyle;
 	//static int lastDrawActiveFrameCount = -1;
 
 	//FIXME hack to avoid overdrawing chat area, happens with wolfcam_follow, need to check why
@@ -5632,8 +6362,20 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 
 	//height = 20;
 
+	if (cg_wideScreen.integer == 7) {  // bug compatibility
+		// 2018-07-26 ql forces color to white
+		Vector4Set(ourColor, 1, 1, 1, 1);
+		scale = 0.22;
+		textStyle = ITEM_TEXTSTYLE_SHADOWED;
+	} else {
+		Vector4Copy(args->color, ourColor);
+		textStyle = args->textStyle;
+	}
+
 	count = 0;
 	for (i = 0;  i < lines;  i++) {
+		int wideScreenOrig;
+
 		n = cg.chatAreaStringsIndex - 1 - i;
 		if (n < 0) {
 			break;
@@ -5664,8 +6406,20 @@ static void CG_DrawAreaNewChat (const odArgs_t *args)
 
 		//Com_Printf("text style: %d\n", args->textStyle);
 
+		wideScreenOrig = QLWideScreen;
+		if (cg_wideScreen.integer == 7) {  // bug compatability, force WIDESCREEN_LEFT
+			QLWideScreen = WIDESCREEN_LEFT;
+		}
+
+		rect.x = args->x;
+		rect.y = args->y + (args->h) - (height + 4) * count;
+		rect.w = args->w;
+		rect.h = args->h;
+
 		//FIXME height based on scale
-		CG_Text_Paint(args->x, args->y + (args->h) - (height + 4) * count, scale, args->color, cg.chatAreaStrings[n], 0, 0, args->textStyle, args->font);
+		CG_Text_Paint_Align(&rect, scale, ourColor, cg.chatAreaStrings[n], 0, 0, textStyle, args->font, args->align);
+
+		QLWideScreen = wideScreenOrig;
 
 		// testing
 #if 0
@@ -5987,7 +6741,7 @@ int CG_GetGameStartTime (void)
 }
 #endif
 
-static void CG_DrawTeamMapPickupsTdm (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, int team)
+static void CG_DrawTeamMapPickupsTdm (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, const vec4_t color, int team)
 {
 	float x;
 	float y;
@@ -5998,7 +6752,6 @@ static void CG_DrawTeamMapPickupsTdm (const rectDef_t *rect, float scale, int st
 	float spacing;
 	const char *s;
 	float textWidth;
-	//rectDef_t textRect;
 	float xspace;
 	int diffArmorHealthCount;
 
@@ -6044,6 +6797,8 @@ static void CG_DrawTeamMapPickupsTdm (const rectDef_t *rect, float scale, int st
 	// testing
 	//ra = ya = ga = mega = quad = bs = regen = haste = invis = 2;
 
+	// 2018-10-03 ingame_scoreboard_* uses 15 x 15 rect
+
 	// scale 0.16
 	w = 32;
 	h = 32;
@@ -6058,56 +6813,88 @@ static void CG_DrawTeamMapPickupsTdm (const rectDef_t *rect, float scale, int st
 	w = rect->h;
 	h = rect->h;
 
-	spacing = h * 1.7;
-
-	//Com_Printf("scale %f\n", scale);
-
-	//memcpy(&textRect, rect, sizeof(textRect));
-
-	//Com_Printf("h: %f\n", rect->h);
+	if (cg_wideScreen.integer == 7) {
+		// 2018-10-03 fixed horizontal spacing amount
+		spacing = 24;
+	} else {
+		spacing = h * 1.7;
+	}
 
 	y = rect->y;
 
 	xspace = 0;  //CG_Text_Width("0", scale, 0, font) * 0.5;
 
-	//scale *= 0.9;
-
 	diffArmorHealthCount = 0;
 
 	if (ra) {
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconra);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconra);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconra);
+		}
 		s = va("%d", ra);
 		textWidth = CG_Text_Width(s, scale, 0, font);
-		//CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, style, font);
-		CG_Text_Paint(x + h - xspace, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - xspace, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
 	if (ya) {
-
-		//textRect.x += spacing;
-		CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconya);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, rect->y, rect->w, rect->h, cgs.media.pickup_iconya);
+		} else {
+			CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconya);
+		}
 		s = va("%d", ya);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
 	if (ga) {
-
-		CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconga);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, rect->y, rect->w, rect->h, cgs.media.pickup_iconga);
+		} else {
+			CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconga);
+		}
 		s = va("%d", ga);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
 	if (mega) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmh);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconmh);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmh);
+		}
 		s = va("%d", mega);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
@@ -6119,70 +6906,140 @@ static void CG_DrawTeamMapPickupsTdm (const rectDef_t *rect, float scale, int st
 
 	////
 
-	//y = rect->y;
-
-	s = va("0:00");
-	y -= CG_Text_Height(s, scale, 0, font) * 1.5;
-
+	if (cg_wideScreen.integer == 7) {
+		// 2018-10-03 powerup icon offset uses fixed amount
+		y -= 7;
+	} else {
+		s = va("0:00");
+		y -= CG_Text_Height(s, scale, 0, font) * 1.5;
+	}
 
 	//textHeight = CG_Text_Height(s, scale, 0, font);
 
 	if (quad) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconquad);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconquad);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconquad);
+		}
 		s = va("%d", quad);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", quadTime / 60, quadTime % 60);
 		//textWidth = CG_Text_Width(s, scale, 0, font);
-		//CG_Text_Paint(x, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
-		//CG_Text_Paint(x + (h * 1.1) - textWidth, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (bs) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconbs);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconbs);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconbs);
+		}
 		s = va("%d", bs);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", bsTime / 60, bsTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (regen) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconregen);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconregen);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconregen);
+		}
 		s = va("%d", regen);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", regenTime / 60, regenTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (haste) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconhaste);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconhaste);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconhaste);
+		}
 		s = va("%d", haste);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", hasteTime / 60, hasteTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (invis) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconinvis);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconinvis);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconinvis);
+		}
 		s = va("%d", invis);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", invisTime / 60, invisTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 }
 
-static void CG_DrawTeamMapPickupsCtf (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, int team)
+static void CG_DrawTeamMapPickupsCtf (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, const vec4_t color, int team)
 {
 	float x;
 	float y;
@@ -6193,7 +7050,6 @@ static void CG_DrawTeamMapPickupsCtf (const rectDef_t *rect, float scale, int st
 	float spacing;
 	const char *s;
 	float textWidth;
-	//rectDef_t textRect;
 	float xspace;
 	int diffArmorHealthCount;
 
@@ -6245,6 +7101,8 @@ static void CG_DrawTeamMapPickupsCtf (const rectDef_t *rect, float scale, int st
 	// testing
 	//ra = ya = ga = mega = quad = bs = regen = haste = invis = 2;
 
+	// 2018-10-03 ingame_scoreboard_* uses 15 x 15 rect
+
 	// scale 0.16
 	w = 32;
 	h = 32;
@@ -6259,64 +7117,107 @@ static void CG_DrawTeamMapPickupsCtf (const rectDef_t *rect, float scale, int st
 	w = rect->h;
 	h = rect->h;
 
-	spacing = h * 1.7;
-
-	//Com_Printf("scale %f\n", scale);
-
-	//memcpy(&textRect, rect, sizeof(textRect));
-
-	//Com_Printf("h: %f\n", rect->h);
+	if (cg_wideScreen.integer == 7) {
+		// 2018-10-03 fixed horizontal spacing amount
+		spacing = 24;
+	} else {
+		spacing = h * 1.7;
+	}
 
 	y = rect->y;
 
 	xspace = 0;  //CG_Text_Width("0", scale, 0, font) * 0.5;
 
-	//scale *= 0.9;
-
 	diffArmorHealthCount = 0;
 
 	if (ra) {
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconra);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconra);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconra);
+		}
+
 		s = va("%d", ra);
 		textWidth = CG_Text_Width(s, scale, 0, font);
-		//CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, style, font);
-		CG_Text_Paint(x + h - xspace, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - xspace, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
 	if (ya) {
-		//textRect.x += spacing;
-		CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconya);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, rect->y, rect->w, rect->h, cgs.media.pickup_iconya);
+		} else {
+			CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconya);
+		}
 		s = va("%d", ya);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
 	if (ga) {
-
-		CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconga);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, rect->y, rect->w, rect->h, cgs.media.pickup_iconga);
+		} else {
+			CG_DrawPic(x, rect->y, w, h, cgs.media.pickup_iconga);
+		}
 		s = va("%d", ga);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
 	if (mega) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmh);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconmh);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmh);
+		}
 		s = va("%d", mega);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
 	if (medkit) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmedkit);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconmedkit);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmedkit);
+		}
 		s = va("%d", medkit);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		diffArmorHealthCount++;
 		x += spacing;
 	}
@@ -6328,224 +7229,516 @@ static void CG_DrawTeamMapPickupsCtf (const rectDef_t *rect, float scale, int st
 
 	////
 
-	//y = rect->y;
-
-	s = va("0:00");
-	y -= CG_Text_Height(s, scale, 0, font) * 1.5;
-
+	if (cg_wideScreen.integer == 7) {
+		// 2018-10-03 powerup icon offset uses fixed amount
+		y -= 7;
+	} else {
+		s = va("0:00");
+		y -= CG_Text_Height(s, scale, 0, font) * 1.5;
+	}
 
 	//textHeight = CG_Text_Height(s, scale, 0, font);
 
 	if (flag) {
 
 		if (cgs.gametype == GT_1FCTF) {
-			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconneutralflag);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-02 fill rectangle
+				CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconneutralflag);
+			} else {
+				CG_DrawPic(x, y, w, h, cgs.media.pickup_iconneutralflag);
+			}
 		} else if (team == TEAM_RED) {
-			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconblueflag);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-02 fill rectangle
+				CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconblueflag);
+			} else {
+				CG_DrawPic(x, y, w, h, cgs.media.pickup_iconblueflag);
+			}
 		} else {
-			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconredflag);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-02 fill rectangle
+				CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconredflag);
+			} else {
+				CG_DrawPic(x, y, w, h, cgs.media.pickup_iconredflag);
+			}
 		}
 		s = va("%d", flag);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", flagTime / 60, flagTime % 60);
 		//textWidth = CG_Text_Width(s, scale, 0, font);
-		//CG_Text_Paint(x, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
-		//CG_Text_Paint(x + (h * 1.1) - textWidth, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (quad) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconquad);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconquad);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconquad);
+		}
 		s = va("%d", quad);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", quadTime / 60, quadTime % 60);
 		//textWidth = CG_Text_Width(s, scale, 0, font);
-		//CG_Text_Paint(x, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
-		//CG_Text_Paint(x + (h * 1.1) - textWidth, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (bs) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconbs);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconbs);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconbs);
+		}
 		s = va("%d", bs);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", bsTime / 60, bsTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (regen) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconregen);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconregen);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconregen);
+		}
 		s = va("%d", regen);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", regenTime / 60, regenTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (haste) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconhaste);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconhaste);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconhaste);
+		}
 		s = va("%d", haste);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", hasteTime / 60, hasteTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 	if (invis) {
-
-		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconinvis);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-02 fill rectangle
+			CG_DrawPic(x, y, rect->w, rect->h, cgs.media.pickup_iconinvis);
+		} else {
+			CG_DrawPic(x, y, w, h, cgs.media.pickup_iconinvis);
+		}
 		s = va("%d", invis);
 		textWidth = 0;  //CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x + h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 14, y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h - textWidth, y + h, scale, color, s, 0, 0, style, font);
+		}
 		s = va("%d:%02d", invisTime / 60, invisTime % 60);
-		CG_Text_Paint(x + h * 0.1, rect->y + h, scale, colorWhite, s, 0, 0, 0, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed x and y offsets for count
+			CG_Text_Paint(x + 2, rect->y + 14, scale, color, s, 0, 0, style, font);
+		} else {
+			CG_Text_Paint(x + h * 0.1, rect->y + h, scale, color, s, 0, 0, style, font);
+		}
 		x += spacing;
 	}
 }
 
-static void CG_DrawTeamMapPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, int team)
+static void CG_DrawTeamMapPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, const vec4_t color, int team)
 {
 	if (cgs.gametype == GT_DOMINATION) {
 		return;
 	}
 
 	if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_FREEZETAG) {
-		CG_DrawTeamMapPickupsTdm(rect, scale, style, font, team);
+		CG_DrawTeamMapPickupsTdm(rect, scale, style, font, color, team);
 	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER) {
-		CG_DrawTeamMapPickupsCtf(rect, scale, style, font, team);
+		CG_DrawTeamMapPickupsCtf(rect, scale, style, font, color, team);
 	} else {
 		//Com_Printf("^3CG_DrawTeamMapPickups() unsupported game type: %d\n", cgs.gametype);
 	}
 }
 
-static void CG_Draw1stPlayerPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font)
+static void CG_Draw1stPlayerPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, const vec4_t color, int align)
 {
 	const duelScore_t *ds;
 	float x, y, w, h;
 	const char *s;
+	float yoffset;
+	float qlCountx = 0;
+	float qlCounty = 0;
+	float qlTimerx = 0;
+	float qlTimery = 0;
+	rectDef_t textRect;
+	float timerOffset;
 
 	ds = &cg.duelScores[0];
 
+	textRect.x = rect->x;
+	textRect.y = rect->y;
+	textRect.w = rect->w;
+	textRect.h = rect->h;
+
 	x = rect->x;
 	y = rect->y;
 	w = rect->w;
 	h = rect->h;
 
+	// in hud.menu uses 15x15 rect and  textscale 0.16
+
+	//FIXME WIDESCREEN_STRETCH causes overlap
+	timerOffset = CG_Text_Width("       ", scale, 0, font);
+
+	if (cg_wideScreen.integer == 7) {
+		// 2018-10-03 fixed offset
+		yoffset = 14;
+		// 2018-10-04 ql ignores font
+		font = &cgDC.Assets.textFont;
+
+		qlCountx = 15;
+		qlCounty = 14;
+		qlTimerx = 15 + 15;
+		qlTimery = 14;
+	} else {
+		yoffset = w;
+	}
+
 	if (ds->redArmorPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconra);
 		s = va("%d", ds->redArmorPickups);
-		CG_Text_Paint(x + h, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed offset
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x + w;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->redArmorTime);
-			CG_Text_Paint(x + h * 2, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-04 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.y = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x + w + timerOffset;
+				textRect.y = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 	if (ds->yellowArmorPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconya);
 		s = va("%d", ds->yellowArmorPickups);
-		CG_Text_Paint(x + h, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-04 fixed offsets
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x + w;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->yellowArmorTime);
-			CG_Text_Paint(x + h * 2, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-04 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.y = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x + w + timerOffset;
+				textRect.y = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 	if (ds->greenArmorPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconga);
 		s = va("%d", ds->greenArmorPickups);
-		CG_Text_Paint(x + h, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-04 fixed offsets
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x + w;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->greenArmorTime);
-			CG_Text_Paint(x + h * 2, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-04 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.y = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x + w + timerOffset;
+				textRect.y = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 	if (ds->megaHealthPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmh);
 		s = va("%d", ds->megaHealthPickups);
-		CG_Text_Paint(x + h, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-04 fixed offsets
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x + w;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->megaHealthTime);
-			CG_Text_Paint(x + h * 2, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-04 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.y = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x + w + timerOffset;
+				textRect.y = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 }
 
-static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font)
+static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int style, const fontInfo_t *font, const vec4_t color, int align)
 {
 	const duelScore_t *ds;
 	float x, y, w, h;
 	const char *s;
-	float textWidth;
+	float yoffset;
+	float qlCountx = 0;
+	float qlCounty = 0;
+	float qlTimerx = 0;
+	float qlTimery = 0;
+	rectDef_t textRect;
+	float timerOffset;
 
 	ds = &cg.duelScores[1];
+
+	textRect.x = rect->x;
+	textRect.y = rect->y;
+	textRect.w = rect->w;
+	textRect.h = rect->h;
 
 	x = rect->x;
 	y = rect->y;
 	w = rect->w;
 	h = rect->h;
 
+	// in hud.menu uses 15x15 rect and textscale 0.16
+
+	//FIXME WIDESCREEN_STRETCH causes overlap
+	timerOffset = CG_Text_Width("       ", scale, 0, font);
+
+	if (cg_wideScreen.integer == 7) {
+		// 2018-10-03 fixed offset
+		yoffset = 14;
+		// 2018-10-04 ql ignores font
+		font = &cgDC.Assets.textFont;
+
+		qlCountx = 0;
+		qlCounty = 14;
+		qlTimerx = -15;
+		qlTimery = 14;
+	} else {
+		yoffset = w;
+	}
+
 	if (ds->redArmorPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconra);
 		s = va("%d", ds->redArmorPickups);
-		textWidth = CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x - textWidth, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-03 fixed offset
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->redArmorTime);
-			textWidth = CG_Text_Width(s, scale, 0, font);
-			CG_Text_Paint(x - h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-05 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.y = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x - timerOffset;
+				textRect.y = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 	if (ds->yellowArmorPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconya);
 		s = va("%d", ds->yellowArmorPickups);
-		textWidth = CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x - textWidth, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-05 fixed offsets
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->yellowArmorTime);
-			textWidth = CG_Text_Width(s, scale, 0, font);
-			CG_Text_Paint(x - h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-05 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.h = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x - timerOffset;
+				textRect.h = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 	if (ds->greenArmorPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconga);
 		s = va("%d", ds->greenArmorPickups);
-		textWidth = CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x - textWidth, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-05 fixed offsets
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->greenArmorTime);
-			textWidth = CG_Text_Width(s, scale, 0, font);
-			CG_Text_Paint(x - h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-05 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.y = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x - timerOffset;
+				textRect.y = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 	if (ds->megaHealthPickups) {
 		CG_DrawPic(x, y, w, h, cgs.media.pickup_iconmh);
 		s = va("%d", ds->megaHealthPickups);
-		textWidth = CG_Text_Width(s, scale, 0, font);
-		CG_Text_Paint(x - textWidth, y + h, scale, colorWhite, s, 0, 0, style, font);
+		if (cg_wideScreen.integer == 7) {
+			// 2018-10-05 fixed offsets
+			textRect.x = x + qlCountx;
+			textRect.y = y + qlCounty;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		} else {
+			textRect.x = x;
+			textRect.y = y + h;
+			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+		}
 		if (cgs.protocol == PROTOCOL_QL) {
 			s = va("%.2f", ds->megaHealthTime);
-			textWidth = CG_Text_Width(s, scale, 0, font);
-			CG_Text_Paint(x - h - textWidth, y + h, scale, colorWhite, s, 0, 0, 0, font);
+			if (cg_wideScreen.integer == 7) {
+				// 2018-10-05 fixed offsets
+				textRect.x = x + qlTimerx;
+				textRect.y = y + qlTimery;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			} else {
+				textRect.x = x - timerOffset;
+				textRect.y = y + h;
+				CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
+			}
 		}
-		y += w;
+		y += yoffset;
 	}
 }
 
-static void CG_SetArmorColor (void)
+static void CG_SetArmorColor (float alpha)
 {
+	vec4_t color;
+
 	if (cgs.protocol != PROTOCOL_QL  &&  !cgs.cpma) {
 		return;
 	}
@@ -6563,21 +7756,24 @@ static void CG_SetArmorColor (void)
 
 	switch (cg.snap->ps.stats[STAT_ARMOR_TIER]) {
 	case 2:  // red
-		trap_R_SetColor(colorRed);
+		Vector4Set(color, 1.0, 0, 0, alpha);
+		trap_R_SetColor(color);
 		break;
 	case 1:  // yellow
-		trap_R_SetColor(colorYellow);
+		Vector4Set(color, 1.0, 1.0, 0, alpha);
+		trap_R_SetColor(color);
 		break;
 	default:
 	case 0:  // green
-		trap_R_SetColor(colorGreen);
+		Vector4Set(color, 0, 1.0, 0, alpha);
+		trap_R_SetColor(color);
 		break;
 	}
 }
 
 //FIXME hack
-int MenuWidescreen = WIDESCREEN_NONE;
-int QLWideScreen = WIDESCREEN_NONE;
+int MenuWidescreen = WIDESCREEN_STRETCH;
+int QLWideScreen = WIDESCREEN_STRETCH;
 rectDef_t MenuRect;
 
 void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_y, int ownerDraw, int ownerDrawFlags, int ownerDrawFlags2, int align, float special, float scale, const vec4_t color, qhandle_t shader, int textStyle, int fontIndex, int menuWidescreen, int itemWidescreen, rectDef_t menuRect)
@@ -6595,11 +7791,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	int clientNum;
 	vec4_t newColor;
 
-
-  //FIXME debugging
-  if (cg_wideScreen.integer == 6) {
-	  return;
-  }
 
   if ( cg_drawStatus.integer == 0 ) {
 		return;
@@ -6647,7 +7838,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   QLWideScreen = itemWidescreen;
   MenuRect = menuRect;
 
-  //FIXME debugging widescreen
+#if 0  // debugging widescreen
   //args.color[0] = 255;
   //args.color[1] = 255;
   //args.color[2] = 255;
@@ -6667,22 +7858,20 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
 
   //Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
+#endif
 
+#if 0  // debugging widescreen
   if (menuWidescreen  ||  itemWidescreen) {
 	  //Com_Printf("^3menu widescreen %d  item widescreen %d\n", menuWidescreen, itemWidescreen);
-	  //FIXME testing widescren
 
 	  int widescreenValue = menuWidescreen;
 	  if (widescreenValue == 0) {
 		  widescreenValue = itemWidescreen;
 	  }
-
-	  //rect.x += 300;
-	  //x += 300;
   }
+#endif
 
-
-#if 0  // debugging
+#if 0  // debugging specific ownerdraws
   {
 	  int mn, mx;
 
@@ -6702,106 +7891,172 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
 
   if (debug > 2) {
-	  MenuWidescreen = WIDESCREEN_NONE;
-	  QLWideScreen = WIDESCREEN_NONE;
+	  MenuWidescreen = WIDESCREEN_STRETCH;
+	  QLWideScreen = WIDESCREEN_STRETCH;
 	  return;
   }
 
   switch (ownerDraw) {
   case CG_PLAYER_ARMOR_ICON:
-    CG_DrawPlayerArmorIcon(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
-    break;
+	  CG_DrawPlayerArmorIcon(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
+	  break;
   case CG_PLAYER_ARMOR_ICON2D:
-    CG_DrawPlayerArmorIcon(&rect, qtrue);
-    break;
+	  CG_DrawPlayerArmorIcon(&rect, qtrue);
+	  break;
   case CG_PLAYER_ARMOR_VALUE:
+	  // 2018-07-18 ql does use 'shader' and doesn't draw value
 	  CG_DrawPlayerArmorValue(&rect, scale, color, shader, textStyle, font, align, &menuRect);
-    break;
+	  break;
   case CG_PLAYER_AMMO_ICON:
-    CG_DrawPlayerAmmoIcon(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
-    break;
+	  CG_DrawPlayerAmmoIcon(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
+	  break;
   case CG_PLAYER_AMMO_ICON2D:
-    CG_DrawPlayerAmmoIcon(&rect, qtrue);
-    break;
+	  CG_DrawPlayerAmmoIcon(&rect, qtrue);
+	  break;
   case CG_PLAYER_AMMO_VALUE:
+	  // 2018-07-18 ql does use 'shader' and doesn't draw value
 	  CG_DrawPlayerAmmoValue(&rect, scale, color, shader, textStyle, font, align, &menuRect);
-    break;
+	  break;
   case CG_SELECTEDPLAYER_HEAD:
-    CG_DrawSelectedPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qfalse);
-    break;
+	  // 2018-07-18 not in ql
+	  CG_DrawSelectedPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qfalse);
+	  break;
   case CG_VOICE_HEAD:
-    CG_DrawSelectedPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qtrue);
-    break;
+	  // 2018-07-18 not in ql
+	  CG_DrawSelectedPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qtrue);
+	  break;
   case CG_VOICE_NAME:
+	  // 2018-07-18 not in ql
 	  CG_DrawSelectedPlayerName(&rect, scale, color, qtrue, textStyle, font, align);
-    break;
+	  break;
   case CG_SELECTEDPLAYER_STATUS:
-    CG_DrawSelectedPlayerStatus(&rect);
-    break;
+	  // 2018-07-18 not in ql
+	  CG_DrawSelectedPlayerStatus(&rect);
+	  break;
   case CG_SELECTEDPLAYER_ARMOR:
+	  // 2018-07-18 not in ql
 	  CG_DrawSelectedPlayerArmor(&rect, scale, color, shader, textStyle, font, align);
-    break;
+	  break;
   case CG_SELECTEDPLAYER_HEALTH:
+	  // 2018-07-18 not in ql
 	  CG_DrawSelectedPlayerHealth(&rect, scale, color, shader, textStyle, font, align);
-    break;
+	  break;
   case CG_SELECTEDPLAYER_NAME:
+	  // 2018-07-18 not in ql
 	  CG_DrawSelectedPlayerName(&rect, scale, color, qfalse, textStyle, font, align);
-    break;
+	  break;
   case CG_SELECTEDPLAYER_LOCATION:
+	  // 2018-07-18 not in ql
 	  CG_DrawSelectedPlayerLocation(&rect, scale, color, textStyle, font, align);
-    break;
+	  break;
   case CG_SELECTEDPLAYER_WEAPON:
-    CG_DrawSelectedPlayerWeapon(&rect);
-    break;
+	  // 2018-07-18 not in ql
+	  CG_DrawSelectedPlayerWeapon(&rect);
+	  break;
   case CG_SELECTEDPLAYER_POWERUP:
-    CG_DrawSelectedPlayerPowerup(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
-    break;
+	  // 2018-07-18 not in ql
+	  CG_DrawSelectedPlayerPowerup(&rect, ownerDrawFlags & CG_SHOW_2DONLY);
+	  break;
   case CG_PLAYER_HEAD:
+	  // 2018-07-18 ql forces 2d and shows steam avatar
 	  CG_DrawPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qtrue);
 	  break;
   case WCG_REAL_PLAYER_HEAD:
 	  CG_DrawPlayerHead(&rect, ownerDrawFlags & CG_SHOW_2DONLY, qfalse);
 	  break;
   case CG_PLAYER_ITEM:
-    CG_DrawPlayerItem(&rect, scale, ownerDrawFlags & CG_SHOW_2DONLY);
-    break;
+	  CG_DrawPlayerItem(&rect, scale, ownerDrawFlags & CG_SHOW_2DONLY);
+	  break;
   case CG_PLAYER_SCORE:
+	  // 2018-07-19 ql uses 'shader' but also draws score
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-06 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawPlayerScore(&rect, scale, color, shader, textStyle, font, align);
-    break;
+	  break;
   case CG_PLAYER_HEALTH:
+	  // 2018-07-19 ql uses 'shader' and doesn't render health
 	  CG_DrawPlayerHealth(&rect, scale, color, shader, textStyle, font, align, &menuRect);
-    break;
+	  break;
   case CG_RED_SCORE:
+	  // 2018-07-19 ql ignores 'shader'
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibilty
+		  // 2018-08-06 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawRedScore(&rect, scale, color, shader, textStyle, font, align);
-    break;
+	  break;
   case CG_BLUE_SCORE:
+	  // 2018-07-19 ql ignores 'shader'
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-06 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawBlueScore(&rect, scale, color, shader, textStyle, font, align);
-    break;
+	  break;
   case CG_RED_NAME:
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-06 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawRedName(&rect, scale, color, textStyle, font, align);
-    break;
+	  break;
   case CG_BLUE_NAME:
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-06 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawBlueName(&rect, scale, color, textStyle, font, align);
-    break;
+	  break;
   case CG_BLUE_FLAGHEAD:
-    CG_DrawBlueFlagHead(&rect);
-    break;
-  case CG_BLUE_FLAGSTATUS:
-    CG_DrawBlueFlagStatus(&rect, shader);
-    break;
-  case CG_BLUE_FLAGNAME:
-	  CG_DrawBlueFlagName(&rect, scale, color, textStyle, font, align);
-    break;
-  case CG_RED_FLAGHEAD:
-    CG_DrawRedFlagHead(&rect);
-    break;
-  case CG_RED_FLAGSTATUS:
-    CG_DrawRedFlagStatus(&rect, shader);
-    break;
-  case CG_RED_FLAGNAME:
-	  CG_DrawRedFlagName(&rect, scale, color, textStyle, font, align);
-    break;
+	  // 2018-07-18 not in ql
+	  CG_DrawBlueFlagHead(&rect);
+	  break;
 
+  case WCG_BLUE_FLAGSTATUS_COLOR:
+  case CG_BLUE_FLAGSTATUS: {
+	  qboolean colorize;
+
+	  // 2018-07-19 ql ignores 'shader'
+
+	  colorize = qfalse;
+	  if (ownerDraw == WCG_BLUE_FLAGSTATUS_COLOR) {
+		  colorize = qtrue;
+	  }
+	  CG_DrawBlueFlagStatus(&rect, shader, colorize);
+	  break;
+  }
+
+  case CG_BLUE_FLAGNAME:
+	  // 2018-07-18 not in ql
+	  CG_DrawBlueFlagName(&rect, scale, color, textStyle, font, align);
+	  break;
+  case CG_RED_FLAGHEAD:
+	  // 2018-07-18 not in ql
+	  CG_DrawRedFlagHead(&rect);
+	  break;
+
+  case WCG_RED_FLAGSTATUS_COLOR:
+  case CG_RED_FLAGSTATUS: {
+	  qboolean colorize;
+
+	  // 2018-07-19 ql ignores 'shader'
+
+	  colorize = qfalse;
+	  if (ownerDraw == WCG_RED_FLAGSTATUS_COLOR) {
+		  colorize = qtrue;
+	  }
+	  CG_DrawRedFlagStatus(&rect, shader, colorize);
+	  break;
+  }
+
+  case CG_RED_FLAGNAME:
+	  // 2018-07-18- not in ql
+	  CG_DrawRedFlagName(&rect, scale, color, textStyle, font, align);
+	  break;
+
+  // 2018-07-19 these are not in quake live or used in quake3
 	/*
 #define CG_FLAGCARRIER_HEAD 13
 #define CG_FLAGCARRIER_NAME 14
@@ -6814,50 +8069,93 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_HARVESTER_SKULLS:
 	  //Com_Printf("text_x %f  text_y %f\n", text_x, text_y);
 	  CG_HarvesterSkulls(&rect, scale, color, qfalse, textStyle, font);
-    break;
+	  break;
   case CG_HARVESTER_SKULLS2D:
 	  CG_HarvesterSkulls(&rect, scale, color, qtrue, textStyle, font);
-    break;
-  case CG_ONEFLAG_STATUS:
-    CG_OneFlagStatus(&rect);
-    break;
+	  break;
+
+  case WCG_ONEFLAG_STATUS_COLOR:
+  case CG_ONEFLAG_STATUS: {
+	  qboolean colorize = qfalse;
+
+	  if (ownerDraw == WCG_ONEFLAG_STATUS_COLOR) {
+		  colorize = qtrue;
+	  }
+
+	  CG_OneFlagStatus(&rect, colorize);
+	  break;
+  }
+
   case CG_PLAYER_LOCATION:
+	  // 2018-07-22 not in ql
 	  CG_DrawPlayerLocation(&rect, scale, color, textStyle, font, align);
-    break;
+	  break;
   case CG_TEAM_COLOR:
-    CG_DrawTeamColor(&rect, color);
-    break;
+	  CG_DrawTeamColor(&rect, color);
+	  break;
   case CG_CTF_POWERUP:
-    CG_DrawCTFPowerUp(&rect);
-    break;
+	  CG_DrawCTFPowerUp(&rect);
+	  break;
   case CG_AREA_POWERUP:
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-06 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawAreaPowerUp(&rect, align, special, scale, color, font);
-    break;
+	  break;
   case CG_PLAYER_STATUS:
-    CG_DrawPlayerStatus(&rect);
-    break;
+	  // 2018-07-25 not in ql
+	  CG_DrawPlayerStatus(&rect);
+	  break;
   case CG_PLAYER_HASFLAG:
-    CG_DrawPlayerHasFlag(&rect, qfalse);
-    break;
+	  CG_DrawPlayerHasFlag(&rect, qfalse);
+	  break;
   case CG_PLAYER_HASFLAG2D:
-    CG_DrawPlayerHasFlag(&rect, qtrue);
-    break;
+	  CG_DrawPlayerHasFlag(&rect, qtrue);
+	  break;
   case CG_AREA_SYSTEMCHAT:
+	  // 2018-07-19 not in ql
 	  CG_DrawAreaSystemChat(&rect, scale, color, shader, font, align);
-    break;
+	  break;
   case CG_AREA_TEAMCHAT:
+	  // 2018-07-19 not in ql
 	  CG_DrawAreaTeamChat(&rect, scale, color, shader, font, align);
-    break;
+	  break;
   case CG_AREA_CHAT:
+	  // 2018-07-19 not in ql
 	  CG_DrawAreaChat(&rect, scale, color, shader, font, align);
-    break;
+	  break;
   case CG_GAME_TYPE:
+	  if (cg_wideScreen.integer == 7) {
+		  if (align == ITEM_ALIGN_RIGHT) {
+			  // 2018-07-14 ql doesn't support right align
+			  align = ITEM_ALIGN_LEFT;
+		  }
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_Text_Paint_Align(&rect, scale, color, CG_GameTypeString(), 0, 0, textStyle, font, align);
 	  break;
   case CG_GAME_STATUS:
+	  // 2018-07-14 quake live still applies extra height offset, matching
+	  // 2018-07-19 ql ignores 'shader'
+	  // 2018-07-25 ql ignores align center and right
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawGameStatus(&rect, scale, color, shader, textStyle, font, align);
 	  break;
   case CG_KILLER:
+	  // 2018-07-15 outside of scoreboard, ql adds rectangle height to text but not the weapon icon, WIDESCREEN_STRETCH extra horizontal spacing for weapon icon after text  --  text plus rectangle height implemented but icon vertical position bug not implemented
+	  // 2018-07-15 ql doesn't reset it after death scoreboard is shown
+	  // 2018-07-19 ql ignores 'shader'
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawKiller(&rect, scale, color, shader, textStyle, font, align);
 	  break;
 	case CG_ACCURACY:
@@ -6868,40 +8166,89 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	case CG_PERFECT:
 	case CG_GAUNTLET:
 	case CG_CAPTURES:
-		CG_DrawMedal(ownerDraw, &rect, scale, color, shader, font);
-		break;
+	  // 2018-07-15 a bit of spacing is added before the text and quake live seems to used a fixed amount
+	  // 2018-07-15 in quake live a change of textscale moves the text up or down -- not implemented
+	  // 2018-07-19 ql uses 'shader'
+	  CG_DrawMedal(ownerDraw, &rect, scale, color, shader, font);
+	  break;
   case CG_SPECTATORS:
+	  // 2018-07-15 ql doesn't scroll text anymore just changes order so that the list changes after a set amount of time.  ex:  show 'player1 player2 player3' then after a while show 'player4 player5' etc..
+	  // 2018-07-19 ql ignores 'shader'
 	  CG_DrawTeamSpectators(&rect, scale, color, shader, font);
-		break;
+	  break;
   case CG_TEAMINFO:
-		if (cg_currentSelectedPlayer.integer == numSortedTeamPlayers) {
-			CG_DrawNewTeamInfo(&rect, text_x, text_y, scale, color, shader, font);
-		}
-		break;
+	  // 2018-07-19 not in ql
+	  if (cg_currentSelectedPlayer.integer == numSortedTeamPlayers) {
+		  CG_DrawNewTeamInfo(&rect, text_x, text_y, scale, color, shader, font);
+	  }
+	  break;
   case CG_CAPFRAGLIMIT:
+	  // 2018-07-25 ql ignores 'shader'
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_DrawCapFragLimit(&rect, scale, color, shader, textStyle, font, align, &menuRect);
-		break;
+	  break;
   case CG_1STPLACE:
+	  // 2018-07-25 ql ignores 'shader'
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_Draw1stPlace(&rect, scale, color, shader, textStyle, font, align);
-		break;
+	  break;
   case CG_2NDPLACE:
+	  // 2018-07-25 ql ignores 'shader'
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_Draw2ndPlace(&rect, scale, color, shader, textStyle, font, align);
-		break;
+	  break;
 
-		////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////
 
-		//CG_FULLTEAMINFO 70  // some weird heart thing
+  // 2018-08-01 not in ql or quake3
+  // CG_FULLTEAMINFO 70  // some weird heart thing
 
   case CG_LEVELTIMER:  {
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_Text_Paint_Align(&rect, scale, color, CG_GetLevelTimerString(), 0, 0, textStyle, font, align);
 	  break;
   }
-	  // CG_PLAYER_SKILL 72  // doesn't appear to be used
 
-  case CG_PLAYER_OBIT:
+  // 2018-08-01 not in ql or quake3
+  // CG_PLAYER_SKILL 72  // doesn't appear to be used
+
+  case WCG_PLAYER_OBIT:
+  case CG_PLAYER_OBIT: {
+	  vec4_t ourColor;
+
 	  // 2018-07-05 ql doesn't use text align
-	  CG_DrawObit(&rect, scale, color, shader, textStyle, font);
+	  if (ownerDraw == CG_PLAYER_OBIT) {
+		  align = ITEM_ALIGN_LEFT;
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // bug compatibility
+		  // 2018-07-25 ql ignores color
+		  Vector4Set(ourColor, 1, 1, 1, 1);
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  } else {
+		  Vector4Copy(color, ourColor);
+	  }
+
+	  // 2018-07-25 ql ignores 'shader'
+	  CG_DrawObit(&rect, scale, ourColor, shader, textStyle, font, align);
 	  break;
+  }
   case CG_PLAYER_HEALTH_BAR_100:
 	  ival = cg.snap->ps.stats[STAT_HEALTH];
 
@@ -6919,18 +8266,23 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  ival = 0;
 	  }
 
-	  CG_SetTeamColor();
-	  //CG_DrawPic(rect.x, rect.y, rect.w * (ival / 100.0), rect.h, shader);
+	  CG_SetTeamColor(1);
 
-	  //CG_AdjustFrom640( &rect.x, &rect.y, &rect.w, &rect.h );
 	  s1 = 0;
 	  t1 = 0;
 	  s2 = (ival / 100.0);
 	  t2 = 1;
-	  //trap_R_DrawStretchPic( rect.x, rect.y, rect.w * (ival / 100.0), rect.h, s1, t1, s2, t2, shader );
+
 	  CG_DrawStretchPic( rect.x, rect.y, rect.w * (ival / 100.0), rect.h, s1, t1, s2, t2, shader );
 	  break;
-  case CG_PLAYER_HEALTH_BAR_200:
+
+  case CG_PLAYER_HEALTH_BAR_200: {
+	  int maxVal;
+
+	  // 2018-07-26 this is dependent on the image used.  The current ql image (h200.png) has spacing for more than 200 health so that needs to be taken into account.  Also, 145 (not 150) matches ql behavior.
+
+	  maxVal = 145;
+
 	  ival = cg.snap->ps.stats[STAT_HEALTH];
 
 	  if (wolfcam_following) {
@@ -6941,21 +8293,22 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 
 	  ival -= 100;
-	  if (ival > 100) {
-		  ival = 100;
+	  if (ival > maxVal) {
+		  ival = maxVal;
 	  }
 	  if (ival < 0) {
 		  ival = 0;
 	  }
-	  CG_SetTeamColor();
-	  //CG_DrawPic(rect.x, rect.y, rect.w, rect.h * 0.5, shader);
+	  CG_SetTeamColor(1);
 	  CG_AdjustFrom640( &rect.x, &rect.y, &rect.w, &rect.h );
 	  s1 = 0;
-	  t1 = 1.0 - (ival / 100.0);  //0.5;
-	  s2 = 1;  //0.5;
+	  t1 = 1.0 - (ival / (float)maxVal);
+	  s2 = 1;
 	  t2 = 1;
-	  trap_R_DrawStretchPic( rect.x, rect.y + rect.h * (1 - ival / 100.0), rect.w, rect.h * (ival / 100.0), s1, t1, s2, t2, shader );
+	  trap_R_DrawStretchPic( rect.x, rect.y + rect.h * (1 - ival / (float)maxVal), rect.w, rect.h * (ival / (float)maxVal), s1, t1, s2, t2, shader );
 	  break;
+  }
+
   case CG_PLAYER_ARMOR_BAR_100:
 	  ival = cg.snap->ps.stats[STAT_ARMOR];
 
@@ -6972,16 +8325,22 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  if (ival < 0) {
 		  ival = 0;
 	  }
-	  CG_SetTeamColor();
-	  //CG_DrawPic(rect.x, rect.y, rect.w * (ival / 100.0), rect.h, shader);
+	  CG_SetTeamColor(1);
 	  CG_AdjustFrom640( &rect.x, &rect.y, &rect.w, &rect.h );
 	  s1 = 1.0 - (ival / 100.0);
 	  t1 = 0;
-	  s2 = 1;  //(ival / 100.0);
+	  s2 = 1;
 	  t2 = 1;
 	  trap_R_DrawStretchPic( rect.x + rect.w * (1 - ival / 100.0), rect.y, rect.w * (ival / 100.0), rect.h, s1, t1, s2, t2, shader );
 	  break;
-  case CG_PLAYER_ARMOR_BAR_200:
+
+  case CG_PLAYER_ARMOR_BAR_200: {
+	  int maxVal;
+
+	  // 2018-07-26 this is dependent on the image used.  The current ql image (a200.png) has spacing for more than 200 health so that needs to be taken into account.  Also, 145 (not 150) matches ql behavior.
+
+	  maxVal = 145;
+
 	  ival = cg.snap->ps.stats[STAT_ARMOR];
 
 	  if (wolfcam_following) {
@@ -6992,99 +8351,197 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 
 	  ival -= 100;
-	  if (ival > 100) {
-		  ival = 100;
+	  if (ival > maxVal) {
+		  ival = maxVal;
 	  }
 	  if (ival < 0) {
 		  ival = 0;
 	  }
-	  CG_SetTeamColor();
-	  //CG_DrawPic(rect.x, rect.y, rect.w, rect.h * (ival / 100.0), shader);
+
+	  CG_SetTeamColor(1);
 	  CG_AdjustFrom640( &rect.x, &rect.y, &rect.w, &rect.h );
 	  s1 = 0;
-	  t1 = 1.0 - (ival / 100.0);  //0.5;
-	  s2 = 1;  //0.5;
+	  t1 = 1.0 - (ival / (float)maxVal);
+	  s2 = 1;
 	  t2 = 1;
-	  trap_R_DrawStretchPic( rect.x, rect.y + rect.h * (1 - ival / 100.0), rect.w, rect.h * (ival / 100.0), s1, t1, s2, t2, shader );
+	  trap_R_DrawStretchPic( rect.x, rect.y + rect.h * (1 - ival / (float)maxVal), rect.w, rect.h * (ival / (float)maxVal), s1, t1, s2, t2, shader );
 	  break;
+  }
+
+  case WCG_AREA_NEW_CHAT:
   case CG_AREA_NEW_CHAT:
+	  if (ownerDraw == CG_AREA_NEW_CHAT) {
+		  args.align = ITEM_ALIGN_LEFT;
+	  }
+
 	  // hack for new ql which uses notosans-regular in area chat but doesn't set anything in the menu file
 	  if (fontIndex <= 0) {
 		  // not &cgDC.Assets.textFont
 		  args.font = &cg.notosansFont;
 	  }
 
-	  // 2018-07-05 ql seems to offset x to the left by a fixed amount, also ignores text align
+	  // 2018-07-05 ql seems to offset x to the left by a fixed amount, also ignores text align  -- 2018-07-16 offset is forced WIDESCREEN_LEFT
+	  // 2018-07-26 ql forces color to white, scale to 0.22, and textStyle to ITEM_TEXTSTYLE_SHADOWED
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-07 ql ignores font
+		  args.font = &cg.notosansFont;
+	  }
 	  CG_DrawAreaNewChat(&args);
 	  break;
   case CG_TEAM_COLORIZED:
-	  CG_SetTeamColor();
+	  CG_SetTeamColor(color[3]);
 	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
 	  break;
   case CG_1ST_PLACE_SCORE:
 	  // 2018-07-05 ql ignores text align
+	  // 2018-07-16 name is left aligned to box and score to the right so alignment implementation wouldn't make sense
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_Draw1stPlaceScore(&rect, scale, color, textStyle, font);
 	  break;
   case CG_2ND_PLACE_SCORE:
 	  // 2018-07-05 ql ignores text align
+	  // 2018-07-16 name is left aligned to box and score to the right so alignment implementation wouldn't make sense
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-07 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 	  CG_Draw2ndPlaceScore(&rect, scale, color, textStyle, font);
 	  break;
   case CG_GAME_TYPE_ICON:  {
 	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, cgs.media.gametypeIcon[cgs.gametype]);
 	  break;
   }
-	  // CG_1STPLACE_PLYR_MODEL 83
+
+  case CG_1STPLACE_PLYR_MODEL:
+	  CG_Draw1stPlacePlayerModel(rect.x, rect.y, rect.w, rect.h);
+	  break;
+
+  case CG_1STPLACE_PLYR_MODEL_ACTIVE:
+	  // 2018-10-06 this doesn't appear to do anything
+	  break;
 
   case CG_MATCH_WINNER:  {
 	  vec4_t ourColor = { 1, 1, 1, 1 };
+	  float x;
+
+	  // 2018-07-08 ql doesn't support align right
+	  if (cg_wideScreen.integer == 7  &&  align == ITEM_ALIGN_RIGHT) {
+		  align = ITEM_ALIGN_LEFT;
+	  }
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-09-25 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  // 2018-07-13 only used in end_scoreboard* but ql shows 'player leads with a score of 2' if it isn't match end
+	  // 2018-07-12 ql uses forecolor to set the player name but the rest of the message is forced to white
+	  // 2018-09-25 if name is large uses '...'
 
 	  if (!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER) {
+		  const char *playerName = "";
+		  char endText[1024];
+		  const char *fullText = "";
 		  float w;
+		  int wideScreenOrig;
+
+		  // testing
+		  //Q_strncpyz(cgs.firstPlace, "This is the PlayerName", sizeof(cgs.firstPlace));
 
 		  if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")  &&  CG_IsDuelGame(cgs.gametype)) {
 			  // use "duelendscores" values
-			  w = CG_Text_Width(cg.cpmaDuelPlayerWinner, scale, 0, font);
-			  CG_Text_Paint_Align(&rect, scale, color, va("%s", cg.cpmaDuelPlayerWinner), 0, 0, textStyle, font, align);
+			  playerName = cg.cpmaDuelPlayerWinner;
 		  } else {
-			  w = CG_Text_Width(cgs.firstPlace, scale, 0, font);
-			  CG_Text_Paint_Align(&rect, scale, color, va("%s", cgs.firstPlace), 0, 0, textStyle, font, align);
+			  playerName = cgs.firstPlace;
 		  }
-		  rect.x += w;
-		  ourColor[3] = color[3];
 
-		  if ((cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
-			    ||
-			  (cgs.cpma  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
-			  ) {
-			  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS by forfeit", 0, 0, textStyle, font, align);
+		  if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+			  if ( (cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
+				   ||
+				   (cgs.cpma  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
+				   ) {
+				  Q_strncpyz(endText, " WINS by forfeit", sizeof(endText));
+			  } else {
+				  Q_strncpyz(endText, " WINS", sizeof(endText));
+			  }
 		  } else {
-			  CG_Text_Paint_Align(&rect, scale, ourColor, " WINS", 0, 0, textStyle, font, align);
+			  Com_sprintf(endText, sizeof(endText), " leads with a score of %d", cgs.scores1);
 		  }
-	  } else {
-		  //FIXME color getting set?
-		  //Vector4Copy(color, ourColor);
+
+		  fullText = va("%s ^7%s", playerName, endText);
+		  w = CG_Text_Width(fullText, scale, 0, font);
+
+		  if (align == ITEM_ALIGN_CENTER) {
+			  x = rect.x - (w / 2);
+		  } else if (align == ITEM_ALIGN_RIGHT) {
+			  x = rect.x - w;
+		  } else {  // ITEM_ALIGN_LEFT or invalid value
+			  x = rect.x;
+		  }
+
+		  // we have to split text painting since the first part (player name) might be using a different alpha value for color
+
+		  CG_Text_Paint(x, rect.y, scale, color, playerName, 0, 0, textStyle, font);
+
+		  //FIXME 2018-07-13 horrible widescreen hack so that the spacing between the two text paints() isn't stretched, need text paint() that supports alpha change
+		  wideScreenOrig = cg_wideScreen.integer;
+		  if (cg_wideScreen.integer == 7) {
+			  cg_wideScreen.integer = 5;
+		  }
+		  x += CG_Text_Width(playerName, scale, 0, font);
+		  cg_wideScreen.integer = wideScreenOrig;
+
+		  CG_Text_Paint(x, rect.y, scale, ourColor, endText, 0, 0, textStyle, font);
+	  } else {  // team game
+
+		  // 2018-07-08 ql shows 'Teams are tied with a score of 0' -- 2018-07-13 has color and alpha from hud for 'Teams are tied' but overrides colors for Blue|Red leads/wins
+		  // 2018-07-13 win shows 'Red|Blue Team ^7WINS by a score of 10 to 8' with forced colors
+
 		  ourColor[3] = color[3];
-		  if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {
-			  CG_Text_Paint_Align(&rect, scale, ourColor, va("^4Blue Team ^7WINS by a score of %d to %d", cgs.scores2, cgs.scores1), 0, 0, textStyle, font, align);
+		  if (CG_ScoresEqual(cgs.scores1, cgs.scores2)) {  // shouldn't happen during intermission
+			  CG_Text_Paint_Align(&rect, scale, color, va("Teams are tied with a score of %d", cgs.scores1), 0, 0, textStyle, font, align);
 		  } else if (cgs.scores1 > cgs.scores2) {
-			  CG_Text_Paint_Align(&rect, scale, ourColor, va("^1Red Team ^7WINS by a score of %d to %d", cgs.scores1, cgs.scores2), 0, 0, textStyle, font, align);
+			  if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+				  CG_Text_Paint_Align(&rect, scale, ourColor, va("^1Red Team ^7WINS by a score of %d to %d", cgs.scores1, cgs.scores2), 0, 0, textStyle, font, align);
+			  } else {
+				  CG_Text_Paint_Align(&rect, scale, ourColor, va("^1Red Team ^7leads with a score of %d", cgs.scores1), 0, 0, textStyle, font, align);
+			  }
 		  } else {
-			  //CG_Text_Paint_Align(&rect, scale, color, "Blue wins", 0, 0, textStyle, font, align);
-			  CG_Text_Paint_Align(&rect, scale, ourColor, va("^4Blue Team ^7WINS by a score of %d to %d", cgs.scores2, cgs.scores1), 0, 0, textStyle, font, align);
+			  if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+				  CG_Text_Paint_Align(&rect, scale, ourColor, va("^4Blue Team ^7WINS by a score of %d to %d", cgs.scores2, cgs.scores1), 0, 0, textStyle, font, align);
+			  } else {
+				  CG_Text_Paint_Align(&rect, scale, ourColor, va("^4Blue Team ^7leads with a score of %d", cgs.scores2), 0, 0, textStyle, font, align);
+			  }
 		  }
 	  }
 	  break;
   }
   case CG_MATCH_END_CONDITION:
-	  //FIXME GT_CTFS
-	  if (cgs.gametype == GT_FFA  ||  CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM) {
-		  s = "Highest score within the time limit";  // not really true for ffa, but used in ql
-	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CA) {
-		  s = "First to reach the round limit";
-	  } else if (cgs.gametype == GT_FREEZETAG) {
-		  s = "Highest score within the time limit";
-	  } else if (cgs.gametype == GT_RED_ROVER  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {
+	  // 2018-07-13 ql ignores text align
+	  // 2018-09-25 ql ignores font
+	  if (cg_wideScreen.integer == 7) {  // ql bug compat
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  // 2018-07-17 is GT_1FCTF a ql bug?
+
+	  if (cgs.gametype == GT_FFA  ||  CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_RED_ROVER  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_OBELISK) {
+		  // 2018-07-13 ql has 'Highest score at the end of the game' for ffa
 		  s = "Highest score at the end of the game";
+	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CA) {
+		  // 2018-07-17 mercy
+		  s = "First to reach the mercy limit";
+	  } else if (cgs.gametype == GT_CA) {
+		  s = "First to reach the round limit";
+	  } else if (cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_DOMINATION) {
+		  s = "First to reach the score limit";
 	  } else if (cgs.gametype == GT_RACE) {
 		  s = "Fastest race time within the time limit";
 	  } else {
@@ -7093,6 +8550,12 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  break;
   case CG_PLYR_END_GAME_SCORE:
+	  // 2018-09-25 ql ignores font
+	  if (cg_wideScreen.integer == 7) {  // ql bug compat
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  // chopping off color code like ql
 	  if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR) {
 		  int i;
@@ -7101,6 +8564,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  int assists = 0;
 		  int captures = 0;
 		  int defends = 0;
+		  char placeString[32];
+		  char *s;
+
+		  //FIXME wolfcam following
 
 		  if (cg.ctfScore.valid  &&  cg.ctfScore.version >= 1) {
 			  for (i = 0;  i < cg.ctfScore.numPlayerScores;  i++) {
@@ -7124,21 +8591,37 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  }
 		  }
 
-		  s = CG_PlaceString(cg.snap->ps.persistant[PERS_RANK] + 1);
+		  // 2018-07-28 ignore RANK_TIED_FLAG to match quake live
+		  //s = CG_PlaceString((cg.snap->ps.persistant[PERS_RANK] &= ~RANK_TIED_FLAG) + 1);
+		  Q_strncpyz(placeString, CG_PlaceString((cg.snap->ps.persistant[PERS_RANK] &= ~RANK_TIED_FLAG) + 1), sizeof(placeString));
+		  s = placeString;
+
+		  // ignore colorized '1st', '2nd', etc.
 		  if (s[0] == '^') {
 			  s += 2;
 		  }
+		  if (strlen(s) > 1) {
+			  if (s[strlen(s) - 2] == '^') {
+				  s[strlen(s) - 2] = '\0';
+			  }
+		  }
+
 		  if (cgs.gametype == GT_FREEZETAG) {
 			  if (assists) {
 				  CG_Text_Paint_Align(&rect, scale, color, va("You had %d assist%s", assists, assists == 1 ? "." : "s."), 0, 0, textStyle, font, align);
 			  } else {
 				  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 			  }
-		  } else if (cgs.gametype == GT_CA) {  //FIXME in quakelive red rover too
+		  } else if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RED_ROVER) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 		  } else if (cgs.gametype == GT_RACE) {
-			  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a time of %s", s, CG_GetTimeString(cg.snap->ps.persistant[PERS_SCORE])), 0, 0, textStyle, font, align);
-		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS) {  //FIXME OBELISK like quakelive -- even if wrong
+			  // 2018-07-28 ql doesn't show anything
+			  if (cg_wideScreen.integer == 7) {
+				  // pass
+			  } else {
+				  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a time of %s", s, CG_GetTimeString(cg.snap->ps.persistant[PERS_SCORE])), 0, 0, textStyle, font, align);
+			  }
+		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_CTFS) {  //FIXME OBELISK like quakelive -- even if wrong
 			  if (captures) {
 				  if (cgs.gametype == GT_HARVESTER) {
 					  CG_Text_Paint_Align(&rect, scale, color, va("You captured %d skull%s", captures, captures == 1 ? "." : "s."), 0, 0, textStyle, font, align);
@@ -7152,32 +8635,38 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  } else {
 				  CG_Text_Paint_Align(&rect, scale, color, va("You finished with a score of %d.", cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 			  }
-		  }	else {
+		  }	else {  // other gametypes
 			  if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")  &&  cg.duelForfeit) {
-			  //FIXME cpma
+				  //FIXME cpma
 			  } else {
-				  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d.", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+				  // 2018-07-28 quake live missing period at the end but not for other game types
+				  if (cg_wideScreen.integer == 7) {
+					  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+				  } else {
+					  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d.", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+				  }
 			  }
 		  }
+	  } else {
+		  //FIXME spectator
 	  }
 	  break;
   case CG_MAP_NAME: {
 	  // 2018-07-05 ql ignores text align
-	  if (cg.scoreBoardShowing  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {  // show skill rating
-		  //FIXME hack don't do this here
-		  CG_Text_Paint(rect.x, rect.y, scale, color, va("%s  ^2skr: %d", CG_ConfigString(CS_MESSAGE), atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO),"sv_skillrating"))), 0, 0, textStyle, font);
-	  } else {
-		  CG_Text_Paint(rect.x, rect.y, scale, color, CG_ConfigString(CS_MESSAGE), 0, 0, textStyle, font);
+	  if (cg_wideScreen.integer == 7) {
+		  align = ITEM_ALIGN_LEFT;
 	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MESSAGE), 0, 0, textStyle, font, align);
 	  break;
   }
   case CG_PLYR_BEST_WEAPON_NAME: {
 	  int w;
 
 	  // 2018-07-05 ql ignores text align
-
-	  //FIXME shouldn't this be selected player?
-	  //CG_Text_Paint(rect.x, rect.y, scale, color, weapNamesCasual[cg.scores[cg.snap->ps.clientNum].bestWeapon], 0, 0, textStyle, font);
+	  if (cg_wideScreen.integer == 7) {
+		  align = ITEM_ALIGN_LEFT;
+	  }
 
 	  if (cg.selectedScore < 0  ||  cg.selectedScore > MAX_CLIENTS) {
 		  Com_Printf("^1CG_PLYR_BEST_WEAPON_NAME invalid client number %d\n", cg.selectedScore);
@@ -7189,46 +8678,60 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  Com_Printf("^1CG_PLYR_BEST_WEAPON_NAME invalid weapon number %d\n", w);
 		  break;
 	  }
-	  CG_Text_Paint(rect.x, rect.y, scale, color, weapNamesCasual[w], 0, 0, textStyle, font);
-	  //CG_DrawPic(rect.x, rect.y, rect.w, rect.h, cg_weapons[cg.scores[cg.snap->ps.clientNum].bestWeapon].weaponIcon);
+
+	  CG_Text_Paint_Align(&rect, scale, color, weapNamesCasual[w], 0, 0, textStyle, font, align);
+
+	  // debugging
+	  //CG_Text_Paint_Align(&rect, scale, colorGreen, va("%d", cg.selectedScore), 0, 0, textStyle, font, align);
 	  break;
   }
-  case CG_SELECTED_PLYR_TEAM_COLOR:  {  //FIXME selectedScore
+  case CG_SELECTED_PLYR_TEAM_COLOR: {
 	  int team;
+	  vec4_t ourColor;
 
-	  //team = cgs.clientinfo[cg.selectedScore].team;
-
-	  if (wolfcam_following) {
-		  team = cgs.clientinfo[wcg.clientNum].team;
-	  } else {
-		  team = cgs.clientinfo[cg.snap->ps.clientNum].team;
+	  if (cg.selectedScore < 0  ||  cg.selectedScore > MAX_CLIENTS) {
+		  Com_Printf("^1CG_SELECTED_PLYR_TEAM_COLOR invalid client number %d\n", cg.selectedScore);
+		  break;
 	  }
+
+	  team = cgs.clientinfo[cg.selectedScore].team;
 
 	  if (team == TEAM_RED) {
-		  trap_R_SetColor(colorRed);
+		  SC_Vec3ColorFromCvar(ourColor, &cg_hudRedTeamColor);
 	  } else if (team == TEAM_BLUE) {
-		  trap_R_SetColor(colorBlue);
+		  SC_Vec3ColorFromCvar(ourColor, &cg_hudBlueTeamColor);
 	  } else {
-		  trap_R_SetColor(colorYellow);
+		  SC_Vec3ColorFromCvar(ourColor, &cg_hudNoTeamColor);
 	  }
 
-	  if (team == TEAM_RED  ||  team == TEAM_BLUE) {
-		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
-	  }
+	  ourColor[3] = color[3];
+	  trap_R_SetColor(ourColor);
+
+	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
 	  break;
   }
-  case CG_SELECTED_PLYR_ACCURACY: {  //FIXME selectedScore
+  case CG_SELECTED_PLYR_ACCURACY: {
 	  // 2018-07-05 ql ignores text align
+	  if (cg_wideScreen.integer == 7) {
+		  align = ITEM_ALIGN_LEFT;
+	  }
 
-	  CG_Text_Paint(rect.x, rect.y, scale, color, va("%d%%", cg.scores[cg.selectedScore].accuracy), 0, 0, textStyle, font);
+	  if (cg.selectedScore < 0  ||  cg.selectedScore > MAX_CLIENTS) {
+		  Com_Printf("^1CG_SELECTED_PLYR_ACCURACY invalid client number %d\n", cg.selectedScore);
+		  break;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.scores[cg.selectedScore].accuracy), 0, 0, textStyle, font, align);
 	  break;
   }
   case CG_PLAYER_COUNTS:  {
 	  int i;
 	  int count;
 	  const clientInfo_t *ci;
+	  int maxPlayers;
+	  int teamSize;
 
-	  // 2018-07-06 ql shows team size as the max size instead of sv_maxclients, but that can show something like 8/4 Players
+	  // 2018-07-06 ql shows team size as the max size instead of sv_maxclients, but that can show something like 8/4 Players -- 2018-07-30 red rover
 
 	  //FIXME don't do it every time
 	  count = 0;
@@ -7239,12 +8742,33 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  }
 		  if (ci->team == TEAM_SPECTATOR) {
 			  // ql includes the specs  -- 2018-07-06 probably a bug
-			  //continue;
+			  if (cg_wideScreen.integer == 7) {  // bug compatibility
+				  // pass, count as player
+			  } else {
+				  continue;
+			  }
 		  }
 		  count++;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d/%s Players", count, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_maxclients")), 0, 0, textStyle, font, align);
+	  teamSize = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "teamsize"));
+	  if (teamSize > 0) {
+		  maxPlayers = teamSize;
+		  if (CG_IsTeamGame(cgs.gametype)) {
+			  maxPlayers *= 2;
+		  }
+		  if (cg_wideScreen.integer == 7) {  // bug compatibility
+			  // using teamsize even for red rover
+		  } else {
+			  if (cgs.gametype == GT_RED_ROVER) {
+				  maxPlayers = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_maxclients"));
+			  }
+		  }
+	  } else {
+		  maxPlayers = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_maxclients"));
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, va("%d/%d Players", count, maxPlayers), 0, 0, textStyle, font, align);
 	  break;
   }
   case CG_RED_PLAYER_COUNT:  {
@@ -7257,8 +8781,13 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  const char *teamSizeStr;
 	  int teamSize;
 
+	  // 2018-09-25 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  //FIXME don't do it every time
-	  //FIXME assuming this is only used for team games  -- 2018-07-06 yes but ql does draw something (0 Players)
+	  // assuming this is only used for team games  -- 2018-07-06 yes but ql does draw something ('0 Players') for non-team games
 	  count = 0;
 	  for (i = 0;  i < MAX_CLIENTS;  i++) {
 		  ci = &cgs.clientinfo[i];
@@ -7302,6 +8831,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  const clientInfo_t *ci;
 	  const char *teamSizeStr;
 	  int teamSize;
+
+	  // 2018-09-25 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
 
 	  //FIXME don't do it every time
 	  //FIXME assuming this is only used for team games -- 2018-07-06 yes but ql does draw something (0 Players)
@@ -7348,20 +8882,42 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_RED_CLAN_PLYRS:
-	  // 2018-07-06 ql doesn't use text align, nothing displayed for non-team games
+	  // 2018-07-06 ql doesn't use text align
+	  // 2018-09-25 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  // 2018-07-06 nothing displayed for non-team games
 	  if (CG_IsTeamGame(cgs.gametype)) {
-		  CG_Text_Paint(rect.x, rect.y, scale, color, va("%d", cgs.redPlayersLeft), 0, 0, textStyle, font);
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.redPlayersLeft), 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_BLUE_CLAN_PLYRS:
-	  // 2018-07-06 ql doesn't use text align, nothing displayed for non-team games
+	  // 2018-07-06 ql doesn't use text align
+	  // 2018-09-25 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  // 2018-07-06 nothing displayed for non-team games
 	  if (CG_IsTeamGame(cgs.gametype)) {
-		  CG_Text_Paint(rect.x, rect.y, scale, color, va("%d", cgs.bluePlayersLeft), 0, 0, textStyle, font);
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.bluePlayersLeft), 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_GAME_LIMIT:
 	  // 2018-07-06 depends on game type (Round Limit, Frag Limit, Cap Limit, ...
 	  // 2018-07-06 ql only supports left and center align, missing right align is probably a bug
+	  if (cg_wideScreen.integer == 7  &&  align == ITEM_ALIGN_RIGHT) {
+		  align = ITEM_ALIGN_LEFT;
+	  }
+
+	  // 2018-09-25 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
 
 	  // 2018-07-06 quake live:
 	  // actf  Cap Limit
@@ -7385,7 +8941,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  // vca  Round Limit
 
 	  if (CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_2V2  ||  cgs.gametype == GT_RACE) {
-		  if (cgs.fraglimit > 0) {
+		  if (cgs.fraglimit > 0  ||  cg_wideScreen.integer == 7) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("Frag Limit: %d", cgs.fraglimit), 0, 0, textStyle, font, align);
 		  } else {
 			  CG_Text_Paint_Align(&rect, scale, color, va("Time Limit: %d", cgs.timelimit), 0, 0, textStyle, font, align);
@@ -7403,7 +8959,23 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 
 	  break;
+
+  case WCG_ROUNDTIMER:
   case CG_ROUNDTIMER: {
+	  vec4_t ourColor;
+
+	  if (ownerDraw == CG_ROUNDTIMER) {
+		  // 2018-07-30 ql forces color to red and ignores alpha
+		  Vector4Copy(colorRed, ourColor);
+
+		  // 2018-09-26 ql ignores font
+		  if (cg_wideScreen.integer == 7) {
+			  font = &cgDC.Assets.textFont;
+		  }
+	  } else {
+		  Vector4Copy(color, ourColor);
+	  }
+
 	  // 30 second warning counter
 	  if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG  &&  cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_RED_ROVER) {
 		  break;
@@ -7411,9 +8983,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  ival = cg.time - atoi(CG_ConfigString(CS_ROUND_TIME));
 	  if (cgs.roundStarted  &&  cgs.roundlimit  &&  cgs.roundtimelimit - (ival / 1000) <= 30) {
-		  // 2018-07-06 ql forces color to red
 		  if (cgs.roundtimelimit - (ival / 1000) >= 0) {
-			  CG_Text_Paint_Align(&rect, scale, colorRed, va("%d", cgs.roundtimelimit - (ival / 1000)), 0, 0, textStyle, font, align);
+			  CG_Text_Paint_Align(&rect, scale, ourColor, va("%d", cgs.roundtimelimit - (ival / 1000)), 0, 0, textStyle, font, align);
 		  }
 	  } else {
 		  // testing
@@ -7423,6 +8994,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
 
   case CG_RED_TIMEOUT_COUNT:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cgs.protocol == PROTOCOL_QL) {
 		  if (atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_timeoutcount"))) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("TO: %s", CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT)), 0, 0, textStyle, font, align);
@@ -7430,6 +9006,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_BLUE_TIMEOUT_COUNT:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cgs.protocol == PROTOCOL_QL) {
 		  if (atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_timeoutcount"))) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("TO: %s", CG_ConfigString(CS_BLUE_TEAM_TIMEOUTS_LEFT)), 0, 0, textStyle, font, align);
@@ -7444,16 +9025,95 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  // 2018-07-07 not used by ql anymore, no text align supported
 	  CG_Draw2ndPlaceScore(&rect, scale, color, textStyle, font);
 	  break;
-  case CG_FOLLOW_PLAYER_NAME_EX:
+
+  case WCG_FOLLOW_PLAYER_NAME_EX:
+  case CG_FOLLOW_PLAYER_NAME_EX: {
+	  char name[MAX_QPATH * 2];
+	  floatint_t tmpExtString[MAX_QPATH * 2];
+	  const char *namep;
+	  const clientInfo_t *cinfo;
+
 	  if (wolfcam_following) {
-		  CG_Text_Paint_Align(&rect, scale, color, va("%s", cgs.clientinfo[wcg.clientNum].name), 0, 0, textStyle, font, align);
+		  cinfo = &cgs.clientinfo[wcg.clientNum];
 	  } else {
-		  CG_Text_Paint_Align(&rect, scale, color, va("%s", cgs.clientinfo[cg.snap->ps.clientNum].name), 0, 0, textStyle, font, align);
+		  cinfo = &cgs.clientinfo[cg.snap->ps.clientNum];
 	  }
+
+	  if (ownerDraw == CG_FOLLOW_PLAYER_NAME_EX) {
+		  // 2018-07-08 ql colorizes based on team
+
+		  Q_strncpyz(name, cinfo->name, sizeof(name));
+
+		  if (CG_IsTeamGame(cgs.gametype)  &&  (cinfo->team == TEAM_RED  ||  cinfo->team == TEAM_BLUE)) {
+			  float textWidth;
+			  float textHeight;
+			  float x;
+			  int i;
+			  int slen;
+			  int teamColor;
+
+			  // cinfo->name uses CG_SafeColorName() which prepends '^7'
+			  // 2018-07-30 just changing to red or blue color code isn't enough since those don't match the quake live colors
+
+			  if (cinfo->team == TEAM_RED) {
+				  teamColor = cg_textRedTeamColor.integer;
+			  } else {
+				  teamColor = cg_textBlueTeamColor.integer;
+			  }
+
+			  slen = strlen(name);
+			  tmpExtString[0].i = TEXT_PIC_PAINT_COLOR;
+			  tmpExtString[1].i = teamColor;
+
+			  for (i = 2;  i < slen  &&  i < ((MAX_QPATH * 2) - 1) ;  i++) {
+				  tmpExtString[i].i = name[i];
+			  }
+
+			  tmpExtString[i].i = 0;
+
+			  textHeight = CG_Text_Height(name, scale, 0, font);
+			  textWidth = CG_Text_Width(name, scale, 0, font);
+			  //textWidth = CG_Text_Pic_Width(tmpExtString, scale, 1.0, 0, textHeight, font);
+
+			  if (align == ITEM_ALIGN_CENTER) {
+				  x = rect.x - (textWidth / 2.0);
+			  } else if (align == ITEM_ALIGN_RIGHT) {
+				  x = rect.x - textWidth;
+			  } else {
+				  x = rect.x;
+			  }
+
+			  CG_Text_Pic_Paint(x, rect.y, scale, colorWhite, tmpExtString, 0, 0, textStyle, font, textHeight, 1.0);
+		  } else {
+			  // not using forced colors
+			  CG_Text_Paint_Align(&rect, scale, color, name, 0, 0, textStyle, font, align);
+		  }
+	  } else {
+		  //Vector4Copy(color, ourColor);
+
+		  if (wolfcam_following) {
+			  namep = cgs.clientinfo[wcg.clientNum].name;
+		  } else {
+			  namep = cgs.clientinfo[cg.snap->ps.clientNum].name;
+		  }
+
+		  CG_Text_Paint_Align(&rect, scale, color, namep, 0, 0, textStyle, font, align);
+	  }
+
 	  break;
+  }
 
   case CG_SPEEDOMETER:  {
-	  // 2018-07-07 ql doesn't support textalign right, probably bug
+	  // 2018-07-07 ql doesn't support align right, probably bug
+	  if (cg_wideScreen.integer == 7  &&  align == ITEM_ALIGN_RIGHT) {
+		  align = ITEM_ALIGN_LEFT;
+	  }
+
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (!wolfcam_following) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", (int)cg.xyspeed), 0, 0, textStyle, font, align);
 	  } else {
@@ -7476,19 +9136,71 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   }
-	  //+#define CG_WP_VERTICAL 106
-	  //+#define CG_ACC_VERTICAL 107
+
+  case CG_WP_VERTICAL: {
+	  int i;
+	  int offset;
+
+	  offset = 0;
+	  for (i = WP_MACHINEGUN;  i < WP_NUM_WEAPONS;  i++) {
+		  if (!cg_weapons[i].registered) {
+			  continue;
+		  }
+
+		  CG_DrawPic(rect.x, rect.y + offset, rect.w * 1.0, rect.w * 1.0, cg_weapons[i].weaponIcon);
+		  //offset += 15;
+		  offset += rect.h;
+	  }
+	  break;
+  }
+
+  case CG_ACC_VERTICAL: {
+	  int i;
+	  int offset;
+	  int acc;
+	  rectDef_t textRect;
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-06 ignores align and font
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  textRect.x = rect.x;
+	  textRect.y = rect.y;
+	  textRect.w = rect.w;
+	  textRect.h = rect.h;
+
+	  offset = 0;
+	  for (i = WP_MACHINEGUN;  i < WP_NUM_WEAPONS;  i++) {
+		  if (!cg_weapons[i].registered) {
+			  continue;
+		  }
+
+		  //FIXME wolfcam follow
+		  acc = cg.serverAccuracyStats[i];
+
+		  textRect.y = rect.y + offset;
+		  CG_Text_Paint_Align(&textRect, scale, color, va("%d%%", acc), 0, 0, textStyle, font, align);
+		  //offset += 15;
+		  offset += rect.h;
+	  }
+
+	  break;
+  }
 
 	  ////////////////////////////////////////////////////////////////
 	  // 2010-12-14 new ql gillz scoreboard
 	  //
 
 
-	  //#define CG_1STPLACE_PLYR_MODEL_ACTIVE 108
+  // 2018-08-02 ql end_scoreboard_duel
 
   case CG_1ST_PLYR: {
 	  const clientInfo_t *ci;
 	  const char *s;
+
+	  //FIXME 2018-09-26 ql uses '...' if name doesn't fit
 
 	  if (!cg.duelScoresValid) {
 		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
@@ -7511,45 +9223,97 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
   case CG_1ST_PLYR_SCORE:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 1) {
 		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
 		  break;
 	  }
 	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].score), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.clientinfo[cg.duelPlayer1].score), 0, 0, textStyle, font, align);
+			  break;
 		  } else {
+			  if (cg_wideScreen.integer == 7) {  // ql bug comatibility
+				  // 2018-08-01 draw something to match quake live
+				  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
+			  }
 			  break;
 		  }
 	  }
 	  break;
   case CG_1ST_PLYR_FRAGS:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].kills), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].frags), 0, 0, textStyle, font, align);
+			  break;
 		  }
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug comatibility
+		  // 2018-08-01 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_1ST_PLYR_DEATHS:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].deaths), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].deaths), 0, 0, textStyle, font, align);
+			  break;
 		  }
 	  }
-	  break;
-  case CG_1ST_PLYR_DMG:
-	  if (cg.duelScoresValid) {
-		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].damage), 0, 0, textStyle, font, align);
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug comatibility
+		  // 2018-08-01 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
 	  }
 	  break;
 
-  case CG_1ST_PLYR_TIME:  // not used?
+  case CG_1ST_PLYR_DMG:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cg.duelScoresValid) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].damage), 0, 0, textStyle, font, align);
+		  break;
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug comatibility
+		  // 2018-08-01 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
+	  }
+	  break;
+
+  case CG_1ST_PLYR_TIME:
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // not supported
+		  break;
+	  }
+
 	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].time), 0, 0, textStyle, font, align);
 	  } else {
@@ -7563,13 +9327,23 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  int colorNum;
 	  int ping;
 
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  ping = cg.duelScores[0].ping;
 	  } else {
 		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
 			  ping = cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].ping;
 		  } else {
-			  break;
+			  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+				  // 2018-08-01 draw something
+				  ping = 0;
+			  } else {
+				  break;
+			  }
 		  }
 	  }
 
@@ -7585,21 +9359,50 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
   case CG_1ST_PLYR_WINS:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  if (!cg.duelScoresValid) {
+			  break;
+		  }
+	  }
 	  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d/%d", cgs.clientinfo[cg.duelPlayer1].wins, cgs.clientinfo[cg.duelPlayer1].losses), 0, 0, textStyle, font, align);
 	  }
 	  break;
+
   case CG_1ST_PLYR_ACC:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.duelScores[0].accuracy), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerScoreValid(cg.duelPlayer1)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.scores[cgs.clientinfo[cg.duelPlayer1].scoreIndexNum].accuracy), 0, 0, textStyle, font, align);
+			  break;
 		  }
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug comatibility
+		  // 2018-08-01 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0%", 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_1ST_PLYR_FLAG: {
 	  const clientInfo_t *ci;
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatbility
+		  if (!cg.duelScoresValid) {
+			  break;
+		  }
+	  }
 
 	  if (cg.duelScoresValid) {
 		  ci = &cg.duelScores[0].ci;
@@ -7614,7 +9417,9 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   }
+
   case CG_1ST_PLYR_FULLCLAN: {
+	  // 2018-08-01 not in ql
 	  const clientInfo_t *ci;
 
 	  if (cg.duelScoresValid) {
@@ -7628,7 +9433,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, ci->fullClanName, 0, 0, textStyle, font, align);
 	  break;
   }
-	  //#define CG_1ST_PLYR_TIMEOUT_COUNT 120  // not used?
+
+  case CG_1ST_PLYR_TIMEOUT_COUNT:
+	  // 2018-10-06 appears to be unused in ql
+	  break;
 
   case CG_2ND_PLYR: {
 	  const clientInfo_t *ci;
@@ -7654,6 +9462,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
   case CG_2ND_PLYR_SCORE:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if ((cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 2)  ||
 		  /* with cpma we are always placing forfeiting player in second duel slot */
 		  (cgs.cpma  &&  cg.duelForfeit)
@@ -7663,37 +9476,84 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  if ((CG_CheckQlVersion(0, 1, 0, 719)  ||  cgs.cpma)  &&  cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].score), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.clientinfo[cg.duelPlayer2].score), 0, 0, textStyle, font, align);
+			  break;
+		  } else {
+			  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+				  // 2018-08-05 draw something to match quake live
+				  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
+			  }
 		  }
 	  }
 	  break;
   case CG_2ND_PLYR_FRAGS:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].kills), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].frags), 0, 0, textStyle, font, align);
+			  break;
 		  }
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-05 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_2ND_PLYR_DEATHS:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].deaths), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].deaths), 0, 0, textStyle, font, align);
+			  break;
 		  }
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-05 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_2ND_PLYR_DMG:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].damage), 0, 0, textStyle, font, align);
+		  break;
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-05 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0", 0, 0, textStyle, font, align);
 	  }
 	  break;
 
-  case CG_2ND_PLYR_TIME:  // not used?
+  case CG_2ND_PLYR_TIME:
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // doesn't appear to be supported
+		  break;
+	  }
+
 	  if (CG_CheckQlVersion(0, 1, 0, 719)  &&  cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].time), 0, 0, textStyle, font, align);
 	  } else {
@@ -7706,12 +9566,24 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  int colorNum;
 	  int ping;
 
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  ping = cg.duelScores[1].ping;
-	  } else if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
-		  ping = cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].ping;
 	  } else {
-		  break;
+		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
+			  ping = cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].ping;
+		  } else {
+			  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+				  // 2018-08-06 draw something
+				  ping = 0;
+			  } else {
+				  break;
+			  }
+		  }
 	  }
 
 	  if (ping < 41) {
@@ -7726,21 +9598,49 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
   case CG_2ND_PLYR_WINS:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  if (!cg.duelScoresValid) {
+			  break;
+		  }
+	  }
 	  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d/%d", cgs.clientinfo[cg.duelPlayer2].wins, cgs.clientinfo[cg.duelPlayer2].losses), 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_2ND_PLYR_ACC:
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.duelScores[1].accuracy), 0, 0, textStyle, font, align);
+		  break;
 	  } else {
 		  if (CG_DuelPlayerScoreValid(cg.duelPlayer2)) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("%d%%", cg.scores[cgs.clientinfo[cg.duelPlayer2].scoreIndexNum].accuracy), 0, 0, textStyle, font, align);
+			  break;
 		  }
+	  }
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-08-06 draw something to match quake live
+		  CG_Text_Paint_Align(&rect, scale, color, "0%", 0, 0, textStyle, font, align);
 	  }
 	  break;
   case CG_2ND_PLYR_FLAG: {
 	  const clientInfo_t *ci;
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  if (!cg.duelScoresValid) {
+			  break;
+		  }
+	  }
 
 	  if (cg.duelScoresValid) {
 		  ci = &cg.duelScores[1].ci;
@@ -7756,6 +9656,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
   case CG_2ND_PLYR_FULLCLAN: {
+	  // 2018-08-06 not in ql
 	  const clientInfo_t *ci;
 
 	  if (cg.duelScoresValid) {
@@ -7770,10 +9671,17 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
 
-	  //#define CG_2ND_PLYR_TIMEOUT_COUNT 132
+  case CG_2ND_PLYR_TIMEOUT_COUNT:
+	  // 2018-10-06 appears to be unused in ql
+	  break;
 
   case CG_RED_AVG_PING: {
 	  int colorNum;
+
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
 
 	  if (cg.avgRedPing < 41) {
 		  colorNum = 2;
@@ -7789,6 +9697,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_BLUE_AVG_PING: {
 	  int colorNum;
 
+	  // 2018-09-26 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.avgBluePing < 41) {
 		  colorNum = 2;
 	  } else if (cg.avgBluePing < 81) {
@@ -7801,9 +9714,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
 
-	  //#define CG_VOTEMAP1 99  // never used?
-	  //#define CG_VOTEMAP2 135  // never used?
-	  //#define CG_VOTEMAP3 136  // never used?
+	  //FIXME 2018-09-27  missing CG_VOTEGAMETYPE1 CG_VOTEGAMETYPE2 CG_VOTEGAMETYPE3
 
   case CG_VOTESHOT1: {
 	  qhandle_t shader = 0;
@@ -7861,14 +9772,86 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
 
+  case CG_VOTEMAP1:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "map_0"), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_VOTEMAP2:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "map_1"), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_VOTEMAP3:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "map_2"), 0, 0, textStyle, font, align);
+	  break;
+
+
   case CG_VOTENAME1:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "title_0"), 0, 0, textStyle, font, align);
 	  break;
+
   case CG_VOTENAME2:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "title_1"), 0, 0, textStyle, font, align);
 	  break;
+
   case CG_VOTENAME3:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "title_2"), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_VOTEGAMETYPE1:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "gt_0"), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_VOTEGAMETYPE2:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "gt_1"), 0, 0, textStyle, font, align);
+	  break;
+
+  case CG_VOTEGAMETYPE3:
+	  // 2018-09-26 ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, Info_ValueForKey(CG_ConfigString(CS_MAP_VOTE_INFO), "gt_2"), 0, 0, textStyle, font, align);
 	  break;
 
   case CG_VOTECOUNT1:
@@ -7883,6 +9866,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
   case CG_VOTETIMER: {
 	  int t;
+
+	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
+		  // 2018-09-25 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 
 	  //FIXME 20 sec fixed???
 	  t = (atoi(CG_ConfigString(CS_VOTE_TIME)) + 20000 - cg.time) / 1000;
@@ -7970,40 +9958,6 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_LOCALTIME: {
-#if 0
-	  qtime_t now;
-	  const char *nowString;
-	  int tm;
-	  int offset;
-	  qboolean timeAm = qfalse;
-
-	  offset = cg.time - cgs.levelStartTime;
-	  tm = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_levelStartTime"));
-	  if (tm  &&  cg.demoPlayback  &&  cg_localTime.integer == 0) {
-		  if (offset > 0) {
-			  tm += (offset / 1000);
-		  }
-		  trap_RealTime(&now, qfalse, tm);
-	  } else {
-		  trap_RealTime(&now, qtrue, 0);
-	  }
-	  if (cg_localTimeStyle.integer == 0) {
-		  nowString = va("%02d:%02d (%s %d, %d)", now.tm_hour, now.tm_min, MonthAbbrev[now.tm_mon], now.tm_mday, 1900 + now.tm_year);
-	  } else {
-		  if (now.tm_hour < 12) {
-			  timeAm = qtrue;
-			  if (now.tm_hour < 1) {
-				  now.tm_hour = 12;
-			  }
-		  } else if (now.tm_hour >= 12) {
-			  timeAm = qfalse;
-			  if (now.tm_hour >= 13) {
-				  now.tm_hour -= 12;
-			  }
-		  }
-		  nowString = va("%d:%02d%s (%s %d, %d)", now.tm_hour, now.tm_min, timeAm ? "am" : "pm", MonthAbbrev[now.tm_mon], now.tm_mday, 1900 + now.tm_year);
-	  }
-#endif
 	  CG_Text_Paint_Align(&rect, scale, color, CG_GetLocalTimeString(), 0, 0, textStyle, font, align);
 	  break;
   }
@@ -8011,6 +9965,56 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_MATCH_DETAILS: {
 	  const char *detail;
 	  char mapname[MAX_QPATH];
+	  const char *gameType;
+
+	  // 2018-07-17 ql doesn't support center or right align
+	  // 2018-09-27 ql doesn't support font
+	  if (cg_wideScreen.integer == 7) {
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cgs.gametype == GT_FFA) {
+		  gameType = "FFA";
+	  } else if (cgs.gametype == GT_SINGLE_PLAYER) {
+		  gameType = "SP";
+	  } else if (cgs.gametype == GT_TOURNAMENT) {
+		  gameType = "DUEL";
+	  } else if (cgs.gametype == GT_TEAM) {
+		  gameType = "TDM";
+	  } else if (cgs.gametype == GT_CA) {
+		  gameType = "CA";
+	  } else if (cgs.gametype == GT_CTF) {
+		  gameType = "CTF";
+	  } else if (cgs.gametype == GT_1FCTF) {
+		  gameType = "1F";
+	  } else if (cgs.gametype == GT_CTFS) {
+		  if (cgs.cpma) {
+			  gameType = "CS";
+		  } else {
+			  gameType = "AD";
+		  }
+	  } else if (cgs.gametype == GT_OBELISK) {
+		  gameType = "OB";
+	  } else if (cgs.gametype == GT_HARVESTER) {
+		  gameType = "HAR";
+	  } else if (cgs.gametype == GT_FREEZETAG) {
+		  gameType = "FT";
+	  } else if (cgs.gametype == GT_DOMINATION) {
+		  gameType = "DOM";
+	  } else if (cgs.gametype == GT_RED_ROVER) {
+		  gameType = "RR";
+	  } else if (cgs.gametype == GT_NTF) {
+		  gameType = "NTF";
+	  } else if (cgs.gametype == GT_2V2) {
+		  gameType = "TVT";
+	  } else if (cgs.gametype == GT_HM) {
+		  gameType = "HM";
+	  } else if (cgs.gametype == GT_RACE) {
+		  gameType = "RACE";
+	  } else {
+		  gameType = "UNK";
+	  }
 
 	  if (cg.warmup) {
 		  detail = "MATCH WARMUP";
@@ -8022,28 +10026,29 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  }
 	  }
 
-#define DETAIL_LIMIT 53
-
-	  //FIXME or not:  using sv_location instead of gametype
-
 	  if (cgs.protocol == PROTOCOL_QL) {
-		  s = va("%s - %s %s - %s", detail, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_location"), CG_ConfigString(CS_MESSAGE));
-		  CG_LimitText((char *)s, DETAIL_LIMIT);
+		  // 2018-07-17 ql shows hostname as part of message in menudef.h:
+		  //
+		  //  "#define CG_MATCH_DETAILS  8"
+		  //  "// Game state - Gametype Shortname - Server Location - Map"
+		  //
+		  // but not necessarily shown ingame  -- uses CS_MESSAGE which has
+		  // hostname '-' mapname,  CS_MESSAGE sometimes not defined (ex:
+		  // quakecon 2016 demos)
+
+		  s = va("%s - %s - %s", detail, gameType, CG_ConfigString(CS_MESSAGE));
 		  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  } else {
-		  //CG_Text_Paint_Align(&rect, scale, color, va("%s - %s %s", detail, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_location")), 0, 0, textStyle, font, align);
 		  //FIXME store this
 		  mapname[0] = '\0';
 		  Q_strncpyz(mapname, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "mapname"), sizeof(mapname));
-		  s = va("%s - %s ^7- %s", detail, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), mapname);
-		  CG_LimitText((char *)s, DETAIL_LIMIT);
+		  s = va("%s - %s - %s ^7- %s", detail, gameType, Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_hostname"), mapname);
 		  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  }
 
-#undef DETAIL_LIMIT
-
 	  break;
   }
+
   case CG_1ST_PLYR_FRAGS_G:
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].weaponStats[WP_GAUNTLET].kills), 0, 0, textStyle, font, align);
 	  break;
@@ -8342,18 +10347,43 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_1ST_PLYR_PICKUPS_RA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].redArmorPickups), 0, 0, textStyle, font, align);
 	  break;
   case CG_1ST_PLYR_PICKUPS_YA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].yellowArmorPickups), 0, 0, textStyle, font, align);
 	  break;
   case CG_1ST_PLYR_PICKUPS_GA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].greenArmorPickups), 0, 0, textStyle, font, align);
 	  break;
   case CG_1ST_PLYR_PICKUPS_MH:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].megaHealthPickups), 0, 0, textStyle, font, align);
 	  break;
   case CG_1ST_PLYR_AVG_PICKUP_TIME_RA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[0].redArmorPickups) {
 		  s = va("%.2f", cg.duelScores[0].redArmorTime);
 	  } else {
@@ -8362,6 +10392,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  break;
   case CG_1ST_PLYR_AVG_PICKUP_TIME_YA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[0].yellowArmorPickups) {
 		  s = va("%.2f", cg.duelScores[0].yellowArmorTime);
 	  } else {
@@ -8370,6 +10405,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  break;
   case CG_1ST_PLYR_AVG_PICKUP_TIME_GA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[0].greenArmorPickups) {
 		  s = va("%.2f", cg.duelScores[0].greenArmorTime);
 	  } else {
@@ -8379,6 +10419,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  break;
   case CG_1ST_PLYR_AVG_PICKUP_TIME_MH:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[0].megaHealthPickups) {
 		  s = va("%.2f", cg.duelScores[0].megaHealthTime);
 	  } else {
@@ -8691,19 +10736,44 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_2ND_PLYR_PICKUPS_RA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].redArmorPickups), 0, 0, textStyle, font, align);
 	  break;
   case CG_2ND_PLYR_PICKUPS_YA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].yellowArmorPickups), 0, 0, textStyle, font, align);
 	  break;
   case CG_2ND_PLYR_PICKUPS_GA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].greenArmorPickups), 0, 0, textStyle, font, align);
 	  break;
   case CG_2ND_PLYR_PICKUPS_MH:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[1].megaHealthPickups), 0, 0, textStyle, font, align);
 	  break;
 
   case CG_2ND_PLYR_AVG_PICKUP_TIME_RA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[1].redArmorPickups) {
 		  s = va("%.2f", cg.duelScores[1].redArmorTime);
 	  } else {
@@ -8712,6 +10782,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  break;
   case CG_2ND_PLYR_AVG_PICKUP_TIME_YA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[1].yellowArmorPickups) {
 		  s = va("%.2f", cg.duelScores[1].yellowArmorTime);
 	  } else {
@@ -8720,6 +10795,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  break;
   case CG_2ND_PLYR_AVG_PICKUP_TIME_GA:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[1].greenArmorPickups) {
 		  s = va("%.2f", cg.duelScores[1].greenArmorTime);
 	  } else {
@@ -8729,6 +10809,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  break;
   case CG_2ND_PLYR_AVG_PICKUP_TIME_MH:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScores[1].megaHealthPickups) {
 		  s = va("%.2f", cg.duelScores[1].megaHealthTime);
 	  } else {
@@ -8741,6 +10826,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 
   case CG_1ST_PLYR_EXCELLENT:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  if (cgs.cpma  &&  cg.duelScores[0].awardExcellent == -1) {
 			  // pass
@@ -8754,6 +10844,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_1ST_PLYR_IMPRESSIVE:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  if (cgs.cpma  &&  cg.duelScores[0].awardImpressive == -1) {
 			  // pass
@@ -8781,6 +10876,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_2ND_PLYR_EXCELLENT:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  if (cgs.cpma  &&  cg.duelScores[1].awardExcellent == -1) {
 			  // pass
@@ -8794,6 +10894,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_2ND_PLYR_IMPRESSIVE:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  if (cgs.cpma  &&  cg.duelScores[1].awardImpressive == -1) {
 			  // pass
@@ -8807,6 +10912,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_2ND_PLYR_HUMILIATION:
+	  // 2018-09-28 ql ignores font
+	  if (cg_wideScreen.integer == 7) {
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (cg.duelScoresValid) {
 		  if (cgs.cpma  &&  cg.duelScores[1].awardHumiliation == -1) {
 			  // pass
@@ -8820,89 +10930,141 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
 
-  case CG_1ST_PLYR_READY:
+  case WCG_1ST_PLYR_READY:
+  case CG_1ST_PLYR_READY: {
+	  const char *textStatus = "";
+	  rectDef_t textRect;
+
 	  if (cg.warmup) {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer1)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_ready");
+			  textStatus = "READY";
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_notready");
+			  textStatus = "NOT READY";
 		  }
 	  } else if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")) {
 		  // with mstatsa we don't have client numbers
 		  if (cg.duelScoresValid) {
 			  if (cg.duelScores[0].score > cg.duelScores[1].score  ||  cg.duelForfeit) {
 				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_leads");
+				  textStatus = "LEADS";
 			  } else if (cg.duelScores[0].score < cg.duelScores[1].score) {
 				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_trails");
+				  textStatus = "TRAILS";
 			  } else {
 				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
+				  textStatus = "TIED";
 			  }
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
+			  textStatus = "TIED";
 		  }
 	  } else {
 		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
+			  textStatus = "TIED";
 		  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_leads");
+			  textStatus = "LEADS";
 		  } else if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_trails");
+			  textStatus = "TRAILS";
 		  } else if (cgs.clientinfo[cg.duelPlayer1].score > cgs.clientinfo[cg.duelPlayer2].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_leads");
+			  textStatus = "LEADS";
 		  } else if (cgs.clientinfo[cg.duelPlayer1].score < cgs.clientinfo[cg.duelPlayer2].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_trails");
+			  textStatus = "TRAILS";
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/1st_plyr_tied");
+			  textStatus = "TIED";
 		  }
 	  }
 
-	  //CG_Text_Paint_Align(&rect, scale, color, "test1", 0, 0, textStyle, font, align);
 	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
-	  break;
 
-  case CG_2ND_PLYR_READY:
+	  if (ownerDraw == CG_1ST_PLYR_READY) {
+		  textRect.x = rect.x + 16;
+		  textRect.y = rect.y + 16;
+		  textRect.w = rect.w;
+		  textRect.h = rect.h;
+
+		  CG_Text_Paint_Align(&textRect, 0.16f, colorWhite, textStatus, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont, ITEM_ALIGN_LEFT);
+	  }
+	  break;
+  }
+
+  case WCG_2ND_PLYR_READY:
+  case CG_2ND_PLYR_READY: {
+	  const char *textStatus = "";
+	  rectDef_t textRect;
+
 	  if (cg.warmup) {
 		  if (CG_DuelPlayerInfoValid(cg.duelPlayer2)  &&  cg.snap->ps.stats[STAT_CLIENTS_READY] & (1 << cg.duelPlayer2)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_ready");
+			  textStatus = "READY";
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_notready");
+			  textStatus = "NOT READY";
 		  }
 	  } else if (cgs.cpma  &&  CG_CheckCpmaVersion(1, 50, "")) {
 		  // with mstatsa we don't have client numbers
 		  if (cg.duelScoresValid) {
 			  if (cg.duelScores[1].score < cg.duelScores[0].score  ||  cg.duelForfeit) {
 				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_trails");
+				  textStatus = "TRAILS";
 			  } else if (cg.duelScores[1].score > cg.duelScores[0].score) {
 				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_leads");
+				  textStatus = "LEADS";
 			  } else {
 				  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
+				  textStatus = "TIED";
 			  }
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
+			  textStatus = "TIED";
 		  }
 	  } else {
 		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
+			  textStatus = "TIED";
 		  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer2)  &&  !CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_leads");
+			  textStatus = "LEADS";
 		  } else if (!CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_trails");
+			  textStatus = "TRAILS";
 		  } else if (cgs.clientinfo[cg.duelPlayer2].score > cgs.clientinfo[cg.duelPlayer1].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_leads");
+			  textStatus = "LEADS";
 		  } else if (cgs.clientinfo[cg.duelPlayer2].score < cgs.clientinfo[cg.duelPlayer1].score) {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_trails");
+			  textStatus = "TRAILS";
 		  } else {
 			  shader = trap_R_RegisterShaderNoMip("ui/assets/score/2nd_plyr_tied");
+			  textStatus = "TIED";
 		  }
 	  }
 
-	  //CG_Text_Paint_Align(&rect, scale, color, "test2", 0, 0, textStyle, font, align);
 	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
+
+	  if (ownerDraw == CG_2ND_PLYR_READY) {
+		  textRect.x = rect.x + 164;
+		  textRect.y = rect.y + 16;
+		  textRect.w = rect.w;
+		  textRect.h = rect.h;
+
+		  CG_Text_Paint_Align(&textRect, 0.16f, colorWhite, textStatus, 0, 0, ITEM_TEXTSTYLE_SHADOWED, &cgDC.Assets.textFont, ITEM_ALIGN_RIGHT);
+	  }
+
 	  break;
+  }
 
   // CG_SELECTED_PLYR_*  just duel?
 
   case CG_SELECTED_PLYR_NAME:
+	  // 2018-09-29 not in ql
 	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (*ci->clanTag) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%s ^7%s", ci->clanTag, ci->name), 0, 0, textStyle, font, align);
@@ -8912,11 +11074,13 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_SELECTED_PLYR_SCORE:
+	  // 2018-09-29 not in ql
 	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  CG_Text_Paint_Align(&rect, scale, color, va("%d", ci->score), 0, 0, textStyle, font, align);
 	  break;
 
   case CG_SELECTED_PLYR_DMG:
+	  // 2018-09-29 not in ql
 	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (clientNum == cg.duelPlayer1) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].damage), 0, 0, textStyle, font, align);
@@ -8926,6 +11090,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_SELECTED_PLYR_ACC:
+	  // 2018-09-29 not in ql
 	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (clientNum == cg.duelPlayer1) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].accuracy), 0, 0, textStyle, font, align);
@@ -8936,6 +11101,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 
   case CG_SELECTED_PLYR_FLAG:
+	  // 2018-09-29 not in ql
 	  ci = cgs.clientinfo + sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (ci->countryFlag) {
 		  // CG_Text_Paint_Align(&rect, scale, color, va("%s ^7%s", ci->clanTag, ci->name), 0, 0, textStyle, font, align);
@@ -8944,6 +11110,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_SELECTED_PLYR_FULLCLAN:
+	  // 2018-09-29 not in ql
 	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (clientNum == cg.duelPlayer1) {
 		  CG_Text_Paint_Align(&rect, scale, color, cg.duelScores[0].ci.fullClanName, 0, 0, textStyle, font, align);
@@ -8954,6 +11121,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 
   case CG_SELECTED_PLYR_PICKUPS_RA:
+	  // 2018-09-29 not in ql
 	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (clientNum == cg.duelPlayer1) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].redArmorPickups), 0, 0, textStyle, font, align);
@@ -8963,6 +11131,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_SELECTED_PLYR_PICKUPS_YA:
+	  // 2018-09-29 not in ql
 	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (clientNum == cg.duelPlayer1) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].yellowArmorPickups), 0, 0, textStyle, font, align);
@@ -8972,6 +11141,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_SELECTED_PLYR_PICKUPS_GA:
+	  // 2018-09-29 not in ql
 	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (clientNum == cg.duelPlayer1) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].greenArmorPickups), 0, 0, textStyle, font, align);
@@ -8981,6 +11151,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_SELECTED_PLYR_PICKUPS_MH:
+	  // 2018-09-29 not in ql
 	  clientNum = sortedTeamPlayers[CG_GetSelectedPlayer()];
 	  if (clientNum == cg.duelPlayer1) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.duelScores[0].megaHealthPickups), 0, 0, textStyle, font, align);
@@ -8989,17 +11160,39 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
 
-	  //CG_1ST_PLYR_PR 300  // not used?
-	  //CG_2ND_PLYR_PR 301  // not used?
-	  //CG_1ST_PLYR_TIER 302  // not used?
-	  //CG_2ND_PLYR_TIER 303  // not used?
+  case CG_1ST_PLYR_PR:
+	  // premium
+	  // 2018-10-06 no longer used in ql
+	  //FIXME what about older demos?
+	  break;
+
+  case CG_2ND_PLYR_PR:
+	  // premium
+	  // 2018-10-06 no longer used in ql
+	  //FIXME what about older demos?
+	  break;
+
+  case CG_1ST_PLYR_TIER:
+	  // 2018-10-06 no longer used in ql
+	  //FIXME what about older demos?
+	  break;
+
+  case CG_2ND_PLYR_TIER:
+	  // 2018-10-06 no longer used in ql
+	  //FIXME what about older demos?
+	  break;
 
   case CG_SERVER_OWNER: {
+	  // 2018-09-29 not in ql
 	  const char *ownerName = NULL;
 
 	  ownerName = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_owner");
 	  if (!ownerName  ||  !*ownerName) {
-		  ownerName = "Quake Live";
+		  if (cgs.protocol == PROTOCOL_QL) {
+			  ownerName = "Quake Live";
+		  } else {
+			  ownerName = "Quake 3";
+		  }
 	  }
 	  CG_Text_Paint_Align(&rect, scale, color, va("%s", ownerName), 0, 0, textStyle, font, align);
 	  break;
@@ -9008,69 +11201,138 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_RED_TEAM_PICKUPS_RA:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.rra), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_RED_TEAM_PICKUPS_YA:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.rya), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_RED_TEAM_PICKUPS_GA:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.rga), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_RED_TEAM_PICKUPS_MH:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.rmh), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_RED_TEAM_PICKUPS_QUAD:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.rquad), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_RED_TEAM_PICKUPS_BS:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.rbs), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
 
   case CG_BLUE_TEAM_PICKUPS_RA:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.bra), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_BLUE_TEAM_PICKUPS_YA:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.bya), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_BLUE_TEAM_PICKUPS_GA:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.bga), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_BLUE_TEAM_PICKUPS_MH:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.bmh), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_BLUE_TEAM_PICKUPS_QUAD:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.bquad), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
   case CG_BLUE_TEAM_PICKUPS_BS:
 	  if (cg.tdmScore.valid) {
 		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cg.tdmScore.bbs), 0, 0, textStyle, font, align);
+	  } else {
+		  if (cg_wideScreen.integer == 7) {
+			  // 2018-09-29 ql draws -1
+			  CG_Text_Paint_Align(&rect, scale, color, "-1", 0, 0, textStyle, font, align);
+		  }
 	  }
 	  break;
 
   case CG_RED_TEAM_TIMEHELD_QUAD:
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-01 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (!cg.tdmScore.valid) {
+		  if (cg_wideScreen.integer == 7) {
+			  CG_Text_Paint_Align(&rect, scale, color, "0:0-1", 0, 0, textStyle, font, align);
+		  }
 		  break;
 	  }
+
 	  if (cg.tdmScore.rquad) {
 		  mins = cg.tdmScore.rquadTime / 60;
 		  secs = cg.tdmScore.rquadTime % 60;
@@ -9079,10 +11341,20 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
 	  }
 	  break;
+
   case CG_RED_TEAM_TIMEHELD_BS:
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-01 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (!cg.tdmScore.valid) {
+		  if (cg_wideScreen.integer == 7) {
+			  CG_Text_Paint_Align(&rect, scale, color, "0:0-1", 0, 0, textStyle, font, align);
+		  }
 		  break;
 	  }
+
 	  if (cg.tdmScore.rbs) {
 		  mins = cg.tdmScore.rbsTime / 60;
 		  secs = cg.tdmScore.rbsTime % 60;
@@ -9091,10 +11363,20 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
 	  }
 	  break;
+
   case CG_BLUE_TEAM_TIMEHELD_QUAD:
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-01 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (!cg.tdmScore.valid) {
+		  if (cg_wideScreen.integer == 7) {
+			  CG_Text_Paint_Align(&rect, scale, color, "0:0-1", 0, 0, textStyle, font, align);
+		  }
 		  break;
 	  }
+
 	  if (cg.tdmScore.bquad) {
 		  mins = cg.tdmScore.bquadTime / 60;
 		  secs = cg.tdmScore.bquadTime % 60;
@@ -9103,10 +11385,20 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
 	  }
 	  break;
+
   case CG_BLUE_TEAM_TIMEHELD_BS:
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-01 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
+
 	  if (!cg.tdmScore.valid) {
+		  if (cg_wideScreen.integer == 7) {
+			  CG_Text_Paint_Align(&rect, scale, color, "0:0-1", 0, 0, textStyle, font, align);
+		  }
 		  break;
 	  }
+
 	  if (cg.tdmScore.bbs) {
 		  mins = cg.tdmScore.bbsTime / 60;
 		  secs = cg.tdmScore.bbsTime % 60;
@@ -9117,22 +11409,22 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_ARMORTIERED_COLORIZED:
-	  CG_SetArmorColor();
+	  CG_SetArmorColor(color[3]);
 	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
 	  break;
   case CG_RED_TEAM_MAP_PICKUPS:
 	  // 2018-07-07 ql expands icons to fit rectangle
-	  CG_DrawTeamMapPickups(&rect, scale, textStyle, font, TEAM_RED);
+	  CG_DrawTeamMapPickups(&rect, scale, textStyle, font, color, TEAM_RED);
 	  break;
   case CG_BLUE_TEAM_MAP_PICKUPS:
 	  // 2018-07-07 ql expands icons to fit rectangle
-	  CG_DrawTeamMapPickups(&rect, scale, textStyle, font, TEAM_BLUE);
+	  CG_DrawTeamMapPickups(&rect, scale, textStyle, font, color, TEAM_BLUE);
 	  break;
   case CG_1ST_PLYR_PICKUPS:
-	  CG_Draw1stPlayerPickups(&rect, scale, textStyle, font);
+	  CG_Draw1stPlayerPickups(&rect, scale, textStyle, font, color, align);
 	  break;
   case CG_2ND_PLYR_PICKUPS:
-	  CG_Draw2ndPlayerPickups(&rect, scale, textStyle, font);
+	  CG_Draw2ndPlayerPickups(&rect, scale, textStyle, font, color, align);
 	  break;
   case CG_MOST_VALUABLE_OFFENSIVE_PLYR:
 	  // 2015-11-04 current menu files only have room for avatar
@@ -9195,12 +11487,37 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_RED_OWNED_FLAGS:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.dominationRedPoints), 0, 0, textStyle, font, align);
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-09 ignore font and align
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cgs.gametype == GT_DOMINATION) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.dominationRedPoints), 0, 0, textStyle, font, align);
+	  }
 	  break;
   case CG_BLUE_OWNED_FLAGS:
-	  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.dominationBluePoints), 0, 0, textStyle, font, align);
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-09 ignore font and align
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cgs.gametype == GT_DOMINATION) {
+		  CG_Text_Paint_Align(&rect, scale, color, va("%d", cgs.dominationBluePoints), 0, 0, textStyle, font, align);
+	  }
 	  break;
   case CG_ROUND: {
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-09 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG  &&  cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_RED_ROVER) {
+		  break;
+	  }
+
 	  if (cg.warmup) {
 		  CG_Text_Paint_Align(&rect, scale, color, "Warmup", 0, 0, textStyle, font, align);
 	  } else {
@@ -9210,6 +11527,16 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   case CG_TEAM_PLYR_COUNT: {
 	  int ourTeam;
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-09 ignores align and font
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG  &&  cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_RED_ROVER) {
+		  break;
+	  }
 
 	  if (wolfcam_following) {
 		  ourTeam = cgs.clientinfo[wcg.clientNum].team;
@@ -9227,6 +11554,16 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_ENEMY_PLYR_COUNT: {
 	  int ourTeam;
 
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-09 ignores align and font
+		  align = ITEM_ALIGN_LEFT;
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cgs.gametype != GT_CA  &&  cgs.gametype != GT_FREEZETAG  &&  cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_RED_ROVER) {
+		  break;
+	  }
+
 	  if (wolfcam_following) {
 		  ourTeam = cgs.clientinfo[wcg.clientNum].team;
 	  } else {
@@ -9242,6 +11579,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
   case UI_ADVERT:
 	  // ql advertisment
+	  // 2018-10-13 crashes ql if used in test hud
 	  break;
 
 	  // UI_CROSSHAIR_COLOR 258  // only in config menu?
@@ -9250,6 +11588,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  // UI_SERVER_SETTINGS 580
 
   case UI_KEYBINDSTATUS:
+	  // 2018-10-13 not used in ql anymore?
 	  if (Display_KeyBindPending()) {
 		  s = "Waiting for new key... Press ESCAPE to cancel";
 	  } else {
@@ -9258,10 +11597,17 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
 	  break;
 
-  // wolfcam ownerdraws
-
   case CG_RACE_STATUS: {
 	  int nextCheckPointEnt;
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-13 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
+
+	  if (cgs.gametype != GT_RACE) {
+		  break;
+	  }
 
 	  if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
 		  break;
@@ -9289,6 +11635,19 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  int start;
 	  int end;
 	  const char *timeString;
+	  vec4_t ourColor;
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-13 ql ignores font and color
+		  font = &cgDC.Assets.textFont;
+		  Vector4Set(ourColor, 1, 1, 1, 1);
+	  } else {
+		  Vector4Copy(color, ourColor);
+	  }
+
+	  if (cgs.gametype != GT_RACE) {
+		  break;
+	  }
 
 	  if (cg.freecam  &&  cg_freecam_useTeamSettings.integer == 0) {
 		  break;
@@ -9308,11 +11667,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  if (nextCheckPointEnt > 0) {
 		  timeString = CG_GetTimeString(cg.time - start);
-		  CG_Text_Paint_Align(&rect, scale, color, va("%s", timeString), 0, 0, textStyle, font, align);
+		  CG_Text_Paint_Align(&rect, scale, ourColor, va("%s", timeString), 0, 0, textStyle, font, align);
 	  } else {
 		  timeString = CG_GetTimeString(end);
 		  //Com_Printf("tstring %d  start %d  end %d\n", end - start, start, end);
-		  CG_Text_Paint_Align(&rect, scale, color, va("%s", timeString), 0, 0, textStyle, font, align);
+		  CG_Text_Paint_Align(&rect, scale, ourColor, va("%s", timeString), 0, 0, textStyle, font, align);
 	  }
 
 	  break;
@@ -9320,6 +11679,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
   case CG_OVERTIME: {
 	  int numOverTimes = 0;
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-14 ql ignores font
+		  font = &cgDC.Assets.textFont;
+	  }
 
 	  CG_GetCurrentTimeWithDirection(&numOverTimes);
 
@@ -9377,11 +11741,30 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  //FIXME
 	  break;
 
-  case CG_MATCH_STATE:
-	  //FIXME like CG_MATCH_STATUS?
-	  //Com_Printf("^3FIXME CG_MATCH_STATE\n");
-	  //CG_Text_Paint_Align(&rect, scale, color, "^2CG_MATCH_STATE", 0, 0, textStyle, font, align);
+  case CG_MATCH_STATE: {
+	  const char *detail;
+
+	  if (cg_wideScreen.integer == 7) {
+		  // 2018-10-14 ql ignores item align
+		  align = ITEM_ALIGN_LEFT;
+	  }
+
+	  // like CG_MATCH_STATUS
+	  if (cg.warmup) {
+		  detail = "MATCH WARMUP";
+	  } else {
+		  if (cg.snap->ps.pm_type == PM_INTERMISSION) {
+			  detail = "MATCH SUMMARY";
+		  } else {
+			  detail = "MATCH IN PROGRESS";
+		  }
+	  }
+
+	  CG_Text_Paint_Align(&rect, scale, color, detail, 0, 0, textStyle, font, align);
 	  break;
+  }
+
+  // wolfcam ownerdraws
 
   case WCG_GAME_STATUS:
 	  if (cg.warmup) {
@@ -9545,8 +11928,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
     break;
   }
 
-  MenuWidescreen = WIDESCREEN_NONE;
-  QLWideScreen = WIDESCREEN_NONE;
+  MenuWidescreen = WIDESCREEN_STRETCH;
+  QLWideScreen = WIDESCREEN_STRETCH;
 }
 
 void CG_MouseEvent(int x, int y, qboolean active) {

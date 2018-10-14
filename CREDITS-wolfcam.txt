@@ -1,7 +1,7 @@
 id software:  releasing quake3 source
 ioquake3
 Luigi Auriemma:  quake live pk3 decryption
-CaNaBiS, HMage, auri, ent:  q3mme (blur code, q3mme camera code, and obviously inspiration)
+CaNaBiS, HMage, auri, ent:  q3mme (blur code, q3mme camera code, dof code, and obviously inspiration)
 ent / entdark:  image bgr swap speedup
 Cloud Wu:  backtrace
 OpenArena:  some content
@@ -21,12 +21,13 @@ em92 (Eugene Molotov):
   * bug fix:  don't show crosshair scan name and info for dead players
   * compile fix:  add -D_FILE_OFFSET_BITS=64 to all platforms
   * include 64-bit Windows libfreetype.a
-  * bug fix:  overtime clock stayed at zero for game types besides duel, tdm, ca, and ft (em92 Eugene Molotov)
+  * bug fix:  overtime clock stayed at zero for game types besides duel, tdm, ca, and ft
   * bug fix:  r_fullscreen 1 wouldn't fit game screen correctly (via ioquake3 patch)
   * bug fix:  renderer shader times incorrect when recording videos
   * bug fix:  round based games didn't ignore g_overtime value
   * bug fix:  use correct flag sounds for cpma NTF
   * bug fix:  loading flag models and sounds for cpma NTF gametype
+  * bug fix:  opengl2 renderer 'animmap' limit 8 instead of 2048
 
 Cyrax (Eugene C.):  screenMap shader directive from Quake3e
 

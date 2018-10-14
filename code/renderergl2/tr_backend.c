@@ -1821,11 +1821,171 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 	VectorSet2(texCoords[3], 0.5f / cols,          (rows - 0.5f) / rows);
 
 	GLSL_BindProgram(&tr.textureColorShader);
-	
+
 	GLSL_SetUniformMat4(&tr.textureColorShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
 	GLSL_SetUniformVec4(&tr.textureColorShader, UNIFORM_COLOR, colorWhite);
 
 	RB_InstantQuad2(quadVerts, texCoords);
+}
+
+// glConfig.vidWidth x glConfig.vidHeight rgb data
+static void RE_StretchRawRectScreen (const byte *data)
+{
+	int start, end;
+	vec4_t quadVerts[4];
+	vec2_t texCoords[4];
+	GLenum target;
+	GLint loc;
+	int width;
+	int height;
+
+	if ( !tr.registered ) {
+		return;
+	}
+
+	if (!glConfig.textureRectangleAvailable) {
+		static qboolean warningIssued = qfalse;
+
+		if (!warningIssued) {
+			ri.Printf(PRINT_ALL, "^3%s: rectangle texture not supported\n", __FUNCTION__);
+			warningIssued = qtrue;
+		}
+
+		return;
+	}
+
+	width = glConfig.vidWidth;
+	height = glConfig.vidHeight;
+
+	//R_IssuePendingRenderCommands();
+
+	if ( tess.numIndexes ) {
+		RB_EndSurface();
+	}
+
+	// we definitely want to sync every frame for the cinematics
+	qglFinish();
+
+	start = 0;
+	if ( r_speeds->integer ) {
+		start = ri.RealMilliseconds();
+	}
+
+	target = GL_TEXTURE_RECTANGLE_ARB;
+
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.rectScreenTexture);
+
+	qglTexSubImage2D(target, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+	if ( r_speeds->integer ) {
+		end = ri.RealMilliseconds();
+		ri.Printf( PRINT_ALL, "rect: qglTexSubImage2D %i, %i: %i msec\n", width, height, end - start );
+	}
+
+	// FIXME: HUGE hack
+	if (glRefConfig.framebufferObject)
+	{
+		if (tr.usingFinalFrameBufferObject) {
+			FBO_Bind(backEnd.framePostProcessed ? tr.finalFbo : tr.renderFbo);
+		} else {
+			FBO_Bind(backEnd.framePostProcessed ? NULL : tr.renderFbo);
+		}
+	}
+
+	RB_SetGL2D();
+
+	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.rectScreenTexture);
+
+	//FIXME program
+	//GLSL_BindProgram(&tr.textureNoColorShader);
+	GL_UseProgram(tr.colorCorrectSp);
+
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_gammaRecip");
+	if (loc < 0) {
+		ri.Error(ERR_FATAL, "%s() couldn't get p_gammaRecip", __FUNCTION__);
+	}
+	//qglUniform1f(loc, (GLfloat)(1.0 / r_gamma->value));
+	qglUniform1f(loc, (GLfloat)1.0f);
+
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_overbright");
+	if (loc < 0) {
+		ri.Error(ERR_FATAL, "%s() couldn't get p_overbright", __FUNCTION__);
+	}
+	//qglUniform1f(loc, (GLfloat)((float)(1 << shift) * mul));
+	qglUniform1f(loc, (GLfloat)1.0f);
+
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_contrast");
+	if (loc < 0) {
+		ri.Error(ERR_FATAL, "%s() couldn't get p_contrast", __FUNCTION__);
+	}
+	//qglUniform1f(loc, (GLfloat)r_contrast->value);
+	qglUniform1f(loc, (GLfloat)1.0f);
+
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "backBufferTex");
+	if (loc < 0) {
+		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
+	}
+
+	//qglUniform1i(loc, GL_TEXTURE0 + TB_COLORMAP);
+	//ri.Printf(PRINT_ALL, "^5GL_TEXTURE0 : %d\n", GL_TEXTURE0);
+	qglUniform1i(loc, 0);
+
+	//GLSL_SetUniformMat4(&tr.textureNoColorShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
+
+	loc = qglGetUniformLocation(tr.colorCorrectSp, "u_ModelViewProjectionMatrix");
+	if (loc < 0) {
+		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
+	}
+
+	qglUniformMatrix4fv(loc, 1 /* only setting 1 matrix */, GL_FALSE /*transpose?*/, glState.modelviewProjection);
+
+	GL_State(GLS_DEPTHTEST_DISABLE);
+
+	// cull
+	qglDisable( GL_CULL_FACE );
+
+	qglDisable(GL_CLIP_PLANE0);
+
+	qglDepthMask(GL_FALSE);
+
+	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+
+	//FIXME testing
+	//w /= 2;
+	//h /= 2;
+
+	VectorSet4(quadVerts[0], 0.0, (float)height, 0, 0);
+	VectorSet4(quadVerts[1], (float)width, (float)height, 0, 0);
+	VectorSet4(quadVerts[2], (float)width, 0.0, 0, 0);
+	VectorSet4(quadVerts[3], 0.0, 0.0, 0, 0);
+
+	VectorSet2(texCoords[0], 0, 0);
+	VectorSet2(texCoords[1], (float)width, 0);
+	VectorSet2(texCoords[2], (float)width, (float)height);
+	VectorSet2(texCoords[3], 0, (float)height);
+
+
+	//GLSL_BindProgram(&tr.textureColorShader);
+
+	//GLSL_SetUniformMat4(&tr.textureColorShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
+	//GLSL_SetUniformVec4(&tr.textureColorShader, UNIFORM_COLOR, colorWhite);
+
+	RB_InstantQuad2(quadVerts, texCoords);
+
+	qglFinish();
+
+	// restore cull
+	{
+		int current = glState.faceCulling;
+
+		glState.faceCulling = !current;
+		GL_Cull(current);
+	}
+
+	qglEnable(GL_CLIP_PLANE0);
+
+	GL_BindNullProgram();
+	GL_BindNullTextures();
 }
 
 void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty) {
@@ -1987,6 +2147,47 @@ const void	*RB_DrawSurfs( const void *data ) {
 	backEnd.viewParms = cmd->viewParms;
 
 	isShadowView = !!(backEnd.viewParms.flags & VPF_DEPTHSHADOW);
+
+	//FIXME not here?
+	// from q3mme
+	//Jitter the camera origin
+	if ( !backEnd.viewParms.isPortal && !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL) ) {
+		int i;
+		float x, y;
+		qboolean adjustOrigin = qfalse;
+
+		if ((tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  mme_dofFrames->integer > 0) {
+			if (r_anaglyphMode->integer == 19  &&  *ri.SplitVideo  &&  !tr.leftRecorded) {
+				adjustOrigin = R_MME_JitterOrigin(&x, &y, qfalse);
+			} else {
+				adjustOrigin = R_MME_JitterOrigin(&x, &y, qtrue);
+			}
+		}
+
+		if (adjustOrigin) {
+			orientationr_t* or = &backEnd.viewParms.or;
+			orientationr_t* world = &backEnd.viewParms.world;
+
+//			VectorScale( or->axis[0], 0.5, or->axis[0] );
+//			VectorScale( or->axis[1], 0.3, or->axis[1] );
+//			VectorScale( or->axis[2], 0.8, or->axis[2] );
+			VectorMA( or->origin, x, or->axis[1], or->origin );
+			VectorMA( or->origin, y, or->axis[2], or->origin );
+//			or->origin[2] += 4000;
+//			or->origin[2] += 0.1 * x;
+			R_RotateForWorld( or, world );
+			for ( i = 0; i < 16; i++ ) {
+				////int r = (rand() & 0xffff ) - 0x4000;
+				//world->modelMatrix[i] *= (0.9 + r * 0.0001);
+				//or->modelMatrix[i] *= (0.9 + r * 0.0001);
+			}
+		} else {
+			for ( i = 0; i < 16; i++ ) {
+//				int r = (rand() & 0xffff ) - 0x4000;
+//				backEnd.viewParms.world.modelMatrix[i] *= (0.9 + r * 0.0001);
+			}
+		}
+	}
 
 	// clear the z buffer, set the modelview, etc
 	RB_BeginDrawingView ();
@@ -2972,6 +3173,19 @@ const void *RB_ExportCubemaps(const void *data)
 	return (const void *)(cmd + 1);
 }
 
+static const void *RB_DebugGraphics (const void *data)
+{
+	const debugGraphicsCommand_t *cmd;
+
+	cmd = (const debugGraphicsCommand_t *)data;
+
+	GL_BindToTMU(tr.whiteImage, TB_COLORMAP);
+	GL_Cull( CT_FRONT_SIDED );
+	ri.CM_DrawDebugSurface( R_DebugPolygon );
+
+	return (const void *)(cmd + 1);
+}
+
 static const void *RB_SkipRenderCommand (const void *data)
 {
 	data = PADP(data, sizeof(void *));
@@ -3006,6 +3220,12 @@ static const void *RB_SkipRenderCommand (const void *data)
 		break;
 	case RC_CAPSHADOWMAP:
 		data += sizeof(capShadowmapCommand_t);
+		break;
+	case RC_BEGIN_HUD:
+		data += sizeof(beginHudCommand_t);
+		break;
+	case RC_DEBUG_GRAPHICS:
+		data += sizeof(debugGraphicsCommand_t);
 		break;
 	case RC_POSTPROCESS:
 		data += sizeof(postProcessCommand_t);
@@ -3045,9 +3265,24 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	GLboolean rgba[4];
 	qboolean videoCommand;
 	const void *data2;
+	qboolean renderingHud;
+	qboolean renderingHud2;
+
+	// silence compiler warning
+	rgba[0] = rgba[1] = rgba[2] = rgba[3] = GL_FALSE;
+
+	tr.leftRecorded = qfalse;  // to break outer dof loop
+
+	//FIXME splitting rendering between world and hud will not work correctly when R_IssuePendingRenderCommands() is used  -- 2018-08-10 hack added to only run R_IssuePendingRenderCommands() at the end of frame
+
+	if (tr.recordingVideo  ||  mme_dofVisualize->integer) {
+		R_MME_CheckCvars(qfalse, &shotDataMain);
+		if (r_anaglyphMode->integer == 19  &&  *ri.SplitVideo) {
+			R_MME_CheckCvars(qfalse, &shotDataLeft);
+		}
+	}
 
 	t1 = ri.RealMilliseconds();
-
 	dataOrig = data;
 
 #if 0  // orig
@@ -3132,6 +3367,8 @@ void RB_ExecuteRenderCommands( const void *data ) {
 	colorMaskSet = qfalse;
 	tr.drawSurfsCount = 0;
 
+	renderingHud = qfalse;
+
 	data = dataOrig;
 	dprintf("render1 commands start ----------------------------\n");
 
@@ -3146,50 +3383,65 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		switch (*(const int *)data) {
 		case RC_DRAW_SURFS:
 			dprintf("r1 drawsurfs\n");
-			data = RB_DrawSurfs(data);  //FIXME others are hud? you sure?
-			tr.drawSurfsCount++;
+			if (!renderingHud) {
+				data = RB_DrawSurfs(data);  //FIXME others are hud? you sure?
+				tr.drawSurfsCount++;
+			} else {
+				data = RB_SkipRenderCommand(data);
+			}
 			break;
 
 		case RC_CLEARDEPTH:
 			dprintf("r1 cleardepth\n");
-			//ri.Printf(PRINT_ALL, "^5clear depth : %d  %d\n", *ri.SplitVideo, videoCommand);
-			//if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  videoCommand  &&  *ri.SplitVideo) {
-			//if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo) {
-			//if (r_anaglyphMode->integer == 19  &&  videoCommand  &&  *ri.SplitVideo) {
-			if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  *ri.SplitVideo) {
+
+			if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  *ri.SplitVideo  &&  !tr.leftRecorded) {
 				videoFrameCommand_t cmd;
 
-				//ri.Printf(PRINT_ALL, "yes\n");
 				if (!videoCommand) {
-					//ri.Printf(PRINT_ALL, "^3wtf.......................\n");
+					//FIXME 'videoCommand' not used
+					// shouldn't happen
 				}
 
 				if ( tess.numIndexes ) {
 					RB_EndSurface();
 				}
 
-				//qglFinish();
-				//ri.Printf(PRINT_ALL, "%p\n", ExtraVideoBuffer);
-				//if (!ExtraVideoBuffer1) {
 				if (!shotDataLeft.workAlloc) {
-					//ExtraVideoBuffer1 = malloc(glConfig.vidHeight * glConfig.vidWidth * 4 + 18);
-
-					//if (!ExtraVideoBuffer1) {
-					//	ri.Error(ERR_FATAL, "couldn't allocate extra video buffer\n");
-					//}
-					//ri.Printf(PRINT_ALL, "^5%p--------------  %d x %d\n", ExtraVideoBuffer1, glConfig.vidWidth, glConfig.vidHeight);
-					R_MME_InitMemory(qfalse, &shotDataLeft);
+					ri.Error(ERR_DROP, "shotDataLeft memory not allocated");
 				}
-#if 0
-				qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, ExtraVideoBuffer1 + 18);
-				R_GammaCorrect(ExtraVideoBuffer1 + 18, glConfig.vidWidth * glConfig.vidHeight * 4);
-#endif
+
+				if (tr.drawSurfsCount) {
+					if (R_MME_MultiPassNext(qfalse)) {
+						R_InitNextFrameNoCommands();
+						goto videoCommandCheckDone;
+					}
+
+					// blit mme dof
+					if (mme_dofFrames->integer > 0  &&  tr.recordingVideo  &&  R_MME_GetPassData(qfalse)) {
+						byte *buffer;
+
+						buffer = R_MME_GetPassData(qfalse);
+						RE_StretchRawRectScreen(buffer);
+					}
+				}
 
 				// draw hud
+				renderingHud2 = qfalse;
+
 				data2 = dataOrig;
 				while ( 1 ) {
 					data2 = PADP(data2, sizeof(void *));
 					switch (*(const int *)data2) {
+					case RC_DRAW_SURFS:
+						dprintf("r1 -- depth drawsurfs\n");
+						if (renderingHud2) {
+							data2 = RB_DrawSurfs(data2);  // 3d hud models
+							tr.drawSurfsCount++;
+						} else {
+							data2 = RB_SkipRenderCommand(data2);
+						}
+						break;
+
 					case RC_SET_COLOR:
 						//dprintf("r1 hud setcolor\n");
 						data2 = RB_SetColor(data2);
@@ -3198,6 +3450,15 @@ void RB_ExecuteRenderCommands( const void *data ) {
 						//dprintf("r1 hud stretchpic\n");
 						data2 = RB_StretchPic(data2);
 						break;
+
+					case RC_BEGIN_HUD:
+						data2 = RB_SkipRenderCommand(data2);
+						renderingHud2 = qtrue;
+						break;
+
+					case RC_CLEARDEPTH:
+						goto renderpass1huddone;
+
 					case RC_END_OF_LIST:
 						//dprintf("render1 hud commands stop ------------------------\n");
 						goto renderpass1huddone;
@@ -3227,11 +3488,12 @@ void RB_ExecuteRenderCommands( const void *data ) {
 				cmd.picCount = ri.afdMain->picCount - 1;
 				Q_strncpyz(cmd.givenFileName, ri.afdMain->givenFileName, MAX_QPATH);
 				RB_TakeVideoFrameCmd(&cmd, &shotDataLeft);
-				//ri.Printf(PRINT_ALL, "^1recording ...\n");
+				tr.leftRecorded = qtrue;
 			}
+
 			data = RB_ClearDepth(data);
-			//data = RB_SkipRenderCommand(data);
 			depthWasCleared = qtrue;
+			renderingHud = qfalse;
 			break;
 
 		case RC_DRAW_BUFFER:
@@ -3281,6 +3543,15 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		case RC_EXPORT_CUBEMAPS:
 			data = RB_ExportCubemaps(data);
 			break;
+
+		case RC_BEGIN_HUD:
+			data = RB_SkipRenderCommand(data);
+			renderingHud = qtrue;
+			break;
+
+		case RC_DEBUG_GRAPHICS:
+			data = RB_DebugGraphics(data);
+			break;
 		case RC_END_OF_LIST:
 			goto firstpassdone;
 		default:
@@ -3302,6 +3573,42 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 	// video command is in it's own render list, so drawing doesn't always
 	// take place
+
+	/* Take and merge DOF frames */
+	if ((tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  tr.drawSurfsCount) {
+		if (R_MME_MultiPassNext(qtrue)) {
+			R_InitNextFrameNoCommands();
+			goto videoCommandCheckDone;
+		}
+
+		// blit q3mme dof
+		if (mme_dofFrames->integer > 0  &&  (tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  R_MME_GetPassData(qtrue)) {
+			byte *buffer;
+			//int i, j;
+
+			buffer = R_MME_GetPassData(qtrue);
+
+#if 0  // testing
+			for (i = 0;  i < glConfig.vidHeight;  i++) {
+				for (j = 0;  j < glConfig.vidWidth;  j++) {
+					byte *p;
+					p = buffer + i * glConfig.vidWidth * 3 + j * 3;
+					if (j == glConfig.vidWidth / 2) {
+						p[0] = 255;
+						p[1] = 0;
+						p[2] = 0;
+					} else {
+						//p[0] = 0;
+						//p[1] = 0;
+						//p[2] = 0;
+					}
+				}
+			}
+#endif
+
+			RE_StretchRawRectScreen(buffer);
+		}
+	}
 
 	if (tr.drawSurfsCount) {
 		// screen map texture
@@ -3411,16 +3718,22 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		backEnd.colorMask[1] = !rgba[1];
 		backEnd.colorMask[2] = !rgba[2];
 		backEnd.colorMask[3] = !rgba[3];
-		
 	}
 
-	//RB_SetGL2D();
+	// draw hud
+	renderingHud = qfalse;
+
+	RB_SetGL2D();
 
 	data = dataOrig;
 	dprintf("render2 commands start ------------------------------\n");
 	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
 		switch ( *(const int *)data ) {
+		case RC_BEGIN_HUD:
+			data = RB_SkipRenderCommand(data);
+			renderingHud = qtrue;
+			break;
 		case RC_SET_COLOR:
 			//dprintf("r2 setcolor\n");
 			data = RB_SetColor( data );
@@ -3432,8 +3745,14 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			break;
 		case RC_DRAW_SURFS:
 			//dprintf("r2 drawsurfs\n");
-			//data = RB_DrawSurfs( data );
-			data = RB_SkipRenderCommand(data);
+			if (renderingHud) {
+				data = RB_DrawSurfs(data);  // 3d hud models
+				tr.drawSurfsCount++;
+				// hack to set rendering mode back correctly
+				RB_SetGL2D();
+			} else {
+				data = RB_SkipRenderCommand(data);
+			}
 			break;
 		case RC_DRAW_BUFFER:
 			//dprintf("r2 drawbuffer\n");
@@ -3465,6 +3784,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			//ri.Printf(PRINT_ALL, "r2 cleardepth\n");
 			//data = RB_ClearDepth(data);
 			data = RB_SkipRenderCommand(data);
+			renderingHud = qfalse;
 			break;
 		case RC_CAPSHADOWMAP:
 			//data = RB_CapShadowMap(data);
@@ -3479,6 +3799,9 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			break;
 		case RC_EXPORT_CUBEMAPS:
 			//data = RB_ExportCubemaps(data);
+			data = RB_SkipRenderCommand(data);
+			break;
+		case RC_DEBUG_GRAPHICS:
 			data = RB_SkipRenderCommand(data);
 			break;
 

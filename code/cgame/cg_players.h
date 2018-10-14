@@ -43,4 +43,7 @@ void CG_ResetPlayerEntity( centity_t *cent );
 qboolean CG_DuelPlayerScoreValid (int clientNum);
 qboolean CG_DuelPlayerInfoValid (int clientNum);
 
+void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_t *legs, refEntity_t *torso, refEntity_t *head);
+
+
 #endif  // cg_players_h_included

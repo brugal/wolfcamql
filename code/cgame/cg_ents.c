@@ -1670,7 +1670,7 @@ static void CG_Item ( centity_t *cent ) {
 			ent.hModel = cgs.media.neutralFlagModel3;
 			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_neutralFlagColor);
 			ent.shaderRGBA[3] = 255;
-		} else if (cg_flagStyle.integer) {
+		} else if (cg_flagStyle.integer == 2) {
 			//ent.hModel = cg_items[es->modelindex].models[1];
 			if (item->giTag == PW_REDFLAG) {
 				ent.hModel = cgs.media.redFlagModel2;
@@ -2848,12 +2848,22 @@ static void CG_Draw1FctfHelpIcons (const centity_t *cent)
 		return;
 	}
 
-	if (cent->currentState.modelindex == 0  &&  (cgs.flagStatus == FLAG_TAKEN_RED  ||  cgs.flagStatus == FLAG_TAKEN_BLUE)) {
-		return;
-	}
+	if (cgs.realProtocol < 91) {
+		if (cent->currentState.modelindex == 0  &&  (cgs.flagStatus == FLAG_TAKEN_RED  ||  cgs.flagStatus == FLAG_TAKEN_BLUE)) {
+			return;
+		}
 
-	if (cent->currentState.modelindex != 0  &&  (cgs.flagStatus != FLAG_TAKEN_RED  &&  cgs.flagStatus != FLAG_TAKEN_BLUE)) {
-		return;
+		if (cent->currentState.modelindex != 0  &&  (cgs.flagStatus != FLAG_TAKEN_RED  &&  cgs.flagStatus != FLAG_TAKEN_BLUE)) {
+			return;
+		}
+	} else {  // protocol >= 91
+		if (cent->currentState.modelindex == 0  &&  (cgs.flagStatus == FLAG_QL_TAKEN_RED  ||  cgs.flagStatus == FLAG_QL_TAKEN_BLUE)) {
+			return;
+		}
+
+		if (cent->currentState.modelindex != 0  &&  (cgs.flagStatus != FLAG_QL_TAKEN_RED  &&  cgs.flagStatus != FLAG_QL_TAKEN_BLUE)) {
+			return;
+		}
 	}
 
 	if (wolfcam_following) {

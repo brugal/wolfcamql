@@ -115,6 +115,9 @@ typedef struct {
 
 	void (*TakeVideoFrame)(aviFileData_t *afd, int h, int w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg, qboolean avi, qboolean tga, qboolean jpg, qboolean png, int picCount, char *givenFileName);
 
+	void (*BeginHud)(void);
+	void (*UpdateDof)(float viewFocus, float viewRadius);
+
 	void (*Get_Advertisements)(int *num, float *verts, char shaders[][MAX_QPATH]);
 	void (*ReplaceShaderImage)(qhandle_t h, const ubyte *data, int width, int height);
 
@@ -228,6 +231,8 @@ typedef struct {
 
 	// misc
 	mapNames_t *MapNames;
+
+	qboolean sse2_supported;
 } refimport_t;
 
 

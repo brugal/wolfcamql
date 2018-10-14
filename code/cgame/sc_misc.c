@@ -3,7 +3,7 @@
 
 #include "sc.h"
 #include "cg_main.h"
-//#include "cg_q3mme_scripts.h"
+//#include "cg_fx_scripts.h"
 //#include "cg_localents.h"
 #include "cg_syscalls.h"
 #include "wolfcam_predict.h"
@@ -998,7 +998,7 @@ qboolean CG_CheckCpmaVersion (int major, int minor, const char *revision)
 
 	//FIXME revision if needed
 
-	return qfalse;
+	//return qfalse;
 }
 
 // not freezetag

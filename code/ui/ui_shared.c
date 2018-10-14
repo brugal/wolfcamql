@@ -83,6 +83,8 @@ static qboolean debugMode = qfalse;
 #define DOUBLE_CLICK_DELAY 300
 static int lastListBoxClickTime = 0;
 
+int DefaultWideScreenValue = WIDESCREEN_CENTER;
+
 static void Item_RunScript(itemDef_t *item, const char *s);
 static void Item_RunFrameScript (itemDef_t *item, const char *script);
 static void Item_SetupKeywordHash(void);
@@ -1280,7 +1282,7 @@ static qboolean Item_ContainsPoint (const itemDef_t *item, float x, float y)
 
 	// already scaled to 640x480, reverse and apply new
 
-	if (item->widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f) {
+	if (item->widescreen == WIDESCREEN_STRETCH  ||  aspect <= 1.25f) {
 		//use regular scaling, don't alter rect values
 	} else if (item->widescreen == WIDESCREEN_LEFT) {
 		rect.w *= newXScale;
@@ -1324,7 +1326,7 @@ static qboolean Rect_ContainsWidescreenPoint (const rectDef_t *rectIn, float x, 
 
 	// already scaled to 640x480, reverse and apply new
 
-	if (widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f  ||  DC->widescreen != 5) {
+	if (widescreen == WIDESCREEN_STRETCH  ||  aspect <= 1.25f  ||  DC->widescreen != 5) {
 		//use regular scaling, don't alter rect values
 	} else if (widescreen == WIDESCREEN_LEFT) {
 		rect.w *= newXScale;
@@ -1340,7 +1342,7 @@ static qboolean Rect_ContainsWidescreenPoint (const rectDef_t *rectIn, float x, 
 	return Rect_ContainsPoint(&rect, x, y);
 }
 
-// assumes cursor is being drawn fullscreen (widescreen == WIDESCREEN_NONE),
+// assumes cursor is being drawn fullscreen (widescreen == WIDESCREEN_STRETCH),
 // converts to the relative 640x480 coordinates of the widescreen hud
 static float CursorX_Widescreen (int widescreen)
 {
@@ -1361,7 +1363,7 @@ static float CursorX_Widescreen (int widescreen)
 	realXScale = (float)DC->glconfig.vidWidth / 640.0f;
 	newXScale = 640.0f / width43;
 
-	if (widescreen == WIDESCREEN_NONE  ||  aspect <= 1.25f  ||  DC->widescreen != 5) {
+	if (widescreen == WIDESCREEN_STRETCH  ||  aspect <= 1.25f  ||  DC->widescreen != 5) {
 		//use regular scaling, don't chage x
 	} else if (widescreen == WIDESCREEN_LEFT) {
 		x *= realXScale;
@@ -3527,7 +3529,7 @@ static void Item_SetTextExtents(itemDef_t *item, float *width, float *height, co
 
 	// keeps us from computing the widths and heights more than once
 	if (*width == 0 || (item->type == ITEM_TYPE_OWNERDRAW && item->textalignment == ITEM_ALIGN_CENTER)) {
-		//FIXME widescreen?
+		//FIXME widescreen?  -- 2018-07-12 cgame textWidth() takes widescreen into account
 		float originalWidth = DC->textWidth(item->text, item->textscale, 0, item->fontIndex, item->widescreen, menuRect);
 
 		if (item->type == ITEM_TYPE_OWNERDRAW && (item->textalignment == ITEM_ALIGN_CENTER || item->textalignment == ITEM_ALIGN_RIGHT)) {
@@ -4709,7 +4711,7 @@ void Item_ListBox_Paint(itemDef_t *item) {
 
 
 static void Item_OwnerDraw_Paint(itemDef_t *item) {
-	int menuWidescreen = 0;
+	int menuWidescreen = WIDESCREEN_STRETCH;
 
 	if (item == NULL) {
 		return;
@@ -4994,9 +4996,9 @@ void Menu_Init(menuDef_t *menu) {
 	menu->fadeAmount = DC->Assets.fadeAmount;
 	menu->fadeClamp = DC->Assets.fadeClamp;
 	menu->fadeCycle = DC->Assets.fadeCycle;
-	// hack for ql, end game scoreboards don't define wideescreen so 2 appears
-	// to be the default
-	menu->widescreen = 2;
+
+	// 2018-07-12 this uses a global variable to allow changing the default for certain menus.  Quake Live uses WIDESCREEN_STRETCH as the default for user huds (cg_hudFiles) but appears to force WIDESCREEN_CENTER for the default (and possiply other) menus.
+	menu->widescreen = DefaultWideScreenValue;
 	Window_Init(&menu->window);
 }
 
@@ -5118,7 +5120,7 @@ void Item_Init(itemDef_t *item) {
 	}
 
 	memset(item, 0, sizeof(itemDef_t));
-	item->textscale = 0.22f;  // 0.55f
+	item->textscale = 0.55f;  // 2018-07-22 this matches quake live
 	Window_Init(&item->window);
 }
 
@@ -6355,15 +6357,19 @@ static qboolean ItemParse_font (itemDef_t *item, int handle) {
 		int fontId;
 
 		//PC_SourceWarning(handle, "font %s\n", fontName);
-		//FIXME pointSize
+		//FIXME pointSize  -- 2018-07-31 48 is too blurry for "notosans-regular" and "droidsansmono"
 		pointSize = 48;
+		//pointSize = 24;
 		fontId = atoi(fontName);
 		switch (fontId) {
 		case FONT_SANS:
 			fontName = DEFAULT_SANS_FONT;
+			pointSize = 24;
 			break;
 		case FONT_MONO:
 			fontName = DEFAULT_MONO_FONT;
+			// 2018-09-25 24 is blurry with textScale 0.6, auto font scale, threshold 9 or 24
+			pointSize = 24;
 			break;
 		default:
 		case FONT_DEFAULT:
@@ -7123,9 +7129,9 @@ static qboolean ItemParse_widescreen (itemDef_t *item, int handle)
 	//Com_Printf("^3FIXME item parse widescreen %d\n", item->widescreen);
 	//PC_SourceWarning(handle, "FIXME item parse widescreen %d", item->widescreen);
 
-	if (item->widescreen < 0  ||  item->widescreen > 3) {
+	if (item->widescreen < WIDESCREEN_STRETCH  ||  item->widescreen > WIDESCREEN_RIGHT) {
 		PC_SourceError(handle, "invalid widescreen value %d", item->widescreen);
-		item->widescreen = 0;
+		item->widescreen = WIDESCREEN_STRETCH;
 	}
 
 	return qtrue;
@@ -7758,10 +7764,10 @@ static qboolean MenuParse_widescreen( itemDef_t *item, int handle ) {
 
 	//Com_Printf("^1............\n");
 
-	if (menu->widescreen < 0  ||  menu->widescreen > 3) {
+	if (menu->widescreen < WIDESCREEN_STRETCH  ||  menu->widescreen > WIDESCREEN_RIGHT) {
 		//Com_Printf("^1MenuParse invalid widescreen value: %d", menu->widescreen);
 		PC_SourceError(handle, "menu parse invalid widescreen value: %d\n", menu->widescreen);
-		menu->widescreen = 0;
+		menu->widescreen = WIDESCREEN_STRETCH;
 	}
 
 	return qtrue;

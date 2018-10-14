@@ -49,7 +49,6 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	qboolean fetchBufferNeedsBGRswap = qfalse;
 	int glMode = GL_RGB;
 	char *sbuf;
-	//__m64 *outAlloc;
 	__m64 *outAlign = NULL;
 	byte *fetchBuffer;
 	int blurFrames;
@@ -59,7 +58,6 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 	cmd = (const videoFrameCommand_t *)data;
 
-	R_MME_CheckCvars(qfalse, shotData);
 	useBlur = qfalse;
 	blurFrames = ri.Cvar_VariableIntegerValue("mme_blurFrames");
 	if (blurFrames == 0  ||  blurFrames == 1) {
@@ -77,15 +75,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	}
 
 	shotData->pixelCount = cmd->width * cmd->height;
-	//outAlloc = ri.Hunk_AllocateTempMemory( shotData->pixelCount * 4 + 8);
-	//FIXME
-	//outAlign = (__m64 *)((((int)(outAlloc))+7) & ~7);
 
 	if (cmd->png) {
 		fetchBufferHasAlpha = qtrue;
 		fetchBufferNeedsBGRswap = qtrue;
 		glMode = GL_RGBA;
-		fetchBuffer = cmd->captureBuffer;
+		fetchBuffer = cmd->captureBuffer + 18;
+		fetchBuffer = (byte *)(((uintptr_t)fetchBuffer + 15) & ~15);
+		fetchBuffer -= 18;
 	} else {  //  not png
 		sbuf = finalName;
 		ri.Cvar_VariableStringBuffer("cl_aviFetchMode", sbuf, MAX_QPATH);
@@ -114,16 +111,20 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 		if (cmd->jpg  ||  (cmd->avi  &&  cmd->motionJpeg)) {
 			//FIXME jpg check not needed anymore
-			fetchBuffer = cmd->captureBuffer;
+			fetchBuffer = cmd->captureBuffer + 18;
+			fetchBuffer = (byte *)(((uintptr_t)fetchBuffer + 15) & ~15);
+			fetchBuffer -= 18;
 		} else {
-			fetchBuffer = cmd->encodeBuffer;
+			fetchBuffer = cmd->encodeBuffer + 18;
+			fetchBuffer = (byte *)(((uintptr_t)fetchBuffer + 15) & ~15);
+			fetchBuffer -= 18;
 		}
 	}
 
-	if (useBlur) {
-		glMode = GL_RGBA;
-		fetchBufferHasAlpha = qtrue;
-		fetchBufferNeedsBGRswap = qtrue;
+	if (useBlur  ||  mme_dofFrames->integer > 0) {
+		glMode = GL_BGR;
+		fetchBufferHasAlpha = qfalse;
+		fetchBufferNeedsBGRswap = qfalse;
 	}
 
 	if (cmd->jpg  ||  (cmd->avi  &&  cmd->motionJpeg)) {
@@ -139,6 +140,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		}
 		//ri.Printf(PRINT_ALL, "writing %d\n", cmd->picCount + 1);
 		qglReadPixels(0, 0, cmd->width, cmd->height, glMode, GL_UNSIGNED_BYTE, fetchBuffer + 18);
+		//R_MME_GetMultiShot(fetchBuffer + 18, cmd->width, cmd->height, glMode);
 		R_GammaCorrect(fetchBuffer + 18, cmd->width * cmd->height * (3 + fetchBufferHasAlpha));
 	} else {  // use blur
 
@@ -146,52 +148,92 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			ri.Printf(PRINT_ALL, "shotData->allocFailed\n");
 		}
 
-		if (shotData->blurTotal && !shotData->allocFailed) {
-			if ( shotData->overlapTotal ) {
-				int lapIndex = shotData->overlapIndex % shotData->overlapTotal;
-				shotData->overlapIndex++;
+		if (shotData->control.totalFrames && !shotData->allocFailed) {
+			//mmeBlurBlock_t *blurShot = &blurData.shot;
+			//mmeBlurBlock_t *blurDepth = &blurData.depth;
+			//mmeBlurBlock_t *blurStencil = &blurData.stencil;
+
+			/* Test if we blur with overlapping frames */
+			if ( shotData->control.overlapFrames ) {
 				/* First frame in a sequence, fill the buffer with the last frames */
-				if (shotData->blurIndex == 0) {
-					int i, index;
-					index = lapIndex;
-					//ri.Printf(PRINT_ALL, "first\n");
-					accumClearMultiply( shotData->accumAlign, shotData->overlapAlign + (index * shotData->pixelCount/2), shotData->blurMultiply + 0, shotData->pixelCount );
-					for (i = 1; i < shotData->overlapTotal; i++) {
-						index = (index + 1 ) % shotData->overlapTotal;
-						accumAddMultiply( shotData->accumAlign, shotData->overlapAlign + (index * shotData->pixelCount/2), shotData->blurMultiply + i, shotData->pixelCount );
+				if (shotData->control.totalIndex == 0) {
+					int i;
+					for (i = 0; i < shotData->control.overlapFrames; i++) {
+						R_MME_BlurOverlapAdd(&shotData->shot, i);
+
+						//FIXME implement
+#if 0
+						if ( mme_saveDepth->integer ) {
+							R_MME_BlurOverlapAdd( blurDepth, i );
+						}
+						if ( mme_saveStencil->integer ) {
+							R_MME_BlurOverlapAdd( blurStencil, i );
+						}
+#endif
+						shotData->control.totalIndex++;
 					}
-					shotData->blurIndex = shotData->overlapTotal;
 				}
 
-				//qglReadPixels(0, 0, cmd->width, cmd->height, glMode, GL_UNSIGNED_BYTE, fetchBuffer + 18);
-				qglReadPixels(0, 0, cmd->width, cmd->height, glMode, GL_UNSIGNED_BYTE, (byte *)(shotData->overlapAlign + (lapIndex * shotData->pixelCount/2)));
+				if (1) {  // ( mme_saveShot->integer == 1 ) {
+					byte *shotBuf = R_MME_BlurOverlapBuf(&shotData->shot);
 
-				//fetchBuffer = cmd->encodeBuffer;
-				//FIXME align
-				outAlign = (__m64 *)(fetchBuffer + 18);
-				//R_GammaCorrect(fetchBuffer + 18, cmd->width * cmd->height * (3 + fetchBufferHasAlpha));
-				R_GammaCorrect((byte *)(shotData->overlapAlign + (lapIndex * shotData->pixelCount/2)), cmd->width * cmd->height * (3 + fetchBufferHasAlpha));
-				accumAddMultiply( shotData->accumAlign, shotData->overlapAlign + (lapIndex * shotData->pixelCount/2), shotData->blurMultiply + shotData->blurIndex, shotData->pixelCount );
-				shotData->blurIndex++;
-			} else {  // shotData->overlapTotal
+					qglReadPixels(0, 0, cmd->width, cmd->height, glMode, GL_UNSIGNED_BYTE, shotBuf);
+					//R_MME_GetMultiShot(shotBuf, cmd->width, cmd->height, glMode);
+
+					outAlign = (__m64 *)(fetchBuffer + 18);
+					R_GammaCorrect(shotBuf, cmd->width * cmd->height * (3 + fetchBufferHasAlpha));
+
+					R_MME_BlurOverlapAdd(&shotData->shot, 0);
+				}
+
+#if 0  //FIXME implement
+				if ( mme_saveDepth->integer == 1 ) {
+					R_MME_GetDepth( R_MME_BlurOverlapBuf( blurDepth ) ); 
+					R_MME_BlurOverlapAdd( blurDepth, 0 );
+				}
+				if ( mme_saveStencil->integer == 1 ) {
+					R_MME_GetStencil( R_MME_BlurOverlapBuf( blurStencil ) ); 
+					R_MME_BlurOverlapAdd( blurStencil, 0 );
+				}
+#endif
+				shotData->control.overlapIndex++;
+				shotData->control.totalIndex++;
+			} else {  // shotData->overlapFrames, just blur no overlap
 				qglReadPixels(0, 0, cmd->width, cmd->height, glMode, GL_UNSIGNED_BYTE, fetchBuffer + 18);
+				//R_MME_GetMultiShot(fetchBuffer + 18, cmd->width, cmd->height, glMode);
 				R_GammaCorrect(fetchBuffer + 18, cmd->width * cmd->height * (3 + fetchBufferHasAlpha));
-				//fetchBuffer = cmd->encodeBuffer;
-				//FIXME align
+
 				outAlign = (__m64 *)(fetchBuffer + 18);
-				if (shotData->blurIndex == 0) {
-					accumClearMultiply( shotData->accumAlign, outAlign, shotData->blurMultiply + 0, shotData->pixelCount );
-				} else {
-					accumAddMultiply( shotData->accumAlign, outAlign, shotData->blurMultiply + shotData->blurIndex, shotData->pixelCount );
+
+				R_MME_BlurAccumAdd(&shotData->shot, outAlign);
+
+#if 0  //FIXME implement
+				if ( mme_saveDepth->integer == 1 ) {
+					R_MME_GetDepth( (byte *)outAlign );
+					R_MME_BlurAccumAdd( blurDepth, outAlign );
 				}
-				shotData->blurIndex++;
+
+				if ( mme_saveStencil->integer == 1 ) {
+					R_MME_GetStencil( (byte *)outAlign );
+					R_MME_BlurAccumAdd( blurStencil, outAlign );
+				}
+#endif
+				shotData->control.totalIndex++;
+
 			}  // shotData->overlapTotal
 
-			if (shotData->blurIndex >= shotData->blurTotal) {
-				shotData->blurIndex = 0;
-				accumShift( shotData->accumAlign, outAlign, shotData->pixelCount );
-				//R_MME_SaveShot( &shotData->shot.main, glConfig.vidWidth, glConfig.vidHeight, shotData->shot.fps, doGamma && !mme_blurGamma->integer, (byte *)outAlign );
-				//shotData->frameCount++;
+			if (shotData->control.totalIndex >= shotData->control.totalFrames) {
+				shotData->control.totalIndex = 0;
+				R_MME_BlurAccumShift(&shotData->shot);
+
+				outAlign = shotData->shot.accum;
+
+#if 0  //FIXME implement
+				if ( mme_saveDepth->integer == 1 )
+					R_MME_BlurAccumShift( blurDepth );
+				if ( mme_saveStencil->integer == 1 )
+					R_MME_BlurAccumShift( blurStencil );
+#endif
 				//ri.Printf(PRINT_ALL, "pic count: %d\n", cmd->picCount);
 				if (((cmd->picCount + 1) * blurFrames) % frameRateDivider != 0) {
 					goto dontwrite;
@@ -201,6 +243,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				//goto done;
 				goto dontwrite;
 			}
+
+			memcpy(fetchBuffer + 18, shotData->shot.accum, shotData->pixelCount * 3);
+		} else {
+			// shouldn't happen
 		}
 	}
 
@@ -225,7 +271,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		}
 		width = cmd->width;
 		height = cmd->height;
-		buffer = cmd->encodeBuffer;
+		buffer = fetchBuffer;
 		Com_Memset (buffer, 0, 18);
         buffer[2] = 2;          // uncompressed type
         buffer[12] = width & 255;
@@ -358,7 +404,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 		width = cmd->width;
 		height = cmd->height;
-		buffer = cmd->captureBuffer + 18;
+		buffer = fetchBuffer + 18;
 		ri.FS_WriteFile(finalName, buffer, 1);  // create path
 		if (cmd->jpg) {
 			if (fetchBufferNeedsBGRswap) {
@@ -490,14 +536,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	if( cmd->avi  &&  cmd->motionJpeg )
 	{
 		if (fetchBufferNeedsBGRswap) {
-			swap_bgr(cmd->captureBuffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
+			swap_bgr(fetchBuffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
 		}
 
 		if (fetchBufferHasAlpha) {
-			convert_rgba_to_rgb(cmd->captureBuffer + 18, cmd->width, cmd->height);
+			convert_rgba_to_rgb(fetchBuffer + 18, cmd->width, cmd->height);
 		}
 
-		frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, cmd->captureBuffer + 18, 0);
+		frameSize = RE_SaveJPGToBuffer(cmd->encodeBuffer + 18, /*FIXME*/ cmd->width * cmd->height * 3, r_jpegCompressionQuality->integer, cmd->width, cmd->height, fetchBuffer + 18, 0);
 		if (shotData == &shotDataLeft) {
 
 			ri.CL_WriteAVIVideoFrame(ri.afdLeft, cmd->encodeBuffer + 18, frameSize);
@@ -515,7 +561,8 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			*/
 			width = cmd->width;
 			height = cmd->height;
-			buffer = cmd->captureBuffer;
+			buffer = fetchBuffer;
+
 			memcpy(*ri.ExtraVideoBuffer, buffer, 18 + width * height * (3 + fetchBufferHasAlpha));
 
 			c = 18 + width * height * 3;
@@ -597,24 +644,25 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		byte *outBuffer;
 
 		//buffer = cmd->encodeBuffer;
-		outBuffer = cmd->encodeBuffer;
+		//outBuffer = cmd->encodeBuffer;
+		outBuffer = fetchBuffer;
 		if (fetchBufferHasAlpha  &&  fetchBufferNeedsBGRswap) {
 			// gl_rgba
 			outBuffer = cmd->captureBuffer;
 			//frameSize = cmd->width * cmd->height;
 			for (i = 0;  i < frameSize;  i++) {
-				outBuffer[i * 3 + 0 + 18] = cmd->encodeBuffer[i * 4 + 2 + 18];
-				outBuffer[i * 3 + 1 + 18] = cmd->encodeBuffer[i * 4 + 1 + 18];
-				outBuffer[i * 3 + 2 + 18] = cmd->encodeBuffer[i * 4 + 0 + 18];
+				outBuffer[i * 3 + 0 + 18] = fetchBuffer[i * 4 + 2 + 18];
+				outBuffer[i * 3 + 1 + 18] = fetchBuffer[i * 4 + 1 + 18];
+				outBuffer[i * 3 + 2 + 18] = fetchBuffer[i * 4 + 0 + 18];
 			}
 		} else if (fetchBufferHasAlpha  &&  !fetchBufferNeedsBGRswap) {
 			// gl_bgra
 			outBuffer = cmd->captureBuffer;
 			//frameSize = cmd->width * cmd->height;
 			for (i = 0;  i < frameSize;  i++) {
-				outBuffer[i * 3 + 0 + 18] = cmd->encodeBuffer[i * 4 + 0 + 18];
-				outBuffer[i * 3 + 1 + 18] = cmd->encodeBuffer[i * 4 + 1 + 18];
-				outBuffer[i * 3 + 2 + 18] = cmd->encodeBuffer[i * 4 + 2 + 18];
+				outBuffer[i * 3 + 0 + 18] = fetchBuffer[i * 4 + 0 + 18];
+				outBuffer[i * 3 + 1 + 18] = fetchBuffer[i * 4 + 1 + 18];
+				outBuffer[i * 3 + 2 + 18] = fetchBuffer[i * 4 + 2 + 18];
 			}
 		} else if (fetchBufferNeedsBGRswap) {
 			// gl_rbg

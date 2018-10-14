@@ -7,14 +7,14 @@
 #include "cg_draw.h"
 #include "cg_drawdc.h"
 #include "cg_drawtools.h"
+#include "cg_fx_scripts.h"
 #include "cg_info.h"
 #include "cg_localents.h"
 #include "cg_main.h"
 #include "cg_marks.h"
 #include "cg_newdraw.h"
 #include "cg_players.h"
-#include "cg_q3mme_camera.h"
-#include "cg_q3mme_scripts.h"
+#include "cg_q3mme_demos_camera.h"
 #include "cg_servercmds.h"
 #include "cg_snapshot.h"
 #include "cg_spawn.h"
@@ -674,6 +674,7 @@ vmCvar_t cg_qlhud;
 vmCvar_t cg_qlFontScaling;
 vmCvar_t cg_autoFontScaling;
 vmCvar_t cg_autoFontScalingThreshold;
+vmCvar_t cg_overallFontScale;
 
 vmCvar_t cg_weaponBar;
 vmCvar_t cg_weaponBarX;
@@ -811,6 +812,8 @@ vmCvar_t cg_weaponRedTeamColor;
 vmCvar_t cg_hudRedTeamColor;
 vmCvar_t cg_hudBlueTeamColor;
 vmCvar_t cg_hudNoTeamColor;
+vmCvar_t cg_hudNeutralTeamColor;
+
 vmCvar_t cg_hudForceRedTeamClanTag;
 vmCvar_t cg_hudForceBlueTeamClanTag;
 
@@ -938,11 +941,12 @@ vmCvar_t cg_drawFragMessageWideScreen;
 
 vmCvar_t cg_obituaryTokens;
 vmCvar_t cg_obituaryIconScale;
-vmCvar_t cg_obituaryRedTeamColor;
-vmCvar_t cg_obituaryBlueTeamColor;
 vmCvar_t cg_obituaryTime;
 vmCvar_t cg_obituaryFadeTime;
 vmCvar_t cg_obituaryStack;
+
+vmCvar_t cg_textRedTeamColor;
+vmCvar_t cg_textBlueTeamColor;
 
 vmCvar_t cg_fragTokenAccuracyStyle;
 vmCvar_t cg_fragIconHeightFixed;
@@ -1180,6 +1184,9 @@ vmCvar_t cg_playerModelAllowServerOverride;
 vmCvar_t cg_allowServerOverride;
 
 vmCvar_t cg_powerupLight;
+vmCvar_t cg_powerupBlink;
+vmCvar_t cg_powerupKillCounter;
+
 vmCvar_t cg_buzzerSound;
 vmCvar_t cg_flagStyle;
 vmCvar_t cg_flagTakenSound;
@@ -1256,6 +1263,8 @@ vmCvar_t cg_specOffsetQL;
 
 vmCvar_t cg_drawKeyPress;
 vmCvar_t cg_useScoresUpdateTeam;
+vmCvar_t cg_colorCodeWhiteUseForegroundColor;
+vmCvar_t cg_colorCodeUseForegroundAlpha;
 
 // end cvar_t
 
@@ -1813,7 +1822,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_qlhud, "cg_qlhud", "1", CVAR_ARCHIVE },
 	{ &cg_qlFontScaling, "cg_qlFontScaling", "1", CVAR_ARCHIVE },
 	{ cvp(cg_autoFontScaling), "1", CVAR_ARCHIVE },
-	{ cvp(cg_autoFontScalingThreshold), "9", CVAR_ARCHIVE },
+	{ cvp(cg_autoFontScalingThreshold), "24", CVAR_ARCHIVE },
+	{ cvp(cg_overallFontScale), "1.125", CVAR_ARCHIVE },
 
 	{ &cg_weaponBar, "cg_weaponBar", "1", CVAR_ARCHIVE },
 	{ &cg_weaponBarX, "cg_weaponBarX", "", CVAR_ARCHIVE },
@@ -1962,9 +1972,11 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_weaponBlueTeamColor, "cg_weaponBlueTeamColor", "0x3266f4", CVAR_ARCHIVE },
 	// cg_noTeamColor
 
-	{ &cg_hudRedTeamColor, "cg_hudRedTeamColor", "0xf40000", CVAR_ARCHIVE },
-	{ &cg_hudBlueTeamColor, "cg_hudBlueTeamColor", "0x3266f4", CVAR_ARCHIVE },
-	{ &cg_hudNoTeamColor, "cg_hudNoTeamColor", "0xf2db1f", CVAR_ARCHIVE },
+	{ &cg_hudRedTeamColor, "cg_hudRedTeamColor", "0xfe3219", CVAR_ARCHIVE },
+	{ &cg_hudBlueTeamColor, "cg_hudBlueTeamColor", "0x3366ff", CVAR_ARCHIVE },
+	{ &cg_hudNoTeamColor, "cg_hudNoTeamColor", "0xfecb32", CVAR_ARCHIVE },
+	{ cvp(cg_hudNeutralTeamColor), "0xffffff", CVAR_ARCHIVE },
+
 	{ &cg_hudForceRedTeamClanTag, "cg_hudForceRedTeamClanTag", "", CVAR_ARCHIVE },
 	{ &cg_hudForceBlueTeamClanTag, "cg_hudForceBlueTeamClanTag", "", CVAR_ARCHIVE },
 
@@ -2065,7 +2077,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_accX, "cg_accX", "450", CVAR_ARCHIVE },
 	{ &cg_accY, "cg_accY", "100", CVAR_ARCHIVE },
 	{ cvp(cg_accWideScreen), "3", CVAR_ARCHIVE },
-	
+
 	{ &cg_loadDefaultMenus, "cg_loadDefaultMenus", "1", CVAR_ARCHIVE },
 	{ &cg_grenadeColor, "cg_grenadeColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_grenadeColorAlpha, "cg_grenadeColorAlpha", "255", CVAR_ARCHIVE },
@@ -2099,11 +2111,12 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 	{ &cg_obituaryTokens, "cg_obituaryTokens", "%k %i %v", CVAR_ARCHIVE },
 	{ &cg_obituaryIconScale, "cg_obituaryIconScale", "1.5", CVAR_ARCHIVE },
-	{ &cg_obituaryRedTeamColor, "cg_obituaryRedTeamColor", "0xf40000", CVAR_ARCHIVE },
-	{ &cg_obituaryBlueTeamColor, "cg_obituaryBlueTeamColor", "0x3266f4", CVAR_ARCHIVE },
 	{ &cg_obituaryTime, "cg_obituaryTime", "3000", CVAR_ARCHIVE },
 	{ &cg_obituaryFadeTime, "cg_obituaryFadeTime", "1000", CVAR_ARCHIVE },
 	{ cvp(cg_obituaryStack), "5", CVAR_ARCHIVE },
+
+	{ cvp(cg_textRedTeamColor), "0xfc7e7d", CVAR_ARCHIVE },
+	{ cvp(cg_textBlueTeamColor), "0x7ebefe", CVAR_ARCHIVE },
 
 	{ &cg_fragTokenAccuracyStyle, "cg_fragTokenAccuracyStyle", "0", CVAR_ARCHIVE },
 	{ cvp(cg_fragIconHeightFixed), "1", CVAR_ARCHIVE },
@@ -2316,7 +2329,11 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_playerModelAllowServerScaleDefault, "cg_playerModelAllowServerScaleDefault", "1.1", CVAR_ARCHIVE },
 	{ &cg_playerModelAllowServerOverride, "cg_playerModelAllowServerOverride", "1", CVAR_ARCHIVE },
 	{ cvp(cg_allowServerOverride), "1", CVAR_ARCHIVE },
+
 	{ &cg_powerupLight, "cg_powerupLight", "1", CVAR_ARCHIVE },
+	{ cvp(cg_powerupBlink), "1", CVAR_ARCHIVE },
+	{ cvp(cg_powerupKillCounter), "1", CVAR_ARCHIVE },
+
 	{ &cg_buzzerSound, "cg_buzzerSound", "1", CVAR_ARCHIVE },
 	{ &cg_flagStyle, "cg_flagStyle", "1", CVAR_ARCHIVE },
 	{ cvp(cg_flagTakenSound), "0", CVAR_ARCHIVE },
@@ -2425,6 +2442,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 	{ cvp(cg_drawKeyPress), "0", CVAR_ARCHIVE },
 	{ cvp(cg_useScoresUpdateTeam), "1", CVAR_ARCHIVE },
+	{ cvp(cg_colorCodeWhiteUseForegroundColor), "0", CVAR_ARCHIVE },
+	{ cvp(cg_colorCodeUseForegroundAlpha), "0", CVAR_ARCHIVE },
 
 };
 
@@ -2517,14 +2536,18 @@ void CG_UpdateCvars( void ) {
 	int cvarscoreboardold = -1;
 	int ambientSoundsOld;
 	int audioAnnouncerOld;
+	int wideScreenOld;
 
 	cvarscoreboardold = cg_scoreBoardOld.integer;
 	ambientSoundsOld = cg_ambientSounds.integer;
 	audioAnnouncerOld = cg_audioAnnouncer.integer;
+	wideScreenOld = cg_wideScreen.integer;
 
 	for ( i = 0, cv = cvarTable ; i < cvarTableSize ; i++, cv++ ) {
 		trap_Cvar_Update( cv->vmCvar );
 	}
+
+	// check for modications here
 
 	if (cvarscoreboardold != cg_scoreBoardOld.integer) {
 		cg.menuScoreboard = NULL;
@@ -2534,7 +2557,12 @@ void CG_UpdateCvars( void ) {
 		CG_RegisterAnnouncerSounds();
 	}
 
-	// check for modications here
+	if (wideScreenOld != cg_wideScreen.integer) {
+		// We need to reload all hud files since itemDef 'text' widths are calculated once and stored.  Different cg_wideScreen settings change how those widths are calculated.
+
+		// this will reset all menus and also load default ones
+		CG_LoadHudFile(SC_Cvar_Get_String("cg_hudFiles"));
+	}
 
 	// If team overlay is on, ask for updates from the server.  If it's off,
 	// let the server know so we don't receive it
@@ -3706,36 +3734,23 @@ static void CG_RegisterGraphics( void ) {
 	//cgs.media.worldDeathIcon = trap_R_RegisterShader("icons/icon_frag");
 	cgs.media.worldDeathIcon = trap_R_RegisterShader("wc/worldDeath");
 
-#if 0
-	cgs.media.redFlagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_red1" );
-	cgs.media.redFlagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
-	cgs.media.redFlagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_red3" );
-	cgs.media.blueFlagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_blu1" );
-	cgs.media.blueFlagShader[1] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
-	cgs.media.blueFlagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_blu3" );
-
-	cgs.media.flagShader[0] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral1" );
-	cgs.media.flagShader[1] = 0;  // unused
-	cgs.media.flagShader[2] = trap_R_RegisterShaderNoMip( "icons/iconf_red2" );
-	cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip( "icons/iconf_blu2" );
-	cgs.media.flagShader[4] = trap_R_RegisterShaderNoMip( "icons/iconf_neutral3" );
-
-#endif
+	cgs.media.killCounterIcon = trap_R_RegisterShader("icons/icon_frag");
 
 	// not checking gametype since it's also used in non ctf games (ex: red rover)
-	cgs.media.redFlagShader[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_at_base.png");
-	cgs.media.redFlagShader[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_taken.png");
-	cgs.media.redFlagShader[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_dropped.png");
+	cgs.media.redFlagAtBaseShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_at_base.png");
+	cgs.media.redFlagTakenShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_taken.png");
+	cgs.media.redFlagDroppedShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_dropped.png");
 
-	cgs.media.blueFlagShader[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_at_base.png");
-	cgs.media.blueFlagShader[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_taken.png");
-	cgs.media.blueFlagShader[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_dropped.png");
+	cgs.media.blueFlagAtBaseShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_at_base.png");
+	cgs.media.blueFlagTakenShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_taken.png");
+	cgs.media.blueFlagDroppedShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_dropped.png");
 
-	cgs.media.flagShader[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_at_base");
-	cgs.media.flagShader[1] = 0;  // unused
-	cgs.media.flagShader[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/red_flag_taken.png");
-	cgs.media.flagShader[3] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/blue_flag_taken.png");
-	cgs.media.flagShader[4] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_dropped.png");
+	cgs.media.neutralFlagAtBaseShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_at_base.png");
+	cgs.media.neutralFlagTakenShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_taken.png");
+	cgs.media.neutralFlagStolenShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_stolen.png");
+	cgs.media.neutralFlagDroppedShader = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_dropped.png");
+
+	cgs.media.flagDroppedArrowShader = trap_R_RegisterShaderNoMip("gfx/wc/flag_dropped_arrow.png");
 
 	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF || cgs.gametype == GT_HARVESTER || cgs.gametype == GT_CTFS || cgs.gametype == GT_NTF ||  cg_buildScript.integer) {
 #else
@@ -4125,17 +4140,6 @@ static void CG_RegisterGraphics( void ) {
 	//cgs.media.selectCursor = trap_R_RegisterShaderNoMip( "ui/assets/selectcursor.tga" );
 	cgs.media.selectCursor = trap_R_RegisterShaderNoMip( "ui/assets/3_cursor3.png");
 	//cgs.media.selectCursor = cgs.media.cursor;  //trap_R_RegisterShaderNoMip( "ui/assets/3_cursor3.png");
-
-#if 0
-	cgs.media.flagShaders[0] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_in_base.tga");
-	cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_capture.tga");
-	cgs.media.flagShaders[2] = trap_R_RegisterShaderNoMip("ui/assets/statusbar/flag_missing.tga");
-#endif
-
-	cgs.media.flagShaders[0] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_at_base.png");
-	//cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_stolen.png");
-	cgs.media.flagShaders[1] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_taken.png");
-	cgs.media.flagShaders[2] = trap_R_RegisterShaderNoMip("gfx/2d/flag_status/flag_dropped.tga");  // orig flag_missing.tga  -- ?  question mark
 
 #if 0  // what's the point?
 	trap_R_RegisterModel( "models/players/james/lower.md3" );
@@ -7429,6 +7433,8 @@ static void CG_FeederSelection (float feederID, int index) {
 	} else {
 		cg.selectedScore = index;
 	}
+
+	//Com_Printf("    ^5feederId:%f  index:%d\n", feederID, index);
 }
 
 float CG_Cvar_Get (const char *cvar)
@@ -8037,8 +8043,6 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 #if 1  //def MPACK
 	CG_AssetCache();
-	//CG_LoadDefaultMenus();
-	//CG_LoadHudMenu();      // load new hud stuff
 #endif
 
 	cg.loading = qfalse;	// future players will be deferred
@@ -8050,7 +8054,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	// remove the last loading update
 	cg.infoScreenText[0] = 0;
 
-	// Make sure we have update values (scores)
+	// Make sure we have update values (scores) and other info
 	CG_SetConfigValues();
 
 	CG_StartMusic();
@@ -8097,20 +8101,19 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	CG_ParseSpawnVars();
 	CG_ResetTimedItemPickupTimes();
 
-	//CG_LoadDefaultMenus();
-	//FIXME before or after default menus?
 #if 1  //def MPACK
-	//CG_AssetCache();
-	CG_InitDC();      // load new hud stuff
+	CG_InitDC();
 	CG_LoadDefaultMenus();
-	//CG_LoadHudMenu();      // load new hud stuff
 	trap_Cvar_VariableStringBuffer("cg_hudFiles", buff, sizeof(buff));
 	hudSet = buff;
 	if (hudSet[0] == '\0') {
 		hudSet = "ui/hud.txt";
 	}
 
+	// 2018-07-12 quake live appears to use stretch as the default for just user huds (cg_hudFiles)
+	DefaultWideScreenValue = WIDESCREEN_STRETCH;
 	CG_LoadMenus(hudSet);
+	DefaultWideScreenValue = WIDESCREEN_CENTER;
 #endif
 
 	cg.menusLoaded = qtrue;
@@ -8180,6 +8183,11 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	demo.camera.smoothAngles = angleQuat;
 	demo.camera.target = -1;
 
+	// q3mme dof
+	demo.dof.focus = 256.0f;
+	demo.dof.radius = 5.0f;
+	demo.dof.target = -1;
+
 	// hack for ql area chat not using default font
 	trap_R_RegisterFont(DEFAULT_SANS_FONT, 16, &cg.notosansFont);
 
@@ -8193,6 +8201,9 @@ void CG_LoadDefaultMenus (void)
 	}
 
 	Com_Printf("loading default menus\n");
+
+	// 2018-07-12 match quake live behavior for default widescreen value, note that quake live appears to force WIDESCREEN_CENTER for at least some of these menus (ex: end_scoreboard_*) instead of just making center the default.  This can't be overrided in quake live.
+	DefaultWideScreenValue = WIDESCREEN_CENTER;
 
 	CG_ParseMenu("ui/intro.menu");
 	CG_ParseMenu("ui/ingamescoreteam.menu");
@@ -8242,6 +8253,35 @@ void CG_LoadDefaultMenus (void)
 		CG_ParseMenu("ui/ingame_scoreboard_race.menu");
 		CG_ParseMenu("ui/end_scoreboard_race.menu");
 	}
+}
+
+void CG_LoadHudFile (const char *menuFile)
+{
+	const char *hudSet;
+
+	String_Init();
+
+	//FIXME hack for fx scripts using String_Alloc()
+	//memset(&EffectScripts.jitToken, 0, sizeof(EffectScripts.jitToken));
+	CG_FreeFxJitTokens();
+
+	Menu_Reset();
+
+	if (cg_loadDefaultMenus.integer) {
+		CG_LoadDefaultMenus();
+	}
+
+	hudSet = menuFile;
+	if (hudSet[0] == '\0') {
+		hudSet = "ui/hud.txt";
+	}
+
+	// 2018-07-12 quake live appears to use stretch as the default for just user huds (cg_hudFiles)
+	DefaultWideScreenValue = WIDESCREEN_STRETCH;
+	CG_LoadMenus(hudSet);
+	DefaultWideScreenValue = WIDESCREEN_CENTER;
+
+	cg.menuScoreboard = NULL;
 }
 
 /*

@@ -3436,6 +3436,28 @@ void	R_InitImages( void ) {
 
 	// create default texture and white texture
 	R_CreateBuiltinImages();
+
+	if (glConfig.textureRectangleAvailable) {
+		GLenum target;
+		GLenum err;
+
+		target = GL_TEXTURE_RECTANGLE_ARB;
+
+		qglGenTextures(1, &tr.rectScreenTexture);
+		GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.rectScreenTexture);
+		//FIXME bgr
+		qglTexImage2D(target, 0, GL_RGB8, glConfig.vidWidth, glConfig.vidHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+		err = qglGetError();
+        if (err != GL_NO_ERROR) {
+                ri.Printf(PRINT_ALL, "^1opengl error creating raw rect texture:  0x%x\n", err);
+        }
+
+        qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	}
 }
 
 /*
@@ -3452,6 +3474,12 @@ void R_DeleteTextures( void ) {
 	Com_Memset( tr.images, 0, sizeof( tr.images ) );
 
 	tr.numImages = 0;
+
+	qglDeleteTextures(1, &tr.backBufferTexture);
+	qglDeleteTextures(1, &tr.bloomTexture);
+	if (tr.rectScreenTexture) {
+		qglDeleteTextures(1, &tr.rectScreenTexture);
+	}
 
 	GL_BindNullTextures();
 }

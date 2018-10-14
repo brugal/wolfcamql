@@ -616,6 +616,8 @@ void _UI_Refresh( int realtime )
 
 	UI_UpdateCvars();
 
+	trap_R_BeginHud();
+
 	if (Menu_Count() > 0) {
 		// paint all the menus
 		Menu_PaintAll();

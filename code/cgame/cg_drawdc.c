@@ -6,7 +6,7 @@
 #include "cg_syscalls.h"
 
 #define wsset() QLWideScreen = widescreen; MenuWidescreen = widescreen; MenuRect = menuRect
-#define wsoff() QLWideScreen = WIDESCREEN_NONE;  MenuWidescreen = WIDESCREEN_NONE
+#define wsoff() QLWideScreen = WIDESCREEN_STRETCH;  MenuWidescreen = WIDESCREEN_STRETCH
 
 void CG_DrawHandlePicDc (float x, float y, float w, float h, qhandle_t asset, int widescreen, rectDef_t menuRect)
 {
@@ -120,12 +120,9 @@ static float CG_OwnerDrawWidth (int ownerDraw, float scale, int fontIndex)
 	switch (ownerDraw) {
 	  case CG_GAME_TYPE:
 		  return CG_Text_Width(CG_GameTypeString(), scale, 0, font);
-      case CG_GAME_STATUS: {
-		  vec4_t color = { 1, 1, 1, 1 };
-
-		  return CG_Text_Width(CG_GetGameStatusText(color), scale, 0, font);
+      case CG_GAME_STATUS:
+		  return CG_Text_Width(CG_GetGameStatusText(), scale, 0, font);
 		  break;
-	  }
 	  case CG_KILLER:
 		  return CG_Text_Width(CG_GetKillerText(), scale, 0, font);
 		  break;

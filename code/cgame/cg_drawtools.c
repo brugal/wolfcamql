@@ -54,7 +54,7 @@ void CG_AdjustFrom640 (float *x, float *y, float *w, float *h)
 #endif
 
 	// ql widescreen
-	if (cg_wideScreen.integer == 5) {
+	if (cg_wideScreen.integer == 5  ||  cg_wideScreen.integer == 6  ||  cg_wideScreen.integer == 7) {
 		float width43;
 		float diff;
 		float newXScale;
@@ -83,12 +83,12 @@ void CG_AdjustFrom640 (float *x, float *y, float *w, float *h)
 
 		newXScale = width43 / 640.0;
 
-		if (QLWideScreen == WIDESCREEN_NONE) {
-			//FIXME
-
+		if (QLWideScreen == WIDESCREEN_STRETCH) {
+#if 0  // widescreen debugging
 			if (MenuWidescreen) {
-				Com_Printf("^3FIXME ql QLWideScreen 0  menu %d\n", MenuWidescreen);
+				Com_Printf("^3 ql QLWideScreen 0  menu %d\n", MenuWidescreen);
 			}
+#endif
 			//debug_rect(menuRect.x, menuRect.y, menuRect.w, menuRect.h, qfalse, 1, 0, 0, 0.1);
 			*x *= cgs.screenXScale;
 			*y *= cgs.screenYScale;
