@@ -1951,13 +1951,18 @@ r_singleShader options and r_singleShaderName  to replace all the map textures
 
   ex:  +set r_singleShaderName textures/crn_master/smooth_concrete +set r_singleShader 2
 
-  r_singleShader options:  1 replace all textures include advertisements and don't apply lightmap, 2 same as 1 but apply lightmap, 3 replace all map textures except advertisements and don't apply lightmap, 4 same as 3 but apply lightmap
+  r_singleShader options:  1 replace all textures (including advertisements) and don't apply lightmap, 2 same as 1 but apply lightmap, 3 replace all map textures (except advertisements) and don't apply lightmap, 4 same as 3 but apply lightmap
 
-  Along with r_fastSkyColor can be used for chroma keying:
+  r_singleShaderName can specify an image file directly or a shader.  If a shader is specified and lightmaps are used (r_vertexLight 0), the shader should include a lightmap stage.  See wolfcam-ql/scripts/wcmap.shader.
 
-  +set r_singleShaderName wc/map/custom +set r_singleShader 1 +set r_fastSky 1 +set r_fastSkyColor 0x010001
 
-  You can edit or replace wolfcam-ql/gfx/wc/custom.tga to choose the color.
+  Along with r_fastSkyColor these can be used for chroma keying:
+
+      +set r_singleShaderName wc/map/custom +set r_singleShader 1 +set r_fastSky 1 +set r_fastSkyColor 0x010001 +set r_vertexLight 1
+
+      You can edit or replace wolfcam-ql/gfx/wc/custom.tga to choose the color for wc/map/custom.
+
+
 --------------------------------------
 
 * 'screenMap' shader keyword from Quake3e.  This uses a screenshot of the previous frame as a texture.  Can be used for mirror like surfaces.  The size of the texture used can be controlled with r_screenMapTextureSize.  Example:

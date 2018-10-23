@@ -2378,7 +2378,6 @@ No background file.
 * mac osx vm lockup with s_useOpenal 0  -- even with r:7301 before Altivec separation  -- seems to be s_sdlCapture 1  -- works with direct hw probably vm error/bug with capturing audio
 * 2018-06-18 uber dm_91 17:09 8 to 5 and scoreboard message is Red Leads Blue 7 to 5
 
-* kitten:  q3mme depth-lock
 * kitten:  output sky transparency
 * kitten:  lg beam in a different program?
 * kitten:  defrag timer  -- 2018-08-01  encrypted
@@ -2462,6 +2461,9 @@ No background file.
 * cg_autoFontScalingThreshold 300 leads to max images error
 * screenmap grab after anaglyph mode 19 split video will capture hud
 * CG_1STPLACE_PLYR_MODEL doesn't render anything if client info isn't valid
+* r_singleshader and weather effects : tom
+* r_singleshader and transparent textures :  elder shader on top of fog
+* GL_TEXTURE0_ARB  renderer2
 
 
 ----

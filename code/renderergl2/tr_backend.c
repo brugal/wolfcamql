@@ -59,7 +59,7 @@ void GL_BindToTMU( image_t *image, int tmu )
 		ri.Printf(PRINT_WARNING, "GL_BindToTMU: NULL image\n");
 	}
 
-	GL_BindMultiTexture(GL_TEXTURE0_ARB + tmu, target, texture);
+	GL_BindMultiTexture(GL_TEXTURE0 + tmu, target, texture);
 }
 
 
@@ -708,8 +708,6 @@ static void RB_QLBloomDownSample (void)
 	// cull
 	qglDisable( GL_CULL_FACE );
 
-	qglDisable(GL_CLIP_PLANE0);
-
 	qglDepthMask(GL_FALSE);
 
 
@@ -794,8 +792,6 @@ static void RB_QLBloomDownSample (void)
 		GL_Cull(current);
 	}
 
-	qglEnable(GL_CLIP_PLANE0);
-
 	GL_BindNullProgram();
 	GL_BindNullTextures();
 }
@@ -852,8 +848,6 @@ static void RB_QLBloomBrightness (void)
 	// cull
 	qglDisable( GL_CULL_FACE );
 
-	qglDisable(GL_CLIP_PLANE0);
-
 	qglDepthMask(GL_FALSE);
 
 	//qglClearColor(0.0, 0.0, 0.0, 1.0);
@@ -883,8 +877,6 @@ static void RB_QLBloomBrightness (void)
 		glState.faceCulling = !current;
 		GL_Cull(current);
 	}
-
-	qglEnable(GL_CLIP_PLANE0);
 
 	GL_BindNullProgram();
 	GL_BindNullTextures();
@@ -937,8 +929,6 @@ static void RB_QLBloomBlurHorizontal (void)
 	// cull
 	qglDisable( GL_CULL_FACE );
 
-	qglDisable(GL_CLIP_PLANE0);
-
 	qglDepthMask(GL_FALSE);
 
 	//qglClearColor(0.0, 0.0, 0.0, 1.0);
@@ -968,8 +958,6 @@ static void RB_QLBloomBlurHorizontal (void)
 		glState.faceCulling = !current;
 		GL_Cull(current);
 	}
-
-	qglEnable(GL_CLIP_PLANE0);
 
 	GL_BindNullProgram();
 	GL_BindNullTextures();
@@ -1020,8 +1008,6 @@ static void RB_QLBloomBlurVertical (void)
 	// cull
 	qglDisable( GL_CULL_FACE );
 
-	qglDisable(GL_CLIP_PLANE0);
-
 	qglDepthMask(GL_FALSE);
 
 	//qglClearColor(0.0, 0.0, 0.0, 1.0);
@@ -1051,8 +1037,6 @@ static void RB_QLBloomBlurVertical (void)
 		glState.faceCulling = !current;
 		GL_Cull(current);
 	}
-
-	qglEnable(GL_CLIP_PLANE0);
 
 	GL_BindNullProgram();
 	GL_BindNullTextures();
@@ -1139,8 +1123,6 @@ static void RB_QLBloomCombine (void)
 	// cull
 	qglDisable( GL_CULL_FACE );
 
-	qglDisable(GL_CLIP_PLANE0);
-
 	qglDepthMask(GL_FALSE);
 	
 	width = glConfig.vidWidth;
@@ -1213,8 +1195,6 @@ static void RB_QLBloomCombine (void)
 		glState.faceCulling = !current;
 		GL_Cull(current);
 	}
-
-	qglEnable(GL_CLIP_PLANE0);
 
 	GL_BindNullProgram();
 	GL_BindNullTextures();
@@ -1420,8 +1400,6 @@ static void RB_ColorCorrect (void)
 	// cull
 	qglDisable( GL_CULL_FACE );
 
-	qglDisable(GL_CLIP_PLANE0);
-
 	qglDepthMask(GL_FALSE);
 
 	//qglClearColor(0.0, 0.0, 0.0, 1.0);
@@ -1452,8 +1430,6 @@ static void RB_ColorCorrect (void)
 		GL_Cull(current);
 	}
 
-	qglEnable(GL_CLIP_PLANE0);
-
 	GL_BindNullProgram();
 	GL_BindNullTextures();
 }
@@ -1478,7 +1454,6 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	double			originalTime;
 	double			realOriginalTime;
 	FBO_t*			fbo = NULL;
-	qboolean		inQuery = qfalse;
 
 	// save original time for entity shader offsets
 	originalTime = backEnd.refdef.floatTime;
@@ -1669,10 +1644,6 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		RB_EndSurface();
 	}
 
-	if (inQuery) {
-		qglEndQuery(GL_SAMPLES_PASSED);
-	}
-
 	if (glRefConfig.framebufferObject) {
 		if (tr.usingFinalFrameBufferObject  &&  fbo == NULL) {
 			fbo = tr.finalFbo;
@@ -1738,7 +1709,6 @@ void	RB_SetGL2D (void) {
 			  GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
 
 	GL_Cull( CT_TWO_SIDED );
-	qglDisable( GL_CLIP_PLANE0 );
 
 	// set time for 2D shaders
 	backEnd.refdef.time = ri.ScaledMilliseconds();
@@ -1944,8 +1914,6 @@ static void RE_StretchRawRectScreen (const byte *data)
 	// cull
 	qglDisable( GL_CULL_FACE );
 
-	qglDisable(GL_CLIP_PLANE0);
-
 	qglDepthMask(GL_FALSE);
 
 	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
@@ -1981,8 +1949,6 @@ static void RE_StretchRawRectScreen (const byte *data)
 		glState.faceCulling = !current;
 		GL_Cull(current);
 	}
-
-	qglEnable(GL_CLIP_PLANE0);
 
 	GL_BindNullProgram();
 	GL_BindNullTextures();

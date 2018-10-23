@@ -1,4 +1,4 @@
-12.1test3
+12.1test4
 
 * menus work even if window doesn't have mouse grab
 * bug fix:  info screen calculated string widths incorrectly
@@ -81,11 +81,12 @@
 * bug fix:  changing mme_blurType would only reset one of 'left' or 'right' with split video saving
 * bug fix:  memory corruption if mme_blurFrames + mme_blurOverlap were greater than 256
 * bug fix:  renderergl2 shutdown didn't delete bloom and backbuffer textures
-* q3mme dof.  Added mme_dofFrames and mme_dofRadius, new : mme_dofVisualize, /saveq3mmedof /loadq3mmedof
+* q3mme dof:  mme_dofFrames and mme_dofRadius
 
-  /dof [list|info]
-
-  '/dof target' changed to accept integer value (-1 clears target)
+  - added mme_dofVisualize in order to see final rendering
+  - added /saveq3mmedof and /loadq3mmedof
+  - added /dof [list|info]
+  - '/dof target' changed to accept integer value (-1 clears target)
 
 * bug fix:  opengl2 renderer crash if '{font}' frag token used
 * cg_colorCodeWhiteUseForegroundColor  in huds, this controls whether white ('^7') color code forces white or uses foreground color.

@@ -1,5 +1,14 @@
 #include "tr_mme.h"
 
+// qglReadPixels
+#define GLE(ret, name, ...) extern name##proc * qgl##name;
+QGL_1_1_PROCS;
+//QGL_1_1_FIXED_FUNCTION_PROCS;
+//QGL_DESKTOP_1_1_PROCS;
+//QGL_DESKTOP_1_1_FIXED_FUNCTION_PROCS;
+//QGL_3_0_PROCS;
+#undef GLE
+
 #if 0
 extern GLuint pboIds[4];
 void R_MME_GetShot( void* output, mmeShotType_t type ) {

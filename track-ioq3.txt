@@ -7252,3 +7252,213 @@ the demo.
     Signed-off-by: Simon McVittie <smcv@debian.org>
 
 2018-06-24-01 Make testgun command without argument disable test gun model
+
+2018-07-20-01 Remove unused renderer_buffer variable
+
+2018-07-20-02
+    Fix renderer not clearing some GL extension variables at vid_restart
+
+    If renderer is compiled into client (USE_RENDERER_DLOPEN=0) and after
+    start up set r_allowExtension to 0 and run vid_restart, some extension
+    were still used.
+
+2018-07-20-03
+    Don't upload 8 bit grayscale images as 16 bit luminance
+
+    Using more color bits than the source image provides shouldn't improve
+    the quality.
+
+2018-07-20-04
+    OpenGL1: Use RE_UploadCinematic() instead of duplicate code
+
+    Already done in opengl2 renderer.
+
+2018-07-20-05
+    Don't load non-core GL functions for OpenGL 3.2 core context
+
+    Also declare the GL functions in tr_local.h so there is compile error
+    for non-core GL functions instead of SEGFAULT from dereferencing a NULL
+    pointer.
+
+    Disable the non-functional stencil shadow code that hasn't been updated
+    to use OpenGL 3.2 core compatible drawing.
+
+2018-07-20-06
+    Load OpenGL ES 2.0 function procs
+
+    Load functions procs supported by OpenGL ES 2.0, though there is not a
+    compatible renderer yet. Change argument for GLimp_Init from coreContext
+    to fixedFunction.
+
+2018-07-20-07
+    Don't check fixed function GL extensions when using shader pipeline
+
+    GL_TEXTURE_UNITS_ARB is not part of OpenGL ES 2 API and sets GL error.
+    It's not part of OpenGL 3.2 core profile either.
+
+2018-07-20-08
+    OpenGL2: Fix world VAO cache drawing when glIndex_t is unsigned short
+
+    OpenGL ES is only required to support unsigned short for element buffer
+    values.
+
+    R_DrawElements() firstIndex argument was glIndex_t which caused element
+    indexes to wrap around to 0 when glIndex_t is an unsigned short.
+    (glIndex_t is an index into the vertexes buffer, not element buffer.)
+    Change it to 'int' like tess.firstIndex which is passed to
+    R_DrawElements().
+
+    World VAO cache buffer size allowed storing more vertexes than unsigned
+    short glIndex_t could reference. This resulted in the vertex indexes in
+    the element buffer wrapping around to 0.
+
+2018-07-20-09
+    OpenGL2: Misc fixes and cleanup
+
+    Fix two constants in GLSL shaders. Remove f suffix from float and fix
+    int to float assignment. They were causing shader compile errors in
+    OpenGL ES 2 context.
+
+    Remove disabling clip plane. Clip plane is unused and never enabled in
+    the opengl2 renderer. Remove disabling it to avoid causing a GL error
+    when using OpenGL 3.2 core profile or OpenGL ES.
+
+    Make VAO cache vertex stride be size of srfVert_t since that is what
+    is uploaded to the GPU. No behavior change. There is a disabled debug
+    id in srfVert_t though which if enabled changes srfVert_t size.
+
+2018-07-27-01
+    Fix IQM root joint backlerp when joint number is more than 0
+
+    Backlerp for root joint (joint with no parent) was always applied to
+    joint 0. This is an issue when a model has multiple root joints.
+
+2018-07-27-02 (skip)
+    Improve IQM loading
+
+    - Only allocate memory for vertex arrays that are present in the IQM
+    file and are actually used (may not have colors or blend index/weights,
+    don't load tangents in opengl1). (Colors is fixed to next commit.)
+    - Explicitly handle loading IQM files without meshes (bones only).
+    - Better IQM validation. Header data offset 0 mean data is not present
+    in file. Check if required vertex arrays are present.
+
+    This involved a lot of white space changes and moving code around.
+
+2018-07-27-03 (skip)
+    Improve IQM CPU vertex skinning performance
+
+    Only calculate vertex blend matrix for each unique bone indexes/weights
+    combination once per-surface instead of recalculating for each vertex.
+    For best performance the model surfaces needs to use few vertex bone
+    indexes and weights combinations.
+
+    Unroll loops so GCC better optimizes them.
+
+    In my tests drawing animated IQM may take 50% as long in opengl1 and
+    70% as long in opengl2. It will vary by model though and might not
+    help much at all.
+
+    Made unanimated IQM models skip matrix math altogether.
+
+2018-07-27-04 (skip)
+    OpenGL2: Add GPU vertex skinning for IQM models
+
+    Using GPU vertex skinning is significantly faster than CPU vertex
+    skinning. Especially since OpenGL2 has to run R_VaoPackNormal() and
+    R_VaoPackTangent() each vertex each frame which causes CPU vertex
+    skinning to be significantly slower than OpenGL1 renderer.
+
+2018-07-31-01 (skip)
+    Fix axis returned by IQM's LerpTag
+
+    The axis returned for IQM tag was the animation's joint rotation without
+    the base frame joint rotation. It only worked correct for models that
+    did not rotate the base frame joints.
+
+2018-08-02-01 (skip)
+    Calculate bounds for unanimated IQM models
+
+    Bounds are optional for animated IQM models but are not possible to
+    include with unanimated models (seems intended for use with separate
+    model containing animations and bounds). Calculating bounds for
+    unanimated IQM models fixes culling and head model on HUD which
+    calculates position from model bounds.
+
+2018-08-28-01 (skip)
+    Fix loading favorites as initial source in server browser
+
+    When I added UIAS_GLOBAL0 in 2017 I missed changing ui_browserMaster
+    range clamp from 6 to 7.
+
+    Reported by cdev-tux.
+
+2018-09-12-01 (skip)
+    Improve finding obelisk entitynum for bot AI
+
+    BotSetEntityNumForGoal() was checking all entities that are not
+    team_redobelisk (which is the obelisk visual entity) to find the
+    untitled obelisk collision entity. This may fail in rare cases where
+    there is an another entity within 10 units of the obelisk origin.
+    Failing to find the correct entity may cause bots to not attack the
+    obelisk.
+
+    Instead add BotSetEntityNumForGoalWithActivator() for looking for the
+    obelisk collision entity by activator classname (team_redobelisk) which
+    should be less likely to find the wrong entity.
+
+    This doesn't affect official Team Arena maps (unknown if it affects any
+    others).
+
+    Reversed strcmp check was reported by Thomas Köppe.
+
+2018-09-13-01 (skip)
+    Fix SDL audio playback with surround sound
+
+    If user has surround sound enabled, ioq3 would not play any sound.
+    Fix painting sound buffer for 4/5.1 audio channels. Extra channels
+    currently play no audio.
+
+2018-09-15-01 (skip)
+    Fix predicting entity origin on rotating mover
+
+    Based on G_TryPushingEntity() in code/game/g_mover.c.
+
+2018-09-30-01 (skip) Allow binds to use hex values for all key codes
+
+2018-09-30-02 (skip)
+    Disable pulseaudio capture regardless of SDL version
+
+    SDL changed version to 2.0.9 but the pulseaudio capture bug isn't fixed
+    yet. Remove my version check.
+
+2018-10-01-01 (skip)
+    Fix SDL audio playback with 16-bit stereo sound
+
+    My commit last month "Fix SDL audio playback with surround sound" broke
+    16-bit stereo sound. S_TransferStereo16() still assumed that dma.samples
+    was a power of two. I also cleaned up code related to the previously
+    mentioned commit.
+
+2018-10-01-02 (skip)
+    Make s_info command display channels instead of stereo
+
+    channels-1 was displayed as '# stereo', affectively a boolean for
+    mono or stereo. However '3 stereo' for quad surround sound doesn't
+    make sense.
+
+2018-10-01-03 (skip)
+    Don't use host pkg-config when cross-compiling
+
+    Fix cross-compiling using mingw-w64 on Ubuntu 18.04.
+
+    pkg-config --cflags libcurl is now pulling in a Linux include directory
+    which breaks compiling.
+
+2018-10-17-01 (skip)
+    Make Team Arena prevTeamMember command loop around player list
+
+    Team Arena HUD's team member info box can be cycled through using
+    nextTeamMember and prevTeamMember commands. nextTeamMember command loops
+    around when end of list is reached but prevTeamMember command got stuck
+    at last entry in list (team overview).

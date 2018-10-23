@@ -38,6 +38,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../renderercommon/qgl.h"
 #include "../renderercommon/iqm.h"
 
+#define GLE(ret, name, ...) extern name##proc * qgl##name;
+QGL_1_1_PROCS;
+QGL_1_1_FIXED_FUNCTION_PROCS;
+QGL_DESKTOP_1_1_PROCS;
+QGL_DESKTOP_1_1_FIXED_FUNCTION_PROCS;
+QGL_3_0_PROCS;
+#undef GLE
+
 #define fcheckgl() do { GLenum err; err = qglGetError(); if (err) ri.Error(ERR_FATAL, "^1opengl error 0x%x  file:'%s'  line:%d", err, __FILE__, __LINE__); } while (0);
 
 //#define fcheckgl() do { GLenum err; err = qglGetError(); if (err) ri.Printf(PRINT_ALL, "^1opengl error 0x%x  file:'%s'  line:%d\n", err, __FILE__, __LINE__); *(int *)0 = 0x666666; } while(0);
