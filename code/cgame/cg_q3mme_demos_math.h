@@ -225,7 +225,7 @@ extern void AnglesNormalize180( vec3_t angles);
 
 //qboolean BoxTraceImpact(const vec3_t start, const vec3_t forward, const vec3_t container, vec3_t result );
 
-//void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up );
+void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up );
 
 float dsplineCalc(float x, vec3_t dx, vec3_t dy, float*deriv );
 

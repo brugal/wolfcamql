@@ -50,7 +50,7 @@ GetPerpendicularViewVector
   Used to find an "up" vector for drawing a sprite so that it always faces the view as best as possible
 =================
 */
-static void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up )
+void GetPerpendicularViewVector( const vec3_t point, const vec3_t p1, const vec3_t p2, vec3_t up )
 {
 	vec3_t	v1, v2;
 

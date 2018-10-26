@@ -3163,7 +3163,6 @@ extern vmCvar_t cg_drawWarmupStringAlpha;
 extern vmCvar_t cg_drawWarmupStringWideScreen;
 
 extern vmCvar_t cg_ambientSounds;
-extern vmCvar_t cg_weather;
 
 extern vmCvar_t cg_interpolateMissiles;
 extern vmCvar_t wolfcam_hoverTime;
@@ -3475,6 +3474,8 @@ extern vmCvar_t cg_cameraDefaultOriginType;
 extern vmCvar_t cg_cameraDebugPath;
 extern vmCvar_t cg_cameraSmoothFactor;
 extern vmCvar_t cg_q3mmeCameraSmoothPos;
+
+extern vmCvar_t cg_q3mmeDofMarker;
 
 extern vmCvar_t cg_flightTrail;
 extern vmCvar_t cg_hasteTrail;

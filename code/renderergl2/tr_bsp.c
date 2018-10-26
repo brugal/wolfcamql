@@ -699,6 +699,43 @@ static shader_t *ShaderForShaderNum( int shaderNum, int lightmapNum ) {
 	return shader;
 }
 
+static void MarkAsMapShader (shader_t *shader)
+{
+	static int ignoreCount = -1;
+	int i;
+
+	if (ignoreCount == -1) {
+		ignoreCount = 0;
+
+		while (1) {
+			if (!ri.Cvar_FindVar(va("r_singleShaderIgnore%d", ignoreCount + 1))) {
+				break;
+			}
+
+			ignoreCount++;
+		}
+	}
+
+	//FIXME tr.defaultShader
+
+	// ignore weather shaders and weather shaders replaced with wc/empty (r_weather)
+	if (strcmp(shader->name, "textures/sfx/rain") == 0  ||  strcmp(shader->name, "textures/proto2/snow01") == 0  ||  strcmp(shader->name, "gfx/misc/snow") == 0  ||  strcmp(shader->name, "wc/empty") == 0) {
+		shader->mapShader = qfalse;
+	} else {
+		shader->mapShader = qtrue;
+	}
+
+	for (i = 0;  i < ignoreCount;  i++) {
+		cvar_t *cv;
+
+		cv = ri.Cvar_Get(va("r_singleShaderIgnore%d", i + 1), "", 0);
+
+		if (strcmp(shader->name, cv->string) == 0) {
+			shader->mapShader = qfalse;
+		}
+	}
+}
+
 void LoadDrawVertToSrfVert(srfVert_t *s, drawVert_t *d, int realLightmapNum, float hdrVertColors[3], vec3_t *bounds)
 {
 	vec4_t v;
@@ -779,7 +816,7 @@ static void ParseFace( dsurface_t *ds, drawVert_t *verts, float *hdrVertColors, 
 
 	// get shader value
 	surf->shader = ShaderForShaderNum( ds->shaderNum, FatLightmap(realLightmapNum) );
-	surf->shader->mapShader = qtrue;
+	MarkAsMapShader(surf->shader);
 
 	numVerts = LittleLong(ds->numVerts);
 	if (numVerts > MAX_FACE_POINTS) {
@@ -885,7 +922,7 @@ static void ParseMesh ( dsurface_t *ds, drawVert_t *verts, float *hdrVertColors,
 
 	// get shader value
 	surf->shader = ShaderForShaderNum( ds->shaderNum, FatLightmap(realLightmapNum) );
-	surf->shader->mapShader = qtrue;
+	MarkAsMapShader(surf->shader);
 
 	// we may have a nodraw surface, because they might still need to
 	// be around for movement clipping
@@ -1003,7 +1040,7 @@ static void ParseTriSurf( dsurface_t *ds, drawVert_t *verts, float *hdrVertColor
 
 	// get shader
 	surf->shader = ShaderForShaderNum( ds->shaderNum, LIGHTMAP_BY_VERTEX );
-	surf->shader->mapShader = qtrue;
+	MarkAsMapShader(surf->shader);
 
 	numVerts = LittleLong(ds->numVerts);
 	numIndexes = LittleLong(ds->numIndexes);
@@ -1084,7 +1121,7 @@ static void ParseFlare( dsurface_t *ds, drawVert_t *verts, msurface_t *surf, int
 
 	// get shader
 	surf->shader = ShaderForShaderNum( ds->shaderNum, LIGHTMAP_BY_VERTEX );
-	surf->shader->mapShader = qtrue;
+	MarkAsMapShader(surf->shader);
 
 	//flare = ri.Hunk_Alloc( sizeof( *flare ), h_low );
 	flare = (void *)surf->data;

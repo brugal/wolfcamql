@@ -3370,17 +3370,17 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 	//
 	shaderText = NULL;
 
-	if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/sfx/rain")) {  //FIXME not here
+	if (!r_weather->integer  &&  !strcmp(strippedName, "textures/sfx/rain")) {  //FIXME not here
 		//FIXME snow qzctf8
-		//} else if (!ri.Cvar_VariableIntegerValue("cg_weather")  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snowtiles"))) {  //FIXME not here
+		//} else if (!r_weather->integer  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snowtiles"))) {  //FIXME not here
 		//ri.Printf(PRINT_ALL, "skipping rain texture\n");
 		//ri.Printf(PRINT_ALL, "skipping %s\n", strippedName);
 		return R_FindShader("wc/empty", 0, 0);
 		//FIXME remap shader
-	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/proto2/snow01")) {  //FIXME not here
+	} else if (!r_weather->integer  &&  !strcmp(strippedName, "textures/proto2/snow01")) {  //FIXME not here
 		//ri.Printf(PRINT_ALL, "^4skipping snow\n");
 		return R_FindShader("wc/empty", 0, 0);
-	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "gfx/misc/snow")) {
+	} else if (!r_weather->integer  &&  !strcmp(strippedName, "gfx/misc/snow")) {
 		return R_FindShader("wc/empty", 0, 0);
 	} else {
 		shaderText = FindShaderInShaderText( strippedName );

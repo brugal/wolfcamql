@@ -2783,18 +2783,19 @@ shader_t *R_FindShader( const char *name, int lightmapIndex, qboolean mipRawImag
 		// want to avoid having to copy the shader file
 		// I don't think it's used, so just ignore it regardless of
 		// cl_useq3gibs setting
-		//} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snow_melting"))) {  //FIXME not here
-	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/sfx/rain")) {  //FIXME not here
+
+	//} else if (!r_weather->integer  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snow_melting"))) {  //FIXME not here
+	} else if (!r_weather->integer  &&  !strcmp(strippedName, "textures/sfx/rain")) {  //FIXME not here
 		//FIXME snow qzctf8
-		//} else if (!ri.Cvar_VariableIntegerValue("cg_weather")  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snowtiles"))) {  //FIXME not here
+		//} else if (!r_weather->integer  &&  (!strcmp(strippedName, "textures/sfx/rain")  ||  !strcmp(strippedName, "textures/ql/snowtiles"))) {  //FIXME not here
 		//ri.Printf(PRINT_ALL, "skipping rain texture\n");
 		//ri.Printf(PRINT_ALL, "skipping %s\n", strippedName);
 		return R_FindShader("wc/empty", 0, 0);
 		//FIXME remap shader
-	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "textures/proto2/snow01")) {  //FIXME not here
+	} else if (!r_weather->integer  &&  !strcmp(strippedName, "textures/proto2/snow01")) {  //FIXME not here
 		//ri.Printf(PRINT_ALL, "^4skipping snow\n");
 		return R_FindShader("wc/empty", 0, 0);
-	} else if (ri.Cvar_FindVar("cg_weather")  && !ri.Cvar_VariableIntegerValue("cg_weather")  &&  !strcmp(strippedName, "gfx/misc/snow")) {
+	} else if (!r_weather->integer  &&  !strcmp(strippedName, "gfx/misc/snow")) {
 		return R_FindShader("wc/empty", 0, 0);
 	} else {
 		shaderText = FindShaderInShaderText( strippedName );

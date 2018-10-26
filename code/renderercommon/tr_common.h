@@ -124,6 +124,7 @@ extern cvar_t *r_defaultSystemFontFallbacks;
 extern cvar_t *r_defaultUnifontFallbacks;
 
 extern cvar_t *r_screenMapTextureSize;
+extern cvar_t *r_weather;
 
 qboolean	R_GetModeInfo( int *width, int *height, float *windowAspect, int mode );
 

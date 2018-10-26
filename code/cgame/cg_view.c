@@ -5942,11 +5942,6 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		lastWarmupCount = cg.warmupCount;
 	}
 
-	// actually issue the rendering calls
-	if (draw) {
-		CG_DrawActive( stereoView );
-	}
-
 	// q3mme dof
 
 	demo.viewFocus = 0;
@@ -5995,6 +5990,11 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	trap_R_UpdateDof(demo.viewFocus, demo.viewRadius);
 
+	//FIXME not here?
+	if (!cg.videoRecording  &&  cg_q3mmeDofMarker.integer) {
+		CG_Q3mmeDofDraw(demo.play.time, demo.play.fraction);
+	}
+
 	if (SC_Cvar_Get_Int("debug_mme_dof")) {
 		static int lastTime = 0;
 		int t;
@@ -6006,6 +6006,10 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		}
 	}
 
+	// actually issue the rendering calls
+	if (draw) {
+		CG_DrawActive( stereoView );
+	}
 
 	if ( cg_stats.integer ) {
 		CG_Printf( "cg.clientFrame:%i\n", cg.clientFrame );

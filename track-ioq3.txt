@@ -7333,7 +7333,7 @@ the demo.
     Backlerp for root joint (joint with no parent) was always applied to
     joint 0. This is an issue when a model has multiple root joints.
 
-2018-07-27-02 (skip)
+2018-07-27-02
     Improve IQM loading
 
     - Only allocate memory for vertex arrays that are present in the IQM
@@ -7345,7 +7345,7 @@ the demo.
 
     This involved a lot of white space changes and moving code around.
 
-2018-07-27-03 (skip)
+2018-07-27-03
     Improve IQM CPU vertex skinning performance
 
     Only calculate vertex blend matrix for each unique bone indexes/weights

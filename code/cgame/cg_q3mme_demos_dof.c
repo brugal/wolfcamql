@@ -194,7 +194,6 @@ static void dofInterpolate( int time, float timeFraction, float *focus, float *r
 	VectorTimeSpline( lerp, times, (float *)radiuses, radius,1 );
 }
 
-#if 0  // wolfcamql unused
 static void dofDrawVerticalLine(vec3_t centre, vec3_t axis[3], float scale, float focus, vec4_t color) {
 	vec3_t start, end, newCentre, up, middle;
 	polyVert_t verts[4];
@@ -213,7 +212,7 @@ static void dofDrawVerticalLine(vec3_t centre, vec3_t axis[3], float scale, floa
 	VectorMA( start, -scale, up, verts[1].xyz);
 	VectorMA( end, -scale, up, verts[2].xyz);
 	VectorMA( end, scale, up, verts[3].xyz);
-	trap_R_AddPolyToScene( demo.media.additiveWhiteShader, 4, verts );
+	trap_R_AddPolyToScene( cgs.media.mme_additiveWhiteShader, 4, verts, qfalse );
 }
 static void dofDrawHorizontalLine(vec3_t centre, vec3_t axis[3], float scale, float focus, vec4_t color) {
 	vec3_t start, end, newCentre, up, middle;
@@ -233,7 +232,7 @@ static void dofDrawHorizontalLine(vec3_t centre, vec3_t axis[3], float scale, fl
 	VectorMA( start, -scale, up, verts[1].xyz);
 	VectorMA( end, -scale, up, verts[2].xyz);
 	VectorMA( end, scale, up, verts[3].xyz);
-	trap_R_AddPolyToScene( demo.media.additiveWhiteShader, 4, verts );
+	trap_R_AddPolyToScene( cgs.media.mme_additiveWhiteShader, 4, verts, qfalse );
 }
 
 qboolean dofWorldCoordToScreenCoordFloat(vec3_t worldCoord, float *x, float *y) {
@@ -320,7 +319,6 @@ static void dofDrawPlane(vec3_t origin, vec3_t angles, float focus, float radius
 		dofDrawHorizontalLine(newCentre, axis, radius, focus, colorRed);
 	}
 }
-#endif
 
 void CG_Q3mmeDofUpdate( int time, float timeFraction ) {
 	if (demo.dof.locked && demo.dof.points ) {
@@ -328,9 +326,8 @@ void CG_Q3mmeDofUpdate( int time, float timeFraction ) {
 	}
 }
 
-#if 0  // wolfcamql unused
-void dofDraw( int time, float timeFraction ) {
-	centity_t *targetCent;
+void CG_Q3mmeDofDraw( int time, float timeFraction ) {
+	//centity_t *targetCent;
 	float focus, radius;
 	if (demo.dof.target >= 0 && demo.dof.focus < 0.001f)
 		return;
@@ -342,7 +339,11 @@ void dofDraw( int time, float timeFraction ) {
 		focus = demo.dof.focus;
 		radius = demo.dof.radius;
 	}
-	dofDrawPlane(demo.viewOrigin, demo.viewAngles, focus, radius);
+	//dofDrawPlane(demo.viewOrigin, demo.viewAngles, focus, radius);
+	//FIXME set demo.viewOrigin and demo.viewAngles in cg_view.c
+	dofDrawPlane(cg.refdef.vieworg, cg.refdefViewAngles, focus, radius);
+
+#if 0  //FIXME
 	/* Draw a box around an optional target */
 	targetCent = demoTargetEntity( demo.dof.target );
 	if (targetCent) {
@@ -350,8 +351,10 @@ void dofDraw( int time, float timeFraction ) {
 		demoCentityBoxSize( targetCent, container );
 		demoDrawBox( targetCent->lerpOrigin, container, colorWhite );
 	}
+#endif
 }
 
+#if 0  // wolfcamql unused
 void dofMove(void) {
 	float *focus, *radius;
 	demoDofPoint_t *point;
@@ -649,5 +652,6 @@ void CG_Q3mmeDemoDofCommand_f(void) {
 		Com_Printf("dof radius (a)0, Directly control radius, optional a before number to add to current value.\n" );
 		Com_Printf("dof target, Clear/Set the target currently being focused at.\n" );
 		Com_Printf("dof list, print dof point list.\n");
+		Com_Printf("demo info, print current dof point information.\n");
 	}
 }

@@ -2251,7 +2251,6 @@ C:\Share\wc\dev>
     r_ignorehwgamma
 
 * opengl2:  r_darknessThresshold and hdr lightmaps
-* cg_weather optimize cvar lookup
 * opengl2:  r_shownormals 2 without wallhack effect
 * opengl2:  pass flag indicating that camera positions have changed so buffers don't have to be updated every frame
 * cg_demozoom and freespec is still zooming  CA-6plus-2017_11_01-17_18_12.dm_91
@@ -2461,9 +2460,9 @@ No background file.
 * cg_autoFontScalingThreshold 300 leads to max images error
 * screenmap grab after anaglyph mode 19 split video will capture hud
 * CG_1STPLACE_PLYR_MODEL doesn't render anything if client info isn't valid
-* r_singleshader and weather effects : tom
 * r_singleshader and transparent textures :  elder shader on top of fog
 * GL_TEXTURE0_ARB  renderer2
+* r_singleShader marking shader as map shader and tr.defaultShader
 
 
 ----

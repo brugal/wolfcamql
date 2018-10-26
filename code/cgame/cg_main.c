@@ -796,7 +796,6 @@ vmCvar_t cg_drawWarmupStringAlpha;
 vmCvar_t cg_drawWarmupStringWideScreen;
 
 vmCvar_t cg_ambientSounds;
-vmCvar_t cg_weather;
 
 vmCvar_t wolfcam_hoverTime;
 vmCvar_t wolfcam_switchMode;
@@ -1103,6 +1102,8 @@ vmCvar_t cg_cameraAddUsePreviousValues;
 vmCvar_t cg_cameraDebugPath;
 vmCvar_t cg_cameraSmoothFactor;
 vmCvar_t cg_q3mmeCameraSmoothPos;
+
+vmCvar_t cg_q3mmeDofMarker;
 
 vmCvar_t cg_flightTrail;
 vmCvar_t cg_hasteTrail;
@@ -1947,7 +1948,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_drawWarmupStringWideScreen), "2", CVAR_ARCHIVE },
 
 	{ &cg_ambientSounds, "cg_ambientSounds", "2", CVAR_ARCHIVE },
-	{ &cg_weather, "cg_weather", "1", CVAR_ARCHIVE },
+
 	{ &wolfcam_hoverTime, "wolfcam_hoverTime", "2000", CVAR_ARCHIVE },
 	{ &wolfcam_switchMode, "wolfcam_switchMode", "0", CVAR_ARCHIVE },
 	//{ &cg_fragForwardStyle, "cg_fragForwardStyle", "0", CVAR_ARCHIVE },
@@ -2160,7 +2161,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCameraPointInfoStyle, "cg_drawCameraPointInfoStyle", "0", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoFont, "cg_drawCameraPointInfoFont", "", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoPointSize, "cg_drawCameraPointInfoPointSize", "24", CVAR_ARCHIVE },
-	{ &cg_drawCameraPointInfoScale, "cg_drawCameraPointInfoScale", "0.25", CVAR_ARCHIVE },
+	{ &cg_drawCameraPointInfoScale, "cg_drawCameraPointInfoScale", "0.20", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoColor, "cg_drawCameraPointInfoColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoSelectedColor, "cg_drawCameraPointInfoSelectedColor", "0xff5a5a", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoAlpha, "cg_drawCameraPointInfoAlpha", "255", CVAR_ARCHIVE },
@@ -2267,6 +2268,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_cameraDebugPath, "cg_cameraDebugPath", "0", CVAR_ARCHIVE },
 	{ &cg_cameraSmoothFactor, "cg_cameraSmoothFactor", "1.5", CVAR_ARCHIVE },
 	{ cvp(cg_q3mmeCameraSmoothPos), "0", CVAR_ARCHIVE },
+
+	{ cvp(cg_q3mmeDofMarker), "0", CVAR_ARCHIVE },
 
 	{ &cg_flightTrail, "cg_flightTrail", "1", CVAR_ARCHIVE },
 	{ &cg_hasteTrail, "cg_hasteTrail", "1", CVAR_ARCHIVE },

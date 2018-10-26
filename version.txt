@@ -1,4 +1,4 @@
-12.1test4
+12.1test5
 
 * menus work even if window doesn't have mouse grab
 * bug fix:  info screen calculated string widths incorrectly
@@ -84,6 +84,7 @@
 * q3mme dof:  mme_dofFrames and mme_dofRadius
 
   - added mme_dofVisualize in order to see final rendering
+  - added cg_q3mmeDofMarker to enable/disable ingame dof marker
   - added /saveq3mmedof and /loadq3mmedof
   - added /dof [list|info]
   - '/dof target' changed to accept integer value (-1 clears target)
@@ -108,6 +109,12 @@
 * bug fix:  CG_ROUND, CG_TEAM_PLYR_COUNT, CG_ENEMY_PLYR_COUNT, CG_RACE_STATUS, and CG_RACE_TIMES rendering didn't check for valid game types
 * bug fix:  domination control point count and red/blue player alive count not set when demo playback starts or video is reset
 * bug fix:  opengl2 renderer 'animMap' limit 8 instead of 2048 (em92 Eugene Molotov)
+* ioquake3 patches
+* bug fix:  r_singleShader was being used for weather shaders
+* r_singleShaderIgnore[num] option to exclude shaders from having r_singlShader applied with it
+* bug fix:  cg_weather wasn't marked as a latched cvar
+* cg_weather renamed to r_weather
+
 
 ---------------------------------
 12.0  2018-06-21

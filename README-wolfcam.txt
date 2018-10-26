@@ -964,6 +964,7 @@ Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_au
 * q3mme dof:  mme_dofFrames and mme_dofRadius
 
    - added mme_dofVisualize in order to see final rendering
+   - added cg_q3mmeDofMarker to enable/disable ingame dof marker
    - added /saveq3mmedof and /loadq3mmedof
    - added /dof [list|info]
    - '/dof target' changed to accept integer value (-1 clears target)
@@ -1358,7 +1359,13 @@ Available tokens:
 
 ----------------------------------------------------------
 
-* cg_weather 0  to eliminate rain and snow
+* r_weather 0  to eliminate rain and snow
+
+   This is a hack which checks for the following weather shaders and replaces them with "wc/empty".
+
+        textures/sfx/rain
+        textures/proto2/snow01
+        gfx/misc/snow
 
 * cg_scoreBoardWhenDead  enable/disable automatically showing scoreboard when demo taker dies
 * cg_scoreBoardAtIntermission  Draw scoreboard at the end of the game.
@@ -1962,6 +1969,11 @@ r_singleShader options and r_singleShaderName  to replace all the map textures
 
       You can edit or replace wolfcam-ql/gfx/wc/custom.tga to choose the color for wc/map/custom.
 
+
+  Weather shaders (see r_weather description) aren't replaced by r_singleShader.
+  Additional shaders can be ignored with respect to r_singleShader by setting r_singleShaderIgnore[num].  This will check if r_singleShaderIgnore1 exists and keeps incrementing the 'num' portion while a cvar with that name is found to exist.  Ex:
+
+     /set r_singleShaderIgnore1 "textures/sfx/rain"
 
 --------------------------------------
 

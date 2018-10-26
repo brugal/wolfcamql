@@ -195,7 +195,7 @@ void CG_AddParticleToScene (cparticle_t *p, vec3_t org, float alpha)
 	vec3_t		rright2, rup2;
 
 #if 0
-	if (!cg_weather.integer  &&  (p->type == P_WEATHER  ||  p->type == P_WEATHER_TURBULENT  ||  p->type == P_WEATHER_FLURRY)) {
+	if (!r_weather.integer  &&  (p->type == P_WEATHER  ||  p->type == P_WEATHER_TURBULENT  ||  p->type == P_WEATHER_FLURRY)) {
 		return;
 	}
 #endif
