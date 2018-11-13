@@ -7361,7 +7361,7 @@ the demo.
 
     Made unanimated IQM models skip matrix math altogether.
 
-2018-07-27-04 (skip)
+2018-07-27-04
     OpenGL2: Add GPU vertex skinning for IQM models
 
     Using GPU vertex skinning is significantly faster than CPU vertex
@@ -7369,14 +7369,14 @@ the demo.
     R_VaoPackTangent() each vertex each frame which causes CPU vertex
     skinning to be significantly slower than OpenGL1 renderer.
 
-2018-07-31-01 (skip)
+2018-07-31-01
     Fix axis returned by IQM's LerpTag
 
     The axis returned for IQM tag was the animation's joint rotation without
     the base frame joint rotation. It only worked correct for models that
     did not rotate the base frame joints.
 
-2018-08-02-01 (skip)
+2018-08-02-01
     Calculate bounds for unanimated IQM models
 
     Bounds are optional for animated IQM models but are not possible to
@@ -7385,7 +7385,7 @@ the demo.
     unanimated IQM models fixes culling and head model on HUD which
     calculates position from model bounds.
 
-2018-08-28-01 (skip)
+2018-08-28-01
     Fix loading favorites as initial source in server browser
 
     When I added UIAS_GLOBAL0 in 2017 I missed changing ui_browserMaster
@@ -7393,7 +7393,7 @@ the demo.
 
     Reported by cdev-tux.
 
-2018-09-12-01 (skip)
+2018-09-12-01
     Improve finding obelisk entitynum for bot AI
 
     BotSetEntityNumForGoal() was checking all entities that are not
@@ -7412,27 +7412,27 @@ the demo.
 
     Reversed strcmp check was reported by Thomas Köppe.
 
-2018-09-13-01 (skip)
+2018-09-13-01
     Fix SDL audio playback with surround sound
 
     If user has surround sound enabled, ioq3 would not play any sound.
     Fix painting sound buffer for 4/5.1 audio channels. Extra channels
     currently play no audio.
 
-2018-09-15-01 (skip)
+2018-09-15-01
     Fix predicting entity origin on rotating mover
 
     Based on G_TryPushingEntity() in code/game/g_mover.c.
 
-2018-09-30-01 (skip) Allow binds to use hex values for all key codes
+2018-09-30-01 Allow binds to use hex values for all key codes
 
-2018-09-30-02 (skip)
+2018-09-30-02
     Disable pulseaudio capture regardless of SDL version
 
     SDL changed version to 2.0.9 but the pulseaudio capture bug isn't fixed
     yet. Remove my version check.
 
-2018-10-01-01 (skip)
+2018-10-01-01
     Fix SDL audio playback with 16-bit stereo sound
 
     My commit last month "Fix SDL audio playback with surround sound" broke
@@ -7440,14 +7440,14 @@ the demo.
     was a power of two. I also cleaned up code related to the previously
     mentioned commit.
 
-2018-10-01-02 (skip)
+2018-10-01-02
     Make s_info command display channels instead of stereo
 
     channels-1 was displayed as '# stereo', affectively a boolean for
     mono or stereo. However '3 stereo' for quad surround sound doesn't
     make sense.
 
-2018-10-01-03 (skip)
+2018-10-01-03
     Don't use host pkg-config when cross-compiling
 
     Fix cross-compiling using mingw-w64 on Ubuntu 18.04.
@@ -7455,7 +7455,7 @@ the demo.
     pkg-config --cflags libcurl is now pulling in a Linux include directory
     which breaks compiling.
 
-2018-10-17-01 (skip)
+2018-10-17-01
     Make Team Arena prevTeamMember command loop around player list
 
     Team Arena HUD's team member info box can be cycled through using

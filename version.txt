@@ -1,4 +1,4 @@
-12.1test5
+12.1test6
 
 * menus work even if window doesn't have mouse grab
 * bug fix:  info screen calculated string widths incorrectly
@@ -110,10 +110,13 @@
 * bug fix:  domination control point count and red/blue player alive count not set when demo playback starts or video is reset
 * bug fix:  opengl2 renderer 'animMap' limit 8 instead of 2048 (em92 Eugene Molotov)
 * ioquake3 patches
+  - Fix SDL audio playback with surround sound
+
 * bug fix:  r_singleShader was being used for weather shaders
 * r_singleShaderIgnore[num] option to exclude shaders from having r_singlShader applied with it
 * bug fix:  cg_weather wasn't marked as a latched cvar
 * cg_weather renamed to r_weather
+* bug fix:  con_scale scaling font height incorrectly
 
 
 ---------------------------------

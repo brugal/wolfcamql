@@ -1586,6 +1586,9 @@ This reverts commit 9257327.
 
 	// for screenshots and screen width not divisible by 4
 	qglPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+	// for updating screen rectangle with width not divisible by 4
+	qglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
 /*

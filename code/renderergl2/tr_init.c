@@ -880,6 +880,13 @@ static void InitOpenGL( void )
 
 		qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &temp );
 		glConfig.numTextureUnits = temp;
+
+		// reserve 160 components for other uniforms
+		qglGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &temp );
+		glRefConfig.glslMaxAnimatedBones = Com_Clamp( 0, IQM_MAX_JOINTS, ( temp - 160 ) / 16 );
+		if ( glRefConfig.glslMaxAnimatedBones < 12 ) {
+			glRefConfig.glslMaxAnimatedBones = 0;
+		}
 	}
 
 	//InitFrameBufferAndRenderBuffer();
@@ -1643,6 +1650,9 @@ void GL_SetDefaultState( void )
 
 	// for screenshots and screen width not divisible by 4
 	qglPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+	// for updating screen rectangle with width not divisible by 4
+	qglPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
 /*

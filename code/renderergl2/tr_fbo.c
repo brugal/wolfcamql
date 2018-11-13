@@ -647,12 +647,16 @@ void FBO_FastBlit(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, int bu
 {
 	ivec4_t srcBoxFinal, dstBoxFinal;
 	GLuint srcFb, dstFb;
+	GLuint oldDrawFramebuffer, oldReadFramebuffer;
 
 	if (!glRefConfig.framebufferBlit)
 	{
 		FBO_Blit(src, srcBox, NULL, dst, dstBox, NULL, NULL, 0);
 		return;
 	}
+
+	oldDrawFramebuffer = GL_CurrentDrawFramebuffer();
+	oldReadFramebuffer = GL_CurrentReadFramebuffer();
 
 	srcFb = src ? src->frameBuffer : 0;
 	dstFb = dst ? dst->frameBuffer : 0;
@@ -688,10 +692,11 @@ void FBO_FastBlit(FBO_t *src, ivec4_t srcBox, FBO_t *dst, ivec4_t dstBox, int bu
 
 	GL_BindFramebuffer(GL_READ_FRAMEBUFFER, srcFb);
 	GL_BindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFb);
+
 	qglBlitFramebuffer(srcBoxFinal[0], srcBoxFinal[1], srcBoxFinal[2], srcBoxFinal[3],
 	                      dstBoxFinal[0], dstBoxFinal[1], dstBoxFinal[2], dstBoxFinal[3],
 						  buffers, filter);
 
-	GL_BindFramebuffer(GL_FRAMEBUFFER, 0);
-	glState.currentFBO = NULL;
+	GL_BindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFramebuffer);
+	GL_BindFramebuffer(GL_DRAW_FRAMEBUFFER, oldDrawFramebuffer);
 }

@@ -663,6 +663,9 @@ static void ProjectDlightTexture_scalar( void ) {
 		backEnd.pc.c_totalIndexes += numIndexes;
 		backEnd.pc.c_dlightIndexes += numIndexes;
 	}
+
+	// 2018-11-09 home desktop: 'Quadro FX 380 LP/PCIe/SSE2' with mme dof multipass flickers (dark fading color) if this isn't set
+	qglColor3f(1, 1, 1);
 }
 
 static void ProjectDlightTexture( void ) {

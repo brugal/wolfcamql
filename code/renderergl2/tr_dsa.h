@@ -76,5 +76,7 @@ GLvoid APIENTRY GLDSA_NamedFramebufferTexture2DEXT(GLuint framebuffer,
 GLvoid APIENTRY GLDSA_NamedFramebufferRenderbufferEXT(GLuint framebuffer,
 	GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 
+GLuint GL_CurrentDrawFramebuffer (void);
+GLuint GL_CurrentReadFramebuffer (void);
 
 #endif

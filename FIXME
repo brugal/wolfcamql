@@ -2463,6 +2463,21 @@ No background file.
 * r_singleshader and transparent textures :  elder shader on top of fog
 * GL_TEXTURE0_ARB  renderer2
 * r_singleShader marking shader as map shader and tr.defaultShader
+*
+  flicker with opengl1 and r_dynamiclight 1  -- home desktop
+      -- kitten:  screen corrupted
+
+* opengl2 q3mme dof mme_dofVisualize 1 r_usefbo 1 r_enablepostprocess 0
+   cg.frametime > 200  (292)  oldSnapNum 48354  snapNum 48365
+^3(warmup) ^74:20 ^48PLAY ^7evil^7: ^2glhf
+]\mme_dofVisualize 1
+^1Com_Error(): RE_StretchRawRectScreen() couldn't get p_gammaRecip----- Client Shutdown (Client fatal crashed: RE_StretchRawRectScreen() couldn't get p_gammaRecip) -----
+disconnect
+
+* /video png : wrong colors (bluish)  (using r_fbo with customwidth 1369, mme_blurframes 40)  /video avi has correct colors
+* MAX_RECTANGLE_TEXTURE_SIZE_ARB  check
+* R_InitNextFrameNoCommands  doesn't need to be called for q3mme dof blur
+* single render list change:  check usages of dynamic lights and other r_num*
 
 
 ----

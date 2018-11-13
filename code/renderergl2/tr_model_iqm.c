@@ -58,11 +58,6 @@ static void Matrix34Multiply( float *a, float *b, float *out ) {
 	out[10] = a[8] * b[2] + a[9] * b[6] + a[10] * b[10];
 	out[11] = a[8] * b[3] + a[9] * b[7] + a[10] * b[11] + a[11];
 }
-static void Matrix34Multiply_OnlySetOrigin( float *a, float *b, float *out ) {
-	out[ 3] = a[0] * b[3] + a[1] * b[7] + a[ 2] * b[11] + a[ 3];
-	out[ 7] = a[4] * b[3] + a[5] * b[7] + a[ 6] * b[11] + a[ 7];
-	out[11] = a[8] * b[3] + a[9] * b[7] + a[10] * b[11] + a[11];
-}
 static void InterpolateMatrix( float *a, float *b, float lerp, float *mat ) {
 	float unLerp = 1.0f - lerp;
 
@@ -574,6 +569,8 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	}
 	if( header->ofs_bounds ) {
 		size += header->num_frames * 6 * sizeof(float);		// model bounds
+	} else if( header->num_meshes && header->num_frames == 0 ) {
+		size += 6 * sizeof(float);							// model bounds
 	}
 
 	mod->type = MOD_IQM;
@@ -649,6 +646,9 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 	if( header->ofs_bounds ) {
 		iqmData->bounds = (float*)dataPtr;
 		dataPtr += header->num_frames * 6 * sizeof(float);	// model bounds
+	} else if( header->num_meshes && header->num_frames == 0 ) {
+		iqmData->bounds = (float*)dataPtr;
+		dataPtr += 6 * sizeof(float);						// model bounds
 	}
 
 	if( header->num_meshes )
@@ -915,6 +915,179 @@ qboolean R_LoadIQM( model_t *mod, void *buffer, int filesize, const char *mod_na
 			bounds++;
 		}
 	}
+	else if( header->num_meshes && header->num_frames == 0 )
+	{
+		mat = iqmData->bounds;
+
+		ClearBounds( &iqmData->bounds[0], &iqmData->bounds[3] );
+		for ( i = 0 ; i < header->num_vertexes ; i++ ) {
+			AddPointToBounds( &iqmData->positions[i*3], &iqmData->bounds[0], &iqmData->bounds[3] );
+		}
+	}
+
+	// Create VAO surfaces
+	if ( iqmData->num_surfaces && iqmData->num_joints <= glRefConfig.glslMaxAnimatedBones )
+	{
+		srfVaoIQModel_t *vaoSurf;
+		srfIQModel_t *surf;
+
+		iqmData->numVaoSurfaces = iqmData->num_surfaces;
+		iqmData->vaoSurfaces = ri.Hunk_Alloc(sizeof(*iqmData->vaoSurfaces) * iqmData->numVaoSurfaces, h_low);
+
+		vaoSurf = iqmData->vaoSurfaces;
+		surf = iqmData->surfaces;
+		for (i = 0; i < iqmData->num_surfaces; i++, vaoSurf++, surf++)
+		{
+			uint32_t offset_xyz, offset_st, offset_normal, offset_tangent;
+			uint32_t offset_blendindexes, offset_blendweights, stride;
+			uint32_t dataSize, dataOfs;
+			uint8_t *data;
+			glIndex_t indexes[SHADER_MAX_INDEXES];
+			glIndex_t *ptr;
+			int *tri;
+
+			offset_xyz     = 0;
+			offset_st      = offset_xyz + sizeof(float) * 3;
+			offset_normal  = offset_st + sizeof(float) * 2;
+			offset_tangent = offset_normal + sizeof(int16_t) * 4;
+
+			if ( iqmData->num_joints )
+			{
+				offset_blendindexes = offset_tangent + sizeof(int16_t) * 4;
+				offset_blendweights = offset_blendindexes + sizeof(byte) * 4;
+
+				if ( vertexArrayFormat[IQM_BLENDWEIGHTS] == IQM_FLOAT ) {
+					stride = offset_blendweights + sizeof(float) * 4;
+				} else {
+					stride = offset_blendweights + sizeof(byte) * 4;
+				}
+			}
+			else
+			{
+				stride = offset_tangent + sizeof(int16_t) * 4;
+			}
+
+			dataSize = surf->num_vertexes * stride;
+
+			data = ri.Malloc(dataSize);
+			dataOfs = 0;
+
+			for ( j = 0; j < surf->num_vertexes; j++ )
+			{
+				int vtx = surf->first_vertex + j;
+
+				// xyz
+				memcpy(data + dataOfs, &iqmData->positions[vtx*3], sizeof(float) * 3);
+				dataOfs += sizeof(float) * 3;
+
+				// st
+				memcpy(data + dataOfs, &iqmData->texcoords[vtx*2], sizeof(float) * 2);
+				dataOfs += sizeof(float) * 2;
+
+				// normal
+				R_VaoPackNormal((int16_t*)(data + dataOfs), &iqmData->normals[vtx*3]);
+				dataOfs += sizeof(int16_t) * 4;
+
+				// tangent
+				R_VaoPackTangent((int16_t*)(data + dataOfs), &iqmData->tangents[vtx*4]);
+				dataOfs += sizeof(int16_t) * 4;
+
+				if ( iqmData->num_joints )
+				{
+					// blendindexes
+					memcpy(data + dataOfs, &blendIndexes[vtx*4], sizeof(byte) * 4);
+					dataOfs += sizeof(byte) * 4;
+
+					// blendweights
+					if ( vertexArrayFormat[IQM_BLENDWEIGHTS] == IQM_FLOAT ) {
+						memcpy(data + dataOfs, &blendWeights.f[vtx*4], sizeof(float) * 4);
+						dataOfs += sizeof(float) * 4;
+					} else {
+						memcpy(data + dataOfs, &blendWeights.b[vtx*4], sizeof(byte) * 4);
+						dataOfs += sizeof(byte) * 4;
+					}
+				}
+			}
+
+			tri = iqmData->triangles + 3 * surf->first_triangle;
+			ptr = indexes;
+
+			for( j = 0; j < surf->num_triangles; j++ ) {
+				*ptr++ = (*tri++ - surf->first_vertex);
+				*ptr++ = (*tri++ - surf->first_vertex);
+				*ptr++ = (*tri++ - surf->first_vertex);
+			}
+
+			vaoSurf->surfaceType = SF_VAO_IQM;
+			vaoSurf->iqmData = iqmData;
+			vaoSurf->iqmSurface = surf;
+			vaoSurf->numIndexes = surf->num_triangles * 3;
+			vaoSurf->numVerts = surf->num_vertexes;
+
+			vaoSurf->vao = R_CreateVao(va("staticIQMMesh_VAO '%s'", surf->name), data, dataSize, (byte *)indexes, surf->num_triangles * 3 * sizeof(indexes[0]), VAO_USAGE_STATIC);
+
+			vaoSurf->vao->attribs[ATTR_INDEX_POSITION].enabled = 1;
+			vaoSurf->vao->attribs[ATTR_INDEX_POSITION].enabled = 1;
+			vaoSurf->vao->attribs[ATTR_INDEX_TEXCOORD].enabled = 1;
+			vaoSurf->vao->attribs[ATTR_INDEX_NORMAL  ].enabled = 1;
+			vaoSurf->vao->attribs[ATTR_INDEX_TANGENT ].enabled = 1;
+
+			vaoSurf->vao->attribs[ATTR_INDEX_POSITION].count = 3;
+			vaoSurf->vao->attribs[ATTR_INDEX_TEXCOORD].count = 2;
+			vaoSurf->vao->attribs[ATTR_INDEX_NORMAL  ].count = 4;
+			vaoSurf->vao->attribs[ATTR_INDEX_TANGENT ].count = 4;
+
+			vaoSurf->vao->attribs[ATTR_INDEX_POSITION].type = GL_FLOAT;
+			vaoSurf->vao->attribs[ATTR_INDEX_TEXCOORD].type = GL_FLOAT;
+			vaoSurf->vao->attribs[ATTR_INDEX_NORMAL  ].type = GL_SHORT;
+			vaoSurf->vao->attribs[ATTR_INDEX_TANGENT ].type = GL_SHORT;
+
+			vaoSurf->vao->attribs[ATTR_INDEX_POSITION].normalized = GL_FALSE;
+			vaoSurf->vao->attribs[ATTR_INDEX_TEXCOORD].normalized = GL_FALSE;
+			vaoSurf->vao->attribs[ATTR_INDEX_NORMAL  ].normalized = GL_TRUE;
+			vaoSurf->vao->attribs[ATTR_INDEX_TANGENT ].normalized = GL_TRUE;
+
+			vaoSurf->vao->attribs[ATTR_INDEX_POSITION].offset = offset_xyz;
+			vaoSurf->vao->attribs[ATTR_INDEX_TEXCOORD].offset = offset_st;
+			vaoSurf->vao->attribs[ATTR_INDEX_NORMAL  ].offset = offset_normal;
+			vaoSurf->vao->attribs[ATTR_INDEX_TANGENT ].offset = offset_tangent;
+
+			vaoSurf->vao->attribs[ATTR_INDEX_POSITION].stride = stride;
+			vaoSurf->vao->attribs[ATTR_INDEX_TEXCOORD].stride = stride;
+			vaoSurf->vao->attribs[ATTR_INDEX_NORMAL  ].stride = stride;
+			vaoSurf->vao->attribs[ATTR_INDEX_TANGENT ].stride = stride;
+
+			if ( iqmData->num_joints )
+			{
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_INDEXES].enabled = 1;
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].enabled = 1;
+
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_INDEXES].count = 4;
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].count = 4;
+
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_INDEXES].type = GL_UNSIGNED_BYTE;
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_INDEXES].normalized = GL_FALSE;
+
+				if ( vertexArrayFormat[IQM_BLENDWEIGHTS] == IQM_FLOAT ) {
+					vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].type = GL_FLOAT;
+					vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].normalized = GL_FALSE;
+				} else {
+					vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].type = GL_UNSIGNED_BYTE;
+					vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].normalized = GL_TRUE;
+				}
+
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_INDEXES].offset = offset_blendindexes;
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].offset = offset_blendweights;
+
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_INDEXES].stride = stride;
+				vaoSurf->vao->attribs[ATTR_INDEX_BONE_WEIGHTS].stride = stride;
+			}
+
+			Vao_SetVertexPointers(vaoSurf->vao);
+
+			ri.Free(data);
+		}
+	}
 
 	return qtrue;
 }
@@ -1017,6 +1190,7 @@ Add all surfaces of this model
 void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 	iqmData_t		*data;
 	srfIQModel_t		*surface;
+	void			*drawSurf;
 	int			i, j;
 	qboolean		personalModel;
 	int			cull;
@@ -1097,6 +1271,12 @@ void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 			shader = surface->shader;
 		}
 
+		if ( data->numVaoSurfaces ) {
+			drawSurf = &data->vaoSurfaces[i];
+		} else {
+			drawSurf = surface;
+		}
+
 		// we will add shadows even if the main object isn't visible in the view
 
 		// stencil shadows can't do personal models unless I polyhedron clip
@@ -1105,7 +1285,7 @@ void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 			&& fogNum == 0
 			&& !(ent->e.renderfx & ( RF_NOSHADOW | RF_DEPTHHACK ) ) 
 			&& shader->sort == SS_OPAQUE ) {
-			R_AddDrawSurf( (void *)surface, tr.shadowShader, 0, 0, 0, 0 );
+			R_AddDrawSurf( drawSurf, tr.shadowShader, 0, 0, 0, 0 );
 		}
 
 		// projection shadows work fine with personal models
@@ -1113,11 +1293,11 @@ void R_AddIQMSurfaces( trRefEntity_t *ent ) {
 			&& fogNum == 0
 			&& (ent->e.renderfx & RF_SHADOW_PLANE )
 			&& shader->sort == SS_OPAQUE ) {
-			R_AddDrawSurf( (void *)surface, tr.projectionShadowShader, 0, 0, 0, 0 );
+			R_AddDrawSurf( drawSurf, tr.projectionShadowShader, 0, 0, 0, 0 );
 		}
 
 		if( !personalModel ) {
-			R_AddDrawSurf( (void *)surface, shader, fogNum, 0, 0, cubemapIndex );
+			R_AddDrawSurf( drawSurf, shader, fogNum, 0, 0, cubemapIndex );
 		}
 
 		surface++;
@@ -1130,18 +1310,6 @@ static void ComputePoseMats( iqmData_t *data, int frame, int oldframe,
 	float	*mat1, *mat2;
 	int	*joint = data->jointParents;
 	int	i;
-
-	if ( data->num_poses == 0 ) {
-		for( i = 0; i < data->num_joints; i++, joint++ ) {
-			if( *joint >= 0 ) {
-				Matrix34Multiply( mat + 12 * *joint,
-						  identityMatrix, mat + 12*i );
-			} else {
-				Com_Memcpy( mat + 12*i, identityMatrix, 12 * sizeof(float) );
-			}
-		}
-		return;
-	}
 
 	if ( oldframe == frame ) {
 		mat1 = data->poseMats + 12 * data->num_poses * frame;
@@ -1178,6 +1346,11 @@ static void ComputeJointMats( iqmData_t *data, int frame, int oldframe,
 	float	*mat1;
 	int	i;
 
+	if ( data->num_poses == 0 ) {
+		Com_Memcpy( mat, data->jointMats, data->num_joints * 12 * sizeof(float) );
+		return;
+	}
+
 	ComputePoseMats( data, frame, oldframe, backlerp, mat );
 
 	for( i = 0; i < data->num_joints; i++ ) {
@@ -1186,7 +1359,7 @@ static void ComputeJointMats( iqmData_t *data, int frame, int oldframe,
 
 		Com_Memcpy(outmat, mat1, sizeof(outmat));
 
-		Matrix34Multiply_OnlySetOrigin( outmat, data->jointMats + 12 * i, mat1 );
+		Matrix34Multiply( outmat, data->jointMats + 12*i, mat1 );
 	}
 }
 
@@ -1201,7 +1374,7 @@ Compute vertices for this model surface
 void RB_IQMSurfaceAnim( surfaceType_t *surface ) {
 	srfIQModel_t	*surf = (srfIQModel_t *)surface;
 	iqmData_t	*data = surf->data;
-	float		jointMats[IQM_MAX_JOINTS * 12];
+	float		poseMats[IQM_MAX_JOINTS * 12];
 	float		influenceVtxMat[SHADER_MAX_VERTEXES * 12];
 	float		influenceNrmMat[SHADER_MAX_VERTEXES * 9];
 	int		i;
@@ -1246,7 +1419,7 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface ) {
 
 	if ( data->num_poses > 0 ) {
 		// compute interpolated joint matrices
-		ComputePoseMats( data, frame, oldframe, backlerp, jointMats );
+		ComputePoseMats( data, frame, oldframe, backlerp, poseMats );
 
 		// compute vertex blend influence matricies
 		for( i = 0; i < surf->num_influences; i++ ) {
@@ -1284,32 +1457,32 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface ) {
 			} else {
 				// compute the vertex matrix by blending the up to
 				// four blend weights
-				vtxMat[0] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 0];
-				vtxMat[1] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 1];
-				vtxMat[2] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 2];
-				vtxMat[3] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 3];
-				vtxMat[4] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 4];
-				vtxMat[5] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 5];
-				vtxMat[6] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 6];
-				vtxMat[7] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 7];
-				vtxMat[8] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 8];
-				vtxMat[9] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 9];
-				vtxMat[10] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 10];
-				vtxMat[11] = blendWeights[0] * jointMats[12 * data->influenceBlendIndexes[4*influence + 0] + 11];
+				vtxMat[0] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 0];
+				vtxMat[1] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 1];
+				vtxMat[2] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 2];
+				vtxMat[3] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 3];
+				vtxMat[4] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 4];
+				vtxMat[5] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 5];
+				vtxMat[6] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 6];
+				vtxMat[7] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 7];
+				vtxMat[8] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 8];
+				vtxMat[9] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 9];
+				vtxMat[10] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 10];
+				vtxMat[11] = blendWeights[0] * poseMats[12 * data->influenceBlendIndexes[4*influence + 0] + 11];
 
 				for( j = 1; j < numWeights; j++ ) {
-					vtxMat[0] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 0];
-					vtxMat[1] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 1];
-					vtxMat[2] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 2];
-					vtxMat[3] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 3];
-					vtxMat[4] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 4];
-					vtxMat[5] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 5];
-					vtxMat[6] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 6];
-					vtxMat[7] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 7];
-					vtxMat[8] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 8];
-					vtxMat[9] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 9];
-					vtxMat[10] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 10];
-					vtxMat[11] += blendWeights[j] * jointMats[12 * data->influenceBlendIndexes[4*influence + j] + 11];
+					vtxMat[0] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 0];
+					vtxMat[1] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 1];
+					vtxMat[2] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 2];
+					vtxMat[3] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 3];
+					vtxMat[4] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 4];
+					vtxMat[5] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 5];
+					vtxMat[6] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 6];
+					vtxMat[7] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 7];
+					vtxMat[8] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 8];
+					vtxMat[9] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 9];
+					vtxMat[10] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 10];
+					vtxMat[11] += blendWeights[j] * poseMats[12 * data->influenceBlendIndexes[4*influence + j] + 11];
 				}
 			}
 
@@ -1416,6 +1589,73 @@ void RB_IQMSurfaceAnim( surfaceType_t *surface ) {
 
 	tess.numIndexes += 3 * surf->num_triangles;
 	tess.numVertexes += surf->num_vertexes;
+}
+
+/*
+=================
+RB_IQMSurfaceAnimVao
+=================
+*/
+void RB_IQMSurfaceAnimVao(srfVaoIQModel_t * surface)
+{
+	iqmData_t *data = surface->iqmData;
+
+	if (ShaderRequiresCPUDeforms(tess.shader))
+	{
+		RB_IQMSurfaceAnim((surfaceType_t*)surface->iqmSurface);
+		return;
+	}
+
+	if(!surface->vao)
+		return;
+
+	//RB_CheckVao(surface->vao);
+	RB_EndSurface();
+	RB_BeginSurface(tess.shader, tess.fogNum, tess.cubemapIndex);
+
+	R_BindVao(surface->vao);
+
+	tess.useInternalVao = qfalse;
+
+	tess.numIndexes = surface->numIndexes;
+	tess.numVertexes = surface->numVerts;
+
+	glState.boneAnimation = data->num_poses;
+
+	if ( glState.boneAnimation ) {
+		float		jointMats[IQM_MAX_JOINTS * 12];
+		int			frame = data->num_frames ? backEnd.currentEntity->e.frame % data->num_frames : 0;
+		int			oldframe = data->num_frames ? backEnd.currentEntity->e.oldframe % data->num_frames : 0;
+		float		backlerp = backEnd.currentEntity->e.backlerp;
+		int i;
+
+		// compute interpolated joint matrices
+		ComputePoseMats( surface->iqmData, frame, oldframe, backlerp, jointMats );
+
+		// convert row-major order 3x4 matrix to column-major order 4x4 matrix
+		for ( i = 0; i < data->num_poses; i++ ) {
+			glState.boneMatrix[i][0] = jointMats[i*12+0];
+			glState.boneMatrix[i][1] = jointMats[i*12+4];
+			glState.boneMatrix[i][2] = jointMats[i*12+8];
+			glState.boneMatrix[i][3] = 0.0f;
+			glState.boneMatrix[i][4] = jointMats[i*12+1];
+			glState.boneMatrix[i][5] = jointMats[i*12+5];
+			glState.boneMatrix[i][6] = jointMats[i*12+9];
+			glState.boneMatrix[i][7] = 0.0f;
+			glState.boneMatrix[i][8] = jointMats[i*12+2];
+			glState.boneMatrix[i][9] = jointMats[i*12+6];
+			glState.boneMatrix[i][10] = jointMats[i*12+10];
+			glState.boneMatrix[i][11] = 0.0f;
+			glState.boneMatrix[i][12] = jointMats[i*12+3];
+			glState.boneMatrix[i][13] = jointMats[i*12+7];
+			glState.boneMatrix[i][14] = jointMats[i*12+11];
+			glState.boneMatrix[i][15] = 1.0f;
+		}
+	}
+
+	RB_EndSurface();
+
+	glState.boneAnimation = 0;
 }
 
 int R_IQMLerpTag( orientation_t *tag, iqmData_t *data,

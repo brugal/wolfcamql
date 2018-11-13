@@ -160,113 +160,38 @@ static void SCR_DrawChar (int x, int y, float size, int ch)
 ** small chars are drawn at native screen resolution
 */
 void SCR_DrawSmallChar( int x, int y, int ch ) {
-	//int row, col;
-	//float frow, fcol;
-	//float size;
 	glyphInfo_t glyph;
 
-	//return;
-
-#if 1
-	//printf("xxx: %d 0x%x '%c'\n", ch, ch, ch);
-
-	//ch &= 255;
-
 	re.GetGlyphInfo(&cls.consoleFont, ch, &glyph);
-#endif
 
-	// not with utf8
-	/*
-	if ( ch == ' ' ) {
-		return;
-	}
-	*/
-	
 	if ( y < -SMALLCHAR_HEIGHT ) {
 		return;
 	}
 
-	/*
-	row = ch>>4;
-	col = ch&15;
-
-	frow = row*0.0625;
-	fcol = col*0.0625;
-	size = 0.0625;
-	*/
-#if 0
-	re.DrawStretchPic( x, y, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT,
-					   fcol, frow, 
-					   fcol + size, frow + size, 
-					   cls.charSetShader );
-#endif
-
-#if 1
 	re.DrawStretchPic(x, y - glyph.top, SMALLCHAR_WIDTH, /* SMALLCHAR_HEIGHT */ glyph.height < SMALLCHAR_HEIGHT ? glyph.height : SMALLCHAR_HEIGHT,
 					  glyph.s, glyph.t,
 					  glyph.s2, glyph.t2,
 					  glyph.glyph);
-#endif
 }
 
 void SCR_DrawSmallCharExt( float x, float y, float width, float height, int ch ) {
-	//int row, col;
-	//float frow, fcol;
-	//float size;
 	glyphInfo_t glyph;
+	float scale;
 
-#if 1
-	/*
-	if (ch > 128) {
-		printf("drawsmallcharext drawing glyph %d 0x%x\n", ch, ch);
-	}
-	*/
-	// testing
-	//printf("drawsmallcharext: %d\n", ch);
-	//if (ch < 0) {
-	//	Crash();
-	//}
 	re.GetGlyphInfo(&cls.consoleFont, ch, &glyph);
-#endif
-	
-	ch &= 255;
 
-	// not with utf8
-	/*
-	if ( ch == ' ' ) {
-		return;
-	}
-	*/
-	
 	if ( y < -height ) {
 		return;
 	}
 
-	/*
-	
-	row = ch>>4;
-	col = ch&15;
+	scale = height / SMALLCHAR_HEIGHT;
 
-	frow = row*0.0625;
-	fcol = col*0.0625;
-	size = 0.0625;
-	*/
-	
-	//printf("zzz: %d 0x%x '%c'\n", ch, ch, ch);
+	// 2018-11-12 checking fo glyph.height since super and subscripts will be smaller (ex:  trademark symbol)
 
-#if 0
-	re.DrawStretchPic( x, y, width, height,
-					   fcol, frow, 
-					   fcol + size, frow + size, 
-					   cls.charSetShader );
-#endif
-
-#if 1
-	re.DrawStretchPic(x, y - glyph.top, width, /* height */ glyph.height < height ? glyph.height : height,
+	re.DrawStretchPic(x, y - glyph.top, width,  /* height */  (glyph.height * scale) < height ? (glyph.height * scale) : height ,
 					  glyph.s, glyph.t,
 					  glyph.s2, glyph.t2,
 					  glyph.glyph);
-#endif
 }
 
 
@@ -287,7 +212,7 @@ void SCR_DrawStringExt( int x, int y, float size, const char *string, float *set
 	int			xx;
 
 	//printf("SCR_DrawStringExt: '%s'\n", string);
-	
+
 	// draw the drop shadow
 	color[0] = color[1] = color[2] = 0;
 	color[3] = setColor[3];

@@ -35,6 +35,16 @@ static struct
 }
 glDsaState;
 
+GLuint GL_CurrentDrawFramebuffer (void)
+{
+	return glDsaState.drawFramebuffer;
+}
+
+GLuint GL_CurrentReadFramebuffer (void)
+{
+	return glDsaState.readFramebuffer;
+}
+
 void GL_BindNullTextures(void)
 {
 	int i;

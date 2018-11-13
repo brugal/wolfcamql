@@ -2908,7 +2908,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_opengl2_overbright  enables original opengl2 overbright handling
 * r_allowSoftwareGLCoreContext  Mac OS X hack to disable software renderer with core context
 * r_useCoreContext enables core context with opengl2
-* s_sdlWindowsForceDirectSound, needed for video recording and playback if wsapi reports more than 2 channels
+* s_sdlWindowsForceDirectSound, needed for video recording if wsapi reports more than 2 channels
 * ui_demoSortDirFirst to list directories first in demo listing
 
 ----------
