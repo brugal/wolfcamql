@@ -2352,7 +2352,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 					}
 
 					// blit mme dof
-					if (mme_dofFrames->integer > 0  &&  tr.recordingVideo  &&  R_MME_GetPassData(qfalse)) {
+					if (mme_dofFrames->integer > 1  &&  tr.recordingVideo  &&  R_MME_GetPassData(qfalse)  &&  !shotDataLeft.allocFailed) {
 						byte *buffer;
 
 						buffer = R_MME_GetPassData(qfalse);
@@ -2490,8 +2490,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 		// blit mme dof
 
-		//if (mme_dofFrames->integer > 0  &&  R_MME_GetPassData()) {
-		if (mme_dofFrames->integer > 0  &&  (tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  R_MME_GetPassData(qtrue)) {
+		if (mme_dofFrames->integer > 1  &&  (tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  R_MME_GetPassData(qtrue)  &&  !shotDataMain.allocFailed) {
 			byte *buffer;
 			//int i, j;
 

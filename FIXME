@@ -2441,13 +2441,10 @@ No background file.
 * opengl2 seeking after vid_restart with mode change still rendering with old mode:  ex:  +demo rapha-ot1 +set r_mode 5, in console /r_mode -1  (1365 x 768), /vid_restart, seek ...
 * opengl2 elder outside purple sky not being rendered (drawn as white texture), also longestyard sky incorrect  -- 2018-08-23 it's r_picmip >= 9 and it happens with 12.0 release
 
-* q3mme dof blit renderer2 don't reuse colorcorrect program
-* q3mme dof blit renderer1 doesn't work with non power of two dimensions : 1365 x 768  -- not blit, dof doesn't work when width isn't divisible by 4
-* add warning for blur and dof if vid width/height not divisible by 4  -- 2018-08-30 older q3mme blur could do it correctly  -- 2018-09-07 because it gets screenshot as rgba which will always have width divisible by 4
 * q3mme dof blit use 2d textures for screen blit -- array of as many textures as needed, or one texture that gets updated repeatedly to fill screen
 
 * check uses of rectangle arb
-* check max texture size and rectngel
+* check max texture size and rectangle
     GL_MAX_RECTANGLE_TEXTURE_SIZE_ARB
 * cg_autoFontScalingThreshold 24 looks bad in Windows 7 desktop, 1600 x 600
 * mega health in client item timer not working with cpma mvd demos
@@ -2463,21 +2460,11 @@ No background file.
 * r_singleshader and transparent textures :  elder shader on top of fog
 * GL_TEXTURE0_ARB  renderer2
 * r_singleShader marking shader as map shader and tr.defaultShader
-*
-  flicker with opengl1 and r_dynamiclight 1  -- home desktop
-      -- kitten:  screen corrupted
-
-* opengl2 q3mme dof mme_dofVisualize 1 r_usefbo 1 r_enablepostprocess 0
-   cg.frametime > 200  (292)  oldSnapNum 48354  snapNum 48365
-^3(warmup) ^74:20 ^48PLAY ^7evil^7: ^2glhf
-]\mme_dofVisualize 1
-^1Com_Error(): RE_StretchRawRectScreen() couldn't get p_gammaRecip----- Client Shutdown (Client fatal crashed: RE_StretchRawRectScreen() couldn't get p_gammaRecip) -----
-disconnect
-
-* /video png : wrong colors (bluish)  (using r_fbo with customwidth 1369, mme_blurframes 40)  /video avi has correct colors
 * MAX_RECTANGLE_TEXTURE_SIZE_ARB  check
 * R_InitNextFrameNoCommands  doesn't need to be called for q3mme dof blur
 * single render list change:  check usages of dynamic lights and other r_num*
+* check calculating too much memory for mme work size
+* rename cl_aviFetchMode since it can be used for screenshots as well
 
 
 ----

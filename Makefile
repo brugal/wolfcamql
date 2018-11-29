@@ -1986,6 +1986,8 @@ Q3R2STRINGOBJ = \
   $(B)/renderergl2/glsl/lightall_vp.o \
   $(B)/renderergl2/glsl/pshadow_fp.o \
   $(B)/renderergl2/glsl/pshadow_vp.o \
+  $(B)/renderergl2/glsl/rectscreen_fp.o \
+  $(B)/renderergl2/glsl/rectscreen_vp.o \
   $(B)/renderergl2/glsl/shadowfill_fp.o \
   $(B)/renderergl2/glsl/shadowfill_vp.o \
   $(B)/renderergl2/glsl/shadowmask_fp.o \

@@ -42,6 +42,8 @@ extern const char *fallbackShader_lightall_vp;
 extern const char *fallbackShader_lightall_fp;
 extern const char *fallbackShader_pshadow_vp;
 extern const char *fallbackShader_pshadow_fp;
+extern const char *fallbackShader_rectscreen_vp;
+extern const char *fallbackShader_rectscreen_fp;
 extern const char *fallbackShader_shadowfill_vp;
 extern const char *fallbackShader_shadowfill_fp;
 extern const char *fallbackShader_shadowmask_vp;
@@ -242,6 +244,8 @@ static void GLSL_GetShaderHeader( GLenum shaderType, const GLchar *extra, char *
 		else
 			Q_strcat(dest, size, "#version 130\n");
 
+		Q_strcat(dest, size, "#extension GL_ARB_texture_rectangle : enable\n");
+
 		if(shaderType == GL_VERTEX_SHADER)
 		{
 			Q_strcat(dest, size, "#define attribute in\n");
@@ -261,6 +265,7 @@ static void GLSL_GetShaderHeader( GLenum shaderType, const GLchar *extra, char *
 	else
 	{
 		Q_strcat(dest, size, "#version 120\n");
+		Q_strcat(dest, size, "#extension GL_ARB_texture_rectangle : enable\n");
 		Q_strcat(dest, size, "#define shadow2D(a,b) shadow2D(a,b).r \n");
 	}
 
@@ -1002,6 +1007,19 @@ void GLSL_InitGPUShaders(void)
 
 	numEtcShaders++;
 
+	if (!GLSL_InitGPUShader(&tr.rectScreenShader, "rectscreen", attribs, qtrue, extradefines, qtrue, fallbackShader_rectscreen_vp, fallbackShader_rectscreen_fp))
+	{
+		ri.Error(ERR_FATAL, "Could not load rectscreen shader!");
+	}
+
+	GLSL_InitUniforms(&tr.rectScreenShader);
+
+	GLSL_SetUniformInt(&tr.rectScreenShader, UNIFORM_TEXTUREMAP, TB_DIFFUSEMAP);
+
+	GLSL_FinishGPUShader(&tr.rectScreenShader);
+
+	numEtcShaders++;
+
 	for (i = 0; i < FOGDEF_COUNT; i++)
 	{
 		if ((i & FOGDEF_USE_VERTEX_ANIMATION) && (i & FOGDEF_USE_BONE_ANIMATION))
@@ -1464,6 +1482,7 @@ void GLSL_ShutdownGPUShaders(void)
 
 	GLSL_DeleteGPUShader(&tr.textureColorShader);
 	GLSL_DeleteGPUShader(&tr.textureNoColorShader);
+	GLSL_DeleteGPUShader(&tr.rectScreenShader);
 
 	for ( i = 0; i < FOGDEF_COUNT; i++)
 		GLSL_DeleteGPUShader(&tr.fogShader[i]);

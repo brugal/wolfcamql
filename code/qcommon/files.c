@@ -974,6 +974,11 @@ fileHandle_t FS_FOpenFileWrite( const char *filename ) {
 	//Com_DPrintf( "writing to: %s\n", ospath );
 	fsh[f].handleFiles.file.o = Sys_FOpen( ospath, "wb" );
 
+	//if (fs_debug->integer  &&  !fsh[f].handleFiles.file.o) {
+	if (!fsh[f].handleFiles.file.o) {
+		Com_Printf("Sys_FOpen(%s) failed to open for writing\n", ospath);
+	}
+
 	Q_strncpyz( fsh[f].name, filename, sizeof( fsh[f].name ) );
 
 	fsh[f].handleSync = qfalse;

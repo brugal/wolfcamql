@@ -1866,32 +1866,9 @@ static void RE_StretchRawRectScreen (const byte *data)
 
 	GL_BindMultiTexture(GL_TEXTURE0_ARB, target, tr.rectScreenTexture);
 
-	//FIXME program
-	//GLSL_BindProgram(&tr.textureNoColorShader);
-	GL_UseProgram(tr.colorCorrectSp);
+	GL_UseProgram(tr.rectScreenShader.program);
 
-	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_gammaRecip");
-	if (loc < 0) {
-		ri.Error(ERR_FATAL, "%s() couldn't get p_gammaRecip", __FUNCTION__);
-	}
-	//qglUniform1f(loc, (GLfloat)(1.0 / r_gamma->value));
-	qglUniform1f(loc, (GLfloat)1.0f);
-
-	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_overbright");
-	if (loc < 0) {
-		ri.Error(ERR_FATAL, "%s() couldn't get p_overbright", __FUNCTION__);
-	}
-	//qglUniform1f(loc, (GLfloat)((float)(1 << shift) * mul));
-	qglUniform1f(loc, (GLfloat)1.0f);
-
-	loc = qglGetUniformLocation(tr.colorCorrectSp, "p_contrast");
-	if (loc < 0) {
-		ri.Error(ERR_FATAL, "%s() couldn't get p_contrast", __FUNCTION__);
-	}
-	//qglUniform1f(loc, (GLfloat)r_contrast->value);
-	qglUniform1f(loc, (GLfloat)1.0f);
-
-	loc = qglGetUniformLocation(tr.colorCorrectSp, "backBufferTex");
+	loc = qglGetUniformLocation(tr.rectScreenShader.program, "backBufferTex");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get backBufferTex", __FUNCTION__);
 	}
@@ -1900,9 +1877,9 @@ static void RE_StretchRawRectScreen (const byte *data)
 	//ri.Printf(PRINT_ALL, "^5GL_TEXTURE0 : %d\n", GL_TEXTURE0);
 	qglUniform1i(loc, 0);
 
-	//GLSL_SetUniformMat4(&tr.textureNoColorShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
+	//GLSL_SetUniformMat4(&tr.rectScreenShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
 
-	loc = qglGetUniformLocation(tr.colorCorrectSp, "u_ModelViewProjectionMatrix");
+	loc = qglGetUniformLocation(tr.rectScreenShader.program, "u_ModelViewProjectionMatrix");
 	if (loc < 0) {
 		ri.Error(ERR_FATAL, "%s() couldn't get u_ModelViewProjectionMatrix", __FUNCTION__);
 	}
@@ -1932,11 +1909,6 @@ static void RE_StretchRawRectScreen (const byte *data)
 	VectorSet2(texCoords[2], (float)width, (float)height);
 	VectorSet2(texCoords[3], 0, (float)height);
 
-
-	//GLSL_BindProgram(&tr.textureColorShader);
-
-	//GLSL_SetUniformMat4(&tr.textureColorShader, UNIFORM_MODELVIEWPROJECTIONMATRIX, glState.modelviewProjection);
-	//GLSL_SetUniformVec4(&tr.textureColorShader, UNIFORM_COLOR, colorWhite);
 
 	RB_InstantQuad2(quadVerts, texCoords);
 
@@ -3383,7 +3355,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 					}
 
 					// blit mme dof
-					if (mme_dofFrames->integer > 0  &&  tr.recordingVideo  &&  R_MME_GetPassData(qfalse)) {
+					if (mme_dofFrames->integer > 1  &&  tr.recordingVideo  &&  R_MME_GetPassData(qfalse)  &&  !shotDataLeft.allocFailed) {
 						byte *buffer;
 
 						buffer = R_MME_GetPassData(qfalse);
@@ -3548,7 +3520,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 		}
 
 		// blit q3mme dof
-		if (mme_dofFrames->integer > 0  &&  (tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  R_MME_GetPassData(qtrue)) {
+		if (mme_dofFrames->integer > 1  &&  (tr.recordingVideo  ||  mme_dofVisualize->integer)  &&  R_MME_GetPassData(qtrue)  &&  !shotDataMain.allocFailed) {
 			byte *buffer;
 			//int i, j;
 

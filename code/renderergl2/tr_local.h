@@ -1615,6 +1615,7 @@ typedef struct {
 	shaderProgram_t genericShader[GENERICDEF_COUNT];
 	shaderProgram_t textureColorShader;
 	shaderProgram_t textureNoColorShader;
+	shaderProgram_t rectScreenShader;
 	shaderProgram_t fogShader[FOGDEF_COUNT];
 	shaderProgram_t dlightShader[DLIGHTDEF_COUNT];
 	shaderProgram_t lightallShader[LIGHTDEF_COUNT];

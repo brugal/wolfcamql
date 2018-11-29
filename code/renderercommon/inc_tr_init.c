@@ -46,7 +46,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	int												i;
 	char finalName[MAX_QPATH];
 	qboolean fetchBufferHasAlpha = qfalse;
-	qboolean fetchBufferNeedsBGRswap = qfalse;
+	qboolean fetchBufferHasRGB = qtrue;   // does buffer have RGB or BGR
 	int glMode = GL_RGB;
 	char *sbuf;
 	__m64 *outAlign = NULL;
@@ -78,7 +78,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 	if (cmd->png) {
 		fetchBufferHasAlpha = qtrue;
-		fetchBufferNeedsBGRswap = qtrue;
+		fetchBufferHasRGB = qtrue;
 		glMode = GL_RGBA;
 		fetchBuffer = cmd->captureBuffer + 18;
 		fetchBuffer = (byte *)(((uintptr_t)fetchBuffer + 15) & ~15);
@@ -88,24 +88,24 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		ri.Cvar_VariableStringBuffer("cl_aviFetchMode", sbuf, MAX_QPATH);
 		if (!Q_stricmp("gl_rgba", sbuf)) {
 			fetchBufferHasAlpha = qtrue;
-			fetchBufferNeedsBGRswap = qtrue;
+			fetchBufferHasRGB = qtrue;
 			glMode = GL_RGBA;
 		} else if (!Q_stricmp("gl_rgb", sbuf)) {
 			fetchBufferHasAlpha = qfalse;
-			fetchBufferNeedsBGRswap = qtrue;
+			fetchBufferHasRGB = qtrue;
 			glMode = GL_RGB;
 		} else if (!Q_stricmp("gl_bgr", sbuf)) {
 			fetchBufferHasAlpha = qfalse;
-			fetchBufferNeedsBGRswap = qfalse;
+			fetchBufferHasRGB = qfalse;
 			glMode = GL_BGR;
 		} else if (!Q_stricmp("gl_bgra", sbuf)) {
 			fetchBufferHasAlpha = qtrue;
-			fetchBufferNeedsBGRswap = qfalse;
+			fetchBufferHasRGB = qfalse;
 			glMode = GL_BGRA;
 		} else {
 			ri.Printf(PRINT_ALL, "unknown glmode using GL_RGB\n");
 			fetchBufferHasAlpha = qfalse;
-			fetchBufferNeedsBGRswap = qtrue;
+			fetchBufferHasRGB = qtrue;
 			glMode = GL_RGB;
 		}
 
@@ -121,15 +121,11 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		}
 	}
 
+	//FIXME why is this needed?
 	if (useBlur  ||  mme_dofFrames->integer > 0) {
 		glMode = GL_BGR;
 		fetchBufferHasAlpha = qfalse;
-		fetchBufferNeedsBGRswap = qfalse;
-	}
-
-	if (cmd->jpg  ||  (cmd->avi  &&  cmd->motionJpeg)) {
-		// no need to use data as bgr
-		fetchBufferNeedsBGRswap = !fetchBufferNeedsBGRswap;
+		fetchBufferHasRGB = qfalse;
 	}
 
 	if (!useBlur) {
@@ -145,7 +141,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 	} else {  // use blur
 
 		if (shotData->allocFailed) {
-			ri.Printf(PRINT_ALL, "shotData->allocFailed\n");
+			ri.Printf(PRINT_ALL, "^1ERROR: not capturing because blur allocation failed\n");
 		}
 
 		if (shotData->control.totalFrames && !shotData->allocFailed) {
@@ -282,7 +278,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 		frameSize = cmd->width * cmd->height;
 
-		if (fetchBufferNeedsBGRswap) {
+		if (fetchBufferHasRGB) {
 			swap_bgr(buffer + 18, width, height, fetchBufferHasAlpha);
 		}
 
@@ -407,7 +403,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		buffer = fetchBuffer + 18;
 		ri.FS_WriteFile(finalName, buffer, 1);  // create path
 		if (cmd->jpg) {
-			if (fetchBufferNeedsBGRswap) {
+			if (!fetchBufferHasRGB) {
 				swap_bgr(buffer, width, height, fetchBufferHasAlpha);
 			}
 
@@ -417,6 +413,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 			RE_SaveJPG(finalName, r_jpegCompressionQuality->integer, width, height, buffer, 0);
 		} else {  // png
+			if (!fetchBufferHasRGB) {
+				swap_bgr(buffer, width, height, fetchBufferHasAlpha);
+			}
+
 			SavePNG(finalName, buffer, width, height, (3 + fetchBufferHasAlpha));
 		}
 
@@ -535,7 +535,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 	if( cmd->avi  &&  cmd->motionJpeg )
 	{
-		if (fetchBufferNeedsBGRswap) {
+		if (!fetchBufferHasRGB) {
 			swap_bgr(fetchBuffer + 18, cmd->width, cmd->height, fetchBufferHasAlpha);
 		}
 
@@ -646,7 +646,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		//buffer = cmd->encodeBuffer;
 		//outBuffer = cmd->encodeBuffer;
 		outBuffer = fetchBuffer;
-		if (fetchBufferHasAlpha  &&  fetchBufferNeedsBGRswap) {
+		if (fetchBufferHasAlpha  &&  fetchBufferHasRGB) {
 			// gl_rgba
 			outBuffer = cmd->captureBuffer;
 			//frameSize = cmd->width * cmd->height;
@@ -655,7 +655,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				outBuffer[i * 3 + 1 + 18] = fetchBuffer[i * 4 + 1 + 18];
 				outBuffer[i * 3 + 2 + 18] = fetchBuffer[i * 4 + 0 + 18];
 			}
-		} else if (fetchBufferHasAlpha  &&  !fetchBufferNeedsBGRswap) {
+		} else if (fetchBufferHasAlpha  &&  !fetchBufferHasRGB) {
 			// gl_bgra
 			outBuffer = cmd->captureBuffer;
 			//frameSize = cmd->width * cmd->height;
@@ -664,7 +664,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				outBuffer[i * 3 + 1 + 18] = fetchBuffer[i * 4 + 1 + 18];
 				outBuffer[i * 3 + 2 + 18] = fetchBuffer[i * 4 + 2 + 18];
 			}
-		} else if (fetchBufferNeedsBGRswap) {
+		} else if (fetchBufferHasRGB) {
 			// gl_rbg
 			// there is no alpha
 			swap_bgr(outBuffer + 18, cmd->width, cmd->height, qfalse);
@@ -919,4 +919,3 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 	return (const void *)(cmd + 1);
 }
-

@@ -136,10 +136,6 @@ void R_MME_CheckCvars (qboolean init, shotData_t *shotData)
 		blurTotal = 0;
 	}
 
-	if (!init  &&  (mme_blurFrames->integer > shotData->lastSetBlurFrames  ||  mme_blurOverlap->integer > shotData->lastSetOverlapFrames  ||  mme_dofFrames->integer > shotData->lastSetDofFrames)) {
-		R_MME_InitMemory(qfalse, shotData);
-	}
-
 	if (mme_dofFrames->integer > BLURMAX ) {
 		ri.Cvar_Set( "mme_dofFrames", va( "%d", BLURMAX) );
 	} else if (mme_dofFrames->integer < 0 ) {
@@ -148,11 +144,14 @@ void R_MME_CheckCvars (qboolean init, shotData_t *shotData)
 
 	passTotal = mme_dofFrames->integer;
 
+	if (!init  &&  (mme_blurFrames->integer != shotData->lastSetBlurFrames  ||  mme_blurOverlap->integer != shotData->lastSetOverlapFrames  ||  mme_dofFrames->integer != shotData->lastSetDofFrames)) {
+		R_MME_InitMemory(qfalse, shotData);
+	}
+
 	if (!init  &&  ((shotData->forceReset  ||  passTotal != passControl->totalFrames  ||  blurTotal != shotData->control.totalFrames || pixelCount != shotData->pixelCount || shotData->control.overlapFrames != mme_blurOverlap->integer)
 					&& !shotData->allocFailed)) {
 
 		shotData->forceReset = qfalse;
-		shotData->workUsed = 0;
 
 		blurCreate(&shotData->control, mme_blurType->string, blurTotal);
 
@@ -161,11 +160,12 @@ void R_MME_CheckCvars (qboolean init, shotData_t *shotData)
 		shotData->control.overlapFrames = mme_blurOverlap->integer;
 		shotData->control.overlapIndex = 0;
 
-		if (!R_MME_MakeBlurBlock(&shotData->shot, pixelCount * 3, &shotData->control, shotData)) {
-			ri.Printf(PRINT_ALL, "^1blur block creation failed\n");
-			//FIXME is this ok?
-			shotData->allocFailed = qtrue;
-			goto alloc_Skip;
+		if (blurTotal > 0) {
+			if (!R_MME_MakeBlurBlock(&shotData->shot, pixelCount * 3, &shotData->control, shotData)) {
+				ri.Printf(PRINT_ALL, "^1blur block creation failed\n");
+				shotData->allocFailed = qtrue;
+				goto alloc_Skip;
+			}
 		}
 
 #if 0  //FIXME implement
@@ -182,11 +182,12 @@ void R_MME_CheckCvars (qboolean init, shotData_t *shotData)
 		passControl->overlapFrames = 0;
 		passControl->overlapIndex = 0;
 
-		if (!R_MME_MakeBlurBlock( &passData->dof, pixelCount * 3, passControl, shotData )) {
-			ri.Printf(PRINT_ALL, "^1blur pass creation failed\n");
-			//FIXME is this ok?
-			shotData->allocFailed = qtrue;
-			goto alloc_Skip;
+		if (passTotal > 0) {
+			if (!R_MME_MakeBlurBlock( &passData->dof, pixelCount * 3, passControl, shotData )) {
+				ri.Printf(PRINT_ALL, "^1blur pass creation failed\n");
+				shotData->allocFailed = qtrue;
+				goto alloc_Skip;
+			}
 		}
 
 		R_MME_JitterTable( passData->jitter[0], passTotal );
@@ -408,7 +409,7 @@ void R_MME_InitMemory (qboolean verbose, shotData_t *shotData)
 
 	bl = ovr = 0;
 	if (mme_blurFrames->integer > 0) {
-		bl = mme_blurFrames->integer;
+		bl = 1;
 	}
 	if (mme_blurOverlap->integer > 0) {
 		ovr = mme_blurOverlap->integer;
@@ -419,23 +420,36 @@ void R_MME_InitMemory (qboolean verbose, shotData_t *shotData)
 	if (mme_dofFrames->integer > 0) {
 		dofFrames = mme_dofFrames->integer;
 	}
-	m += dofFrames;
 
-	shotData->workSize = (glConfig.vidWidth * glConfig.vidHeight * 4 * m) + (4 * 1024 * 1024);
+	// R_MME_MakeBlurBlock() allocates 4*size (size is pixelcount * (3 or 1)), also increase if depth or stencil blur used
+	if ((bl + ovr) > 0) {
+		m += 4;
+	}
+	if (dofFrames > 0) {
+		m += 4;
+	}
+
+	//FIXME too much extra added
+	shotData->workSize = (glConfig.vidWidth * glConfig.vidHeight * 4 * m) + (1 * 1024 * 1024);
 
 	if (!shotData->workAlloc) {
 		shotData->workAlloc = calloc(shotData->workSize + 16, 1);
+		//ri.Printf(PRINT_ALL, "^5calloc() %f\n", (float)(shotData->workSize + 16) / 1024.0 / 1024.0);
 	} else {
-		shotData->workAlloc = realloc(shotData->workAlloc, shotData->workSize + 16);
+		// 2018-11-28 don't use realloc() since it can cause premature failure in Win32 x86 (presumably because the new and old memory are still allocated until the old one is copied over)
+		free(shotData->workAlloc);
+		shotData->workAlloc = malloc(shotData->workSize + 16);
+		//ri.Printf(PRINT_ALL, "^5realloc() %f\n", (float)(shotData->workSize + 16) / 1024.0 / 1024.0);
 	}
 	if (!shotData->workAlloc) {
 		Com_Error(ERR_DROP, "%d: Failed to allocate %f megabytes for mme work buffer", shotData == &shotDataMain, (float)(shotData->workSize + 16) / 1024.0 / 1024.0);
 		return;
 	}
-	if (verbose) {
+	if (verbose  ||  ri.Cvar_VariableIntegerValue("mme_debugmemory")) {
 		ri.Printf(PRINT_ALL, "%d: %f megabytes for mme work buffer\n", shotData == &shotDataMain, (float)(shotData->workSize + 16) / 1024.0 / 1024.0);
 	}
 	shotData->workAlign = (char *)(((intptr_t)shotData->workAlloc + 15) & ~15);
+	shotData->workUsed = 0;
 
 	shotData->lastSetBlurFrames = mme_blurFrames->integer;
 	shotData->lastSetOverlapFrames = mme_blurOverlap->integer;
