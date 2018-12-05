@@ -1,4 +1,4 @@
-12.1test7
+12.1test8
 
 * menus work even if window doesn't have mouse grab
 * bug fix:  info screen calculated string widths incorrectly
