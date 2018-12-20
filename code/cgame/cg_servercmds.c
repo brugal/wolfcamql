@@ -2304,8 +2304,15 @@ static void CG_ConfigStringModified( void ) {
 	} else if (num == CS_BLUE_PLAYERS_LEFT) {
 		cgs.bluePlayersLeft = atoi(str);
 	} else if (num == CS_ROUND_STATUS  &&  (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER)) {
-		//Com_Printf("^3%d FIXME %d CS_ROUND_STATUS  %s\n", cg.time, num, str);
-		if (str[0] == '\0') {  // older q3 demos dm_73
+		//Com_Printf("^3%d %d CS_ROUND_STATUS  %s\n", cg.time, num, str);
+
+		// Don't use CS_ROUND_STATUS to determine if a round is still active.
+		// In Quake Live CS_ROUND_TIME is set to -1 when a round ends.  A few
+		// seconds later CS_ROUND_STATUS will be updated with next round start
+		// time.  When the round starts both CS_ROUND_STATUS and CS_ROUND_TIME
+		// are updated.
+
+		if (str[0] == '\0') {  // older ql demos dm_73
 			cgs.roundStarted = qtrue;
 			for (i = 0;  i < cg.numScores;  i++) {
 				cg.scores[i].alive = qtrue;
@@ -2316,7 +2323,7 @@ static void CG_ConfigStringModified( void ) {
 			//Com_Printf("^2 ROUND STARTED...\n");
 			cgs.thirtySecondWarningPlayed = qfalse;
 		} else {
-			//cgs.roundStarted = qfalse;
+			// cgs.roundStarted = qfalse is set with CS_ROUND_TIME change
 			cgs.roundBeginTime = atoi(Info_ValueForKey(str, "time"));
 			cgs.roundNum = atoi(Info_ValueForKey(str, "round"));
 			cgs.roundTurn = atoi(Info_ValueForKey(str, "turn"));
@@ -2326,7 +2333,7 @@ static void CG_ConfigStringModified( void ) {
 		int val;
 
 		val = atoi(str);
-		//Com_Printf("%d CS_ROUND_TIME %d\n", cg.time, val);
+		//Com_Printf("^5%d CS_ROUND_TIME %d\n", cg.time, val);
 		if (val > 0  &&  !cgs.roundStarted) {
 			//CG_StartLocalSound( cgs.media.countFightSound, CHAN_ANNOUNCER );
 

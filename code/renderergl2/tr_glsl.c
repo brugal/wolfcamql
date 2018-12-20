@@ -258,6 +258,7 @@ static void GLSL_GetShaderHeader( GLenum shaderType, const GLchar *extra, char *
 			Q_strcat(dest, size, "out vec4 out_Color;\n");
 			Q_strcat(dest, size, "#define gl_FragColor out_Color\n");
 			Q_strcat(dest, size, "#define texture2D texture\n");
+			Q_strcat(dest, size, "#define texture2DRect texture\n");
 			Q_strcat(dest, size, "#define textureCubeLod textureLod\n");
 			Q_strcat(dest, size, "#define shadow2D texture\n");
 		}

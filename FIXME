@@ -1063,20 +1063,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * fx player/thawed  maybe scan through ents to find client match
 * check EV_GIB_PLAYER since you might be passing in wrong origin
 * cg_ambientSounds and haunted game mode?
-* /devmap sinister
-* ]/play music/sonic6
-Com_Error(): Z_Malloc: failed on allocation of 18602448 bytes from the main zone----- CL_Shutdown -----
-disconnect
-Closing SDL audio device...
-SDL audio device shut down.
-RE_Shutdown( 1 )
-GLimp_Shutdown: mode 4 lastMode 4
------------------------
------ Server Shutdown (Server fatal crashed: Z_Malloc: failed on allocation of 18602448 bytes from the main zone) -----
-==== ShutdownGame ====
-AAS shutdown.
----------------------------
-Z_Malloc: failed on allocation of 18602448 bytes from the main zone
 
 * weird bullet marks silence from top level down to rail floor texture and zooming  screenshots/shot0055.jpg <=
 * map artifact sinister screenshots/shot0056.jpg
@@ -2085,82 +2071,6 @@ No locals.
 * sdl_glimp.c visible window width|height should be checking that fbo is possible first
 * ql post processing and gamma:  save LOC and don't fetch each frame
 * opengl2:  bloom done before 3d icons in hud
-* opengl2:  r_usefbo toggle vid_restart crash  -- see below, not related to r_useFbo
-
-   crash:
-
-
-C:\Share\wc\dev>
-C:\Share\wc\dev>wolfcamql --console-output +set r_ignoreglerrors 0 +devmap spidercrossings +set cl_renderer opengl1 +set cg_fxfile "scripts/q3mme.fx" +demo blurshader1
-
-
-toggle r_useFbo and try vid_restart  -- 2017-11-12  just vid_restart does it
-
-RE_RegisterShaderNoMip(icons/portal) failed
-WARNING: R_FindImageFile could not find 'icons/spawnarmor.tga' in shader 'icons/spawnarmor'
-Shader icons/spawnarmor has a stage with no image
-RE_RegisterShaderNoMip(icons/spawnarmor) failed
-RE_RegisterModel: failed to load models/powerups/keys/key_master.md3
-WARNING: R_FindImageFile could not find 'icons/key_master.tga' in shader 'icons/key_master'
-Shader icons/key_master has a stage with no image
-RE_RegisterShaderNoMip(icons/key_master) failed
-WARNING: R_FindImageFile could not find 'gfx/damageq3/blood_stain.tga' in shader 'q3bloodMark'
-Shader q3bloodMark has a stage with no image
-RE_RegisterShader(q3bloodMark) failed
-RE_RegisterShaderNoMip(icons/key_master) failed
-using default shader for 'textures/ctf2/redteam01'
-using default shader for 'team_icon/Red Team_red'
-WARNING: R_RemapShader: new shader team_icon/Red Team_red not found
-using default shader for 'textures/ctf2/redteam02'
-using default shader for 'textures/ctf2/blueteam01'
-using default shader for 'team_icon/Blue Team_blue'
-WARNING: R_RemapShader: new shader team_icon/Blue Team_blue not found
-using default shader for 'textures/ctf2/blueteam02'
-0:00 CG_EventHandling type: 4
-CG_EventHandling type: 4  not handled
-0x43c2b3 : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-player/code/qcommon/cm_test.c (41) : in function (CM_PointLeafnum_r)
-
-
-
-
-CG_EventHandling type: 4  not handled
-
-Program received signal SIGSEGV, Segmentation fault.
-CM_PointLeafnum_r (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
-) at code/qcommon/cm_test.c:41
-41      code/qcommon/cm_test.c: No such file or directory.
-        in code/qcommon/cm_test.c
-	(gdb) bt
-	#0  CM_PointLeafnum_r (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
-	) at code/qcommon/cm_test.c:41
-	#1  CM_PointContents (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
-	) at code/qcommon/cm_test.c:248
-	#2  0x0040ad15 in CL_CgameSystemCalls (args=0x363ac94) at code/client/cl_cgame.c:965
-	#3  0x00494ce2 in VM_DllSyscall (arg=<value optimized out>) at code/qcommon/vm.c:354
-	#4  0x39a122b0 in trap_CM_PointContents (p=0x363ad48, model=0) at code/cgame/cg_syscalls.c:148
-	#5  0x399b9bbf in CG_PointContents (point=0x363ad48, passEntityNum=0) at code/cgame/cg_predict.c:189
-	#6  0x399dac36 in CG_ParseSpawnVars () at code/cgame/cg_spawn.c:296
-	#7  0x3993e1ba in CG_Init (serverMessageNum=Unhandled dwarf expression opcode 0xf3
-	) at code/cgame/cg_main.c:7971
-	#8  0x3993f101 in vmMain (command=0, arg0=11489, arg1=66, arg2=1, arg3=1, arg4=0, arg5=4363247, arg6=0, arg7=0,
-	    arg8=21668, arg9=41880703, arg10=12, arg11=0) at code/cgame/cg_main.c:81
-	    #9  0x00496306 in VM_Call (vm=0x2d09280, callnum=<value optimized out>) at code/qcommon/vm.c:876
-	    #10 0x0040be95 in CL_InitCGame () at code/client/cl_cgame.c:1514
-	    #11 0x0042a6f5 in CL_Vid_Restart_f () at code/client/cl_main.c:3245
-	    #12 0x00442be3 in Cbuf_Execute () at code/qcommon/cmd.c:263
-	    #13 0x00447fc3 in Com_Frame () at code/qcommon/common.c:3535
-	    #14 0x004dfffc in SDL_main (argc=15, argv=0x3fe83c8) at code/sys/sys_main.c:830
-	    #15 0x005f2a30 in WinMain@16 ()
-	    #16 0x0060ca8d in main () at ./mingw-w64-crt/crt/crt0_c.c:18
-	    (gdb)
-
-  --console-output +devmap spidercrossings +demo blurshader1
-
-  --console-output +devmap spidercrossings
-
-    /demo blurshader1
-    /vid_restart
-
 * cg_useddemofov 1  and /devmap is zoomed in completely  -- how does ql modify usercmd_t with fov ?
 * https://github.com/brugal/wolfcamql/pull/19   CL_ScaledMilliseconds leads to wrong  time for 2d timer in render and cinematics when recording video
 * use of ri.Milliseconds() that shouldn't be scaled
@@ -2175,73 +2085,6 @@ CM_PointLeafnum_r (p=0x363ad48, model=Unhandled dwarf expression opcode 0xf3
 * opengl2:  depth saving not working if r_useFbo 0
 * opengl2:  should fat/deluxe lightmaps use "*..." naming convention?
 * /devmap shows damage sprite number for self damage
-* crash:  opengl1  devmap campgrounds shoot up to round area shoot floor of bottom area and /remaplasttwoshaders  --  2017-11-19
-
-   --console-output +devmap campgrounds +set cl_renderer opengl2
-
-     change shaders like above
-
-   /cl_renderer opengl1
-   /vid_restart
-
-   /listremappedshaders
-
-sv_fps 20  50 ms
-]\listremappedshaders
-0x544d1c20 : [unknown module] : [unknown file]
-0x442be3 : C:\Share\wc\dev\wolfcamql.exe : /home/acano/work/hg/ioquakelive-demo-player/code/qcommon/cmd.c (187) : in function (Cbuf_Execute)
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atigktxx.dll)
-0x65fcac3c : C:\WINDOWS\SYSTEM32\atigktxx.dll : XopOpenLinkedAdapter
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x52c822a5 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x52c5d3dc : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x52c53ff6 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x539cd734 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x539c64d7 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-0x24b6b9c0 : [unknown module] : [unknown file]
-0x2276ed60 : [unknown module] : [unknown file]
-0x24b6b9c0 : [unknown module] : [unknown file]
-0x44280000 : C:\Share\wc\dev\wolfcam-ql\cgamex86.dll : c_pmove
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x54039970 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x54144ebc : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-Failed to init bfd from (C:\WINDOWS\SYSTEM32\atioglxx.dll)
-0x53fc1b80 : C:\WINDOWS\SYSTEM32\atioglxx.dll : DrvPresentBuffers
-
-C:\Share\wc\dev>
 
 * opengl2:  check /remapshader with different lighting options  -- 2017-11-20 currently works with at least regular lightmaps and r_mergelightmaps 1
 * remap shader optimization:  check for light stage once
@@ -2390,7 +2233,6 @@ No background file.
 * ql has cvarTest2
 * CG_DrawPlayerAmmoValue() infinite icon and textalign
 
-* check CS_ROUND_STATUS and CS_ROUND_TIME mess
 * ui_main.c cg_wideScreen, utf8, quake live WIDESCREEN_STRETCH text paint hack
 * check how CG_CreateNameSprite() uses default menus and if name sprites need to be reset with menu reset as well
 * CG_Text_Pic_Paint() allow changing alpha color value
@@ -2465,7 +2307,6 @@ No background file.
 * single render list change:  check usages of dynamic lights and other r_num*
 * check calculating too much memory for mme work size
 * rename cl_aviFetchMode since it can be used for screenshots as well
-
 
 ----
 

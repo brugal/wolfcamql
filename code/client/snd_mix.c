@@ -399,6 +399,7 @@ static void S_PaintChannelFrom16_scalar( channel_t *ch, const sfx_t *sc, int cou
 
 			if ( sc->soundChannels == 2 ) {
 				data = samples[sampleOffset++];
+				sampleOffsetf++;
 			}
 			samp[i].right += (data * rightvol)>>8;
 

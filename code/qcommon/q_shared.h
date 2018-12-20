@@ -446,8 +446,8 @@ extern	vec4_t		colorMdGrey;
 extern	vec4_t		colorDkGrey;
 
 #define Q_COLOR_ESCAPE	'^'
-#define Q_IsColorString(p) ((p) && *(p) == Q_COLOR_ESCAPE && *((p)+1) && isalnum(*((p)+1))) // ^[0-9a-zA-Z]
-#define Q_IsColorStringPicString(p) ((p) && p[0].i == Q_COLOR_ESCAPE && p[1].i && isalnum(p[1].i)) // ^[0-9a-zA-Z]
+qboolean Q_IsColorString(const char *p);  // ^[0-9a-zA-Z]
+qboolean Q_IsColorStringPicString(const floatint_t *p);  // ^[0-9a-zA-Z]
 
 #define COLOR_BLACK	'0'
 #define COLOR_RED	'1'

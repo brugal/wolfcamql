@@ -815,18 +815,25 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cg.intermissionStarted = atoi(CG_ConfigString(CS_INTERMISSION));
 
 	if (cgs.protocol == PROTOCOL_QL) {
+		int roundTime;
+
 		//Com_Printf("^2 round status: '%s'\n", CG_ConfigString(CS_ROUND_STATUS));
 		if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_RED_ROVER) {
 			if (CG_ConfigString(CS_ROUND_STATUS)[0] == '\0'  /* dm_73 */
 				||  Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "time")[0] == '\0'  /* newer ql demos */
 				) {
-				cgs.roundStarted = qtrue;
 				cgs.roundBeginTime = -999;
 				cgs.roundNum = 0;  //-999;
 			} else {
-				cgs.roundStarted = qfalse;
 				cgs.roundBeginTime = atoi(Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "time"));
 				cgs.roundNum = atoi(Info_ValueForKey(CG_ConfigString(CS_ROUND_STATUS), "round"));
+			}
+
+			roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
+			if (roundTime > 0) {
+				cgs.roundStarted = qtrue;
+			} else {
+				cgs.roundStarted = qfalse;
 			}
 		}
 	} else {
@@ -835,7 +842,6 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		cgs.roundNum = 0;
 	}
 
-	//FIXME CS_ROUND_TIME
 	if (cgs.protocol == PROTOCOL_QL) {
 		cgs.timeoutBeginTime = atoi(CG_ConfigString(CS_TIMEOUT_BEGIN_TIME));
 		cgs.timeoutEndTime = atoi(CG_ConfigString(CS_TIMEOUT_END_TIME));
@@ -1267,6 +1273,8 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	// round count down
 	if (!cgs.roundStarted) {
 		timeLeft = (cgs.roundBeginTime - cg.time) / 1000;
+		timeLeft++;
+
 		cgs.countDownSoundPlayed = -999;
 		//Com_Printf("timeleft %d\n", timeLeft);
 		if (timeLeft >= 0  &&  timeLeft <= 5) {

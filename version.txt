@@ -1,4 +1,4 @@
-12.1test8
+12.1test9
 
 * menus work even if window doesn't have mouse grab
 * bug fix:  info screen calculated string widths incorrectly
@@ -120,6 +120,10 @@
 * bug fix:  reduce memory usage with mme_blurFrames
 * error message indicating whether opening a file for writing failed due to system file open call
 * bug fix:  premature memory allocation failure with mme blur
+* bug fix:  fix vid_restart crash if /devamp and /demo are both used in the command line and both use the same map
+* bug fix:  incorrect playback rate for stereo sound files
+* bug fix:  round count down sometimes not working after demo seeking
+
 
 ---------------------------------
 12.0  2018-06-21

@@ -2527,6 +2527,16 @@ void CL_ClearMemory(qboolean shutdownRef)
 		// clear all the client data on the hunk
 		Hunk_ClearToMark();
 	}
+
+	// hack for devmap and demo both specified on the command line (same map)
+	//   +devmap spidercrossings +demo spiderdemo1
+	//
+	//   That causes the server code above to run instead of client.
+	//   This can crash with /vid_restart since the cm data is invalid but
+	//   the check for cm.name in cm loading can still pass.
+	if ((com_sv_running  &&  com_sv_running->integer)  &&  clc.demoReadFile) {
+		CM_ClearMap();
+	}
 }
 
 /*

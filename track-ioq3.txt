@@ -7462,3 +7462,7 @@ the demo.
     nextTeamMember and prevTeamMember commands. nextTeamMember command loops
     around when end of list is reached but prevTeamMember command got stuck
     at last entry in list (team overview).
+
+2018-12-14-01 Prevent Q_IsColorString from asserting on negative ascii chars
+
+2018-12-14-02 Add .gitignore for misc/msvc12
