@@ -1405,7 +1405,13 @@ keep_reading:
 #endif
 
 	if ( buf.cursize > buf.maxsize ) {
-		Com_Error (ERR_DROP, "CL_ReadDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d)", buf.cursize, buf.maxsize);
+		if (di.testParse) {
+			Com_Printf("^1demo_error: 'CL_ReadDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d)' at %d / %ld\n", buf.cursize, buf.maxsize, FS_FTell(clc.demoReadFile), FS_filelength(clc.demoReadFile));
+			CL_DemoCompleted();
+			return;
+		} else {
+			Com_Error (ERR_DROP, "CL_ReadDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d)", buf.cursize, buf.maxsize);
+		}
 	}
 	r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
 	if ( r != buf.cursize ) {

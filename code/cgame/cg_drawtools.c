@@ -561,9 +561,13 @@ float CG_DrawStrlen( const char *str, const fontInfo_t *font ) {
 				s += 2;
 			}
 		} else {
-			//FIXME utf8
+			int numUtf8Bytes;
+			qboolean error;
+
+			Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
+			s += numUtf8Bytes;
+
 			count++;
-			s++;
 		}
 	}
 
@@ -702,7 +706,6 @@ void CG_FadeColorVec4 (vec4_t color,  int startMsec, int totalMsec, int fadeTime
 	int			t;
 
 	if ( startMsec == 0 ) {
-		//return NULL;
 		Vector4Set(color, 0, 0, 0, 0);
 		return;
 	}
@@ -710,7 +713,6 @@ void CG_FadeColorVec4 (vec4_t color,  int startMsec, int totalMsec, int fadeTime
 	t = cg.time - startMsec;
 
 	if ( t >= totalMsec ) {
-		//return NULL;
 		Vector4Set(color, 0, 0, 0, 0);
 		return;
 	}
@@ -1113,6 +1115,7 @@ static int UI_ProportionalStringWidth( const char* str ) {
 				width += PROP_GAP_WIDTH;
 			} else {
 				// control character, skip it
+				s++;
 				continue;
 			}
 		} else {
@@ -1152,7 +1155,7 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 	*/
 	ax = x;
 	ay = y;
-	
+
 	s = str;
 	while ( *s )
 	{
@@ -1162,7 +1165,6 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 
 		ch = *s & 127;
 		codePoint = Q_GetCpFromUtf8(s, &numUtf8Bytes, &error);
-		s += (numUtf8Bytes - 1);
 
 		if (Q_IsColorString(s)) {
 			if (forceColor) {
@@ -1200,7 +1202,11 @@ static void UI_DrawProportionalString2( int x, int y, const char* str, const vec
 				s += 2;
 			}
 			continue;
-		} else if (codePoint <= 127  &&  ch == ' ') {  // ! q3color string
+		}
+
+		s += (numUtf8Bytes - 1);
+
+		if (codePoint <= 127  &&  ch == ' ') {  // ! q3color string
 			aw = (float)PROP_SPACE_WIDTH * sizeScale;
 		} else if (codePoint <= 127  &&   propMap[ch][2] != -1) {
 			fcol = (float)propMap[ch][0] / 256.0f;
