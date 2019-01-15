@@ -109,6 +109,7 @@ cvar_t *com_autoWriteConfig;
 cvar_t *com_execVerbose;
 cvar_t *com_qlColors;
 cvar_t *com_idleSleep;
+cvar_t *com_brokenDemo;
 
 #if idx64
   int (*Q_VMftol)(void);
@@ -3083,6 +3084,7 @@ void Com_Init( char *commandLine ) {
 	com_execVerbose = Cvar_Get("com_execVerbose", "0", CVAR_ARCHIVE);
 	com_qlColors = Cvar_Get("com_qlColors", "1", CVAR_ARCHIVE);
 	com_idleSleep = Cvar_Get("com_idleSleep", "1", CVAR_ARCHIVE);
+	com_brokenDemo = Cvar_Get("com_brokenDemo", "0", CVAR_INIT);  // can only change from command line
 
 	Cvar_Get("com_workshopids", "", CVAR_ROM);
 

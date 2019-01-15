@@ -7466,3 +7466,5 @@ the demo.
 2018-12-14-01 Prevent Q_IsColorString from asserting on negative ascii chars
 
 2018-12-14-02 Add .gitignore for misc/msvc12
+
+2018-12-21-01 OpenGL2: r_cubemapping 2 for box cubemap parallax.

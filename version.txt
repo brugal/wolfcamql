@@ -1,4 +1,4 @@
-12.1test10
+12.1  2019-01-15
 
 * menus work even if window doesn't have mouse grab
 * bug fix:  info screen calculated string widths incorrectly
@@ -127,6 +127,7 @@
 * bug fix:  control character in string could lead to infinite loop when rendering
 * bug fix:  invalid string length calculation with utf8
 * allow playback of demos with corrupt message length (up to the point of the corrupt packet)
+* com_brokenDemo this is set on the command line and tries to continue parsing of demo files that have errors
 
 ---------------------------------
 12.0  2018-06-21

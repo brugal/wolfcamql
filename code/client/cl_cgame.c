@@ -358,8 +358,25 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 			return qfalse;
 		}
 		if ( buf.cursize > buf.maxsize ) {
-			Com_Error (ERR_DROP, "CL_PeekSnapshot: demoMsglen > MAX_MSGLEN");
+			if (com_brokenDemo->integer) {
+				Com_Printf("^1CL_PeekSnapshot:  demoMsglen > MAX_MSGLEN\n");
+				FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+				clc.lastPacketTime = lastPacketTimeOrig;
+				cl.parseEntitiesNum = parseEntitiesNumOrig;
+				return qfalse;
+			} else {
+				Com_Error (ERR_DROP, "CL_PeekSnapshot: demoMsglen > MAX_MSGLEN");
+			}
 		}
+
+		if (buf.cursize < 0) {
+			Com_Printf("^1CL_PeekSnapshot negative message size: %d\n", buf.cursize);
+			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+			clc.lastPacketTime = lastPacketTimeOrig;
+			cl.parseEntitiesNum = parseEntitiesNumOrig;
+			return qfalse;
+		}
+
 		r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
 		if ( r != buf.cursize ) {
 			Com_Printf("CL_PeekSnapshot Demo file was truncated.\n");
@@ -387,7 +404,13 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 
 			//cmdCount++;
 			if ( buf.readcount > buf.cursize ) {
-				Com_Error (ERR_DROP,"CL_PeekSnapshot: read past end of server message");
+				if (com_brokenDemo->integer) {
+					Com_Printf("^1CL_PeekSnapshot: read past end of server message");
+					FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
+					return qfalse;
+				} else {
+					Com_Error (ERR_DROP,"CL_PeekSnapshot: read past end of server message");
+				}
 				break;
 			}
 

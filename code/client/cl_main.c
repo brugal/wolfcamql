@@ -1300,6 +1300,152 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 	Com_Printf("writing non delta for %d %d\n", cl.snap.messageNum, clc.serverMessageSequence);
 }
 
+// not very strict validation, just checks if it's close enough to something valid
+static qboolean CL_CheckForValidServerMessage (msg_t *msg)
+{
+	int cmd;
+	int v;
+
+	MSG_Bitstream(msg);
+
+	// get the reliable sequence acknowledge number
+	v = MSG_ReadLong( msg );
+	if (v < 0) {
+		Com_Printf("%s: invalid sequence ackowledge number %d\n", __FUNCTION__, v);
+		return qfalse;
+	}
+
+	// parse the message
+	while (1) {
+		qboolean dataFollowsEOF = qfalse;
+
+		if (msg->readcount > msg->cursize) {
+			Com_Printf("%s: readcount > cursize   %d > %d\n", __FUNCTION__, msg->readcount, msg->cursize);
+			return qfalse;
+		}
+
+		cmd = MSG_ReadByte(msg);
+
+		// See if this is an extension command after the EOF, which means we
+		// have speex voip data.
+		if ((cmd == svc_EOF)  &&  (MSG_LookaheadByte(msg) == svc_extension)) {
+			dataFollowsEOF = qtrue;
+			MSG_ReadByte(msg);  // throw the svc_extension byte away
+
+			cmd = MSG_ReadByte(msg);
+			if (cmd == -1) {
+				cmd = svc_EOF;
+			}
+		}
+
+		if (cmd == svc_EOF) {
+			break;
+		}
+
+		// other commands
+		switch (cmd) {
+		default:
+			Com_Printf("%s: Illegible server message %d\n", __FUNCTION__, cmd);
+			return qfalse;
+		case svc_nop:
+			break;
+		case svc_serverCommand: {
+			int seq;
+			char *s;
+
+			seq = MSG_ReadLong(msg);
+			if (seq < 0) {
+				Com_Printf("%s: invalid command string seq %d\n", __FUNCTION__, seq);
+				return qfalse;
+			}
+			s = MSG_ReadString(msg);
+			//FIXME debugging
+			Com_Printf("command string: '%s'\n", s);
+			break;
+		}
+		case svc_gamestate: {
+			//FIXME CL_ParseGamestate(msg);
+			Com_Printf("%s: gamestate\n", __FUNCTION__);
+			return qtrue;
+			break;
+		}
+		case svc_snapshot: {
+			int serverTime;
+			int deltaNum;
+			int len;
+			clSnapshot_t newSnap;
+
+			//FIXME CL_ParseSnapshot(msg, NULL, clc.serverMessageSequence, qfalse);
+			Com_Printf("%s: snapshot\n", __FUNCTION__);
+
+			serverTime = MSG_ReadLong(msg);
+			if (serverTime < 0) {
+				Com_Printf("%s: invalid server time %d\n", __FUNCTION__, serverTime);
+				return qfalse;
+			}
+
+			deltaNum = MSG_ReadByte(msg);
+#if 0
+			if (deltaNum < 0) {
+				Com_Printf("%s: invalid deltaNum %d\n", __FUNCTION__, deltaNum);
+				return qfalse;
+			}
+#endif
+			Com_Printf("deltaNum %d\n", deltaNum);
+
+			MSG_ReadByte(msg);  // newSnap.snapFlags
+
+			// read areamask
+			len = MSG_ReadByte(msg);
+			if (len > sizeof(newSnap.areamask)) {
+				Com_Printf("%s: invalid areamask size %d\n", __FUNCTION__, len);
+				return qfalse;
+			}
+
+			MSG_ReadData(msg, &newSnap.areamask, len);
+
+			// read playerinfo
+			MSG_ReadDeltaPlayerstate(msg, NULL, &newSnap.ps);
+
+			// read packet entities
+			//FIXME
+			//CL_ParsePacketEntities(msg, old, &newSnap);
+			return qtrue;
+			break;
+		}
+		case svc_download:
+			//FIXME CL_ParseDownload(msg);
+			Com_Printf("%s: download\n", __FUNCTION__);
+			return qtrue;
+			break;
+		case svc_extension:  // libspeex voip protocol 70 or 71
+			//FIXME check
+			if (dataFollowsEOF) {
+				// shouldn't happen
+				//Com_Printf("^1%s unknown svc_extension\n", __FUNCTION__);
+			} else {
+				// check protocol to see if it contains flags
+				//CL_ParseVoipSpeex(msg, qtrue, false);
+			}
+			Com_Printf("%s: extension\n", __FUNCTION__);
+			return qtrue;
+			break;
+		case svc_voip:
+			if (dataFollowsEOF) {
+				// old speex without flags
+				//CL_ParseVoipSpeex(msg, qfalse, qfalse);
+			} else {
+				//CL_ParseVoip(msg, qfalse);
+			}
+			Com_Printf("%s: voip\n", __FUNCTION__);
+			return qtrue;
+			break;
+		}
+	}
+
+	return qtrue;
+}
+
 /*
 =================
 CL_ReadDemoMessage
@@ -1314,6 +1460,8 @@ void CL_ReadDemoMessage (qboolean seeking)
 	int i;
 	rewindBackups_t *rb;
 	//double currentTime;
+	int prevServerMessageSequence;
+	qboolean badMessageFound = qfalse;
 
 	if (cl_freezeDemo->integer) {
 		//return;
@@ -1375,7 +1523,13 @@ keep_reading:
 		CL_DemoCompleted ();
 		return;
 	}
+
+	prevServerMessageSequence = clc.serverMessageSequence;
 	clc.serverMessageSequence = LittleLong( s );
+
+	if (clc.serverMessageSequence != (prevServerMessageSequence + 1)  &&  prevServerMessageSequence != 0  &&  clc.serverMessageSequence != -1) {
+		//Com_Printf("^3server message sequence: %d -> %d\n", prevServerMessageSequence, clc.serverMessageSequence);
+	}
 
 	// init the message
 	MSG_Init( &buf, bufData, sizeof( bufData ) );
@@ -1404,6 +1558,43 @@ keep_reading:
 	}
 #endif
 
+	// hack for broken demos
+	//FIXME also check if clc.serverMessageSequence is valid
+	if (com_brokenDemo->integer  &&  (buf.cursize > MAX_MSGLEN  ||  buf.cursize < 0)) {  //  ||  clc.serverMessageSequence < 0) {
+		Com_Printf("  ^6broken demo pos: %d  seq: %d -> %d  bad size: %d\n", FS_FTell(clc.demoReadFile) - 8, prevServerMessageSequence, clc.serverMessageSequence, buf.cursize);
+		//buf.cursize = 16;
+		// -7
+		FS_Seek(clc.demoReadFile, -7, FS_SEEK_CUR);
+		badMessageFound = qtrue;
+		goto keep_reading;
+	}
+
+	if (badMessageFound) {
+		int currentPosition;
+
+		currentPosition = FS_FTell(clc.demoReadFile);
+		Com_Printf("^3found possible valid message %d -> %d length %d at %d\n", prevServerMessageSequence, clc.serverMessageSequence, buf.cursize, FS_FTell(clc.demoReadFile) - 8);
+
+		//FIXME double check message, buf.cursize already checked if < 0
+		r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
+		if ( r != buf.cursize ) {
+			Com_Printf( "Demo file was truncated.\n");
+			CL_DemoCompleted ();
+			return;
+		}
+
+		if (!CL_CheckForValidServerMessage(&buf)) {
+			// bad, keep trying
+			Com_Printf("  ^1not valid server message\n");
+			FS_Seek(clc.demoReadFile, currentPosition - 7, FS_SEEK_SET);
+			goto keep_reading;
+		} else {
+			// all good, reset and continue
+			Com_Printf("   maybe valid server message\n");
+			FS_Seek(clc.demoReadFile, currentPosition, FS_SEEK_SET);
+		}
+	}
+
 	if ( buf.cursize > buf.maxsize ) {
 		if (di.testParse) {
 			Com_Printf("^1demo_error: 'CL_ReadDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d)' at %d / %ld\n", buf.cursize, buf.maxsize, FS_FTell(clc.demoReadFile), FS_filelength(clc.demoReadFile));
@@ -1413,6 +1604,17 @@ keep_reading:
 			Com_Error (ERR_DROP, "CL_ReadDemoMessage: demoMsglen (%d) > MAX_MSGLEN (%d)", buf.cursize, buf.maxsize);
 		}
 	}
+
+	if (buf.cursize < 0) {
+		if (di.testParse) {
+			Com_Printf("^1demo_error: 'CL_ReadDemoMessage: negative message size: %d\n", buf.cursize);
+			CL_DemoCompleted();
+			return;
+		} else {
+			Com_Error (ERR_DROP, "CL_ReadDemoMessage: negative message size: %d", buf.cursize);
+		}
+	}
+
 	r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
 	if ( r != buf.cursize ) {
 		Com_Printf( "Demo file was truncated.\n");

@@ -57,7 +57,11 @@ static void Parse_Error (int code, const char *fmt, ...)
 	if (di.testParse) {
 		Com_Printf(S_COLOR_RED "demo error: '%s'\n", errorMsg);
 	} else {
-		Com_Error(code, "%s", errorMsg);
+		if (com_brokenDemo->integer) {
+			Com_Printf(S_COLOR_RED "demo error: '%s'\n", errorMsg);
+		} else {
+			Com_Error(code, "%s", errorMsg);
+		}
 	}
 }
 
@@ -456,7 +460,19 @@ void CL_ParseSnapshot (msg_t *msg, clSnapshot_t *sn, int serverMessageSequence, 
 			// is too old, so we can't reconstruct it properly.
 			//if (!clc.demoplaying) {
 			if (1) {
-				Com_Printf ("Delta frame too old.\n");
+				// don't spam
+				if (clc.demoplaying  &&  com_brokenDemo->integer) {
+					static int lastTime = -1;
+					int currentTime;
+
+					currentTime = Sys_Milliseconds();
+					if (currentTime - lastTime > 1000) {
+						Com_Printf("Delta frame too old : %d -> %d\n", old->messageNum, newSnap.deltaNum);
+						lastTime = currentTime;
+					}
+				} else {
+					Com_Printf ("Delta frame too old.\n");
+				}
 			} else {
 				// could be seeking in demo
 				newSnap.valid = qtrue;

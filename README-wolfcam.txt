@@ -2819,6 +2819,9 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
   ex:  to show current demo name with a keybind:
      bind F6 echopopupcvar cl_demoFileBaseName
 * demo name is also shown in +info screen along with the length and progress counter
+
+* com_brokenDemo  this is set on the command and tries to continue parsing of demo files that have errors.  Broken demo playback isn't guaranteed and setting this cvar can lead to very long demo parsing times.
+
 * cg_itemTimers  in world quake live item timers (0: not visible, 1: visible, 2: visible with depth hack)
 * cg_itemTimersScale  size scale of in world timers
 * cg_itemTimersOffset  vertical displacement of in world timers

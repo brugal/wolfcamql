@@ -41,10 +41,16 @@ static void MSG_Error (int code, const char *fmt, ...)
 	va_end(argptr);
 
 	if (Msg_TestParse) {
-		Msg_Abort = qtrue;
+		if (!com_brokenDemo->integer) {
+			Msg_Abort = qtrue;
+		}
 		Com_Printf(S_COLOR_RED "demo error: '%s'\n", errorMsg);
 	} else {
-		Com_Error(code, "%s", errorMsg);
+		if (com_brokenDemo->integer) {
+			Com_Printf(S_COLOR_RED "demo error: '%s'\n", errorMsg);
+		} else {
+			Com_Error(code, "%s", errorMsg);
+		}
 	}
 }
 

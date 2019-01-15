@@ -917,6 +917,7 @@ extern qboolean com_writeConfig;
 
 extern cvar_t *com_execVerbose;
 extern cvar_t *com_qlColors;
+extern cvar_t *com_brokenDemo;
 
 // com_speeds times
 extern	int		time_game;
