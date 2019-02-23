@@ -146,6 +146,7 @@ void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 	if ( bits < 0 ) {
 		bits = -bits;
 	}
+
 	if ( msg->oob ) {
 		if ( msg->cursize + ( bits >> 3 ) > msg->maxsize ) {
 			msg->overflowed = qtrue;
@@ -162,7 +163,7 @@ void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 			CopyLittleShort( &msg->data[msg->cursize], &temp );
 			msg->cursize += 2;
 			msg->bit += 16;
-		} else if ( bits == 32 ) {
+		} else if ( bits==32 ) {
 			CopyLittleLong( &msg->data[msg->cursize], &value );
 			msg->cursize += 4;
 			msg->bit += 32;
@@ -171,7 +172,7 @@ void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 			return;
 		}
 	} else {
-		value &= (0xffffffff>>(32-bits));
+		value &= (0xffffffff >> (32 - bits));
 		if ( bits&7 ) {
 			int nbits;
 			nbits = bits&7;
@@ -180,14 +181,14 @@ void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 				return;
 			}
 			for( i = 0; i < nbits; i++ ) {
-				Huff_putBit((value & 1), msg->data, &msg->bit);
+				Huff_putBit( (value & 1), msg->data, &msg->bit );
 				value = (value >> 1);
 			}
 			bits = bits - nbits;
 		}
 		if ( bits ) {
-			for( i = 0; i < bits; i +=8 ) {
-				Huff_offsetTransmit( &msgHuff.compressor, (value&0xff), msg->data, &msg->bit, msg->maxsize << 3 );
+			for( i = 0; i < bits; i += 8 ) {
+				Huff_offsetTransmit( &msgHuff.compressor, (value & 0xff), msg->data, &msg->bit, msg->maxsize << 3 );
 				value = (value >> 8);
 
 				if ( msg->bit > msg->maxsize << 3 ) {
@@ -226,7 +227,8 @@ int MSG_ReadBits( msg_t *msg, int bits ) {
 			return 0;
 		}
 
-		if(bits==8) {
+		if(bits==8)
+		{
 			value = msg->data[msg->readcount];
 			msg->readcount += 1;
 			msg->bit += 8;

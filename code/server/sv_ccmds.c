@@ -167,8 +167,6 @@ static void SV_Map_f( void ) {
 	}
 #endif
 
-	Cvar_Set("protocol", va("%i", SERVER_PROTOCOL));
-
 	map = Cmd_Argv(1);
 	if ( !map ) {
 		return;
@@ -178,6 +176,18 @@ static void SV_Map_f( void ) {
 		Q_strncpyz(gameType, Cmd_Argv(2), sizeof(gameType));
 	} else {
 		gameType[0] = '\0';
+	}
+
+	// check if no map is specified to issue help message
+	if (strlen(map) == 0) {
+		cmd = Cmd_Argv(0);
+
+		//FIXME spdevmap ...
+
+		if ( !Q_stricmp( cmd, "devmap" ) ) {
+			Com_Printf("usage: devmap <map name> [ffa | duel | race | tdm | ca | ctf | oneflag | ob | har | ft | dom | ad | rr]\n");
+			return;
+		}
 	}
 
 	// make sure the level exists before trying to change, so that
@@ -206,6 +216,8 @@ static void SV_Map_f( void ) {
 			return;
 		}
 	}
+
+	Cvar_Set("protocol", va("%i", SERVER_PROTOCOL));
 
 	// force latched values to get set
 	Cvar_Get ("g_gametype", "0", CVAR_SERVERINFO | CVAR_USERINFO | CVAR_LATCH );
@@ -1533,7 +1545,7 @@ static void SV_Serverinfo_f( void ) {
 ===========
 SV_Systeminfo_f
 
-Examine the serverinfo string
+Examine the systeminfo string
 ===========
 */
 static void SV_Systeminfo_f( void ) {

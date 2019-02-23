@@ -387,9 +387,18 @@ vmCvar_t	cg_zoomFov;
 vmCvar_t cg_zoomTime;
 vmCvar_t cg_zoomIgnoreTimescale;
 vmCvar_t cg_zoomBroken;
+
 vmCvar_t	cg_thirdPersonRange;
 vmCvar_t	cg_thirdPersonAngle;
+vmCvar_t cg_thirdPersonMaxPlayerPitch;
+vmCvar_t cg_thirdPersonFocusDistance;
+vmCvar_t cg_thirdPersonOffsetZ;
+vmCvar_t cg_thirdPersonPlayerOffsetZ;
+vmCvar_t cg_thirdPersonPlayerCrouchHeightChange;
+vmCvar_t cg_thirdPersonPlayerPitchScale;
+vmCvar_t cg_thirdPersonAvoidSolid;
 vmCvar_t	cg_thirdPerson;
+
 vmCvar_t	cg_stereoSeparation;
 
 vmCvar_t	cg_lagometer;
@@ -1267,6 +1276,9 @@ vmCvar_t cg_useScoresUpdateTeam;
 vmCvar_t cg_colorCodeWhiteUseForegroundColor;
 vmCvar_t cg_colorCodeUseForegroundAlpha;
 
+vmCvar_t cg_chaseThirdPerson;
+vmCvar_t cg_chaseUpdateFreeCam;
+
 // end cvar_t
 
 typedef struct {
@@ -1565,14 +1577,23 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_errorDecay, "cg_errordecay", "100", 0 },
 	{ &cg_nopredict, "cg_nopredict", "0", 0 },
 	{ &cg_noPlayerAnims, "cg_noplayeranims", "0", CVAR_CHEAT },
-	{ &cg_showmiss, "cg_showmiss", "0", 0 },
+	{ &cg_showmiss, "cg_showmiss", "0", CVAR_ARCHIVE },
 	{ &cg_footsteps, "cg_footsteps", "1", CVAR_CHEAT },
 	{ &cg_tracerChance, "cg_tracerChance", "0.4", CVAR_ARCHIVE },
 	{ &cg_tracerWidth, "cg_tracerWidth", "1", CVAR_ARCHIVE },
 	{ &cg_tracerLength, "cg_tracerLength", "100", CVAR_ARCHIVE },
+
 	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "40", CVAR_CHEAT },
 	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT },
+	{ cvp(cg_thirdPersonMaxPlayerPitch), "45", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonFocusDistance), "512.0", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonOffsetZ), "0", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonPlayerOffsetZ), "8", CVAR_ARCHIVE | CVAR_CHEAT },
+	{ cvp(cg_thirdPersonPlayerCrouchHeightChange), "1", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonPlayerPitchScale), "0.5", CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonAvoidSolid), "1", CVAR_ARCHIVE },
 	{ &cg_thirdPerson, "cg_thirdPerson", "0", 0 },
+
 	{ &cg_teamChatTime, "cg_teamChatTime", "3000", CVAR_ARCHIVE  },
 	{ &cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE  },
 	{ &cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE  },
@@ -2447,6 +2468,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_useScoresUpdateTeam), "1", CVAR_ARCHIVE },
 	{ cvp(cg_colorCodeWhiteUseForegroundColor), "0", CVAR_ARCHIVE },
 	{ cvp(cg_colorCodeUseForegroundAlpha), "0", CVAR_ARCHIVE },
+	{ cvp(cg_chaseThirdPerson), "1", CVAR_ARCHIVE },
+	{ cvp(cg_chaseUpdateFreeCam), "1", CVAR_ARCHIVE },
 
 };
 

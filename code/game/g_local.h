@@ -563,13 +563,13 @@ void Weapon_HookThink (gentity_t *ent);
 //
 // g_client.c
 //
-team_t TeamCount( int ignoreClientNum, team_t team );
+int TeamCount( int ignoreClientNum, team_t team );
 int TeamLeader( int team );
 team_t PickTeam( int ignoreClientNum );
 void SetClientViewAngle( gentity_t *ent, vec3_t angle );
 gentity_t *SelectSpawnPoint (vec3_t avoidPoint, vec3_t origin, vec3_t angles, qboolean isbot);
 void CopyToBodyQue( gentity_t *ent );
-void ClientRespawn (gentity_t *ent);
+void ClientRespawn(gentity_t *ent);
 void BeginIntermission (void);
 void InitBodyQue (void);
 void ClientSpawn( gentity_t *ent );
@@ -757,6 +757,8 @@ extern vmCvar_t g_weapon_plasma_speed;
 //extern vmCvar_t g_weapon_plasma_rate;
 
 extern vmCvar_t g_debugPingValue;
+extern vmCvar_t g_ammoPack;
+extern vmCvar_t g_ammoPackHack;
 
 void	trap_Print( const char *text );
 void    trap_Error( const char *text ) __attribute__((noreturn));

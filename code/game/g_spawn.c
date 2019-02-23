@@ -79,7 +79,7 @@ typedef enum {
 	F_FLOAT,
 	F_STRING,
 	F_VECTOR,
-	F_ANGLEHACK,
+	F_ANGLEHACK
 } fieldtype_t;
 
 typedef struct
@@ -384,11 +384,10 @@ void G_ParseField( const char *key, const char *value, gentity_t *ent ) {
 	}
 }
 
-
 #define ADJUST_AREAPORTAL() \
 	if(ent->s.eType == ET_MOVER) \
 	{ \
-	    trap_LinkEntity(ent);\
+		trap_LinkEntity(ent);					\
 		trap_AdjustAreaPortalState(ent, qtrue); \
 	}
 
@@ -404,13 +403,39 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	int			i;
 	gentity_t	*ent;
 	char		*s, *value, *gametypeName;
-	static char *gametypeNames[] = { "ffa", "tournament", "single", "team", "ca" /*FIXME "clanarena" */, "ctf", "oneflag", "obelisk", "harvester", "ft", "dom", "ad", "rr", "race" };
+	static char *gametypeNames[] = { "ffa", "tournament" /* ql now uses 'duel' so you need extra checks */, "race", "team" /* ql now uses 'tdm' so you need extra checks */, "ca", "ctf", "oneflag" /* ql now uses '1f' so you need extra checks */, "obelisk" /* ql now uses 'ob' so you need extra checks */, "harvester" /* ql now uses 'har' so you need extra checks */, "ft", "dom", "ad", "rr", "ntf" /* cpma never used */, "twovstwo" /* cpma never used */, "hm" /* cpma never used */, "single" };
 
 	// get the next free entity
 	ent = G_Spawn();
 
 	for ( i = 0 ; i < level.numSpawnVars ; i++ ) {
 		G_ParseField( level.spawnVars[i][0], level.spawnVars[i][1], ent );
+	}
+
+	if (g_ammoPackHack.integer) {
+		// substitute ammo_ with ammo_pack
+		if (!Q_stricmp(ent->classname, "ammo_pack")) {
+			ADJUST_AREAPORTAL();
+			G_FreeEntity( ent );
+			return;
+		} else if (!Q_stricmpn(ent->classname, "ammo_", 5)) {
+			ent->classname = G_NewString("ammo_pack");
+		}
+	} else if (g_ammoPack.integer) {
+		if (!Q_stricmp(ent->classname, "ammo_pack")) {
+			// pass, add it
+		} else if (!Q_stricmpn(ent->classname, "ammo_", 5)) {
+			// ignore other types of ammo
+			ADJUST_AREAPORTAL();
+			G_FreeEntity( ent );
+			return;
+		}
+	} else {
+		if (!Q_stricmp(ent->classname, "ammo_pack")) {
+			ADJUST_AREAPORTAL();
+			G_FreeEntity( ent );
+			return;
+		}
 	}
 
 	// check for "notsingle" flag
@@ -439,17 +464,39 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 		}
 	}
 
-	//FIXME this can also be a string in quake live
+	// quake live addition
 	if (G_SpawnString("not_gametype", NULL, &value)) {
-		//FIXME did quakelive also use ints before ?
-		if (isdigit(value[0])) {
-			// old check using integer gametype values
-			if (g_gametype.integer == i) {
-				ADJUST_AREAPORTAL();
-				G_FreeEntity(ent);
-				return;
+		qboolean isDigitString;
+		int i;
+
+		// 2019-01-31 older quake live maps used numbers instead of
+		// strings for the gametypes.  Ex (2009 map):
+		//    qzca1.bsp:"not_gametype" "1"
+		//    qzca1.bsp:"not_gametype" "0 2 3 4 5"
+
+		// check for all digit string so you don't trip up with '1f'
+		isDigitString = qtrue;
+		for (i = 0;  i < strlen(value);  i++) {
+			if (!isdigit(value[i])) {
+				isDigitString = qfalse;
+				break;
 			}
-		} else {
+		}
+
+		if (isDigitString) {
+			if (g_gametype.integer >= 0  &&  g_gametype.integer <= 9) {
+				s = strstr(value, g_gametype.string);
+				if (s) {
+					ADJUST_AREAPORTAL();
+					G_FreeEntity(ent);
+					return;
+				}
+			} else {
+				// single player (not valid in ql) or gametypes that didn't exist when map was created (domination, red rover, etc..)
+
+				// pass
+			}
+		} else {  // string
 			if (g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE) {
 				gametypeName = gametypeNames[g_gametype.integer];
 
@@ -466,11 +513,16 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 						s = strstr(value, "1f");
 					} else if (g_gametype.integer == GT_OBELISK) {
 						s = strstr(value, "ob");
+						// 2019-02-02 also 'overload', don't know if this is a map bug
+                        // overgrowth.bsp:"gametype" "harvester, overload"
+                        if (!s) {
+                            s = strstr(value, "overload");
+                        }
 					}
 				}
 
 				if (s) {
-					//G_Printf("skipping item, not in gametype string: '%s'\n", value);
+					//G_Printf("skipping item, in not_gametype string: '%s'\n", value);
 					ADJUST_AREAPORTAL();
 					G_FreeEntity(ent);
 					return;
@@ -496,17 +548,18 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	}
 #endif
 
-
-	if (G_SpawnString("gametype", NULL, &value)) {
+	if( G_SpawnString( "gametype", NULL, &value ) ) {
 		//Com_Printf("^5gametype: %s\n", value);
 
-		//FIXME gametype as int?  q3 mods?
+		// 2019-02-02 quake live sometimes uses comma separated list:
+		//    theoldendomain.bsp:"gametype" "ffa,tournament,single"
+		//    solid.bsp:"gametype" "ffa tdm ft"
 
-		if (g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE) {
+		if( g_gametype.integer >= GT_FFA && g_gametype.integer < GT_MAX_GAME_TYPE ) {
 			gametypeName = gametypeNames[g_gametype.integer];
 
-			s = strstr(value, gametypeName);
-			if (!s) {
+			s = strstr( value, gametypeName );
+			if( !s ) {
 				// try alternate quake live gametype names
 				if (g_gametype.integer == GT_TEAM) {
 					s = strstr(value, "tdm");
@@ -518,13 +571,18 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 					s = strstr(value, "1f");
 				} else if (g_gametype.integer == GT_OBELISK) {
 					s = strstr(value, "ob");
+					// 2019-02-02 also 'overload', don't know if this is a map bug
+					// overgrowth.bsp:"gametype" "harvester, overload"
+					if (!s) {
+						s = strstr(value, "overload");
+					}
 				}
 			}
 
 			if (!s) {
 				//G_Printf("skipping item, not in gametype string: '%s'\n", value);
 				ADJUST_AREAPORTAL();
-				G_FreeEntity(ent);
+				G_FreeEntity( ent );
 				return;
 			}
 		}
@@ -677,7 +735,6 @@ void SP_worldspawn( void ) {
 	g_entities[ENTITYNUM_WORLD].s.number = ENTITYNUM_WORLD;
 	g_entities[ENTITYNUM_WORLD].r.ownerNum = ENTITYNUM_NONE;
 	g_entities[ENTITYNUM_WORLD].classname = "worldspawn";
-
 
 	g_entities[ENTITYNUM_NONE].s.number = ENTITYNUM_NONE;
 	g_entities[ENTITYNUM_NONE].r.ownerNum = ENTITYNUM_NONE;

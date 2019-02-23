@@ -215,7 +215,27 @@ int Pickup_Ammo (gentity_t *ent, gentity_t *other)
 		quantity = ent->item->quantity;
 	}
 
-	Add_Ammo (other, ent->item->giTag, quantity);
+	if (!Q_stricmp(ent->item->classname, "ammo_pack")) {
+		int i;
+
+		for (i = 0;  i < bg_numItems;  i++) {
+			const gitem_t *item;
+
+			item = &bg_itemlist[i];
+			if (item->giType != IT_AMMO) {
+				// skip
+				continue;
+			}
+			if (!Q_stricmp(item->classname, "ammo_pack")) {
+				// skip
+				continue;
+			}
+
+			Add_Ammo(other, item->giTag, item->quantity);
+		}
+	} else {
+		Add_Ammo (other, ent->item->giTag, quantity);
+	}
 
 	return RESPAWN_AMMO;
 }
@@ -343,6 +363,7 @@ void RespawnItem( gentity_t *ent ) {
 		Com_Printf("^1ERROR RespawnItem ent == null\n");
 		return;
 	}
+
 	// randomly select from teamed entities
 	if (ent->team) {
 		gentity_t	*master;
@@ -374,7 +395,6 @@ void RespawnItem( gentity_t *ent ) {
 	ent->r.contents = CONTENTS_TRIGGER;
 	ent->s.eFlags &= ~EF_NODRAW;
 	ent->r.svFlags &= ~SVF_NOCLIENT;
-
 	trap_LinkEntity (ent);
 
 	if ( ent->item->giType == IT_POWERUP ) {
@@ -543,7 +563,7 @@ void Touch_Item (gentity_t *ent, gentity_t *other, trace_t *trace) {
 
 	// ql timer pies..  send no draw items to client
 
-	// commenting this creates double pickup sounds if cg_predict.c isn't changed
+	// commenting this creates double pickup sounds if cg_predict.c isn't changed  -- 2019-02-14 added EF_NODRAW check in cg_predict.c
 	// ent->r.svFlags |= SVF_NOCLIENT;
 	if (ent->item->giType == IT_POWERUP) {
 		ent->r.svFlags |= SVF_BROADCAST;
@@ -968,7 +988,7 @@ void G_RunItem( gentity_t *ent ) {
 	int			contents;
 	int			mask;
 
-	// if groundentity has been set to none, it may have been pushed off an edge
+	// if its groundentity has been set to none, it may have been pushed off an edge
 	if ( ent->s.groundEntityNum == ENTITYNUM_NONE  ) {
 		if ( ent->s.pos.trType != TR_GRAVITY ) {
 			ent->s.pos.trType = TR_GRAVITY;

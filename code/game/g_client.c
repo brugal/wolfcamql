@@ -522,11 +522,10 @@ void SetClientViewAngle( gentity_t *ent, vec3_t angle ) {
 
 /*
 ================
-respawn
+ClientRespawn
 ================
 */
 void ClientRespawn( gentity_t *ent ) {
-	//gentity_t	*tent;
 
 	CopyToBodyQue (ent);
 	ClientSpawn(ent);
@@ -539,7 +538,7 @@ TeamCount
 Returns number of players on a team
 ================
 */
-team_t TeamCount( int ignoreClientNum, team_t team ) {
+int TeamCount( int ignoreClientNum, team_t team ) {
 	int		i;
 	int		count = 0;
 
@@ -955,7 +954,7 @@ char *ClientConnect( int clientNum, qboolean firstTime, qboolean isBot ) {
 	}
 	G_ReadSessionData( client );
 
-	// get and distribute relevant paramters
+	// get and distribute relevant parameters
 	G_LogPrintf( "ClientConnect: %i\n", clientNum );
 	ClientUserinfoChanged( clientNum );
 
@@ -1193,7 +1192,6 @@ void ClientSpawn(gentity_t *ent) {
 
 	trap_GetUsercmd( client - level.clients, &ent->client->pers.cmd );
 	SetClientViewAngle( ent, spawn_angles );
-
 	// don't allow full run speed for a bit
 	client->ps.pm_flags |= PMF_TIME_KNOCKBACK;
 	client->ps.pm_time = 100;
@@ -1212,36 +1210,34 @@ void ClientSpawn(gentity_t *ent) {
 			// force the base weapon up
 			client->ps.weapon = WP_MACHINEGUN;
 			client->ps.weaponstate = WEAPON_READY;
-		// fire the targets of the spawn point
-		G_UseTargets( spawnPoint, ent );
+			// fire the targets of the spawn point
+			G_UseTargets(spawnPoint, ent);
+			// select the highest weapon number available, after any spawn given items have fired
+			client->ps.weapon = 1;
 
-		// select the highest weapon number available, after any spawn given items have fired
-		client->ps.weapon = 1;
-
-		for ( i = WP_NUM_WEAPONS - 1 ; i > 0 ; i-- ) {
-			if ( client->ps.stats[STAT_WEAPONS] & ( 1 << i ) ) {
-				client->ps.weapon = i;
-				break;
+			for (i = WP_NUM_WEAPONS - 1 ; i > 0 ; i--) {
+				if (client->ps.stats[STAT_WEAPONS] & (1 << i)) {
+					client->ps.weapon = i;
+					break;
+				}
 			}
-		}
-		// positively link the client, even if the command times are weird
-		VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
+			// positively link the client, even if the command times are weird
+			VectorCopy(ent->client->ps.origin, ent->r.currentOrigin);
 
-		tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_IN);
-		tent->s.clientNum = ent->s.clientNum;
-		trap_LinkEntity (ent);
+			tent = G_TempEntity(ent->client->ps.origin, EV_PLAYER_TELEPORT_IN);
+			tent->s.clientNum = ent->s.clientNum;
+
+			trap_LinkEntity (ent);
 		}
 	} else {
 		// move players to intermission
 		MoveClientToIntermission(ent);
 	}
-
 	// run a client frame to drop exactly to the floor,
 	// initialize animations and other things
 	client->ps.commandTime = level.time - 100;
 	ent->client->pers.cmd.serverTime = level.time;
 	ClientThink( ent-g_entities );
-
 	// run the presend to set anything else, follow spectators wait
 	// until all clients have been reconnected after map_restart
 	if ( ent->client->sess.spectatorState != SPECTATOR_FOLLOW ) {

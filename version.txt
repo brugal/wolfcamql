@@ -1,3 +1,38 @@
+12.2test1
+
+* bug fix:  UI_SERVER_OWNER not implemented
+* bug fix:  warm up string using cg_drawWaitingForPlayersFont instead of cg_drawWarmupStringFont
+* bug fix:  incorrect client parsing of map items for older quake live maps that use digit values with 'not_gametype'
+* bug fix:  incorrect server parsing of map items for older quake live maps that use digit values with 'not_gametype'
+* bug fix:  incorrect server parsing of map items for 'race' gametype
+* bug fix:  incorrect client parsing of map items when 'not_gametype' set to '1f'
+* bug fix:  incorrect client parsing of map items when 'not_gametype' set to 'ob'
+* support for 'overload' (GT_OBELISK) gametype string for client and server map item parsing
+* bug fix:  crash parsing map items with cpma ntf, cpma 2v2, cpma hoony mode, and single player modes
+* g_ammoPack to use or ignore 'ammo_pack' items
+* g_ammoPackHack  to substitute other 'ammo_' types with 'ammo_pack'
+* bug fix:  typo in 'Heavy Bullets' pickup name
+* bug fix:  bg item list 'ammoregen' changed to 'armorregen'
+* bug fix:  bg item list hmg missing starting ammo
+* bug fix:  bg item list "Doubler" changed to "Damage" to match quake live
+* bug fix:  bg item list hmg bullets missing quantity
+* bug fix:  multiple item pickups generated with /devmap and cg_predictItems 1
+* added help message for /devmap, /printentitystate, /printnextentitystate
+* cg_showmiss set as archived cvar
+* ioquake3 patches:
+
+    - Add r_parallaxMapShadows
+
+* bug fix:  bots would crouch/movedown
+* /chase and /view commands changed so that -1 needs to be set explicitly to disable chase or view mode.  If no entity is specified, a help message is printed to the console.
+* console help message added for /echopopupcvar
+* bug fix:  incorrect help message for /printentitydistance
+* /testreplace debugging function removed
+* cg_chaseThirdPerson to enable third person options with /chase
+* cg_chaseUpdateFreeCam to enable updating freecam position and angles in chase mode
+* cg_thirdPersonMaxPlayerPitch, cg_thirdPersonFocusDistance, cg_thirdPersonOffsetZ, cg_thirdPersonPlayerOffsetZ, cg_thirdPersonPlayerPitchScale, cg_thirdPersonAvoidSolid, cg_thirdPersonPlayerCrouchHeightChange
+
+---------------------------------
 12.1  2019-01-15
 
 * menus work even if window doesn't have mouse grab
@@ -45,7 +80,6 @@
 * bug fix:  default texscale was 0.22 instead of 0.55 (matches quake live)
 * cg_powerupBlink  (enable or disable icon blinking when time is running out)
 * bug fix:  CG_AREA_POWERUP would always use rectangle width to increment distance between multiple powerups (for both HUD_VERTICAL and HUD_HORIZONTAL)
-* cg_powerupBlink  (enable or disable icon blinking when time is running out)
 * bug fix:  CG_AREA_POWERUP kill counter icon size based on textscale instead of rectangle size
 * bug fix:  CG_AREA_POWERUP kill counter icon position and text weren't connected to countdown text
 * bug fix:  CG_PLAYER_HEALTH_BAR_200 and CG_PLAYER_ARMOR_BAR_200 drawing incorrect value

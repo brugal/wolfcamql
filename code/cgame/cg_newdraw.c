@@ -8172,7 +8172,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  CG_DrawMedal(ownerDraw, &rect, scale, color, shader, font);
 	  break;
   case CG_SPECTATORS:
-	  // 2018-07-15 ql doesn't scroll text anymore just changes order so that the list changes after a set amount of time.  ex:  show 'player1 player2 player3' then after a while show 'player4 player5' etc..
+	  // 2018-07-15 ql doesn't scroll text anymore just changes order so that the list changes after a set amount of time.  ex: show 'player1 player2 player3' then after a while show 'player4 player5' etc..
 	  // 2018-07-19 ql ignores 'shader'
 	  CG_DrawTeamSpectators(&rect, scale, color, shader, font);
 	  break;
@@ -11182,6 +11182,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  //FIXME what about older demos?
 	  break;
 
+  case UI_SERVER_OWNER:
   case CG_SERVER_OWNER: {
 	  // 2018-09-29 not in ql
 	  const char *ownerName = NULL;

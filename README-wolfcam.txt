@@ -1724,14 +1724,13 @@ freecam   type /freecam in console
 
   autoexecs freecamon.cfg and freecamoff.cfg
 
-  locking view to an entity or position:
+  locking view to an entity or current position:
 
-      /view <entity num> [x offset] [y offset] [z offset]    // [] are optional
+      /view <entity number> [x offset] [y offset] [z offset]    // [] are optional
           or
       /view here    // lock view to current freecam position
 
-
-      Use '/view' by itself to unlock.
+      Set entity number to -1 to disable view mode.
 
       Use /listentities or 'cg_drawEntNumbers 1' to get entity numbers.
 
@@ -1756,7 +1755,13 @@ freecam +rollright +rollleft /centerroll (like /centerview) +rollstopzero
       bind 3 "centerroll"
 
 
-/chase <entNum> [x offset] [y offset] [z offset]     [] means optional
+/chase <entity number> [x offset] [y offset] [z offset]     [] means optional
+
+  set entity number to -1 to disable chase mode
+
+  cg_chaseThirdPerson  this enables third person options in chase mode otherwise only position is tied to chase target and you can manually change freecam angles
+
+  cg_chaseUpdateFreeCam  update freecam position and angles
 
 /move command changes positions/angles relative to where you already are:  /m\
 ove [forward amount] [right] [up] [pitch] [yaw] [roll]
@@ -1767,6 +1772,23 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
   ex:  /freecam move 100   switch to third person 100 game units ahead of player
        /freecam offset 0 0 26  switch to third person 26 game units above player
        /freecam last   switch to third person and use last freecam position
+
+Third person options:
+
+  cg_thirdPersonMaxPlayerPitch  restrict pitch with third person and chasing players
+
+  cg_thirdPersonFocusDistance  forward focus distance
+
+  cg_thirdPersonOffsetZ  extra world height above or below entity
+
+  cg_thirdPersonPlayerOffsetZ extra world height above or below player
+
+  cg_thirdPersonPlayerPitchScale  multiply PITCH by this
+
+  cg_thirdPersonAvoidSolid  shift origin closer to player or entity to avoid having something solid (ex: wall) between them
+
+  cg_thirdPersonPlayerCrouchHeightChange  allow player crouching to change view height
+
 ---------------------------------------------------------------------------
 
 Player Models:
@@ -2600,7 +2622,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
       set cg_forceBModel2 11
 
 
-  note:  to find the model index find the entity number using 'cg_drawEntNumbers 1', then /printentitystate <ent number>,  and use the value given for 'modelindex'
+  note:  to find the model index find the entity number using 'cg_drawEntNumbers 1', then /printentitystate <entity number>,  and use the value given for 'modelindex'
 
 
 * cg_proxMineTick  (play proximity mine ticking sound)
@@ -2743,13 +2765,24 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * some dubugging and informational commands:
 
   /printtime  to print cgame and server time to the console
+
   /printdirvector
-  /printlegsinfo
+
+  /printlegsinfo <entity number>
+
   /printplayerstate
-  /printnextentitystate
+
+  /printentitystate <entity number | 'p' | 'P'>
+      'p' or 'P' options print information for cg.predictedPlayerEntity
+
+  /printnextentitystate <entity number>
+
   /printviewparms
+
   /printdatadir
+
   /listentities
+
   /debugcpmamvd
 
   - cg_debugEvents > 1 also prints entity information
@@ -2758,13 +2791,40 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * some server debugging and test commands (/devmap <map>) :
 
-  /spawn "<pickup name" [optional amount forward]
+  /spawn "<pickup name>" [optional amount forward]
       like /give but places the item in front of you
 
   /juice
       test EV_JUICED
 
   /view yaw pitch roll
+
+  /devmapnext  next map in maps/ directory
+
+  /devmapprev  previous map in maps/ directory
+
+  /devmap <map name> [ffa | duel | race | tdm | ca | ctf | oneflag | ob | har | ft | dom | ad | rr]
+
+      can specify gametype similar to quake live
+
+  /kami  execute kamikaze
+
+  /serversound <sound file>
+      play server sound
+
+* some server debugging and test cvars (/devmap <map>) :
+
+  sv_broadcastAll  send all entity data even if they would have normally been skipped
+
+  sv_randomClientSlot  assign random client numbers instead of first available
+
+  g_ammoPack  like quake live, use 'ammo_pack' items and ignore other ammo types
+  g_ammoPackHack  like quake live, ignore 'ammo_pack' map items but substitute other 'ammo_' ones with 'ammo_pack'
+
+  g_debugPingValue  if greater than 0, forces that value to be sent as player ping in 'scores' command
+
+  g_weapon_rocket_speed  (default 900)
+  g_weapon_plasma_speed  (default 2000)
 
 ------------------------------
 

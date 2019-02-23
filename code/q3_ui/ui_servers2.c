@@ -154,8 +154,8 @@ static char* gamenames[] = {
 };
 
 static char* netnames[] = {
-	"???",
-	"UDP",
+	"??? ",
+	"UDP ",
 	"UDP6",
 	NULL
 };
@@ -1164,7 +1164,6 @@ int ArenaServers_SetType( int type )
 		g_arenaservers.currentping       = *g_arenaservers.numservers;
 		g_arenaservers.numqueriedservers = *g_arenaservers.numservers; 
 		ArenaServers_UpdateMenu();
-
 		strcpy(g_arenaservers.status.string,"hit refresh to update");
 	}
 

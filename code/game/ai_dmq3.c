@@ -210,6 +210,7 @@ qboolean EntityIsDead(aas_entityinfo_t *entinfo) {
 		if (!BotAI_GetClientState(entinfo->number, &ps)) {
 			return qfalse;
 		}
+
 		if (ps.pm_type != PM_NORMAL) return qtrue;
 	}
 	return qfalse;
@@ -1645,7 +1646,7 @@ void BotCheckItemPickup(bot_state_t *bs, int *oldinventory) {
 		if (!oldinventory[INVENTORY_DOUBLER] && bs->inventory[INVENTORY_DOUBLER] >= 1) {
 			offence = qfalse;
 		}
-		if (!oldinventory[INVENTORY_AMMOREGEN] && bs->inventory[INVENTORY_AMMOREGEN] >= 1) {
+		if (!oldinventory[INVENTORY_ARMORREGEN] && bs->inventory[INVENTORY_ARMORREGEN] >= 1) {
 			offence = qfalse;
 		}
 	}
@@ -1768,7 +1769,7 @@ void BotUpdateInventory(bot_state_t *bs) {
 	bs->inventory[INVENTORY_SCOUT] = bs->cur_ps.stats[STAT_PERSISTANT_POWERUP] == MODELINDEX_SCOUT;
 	bs->inventory[INVENTORY_GUARD] = bs->cur_ps.stats[STAT_PERSISTANT_POWERUP] == MODELINDEX_GUARD;
 	bs->inventory[INVENTORY_DOUBLER] = bs->cur_ps.stats[STAT_PERSISTANT_POWERUP] == MODELINDEX_DOUBLER;
-	bs->inventory[INVENTORY_AMMOREGEN] = bs->cur_ps.stats[STAT_PERSISTANT_POWERUP] == MODELINDEX_AMMOREGEN;
+	bs->inventory[INVENTORY_ARMORREGEN] = bs->cur_ps.stats[STAT_PERSISTANT_POWERUP] == MODELINDEX_ARMORREGEN;
 #endif
 	bs->inventory[INVENTORY_REDFLAG] = bs->cur_ps.powerups[PW_REDFLAG] != 0;
 	bs->inventory[INVENTORY_BLUEFLAG] = bs->cur_ps.powerups[PW_BLUEFLAG] != 0;
@@ -2420,7 +2421,7 @@ int BotHasPersistantPowerupAndWeapon(bot_state_t *bs) {
 	if (!bs->inventory[INVENTORY_SCOUT] &&
 		!bs->inventory[INVENTORY_GUARD] &&
 		!bs->inventory[INVENTORY_DOUBLER] &&
-		!bs->inventory[INVENTORY_AMMOREGEN] ) {
+		!bs->inventory[INVENTORY_ARMORREGEN] ) {
 		return qfalse;
 	}
 #endif
@@ -2783,7 +2784,7 @@ int BotSameTeam(bot_state_t *bs, int entnum) {
 		return qfalse;
 	}
 
-	if ( gametype >= GT_TEAM ) {
+	if (gametype >= GT_TEAM) {
 		if (level.clients[bs->client].sess.sessionTeam == level.clients[entnum].sess.sessionTeam) return qtrue;
 	}
 

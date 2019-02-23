@@ -501,7 +501,6 @@ void SV_DirectConnect( netadr_t from ) {
 	}
 
 	newcl = NULL;
-	//for ( i = startIndex; i < sv_maxclients->integer ; i++ ) {
 	for ( i = randIndex; i < sv_maxclients->integer ; i++ ) {
 		cl = &svs.clients[i];
 		if (cl->state == CS_FREE) {

@@ -499,7 +499,7 @@ void player_die( gentity_t *self, gentity_t *inflictor, gentity_t *attacker, int
 		killerName = "<world>";
 	}
 
-	if ( meansOfDeath < 0 || meansOfDeath >= ARRAY_LEN(modNames) ) {
+	if ( meansOfDeath < 0 || meansOfDeath >= ARRAY_LEN( modNames ) ) {
 		obit = "<bad obituary>";
 	} else {
 		obit = modNames[meansOfDeath];

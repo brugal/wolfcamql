@@ -545,7 +545,7 @@ static void CG_LoadMenu_f (void)
 	char filename[1024];
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  loadmenu <menufile>\n");
+		Com_Printf("usage: loadmenu <menufile>\n");
 		return;
 	}
 
@@ -564,9 +564,9 @@ static void CG_FreeCam_f (void)
 	}
 
 	if (!Q_stricmp("help", CG_Argv(1))) {
-		Com_Printf("usage:  freecam [offset | move | set | last] ...\n");
-		Com_Printf("                 default is offset\n\n");
-		Com_Printf("        freecam offset [x offset] [y offset] [z offset] [pitch offset] [yaw offset] [roll offset]\n");
+		Com_Printf("usage: freecam [offset | move | set | last] ...\n");
+		Com_Printf("                default is offset\n\n");
+		Com_Printf("       freecam offset [x offset] [y offset] [z offset] [pitch offset] [yaw offset] [roll offset]\n");
 		return;
 	}
 
@@ -671,9 +671,8 @@ static void CG_FreeCam_f (void)
 static void CG_SetViewPos_f (void)
 {
 	if (CG_Argc() < 4) {
-		Com_Printf("need to provide origin (x y z)\n");
 		Com_Printf("usage: setviewpos x y z\n");
-		Com_Printf("optional: setviewpos x y z  pitch yaw roll   to also set angles\n");
+		Com_Printf(" or    setviewpos x y z pitch yaw roll\n");
 		return;
 	}
 	//FIXME reset
@@ -851,8 +850,8 @@ static void CG_SeekClock_f (void)
 	}
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  seekclock <game time>\n");
-		Com_Printf("example:  seekclock 10:21, seekclock w12:53 to seek to a time within warmup\n");
+		Com_Printf("usage: seekclock <game time>\n");
+		Com_Printf("example: seekclock 10:21, seekclock w12:53 to seek to a time within warmup\n");
 		return;
 	}
 
@@ -1000,6 +999,9 @@ static void CG_EchoPopupCvar_f (void)
 	char buff[MAX_STRING_CHARS];
 
 	if (CG_Argc() < 2) {
+		Com_Printf("usage: echopopupcvar <cvar> ['name']\n");
+		Com_Printf("    'name' option prints cvar name as well\n");
+		Com_Printf("example: echopopupcvar cg_teamModel name\n");
 		return;
 	}
 
@@ -1026,10 +1028,31 @@ static void CG_ViewEnt_f (void)
 	int ent;
 
 	if (CG_Argc() < 2) {
+		Com_Printf("usage: view <entity number | 'here'> [x offset] [y offset] [z offset]\n");
+		Com_Printf("    set entity number to -1 to disable view mode\n");
+		Com_Printf("    'here' sets view to current position\n");
+
+		if (cg.viewEnt == -1) {
+			Com_Printf("\ncurrent view entity: none\n");
+		} else {
+			Com_Printf("\ncurrent view entity: %d\n", cg.viewEnt);
+		}
+
+		if (cg.useViewPointMark) {
+			Com_Printf("view point mark: %f %f %f\n", cg.viewPointMarkOrigin[0], cg.viewPointMarkOrigin[1], cg.viewPointMarkOrigin[2]);
+		} else {
+			Com_Printf("view point mark: none\n");
+		}
+
+		//FIXME 2019-02-17 cg.viewPointMarkSet ?
+
+		return;
+	}
+
+	if (!Q_stricmp(CG_Argv(1), "-1")) {
 		cg.viewEnt = -1;
-		//cg.viewUnlockYaw = qfalse;
-		//cg.viewUnlockPitch = qfalse;
 		cg.useViewPointMark = qfalse;
+		//FIXME 2019-02-17 need comments regarding this being disabled
 		//cg.viewPointMarkSet = qfalse;
 		return;
 	}
@@ -1046,6 +1069,14 @@ static void CG_ViewEnt_f (void)
 	ent = atoi(CG_Argv(1));
 	if (ent < 0  ||  ent >= MAX_GENTITIES) {
 		ent = -1;
+
+		//FIXME 2019-02-17 why aren't these set?
+		/*
+		cg.viewEnt = -1;
+		cg.useViewPointMark = qfalse;
+		cg.viewPointMarkSet = qfalse;
+		return;
+		*/
 	}
 	cg.viewEnt = ent;
 
@@ -1070,23 +1101,25 @@ static void CG_Chase_f (void)
 	int ent;
 
 	if (CG_Argc() < 2) {
-		//cg.viewEnt = -1;
-		cg.chaseEnt = -1;
-		cg.chase = qfalse;
-		//cg.viewUnlockYaw = qfalse;
-		//cg.viewUnlockPitch = qfalse;
+		Com_Printf("usage: chase <entity number> [x offset] [y offset] [z offset]\n");
+		Com_Printf("    set entity number to -1 to disable chase mode\n");
+
+		if (cg.chaseEnt == -1) {
+			Com_Printf("\ncurrent chase entity: none\n");
+		} else {
+			Com_Printf("\ncurrent chase entity: %d\n", cg.chaseEnt);
+		}
+
 		return;
 	}
 
 	ent = atoi(CG_Argv(1));
+
 	if (ent < 0  ||  ent >= MAX_GENTITIES) {
-		//ent = -1;
 		cg.chaseEnt = -1;
-		cg.chase = qfalse;
 		return;
 	}
 	cg.chaseEnt = ent;
-	cg.chase = qtrue;
 
 	cg.chaseEntOffsetX = 0;
 	cg.chaseEntOffsetY = 0;
@@ -1101,6 +1134,7 @@ static void CG_Chase_f (void)
 	if (CG_Argc() >= 5) {
 		cg.chaseEntOffsetZ = atof(CG_Argv(4));
 	}
+
 	Com_Printf("chase %d  %f %f %f\n", cg.chaseEnt, cg.chaseEntOffsetX, cg.chaseEntOffsetY, cg.chaseEntOffsetZ);
 }
 
@@ -1122,6 +1156,7 @@ static void CG_ViewPos_f (void)
 }
 #endif
 
+#if 0  // debugging
 static void CG_TestReplaceShaderImage_f (void)
 {
 	unsigned char data[16 * 16 * 4];
@@ -1137,6 +1172,7 @@ static void CG_TestReplaceShaderImage_f (void)
 
 	trap_ReplaceShaderImage(atoi(CG_Argv(1)), data, 16, 16);
 }
+#endif
 
 static void CG_StopMovement_f (void)
 {
@@ -1208,6 +1244,8 @@ static void CG_ListEntities_f (void)
 void CG_PrintEntityState_f (void)
 {
 	if (CG_Argc() < 2) {
+		Com_Printf("usage: printentitystate <entity number | 'p' | 'P'>\n");
+		Com_Printf("    'p' or 'P' options print information for cg.predictedPlayerEntity\n");
 		return;
 	}
 
@@ -1221,6 +1259,7 @@ void CG_PrintEntityState_f (void)
 void CG_PrintNextEntityState_f (void)
 {
 	if (CG_Argc() < 2) {
+		Com_Printf("usage: printnextentitystate <entity number>\n");
 		return;
 	}
 
@@ -3946,7 +3985,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 
 	if (!Q_stricmp(CG_Argv(1), "rebase")) {
 		if (CG_Argc() < 3) {
-			Com_Printf("usage:  /ecam rebase [origin | angles | time | timen <server time>] ...\n");
+			Com_Printf("usage: ecam rebase [origin | angles | time | timen <server time>] ...\n");
 			return;
 		}
 
@@ -4173,7 +4212,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 		double shift;
 
 		if (CG_Argc() < 3) {
-			Com_Printf("usage:  /ecam shifttime <milliseconds>\n");
+			Com_Printf("usage: ecam shifttime <milliseconds>\n");
 			return;
 		}
 
@@ -4190,7 +4229,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 		double s;
 
 		if (CG_Argc() < 3) {
-			Com_Printf("usage:  /ecam scale <speed up/down scale value>\n");
+			Com_Printf("usage: ecam scale <speed up/down scale value>\n");
 			return;
 		}
 
@@ -4198,7 +4237,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 
 		if (s <= 0.0) {
 			Com_Printf("invalid scale value\n");
-			Com_Printf("usage:  /ecam scale <speed up/down scale value>\n");
+			Com_Printf("usage: ecam scale <speed up/down scale value>\n");
 			return;
 		}
 
@@ -4855,7 +4894,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 	}  // end '/ecam smooth velocity'
 
 	if (!Q_stricmp(CG_Argv(1), "smooth")) {
-		Com_Printf("usage:  /ecam smooth [origin | originf | angles | anglesf | avgvelocity | velocity | time]\n");
+		Com_Printf("usage: ecam smooth [origin | originf | angles | anglesf | avgvelocity | velocity | time]\n");
 		return;
 	}
 
@@ -4914,7 +4953,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				Com_Printf("unknown fov type\n");
 				Com_Printf("valid types:  current interp fixed pass spline\n");
 				Com_Printf("current fov: %f\n", cp->fov);
-				Com_Printf("usage:  /ecam fov <fov type> [fov value]\n");
+				Com_Printf("usage: ecam fov <fov type> [fov value]\n");
 				return;
 			}
 			if (!*CG_Argv(j + 2)) {
@@ -4936,7 +4975,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 			if (!(s  &&  *s)) {
 				//cp->numSplines = 40;  //FIXME define
 				Com_Printf("current numsplines: %d\n", cp->numSplines);
-				Com_Printf("usage:  /ecam numsplines <value>\n");
+				Com_Printf("usage: ecam numsplines <value>\n");
 				return;
 			} else {
 				int ns;
@@ -5009,7 +5048,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				Com_Printf("unknown setting for roll '%s'\n", s);
 				Com_Printf("valid values:  interp fixed pass angles\n");
 				Com_Printf("current roll value: %f\n", cp->angles[ROLL]);
-				Com_Printf("usage:  /ecam roll <roll type> [roll value]\n");
+				Com_Printf("usage: ecam roll <roll type> [roll value]\n");
 				return;
 			}
 			j++;
@@ -5062,7 +5101,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				Com_Printf("uknown offset type '%s'\n", s);
 				Com_Printf("valid values:  interp fixed pass\n");
 				Com_Printf("current values: x: %f  y: %f  z: %f\n", cp->xoffset, cp->yoffset, cp->zoffset);
-				Com_Printf("usage:  /ecam offset <offset type> [xoffset] [yoffset] [zoffset]\n");
+				Com_Printf("usage: ecam offset <offset type> [xoffset] [yoffset] [zoffset]\n");
 				return;
 			}
 			j++;
@@ -5358,7 +5397,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 			} else {
 				Com_Printf("unknown initial velocity type '%s'\n", s);
 				Com_Printf("valid values:  origin angles xoffset yoffset zoffset fov roll\n");
-				Com_Printf("usage:  /ecam initialVelocity <type> <value or 'reset'>\n");
+				Com_Printf("usage: ecam initialVelocity <type> <value or 'reset'>\n");
 				return;
 			}
 		} else if (!Q_stricmp(s, "finalVelocity")) {
@@ -5639,7 +5678,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 			} else {
 				Com_Printf("unknown final velocity type '%s'\n", s);
 				Com_Printf("valid values:  origin angles xoffset yoffset zoffset fov roll\n");
-				Com_Printf("usage:  /ecam finalVelocity <type> <value or 'reset'>\n");
+				Com_Printf("usage: ecam finalVelocity <type> <value or 'reset'>\n");
 				return;
 			}
 		} else {
@@ -5799,9 +5838,9 @@ static void CG_FXMath_f (void)
 	s[0] = '\0';
 	argc = CG_Argc();
 	if (argc < 2) {
-		Com_Printf("usage:  fxmath <math expression>\n");
-		Com_Printf("example:  fxmath (3 + 8) * 4 + (2.2 * 3.3)\n");
-		Com_Printf("          fxmath sin(45.3 / 1.2)\n");
+		Com_Printf("usage: fxmath <math expression>\n");
+		Com_Printf("example: fxmath (3 + 8) * 4 + (2.2 * 3.3)\n");
+		Com_Printf("         fxmath sin(45.3 / 1.2)\n");
 		return;
 	}
 
@@ -5861,7 +5900,7 @@ static void CG_GotoAdvertisement_f (void)
 	vec3_t normal;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  gotoad <add number>\n");
+		Com_Printf("usage: gotoad <add number>\n");
 		return;
 	}
 
@@ -6095,8 +6134,8 @@ static void CG_ClientOverride_f (void)
 	}
 
 	if (CG_Argc() < 4) {
-		Com_Printf("\nusage:  clientoverride <client number or 'red', 'blue', 'enemy', 'mates', 'us', 'all', 'clear'> <key name> <key value> ... with additional key and value pairs as needed\n");
-		Com_Printf("\nexample:  clientoverride 3 model ranger hmodel bones\n\n");
+		Com_Printf("usage: clientoverride <client number or 'red', 'blue', 'enemy', 'mates', 'us', 'all', 'clear'> <key name> <key value> ... with additional key and value pairs as needed\n");
+		Com_Printf("example: clientoverride 3 model ranger hmodel bones\n");
 		return;
 	}
 
@@ -6484,11 +6523,11 @@ static void CG_AddAtCommand_f (void)
 	double ftime;
 
 	if (CG_Argc() < 3) {
-		Com_Printf("usage:  at <'now' |  server time  |  clock time> <command>\n");
-		Com_Printf("   ex:  at now timescale 0.5\n");
-		Com_Printf("        at 4546629.50 stopvideo    // server time\n");
-		Com_Printf("        at 8:52.33 cg_fov 90       // clock time\n");
-		Com_Printf("        at w2:05 r_gamma 1.4    // warmup 2:05\n");
+		Com_Printf("usage: at <'now' |  server time  |  clock time> <command>\n");
+		Com_Printf("example: at now timescale 0.5\n");
+		Com_Printf("         at 4546629.50 stopvideo    // server time\n");
+		Com_Printf("         at 8:52.33 cg_fov 90       // clock time\n");
+		Com_Printf("         at w2:05 r_gamma 1.4    // warmup 2:05\n");
 		return;
 	}
 
@@ -6555,7 +6594,7 @@ static void CG_RemoveAtCommand_f (void)
 	int num;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  removeat <at number>\n");
+		Com_Printf("usage: removeat <at number>\n");
 		return;
 	}
 
@@ -6616,7 +6655,7 @@ static void CG_ExecAtTime_f (void)
 	char buffer[MAX_STRING_CHARS];
 
 	if (CG_Argc() < 3) {
-		Com_Printf("usage:  exec_at_time <servertime> <config file to exec>\n");
+		Com_Printf("usage: exec_at_time <servertime> <config file to exec>\n");
 		return;
 	}
 
@@ -6633,7 +6672,7 @@ static void CG_EntityFilter_f (void)
 	int i;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  entityfilter <'clear', 'all', TYPE, entity number>\n");
+		Com_Printf("usage: entityfilter <'clear', 'all', TYPE, entity number>\n");
 		return;
 	}
 
@@ -6754,7 +6793,7 @@ static void CG_EntityFreeze_f (void)
 	int i;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  entityfreeze <'clear', entity number>\n");
+		Com_Printf("usage: entityfreeze <'clear', entity number>\n");
 		return;
 	}
 
@@ -6904,13 +6943,12 @@ static void CG_PrintLegsInfo (int entNumber)
 	}
 }
 
-
 static void CG_PrintLegsInfo_f (void)
 {
 	int entNumber;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  printlegsinfo <entity number>\n");
+		Com_Printf("usage: printlegsinfo <entity number>\n");
 		return;
 	}
 
@@ -6946,9 +6984,9 @@ static void CG_CvarInterp_f (void)
 	double tm;
 
 	if (CG_Argc() < 5) {
-		Com_Printf("usage:  cvarinterp <cvar name> <starting value> <ending value> <time length in seconds> ['real' or 'game', default: 'game']\n");
-		Com_Printf("  ex:  /cvarinterp s_volume 0 0.7 2.0\n");
-		Com_Printf("  ex:  /cvarinterp timescale 0.0001 1.0  6.0 real\n");
+		Com_Printf("usage: cvarinterp <cvar name> <starting value> <ending value> <time length in seconds> ['real' or 'game', default: 'game']\n");
+		Com_Printf("example: cvarinterp s_volume 0 0.7 2.0\n");
+		Com_Printf("example: cvarinterp timescale 0.0001 1.0  6.0 real\n");
 		return;
 	}
 
@@ -7006,13 +7044,13 @@ static void CG_ChangeConfigString_f (void)
 
 	if (CG_Argc() < 2) {
 		Com_Printf("usage: changeconfigstring [force | clear | list ] <string number> <new string>\n");
-		Com_Printf("  ex:  changeconfigstring 3 \"Furious Heights\"\n");
+		Com_Printf("example: changeconfigstring 3 \"Furious Heights\"\n");
 		//FIXME 659 changes
-		Com_Printf("  ex:  changeconfigstring force 659 ^6noone\n");
-		Com_Printf("  ex:  changeconfigstring clear 1\n");
-		Com_Printf("  ex:  changeconfigstring clear all\n");
-		Com_Printf("  ex:  changeconfigstring list\n");
-		Com_Printf("   3 is map name, 659 is player in first place\n");
+		Com_Printf("example: changeconfigstring force 659 ^6noone\n");
+		Com_Printf("example: changeconfigstring clear 1\n");
+		Com_Printf("example: changeconfigstring clear all\n");
+		Com_Printf("example: changeconfigstring list\n");
+		Com_Printf("\nFor the above examples, 3 is map name and 659 is player in first place.\n");
 		return;
 	}
 
@@ -7066,8 +7104,6 @@ static void CG_ConfigStrings_f (void)
 {
 	int i;
 	const char *s;
-
-	//Com_Printf("yes\n");
 
 	if (CG_Argc() > 1) {
 		i = atoi(CG_Argv(1));
@@ -7370,7 +7406,7 @@ static void CG_RunFx_f (void)
 	argc = CG_Argc();
 
 	if (argc < 2) {
-		Com_Printf("usage:  runfx <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]\n");
+		Com_Printf("usage: runfx <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]\n");
 		Com_Printf("   if origin0 --> dir2 not given will use current (freecam or 1st person view) settings\n");
 		return;
 	}
@@ -7434,7 +7470,7 @@ static void CG_RunFxAll_f (void)
 	char name[MAX_STRING_CHARS];
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  runfxall <fx name>\n");
+		Com_Printf("usage: runfxall <fx name>\n");
 		return;
 	}
 	Q_strncpyz(name, CG_Argv(1), sizeof(name));
@@ -7455,7 +7491,7 @@ static void CG_RunFxAt_f (void)
 	argc = CG_Argc();
 
 	if (argc < 3) {
-		Com_Printf("usage:  runfxat <'now' | server time | clock time> <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]\n");
+		Com_Printf("usage: runfxat <'now' | server time | clock time> <fx name> [origin0] [origin1] [origin2] [dir0] [dir1] [dir2] [velocity0] [velocity1] [velocity2]\n");
 		Com_Printf("   if origin0 --> dir2 not given will use current (freecam or 1st person view) settings\n");
 		return;
 	}
@@ -7552,7 +7588,7 @@ static void CG_EventFilter_f (void)
 	int j;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  eventfilter <'clear', event id>\n");
+		Com_Printf("usage: eventfilter <'clear', event id>\n");
 		Com_Printf("   toggles on and off\n");
 		Com_Printf("   'clear' deletes all filters\n");
 		return;
@@ -7610,8 +7646,8 @@ static void CG_AddDecal_f (void)
 	const char *st;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  adddecal <shader>\n");
-		Com_Printf("ex:  /adddecal wc/poster");
+		Com_Printf("usage: adddecal <shader>\n");
+		Com_Printf("example: adddecal wc/poster");
 		return;
 	}
 
@@ -7669,17 +7705,14 @@ static void CG_PrintEntityDistance_f (void)
 	int num;
 
 	if (CG_Argc() < 2) {
-		Com_Printf("usage:  adddecal <shader>\n");
-		Com_Printf("ex:  /adddecal wc/poster");
-
-		Com_Printf("usage:  printentitydistance [entity 1] [entity 2]\n");
-		Com_Printf(" or     printentitydistance [entity]\n");
+		Com_Printf("usage: printentitydistance [entity 1] [entity 2]\n");
+		Com_Printf(" or    printentitydistance [entity]\n");
 		Com_Printf("\n");
-		Com_Printf("The second one prints the distance from the current view origin\n");
+		Com_Printf("The second one prints the distance from the current view origin.\n");
 		return;
 	} else if (CG_Argc() < 3) {
 		VectorCopy(cg.refdef.vieworg, org1);
-	} else {  // 2 entes given
+	} else {  // 2 entities given
 		num = atoi(CG_Argv(2));
 		if (num < 0  ||  num >= MAX_GENTITIES) {
 			Com_Printf("^3invalid entity number\n");
@@ -7823,7 +7856,7 @@ static void CG_LoadQ3mmeCamera_f (void)
 	}
 
 	if (!BG_XMLParse(&xmlParse, 0, loadBlock, 0)) {
-		Com_Printf("^1Errors while loading q3mme camera\n");
+		Com_Printf("^1errors while loading q3mme camera\n");
 		return;
 	}
 }
@@ -7908,7 +7941,7 @@ static void CG_LoadQ3mmeDof_f (void)
 	}
 
 	if (!BG_XMLParse(&xmlParse, 0, loadBlock, 0)) {
-		Com_Printf("^1Errors while loading q3mme dof\n");
+		Com_Printf("^1errors while loading q3mme dof\n");
 		return;
 	}
 }
@@ -8112,7 +8145,7 @@ static consoleCommand_t	commands[] = {
 	{ "listtimeditems", CG_ListTimedItems_f },
 	{ "loadmenu", CG_LoadMenu_f },
 	{ "freecam", CG_FreeCam_f },
-	{ "setviewpos", CG_SetViewPos_f },
+	{ "setviewpos", CG_SetViewPos_f },  // there's also a server 'setviewpos' command
 	{ "freecamsetpos", CG_SetViewPos_f },  // alias for camtrace 3d
 	{ "setviewangles", CG_SetViewAngles_f },
 	{ "seekclock", CG_SeekClock_f },
@@ -8127,7 +8160,7 @@ static consoleCommand_t	commands[] = {
 	{ "viewunlockyaw", CG_ViewUnlockYaw_f },
 	{ "viewunlockpitch", CG_ViewUnlockPitch_f },
 	{ "gotoview", CG_GotoView_f },
-	{ "testreplace", CG_TestReplaceShaderImage_f },
+	//{ "testreplace", CG_TestReplaceShaderImage_f },  // debugging
 	{ "stopmovement", CG_StopMovement_f },
 	{ "servertime", CG_ServerTime_f },
 	//{ "printscores", CG_PrintScores_f },

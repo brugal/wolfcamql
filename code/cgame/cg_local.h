@@ -1337,7 +1337,6 @@ typedef struct {
 	char errorPopupString[MAX_STRING_CHARS];
 
 	int viewEnt;
-	qboolean chase;
 	int chaseEnt;
 	vec3_t viewEntAngles;
 	float viewEntOffsetX;
@@ -2806,8 +2805,16 @@ extern	vmCvar_t		cg_zoomFov;
 extern vmCvar_t cg_zoomTime;
 extern vmCvar_t cg_zoomIgnoreTimescale;
 extern vmCvar_t cg_zoomBroken;
+
 extern	vmCvar_t		cg_thirdPersonRange;
 extern	vmCvar_t		cg_thirdPersonAngle;
+extern vmCvar_t cg_thirdPersonMaxPlayerPitch;
+extern vmCvar_t cg_thirdPersonFocusDistance;
+extern vmCvar_t cg_thirdPersonOffsetZ;
+extern vmCvar_t cg_thirdPersonPlayerOffsetZ;
+extern vmCvar_t cg_thirdPersonPlayerCrouchHeightChange;
+extern vmCvar_t cg_thirdPersonPlayerPitchScale;
+extern vmCvar_t cg_thirdPersonAvoidSolid;
 extern	vmCvar_t		cg_thirdPerson;
 extern	vmCvar_t		cg_stereoSeparation;
 
@@ -3638,6 +3645,9 @@ extern vmCvar_t cg_drawKeyPress;
 extern vmCvar_t cg_useScoresUpdateTeam;
 extern vmCvar_t cg_colorCodeWhiteUseForegroundColor;
 extern vmCvar_t cg_colorCodeUseForegroundAlpha;
+
+extern vmCvar_t cg_chaseThirdPerson;
+extern vmCvar_t cg_chaseUpdateFreeCam;
 
 // end cvar_t
 

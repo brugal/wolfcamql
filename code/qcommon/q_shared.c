@@ -121,7 +121,7 @@ COM_StripExtension
 ============
 */
 // allow overlapping array ranges
-void COM_StripExtension (const char *in, char *out, int destsize)
+void COM_StripExtension( const char *in, char *out, int destsize )
 {
 	const char *dot;
 	const char *slash;
@@ -370,7 +370,7 @@ void COM_BeginParseSession( const char *name )
 
 int COM_GetCurrentParseLine( void )
 {
-	if ( com_tokenline)
+	if ( com_tokenline )
 	{
 		return com_tokenline;
 	}
@@ -557,7 +557,7 @@ char *COM_ParseExt( char **data_p, qboolean allowLineBreaks )
 			data += 2;
 			while ( *data && ( *data != '*' || data[1] != '/' ) ) 
 			{
-				if ( *data == '\n')
+				if ( *data == '\n' )
 				{
 					com_lines++;
 				}

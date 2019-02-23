@@ -123,18 +123,13 @@ This does not actually spawn an entity.
 qboolean CG_ParseSpawnVars( void ) {
     char            keyname[MAX_TOKEN_CHARS];
     char            com_token[MAX_TOKEN_CHARS];
-    char    token[MAX_TOKEN_CHARS];
     //char buf[MAX_TOKEN_CHARS];
-    const char *line;
-    qboolean newLine;
     vec3_t origin;
     int wait;
     titem_t ti;
     int val;
     int skipItem;
     int i;
-    //char *gametypeName;
-    //char *value;
     int angle;
     int spawnflags;
     qboolean spawnPoint;
@@ -148,9 +143,8 @@ qboolean CG_ParseSpawnVars( void ) {
     qboolean stopTimer;
     qboolean gotOrigin;
     int pointContents;
-    static char *gametypeNames[] = { "ffa", "tournament", "single", "team", /*FIXME clanarena*/ "ca",  "ctf", "oneflag", "obelisk", "harvester", "ft", "dom", "ad", "rr", "race" };
+    static char *gametypeNames[] = { "ffa", "tournament" /* ql now uses 'duel' so you need extra checks */, "race", "team" /* ql now uses 'tdm' so you need extra checks */, "ca", "ctf", "oneflag" /* ql now uses '1f' so you need extra checks */, "obelisk" /* ql now uses 'ob' so you need extra checks */, "harvester" /* ql now uses 'har' so you need extra checks */, "ft", "dom", "ad", "rr", "ntf" /* cpma never used */, "twovstwo" /* cpma never used */, "hm" /* cpma never used */, "single" };
 
-    //Com_Printf("cgs.gametype : %d\n", cgs.gametype);
     cg.numSpawnVars = 0;
     cg.numSpawnVarChars = 0;
 
@@ -195,10 +189,6 @@ qboolean CG_ParseSpawnVars( void ) {
             cg.mapEnableBreath = atoi(com_token);
         }
         //CG_Printf("spawnvars  %s : %s\n", cg.spawnVars[ cg.numSpawnVars - 1 ][0], cg.spawnVars[ cg.numSpawnVars - 1 ][1]);
-    }
-
-    if (cgs.gametype == GT_CA) {
-        //return qtrue;
     }
 
     ti = noitem;
@@ -385,7 +375,6 @@ qboolean CG_ParseSpawnVars( void ) {
                 // battlesuit
                 //Com_Printf("battlesuit?\n");
                 ti = battleSuit;
-                // count ??
             } else if (!Q_stricmp(com_token, "misc_portal_surface")) {
                 //Com_Printf("^3portal surface\n");
                 portal = qtrue;
@@ -396,8 +385,6 @@ qboolean CG_ParseSpawnVars( void ) {
             } else {
                 //FIXME other?  regen?
             }
-
-
         } else if (!Q_stricmp(keyname, "origin")) {
             if (SC_ParseVec3FromStr(com_token, origin) == -1) {
                 //Com_Printf("FIXME getting origin for entitytoken %s", com_token);
@@ -415,7 +402,6 @@ qboolean CG_ParseSpawnVars( void ) {
             wait = atoi(com_token);
         } else if (!Q_stricmp(keyname, "notteam")) {
             val = atoi(com_token);
-            //if (val  &&  cgs.gametype >= GT_TEAM) {
             if (val  &&  CG_IsTeamGame(cgs.gametype)) {
                 skipItem = 1;
             }
@@ -423,25 +409,36 @@ qboolean CG_ParseSpawnVars( void ) {
             const char *value = com_token;
             const char *gametypeName;
             const char *s;
+            qboolean isDigitString;
+            int i;
 
-            //FIXME could be more than one digit in the list ??
+            // 2019-01-31 older quake live maps used numbers instead of
+            // strings for the gametypes.  Ex (2009 map):
+            //    qzca1.bsp:"not_gametype" "1"
+            //    qzca1.bsp:"not_gametype" "0 2 3 4 5"
 
-            if (isdigit(com_token[0])) {
-                val = atoi(com_token);
-                if (cgs.protocol == PROTOCOL_QL) {
-                    if (cgs.gametype == GT_RACE) {
-                        if (val == 2) {
-                            skipItem = 1;
-                        }
-                    } else {
-                        if (cgs.gametype == val) {
-                            skipItem = 1;
-                        }
-                    }
-                } else {
-                    if (cgs.gametype == val) {
+            // check for all digit string so you don't trip up with '1f'
+            isDigitString = qtrue;
+            for (i = 0;  i < strlen(com_token);  i++) {
+                if (!isdigit(com_token[i])) {
+                    isDigitString = qfalse;
+                    break;
+                }
+            }
+
+            if (isDigitString) {
+                char ourGameNum[2] = { '0', '\0' };
+
+                if (cgs.gametype >= 0  &&  cgs.gametype <= 9) {
+                    ourGameNum[0] = '0' + cgs.gametype;
+                    s = strstr(com_token, ourGameNum);
+                    if (s) {
                         skipItem = 1;
                     }
+                } else {
+                    // single player (not valid in ql) or gametypes that didn't exist when map was created (domination, red rover, etc..)
+
+                    // pass
                 }
             } else {  // string value
                 s = NULL;
@@ -460,7 +457,12 @@ qboolean CG_ParseSpawnVars( void ) {
                     } else if (cgs.gametype == GT_1FCTF) {
                         s = strstr(value, "1f");
                     } else if (cgs.gametype == GT_OBELISK) {
-                        s = strstr(value, "obj");
+                        s = strstr(value, "ob");
+                        // 2019-02-02 also 'overload', don't know if this is a map bug
+                        // overgrowth.bsp:"gametype" "harvester, overload"
+                        if (!s) {
+                            s = strstr(value, "overload");
+                        }
                     }
                 }
                 if (s) {
@@ -468,74 +470,42 @@ qboolean CG_ParseSpawnVars( void ) {
                 }
             }
         } else if (!Q_stricmp(keyname, "gametype")) {
-            //FIXME this is wrong, see g_spawn.c
-            //val = atoi(com_token);
-            //if (val != cgs.gametype) {
-            //    skipItem = 1;
-            //}
-            qboolean found = qfalse;
+            char *s = NULL;
+            char *gametypeName;
+
+            // 2019-02-02 quake live sometimes uses comma separated list:
+            //    theoldendomain.bsp:"gametype" "ffa,tournament,single"
+            //    solid.bsp:"gametype" "ffa tdm ft"
 
             skipItem = 1;
-            line = com_token;
-            newLine = qfalse;
-            while (*line  &&  newLine == qfalse) {
-                int ln;
-                //Com_Printf("line1: '%s'\n", line);
-                //FIXME const
-                line = (char *)CG_GetTokenGameType(line, token, qfalse, &newLine);
-                //Com_Printf("newline: %d\n", newLine);
-                //Com_Printf("line2: '%s'\n", line);
-                //Com_Printf("    token: '%s'\n", token);
-                ln = strlen(token);
-                if (ln  &&  *token) {
-                    if (token[ln - 1] == ',') {
-                        token[ln - 1] = '\0';
+            if (cgs.gametype >= GT_FFA  &&  cgs.gametype < GT_MAX_GAME_TYPE) {
+                gametypeName = gametypeNames[cgs.gametype];
+
+                s = strstr(com_token, gametypeName);
+                if (!s) {
+                    // try alternate quake live gametype names
+                    if (cgs.gametype == GT_TEAM) {
+                        s = strstr(com_token, "tdm");
+                    } else if (cgs.gametype == GT_TOURNAMENT) {
+                        s = strstr(com_token, "duel");
+                    } else if (cgs.gametype == GT_HARVESTER) {
+                        s = strstr(com_token, "har");
+                    } else if (cgs.gametype == GT_1FCTF) {
+                        s = strstr(com_token, "1f");
+                    } else if (cgs.gametype == GT_OBELISK) {
+                        s = strstr(com_token, "ob");
+                        // 2019-02-02 also 'overload', don't know if this is a map bug
+                        // overgrowth.bsp:"gametype" "harvester, overload"
+                        if (!s) {
+                            s = strstr(com_token, "overload");
+                        }
                     }
                 }
-                for (i = 0;  i < (sizeof(gametypeNames) / sizeof(char *));  i++) {
-                    if (!Q_stricmp(token, gametypeNames[i])) {
-                        found = qtrue;
-                        break;
-                    }
-                }
-                if (!found) {
-                    // try alternate quakelive name for 'team'
-                    if (!Q_stricmp(token, "tdm")) {
-                        if (cgs.gametype == GT_TEAM) {
-                            skipItem = 0;
-                        }
-                    } else if (!Q_stricmp(token, "duel")) {
-                        if (cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM) {
-                            skipItem = 0;
-                        }
-                    } else if (!Q_stricmp(token, "har")) {
-                        if (cgs.gametype == GT_HARVESTER) {
-                            skipItem = 0;
-                        }
-                    } else if (!Q_stricmp(token, "1f")) {
-                        if (cgs.gametype == GT_1FCTF) {
-                            skipItem = 0;
-                        }
-                    } else if (!Q_stricmp(token, "ob")) {
-                        if (cgs.gametype == GT_OBELISK) {
-                            skipItem = 0;
-                        }
-                    } else {
-                        Com_Printf("FIXME gametype : '%s'  '%s'\n", com_token, token);
-                    }
-                } else if (cgs.gametype < ARRAY_LEN(gametypeNames)  &&  !Q_stricmp(token, gametypeNames[cgs.gametype])) {
+
+                if (s) {
                     skipItem = 0;
                 }
             }
-#if 0
-            if (!found) {
-                Com_Printf("FIXME gametype : %s\n", com_token);
-            }
-
-            if (cgs.gametype >= ARRAY_LEN(gametypeNames)  ||  Q_stricmp(com_token, gametypeNames[cgs.gametype])) {
-                skipItem = 1;
-            }
-#endif
         } else if (!Q_stricmp(keyname, "notfree")) {
             val = atoi(com_token);
             if (val  &&  (cgs.gametype == GT_FFA ||  cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_HM)) {
@@ -552,7 +522,7 @@ qboolean CG_ParseSpawnVars( void ) {
             spawnflags = atoi(com_token);
         }
 
-            //  count
+        //  count
     }
 
     return qtrue;

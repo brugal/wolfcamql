@@ -178,7 +178,7 @@ gitem_t	bg_itemlist[] =
         { "models/powerups/armor/armor_red.md3",
 		0, 0, 0},
 /* icon */		"icons/iconr_red",
-		/* pickup */	"Red Armor",  // "Red Armor"
+/* pickup */	"Red Armor",  // was "Heavy Armor" in q3
 		100,
 		IT_ARMOR,
 		0,
@@ -194,7 +194,7 @@ gitem_t	bg_itemlist[] =
 		0, 0, 0},
 /* icon */		"icons/iconr_green",
 		/* pickup */	"Green Armor",
-		25,  //FIXME
+		25,
 		IT_ARMOR,
 		0,
 /* precache */ "",
@@ -651,7 +651,7 @@ gitem_t	bg_itemlist[] =
 		"models/powerups/instant/haste_ring.md3", 
 		0, 0 },
 /* icon */		"icons/haste",
-/* pickup */	"Haste",
+/* pickup */	"Haste",  // was "Speed" in q3
 		30,
 		IT_POWERUP,
 		PWOLD_HASTE,
@@ -885,7 +885,7 @@ Only in CTF games
         { "models/powerups/doubler.md3", 
 		0, 0, 0 },
 /* icon */		"icons/doubler",
-/* pickup */	"Doubler",
+/* pickup */	"Damage",  // 2019-02-05 was "Doubler" called "Damage" in quakelive
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_DOUBLER,
@@ -896,12 +896,12 @@ Only in CTF games
 /*QUAKED item_doubler (.3 .3 1) (-16 -16 -16) (16 16 16) suspended redTeam blueTeam
 */
 	{
-		"item_ammoregen",  //FIXME double check
+		"item_armorregen",
 		"sound/items/cl_armorregen.wav",
         { "models/powerups/ammo.md3",
 		0, 0, 0 },
 /* icon */		"icons/armor_regen",
-/* pickup */	"Armor Regen",
+/* pickup */	"Armor Regen",  // changed from "Ammo Regen" in q3
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_ARMORREGEN,
@@ -1026,11 +1026,11 @@ Only in One Flag CTF games
 		{ "models/weapons3/hmg/hmg.md3", 0, 0, 0 },
 		"icons/weap_hmg",
 		"Heavy Machinegun",
-		0,  //FIXME
+		100,
 		IT_WEAPON,
 		WP_HEAVY_MACHINEGUN,
-		"",  //FIXME
-		""  //FIXME
+		"",
+		""
 	},
 
 	{
@@ -1038,12 +1038,12 @@ Only in One Flag CTF games
 		"sound/misc/am_pkup.wav",
 		{ "models/powerups/ammo/hmgam.md3", 0, 0, 0 },
 		"icons/ammo_hmg",
-		"Heavy Bllets",
-		0,  //FIXME
+		"Heavy Bullets",
+		50,
 		IT_AMMO,
 		WP_HEAVY_MACHINEGUN,
-		"",  //FIXME
-		""  //FIXME
+		"",
+		""
 	},
 
 	// ammo pack
@@ -1053,11 +1053,11 @@ Only in One Flag CTF games
 		{ "models/powerups/ammo/ammopack.md3", 0, 0, 0 },
 		"icons/ammo_pack",
 		"Ammo Pack",
-		0,  //FIXME
+		0,
 		IT_AMMO,
-		0, //FIXME
-		"",  //FIXME
-		""  //FIXME
+		0,
+		"",
+		""
 	},
 
 	// keys
@@ -1067,11 +1067,11 @@ Only in One Flag CTF games
 		{ "models/powerups/keys/key_silver.md3", 0, 0, 0 },
 		"icons/key_silver",
 		"Silver Key",
-		0,  //FIXME
+		0,
 		IT_PERSISTANT_POWERUP,
-		PWEX_KEY, //FIXME  PW_QUAD  .. PW_SILVER_KEY
-		"",  //FIXME
-		""  //FIXME
+		PWEX_KEY,
+		"",
+		""
 	},
 
 	{
@@ -1080,11 +1080,11 @@ Only in One Flag CTF games
 		{ "models/powerups/keys/key_gold.md3", 0, 0, 0 },
 		"icons/key_gold",
 		"Gold Key",
-		0,  //FIXME
+		0,
 		IT_PERSISTANT_POWERUP,
-		PWEX_KEY, //FIXME  PW_QUAD  .. PW_SILVER_KEY
-		"",  //FIXME
-		""  //FIXME
+		PWEX_KEY,
+		"",
+		""
 	},
 
 	{
@@ -1093,11 +1093,11 @@ Only in One Flag CTF games
 		{ "models/powerups/keys/key_master.md3", 0, 0, 0 },
 		"icons/key_master",
 		"Master Key",
-		0,  //FIXME
+		0,
 		IT_PERSISTANT_POWERUP,
 		PWEX_KEY,
-		"",  //FIXME
-		""  //FIXME
+		"",
+		""
 	},
 
 	
@@ -1167,7 +1167,7 @@ const gitem_t bg_itemlistQldm91[] =
         { "models/powerups/armor/armor_red.md3",
 		0, 0, 0},
 /* icon */		"icons/iconr_red",
-		/* pickup */	"Red Armor",  // "Red Armor"
+/* pickup */	"Red Armor",  // was "Heavy Armor" in q3
 		100,
 		IT_ARMOR,
 		0,
@@ -1183,7 +1183,7 @@ const gitem_t bg_itemlistQldm91[] =
 		0, 0, 0},
 /* icon */		"icons/iconr_green",
 		/* pickup */	"Green Armor",
-		25,  //FIXME
+		25,
 		IT_ARMOR,
 		0,
 /* precache */ "",
@@ -1640,7 +1640,7 @@ const gitem_t bg_itemlistQldm91[] =
 		"models/powerups/instant/haste_ring.md3", 
 		0, 0 },
 /* icon */		"icons/haste",
-/* pickup */	"Haste",
+/* pickup */	"Haste",  // was "Speed" in q3
 		30,
 		IT_POWERUP,
 		PW91_HASTE,
@@ -1874,7 +1874,7 @@ Only in CTF games
         { "models/powerups/doubler.md3", 
 		0, 0, 0 },
 /* icon */		"icons/doubler",
-/* pickup */	"Doubler",
+/* pickup */	"Damage",  // 2019-02-05 was "Doubler" called "Damage" in quakelive
 		30,
 		IT_PERSISTANT_POWERUP,
 		PW91_DOUBLER,
@@ -1885,12 +1885,12 @@ Only in CTF games
 /*QUAKED item_doubler (.3 .3 1) (-16 -16 -16) (16 16 16) suspended redTeam blueTeam
 */
 	{
-		"item_ammoregen",  //FIXME double check
+		"item_armorregen",
 		"sound/items/cl_armorregen.wav",
         { "models/powerups/ammo.md3",
 		0, 0, 0 },
 /* icon */		"icons/armor_regen",
-/* pickup */	"Armor Regen",
+/* pickup */	"Armor Regen",  // changed from "Ammo Regen" in q3
 		30,
 		IT_PERSISTANT_POWERUP,
 		PW91_ARMORREGEN,
@@ -2015,11 +2015,11 @@ Only in One Flag CTF games
 		{ "models/weapons3/hmg/hmg.md3", 0, 0, 0 },
 		"icons/weap_hmg",
 		"Heavy Machinegun",
-		0,  //FIXME
+		100,
 		IT_WEAPON,
 		WP_HEAVY_MACHINEGUN,
-		"",  //FIXME
-		""  //FIXME
+		"",
+		""
 	},
 
 	{
@@ -2027,12 +2027,12 @@ Only in One Flag CTF games
 		"sound/misc/am_pkup.wav",
 		{ "models/powerups/ammo/hmgam.md3", 0, 0, 0 },
 		"icons/ammo_hmg",
-		"Heavy Bllets",
-		0,  //FIXME
+		"Heavy Bullets",
+		50,
 		IT_AMMO,
 		WP_HEAVY_MACHINEGUN,
-		"",  //FIXME
-		""  //FIXME
+		"",
+		""
 	},
 
 	// ammo pack
@@ -2042,11 +2042,11 @@ Only in One Flag CTF games
 		{ "models/powerups/ammo/ammopack.md3", 0, 0, 0 },
 		"icons/ammo_pack",
 		"Ammo Pack",
-		0,  //FIXME
+		0,
 		IT_AMMO,
-		0, //FIXME
-		"",  //FIXME
-		""  //FIXME
+		0,
+		"",
+		""
 	},
 
 	// keys
@@ -2056,11 +2056,11 @@ Only in One Flag CTF games
 		{ "models/powerups/keys/key_silver.md3", 0, 0, 0 },
 		"icons/key_silver",
 		"Silver Key",
-		0,  //FIXME
+		0,
 		IT_PERSISTANT_POWERUP,
-		PWEX_KEY, //FIXME  PW91_QUAD  .. PW_SILVER_KEY
-		"",  //FIXME
-		""  //FIXME
+		PWEX_KEY,
+		"",
+		""
 	},
 
 	{
@@ -2069,11 +2069,11 @@ Only in One Flag CTF games
 		{ "models/powerups/keys/key_gold.md3", 0, 0, 0 },
 		"icons/key_gold",
 		"Gold Key",
-		0,  //FIXME
+		0,
 		IT_PERSISTANT_POWERUP,
-		PWEX_KEY, //FIXME  PW91_QUAD  .. PW_SILVER_KEY
-		"",  //FIXME
-		""  //FIXME
+		PWEX_KEY,
+		"",
+		""
 	},
 
 	{
@@ -2082,11 +2082,11 @@ Only in One Flag CTF games
 		{ "models/powerups/keys/key_master.md3", 0, 0, 0 },
 		"icons/key_master",
 		"Master Key",
-		0,  //FIXME
+		0,
 		IT_PERSISTANT_POWERUP,
 		PWEX_KEY,
-		"",  //FIXME
-		""  //FIXME
+		"",
+		""
 	},
 
 
@@ -2156,7 +2156,7 @@ const gitem_t bg_itemlistQldm73[] =
         { "models/powerups/armor/armor_red.md3",
 		0, 0, 0},
 /* icon */		"icons/iconr_red",
-		/* pickup */	"Red Armor",  // "Red Armor"
+/* pickup */	"Red Armor",  // was "Heavy Armor" in q3
 		100,
 		IT_ARMOR,
 		0,
@@ -2172,7 +2172,7 @@ const gitem_t bg_itemlistQldm73[] =
 		0, 0, 0},
 /* icon */		"icons/iconr_green",
 		/* pickup */	"Green Armor",
-		25,  //FIXME
+		25,
 		IT_ARMOR,
 		0,
 /* precache */ "",
@@ -2630,7 +2630,7 @@ const gitem_t bg_itemlistQldm73[] =
 		"models/powerups/instant/haste_ring.md3", 
 		0, 0 },
 /* icon */		"icons/haste",
-/* pickup */	"Haste",
+/* pickup */	"Haste",  // was "Speed" in q3
 		30,
 		IT_POWERUP,
 		PWOLD_HASTE,
@@ -2864,7 +2864,7 @@ Only in CTF games
         { "models/powerups/doubler.md3", 
 		0, 0, 0 },
 /* icon */		"icons/doubler",
-/* pickup */	"Doubler",
+/* pickup */	"Damage",  // 2019-02-05 was "Doubler" called "Damage" in quakelive
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_DOUBLER,
@@ -2875,12 +2875,12 @@ Only in CTF games
 /*QUAKED item_doubler (.3 .3 1) (-16 -16 -16) (16 16 16) suspended redTeam blueTeam
 */
 	{
-		"item_ammoregen",  //FIXME double check
+		"item_armorregen",
 		"sound/items/cl_armorregen.wav",
         { "models/powerups/ammo.md3",
 		0, 0, 0 },
 /* icon */		"icons/armor_regen",
-/* pickup */	"Armor Regen",
+/* pickup */	"Armor Regen",  // changed from "Ammo Regen" in q3
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_ARMORREGEN,
@@ -3068,7 +3068,7 @@ const gitem_t bg_itemlistQ3[] =
         { "models/powerups/armor/armor_red.md3",
 		NULL, NULL, NULL},
 /* icon */		"icons/iconr_red",
-/* pickup */	"Red Armor",
+/* pickup */	"Red Armor",  // was "Heavy Armor" in q3
 		100,
 		IT_ARMOR,
 		0,
@@ -3527,7 +3527,7 @@ const gitem_t bg_itemlistQ3[] =
 		"models/powerups/instant/haste_ring.md3", 
 		NULL, NULL },
 /* icon */		"icons/haste",
-/* pickup */	"Haste",
+/* pickup */	"Haste",  // was "Speed" in q3
 		30,
 		IT_POWERUP,
 		PWOLD_HASTE,
@@ -3760,7 +3760,7 @@ Only in CTF games
         { "models/powerups/doubler.md3", 
 		NULL, NULL, NULL },
 /* icon */		"icons/doubler",
-/* pickup */	"Doubler",
+/* pickup */	"Damage",  // 2019-02-05 was "Doubler" called "Damage" in quakelive
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_DOUBLER,
@@ -3771,12 +3771,12 @@ Only in CTF games
 /*QUAKED item_doubler (.3 .3 1) (-16 -16 -16) (16 16 16) suspended redTeam blueTeam
 */
 	{
-		"item_ammoregen",
-		"sound/items/ammoregen.wav",
+		"item_armorregen",
+		"sound/items/armorregen.wav",
         { "models/powerups/ammo.md3",
 		NULL, NULL, NULL },
-/* icon */		"icons/ammo_regen",
-/* pickup */	"Ammo Regen",
+/* icon */		"icons/armor_regen",
+/* pickup */	"Armor Regen",  // changed from "Ammo Regen" in q3
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_ARMORREGEN,
@@ -3948,7 +3948,7 @@ const gitem_t bg_itemlistCpma[] =
         { "models/powerups/armor/armor_red.md3",
 		NULL, NULL, NULL},
 /* icon */		"icons/iconr_red",
-/* pickup */	"Red Armor",
+/* pickup */	"Red Armor",  // was "Heavy Armor" in q3
 		100,
 		IT_ARMOR,
 		0,
@@ -4407,7 +4407,7 @@ const gitem_t bg_itemlistCpma[] =
 		"models/powerups/instant/haste_ring.md3", 
 		NULL, NULL },
 /* icon */		"icons/haste",
-/* pickup */	"Haste",
+/* pickup */	"Haste",  // was "Speed" in q3
 		30,
 		IT_POWERUP,
 		PWOLD_HASTE,
@@ -4640,7 +4640,7 @@ Only in CTF games
         { "models/powerups/doubler.md3", 
 		NULL, NULL, NULL },
 /* icon */		"icons/doubler",
-/* pickup */	"Doubler",
+/* pickup */	"Damage",  // 2019-02-05 was "Doubler" called "Damage" in quakelive
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_DOUBLER,
@@ -4651,12 +4651,12 @@ Only in CTF games
 /*QUAKED item_doubler (.3 .3 1) (-16 -16 -16) (16 16 16) suspended redTeam blueTeam
 */
 	{
-		"item_ammoregen",
-		"sound/items/ammoregen.wav",
+		"item_armorregen",
+		"sound/items/armorregen.wav",
         { "models/powerups/ammo.md3",
 		NULL, NULL, NULL },
-/* icon */		"icons/ammo_regen",
-/* pickup */	"Ammo Regen",
+/* icon */		"icons/armor_regen",
+/* pickup */	"Armor Regen",  // changed from "Ammo Regen" in q3
 		30,
 		IT_PERSISTANT_POWERUP,
 		PWOLD_ARMORREGEN,
@@ -4769,7 +4769,7 @@ Only in One Flag CTF games
 		  0, 0, 0},
 		/* icon */              "icons/iconr_green",
 		/* pickup */    "Green Armor",
-		25,  //FIXME
+		25,
 		IT_ARMOR,
 		0,
 		/* precache */ "",
@@ -5631,6 +5631,8 @@ int BG_ModToWeapon (int mod)
 		return WP_GAUNTLET;
 	case MOD_MACHINEGUN:
 		return WP_MACHINEGUN;
+	case MOD_HMG:
+		return WP_HEAVY_MACHINEGUN;
 	case MOD_SHOTGUN:
 		return WP_SHOTGUN;
 	case MOD_RAILGUN:
@@ -5643,7 +5645,6 @@ int BG_ModToWeapon (int mod)
 		return WP_NAILGUN;
 	case MOD_CHAINGUN:
 		return WP_CHAINGUN;
-		//FIXME MOD_HMG
 	default:
 		w = WP_NONE;
 	}

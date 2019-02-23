@@ -1518,11 +1518,11 @@ void BotMatch_WhereAreYou(bot_state_t *bs, bot_match_t *match) {
 		"Quad Damage",
 		"Regeneration",
 		"Battle Suit",
-		"Haste",
+		"Haste",  // changed from "Speed" in q3
 		"Invisibility",
 		"Flight",
 		"Armor",
-		"Red Armor",
+		"Red Armor",  // changed from "Heavy Armor" in q3
 		"Red Flag",
 		"Blue Flag",
 #if 1  // MPACK
@@ -1531,8 +1531,8 @@ void BotMatch_WhereAreYou(bot_state_t *bs, bot_match_t *match) {
 		"Chaingun",
 		"Scout",
 		"Guard",
-		"Doubler",
-		"Ammo Regen",
+		"Damage",  // changed from "Doubler" in q3
+		"Armor Regen",  // changed from "Ammo Regen" in q3
 		"Neutral Flag",
 		"Red Obelisk",
 		"Blue Obelisk",

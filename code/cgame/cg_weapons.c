@@ -1490,7 +1490,7 @@ void CG_RegisterItemVisuals( int itemNum ) {
 #endif
 
 	// some quake live icons don't define a shader, make sure to nomip
-	// ex:  icons/iconh_borb
+	// ex: icons/iconh_borb
 	itemInfo->icon = trap_R_RegisterShaderNoMip( item->icon );
 
 	if ( item->giType == IT_WEAPON ) {

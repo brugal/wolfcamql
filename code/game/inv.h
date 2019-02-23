@@ -65,7 +65,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define INVENTORY_SCOUT				41
 #define INVENTORY_GUARD				42
 #define INVENTORY_DOUBLER			43
-#define INVENTORY_AMMOREGEN			44
+#define INVENTORY_ARMORREGEN		44
 
 #define INVENTORY_REDFLAG			45
 #define INVENTORY_BLUEFLAG			46
@@ -139,7 +139,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define MODELINDEX_SCOUT			42
 #define MODELINDEX_GUARD			43
 #define MODELINDEX_DOUBLER			44
-#define MODELINDEX_AMMOREGEN		45
+#define MODELINDEX_ARMORREGEN		45
 
 #define MODELINDEX_NEUTRALFLAG		46
 #define MODELINDEX_REDCUBE			47

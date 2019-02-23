@@ -614,7 +614,7 @@ static void CG_ParseCaStats (void)
 	s->clientNum = clientNum;
 	s->damageDone = atoi(CG_Argv(2));
 	s->damageReceived = atoi(CG_Argv(3));
-	// 4  guantlet accuracy, ql loops through all the weapons generically
+	// 4  gauntlet accuracy, ql loops through all the weapons generically
 	s->gauntKills = atoi(CG_Argv(5));
 	s->mgAccuracy = atoi(CG_Argv(6));
 	s->mgKills = atoi(CG_Argv(7));

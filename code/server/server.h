@@ -348,6 +348,7 @@ void SV_MasterShutdown (void);
 int SV_RateMsec(client_t *client);
 
 
+
 //
 // sv_init.c
 //

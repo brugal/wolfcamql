@@ -771,7 +771,6 @@ int Team_TouchOurFlag( gentity_t *ent, gentity_t *other, int team ) {
 				player->client->rewardTime = level.time + REWARD_SPRITE_TIME;
 
 			}
-
 			if (player->client->pers.teamState.lastfraggedcarrier + 
 				CTF_FRAG_CARRIER_ASSIST_TIMEOUT > level.time) {
 				AddScore(player, ent->r.currentOrigin, CTF_FRAG_CARRIER_ASSIST_BONUS);
@@ -1092,6 +1091,7 @@ void TeamplayInfoMessage( gentity_t *ent ) {
 	for (i = 0, cnt = 0; i < g_maxclients.integer && cnt < TEAM_MAXOVERLAY; i++) {
 		player = g_entities + i;
 		if (player->inuse && player->client->sess.sessionTeam == team ) {
+
 			h = player->client->ps.stats[STAT_HEALTH];
 			a = player->client->ps.stats[STAT_ARMOR];
 			if (h < 0) h = 0;

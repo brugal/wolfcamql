@@ -75,7 +75,6 @@ int ZCALLBACK ferror_file_func OF((
    voidpf stream));
 
 
-
 voidpf ZCALLBACK fopen_file_func (opaque, filename, mode)
    voidpf opaque;
    const char* filename;

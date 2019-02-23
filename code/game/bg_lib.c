@@ -237,7 +237,7 @@ char *strchr( const char *string, int c ) {
 	if(c)
 		return NULL;
 	else
-		return (char *)string;
+		return (char *) string;
 }
 
 char *strrchr(const char *string, int c)
@@ -290,26 +290,26 @@ int toupper( int c ) {
 	return c;
 }
 
-void *memmove( void *dest, const void *src, size_t count )
+void *memmove(void *dest, const void *src, size_t count)
 {
 	size_t		i;
 
-	if (count)
+	if(count)
 	{
-		if (dest > src)
+		if(dest > src)
 		{
 			i = count;
 
 			do
 			{
 				i--;
-				((char *)dest)[i] = ((char *)src)[i];
-			} while (i > 0);
+				((char *) dest)[i] = ((char *) src)[i];
+			} while(i > 0);
 		}
 		else
 		{
-			for (i = 0;  i < count;  i++)
-				((char *)dest)[i] = ((char *)src)[i];
+			for(i = 0;  i < count; i++)
+				((char *) dest)[i] = ((char *) src)[i];
 		}
 	}
 
@@ -984,7 +984,7 @@ double strtod( const char *nptr, char **endptr )
 	{
 		floatint_t nan;
 
-		if (endptr)
+		if( endptr )
 			*endptr = (char *)&nptr[3];
 
 		// nan can be followed by a bracketed number (in hex, octal,

@@ -231,7 +231,6 @@ CG_OffsetThirdPersonView
 
 ===============
 */
-#define	FOCUS_DISTANCE	512
 static void CG_OffsetThirdPersonView( void ) {
 	vec3_t		forward, right, up;
 	vec3_t		view;
@@ -244,9 +243,13 @@ static void CG_OffsetThirdPersonView( void ) {
 	float		forwardScale, sideScale;
 	vec3_t killerAngles;
 
-	cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
+	if (cg_thirdPersonPlayerCrouchHeightChange.integer) {
+		cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
+	} else {
+		cg.refdef.vieworg[2] += DEFAULT_VIEWHEIGHT;
+	}
 
-	//FIXME testing quakelive
+	// testing quakelive
 	//cg.refdef.vieworg[2] -= 15;
 
 #if 0
@@ -284,30 +287,32 @@ static void CG_OffsetThirdPersonView( void ) {
 				vectoangles(forward, killerAngles);
 				VectorCopy(killerAngles, cg.refdefViewAngles);
 				return;
-
-				//focusAngles[YAW] = killerAngles[YAW];
-				//cg.refdefViewAngles[YAW] = killerAngles[YAW];
 			}
 		} else if (cg_deathStyle.integer == 3) {
 			//Com_Printf("%d\n", cg.predictedPlayerState.stats[STAT_DEAD_YAW]);
 			focusAngles[YAW] = 0;
 			cg.refdefViewAngles[YAW] = 0;
 		}
-
 	}
 
-	if ( focusAngles[PITCH] > 45 ) {
-		focusAngles[PITCH] = 45;		// don't go too far overhead
+	if (cg_thirdPersonMaxPlayerPitch.integer >= 0) {
+		// quake3 uses 45
+		if ( focusAngles[PITCH] > cg_thirdPersonMaxPlayerPitch.integer ) {
+			focusAngles[PITCH] = cg_thirdPersonMaxPlayerPitch.integer;		// don't go too far overhead
+		}
 	}
+
 	AngleVectors( focusAngles, forward, NULL, NULL );
 
-	VectorMA( cg.refdef.vieworg, FOCUS_DISTANCE, forward, focusPoint );
+	VectorMA( cg.refdef.vieworg, cg_thirdPersonFocusDistance.value, forward, focusPoint );
 
 	VectorCopy( cg.refdef.vieworg, view );
 
-	view[2] += 8;
+	// quake3 uses 8
+	view[2] += cg_thirdPersonPlayerOffsetZ.value;
 
-	cg.refdefViewAngles[PITCH] *= 0.5;
+	// quake3 uses 0.5
+	cg.refdefViewAngles[PITCH] *= cg_thirdPersonPlayerPitchScale.value;
 
 	AngleVectors( cg.refdefViewAngles, forward, right, up );
 
@@ -319,7 +324,7 @@ static void CG_OffsetThirdPersonView( void ) {
 	// trace a ray from the origin to the viewpoint to make sure the view isn't
 	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
 
-	if (!cg_cameraMode.integer) {
+	if (!cg_cameraMode.integer  &&  cg_thirdPersonAvoidSolid.integer) {
 		CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, MASK_SOLID );
 
 		if ( trace.fraction != 1.0 ) {
@@ -329,6 +334,158 @@ static void CG_OffsetThirdPersonView( void ) {
 			// close enough that this is poking out
 
 			CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, MASK_SOLID );
+			VectorCopy( trace.endpos, view );
+		}
+	}
+
+	VectorCopy( view, cg.refdef.vieworg );
+
+	// select pitch to look at focus point from vieworg
+	VectorSubtract( focusPoint, cg.refdef.vieworg, focusPoint );
+	focusDist = sqrt( focusPoint[0] * focusPoint[0] + focusPoint[1] * focusPoint[1] );
+	if ( focusDist < 1 ) {
+		focusDist = 1;	// should never happen
+	}
+	cg.refdefViewAngles[PITCH] = -180.0 / M_PI * atan2( focusPoint[2], focusDist );
+	cg.refdefViewAngles[YAW] -= cg_thirdPersonAngle.value;
+}
+
+static void CG_OffsetChaseThirdPersonView (void)
+{
+	vec3_t		forward, right, up;
+	vec3_t		view;
+	vec3_t		focusAngles;
+	trace_t		trace;
+	static vec3_t	mins = { -4, -4, -4 };
+	static vec3_t	maxs = { 4, 4, 4 };
+	vec3_t		focusPoint;
+	float		focusDist;
+	float		forwardScale, sideScale;
+	//vec3_t killerAngles;
+	qboolean isPlayer;
+	const centity_t *cent;
+
+	if (cg.chaseEnt < 0  ||  cg.chaseEnt >= MAX_GENTITIES) {
+		Com_Printf("^1CG_OffsetChaseThirdPersonView invalid entity %d\n", cg.chaseEnt);
+		return;
+	}
+
+	cent = &cg_entities[cg.chaseEnt];
+
+	if (cg.chaseEnt < MAX_CLIENTS) {
+		isPlayer = qtrue;
+	} else {
+		isPlayer = qfalse;
+	}
+
+	VectorCopy(cent->lerpOrigin, cg.refdef.vieworg);
+
+	if (isPlayer  &&  cg_thirdPersonPlayerCrouchHeightChange.integer) {
+		int anim;
+
+		// same as wolfcam_view.c Wolfcam_OffsetFirstPersonView : uses crouch anim
+		anim = cent->currentState.legsAnim & ~ANIM_TOGGLEBIT;
+
+		if (cent->currentState.number == cg.snap->ps.clientNum) {
+			cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
+		} else {
+			if (anim == LEGS_WALKCR  ||  anim == LEGS_IDLECR) {
+				cg.refdef.vieworg[2] += CROUCH_VIEWHEIGHT;
+			} else {
+				cg.refdef.vieworg[2] += DEFAULT_VIEWHEIGHT;
+			}
+		}
+	} else if (isPlayer) {
+		cg.refdef.vieworg[2] += DEFAULT_VIEWHEIGHT;
+	} else {
+		// no default adjustment for things like missiles
+	}
+
+	if (isPlayer) {
+		VectorCopy(cent->lerpAngles, cg.refdefViewAngles);
+	} else {
+		// use velocity to get angles for non-players
+		vectoangles(cent->currentState.pos.trDelta, forward);
+		VectorCopy(forward, cg.refdefViewAngles);
+	}
+
+	VectorCopy( cg.refdefViewAngles, focusAngles );
+
+	//FIXME death angles for players?
+#if 0
+	if ( cg.predictedPlayerState.stats[STAT_HEALTH] <= 0  &&
+
+		 // hack for setting spec free health to 0 like quake live
+		 !(!cg.demoPlayback  &&  cg.clientNum == cg.snap->ps.clientNum  &&  cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR)
+
+	   ) {
+		if (cg_deathStyle.integer == 1) {
+			if (cg.killerClientNum >= 0  &&  cg.killerClientNum < MAX_CLIENTS  &&  cg.killerClientNum != cg.snap->ps.clientNum) {
+				focusAngles[YAW] = cg.deadAngles[YAW];
+				cg.refdefViewAngles[YAW] = cg.deadAngles[YAW];
+			}
+		} else if (cg_deathStyle.integer == 2) {
+			if (cg.killerClientNum >= 0  &&  cg.killerClientNum < MAX_CLIENTS  &&  cg.killerClientNum != cg.snap->ps.clientNum) {
+				// face killer
+				//VectorSubtract(cg.killerOrigin, cg.snap->ps.origin, forward);
+				VectorSubtract(cg_entities[cg.killerClientNum].lerpOrigin, cg.snap->ps.origin, forward);
+				vectoangles(forward, killerAngles);
+				VectorCopy(killerAngles, cg.refdefViewAngles);
+				return;
+			}
+		} else if (cg_deathStyle.integer == 3) {
+			//Com_Printf("%d\n", cg.predictedPlayerState.stats[STAT_DEAD_YAW]);
+			focusAngles[YAW] = 0;
+			cg.refdefViewAngles[YAW] = 0;
+		}
+	}
+#endif
+
+	if (isPlayer  &&  cg_thirdPersonMaxPlayerPitch.integer >= 0) {
+		// quake3 uses 45
+		if ( focusAngles[PITCH] > cg_thirdPersonMaxPlayerPitch.integer ) {
+			focusAngles[PITCH] = cg_thirdPersonMaxPlayerPitch.integer;		// don't go too far overhead
+		}
+	}
+
+	AngleVectors( focusAngles, forward, NULL, NULL );
+
+	VectorMA( cg.refdef.vieworg, cg_thirdPersonFocusDistance.value, forward, focusPoint );
+
+	VectorCopy( cg.refdef.vieworg, view );
+
+	if (isPlayer) {
+		// quake3 uses 8
+		view[2] += cg_thirdPersonPlayerOffsetZ.value;
+	} else {
+		view[2] += cg_thirdPersonOffsetZ.value;
+	}
+
+	if (isPlayer) {
+		// quake3 uses 0.5
+		cg.refdefViewAngles[PITCH] *= cg_thirdPersonPlayerPitchScale.value;
+	}
+
+	AngleVectors( cg.refdefViewAngles, forward, right, up );
+
+	forwardScale = cos( cg_thirdPersonAngle.value / 180 * M_PI );
+	sideScale = sin( cg_thirdPersonAngle.value / 180 * M_PI );
+	VectorMA( view, -cg_thirdPersonRange.value * forwardScale, forward, view );
+	VectorMA( view, -cg_thirdPersonRange.value * sideScale, right, view );
+
+	// trace a ray from the origin to the viewpoint to make sure the view isn't
+	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
+
+	if (!cg_cameraMode.integer  &&  cg_thirdPersonAvoidSolid.integer) {
+		CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.chaseEnt, MASK_SOLID );
+
+		if ( trace.fraction != 1.0 ) {
+			VectorCopy( trace.endpos, view );
+			view[2] += (1.0 - trace.fraction) * 32;
+			// try another trace to this position, because a tunnel may have the ceiling
+			// close enough that this is poking out
+
+			CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.chaseEnt, MASK_SOLID );
 			VectorCopy( trace.endpos, view );
 		}
 	}
@@ -1452,7 +1609,7 @@ static void CG_DrawAdvertisements (void)
 
 				//FIXME no clue what I'm doing
 		if (verts[0].xyz[2] > verts[1].xyz[2]) {
-			// ex:  ad 3 blackcathedral
+			// ex: ad 3 blackcathedral
 			//Com_Printf("flip ad %i\n", i + 1);
 			verts[0].st[0] = 1;
 			verts[0].st[1] = 0;
@@ -4035,13 +4192,6 @@ static void CG_FreeCam (void)
 		}
 	}
 
-#if 0
-	if (cg.viewEnt > -1  &&  cg.chase) {
-		VectorCopy(cg_entities[cg.viewEnt].lerpOrigin, cg.freecamPlayerState.origin);
-		//return;
-	}
-#endif
-
 	fmove = smove = umove = 0;
 
 	if (cg.keyf) {
@@ -4196,7 +4346,7 @@ static void CG_FreeCam (void)
 	cg.refdef.fov_x = CG_CalcZoom(cg.refdef.fov_x);
 
 	CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
-	
+
 	cg.refdef.time = cg.time;  //dcg.realTime;  //cg.time;
 
 	if (cg.keya  &&  !cg.mouseSeeking) {
@@ -4243,47 +4393,40 @@ static void CG_FreeCam (void)
 	}
 
 	if (cg.chaseEnt > -1) {
-		const centity_t *cent;
-		vec3_t origin;
-		//vec3_t forward, right, up;
-		//vec3_t dir;
+		if (cg_chaseThirdPerson.integer) {
+			CG_OffsetChaseThirdPersonView();
+			AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
 
-		//VectorCopy(cg_entities[cg.chaseEnt].lerpOrigin, cg.refdef.vieworg);
-		cent = &cg_entities[cg.chaseEnt];
-		VectorCopy(cent->lerpOrigin, origin);
+			if (cg_chaseUpdateFreeCam.integer) {
+				VectorCopy(cg.refdef.vieworg, cg.fpos);
+				// viewheight nonsense
+				cg.fpos[2] -= DEFAULT_VIEWHEIGHT;
+				VectorCopy(cg.refdefViewAngles, cg.fang);
 
-#if 0
-		if (cent->currentState.eType == ET_MISSILE) {
-			//AngleVectors(cent->currentState.angles, forward, right, up);
-			AngleVectors(cent->currentState.pos.trDelta, forward, right, up);
-		} else if (cent->currentState.eType == ET_PLAYER) {
-			//static vec3_t dir;
-			//static int lastDirTime = -1;
-			//AngleVectors(cent->currentState.pos.trDelta, forward, right, up);
-			//AngleVectors(cg.freecamPlayerState.viewangles, forward, right, up);
-			if (1) {  //(1) {  //(trap_Milliseconds() - lastDirTime > 1500) {
-				VectorSubtract(cent->nextState.pos.trBase, cent->currentState.pos.trBase, dir);
-				AngleVectors(dir, forward, right, up);
+				VectorCopy(cg.fpos, ps->origin);
+				VectorCopy(cg.fang, ps->viewangles);
 			}
-		} else {
-			// the fuck
-			//Com_Printf("the fuck viewent offset\n");
-			AngleVectors(cent->lerpAngles, forward, right, up);
+		} else {  // only updating position, free to change freecam angles
+			const centity_t *cent;
+
+			cent = &cg_entities[cg.chaseEnt];
+			VectorCopy(cent->lerpOrigin, cg.refdef.vieworg);
+
+			cg.refdef.vieworg[0] += cg.chaseEntOffsetX;
+			cg.refdef.vieworg[1] += cg.chaseEntOffsetY;
+			cg.refdef.vieworg[2] += cg.chaseEntOffsetZ;
+
+			if (cg_chaseUpdateFreeCam.integer) {
+				VectorCopy(cg.refdef.vieworg, cg.fpos);
+				// viewheight nonsense
+				cg.fpos[2] -= DEFAULT_VIEWHEIGHT;
+				VectorCopy(cg.fpos, ps->origin);
+			}
 		}
 
-		//AngleVectors(cent->lerpAngles, forward, right, up);
-#if 1
-		VectorMA(origin, cg.chaseEntOffsetForward, forward, origin);
-		VectorMA(origin, cg.chaseEntOffsetRight, right, origin);
-		VectorMA(origin, cg.chaseEntOffsetUp, up, origin);
-#endif
-#endif
-		VectorCopy(origin, cg.refdef.vieworg);
-		cg.refdef.vieworg[0] += cg.chaseEntOffsetX;
-		cg.refdef.vieworg[1] += cg.chaseEntOffsetY;
-		cg.refdef.vieworg[2] += cg.chaseEntOffsetZ;
-
+		//FIXME ps->velocity
 	}
+
 	//done:
 	//FIXME inwater);
 	//trap_S_Respatialize (-1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);

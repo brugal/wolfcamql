@@ -19,7 +19,7 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-#include "../renderer/tr_local.h"
+#include "../renderercommon/tr_common.h"
 
 
 qboolean ( * qwglSwapIntervalEXT)( int interval );
@@ -35,8 +35,7 @@ void ( * qglUnlockArraysEXT) ( void );
 void		GLimp_EndFrame( void ) {
 }
 
-void 		GLimp_Init( void )
-{
+void 		GLimp_Init( void ) {
 }
 
 void		GLimp_Shutdown( void ) {

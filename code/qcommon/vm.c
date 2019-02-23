@@ -345,7 +345,7 @@ intptr_t QDECL VM_DllSyscall( intptr_t arg, ... ) {
   args[0] = arg;
   
   va_start(ap, arg);
-  for (i = 1; i < ARRAY_LEN(args); i++)
+  for (i = 1; i < ARRAY_LEN (args); i++)
     args[i] = va_arg(ap, intptr_t);
   va_end(ap);
   
@@ -363,7 +363,7 @@ VM_LoadQVM
 Load a .qvm file
 =================
 */
-vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure )
+vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure)
 {
 	int					dataLength;
 	int					i;
@@ -404,7 +404,7 @@ vmHeader_t *VM_LoadQVM( vm_t *vm, qboolean alloc, qboolean unpure )
 			|| header.h->bssLength < 0
 			|| header.h->dataLength < 0
 			|| header.h->litLength < 0
-			|| header.h->codeLength <= 0)
+			|| header.h->codeLength <= 0 )
 		{
 			VM_Free(vm);
 			FS_FreeFile(header.v);
@@ -555,7 +555,7 @@ vm_t *VM_Restart(vm_t *vm, qboolean unpure)
 
 	if(!(header = VM_LoadQVM(vm, qfalse, unpure)))
 	{
-		Com_Error(ERR_DROP, "VM_Restart failed.");
+		Com_Error(ERR_DROP, "VM_Restart failed");
 		return NULL;
 	}
 

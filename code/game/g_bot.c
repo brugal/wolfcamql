@@ -234,8 +234,7 @@ G_CountBotPlayersByName
 
 Check connected and connecting (delay join) bots.
 
-Returns number of bots with name on specified team or whole server if team is -
-1.
+Returns number of bots with name on specified team or whole server if team is -1.
 ===============
 */
 int G_CountBotPlayersByName( const char *name, int team ) {

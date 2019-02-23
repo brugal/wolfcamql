@@ -526,6 +526,7 @@ void vectoangles( const vec3_t value1, vec3_t angles ) {
 	angles[ROLL] = 0;
 }
 
+
 /*
 =================
 AnglesToAxis
@@ -832,7 +833,7 @@ AngleSubtract
 Always returns a value from -180 to 180
 =================
 */
-float AngleSubtract (float a1, float a2) {
+float	AngleSubtract( float a1, float a2 ) {
 	float a;
 
 	a = a1 - a2;
@@ -866,7 +867,7 @@ float AngleAdd (float a1, float a2)
 	return a;
 }
 
-float AngleMod (float a) {
+float	AngleMod(float a) {
 	a = (360.0/65536) * ((int)(a*(65536/360.0)) & 65535);
 	return a;
 }
@@ -879,7 +880,7 @@ AngleNormalize360
 returns angle normalized to the range [0 <= angle < 360]
 =================
 */
-float AngleNormalize360 (float angle) {
+float AngleNormalize360 ( float angle ) {
 	return (360.0 / 65536) * ((int)(angle * (65536 / 360.0)) & 65535);
 }
 
@@ -1326,7 +1327,6 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 	** project the point onto the plane defined by src
 	*/
 	ProjectPointOnPlane( dst, tempvec, src );
-	//ProjectPointOnPlane( dst, src, tempvec);
 
 	/*
 	** normalize the result

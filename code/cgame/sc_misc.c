@@ -20,7 +20,7 @@ void SC_Lowercase (char *p)
     }
 }
 
-// ex:  '255 125 100'
+// ex: '255 125 100'
 int SC_ParseColorFromStr (const char *s, int *r, int *g, int *b)
 {
     int i;
@@ -149,7 +149,7 @@ int SC_ParseVec3FromStr (const char *s, vec3_t v)
     if (!s)
         return -1;
 
-	// sscanf()  doesn't work with integer strings :(  ex:  "100 -99 20"
+	// sscanf()  doesn't work with integer strings :(  ex: "100 -99 20"
 
     sl = strlen(s);
 
@@ -670,117 +670,6 @@ const char *CG_GetToken (const char *inputString, char *token, qboolean isFilena
     return p;
 }
 
-const char *CG_GetTokenGameType (const char *inputString, char *token, qboolean isFilename, qboolean *newLine)
-{
-    //int i;
-    const char *p;
-    char c;
-    qboolean gotFirstToken;
-    //char *start;
-    //char *tokenOrig;
-
-    //tokenOrig = token;
-
-    //start = token;
-
-    if (1) {  //(isFilename) {
-        //Com_Printf("inputstring '%s'\n", inputString);
-    }
-
-	if (!inputString) {
-		Com_Printf("CG_GetToken inputString == NULL\n");
-		return NULL;
-	}
-
-    *newLine = qfalse;
-    p = inputString;
-    token[0] = '\0';
-
-    if (p[0] == '\0') {  //  ||  (p[0] != '\t'  &&  (p[0] < ' '  ||  p[0] > '~'))) {
-        //Com_Printf("xx\n");
-        *newLine = qtrue;
-        //Com_Printf("CG_GetToken() '%s'\n", tokenOrig);
-        return p;
-    }
-
-#if 0
-    if (p[0] == '\0'  ||  (p[0] != '\t'  &&  (p[0] < ' '  ||  p[0] > '~'))) {
-        Com_Printf("xx\n");
-        *newLine = qtrue;
-        return p;
-    }
-#endif
-
-    gotFirstToken = qfalse;
-
-    while (1) {
-        c = p[0];
-        if (c == '\0') {
-            //Com_Printf("end\n");
-            *newLine = qtrue;
-            break;
-        }
-        if (c != '\t'  &&  (c < ' '  ||  c > '~')) {
-            *newLine = qtrue;
-            if (gotFirstToken) {
-                p--;
-            }
-            break;
-        }
-
-        if (c == ' '  ||  c == '\t'  ||  c == '\''  ||  c == '"'  ||  c == ',') {
-            if (!gotFirstToken) {
-                p++;
-                continue;
-            } else {
-                break;
-            }
-        }
-
-        if (!isFilename  &&  (c == '/'  ||  c == '-'  ||  c == '+'  ||  c == '*'  ||  c  == '('  ||  c  == ')')) {
-            if (gotFirstToken) {
-                p--;
-                break;
-            } else {
-                token[0] = c;
-                token++;
-                break;
-            }
-        }
-
-        if (c < '!'  ||  c > '~') {
-            break;
-        }
-
-        if (c == '{'  ||  c == '}') {
-            if (gotFirstToken) {
-                p--;
-                break;
-            }
-        }
-
-        token[0] = c;
-        token++;
-        p++;
-        gotFirstToken = qtrue;
-    }
-
-    p++;
-    token[0] = '\0';
-
-#if 0
-    if (isFilename) {
-        Com_Printf("^6filename token: '%s'\n", start);
-    } else {
-        Com_Printf("^5token: '%s'\n", start);
-    }
-#endif
-
-    //Com_Printf("CG_GetToken() '%s'\n", tokenOrig);
-
-    return p;
-}
-
 void CG_LStrip (char **cp)
 {
     char c;
@@ -945,7 +834,7 @@ const char *CG_GetTimeString (int ms)
 // check version is at least this, or possibly not quakelive client
 qboolean CG_CheckQlVersion (int n0, int n1, int n2, int n3)
 {
-	// ex:  0.1.0.432
+	// ex: 0.1.0.432
 
 	if (cgs.qlversion[0] > n0) {
 		return qtrue;

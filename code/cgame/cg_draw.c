@@ -4275,7 +4275,6 @@ static void CG_DrawClientItemTimer (void)
 		return;
 	}
 
-
 	x = cg_drawClientItemTimerX.value;
 	y = cg_drawClientItemTimerY.value;
 
@@ -4334,8 +4333,7 @@ static void CG_DrawClientItemTimer (void)
 	}
 	color[3] = alpha;
 
-
-		shownMH = shownRA = shownYA = shownGA = shownQuad = shownBS = qfalse;
+	shownMH = shownRA = shownYA = shownGA = shownQuad = shownBS = qfalse;
 
 	str = cg_drawClientItemTimerFilter.string;
 	while (*str) {
@@ -10010,7 +10008,7 @@ static void CG_DrawWarmup( void ) {
 	}
 
 	if (*cg_drawWarmupStringFont.string) {
-		font = &cgs.media.waitingForPlayersFont;
+		font = &cgs.media.warmupStringFont;
 	} else {
 		font = &cgDC.Assets.textFont;
 	}

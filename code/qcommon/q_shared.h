@@ -742,17 +742,17 @@ qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
 qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
 		const vec3_t origin);
 
-float AngleMod (float a);
+float	AngleMod(float a);
 float LerpAngle (float from, float to, float frac);
 void LerpAngles (const vec3_t from, const vec3_t to, vec3_t out, float lerp);  // q3mme camera
 float LerpAngleNear (float from, float to, float frac);
-float AngleSubtract (float a1, float a2);
+float AngleSubtract( float a1, float a2 );
 void AnglesSubtract (const vec3_t v1, const vec3_t v2, vec3_t v3);
 float AngleAdd (float a1, float a2);
 
-float AngleNormalize360 (float angle);
-float AngleNormalize180 (float angle);
-float AngleDelta (float angle1, float angle2);
+float AngleNormalize360 ( float angle );
+float AngleNormalize180 ( float angle );
+float AngleDelta ( float angle1, float angle2 );
 
 qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c );
 void ProjectPointOntoVector (vec3_t point, vec3_t vStart, vec3_t vDir, vec3_t vProj);
@@ -943,7 +943,7 @@ qboolean Info_Validate( const char *s );
 void Info_NextPair( const char **s, char *key, char *value );
 
 // this is only here so the functions in q_shared.c and bg_*.c can link
-void	QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((noreturn, format (printf, 2, 3)));
+void	QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((noreturn, format(printf, 2, 3)));
 void	QDECL Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
 
 

@@ -244,7 +244,6 @@ void BotSaveGoalFuzzyLogic(int goalstate, char *filename)
 	//bot_goalstate_t *gs;
 
 	//gs = BotGoalStateFromHandle(goalstate);
-
 	//if (!gs) return;
 	//WriteWeightConfig(filename, gs->itemweightconfig);
 } //end of the function BotSaveGoalFuzzyLogic
@@ -259,7 +258,6 @@ void BotMutateGoalFuzzyLogic(int goalstate, float range)
 	bot_goalstate_t *gs;
 
 	gs = BotGoalStateFromHandle(goalstate);
-
 	if (!gs) return;
 	EvolveWeightConfig(gs->itemweightconfig);
 } //end of the function BotMutateGoalFuzzyLogic

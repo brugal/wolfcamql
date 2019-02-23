@@ -3509,7 +3509,6 @@ void BotResetLastAvoidReach(int movestate)
 			latest = i;
 		} //end if
 	} //end for
-	//if (latesttime  &&  i < MAX_AVOIDREACH)  // i < MAX_AVOIDREACH silence gcc warning
 	if (latesttime)
 	{
 		ms->avoidreachtimes[latest] = 0;

@@ -198,6 +198,7 @@ mapNames_t MapNames[] = {
 
 	{ "maps/q3dm6.bsp", "maps/campgrounds.bsp", NULL, NULL },
 	{ "maps/q3ctf1.bsp", "maps/duelingkeeps.bsp", NULL, NULL },
+	//{ "maps/hub3aeroq3.bsp", "maps/aerowalk.bsp", NULL, NULL },  // 2019-01-25 no wrong coordinates
 	{ NULL, NULL, NULL, NULL },
 };
 
@@ -1679,7 +1680,6 @@ void Hunk_SmallLog( void) {
 	FS_Write(buf, strlen(buf), logfile);
 }
 
-
 /*
 =================
 Com_InitHunkMemory
@@ -2276,7 +2276,7 @@ Com_GetSystemEvent
 
 ================
 */
-sysEvent_t Com_GetSystemEvent (void)
+sysEvent_t Com_GetSystemEvent( void )
 {
 	sysEvent_t  ev;
 	char        *s;
@@ -2320,7 +2320,7 @@ sysEvent_t Com_GetSystemEvent (void)
 Com_GetRealEvent
 =================
 */
-sysEvent_t	Com_GetRealEvent ( void ) {
+sysEvent_t	Com_GetRealEvent( void ) {
 	int			r;
 	sysEvent_t	ev;
 
@@ -2414,7 +2414,7 @@ void Com_PushEvent( sysEvent_t *event ) {
 Com_GetEvent
 =================
 */
-sysEvent_t	Com_GetEvent (void) {
+sysEvent_t	Com_GetEvent( void ) {
 	if ( com_pushedEventsHead > com_pushedEventsTail ) {
 		com_pushedEventsTail++;
 		return com_pushedEvents[ (com_pushedEventsTail-1) & (MAX_PUSHED_EVENTS-1) ];
@@ -2466,7 +2466,7 @@ int Com_EventLoop( void ) {
 		ev = Com_GetEvent();
 
 		// if no more events are available
-		if (ev.evType == SE_NONE) {
+		if ( ev.evType == SE_NONE ) {
 			// manually send packet events for the loopback channel
 			while ( NET_GetLoopPacket( NS_CLIENT, &evFrom, &buf ) ) {
 				CL_PacketEvent( evFrom, &buf );
@@ -2594,7 +2594,7 @@ Com_Crash_f
 A way to force a bus error for development reasons
 =================
 */
-static void Com_Crash_f (void) {
+static void Com_Crash_f( void ) {
 	Com_Printf("crash %p\n", Com_Crash_f);
 	* ( volatile int * ) 0 = 0x12345678;
 }
@@ -2954,7 +2954,6 @@ void Com_Init( char *commandLine ) {
 	if ( setjmp (abortframe) ) {
 		Sys_Error ("Error during initialization");
 	}
-
 
 	// Clear queues
 	Com_Memset( &eventQueue[ 0 ], 0, MAX_QUEUED_EVENTS * sizeof( sysEvent_t ) );
@@ -3684,6 +3683,7 @@ void Com_Shutdown (void) {
 		FS_FCloseFile( pipefile );
 		FS_HomeRemove( com_pipefile->string );
 	}
+
 }
 
 /*

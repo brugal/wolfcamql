@@ -89,7 +89,7 @@ void DeathmatchScoreboardMessage( gentity_t *ent ) {
 					 // new in ql
 					 cl->ps.pm_type == PM_NORMAL,  //0,  //FIXME alive
 					 0,  //FIXME frags
-					 0,  //FIXME deaths  no: self->client->ps.persistant[PERS_KILLED
+					 0,  //FIXME deaths  no: self->client->ps.persistant[PERS_KILLED]
 					 WP_MACHINEGUN  //FIXME bestWeapon
 
 					 );
@@ -190,6 +190,7 @@ char	*ConcatArgs( int start ) {
 	return line;
 }
 
+
 /*
 ==================
 StringIsInteger
@@ -213,6 +214,7 @@ qboolean StringIsInteger( const char * s ) {
 
 	return foundDigit;
 }
+
 
 /*
 ==================
@@ -447,7 +449,7 @@ and sends over a command to the client to resize the view,
 hide the scoreboard, and take a special screenshot
 ==================
 */
-void Cmd_LevelShot_f( gentity_t *ent )
+void Cmd_LevelShot_f(gentity_t *ent)
 {
 	if(!ent->client->pers.localClient)
 	{
@@ -456,19 +458,19 @@ void Cmd_LevelShot_f( gentity_t *ent )
 		return;
 	}
 
-	if ( !CheatsOk( ent ) ) {
+	if(!CheatsOk(ent))
 		return;
-	}
 
 	// doesn't work in single player
-	if (g_gametype.integer == GT_SINGLE_PLAYER) {
-		trap_SendServerCommand( ent-g_entities, 
+	if(g_gametype.integer == GT_SINGLE_PLAYER)
+	{
+		trap_SendServerCommand(ent-g_entities, 
 			"print \"Must not be in singleplayer mode for levelshot\n\"" );
 		return;
 	}
 
 	BeginIntermission();
-	trap_SendServerCommand( ent-g_entities, "clientLevelShot" );
+	trap_SendServerCommand(ent-g_entities, "clientLevelShot");
 }
 
 
@@ -494,7 +496,6 @@ void Cmd_TeamTask_f( gentity_t *ent ) {
 	trap_SetUserinfo(client, userinfo);
 	ClientUserinfoChanged(client);
 }
-
 
 
 /*
@@ -670,7 +671,7 @@ void SetTeam( gentity_t *ent, const char *s ) {
 
 	BroadcastTeamChange( client, oldTeam );
 
-	// get and distribute relevant paramters
+	// get and distribute relevant parameters
 	ClientUserinfoChanged( clientNum );
 
 	// client hasn't spawned yet, they sent an early team command, teampref userinfo, or g_teamAutoJoin is enabled
@@ -969,6 +970,7 @@ static void SanitizeChatText( char *text ) {
 	}
 }
 
+
 /*
 ==================
 Cmd_Say_f
@@ -1034,6 +1036,7 @@ static void Cmd_Tell_f( gentity_t *ent ) {
 		G_Say( ent, ent, SAY_TELL, p );
 	}
 }
+
 
 #ifdef MISSIONPACK
 static void G_VoiceTo( gentity_t *ent, gentity_t *other, int mode, const char *id, qboolean voiceonly ) {
@@ -1239,6 +1242,7 @@ static void Cmd_VoiceTaunt_f( gentity_t *ent ) {
 #endif
 
 
+
 static char	*gc_orders[] = {
 	"hold your position",
 	"hold this position",
@@ -1296,7 +1300,7 @@ Cmd_Where_f
 ==================
 */
 void Cmd_Where_f( gentity_t *ent ) {
-	trap_SendServerCommand( ent-g_entities, va("print \"%s\n\"", vtos( ent->r.currentOrigin ) ) );
+	trap_SendServerCommand( ent-g_entities, va("print \"%s\n\"", vtos(ent->r.currentOrigin) ) );
 }
 
 static const char *gameNames[] = {

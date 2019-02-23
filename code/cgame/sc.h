@@ -34,7 +34,6 @@ qboolean CG_IsOurTeam (int team);
 
 char *CG_FS_ReadLine (qhandle_t f, int *len);
 const char *CG_GetToken (const char *inputString, char *token, qboolean isFilename, qboolean *newLine);
-const char *CG_GetTokenGameType (const char *inputString, char *token, qboolean isFilename, qboolean *newLine);
 
 void CG_LStrip (char **cp);
 void CG_StripSlashComments (char *s);

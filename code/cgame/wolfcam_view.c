@@ -802,6 +802,7 @@ void Wolfcam_LoadModels (void)
 	}
 }
 
+#if 0  // unused
 #define FOCUS_DISTANCE  400     //800   //512
 int Wolfcam_OffsetThirdPersonView (void)
 {
@@ -887,6 +888,7 @@ int Wolfcam_OffsetThirdPersonView (void)
         //FIXME wolfcam CG_CalcFov
         return 0;
 }
+#endif
 
 /*
 ===============

@@ -494,7 +494,7 @@ static void PM_WaterMove( void ) {
 		if (pm->ps->velocity[2] > -300) {
 			if ( pm->watertype & CONTENTS_WATER ) {
 				pm->ps->velocity[2] = 100;
-			} else if ( pm->watertype & CONTENTS_SLIME) {
+			} else if ( pm->watertype & CONTENTS_SLIME ) {
 				pm->ps->velocity[2] = 80;
 			} else {
 				pm->ps->velocity[2] = 50;

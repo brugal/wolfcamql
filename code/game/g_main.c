@@ -103,6 +103,8 @@ vmCvar_t g_weapon_plasma_speed;
 //vmCvar_t g_weapon_plasma_rate;
 
 vmCvar_t g_debugPingValue;
+vmCvar_t g_ammoPack;
+vmCvar_t g_ammoPackHack;
 
 static cvarTable_t		gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -181,21 +183,23 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_enableBreath, "g_enableBreath", "0", CVAR_SERVERINFO, 0, qtrue, qfalse },
 	{ &g_proxMineTimeout, "g_proxMineTimeout", "20000", 0, 0, qfalse },
 #endif
-	{ &g_smoothClients, "g_smoothClients", "1", 0, 0, qfalse },
-	{ &pmove_fixed, "pmove_fixed", "0", CVAR_SYSTEMINFO, 0, qfalse },
-	{ &pmove_msec, "pmove_msec", "8", CVAR_SYSTEMINFO, 0, qfalse },
+	{ &g_smoothClients, "g_smoothClients", "1", 0, 0, qfalse},
+	{ &pmove_fixed, "pmove_fixed", "0", CVAR_SYSTEMINFO, 0, qfalse},
+	{ &pmove_msec, "pmove_msec", "8", CVAR_SYSTEMINFO, 0, qfalse},
 
-	{ &g_rankings, "g_rankings", "0", 0, 0, qfalse },
+	{ &g_rankings, "g_rankings", "0", 0, 0, qfalse},
 	{ &g_localTeamPref, "g_localTeamPref", "", 0, 0, qfalse },
 	{ &g_levelStartTime, "g_levelStartTime", "0", CVAR_SERVERINFO, 0, qfalse },
 	{ &g_weapon_rocket_speed, "g_weapon_rocket_speed", "900", CVAR_ARCHIVE, 0, qfalse },
 	{ &g_weapon_plasma_speed, "g_weapon_plasma_speed", "2000", CVAR_ARCHIVE, 0, qfalse },
 	//{ &g_weapon_plasma_rate, "g_weapon_plasma_rate", "100", CVAR_ARCHIVE, 0, qfalse },
 	{ &g_debugPingValue, "g_debugPingValue", "0", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_ammoPack, "g_ammoPack", "0", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_ammoPackHack, "g_ammoPackHack", "0", CVAR_ARCHIVE, 0, qfalse },
 
 };
 
-static int gameCvarTableSize = ARRAY_LEN(gameCvarTable);
+static int gameCvarTableSize = ARRAY_LEN( gameCvarTable );
 
 
 void G_InitGame( int levelTime, int randomSeed, int restart );
@@ -849,10 +853,10 @@ void CalculateRanks( void ) {
 	level.numNonSpectatorClients = 0;
 	level.numPlayingClients = 0;
 	level.numVotingClients = 0;		// don't count bots
-	//for ( i = 0; i < TEAM_NUM_TEAMS; i++ ) {
-	for (i = 0; i < ARRAY_LEN(level.numteamVotingClients); i++) {
+
+	for (i = 0; i < ARRAY_LEN(level.numteamVotingClients); i++)
 		level.numteamVotingClients[i] = 0;
-	}
+
 	for ( i = 0 ; i < level.maxclients ; i++ ) {
 		if ( level.clients[i].pers.connected != CON_DISCONNECTED ) {
 			level.sortedClients[level.numConnectedClients] = i;
@@ -989,7 +993,6 @@ void MoveClientToIntermission( gentity_t *ent ) {
 		StopFollowing( ent );
 	}
 
-
 	FindIntermissionPoint();
 	// move to the spot
 	VectorCopy( level.intermission_origin, ent->s.origin );
@@ -1069,7 +1072,6 @@ void BeginIntermission( void ) {
 		}
 		MoveClientToIntermission( client );
 	}
-
 #ifdef MISSIONPACK
 	if (g_singlePlayer.integer) {
 		trap_Cvar_Set("ui_singlePlayerActive", "0");
@@ -1082,7 +1084,6 @@ void BeginIntermission( void ) {
 		SpawnModelsOnVictoryPads();
 	}
 #endif
-
 	// send the current scoring to all clients
 	SendScoreboardMessageToAllClients();
 
@@ -1732,6 +1733,7 @@ void CheckTeamLeader( int team ) {
 				break;
 			}
 		}
+
 		if (i >= level.maxclients) {
 			for ( i = 0 ; i < level.maxclients ; i++ ) {
 				if (level.clients[i].sess.sessionTeam != team)

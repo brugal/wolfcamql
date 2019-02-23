@@ -359,7 +359,7 @@ void Cmd_Ifeq_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifeq <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifeq <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -383,7 +383,7 @@ void Cmd_Ifneq_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifneq <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifneq <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -407,7 +407,7 @@ void Cmd_Ifgt_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifgt <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifgt <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -431,7 +431,7 @@ void Cmd_Ifgte_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifgte <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifgte <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -455,7 +455,7 @@ void Cmd_Iflt_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  iflt <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: iflt <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -479,7 +479,7 @@ void Cmd_Iflte_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  iflte <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: iflte <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -503,7 +503,7 @@ void Cmd_Ifeqf_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifeqf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifeqf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -527,7 +527,7 @@ void Cmd_Ifneqf_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifneqf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifneqf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -551,7 +551,7 @@ void Cmd_Ifgtf_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifgtf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifgtf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -575,7 +575,7 @@ void Cmd_Ifgtef_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifgtef <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifgtef <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -599,7 +599,7 @@ void Cmd_Ifltf_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifltf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifltf <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -623,7 +623,7 @@ void Cmd_Ifltef_f (void)
 	const char *s;
 
 	if (Cmd_Argc() < 4) {
-		Com_Printf("usage:  ifltef <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
+		Com_Printf("usage: ifltef <cvar> <value> <vstr to execute if true> [optional vstr to execute if false]\n");
 		return;
 	}
 
@@ -701,8 +701,8 @@ static void Cmd_Unalias_f (void)
 	alias_t *a;
 
 	if (Cmd_Argc() == 1) {
-		Com_Printf("Usage: unalias \"command\"\n");
-		Com_Printf("Alias List:\n");
+		Com_Printf("usage: unalias \"command\"\n");
+		Com_Printf("alias list:\n");
 
 		for (i = 0;  i < numAliases;  i++) {
 			Com_Printf("  %s \"%s\"\n", cmd_aliases[i].name, cmd_aliases[i].command);
@@ -905,13 +905,13 @@ char *Cmd_Cmd(void)
    https://bugzilla.icculus.org/show_bug.cgi?id=4769
 */
 
-void Cmd_Args_Sanitize( void )
+void Cmd_Args_Sanitize(void)
 {
 	int i;
 
-	for (i = 1; i < cmd_argc; i++)
+	for(i = 1; i < cmd_argc; i++)
 	{
-		char* c = cmd_argv[i];
+		char *c = cmd_argv[i];
 
 		if(strlen(c) > MAX_CVAR_VALUE_STRING - 1)
 			c[MAX_CVAR_VALUE_STRING - 1] = '\0';
@@ -1092,9 +1092,8 @@ void	Cmd_AddCommand( const char *cmd_name, xcommand_t function ) {
 	if( Cmd_FindCommand( cmd_name ) )
 	{
 		// allow completion-only commands to be silently doubled
-		if ( function != NULL ) {
-			Com_Printf ("Cmd_AddCommand: %s already defined\n", cmd_name);
-		}
+		if( function != NULL )
+			Com_Printf( "Cmd_AddCommand: %s already defined\n", cmd_name );
 		return;
 	}
 
@@ -1140,7 +1139,7 @@ void	Cmd_RemoveCommand( const char *cmd_name ) {
 		}
 		if ( !strcmp( cmd_name, cmd->name ) ) {
 			*back = cmd->next;
-			Z_Free(cmd->name);
+			Z_Free (cmd->name);
 			Z_Free (cmd);
 			return;
 		}

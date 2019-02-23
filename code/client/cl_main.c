@@ -5640,7 +5640,7 @@ void CL_Rewind_f (void)
 	double wantedTime;
 
 	if (Cmd_Argc() < 2) {
-		Com_Printf("usage:  rewind <time in seconds>\n");
+		Com_Printf("usage: rewind <time in seconds>\n");
 		return;
 	}
 
@@ -5680,7 +5680,7 @@ void CL_FastForward_f (void)
 	double wantedTime;
 
 	if (Cmd_Argc() < 2) {
-		Com_Printf("usage:  fastforward <time in seconds>\n");
+		Com_Printf("usage: fastforward <time in seconds>\n");
 		return;
 	}
 
@@ -5771,7 +5771,7 @@ void CL_SeekServerTime_f (void)
 	}
 
 	if (Cmd_Argc() < 2) {
-		Com_Printf("usage:  seekservertime <time in milliseconds>\n");
+		Com_Printf("usage: seekservertime <time in milliseconds>\n");
 		return;
 	}
 
@@ -5792,7 +5792,7 @@ void CL_Seek_f (void)
 	}
 
 	if (Cmd_Argc() < 2) {
-		Com_Printf("usage:  seek <time in seconds>\n");
+		Com_Printf("usage: seek <time in seconds>\n");
 		return;
 	}
 
@@ -5815,7 +5815,7 @@ void CL_SeekEnd_f (void)
 	}
 
 	if (Cmd_Argc() < 2) {
-		Com_Printf("usage:  seek <time in seconds>\n");
+		Com_Printf("usage: seek <time in seconds>\n");
 		return;
 	}
 
@@ -6025,9 +6025,9 @@ static void CL_SetColorTable_f (void)
 	float r, g, b, a;
 
 	if (Cmd_Argc() < 6) {
-		Com_Printf("usage:  /setcolortable <index number> r g b a\n");
-		Com_Printf("        0 black, 1 red, 2 green, 3 yellow, 4 blue, 5 cyan, 6 magenta, 7 white, 8 light grey, 9, medium grey, 10 dark grey\n");
-		Com_Printf("        r g b a  from 0.0 to 1.0\n");
+		Com_Printf("usage: /setcolortable <index number> r g b a\n");
+		Com_Printf("       0 black, 1 red, 2 green, 3 yellow, 4 blue, 5 cyan, 6 magenta, 7 white, 8 light grey, 9, medium grey, 10 dark grey\n");
+		Com_Printf("       r g b a  from 0.0 to 1.0\n");
 		return;
 	}
 

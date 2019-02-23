@@ -2623,6 +2623,7 @@ int	FS_GetFileList(  const char *path, const char *extension, char *listbuf, int
 	if (Q_stricmp(path, "$modlist") == 0) {
 		return FS_GetModList(listbuf, bufsize);
 	}
+
 	pFiles = FS_ListFiles(path, extension, &nFiles);
 
 	for (i =0; i < nFiles; i++) {
@@ -3355,7 +3356,7 @@ qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring ) {
 		havepak = qfalse;
 
 		// never autodownload any of the id paks
-		if ( FS_idPak(fs_serverReferencedPakNames[i], BASEGAME, NUM_ID_PAKS)
+		if(FS_idPak(fs_serverReferencedPakNames[i], BASEGAME, NUM_ID_PAKS)
 #ifndef STANDALONE
 			 || FS_idPak(fs_serverReferencedPakNames[i], BASETA, NUM_TA_PAKS)
 #endif
@@ -4290,7 +4291,7 @@ void FS_PureServerSetReferencedPaks( const char *pakSums, const char *pakNames )
 		fs_serverReferencedPaks[i] = atoi( Cmd_Argv( i ) );
 	}
 
-	for (i = 0 ; i < ARRAY_LEN(fs_serverReferencedPakNames) ; i++)
+	for (i = 0 ; i < ARRAY_LEN(fs_serverReferencedPakNames); i++)
 	{
 		if(fs_serverReferencedPakNames[i])
 			Z_Free(fs_serverReferencedPakNames[i]);

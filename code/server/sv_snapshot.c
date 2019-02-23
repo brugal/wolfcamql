@@ -669,7 +669,6 @@ void SV_SendClientMessages(void)
 			 (sv_lanForceRate->integer && Sys_IsLANAddress(c->netchan.remoteAddress))))
 		{
 			// rate control for clients not on LAN
-
 			if(SV_RateMsec(c) > 0)
 			{
 				// Not enough time since last packet passed through the line
@@ -684,4 +683,3 @@ void SV_SendClientMessages(void)
 		c->rateDelayed = qfalse;
 	}
 }
-
