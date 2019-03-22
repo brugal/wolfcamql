@@ -224,6 +224,159 @@ void CG_CalcVrect (void)
 
 //==============================================================================
 
+static void CG_CheckThirdPersonKeys (void)
+{
+	int currentTime;
+	int t;
+	float value;
+	float speed;
+
+	if (!cg_thirdPersonMovementKeys.integer) {
+		return;
+	}
+
+	if (cg.thirdPersonKeyCheckTime <= 0) {
+		// wait for at least one frame
+		return;
+	}
+
+	currentTime = trap_Milliseconds();
+	t = currentTime - cg.thirdPersonKeyCheckTime;
+	if (t <= 0) {
+		return;
+	}
+
+	if (SC_Cvar_Get_Int("com_autoWriteConfig") == 2) {
+		trap_autoWriteConfig(qfalse);
+	}
+
+	//FIXME separate cvar?
+	speed = cg_freecam_speed.value / 1000.0f;
+	if (cg.keyspeed) {
+		speed /= 2.0f;
+	}
+
+	if (cg.keyf) {
+		value = cg_thirdPersonRange.value;
+		value -= (t * speed);
+		trap_Cvar_Set("cg_thirdPersonRange", va("%f", value));
+	}
+
+	if (cg.keyb) {
+		value = cg_thirdPersonRange.value;
+		value += (t * speed);
+		trap_Cvar_Set("cg_thirdPersonRange", va("%f", value));
+	}
+
+	if (cg.keyr) {
+		value = cg_thirdPersonAngle.value;
+		value -= (t * (speed / 3.0f));
+		value = AngleNormalize360(value);
+		trap_Cvar_Set("cg_thirdPersonAngle", va("%f", value));
+	}
+
+	if (cg.keyl) {
+		value = cg_thirdPersonAngle.value;
+		value += (t * (speed / 3.0f));
+		value = AngleNormalize360(value);
+		trap_Cvar_Set("cg_thirdPersonAngle", va("%f", value));
+	}
+
+	if (cg.keyu) {
+		value = cg_thirdPersonOffsetZ.value;
+		value += (t * speed);
+		trap_Cvar_Set("cg_thirdPersonOffsetZ", va("%f", value));
+
+		value = cg_thirdPersonPlayerOffsetZ.value;
+		value += (t * speed);
+		trap_Cvar_Set("cg_thirdPersonPlayerOffsetZ", va("%f", value));
+	}
+
+	if (cg.keyd) {
+		value = cg_thirdPersonOffsetZ.value;
+		value -= (t * speed);
+		trap_Cvar_Set("cg_thirdPersonOffsetZ", va("%f", value));
+
+		value = cg_thirdPersonPlayerOffsetZ.value;
+		value -= (t * speed);
+		trap_Cvar_Set("cg_thirdPersonPlayerOffsetZ", va("%f", value));
+	}
+
+	trap_autoWriteConfig(qtrue);
+}
+
+static void CG_CheckChaseKeys (void)
+{
+	int currentTime;
+	int t;
+	float speed;
+	vec3_t forward, right, up;
+
+	// not reusing previous freecam pmove since the accel is awkward and
+	// no clip might not be set
+
+	if (!cg_chaseMovementKeys.integer) {
+		return;
+	}
+
+	if (cg.chaseKeyCheckTime <= 0) {
+		// wait for at least one frame
+		return;
+	}
+
+	currentTime = trap_Milliseconds();
+	t = currentTime - cg.chaseKeyCheckTime;
+	if (t <= 0) {
+		return;
+	}
+
+	AngleVectors(cg.refdefViewAngles, forward, right, up);
+	VectorNormalize(forward);
+	VectorNormalize(right);
+	VectorNormalize(up);
+
+	//FIXME separate cvar?
+	speed = cg_freecam_speed.value / 1000.0f;
+	if (cg.keyspeed) {
+		speed /= 2.0f;
+	}
+
+	if (cg.keyf) {
+		cg.chaseEntOffsetX += (t * speed) * forward[0];
+		cg.chaseEntOffsetY += (t * speed) * forward[1];
+		cg.chaseEntOffsetZ += (t * speed) * forward[2];
+	}
+
+	if (cg.keyb) {
+		cg.chaseEntOffsetX -= (t * speed) * forward[0];
+		cg.chaseEntOffsetY -= (t * speed) * forward[1];
+		cg.chaseEntOffsetZ -= (t * speed) * forward[2];
+	}
+
+	if (cg.keyr) {
+		cg.chaseEntOffsetX += (t * speed) * right[0];
+		cg.chaseEntOffsetY += (t * speed) * right[1];
+		cg.chaseEntOffsetZ += (t * speed) * right[2];
+	}
+
+	if (cg.keyl) {
+		cg.chaseEntOffsetX -= (t * speed) * right[0];
+		cg.chaseEntOffsetY -= (t * speed) * right[1];
+		cg.chaseEntOffsetZ -= (t * speed) * right[2];
+	}
+
+	if (cg.keyu) {
+		cg.chaseEntOffsetX += (t * speed) * up[0];
+		cg.chaseEntOffsetY += (t * speed) * up[1];
+		cg.chaseEntOffsetZ += (t * speed) * up[2];
+	}
+
+	if (cg.keyd) {
+		cg.chaseEntOffsetX -= (t * speed) * up[0];
+		cg.chaseEntOffsetY -= (t * speed) * up[1];
+		cg.chaseEntOffsetZ -= (t * speed) * up[2];
+	}
+}
 
 /*
 ===============
@@ -236,12 +389,17 @@ static void CG_OffsetThirdPersonView( void ) {
 	vec3_t		view;
 	vec3_t		focusAngles;
 	trace_t		trace;
-	static vec3_t	mins = { -4, -4, -4 };
-	static vec3_t	maxs = { 4, 4, 4 };
+	vec3_t	mins;
+	vec3_t	maxs;
 	vec3_t		focusPoint;
 	float		focusDist;
 	float		forwardScale, sideScale;
 	vec3_t killerAngles;
+
+	if (!cg.freecam) {
+		// freecam does it separately
+		CG_CheckThirdPersonKeys();
+	}
 
 	if (cg_thirdPersonPlayerCrouchHeightChange.integer) {
 		cg.refdef.vieworg[2] += cg.predictedPlayerState.viewheight;
@@ -265,6 +423,10 @@ static void CG_OffsetThirdPersonView( void ) {
 #endif
 
 	//Com_Printf("vh %d\n", cg.predictedPlayerState.viewheight);
+
+	if (!cg_thirdPersonUseEntityAngles.integer) {
+		VectorSet(cg.refdefViewAngles, 0, 0, 0);
+	}
 
 	VectorCopy( cg.refdefViewAngles, focusAngles );
 
@@ -325,6 +487,12 @@ static void CG_OffsetThirdPersonView( void ) {
 	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
 
 	if (!cg_cameraMode.integer  &&  cg_thirdPersonAvoidSolid.integer) {
+		float avSize;
+
+		avSize = cg_thirdPersonAvoidSolidSize.value;
+		VectorSet(mins, -avSize, -avSize, -avSize);
+		VectorSet(maxs, avSize, avSize, avSize);
+
 		CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.predictedPlayerState.clientNum, MASK_SOLID );
 
 		if ( trace.fraction != 1.0 ) {
@@ -356,8 +524,8 @@ static void CG_OffsetChaseThirdPersonView (void)
 	vec3_t		view;
 	vec3_t		focusAngles;
 	trace_t		trace;
-	static vec3_t	mins = { -4, -4, -4 };
-	static vec3_t	maxs = { 4, 4, 4 };
+	vec3_t	mins;
+	vec3_t	maxs;
 	vec3_t		focusPoint;
 	float		focusDist;
 	float		forwardScale, sideScale;
@@ -372,11 +540,24 @@ static void CG_OffsetChaseThirdPersonView (void)
 
 	cent = &cg_entities[cg.chaseEnt];
 
+#if 0
+	if (!cent->currentValid) {
+		return;
+	}
+#endif
+
 	if (cg.chaseEnt < MAX_CLIENTS) {
 		isPlayer = qtrue;
 	} else {
 		isPlayer = qfalse;
 	}
+
+#if 0
+	if (!isPlayer  &&  (cent->currentState.eType != ET_MISSILE)) {
+		VectorCopy(cent->lerpOrigin, cg.refdef.vieworg);
+		return;
+	}
+#endif
 
 	VectorCopy(cent->lerpOrigin, cg.refdef.vieworg);
 
@@ -405,8 +586,28 @@ static void CG_OffsetChaseThirdPersonView (void)
 		VectorCopy(cent->lerpAngles, cg.refdefViewAngles);
 	} else {
 		// use velocity to get angles for non-players
-		vectoangles(cent->currentState.pos.trDelta, forward);
-		VectorCopy(forward, cg.refdefViewAngles);
+		if (VectorLength(cent->currentState.pos.trDelta) > 0.0f) {
+			vectoangles(cent->currentState.pos.trDelta, forward);
+			VectorCopy(forward, cg.refdefViewAngles);
+			VectorCopy(cg.refdefViewAngles, cg.lastSetChaseMoveAngles);
+		} else {
+			if (cg_thirdPersonNoMoveUsePreviousAngles.integer) {
+				// pass, just use previous freecam angles
+				VectorCopy(cg.lastSetChaseMoveAngles, cg.refdefViewAngles);
+			} else if (*cg_thirdPersonNoMoveAngles.string) {
+				VectorSet(cg.refdefViewAngles, 0, 0, 0);
+				//FIXME store and parse only if value changed
+				sscanf(cg_thirdPersonNoMoveAngles.string, "%f %f %f", &cg.refdefViewAngles[0], &cg.refdefViewAngles[1], &cg.refdefViewAngles[2]);
+
+			} else {
+				// don't look down when there is no movement
+				VectorSet(cg.refdefViewAngles, 0, 0, 0);
+			}
+		}
+	}
+
+	if (!cg_thirdPersonUseEntityAngles.integer) {
+		VectorSet(cg.refdefViewAngles, 0, 0, 0);
 	}
 
 	VectorCopy( cg.refdefViewAngles, focusAngles );
@@ -446,6 +647,10 @@ static void CG_OffsetChaseThirdPersonView (void)
 		if ( focusAngles[PITCH] > cg_thirdPersonMaxPlayerPitch.integer ) {
 			focusAngles[PITCH] = cg_thirdPersonMaxPlayerPitch.integer;		// don't go too far overhead
 		}
+	} else if (!isPlayer  &&  cg_thirdPersonMaxPitch.integer >= 0) {
+		if ( focusAngles[PITCH] > cg_thirdPersonMaxPitch.integer ) {
+			focusAngles[PITCH] = cg_thirdPersonMaxPitch.integer;		// don't go too far overhead
+		}
 	}
 
 	AngleVectors( focusAngles, forward, NULL, NULL );
@@ -464,6 +669,8 @@ static void CG_OffsetChaseThirdPersonView (void)
 	if (isPlayer) {
 		// quake3 uses 0.5
 		cg.refdefViewAngles[PITCH] *= cg_thirdPersonPlayerPitchScale.value;
+	} else {
+		cg.refdefViewAngles[PITCH] *= cg_thirdPersonPitchScale.value;
 	}
 
 	AngleVectors( cg.refdefViewAngles, forward, right, up );
@@ -477,6 +684,12 @@ static void CG_OffsetChaseThirdPersonView (void)
 	// in a solid block.  Use an 8 by 8 block to prevent the view from near clipping anything
 
 	if (!cg_cameraMode.integer  &&  cg_thirdPersonAvoidSolid.integer) {
+		float avSize;
+
+		avSize = cg_thirdPersonAvoidSolidSize.value;
+		VectorSet(mins, -avSize, -avSize, -avSize);
+		VectorSet(maxs, avSize, avSize, avSize);
+
 		CG_Trace( &trace, cg.refdef.vieworg, mins, maxs, view, cg.chaseEnt, MASK_SOLID );
 
 		if ( trace.fraction != 1.0 ) {
@@ -4003,17 +4216,16 @@ static void CG_FreeCam (void)
 	int fmove;
 	int smove;
 	int umove;
+	int movespeed;
 	vec3_t maxs;
 	vec3_t mins;
 	int i;
 	int tm;
 	playerState_t *ps;
 	pmove_t pmove;
-	//int x;
-	//char *s = NULL;
 
 	ps = &cg.freecamPlayerState;
-	tm = cg.realTime;  //cg.time;
+	tm = cg.realTime;
 
 	VectorCopy(bg_playerMins, mins);
 	VectorCopy(bg_playerMaxs, maxs);
@@ -4041,7 +4253,7 @@ static void CG_FreeCam (void)
 
 	if (cg.fMoveTime == 0) {
 		//Com_Printf("^3fmovetime == 0\n");
-		cg.fMoveTime = cg.realTime;  //cg.time;
+		cg.fMoveTime = cg.realTime;
 		VectorCopy(cg.fpos, ps->origin);
 		VectorCopy(cg.fang, ps->viewangles);
 		VectorSet(ps->delta_angles, 0, 0, 0);
@@ -4066,16 +4278,9 @@ static void CG_FreeCam (void)
 
 		CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
 
-		cg.refdef.time = cg.time;  //dcg.realTime;  //cg.time;
-
-		//goto finish;
+		cg.refdef.time = cg.time;
 		return;
 	}
-
-	//FIXME hack, something is unsetting it
-	//trap_Cvar_Set ("cg_thirdPerson", "1");
-	//cg.renderingThirdPerson = 1;
-
 
 	if (cg.viewEnt == -1  &&  !cg.useViewPointMark) {
 		float roll;
@@ -4098,10 +4303,22 @@ static void CG_FreeCam (void)
 
 		roll = cg.fang[ROLL];
 		if (cg.keyrollright) {
-			cg.fang[ROLL] += cg_freecam_rollValue.value;
+			float speed;
+
+			speed = cg_freecam_rollValue.value;
+			if (cg.keyspeed) {
+				speed /= 2.0f;
+			}
+			cg.fang[ROLL] += speed;
 		}
 		if (cg.keyrollleft) {
-			cg.fang[ROLL] -= cg_freecam_rollValue.value;
+			float speed;
+
+			speed = cg_freecam_rollValue.value;
+			if (cg.keyspeed) {
+				speed /= 2.0f;
+			}
+			cg.fang[ROLL] -= speed;
 		}
 		newRoll = AngleNormalize180(cg.fang[ROLL]);
 		if (cg.keyrollstopzero) {
@@ -4171,13 +4388,24 @@ static void CG_FreeCam (void)
 			cg.fang[PITCH] += angles[PITCH] - ps->viewangles[PITCH];
 		}
 
-
 		roll = cg.fang[ROLL];
 		if (cg.keyrollright) {
-			cg.fang[ROLL] += cg_freecam_rollValue.value;
+			float speed;
+
+			speed = cg_freecam_rollValue.value;
+			if (cg.keyspeed) {
+				speed /= 2.0f;
+			}
+			cg.fang[ROLL] += speed;
 		}
 		if (cg.keyrollleft) {
-			cg.fang[ROLL] -= cg_freecam_rollValue.value;
+			float speed;
+
+			speed = cg_freecam_rollValue.value;
+			if (cg.keyspeed) {
+				speed /= 2.0f;
+			}
+			cg.fang[ROLL] -= speed;
 		}
 		newRoll = AngleNormalize180(cg.fang[ROLL]);
 		if (cg.keyrollstopzero) {
@@ -4194,42 +4422,49 @@ static void CG_FreeCam (void)
 
 	fmove = smove = umove = 0;
 
-	if (cg.keyf) {
-		fmove += 127;
-	}
-	if (cg.keyb) {
-		fmove -= 127;
-	}
-	if (cg.keyr) {
-		smove += 127;
-	}
-	if (cg.keyl) {
-		smove -= 127;
-	}
-	if (cg.keyu) {
-		umove += 127;
-	}
-	if (cg.keyd) {
-		umove -= 127;
+	if (cg.keyspeed) {
+		movespeed = 64;
+	} else {
+		movespeed = 127;
 	}
 
+	if (cg.keyf) {
+		fmove += movespeed;
+	}
+	if (cg.keyb) {
+		fmove -= movespeed;
+	}
+	if (cg.keyr) {
+		smove += movespeed;
+	}
+	if (cg.keyl) {
+		smove -= movespeed;
+	}
+	if (cg.keyu) {
+		umove += movespeed;
+	}
+	if (cg.keyd) {
+		umove -= movespeed;
+	}
+
+	//FIXME 2019-03-09 why?
 	if (fmove > 0) {
-		fmove = 127;
+		fmove = movespeed;
 	}
 	if (fmove < 0) {
-		fmove = -127;
+		fmove = -movespeed;
 	}
 	if (smove > 0) {
-		smove = 127;
+		smove = movespeed;
 	}
 	if (smove < 0) {
-		smove = -127;
+		smove = -movespeed;
 	}
 	if (umove > 0) {
-		umove = 127;
+		umove = movespeed;
 	}
 	if (umove < 0) {
-		umove = -127;
+		umove = -movespeed;
 	}
 
 	if (cg.mouseSeeking) {
@@ -4238,7 +4473,6 @@ static void CG_FreeCam (void)
 
 	for (i = 0;  i < 3;  i++) {
 		cg.fang[i] = AngleNormalize180(cg.fang[i]);
-		//cg.fang[i] = AngleNormalize360(cg.fang[i]);
 	}
 
 	// pmove
@@ -4275,7 +4509,7 @@ static void CG_FreeCam (void)
 	pmove.cmd.buttons = 0;
 	pmove.cmd.rightmove = smove;
 	pmove.cmd.upmove = umove;
-	pmove.cmd.serverTime = cg.realTime;  //cg.time;
+	pmove.cmd.serverTime = cg.realTime;
 	pmove.cmd.weapon = WP_RAILGUN;
 
 	if (!cg_freecam_unlockPitch.integer) {
@@ -4297,27 +4531,14 @@ static void CG_FreeCam (void)
 	//Com_Printf("^3pre pmove %f %f %f\n", cg.fpos[0], cg.fpos[1], cg.fpos[2]);
 	//Com_Printf("f %d r %d u %d  commandtime %d  %d\n", fmove, smove, umove, ps->commandTime, cg.realTime);
 	//Com_Printf("vel %f %f %f\n", ps->velocity[0], ps->velocity[1], ps->velocity[2]);
+
 	Pmove(&pmove);
 	VectorCopy(ps->origin, cg.fpos);
+
 	//Com_Printf("^3pst pmove %f %f %f\n", cg.fpos[0], cg.fpos[1], cg.fpos[2]);
 	//Com_Printf("vel %f %f %f\n", ps->velocity[0], ps->velocity[1], ps->velocity[2]);
 	VectorCopy(ps->viewangles, cg.fang);
 	VectorCopy(ps->velocity, cg.fvelocity);
-
-#if 0
-	if (cg.keyf) {
-		vec3_t right;
-		float scale;
-
-		AngleVectors(cg.fang, NULL, right, NULL);
-		scale = 0.5 * 180.0 / cg.fang[ROLL];
-		Com_Printf("scale %f\n", scale);
-		VectorMA(cg.fpos, scale, right, cg.fpos);
-		VectorCopy(cg.fpos, cg.refdef.vieworg);
-		//cg.refdef.vieworg[2] += DEFAULT_VIEWHEIGHT;
-	}
-#endif
-
 
 	VectorCopy(cg.fpos, cg.refdef.vieworg);
 	//FIXME check DEFAULT_VIEWHEIGHT
@@ -4331,8 +4552,8 @@ static void CG_FreeCam (void)
 	}
 	//VectorSet(ps->delta_angles, 0, 0, 0);
 
+	// finished pmove
 
-	// finish:
 	if (cgs.realProtocol >= 91  &&  cg_useDemoFov.integer == 1) {
 		cg.refdef.fov_x = cg.demoFov;
 	} else {
@@ -4347,7 +4568,7 @@ static void CG_FreeCam (void)
 
 	CG_AdjustedFov(cg.refdef.fov_x, &cg.refdef.fov_x, &cg.refdef.fov_y);
 
-	cg.refdef.time = cg.time;  //dcg.realTime;  //cg.time;
+	cg.refdef.time = cg.time;
 
 	if (cg.keya  &&  !cg.mouseSeeking) {
 		if (tm - cg.freecamFireTime > 1500) {
@@ -4387,14 +4608,22 @@ static void CG_FreeCam (void)
 			//Com_Printf("impact mark:  %f %f %f  distance: %f\n", tr.endpos[0], tr.endpos[1], tr.endpos[2], Distance(cg.fpos, tr.endpos));
 			CG_ImpactMark(cgs.media.energyMarkShader, tr.endpos, tr.plane.normal, random() * 360, color[0], color[1], color[2], 1, qtrue, 8, qfalse, qtrue, qtrue);
 
-			cg.freecamFireTime = tm;  //trap_Milliseconds();  //cg.time;
+			cg.freecamFireTime = tm;
 			//FIXME clientInfo
 		}
 	}
 
 	if (cg.chaseEnt > -1) {
 		if (cg_chaseThirdPerson.integer) {
+			float roll;
+
+			roll = cg.refdefViewAngles[ROLL];
+			CG_CheckThirdPersonKeys();
 			CG_OffsetChaseThirdPersonView();
+
+			// keep freecam roll
+			cg.refdefViewAngles[ROLL] = roll;
+
 			AnglesToAxis(cg.refdefViewAngles, cg.refdef.viewaxis);
 
 			if (cg_chaseUpdateFreeCam.integer) {
@@ -4408,6 +4637,8 @@ static void CG_FreeCam (void)
 			}
 		} else {  // only updating position, free to change freecam angles
 			const centity_t *cent;
+
+			CG_CheckChaseKeys();
 
 			cent = &cg_entities[cg.chaseEnt];
 			VectorCopy(cent->lerpOrigin, cg.refdef.vieworg);
@@ -4424,11 +4655,52 @@ static void CG_FreeCam (void)
 			}
 		}
 
-		//FIXME ps->velocity
+		/* velocity
+		 *
+		 * if nothing is changed, velocity shown with cg_drawspeed will be
+		 * based on freecam pmove.
+		 *
+		 * 2019-03-15: that is probably the most useful value since it shows
+		 * update rate for cg_thirdPersonMovementKeys.  Angle change (right
+		 * or left key) isn't quite accurate though.
+		 *
+		 * The other options are to show real time velocity or something based
+		 * on the game velocity of chased entity.
+		 */
+
+#if 0  // real time velocity
+		{
+			static double lastTime = -1;
+			static vec3_t lastOrg = { 0, 0, 0 };
+			int ms;
+
+			ms = trap_Milliseconds();
+
+			if (lastTime > 0) {
+				int t;
+
+				t = ms - lastTime;
+				if (t <= 0.0) {
+					//VectorSet(cg.freecamPlayerState.velocity, 0, 0, 0);
+					//FIXME last velocity?
+				} else {
+					int i;
+
+					for (i = 0;  i < 3;  i++) {
+						cg.freecamPlayerState.velocity[i] = (cg.refdef.vieworg[i] - lastOrg[i]) / ((float)t / 1000.0f);
+					}
+				}
+			} else {
+				VectorSet(cg.freecamPlayerState.velocity, 0, 0, 0);
+			}
+
+			lastTime = ms;
+			VectorCopy(cg.refdef.vieworg, lastOrg);
+		}
+#endif
 	}
 
-	//done:
-	//FIXME inwater);
+	//FIXME inwater();
 	//trap_S_Respatialize (-1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
 	//FIXME hack for entity num
 	trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
@@ -4918,15 +5190,14 @@ static void CG_CheckCvarInterp (void)
 	float f = 0.0;
 	cvarInterp_t *c;
 
+	if (SC_Cvar_Get_Int("com_autoWriteConfig") == 2) {
+		trap_autoWriteConfig(qfalse);
+	}
+
 	for (i = 0;  i < MAX_CVAR_INTERP;  i++) {
 		c = &cg.cvarInterp[i];
 		if (!c->valid) {
 			continue;
-		}
-
-		if (SC_Cvar_Get_Int("com_autoWriteConfig") == 2  &&  cg.configWriteDisabled == qfalse) {
-			trap_autoWriteConfig(qfalse);
-			cg.configWriteDisabled = qtrue;
 		}
 
 		if (c->realTime) {
@@ -4961,6 +5232,8 @@ static void CG_CheckCvarInterp (void)
 		trap_Cvar_Set(c->cvar, va("%f", c->startValue + (c->endValue - c->startValue) * f));
 		//Com_Printf("real:%d setting '%s' to %f\n", c->realTime, c->cvar,  c->startValue + (c->endValue - c->startValue) * f);
 	}
+
+	trap_autoWriteConfig(qtrue);
 }
 
 static void CG_CheckAtCommands (void)
@@ -5407,6 +5680,11 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	//int startTime;
 	int oldClientNum;
 	qboolean behindView = qfalse;
+	qboolean freeCamOrig;
+	int chaseEntOrig;
+	qboolean autoChaseMissile = qfalse;
+	int lastAutoChaseMissileEntOrig;
+	int i;
 
 	//cg.drawActiveFrameCount++;
 
@@ -5488,10 +5766,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	cg.demoPlayback = demoPlayback;
 
-	if (cg.configWriteDisabled) {
-		trap_autoWriteConfig(qtrue);
-		cg.configWriteDisabled = qfalse;
-	}
+	trap_autoWriteConfig(qtrue);
 
 	CG_CheckCvarChange();
 	CG_CheckRepeatKeys();
@@ -5760,6 +6035,90 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 	// update cg.predictedPlayerState
 	CG_PredictPlayerState();
 
+	// auto chase missile
+
+	freeCamOrig = cg.freecam;
+	chaseEntOrig = cg.chaseEnt;
+	lastAutoChaseMissileEntOrig = cg.lastAutoChaseMissileEnt;
+
+	if (cg.snap  &&  cg_autoChaseMissile.integer) {
+		qboolean missileFound;
+		int ourClientNum;
+		qboolean useClientNum;
+
+		if (wolfcam_following) {
+			ourClientNum = wcg.clientNum;
+		} else {
+			ourClientNum = cg.snap->ps.clientNum;
+		}
+
+		useClientNum = qfalse;
+		// only ql sets owner (otherEntityNum) for missiles
+		if (cg_autoChaseMissile.integer == 1  &&  cgs.protocol == PROTOCOL_QL) {
+			useClientNum = qtrue;
+		} else {
+			// use any missile
+		}
+
+		missileFound = qfalse;
+
+		// check lastAutoChaseMissleEnt first
+		if (cg.lastAutoChaseMissileEnt >= 0  &&  cg.lastAutoChaseMissileEnt < MAX_GENTITIES) {
+			const centity_t *cent = &cg_entities[cg.lastAutoChaseMissileEnt];
+
+			// make sure type and client are the same since it might have been re-used for a newly created entity
+			if (cent->currentValid  &&  cent->currentState.eType == ET_MISSILE  &&  cg.weaponAutoChase[cent->currentState.weapon]  &&
+				(!useClientNum  ||  (useClientNum  &&  cent->currentState.otherEntityNum == ourClientNum))
+			) {
+				// got it
+				missileFound = qtrue;
+				cg.freecam = qtrue;
+				cg.chaseEnt = cg.lastAutoChaseMissileEnt;
+				autoChaseMissile = qtrue;
+			}
+		}
+
+		if (!missileFound) {
+			for (i = 0;  i < cg.snap->numEntities;  i++) {
+				const centity_t *cent = &cg_entities[cg.snap->entities[i].number];
+				int entNum = cg.snap->entities[i].number;
+
+				if (!cent->currentValid) {
+					continue;
+				}
+
+				if (cent->currentState.eType != ET_MISSILE) {
+					continue;
+				}
+
+				if (!cg.weaponAutoChase[cent->currentState.weapon]) {
+					continue;
+				}
+
+				if (!useClientNum  ||  (useClientNum  && cent->currentState.otherEntityNum == ourClientNum)) {
+					// got it
+					missileFound = qtrue;
+					cg.freecam = qtrue;
+					cg.chaseEnt = entNum;
+					cg.lastAutoChaseMissileEnt = entNum;
+					autoChaseMissile = qtrue;
+
+					if (lastAutoChaseMissileEntOrig < 0) {
+						// we are possibly switching to freecam
+						if (!freeCamOrig) {
+							trap_SendConsoleCommand("exec autochase.cfg\n");
+						}
+					}
+					break;
+				}
+			}
+		}
+
+		if (!missileFound) {
+			cg.lastAutoChaseMissileEnt = -1;
+		}
+	}
+
 	// decide on third person view
 	//cg.renderingThirdPerson = cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0) || cg.freecam  ||  (cg.snap->ps.pm_type == PM_SPECTATOR  &&  cg.snap->ps.clientNum == cg.clientNum);
 	cg.renderingThirdPerson = cg_thirdPerson.integer || (cg.snap->ps.stats[STAT_HEALTH] <= 0  &&  cg_deathStyle.integer != 4) || cg.freecam;
@@ -5867,6 +6226,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 #endif
 
 	}
+
 	if (cg.freecam) {  //FIXME what else? idcamera intermission?
 		currentWeapon = WP_NONE;
 	} else if (cg.snap->ps.pm_type == PM_INTERMISSION) {
@@ -6165,5 +6525,29 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		//trap_R_ClearScene();
 	}
 
+	cg.thirdPersonKeyCheckTime = cg.realTime;
+	cg.chaseKeyCheckTime = cg.realTime;
 	cg.demoSeeking = qfalse;
+
+	if (lastAutoChaseMissileEntOrig >= 0  &&  cg.lastAutoChaseMissileEnt < 0) {
+		// not following missile anymore, might be switching back to first person view
+		if (!freeCamOrig) {
+			if (wolfcam_following) {
+				trap_SendConsoleCommand("exec follow.cfg\n");
+			} else {
+				if (cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR) {
+					trap_SendConsoleCommand("exec spectator.cfg\n");
+				} else if (cg.snap  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
+					trap_SendConsoleCommand("exec spectator.cfg\n");
+				} else {
+					trap_SendConsoleCommand("exec ingame.cfg\n");
+				}
+			}
+		}
+	}
+
+	if (autoChaseMissile) {
+		cg.freecam = freeCamOrig;
+		cg.chaseEnt = chaseEntOrig;
+	}
 }

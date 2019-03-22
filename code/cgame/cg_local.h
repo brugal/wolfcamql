@@ -1294,6 +1294,7 @@ typedef struct {
 	int				keyrollright;
 	int keyrollleft;
 	int keyrollstopzero;
+	int keyspeed;
 
 	int				fMoveTime;
 	playerState_t	freecamPlayerState;
@@ -1345,6 +1346,9 @@ typedef struct {
 	float chaseEntOffsetX;
 	float chaseEntOffsetY;
 	float chaseEntOffsetZ;
+	vec3_t lastSetChaseMoveAngles;
+	int lastAutoChaseMissileEnt;
+
 	qboolean viewUnlockYaw;
 	qboolean viewUnlockPitch;
 
@@ -1485,7 +1489,6 @@ typedef struct {
 	projectile_t projectiles[MAX_GENTITIES];
 	int numProjectiles;
 
-	qboolean configWriteDisabled;
 	qboolean configStringOverride[MAX_CONFIGSTRINGS];
 	char configStringOurs[MAX_CONFIGSTRINGS][MAX_STRING_CHARS];
 
@@ -1539,6 +1542,9 @@ typedef struct {
 	qboolean weaponDamagePlum[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
 	int damagePlumModificationCount;
 
+	qboolean weaponAutoChase[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
+	int autoChaseMissileFilterModificationCount;
+
 	int infectedSnapshotTime;
 	int demoFov;
 
@@ -1558,6 +1564,9 @@ typedef struct {
 	qboolean playerKeyPressFire;
 	qboolean playerKeyPressCrouch;
 	qboolean playerKeyPressJump;
+
+	int thirdPersonKeyCheckTime;
+	int chaseKeyCheckTime;
 
 } cg_t;
 
@@ -2808,16 +2817,26 @@ extern vmCvar_t cg_zoomBroken;
 
 extern	vmCvar_t		cg_thirdPersonRange;
 extern	vmCvar_t		cg_thirdPersonAngle;
+extern vmCvar_t cg_thirdPersonMaxPitch;
 extern vmCvar_t cg_thirdPersonMaxPlayerPitch;
 extern vmCvar_t cg_thirdPersonFocusDistance;
 extern vmCvar_t cg_thirdPersonOffsetZ;
 extern vmCvar_t cg_thirdPersonPlayerOffsetZ;
 extern vmCvar_t cg_thirdPersonPlayerCrouchHeightChange;
+extern vmCvar_t cg_thirdPersonPitchScale;
 extern vmCvar_t cg_thirdPersonPlayerPitchScale;
 extern vmCvar_t cg_thirdPersonAvoidSolid;
+extern vmCvar_t cg_thirdPersonAvoidSolidSize;
+extern vmCvar_t cg_thirdPersonMovementKeys;
+extern vmCvar_t cg_thirdPersonNoMoveAngles;
+extern vmCvar_t cg_thirdPersonNoMoveUsePreviousAngles;
+extern vmCvar_t cg_thirdPersonUseEntityAngles;
 extern	vmCvar_t		cg_thirdPerson;
-extern	vmCvar_t		cg_stereoSeparation;
 
+extern vmCvar_t cg_autoChaseMissile;
+extern vmCvar_t cg_autoChaseMissileFilter;
+
+extern	vmCvar_t		cg_stereoSeparation;
 extern	vmCvar_t		cg_lagometer;
 extern	vmCvar_t		cg_lagometerX;
 extern	vmCvar_t		cg_lagometerY;
@@ -3648,6 +3667,7 @@ extern vmCvar_t cg_colorCodeUseForegroundAlpha;
 
 extern vmCvar_t cg_chaseThirdPerson;
 extern vmCvar_t cg_chaseUpdateFreeCam;
+extern vmCvar_t cg_chaseMovementKeys;
 
 // end cvar_t
 

@@ -390,14 +390,24 @@ vmCvar_t cg_zoomBroken;
 
 vmCvar_t	cg_thirdPersonRange;
 vmCvar_t	cg_thirdPersonAngle;
+vmCvar_t cg_thirdPersonMaxPitch;
 vmCvar_t cg_thirdPersonMaxPlayerPitch;
 vmCvar_t cg_thirdPersonFocusDistance;
 vmCvar_t cg_thirdPersonOffsetZ;
 vmCvar_t cg_thirdPersonPlayerOffsetZ;
 vmCvar_t cg_thirdPersonPlayerCrouchHeightChange;
+vmCvar_t cg_thirdPersonPitchScale;
 vmCvar_t cg_thirdPersonPlayerPitchScale;
 vmCvar_t cg_thirdPersonAvoidSolid;
+vmCvar_t cg_thirdPersonAvoidSolidSize;
+vmCvar_t cg_thirdPersonMovementKeys;
+vmCvar_t cg_thirdPersonNoMoveAngles;
+vmCvar_t cg_thirdPersonNoMoveUsePreviousAngles;
+vmCvar_t cg_thirdPersonUseEntityAngles;
 vmCvar_t	cg_thirdPerson;
+
+vmCvar_t cg_autoChaseMissile;
+vmCvar_t cg_autoChaseMissileFilter;
 
 vmCvar_t	cg_stereoSeparation;
 
@@ -1278,6 +1288,7 @@ vmCvar_t cg_colorCodeUseForegroundAlpha;
 
 vmCvar_t cg_chaseThirdPerson;
 vmCvar_t cg_chaseUpdateFreeCam;
+vmCvar_t cg_chaseMovementKeys;
 
 // end cvar_t
 
@@ -1583,17 +1594,27 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_tracerWidth, "cg_tracerWidth", "1", CVAR_ARCHIVE },
 	{ &cg_tracerLength, "cg_tracerLength", "100", CVAR_ARCHIVE },
 
-	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "40", CVAR_CHEAT },
-	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT },
-	{ cvp(cg_thirdPersonMaxPlayerPitch), "45", CVAR_ARCHIVE },
-	{ cvp(cg_thirdPersonFocusDistance), "512.0", CVAR_ARCHIVE },
-	{ cvp(cg_thirdPersonOffsetZ), "0", CVAR_ARCHIVE },
-	{ cvp(cg_thirdPersonPlayerOffsetZ), "8", CVAR_ARCHIVE | CVAR_CHEAT },
-	{ cvp(cg_thirdPersonPlayerCrouchHeightChange), "1", CVAR_ARCHIVE },
-	{ cvp(cg_thirdPersonPlayerPitchScale), "0.5", CVAR_ARCHIVE },
-	{ cvp(cg_thirdPersonAvoidSolid), "1", CVAR_ARCHIVE },
-	{ &cg_thirdPerson, "cg_thirdPerson", "0", 0 },
+	{ &cg_thirdPersonRange, "cg_thirdPersonRange", "80", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ &cg_thirdPersonAngle, "cg_thirdPersonAngle", "0", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonMaxPitch), "-1", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonMaxPlayerPitch), "45", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonFocusDistance), "512.0", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonOffsetZ), "0", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonPlayerOffsetZ), "8", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonPlayerCrouchHeightChange), "1", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonPitchScale), "1.0", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonPlayerPitchScale), "0.5", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonAvoidSolid), "1", CVAR_CHEAT | CVAR_ARCHIVE },
+	// q3 uses 4, higher value avoids rendering stuff behind walls when you are in a corner
+	{ cvp(cg_thirdPersonAvoidSolidSize), "8", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonMovementKeys), "1", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonNoMoveAngles), "0 0 0", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonNoMoveUsePreviousAngles), "1", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ cvp(cg_thirdPersonUseEntityAngles), "1", CVAR_CHEAT | CVAR_ARCHIVE },
+	{ &cg_thirdPerson, "cg_thirdPerson", "0", CVAR_CHEAT | CVAR_ARCHIVE },
 
+	{ cvp(cg_autoChaseMissile), "0", CVAR_ARCHIVE },
+	{ cvp(cg_autoChaseMissileFilter), "gl rl pg bfg gh ng pl", CVAR_ARCHIVE },
 	{ &cg_teamChatTime, "cg_teamChatTime", "3000", CVAR_ARCHIVE  },
 	{ &cg_teamChatHeight, "cg_teamChatHeight", "0", CVAR_ARCHIVE  },
 	{ &cg_forceModel, "cg_forceModel", "0", CVAR_ARCHIVE  },
@@ -2470,6 +2491,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_colorCodeUseForegroundAlpha), "0", CVAR_ARCHIVE },
 	{ cvp(cg_chaseThirdPerson), "1", CVAR_ARCHIVE },
 	{ cvp(cg_chaseUpdateFreeCam), "1", CVAR_ARCHIVE },
+	{ cvp(cg_chaseMovementKeys), "1", CVAR_ARCHIVE },
 
 };
 
@@ -2658,7 +2680,8 @@ void CG_UpdateCvars( void ) {
 			}
 
 			s = CG_GetToken(s, token, qfalse, &newLine);
-			//CG_Printf("token: '%s'\n", token);
+			//Com_Printf("^5token: ^3'%s' ^7newline %d\n", token, newLine);
+
 			if (!Q_stricmp(token, "none")) {
 				cg.weaponDamagePlum[WP_NONE] = qtrue;
 			} else if (!Q_stricmp(token, "g")) {
@@ -2692,8 +2715,83 @@ void CG_UpdateCvars( void ) {
 			} else {
 				Com_Printf("^3WARNING:  unknown token '%s' in cg_damagePlum\n", token);
 			}
+
+			if (newLine) {
+				break;
+			}
 		}
 		cg.damagePlumModificationCount = cg_damagePlum.modificationCount;
+
+#if 0
+		for (i = 0;  i < WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS;  i++) {
+			Com_Printf("^5damage plum %d  :  ^2%d\n", i, cg.weaponDamagePlum[i]);
+		}
+#endif
+	}
+
+	if (cg.autoChaseMissileFilterModificationCount != cg_autoChaseMissileFilter.modificationCount) {
+		qboolean newLine;
+		char token[MAX_TOKEN_CHARS];
+		const char *s;
+
+		for (i = 0;  i < WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS;  i++) {
+			cg.weaponAutoChase[i] = qfalse;
+		}
+
+		s = cg_autoChaseMissileFilter.string;
+		while (qtrue) {
+			if (!s  ||  !*s) {
+				break;
+			}
+
+			s = CG_GetToken(s, token, qfalse, &newLine);
+			//Com_Printf("^5token: ^3'%s' ^7newline %d\n", token, newLine);
+
+			if (!Q_stricmp(token, "none")) {
+				cg.weaponAutoChase[WP_NONE] = qtrue;
+			} else if (!Q_stricmp(token, "g")) {
+				cg.weaponAutoChase[WP_GAUNTLET] = qtrue;
+			} else if (!Q_stricmp(token, "mg")) {
+				cg.weaponAutoChase[WP_MACHINEGUN] = qtrue;
+			} else if (!Q_stricmp(token, "sg")) {
+				cg.weaponAutoChase[WP_SHOTGUN] = qtrue;
+			} else if (!Q_stricmp(token, "gl")) {
+				cg.weaponAutoChase[WP_GRENADE_LAUNCHER] = qtrue;
+			} else if (!Q_stricmp(token, "rl")) {
+				cg.weaponAutoChase[WP_ROCKET_LAUNCHER] = qtrue;
+			} else if (!Q_stricmp(token, "lg")) {
+				cg.weaponAutoChase[WP_LIGHTNING] = qtrue;
+			} else if (!Q_stricmp(token, "rg")) {
+				cg.weaponAutoChase[WP_RAILGUN] = qtrue;
+			} else if (!Q_stricmp(token, "pg")) {
+				cg.weaponAutoChase[WP_PLASMAGUN] = qtrue;
+			} else if (!Q_stricmp(token, "bfg")) {
+				cg.weaponAutoChase[WP_BFG] = qtrue;
+			} else if (!Q_stricmp(token, "gh")) {
+				cg.weaponAutoChase[WP_GRAPPLING_HOOK] = qtrue;
+			} else if (!Q_stricmp(token, "cg")) {
+				cg.weaponAutoChase[WP_CHAINGUN] = qtrue;
+			} else if (!Q_stricmp(token, "ng")) {
+				cg.weaponAutoChase[WP_NAILGUN] = qtrue;
+			} else if (!Q_stricmp(token, "pl")) {
+				cg.weaponAutoChase[WP_PROX_LAUNCHER] = qtrue;
+			} else if (!Q_stricmp(token, "hmg")) {
+				cg.weaponAutoChase[WP_HEAVY_MACHINEGUN] = qtrue;
+			} else {
+				Com_Printf("^3WARNING:  unknown token '%s' in cg_autoChaseMissileFilter\n", token);
+			}
+
+			if (newLine) {
+				break;
+			}
+		}
+		cg.autoChaseMissileFilterModificationCount = cg_autoChaseMissileFilter.modificationCount;
+
+#if 0
+		for (i = 0;  i < WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS;  i++) {
+			Com_Printf("^5auto chase %d  :  ^2%d\n", i, cg.weaponAutoChase[i]);
+		}
+#endif
 	}
 }
 
@@ -7813,6 +7911,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	cg.serverFrameTime = 99999;
 	cg.viewEnt = -1;
 	cg.chaseEnt = -1;
+	cg.lastAutoChaseMissileEnt = -1;
 	cg.selectedCameraPointField = 3;
 	// CHRUKER: b079 - Background images on the loading screen were not visible on the first call
 	//trap_R_SetColor(NULL);  // crosshair color problem

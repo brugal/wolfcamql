@@ -649,7 +649,7 @@ static void CG_FreeCam_f (void)
 		cg.mousex = 0;
 		cg.mousey = 0;
 		cg.fMoveTime = 0;
-		cg.keyu = cg.keyd = cg.keyf = cg.keyb = cg.keyr = cg.keyl = cg.keya = 0;
+		cg.keyu = cg.keyd = cg.keyf = cg.keyb = cg.keyr = cg.keyl = cg.keya = cg.keyspeed = 0;
 		VectorSet(cg.fvelocity, 0, 0, 0);
 		cg.freecamSet = qtrue;
 		trap_SendConsoleCommand("exec freecam.cfg\n");
@@ -1099,15 +1099,22 @@ static void CG_ViewEnt_f (void)
 static void CG_Chase_f (void)
 {
 	int ent;
+	int argc;
+	qboolean haveRange;
+	float range;
+	float angle;
 
-	if (CG_Argc() < 2) {
-		Com_Printf("usage: chase <entity number> [x offset] [y offset] [z offset]\n");
+	argc = CG_Argc();
+
+	if (argc < 2) {
+		Com_Printf("usage: chase <entity number> [x offset] [y offset] [z offset] [range] [angle]\n");
 		Com_Printf("    set entity number to -1 to disable chase mode\n");
+		Com_Printf("    range can be a number, 'here' (range from entity to current view origin), or 'herez' (same as 'here' but also bases z offset on current view origin)\n");
 
 		if (cg.chaseEnt == -1) {
 			Com_Printf("\ncurrent chase entity: none\n");
 		} else {
-			Com_Printf("\ncurrent chase entity: %d\n", cg.chaseEnt);
+			Com_Printf("\ncurrent chase entity: %d  ^5%f %f %f\n", cg.chaseEnt, cg.chaseEntOffsetX, cg.chaseEntOffsetY, cg.chaseEntOffsetZ);
 		}
 
 		return;
@@ -1121,18 +1128,64 @@ static void CG_Chase_f (void)
 	}
 	cg.chaseEnt = ent;
 
-	cg.chaseEntOffsetX = 0;
-	cg.chaseEntOffsetY = 0;
-	cg.chaseEntOffsetZ = 0;
+	// keep previous values for cg.chaseEntOffset[XYZ]
 
-	if (CG_Argc() >= 3) {
+	if (argc >= 3) {
 		cg.chaseEntOffsetX = atof(CG_Argv(2));
 	}
-	if (CG_Argc() >= 4) {
+	if (argc >= 4) {
 		cg.chaseEntOffsetY = atof(CG_Argv(3));
 	}
-	if (CG_Argc() >= 5) {
+	if (argc >= 5) {
 		cg.chaseEntOffsetZ = atof(CG_Argv(4));
+	}
+
+	haveRange = qfalse;
+	range = 0;
+	angle = 0;
+
+	if (argc >= 6) {
+		if (!Q_stricmp("here", CG_Argv(5))  ||  !Q_stricmp("herez", CG_Argv(5))) {
+			vec3_t end;
+
+			VectorCopy(cg.refdef.vieworg, end);
+			end[2] = cg_entities[cg.chaseEnt].lerpOrigin[2];
+			range = Distance(cg_entities[cg.chaseEnt].lerpOrigin, end);
+
+			if (!Q_stricmp("herez", CG_Argv(5))) {
+				cg.chaseEntOffsetZ = cg.refdef.vieworg[2] - cg_entities[cg.chaseEnt].lerpOrigin[2];
+			}
+		} else {
+			range = atof(CG_Argv(5));
+		}
+		haveRange = qtrue;
+	}
+	if (argc >= 7) {
+		angle = atof(CG_Argv(6));
+	}
+
+	if (haveRange) {
+		vec3_t dir;
+		vec3_t rotatedDir;
+		vec3_t start;
+		vec3_t end;
+		vec3_t point;
+		vec3_t up = { 0, 0, 1 };
+
+		VectorCopy(cg_entities[cg.chaseEnt].lerpOrigin, start);
+		VectorCopy(cg.refdef.vieworg, end);
+
+		end[2] = start[2];
+
+		VectorSubtract(end, start, dir);
+		VectorNormalize(dir);
+		RotatePointAroundVector(rotatedDir, up, dir, angle);
+
+		VectorMA(start, range, rotatedDir, point);
+
+		cg.chaseEntOffsetX = point[0] - start[0];
+		cg.chaseEntOffsetY = point[1] - start[1];
+		// cg.chaseEntOffsetZ already set
 	}
 
 	Com_Printf("chase %d  %f %f %f\n", cg.chaseEnt, cg.chaseEntOffsetX, cg.chaseEntOffsetY, cg.chaseEntOffsetZ);

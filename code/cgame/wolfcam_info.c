@@ -75,6 +75,12 @@ void Wolfcam_DemoKeyClick (int key, qboolean down)
         } else {
             cg.keyd = 0;
         }
+    } else if (!strcmp(binding, "+speed")) {
+        if (down) {
+            cg.keyspeed = 1;
+        } else {
+            cg.keyspeed = 0;
+        }
     } else if (!strcmp(binding, "+attack")) {
         if (down) {
             cg.keya = 1;

@@ -1657,6 +1657,7 @@ Same as r_greyScale but only apply when picmip is allowed.
   - freecam.cfg when switching to freecam
   - spectator.cfg when you switch to spectator
   - ingame.cfg when you switch back to your own view
+  - autochase.cfg when automatically chasing missile
   - gameend.cfg
   - gamestart.cfg
   - roundend.cfg
@@ -1755,13 +1756,37 @@ freecam +rollright +rollleft /centerroll (like /centerview) +rollstopzero
       bind 3 "centerroll"
 
 
-/chase <entity number> [x offset] [y offset] [z offset]     [] means optional
+/chase <entity number> [x offset] [y offset] [z offset] [range] [angle]    [] means optional
 
-  set entity number to -1 to disable chase mode
+    set entity number to -1 to disable chase mode
 
-  cg_chaseThirdPerson  this enables third person options in chase mode otherwise only position is tied to chase target and you can manually change freecam angles
+    If x, y, and z offsets aren't specified it will use previously set values.
+
+    If range and/or angle are specified x and y offsets are calculated based on those values and current view origin.
+
+    range can be a number, 'here' (range from entity to current view origin), or 'herez' (same as 'here' but also bases z offset on current view origin)
+
+    x, y, and z offsets as well as range and angle only apply if cg_chaseThirdPerson isn't used.
+
+  cg_chaseMovementKeys  this enables changing x, y, and z offsets using movement keys when cg_chaseThirdPerson is not used.  Changes are based on view angles.
+
+  cg_chaseThirdPerson  this enables third person options in chase mode otherwise only position is tied to chase target and you can manually change freecam angles.  In third person mode non-player entity angles are based on their velocity.
 
   cg_chaseUpdateFreeCam  update freecam position and angles
+
+  cg_autoChaseMissile  1:  automatically switch to freecam and chase missiles from followed player.  This only works with quake live demos.  With other demos chases any random missile.  2:  automatically switch to freecam and chase random missle
+
+      Uses autochase.cfg when view is automatically switched.
+
+  cg_autoChaseMissileFilter  whitespace separated list of weapon tokens that can be chased.  Available tokens:
+
+    gl  : grenade launcher
+    rl  : rocker launcher
+    pg  : plasma gun
+    bfg : big fucking gun
+    gh  : grappling hook
+    ng  : nail gun
+    pl  : proximity launcher
 
 /move command changes positions/angles relative to where you already are:  /m\
 ove [forward amount] [right] [up] [pitch] [yaw] [roll]
@@ -1773,21 +1798,35 @@ ove [forward amount] [right] [up] [pitch] [yaw] [roll]
        /freecam offset 0 0 26  switch to third person 26 game units above player
        /freecam last   switch to third person and use last freecam position
 
-Third person options:
+Third person options (used with cg_thirdPerson and cg_chaseThirdPerson):
 
-  cg_thirdPersonMaxPlayerPitch  restrict pitch with third person and chasing players
+  cg_thirdPersonMaxPitch  restrict focus pitch, if this value is less than 0 pitch isn't restricted
+
+  cg_thirdPersonMaxPlayerPitch  restrict focus pitch, if this value is less than 0 pitch isn't restricted
 
   cg_thirdPersonFocusDistance  forward focus distance
 
   cg_thirdPersonOffsetZ  extra world height above or below entity
 
-  cg_thirdPersonPlayerOffsetZ extra world height above or below player
+  cg_thirdPersonPlayerOffsetZ  extra world height above or below player
 
-  cg_thirdPersonPlayerPitchScale  multiply PITCH by this
+  cg_thirdPersonPitchScale  scale pitch
+
+  cg_thirdPersonPlayerPitchScale  scale pitch
 
   cg_thirdPersonAvoidSolid  shift origin closer to player or entity to avoid having something solid (ex: wall) between them
 
+  cg_thirdPersonAvoidSolidSize bounding box size for point checked when avoiding solid
+
   cg_thirdPersonPlayerCrouchHeightChange  allow player crouching to change view height
+
+  cg_thirdPersonMovementKeys  allow changing range, Z offset, and angle with movement keys, speed is controlled with cg_freecam_speed
+
+  cg_thirdPersonNoMoveAngles  angles to use when /chase non-player entity doesn't have velocity
+
+  cg_thirdPersonNoMoveUsePreviousAngles  use previous velocity angles when /chase non-player entity doesn't have velocity, if this is set it takes precedence over cg_thirdPersonNoMoveAngles
+
+  cg_thirdPersonUseEntityAngles  focus angles based on player view or velocity (non player entities)
 
 ---------------------------------------------------------------------------
 
@@ -2563,7 +2602,8 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * cg_damagePlumAlpha
 
 * cg_drawFPS (2: higher precision and use given time in cgame not real time -- for debugging,  3:  use current frame value not average of last four)
-* cg_autoWriteConfig (0: don't automatically write q3config.cfg when a cvar changes (can be useful for testing configs), 1:  always write q3config.cfg when a cvar changes, 2:  (default) don't write q3config.cfg if a cvar is changed from fx scripting code or with /cvarinterp to prevent hard disk thrashing)
+
+* com_autoWriteConfig (0: don't automatically write q3config.cfg when a cvar changes (can be useful for testing configs), 1:  always write q3config.cfg when a cvar changes, 2:  (default) don't write q3config.cfg if a cvar is changed from fx scripting code, with /cvarinterp, or by cg_thirdPersonMovementKeys to prevent hard disk thrashing)
 
 * cg_adShaderOverride  when set to 1 you can use cg_adShader[num] to replace the ad.  It needs to be the name of a shader:
   ex:  create a file name scripts/mycustomads.shader  with the following:
@@ -2764,7 +2804,8 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * some dubugging and informational commands:
 
-  /printtime  to print cgame and server time to the console
+  /printtime
+      to print cgame and server time to the console
 
   /printdirvector
 
@@ -2791,7 +2832,7 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
 * some server debugging and test commands (/devmap <map>) :
 
-  /spawn "<pickup name>" [optional amount forward]
+  /spawn <pickup name> [optional amount forward]
       like /give but places the item in front of you
 
   /juice
@@ -2799,15 +2840,18 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 
   /view yaw pitch roll
 
-  /devmapnext  next map in maps/ directory
+  /devmapnext
+      next map in maps/ directory
 
-  /devmapprev  previous map in maps/ directory
+  /devmapprev
+      previous map in maps/ directory
 
   /devmap <map name> [ffa | duel | race | tdm | ca | ctf | oneflag | ob | har | ft | dom | ad | rr]
 
       can specify gametype similar to quake live
 
-  /kami  execute kamikaze
+  /kami
+      execute kamikaze
 
   /serversound <sound file>
       play server sound

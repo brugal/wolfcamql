@@ -6524,8 +6524,9 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 			count = 0;
 			memset(outputToken, 0, sizeof(outputToken));
 
-			trap_autoWriteConfig(qfalse);
-			cg.configWriteDisabled = qtrue;
+			if (SC_Cvar_Get_Int("com_autoWriteConfig") == 2) {
+				trap_autoWriteConfig(qfalse);
+			}
 
 			while (1) {
 				c = script[0];
@@ -6581,6 +6582,7 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 
 			// done
 
+			trap_autoWriteConfig(qtrue);
 			}
 			goto handledToken;
         } else if (!Q_stricmpt(token, "animframe")) {

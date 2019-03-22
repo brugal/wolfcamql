@@ -423,6 +423,9 @@ cvar_t *Cvar_Get( const char *var_name, const char *var_value, int flags ) {
 		// ZOID--needs to be set so that cvars the game sets as
 		// SERVERINFO get sent to clients
 		cvar_modifiedFlags |= flags;
+		if (!com_writeConfig) {
+			cvar_modifiedFlags &= ~CVAR_ARCHIVE;
+		}
 
 		return var;
 	}
@@ -479,6 +482,9 @@ cvar_t *Cvar_Get( const char *var_name, const char *var_value, int flags ) {
 	var->flags = flags;
 	// note what types of cvars have been modified (userinfo, archive, serverinfo, systeminfo)
 	cvar_modifiedFlags |= var->flags;
+	if (!com_writeConfig) {
+		cvar_modifiedFlags &= ~CVAR_ARCHIVE;
+	}
 
 	hash = generateHashValue(var_name);
 	var->hashIndex = hash;
@@ -582,6 +588,9 @@ cvar_t *Cvar_Set2( const char *var_name, const char *value, qboolean force ) {
 
 	// note what types of cvars have been modified (userinfo, archive, serverinfo, systeminfo)
 	cvar_modifiedFlags |= var->flags;
+	if (!com_writeConfig) {
+		cvar_modifiedFlags &= ~CVAR_ARCHIVE;
+	}
 
 	if (!force)
 	{
@@ -959,7 +968,9 @@ void Cvar_Set_f( void ) {
 				Com_Printf("^3ignoring archive flag for '%s'\n", Cmd_Argv(1));
 			} else if( !( v->flags & CVAR_ARCHIVE ) ) {
 				v->flags |= CVAR_ARCHIVE;
-				cvar_modifiedFlags |= CVAR_ARCHIVE;
+				if (com_writeConfig) {
+					cvar_modifiedFlags |= CVAR_ARCHIVE;
+				}
 			}
 			break;
 		case 'u':
@@ -1203,6 +1214,9 @@ cvar_t *Cvar_Unset(cvar_t *cv)
 
 	// note what types of cvars have been modified (userinfo, archive, serverinfo, systeminfo)
 	cvar_modifiedFlags |= cv->flags;
+	if (!com_writeConfig) {
+		cvar_modifiedFlags &= ~CVAR_ARCHIVE;
+	}
 
 	if(cv->name)
 		Z_Free(cv->name);

@@ -105,7 +105,6 @@
 * see dm17 demo players not drawn at beg of demo
 * doc fs_homepath
 * gotoview <..> sometimes you still get stuck -- adjustorigin() bigger mins/maxs?
-* /chase <ent num> from here  for cameras
 * goto spline point for camera
 * nudge cam points to spline
 * options to add camera point
@@ -143,8 +142,7 @@
 * changecamerapoint is messed up -- changes origin to spline
 * cg.demoPlaying checks for camera stuff
 * for /chase option to follow behind:  /chase 123 <time> xoffset yoffset zoffset
-* /follow victim gets messed up with rewind and ca spec demo
-* /chase  option to not get embeded (do you have already?)
+
 * demo smoothing for others and also go as far as you have to for packets
 * nomove in lagometer for /follow
 * software gamma
@@ -600,9 +598,7 @@ GLimp_Shutdown: mode 4 lastMode 4
 * player scale and sink into ground
 * player shadow (1 and 2) and player scale
 * player scale and sprites
-* ql: cg_thirdpersonpitch
-* ql: cg_thridpersonrange default 80
-* cg_thirdperson latched cvars
+* ql: cg_thirdpersonpitch  -- 2019-02-25 doesn't seem to do anything
 * stepsmooth and third person
 * server model stuff:   -- cg.serverModel -- double check newAnims  -- testing wolfcam bounding box --
 * player trail scripts and null models (don't reach)
@@ -2102,7 +2098,6 @@ No background file.
 * kitten:  autocomplete cvar and command descriptions, ex: /chase missing help
 *  ^^  check others besides /chase
 
-* kitten:  chase like cg_thirdPerson ..  movement keys
 * kitten:  negative timescales :\
 * scriptable hud:  key press, player info (playerstate and entitystate?), speed
 * ql has cvarTest2
@@ -2215,19 +2210,19 @@ No background file.
 * https://github.com/brugal/wolfcamql/issues/35  something like cg_nomip and maybe option to enable picmip settings to match q3
 
 * check chase code that should have used vectoangles()
-* chase 3p  okremix-2019-02-15  0:17 chase 160  rocket not shown  -- 2019-02-20  player pitch dampening
 
 * /freecam docs for 'set' and check 'last'
 * check cg.freecamSet
-* /chase set freecam playerstate velocity
 * /view use forward left right offsets
 * cg_specViewHeight clean up
-* option to change cg_thirdPerson values with freecam movement
 
+* missing connection interrupted icon or chat with first connect?  --  wolfcamql --console-output +devamp bloodrun ffa  with cg_thirdPerson 1
 
-* chase cvars see which ones should archive and/or be cheat
+* ql uses fixed fov in third person  -- cg_fov can't be changed
 
+* option to set cg_autoWriteConfig from scripts -- so it takes effect immediately like '2' option
 
+* /chase z offset and/or height could be based on velocity
 
 ----
 

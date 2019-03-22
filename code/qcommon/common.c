@@ -119,7 +119,7 @@ cvar_t *com_brokenDemo;
   void (QDECL *Q_SnapVector)(vec3_t vec);
 #endif
 
-qboolean com_writeConfig;
+qboolean com_writeConfig = qtrue;
 
 // com_speeds times
 int		time_game;
@@ -3256,12 +3256,17 @@ void Com_WriteConfiguration( void ) {
 	}
 	cvar_modifiedFlags &= ~CVAR_ARCHIVE;
 
-	if (!com_writeConfig  ||  com_autoWriteConfig->integer == 0) {
-		//Com_Printf("^3not writing config\n");
+	if (com_autoWriteConfig->integer == 0) {
+		if (Cvar_VariableIntegerValue("debug_config_write")) {
+			Com_Printf("^3not writing config\n");
+		}
 		return;
 	}
 
-	//Com_Printf("^2writing config\n");
+	if (Cvar_VariableIntegerValue("debug_config_write")) {
+		Com_Printf("^2writing config\n");
+	}
+
 	Com_WriteConfigToFile( Q3CONFIG_CFG );
 
 	// not needed for dedicated or standalone

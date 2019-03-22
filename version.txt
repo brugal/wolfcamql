@@ -1,4 +1,4 @@
-12.2test1
+12.2test2
 
 * bug fix:  UI_SERVER_OWNER not implemented
 * bug fix:  warm up string using cg_drawWaitingForPlayersFont instead of cg_drawWarmupStringFont
@@ -9,7 +9,7 @@
 * bug fix:  incorrect client parsing of map items when 'not_gametype' set to 'ob'
 * support for 'overload' (GT_OBELISK) gametype string for client and server map item parsing
 * bug fix:  crash parsing map items with cpma ntf, cpma 2v2, cpma hoony mode, and single player modes
-* g_ammoPack to use or ignore 'ammo_pack' items
+* g_ammoPack  to use or ignore 'ammo_pack' items
 * g_ammoPackHack  to substitute other 'ammo_' types with 'ammo_pack'
 * bug fix:  typo in 'Heavy Bullets' pickup name
 * bug fix:  bg item list 'ammoregen' changed to 'armorregen'
@@ -23,14 +23,27 @@
 
     - Add r_parallaxMapShadows
 
-* bug fix:  bots would crouch/movedown
+* bug fix:  bots wouldn't crouch/movedown
 * /chase and /view commands changed so that -1 needs to be set explicitly to disable chase or view mode.  If no entity is specified, a help message is printed to the console.
+* /chase command without entity specified also prints x, y, and z offsets
+* /chase without x, y, and z offsets specified keeps previously set values
+* /chase option to set x and y offsets based on range and angle
 * console help message added for /echopopupcvar
 * bug fix:  incorrect help message for /printentitydistance
 * /testreplace debugging function removed
+* cg_chaseMovementKeys  enables changing x, y, and z offsets using movement keys when cg_chaseThirdPerson is not used.  Changes are based on view angles.
 * cg_chaseThirdPerson to enable third person options with /chase
 * cg_chaseUpdateFreeCam to enable updating freecam position and angles in chase mode
-* cg_thirdPersonMaxPlayerPitch, cg_thirdPersonFocusDistance, cg_thirdPersonOffsetZ, cg_thirdPersonPlayerOffsetZ, cg_thirdPersonPlayerPitchScale, cg_thirdPersonAvoidSolid, cg_thirdPersonPlayerCrouchHeightChange
+* cg_thirdPersonMaxPitch, cg_thirdPersonMaxPlayerPitch, cg_thirdPersonFocusDistance, cg_thirdPersonOffsetZ, cg_thirdPersonPlayerOffsetZ, cg_thirdPersonPitchScale, cg_thirdPersonPlayerPitchScale, cg_thirdPersonAvoidSolid, cg_thirdPersonAvoidSolidSize, cg_thirdPersonPlayerCrouchHeightChange, cg_thirdPersonNoMoveAngles, cg_thirdPersonNoMoveUsePreviousAngles, cg_thirdPersonUseEntityAngles
+* cg_thirdPerson* cvars set to archive
+* cg_thirdPersonRange default changed to 80 to match quake live
+* cg_thirdPersonMovementKeys  allow changing range, Z offset, and angle with movement keys
+* cg_autoChaseMissile  automatically switch to freecam and chase missiles
+* cg_autoChaseMissileFilter  whitespace separated list of weapon tokens that can be chased
+* +speed support in freecam mode
+* bug fix:  com_autoWriteConfig value not checked from fx code
+* doc typo:  com_autoWriteConfig listed as cg_autoWriteConfig
+* bug fix:  invalid parsing of cg_damagePlum tokens
 
 ---------------------------------
 12.1  2019-01-15
