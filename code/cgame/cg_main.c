@@ -199,6 +199,7 @@ vmCvar_t cg_drawClientItemTimerIconSize;
 vmCvar_t cg_drawClientItemTimerIconXoffset;
 vmCvar_t cg_drawClientItemTimerIconYoffset;
 vmCvar_t cg_drawClientItemTimerWideScreen;
+vmCvar_t cg_drawClientItemTimerForceMegaHealthWearOff;
 
 vmCvar_t cg_itemSpawnPrint;
 
@@ -820,6 +821,13 @@ vmCvar_t wolfcam_hoverTime;
 vmCvar_t wolfcam_switchMode;
 //vmCvar_t cg_fragForwardStyle;
 vmCvar_t wolfcam_firstPersonSwitchSoundStyle;
+vmCvar_t wolfcam_painHealth;
+vmCvar_t wolfcam_painHealthColor;
+vmCvar_t wolfcam_painHealthAlpha;
+vmCvar_t wolfcam_painHealthFade;
+vmCvar_t wolfcam_painHealthFadeTime;
+vmCvar_t wolfcam_painHealthValidTime;
+vmCvar_t wolfcam_painHealthStyle;
 
 vmCvar_t cg_interpolateMissiles;
 
@@ -1374,6 +1382,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_drawClientItemTimerIconXoffset), "-55", CVAR_ARCHIVE },
 	{ cvp(cg_drawClientItemTimerIconYoffset), "0", CVAR_ARCHIVE },
 	{ cvp(cg_drawClientItemTimerWideScreen), "3", CVAR_ARCHIVE },
+	{ cvp(cg_drawClientItemTimerForceMegaHealthWearOff), "0", CVAR_ARCHIVE },
 
 	{ &cg_itemSpawnPrint, "cg_itemSpawnPrint", "0", CVAR_ARCHIVE },
 
@@ -1995,6 +2004,14 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &wolfcam_switchMode, "wolfcam_switchMode", "0", CVAR_ARCHIVE },
 	//{ &cg_fragForwardStyle, "cg_fragForwardStyle", "0", CVAR_ARCHIVE },
 	{ &wolfcam_firstPersonSwitchSoundStyle, "wolfcam_firstPersonSwitchSoundStyle", "1", CVAR_ARCHIVE },
+	{ cvp(wolfcam_painHealth), "1", CVAR_ARCHIVE },
+	{ cvp(wolfcam_painHealthColor), "0xff00ff", CVAR_ARCHIVE },
+	{ cvp(wolfcam_painHealthAlpha), "255", CVAR_ARCHIVE },
+	{ cvp(wolfcam_painHealthFade), "1", CVAR_ARCHIVE },
+	{ cvp(wolfcam_painHealthFadeTime), "4000", CVAR_ARCHIVE },
+	{ cvp(wolfcam_painHealthValidTime), "5000", CVAR_ARCHIVE },
+	{ cvp(wolfcam_painHealthStyle), "1", CVAR_ARCHIVE },
+
 	{ &cg_interpolateMissiles, "cg_interpolateMissiles", "1", CVAR_ARCHIVE },
 
 	{ &cg_wh, "cg_wh", "0", CVAR_ARCHIVE },

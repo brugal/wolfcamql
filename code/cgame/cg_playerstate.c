@@ -21,6 +21,7 @@
 #include "sc.h"
 
 #include "wolfcam_local.h"
+#include "wolfcam_main.h"  // Wolfcam_PlayerHealth()
 
 void CG_PrintPlayerState (void)
 {
@@ -538,12 +539,28 @@ static void CG_CheckPlayerstateEvents( const playerState_t *ps, const playerStat
 				//Com_Printf("ps (%d) %d seq %d %d\n", cg.eventSequence, i >= ops->eventSequence, event, cent->currentState.eventParm);
 			} else {
 				//Com_Printf("ps events\n");
+				//Com_Printf("^3predictable event %d  i:sequence %d  ops->eventSequence %d\n", event, i, ops->eventSequence);
 				CG_EntityEvent( cent, cent->lerpOrigin );
 			}
 
 			cg.predictableEvents[ i & (MAX_PREDICTED_EVENTS-1) ] = event;
 
 			cg.eventSequence++;
+		}
+	}
+
+	// client side predicted events
+	// EV_STEP* is only client side like ql
+
+	for (i = cg.clientSideEventSequence - MAX_PS_EVENTS;  i < cg.clientSideEventSequence;  i++) {
+		// if we have a new predictable event
+		if (i >= cg.clientSideEventSequenceOld) {
+			event = cg.clientSidePredictableEvents[ i & (MAX_PS_EVENTS-1) ];
+			cent->currentState.event = event;
+			cent->currentState.eventParm = cg.clientSidePredictableEventParams[ i & (MAX_PS_EVENTS-1) ];
+
+			//Com_Printf("^3CLIENT SIDE predictable event %d  i:sequence %d  old Sequence %d\n", event, i, cg.clientSideEventSequenceOld);
+			CG_EntityEvent( cent, cent->lerpOrigin );
 		}
 	}
 }
@@ -572,6 +589,7 @@ void CG_CheckChangedPredictableEvents( const playerState_t *ps ) {
 				event = ps->events[ i & (MAX_PS_EVENTS-1) ];
 				cent->currentState.event = event;
 				cent->currentState.eventParm = ps->eventParms[ i & (MAX_PS_EVENTS-1) ];
+				//Com_Printf("changed predictable event..\n");
 				CG_EntityEvent( cent, cent->lerpOrigin );
 
 				cg.predictableEvents[ i & (MAX_PREDICTED_EVENTS-1) ] = event;
@@ -1355,6 +1373,33 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 				cg.intermissionStarted = cg.time;
 			}  // else have to wait until score change config string
 		}
+	}
+
+	// mega health wear off time
+
+	if (CG_IsCpmaMvd()) {
+		for (i = 0;  i < cg.numMegaHealths;  i++) {
+			ti = &cg.megaHealths[i];
+
+			//Com_Printf("^6 mh client %d  pickupTime %d  countDownTrigger %d\n", ti->clientNum, ti->pickupTime, ti->countDownTrigger);
+
+			if (ti->clientNum < 0) {
+				continue;
+			}
+
+			if (Wolfcam_PlayerHealth(ti->clientNum, qfalse) > 100) {
+				continue;
+			}
+
+			//Com_Printf("^5health %d\n", Wolfcam_PlayerHealth(ti->clientNum, qfalse));
+			if (ti->countDownTrigger >= 0) {
+				continue;
+			}
+			ti->countDownTrigger = cg.time;
+		}
+	} else {
+		// even though mega health wear off only happens in cpma it's marked
+		// for all mods since it can be forced for client item timer
 
 		if (ps->clientNum != ops->clientNum) {
 			for (i = 0;  i < cg.numMegaHealths;  i++) {
@@ -1362,10 +1407,11 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 			}
 		}
 
-		if (cgs.cpm  &&  ps->stats[STAT_HEALTH] <= 100) {
+		if (ps->stats[STAT_HEALTH] <= 100) {
 			for (i = 0;  i < cg.numMegaHealths;  i++) {
 				ti = &cg.megaHealths[i];
 
+				//Com_Printf("^3%d: cn %d cdt %d pt %d\n", i, ti->clientNum, ti->countDownTrigger, ti->pickupTime);
 				if (ti->clientNum != ps->clientNum) {
 					continue;
 				}
@@ -1373,6 +1419,7 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 					continue;
 				}
 				ti->countDownTrigger = cg.time;
+				//Com_Printf("^5mega health countDownTrigger %d\n", cg.time);
 			}
 		}
 	}
@@ -1413,6 +1460,7 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 		cg.mapRestart = qfalse;
 	}
 
+	//Com_Printf("^2transition player state serverTime %d  cg.time %d  nextSnap:%p\n", cg.snap->serverTime, cg.time, cg.nextSnap);
 	// run events, done before checklocalsounds() so falling doesn't trigger
 	// two pain events
 	CG_CheckPlayerstateEvents(ps, ops);

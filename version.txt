@@ -1,4 +1,4 @@
-12.2test2
+12.2  2019-04-26
 
 * bug fix:  UI_SERVER_OWNER not implemented
 * bug fix:  warm up string using cg_drawWaitingForPlayersFont instead of cg_drawWarmupStringFont
@@ -37,13 +37,33 @@
 * cg_thirdPersonMaxPitch, cg_thirdPersonMaxPlayerPitch, cg_thirdPersonFocusDistance, cg_thirdPersonOffsetZ, cg_thirdPersonPlayerOffsetZ, cg_thirdPersonPitchScale, cg_thirdPersonPlayerPitchScale, cg_thirdPersonAvoidSolid, cg_thirdPersonAvoidSolidSize, cg_thirdPersonPlayerCrouchHeightChange, cg_thirdPersonNoMoveAngles, cg_thirdPersonNoMoveUsePreviousAngles, cg_thirdPersonUseEntityAngles
 * cg_thirdPerson* cvars set to archive
 * cg_thirdPersonRange default changed to 80 to match quake live
-* cg_thirdPersonMovementKeys  allow changing range, Z offset, and angle with movement keys
+* cg_thirdPersonMovementKeys  allow changing range, z offset, and angle with movement keys
 * cg_autoChaseMissile  automatically switch to freecam and chase missiles
 * cg_autoChaseMissileFilter  whitespace separated list of weapon tokens that can be chased
 * +speed support in freecam mode
 * bug fix:  com_autoWriteConfig value not checked from fx code
 * doc typo:  com_autoWriteConfig listed as cg_autoWriteConfig
 * bug fix:  invalid parsing of cg_damagePlum tokens
+* bug fix:  cpma mvd demos didn't show mega health wear off time correctly
+* bug fix:  promode settings not detected with older cpma demos that use 'server_promode' instead of 'server_gameplay' server info string
+* cg_drawClientItemTimerForceMegaHealthWearOff for use with demos were mega health wear off behavior can't automatically be detected
+* older cpma demos that don't have 'server_gameplay' or 'server_promode' server strings default to promode settings
+* kamikaze added to client side weapon stats
+* bug fix: /devmap shows null shader player sprite after initial connection
+* client side step prediction changed to match server not sending EV_STEP events like quake live
+* r_ignoreShaderNoMipMaps  debugging cvar to ignore "nomipmaps" shader directive
+* r_ignoreShaderNoPicMip  debugging cvar to ignore "nopicmip" shader directive
+* wolfcam_painHealth  option to use server pain events to update health value for followed players that normally don't have health information available
+* wolfcam_painHealthColor  hud color when pain event is used to determine health value
+* wolfcam_painHealthAlpha  hud alpha value when pain event is used to determine health
+* wolfcam_painHealthFade and wolfcam_painHealthFadeTime for hud fading of pain event health value
+* wolfcam_painHealthValidTime  how long after pain event health value is valid
+* wolfcam_painHealthStyle  checks demo protocol to determine if only '-' is shown for max health value
+* bug fix:  divide by zero calculating color fade
+* bug fix:  remove console spam with 0 health pain events
+* bug fix:  invisible player cpma and osp player names in team overlay and spectator list
+* bug fix:  cg_colorCodeWhiteUseForegroundColor and cg_colorCodeUseForegroundAlpha were being used outside of hud code
+* bug fix:  cg_colorCodeUseForegroundAlpha 0 prevented obituary fading
 
 ---------------------------------
 12.1  2019-01-15

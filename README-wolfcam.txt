@@ -148,7 +148,7 @@ One of the limitations is that they won't always be present in the demo, they ne
 
 * wolfcam_switchMode 1 (switch back to demo taker if pov not available) 2 (try selected pov, then killer/victim, then demo taker pov)  0 (try selected pov, try closest opponent, demo pov)
 
-* wolfcam  wolfcam_hoverTime "2000"
+* wolfcam_hoverTime "2000"
 
 When you are following other players and they die don't automatically switch to a different pov, wait this amount of time in milliseconds before switching.
 
@@ -156,6 +156,26 @@ When you are following other players and they die don't automatically switch to 
 
 Test/debug cvar.  It'll only update the viewangles of the /follow pov this many milliseconds.
 
+* wolfcam_painHealth
+
+For players that don't normally have health information available (ex: players not on demo taker's team), this can use server pain events to briefly update the current health value.
+
+* wolfcam_painHealthColor  hud color when pain event is used to determine health value
+
+* wolfcam_painHealthAlpha  hud alpha value when pain event is used to determine health value
+
+* wolfcam_painHealthFade
+* wolfcam_painHealthFadeTime
+
+Fade out pain event health value.
+
+* wolfcam_painHealthValidTime
+
+Pain event health values become invalid for health updates after this amount of time in milliseconds.  Setting to negative value never invalidates the health value.
+
+* wolfcam_painHealthStyle
+
+Since protocol 90, Quake Live doesn't send real health values.  It will only send either 20, 40, 60, or 80.  If this cvar is set, only a negative sign ('-') is shown for '80' value.
 
 -----------------------------------------------------------------
 Matching colors and lighting with quakelive:
@@ -1545,6 +1565,10 @@ cg_printTimeStamps  1: game clock time, 2: cgame time,  default is 0
 
 * cg_drawClientItemTimerFilter to disable items.  Default is "rmygqb".  Available tokens are 'b' (battle suit), 'g' (green armor), 'm' (mega health), 'q' (quad damage), 'r' (red armor), and 'y' (yellow armor).  This also selects the order for drawing.
 
+* cg_drawClientItemTimerForceMegaHealthWearOff (-1: don't use mega health wear off, 0: based on detected game mode, 1: use mega health wear off even if game mode doesn't support it)
+
+  Mega health wear off can usually be detected based on server settings but in some cases the behavior might be different.  Older cpma demos, for example, might not have the game mode saved in the demo.  Also, in cpma, you can vote to change mega health behavior so it won't match the detected game mode.  Ex:  /callvote simplemega 1.
+
 * cg_itemSpawnPrint  adds a chatline when items re-spawn and the demo was recorded with cg_enableRespawnTimer 1
 
 * r_mapGreyScale, r_greyscaleValue   load the map in grey, darken to
@@ -1820,7 +1844,7 @@ Third person options (used with cg_thirdPerson and cg_chaseThirdPerson):
 
   cg_thirdPersonPlayerCrouchHeightChange  allow player crouching to change view height
 
-  cg_thirdPersonMovementKeys  allow changing range, Z offset, and angle with movement keys, speed is controlled with cg_freecam_speed
+  cg_thirdPersonMovementKeys  allow changing range, z offset, and angle with movement keys, speed is controlled with cg_freecam_speed
 
   cg_thirdPersonNoMoveAngles  angles to use when /chase non-player entity doesn't have velocity
 
@@ -2081,6 +2105,10 @@ r_BloomBlurFalloff and r_BloomBlurRadius still not implemented, but the followin
 
 
 * r_enablePostProcess, r_enableColorCorrect, r_contrast same as quakelive
+
+* r_ignoreShaderNoMipMaps  debugging cvar to ignore "nomipmaps" shader directive.  Value of 1 still applies to gfx/2d/bigchars.
+
+* r_ignoreShaderNoPicMip  debugging cvar to ignore "nopicmip" shader directive.  Value of 1 still applies to gfx/2d/bigchars.
 
 * con_transparency, con_fracSize, con_conspeed
 * con_rgb  ex:  'con_rgb 0x200000' to replace console shader with just a dark red color.  Default is con_rgb ""
@@ -2583,6 +2611,8 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * cg_colorCodeUseForegroundAlpha
 
   For hud files, this controls whether use of color codes overrides foreground alpha setting.
+
+  Ignored with CG_PLAYER_OBIT.
 
 * r_anaglyph2d to allow or prevent splitting colors for the hud portion
 * r_anaglyphMode 19 uses full color for both left and right channels

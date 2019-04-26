@@ -72,7 +72,18 @@ void P_DamageFeedback( gentity_t *player ) {
 	// play an appropriate pain sound
 	if ( (level.time > player->pain_debounce_time) && !(player->flags & FL_GODMODE) ) {
 		player->pain_debounce_time = level.time + 700;
-		G_AddEvent( player, EV_PAIN, player->health );
+
+		// since protocol 90 ql doesn't send real health value
+		if (player->health >= 80) {
+			G_AddEvent( player, EV_PAIN, 80 );
+		} else if (player->health >= 60) {
+			G_AddEvent( player, EV_PAIN, 60 );
+		} else if (player->health >= 40) {
+			G_AddEvent( player, EV_PAIN, 40 );
+		} else {
+			G_AddEvent( player, EV_PAIN, 20 );
+		}
+
 		client->ps.damageEvent++;
 	}
 

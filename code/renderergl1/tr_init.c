@@ -134,6 +134,8 @@ cvar_t *r_singleShaderName;
 cvar_t	*r_roundImagesDown;
 cvar_t	*r_colorMipLevels;
 cvar_t	*r_picmip;
+cvar_t *r_ignoreShaderNoMipMaps;
+cvar_t *r_ignoreShaderNoPicMip;
 cvar_t	*r_showtris;
 cvar_t	*r_showsky;
 cvar_t	*r_shownormals;
@@ -1785,6 +1787,8 @@ void R_Register( void )
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_picmip = ri.Cvar_Get ("r_picmip", "0", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ignoreShaderNoMipMaps = ri.Cvar_Get ("r_ignoreShaderNoMipMaps", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_ignoreShaderNoPicMip = ri.Cvar_Get ("r_ignoreShaderNoPicMip", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );

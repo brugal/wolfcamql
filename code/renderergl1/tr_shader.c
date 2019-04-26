@@ -1649,14 +1649,18 @@ static qboolean ParseShader( char **text )
 		// no mip maps
 		else if ( !Q_stricmp( token, "nomipmaps" ) )
 		{
-			shader.noMipMaps = qtrue;
-			shader.noPicMip = qtrue;
+			if (r_ignoreShaderNoMipMaps->integer == 0  ||  (r_ignoreShaderNoMipMaps->integer == 1  &&  !Q_stricmp(shader.name, "gfx/2d/bigchars"))) {
+				shader.noMipMaps = qtrue;
+				shader.noPicMip = qtrue;
+			}
 			continue;
 		}
 		// no picmip adjustment
 		else if ( !Q_stricmp( token, "nopicmip" ) )
 		{
-			shader.noPicMip = qtrue;
+			if (r_ignoreShaderNoPicMip->integer == 0  ||  (r_ignoreShaderNoPicMip->integer == 1  &&  !Q_stricmp(shader.name, "gfx/2d/bigchars"))) {
+				shader.noPicMip = qtrue;
+			}
 			continue;
 		}
 		// polygonOffset

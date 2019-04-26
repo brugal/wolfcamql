@@ -5688,6 +5688,9 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	//cg.drawActiveFrameCount++;
 
+	cg.colorCodeWhiteUseForegroundColor = qtrue;
+	cg.colorCodeUseForegroundAlpha = qtrue;
+
 	if (SC_Cvar_Get_Int("debug_cgame_time")) {
 		Com_Printf("cgame time: %d  %d\n", serverTime, ioverf);
 	}

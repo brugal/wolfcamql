@@ -86,9 +86,9 @@ typedef struct {
 
     int deathTime;
 
-    int eventHealth;  // guessed from EV_*
-    //int eventHealthTime;
-    int ev_pain_time;  // EV_PAIN
+	int painValue;
+	int painValueTime;
+
     int bulletDamagePitch;
     int bulletDamageYaw;
 
@@ -153,7 +153,9 @@ typedef struct {
     float v_dmg_roll;
 
     int kills;
+	int kamiKills;
     int deaths;
+	int kamiDeaths;
     int suicides;
 
     //FIXME wolfcam ammo
@@ -195,7 +197,9 @@ typedef struct {
 
 
     int kills;
+	int kamiKills;
     int deaths;
+	int kamiDeaths;
     int suicides;
 
     int warp;

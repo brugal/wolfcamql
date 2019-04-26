@@ -1912,7 +1912,7 @@ Q3OBJ = \
   $(B)/client/con_log.o \
   $(B)/client/sys_autoupdater.o \
   $(B)/client/sys_main.o \
-  $(B)/$(BASEGAME)/game/bg_misc.o
+  $(B)/client/bg_misc.o
 
 ifdef MINGW
   Q3OBJ += \
@@ -3024,6 +3024,9 @@ $(B)/client/%.o: $(SPEEXDIR)/%.c
 	$(DO_CC)
 
 $(B)/client/%.o: $(OGGDIR)/src/%.c
+	$(DO_CC)
+
+$(B)/client/%.o: $(GDIR)/%.c
 	$(DO_CC)
 
 $(B)/client/vorbis/%.o: $(VORBISDIR)/lib/%.c

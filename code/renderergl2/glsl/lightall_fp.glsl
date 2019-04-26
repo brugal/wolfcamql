@@ -222,7 +222,7 @@ float CalcLightAttenuation(float point, float normDist)
 	return attenuation;
 }
 
-#if defined(USE_CUBEMAP)
+#if defined(USE_BOX_CUBEMAP_PARALLAX)
 vec4 hitCube(vec3 ray, vec3 pos, vec3 invSize, float lod, samplerCube tex)
 {
 	// find any hits on cubemap faces facing the camera

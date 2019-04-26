@@ -235,6 +235,13 @@ qboolean	PM_SlideMove( qboolean gravity ) {
 	return ( bumpcount != 0 );
 }
 
+#ifdef CGAME
+extern void CG_AddClientSidePredictableEvent (int event, int eventParam);
+
+// cg. debugging
+//#include "../cgame/cg_local.h"
+#endif
+
 /*
 ==================
 PM_StepSlideMove
@@ -313,9 +320,8 @@ void PM_StepSlideMove( qboolean gravity ) {
 	} else
 #endif
 	{
-
+		// 2019-04-09 ql seems to only do client side step prediction
 #ifdef CGAME
-#if 1  // not used ql  -- wrong
 		// use the step move
 		float	delta;
 
@@ -337,12 +343,14 @@ void PM_StepSlideMove( qboolean gravity ) {
 				newEvent = EV_STEP_16;
 			}
 
-			BG_AddPredictableEventToPlayerstate(newEvent, delta, pm->ps);
+			// don't use BG_Add...() since it's only client side
+			//BG_AddPredictableEventToPlayerstate(newEvent, delta, pm->ps);
+			CG_AddClientSidePredictableEvent(newEvent, delta);
+			//Com_Printf("^5game step  pm->ps.eventSequence %d  serverTime %d  cg.time %d\n", pm->ps->eventSequence, cg.snap->serverTime, cg.time);
 		}
 		if ( pm->debugLevel ) {
 			Com_Printf("%i:stepped\n", c_pmove);
 		}
-#endif
 #endif
 	}
 }

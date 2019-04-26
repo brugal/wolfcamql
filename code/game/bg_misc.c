@@ -5268,111 +5268,159 @@ void BG_EvaluateTrajectoryDeltaf (const trajectory_t *tr, int atTimeMsec, vec3_t
 	}
 }
 
+//#define _DEBUG 1
 
-const char *eventnames[] = {
-	"EV_NONE",
+#ifdef _DEBUG
+#if defined(CGAME)  ||  defined(QAGAME)
 
-	"EV_FOOTSTEP",
-	"EV_FOOTSTEP_METAL",
-	"EV_FOOTSPLASH",
-	"EV_FOOTWADE",
-	"EV_SWIM",
+#define RETEV(x) case x : return #x
 
-	"EV_STEP_4",
-	"EV_STEP_8",
-	"EV_STEP_12",
-	"EV_STEP_16",
+static char *get_eventname (int e)
+{
+	switch (e) {
+	default:
+		return "unknown";
 
-	"EV_FALL_SHORT",
-	"EV_FALL_MEDIUM",
-	"EV_FALL_FAR",
+	RETEV(EV_NONE);
 
-	"EV_JUMP_PAD",			// boing sound at origin", jump sound on player
+	RETEV(EV_FOOTSTEP);
+	RETEV(EV_FOOTSTEP_METAL);
+	RETEV(EV_FOOTSPLASH);
+	RETEV(EV_FOOTWADE);
+	RETEV(EV_SWIM);
 
-	"EV_JUMP",
-	"EV_WATER_TOUCH",	// foot touches
-	"EV_WATER_LEAVE",	// foot leaves
-	"EV_WATER_UNDER",	// head touches
-	"EV_WATER_CLEAR",	// head leaves
+	RETEV(EV_FALL_SHORT);
+	RETEV(EV_FALL_MEDIUM);
+	RETEV(EV_FALL_FAR);
+	RETEV(EV_JUMP_PAD);			// boing sound at origin", jump sound on player
+	RETEV(EV_JUMP);
+	RETEV(EV_WATER_TOUCH);	// foot touches
+	RETEV(EV_WATER_LEAVE);	// foot leaves
 
-	"EV_ITEM_PICKUP",			// normal item pickups are predictable
-	"EV_GLOBAL_ITEM_PICKUP",	// powerup / team sounds are broadcast to everyone
+	RETEV(EV_WATER_UNDER);	// head touches
+	RETEV(EV_WATER_CLEAR);	// head leaves
 
-	"EV_NOAMMO",
-	"EV_CHANGE_WEAPON",
-	"EV_FIRE_WEAPON",
+	RETEV(EV_ITEM_PICKUP);			// normal item pickups are predictable
+	RETEV(EV_GLOBAL_ITEM_PICKUP);	// powerup / team sounds are broadcast to everyone
 
-	"EV_USE_ITEM0",
-	"EV_USE_ITEM1",
-	"EV_USE_ITEM2",
-	"EV_USE_ITEM3",
-	"EV_USE_ITEM4",
-	"EV_USE_ITEM5",
-	"EV_USE_ITEM6",
-	"EV_USE_ITEM7",
-	"EV_USE_ITEM8",
-	"EV_USE_ITEM9",
-	"EV_USE_ITEM10",
-	"EV_USE_ITEM11",
-	"EV_USE_ITEM12",
-	"EV_USE_ITEM13",
-	"EV_USE_ITEM14",
-	"EV_USE_ITEM15",
+	RETEV(EV_NOAMMO);
+	RETEV(EV_CHANGE_WEAPON);
+	RETEV(EV_FIRE_WEAPON);
 
-	"EV_ITEM_RESPAWN",
-	"EV_ITEM_POP",
-	"EV_PLAYER_TELEPORT_IN",
-	"EV_PLAYER_TELEPORT_OUT",
+	RETEV(EV_USE_ITEM0);
+	RETEV(EV_USE_ITEM1);
+	RETEV(EV_USE_ITEM2);
+	RETEV(EV_USE_ITEM3);
+	RETEV(EV_USE_ITEM4);
+	RETEV(EV_USE_ITEM5);
+	RETEV(EV_USE_ITEM6);
+	RETEV(EV_USE_ITEM7);
+	RETEV(EV_USE_ITEM8);
+	RETEV(EV_USE_ITEM9);
+	RETEV(EV_USE_ITEM10);
+	RETEV(EV_USE_ITEM11);
+	RETEV(EV_USE_ITEM12);
+	RETEV(EV_USE_ITEM13);
+	RETEV(EV_USE_ITEM14);
+	RETEV(EV_USE_ITEM15);
 
-	"EV_GRENADE_BOUNCE",		// eventParm will be the soundindex
+	RETEV(EV_ITEM_RESPAWN);
+	RETEV(EV_ITEM_POP);
 
-	"EV_GENERAL_SOUND",
-	"EV_GLOBAL_SOUND",		// no attenuation
-	"EV_GLOBAL_TEAM_SOUND",
+	RETEV(EV_PLAYER_TELEPORT_IN);
+	RETEV(EV_PLAYER_TELEPORT_OUT);
+	RETEV(EV_GRENADE_BOUNCE);		// eventParm will be the soundindex
+	RETEV(EV_GENERAL_SOUND);
+	RETEV(EV_GLOBAL_SOUND);		// no attenuation
 
-	"EV_BULLET_HIT_FLESH",
-	"EV_BULLET_HIT_WALL",
+	RETEV(EV_GLOBAL_TEAM_SOUND);
 
-	"EV_MISSILE_HIT",
-	"EV_MISSILE_MISS",
-	"EV_MISSILE_MISS_METAL",
-	"EV_RAILTRAIL",
-	"EV_SHOTGUN",
-	"EV_BULLET",				// otherEntity is the shooter
+	RETEV(EV_BULLET_HIT_FLESH);
+	RETEV(EV_BULLET_HIT_WALL);
+	RETEV(EV_MISSILE_HIT);
+	RETEV(EV_MISSILE_MISS);
 
-	"EV_PAIN",
-	"EV_DEATH1",
-	"EV_DEATH2",
-	"EV_DEATH3",
-	"EV_OBITUARY",
+	RETEV(EV_MISSILE_MISS_METAL);
+	RETEV(EV_RAILTRAIL);
 
-	"EV_POWERUP_QUAD",
-	"EV_POWERUP_BATTLESUIT",
-	"EV_POWERUP_REGEN",
+	RETEV(EV_SHOTGUN);
 
-	"EV_GIB_PLAYER",			// gib a previously living player
-	"EV_SCOREPLUM",			// score plum
+	//RETEV(EV_BULLET);				// otherEntity is the shooter  // not in quake live
 
-//#ifdef MPACK
-	"EV_PROXIMITY_MINE_STICK",
-	"EV_PROXIMITY_MINE_TRIGGER",
-	"EV_KAMIKAZE",			// kamikaze explodes
-	"EV_OBELISKEXPLODE",		// obelisk explodes
-	"EV_INVUL_IMPACT",		// invulnerability sphere impact
-	"EV_JUICED",				// invulnerability juiced effect
-	"EV_LIGHTNINGBOLT",		// lightning bolt bounced of invulnerability sphere
-//#endif
+	RETEV(EV_PAIN);
+	RETEV(EV_DEATH1);
+	RETEV(EV_DEATH2);
+	RETEV(EV_DEATH3);
+	RETEV(EV_DROWN);
 
-	"EV_DEBUG_LINE",
-	"EV_STOPLOOPINGSOUND",
-	"EV_TAUNT",
-	"EV_TAUNT_YES",
-	"EV_TAUNT_NO",
-	"EV_TAUNT_FOLLOWME",
-	"EV_TAUNT_GETFLAG",
-	"EV_TAUNT_GUARDBASE",
-	"EV_TAUNT_PATROL",
-};
+	RETEV(EV_OBITUARY);
+
+	RETEV(EV_POWERUP_QUAD);
+	RETEV(EV_POWERUP_BATTLESUIT);
+	RETEV(EV_POWERUP_REGEN);
+	RETEV(EV_POWERUP_ARMOR_REGEN);
+
+	RETEV(EV_GIB_PLAYER);			// gib a previously living player
+	RETEV(EV_SCOREPLUM);			// score plum
+
+	//#ifdef MPACK
+	RETEV(EV_PROXIMITY_MINE_STICK);
+	RETEV(EV_PROXIMITY_MINE_TRIGGER);
+
+	RETEV(EV_KAMIKAZE);			// kamikaze explodes
+	RETEV(EV_OBELISKEXPLODE);		// obelisk explodes
+	RETEV(EV_INVUL_IMPACT);		// invulnerability sphere impact
+
+	//#endif
+
+	RETEV(EV_DEBUG_LINE);
+	RETEV(EV_STOPLOOPINGSOUND);
+	RETEV(EV_TAUNT);
+	RETEV(EV_TAUNT_YES);
+	RETEV(EV_TAUNT_NO);
+	RETEV(EV_TAUNT_FOLLOWME);
+	RETEV(EV_TAUNT_GETFLAG);
+	RETEV(EV_TAUNT_GUARDBASE);
+	RETEV(EV_TAUNT_PATROL);
+
+	RETEV(EV_FOOTSTEP_SNOW);
+	RETEV(EV_FOOTSTEP_WOOD);
+	RETEV(EV_ITEM_PICKUP_SPEC);
+	RETEV(EV_OVERTIME);
+	RETEV(EV_GAMEOVER);
+
+	RETEV(EV_THAW_PLAYER);
+	RETEV(EV_THAW_TICK);
+	RETEV(EV_HEADSHOT);
+	RETEV(EV_POI);
+
+	RETEV(EV_RACE_START);
+	RETEV(EV_RACE_CHECKPOINT);
+	RETEV(EV_RACE_END);
+
+	RETEV(EV_DAMAGEPLUM);
+	RETEV(EV_AWARD);
+	RETEV(EV_INFECTED);
+	RETEV(EV_NEW_HIGH_SCORE);
+
+	RETEV(EV_STEP_4);
+	RETEV(EV_STEP_8);
+	RETEV(EV_STEP_12);
+	RETEV(EV_STEP_16);
+	RETEV(EV_STEP_20);
+	RETEV(EV_STEP_24);
+
+	RETEV(EV_JUICED);				// invulnerability juiced effect
+	RETEV(EV_LIGHTNINGBOLT);		// lightning bolt bounced of invulnerability sphere
+	}
+
+	// shouldn't get here
+	//return "error";
+}
+#undef RETEV
+
+#endif
+#endif
 
 /*
 ===============
@@ -5383,23 +5431,27 @@ Handles the sequence numbers
 */
 
 #ifdef _DEBUG
+#if defined(CGAME)  ||  defined(QAGAME)
 void	trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
+#endif
 #endif
 
 void BG_AddPredictableEventToPlayerstate( int newEvent, int eventParm, playerState_t *ps ) {
 
 #ifdef _DEBUG
+#if defined(CGAME)  ||  defined(QAGAME)
 	{
 		char buf[256];
 		trap_Cvar_VariableStringBuffer("showevents", buf, sizeof(buf));
 		if ( atof(buf) != 0 ) {
 #ifdef QAGAME
-			Com_Printf(" game event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount/*ps->commandTime*/, ps->eventSequence, eventnames[newEvent], eventParm);
+			Com_Printf(" game event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount/*ps->commandTime*/, ps->eventSequence, get_eventname(newEvent), eventParm);
 #else
-			Com_Printf("Cgame event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount/*ps->commandTime*/, ps->eventSequence, eventnames[newEvent], eventParm);
+			Com_Printf("Cgame event svt %5d -> %5d: num = %20s parm %d\n", ps->pmove_framecount/*ps->commandTime*/, ps->eventSequence, get_eventname(newEvent), eventParm);
 #endif
 		}
 	}
+#endif
 #endif
 	ps->events[ps->eventSequence & (MAX_PS_EVENTS-1)] = newEvent;
 	ps->eventParms[ps->eventSequence & (MAX_PS_EVENTS-1)] = eventParm;

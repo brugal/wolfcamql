@@ -236,6 +236,7 @@ void Wolfcam_Server_Info_f (void)
 
 // server totals
 static int totalKills[WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
+static int totalKamiKills = 0;
 static float totalWarp;
 //static int totalNoWarp;
 static int totalWarpSeverity;
@@ -294,6 +295,27 @@ static void print_ind_weap_stats (const wweaponStats_t *w)
     Com_Printf ("\n");
 }
 
+static void print_kami_stats (int kills, int deaths)
+{
+    if (kills < 1000)
+        Com_Printf (" ");
+    if (kills < 100)
+        Com_Printf (" ");
+    if (kills < 10)
+        Com_Printf (" ");
+    Com_Printf ("%d", kills);
+
+    if (deaths < 1000)
+        Com_Printf (" ");
+    if (deaths < 100)
+        Com_Printf (" ");
+    if (deaths < 10)
+        Com_Printf (" ");
+    Com_Printf ("%d", deaths);
+
+    Com_Printf ("\n");
+}
+
 static void wolfcam_reset_weapon_stats (int clientNum, qboolean oldclient)
 {
 	wclient_t *wc;
@@ -309,6 +331,8 @@ static void wolfcam_reset_weapon_stats (int clientNum, qboolean oldclient)
 	wc->kills = 0;
 	wc->deaths = 0;
 	wc->suicides = 0;
+	wc->kamiKills = 0;
+	wc->kamiDeaths = 0;
 	ws = wc->wstats;
 
 	for (i = WP_NONE;  i < WP_NUM_WEAPONS;  i++) {
@@ -324,6 +348,7 @@ static void wolfcam_calc_averages (void)
 	const wweaponStats_t *ws;
 
 	memset(totalKills, 0, sizeof(totalKills));
+	totalKamiKills = 0;
 	totalWarp = 0;
 	//totalNoWarp = 0;
 	totalWarpSeverity = 0;
@@ -349,6 +374,8 @@ static void wolfcam_calc_averages (void)
 			ws = &wc->wstats[j];
 			totalKills[j] += ws->kills;
 		}
+
+		totalKamiKills += wc->kamiKills;
 	}
 
 	for (i = 0;  i < wnumOldClients;  i++) {
@@ -370,6 +397,8 @@ static void wolfcam_calc_averages (void)
 			ws = &woc->wstats[j];
 			totalKills[j] += ws->kills;
 		}
+
+		totalKamiKills += woc->kamiKills;
 	}
 
 	if (totalClients > 0) {
@@ -404,6 +433,8 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
 
     const wweaponStats_t *w;
     const wweaponStats_t *ws;  //[WP_NUM_WEAPONS];
+	int kamiKills;
+	int kamiDeaths;
 
 	if (!cg.snap) {
 		return;
@@ -417,6 +448,8 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
         kills = woldclients[clientNum].kills;
         deaths = woldclients[clientNum].deaths;
         suicides = woldclients[clientNum].suicides;
+		kamiKills = woldclients[clientNum].kamiKills;
+		kamiDeaths = woldclients[clientNum].kamiDeaths;
         warp = wc->warp;
         nowarp = wc->nowarp;
         warpaccum = wc->warpaccum;
@@ -438,6 +471,8 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
         kills = wclients[clientNum].kills;
         deaths = wclients[clientNum].deaths;
         suicides = wclients[clientNum].suicides;
+		kamiKills = wclients[clientNum].kamiKills;
+		kamiDeaths = wclients[clientNum].kamiDeaths;
         warp = wc->warp;
         nowarp = wc->nowarp;
         warpaccum = wc->warpaccum;
@@ -585,6 +620,11 @@ static void wolfcam_print_weapon_stats (int clientNum, qboolean oldclient)
         Com_Printf ("  ^2chaingun      ");
 		print_ind_weap_stats(w);
 	}
+
+	if (kamiKills  ||  kamiDeaths) {
+        Com_Printf ("  ^2kamikaze     ");
+		print_kami_stats(kamiKills, kamiDeaths);
+	}
 }
 
 void Wolfcam_Weapon_Stats_f (void)
@@ -718,7 +758,12 @@ void Wolfcam_Weapon_Statsall_f (void)
 		Com_Printf("  ^2%d  %s\n", totalKills[i], weapNamesCasual[i]);
 	}
 
+	if (totalKamiKills) {
+		Com_Printf("  ^2%d  Kamikaze\n", totalKamiKills);
+	}
+
 	memset(totalKills, 0, sizeof(totalKills));
+	totalKamiKills = 0;
 	totalWarp = 0;
 	//totalNoWarp = 0;
 	totalWarpSeverity = 0;

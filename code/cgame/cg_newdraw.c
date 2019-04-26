@@ -844,15 +844,21 @@ static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_
 	char	num[16];
 	rectDef_t r;
 	float height;
+	qboolean painHealth = qfalse;
 
 	ps = &cg.snap->ps;
 
 	value = ps->stats[STAT_HEALTH];
 
 	if (wolfcam_following) {
-		value = Wolfcam_PlayerHealth(wcg.clientNum);
+		// check first without painValue to see if we should display with different color
+		value = Wolfcam_PlayerHealth(wcg.clientNum, qfalse);
 		if (value <= INVALID_WOLFCAM_HEALTH) {
-			return;
+			value = Wolfcam_PlayerHealth(wcg.clientNum, qtrue);
+			if (value <= INVALID_WOLFCAM_HEALTH) {
+				return;
+			}
+			painHealth = qtrue;
 		}
 	}
 
@@ -867,6 +873,13 @@ static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_
 		trap_R_SetColor( NULL );
 	} else {
 		Com_sprintf (num, sizeof(num), "%i", value);
+		if (painHealth  &&  wolfcam_painHealthStyle.integer == 1) {
+			if (cgs.realProtocol >= 90  &&  value >= 80) {
+				// since protocol 90 ql doesn't send real health value just 20, 40, 60, 80
+				Com_sprintf(num, sizeof(num), "-");
+			}
+		}
+
 		//value = CG_Text_Width(num, scale, 0, font);
 		//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, color, num, 0, 0, textStyle, font);
 		//CG_Text_Paint(rect->x + (rect->w - value) / 2, rect->y + rect->h, scale, colorBlack, num, 0, 0, textStyle, font);
@@ -887,7 +900,30 @@ static void CG_DrawPlayerHealth (const rectDef_t *rect, float scale, const vec4_
 
 		//r.y -= (r.h - height) / 2;
 		r.y += scale * 12.0f;
-		CG_Text_Paint_Align(&r, scale, color, num, 0, 0, textStyle, font, align);
+
+		if (painHealth) {
+			vec4_t painHealthColor;
+			float *fcolor;
+
+			SC_Vec4ColorFromCvars(painHealthColor, &wolfcam_painHealthColor, &wolfcam_painHealthAlpha);
+
+			// fade
+			if (wolfcam_painHealthFade.integer) {
+				fcolor = CG_FadeColor(wclients[wcg.clientNum].painValueTime, wolfcam_painHealthFadeTime.integer);
+
+				if (!fcolor) {
+					painHealthColor[3] = 0;
+				} else {
+					painHealthColor[3] -= (1.0 - fcolor[3]);
+				}
+			}
+
+			if (painHealthColor[3] > 0.0) {
+				CG_Text_Paint_Align(&r, scale, painHealthColor, num, 0, 0, textStyle, font, align);
+			}
+		} else {
+			CG_Text_Paint_Align(&r, scale, color, num, 0, 0, textStyle, font, align);
+		}
 	}
 }
 
@@ -2170,19 +2206,8 @@ float CG_GetValue(int ownerDraw) {
 	  if (wolfcam_following) {
 		  int value;
 
-		  value = Wolfcam_PlayerHealth(wcg.clientNum);
+		  value = Wolfcam_PlayerHealth(wcg.clientNum, qtrue);
 		  return value;
-#if 0
-		  value = wclients[wcg.clientNum].eventHealth;  //FIXME time, team info
-		  if (value >= 9999) {
-			  if (cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD) {
-				  return 0;
-			  } else {
-				  return -1;
-			  }
-		  }
-		  return value;
-#endif
 	  } else {
 		  return ps->stats[STAT_HEALTH];
 	  }
@@ -4039,7 +4064,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 		if (wolfcam_following) {
 			int health;
 
-			health = Wolfcam_PlayerHealth(wcg.clientNum);
+			health = Wolfcam_PlayerHealth(wcg.clientNum, qtrue);
 			if (health == INVALID_WOLFCAM_HEALTH) {
 				return qfalse;
 			}
@@ -4759,6 +4784,8 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 		font = CG_ScaleFont(font, &scale, &useScale);
 
 		trap_R_SetColor( color );
+		memcpy(&newColor[0], &color[0], sizeof(vec4_t));
+
 		len = CG_Text_Length(text);  //strlen(text);  //FIXME hmm
 		//len = strlen(text);
 		//Com_Printf("length %d %s\n", len, text);
@@ -4786,11 +4813,11 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 				}
 				//memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
 				//FIXME double check, did it for spec list in ql scoreboard
-				if (cg_colorCodeUseForegroundAlpha.integer) {
+				if (cg.colorCodeUseForegroundAlpha) {
 					newColor[3] = color[3];
 				}
 
-				if (s[1] == '7'  &&  cg_colorCodeWhiteUseForegroundColor.integer) {
+				if (s[1] == '7'  &&  cg.colorCodeWhiteUseForegroundColor) {
 					VectorCopy(color, newColor);
 				}
 				trap_R_SetColor( newColor );
@@ -6033,11 +6060,12 @@ static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color,
 			Vector4Copy(color, newColor);
 			t = cg.time - obituary->time;
 
-			if (t > (cg_obituaryTime.integer - cg_obituaryFadeTime.integer)) {
+			if (t > (cg_obituaryTime.integer - cg_obituaryFadeTime.integer)  &&  cg_obituaryFadeTime.integer > 0 /* avoid divide by zero */) {
 				float fade;
 
 				t -= (cg_obituaryTime.integer - cg_obituaryFadeTime.integer);
 				fade = (float)(cg_obituaryFadeTime.integer - t) / (float)(cg_obituaryFadeTime.integer);
+				//Com_Printf("^3t %d  fade: %f\n", t, fade);
 				newColor[3] *= fade;
 			}
 
@@ -7838,6 +7866,9 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   QLWideScreen = itemWidescreen;
   MenuRect = menuRect;
 
+  cg.colorCodeWhiteUseForegroundColor = cg_colorCodeWhiteUseForegroundColor.integer;
+  cg.colorCodeUseForegroundAlpha = cg_colorCodeUseForegroundAlpha.integer;
+
 #if 0  // debugging widescreen
   //args.color[0] = 255;
   //args.color[1] = 255;
@@ -7893,6 +7924,10 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   if (debug > 2) {
 	  MenuWidescreen = WIDESCREEN_STRETCH;
 	  QLWideScreen = WIDESCREEN_STRETCH;
+
+	  cg.colorCodeWhiteUseForegroundColor = qtrue;
+	  cg.colorCodeUseForegroundAlpha = qtrue;
+
 	  return;
   }
 
@@ -8245,15 +8280,20 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  Vector4Copy(color, ourColor);
 	  }
 
+	  // allow fading
+	  cg.colorCodeUseForegroundAlpha = qtrue;
+
 	  // 2018-07-25 ql ignores 'shader'
 	  CG_DrawObit(&rect, scale, ourColor, shader, textStyle, font, align);
+
+	  cg.colorCodeUseForegroundAlpha = cg_colorCodeUseForegroundAlpha.integer;
 	  break;
   }
   case CG_PLAYER_HEALTH_BAR_100:
 	  ival = cg.snap->ps.stats[STAT_HEALTH];
 
 	  if (wolfcam_following) {
-		  ival = Wolfcam_PlayerHealth(wcg.clientNum);
+		  ival = Wolfcam_PlayerHealth(wcg.clientNum, qtrue);
 		  if (ival <= INVALID_WOLFCAM_HEALTH) {
 			  break;
 		  }
@@ -8286,7 +8326,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  ival = cg.snap->ps.stats[STAT_HEALTH];
 
 	  if (wolfcam_following) {
-		  ival = Wolfcam_PlayerHealth(wcg.clientNum);
+		  ival = Wolfcam_PlayerHealth(wcg.clientNum, qtrue);
 		  if (ival <= INVALID_WOLFCAM_HEALTH) {
 			  break;
 		  }
@@ -11928,6 +11968,9 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
     break;
   }
+
+  cg.colorCodeWhiteUseForegroundColor = qtrue;
+  cg.colorCodeUseForegroundAlpha = qtrue;
 
   MenuWidescreen = WIDESCREEN_STRETCH;
   QLWideScreen = WIDESCREEN_STRETCH;

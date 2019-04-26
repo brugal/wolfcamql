@@ -1021,6 +1021,14 @@ typedef struct {
 	int			eventSequence;
 	int			predictableEvents[MAX_PREDICTED_EVENTS];
 
+	int clientSidePredictableEvents[MAX_PREDICTED_EVENTS];
+	int clientSidePredictableEventParams[MAX_PREDICTED_EVENTS];
+	int clientSideEventSequence;
+
+	int clientSidePredictableEventsOld[MAX_PREDICTED_EVENTS];
+	int clientSidePredictableEventParamsOld[MAX_PREDICTED_EVENTS];
+	int clientSideEventSequenceOld;
+
 	float		stepChange;				// for stair up smoothing
 	int			stepTime;
 
@@ -1568,6 +1576,8 @@ typedef struct {
 	int thirdPersonKeyCheckTime;
 	int chaseKeyCheckTime;
 
+	qboolean colorCodeWhiteUseForegroundColor;
+	qboolean colorCodeUseForegroundAlpha;
 } cg_t;
 
 
@@ -2560,6 +2570,7 @@ extern vmCvar_t cg_drawClientItemTimerIconSize;
 extern vmCvar_t cg_drawClientItemTimerIconXoffset;
 extern vmCvar_t cg_drawClientItemTimerIconYoffset;
 extern vmCvar_t cg_drawClientItemTimerWideScreen;
+extern vmCvar_t cg_drawClientItemTimerForceMegaHealthWearOff;
 
 extern vmCvar_t cg_itemSpawnPrint;
 
@@ -3195,6 +3206,13 @@ extern vmCvar_t wolfcam_hoverTime;
 extern vmCvar_t wolfcam_switchMode;
 //extern vmCvar_t cg_fragForwardStyle;
 extern vmCvar_t wolfcam_firstPersonSwitchSoundStyle;
+extern vmCvar_t wolfcam_painHealth;
+extern vmCvar_t wolfcam_painHealthColor;
+extern vmCvar_t wolfcam_painHealthAlpha;
+extern vmCvar_t wolfcam_painHealthFade;
+extern vmCvar_t wolfcam_painHealthFadeTime;
+extern vmCvar_t wolfcam_painHealthValidTime;
+extern vmCvar_t wolfcam_painHealthStyle;
 
 extern vmCvar_t cg_weaponRedTeamColor;
 extern vmCvar_t cg_weaponBlueTeamColor;

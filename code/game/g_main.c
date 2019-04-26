@@ -105,6 +105,7 @@ vmCvar_t g_weapon_plasma_speed;
 vmCvar_t g_debugPingValue;
 vmCvar_t g_ammoPack;
 vmCvar_t g_ammoPackHack;
+vmCvar_t g_wolfcamVersion;
 
 static cvarTable_t		gameCvarTable[] = {
 	// don't override the cheat state set by the system
@@ -196,6 +197,7 @@ static cvarTable_t		gameCvarTable[] = {
 	{ &g_debugPingValue, "g_debugPingValue", "0", CVAR_ARCHIVE, 0, qfalse },
 	{ &g_ammoPack, "g_ammoPack", "0", CVAR_ARCHIVE, 0, qfalse },
 	{ &g_ammoPackHack, "g_ammoPackHack", "0", CVAR_ARCHIVE, 0, qfalse },
+	{ &g_wolfcamVersion, "wolfcamversion", WOLFCAM_VERSION, CVAR_SERVERINFO | CVAR_ROM, 0, qfalse },
 
 };
 

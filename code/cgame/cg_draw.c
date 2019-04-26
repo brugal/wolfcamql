@@ -1419,7 +1419,7 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 
 				} else if (s[0].i == TEXT_PIC_PAINT_FONT) {
 					if (!trap_R_GetFontInfo(s[1].i, &newFont)) {
-						Com_Printf("^3CG_Text_Pic_Paint: couldn't get new font info for %d\n", s[1].i);
+						Com_Printf("^3CG_Text_Pic_Width: couldn't get new font info for %d\n", s[1].i);
 						font = fontOrig;
 					} else {
 						font = &newFont;
@@ -1470,7 +1470,7 @@ float CG_Text_Pic_Width (const floatint_t *text, float scale, float iconScale, i
 				} else if (s[0].i == TEXT_PIC_PAINT_ICONSCALE) {
 					iconScale *= s[1].f;
 				} else {
-					//Com_Printf("^1CG_Text_Pic_Paint_Width:  unknown command: %d\n", s[0].i);
+					//Com_Printf("^1CG_Text_Pic_Width:  unknown command: %d\n", s[0].i);
 				}
 
 				//Com_Printf("^5cp: command %d\n", s[0].i);
@@ -1991,11 +1991,11 @@ void CG_Text_Paint (float x, float y, float scale, const vec4_t color, const cha
 				// g_color_table_ql_0_1_0_303
 				//memcpy( newColor, g_color_table_ql_0_1_0_303[ColorIndex(*(s+1))], sizeof( newColor ) );
 
-				if (cg_colorCodeUseForegroundAlpha.integer) {
+				if (cg.colorCodeUseForegroundAlpha) {
 					newColor[3] = color[3];
 				}
 
-				if (s[1] == '7'  &&  cg_colorCodeWhiteUseForegroundColor.integer) {
+				if (s[1] == '7'  &&  cg.colorCodeWhiteUseForegroundColor) {
 					VectorCopy(color, newColor);
 				}
 				trap_R_SetColor( newColor );
@@ -2363,11 +2363,11 @@ void CG_Text_Pic_Paint (float x, float y, float scale, const vec4_t color, const
 					memcpy( newColor, g_color_table[ColorIndex(s[1].i)], sizeof( newColor ) );
 				}
 				//memcpy( newColor, g_color_table[ColorIndex(*(s+1))], sizeof( newColor ) );
-				if (cg_colorCodeUseForegroundAlpha.integer) {
+				if (cg.colorCodeUseForegroundAlpha) {
 					newColor[3] = color[3];
 				}
 
-				if (s[1].i == '7'  &&  cg_colorCodeWhiteUseForegroundColor.integer) {
+				if (s[1].i == '7'  &&  cg.colorCodeWhiteUseForegroundColor) {
 					VectorCopy(color, newColor);
 				}
 				trap_R_SetColor( newColor );
@@ -3187,6 +3187,7 @@ static void CG_DrawStatusBar( void ) {
 	vec3_t		origin;
 	int health;
 	int armor;
+	qboolean painHealth = qfalse;
 #ifdef MISSIONPACK
 	qhandle_t	handle;
 #endif
@@ -3216,7 +3217,14 @@ static void CG_DrawStatusBar( void ) {
 	if (wolfcam_following) {
 		cent = &cg_entities[wcg.clientNum];
 		armor = Wolfcam_PlayerArmor(wcg.clientNum);
-		health = Wolfcam_PlayerHealth(wcg.clientNum);
+
+		health = Wolfcam_PlayerHealth(wcg.clientNum, qfalse);
+		if (health <= INVALID_WOLFCAM_HEALTH) {
+			health = Wolfcam_PlayerHealth(wcg.clientNum, qtrue);
+			if (health > INVALID_WOLFCAM_HEALTH) {
+				painHealth = qtrue;
+			}
+		}
 	} else {
 		cent = &cg_entities[cg.snap->ps.clientNum];
 		armor = ps->stats[STAT_ARMOR];
@@ -3336,7 +3344,28 @@ static void CG_DrawStatusBar( void ) {
 	// health
 	//
 	value = health;
-	if ( value > 100 ) {
+	if (painHealth) {
+		vec4_t painHealthColor;
+		float *fcolor;
+
+		SC_Vec4ColorFromCvars(painHealthColor, &wolfcam_painHealthColor, &wolfcam_painHealthAlpha);
+
+		// fade
+		if (wolfcam_painHealthFade.integer) {
+			fcolor = CG_FadeColor(wclients[wcg.clientNum].painValueTime, wolfcam_painHealthFadeTime.integer);
+
+			if (!fcolor) {
+				painHealthColor[3] = 0;
+			} else {
+				painHealthColor[3] -= (1.0 - fcolor[3]);
+			}
+
+			if (painHealthColor[3] < 0.0) {
+				painHealthColor[3] = 0;
+			}
+		}
+		trap_R_SetColor(painHealthColor);
+	} else if ( value > 100 ) {
 		trap_R_SetColor( colors[3] );		// white
 	} else if (value > 25) {
 		trap_R_SetColor( colors[0] );	// green
@@ -3349,7 +3378,14 @@ static void CG_DrawStatusBar( void ) {
 
 	// stretch the health up when taking damage  2016-07-15 wc what?
 	if (!wolfcam_following  ||  (wolfcam_following  &&  value != INVALID_WOLFCAM_HEALTH)) {
-		CG_DrawField ( 185, 432, 3, value);
+		if (painHealth  &&  wolfcam_painHealthStyle.integer == 1  &&  cgs.realProtocol >= 90  &&  value >= 80) {
+			// since protocol 90 ql doesn't send real health value just 20, 40, 60, 80
+			// x += 2 + CHAR_WIDTH*(3 - l)
+			CG_DrawPic(185 + (2 + CHAR_WIDTH*2), 432, CHAR_WIDTH, CHAR_HEIGHT, cgs.media.numberShaders[STAT_MINUS]);
+		} else {
+			CG_DrawField ( 185, 432, 3, value);
+		}
+
 		CG_ColorForHealth( hcolor );
 		trap_R_SetColor( hcolor );
 	}
@@ -4094,9 +4130,24 @@ static float CG_DrawMegaHealthTimer (float x, float y, int cgtime, int ourClient
 	const char *s;
 	float w;
 	float xAlign;
+	qboolean useCpmWearOff;
+
+	useCpmWearOff = qfalse;
+	if (cg_drawClientItemTimerForceMegaHealthWearOff.integer == -1) {
+		// -1 : wear off disabled even if wear off game mode detected
+		useCpmWearOff = qfalse;
+	} else if (cg_drawClientItemTimerForceMegaHealthWearOff.integer == 0  &&  cgs.cpm) {
+		// based on detected game mode
+		useCpmWearOff = qtrue;
+	} else if (cg_drawClientItemTimerForceMegaHealthWearOff.integer == 1) {
+		// forced regardless of detected game mode
+		useCpmWearOff = qtrue;
+	}
 
 	for (i = 0;  i < cg.numMegaHealths;  i++) {
 		titem = &cg.megaHealths[i];
+
+		//Com_Printf("^6 mh client %d  pickupTime %d  countDownTrigger %d  specPickupTime %d\n", titem->clientNum, titem->pickupTime, titem->countDownTrigger, titem->specPickupTime);
 
 		if (titem->specPickupTime > titem->pickupTime) {  //FIXME cpm
 			titem->clientNum = -1;
@@ -4107,7 +4158,7 @@ static float CG_DrawMegaHealthTimer (float x, float y, int cgtime, int ourClient
 
 		t = ((pickupTime / 1000) + titem->respawnLength) - (cgtime / 1000);
 		//Com_Printf("t %d\n", t);
-		if (t < -5  &&  !cgs.cpm) {
+		if (t < -5  &&  !useCpmWearOff) {
 			titem->clientNum = -1;
 		}
 		if (t < 0)
@@ -4120,8 +4171,9 @@ static float CG_DrawMegaHealthTimer (float x, float y, int cgtime, int ourClient
 			ts = 0;
 		}
 
-		if (cgs.cpm) {
-			if (titem->clientNum == cg.snap->ps.clientNum  &&  titem->countDownTrigger >= 0) {
+		// mega health wear off time
+		if (useCpmWearOff) {
+			if ((CG_IsCpmaMvd()  ||  titem->clientNum == cg.snap->ps.clientNum)  &&  titem->countDownTrigger >= 0) {
 				//FIXME always 20 for mega ??
 				t = ((titem->countDownTrigger / 1000) + 20) - (cgtime / 1000);
 				if (t < 0) {
@@ -4962,6 +5014,7 @@ static float CG_DrawTeamOverlay (float y, qboolean right, qboolean upper)
 
 		powerups = ci->powerups;
 		location = ci->location;
+		// 2019-04-19 could use painEvent health
 		health = ci->health;
 		armor = ci->armor;
 		curWeapon = ci->curWeapon;
@@ -9019,7 +9072,8 @@ static void CG_DrawCrosshairTeammateHealth (void)
 		return;
 	}
 
-	health = Wolfcam_PlayerHealth(cg.crosshairClientNum);
+	// 2019-04-19 could use painEvent health
+	health = Wolfcam_PlayerHealth(cg.crosshairClientNum, qfalse);
 	armor = Wolfcam_PlayerArmor(cg.crosshairClientNum);
 
 	align = cg_drawCrosshairTeammateHealthAlign.integer;

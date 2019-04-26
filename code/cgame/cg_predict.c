@@ -522,6 +522,10 @@ void CG_PredictPlayerState( void ) {
 	// save the state before the pmove so we can detect transitions
 	oldPlayerState = cg.predictedPlayerState;
 
+	memcpy(cg.clientSidePredictableEventsOld, cg.clientSidePredictableEvents, sizeof(cg.clientSidePredictableEventsOld));
+	memcpy(cg.clientSidePredictableEventParamsOld, cg.clientSidePredictableEventParams, sizeof(cg.clientSidePredictableEventParamsOld));
+	cg.clientSideEventSequenceOld = cg.clientSideEventSequence;
+
 	current = trap_GetCurrentCmdNumber();
 
 	// if we don't have the commands right after the snapshot, we
@@ -551,6 +555,9 @@ void CG_PredictPlayerState( void ) {
 		cg.predictedPlayerState = cg.snap->ps;
 		cg.physicsTime = cg.snap->serverTime;
 	}
+	memset(cg.clientSidePredictableEvents, 0, sizeof(cg.clientSidePredictableEvents));
+	memset(cg.clientSidePredictableEventParams, 0, sizeof(cg.clientSidePredictableEventParams));
+	cg.clientSideEventSequence = 0;
 
 	if ( pmove_msec.integer < 8 ) {
 		trap_Cvar_Set("pmove_msec", "8");
@@ -657,6 +664,7 @@ void CG_PredictPlayerState( void ) {
 		}
 		// end camera script
 
+		//Com_Printf("cgame pmove cg.time %d  serverTime %d  eventSequence %d\n", cg.time, cg.snap->serverTime, cg.predictedPlayerState.eventSequence);
 		Pmove (&cg_pmove);
 
 		moved = qtrue;

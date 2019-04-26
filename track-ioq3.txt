@@ -7470,3 +7470,45 @@ the demo.
 2018-12-21-01 OpenGL2: r_cubemapping 2 for box cubemap parallax.
 
 2019-02-06-01 Add r_parallaxMapShadows.
+
+2019-04-16-01
+    Fix PRINT_ERROR print level missing from CL_RefPrintf
+
+    It's used for one message in the OpenGL2 renderer.
+
+2019-04-15-01
+    OpenGL2: Fix compiling lightall GLSL on OpenGL 2.1
+
+    textureCubeLod() requires OpenGL 3.0 / GLSL 1.30. Added in
+    2018-12-21 commit e5da13f14635b6accc5eefd6986de03d2cff9662
+    "OpenGL2: r_cubemapping 2 for box cubemap parallax."
+
+    Report by brugal and Simon McVittie.
+
+    Bug-Debian: https://bugs.debian.org/923226
+
+2019-04-15-02
+    Add current (custom) resolution to Q3 UI video mode list
+
+    Custom resolution is displayed when entering system options menu and
+    settings can be changed without being forced to change video resolution.
+
+2019-04-15-03
+    Override video mode list in Team Arena UI
+
+    Override the video mode list in the Team Arena data files with detected
+    modes from SDL like in ioquake3's Q3 UI. Add the aspect ratio to the
+    end of the video resolution (i.e., "640x480 (4:3)"). Add the current
+    (custom) video mode to the list.
+
+    Before when using a custom resolution in the menu you could not change
+    the video mode using the mouse because the resolution text was blank.
+    Now custom video resolution is displayed and can be clicked.
+
+2019-04-16-01
+    OpenGL2: Disable r_cubeMapping if not OpenGL 3.0+
+
+    r_cubeMapping requires textureCubeLod() which is only in OpenGL 3.0
+    (GLSL 1.30) and later. It's not in OpenGL ES 3.0 / GLSL ES 3.00.
+    This needs to be checked before R_InitImages() so can't just check in
+    GLSL_InitGPUShaders().

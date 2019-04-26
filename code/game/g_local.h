@@ -759,6 +759,7 @@ extern vmCvar_t g_weapon_plasma_speed;
 extern vmCvar_t g_debugPingValue;
 extern vmCvar_t g_ammoPack;
 extern vmCvar_t g_ammoPackHack;
+extern vmCvar_t g_wolfcamVersion;
 
 void	trap_Print( const char *text );
 void    trap_Error( const char *text ) __attribute__((noreturn));

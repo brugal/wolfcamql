@@ -199,6 +199,8 @@ cvar_t	*r_singleShaderName;
 cvar_t	*r_roundImagesDown;
 cvar_t	*r_colorMipLevels;
 cvar_t	*r_picmip;
+cvar_t *r_ignoreShaderNoMipMaps;
+cvar_t *r_ignoreShaderNoPicMip;
 cvar_t	*r_showtris;
 cvar_t	*r_showsky;
 cvar_t	*r_shownormals;
@@ -892,6 +894,12 @@ static void InitOpenGL( void )
 
 	//InitFrameBufferAndRenderBuffer();
 	//InitQLGlslShadersAndPrograms();
+
+	// check for GLSL function textureCubeLod()
+	if ( r_cubeMapping->integer && !QGL_VERSION_ATLEAST( 3, 0 ) ) {
+		ri.Printf( PRINT_WARNING, "WARNING: Disabled r_cubeMapping because it requires OpenGL 3.0\n" );
+		ri.Cvar_Set( "r_cubeMapping", "0" );
+	}
 
 	// set default state
 	GL_SetDefaultState();
@@ -1879,6 +1887,8 @@ void R_Register( void )
 	r_ext_max_anisotropy = ri.Cvar_Get( "r_ext_max_anisotropy", "2", CVAR_ARCHIVE | CVAR_LATCH );
 
 	r_picmip = ri.Cvar_Get ("r_picmip", "1", CVAR_ARCHIVE | CVAR_LATCH );
+	r_ignoreShaderNoMipMaps = ri.Cvar_Get ("r_ignoreShaderNoMipMaps", "0", CVAR_ARCHIVE | CVAR_LATCH);
+	r_ignoreShaderNoPicMip = ri.Cvar_Get ("r_ignoreShaderNoPicMip", "0", CVAR_ARCHIVE | CVAR_LATCH);
 	r_roundImagesDown = ri.Cvar_Get ("r_roundImagesDown", "1", CVAR_ARCHIVE | CVAR_LATCH );
 	r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, 0, 16, qtrue );

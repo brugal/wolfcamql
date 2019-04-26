@@ -325,7 +325,7 @@ void Wolfcam_AddBoundingBox( const centity_t *cent ) {
 	trap_R_AddPolyToScene( cgs.media.bboxShader_nocull, 4, verts, qfalse );
 }
 
-int Wolfcam_PlayerHealth (int clientNum)
+int Wolfcam_PlayerHealth (int clientNum, qboolean usePainValue)
 {
 	//int value;
 	const clientInfo_t *ci;
@@ -373,25 +373,28 @@ int Wolfcam_PlayerHealth (int clientNum)
 		}
 	}
 
-	return INVALID_WOLFCAM_HEALTH;
-#if 0
-	//FIXME broken in ql
+	if (usePainValue  &&  wolfcam_painHealth.integer) {
+		const centity_t *cent;
+		int painValue;
+		int painValueTime;
 
-	if (wclients[clientNum].ev_pain_time == 0) {
-		return INVALID_WOLFCAM_HEALTH;
-	}
+		cent = &cg_entities[clientNum];
+		painValue = wclients[clientNum].painValue;
+		painValueTime = wclients[clientNum].painValueTime;
 
-	value = wclients[clientNum].eventHealth;
-	if (value >= 9999) {
-		if (cg_entities[wcg.clientNum].currentState.eFlags & EF_DEAD) {
-			value = 0;
-		} else {
-			value = INVALID_WOLFCAM_HEALTH;
+		//Com_Printf("  pain health: clientNum %d  painValue %d  painValueTime %d cg.time %d\n", clientNum, painValue, painValueTime, cg.time);
+
+		if (!(cent->currentState.eFlags & EF_DEAD)  &&
+			painValue > 0  &&  // EV_PAIN never sends <= 0 health
+			painValueTime > 0  &&  // reset to 0 after EV_OBITUARY
+			cg.time >= painValueTime  &&  // not reset after demo seeking
+			( wolfcam_painHealthValidTime.integer < 0  ||  cg.time - painValueTime < wolfcam_painHealthValidTime.integer )
+			) {
+			return painValue;
 		}
 	}
 
-	return value;
-#endif
+	return INVALID_WOLFCAM_HEALTH;
 }
 
 int Wolfcam_PlayerArmor (int clientNum) {

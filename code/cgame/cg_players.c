@@ -1563,6 +1563,8 @@ void CG_NewClientInfo( int clientNum ) {
             wold->kills = wc->kills;
             wold->deaths = wclients[clientNum].deaths;
             wold->suicides = wclients[clientNum].suicides;
+			wold->kamiKills = wc->kamiKills;
+			wold->kamiDeaths = wc->kamiDeaths;
             wold->warp = wc->warp;
             wold->nowarp = wclients[clientNum].nowarp;
             wold->warpaccum = wc->warpaccum;
@@ -3700,7 +3702,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 	//FIXME time
 	if (cg.time <= ci->clientRewards.startTime) {  // demo seeking
 		// pass
-	} else if (cg.time - ci->clientRewards.startTime <= 1500) {
+	} else if (ci->clientRewards.startTime > 0  &&  cg.time - ci->clientRewards.startTime <= 1500) {
 		// check fx
 		if (ci->clientRewards.shader == cgs.media.medalComboKill  &&  *EffectScripts.playerMedalComboKill) {
 			CG_ResetScriptVars();

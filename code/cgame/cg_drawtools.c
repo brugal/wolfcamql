@@ -718,7 +718,7 @@ void CG_FadeColorVec4 (vec4_t color,  int startMsec, int totalMsec, int fadeTime
 	}
 
 	// fade out
-	if ( totalMsec - t < fadeTimeMsec ) {
+	if ( totalMsec - t < fadeTimeMsec  &&  fadeTimeMsec > 0  /* avoid divide by zero */) {
 		color[3] = ( totalMsec - t ) * 1.0/fadeTimeMsec;
 	} else {
 		color[3] = 1.0;

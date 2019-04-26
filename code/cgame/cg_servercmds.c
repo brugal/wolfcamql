@@ -1238,7 +1238,56 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 	}
 
 	if (cgs.cpma) {
-		if (!Q_stricmp("cpm", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"))  ||  !Q_stricmp("pmc", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"))) {
+		const char *server_gameplay;
+		const char *server_promode;
+		qboolean promodeDetected;
+
+		//FIXME older demos used 'server_promode' and even older demos didn't
+		// have this info in config strings.  They were server side variables.
+		//
+		// cpma changelogs:
+		//
+		//   Notes for version 1.22 (8 Feb 04)
+		//   ...
+		//   chg: server_promode renamed to server_gameplay (default "CPM")
+		//
+		//   Notes for version 1.1 (20 Mar 03)
+		//   ...
+		//   add: arQmode :P (server_promode 2, callvote promode 2)
+		//
+		//   Notes for version 0.99y1 (14 Nov 02)
+		//   ...
+		//   chg: server_promode tagged as serverinfo for ASE etc
+		//
+		// Mega health wear off settings could be different from server info
+		// settings.  That info is server side.  Ex:
+		//    /callvote simplemega 1
+		//
+
+		promodeDetected = qfalse;
+
+		server_gameplay = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay");
+		if (server_gameplay[0] == '\0') {
+			//Com_Printf("^5no server_gameplay\n");
+			server_promode = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_promode");
+			if (server_promode[0] == '\0') {
+				//Com_Printf("^5no server_promode\n");
+				// bot server_gameplay and server_promode missing, default to promode
+				promodeDetected = qtrue;
+			} else {
+				// checking server_promode
+				if (!Q_stricmp("1", server_promode)  ||  !Q_stricmp("2", server_promode)) {
+					promodeDetected = qtrue;
+				}
+			}
+		} else {
+			// checking server_gameplay
+			if (!Q_stricmp("cpm", server_gameplay)  ||  !Q_stricmp("pmc", server_gameplay)) {
+				promodeDetected = qtrue;
+			}
+		}
+
+		if (promodeDetected) {
 			cgs.cpm = qtrue;
 			cgs.rocketSpeed = 900;
 			trap_Cvar_Set("cg_armorTiered", "1");

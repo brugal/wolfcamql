@@ -278,7 +278,8 @@ static void CG_Obituary( const entityState_t *ent ) {
 #if 1  //def MPACK
 		case MOD_KAMIKAZE:
 			message = "goes out with a bang";
-			//FIXME weapon stats
+			wclients[attacker].kamiDeaths++;
+			//FIXME kami suicide stats?
 			break;
 #endif
 		case MOD_GRENADE_SPLASH:
@@ -427,7 +428,12 @@ static void CG_Obituary( const entityState_t *ent ) {
                 wclients[target].wstats[WP_CHAINGUN].deaths++;
 				icon = cg_weapons[WP_CHAINGUN].weaponIcon;
 				break;
-				//FIXME HMG
+			case MOD_KAMIKAZE:
+				if (attacker != target) {
+					wclients[attacker].kamiKills++;
+				}
+				wclients[target].kamiDeaths++;
+				break;
             default:
                 break;
             }
@@ -1081,17 +1087,30 @@ Also called by playerstate transition
 void CG_PainEvent( centity_t *cent, int health ) {
 	const char	*snd;
 
-	//Com_Printf("%f  pain event %d  %p\n", cg.ftime, cent->currentState.number, cent);
+	// 2019-04-17 since protocol 90 ql doesn't send real value just 20, 40, 60, or 80
+
+	//Com_Printf("^5%f  pain event %d  %p  health %d\n", cg.ftime, cent->currentState.number, cent, health);
 
 	//CG_PrintEntityStatep(&cent->currentState);
 	//Com_Printf("%d pain %d %s  health:%d\n", cg.time, cent->currentState.number, cgs.clientinfo[cent->currentState.number].name, health);
+
+	// save values for health estimates (ex: /follow)
+	if (cent != &cg.predictedPlayerEntity) {
+		int clientNum;
+
+		clientNum = cent->currentState.clientNum;
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_PainEvent invalid client number %d\n", clientNum);
+		} else {
+			wclients[clientNum].painValue = health;
+			wclients[clientNum].painValueTime = cg.time;
+		}
+	}
 
 	// don't do more than two pain sounds a second
 	if ( cg.time - cent->pe.painTime < 500 ) {
 		return;
 	}
-
-	//Com_Printf("ouch\n");
 
 	if ( health < 25 ) {
 		snd = "*pain25_1.wav";
@@ -1651,6 +1670,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		int		delta;
 		int		step;
 
+		//Com_Printf("   event step %d %d\n", clientNum, cg.predictedPlayerState.clientNum);
 		if (es->number >= MAX_CLIENTS) {
 			CG_Printf("^3FIXME event %d  %s  clientnum %d\n", event, eventName, es->number);
 		}
@@ -1687,6 +1707,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		}
 		cg.stepTime = cg.time;
 		//Com_Printf("^5%f  step %d\n", cg.ftime, es->eventParm);
+		//Com_Printf("   event ran step\n");
 		break;
 	}
 
@@ -3335,6 +3356,8 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 				pe = &cg_entities[es->otherEntityNum].pe;
 			}
 			pe->deathTime = cg.time;
+
+			wclients[es->otherEntityNum].painValueTime = 0;
 		}
 		CG_Obituary( es );
 		//Com_Printf("^3 after CG_Obituary(), cg.obituaryIndex %d  time: %d\n", cg.obituaryIndex, cg.obituaries[(cg.obituaryIndex - 1) % MAX_OBITUARIES].time);
@@ -3527,8 +3550,6 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	}
 	case EV_GAMEOVER: {
 		DEBUGNAME("EV_GAMEOVER");
-		//FIXME
-		//Com_Printf("FIXME EV_GAMEOVER\n");
 		break;
 	}
 	case EV_THAW_PLAYER: {
@@ -3871,4 +3892,16 @@ void CG_CheckEvents( centity_t *cent ) {
 
 	//Com_Printf("event ent %d\n", cent->currentState.number);
 	CG_EntityEvent( cent, cent->lerpOrigin );
+}
+
+void CG_AddClientSidePredictableEvent (int event, int eventParam)
+{
+	if (cg.clientSideEventSequence >= MAX_PREDICTED_EVENTS) {
+		CG_Printf("^3cg.clientSideEventSequence >= MAX_PREDICTED_EVENTS\n");
+		return;
+	}
+
+	cg.clientSidePredictableEvents[cg.clientSideEventSequence] = event;
+	cg.clientSidePredictableEventParams[cg.clientSideEventSequence] = eventParam;
+	cg.clientSideEventSequence++;
 }

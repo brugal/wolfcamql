@@ -272,22 +272,18 @@ void wolfcam_log_event (const centity_t *cent, const vec3_t position)
     case EV_OBITUARY:
         if (es->otherEntityNum < MAX_CLIENTS) {
             wclients[es->otherEntityNum].deathTime = cg.time;
-            wclients[es->otherEntityNum].eventHealth = 9999; //FIXME actually set to full
-            //Com_Printf("setting 100 health %s\n", cgs.clientinfo[wcg.clientNum].name);
         }
         break;
+#if 0  // unused
     case EV_PAIN:
 		if (cgs.cpma  ||  cgs.osp) {
 			clientNum = CG_CheckClientEventCpma(clientNum, es);
 		}
         //Com_Printf("^3%d (pain %d)  %d  %s\n", cg.time, es->eventParm, clientNum, cgs.clientinfo[clientNum].name);
-        if (es->eventParm != 0) {
-            wclients[clientNum].eventHealth = es->eventParm;
-            wclients[clientNum].ev_pain_time = cg.time;
-        } else {
-            CG_Printf("^3FIXME %d (pain %d)  %d  %s\n", cg.time, es->eventParm, clientNum, cgs.clientinfo[clientNum].name);
-        }
+
+		// 2019-04-20 q3 code shouldn't send pain events with zero health but it sometimes happens with ql demos
         break;
+#endif
     default:
         break;
     }
