@@ -1164,6 +1164,8 @@ Velocity:
 
   cg_cameraDebugPath  adds a model showing the camera path without updating freecam origin and angles.  Use r_drawworld 0  and r_fastsky 1  for a clearer view.  If both camera types are present (q3mme and wolfcamql) it will draw a model for each of them.
 
+Note that camera point creation will also record the effects of fx camera vibration (cg_vibrate 1).  Use 'cg_vibrate 0' if you don't want those effects recorded.  Camera path playback with 'cg_vibrate 1' will re-add the camera vibrate effect.
+
 --------------------------------------------------------------------------
 
 * camtrace 3d support:
@@ -1767,8 +1769,13 @@ freecam   type /freecam in console
   /gotoview [forward] [right] [up] [force] relative to the viewed entity (or demo taker).  The force (integer) option means to jump to the view even if you might get stuck inside a wall.  []  are optional
 
   /stopmovement for freecam since there's no gravity friction
-  command /recordpath [filename] to save your position and viewangles to a file.  /recordpath will also stop a current recording.  To play back use /playpath
+
+  command /recordpath [filename] to save your position and viewangles to a file.  /recordpath will also stop a current recording.  To play back use /playpath.
+
+    - note that /recordpath will also record the effects of fx camera vibrations (cg_vibrate 1).  Use 'cg_vibrate 0' if you don't want those effects recorded.  Playing the path back with 'cg_vibrate 1' will re-add the camera vibrate effect.
+
   /stopplaypath to stop playback
+
   cg_pathRewindTime  (milliseconds: extra time to rewind to allow things like explosions, wall marks, rail trails, etc..  to be drawn)
   cg_pathSkipNum (smoothing value -- how many points to skip and smooth between)
 

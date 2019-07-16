@@ -6384,6 +6384,8 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	if (cg.cameraPlaying  ||  cg.cameraQ3mmePlaying  ||  cg_cameraQue.integer) {
 		CG_PlayCamera();
+		//FIXME 2019-07-16 effects of cg_vibrate 1 will also be recorded in the camera point
+		CG_VibrateCamera();
 		cg.refdef.time = cg.time;
 		if (cg.freecam) {
 			trap_S_Respatialize(MAX_GENTITIES - 1, cg.refdef.vieworg, cg.refdef.viewaxis, qfalse);
@@ -6394,21 +6396,8 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	//Com_Printf("fpos %f %f %f\n", cg.fpos[0], cg.fpos[1], cg.fpos[2]);
 
-#if 0  // old
 	if (cg.recordPath  &&  !cg.paused) {
-		if (cg.snap->serverTime != cg.recordPathLastServerTime) {
-			const char *s;
-
-			//s = va("%d %f %f %f %f %f %f %d\n", cg.snap->serverTime, ps->origin[0], ps->origin[1], ps->origin[2], ps->viewangles[0], ps->viewangles[1], ps->viewangles[2], cg.viewEnt);
-			s = va("%d %f %f %f %f %f %f %d\n", cg.snap->serverTime, cg.refdef.vieworg[0], cg.refdef.vieworg[1], cg.refdef.vieworg[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], cg.viewEnt);
-			trap_FS_Write(s, strlen(s), cg.recordPathFile);
-			cg.recordPathLastServerTime = cg.snap->serverTime;
-			trap_SendConsoleCommand("echopopup recording path\n");
-		}
-	}
-#endif
-
-	if (cg.recordPath  &&  !cg.paused) {
+		//FIXME 2019-07-16  for first person view this will also record camera vibrations (cg_vibrate 1)
 		//if (cg.snap->serverTime != cg.recordPathLastServerTime) {
 			const char *s;
 
@@ -6433,7 +6422,6 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 	CG_DumpEntities();
 
-	//CG_VibrateCamera();
 	CG_CheckSkillRating();
 
 	{

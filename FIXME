@@ -2228,6 +2228,8 @@ No background file.
 
 * wcstats accuracy against player
 * test new cpma
+* cg_vibrate 1  effects recorded in camera points and recordpath
+
 
 ----
 
