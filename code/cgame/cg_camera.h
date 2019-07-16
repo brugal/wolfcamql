@@ -2,7 +2,7 @@
 #define camera_h_included
 
 #include "../qcommon/q_shared.h"
-#include "cg_q3mme_demos_math.h"  // posInterpolate_t
+#include "cg_q3mme_demos_math_public.h"  // posInterpolate_t
 
 #define WOLFCAM_CAMERA_VERSION 10
 #define MAX_CAMERAPOINTS 512

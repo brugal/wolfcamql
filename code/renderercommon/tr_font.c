@@ -936,7 +936,7 @@ void RE_RegisterFont (const char *fontName, int pointSize, fontInfo_t *font)
 			}
 
 			//Com_sprintf (name, sizeof(name), "fonts/fontImage_%i_%i", imageNumber++, pointSize);
-			//image = R_CreateImage(name, imageBuff, FSIZE, FSIZE, qfalse, qfalse, GL_CLAMP_TO_EDGE);
+			//image = R_CreateImage(name, imageBuff, FSIZE, FSIZE, qfalse, qfalse, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 			image = R_CreateImage(name, imageBuff, FSIZE, FSIZE, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0 );
 			h = RE_RegisterShaderFromImage(name, LIGHTMAP_2D, image, qfalse);
 			for (j = lastStart; j < i; j++) {
@@ -1241,7 +1241,7 @@ qboolean RE_GetGlyphInfo (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyp
 		//imageBuff[left++] = out[k];
 	}
 
-	//image = R_CreateImage(fontShaderName, imageBuff, FSIZE, FSIZE, qfalse, qfalse, GL_CLAMP_TO_EDGE);
+	//image = R_CreateImage(fontShaderName, imageBuff, FSIZE, FSIZE, qfalse, qfalse, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 	image = R_CreateImage(fontShaderName, imageBuff, FSIZE, FSIZE, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0 );
 	h = RE_RegisterShaderFromImage(fontShaderName, LIGHTMAP_2D, image, qfalse);
 

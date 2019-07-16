@@ -959,7 +959,7 @@ image_t *R_CreateImage( const char *name, byte *pic, int width, int height,
 	image->width = width;
 	image->height = height;
 	if (flags & IMGFLAG_CLAMPTOEDGE)
-		glWrapClampMode = GL_CLAMP_TO_EDGE;
+		glWrapClampMode = haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 	else
 		glWrapClampMode = GL_REPEAT;
 
@@ -1870,8 +1870,8 @@ void R_CreatePlayerColorSkinImages (qboolean force)
 		qglClearColor(0, 0, 0, 1);
 		qglGenTextures(1, &texture);
         qglBindTexture(GL_TEXTURE_2D, texture);
-        qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+        qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
         qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         qglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		if (r_texturebits->integer == 16) {
@@ -2009,8 +2009,8 @@ void	R_InitImages( void ) {
                 ri.Printf(PRINT_ALL, "^1opengl error creating raw rect texture:  0x%x\n", err);
         }
 
-        qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        qglTexParameteri(target, GL_TEXTURE_WRAP_S, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+        qglTexParameteri(target, GL_TEXTURE_WRAP_T, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
         qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 

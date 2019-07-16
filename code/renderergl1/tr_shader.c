@@ -3649,7 +3649,7 @@ void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int heigh
 								&image->uploadHeight );
 
 	if (image->flags & IMGFLAG_CLAMPTOEDGE) {
-		glWrapClampMode = GL_CLAMP_TO_EDGE;
+		glWrapClampMode = haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP;
 	} else {
 		glWrapClampMode = GL_REPEAT;
 	}

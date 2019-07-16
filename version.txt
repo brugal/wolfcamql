@@ -1,3 +1,8 @@
+12.3test1
+
+* ioquake3 patches
+
+---------------------------------
 12.2  2019-04-26
 
 * bug fix:  UI_SERVER_OWNER not implemented

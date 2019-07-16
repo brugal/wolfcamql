@@ -25,19 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //#include "cg_local.h"
 #include "../renderercommon/tr_types.h"  // polyVert_t
-
-typedef enum {
-	posLinear,
-	posCatmullRom,
-	posBezier,
-	posLast,
-} posInterpolate_t;
-
-typedef enum {
-	angleLinear,
-	angleQuat,
-	angleLast,
-} angleInterpolate_t;
+#include "cg_q3mme_demos_math_public.h"  // posInterpolate_t, angleInterpolate_t
 
 typedef float Quat_t[4];
 void QuatFromAngles( const vec3_t angles, Quat_t dst );
@@ -83,6 +71,8 @@ static ID_INLINE void AngleForward( const vec3_t angles, vec3_t forward ) {
 static ID_INLINE float QuatDot( const Quat_t q0, const Quat_t q1) {
 	return q0[0]*q1[0] + q0[1]*q1[1] + q0[2]*q1[2] + q0[3]*q1[3];
 }
+
+#undef QuatCopy  // 2019-05-02 added by ioquake3 d404519cce565402aa98c3f9943221ed6ddb2790
 static ID_INLINE void QuatCopy( const Quat_t src, Quat_t dst) {
 	dst[0] = src[0];dst[1] = src[1];dst[2] = src[2];dst[3] = src[3];
 }
@@ -197,6 +187,7 @@ static ID_INLINE void AnglesNormalize180( vec3_t angles) {
 #else  // qvm only reference them
 extern void AngleForward( const vec3_t angles, vec3_t forward );
 extern float QuatDot( const Quat_t q0, const Quat_t q1);
+#undef QuatCopy  // 2019-05-02 added by ioquake3 d404519cce565402aa98c3f9943221ed6ddb2790
 extern void QuatCopy( const Quat_t src, Quat_t dst);
 extern void QuatNegate( const Quat_t src, Quat_t dst);
 extern void QuatConjugate( const Quat_t src, Quat_t dst);

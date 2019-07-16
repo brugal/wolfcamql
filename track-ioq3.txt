@@ -7512,3 +7512,56 @@ the demo.
     (GLSL 1.30) and later. It's not in OpenGL ES 3.0 / GLSL ES 3.00.
     This needs to be checked before R_InitImages() so can't just check in
     GLSL_InitGPUShaders().
+
+2019-04-29-01
+    Fix rendering IQM models between model frames
+
+    For lerped frames (refEntity_t frame not equal oldframe) IQM joint
+    matrices may have incorrect axis scale. This can cause significant model
+    distortion. The matrix lerp is linear causing each vector to move in a
+    straight line between frames instead of arcing like a circle. Each joint
+    frame can have a different scale so can't just normalize the joint
+    matrix.
+
+    Store joints as quaternions and spherical lerp between them and then
+    convert to a matrix. For my test model, setting up the skeleton is four
+    times slower now but it still seems to be fast enough to be usable.
+
+2019-04-29-02 Fix warnings that IQM blendWeights may not be initialized
+
+2019-05-28-01
+    Fix IQM quat normalize fail case
+
+    Should only happen with invalid models though.
+
+2019-05-28-02 Remove erroneous newlines from Com_Error in sdl_glimp.c
+
+2019-05-28-03
+    Restore OpenGL 1.1 support (GL_CLAMP)
+
+    GL_CLAMP (clamp to border) was changed to GL_CLAMP_TO_EDGE in 2008
+    (f2baf359). In 2018 (ce1d5406) I made OpenGL 1.2 be required since
+    GL_CLAMP_TO_EDGE is used.
+
+    Restore support for GL_CLAMP in order to support OpenGL 1.1 like vanilla
+    Quake 3 does. This should allow using the default Microsoft Windows
+    GDI Generic OpenGL 1.1 driver (untested but it won't fail the version
+    check at least).
+
+    From gpuinfo.org, it looks like drivers stopped advertising support for
+    GL_SGIS_texture_edge_clamp so use a version check in addition to the
+    extension check.
+
+    r_allowExtensions 0 disables using GL_CLAMP_TO_EDGE in the opengl1
+    renderer. GL_CLAMP support wasn't added to the opengl2 renderer.
+
+2019-07-10-01
+    q3rcc: Allow to override build date
+
+    Allow to override __DATE__ and __TIME__ with SOURCE_DATE_EPOCH
+    in order to make builds reproducible.
+    See https://reproducible-builds.org/ for why this is good
+    and https://reproducible-builds.org/specs/source-date-epoch/
+    for the definition of this variable.
+
+    This behavior is what gcc already does.

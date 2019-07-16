@@ -29,6 +29,7 @@ glconfig_t  glConfig;
 qboolean    textureFilterAnisotropic = qfalse;
 int         maxAnisotropy = 0;
 float       displayAspect = 0.0f;
+qboolean    haveClampToEdge = qfalse;
 
 glstate_t	glState;
 
@@ -282,8 +283,8 @@ static void InitFrameBufferAndRenderBuffer (void)
 	if (err != GL_NO_ERROR) {
 		ri.Printf(PRINT_ALL, "^1opengl error creating offscreen render texture:  0x%x\n", err);
 	}
-	qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qglTexParameteri(target, GL_TEXTURE_WRAP_S, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+	qglTexParameteri(target, GL_TEXTURE_WRAP_T, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 	qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -299,8 +300,8 @@ static void InitFrameBufferAndRenderBuffer (void)
 		if (err != GL_NO_ERROR) {
 			ri.Printf(PRINT_ALL, "^1opengl error creating offscreen depth/stencil texture:  0x%x\n", err);
 		}
-		qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		qglTexParameteri(target, GL_TEXTURE_WRAP_S, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+		qglTexParameteri(target, GL_TEXTURE_WRAP_T, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 		qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		qglTexParameteri(target, GL_TEXTURE_COMPARE_FUNC_ARB, GL_LEQUAL);
@@ -557,8 +558,8 @@ static void InitQLGlslShadersAndPrograms (void)
 	qglGenTextures(1, &tr.bloomTexture);
 	qglBindTexture(target, tr.bloomTexture);
 	qglTexImage2D(target, 0, GL_RGBA8, tr.bloomWidth, tr.bloomHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-	qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qglTexParameteri(target, GL_TEXTURE_WRAP_S, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+	qglTexParameteri(target, GL_TEXTURE_WRAP_T, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 	qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -567,8 +568,8 @@ static void InitQLGlslShadersAndPrograms (void)
 	qglBindTexture(target, tr.backBufferTexture);
 
 	qglTexImage2D(target, 0, GL_RGB8, glConfig.vidWidth, glConfig.vidHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-	qglTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	qglTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	qglTexParameteri(target, GL_TEXTURE_WRAP_S, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
+	qglTexParameteri(target, GL_TEXTURE_WRAP_T, haveClampToEdge ? GL_CLAMP_TO_EDGE : GL_CLAMP);
 	qglTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	qglTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -2136,6 +2137,7 @@ void RE_Shutdown( qboolean destroyWindow ) {
 		textureFilterAnisotropic = qfalse;
 		maxAnisotropy = 0;
 		displayAspect = 0.0f;
+		haveClampToEdge = qfalse;
 
 		Com_Memset( &glState, 0, sizeof( glState ) );
 	}
