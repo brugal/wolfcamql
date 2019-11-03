@@ -2228,6 +2228,9 @@ No background file.
 
 * wcstats accuracy against player
 * test new cpma
+
+  /it and /itr item timer commands
+
 * cg_vibrate 1  effects recorded in camera points and recordpath
 
 

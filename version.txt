@@ -1,7 +1,8 @@
-12.3test2
+12.3test3
 
 * ioquake3 patches
 * bug fix:  fx camera vibration not working when camera path playing
+* 64-bit Mac OS X builds
 
 ---------------------------------
 12.2  2019-04-26

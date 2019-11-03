@@ -6,7 +6,7 @@ compile external ogg and vorbis mac os x:
 
 compile freetype mac os x:
 
-  ./configure --with-zlib=no --with-bzip2=no --with-png=no
+  CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" ./configure --with-zlib=no --with-bzip2=no --with-png=no
   make
   cp objs/.libs/libfreetype.a ...
 

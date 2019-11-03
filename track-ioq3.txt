@@ -7565,3 +7565,44 @@ the demo.
     for the definition of this variable.
 
     This behavior is what gcc already does.
+
+2019-08-22-01
+    Create Funding.yml
+
+    TODO: add more of these things https://help.github.com/en/articles/displaying-a-sponsor-button-in-your-repository
+
+2019-10-11-01
+    Fix lightning gun handling for corpses and single player podiums
+
+    The lightning trail is fired from the real non-predicted entity for
+    the local client so it can show the server location. The real client
+    entity was always used to check if a player entity is firing the
+    lighting gun. This potentially causes corpses and players on single
+    player podiums with lightning gun to render the lightning trail if
+    the real (living) client is firing the lightning gun.
+
+    I'm not aware of this causing any issues without modifying the game
+    logic. Corpses have no weapon and it's not possible to fire during
+    single player intermission.
+
+2019-10-11-02
+    Fix for macOS Catalina screen resolution issue
+
+    Issue #422
+
+2019-10-26-01
+    Several updates to xcode project files for Xcode 11
+
+    A few more things to go
+
+2019-10-28-01
+    Fix team orders menu not listing clients with lower clientnums
+
+    If bots join before the local client (dedicated server) the bots would
+    not be listed in the Q3A team orders menu and so they could not be given
+    orders using the menu.
+
+    The Q3A team orders menu got local client's team while looping through
+    all clients. Ignoring any bots with clientnum lower than the local
+    client. Get local client's team before the loop so all bots are
+    listed.

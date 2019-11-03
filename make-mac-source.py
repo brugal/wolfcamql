@@ -13,4 +13,4 @@ if os.path.ismount(shareDir) == False  and  buildLocal != True:
     print "mac share isn't mounted"
     sys.exit(1)
 
-os.system("tar --exclude='misc/msvc' --exclude='misc/msvc10' --exclude='misc/nsis' --exclude='code/libs/backtrace.dll' --exclude='code/libs/SDL2.dll' --exclude='code/libs/win32' --exclude='code/libs/win64'  -zcvf %s/macsrc.tar.gz Makefile* *.sh *.py code/ ui/ misc/" % destDir)
+os.system("tar --exclude='misc/msvc' --exclude='misc/msvc10' --exclude='misc/msvc11' --exclude='misc/msvc12' --exclude='misc/nsis' --exclude='code/libs/win32' --exclude='code/libs/win64'  -zcvf %s/macsrc.tar.gz Makefile* *.sh *.py code/ ui/ misc/" % destDir)

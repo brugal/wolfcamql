@@ -9,13 +9,24 @@ mkdir build
 cd build
 tar -zxvf ../share/wolfcam-build/macsrc.tar.gz
 mkdir bin
-make
-cp build/release-darwin-x86/ioquake3.x86 bin/wolfcamqlmac
-cp build/release-darwin-x86/renderer_opengl1_x86.dylib bin/
-cp build/release-darwin-x86/renderer_opengl2_x86.dylib bin/
-cp build/release-darwin-x86/baseq3/*dylib bin/
+
+# i386
+#make
+#cp build/release-darwin-x86/ioquake3.x86 bin/wolfcamqlmac
+#cp build/release-darwin-x86/renderer_opengl1_x86.dylib bin/
+#cp build/release-darwin-x86/renderer_opengl2_x86.dylib bin/
+#cp build/release-darwin-x86/baseq3/*dylib bin/
+
+# x86_64
+ARCH=x86_64 make
+
+cp build/release-darwin-x86_64/ioquake3.x86_64 bin/wolfcamqlmac64
+cp build/release-darwin-x86_64/renderer_opengl1_x86_64.dylib bin/
+cp build/release-darwin-x86_64/renderer_opengl2_x86_64.dylib bin/
+cp build/release-darwin-x86_64/baseq3/*dylib bin/
+
+
 cd bin
 tar -zcvf bin.tar.gz *
 #lilweb-deb
 cp bin.tar.gz ~/share/wolfcam-build/
-
