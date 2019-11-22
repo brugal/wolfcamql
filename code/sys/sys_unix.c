@@ -1198,11 +1198,8 @@ Unix specific initialisation
 ==============
 */
 
-#if defined(__APPLE__)  ||  DEDICATED
 
-#include <execinfo.h>
-
-// from backtrace() man page
+// code is from Apple's backtrace(3) man page
 static void print_dl_backtrace (void)
 {
 	void *callstack[128];
@@ -1215,14 +1212,61 @@ static void print_dl_backtrace (void)
 	for (i = 0;  i < frames;  i++) {
 		fprintf(stderr, "%s\n", strs[i]);
 	}
+	free(strs);
 }
+
+#if defined(__APPLE__)  ||  DEDICATED
 
 static int print_gdb_trace (void)
 {
-	//FIXME test gdb?
+	//FIXME check for gdb?
+	return 0;
+}
 
-	//FIXME testing
-	//print_dl_backtrace();
+static void signal_crash (int signum, siginfo_t *info, void *ptr)
+{
+	fprintf(stderr, "crash with signal %d\n", signum);
+
+	//FIXME gdb backtrace?
+
+	fprintf(stderr, "internal backtrace:\n");
+	print_dl_backtrace();
+
+	exit(-1);
+}
+
+#else
+
+//FIXME linux only :  /proc/self/exe
+static int print_gdb_trace (void)
+{
+	char pid_buf[30];
+	char name_buf[512];
+	int child_pid;
+
+	sprintf(pid_buf, "%d", getpid());
+	name_buf[readlink("/proc/self/exe", name_buf, 511)] = 0;
+	child_pid = fork();
+	if (child_pid < 0) {
+		return -1;
+	}
+
+	if (child_pid == 0) {
+		dup2(2, 1);   // redirect output to stderr
+		fprintf(stdout, "stack trace for %s pid=%s\n", name_buf, pid_buf);
+		execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt full", name_buf, pid_buf, NULL);
+		exit(1);  // should only get here if execlp() failed
+	} else {
+		int status;
+		waitpid(child_pid, &status, 0);
+
+		if (WEXITSTATUS(status) == 0) {
+			return 0;
+		} else {
+			printf("couldn't execute gdb\n");
+			return -1;
+		}
+	}
 
 	return 0;
 }
@@ -1230,11 +1274,18 @@ static int print_gdb_trace (void)
 static void signal_crash (int signum, siginfo_t *info, void *ptr)
 {
 	fprintf(stderr, "crash with signal %d\n", signum);
+
+	if (print_gdb_trace() != -1) {
+		exit(1);
+	}
+
+	fprintf(stderr, "internal backtrace:\n");
 	print_dl_backtrace();
-	exit(-1);
+	_exit(1);
 }
 
-#else
+// disabled since it needs stack register: -fno-omit-frame-pointer
+#if 0
 
 /*
  *
@@ -1261,86 +1312,48 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
  *FIXME dladdr() sucks since it can't get symbols for static functions
  */
 
-
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+  #define _GNU_SOURCE
 #endif
 
 /*
 #ifndef __USE_GNU
-#define __USE_GNU
+  #define __USE_GNU
 #endif
 */
 
 /* Bug in gcc prevents from using CPP_DEMANGLE in pure "C" */
 #if !defined(__cplusplus) && !defined(NO_CPP_DEMANGLE)
-#define NO_CPP_DEMANGLE
+  #define NO_CPP_DEMANGLE
 #endif
 
 #include <ucontext.h>
 
 //#include <dlfcn.h>
 #ifndef NO_CPP_DEMANGLE
-#include <cxxabi.h>
-#ifdef __cplusplus
-using __cxxabiv1::__cxa_demangle;
-#endif
+  #include <cxxabi.h>
+  #ifdef __cplusplus
+    using __cxxabiv1::__cxa_demangle;
+  #endif
 #endif
 
 #ifdef HAS_ULSLIB
-#include "uls/logger.h"
-#define sigsegv_outp(x)         sigsegv_outp(,gx)
+  #include "uls/logger.h"
+  #define sigsegv_outp(x)         sigsegv_outp(,gx)
 #else
-#define sigsegv_outp(x, ...)    fprintf(stderr, x "\n", ##__VA_ARGS__)
+  #define sigsegv_outp(x, ...)    fprintf(stderr, x "\n", ##__VA_ARGS__)
 #endif
 
 #if defined(REG_RIP)
-# define SIGSEGV_STACK_IA64
-//#error lskdjflskdjflksdjf
-# define REGFORMAT "%016llx"
+  # define SIGSEGV_STACK_IA64
+  # define REGFORMAT "%016llx"
 #elif defined(REG_EIP)
-//#error ssss
-# define SIGSEGV_STACK_X86
-# define REGFORMAT "%08x"
+  # define SIGSEGV_STACK_X86
+  # define REGFORMAT "%08x"
 #else
-#error slkdjf
-# define SIGSEGV_STACK_GENERIC
-# define REGFORMAT "%x"
+  # define SIGSEGV_STACK_GENERIC
+  # define REGFORMAT "%x"
 #endif
-
-//FIXME linux only :  /proc/self/exe
-static int print_gdb_trace (void)
-{
-    char pid_buf[30];
-    char name_buf[512];
-	int child_pid;
-
-    sprintf(pid_buf, "%d", getpid());
-    name_buf[readlink("/proc/self/exe", name_buf, 511)] = 0;
-    child_pid = fork();
-	if (child_pid < 0) {
-		return -1;
-	}
-
-    if (child_pid == 0) {
-        dup2(2, 1);   // redirect output to stderr
-        fprintf(stdout, "stack trace for %s pid=%s\n", name_buf, pid_buf);
-        execlp("gdb", "gdb", "--batch", "-n", "-ex", "thread", "-ex", "bt full", name_buf, pid_buf, NULL);
-		exit(1);  // should only get here if execlp() failed
-    } else {
-		int status;
-        waitpid(child_pid, &status, 0);
-
-		if (WEXITSTATUS(status) == 0) {
-			return 0;
-		} else {
-			printf("couldn't execute gdb\n");
-			return -1;
-		}
-    }
-
-	return 0;
-}
 
 static void signal_crash (int signum, siginfo_t *info, void *ptr)
 {
@@ -1352,13 +1365,11 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 	void **bp = 0;
 	void *ip = 0;
 
-	//printf("here we go...\n");
 	if (print_gdb_trace() != -1) {
-		//return;
 		exit(1);
 	}
 
-	printf("fallback trace...\n");
+	fprintf(stderr, "fallback trace...\n");
 
 	sigsegv_outp("signal string: %s\n", strsignal(signum));
 	sigsegv_outp("info.si_signo = %d", signum);
@@ -1369,14 +1380,14 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 		sigsegv_outp("reg[%02d]       = 0x" REGFORMAT, i, ucontext->uc_mcontext.gregs[i]);
 
 #ifndef SIGSEGV_NOSTACK
-#if defined(SIGSEGV_STACK_IA64) || defined(SIGSEGV_STACK_X86)
-#if defined(SIGSEGV_STACK_IA64)
-	ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
-	bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
-#elif defined(SIGSEGV_STACK_X86)
-	ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
-	bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
-#endif
+  #if defined(SIGSEGV_STACK_IA64) || defined(SIGSEGV_STACK_X86)
+    #if defined(SIGSEGV_STACK_IA64)
+      ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
+      bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
+    #elif defined(SIGSEGV_STACK_X86)
+      ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
+      bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
+    #endif
 
 #ifdef SIGSEGV_STACK_X86
 	sigsegv_outp("Stack trace: eip %p  ip %p  bp %p", (void *)ucontext->uc_mcontext.gregs[REG_EIP], ip, bp);
@@ -1394,16 +1405,7 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 			 );
 #endif
 
-#if 0
-	if (ip) {
-		//if (dladdr(ip - 21, &dlinfo)) {
-		if (dladdr(0x80bb12c, &dlinfo)) {
-			const char *symname = dlinfo.dli_sname;
-			sigsegv_outp("%s\n", symname);
-		}
-	}
-#endif
-
+	// this doesn't work without -fno-omit-frame-pointer
 	while(bp && ip) {
 		if(!dladdr(ip, &dlinfo))
 			break;
@@ -1436,28 +1438,30 @@ static void signal_crash (int signum, siginfo_t *info, void *ptr)
 		ip = bp[1];
 		bp = (void**)bp[0];
 	}
-#else
+  #else  //if defined(SIGSEGV_STACK_IA64) || defined(SIGSEGV_STACK_X86)
 	sigsegv_outp("Stack trace (non-dedicated):");
 	//FIXME sz and strings not defined
 	{
 		int sz;
 		char **strings;
 
-	sz = backtrace(bt, 20);
-	strings = backtrace_symbols(bt, sz);
-	for(i = 0; i < sz; ++i)
-		sigsegv_outp("%s", strings[i]);
+		sz = backtrace(bt, 20);
+		strings = backtrace_symbols(bt, sz);
+		for(i = 0; i < sz; ++i)
+			sigsegv_outp("%s", strings[i]);
 	}
 
-#endif
+  #endif  //defined(SIGSEGV_STACK_IA64) || defined(SIGSEGV_STACK_X86)
 	sigsegv_outp("End of stack trace.");
-#else
+#else  //ifndef SIGSEGV_NOSTACK
 	sigsegv_outp("Not printing stack strace.");
-#endif
+#endif  //ifndef SIGSEGV_NOSTACK
 	_exit (-1);
 }
 
-#endif
+#endif  // if 0
+
+#endif  //if defined(__APPLE__)  ||  DEDICATED
 
 void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 {
@@ -1682,6 +1686,10 @@ void Sys_AnsiColorPrint( const char *msg )
 
 void Sys_Backtrace_f (void)
 {
+	fprintf(stderr, "internal backtrace:\n");
+	print_dl_backtrace();
+
+	fprintf(stderr, "GDB backtrace:\n");
 	print_gdb_trace();
 }
 

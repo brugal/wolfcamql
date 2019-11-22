@@ -1,8 +1,11 @@
-12.3test3
+12.3test4
 
 * ioquake3 patches
 * bug fix:  fx camera vibration not working when camera path playing
 * 64-bit Mac OS X builds
+* disable unix tty console for clients, can be enabled with '--console-active' command line
+* bug fix:  unix backtrace code memory leak
+* update backtrace.dll build
 
 ---------------------------------
 12.2  2019-04-26

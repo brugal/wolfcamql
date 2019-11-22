@@ -3017,6 +3017,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * windows version can echo console messages in the command prompt if --console-output is used in the command line.  Color output can be controlled with com_ansiColor.
 
+* --console-active command line option to enable unix tty console
 * --console-passive command line option to disable unix tty console
 
 * cg_useDemoFov  protocol 91 transmits player fov values and this can be used to view the demo using the players fov or to try and detect zoom changes.  Note that zoom isn't transmitted in the demo so it is detected using a fov change.  This will lead to a problem if the player uses a config that changes fov (ex:  per weapon).  Values (0:  ignore demo fov (default),  1:  use player's fov,  2:  detect zoom changes).

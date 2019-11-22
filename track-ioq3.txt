@@ -7606,3 +7606,20 @@ the demo.
     all clients. Ignoring any bots with clientnum lower than the local
     client. Get local client's team before the loop so all bots are
     listed.
+
+2019-11-16-01
+    Fix duplicate team join center print for bots and g_teamAutoJoin
+
+    My 2017 commit f7c3276 ("Fix g_teamAutoJoin and g_teamForceBalance")
+    caused BroadcastTeamChange() to be run an extra time when bots connect.
+    This caused a duplicate center print message to be sent to all clients.
+
+    g_teamAutoJoin 1 sent an extra center print when any player or bot
+    connects. Though that is the original behavior from Team Arena.
+
+    Team set during connection no longer sends broadcast as it will be
+    sent later in ClientConnect().
+
+    Reported by Pascal Brochart (pbrochart) as causing clients to be
+    kicked due to server command overflow if many bots join at the
+    same time.

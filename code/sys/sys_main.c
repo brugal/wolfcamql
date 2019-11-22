@@ -742,6 +742,10 @@ int main( int argc, char **argv )
 
 		Sys_Exit( 1 );
 	}
+
+	// 2019-11-03 problems with Mac OS X console, disable unix tty by default for client
+	ConsoleIsPassive = qtrue;
+
 #endif
 
 	// Set the initial time base
@@ -755,6 +759,8 @@ int main( int argc, char **argv )
 			useBacktrace = qfalse;
 		} else if (!strcmp(argv[i], "--console-output")) {
 			useConsoleOutput = qtrue;
+		} else if (!strcmp(argv[i], "--console-active")) {
+			ConsoleIsPassive = qfalse;
 		} else if (!strcmp(argv[i], "--console-passive")) {
 			ConsoleIsPassive = qtrue;
 		} else if (!strcmp(argv[i], "--no-demo-arg")) {
