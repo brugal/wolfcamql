@@ -482,8 +482,7 @@ static void printGlslLog (GLhandleARB obj)
 	}
 }
 
-//static char ShaderExtensions[] = "#version 140\n#extension GL_ARB_texture_rectangle : enable";
-static char ShaderExtensions[] = "#extension GL_ARB_texture_rectangle : enable";
+static char ShaderExtensions[] = "#version 110\n#extension GL_ARB_texture_rectangle : enable";
 
 static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentShader, GLhandleARB *program, GLhandleARB vertexShader)
 {
@@ -533,9 +532,9 @@ static void R_InitFragmentShader (const char *filename, GLhandleARB *fragmentSha
 static void InitQLGlslShadersAndPrograms (void)
 {
 	void *shaderSource;
+	int len;
 	GLenum target;
 	float bloomTextureScale;
-	int ret;
 
 	if (!r_enablePostProcess->integer  ||  !glConfig.qlGlsl) {
 		return;
@@ -579,14 +578,29 @@ static void InitQLGlslShadersAndPrograms (void)
 	GL_SelectTextureUnit(0);
 
 	ri.Printf(PRINT_ALL, "^5scripts/posteffect.vs ->\n");
-	ret = ri.FS_ReadFile("scripts/posteffect.vs", &shaderSource);
+	len = ri.FS_ReadFile("scripts/posteffect.vs", &shaderSource);
 
-	if (ret > 0) {
+	if (len > 0) {
+		char *text;
+		int slen;
+
+		slen = strlen(ShaderExtensions);
+		text = (char *)malloc(len + slen + 3);
+		if (!text) {
+			ri.Printf(PRINT_ALL, "InitQLGlslShadersAndPrograms() couldn't allocate memory for posteffect.vs\n");
+			ri.FS_FreeFile(shaderSource);
+			R_DeleteQLGlslShadersAndPrograms();
+			glConfig.qlGlsl = qfalse;
+			return;
+		}
+
+		Com_sprintf(text, len + slen + 3, "%s\n%s\n", ShaderExtensions, (char *)shaderSource);
 		tr.mainVs = qglCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-		qglShaderSourceARB(tr.mainVs, 1, (const char **)&shaderSource, NULL);
+		qglShaderSourceARB(tr.mainVs, 1, (const char **)&text, NULL);
 		qglCompileShaderARB(tr.mainVs);
 		printGlslLog(tr.mainVs);
 		ri.FS_FreeFile(shaderSource);
+		free(text);
 	} else {
 		ri.Printf(PRINT_ALL, "^1file not found\n");
 		R_DeleteQLGlslShadersAndPrograms();

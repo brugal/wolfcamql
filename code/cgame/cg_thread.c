@@ -16,7 +16,7 @@
 #include <errno.h>
 
 void Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
-
+int Com_sprintf (char *dest, int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 
 #ifdef _WIN32
 
@@ -24,13 +24,17 @@ void Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
 static unsigned int __stdcall genericThreadFunction (void *lpParam)
 {
     thread_t *thread = (thread_t *)lpParam;
-    void *ret;
+    void *threadRet;
+    unsigned int ret;
 
-    ret = thread->proc(thread->arg);
+    threadRet = thread->proc(thread->arg);
 
-    _endthreadex((unsigned int)ret);
+    // 2019-11-27 threadRet is always NULL
+    ret = (uintptr_t)threadRet % UINT_MAX;
 
-    return (unsigned int)ret;
+    _endthreadex(ret);
+
+    return ret;
 }
 
 int thread_create (thread_t *thread, const thread_attr_t *attr, void *(*start_routine)(void *), void *arg)
@@ -288,7 +292,7 @@ int thread_mutex_unlock (thread_mutex_t *mutex)
 
 #ifdef _WIN32
 
-int semaphore_init (semaphore_t *sem, int pshared, unsigned int value)
+int semaphore_init (semaphore_t *sem, unsigned int value)
 {
     sem->s = CreateSemaphore(NULL, (LONG)value, 500, NULL);
     if (!sem->s) {
@@ -300,17 +304,36 @@ int semaphore_init (semaphore_t *sem, int pshared, unsigned int value)
 
 #else  // ifdef _WIN32
 
-int semaphore_init (semaphore_t *sem, int pshared, unsigned int value)
+/* sem_init() and sem_destroy() deprecated in Mac OS X.  Use sem_open(),
+ * sem_close(), and sem_unlink() instead.
+ */
+
+#include <fcntl.h>
+#include <sys/stat.h>
+
+int semaphore_init (semaphore_t *sem, unsigned int value)
 {
     int r;
+    char semName[256];
+    static int callNumber = 0;
 
-    r = sem_init(sem, pshared, value);
-    if (r != 0) {
-        Com_Printf("%s failed  error: %d\n", __FUNCTION__, errno);
+    callNumber++;
+    Com_sprintf(semName, 256, "/wcsem%d", callNumber);
+
+    sem->s = sem_open(semName, O_CREAT | O_EXCL, S_IRUSR | S_IWUSR, 0);
+
+    if (sem->s == SEM_FAILED) {
+        Com_Printf("%s sem_open() failed  error: %d\n", __FUNCTION__, errno);
         return 1;
     }
 
-    return r;
+    r = sem_unlink(semName);
+    if (r != 0) {
+        Com_Printf("%s sem_unlink() failed  error: %d\n", __FUNCTION__, errno);
+        return 1;
+    }
+
+    return 0;
 }
 
 #endif  // ifdef _WIN32
@@ -342,7 +365,7 @@ int semaphore_destroy (semaphore_t *sem)
 {
     int r;
 
-    r = sem_destroy(sem);
+    r = sem_close(sem->s);
     if (r != 0) {
         Com_Printf("%s failed  error: %d\n", __FUNCTION__, errno);
         return 1;
@@ -374,7 +397,7 @@ int semaphore_wait (semaphore_t *sem)
 {
     int r;
 
-    r = sem_wait(sem);
+    r = sem_wait(sem->s);
     if (r != 0) {
         Com_Printf("%s failed  error: %d\n", __FUNCTION__, errno);
         return 1;
@@ -407,7 +430,7 @@ int semaphore_post (semaphore_t *sem)
 {
     int r;
 
-    r = sem_post(sem);
+    r = sem_post(sem->s);
     if (r != 0) {
         Com_Printf("%s failed  error: %d\n", __FUNCTION__, errno);
         return 1;

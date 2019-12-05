@@ -1,17 +1,17 @@
-/* 
+/*
  	Copyright (c) 2010 ,
  		Cloud Wu . All rights reserved.
- 
+
  		http://www.codingnow.com
- 
+
  	Use, modification and distribution are subject to the "New BSD License"
  	as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.
- 
+
    filename: backtrace.c
 
    compiler: gcc 3.4.5 (mingw-win32)
 
-   build command: gcc -O2 -shared -Wall -o backtrace.dll backtrace.c -lbfd -liberty -limagehlp 
+   build command: gcc -O2 -shared -Wall -o backtrace.dll backtrace.c -lbfd -liberty -limagehlp
 
    how to use: Call LoadLibraryA("backtrace.dll"); at beginning of your program .
 
@@ -95,7 +95,7 @@ output_print(struct output_buffer *ob, const char * format, ...)
 	ob->ptr = strlen(ob->buf + ob->ptr) + ob->ptr;
 }
 
-static void 
+static void
 lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 {
 	struct find_info *data = opaque_data;
@@ -103,11 +103,11 @@ lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 	if (data->func)
 		return;
 
-	if (!(bfd_get_section_flags(abfd, sec) & SEC_ALLOC)) 
+	if (!(bfd_get_section_flags(abfd, sec) & SEC_ALLOC))
 		return;
 
 	bfd_vma vma = bfd_get_section_vma(abfd, sec);
-	if (data->counter < vma || vma + bfd_get_section_size(sec) <= data->counter) 
+	if (data->counter < vma || vma + bfd_get_section_size(sec) <= data->counter)
 		return;
 
 	bfd_find_nearest_line(abfd, sec, data->symbol, data->counter - vma, &(data->file), &(data->func), &(data->line));
@@ -234,14 +234,36 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 	struct bfd_ctx *bc = NULL;
 	int err = BFD_ERR_OK;
 
+#if defined(__x86_64__)
+	STACKFRAME64 frame;
+#else
 	STACKFRAME frame;
+#endif
+
 	memset(&frame,0,sizeof(frame));
 
+#if defined(__x86_64__)
+	frame.AddrPC.Offset = context->Rip;
+#else
 	frame.AddrPC.Offset = context->Eip;
+#endif
+
 	frame.AddrPC.Mode = AddrModeFlat;
+
+#if defined(__x86_64__)
+	frame.AddrStack.Offset = context->Rsp;
+#else
 	frame.AddrStack.Offset = context->Esp;
+#endif
+
 	frame.AddrStack.Mode = AddrModeFlat;
+
+#if defined(__x86_64__)
+	frame.AddrFrame.Offset = context->Rbp;
+#else
 	frame.AddrFrame.Offset = context->Ebp;
+#endif
+
 	frame.AddrFrame.Mode = AddrModeFlat;
 
 	HANDLE process = GetCurrentProcess();
@@ -250,14 +272,26 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 	char symbol_buffer[sizeof(IMAGEHLP_SYMBOL) + 255];
 	char module_name_raw[MAX_PATH];
 
-	while(StackWalk(IMAGE_FILE_MACHINE_I386, 
-		process, 
-		thread, 
-		&frame, 
-		context, 
-		0, 
-		SymFunctionTableAccess, 
-		SymGetModuleBase, 0)) {
+	while(StackWalk(
+#if defined(__x86_64__)
+		IMAGE_FILE_MACHINE_AMD64,
+#else
+		IMAGE_FILE_MACHINE_I386,
+#endif
+		process,
+		thread,
+		&frame,
+		context,
+		0,
+
+#if defined(__x86_64__)
+		SymFunctionTableAccess64,
+		SymGetModuleBase64,
+#else
+		SymFunctionTableAccess,
+		SymGetModuleBase,
+#endif
+		0)) {
 
 		--depth;
 		if (depth < 0)
@@ -267,10 +301,14 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		symbol->SizeOfStruct = (sizeof *symbol) + 255;
 		symbol->MaxNameLength = 254;
 
+#if defined(__x86_64__)
+		DWORD64 module_base = SymGetModuleBase64(process, frame.AddrPC.Offset);
+#else
 		DWORD module_base = SymGetModuleBase(process, frame.AddrPC.Offset);
+#endif
 
 		const char * module_name = "[unknown module]";
-		if (module_base && 
+		if (module_base &&
 			GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)) {
 			module_name = module_name_raw;
 			bc = get_bc(set, module_name, &err);
@@ -285,8 +323,19 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		}
 
 		if (file == NULL) {
+#if defined(__x86_64__)
+			DWORD64 dummy = 0;
+#else
 			DWORD dummy = 0;
-			if (SymGetSymFromAddr(process, frame.AddrPC.Offset, &dummy, symbol)) {
+#endif
+
+			if (
+#if defined(__x86_64__)
+				SymGetSymFromAddr64(process, frame.AddrPC.Offset, &dummy, symbol)
+#else
+				SymGetSymFromAddr(process, frame.AddrPC.Offset, &dummy, symbol)
+#endif
+				) {
 				file = symbol->Name;
 			}
 			else {
@@ -294,14 +343,24 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 			}
 		}
 		if (func == NULL) {
-			output_print(ob,"0x%08x : %s : %s %s \n",
+			output_print(ob,
+#if defined(__x86_64__)
+						 "0x%016x : %s : %s %s \n",
+#else
+						 "0x%08x : %s : %s %s \n",
+#endif
 				frame.AddrPC.Offset,
 				module_name,
 				file,
 				bfd_errors[err]);
 		}
 		else {
-			output_print(ob,"0x%08x : %s : %s (%d) : in function (%s) \n",
+			output_print(ob,
+#if defined(__x86_64__)
+						 "0x%016x : %s : %s (%d) : in function (%s) \n",
+#else
+						 "0x%08x : %s : %s (%d) : in function (%s) \n",
+#endif
 				frame.AddrPC.Offset,
 				module_name,
 				file,
@@ -314,7 +373,7 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 static char * g_output = NULL;
 static LPTOP_LEVEL_EXCEPTION_FILTER g_prev = NULL;
 
-static LONG WINAPI 
+static LONG WINAPI
 exception_filter(LPEXCEPTION_POINTERS info)
 {
 	struct output_buffer ob;
@@ -367,7 +426,7 @@ __printf__(const char * format, ...) {
 	return value;
 }
 
-BOOL WINAPI 
+BOOL WINAPI
 DllMain(HINSTANCE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
 {
 	switch (dwReason) {
@@ -380,4 +439,3 @@ DllMain(HINSTANCE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
 	}
 	return TRUE;
 }
-

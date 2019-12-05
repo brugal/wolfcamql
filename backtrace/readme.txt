@@ -1,23 +1,28 @@
-apt-get install libz-mingw-w64-dev
 
 -- binutils --
 
-cd ~/bin
-ln -s /usr/bin/i686-w64-mingw32-ar mingw32-ar
-export `pwd`:$PATH
-cd -
+# binutils-*.tar.gz
 
-# binutils-2.25.tar.gz
-mkdir build/32
-cd build/32
+# mkdir build/32
+# cd build/32
+
+mkdir build/64
+cd build/64
 
 tar -zxvf ../../binutils-*.tar.gz
 cd binutils*
-CC=i686-w64-mingw32-gcc ./configure --host=mingw32
+# add --target ...  see: https://www.reactos.org/wiki/Building_MINGW-w64
+
+# ./configure --host=i686-w64-mingw32 --target=i686-w64-mingw32
+
+./configure --host=x86_64-w64-mingw32 --target=x86_64-w64-mingw32
+
 make
 
 -- backtrace.dll
 
 edit backtrace.c and add <config.h> before <bfd.h>
 
-./build-32.sh
+# ./compile-32.sh
+
+./compile-64.sh

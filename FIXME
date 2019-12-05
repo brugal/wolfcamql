@@ -1574,7 +1574,6 @@ and didn't 'quit'  -- it's '+quit' not '-quit'
   --  ] set to red for console scroll horizontal, what if con.color is red, use different char?
 * com_altivec default change for windows / linux
 * keypress hud:  strcmp(binding, "+back")  maybe search for string in binding
-* windows 10 showing as windows 8 in os info printf  -- microsoft changed / deprecated GetVersionEx()
 * gdb for Mac OS X, bsd, etc.. (non linux)
 
 * +back, +moveright, etc.. as demo commands instead of checking for keybinding

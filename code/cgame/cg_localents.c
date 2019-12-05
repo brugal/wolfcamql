@@ -201,13 +201,13 @@ void CG_InitLocalEntities (void)
 		thread_mutex_init(&SysCallLock, NULL);
 
 		for (i = 0;  i < ARRAY_LEN(RunSem);  i++) {
-			if (semaphore_init(&RunSem[i], 0, 0) != 0) {
+			if (semaphore_init(&RunSem[i], 0) != 0) {
 				Com_Printf("run semaphore %d init failed\n", i);
 			}
 		}
 
 		for (i = 0;  i < ARRAY_LEN(StopSem);  i++) {
-			if (semaphore_init(&StopSem[i], 0, 0) != 0) {
+			if (semaphore_init(&StopSem[i], 0) != 0) {
 				Com_Printf("stop semaphore %d init failed\n", i);
 			}
 		}

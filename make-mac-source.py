@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, sys
+import os, sys, tarfile
 
 shareDir = "/mac-share"
 destDir = os.path.join(shareDir, "wolfcam-build")
@@ -13,4 +13,26 @@ if os.path.ismount(shareDir) == False  and  buildLocal != True:
     print "mac share isn't mounted"
     sys.exit(1)
 
-os.system("tar --exclude='misc/msvc' --exclude='misc/msvc10' --exclude='misc/msvc11' --exclude='misc/msvc12' --exclude='misc/nsis' --exclude='code/libs/win32' --exclude='code/libs/win64'  -zcvf %s/macsrc.tar.gz Makefile* *.sh *.py code/ ui/ misc/" % destDir)
+ignoreFiles = [ ".hg", ".hgignore", "backtrace", "build", "package-files",
+                "package-release", os.path.join("code", "libs", "win32"),
+                os.path.join("code", "libs", "win64"), "mac-binaries",
+                os.path.join("misc", "msvc"), os.path.join("misc", "msvc10"),
+                os.path.join("misc", "msvc11"),
+                os.path.join("misc", "msvc12"), os.path.join("misc", "nsis")
+]
+
+tar = tarfile.open(os.path.join(destDir, "macsrc.tar.gz"), "w:gz")
+
+def tarFilter(tarinfo):
+    #print "tar file: " + tarinfo.name
+    if tarinfo.name in ignoreFiles:
+        print "skipping " + tarinfo.name
+        return None
+    if os.path.isdir(tarinfo.name):
+        print "adding dir: " + tarinfo.name
+    return tarinfo
+
+topFiles = os.listdir(".")
+for f in topFiles:
+    tar.add(f, filter=tarFilter)
+tar.close()

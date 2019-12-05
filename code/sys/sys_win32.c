@@ -1034,7 +1034,12 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 
 	if (useBacktrace) {
 		DWORD lastError;
+
+#if defined(__x86_64__)
+		bt = LoadLibraryA("backtrace64.dll");
+#else
 		bt = LoadLibraryA("backtrace.dll");
+#endif
 		if (bt == NULL) {
 			lastError = GetLastError();
 			Com_Printf("ERROR loading backtrace library, error code: %ld\n", lastError);
@@ -1165,7 +1170,27 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 		}
 
 		switch (vi.dwMajorVersion) {
-		case 6:  // vista +
+		case 5:  // xp and 2000
+			switch (vi.dwMinorVersion) {
+			case 0:
+				osname = "Windows 2000";
+				break;
+			case 1:
+				osname = "Windows XP";
+				break;
+			case 2:
+				if (GetSystemMetrics(SM_SERVERR2)) {
+					osname = "Windows Server 2003 R2";
+				} else {
+					osname = "Windows Server 2003";
+				}
+				break;
+			default:
+				osname = "Windows (unknown version before vista)";
+				break;
+			}
+			break;
+		case 6:  // Vista, Windows 7, Windows 8
 			switch (vi.dwMinorVersion) {
 			case 0:
 				if (ntWorkStation) {
@@ -1188,28 +1213,29 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 					osname = "Windows Server 2012";
 				}
 				break;
+			case 3:
+				if (ntWorkStation) {
+					osname = "Windows 8.1";
+				} else {
+					osname = "Windows Server 2012 R2";
+				}
+				break;
 			default:
 				osname = "Windows (unknown version after xp)";
 				break;
 			}
 			break;
-		case 5:  // xp and 2000
+		case 10:
 			switch (vi.dwMinorVersion) {
 			case 0:
-				osname = "Windows 2000";
-				break;
-			case 1:
-				osname = "Windows XP";
-				break;
-			case 2:
-				if (GetSystemMetrics(SM_SERVERR2)) {
-					osname = "Windows Server 2003 R2";
+				if (ntWorkStation) {
+					osname = "Windows 10";
 				} else {
-					osname = "Windows Server 2003";
+					osname = "Windows Server 2016";
 				}
 				break;
 			default:
-				osname = "Windows (unknown version before vista)";
+				osname = "Windows (unknown version after Windows 10)";
 				break;
 			}
 			break;

@@ -298,7 +298,7 @@ int R_MME_MultiPassNext (qboolean useMain)
 	}
 
 	outAlloc = ri.Hunk_AllocateTempMemory( shotData->pixelCount * 3 + 16);
-	outAlign = (__m64 *)((((int)(outAlloc)) + 15) & ~15);
+	outAlign = (__m64 *)((((intptr_t)(outAlloc)) + 15) & ~15);
 
 	// don't call GLimp_EndFrame()
 

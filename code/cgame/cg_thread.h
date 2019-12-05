@@ -37,11 +37,16 @@ typedef pthread_t thread_t;
 typedef pthread_attr_t thread_attr_t;
 typedef pthread_mutex_t thread_mutex_t;
 typedef pthread_mutexattr_t thread_mutexattr_t;
-typedef sem_t semaphore_t;
+
+typedef struct semaphore_t {
+    sem_t *s;
+} semaphore_t;
+
+
 
 #endif  // ifdef _WIN32
 
-// all return 0 for succes
+// all return 0 for success
 
 int thread_create (thread_t *thread, const thread_attr_t *attr, void *(*start_routine)(void *), void *arg);
 
@@ -54,7 +59,7 @@ int thread_mutex_destroy (thread_mutex_t *mutex);
 int thread_mutex_lock (thread_mutex_t *mutex);
 int thread_mutex_unlock (thread_mutex_t *mutex);
 
-int semaphore_init (semaphore_t *sem, int pshared, unsigned int value);
+int semaphore_init (semaphore_t *sem, unsigned int value);
 int semaphore_destroy (semaphore_t *sem);
 int semaphore_wait (semaphore_t *sem);
 int semaphore_post (semaphore_t *sem);
