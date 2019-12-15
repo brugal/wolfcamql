@@ -2231,6 +2231,9 @@ No background file.
   /it and /itr item timer commands
 
 * cg_vibrate 1  effects recorded in camera points and recordpath
+* 64-bit windows (10 -- not 7) crash if map can't be loaded... silent exit after com_error() from cm_load.c  -- 2019-12-06 fixed in common.c by switching to __builtin_ versions of setjmp() and longjmp(), but other code uses those (ex: jpeg), maybe build project with no-omit-frame pointer? -- tried -fno-omit-frame-pointer with non __builtin_ and it had internal compiler error for gcc version 8.3-win32 20190406 (GCC)
+
+
 
 
 ----

@@ -25,7 +25,37 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_shared.h"
 #include "qcommon.h"
-#include <setjmp.h>
+
+/*
+FIXME 2019-12-06 switched to __builtin_ versions of setjmp() and longjmp()
+since they weren't working in 64-bit Windows builds.  See:
+  http://www.agardner.me/golang/windows/cgo/64-bit/setjmp/longjmp/2016/02/29/go-windows-setjmp-x86.html
+
+  - reproduced in Windows 10 but not Windows 7, try to play a demo that you don't have a map for (cgame -> cm_load calls Com_Error
+
+FIXME 2019-12-06 tried using non builtins with -fno-omit-frame-pointer
+and it led to internal compiler error with gcc version 8.3-win32 20190406 (GCC)
+
+FIXME 2019-12-07 test other uses of longjmp(): jpeg
+
+  - both jumps in puff.c seem ok
+
+2019-12-14 it's the call to FreeLibrary() before calling longjmp(), maybe with C++ linker the Microsoft implementation is trying to go through the invalid stack
+
+    https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/longjmp?view=vs-2019
+
+    stack can be examined: "In Microsoft C++ code on Windows, longjmp uses the same stack-unwinding semantics as exception-handling code."
+
+2019-12-15 reproducible in current ioquake3 (-O0 flag)
+
+*/
+#if defined(_WIN32)
+  #define setjmp __builtin_setjmp
+  #define longjmp __builtin_longjmp
+#else
+  #include <setjmp.h>
+#endif
+
 #ifndef _WIN32
 #include <netinet/in.h>
 #include <sys/stat.h> // umask
@@ -51,7 +81,12 @@ int demo_protocols[NUM_DEMO_PROTOCOLS] = { 66, 67, 68, 69, 70, 71, 73, 90, 91 };
 int		com_argc;
 char	*com_argv[MAX_NUM_ARGVS+1];
 
-jmp_buf abortframe;		// an ERR_DROP occurred, exit the entire frame
+// an ERR_DROP occurred, exit the entire frame
+#if defined(_WIN32)
+  intptr_t abortframe[5];
+#else
+  jmp_buf abortframe;
+#endif
 
 #ifdef _WIN32
 CRITICAL_SECTION printCriticalSection;
@@ -415,7 +450,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		// make sure we can get at our local stuff
 		FS_PureServerSetLoadedPaks("", "");
 		com_errorEntered = qfalse;
-		longjmp (abortframe, -1);
+		longjmp (abortframe, 1);
 	} else if (code == ERR_DROP) {
 		Com_Printf ("********************\nERROR: %s\n********************\n", com_errorMessage);
 		VM_Forced_Unload_Start();
@@ -428,7 +463,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		VM_Forced_Unload_Done();
 		FS_PureServerSetLoadedPaks("", "");
 		com_errorEntered = qfalse;
-		longjmp (abortframe, -1);
+		longjmp (abortframe, 1);
 	} else if ( code == ERR_NEED_CD ) {
 		VM_Forced_Unload_Start();
 		SV_Shutdown( "Server didn't have CD" );
@@ -448,7 +483,7 @@ void QDECL Com_Error( int code, const char *fmt, ... ) {
 		FS_PureServerSetLoadedPaks("", "");
 
 		com_errorEntered = qfalse;
-		longjmp (abortframe, -1);
+		longjmp (abortframe, 1);
 	} else {
 		VM_Forced_Unload_Start();
 		CL_Shutdown(va("Client fatal crashed: %s", com_errorMessage), qtrue, qtrue);

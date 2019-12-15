@@ -304,7 +304,8 @@ int semaphore_init (semaphore_t *sem, unsigned int value)
 
 #else  // ifdef _WIN32
 
-/* sem_init() and sem_destroy() deprecated in Mac OS X.  Use sem_open(),
+/*
+ * sem_init() and sem_destroy() are deprecated in Mac OS X.  Use sem_open(),
  * sem_close(), and sem_unlink() instead.
  */
 
