@@ -2233,7 +2233,14 @@ No background file.
 * cg_vibrate 1  effects recorded in camera points and recordpath
 * 64-bit windows (10 -- not 7) crash if map can't be loaded... silent exit after com_error() from cm_load.c  -- 2019-12-06 fixed in common.c by switching to __builtin_ versions of setjmp() and longjmp(), but other code uses those (ex: jpeg), maybe build project with no-omit-frame pointer? -- tried -fno-omit-frame-pointer with non __builtin_ and it had internal compiler error for gcc version 8.3-win32 20190406 (GCC)
 
+   -- 2019-12-16 FreeLibrary() call before calling longjmp,
 
+   Faulting application name: wolfcamql.exe, version: 0.0.0.0, time stamp: 0x5df74cf5
+   Faulting module name: ntdll.dll, version: 10.0.18362.418, time stamp: 0x99ca0526
+   Exception code: 0xc0000409
+   Fault offset: 0x000000000009236f
+
+   reproducible in current ioquake3 (-O0 flag)
 
 
 ----

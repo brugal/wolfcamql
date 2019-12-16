@@ -7623,3 +7623,6 @@ the demo.
     Reported by Pascal Brochart (pbrochart) as causing clients to be
     kicked due to server command overflow if many bots join at the
     same time.
+
+2019-11-17-01
+    E2K: fixed build by MCST lcc compiler when using USE_CURL=1 option

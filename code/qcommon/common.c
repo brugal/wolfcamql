@@ -46,6 +46,10 @@ FIXME 2019-12-07 test other uses of longjmp(): jpeg
 
     stack can be examined: "In Microsoft C++ code on Windows, longjmp uses the same stack-unwinding semantics as exception-handling code."
 
+	Faulting module name: ntdll.dll, version: 10.0.18362.418, time stamp: 0x99ca0526
+	Exception code: 0xc0000409
+	Fault offset: 0x000000000009236f
+
 2019-12-15 reproducible in current ioquake3 (-O0 flag)
 
 */

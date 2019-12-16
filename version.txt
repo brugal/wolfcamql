@@ -1,4 +1,4 @@
-12.3test6
+12.3test7
 
 * ioquake3 patches
 * bug fix:  fx camera vibration not working when camera path playing

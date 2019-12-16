@@ -17,8 +17,8 @@
 
   */
 
-#define PACKAGE "your-program-name"
-#define PACKAGE_VERSION "0.1"
+#define PACKAGE "wolfcamql-backtrace"
+#define PACKAGE_VERSION "1.0"
 
 #include <windows.h>
 #include <excpt.h>
@@ -50,6 +50,13 @@ static const char *const bfd_errors[] = {
 struct bfd_ctx {
 	bfd * handle;
 	asymbol ** symbol;
+#if defined(__x86__64__)
+	DWORD64 module_base;
+#else
+	DWORD module_base;
+#endif
+
+	bfd_vma preferred_base;
 };
 
 struct bfd_set {
@@ -64,6 +71,14 @@ struct find_info {
 	const char *file;
 	const char *func;
 	unsigned line;
+#if defined(__x86__64__)
+	DWORD64 module_base;
+#else
+	DWORD module_base;
+#endif
+
+	bfd_vma preferred_base;
+
 };
 
 struct output_buffer {
@@ -99,6 +114,8 @@ static void
 lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 {
 	struct find_info *data = opaque_data;
+	bfd_vma counter;
+	bfd_vma offset;
 
 	if (data->func)
 		return;
@@ -107,10 +124,16 @@ lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 		return;
 
 	bfd_vma vma = bfd_get_section_vma(abfd, sec);
-	if (data->counter < vma || vma + bfd_get_section_size(sec) <= data->counter)
+
+	counter = data->counter - (data->module_base - data->preferred_base);
+
+	if (counter < vma || vma + bfd_get_section_size(sec) <= counter)
 		return;
 
-	bfd_find_nearest_line(abfd, sec, data->symbol, data->counter - vma, &(data->file), &(data->func), &(data->line));
+	// -1 a little more accurate?
+	offset = counter - vma - 1;
+
+	bfd_find_nearest_line(abfd, sec, data->symbol, offset, &(data->file), &(data->func), &(data->line));
 }
 
 static void
@@ -123,6 +146,9 @@ find(struct bfd_ctx * b, DWORD offset, const char **file, const char **func, uns
 	data.file = NULL;
 	data.func = NULL;
 	data.line = 0;
+
+	data.module_base = b->module_base;
+	data.preferred_base = b->preferred_base;
 
 	bfd_map_over_sections(b->handle, &lookup_section, &data);
 	if (file) {
@@ -225,6 +251,72 @@ release_set(struct bfd_set *set)
 	}
 }
 
+static bfd_vma get_preferred_base (struct output_buffer *ob, const char *module_name, int *err)
+{
+	PIMAGE_NT_HEADERS ntHeaders;
+	HANDLE hFile;
+	HANDLE hMapping;
+	LPVOID addrHeader;
+	bfd_vma base;
+
+	if (err == NULL) {
+		output_print(ob, "%s err == NULL\n", __FUNCTION__);
+		return -1;
+	}
+
+	hFile = CreateFile(module_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
+	if (hFile == INVALID_HANDLE_VALUE) {
+		output_print(ob, "%s CreateFile error %d\n", __FUNCTION__, GetLastError());
+		*err = 1;
+		return -1;
+	}
+
+	//output_print(ob, "hFile\n");
+	hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	if (hMapping == INVALID_HANDLE_VALUE) {
+		output_print(ob, "%s CreateFileMapping error %d\n", __FUNCTION__, GetLastError());
+		CloseHandle(hFile);
+		*err = 1;
+		return -1;
+	}
+
+	//output_print(ob, "hMapping\n");
+	addrHeader = MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
+	if (addrHeader == NULL) {
+		output_print(ob, "%s MapViewOfFile error %d\n", __FUNCTION__, GetLastError());
+		CloseHandle(hMapping);
+		CloseHandle(hFile);
+		*err = 1;
+		return -1;
+	}
+
+	//output_print(ob, "addrHeader\n");
+
+	ntHeaders = ImageNtHeader(addrHeader);
+	if (ntHeaders == NULL) {
+		output_print(ob, "%s ImageNtHeader error %d\n", __FUNCTION__, GetLastError);
+		UnmapViewOfFile(addrHeader);
+		CloseHandle(hMapping);
+		CloseHandle(hFile);
+
+		*err = 1;
+		return -1;
+	}
+
+	//output_print(ob, "ntHeaders\n");
+
+	base = ntHeaders->OptionalHeader.ImageBase;
+
+	UnmapViewOfFile(addrHeader);
+	CloseHandle(hMapping);
+	CloseHandle(hFile);
+
+	//output_print(ob, "IMAGE BASE %lx\n", base);
+	*err = 0;
+
+	return base;
+}
+
 static void
 _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT context)
 {
@@ -312,6 +404,12 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 			GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)) {
 			module_name = module_name_raw;
 			bc = get_bc(set, module_name, &err);
+			if (bc) {
+				int berr = 0;
+
+				bc->module_base = module_base;
+				bc->preferred_base = get_preferred_base(ob, module_name, &berr);
+			}
 		}
 
 		const char * file = NULL;
