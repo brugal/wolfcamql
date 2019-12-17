@@ -1,24 +1,22 @@
 /*
- 	Copyright (c) 2010 ,
- 		Cloud Wu . All rights reserved.
 
- 		http://www.codingnow.com
+  Based on backtrace.c by Cloud Wu and addr2line.c by Ulrich Lauther.
 
- 	Use, modification and distribution are subject to the "New BSD License"
- 	as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.
+  Use, modification and distribution are subject to the "New BSD License"
+  as listed at <url: http://www.opensource.org/licenses/bsd-license.php>.
 
-   filename: backtrace.c
+  filename: backtrace.c
 
-   compiler: gcc 3.4.5 (mingw-win32)
+  compiler: gcc (mingw-win32)
 
-   build command: gcc -O2 -shared -Wall -o backtrace.dll backtrace.c -lbfd -liberty -limagehlp
+  build command: gcc -02 -static-libgcc -shared -Wall -o backtrace.dll backtrace.c -Wl,-Bstatic -lbfd -liberty -limagehlp -lz -lintl
 
-   how to use: Call LoadLibraryA("backtrace.dll"); at beginning of your program .
+  how to use: Call LoadLibraryA("backtrace.dll"); at beginning of your program.
 
-  */
+ */
 
 #define PACKAGE "wolfcamql-backtrace"
-#define PACKAGE_VERSION "1.0"
+#define PACKAGE_VERSION "1.1"
 
 #include <windows.h>
 #include <excpt.h>
@@ -55,7 +53,6 @@ struct bfd_ctx {
 #else
 	DWORD module_base;
 #endif
-
 	bfd_vma preferred_base;
 };
 
@@ -76,7 +73,6 @@ struct find_info {
 #else
 	DWORD module_base;
 #endif
-
 	bfd_vma preferred_base;
 
 };
@@ -146,7 +142,6 @@ find(struct bfd_ctx * b, DWORD offset, const char **file, const char **func, uns
 	data.file = NULL;
 	data.func = NULL;
 	data.line = 0;
-
 	data.module_base = b->module_base;
 	data.preferred_base = b->preferred_base;
 
@@ -261,36 +256,32 @@ static bfd_vma get_preferred_base (struct output_buffer *ob, const char *module_
 
 	if (err == NULL) {
 		output_print(ob, "%s err == NULL\n", __FUNCTION__);
-		return -1;
+		return 0;
 	}
 
 	hFile = CreateFile(module_name, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_READONLY, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) {
 		output_print(ob, "%s CreateFile error %d\n", __FUNCTION__, GetLastError());
 		*err = 1;
-		return -1;
+		return 0;
 	}
 
-	//output_print(ob, "hFile\n");
 	hMapping = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-	if (hMapping == INVALID_HANDLE_VALUE) {
+	if (hMapping == NULL) {
 		output_print(ob, "%s CreateFileMapping error %d\n", __FUNCTION__, GetLastError());
 		CloseHandle(hFile);
 		*err = 1;
-		return -1;
+		return 0;
 	}
 
-	//output_print(ob, "hMapping\n");
 	addrHeader = MapViewOfFile(hMapping, FILE_MAP_READ, 0, 0, 0);
 	if (addrHeader == NULL) {
 		output_print(ob, "%s MapViewOfFile error %d\n", __FUNCTION__, GetLastError());
 		CloseHandle(hMapping);
 		CloseHandle(hFile);
 		*err = 1;
-		return -1;
+		return 0;
 	}
-
-	//output_print(ob, "addrHeader\n");
 
 	ntHeaders = ImageNtHeader(addrHeader);
 	if (ntHeaders == NULL) {
@@ -300,10 +291,8 @@ static bfd_vma get_preferred_base (struct output_buffer *ob, const char *module_
 		CloseHandle(hFile);
 
 		*err = 1;
-		return -1;
+		return 0;
 	}
-
-	//output_print(ob, "ntHeaders\n");
 
 	base = ntHeaders->OptionalHeader.ImageBase;
 
@@ -311,7 +300,6 @@ static bfd_vma get_preferred_base (struct output_buffer *ob, const char *module_
 	CloseHandle(hMapping);
 	CloseHandle(hFile);
 
-	//output_print(ob, "IMAGE BASE %lx\n", base);
 	*err = 0;
 
 	return base;

@@ -3,7 +3,8 @@ ioquake3
 Luigi Auriemma:  quake live pk3 decryption
 CaNaBiS, HMage, auri, ent:  q3mme (blur code, q3mme camera code, dof code, and obviously inspiration)
 ent / entdark:  image bgr swap speedup
-Cloud Wu:  backtrace
+Cloud Wu:  mingw backtrace (similar to or based on addr2line by Ulrich Lauther)
+The Free Type Project: libfreetype
 OpenArena:  some content
 Cyberstorm:  anim map change
 iodfe:  number pad fix

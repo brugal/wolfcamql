@@ -1,0 +1,35 @@
+#include <windows.h>
+
+// DLL version information.
+VS_VERSION_INFO    VERSIONINFO
+FILEVERSION        1,1,0,0
+PRODUCTVERSION     1,1,0,0
+FILEFLAGSMASK      VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+  FILEFLAGS        VS_FF_DEBUG | VS_FF_PRERELEASE
+#else
+  FILEFLAGS        0
+#endif
+FILEOS             VOS_NT_WINDOWS32
+FILETYPE           VFT_DLL
+FILESUBTYPE        VFT2_UNKNOWN
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "wolfcamql"
+      VALUE "FileDescription", "wolfcamql backtrace library"
+      VALUE "FileVersion", "1.1.0.0"
+      VALUE "InternalName", "backtrace.dll"
+      VALUE "LegalCopyright", "(C) 2019 Angelo Cano"
+      VALUE "OriginalFilename", "backtrace.dll"
+      VALUE "ProductName", "wolfcamql backtrace library"
+      VALUE "ProductVersion", "1.1.0.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x0409, 1252
+  END
+END

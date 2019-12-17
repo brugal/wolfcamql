@@ -1,11 +1,11 @@
-12.3test7
+12.3test8
 
 * ioquake3 patches
 * bug fix:  fx camera vibration not working when camera path playing
 * 64-bit builds
 * disable unix tty console for clients, can be enabled with '--console-active' command line
 * bug fix:  unix backtrace code memory leak
-* update backtrace.dll build
+* update Windows backtrace library (memory leak, display formatting, relocateable address support)
 
 ---------------------------------
 12.2  2019-04-26
