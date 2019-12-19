@@ -16,7 +16,7 @@
  */
 
 #define PACKAGE "wolfcamql-backtrace"
-#define PACKAGE_VERSION "1.1"
+#define PACKAGE_VERSION "1.2"
 
 #include <windows.h>
 #include <excpt.h>
@@ -89,7 +89,9 @@ output_init(struct output_buffer *ob, char * buf, size_t sz)
 	ob->buf = buf;
 	ob->sz = sz;
 	ob->ptr = 0;
-	ob->buf[0] = '\0';
+	if (buf) {
+		ob->buf[0] = '\0';
+	}
 }
 
 static void
@@ -97,13 +99,25 @@ output_print(struct output_buffer *ob, const char * format, ...)
 {
 	if (ob->sz == ob->ptr)
 		return;
-	ob->buf[ob->ptr] = '\0';
+
+	if (ob->buf) {
+		ob->buf[ob->ptr] = '\0';
+	}
+
 	va_list ap;
 	va_start(ap,format);
-	vsnprintf(ob->buf + ob->ptr , ob->sz - ob->ptr , format, ap);
+
+	if (ob->buf == NULL) {
+		vfprintf(stderr, format, ap);
+	} else {
+		vsnprintf(ob->buf + ob->ptr , ob->sz - ob->ptr , format, ap);
+	}
+
 	va_end(ap);
 
-	ob->ptr = strlen(ob->buf + ob->ptr) + ob->ptr;
+	if (ob->buf) {
+		ob->ptr = strlen(ob->buf + ob->ptr) + ob->ptr;
+	}
 }
 
 static void
@@ -126,8 +140,11 @@ lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 	if (counter < vma || vma + bfd_get_section_size(sec) <= counter)
 		return;
 
-	// -1 a little more accurate?
-	offset = counter - vma - 1;
+	offset = counter - vma;
+	// is '-1' offset a little more accurate?
+	if (offset > 0) {
+		offset--;
+	}
 
 	bfd_find_nearest_line(abfd, sec, data->symbol, offset, &(data->file), &(data->func), &(data->line));
 }
@@ -158,7 +175,7 @@ find(struct bfd_ctx * b, DWORD offset, const char **file, const char **func, uns
 }
 
 static int
-init_bfd_ctx(struct bfd_ctx *bc, const char * procname, int *err)
+init_bfd_ctx(struct output_buffer *ob, struct bfd_ctx *bc, const char * procname, int *err)
 {
 	bc->handle = NULL;
 	bc->symbol = NULL;
@@ -181,14 +198,33 @@ init_bfd_ctx(struct bfd_ctx *bc, const char * procname, int *err)
 		return 1;
 	}
 
-	void *symbol_table;
-
+	void *symbol_table = NULL;
 	unsigned dummy = 0;
-	if (bfd_read_minisymbols(b, FALSE, &symbol_table, &dummy) == 0) {
-		if (bfd_read_minisymbols(b, TRUE, &symbol_table, &dummy) < 0) {
-			free(symbol_table);
+	long symcount;
+
+	// bfd_read_minisymbols() frees symbol_table if symbol count is 0 and -1 error return doesn't allocate memory
+	symcount = bfd_read_minisymbols(b, FALSE, &symbol_table, &dummy);
+	if (symcount < 0) {
+		bfd_close(b);
+		if (err) {
+			*err = BFD_ERR_READ_SYMBOL;
+		}
+		return 1;
+	} else if (symcount == 0) {
+		symcount = bfd_read_minisymbols(b, TRUE, &symbol_table, &dummy);
+		if (symcount < 0) {
 			bfd_close(b);
-			if(err) { *err = BFD_ERR_READ_SYMBOL; }
+			if (err) {
+				*err = BFD_ERR_READ_SYMBOL;
+			}
+			return 1;
+		} else if (symcount == 0) {
+			// shouldn't happen since HAS_SYMS check passed
+			output_print(ob, "%s couldn't read symbols even though HAS_SYMS\n", __FUNCTION__);
+			bfd_close(b);
+			if (err) {
+				*err = BFD_ERR_READ_SYMBOL;
+			}
 			return 1;
 		}
 	}
@@ -210,39 +246,6 @@ close_bfd_ctx(struct bfd_ctx *bc)
 		if (bc->handle) {
 			bfd_close(bc->handle);
 		}
-	}
-}
-
-static struct bfd_ctx *
-get_bc(struct bfd_set *set , const char *procname, int *err)
-{
-	while(set->name) {
-		if (strcmp(set->name , procname) == 0) {
-			return set->bc;
-		}
-		set = set->next;
-	}
-	struct bfd_ctx bc;
-	if (init_bfd_ctx(&bc, procname, err)) {
-		return NULL;
-	}
-	set->next = calloc(1, sizeof(*set));
-	set->bc = malloc(sizeof(struct bfd_ctx));
-	memcpy(set->bc, &bc, sizeof(bc));
-	set->name = strdup(procname);
-
-	return set->bc;
-}
-
-static void
-release_set(struct bfd_set *set)
-{
-	while(set) {
-		struct bfd_set * temp = set->next;
-		free(set->name);
-		close_bfd_ctx(set->bc);
-		free(set);
-		set = temp;
 	}
 }
 
@@ -305,12 +308,83 @@ static bfd_vma get_preferred_base (struct output_buffer *ob, const char *module_
 	return base;
 }
 
+static struct bfd_ctx *
+get_bc (struct output_buffer *ob,
+		struct bfd_set *set ,
+		const char *procname,
+#if defined(__x86_64__)
+		DWORD64 module_base,
+#else
+		DWORD module_base,
+#endif
+		int *err)
+{
+	int pberr = 0;
+
+	while(set->name) {
+		if (strcmp(set->name , procname) == 0) {
+			return set->bc;
+		}
+		set = set->next;
+	}
+
+	struct bfd_ctx bc;
+	if (init_bfd_ctx(ob, &bc, procname, err)) {
+		return NULL;
+	}
+
+	set->name = strdup(procname);
+	if (set->name == NULL) {
+		output_print(ob, "%s strdup() failed, error %d\n", __FUNCTION__, GetLastError());
+		close_bfd_ctx(&bc);
+		return NULL;
+	}
+
+	set->next = calloc(1, sizeof(*set));
+	if (set->next == NULL) {
+		output_print(ob, "%s calloc() for set->next failed, error %d\n", __FUNCTION__, GetLastError());
+		free(set->name);
+		close_bfd_ctx(&bc);
+		return NULL;
+	}
+
+	set->bc = malloc(sizeof(struct bfd_ctx));
+	if (set->bc == NULL) {
+		output_print(ob, "%s malloc() for set->bc failed, error %d\n", __FUNCTION__, GetLastError());
+		free(set->name);
+		free(set->next);
+		set->next = NULL;
+		close_bfd_ctx(&bc);
+		return NULL;
+	}
+
+	memcpy(set->bc, &bc, sizeof(bc));
+
+	set->bc->module_base = module_base;
+	set->bc->preferred_base = get_preferred_base(ob, procname, &pberr);
+
+	return set->bc;
+}
+
+static void
+release_set(struct bfd_set *set)
+{
+	while(set) {
+		struct bfd_set * temp = set->next;
+
+		if (set->name) {
+			free(set->name);
+		}
+		close_bfd_ctx(set->bc);
+
+		free(set);
+		set = temp;
+	}
+}
+
 static void
 _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT context)
 {
-	char procname[MAX_PATH];
-	GetModuleFileNameA(NULL, procname, sizeof procname);
-
 	struct bfd_ctx *bc = NULL;
 	int err = BFD_ERR_OK;
 
@@ -373,9 +447,11 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 #endif
 		0)) {
 
-		--depth;
-		if (depth < 0)
-			break;
+		if (depth >= 0) {
+			--depth;
+			if (depth < 0)
+				break;
+		}
 
 		IMAGEHLP_SYMBOL *symbol = (IMAGEHLP_SYMBOL *)symbol_buffer;
 		symbol->SizeOfStruct = (sizeof *symbol) + 255;
@@ -386,18 +462,22 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 #else
 		DWORD module_base = SymGetModuleBase(process, frame.AddrPC.Offset);
 #endif
+		if (!module_base) {
+			output_print(ob, "%s SymGetModuleBase failed for address %p error %d\n", __FUNCTION__, frame.AddrPC.Offset, GetLastError());
+		}
 
 		const char * module_name = "[unknown module]";
-		if (module_base &&
-			GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH)) {
-			module_name = module_name_raw;
-			bc = get_bc(set, module_name, &err);
-			if (bc) {
-				int berr = 0;
+		DWORD file_name_size;
 
-				bc->module_base = module_base;
-				bc->preferred_base = get_preferred_base(ob, module_name, &berr);
-			}
+		if (module_base) {
+			file_name_size = GetModuleFileNameA((HINSTANCE)module_base, module_name_raw, MAX_PATH);
+		}
+
+		if (module_base &&
+			(file_name_size > 0  &&  file_name_size < MAX_PATH)
+			) {
+			module_name = module_name_raw;
+			bc = get_bc(ob, set, module_name, module_base, &err);
 		}
 
 		const char * file = NULL;
@@ -463,6 +543,14 @@ static LONG WINAPI
 exception_filter(LPEXCEPTION_POINTERS info)
 {
 	struct output_buffer ob;
+
+#if 0  // disabled, if g_output is NULL we just print to stderr
+	g_output = malloc(BUFFER_MAX);
+	if (g_output == NULL) {
+		fprintf(stderr, "ERROR %s failed to allocate memory for buffer\n", __FUNCTION__);
+	}
+#endif
+
 	output_init(&ob, g_output, BUFFER_MAX);
 
 	if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
@@ -471,13 +559,22 @@ exception_filter(LPEXCEPTION_POINTERS info)
 	else {
 		bfd_init();
 		struct bfd_set *set = calloc(1,sizeof(*set));
-		_backtrace(&ob , set , 128 , info->ContextRecord);
-		release_set(set);
+		if (set == NULL) {
+			output_print(&ob, "%s calloc() for set failed\n", __FUNCTION__);
+		} else {
+			_backtrace(&ob , set , -1 , info->ContextRecord);
+			release_set(set);
+		}
 
-		SymCleanup(GetCurrentProcess());
+		if (!SymCleanup(GetCurrentProcess())) {
+			output_print(&ob, "%s SymCleanup error %d\n", __FUNCTION__, GetLastError());
+		}
 	}
 
-	fputs(g_output , stderr);
+	if (g_output) {
+		fputs(g_output , stderr);
+		free(g_output);
+	}
 
 	return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -485,31 +582,13 @@ exception_filter(LPEXCEPTION_POINTERS info)
 static void
 backtrace_register(void)
 {
-	if (g_output == NULL) {
-		g_output = malloc(BUFFER_MAX);
-		g_prev = SetUnhandledExceptionFilter(exception_filter);
-	}
+	g_prev = SetUnhandledExceptionFilter(exception_filter);
 }
 
 static void
 backtrace_unregister(void)
 {
-	if (g_output) {
-		free(g_output);
-		SetUnhandledExceptionFilter(g_prev);
-		g_prev = NULL;
-		g_output = NULL;
-	}
-}
-
-int
-__printf__(const char * format, ...) {
-	int value;
-	va_list arg;
-	va_start(arg, format);
-	value = vprintf ( format, arg );
-	va_end(arg);
-	return value;
+	SetUnhandledExceptionFilter(g_prev);
 }
 
 BOOL WINAPI

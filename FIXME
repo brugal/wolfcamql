@@ -2242,6 +2242,7 @@ No background file.
 
    reproducible in current ioquake3 (-O0 flag)
 
+* backtrace.c not checking if g_output malloc() fails, check size of malloced() buffer isn't too small, option to just output to stderr
 
 ----
 
