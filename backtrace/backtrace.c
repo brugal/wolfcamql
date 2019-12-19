@@ -89,7 +89,7 @@ output_init(struct output_buffer *ob, char * buf, size_t sz)
 	ob->buf = buf;
 	ob->sz = sz;
 	ob->ptr = 0;
-	if (buf) {
+	if (ob->buf) {
 		ob->buf[0] = '\0';
 	}
 }
