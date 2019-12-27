@@ -1,9 +1,16 @@
 /*
+    Copyright (c) 2010 ,
+        Cloud Wu . All rights reserved.
+
+        http://www.codingnow.com
+
+    Copyright (C) 2019, Angelo Cano
+
+ 	Use, modification and distribution are subject to the "New BSD License"
+ 	as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.
+
 
   Based on backtrace.c by Cloud Wu and addr2line.c by Ulrich Lauther.
-
-  Use, modification and distribution are subject to the "New BSD License"
-  as listed at <url: http://www.opensource.org/licenses/bsd-license.php>.
 
   filename: backtrace.c
 
@@ -11,23 +18,23 @@
 
   build command: gcc -02 -static-libgcc -shared -Wall -o backtrace.dll backtrace.c -Wl,-Bstatic -lbfd -liberty -limagehlp -lz -lintl
 
-  how to use: Call LoadLibraryA("backtrace.dll"); at beginning of your program.
+  how to use: Call LoadLibraryA("backtrace.dll"); at beginning of your program.  Note: 32-bit programs will need to enable frame pointers (-fno-omit-frame-pointer) to enable stack unwinding by StackWalk().
 
  */
 
 #define PACKAGE "wolfcamql-backtrace"
-#define PACKAGE_VERSION "1.2"
+#define PACKAGE_VERSION "1.4"
 
 #include <windows.h>
-#include <excpt.h>
 #include <imagehlp.h>
+
+// this undefs TRUE and FALSE and defines as 1 and 0, should be ok since it matches Windows values
 #include <bfd.h>
-#include <psapi.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <stdbool.h>
 
 #define BUFFER_MAX (16*1024)
 
@@ -202,7 +209,7 @@ init_bfd_ctx(struct output_buffer *ob, struct bfd_ctx *bc, const char * procname
 	unsigned dummy = 0;
 	long symcount;
 
-	// bfd_read_minisymbols() frees symbol_table if symbol count is 0 and -1 error return doesn't allocate memory
+	// symbol_table doesn't need to be free()'ed and isn't set if bfd_read_minisymbols() returns 0 (symbol count is 0) or -1 (error).
 	symcount = bfd_read_minisymbols(b, FALSE, &symbol_table, &dummy);
 	if (symcount < 0) {
 		bfd_close(b);
@@ -394,6 +401,9 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 	STACKFRAME frame;
 #endif
 
+	CONTEXT cx;
+	memcpy(&cx, context, sizeof(cx));
+
 	memset(&frame,0,sizeof(frame));
 
 #if defined(__x86_64__)
@@ -435,7 +445,7 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 		process,
 		thread,
 		&frame,
-		context,
+		&cx,
 		0,
 
 #if defined(__x86_64__)
@@ -449,8 +459,9 @@ _backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT 
 
 		if (depth >= 0) {
 			--depth;
-			if (depth < 0)
+			if (depth < 0) {
 				break;
+			}
 		}
 
 		IMAGEHLP_SYMBOL *symbol = (IMAGEHLP_SYMBOL *)symbol_buffer;
@@ -543,6 +554,7 @@ static LONG WINAPI
 exception_filter(LPEXCEPTION_POINTERS info)
 {
 	struct output_buffer ob;
+	int i;
 
 #if 0  // disabled, if g_output is NULL we just print to stderr
 	g_output = malloc(BUFFER_MAX);
@@ -552,6 +564,18 @@ exception_filter(LPEXCEPTION_POINTERS info)
 #endif
 
 	output_init(&ob, g_output, BUFFER_MAX);
+
+	output_print(&ob, "Exception:\n");
+	output_print(&ob, "    code: 0x%x\n", info->ExceptionRecord->ExceptionCode);
+	output_print(&ob, "    flags: 0x%x\n", info->ExceptionRecord->ExceptionFlags);
+	output_print(&ob, "    record: 0x%p\n", info->ExceptionRecord->ExceptionRecord);
+	output_print(&ob, "    address: 0x%p\n", info->ExceptionRecord->ExceptionAddress);
+	output_print(&ob, "    number parameters: %d\n", info->ExceptionRecord->NumberParameters);
+
+	for (i = 0;  i < info->ExceptionRecord->NumberParameters;  i++) {
+		output_print(&ob, "        [%d] %lu\n", i, info->ExceptionRecord->ExceptionInformation[i]);
+	}
+	output_print(&ob, "\n");
 
 	if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
 		output_print(&ob,"Failed to init symbol context\n");

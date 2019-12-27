@@ -81,7 +81,7 @@ except IOError as err:
     print err
 
 libDir = os.path.join("code", "libs", "macosx")
-buildDir = os.path.join("build", "mac-binaries")
+buildDir = "mac-binaries"
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
 print "copying Mac OS X binaries..."

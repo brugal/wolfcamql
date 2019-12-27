@@ -354,6 +354,8 @@ endif
 
 CGAME_LIBS = -lpthread
 
+EXTRACLIENTBINDEPS =
+
 #############################################################################
 # SETUP AND BUILD -- LINUX
 #############################################################################
@@ -494,7 +496,6 @@ ifeq ($(PLATFORM),darwin)
   RENDERER_LIBS=
   OPTIMIZEVM = -O3
 
-  #BASE_CFLAGS = -Wall -mmacosx-version-min=10.5
   BASE_CFLAGS = -Wall
 
   # Default minimum Mac OS X version
@@ -621,6 +622,11 @@ ifeq ($(PLATFORM),darwin)
 
   NOTSHLIBCFLAGS=-mdynamic-no-pic
 
+  ifeq ($(MACOSX_INCLUDE_BINARY_PLIST),1)
+    EXTRACLIENTBINDEPS += $(SYSDIR)/Info.plist
+    CLIENT_LDFLAGS += -Wl,-sectcreate,__TEXT,__info_plist,$(SYSDIR)/Info.plist
+  endif
+
 else # ifeq darwin
 
 
@@ -676,14 +682,10 @@ ifdef MINGW
     $(error Cannot find a suitable cross compiler for $(PLATFORM))
   endif
 
-  # was -g
-  # gdb.exe wants -gstabs ?
-  #  -D__USE_MINGW_ANSI_STDIO
   BASE_CFLAGS = -g -gdwarf-3 -Wall -fno-strict-aliasing \
     -DUSE_ICON -msse
   SSE2_CFLAGS = -msse2
 
-  #CLIENT_CFLAGS = -D__MINGW32__
   ifeq ($(ARCH),x86)
     LDFLAGS += -Xlinker --large-address-aware
   endif
@@ -722,7 +724,8 @@ ifdef MINGW
     HAVE_VM_COMPILED = true
   endif
   ifeq ($(ARCH),x86)
-    OPTIMIZEVM = -O3 -march=i586
+    # need frame pointer for StackWalk() in backtrace.dll
+    OPTIMIZEVM = -O3 -march=i586 -fno-omit-frame-pointer
     OPTIMIZE = $(OPTIMIZEVM) -ffast-math
     HAVE_VM_COMPILED = true
   endif
@@ -2430,7 +2433,7 @@ ifdef CGAME_HARD_LINKED
 else
 
 ifneq ($(USE_RENDERER_DLOPEN),0)
-$(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(SPLINES) $(LIBSDLMAIN)
+$(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(SPLINES) $(LIBSDLMAIN) $(EXTRACLIENTBINDEPS)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CXX) $(CLIENT_CFLAGS) $(CFLAGS) $(CLIENT_LDFLAGS) $(LDFLAGS) \
 		$(NOTSHLIBLDFLAGS) -o $@ $(Q3OBJ) $(SPLINES) \
@@ -2447,7 +2450,7 @@ $(B)/renderer_opengl2_$(SHLIBNAME): $(Q3R2OBJ) $(Q3R2STRINGOBJ) $(JPGOBJ)
 		$(THREAD_LIBS) $(LIBSDLMAIN) $(RENDERER_LIBS) $(LIBS)
 
 else
-$(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(Q3ROBJ) $(JPGOBJ) $(SPLINES) $(LIBSDLMAIN)
+$(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(Q3ROBJ) $(JPGOBJ) $(SPLINES) $(LIBSDLMAIN) $(EXTRACLIENTBINDEPS)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CXX) $(CLIENT_CFLAGS) $(CFLAGS) $(CLIENT_LDFLAGS) $(LDFLAGS) \
 		$(NOTSHLIBLDFLAGS) -o $@ $(Q3OBJ) $(Q3ROBJ) $(JPGOBJ) $(SPLINES) \
