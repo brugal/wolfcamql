@@ -1,4 +1,4 @@
-12.4test2
+12.4test3
 
 * remove r_screenshotJpegQuality (should use r_jpegCompressionQuality)
 * remove unused r_aviMotionJpegQuality cvar
