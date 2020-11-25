@@ -3062,4 +3062,4 @@ brugal
 
 basturdo@yahoo.com
 
-Copyright 2019  Angelo Cano
+Copyright (C) 2009-2020 Angelo Cano

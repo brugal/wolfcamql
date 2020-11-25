@@ -7566,7 +7566,7 @@ the demo.
 
     This behavior is what gcc already does.
 
-2019-08-22-01
+2019-08-22-01 (skip .github)
     Create Funding.yml
 
     TODO: add more of these things https://help.github.com/en/articles/displaying-a-sponsor-button-in-your-repository
@@ -7626,3 +7626,62 @@ the demo.
 
 2019-11-17-01
     E2K: fixed build by MCST lcc compiler when using USE_CURL=1 option
+
+2019-11-20-01
+    Use `r_texturemode GL_LINEAR_MIPMAP_LINEAR` by default
+
+    This improves visual quality without a noticeable performance loss,
+    especially on maps that use textures with high-frequency details
+    such as q3dm1.
+
+2020-02-10-01
+    Figured out method of referencing GLSL generated C files outside of code directory
+
+2020-07-07-01
+    Update README.md
+
+    Added various sponsorships, I hope that hotlinking works fine!
+
+2020-04-07-01  Add C syntax highlighting to readme
+
+2020-08-29-01
+    Simplify glsl -> C stringification
+
+2020-08-29-02
+    Make LCC path resolution more robust
+
+2020-08-29-03 (ignore .github)
+    GitHub Actions setup
+
+2020-08-29-04
+    Remove old CI system configurations
+
+2020-08-29-05
+    Add status badge to README
+
+2020-09-08-01
+    Fix shader stringify
+
+2020-09-08-02 (ignore .github)
+    Run apt-get update before installing deps
+
+2020-09-08-03
+    Avoid platform sed differences
+
+2020-09-09-01 (ignore .github)
+    Run actions on pull request too
+
+2020-09-29-01
+    Merge pull request #436 from Calinou/default-texturemode-mipmap-linear
+
+    Use `r_texturemode GL_LINEAR_MIPMAP_LINEAR` by default
+
+2020-11-17-01
+    [sdl] Turn tentative definition into actual definition.
+
+    There is no need for a tentative definition in this case. By providing
+    an explicit initializer, the resulting definition has the same effect
+    as before, but is no longer tentative. This avoids easy errors
+    resulting from multiple tentative definitions in different translation
+    units. (Previous compilers permitted those common errors, but GCC 10
+    rejects them by default.)

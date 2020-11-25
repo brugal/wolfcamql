@@ -2242,6 +2242,94 @@ No background file.
 
    reproducible in current ioquake3 (-O0 flag)
 
+* check itempickup in client/ and invalid etype values in older cpma mvd demos
+* cent = &cg_entities[cent->currentState.modelindex2 - 0xf];
+  in CG_PainEvent() for cpma/osp, should it be & 0xf ?
+*
+ x  (dt1 x6 bad-client1) 0 : 170  2 : 168
+
+dt:demoTaker num            client numbers
+
+(dt0 x7 daler zero4 cpm3)   1 : 56  2 : 59   eType 70  weapon 64   baseline 72
+(dt2 x7 daler zero4 ztn3t1) 0 : 55  1 : 54   eType 0   weapon 202  baseline 72
+(dt3 x4 drex zero4 cpm1a)   1 : 1   2 : 2    eType 1   weapon 5    baseline 12
+(dt4 x7 rat daler ztn3t1)   0 : 55  3 : 52   eType 0   weapon 205  baseline 72
+(dt0 x4 z4 yrim pq3dm6)     1 : 1   3 : 3    eType 1   weapon 2    baseline 16
+(dt1 x6 zero4 daler cpm1a)  0 : 170 2 : 168  eType 35  weapon 167  baseline 16
+
+
+cn2: eType:70           clientNum(2):59     weapon(mg:2):71     mg is 2
+
+     70(1)  :01000110   59(2) :00111011     71(2) :01000111
+     77(11) :01001101   56(1) :00111000     64(5) :01000000
+
+     34(1)  :00100010
+     41(11) :00101001
+---------  weapon
+
+
+132456789 10
+
+69 : 23 * 3
+207: 23 * 3 * 3
+
+(x7 daler zero4 cpm3 et:70)            rl: 64   rg: 66   lg: 67   mg: 71           no: 69
+(x7 daler zero4 ztn3t1 et:0)          rl: 202  rg: 200           mg: 205  gl: 203 no: 207
+(x7 rat daler ztn3t1 et:0)   pg: 199  rl: 202  rg: 200           mg: 205  gl: 203
+
+(x7 desktop cpm1 et:34)  g: 163  bfg: 171 pg: 170  rg: 165  lg: 164 rl: 167  gl: 166  sg: 161  mg: 160  none:  171
+
+(x7 desktop cpm3 et:34)  g: 163  bfg 171  pg: 170  rg: 165  lg: 164 rl: 167  gl: 166  sg: 161  mg: 160
+
+eType changes from 34 to 41 when dead+gibbed  ET_INVISIBLE
+                   70 to 77
+                   0  to 11
+                   35 to 40  in 99x6 demo
+
+weapon rocket:  64, 202
+
+rail: 66
+
+none:  69
+
+grenade:  203,
+
+mg:  71, 205
+
+99t  has ospauth
+
+10101010
+10101000
+
+* older cpma demos using osp encryption : check both first person and mvd
+* ZeRo4-vs-69Daler(MVD)-cpm1a-2002.08.24-20.19.57.dm_67  /players invalid utf8 -- has 255 byte?
+
+]/players
+ X  00: Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+ÿQ_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+ÿQ_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
+ÿ ÌÌÌ
+ X  01: CHALLENGES-dK    [demo taker]
+ X  02: ZeRo4
+ X  03: GTV-ClanBase
+ X  04: GTV-KillersInc
+ X  05: TsN-djWHEAT519
+ X  06: Joseph
+]
+
+* github issues:  zdepth antialiasing and blur
+* warning for vm_ui 1 and missing qvm
+* option to force demo protocol
+* osp decryption off:  20 instead of 2 multiplier
+
+* 2020-08-26 many-bots/demo3.dm_68  obituaries missing names and overlapping weapon icons
+
 
 ----
 

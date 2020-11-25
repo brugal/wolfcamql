@@ -22,7 +22,7 @@ BEGIN
       VALUE "FileDescription", "wolfcamql backtrace library"
       VALUE "FileVersion", "1.4.0.0"
       VALUE "InternalName", "backtrace.dll"
-      VALUE "LegalCopyright", "(C) 2019 Angelo Cano"
+      VALUE "LegalCopyright", "(C) 2019-2020 Angelo Cano"
       VALUE "OriginalFilename", "backtrace.dll"
       VALUE "ProductName", "wolfcamql backtrace library"
       VALUE "ProductVersion", "1.4.0.0"

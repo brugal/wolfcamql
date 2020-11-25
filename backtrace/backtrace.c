@@ -4,7 +4,7 @@
 
         http://www.codingnow.com
 
-    Copyright (C) 2019, Angelo Cano
+    Copyright (C) 2019-2020, Angelo Cano
 
  	Use, modification and distribution are subject to the "New BSD License"
  	as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.

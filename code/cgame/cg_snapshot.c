@@ -102,15 +102,6 @@ static void CG_TransitionEntity( centity_t *cent ) {
 	}
 #endif
 
-#if 0  //FIXME testing cpma mvd 0.99x7
-	//if (cent->currentState.eType == 70) {
-	if (cent->currentState.number < MAX_CLIENTS) {
-		cent->currentState.eType = ET_PLAYER;
-		cent->currentState.weapon = WP_GAUNTLET;
-		cent->currentState.eFlags &= ~EF_NODRAW;
-	}
-#endif
-
 	// clear the next state.  if will be set by the next CG_SetNextSnap
 	//Com_Printf("transition %d interp false\n", cent->currentState.number);
 	cent->interpolate = qfalse;
@@ -425,6 +416,44 @@ static void CG_TransitionSnapshot( void ) {
 	}
 }
 
+void CG_FixCpmaMvdEntity (entityState_t *es)
+{
+#if 0  //FIXME testing cpma mvd 0.99x7
+	//if (cent->currentState.eType == 70) {
+	if (cent->currentState.number < MAX_CLIENTS) {
+		cent->currentState.eType = ET_PLAYER;
+		cent->currentState.weapon = WP_GAUNTLET;
+		cent->currentState.eFlags &= ~EF_NODRAW;
+	}
+#endif
+
+	// older cpma mvd demos (ex: 0.99x7) don't transmit some values
+	// 0.99z3 appears to be ok
+	// 0.99x4 drex-vs-ZeRo4(MVD)-cpm1a-2002.07.18-19.44.39 positions
+
+	if (!CG_IsCpmaMvd()) {
+		return;
+	}
+
+#if 0
+	// 0.99x4 sending all 64 entities every frame?
+	if (es->number < MAX_CLIENTS   &&  cgs.clientinfo[es->number].infoValid  &&  cgs.clientinfo[es->number].team != TEAM_SPECTATOR) {
+		CG_Printf("%d: eType %d, clientNum %d, weapon %d, eflags 0x%x, powerups %d, event %d, eventParm %d\n", es->number, es->eType, es->clientNum, es->weapon, es->eFlags, es->powerups, es->event, es->eventParm);
+
+		es->eType = ET_PLAYER;
+		es->clientNum = es->number;
+
+
+		//es->weapon &= 0xf;
+		//es->weapon = WP_GAUNTLET;
+		//es->weapon = es->weapon % 11 + 1;
+		//es->weapon = es->weapon % 10 + 1;
+		es->weapon = es->weapon % 11;
+		//Com_Printf("new weapon %d\n", es->weapon);
+		//es->powerups = 0;
+	}
+#endif
+}
 
 /*
 ===================
@@ -1802,6 +1831,7 @@ qboolean CG_GetSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	if (!r) {
 		//Com_Printf("^1couldn't get snapshot %d\n", snapshotNumber);
 	}
+
 	if (cgs.ospEncrypt) {
 		for (i = 0;  i < snapshot->numEntities;  i++) {
 			es = &snapshot->entities[i];
@@ -1813,6 +1843,20 @@ qboolean CG_GetSnapshot (int snapshotNumber, snapshot_t *snapshot)
 			}
 		}
 	}
+
+#if 0  // testing
+	if (CG_IsCpmaMvd()) {
+		for (i = 0;  i < snapshot->numEntities;  i++) {
+			es = &snapshot->entities[i];
+
+			//Com_Printf("ent %d  :::  %d\n", es->number, es->clientNum);
+
+			if (es->number < MAX_CLIENTS) {
+				CG_FixCpmaMvdEntity(es);
+			}
+		}
+	}
+#endif
 
 	return r;
 }
@@ -1836,6 +1880,18 @@ qboolean CG_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 			}
 		}
 	}
+
+#if 0  // testing
+	if (CG_IsCpmaMvd()) {
+		for (i = 0;  i < snapshot->numEntities;  i++) {
+			es = &snapshot->entities[i];
+
+			if (es->number < MAX_CLIENTS) {
+				CG_FixCpmaMvdEntity(es);
+			}
+		}
+	}
+#endif
 
 	return r;
 }

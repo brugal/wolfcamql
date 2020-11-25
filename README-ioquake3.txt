@@ -1,3 +1,5 @@
+![Build](https://github.com/ioquake/ioq3/workflows/Build/badge.svg)
+
                    ,---------------------------------------.
                    |   _                     _       ____  |
                    |  (_)___  __ _ _  _ __ _| |_____|__ /  |
@@ -5,7 +7,7 @@
                    |  |_\___/\__, |\_,_\__,_|_\_\___|___/  |
                    |            |_|                        |
                    |                                       |
-                   `---------- http://ioquake3.org --------'
+                   `--------- https://ioquake3.org --------'
 
 The intent of this project is to provide a baseline Quake 3 which may be used
 for further development and baseq3 fun.
@@ -44,6 +46,27 @@ http://wiki.ioquake3.org/
 If you've got issues that you aren't sure are worth filing as bugs, or just
 want to chat, please visit our forums:
 http://discourse.ioquake.org
+
+# Thank You:
+
+<p>
+  <a href="https://www.digitalocean.com/">Digital Ocean<br/>
+    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.svg" width="201px">
+  </a>
+</p>
+---
+<p>
+<a href="https://www.discourse.org/">Discourse<br/>
+<img src=
+"https://user-images.githubusercontent.com/1681963/52239617-e2683480-289c-11e9-922b-5da55472e5b4.png"
+ width="300px"></a>
+</p>
+---
+<p>
+<a href="https://icculus.org/">icculus dot org<br/>
+<img src="http://icculus.org/icculus-org-now.png" width="300px"></a>
+</p>
+
 
 # Compilation and installation
 
@@ -92,8 +115,8 @@ Makefile.local:
   BUILD_STANDALONE     - build binaries suited for stand-alone games
   SERVERBIN            - rename 'ioq3ded' server binary
   CLIENTBIN            - rename 'ioquake3' client binary
-  USE_YACC             - use yacc to update code/tools/lcc/lburg/gram.c
   USE_RENDERER_DLOPEN  - build and use the renderer in a library
+  USE_YACC             - use yacc to update code/tools/lcc/lburg/gram.c
   BASEGAME             - rename 'baseq3'
   BASEGAME_CFLAGS      - custom CFLAGS for basegame
   MISSIONPACK          - rename 'missionpack'
@@ -106,13 +129,13 @@ Makefile.local:
   USE_CODEC_OPUS       - enable Ogg Opus support
   USE_MUMBLE           - enable Mumble support
   USE_VOIP             - enable built-in VoIP support
+  USE_FREETYPE         - enable FreeType support for rendering fonts
   USE_INTERNAL_LIBS    - build internal libraries instead of dynamically
                          linking against system libraries; this just sets
-                         the default for USE_INTERNAL_SPEEX etc.
+                         the default for USE_INTERNAL_ZLIB etc.
                          and USE_LOCAL_HEADERS
   USE_INTERNAL_SPEEX   - build internal speex library instead of dynamically
                          linking against system libspeex
-  USE_FREETYPE         - enable FreeType support for rendering fonts
   USE_INTERNAL_ZLIB    - build and link against internal zlib
   USE_INTERNAL_JPEG    - build and link against internal JPEG library
   USE_INTERNAL_OGG     - build and link against internal ogg library
@@ -216,7 +239,6 @@ The defaults for these variables differ depending on the target platform.
 				      (startup only)
   com_maxfpsUnfocused               - Maximum frames per second when unfocused
   com_maxfpsMinimized               - Maximum frames per second when minimized
-
   com_pipefile                      - Specify filename to create a named pipe
                                       through which other processes can control
                                       the server while it is running.
@@ -351,11 +373,13 @@ value in the prototype with intptr_t (arg0, arg1, ...stay int).
 
 Add the following code snippet to q_shared.h:
 
-    #ifdef Q3_VM
-    typedef int intptr_t;
-    #else
-    #include <stdint.h>
-    #endif
+```c
+#ifdef Q3_VM
+typedef int intptr_t;
+#else
+#include <stdint.h>
+#endif
+```
 
 Note if you simply wish to run mods on a 64bit platform you do not need to
 recompile anything since by default Q3 uses a virtual machine system.
@@ -441,6 +465,7 @@ This does NOT mean that you cannot market this game commercially. The GPL does
 not prohibit commercial exploitation and all assets (e.g. textures, sounds,
 maps) created by yourself are your property and can be sold like every other
 game you find in stores.
+
 
 ## PNG support
 
@@ -537,3 +562,5 @@ Significant contributions from
   * Vincent S. Cojot <vincent at cojot dot name>
   * optical <alex@rigbo.se>
   * Aaron Gyes <floam@aaron.gy>
+
+

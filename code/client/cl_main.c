@@ -2066,6 +2066,7 @@ static void parse_new_snapshot (const clSnapshot_t *snap, const clSnapshot_t *ol
 		}
 
 		// CG_CheckEvents
+		//FIXME 2020-06-15 encrypted cpma mvd
 		if (es.eType > ET_EVENTS) {
 			if (di.entityPreviousEvent[num]) {
 				goto skip;  // already fired

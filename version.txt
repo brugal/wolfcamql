@@ -1,4 +1,10 @@
-12.3 2019-12-27
+12.4test1
+
+* remove r_screenshotJpegQuality (should use r_jpegCompressionQuality)
+* remove unused r_aviMotionJpegQuality cvar
+
+---------------------------------
+12.3  2019-12-27
 
 * ioquake3 patches
 * bug fix:  fx camera vibration not working when camera path playing
