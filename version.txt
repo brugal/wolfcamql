@@ -1,9 +1,12 @@
-12.4test3
+12.4test4
 
 * remove r_screenshotJpegQuality (should use r_jpegCompressionQuality)
 * remove unused r_aviMotionJpegQuality cvar
 * ioquake3 patches
 * update zlib to version 1.2.11
+* update libogg to version 1.3.4
+* update libvorbis to version 1.3.7
+* update opusfile to 0.12
 
 ---------------------------------
 12.3  2019-12-27
