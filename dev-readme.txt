@@ -29,3 +29,7 @@ Update to SDL2 2.0.2 crashes with i686-w64-mingw32-gcc 4.9.1 and '-O3'.  This is
 ----
 
 convert -background none wolfcamql.svg -define icon:auto-resize=256,128,64,48,32,16 -border 0 quake3.ico
+
+----
+
+2020-11-27 updating to speex-1.2.0 from speex-1.2beta3 takes out needed structure: SpeexPreprocessState
