@@ -50,7 +50,7 @@ extern "C" {
 #endif
 
 #ifdef USE_LOCAL_HEADERS
-  #include "../zlib/zlib.h"
+  #include "../zlib-1.2.11/zlib.h"
 #else
   #include <zlib.h>
 #endif
