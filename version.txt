@@ -1,4 +1,4 @@
-12.4test7
+12.4test8
 
 * remove r_screenshotJpegQuality (should use r_jpegCompressionQuality)
 * remove unused r_aviMotionJpegQuality cvar
@@ -8,6 +8,7 @@
 * update libvorbis to version 1.3.7
 * update opusfile to version 0.12
 * update libjpeg to version 9d
+* update freetype2 to version 2.10.4
 
 ---------------------------------
 12.3  2019-12-27

@@ -72,7 +72,15 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../qcommon/qcommon.h"
 
 #ifdef BUILD_FREETYPE
+
+//#ifdef USE_LOCAL_HEADERS
+//  #include "../freetype-2.10.4/include/ft2build.h"
+//#else
+//  #include <ft2build.h>
+//#endif
+
 #include <ft2build.h>
+
 #include FT_FREETYPE_H
 //#include FT_ERRORS_H
 //#include FT_SYSTEM_H

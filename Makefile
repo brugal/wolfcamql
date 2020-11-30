@@ -282,6 +282,7 @@ NDIR=$(MOUNT_DIR)/null
 UIDIR=$(MOUNT_DIR)/ui
 Q3UIDIR=$(MOUNT_DIR)/q3_ui
 JPDIR=$(MOUNT_DIR)/jpeg-9d
+FREETYPEDIR=$(MOUNT_DIR)/freetype-2.10.4
 SPEEXDIR=$(MOUNT_DIR)/libspeex-1.2beta3
 OGGDIR=$(MOUNT_DIR)/libogg-1.3.4
 VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.7
@@ -581,7 +582,8 @@ ifeq ($(PLATFORM),darwin)
 
   ifeq ($(USE_FREETYPE),1)
       #FIXME using internal freetype headers
-      FREETYPE_CFLAGS = -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2/freetype -I$(MOUNT_DIR)/freetype2/include/freetype2
+      #FREETYPE_CFLAGS = -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2/freetype -I$(MOUNT_DIR)/freetype2/include/freetype2
+      FREETYPE_CFLAGS = -I$(FREETYPEDIR)/include
       FREETYPE_LIBS = $(LIBSDIR)/macosx/libfreetype.a
   endif
 
@@ -710,7 +712,8 @@ ifdef MINGW
   ifeq ($(USE_FREETYPE),1)
     #FIXME using internal freetype headers
     #FREETYPE_CFLAGS += -Ifreetype2
-    FREETYPE_CFLAGS = -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2/freetype -I$(MOUNT_DIR)/freetype2/include/freetype2
+    #FREETYPE_CFLAGS = -I$(MOUNT_DIR)/freetype2/include -I$(MOUNT_DIR)/freetype2/include/freetype2/freetype -I$(MOUNT_DIR)/freetype2/include/freetype2
+    FREETYPE_CFLAGS = -I$(FREETYPEDIR)/include
     ifeq ($(ARCH),x86)
         FREETYPE_LIBS = $(LIBSDIR)/win32/libfreetype.a
     endif
