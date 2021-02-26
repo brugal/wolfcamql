@@ -1,3 +1,8 @@
+12.5test1
+
+* ioquake3 patches
+
+---------------------------------
 12.4  2020-12-04
 
 * remove r_screenshotJpegQuality (should use r_jpegCompressionQuality)

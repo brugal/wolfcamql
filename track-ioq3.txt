@@ -7685,3 +7685,12 @@ the demo.
     resulting from multiple tentative definitions in different translation
     units. (Previous compilers permitted those common errors, but GCC 10
     rejects them by default.)
+
+2020-12-25-01
+    Add TOOLS_CFLAGS to build preamble
+
+2020-12-25-02
+    Fix use of TOOLS_CC being reported as CC
+
+2020-12-26-01
+    Use the correct compiler for tools when cross building under cygwin

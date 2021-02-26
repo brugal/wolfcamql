@@ -548,8 +548,8 @@ ifeq ($(PLATFORM),darwin)
 
   ifeq ($(CROSS_COMPILING),1)
     ifeq ($(ARCH),x86_64)
-        CC=x86_64-apple-darwin13-cc
-        RANLIB=x86_64-apple-darwin13-ranlib
+      CC=x86_64-apple-darwin13-cc
+      RANLIB=x86_64-apple-darwin13-ranlib
     else
       ifeq ($(ARCH),x86)
         CC=i386-apple-darwin13-cc
@@ -745,8 +745,20 @@ ifdef MINGW
   endif
 
   ifeq ($(COMPILE_PLATFORM),cygwin)
-	TOOLS_BINEXT=.exe
-	TOOLS_CC=$(CC)
+    TOOLS_BINEXT=.exe
+
+    # Under cygwin the default of using gcc for TOOLS_CC won't work, so
+    # we need to figure out the appropriate compiler to use, based on the
+    # host architecture that we're running under (as tools run on the host)
+    ifeq ($(COMPILE_ARCH),x86_64)
+      TOOLS_MINGW_PREFIXES=x86_64-w64-mingw32 amd64-mingw32msvc
+    endif
+    ifeq ($(COMPILE_ARCH),x86)
+      TOOLS_MINGW_PREFIXES=i686-w64-mingw32 i586-mingw32msvc i686-pc-mingw32
+    endif
+
+    TOOLS_CC=$(firstword $(strip $(foreach TOOLS_MINGW_PREFIX, $(TOOLS_MINGW_PREFIXES), \
+      $(call bin_path, $(TOOLS_MINGW_PREFIX)-gcc))))
   endif
 
   LIBS= -lws2_32 -lwinmm -lpsapi -static-libgcc -static-libstdc++
@@ -767,11 +779,11 @@ ifdef MINGW
     ifneq ($(USE_CURL_DLOPEN),1)
       ifeq ($(USE_LOCAL_HEADERS),1)
         CLIENT_CFLAGS += -DCURL_STATICLIB
-	ifeq ($(ARCH),x86_64)
-	  CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a -lcrypt32
-	else
-	  CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a -lcrypt32
-	endif
+        ifeq ($(ARCH),x86_64)
+          CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a -lcrypt32
+        else
+          CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a -lcrypt32
+        endif
       else
         CLIENT_LIBS += $(CURL_LIBS)
       endif
@@ -924,8 +936,8 @@ ifeq ($(PLATFORM),openbsd)
     USE_CURL_DLOPEN=0
   endif
 
-   # no shm_open on OpenBSD
-   USE_MUMBLE=0
+  # no shm_open on OpenBSD
+  USE_MUMBLE=0
 
   SHLIBEXT=so
   SHLIBCFLAGS=-fPIC
@@ -934,7 +946,7 @@ ifeq ($(PLATFORM),openbsd)
   THREAD_LIBS=-lpthread
   LIBS=-lm
 
-#FIXME this is fucked up, do like the Mac version
+  #FIXME this is fucked up, do like the Mac version
   #CLIENT_LIBS =
 
   CLIENT_LIBS += $(SDL_LIBS)
@@ -951,7 +963,6 @@ ifeq ($(PLATFORM),openbsd)
       CLIENT_LIBS += $(CURL_LIBS)
     endif
   endif
-
 else # ifeq openbsd
 
 #############################################################################
@@ -1123,10 +1134,10 @@ endif
 
 ifneq ($(BUILD_GAME_SO),0)
   ifneq ($(BUILD_BASEGAME),0)
-  TARGETS += \
-    $(B)/$(BASEGAME)/cgame$(SHLIBNAME) \
-    $(B)/$(BASEGAME)/qagame$(SHLIBNAME) \
-    $(B)/$(BASEGAME)/ui$(SHLIBNAME)
+    TARGETS += \
+      $(B)/$(BASEGAME)/cgame$(SHLIBNAME) \
+      $(B)/$(BASEGAME)/qagame$(SHLIBNAME) \
+      $(B)/$(BASEGAME)/ui$(SHLIBNAME)
   endif
   ifneq ($(BUILD_MISSIONPACK),0)
     TARGETS += \
@@ -1531,6 +1542,9 @@ endif
 	@echo "  SERVER_CFLAGS:"
 	$(call print_wrapped, $(SERVER_CFLAGS))
 	@echo ""
+	@echo "  TOOLS_CFLAGS:"
+	$(call print_wrapped, $(TOOLS_CFLAGS))
+	@echo ""
 	@echo "  LDFLAGS:"
 	$(call print_wrapped, $(LDFLAGS))
 	@echo ""
@@ -1563,8 +1577,8 @@ ifeq ($(PLATFORM),darwin)
 endif
 ifneq ($(PLATFORM),darwin)
   ifdef ARCHIVE
-       @rm -f $@
-       @(cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS))
+	@rm -f $@
+	@(cd $(B) && zip -r9 ../../$@ $(NAKED_TARGETS))
   endif
 endif
 
@@ -1615,7 +1629,7 @@ TOOLS_LIBS =
 TOOLS_LDFLAGS =
 
 ifeq ($(GENERATE_DEPENDENCIES),1)
-	TOOLS_CFLAGS += -MMD
+  TOOLS_CFLAGS += -MMD
 endif
 
 define DO_YACC
@@ -1649,7 +1663,7 @@ LBURGOBJ= \
 # override GNU Make built-in rule for converting gram.y to gram.c
 %.c: %.y
 ifeq ($(USE_YACC),1)
-        $(DO_YACC)
+	$(DO_YACC)
 endif
 
 $(B)/tools/lburg/%.o: $(LBURGDIR)/%.c
@@ -1735,7 +1749,7 @@ $(Q3LCC): $(Q3LCCOBJ) $(Q3RCC) $(Q3CPP)
 	$(Q)$(TOOLS_CC) $(TOOLS_CFLAGS) $(TOOLS_LDFLAGS) -o $@ $(Q3LCCOBJ) $(TOOLS_LIBS)
 
 $(STRINGIFY): $(TOOLSDIR)/stringify.c
-	$(echo_cmd) "CC $@"
+	$(echo_cmd) "TOOLS_CC $@"
 	$(Q)$(TOOLS_CC) $(TOOLS_CFLAGS) $(TOOLS_LDFLAGS) -o $@ $(TOOLSDIR)/stringify.c $(TOOLS_LIBS)
 
 QVM_CFLAGS = -DPRODUCT_VERSION=\"$(VERSION)\"  -DWOLFCAM_VERSION=\"$(VERSION)\"
@@ -3336,14 +3350,14 @@ distclean: clean toolsclean
 installer: release
 ifdef MINGW
 	@$(MAKE) VERSION=$(VERSION) -C $(NSISDIR) V=$(V) \
-               SDLDLL=$(SDLDLL) \
-               USE_RENDERER_DLOPEN=$(USE_RENDERER_DLOPEN) \
-               USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
-               USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \
-               USE_INTERNAL_SPEEX=$(USE_INTERNAL_SPEEX) \
-               USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
-               USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
-               USE_INTERNAL_JPEG=$(USE_INTERNAL_JPEG)
+		SDLDLL=$(SDLDLL) \
+		USE_RENDERER_DLOPEN=$(USE_RENDERER_DLOPEN) \
+		USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
+		USE_CURL_DLOPEN=$(USE_CURL_DLOPEN) \
+		USE_INTERNAL_SPEEX=$(USE_INTERNAL_SPEEX) \
+		USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
+		USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
+		USE_INTERNAL_JPEG=$(USE_INTERNAL_JPEG)
 else
 	@$(MAKE) VERSION=$(VERSION) -C $(LOKISETUPDIR) V=$(V)
 endif
