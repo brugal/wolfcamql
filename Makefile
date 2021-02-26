@@ -761,7 +761,14 @@ ifdef MINGW
       $(call bin_path, $(TOOLS_MINGW_PREFIX)-gcc))))
   endif
 
-  LIBS= -lws2_32 -lwinmm -lpsapi -static-libgcc -static-libstdc++
+  # 2021-02-26 cygwin g++ is automatically adding libwinpthread dependency
+  #   checked cygwin 3.1.7 with both gcc 9.2.0 and 10.2.0
+  ifeq ($(COMPILE_PLATFORM),cygwin)
+    LIBS= -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,-Bdynamic,--no-whole-archive -lws2_32 -lwinmm -lpsapi -static-libgcc -static-libstdc++
+  else
+    LIBS= -lws2_32 -lwinmm -lpsapi -static-libgcc -static-libstdc++
+  endif
+
   AUTOUPDATER_LIBS += -lwininet
 
   # clang 3.4 doesn't support this
