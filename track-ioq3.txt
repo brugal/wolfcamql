@@ -7694,3 +7694,46 @@ the demo.
 
 2020-12-26-01
     Use the correct compiler for tools when cross building under cygwin
+
+2021-02-26-01
+    Allow using pulseaudio for SDL audio capture
+
+    Pulseaudio audio capture didn't stop when paused on Debian 8 but works
+    on Debian 9 when using the same manual SDL build. So it seems to have
+    been an issue in pulseaudio, not SDL.
+
+2021-02-27-01
+    Restore bots crushing unseen player on q3tourney6 in non-CTF
+
+    The affect of my 2017 commit c3e64d380685419f96f71035c961907b9dc09a9a
+
+        "Make bots only use q3tourney6 crusher to kill their enemy"
+
+    made it easier to beat the last map of the Quake 3 single player
+    campaign. It was mainly intended for CTF and Team Arena gametypes
+    variants of the map. (Team deathmatch is usually treated as deathmatch
+    with teams rather than an actual team based gametype.)
+
+    Restore original difficulty for non-CTF/Team Arena gametypes; bot will
+    crush player even if bot hasn't seen the player since either they or
+    player respawned. [This is not good in CTF where all five bots on the
+    team suddenly flip around and shoot at the crusher trigger.]
+
+    Team deathmatch still uses my added behavior of not triggering crusher
+    if there is a teammate under the crusher.
+
+2021-03-17-01
+    Fix the number of weights in the IQM model calculation
+
+    [The fourth bone influence of each vertex was ignored. --zturtleman]
+
+    Patch by Romulo Fernandes (razor85).
+
+2021-03-19-01
+    Fixes a crash when compiling the project on windows in 64 bit mode.
+    Not all non-volatile registers were actually saved and restored, leading to a few registers being trashed after calling the vm instructions.
+    All non-volatile registers have been added.
+
+2021-06-23-01
+    Allow unwinding of qvmcall64 call-stub for msvc/masm
+    qvmcall64 has its own custom calling convention due to pushing all non-volatile registers to the stack. The game uses set/longjmp which on Windows uses "RtlUnwindEx" to unwind the callstack. qvmcall64 cannot be unwound by default due to the custom calling convention. To allow unwinding, we need to add custom SEH unwind data to the function.
