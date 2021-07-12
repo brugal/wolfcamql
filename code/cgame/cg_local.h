@@ -1460,6 +1460,7 @@ typedef struct {
 	qboolean drawInfo;
 
 	float shotgunPattern[20][2];
+	float shotgunPatternCpma[16][2];
 
 	qboolean filterEntity[MAX_GENTITIES];
 	filterTypes_t filter;
@@ -3496,6 +3497,7 @@ extern vmCvar_t cg_animationsRate;
 
 extern vmCvar_t cg_quadFireSound;
 extern vmCvar_t cg_kickScale;
+extern vmCvar_t cg_fallKick;
 
 // referenced in menu files with cvarTest
 extern vmCvar_t cg_gameType;

@@ -341,7 +341,7 @@ static void CG_TouchItem( centity_t *cent ) {
 		}
 	}
 
-	if(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+	if(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 #endif
 		if (cg.predictedPlayerState.persistant[PERS_TEAM] == TEAM_RED &&
 			item->giType == IT_TEAM && item->giTag == PW_REDFLAG)

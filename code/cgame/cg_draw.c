@@ -5345,7 +5345,7 @@ static float CG_DrawScores( float y ) {
 		}
 		CG_DrawBigString( x + 4, y, s, 1.0F);
 
-		if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+		if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 			// Display flag status
 			item = BG_FindItemForPowerup( PW_BLUEFLAG );
 
@@ -5392,7 +5392,7 @@ static float CG_DrawScores( float y ) {
 		}
 		CG_DrawBigString( x + 4, y, s, 1.0F);
 
-		if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+		if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 			// Display flag status
 			item = BG_FindItemForPowerup( PW_REDFLAG );
 
@@ -5495,7 +5495,8 @@ static float CG_DrawScores( float y ) {
 			}
 		}
 #endif
-		if ( cgs.gametype >= GT_CTF  &&  cgs.gametype < GT_FREEZETAG) {
+		//if ( cgs.gametype >= GT_CTF  &&  cgs.gametype < GT_FREEZETAG) {
+		if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_NTF) {
 			v = cgs.capturelimit;
 		} else if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
 			v = cgs.roundlimit;
@@ -9519,7 +9520,7 @@ static qboolean CG_DrawScoreboard (void)
 				cg.menuScoreboard = Menus_FindByName("endteamscore_menu_tdm");
 			} else if (cgs.gametype == GT_CA  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ca");
-			} else if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS)  &&  !cg_scoreBoardOld.integer) {
+			} else if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF)  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ctf");
 			} else if (cgs.gametype == GT_FREEZETAG  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endteamscore_menu_ft");
@@ -9557,7 +9558,7 @@ static qboolean CG_DrawScoreboard (void)
 				cg.menuScoreboard = Menus_FindByName("teamscore_menu_tdm");
 			} else if (cgs.gametype == GT_CA  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("teamscore_menu_ca");
-			} else if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS)  &&  !cg_scoreBoardOld.integer) {
+			} else if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF)  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("teamscore_menu_ctf");
 			} else if (cgs.gametype == GT_FREEZETAG  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("teamscore_menu_ft");

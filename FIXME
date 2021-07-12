@@ -2330,6 +2330,32 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * 2020-08-26 many-bots/demo3.dm_68  obituaries missing names and overlapping weapon icons
 
+* 2021-07-06  cpma ntf :
+  - item timer
+  - unknown command:  it, itr
+  - unknown game events
+
+     197  -- 2021-07-11 not happening anymore
+
+  - check cpma client info streams for player types
+  - load backpack at game start
+  - option to use ql ammo pack instead of back pack
+  - ammo pack model
+  - ammo pack pickup icon
+
+    to doc:  "to enable cpma backpack ... "  copy:
+
+     models/backpack.tga
+     models/backpack.md3
+     icons/icon_backpack.tga
+
+  - player models
+  - flag status
+
+* missing font options for cg_draw.c:  CG_DrawTimer  CG_DrawPlayersLeft CG_DrawScores CG_DrawDisconnect  *CG_DrawCenterString  CG_DrawSpectator (check CG_DrawBigString)  CG_DrawAccStats  CG_DrawErrorPopup CG_DrawEchoPopup CG_DrawCtfsRoundScoreboard
+
+* check cg_draw.c  CG_DrawCenter to see if multiple centerprints fill up centerprint buffer
+
 
 ----
 

@@ -4777,15 +4777,15 @@ Only in One Flag CTF games
 	},
 
 	{
-		"items_backpack",
-		NULL,
+		"item_backpack",
+		"sound/misc/ar2_pkup.wav",
         { "models/backpack.md3",
 		  0, 0, 0 },
 		/* icon */              "icons/icon_backpack",
 		/* pickup */    "Backpack",
+		50,
+		IT_ARMOR,
 		0,
-		IT_TEAM,
-		PWOLD_NEUTRALFLAG,
 		/* precache */ "",
 		/* sounds */ ""
 	},

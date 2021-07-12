@@ -977,7 +977,7 @@ static void CG_DrawBlueFlagStatus (const rectDef_t *rect, qhandle_t shader, qboo
 {
 	const gitem_t *item;
 
-	if (cgs.gametype != GT_CTF  &&  cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS) {
+	if (cgs.gametype != GT_CTF  &&  cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_NTF) {
 
 #if 0  // 2018-07-18 ql doesn't draw anything for harvester
 		if (cgs.gametype == GT_HARVESTER) {
@@ -1078,7 +1078,7 @@ static void CG_DrawRedFlagStatus (const rectDef_t *rect, qhandle_t shader, qbool
 {
 	const gitem_t *item;
 
-	if (cgs.gametype != GT_CTF && cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS) {
+	if (cgs.gametype != GT_CTF && cgs.gametype != GT_1FCTF  &&  cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_NTF) {
 
 #if 0  // 2018-07-18 ql doesn't draw anything for harvester
 		if (cgs.gametype == GT_HARVESTER) {
@@ -2297,7 +2297,7 @@ float CG_GetValue(int ownerDraw) {
 		  limit = cgs.roundlimit;
 	  } else if (CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
 		  limit = cgs.timelimit;
-	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF) {
+	  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_NTF) {
 		  if (cgs.capturelimit) {
 			  limit = cgs.capturelimit;
 		  } else {
@@ -3600,7 +3600,7 @@ float CG_GetValue(int ownerDraw) {
 }
 
 qboolean CG_OtherTeamHasFlag(void) {
-	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS) {
+	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 		int team = cg.snap->ps.persistant[PERS_TEAM];
 
 		if (wolfcam_following) {
@@ -3639,7 +3639,7 @@ qboolean CG_OtherTeamHasFlag(void) {
 }
 
 qboolean CG_YourTeamHasFlag(void) {
-	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS) {
+	if (cgs.gametype == GT_CTF || cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 		int team = cg.snap->ps.persistant[PERS_TEAM];
 
 		if (wolfcam_following) {
@@ -4045,7 +4045,7 @@ qboolean CG_OwnerDrawVisible (int flags, int flags2)
 	}
 
 	if (flags & CG_SHOW_CTF) {
-		if( cgs.gametype == GT_CTF) {  // ||  cgs.gametype == GT_CTFS ) {  //FIXME maybe not ctfs
+		if( cgs.gametype == GT_CTF  ||  cgs.gametype == GT_NTF) {  // ||  cgs.gametype == GT_CTFS ) {  //FIXME maybe not ctfs
 			return qtrue;
 		} else {
 			return qfalse;
@@ -4495,7 +4495,7 @@ static void CG_DrawCapFragLimit (const rectDef_t *rect, float scale, const vec4_
 		limit = cgs.roundlimit;
 	} else if (CG_IsDuelGame(cgs.gametype)  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_RACE) {
 		limit = cgs.timelimit;
-	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF) {
+	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_NTF) {
 		if (cgs.capturelimit) {
 			limit = cgs.capturelimit;
 		} else {
@@ -4692,6 +4692,8 @@ const char *CG_GameTypeString(void) {
 		return "Domination";
 	} else if (cgs.gametype == GT_RED_ROVER) {
 		return "Red Rover";
+	} else if (cgs.gametype == GT_NTF) {
+		return "Not Team Fortress";
 	}
 
 	return "";
@@ -7440,7 +7442,7 @@ static void CG_DrawTeamMapPickups (const rectDef_t *rect, float scale, int style
 
 	if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_FREEZETAG) {
 		CG_DrawTeamMapPickupsTdm(rect, scale, style, font, color, team);
-	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER) {
+	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_NTF) {
 		CG_DrawTeamMapPickupsCtf(rect, scale, style, font, color, team);
 	} else {
 		//Com_Printf("^3CG_DrawTeamMapPickups() unsupported game type: %d\n", cgs.gametype);
@@ -8661,7 +8663,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  } else {
 				  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a time of %s", s, CG_GetTimeString(cg.snap->ps.persistant[PERS_SCORE])), 0, 0, textStyle, font, align);
 			  }
-		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_CTFS) {  //FIXME OBELISK like quakelive -- even if wrong
+		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {  //FIXME OBELISK like quakelive -- even if wrong
 			  if (captures) {
 				  if (cgs.gametype == GT_HARVESTER) {
 					  CG_Text_Paint_Align(&rect, scale, color, va("You captured %d skull%s", captures, captures == 1 ? "." : "s."), 0, 0, textStyle, font, align);

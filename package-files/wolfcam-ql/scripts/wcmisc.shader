@@ -217,3 +217,13 @@ wc/keyPressMisc
                 rgbgen vertex
         }
 }
+
+wc/hud/ntf
+{
+	nopicmip
+	{
+		map gfx/wc/ntf2.png
+		blendfunc blend
+		alphaFunc GE128
+	}
+}

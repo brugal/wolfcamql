@@ -1108,6 +1108,7 @@ vmCvar_t cg_animationsRate;
 
 vmCvar_t cg_quadFireSound;
 vmCvar_t cg_kickScale;
+vmCvar_t cg_fallKick;
 
 vmCvar_t cg_gameType;
 vmCvar_t cg_compMode;
@@ -2308,6 +2309,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_animationsRate, "cg_animationsRate", "1", CVAR_ARCHIVE },
 	{ &cg_quadFireSound, "cg_quadFireSound", "1", CVAR_ARCHIVE },
 	{ &cg_kickScale, "cg_kickScale", "0", CVAR_ARCHIVE },
+	{ cvp(cg_fallKick), "1", CVAR_ARCHIVE },
 	{ &cg_gameType, "cg_gameType", "0", CVAR_ARCHIVE },
 	{ &cg_compMode, "cg_compMode", "0", CVAR_ARCHIVE },
 	{ &cg_drawSpecMessages, "cg_drawSpecMessages", "1", CVAR_ARCHIVE },
@@ -3273,7 +3275,7 @@ static void CG_RegisterAnnouncerSounds (void)
 
 		}
 
-		if ((cgs.gametype == GT_1FCTF || cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS)  || cg_buildScript.integer) {
+		if ((cgs.gametype == GT_1FCTF || cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF)  || cg_buildScript.integer) {
 			cgs.media.youHaveFlagSound = trap_S_RegisterSound( va("%s/you_have_flag.wav", baseDir), qtrue );
 			cgs.media.holyShitSound = trap_S_RegisterSound(va("%s/holy_shit.wav", baseDir), qtrue);
 		}
@@ -4204,6 +4206,20 @@ static void CG_RegisterGraphics( void ) {
 		}
 	}
 
+	// check if cpma backpack was added
+	if (cgs.cpma) {
+		itemInfo_t *itemInfo;
+
+		itemInfo = &cg_items[bg_numItemsCpma - 2];
+
+		if (!itemInfo->models[0]) {
+			itemInfo->models[0] = trap_R_RegisterModel("models/powerups/ammo/ammopack.md3");
+		}
+		if (!itemInfo->icon) {
+			itemInfo->icon = trap_R_RegisterShaderNoMip("icons/ammo_pack");
+		}
+	}
+
 	// wall marks
 	cgs.media.bulletMarkShader = trap_R_RegisterShader( "gfx/damage/bullet_mrk" );
 	cgs.media.burnMarkShader = trap_R_RegisterShader( "gfx/damage/burn_med_mrk" );
@@ -4328,6 +4344,8 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.gametypeIcon[GT_CTFS] = trap_R_RegisterShader("ui/assets/hud/ad");
 	cgs.media.gametypeIcon[GT_RED_ROVER] = trap_R_RegisterShader("ui/assets/hud/rr");
 	cgs.media.gametypeIcon[GT_RACE] = trap_R_RegisterShader("ui/assets/hud/race");
+	// ui/assets/hud/health.png looks a bit like it
+	cgs.media.gametypeIcon[GT_NTF] = trap_R_RegisterShader("wc/hud/ntf");
 
 	cgs.media.infiniteAmmo = trap_R_RegisterShader("icons/infinite");
 	//cgs.media.premiumIcon = trap_R_RegisterShader("ui/assets/score/premium_icon");
@@ -6526,7 +6544,7 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			}
 		case 7:  // net
 			if (cgs.cpma) {
-				if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+				if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 					return "-";
 				}
 				return va("%d", sp->net);
@@ -7335,7 +7353,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 			return CG_FeederItemTextTdm(feederID, index, column, handle);
 		}
 	}
-	if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_DOMINATION)  &&  !cg_scoreBoardOld.integer) {
+	if ((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_DOMINATION  ||  cgs.gametype == GT_NTF)  &&  !cg_scoreBoardOld.integer) {
 		if (feederID == FEEDER_REDTEAM_STATS  ||  feederID == FEEDER_BLUETEAM_STATS) {
 			return CG_FeederItemTextCtfStats(feederID, index, column, handle);
 		} else {
@@ -8312,6 +8330,33 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		}
 	}
 
+	// create cpma shotgun pattern
+	{
+		float pattern[16][2];
+		float scale;
+
+		// 10, 33
+		// inner ring
+		for (i = 0;  i < 8;  i++) {
+			pattern[i][0] = 10.0 * cos(DEG2RAD(22.5 + (45.0 * i)));
+			pattern[i][1] = 10.0 * sin(DEG2RAD(22.5 + (45.0 * i)));
+		}
+
+		// outter ring
+		for (i = 0;  i < 8;  i++) {
+			pattern[8 + i][0] = 26.0 * cos(DEG2RAD(22.5 + (45.0 * i)));
+			pattern[8 + i][1] = 26.0 * sin(DEG2RAD(22.5 + (45.0 * i)));
+		}
+
+		//scale = 40.0 / 39.0;  //38.0;
+		scale = 1.0f;
+
+		for (i = 0;  i < 16;  i++) {
+			cg.shotgunPatternCpma[i][0] = RAD2DEG(atan2(pattern[i][0] * scale, 292.82));
+			cg.shotgunPatternCpma[i][1] = RAD2DEG(atan2(pattern[i][1] * scale, 292.82));
+		}
+	}
+
 	if (cg.demoPlayback) {
 		trap_Get_Demo_Timeouts(&cgs.numTimeouts, cgs.timeOuts);
 		if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
@@ -8370,7 +8415,7 @@ void CG_LoadDefaultMenus (void)
 	} else if (cgs.gametype == GT_CA) {
 		CG_ParseMenu("ui/ingame_scoreboard_ca.menu");
 		CG_ParseMenu("ui/end_scoreboard_ca.menu");
-	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+	} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 		CG_ParseMenu("ui/ingame_scoreboard_ctf.menu");
 		CG_ParseMenu("ui/end_scoreboard_ctf.menu");
 	} else if (cgs.gametype == GT_FREEZETAG) {

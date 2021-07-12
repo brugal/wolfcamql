@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 16 16">
+
+<!--
+https://commons.wikimedia.org/wiki/File:Crossed_circle.svg
+-->
+
+<!--
+convert -background none -transparent white -resize 128x128 test2.svg ntf3.png
+-->
+
+<g fill="black" stroke="black" stroke-width="0">
+<circle cx="8" cy="8" r="8"/>
+<!--
+<path d="M8,1V15zM1,8H15z"/>
+-->
+</g>
+
+<g fill="white" stroke="white" stroke-width="2" >
+<!-- the rotation looks bad in hud -->
+
+<!--
+<path d="M8,1V15zM1,8H15z"  transform="rotate(10 8 8)"/>
+-->
+
+<path d="M8,0V17zM0,8H17z"  />
+
+</g>
+
+<g fill="white" stroke="white" stroke-width="1">
+  <circle cx="8" cy="8" r="2"/>
+</g>
+</svg>

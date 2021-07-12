@@ -1434,6 +1434,7 @@ Available tokens:
 * cg_gunSize (first person) and cg_gunSizeThirdPerson
 
 * cg_kickScale same as quakelive
+* cg_fallKick (0: no view or weapon change, 1: (default) view and weapon change, 2: only weapon sway)
 
 * cg_crosshairColor "0xffffff"
 
@@ -2120,8 +2121,8 @@ r_BloomBlurFalloff and r_BloomBlurRadius still not implemented, but the followin
 * con_transparency, con_fracSize, con_conspeed
 * con_rgb  ex:  'con_rgb 0x200000' to replace console shader with just a dark red color.  Default is con_rgb ""
 
-* cg_shotgunStyle [0: quake3  1: quake live cg_trueShotgun  2: ql shotgun with randomness]
-* cg_shotgunRandomness to control how much 'cg_shotgunStyle 2' diverges from true shotgun pattern
+* cg_shotgunStyle [0: quake3  1: quake live cg_trueShotgun  2: ql shotgun with randomness  3: cpma  4: cpma with randomness]
+* cg_shotgunRandomness to control how much cg_shotgunStyle 2 or 4 diverges from true shotgun pattern
 
 --------------------------------------------
 /at  command
@@ -3055,6 +3056,16 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_useCoreContext enables core context with opengl2
 * s_sdlWindowsForceDirectSound, needed for video recording if wsapi reports more than 2 channels
 * ui_demoSortDirFirst to list directories first in demo listing
+
+* cpma ntf backpack support
+
+   to use cpma model and icon add:
+
+        icons/icon_backpack.tga
+        models/backpack.md3
+        models/backpack.tga
+
+   if those aren't found QuakeLive's ammo pack model and icon are used
 
 ----------
 

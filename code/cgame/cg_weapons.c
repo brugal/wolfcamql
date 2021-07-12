@@ -1601,12 +1601,14 @@ static void CG_CalculateWeaponPosition( vec3_t origin, vec3_t angles ) {
 	angles[PITCH] += xyspeed * cg.bobfracsin * 0.005;
 
 	// drop the weapon when landing
-	delta = cgtime - landTime;
-	if ( delta < LAND_DEFLECT_TIME ) {
-		origin[2] += landChange*0.25 * delta / LAND_DEFLECT_TIME;
-	} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
-		origin[2] += landChange*0.25 *
-			(LAND_DEFLECT_TIME + LAND_RETURN_TIME - delta) / LAND_RETURN_TIME;
+	if (cg_fallKick.integer > 0) {
+		delta = cgtime - landTime;
+		if ( delta < LAND_DEFLECT_TIME ) {
+			origin[2] += landChange*0.25 * delta / LAND_DEFLECT_TIME;
+		} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
+			origin[2] += landChange*0.25 *
+				(LAND_DEFLECT_TIME + LAND_RETURN_TIME - delta) / LAND_RETURN_TIME;
+		}
 	}
 
 #if 0
@@ -4035,6 +4037,47 @@ static void CG_ShotgunPattern (const vec3_t origin, const vec3_t origin2, int se
 			VectorMA (end, u, up, end);
 
 			CG_ShotgunPellet( origin, end, otherEntNum );
+		}
+	} else if (cg_shotgunStyle.integer == 3  ||  cg_shotgunStyle.integer == 4) {
+		// cpma
+
+		//VectorNormalize2( origin2, forward );
+		//AngleVectors(cent->lerpAngles, forward, NULL, NULL);
+		//PerpendicularVector( right, forward );
+		//CrossProduct( forward, right, up );
+
+		for (i = 0;  i < 16;  i++) {
+			vec3_t newForward;
+			vec3_t tmp;
+
+			r = cg.shotgunPatternCpma[i][0];
+			u = cg.shotgunPatternCpma[i][1];
+
+			if (cg_shotgunStyle.integer == 4) {
+				r += crandom() * cg_shotgunRandomness.value;
+				u += crandom() * cg_shotgunRandomness.value;
+			}
+
+#if 1
+			VectorCopy(forward, newForward);
+
+			RotatePointAroundVector(tmp, up, newForward, r);
+			VectorCopy(tmp, newForward);
+			VectorNormalize(newForward);
+			RotatePointAroundVector(tmp, right, newForward, u);
+			VectorCopy(tmp, newForward);
+			VectorNormalize(newForward);
+
+			VectorMA(origin, 8192 * 16, newForward, end);
+#endif
+
+			//VectorMA( origin, 8192 * 16, forward, end);
+			//VectorMA (end, r, right, end);
+			//VectorMA (end, u, up, end);
+
+
+			//Com_Printf("----------- pellet %d  %f %f %f\n", i, origin[0], origin[1], origin[2]);
+			CG_ShotgunPellet(origin, end, otherEntNum);
 		}
 	} else {  // cg_trueShotgun.integer > 0
 		// quakelive

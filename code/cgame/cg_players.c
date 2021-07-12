@@ -3606,7 +3606,7 @@ static void CG_PlayerSprites( centity_t *cent ) {
 
 	// draw flag icons before anything else
 	flagIconDrawn = qfalse;
-	if ( (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS)
+	if ( (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF)
          &&  cg_drawFlagCarrier.integer
 		 ) {
 		qboolean depthHack;

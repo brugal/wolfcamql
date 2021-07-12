@@ -860,14 +860,16 @@ static void CG_OffsetFirstPersonView (qboolean ignoreHealth)
 
 
 	// add fall height
-	delta = cg.time - cg.landTime;
-	if ( delta < LAND_DEFLECT_TIME ) {
-		f = delta / LAND_DEFLECT_TIME;
-		cg.refdef.vieworg[2] += cg.landChange * f;
-	} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
-		delta -= LAND_DEFLECT_TIME;
-		f = 1.0 - ( delta / LAND_RETURN_TIME );
-		cg.refdef.vieworg[2] += cg.landChange * f;
+	if (cg_fallKick.integer == 1) {
+		delta = cg.time - cg.landTime;
+		if ( delta < LAND_DEFLECT_TIME ) {
+			f = delta / LAND_DEFLECT_TIME;
+			cg.refdef.vieworg[2] += cg.landChange * f;
+		} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
+			delta -= LAND_DEFLECT_TIME;
+			f = 1.0 - ( delta / LAND_RETURN_TIME );
+			cg.refdef.vieworg[2] += cg.landChange * f;
+		}
 	}
 
 	// add step offset

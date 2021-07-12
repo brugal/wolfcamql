@@ -119,12 +119,14 @@ static void Wolfcam_CalculateWeaponPosition (vec3_t origin, vec3_t angles)
 	angles[PITCH] += xyspeed * wc->bobfracsin * 0.005;
 
 	// drop the weapon when landing
-	delta = cgtime - landTime;
-	if ( delta < LAND_DEFLECT_TIME ) {
-		origin[2] += landChange*0.25 * delta / LAND_DEFLECT_TIME;
-	} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
-		origin[2] += landChange*0.25 *
-			(LAND_DEFLECT_TIME + LAND_RETURN_TIME - delta) / LAND_RETURN_TIME;
+	if (cg_fallKick.integer > 0) {
+		delta = cgtime - landTime;
+		if ( delta < LAND_DEFLECT_TIME ) {
+			origin[2] += landChange*0.25 * delta / LAND_DEFLECT_TIME;
+		} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
+			origin[2] += landChange*0.25 *
+				(LAND_DEFLECT_TIME + LAND_RETURN_TIME - delta) / LAND_RETURN_TIME;
+		}
 	}
 
 #if 0

@@ -910,6 +910,7 @@ int Wolfcam_OffsetFirstPersonView (void)
     float bob;
     float speed;
     float delta;
+	float f;
     qboolean useLastValidBob = qfalse;
     int anim;
 	int t;
@@ -1071,6 +1072,7 @@ int Wolfcam_OffsetFirstPersonView (void)
     }
 #endif
 
+	// smooth out duck height changes
     timeDelta = cg.time - wc->duckTime;  //FIXME cg.ioverf
     {
         if (timeDelta < 0)
@@ -1087,7 +1089,7 @@ int Wolfcam_OffsetFirstPersonView (void)
     }
 #endif
 
-    //FIXME  fall, stepOffset?
+    //FIXME stepOffset?
 
     // add angles based on bob
 
@@ -1148,6 +1150,19 @@ int Wolfcam_OffsetFirstPersonView (void)
     }
     cg.refdef.vieworg[2] += bob;  //FIXME wolfcam ok for weapons, not player movement
     }
+
+	// add fall height
+	if (cg_fallKick.integer == 1) {
+		delta = cg.time - wc->landTime;
+		if ( delta < LAND_DEFLECT_TIME ) {
+			f = delta / LAND_DEFLECT_TIME;
+			cg.refdef.vieworg[2] += wc->landChange * f;
+		} else if ( delta < LAND_DEFLECT_TIME + LAND_RETURN_TIME ) {
+			delta -= LAND_DEFLECT_TIME;
+			f = 1.0 - ( delta / LAND_RETURN_TIME );
+			cg.refdef.vieworg[2] += wc->landChange * f;
+		}
+	}
 
 	if (wcg.followMode == WOLFCAM_FOLLOW_VICTIM) {
 		t = wcg.nextVictimServerTime - cg.snap->serverTime;

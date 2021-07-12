@@ -924,7 +924,7 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 		return;
 	}
 
-	if (cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_CTF) {  //  &&  cgs.gametype != GT_1FCTF) {
+	if (cgs.gametype != GT_CTFS  &&  cgs.gametype != GT_CTF  &&  cgs.gametype != GT_NTF) {  //  &&  cgs.gametype != GT_1FCTF) {
 		return;
 	}
 
@@ -960,7 +960,7 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 				shader = cgs.media.adAttack;
 				//Com_Printf("attack.... %d\n", cgs.media.adAttack);
 			}
-		} else if (cgs.gametype == GT_CTF) {
+		} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_NTF) {
 			//FIXME flag status
 			if (ourTeam == TEAM_RED) {
 				shader = cgs.media.adDefend;
@@ -982,7 +982,7 @@ static void CG_DrawFlagHelpIcon (const centity_t *cent, const gitem_t *item)
 				}
 				shader = cgs.media.adDefend;
 			}
-		} else if (cgs.gametype == GT_CTF) {
+		} else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_NTF) {
 			//FIXME flag status
 			if (ourTeam == TEAM_BLUE) {
 				shader = cgs.media.adDefend;
@@ -1520,11 +1520,22 @@ static void CG_Item ( centity_t *cent ) {
 	float			frac;
 	float			scale;
 	const weaponInfo_t	*wi;
+	int modelindex;
 
 	es = &cent->currentState;
-	if ( es->modelindex >= bg_numItems ) {
-		//CG_Error( "Bad item index %i on entity", es->modelindex );
-		CG_Printf( "Bad item index %i on entity\n", es->modelindex );
+	modelindex = es->modelindex;
+
+	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
+		//FIXME 2021-07-09 is this correct check for backpack?
+		if (es->modelindex2 == 1  &&  es->eFlags == EF_TICKING) {
+			//FIXME get index at game start
+			modelindex = bg_numItemsCpma - 2;
+		}
+	}
+
+	if ( modelindex >= bg_numItems ) {
+		//CG_Error( "Bad item index %i on entity", modelindex );
+		CG_Printf( "Bad item index %i on entity\n", modelindex );
         //return;
 	}
 
@@ -1537,11 +1548,11 @@ static void CG_Item ( centity_t *cent ) {
 	}
 
 	// if set to invisible, skip
-	if ( !es->modelindex || ( es->eFlags & EF_NODRAW ) ) {
+	if ( !modelindex || ( es->eFlags & EF_NODRAW ) ) {
 		return;
 	}
 
-	item = &bg_itemlist[ es->modelindex ];
+	item = &bg_itemlist[ modelindex ];
 
 	if (cgs.gametype == GT_1FCTF) {
 		if (item->giTag == PW_REDFLAG  ||  item->giTag == PW_BLUEFLAG) {
@@ -1560,7 +1571,7 @@ static void CG_Item ( centity_t *cent ) {
 		if (cg_itemsWh.integer) {
 			ent.renderfx |= RF_DEPTHHACK;
 		}
-		ent.customShader = cg_items[es->modelindex].icon;
+		ent.customShader = cg_items[modelindex].icon;
 		ent.shaderRGBA[0] = 255;
 		ent.shaderRGBA[1] = 255;
 		ent.shaderRGBA[2] = 255;
@@ -1626,7 +1637,7 @@ static void CG_Item ( centity_t *cent ) {
 		cent->lerpOrigin[2] += 8;	// an extra height boost
 	}
 
-	ent.hModel = cg_items[es->modelindex].models[0];
+	ent.hModel = cg_items[modelindex].models[0];
 
 	// flag
 	if (item->giType == IT_TEAM  &&  (item->giTag == PW_REDFLAG  ||  item->giTag == PW_BLUEFLAG  ||  item->giTag == PW_NEUTRALFLAG)) {
@@ -1671,7 +1682,7 @@ static void CG_Item ( centity_t *cent ) {
 			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_neutralFlagColor);
 			ent.shaderRGBA[3] = 255;
 		} else if (cg_flagStyle.integer == 2) {
-			//ent.hModel = cg_items[es->modelindex].models[1];
+			//ent.hModel = cg_items[modelindex].models[1];
 			if (item->giTag == PW_REDFLAG) {
 				ent.hModel = cgs.media.redFlagModel2;
 			} else if (item->giTag == PW_BLUEFLAG) {
@@ -1680,7 +1691,7 @@ static void CG_Item ( centity_t *cent ) {
 				ent.hModel = cgs.media.neutralFlagModel2;
 			}
 		} else {
-			ent.hModel = cg_items[es->modelindex].models[0];
+			ent.hModel = cg_items[modelindex].models[0];
 		}
 		CG_DrawFlagHelpIcon(cent, item);
 #if 0
@@ -1793,7 +1804,7 @@ static void CG_Item ( centity_t *cent ) {
 	}
 
 	// accompanying rings / spheres for powerups
-	if ( !cg_simpleItems.integer  &&  !(cgs.gametype == GT_CTF  &&  item->giTag == PW_FLIGHT) )
+	if ( !cg_simpleItems.integer  &&  !((cgs.gametype == GT_CTF  ||  cgs.gametype == GT_NTF)  &&  item->giTag == PW_FLIGHT) )
 	{
 		vec3_t spinAngles;
 
@@ -1801,7 +1812,7 @@ static void CG_Item ( centity_t *cent ) {
 
 		if ( item->giType == IT_HEALTH || item->giType == IT_POWERUP )
 		{
-			if ( ( ent.hModel = cg_items[es->modelindex].models[1] ) != 0 )
+			if ( ( ent.hModel = cg_items[modelindex].models[1] ) != 0 )
 			{
 				if ( item->giType == IT_POWERUP )
 				{
@@ -3030,7 +3041,7 @@ static void CG_TeamBase( centity_t *cent ) {
 	float c;
 
 	//if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_CTFS) {
-	if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+	if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 #else
 	if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
 #endif

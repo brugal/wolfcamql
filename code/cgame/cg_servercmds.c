@@ -1594,7 +1594,7 @@ void CG_SetConfigValues( void ) {
 		cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
 	}
 
-	if(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+	if(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 		s = CG_ConfigString( CS_FLAGSTATUS );
 		cgs.redflag = s[0] - '0';
 		cgs.blueflag = s[1] - '0';
@@ -1728,7 +1728,7 @@ void CG_InterMissionHit (void)
 			} else {
 				CG_StartLocalSound(cgs.media.blueWinsSound, CHAN_ANNOUNCER);
 			}
-		} else if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+		} else if (cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 			if (cgs.scores1 > cgs.scores2) {
 				CG_StartLocalSound(cgs.media.redWinsSound, CHAN_ANNOUNCER);
 			} else {
@@ -2320,7 +2320,7 @@ static void CG_ConfigStringModified( void ) {
 		CG_BuildSpectatorString();
 		//Com_Printf("build spec string\n");
 	} else if ( num == CS_FLAGSTATUS ) {
-		if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS) {
+		if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {
 			//Com_Printf("CS_FLAGSTATUS: %s\n", str);
 			// format is rb where its red/blue, 0 is at base, 1 is taken, 2 is dropped
 			cgs.redflag = str[0] - '0';

@@ -1,6 +1,25 @@
-12.5test2
+12.5test3
 
 * ioquake3 patches
+* cg_fallKick (0: no view or weapon change, 1: (default) view and weapon change, 2: only weapon sway)
+* bug fix:  follow view didn't use fall kick
+* add cpma ntf game icon
+* cpma ntf backpack support
+
+   to use cpma model and icon add:
+
+        icons/icon_backpack.tga
+        models/backpack.md3
+        models/backpack.tga
+
+   if those aren't found QuakeLive's ammo pack model and icon are used
+
+* cpma ntf show flag status in hud
+* cpma ntf use ctf scoreboards
+* cpma ntf in game help markers
+* cpma ntf flag sounds
+* cg_shotgunStyle 3: cpma  4: cpma with randomness
+
 
 ---------------------------------
 12.4  2020-12-04

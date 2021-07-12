@@ -1367,7 +1367,7 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 		if (!cg.intermissionStarted  &&  ops->pm_type == PM_INTERMISSION) {
 			// hack for overtime and end of buzzer scoring and switching
 			// to PM_INTERMISSION without having updated scores
-			if ((cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS)  &&  (cgs.scores1 != cgs.scores2)) {
+			if ((cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF)  &&  (cgs.scores1 != cgs.scores2)) {
 				trap_SendConsoleCommand("exec gameend.cfg\n");
 				CG_InterMissionHit();
 				cg.intermissionStarted = cg.time;

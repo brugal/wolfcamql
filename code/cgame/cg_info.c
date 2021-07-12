@@ -536,7 +536,7 @@ void CG_DrawInformation (qboolean loading)
 		}
 	}
 
-	if (cgs.gametype >= GT_CTF  &&  cgs.gametype < GT_FREEZETAG) {
+	if ((cgs.gametype >= GT_CTF  &&  cgs.gametype < GT_FREEZETAG)  ||  cgs.gametype == GT_NTF) {
 		value = atoi( Info_ValueForKey( info, "capturelimit" ) );
 		if ( value ) {
 			lines = UI_DrawProportionalString3( 320, y, va( "capturelimit %i", value ),
