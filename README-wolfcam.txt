@@ -1468,6 +1468,8 @@ Available tokens:
 * option to separate frag messages from center print:  cg_drawFragMessageSeperate 1,  frag messages can then be controlled with cg_drawFragMessageX, cg_drawFragMessageY, cg_drawFragMessageAlign (0: align left, 1: align center, 2: align right), cg_drawFragMessageStyle (0: none, 3: shadow, 6: shadow even more), cg_drawFragMessageFont, cg_drawFragMessagePointSize, cg_drawFragMessageScale (this controls the size of the drawn text), cg_drawFragMessageTime (how long to stay on screen), cg_drawFragMessageColor (will not override white in player names), cg_drawFragMessageAlpha, cg_drawFragMessageFade (0: don't fade, 1: fade), cg_drawFragMessageFadeTime
 
 * same options as above for cg_drawCenterPrint*
+* cg_drawCenterPrintOld debugging cvar to test old q3 code
+* cg_drawCenterPrintLineSpacing  extra spacing between lines
 
 * cg_grenadeColor, cg_grenadeColorAlpha, cg_grenadeTeamColor, cg_grenadeTeamColorAlpha, cg_grenadeEnemyColor, cg_grenadeEnemyColorAlpha
 
@@ -1532,6 +1534,16 @@ Available tokens:
 
 * echopopup and echopopupcvar commands to print something on the screen.  /echopopupcvar <cvar> will only print the value.  Add 'name' if you want to print the cvar name as well.  Ex:  /echopopupcvar cg_teamModel name.  Position, time, and widescreen settings are controlled by cg_echoPopupX, cg_echoPopupY, cg_echoPopupTime, and cg_echoPopupWidescreen.
 
+* /centerprint <string> [char width | 'token']
+
+   \n    is a new line character  (doesn't work with 'token' option, use %{newline <size>}
+   \'    is a double quote: "
+   \\    is a single backslash: \
+
+  For 'token' option see 'tokenized frag and obituary messges' section.
+
+* /resetcenterprinttime  redisplay the last center print message
+
 * +acc command to show both server side and client side weapon stats window.  Bound to CTRL by default.  Position controlled with cg_accX and cg_accY
 
 * cg_screenDamageAlpha_Team, cg_screenDamage_Team, cg_screenDamage_Self, cg_screenDamageAlpha_Self, cg_screenDamageAlpha, cg_screenDamage
@@ -1585,12 +1597,18 @@ Same as r_greyScale but only apply when picmip is allowed.
 
 -----------------------------------------------------------
 
-* libfreetype2 font support for cvars that display text in the hud
-* /fontlist command
-* utf8 support
+* UTF-8 support
 
-  - r_debugFonts (0:  (default) no information, 1:  show missing glyphs,  2:  show font fallback checks, 3:  show all glyph loading)
-  - font fallbacks:
+  - to enter unicode characters into the console type 'x' plus the hex value and then press 'ctrl + tab' or 'ctrl + keypad_insert'.
+
+* libfreetype2 font support for cvars that display text in the hud
+
+* /fontlist command
+
+* r_debugFonts (0:  (default) no information, 1:  show missing glyphs,  2:  show font fallback checks, 3:  show all glyph loading)
+
+* font fallbacks:
+
       First the fonts included with quakelive are added to the font fallback list (notosans-regular.ttf and droidsansfallbackfull.ttf).  This can be enabled/disabled with r_defaultQlFontFallbacks.
 
       User set fonts are then added to the list.  These are specified as r_fallbackFont[number] (ex:  r_fallbackFont1, r_fallbackFont2, etc.).  If the cvar doesn't exist or is empty processing stops.
@@ -1600,8 +1618,6 @@ Same as r_greyScale but only apply when picmip is allowed.
       System fonts are added for Windows users.  These are the same MS fonts listed above.  This can be enabled/disabled with r_defaultSystemFontFallbacks.
 
       GNU Unifonts are used as the final fallbacks.  This can be enabled/disabled with r_defaultUnifontFallbakcs.
-
-  - to enter unicode characters into the console type 'x' plus the hex value and then press 'ctrl + tab' or 'ctrl + keypad_insert'.
 
 * cg_qlFontScaling  [1: like ql, use alternate ql font when text becomes small, 2: always use 24 point ql font (old behavior)]
 

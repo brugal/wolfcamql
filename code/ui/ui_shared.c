@@ -2705,7 +2705,7 @@ static qboolean Item_Multi_HandleKey(itemDef_t *item, int key) {
 	return qfalse;
 }
 
-//FIXME utf8
+//FIXME UTF-8
 static qboolean Item_TextField_HandleKey(itemDef_t *item, int key) {
 	char buff[1024];
 	int len;
@@ -3335,7 +3335,7 @@ int UI_SelectForKey(int key)
 }
 
 
-//FIXME utf8
+//FIXME UTF-8
 void Menu_HandleKey(menuDef_t *menu, int key, qboolean down) {
 	//int i;
 	itemDef_t *item = NULL;
@@ -6444,7 +6444,7 @@ static qboolean ItemParse_precision( itemDef_t *item, int handle ) {
 	return qtrue;
 }
 
-//FIXME utf8  --  2016-02-22 ok used with predefined math tokens
+//FIXME UTF-8  --  2016-02-22 ok used with predefined math tokens
 static char *Q_GetToken (char *inputString, char *token, qboolean isFilename, qboolean *newLine)
 {
     char *p;
@@ -6484,7 +6484,7 @@ static char *Q_GetToken (char *inputString, char *token, qboolean isFilename, qb
             *newLine = qtrue;
             break;
         }
-		//FIXME utf8  --  2016-02-22 ok used with predefined math tokens
+		//FIXME UTF-8  --  2016-02-22 ok used with predefined math tokens
         if (c != '\t'  &&  (c < ' '  ||  c > '~')) {
             *newLine = qtrue;
             if (gotFirstToken) {
@@ -6513,7 +6513,7 @@ static char *Q_GetToken (char *inputString, char *token, qboolean isFilename, qb
             }
         }
 
-		//FIXME utf8  --  2016-02-22 ok used with predefined math tokens
+		//FIXME UTF-8  --  2016-02-22 ok used with predefined math tokens
         if (c < '!'  ||  c > '~') {
             break;
         }

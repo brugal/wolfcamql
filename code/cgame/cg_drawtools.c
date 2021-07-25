@@ -416,7 +416,7 @@ void CG_DrawStringExt( int x, int y, const char *string, const float *setColor,
 
 	// 2016-02-02 still using this stuff since some drawing functions are using different scales for height and width
 
-	//FIXME utf8
+	//FIXME UTF-8
 	if (maxChars <= 0)
 		maxChars = 32767; // do them all!
 
@@ -533,7 +533,7 @@ CG_DrawStrlen
 Returns character count, skiping color escape codes
 =================
 */
-//FIXME utf8
+//FIXME UTF-8
 float CG_DrawStrlen( const char *str, const fontInfo_t *font ) {
 	const char *s = str;
 	int count = 0;
@@ -1331,7 +1331,7 @@ void UI_DrawProportionalString( int x, int y, const char* str, int style, const 
 //FIXME hack for info screen
 int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const vec4_t color)
 {
-	char buffer[MAX_STRING_CHARS];  // must hold at least 21 bytes, see below, 8 bytes for color string before, 8 bytes for new color string, up to 4 utf8 butes, and '\0'
+	char buffer[MAX_STRING_CHARS];  // must hold at least 21 bytes, see below, 8 bytes for color string before, 8 bytes for new color string, up to 4 UTF-8 bytes, and '\0'
 	char *b;
 	int lines;
 	char lastColorString[9];
@@ -1440,7 +1440,7 @@ int UI_DrawProportionalString3 (int x, int y, const char* str, int style, const 
 			width += ((float)glyph.xSkip * ((float)PROP_HEIGHT / 24.0f));
 		}
 
-		// each while loop uses potentially 13 bytes in buffer[]:  ^xafafaf + (4 utf8 bytes) + '\0'
+		// each while loop uses potentially 13 bytes in buffer[]:  ^xafafaf + (4 UTF-8 bytes) + '\0'
 		// 30: max prop width 'W'
 		if ((width * fontScale) >= (virtualWidth - (30 * fontScale))
 			||  ((b - buffer) >= (sizeof(buffer) - 13))) {

@@ -328,7 +328,7 @@ void CON_Init( void )
 CON_Input
 ==================
 */
-//FIXME utf8 input
+//FIXME UTF-8 input
 char *CON_Input( void )
 {
 	INPUT_RECORD buff[ MAX_EDIT_LINE ];

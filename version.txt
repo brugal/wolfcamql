@@ -1,6 +1,10 @@
-12.5test3
+12.5test4
 
 * ioquake3 patches
+
+  - fixes
+  - Add r_parallaxMapOffset
+
 * cg_fallKick (0: no view or weapon change, 1: (default) view and weapon change, 2: only weapon sway)
 * bug fix:  follow view didn't use fall kick
 * add cpma ntf game icon
@@ -19,6 +23,12 @@
 * cpma ntf in game help markers
 * cpma ntf flag sounds
 * cg_shotgunStyle 3: cpma  4: cpma with randomness
+* /centerprint <string> [char width | 'token']
+* cg_drawCenterPrintOld  debugging cvar to test old q3 code
+* bug fix:  cg_drawFragMessageSeparate 1 with cg_qlhud 0 wasn't using q3 font
+* cg_drawCenterPrintLineSpacing  extra spacing between lines
+* /resetcenterprinttime  redisplay the last center print message
+* bug fix:  center print font couldn't be changed with cg_qlhud 0
 
 
 ---------------------------------

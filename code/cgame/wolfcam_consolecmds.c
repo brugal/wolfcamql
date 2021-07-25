@@ -81,10 +81,10 @@ void Wolfcam_Players_f (void)
 		}
 
 #if 0
-		//FIXME testing utf8
+		//FIXME testing UTF-8
 		{
 			const char *s = ci->name;
-			Com_Printf("\nutf8 values: ");
+			Com_Printf("\nUTF-8 values: ");
 			while (*s) {
 				Com_Printf("[%d '%c'] ", s[0] & 255, s[0] & 255);
 				s++;

@@ -1102,9 +1102,10 @@ typedef struct {
 	int			centerPrintTime;
 	int			centerPrintCharWidth;
 	float centerPrintY;
-	char		centerPrint[1024];
+	char		centerPrint[MAX_STRING_CHARS];
 	int			centerPrintLines;
 	qboolean	centerPrintIsFragMessage;
+	qboolean	centerPrintIsTokenized;
 
 	// low ammo warning state
 	int			lowAmmoWarning;		// 1 = low, 2 = empty
@@ -3151,6 +3152,8 @@ extern vmCvar_t cg_drawCenterPrintAlpha;
 extern vmCvar_t cg_drawCenterPrintFade;
 extern vmCvar_t cg_drawCenterPrintFadeTime;
 extern vmCvar_t cg_drawCenterPrintWideScreen;
+extern vmCvar_t cg_drawCenterPrintOld;
+extern vmCvar_t cg_drawCenterPrintLineSpacing;
 
 extern vmCvar_t cg_drawVote;
 extern vmCvar_t cg_drawVoteX;

@@ -592,6 +592,7 @@ extern int PERS_ATTACKEE_ARMOR;
 #define	EF_DEAD				0x00000001		// don't draw a foe marker over players with EF_DEAD
 #if 1  //def MPACK
 #define EF_TICKING			0x00000002		// used to make players play the prox mine ticking sound
+#define EF_BACKPACK			0x00000002		// cpma flag to mark weapon as backpack
 #endif
 #define	EF_TELEPORT_BIT		0x00000004		// toggled every time the origin abruptly changes
 #define	EF_AWARD_EXCELLENT	0x00000008		// draw an excellent sprite

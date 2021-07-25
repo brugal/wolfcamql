@@ -784,7 +784,7 @@ void Field_CompleteCommand( char *cmd, qboolean doCommands, qboolean doCvars );
 void Field_CompletePlayerName( const char **names, int count );
 size_t Field_Strlen (const field_t *field);
 
-// char *p must be able to hold at least MAX_EDIT_LINE * 4 (utf8 bytes) chars
+// char *p must be able to hold at least MAX_EDIT_LINE * 4 (UTF-8 bytes) chars
 // len == 0 is full string
 void Field_ToStr (char *p, const field_t *field, int skip, int len);
 

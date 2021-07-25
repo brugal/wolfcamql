@@ -3851,9 +3851,9 @@ static qboolean Field_Complete( void )
 	if( matchCount == 0 )
 		return qtrue;
 
-	//FIXME utf8 completionString, shortestMatch
+	//FIXME UTF-8 completionString, shortestMatch
 	////completionOffset = strlen( completionField->buffer ) - strlen( completionString );
-	//FIXME utf8 strlen(completionString)
+	//FIXME UTF-8 strlen(completionString)
 	completionOffset = Field_Strlen(completionField) - strlen(completionString);
 
 	////Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch, sizeof( completionField->buffer ) - completionOffset );
@@ -4290,7 +4290,7 @@ static qboolean Field_CompletePlayerNameFinal( qboolean whitespace )
 		return qtrue;
 
 	//completionOffset = strlen( completionField->buffer ) - strlen( completionString );
-	//FIXME utf8 strlen(completionString)
+	//FIXME UTF-8 strlen(completionString)
 	completionOffset = Field_Strlen(completionField) - strlen(completionString);
 
 	//Q_strncpyz( &completionField->buffer[ completionOffset ], shortestMatch,

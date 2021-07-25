@@ -182,6 +182,7 @@ static void CG_spWin_f( void) {
 		CG_AddBufferedSound(cgs.media.winnerSound);
 	}
 	//CG_StartLocalSound(cgs.media.winnerSound, CHAN_ANNOUNCER);
+	//FIXME 2021-07-23  charWidth 0?
 	CG_CenterPrint("YOU WIN!", SCREEN_HEIGHT * .30, 0);
 }
 
@@ -195,6 +196,7 @@ static void CG_spLose_f( void) {
 		CG_AddBufferedSound(cgs.media.loserSound);
 	}
 	//CG_StartLocalSound(cgs.media.loserSound, CHAN_ANNOUNCER);
+	//FIXME 2021-07-23  charWidth 0?
 	CG_CenterPrint("YOU LOSE...", SCREEN_HEIGHT * .30, 0);
 }
 #endif
@@ -8127,6 +8129,72 @@ static void CG_DebugCpmaMvd_f (void)
 	}
 }
 
+static void CG_ConsoleCenterPrint_f (void)
+{
+	char buffer[MAX_STRING_CHARS];
+	int i;
+	int bi;
+	int slen;
+	const char *s;
+	int charWidth;
+	qboolean isTokenString = qfalse;
+
+	if (CG_Argc() < 2) {
+		Com_Printf("usage: centerprint <string> [char width | 'token']");
+		return;
+	}
+
+	if (CG_Argc() >= 3) {
+		if (!Q_stricmp(CG_Argv(2), "token")) {
+			charWidth = BIGCHAR_WIDTH;
+			isTokenString = qtrue;
+		} else {
+			charWidth = atoi(CG_Argv(2));
+		}
+	} else {
+		charWidth = BIGCHAR_WIDTH;
+	}
+
+	s = CG_Argv(1);
+	slen = strlen(s);
+
+	i = 0;
+	bi = 0;
+	while (i < slen) {
+		if ((i + 1) < slen  &&  s[i] == '\\') {
+			if (s[i + 1] == '\\') {
+				buffer[bi] = '\\';
+				i++;
+			} else if (s[i + 1] == 'n') {
+				buffer[bi] = '\n';
+				i++;
+			} else if (s[i + 1] == '\'') {
+				buffer[bi] = '"';
+				i++;
+			} else {
+				buffer[bi] = s[i];
+			}
+		} else {
+			buffer[bi] = s[i];
+		}
+
+		i++;
+		bi++;
+	}
+
+	buffer[bi] = '\0';
+
+	CG_CenterPrint(buffer, SCREEN_HEIGHT * 0.30, charWidth);
+	if (isTokenString) {
+		cg.centerPrintIsTokenized = qtrue;
+	}
+}
+
+static void CG_ResetCenterPrintTime_f (void)
+{
+	cg.centerPrintTime = cg.time;
+}
+
 typedef struct {
 	const char *cmd;
 	void (*function)(void);
@@ -8322,6 +8390,8 @@ static consoleCommand_t	commands[] = {
 	{ "seeknextround", CG_SeekNextRound_f },
 	{ "seekprevround", CG_SeekPrevRound_f },
 	{ "debugcpmamvd", CG_DebugCpmaMvd_f },
+	{ "centerprint", CG_ConsoleCenterPrint_f },
+	{ "resetcenterprinttime", CG_ResetCenterPrintTime_f },
 
 };
 

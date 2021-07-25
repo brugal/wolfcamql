@@ -7737,3 +7737,12 @@ the demo.
 2021-06-23-01
     Allow unwinding of qvmcall64 call-stub for msvc/masm
     qvmcall64 has its own custom calling convention due to pushing all non-volatile registers to the stack. The game uses set/longjmp which on Windows uses "RtlUnwindEx" to unwind the callstack. qvmcall64 cannot be unwound by default due to the custom calling convention. To allow unwinding, we need to add custom SEH unwind data to the function.
+
+2021-07-05-01
+    Add epsilon to avoid division by zero in CalcSpecular().
+
+2021-07-05-02
+    Add r_parallaxMapOffset.
+
+2021-07-06-01
+    Fix line not removed in previous commit.

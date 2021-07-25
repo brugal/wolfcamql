@@ -403,7 +403,7 @@ void Field_VariableSizeDraw (field_t *edit, float x, float y, int width, int siz
 		SCR_DrawSmallStringExt( x, y, cwidth, cheight, str, color, qfalse, noColorEscape );
 
 	} else {
-		//FIXME utf8
+		//FIXME UTF-8
 		// draw big string with drop shadow
 		SCR_DrawBigString( x, y, str, 1.0, noColorEscape );
 	}
@@ -704,7 +704,7 @@ void Console_Key (int key)
 	if ((key == K_INS  &&  keys[K_CTRL].down)  ||
 		(key == K_TAB  &&  keys[K_CTRL].down)
 		) {
-		char numberString[MAX_EDIT_LINE * 4];  // max 4 utf8 bytes
+		char numberString[MAX_EDIT_LINE * 4];  // max 4 UTF-8 bytes
 		qboolean gotX;
 		int count;
 		int bc;

@@ -67,7 +67,7 @@ void CG_LagometerMarkNoMove (void);
 
 void CG_CenterPrint (const char *str, float y, int charWidth);
 void CG_CenterPrintFragMessage (const char *str, float y, int charWidth);
-floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum);
+floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum, const char *tokenStringOverride);
 void CG_CreateNewCrosshairs (void);
 
 void CG_Fade( int a, int time, int duration );

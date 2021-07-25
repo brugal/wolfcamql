@@ -1686,7 +1686,7 @@ void Q_PrintSubString (const char *start, const char *end)
 	}
 }
 
-//FIXME check for invalid unicode code points, invalid utf8 strings
+//FIXME check for invalid unicode code points, invalid UTF-8 strings
 //FIXME invalid unicode sequences should parse whatever is available?
 // assumes null terminated input string
 
@@ -1703,7 +1703,7 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 		return c;
 	} else if ((c & 0xe0) == 0xc0) {  // 2 bytes 110xxxxx 10xxxxxx
 		if (qfalse) {  //(s[1] == '\0') {  // not enough bytes to read
-			Com_Printf("^3Q_GetCpFromUtf8 two byte utf8 sequence terminated, %d\n", c);
+			Com_Printf("^3Q_GetCpFromUtf8 two byte UTF-8 sequence terminated, %d\n", c);
 			*bytes = 1;
 			//FIXME return a standard invalid char
 			*error = qtrue;
@@ -1715,7 +1715,7 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 		return ( ((b0 & 0x1f) << 6) | (b1 & 0x3f) );
 	} else if ((c & 0xf0) == 0xe0) {  // 3 bytes 1110xxxx 10xxxxxx 10xxxxxx
 		if (qfalse) {  //(s[1] == '\0'  ||  s[2] == '\0') {
-			Com_Printf("^3Q_GetCpFromUtf8  three byte utf8 sequence terminated, %d\n", c);
+			Com_Printf("^3Q_GetCpFromUtf8  three byte UTF-8 sequence terminated, %d\n", c);
 			//Com_Printf("%s\n", s);
 			*bytes = 1;
 			//FIXME return a standard invalid char
@@ -1729,7 +1729,7 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 		return ( ((b0 & 0xf) << 12) | ((b1 & 0x3f) << 6) | (b2 & 0x3f));
 	} else if ((c & 0xf8) == 0xf0) {  // 4 bytes 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
 		if (qfalse) {  //(s[1] == '\0'  ||  s[2] == '\0'  ||  s[3] == '\0') {
-			Com_Printf("^3Q_GetCpFromUtf8  four byte utf8 sequence terminated, %d\n", c);
+			Com_Printf("^3Q_GetCpFromUtf8  four byte UTF-8 sequence terminated, %d\n", c);
 			*bytes = 1;
 			//FIXME return a standard invalid char
 			*error = qtrue;
@@ -1744,7 +1744,7 @@ int Q_GetCpFromUtf8 (const char *s, int *bytes, qboolean *error)
 	}
 
 	// invalid number of bytes
-	Com_Printf("^3Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character %d\n", c);
+	Com_Printf("^3Q_GetCpFromUtf8  invalid number of bytes specified in UTF-8 character %d\n", c);
 	*error = qtrue;
 	*bytes = 1;
 	return c;

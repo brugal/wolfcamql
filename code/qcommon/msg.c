@@ -368,12 +368,12 @@ void MSG_WriteString( msg_t *sb, const char *s ) {
 
 		// get rid of 0x80+ and '%' chars, because old clients don't like them
 		for ( i = 0 ; i < l ; i++ ) {
-			// utf8
+			// UTF-8
 			if (com_protocol->integer < 91  &&  ((byte *)string)[i] > 127) {
 				string[i] = '.';
 			}
 
-			// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
+			// ok to check each byte when parsing UTF-8 since '%' (0x25) isn't a valid UTF-8 byte
 			if (string[i] == '%') {
 				string[i] = '.';
 			}
@@ -400,12 +400,12 @@ void MSG_WriteBigString( msg_t *sb, const char *s ) {
 
 		// get rid of 0x80+ and '%' chars, because old clients don't like them
 		for ( i = 0 ; i < l ; i++ ) {
-			// utf8
+			// UTF-8
 			if (com_protocol->integer < 91  &&  ((byte *)string)[i] > 127) {
 				string[i] = '.';
 			}
 
-			// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
+			// ok to check each byte when parsing UTF-8 since '%' (0x25) isn't a valid UTF-8 byte
 			if (string[i] == '%') {
 				string[i] = '.';
 			}
@@ -515,12 +515,12 @@ char *MSG_ReadString( msg_t *msg ) {
 			break;
 		}
 		// translate all fmt spec to avoid crash bugs
-		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
+		// ok to check each byte when parsing UTF-8 since '%' (0x25) isn't a valid UTF-8 byte
 		if ( c == '%' ) {
 			c = '.';
 		}
 
-		// utf8
+		// UTF-8
 		if (com_protocol->integer < 91) {
 			// don't allow higher ascii values
 			if ( c > 127 ) {
@@ -551,7 +551,7 @@ char *MSG_ReadBigString( msg_t *msg ) {
 			break;
 		}
 		// translate all fmt spec to avoid crash bugs
-		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
+		// ok to check each byte when parsing UTF-8 since '%' (0x25) isn't a valid UTF-8 byte
 		if ( c == '%' ) {
 			c = '.';
 		}
@@ -587,12 +587,12 @@ char *MSG_ReadStringLine( msg_t *msg ) {
 			break;
 		}
 		// translate all fmt spec to avoid crash bugs
-		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
+		// ok to check each byte when parsing UTF-8 since '%' (0x25) isn't a valid UTF-8 byte
 		if ( c == '%' ) {
 			c = '.';
 		}
 
-		// utf8
+		// UTF-8
 		if (com_protocol->integer < 91) {
 			// don't allow higher ascii values
 			if ( c > 127 ) {
@@ -631,7 +631,7 @@ int MSG_HashKey(const char *string, int maxlen) {
 
 	hash = 0;
 	for (i = 0; i < maxlen && string[i] != '\0'; i++) {
-		// ok to check each byte when parsing utf8 since '%' (0x25) isn't a valid utf8 byte
+		// ok to check each byte when parsing UTF-8 since '%' (0x25) isn't a valid UTF-8 byte
 		if (string[i] & 0x80 || string[i] == '%') {
 			if (com_protocol->integer < 91) {
 				hash += '.' * (119 + i);

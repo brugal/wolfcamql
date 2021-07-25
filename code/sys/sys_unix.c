@@ -394,7 +394,7 @@ char *Sys_GetClipboardData (void)
 
 	UTF8_STRING = XInternAtom(dpy, "UTF8_STRING", True);
 	if (UTF8_STRING == None) {
-		Com_Printf("^1Sys_GetClipboardData:  couldn't create utf8 atom\n");
+		Com_Printf("^1Sys_GetClipboardData:  couldn't create UTF-8 atom\n");
 		return NULL;
 	}
 

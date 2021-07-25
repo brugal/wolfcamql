@@ -766,6 +766,8 @@ vmCvar_t cg_drawCenterPrintAlpha;
 vmCvar_t cg_drawCenterPrintFade;
 vmCvar_t cg_drawCenterPrintFadeTime;
 vmCvar_t cg_drawCenterPrintWideScreen;
+vmCvar_t cg_drawCenterPrintOld;
+vmCvar_t cg_drawCenterPrintLineSpacing;
 
 vmCvar_t cg_drawVote;
 vmCvar_t cg_drawVoteX;
@@ -1950,6 +1952,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_drawCenterPrintFade, "cg_drawCenterPrintFade", "1", CVAR_ARCHIVE },
 	{ &cg_drawCenterPrintFadeTime, "cg_drawCenterPrintFadeTime", "200", CVAR_ARCHIVE },
 	{ cvp(cg_drawCenterPrintWideScreen), "2", CVAR_ARCHIVE },
+	{ cvp(cg_drawCenterPrintOld), "0", CVAR_ARCHIVE },
+	{ cvp(cg_drawCenterPrintLineSpacing), "6.0", CVAR_ARCHIVE },
 
 	{ &cg_drawVote, "cg_drawVote", "1", CVAR_ARCHIVE },
 	{ &cg_drawVoteX, "cg_drawVoteX", "0", CVAR_ARCHIVE },
@@ -2960,7 +2964,7 @@ void CG_PrintToScreen ( const char *msg, ... ) {
 
 
 	for (i = 0;  i < 1024;  i++) {
-		// also allow utf8 characters
+		// also allow UTF-8 characters
 		//if (text[i] >= ' '  &&  text[i] <= '~') {
 		if ((unsigned char)text[i] >= ' ') {
 			continue;

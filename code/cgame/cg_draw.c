@@ -6982,6 +6982,7 @@ void CG_CenterPrint (const char *str, float y, int charWidth)
 		s++;
 	}
 
+	cg.centerPrintIsTokenized = qfalse;
 	cg.centerPrintIsFragMessage = qfalse;
 }
 
@@ -7222,7 +7223,7 @@ static void CG_DrawCenter (void)
 }
 
 // handles both frag and obituary
-floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum)
+floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum, const char *tokenStringOverride)
 {
 	static floatint_t extString[MAX_STRING_CHARS];
 	int i, j, k;
@@ -7265,6 +7266,10 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum)
 
 	i = (cg.obituaryIndex + indexNum - 1) % MAX_OBITUARIES;
 	obituary = &cg.obituaries[i];
+
+	if (tokenStringOverride) {
+		tokenString = tokenStringOverride;
+	}
 
 	i = 0;
 	j = 0;
@@ -7974,14 +7979,10 @@ static void CG_DrawCenterString( void ) {
 	int		l;
 	float x, y, w;
 	float h;
-	//float	*color;
-	//FIXME test
 	const fontInfo_t *font;
 	int align;
 	float scale;
-	//float alphaOverride;
 	vec4_t color;
-	//float fadeAlpha;
 	const floatint_t *extString = NULL;
 	int numIcons = 0;
 	int startLen;
@@ -7996,7 +7997,6 @@ static void CG_DrawCenterString( void ) {
 
 	QLWideScreen = cg_drawCenterPrintWideScreen.integer;
 
-	//color = CG_FadeColor( cg.centerPrintTime, 1000 * cg_centertime.value );
 	if (cg_drawCenterPrintFade.integer) {
 		CG_FadeColorVec4(color, cg.centerPrintTime, cg_drawCenterPrintTime.integer, cg_drawCenterPrintFadeTime.integer);
 	} else {
@@ -8023,11 +8023,18 @@ static void CG_DrawCenterString( void ) {
 	start = cg.centerPrint;
 
 	//FIXME draw top down??
-	if (cg_qlhud.integer) {
-		//FIXME hack, should be storing this from font info
-		y = cg.centerPrintY - cg.centerPrintLines * CG_Text_Height("IP", cg_drawCenterPrintScale.value, 0, &cgs.media.centerPrintFont) / 2;
+	if (cg_drawCenterPrintOld.integer == 0) { //  &&  cg_qlhud.integer) {  //  ||  *cg_drawCenterPrintFont.string) {
 
-	} else {
+		//FIXME 2021-07-25 this also wont center correctly a '/centerprint' 'token' option line that uses %{newline ...}
+
+		if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
+			y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
+		} else {
+			//FIXME hack, should be storing this from font info
+			y = cg.centerPrintY - cg.centerPrintLines * CG_Text_Height("IP", cg_drawCenterPrintScale.value, 0, &cgs.media.centerPrintFont) / 2;
+		}
+
+	} else {  // old q3 hud code that use default bigchar font
 		y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
 	}
 
@@ -8054,23 +8061,32 @@ static void CG_DrawCenterString( void ) {
 
 		//Com_Printf("linebuffer: '%s'\n", linebuffer);
 
-		if (cg_qlhud.integer) {
+		if (cg_drawCenterPrintOld.integer == 0) {
+
 			if (*cg_drawCenterPrintFont.string) {
 				font = &cgs.media.centerPrintFont;
 			} else {
-				font = &cgDC.Assets.textFont;
+				if (cg_qlhud.integer == 0) {
+					font = &cgs.media.giantchar;
+				} else {
+					font = &cgDC.Assets.textFont;
+				}
 			}
 
-			//Com_Printf("x %s\n", font->name);
-			if (cg.centerPrintIsFragMessage  &&  start == cg.centerPrint) {
+			// check that 'start' hasn't advanced  since tokenized message parses the entire thing
+			if ((cg.centerPrintIsFragMessage  ||  cg.centerPrintIsTokenized)  &&  start == cg.centerPrint) {
 				char *lb;
 				const floatint_t *es;
 
-				extString = CG_CreateFragString(qtrue, 0);
+				if (cg.centerPrintIsTokenized) {
+					extString = CG_CreateFragString(qtrue, 0, cg.centerPrint);
+				} else {
+					extString = CG_CreateFragString(qtrue, 0, NULL);
+				}
 
 				//Com_Printf("^3fullstring: ");
 				//printPicString(extString);
-					
+
 				while (1) {
 					floatint_t *ts;
 					qboolean haveNewLineAmount = qfalse;
@@ -8116,7 +8132,7 @@ static void CG_DrawCenterString( void ) {
 
 					//Com_Printf("^6beforenewline: ");
 					//printPicString(tmpExtString);
-					
+
 					lb = linebuffer;
 					es = tmpExtString;  //extString;
 					numIcons = 0;
@@ -8141,6 +8157,15 @@ static void CG_DrawCenterString( void ) {
 
 					//Com_Printf("linebuffer:  '%s'\n", linebuffer);
 					scale = cg_drawCenterPrintScale.value;
+					if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
+						// 0.35 center
+						// 0.25 frag
+						// match default giantchar scaling
+						//   maybe default center value should have been 0.355
+						//scale *= 0.5;
+						scale *= 0.5071428571428571;
+					}
+
 					//w = CG_Text_Width(linebuffer, scale, 0, font);
 					h = CG_Text_Height(linebuffer, scale, 0, font);
 
@@ -8148,7 +8173,7 @@ static void CG_DrawCenterString( void ) {
 					//w += ((float)h * cg_drawFragMessageIconScale.value) * (float)numIcons;
 					w = CG_Text_Pic_Width(tmpExtString, scale, cg_drawFragMessageIconScale.value, /*limit*/ 0, h, font);
 					//Com_Printf("width: %f\n", w);
-					align = cg_drawCenterPrintAlign.value;
+					align = cg_drawCenterPrintAlign.integer;
 					x = (SCREEN_WIDTH - w) / 2;
 					if (*cg_drawCenterPrintX.string) {
 						x = cg_drawCenterPrintX.value;
@@ -8164,17 +8189,29 @@ static void CG_DrawCenterString( void ) {
 					if (haveNewLineAmount) {
 						y += newLineAmount;
 					} else {
-						y += h + 6;  //FIXME scale not fixed value of 6
+						y += h + cg_drawCenterPrintLineSpacing.value;
+						if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
+							y -= 6.0;
+						}
 					}
 				}  // while (1)  getting new line
 			} else { // centerprintisfrag and start == cg.centerprint
 
 				//Com_Printf("centerprint %s font %d\n", linebuffer, *font);
 				scale = cg_drawCenterPrintScale.value;
+				if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
+					// 0.35 center
+					// 0.25 frag
+					// match default giantchar scaling
+					//   maybe default center value should have been 0.355
+					//scale *= 0.5;
+					scale *= 0.5071428571428571;
+				}
+
 				w = CG_Text_Width(linebuffer, scale, 0, font);
 				h = CG_Text_Height(linebuffer, scale, 0, font);
 
-				align = cg_drawCenterPrintAlign.value;
+				align = cg_drawCenterPrintAlign.integer;
 				x = (SCREEN_WIDTH - w) / 2;
 				if (*cg_drawCenterPrintX.string) {
 					x = cg_drawCenterPrintX.value;
@@ -8187,11 +8224,15 @@ static void CG_DrawCenterString( void ) {
 
 				CG_Text_Paint(x, y + h, scale, color, linebuffer, 0, 0, cg_drawCenterPrintStyle.integer, font);
 
-				y += h + 6;  //FIXME scale not fixed value of 6
+				y += h + cg_drawCenterPrintLineSpacing.value;
+				if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
+					y -= 6.0;
+				}
 			}  // end centerprintisfrag and start == cg.centerprint
 
-		} else {  // else qlhud
+		} else {  // else old q3 hud code that uses bigchar font
 			//FIXME width
+			//FIXME 2021-07-25 why does this get divided by BIGCHAR_WIDTH ?
 			w = cg.centerPrintCharWidth * CG_DrawStrlen( linebuffer, &cgs.media.bigchar ) / BIGCHAR_WIDTH;
 
 			x = ( SCREEN_WIDTH - w ) / 2;
@@ -8200,30 +8241,7 @@ static void CG_DrawCenterString( void ) {
 							  cg.centerPrintCharWidth, (int)(cg.centerPrintCharWidth * 1.5), 0, &cgs.media.bigchar );
 
 			y += cg.centerPrintCharWidth * 1.5;
-			//#endif
 		}
-
-#if 0
-		while ( *start && ( *start != '\n' ) ) {
-			start++;
-		}
-		if ( !*start ) {
-			break;
-		}
-		start++;
-#endif
-
-#if 0
-		if (!*start) {
-			break;
-		}
-		if (*start == '\n') {
-			start++;
-		}
-		if (!*start) {
-			break;
-		}
-#endif
 
 		while (*start  &&  (*start != '\n')) {
 			start++;
@@ -8279,7 +8297,11 @@ static void CG_DrawFragMessage (void)
 	if (*cg_drawFragMessageFont.string) {
 		font = &cgs.media.fragMessageFont;
 	} else {
-		font = &cgDC.Assets.textFont;
+		if (cg_qlhud.integer == 0) {
+			font = &cgs.media.giantchar;
+		} else {
+			font = &cgDC.Assets.textFont;
+		}
 	}
 	QLWideScreen = cg_drawFragMessageWideScreen.integer;
 
@@ -8287,8 +8309,13 @@ static void CG_DrawFragMessage (void)
 	y = cg_drawFragMessageY.value;
 	scale = cg_drawFragMessageScale.value;
 
+	if (cg_qlhud.integer == 0  &&  !*cg_drawFragMessageFont.string) {
+		// match default giantchar scaling
+		scale *= 0.75;
+	}
+
 	//FIXME duplicate code in draw center print
-	extString = CG_CreateFragString(qtrue, 0);
+	extString = CG_CreateFragString(qtrue, 0, NULL);
 
 	while (1) {
 		floatint_t *ts;
@@ -8361,7 +8388,7 @@ static void CG_DrawFragMessage (void)
 
 		//tw += ((float)th * cg_drawFragMessageIconScale.value) * (float)numIcons;
 		tw = CG_Text_Pic_Width(tmpExtString, scale, cg_drawFragMessageIconScale.value, /*limit*/ 0, th, font);
-		
+
 		//Com_Printf("new w %d\n", tw);
 
 		x = cg_drawFragMessageX.value;
@@ -9725,7 +9752,7 @@ static qboolean CG_DrawFollow( void ) {
 		s = cgs.clientinfo[cg.snap->ps.clientNum].name;
 	}
 
-	// testing utf8
+	// testing UTF-8
 	//s = "Τη γλώσσα μου έδωσαν ελληνική";
 	//s = "Τη γλώσσα";  // μου έδωσαν ελληνική";
 	//s = "ABCD₪ Τη γλώσσαEFGHI";

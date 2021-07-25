@@ -4869,7 +4869,7 @@ void CG_Text_Paint_Limit (float *maxX, float x, float y, float scale, const vec4
 				*maxX = x;
 				count++;
 				s++;
-				s += (bytes - 1);  // utf8
+				s += (bytes - 1);  // UTF-8
 			}
 		}
 		//Com_Printf("count %d  len %d\n", count, len);
@@ -5993,7 +5993,7 @@ static void CG_DrawObit (const rectDef_t *rect, float scale, const vec4_t color,
 		//Com_Printf("%d\n", (cg.obituaryIndex + i - 1) % MAX_OBITUARIES);
 
 		//Com_Printf("about to create frag string...\n");
-		extString = CG_CreateFragString(qfalse, i);
+		extString = CG_CreateFragString(qfalse, i, NULL);
 		//CG_PrintPicString(extString);
 
 		while (1) {

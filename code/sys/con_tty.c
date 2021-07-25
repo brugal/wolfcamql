@@ -526,7 +526,7 @@ char *CON_Input( void )
 				return NULL;
 
 
-			// push regular character and/or check of utf8
+			// push regular character and/or check of UTF-8
 
 			TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[1] = '\0';
 			TTY_con.xbuffer[TTY_con.cursor].utf8Bytes[2] = '\0';
@@ -538,9 +538,9 @@ char *CON_Input( void )
 
 			ukey = key;
 
-			// utf8 check
+			// UTF-8 check
 			if (ukey <= 0x7f) {
-				// 1 byte utf8, all set
+				// 1 byte UTF-8, all set
 			} else if ((ukey & 0xe0) == 0xc0) {  // 2 bytes
 				TTY_con.xbuffer[TTY_con.cursor].numUtf8Bytes = 2;
 				needUtf8Bytes = 1;
@@ -558,7 +558,7 @@ char *CON_Input( void )
 				return NULL;
 			}
 
-			// utf8 1 byte
+			// UTF-8 1 byte
 			needUtf8Bytes = 0;
 
 			TTY_con.cursor++; // next char will always be '\0';

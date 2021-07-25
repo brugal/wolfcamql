@@ -1527,7 +1527,12 @@ static void CG_Item ( centity_t *cent ) {
 
 	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
 		//FIXME 2021-07-09 is this correct check for backpack?
-		if (es->modelindex2 == 1  &&  es->eFlags == EF_TICKING) {
+		// 2021-07-15 yes, from em92:
+		//    According to http://games.linuxdude.com/tamaps/archive/cpm1_dev_docs/step3.txt
+		//    EF_BACKPACK is used to set dropped entity as backpack.
+		//
+		// not sure if modelindex2 check is needed
+		if (es->modelindex2 == 1  &&  es->eFlags == EF_BACKPACK) {
 			//FIXME get index at game start
 			modelindex = bg_numItemsCpma - 2;
 		}
