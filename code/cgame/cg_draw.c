@@ -5764,7 +5764,7 @@ static float CG_DrawPowerups( float y ) {
 			  cg.time - cg.powerupTime < PULSE_TIME ) {
 			  f = 1.0 - ( ( (float)cg.time - cg.powerupTime ) / PULSE_TIME );
 			  size = ICON_SIZE * ( 1.0 + ( PULSE_SCALE - 1.0 ) * f );
-			  Com_Printf("^5pulse size: %f\n", size);
+			  //Com_Printf("^5pulse size: %f\n", size);
 		  } else {
 			  size = ICON_SIZE;
 		  }
@@ -8023,9 +8023,9 @@ static void CG_DrawCenterString( void ) {
 	start = cg.centerPrint;
 
 	//FIXME draw top down??
-	if (cg_drawCenterPrintOld.integer == 0) { //  &&  cg_qlhud.integer) {  //  ||  *cg_drawCenterPrintFont.string) {
+	if (cg_drawCenterPrintOld.integer == 0) {
 
-		//FIXME 2021-07-25 this also wont center correctly a '/centerprint' 'token' option line that uses %{newline ...}
+		//FIXME 2021-07-25 this wont center correctly a '/centerprint' 'token' option line that uses %{newline ...}
 
 		if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
 			y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
@@ -8034,7 +8034,7 @@ static void CG_DrawCenterString( void ) {
 			y = cg.centerPrintY - cg.centerPrintLines * CG_Text_Height("IP", cg_drawCenterPrintScale.value, 0, &cgs.media.centerPrintFont) / 2;
 		}
 
-	} else {  // old q3 hud code that use default bigchar font
+	} else {  // old q3 hud code that uses default bigchar font
 		y = cg.centerPrintY - cg.centerPrintLines * BIGCHAR_HEIGHT / 2;
 	}
 
@@ -8134,7 +8134,7 @@ static void CG_DrawCenterString( void ) {
 					//printPicString(tmpExtString);
 
 					lb = linebuffer;
-					es = tmpExtString;  //extString;
+					es = tmpExtString;
 					numIcons = 0;
 					while (es[0].i) {
 
@@ -8191,11 +8191,12 @@ static void CG_DrawCenterString( void ) {
 					} else {
 						y += h + cg_drawCenterPrintLineSpacing.value;
 						if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
+							// team arena and ql add a bit of spacing
 							y -= 6.0;
 						}
 					}
 				}  // while (1)  getting new line
-			} else { // centerprintisfrag and start == cg.centerprint
+			} else { // (centerprintisfrag or istoken)  and start == cg.centerprint
 
 				//Com_Printf("centerprint %s font %d\n", linebuffer, *font);
 				scale = cg_drawCenterPrintScale.value;
@@ -8226,9 +8227,10 @@ static void CG_DrawCenterString( void ) {
 
 				y += h + cg_drawCenterPrintLineSpacing.value;
 				if (cg_qlhud.integer == 0  &&  !*cg_drawCenterPrintFont.string) {
+					// team arena and ql add a bit of spacing
 					y -= 6.0;
 				}
-			}  // end centerprintisfrag and start == cg.centerprint
+			}  // end (centerprintisfrag or istoken)  and start == cg.centerprint
 
 		} else {  // else old q3 hud code that uses bigchar font
 			//FIXME width

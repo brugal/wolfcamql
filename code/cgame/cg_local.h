@@ -463,6 +463,8 @@ typedef struct {
 	qboolean hasTeamInfo;
 	clientRewards_t clientRewards;
 
+	teamclass_t teamClass;  // cpma ntf class
+
 } clientInfo_t;
 
 
@@ -1205,6 +1207,16 @@ typedef struct {
 	clientInfo_t fallbackModelRed;
 	clientInfo_t fallbackModelBlue;
 	clientInfo_t serverModel;
+
+	clientInfo_t ntfSniperModel;
+	qboolean ntfSniperModelLoaded;
+	clientInfo_t ntfFighterModel;
+	qboolean ntfFighterModelLoaded;
+	clientInfo_t ntfScoutModel;
+	qboolean ntfScoutModelLoaded;
+	clientInfo_t ntfTankModel;
+	qboolean ntfTankModelLoaded;
+
 	qboolean teamModelTeamSkinFound;
 	qboolean teamModelTeamHeadSkinFound;
 	qboolean enemyModelTeamSkinFound;
@@ -2498,6 +2510,12 @@ typedef struct {
 
 	int numberOfRaceCheckPoints;
 
+	// cpma ntf models:  sniper, fighter, scout, tank
+	char ntfSniperModelName[MAX_QPATH];
+	char ntfFighterModelName[MAX_QPATH];
+	char ntfScoutModelName[MAX_QPATH];
+	char ntfTankModelName[MAX_QPATH];
+
 } cgs_t;
 
 
@@ -3271,6 +3289,14 @@ extern vmCvar_t cg_teamRailNudge;
 extern vmCvar_t cg_teamFlagColor;
 
 extern vmCvar_t cg_neutralFlagColor;
+
+extern vmCvar_t cg_cpmaUseNtfModels;
+extern vmCvar_t cg_cpmaNtfRedHeadColor;
+extern vmCvar_t cg_cpmaNtfRedTorsoColor;
+extern vmCvar_t cg_cpmaNtfRedLegsColor;
+extern vmCvar_t cg_cpmaNtfBlueHeadColor;
+extern vmCvar_t cg_cpmaNtfBlueTorsoColor;
+extern vmCvar_t cg_cpmaNtfBlueLegsColor;
 
 extern vmCvar_t cg_ourModel;
 extern vmCvar_t cg_ourHeadModel;

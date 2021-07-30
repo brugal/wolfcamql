@@ -3083,6 +3083,17 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
    if those aren't found QuakeLive's ammo pack model and icon are used
 
+* cpma ntf player model support
+
+    cg_cpmaUseNtfModels
+    cg_cpmaNtfRedHeadColor
+    cg_cpmaNtfRedTorsoColor
+    cg_cpmaNtfRedLegsColor
+    cg_cpmaNtfBlueHeadColor
+    cg_cpmaNtfBlueTorsoColor
+    cg_cpmaNtfBlueLegsColor
+
+
 ----------
 
 brugal

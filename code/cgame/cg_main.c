@@ -885,6 +885,14 @@ vmCvar_t cg_teamFlagColor;
 
 vmCvar_t cg_neutralFlagColor;
 
+vmCvar_t cg_cpmaUseNtfModels;
+vmCvar_t cg_cpmaNtfRedHeadColor;
+vmCvar_t cg_cpmaNtfRedTorsoColor;
+vmCvar_t cg_cpmaNtfRedLegsColor;
+vmCvar_t cg_cpmaNtfBlueHeadColor;
+vmCvar_t cg_cpmaNtfBlueTorsoColor;
+vmCvar_t cg_cpmaNtfBlueLegsColor;
+
 vmCvar_t cg_ourModel;
 vmCvar_t cg_ourHeadSkin;
 vmCvar_t cg_ourTorsoSkin;
@@ -2087,9 +2095,18 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 	{ cvp(cg_neutralFlagColor), "0xf6f600", CVAR_ARCHIVE },
 
-	//FIXME this two have already been set to default values and can't be ""
+	{ cvp(cg_cpmaUseNtfModels), "1", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfRedHeadColor), "0xff5a00", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfRedTorsoColor), "0xff5a00", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfRedLegsColor), "0xff0000", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfBlueHeadColor), "0x00a5ff", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfBlueTorsoColor), "0x00a5ff", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfBlueLegsColor), "0x0000ff", CVAR_ARCHIVE },
+
+	//FIXME these two have already been set to default values and can't be ""
 	{ &cg_ourModel, "model", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE },
 	{ &cg_ourHeadModel, "headmodel", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE },
+
 	{ cvp(cg_ourHeadSkin), "", CVAR_ARCHIVE },
 	{ cvp(cg_ourTorsoSkin), "", CVAR_ARCHIVE },
 	{ cvp(cg_ourLegsSkin), "", CVAR_ARCHIVE },

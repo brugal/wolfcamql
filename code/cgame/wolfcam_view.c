@@ -226,6 +226,49 @@ static void Wolfcam_LoadTeamModel (void)
 	}
 }
 
+static void Wolfcam_LoadNtfModels (void)
+{
+	if (!(cgs.cpma  &&  cgs.gametype == GT_NTF)) {
+		return;
+	}
+
+	if (!cg.ntfSniperModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfSniperModel, cgs.ntfSniperModelName, "pm", cgs.ntfSniperModelName, "pm", "", qtrue)) {
+			Com_Printf("^1couldn't load ntf Sniper model");
+		} else {
+			Com_Printf("loaded ntf Sniper model : '%s'\n", cgs.ntfSniperModelName);
+		}
+		cg.ntfSniperModelLoaded = qtrue;
+	}
+
+	if (!cg.ntfFighterModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfFighterModel, cgs.ntfFighterModelName, "pm", cgs.ntfFighterModelName, "pm", "", qtrue)) {
+			Com_Printf("^1couldn't load ntf Fighter model");
+		} else {
+			Com_Printf("loaded ntf Fighter model : '%s'\n", cgs.ntfFighterModelName);
+		}
+		cg.ntfFighterModelLoaded = qtrue;
+	}
+
+	if (!cg.ntfScoutModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfScoutModel, cgs.ntfScoutModelName, "pm", cgs.ntfScoutModelName, "pm", "", qtrue)) {
+			Com_Printf("^1couldn't load ntf Scout model");
+		} else {
+			Com_Printf("loaded ntf Scout model : '%s'\n", cgs.ntfScoutModelName);
+		}
+		cg.ntfScoutModelLoaded = qtrue;
+	}
+
+	if (!cg.ntfTankModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfTankModel, cgs.ntfTankModelName, "pm", cgs.ntfTankModelName, "pm", "", qtrue)) {
+			Com_Printf("^1couldn't load ntf Tank model");
+		} else {
+			Com_Printf("loaded ntf Tank model : '%s'\n", cgs.ntfTankModelName);
+		}
+		cg.ntfTankModelLoaded = qtrue;
+	}
+}
+
 static void Wolfcam_LoadOurModel (void)
 {
 	char modelStr[MAX_QPATH];
@@ -773,6 +816,7 @@ void Wolfcam_LoadModels (void)
 
 	Wolfcam_LoadOurModel();
 	Wolfcam_LoadTeamModel();
+	Wolfcam_LoadNtfModels();
 	Wolfcam_LoadEnemyModel();
 	Wolfcam_LoadFallbackModel();
 

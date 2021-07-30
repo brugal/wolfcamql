@@ -370,6 +370,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CSCPMA_RATE 726  // not sure
 // 727  max packet dup?  seen:  4
 
+#define CSCPMA_NTF_FIGHTER 728
+#define CSCPMA_NTF_SCOUT 729
+#define CSCPMA_NTF_SNIPER 730
+#define CSCPMA_NTF_TANK 731
+
 #define CSCPMA_SNAPS 746
 #define CSCPMA_MAX_PACKETS 747
 
@@ -1140,6 +1145,14 @@ typedef enum {
 	TEAMTASK_ESCORT,
 	TEAMTASK_CAMP
 } teamtask_t;
+
+// cpma ntf classes
+typedef enum {
+	TEAMCLASS_SNIPER,
+	TEAMCLASS_FIGHTER,
+	TEAMCLASS_SCOUT,
+	TEAMCLASS_TANK
+} teamclass_t;
 
 // means of death
 typedef enum {

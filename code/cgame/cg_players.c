@@ -1509,11 +1509,13 @@ void CG_NewClientInfo( int clientNum ) {
 	clientInfo_t *ci;
 	clientInfo_t *ciOrig;
 	clientInfo_t newInfo;
-	const char	*configstring;
-	char	*v;
+	const char *configstring;
+	const char *v;
 	const char *s;
 	char *slash;
 	const char *name;
+	const char *model;
+	const char *hmodel;
 	char *skin;
 	char filename[MAX_QPATH];
 	char tmpString[MAX_QPATH];
@@ -1760,35 +1762,40 @@ void CG_NewClientInfo( int clientNum ) {
 		}
 	} else {
 		newInfo.countryFlag = 0;
+
+		if (*v  &&  cgs.cpma  && cgs.gametype == GT_NTF) {
+			newInfo.teamClass = atoi(v);
+		}
 	}
 
-	//FIXME are v and h needed at this point?
+	model = Info_ValueForKey(configstring, "model");
+	hmodel = Info_ValueForKey(configstring, "hmodel");
+
 	if (cg_ignoreClientHeadModel.integer == 2  &&  cgs.protocol == PROTOCOL_QL) {
-		v = Info_ValueForKey(configstring, "model");
+		v = model;
 	} else if (cg_ignoreClientHeadModel.integer) {
-		v = Info_ValueForKey(configstring, "model");
+		v = model;
 	} else {
-		v = Info_ValueForKey(configstring, "hmodel");
+		v = hmodel;
 	}
 
-	s = Info_ValueForKey(configstring, "model");
+	s = model;
 	Q_strncpyz(newInfo.modelString, s, sizeof(newInfo.modelString));
 	Q_strncpyz(newInfo.headString, v, sizeof(newInfo.headString));
 
 	if (!cgs.clientinfo[clientNum].infoValid  ||  strcmp(s, cgs.clientinfo[clientNum].modelString)  ||  strcmp(v, cgs.clientinfo[clientNum].headString)) {
 		// unedited model
 
-		//v = Info_ValueForKey(configstring, "hmodel");
 		if (cg_ignoreClientHeadModel.integer == 2  &&  cgs.protocol == PROTOCOL_QL) {
-			v = Info_ValueForKey(configstring, "model");
+			v = model;
 		} else if (cg_ignoreClientHeadModel.integer) {
-			v = Info_ValueForKey(configstring, "model");
+			v = model;
 		} else {
-			v = Info_ValueForKey(configstring, "hmodel");
+			v = hmodel;
 		}
 
 		if (!*v) {
-			v = Info_ValueForKey(configstring, "model");
+			v = model;
 		}
 		if (!*v) {
 			Q_strncpyz(tmpString, DEFAULT_MODEL"/default", sizeof(v));
@@ -1857,7 +1864,7 @@ void CG_NewClientInfo( int clientNum ) {
 	}
 
 	// model
-	v = Info_ValueForKey( configstring, "model" );
+	v = model;
 	if ( cg_forceModel.integer  ) {
 		// forcemodel makes everyone use a single model
 		// to prevent load hitches
@@ -1892,7 +1899,7 @@ void CG_NewClientInfo( int clientNum ) {
 
 		slash = strchr( newInfo.modelName, '/' );
 		if ( !slash ) {
-			// modelName didn not include a skin name
+			// modelName did not include a skin name
 			Q_strncpyz( newInfo.skinName, "default", sizeof( newInfo.skinName ) );
 		} else {
 			Q_strncpyz( newInfo.skinName, slash + 1, sizeof( newInfo.skinName ) );
@@ -1903,13 +1910,12 @@ void CG_NewClientInfo( int clientNum ) {
 	}
 
 	// head model
-	//v = Info_ValueForKey( configstring, "hmodel" );
 	if (cg_ignoreClientHeadModel.integer == 2  &&  cgs.protocol == PROTOCOL_QL) {
-		v = Info_ValueForKey(configstring, "model");
+		v = model;
 	} else if (cg_ignoreClientHeadModel.integer) {
-		v = Info_ValueForKey(configstring, "model");
+		v = model;
 	} else {
-		v = Info_ValueForKey(configstring, "hmodel");
+		v = hmodel;
 	}
 
 	if ( cg_forceModel.integer ) {
@@ -1945,7 +1951,7 @@ void CG_NewClientInfo( int clientNum ) {
 
 		slash = strchr( newInfo.headModelName, '/' );
 		if ( !slash ) {
-			// modelName didn not include a skin name
+			// modelName did not include a skin name
 			Q_strncpyz( newInfo.headSkinName, "default", sizeof( newInfo.headSkinName ) );
 		} else {
 			Q_strncpyz( newInfo.headSkinName, slash + 1, sizeof( newInfo.headSkinName ) );
@@ -1976,6 +1982,7 @@ void CG_NewClientInfo( int clientNum ) {
 		}
 	}
 #endif
+
 	newInfo.headTeamSkinAlt = 0;
 	newInfo.torsoTeamSkinAlt = 0;
 	newInfo.legsTeamSkinAlt = 0;
@@ -4672,6 +4679,43 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			freecamPovSettings = qtrue;
 		}
 
+		if (freecamPovSettings  &&  cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
+			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+			switch (cgs.clientinfo[cent->currentState.clientNum].teamClass) {
+			case TEAMCLASS_SNIPER:
+				CG_CopyClientInfoModel(&cg.ntfSniperModel, ci);
+				break;
+			case TEAMCLASS_FIGHTER:
+				CG_CopyClientInfoModel(&cg.ntfFighterModel, ci);
+				break;
+			case TEAMCLASS_SCOUT:
+				CG_CopyClientInfoModel(&cg.ntfScoutModel, ci);
+				break;
+			case TEAMCLASS_TANK:
+				CG_CopyClientInfoModel(&cg.ntfTankModel, ci);
+				break;
+			default:
+				break;
+			}
+
+			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
+				head->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
+				torso->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
+				legs->shaderRGBA[3] = 255;
+			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
+				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
+				head->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
+				torso->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
+				legs->shaderRGBA[3] = 255;
+			}
+			goto server_settings;
+		}
+
 		if (cg_forcePovModel.integer == 2  &&  freecamPovSettings == qfalse) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 			CG_CopyClientInfoModel(&cg.ourModel, ci);
@@ -5045,7 +5089,43 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			}
 		}
 	} else if (CG_IsEnemy(ci)) {
-		//Com_Printf("enemy: %s\n", ci->name);
+		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
+			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+			switch (cgs.clientinfo[cent->currentState.clientNum].teamClass) {
+			case TEAMCLASS_SNIPER:
+				CG_CopyClientInfoModel(&cg.ntfSniperModel, ci);
+				break;
+			case TEAMCLASS_FIGHTER:
+				CG_CopyClientInfoModel(&cg.ntfFighterModel, ci);
+				break;
+			case TEAMCLASS_SCOUT:
+				CG_CopyClientInfoModel(&cg.ntfScoutModel, ci);
+				break;
+			case TEAMCLASS_TANK:
+				CG_CopyClientInfoModel(&cg.ntfTankModel, ci);
+				break;
+			default:
+				break;
+			}
+
+			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
+				head->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
+				torso->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
+				legs->shaderRGBA[3] = 255;
+			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
+				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
+				head->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
+				torso->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
+				legs->shaderRGBA[3] = 255;
+			}
+			goto server_settings;
+		}
+
 		if (EM_Loaded == 1) {
 
 			// hack to allow original legs, torso, or head if
@@ -5114,6 +5194,43 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			}
 		}
 	} else if (CG_IsTeammate(ci)) {
+		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
+			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+			switch (cgs.clientinfo[cent->currentState.clientNum].teamClass) {
+			case TEAMCLASS_SNIPER:
+				CG_CopyClientInfoModel(&cg.ntfSniperModel, ci);
+				break;
+			case TEAMCLASS_FIGHTER:
+				CG_CopyClientInfoModel(&cg.ntfFighterModel, ci);
+				break;
+			case TEAMCLASS_SCOUT:
+				CG_CopyClientInfoModel(&cg.ntfScoutModel, ci);
+				break;
+			case TEAMCLASS_TANK:
+				CG_CopyClientInfoModel(&cg.ntfTankModel, ci);
+				break;
+			default:
+				break;
+			}
+
+			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
+				head->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
+				torso->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
+				legs->shaderRGBA[3] = 255;
+			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
+				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
+				head->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
+				torso->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
+				legs->shaderRGBA[3] = 255;
+			}
+			goto server_settings;
+		}
+
 		if (*cg_teamModel.string  ||  *cg_teamHeadModel.string) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 			if (cg.teamModelTeamSkinFound) {
@@ -5229,8 +5346,8 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(head->shaderRGBA));
 			memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(torso->shaderRGBA));
 			memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(legs->shaderRGBA));
-		}
-	}
+		}  // end team*skin cvars set
+	}  // end CG_IsTeammate(ci)
 
  server_settings:
 
@@ -5256,7 +5373,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 	}
 
 
-	if (cg_entities[cent->currentState.clientNum].currentState.eFlags & EF_DEAD  ||  (cent->currentState.clientNum != cent->currentState.number &&  cent !=&cg.predictedPlayerEntity)) {
+	if (cg_entities[cent->currentState.clientNum].currentState.eFlags & EF_DEAD  ||  (cent->currentState.clientNum != cent->currentState.number &&  cent != &cg.predictedPlayerEntity)) {
 		//Com_Printf("%s  %d %d\n", cgs.clientinfo[cent->currentState.clientNum].name, cent->currentState.clientNum, cent->currentState.number);
 		if (!CG_IsUs(ci)  &&  *cg_deadBodyColor.string) {
 			SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_deadBodyColor);

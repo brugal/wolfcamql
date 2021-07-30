@@ -1122,12 +1122,62 @@ static void CG_SetScorePlace (void)
 	}
 }
 
+static void CG_CpmaSetNtfModel (int csNum, qboolean firstCall, qboolean csChange)
+{
+	const char *info;
+	const char *name;
+	const char *model;
+
+	info = CG_ConfigString(csNum);
+	name = Info_ValueForKey(info, "n");
+	model = Info_ValueForKey(info, "m");
+
+	if (!*model  &&  (firstCall  ||  csChange)) {
+		Com_Printf("^1empty ntf model for CS %d\n", csNum);
+		return;
+	}
+
+	if (!strcmp(name, "Fighter")) {
+		if (strcmp(model, cgs.ntfFighterModelName)) {
+			Q_strncpyz(cgs.ntfFighterModelName, model, sizeof(cgs.ntfFighterModelName));
+			cg.ntfFighterModelLoaded = qfalse;
+		}
+	} else if (!strcmp(name, "Scout")) {
+		if (strcmp(model, cgs.ntfScoutModelName)) {
+			Q_strncpyz(cgs.ntfScoutModelName, model, sizeof(cgs.ntfScoutModelName));
+			cg.ntfScoutModelLoaded = qfalse;
+		}
+	} else if (!strcmp(name, "Sniper")) {
+		if (strcmp(model, cgs.ntfSniperModelName)) {
+			Q_strncpyz(cgs.ntfSniperModelName, model, sizeof(cgs.ntfSniperModelName));
+			cg.ntfSniperModelLoaded = qfalse;
+		}
+	} else if (!strcmp(name, "Tank")) {
+		if (strcmp(model, cgs.ntfTankModelName)) {
+			Q_strncpyz(cgs.ntfTankModelName, model, sizeof(cgs.ntfTankModelName));
+			cg.ntfTankModelLoaded = qfalse;
+		}
+	} else {
+		if (firstCall  ||  csChange) {
+			Com_Printf("^1unknown ntf class name '%s' for CS %d\n", name, csNum);
+		}
+
+		return;
+	}
+
+	if (firstCall  ||  csChange) {
+		Com_Printf("^5ntf %s : %s\n", name, model);
+	}
+}
+
 /*
 ================
 CG_ParseServerinfo
 
 This is called explicitly when the gamestate is first received,
-and whenever the server updates any serverinfo flagged cvars
+and whenever the server updates any serverinfo flagged cvars.
+
+This is also called after demo seeking.
 ================
 */
 void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
@@ -1356,6 +1406,21 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 		}
 	}
 
+	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
+		int i;
+
+		/*
+728: n\Fighter\m\sarge\s\280\h\100\a\100\ac\1\jd\1\w3\10,25,5,10\w5\5,25,5,10\w8\50,100,25,50\
+ 729: n\Scout\m\slash\s\320\h\100\a\50\ac\0\jd\1\jr\1\w3\15,25,5,10\w4\3,6,1,3\sw\3\
+ 730: n\Sniper\m\visor\s\280\h\100\a\50\ac\1\jd\1\jr\0\w2\100,100,25,50\w7\10,25,5,10\
+ 731: n\Tank\m\keel\s\240\h\100\a\150\ac\2\w3\10,25,5,10\w5\10,25,5,10\w6\50,150,25,50\
+		 */
+
+		// always the same order?
+		for (i = 0;  i < 4;  i++) {
+			CG_CpmaSetNtfModel(CSCPMA_NTF_FIGHTER + i, firstCall, qfalse);
+		}
+	}
 
 	if (cgs.protocol != PROTOCOL_QL) {
 		return;
@@ -2129,6 +2194,10 @@ static qboolean CG_CpmaCs (int num)
 		}
 	} else if (num == CSCPMA_GAMESTATE) {
 		CG_CpmaParseGameState(qfalse);
+	} else if (num >= CSCPMA_NTF_FIGHTER  &&  num <= CSCPMA_NTF_TANK) {
+		if (cgs.gametype == GT_NTF) {
+			CG_CpmaSetNtfModel(num, qfalse, qtrue);
+		}
 	} else {
 		const char *str;
 

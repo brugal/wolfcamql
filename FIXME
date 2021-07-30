@@ -2331,11 +2331,9 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * 2020-08-26 many-bots/demo3.dm_68  obituaries missing names and overlapping weapon icons
 
 * 2021-07-06  cpma ntf :
-  - item timer
-  - check cpma client info streams for player types
-  - player models
+  - client item timer buggy
 
-* missing font options for cg_draw.c:  CG_DrawTimer  CG_DrawPlayersLeft CG_DrawScores CG_DrawDisconnect  *CG_DrawCenterString  CG_DrawSpectator (check CG_DrawBigString)  CG_DrawAccStats  CG_DrawErrorPopup CG_DrawEchoPopup CG_DrawCtfsRoundScoreboard
+* missing font options for cg_draw.c:  CG_DrawTimer  CG_DrawPlayersLeft CG_DrawScores CG_DrawDisconnect  CG_DrawSpectator (check CG_DrawBigString)  CG_DrawAccStats  CG_DrawErrorPopup CG_DrawEchoPopup CG_DrawCtfsRoundScoreboard
 
 * fx powerup light
 * /centerprint '^' char without color code escape
@@ -2345,7 +2343,31 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * /centerprint 'token' option wont vertically center multi line text correctly since cg.centerPrintLines doesn't deal with %{newline ...}
 
+* %^  for '^' in frag tokens
+
 * CG_DrawCenterString() in old q3 code why does width calculation divide by BIGCHAR_WIDTH ?
+
+* cg_servercmds.c  this correct?
+
+    //FIXME don't check for cgs.gametype < GT_MAX_GAME_TYPE since cpma gametype
+    // can be negative
+
+* CG_ParseServerinfo  sometimes CG_ParseServerInfo  -- Info
+
+* cg_players.c  } else if (cg_ignoreClientHeadModel.integer) {
+  should be checking for == 1?
+
+* cg_players.c  enable deferred  loading for normal play  '#if 0 // screw this'
+
+* check if newConnectedClient can be removed
+
+* CG_NewClientInfo  check and wrap ql only keys/values
+
+  -  char *skin, char *slash  const?
+
+* defines for thinks like cg_ignoreClientHeadModel.integer == 2
+
+* unknown cpma event (steps) is when you switch to freecam in cpma demo
 
 
 ----

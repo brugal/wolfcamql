@@ -1,4 +1,4 @@
-12.5test4
+12.5test5
 
 * ioquake3 patches
 
@@ -29,6 +29,16 @@
 * cg_drawCenterPrintLineSpacing  extra spacing between lines
 * /resetcenterprinttime  redisplay the last center print message
 * bug fix:  center print font couldn't be changed with cg_qlhud 0
+* bug fix:  remove "pulse size" console spamming when powerup is picked up
+* cpma ntf player model support
+
+    cg_cpmaUseNtfModels
+    cg_cpmaNtfRedHeadColor
+    cg_cpmaNtfRedTorsoColor
+    cg_cpmaNtfRedLegsColor
+    cg_cpmaNtfBlueHeadColor
+    cg_cpmaNtfBlueTorsoColor
+    cg_cpmaNtfBlueLegsColor
 
 
 ---------------------------------
