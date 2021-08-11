@@ -2401,7 +2401,6 @@ typedef struct {
 
 	clientInfo_t	clientinfo[MAX_CLIENTS];
 	clientInfo_t	clientinfoOrig[MAX_CLIENTS];
-	//qboolean		newConnectedClient[MAX_CLIENTS];  // for demo playback so they can be shown in the scoreboard, cleared with 'scores' server command
 	qhandle_t		clientNameImage[MAX_CLIENTS];
 
 	// teamchat width is *3 because of embedded color codes
@@ -3298,6 +3297,12 @@ extern vmCvar_t cg_cpmaNtfBlueHeadColor;
 extern vmCvar_t cg_cpmaNtfBlueTorsoColor;
 extern vmCvar_t cg_cpmaNtfBlueLegsColor;
 
+extern vmCvar_t cg_cpmaNtfModelSkin;
+
+extern vmCvar_t cg_cpmaUseNtfRailColors;
+extern vmCvar_t cg_cpmaNtfRedRailColor;
+extern vmCvar_t cg_cpmaNtfBlueRailColor;
+
 extern vmCvar_t cg_ourModel;
 extern vmCvar_t cg_ourHeadModel;
 extern vmCvar_t cg_ourHeadSkin;
@@ -3717,6 +3722,8 @@ extern vmCvar_t cg_colorCodeUseForegroundAlpha;
 extern vmCvar_t cg_chaseThirdPerson;
 extern vmCvar_t cg_chaseUpdateFreeCam;
 extern vmCvar_t cg_chaseMovementKeys;
+
+extern vmCvar_t cg_redRoverRoundStartSound;
 
 // end cvar_t
 

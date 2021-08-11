@@ -27,6 +27,7 @@ qboolean CG_IsTeammate (const clientInfo_t *ci);
 qboolean CG_IsUs (const clientInfo_t *ci);
 qboolean CG_IsFirstPersonView (int clientNum);
 qboolean CG_IsTeamGame (int gametype);
+qboolean CG_IsFlagGame (int gametype);
 qboolean CG_IsDuelGame (int gametype);
 qboolean CG_IsEnemyTeam (int team);
 qboolean CG_IsOurTeam (int team);

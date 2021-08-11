@@ -1251,7 +1251,7 @@ static void CG_DamageBlendBlob( void ) {
 	if (attacker == cg.snap->ps.clientNum) {
 		colorCvar = cg_screenDamage_Self;
 		alpha = cg_screenDamageAlpha_Self.integer;
-	} else if (attacker >= 0  &&  attacker < MAX_CLIENTS  &&  cgs.gametype >= GT_TEAM  &&  cgs.clientinfo[attacker].team == cg.snap->ps.persistant[PERS_TEAM]) {
+	} else if (attacker >= 0  &&  attacker < MAX_CLIENTS  &&  CG_IsTeamGame(cgs.gametype)  &&  cgs.clientinfo[attacker].team == cg.snap->ps.persistant[PERS_TEAM]) {
 		//FIXME clan arena check
 		colorCvar = cg_screenDamage_Team;
 		alpha = cg_screenDamageAlpha_Team.integer;
@@ -2217,8 +2217,7 @@ static void CG_DrawSpawns (void)
 		ent.shaderRGBA[1] = 0;
 		ent.shaderRGBA[2] = 0;
 
-		//if (CG_IsDuelGame(cgs.gametype)) {
-		if (cgs.gametype <= GT_TEAM) {  //  ||  cgs.gametype == GT_FREEZETAG) {
+		if (cgs.gametype == GT_FFA  ||  cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_RACE  ||  cgs.gametype == GT_SINGLE_PLAYER  ||  cgs.gametype == GT_TEAM  ||  cgs.gametype == GT_HM) {
 			if (sp->spawnflags & 0x1) {
 				if (cg_drawSpawnsInitial.integer) {
 					ent.shaderRGBA[1] = 255;
@@ -2233,7 +2232,7 @@ static void CG_DrawSpawns (void)
 					continue;
 				}
 			}
-		} else if (cgs.gametype > GT_TEAM) {
+		} else {
 
 			if (sp->deathmatch) {  // shared spawn
 				if (!cg_drawSpawnsShared.integer) {

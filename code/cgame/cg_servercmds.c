@@ -990,7 +990,7 @@ static void CG_LoadServerModelOverride (void)
 
 		// sounds
 		dir = cg.serverModel.modelName;
-		//fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+		//fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 		for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
 			s = cg_customSoundNames[i];
@@ -1067,7 +1067,7 @@ void CG_LoadInfectedGameTypeModels (void)
 
 	// sounds
 	dir = ci->modelName;
-	//fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+	//fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 	for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
 		s = cg_customSoundNames[i];
@@ -1096,7 +1096,7 @@ void CG_LoadInfectedGameTypeModels (void)
 
 	// sounds
 	dir = ci->modelName;
-	//fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+	//fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 	for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
 		s = cg_customSoundNames[i];
@@ -1283,7 +1283,7 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 	Com_sprintf( cgs.mapname, sizeof( cgs.mapname ), "maps/%s.bsp", mapname );
 
 	if (cgs.cpma) {
-		//CG_Printf("^3CG_ParseServerInfo\n");
+		//CG_Printf("^3CG_ParseServerinfo\n");
 		CG_CpmaParseScores(seeking);
 	}
 
@@ -1350,7 +1350,7 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 		}
 	}
 
-	//FIXME these shouldn't be in CG_ParseServerInfo()
+	//FIXME these shouldn't be in CG_ParseServerinfo()
 
 	if (!cgs.cpma) {
 		cgs.voteModified = qfalse;
@@ -1389,9 +1389,6 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 		CG_BuildSpectatorString();
 	}
 
-	//FIXME don't check for cgs.gametype < GT_MAX_GAME_TYPE since cpma gametype
-	// can be negative
-
 	if ((firstCall  ||  cgs.instaGib != instaGib)  &&  (cgs.gametype >= 0  &&  cgs.gametype < GT_MAX_GAME_TYPE)) {
 		cgs.instaGib = instaGib;
 		if (cgs.instaGib) {
@@ -1410,7 +1407,7 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 		int i;
 
 		/*
-728: n\Fighter\m\sarge\s\280\h\100\a\100\ac\1\jd\1\w3\10,25,5,10\w5\5,25,5,10\w8\50,100,25,50\
+ 728: n\Fighter\m\sarge\s\280\h\100\a\100\ac\1\jd\1\w3\10,25,5,10\w5\5,25,5,10\w8\50,100,25,50\
  729: n\Scout\m\slash\s\320\h\100\a\50\ac\0\jd\1\jr\1\w3\15,25,5,10\w4\3,6,1,3\sw\3\
  730: n\Sniper\m\visor\s\280\h\100\a\50\ac\1\jd\1\jr\0\w2\100,100,25,50\w7\10,25,5,10\
  731: n\Tank\m\keel\s\240\h\100\a\150\ac\2\w3\10,25,5,10\w5\10,25,5,10\w6\50,150,25,50\
@@ -2051,7 +2048,7 @@ te + ts + td == serverTime
 		  va  vote against
 		  vs  vote string
 		  h   starting health
-          a   starting armor
+		  a   starting armor
 		  wr  weapon respawn?
 		  pu  power up respawn?
 		  pb  max blue players?
@@ -5489,8 +5486,6 @@ static void CG_ServerCommand( void ) {
 #endif
 
 	if ( !strcmp( cmd, "scores" ) ) {
-		//Com_Printf("^3---------------scores\n");
-		//memset(cgs.newConnectedClient, 0, sizeof(cgs.newConnectedClient));
 		CG_ParseScores();
 		Wolfcam_ScoreData();
 		CG_BuildSpectatorString();
@@ -5709,8 +5704,6 @@ static void CG_ServerCommand( void ) {
 		}
 
 		if ( !strcmp( cmd, "rrscores" ) ) {
-			//Com_Printf("^3---------------rrscores\n");
-			//memset(cgs.newConnectedClient, 0, sizeof(cgs.newConnectedClient));
 			CG_ParseRRScores();
 			Wolfcam_ScoreData();
 			CG_BuildSpectatorString();

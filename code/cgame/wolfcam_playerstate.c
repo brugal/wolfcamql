@@ -159,7 +159,7 @@ int wolfcam_find_client_to_follow (void)
                     return wcg.clientNum;
                 }
             } else {
-                if (cgs.gametype < GT_TEAM) {
+                if (!CG_IsTeamGame(cgs.gametype)) {
                     return wcg.clientNum;
                 }
             }
@@ -192,7 +192,7 @@ int wolfcam_find_client_to_follow (void)
         }
         //FIXME afk
 
-        if (cgs.gametype >= GT_TEAM) {
+        if (CG_IsTeamGame(cgs.gametype)) {
             if (cgs.clientinfo[i].team == cgs.clientinfo[wcg.selectedClientNum].team) {
                 if (!foundBackupClient) {
                     foundBackupClient = qtrue;
@@ -209,7 +209,7 @@ int wolfcam_find_client_to_follow (void)
                 }
                 continue;
             }  // same team
-        }  // if gametype >= GT_TEAM
+        }  // if CG_IsTeamGame(cgs.gametype)
         if (!foundNewClient) {
             foundNewClient = qtrue;
             newClient = i;
@@ -225,7 +225,7 @@ int wolfcam_find_client_to_follow (void)
         }
     }
 
-    if (cgs.gametype >= GT_TEAM  &&  foundBackupClient) {
+    if (CG_IsTeamGame(cgs.gametype)  &&  foundBackupClient) {
         return backupClient;
     }
 

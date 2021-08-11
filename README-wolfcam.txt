@@ -308,7 +308,9 @@ Some additions to q3mme fx scripting:
    to sound and souldlist to allow local (not placed inside 3d world) and
    weapon (always 'inside player head') channels.
 * modulus math operator '%'.  Note: both input values are rounded to the nearest integer
+
 * player/head/trail, player/torso/trail, player/legs/trail, player/flight
+
 * the following are passed on to the scripting system where appropriate:  team, clientnum (less than 0 signifies non-player), enemy, teammate, ineyes, surfacetype (for impacts).  You could have something like custom rails and rockets per team or different settings for enemies and also first person view.  See wolfcam-ql/scripts/q3mme.fx for more info.
 
   surfacetype doesn't work that well since the maps only use it occasionally:
@@ -316,6 +318,20 @@ Some additions to q3mme fx scripting:
               2 == wood
               3 == dust
               4 == snow
+
+* powerup information is passed on to the scripting system where appropriate:
+
+    player/torso/trail {
+        if pwquad {  // also pwbattlesuit, pwregen, ...
+	    color 0.2 0.75 1.0
+	    size 200 + rand*32
+	    light
+	}
+    }
+
+  Available tokens:  pwspawnprotection, pwquad, pwbattlesuit, pwhaste, pwinvis,
+    pwregen, pwflight, pwredflag, pwblueflag, pwneutralflag, pwinvulnerability,
+    pwscout, pwguard, pwdoubler, pwarmorregn, pwfrozen
 
 * weapon/<weapon name>/impactflesh, also weapon/common/impactflesh
       inputs:  origin, dir, and end
@@ -957,7 +973,24 @@ Fonts can also be used for hud config elements:
 
 ------------------------------------------------------------
 
-Audio messages not dependent on cg_draw2d, use:  cg_audioAnnouncerRewards, cg_audioAnnouncerRound  ("round begins in ...  fight!", "blue wins the round", ...), cg_audioAnnouncerWarmup ("3 2 1 fight!", ...) , cg_audioAnnouncerVote, cg_audioAnnouncerTeamVote, cg_audioAnnouncerFlagStatus, cg_audioAnnouncerLead  ("taken the lead", "tied", ...), cg_audioAnnouncerTimeLimit  (time-limit warnings), cg_audioAnnouncerFragLimit  (frag-limit warnings), cg_audioAnnouncerWin, cg_audioAnnouncerScore ("red scores", ...), cg_audioAnnouncerLastStanding, cg_audioAnnouncerDominationPoint, cg_audioAnnouncerPowerup (powerup pickup)
+Audio messages not dependent on cg_draw2d, use:
+
+  cg_audioAnnouncerRewards
+  cg_audioAnnouncerRound  "round begins in ...  fight!", "blue wins the round", ...
+  cg_audioAnnouncerWarmup "3 2 1 fight!", ...
+  cg_audioAnnouncerVote
+  cg_audioAnnouncerTeamVote
+  cg_audioAnnouncerFlagStatus
+  cg_audioAnnouncerTimeLimit  time limit warnings
+  cg_audioAnnouncerFragLimit  frag limit warnings
+  cg_audioAnnouncerWin
+  cg_audioAnnouncerScore "red scores", ...
+  cg_audioAnnouncerLastStanding
+  cg_audioAnnouncerDominationPoint
+  cg_audioAnnouncerPowerup powerup pickup
+
+  cg_audioAnnouncerLead  "taken the lead", "tied", ...
+     setting this to '2' enables lead announcements in Red Rover game type
 
 * cg_audioAnnouncerRoundReward  to enable/disable end of round 'perfect' or 'denied' announcements
 
@@ -1883,6 +1916,10 @@ Player Models:
 * color skins for all models, they are generated automatically from the already available red and blue skins you can use r_colorSkinsFuzz (the amount that the difference between red and blue skins will signal a match and not replace with white: default 20)  and r_colorSkinsIntensity (default 1.0) and the /createcolorskins  vid_restart to tweak them.  You can then use skin overrides to allow either team or enemies to keep their models but use colorized skins:    ex:  set cg_enemyModel "", then cg_enemyHeadSkin "color", cg_enemyTorsoSkin "color", cg_enemyLegsSkin "color", same for team
 
 * cg_ignoreClientHeadModel [0: use head model set by player,  1: ignore and use 'model' setting,  2: (default) ignore for quake live demos and use 'model' setting]
+
+  Quake Live doesn't use 'headmodel' for in game models but it is still set in
+  player's config strings.  If it's not ignored you'll see a lot of random head
+  models from people testing the setting.
 
 * cg_disallowEnemyModelForTeammates [0, 1, 2]   If cg_teamModel isn't set and teammates use their own models this will prevent them from using the model set with cg_enemyModel.  The replacement model is set with cg_fallbackModel and cg_fallbackHeadModel.  With a setting of 1 it will also apply to first person view.  With a setting of 2 it only applies to teammates and not the person being viewed.
 
@@ -3092,7 +3129,17 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
     cg_cpmaNtfBlueHeadColor
     cg_cpmaNtfBlueTorsoColor
     cg_cpmaNtfBlueLegsColor
+    cg_cpmaNtfModelSkin
 
+* cpma ntf team rail color support
+
+    cg_cpmaUseNtfColors
+    cg_cpmaNtfRedRailColor
+    cg_cpmaNtfBlueRailColor
+
+* cg_debugevents > 1 shows predictable events
+
+* cg_redRoverRoundStartSound
 
 ----------
 

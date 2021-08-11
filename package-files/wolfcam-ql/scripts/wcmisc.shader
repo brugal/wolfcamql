@@ -227,3 +227,13 @@ wc/hud/ntf
 		alphaFunc GE128
 	}
 }
+
+wc/hud/sp
+{
+	nopicmip
+	{
+		map gfx/wc/single-player.png
+		blendfunc blend
+		alphaFunc GE128
+	}
+}

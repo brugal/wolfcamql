@@ -808,7 +808,6 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		//ci->invulnerabilityStartTime = 0;
 		//ci->invulnerabilityStopTime = 0;
 		//ci->breathPuffTime = 0;
-		//cgs.newConnectedClient[i] = qfalse;
 
 		//cgs.clientinfo[i].hitTime = 0;
 
@@ -1335,7 +1334,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	}
 
 	// fraglimit warnings
-	if (cgs.fraglimit > 0  &&  cgs.gametype < GT_CA) {
+	if (cgs.fraglimit > 0  &&  (cgs.gametype == GT_FFA  ||  cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_SINGLE_PLAYER  ||  cgs.gametype == GT_TEAM)) {
 		highScore = cgs.scores1;
 		if ( !( cg.fraglimitWarnings & 4 ) && highScore == (cgs.fraglimit - 1) ) {
 			cg.fraglimitWarnings |= 1 | 2 | 4;

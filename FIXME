@@ -1088,7 +1088,6 @@ fx running before first frame??
   ql difference --  dead icon supercedes talk icon
 * teammate icons could use health colors  or custom colors
 * double check cg_scoreBoardOld for GT_RED_ROVER and GT_RACE
-* grep GT_TEAM *
 * double check 'teamSpacing' in CG_Draw[1st|2nd]PlaceScore
 * demo smoothing -- angles short
 * demo smoothing -- player shadow
@@ -1303,7 +1302,6 @@ WARNING: CG_CreateNameSprite() skipping glyph, dimensions are invalid: 100 x 64 
 * check if disconnect is neccessary before demo playback
 * fx impact scripts for chaingun and hmg ?
 * q3 single player shows 'fragged teammate' message
-* don't check for cgs.gametype < GT_MAX_GAME_TYPE since cpma gametype can be negative
 * g_rankings.c missing ql weapons
 * hmg spread?
 
@@ -2331,11 +2329,10 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * 2020-08-26 many-bots/demo3.dm_68  obituaries missing names and overlapping weapon icons
 
 * 2021-07-06  cpma ntf :
-  - client item timer buggy
+  - client item timer buggy -  powerup
 
 * missing font options for cg_draw.c:  CG_DrawTimer  CG_DrawPlayersLeft CG_DrawScores CG_DrawDisconnect  CG_DrawSpectator (check CG_DrawBigString)  CG_DrawAccStats  CG_DrawErrorPopup CG_DrawEchoPopup CG_DrawCtfsRoundScoreboard
 
-* fx powerup light
 * /centerprint '^' char without color code escape
 
    %f  CG_Text_Pic_Paint unknown command -1
@@ -2347,27 +2344,28 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * CG_DrawCenterString() in old q3 code why does width calculation divide by BIGCHAR_WIDTH ?
 
-* cg_servercmds.c  this correct?
-
-    //FIXME don't check for cgs.gametype < GT_MAX_GAME_TYPE since cpma gametype
-    // can be negative
-
-* CG_ParseServerinfo  sometimes CG_ParseServerInfo  -- Info
-
-* cg_players.c  } else if (cg_ignoreClientHeadModel.integer) {
-  should be checking for == 1?
-
 * cg_players.c  enable deferred  loading for normal play  '#if 0 // screw this'
 
-* check if newConnectedClient can be removed
+* defines for things like cg_ignoreClientHeadModel.integer == 2
 
-* CG_NewClientInfo  check and wrap ql only keys/values
+* autoexec for cpma?
+* step smoothing for freecam
+* Quake Live -- quakelive -- quake live  -- QuakeLive
+* game/ >= GT_TEAM checks
+*   better check 'cgs.gametype >'  or  'cgs.gametype <'  cgame/game/ui/q3_ui
+* ui/q3_ui gametype bits ex:  1 << GT_FFA
+* single player scoreboard CG_LoadDefaultMenus()
+* check red rover 'last standing' announcer
+* use CG_IsFlagGame()
+* GT_HM show fraglimit  as limit, after seeking shows '60'
+* red rover q3 scoreboard shows blue|red leads
+* single player not showing leader name
+* cg_weapons.c CG_RailTrail()
 
-  -  char *skin, char *slash  const?
+  	 if (!cg_railFromMuzzle.integer) {
+            //FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
+            if ((CG_IsUs(ci)  &&  cg_railNudge.integer)  ||
 
-* defines for thinks like cg_ignoreClientHeadModel.integer == 2
-
-* unknown cpma event (steps) is when you switch to freecam in cpma demo
 
 
 ----

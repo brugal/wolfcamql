@@ -64,7 +64,10 @@ typedef struct ScriptVars_s {
 	qboolean enemy;
 	qboolean teamMate;
 	qboolean inEyes;
+	int powerups;
+
 	int surfaceType;  // 0 not specified, 1 metal, 2 wood
+
 #if 0
 	qboolean rewardImpressive;
 	qboolean rewardExcellent;

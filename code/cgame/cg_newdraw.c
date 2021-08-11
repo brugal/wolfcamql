@@ -70,9 +70,10 @@ void CG_CheckOrderPending(void) {
 		return;
 	}
 
-	if (cgs.gametype < GT_CTF  ||  cgs.gametype != GT_FREEZETAG) {
+	if (!(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_NTF  ||  cgs.gametype == GT_CTFS)) {
 		return;
 	}
+
 	if (cgs.orderPending) {
 		//clientInfo_t *ci = cgs.clientinfo + sortedTeamPlayers[cg_currentSelectedPlayer.integer];
 		const char *p1, *p2, *b;
@@ -1708,7 +1709,7 @@ static void CG_DrawCTFPowerUp(const rectDef_t *rect) {
 		return;
 	}
 
-	if (cgs.gametype < GT_CTF  ||  cgs.gametype == GT_FREEZETAG) {
+	if (!(cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_NTF  ||  cgs.gametype == GT_CTFS)) {
 		return;
 	}
 
@@ -4570,7 +4571,7 @@ const char *CG_GetGameStatusText (void)
 {
 	const char *s = "";
 
-	if (!CG_IsTeamGame(cgs.gametype)) {
+	if (!CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_RED_ROVER) {
 		if (!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum)) {
 			if (cg.snap->ps.persistant[PERS_TEAM] != TEAM_SPECTATOR ) {
 				s = va("%s ^7place with %i",CG_PlaceString( cg.snap->ps.persistant[PERS_RANK] + 1 ),cg.snap->ps.persistant[PERS_SCORE] );
@@ -4694,6 +4695,16 @@ const char *CG_GameTypeString(void) {
 		return "Red Rover";
 	} else if (cgs.gametype == GT_NTF) {
 		return "Not Team Fortress";
+	} else if (cgs.gametype == GT_TOURNAMENT) {
+		return "Duel";
+	} else if (cgs.gametype == GT_2V2) {
+		return "Two vs Two";
+	} else if (cgs.gametype == GT_SINGLE_PLAYER) {
+		return "Single Player";
+	} else if (cgs.gametype == GT_RACE) {
+		return "Race";
+	} else if (cgs.gametype == GT_HM) {
+		return "Hoonymode";
 	}
 
 	return "";

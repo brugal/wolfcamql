@@ -3,6 +3,7 @@
 #include "cg_event.h"
 #include "cg_main.h"
 #include "cg_syscalls.h"
+#include "sc.h"
 #include "wolfcam_event.h"
 
 #include "wolfcam_local.h"
@@ -368,7 +369,7 @@ void Wolfcam_LogMissileHit (int weapon, const vec3_t origin, const vec3_t dir, i
         if (wolfcam_following  &&  wcg.clientNum == possibleClient) {
             //FIXME check if entityNum client info valid?
             //Com_Printf("missile hit\n");
-            if (cgs.gametype >= GT_TEAM) {
+            if (CG_IsTeamGame(cgs.gametype)) {
                 if (cgs.clientinfo[wcg.clientNum].team != cgs.clientinfo[entityNum].team) {
                     //CG_StartLocalSound (cgs.media.hitSound, CHAN_LOCAL_SOUND);
                     wcg.playHitSound = qtrue;

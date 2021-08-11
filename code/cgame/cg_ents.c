@@ -2159,7 +2159,7 @@ static void CG_Missile( centity_t *cent ) {
 			//Com_Printf("0x%x 0x%x %d\n", cg_grenadeColor.integer, (int)cg_grenadeColor.value, SC_RedFromCvar(cg_grenadeColor));
 			//Com_Printf("%d %d %d %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2], ent.shaderRGBA[3]);
 			//Com_Printf("own grenade color set to %d %d %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2]);
-		} else if (cgs.gametype >= GT_TEAM  &&  cgs.clientinfo[currentClientNum].team == cgs.clientinfo[s1->clientNum].team) {
+		} else if (CG_IsTeamGame(cgs.gametype)  &&  cgs.clientinfo[currentClientNum].team == cgs.clientinfo[s1->clientNum].team) {
 			SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_grenadeTeamColor);
 			ent.shaderRGBA[3] = cg_grenadeTeamColorAlpha.integer;
 			//Com_Printf("team grenade color set to %d %d %d\n", ent.shaderRGBA[0], ent.shaderRGBA[1], ent.shaderRGBA[2]);

@@ -9,7 +9,22 @@
 //    ineyes       1 if first person view is with this player
 //    surfacetype  for impact scripts:  0 not specified, 1 metal, 2 wood,
 //                   3 dust, 4 snow
-//
+//    pwspawnprotection  has spawn protection powerup
+//    pwquad
+//    pwbattlesuit
+//    pwhaste
+//    pwinvis
+//    pwregen
+//    pwflight
+//    pwredflag
+//    pwblueflag
+//    pwneutralflag
+//    pwinvulnerability
+//    pwscout
+//    pwguard
+//    pwdoubler
+//    pwarmorregen
+//    pwfrozen
 
 /////////////////////////////////////////////////////
 
@@ -30,7 +45,7 @@ mme/model {
 }
 
 // Talk sprite
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/talk {
         if ineyes != 1 {
         	size		10
@@ -40,7 +55,7 @@ player/talk {
 }
 
 // Impressive sprite
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/impressive {
         if ineyes != 1 {
         	size		10
@@ -50,7 +65,7 @@ player/impressive {
 }
 
 // Excellent sprite
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/excellent {
         if ineyes != 1 {
         	size		10
@@ -60,7 +75,7 @@ player/excellent {
 }
 
 // Holy shit medal from ra3
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/holyshit {
         if ineyes != 1 {
         	size		10
@@ -70,7 +85,7 @@ player/holyshit {
 }
 
 // Accuracy medal
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/accuracy {
         if ineyes != 1 {
         	size		10
@@ -80,7 +95,7 @@ player/accuracy {
 }
 
 // Gauntlet sprite
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/gauntlet {
         if ineyes != 1 {
         	size		10
@@ -90,7 +105,7 @@ player/gauntlet {
 }
 
 // new ql awards, also medalMidAir, medalRevenge, medalFirstFrag
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/medalComboKill {
         if ineyes != 1 {
         	size		10
@@ -100,7 +115,7 @@ player/medalComboKill {
 }
 
 // connection sprite
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 player/connection {
         if ineyes != 1 {
         	size		10
@@ -111,7 +126,7 @@ player/connection {
 
 // haste/speed trail
 // input: origin, angles, velocity, dir (normalized), team, clientnum,
-//        enemy, teammate, ineyes
+//        enemy, teammate, ineyes, pw*
 player/haste {
 	interval 0.1 {
 		shader		hasteSmokePuff
@@ -125,7 +140,7 @@ player/haste {
 
 // flight trail -- wolfcam addition, not in q3mme
 // input: origin, angles, velocity, dir (normalized), team, clientnum,
-//        enemy, teammate, ineyes
+//        enemy, teammate, ineyes, pw*
 player/flight {
 	interval 0.1 {
 		shader		hasteSmokePuff
@@ -144,7 +159,7 @@ player/flight {
 // player/legs/trail
 //
 // input: origin, angles, velocity, dir (normalized), team, clientnum,
-//        enemy, teammate, ineyes
+//        enemy, teammate, ineyes, pw*
 
 //player/legs/trail {
 //	interval 0.1 {
@@ -157,6 +172,13 @@ player/flight {
 //	}
 //}
 
+//player/torso/trail {
+//    if pwquad {
+//	color 0.2 0.75 1.0
+//	size 200 + rand*32
+//	light
+//    }
+//}
 
 // teleport in effect and sound effect
 // input: origin
@@ -378,7 +400,7 @@ player/gibbed {
 //   place custom hit sparks.
 
 
-// input: origin, dir, team, clientnum, enemy, teammate, ineyes
+// input: origin, dir, team, clientnum, enemy, teammate, ineyes, pw*
 //weapon/common/impactFlesh {
 //        if (ineyes) {
 //           return
@@ -421,14 +443,14 @@ weapon/common/bubbles {
 	}
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes, dir
+// input: origin, team, clientnum, enemy, teammate, ineyes, dir, pw*
 //   (note: if clientnum < 0  it's a non-player fired weapon.   dir,
 //    and parentDir aren't available)
 weapon/rocket/fire {
    soundweapon sound/weapons/rocket/rocklf1a
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/rocket/flash {
 	color	1 0.75 0
 	size 300 + rand*32
@@ -501,7 +523,7 @@ weapon/bfg/fire {
    soundweapon sound/weapons/bfg/bfg_fire
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/bfg/flash {
 	color	1 0.7 1
 	size 300 + rand*32
@@ -549,7 +571,7 @@ weapon/grenade/fire {
    soundweapon sound/weapons/grenade/grenlf1a
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/grenade/flash {
 	color	1 0.7 0
 	size 300 + rand*32
@@ -557,7 +579,7 @@ weapon/grenade/flash {
 }
 
 // input: velocity, dir (normalized), rotate, origin, angles, axis, size,
-//        team, clientnum, enemy, teammate, ineyes
+//        team, clientnum, enemy, teammate, ineyes, pw*
 weapon/grenade/projectile {
 	// Render the grenade model
 	model		"models/ammo/grenade1.md3"
@@ -569,7 +591,7 @@ weapon/grenade/projectile {
 }
 
 // input: origin, angles, velocity, dir (normalized), axis,
-//        team, clientnum, enemy, teammate, ineyes
+//        team, clientnum, enemy, teammate, ineyes, pw*
 weapon/grenade/trail {
 	// The standard smoke puff trail thing
 	alpha	0.33
@@ -613,7 +635,7 @@ weapon/plasma/fire {
    soundweapon sound/weapons/plasma/hyprbf1a
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/plasma/flash {
 	color	0.6 0.6 1
 	size 300 + rand*32
@@ -663,14 +685,14 @@ weapon/rail/fire {
    soundweapon sound/weapons/railgun/railgf1a
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/rail/flash {
 	color	1 0.6 0
 	size 300 + rand*32
 	light
 }
 
-// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype
+// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype, pw*
 weapon/rail/impact {
 	vibrate 50
 	sound	sound/weapons/plasma/plasmx1a.wav
@@ -693,7 +715,7 @@ weapon/rail/impact {
 }
 
 // input: origin, parentOrigin, end, dir, parentDir, color1, color2, team,
-//        clientnum, enemy, teammate, ineyes
+//        clientnum, enemy, teammate, ineyes, pw*
 weapon/rail/trail {
 	// Color1 gets set before calling
 	// The beam
@@ -752,14 +774,14 @@ weapon/shotgun/fire {
    soundweapon sound/weapons/shotgun/sshotf1b
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/shotgun/flash {
 	color	1 1 0
 	size 300 + rand*32
 	light
 }
 
-// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype
+// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype, pw*
 weapon/shotgun/impact {
 	vibrate 1
 	// Bullet mark on the wall, shotgun ones are smaller
@@ -790,7 +812,7 @@ weapon/shotgun/impact {
 	}
 }
 
-// input: origin, end, dir, clientnum, enemy, teammate, ineyes
+// input: origin, end, dir, clientnum, enemy, teammate, ineyes, pw*
 weapon/shotgun/trail {
         // rtcw / et style moving tracers
 
@@ -845,7 +867,7 @@ weapon/machinegun/fire {
     }
 }
 
-// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype
+// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype, pw*
 weapon/machinegun/impact {
 	soundList {
 		sound/weapons/machinegun/ric1.wav
@@ -880,7 +902,7 @@ weapon/machinegun/impact {
 	}
 }
 
-// input: origin, end, dir, clientnum, enemy, teammate, ineyes
+// input: origin, end, dir, clientnum, enemy, teammate, ineyes, pw*
 weapon/machinegun/trail {
         // rtcw / et style moving tracers
 
@@ -930,7 +952,7 @@ weapon/lightning/fire {
     soundweapon sound/weapons/lightning/lg_fire
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/lightning/flash {
 	color	0.6 0.6 1
 	size 300 + rand*32
@@ -938,7 +960,7 @@ weapon/lightning/flash {
 }
 
 
-// input: origin, dir, end (wolfcam), team, clientnum, enemy, teammate, ineyes
+// input: origin, dir, end (wolfcam), team, clientnum, enemy, teammate, ineyes, pw*
 weapon/lightning/trail {
 	//shader "lightningBoltNew"
         // wolfcam ql uses lightningBolt[1 - 7]
@@ -972,7 +994,7 @@ weapon/lightning/trail {
 	}
 }
 
-// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype
+// input: origin, dir, team, clientnum, enemy, teammate, ineyes, surfacetype, pw*
 weapon/lightning/impact {
 	// random impact sound
 
@@ -1024,7 +1046,7 @@ weapon/chaingun/fire {
     }
 }
 
-// input: origin, end, dir, clientnum, enemy, teammate, ineyes
+// input: origin, end, dir, clientnum, enemy, teammate, ineyes, pw*
 weapon/chaingun/trail {
         // rtcw / et style moving tracers
 
@@ -1074,14 +1096,14 @@ weapon/gauntlet/fire {
     soundweapon sound/weapons/melee/fstatck
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/gauntlet/flash {
 	color	0.6 0.6 1
 	size 300 + rand*32
 	light
 }
 
-// input: origin, team, clientnum, enemy, teammate, ineyes
+// input: origin, team, clientnum, enemy, teammate, ineyes, pw*
 weapon/grapple/flash {
 	color	1 0.6 0
 	size 300 + rand*32

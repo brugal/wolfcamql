@@ -363,7 +363,7 @@ qboolean CG_IsTeammate (const clientInfo_t *ci)
     int ourClientNum;
     const clientInfo_t *us;
 
-    if (cgs.gametype < GT_TEAM) {
+    if (!CG_IsTeamGame(cgs.gametype)) {
         return qfalse;
     }
 
@@ -413,7 +413,7 @@ qboolean CG_IsOurTeam (int team)
     int ourClientNum;
     const clientInfo_t *us;
 
-    if (cgs.gametype < GT_TEAM) {
+    if (!CG_IsTeamGame(cgs.gametype)) {
         return qfalse;
     }
 
@@ -483,8 +483,18 @@ qboolean CG_IsFirstPersonView (int clientNum)
 qboolean CG_IsTeamGame (int gametype)
 {
 
-	//FIXME red rover?
+	// red rover included even though it's part FFA
 	if (gametype == GT_TEAM  ||  gametype == GT_CA  ||  gametype == GT_CTF  ||  gametype == GT_1FCTF  ||  gametype == GT_OBELISK  ||  gametype == GT_HARVESTER  ||  gametype == GT_FREEZETAG  ||  gametype == GT_DOMINATION  ||  gametype == GT_CTFS  ||  gametype == GT_RED_ROVER  ||  gametype == GT_NTF  ||  gametype == GT_2V2) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
+qboolean CG_IsFlagGame (int gametype)
+{
+
+	if (gametype == GT_CTF  ||  gametype == GT_1FCTF  ||  gametype == GT_CTFS  ||  gametype == GT_NTF) {
 		return qtrue;
 	}
 

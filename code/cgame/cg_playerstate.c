@@ -539,7 +539,9 @@ static void CG_CheckPlayerstateEvents( const playerState_t *ps, const playerStat
 				//Com_Printf("ps (%d) %d seq %d %d\n", cg.eventSequence, i >= ops->eventSequence, event, cent->currentState.eventParm);
 			} else {
 				//Com_Printf("ps events\n");
-				//Com_Printf("^3predictable event %d  i:sequence %d  ops->eventSequence %d\n", event, i, ops->eventSequence);
+				if (cg_debugEvents.integer > 1) {
+					Com_Printf("^3predictable event %d  i:sequence %d  ops->eventSequence %d\n", event, i, ops->eventSequence);
+				}
 				CG_EntityEvent( cent, cent->lerpOrigin );
 			}
 
@@ -559,7 +561,9 @@ static void CG_CheckPlayerstateEvents( const playerState_t *ps, const playerStat
 			cent->currentState.event = event;
 			cent->currentState.eventParm = cg.clientSidePredictableEventParams[ i & (MAX_PS_EVENTS-1) ];
 
-			//Com_Printf("^3CLIENT SIDE predictable event %d  i:sequence %d  old Sequence %d\n", event, i, cg.clientSideEventSequenceOld);
+			if (cg_debugEvents.integer > 1) {
+				Com_Printf("^3CLIENT SIDE predictable event %d  i:sequence %d  old Sequence %d\n", event, i, cg.clientSideEventSequenceOld);
+			}
 			CG_EntityEvent( cent, cent->lerpOrigin );
 		}
 	}
@@ -1049,7 +1053,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 	}
 
 	// check for flag pickup
-	if ( cgs.gametype > GT_TEAM ) {  //FIXME better fix?
+	if ( CG_IsFlagGame(cgs.gametype) ) {
 		if ((ps->powerups[PW_REDFLAG] != ops->powerups[PW_REDFLAG] && ps->powerups[PW_REDFLAG]) ||
 			(ps->powerups[PW_BLUEFLAG] != ops->powerups[PW_BLUEFLAG] && ps->powerups[PW_BLUEFLAG]) ||
 			(ps->powerups[PW_NEUTRALFLAG] != ops->powerups[PW_NEUTRALFLAG] && ps->powerups[PW_NEUTRALFLAG]) )
@@ -1070,7 +1074,10 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		if (!cg.warmup) {
 			// never play lead changes during warmup
 			if ( ps->persistant[PERS_RANK] != ops->persistant[PERS_RANK] ) {
-				if ( cgs.gametype < GT_TEAM) {
+				// 2021-08-06 red rover doesn't play lead announcements in
+				// Quake Live but that might be a bug and a result of checking
+				// cgs.gametype < GT_TEAM
+				if (cgs.gametype == GT_FFA  ||  cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_RACE  ||  cgs.gametype == GT_SINGLE_PLAYER  ||  (cgs.gametype == GT_RED_ROVER  &&  cg_audioAnnouncerLead.integer == 2)) {
 					if (  ps->persistant[PERS_RANK] == 0 ) {
 						CG_AddBufferedSound(cgs.media.takenLeadSound);
 					} else if ( ps->persistant[PERS_RANK] == RANK_TIED_FLAG ) {
@@ -1109,8 +1116,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 	}
 
 	// fraglimit warnings
-	//FIXME game type
-	if (cgs.fraglimit > 0  &&  cgs.gametype < GT_CA  &&  cg.warmup == 0) {
+	if (cgs.fraglimit > 0  &&  cg.warmup == 0  && (cgs.gametype == GT_FFA  ||  cgs.gametype == GT_TOURNAMENT  ||  cgs.gametype == GT_SINGLE_PLAYER  ||  cgs.gametype == GT_TEAM)) {
 		highScore = cgs.scores1;
 
 		if (cgs.gametype == GT_TEAM  &&  cgs.scores2 > highScore) {

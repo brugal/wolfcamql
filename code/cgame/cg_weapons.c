@@ -366,10 +366,11 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 		le->color[3] = 1.0 * w;
 
 		if (!cg_railFromMuzzle.integer) {
+			//FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
 			if ((CG_IsUs(ci)  &&  cg_railNudge.integer)  ||
-				(cgs.gametype >= GT_TEAM  &&  CG_IsTeammate(ci)  &&  cg_teamRailNudge.integer  &&  !CG_IsUs(ci))  ||
-				(cgs.gametype >= GT_TEAM  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))  ||
-				(cgs.gametype < GT_TEAM  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))) {
+				(CG_IsTeamGame(cgs.gametype)  &&  CG_IsTeammate(ci)  &&  cg_teamRailNudge.integer  &&  !CG_IsUs(ci))  ||
+				(CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))  ||
+				(!CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))) {
 
 				re->origin[2] -= 8;
 				re->oldorigin[2] -= 8;
@@ -426,7 +427,7 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 		lecolor[1] = ci->color2[1] * 0.75;
 		lecolor[2] = ci->color2[2] * 0.75;
 		lecolor[3] = 1.0f;
-	} else if (cgs.gametype < GT_TEAM) {
+	} else if (!CG_IsTeamGame(cgs.gametype)) {
 		enemyRail = CG_IsEnemy(ci);
 
 		if (enemyRail  &&  (*cg_enemyRailColor1.string  ||  *cg_enemyRailColor2.string)  && !CG_IsUs(ci)) {
@@ -510,7 +511,70 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 		enemyRail = CG_IsEnemy(ci);
 		teamRail = CG_IsTeammate(ci);
 
-		if (!CG_IsUs(ci)  &&  enemyRail  &&  (*cg_enemyRailColor1.string  ||  cg_enemyRailColor1Team.integer  ||  *cg_enemyRailColor2.string  ||  cg_enemyRailColor2Team.integer)) {
+		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfRailColors.integer) {
+			const vmCvar_t *v;
+
+			if (ci->team == TEAM_RED) {
+				v = &cg_cpmaNtfRedRailColor;
+			} else {
+				v = &cg_cpmaNtfBlueRailColor;
+			}
+
+			if (*v->string) {
+				SC_ByteVec3ColorFromCvar(re->shaderRGBA, v);
+				re->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(recolor, v);
+				recolor[3] = 255;
+
+				SC_Vec3ColorFromCvar(le->color, v);
+				le->color[0] *= 0.75;
+				le->color[1] *= 0.75;
+				le->color[2] *= 0.75;
+				le->color[3] = 1.0f;
+				Vector4Copy(le->color, lecolor);
+			} else {
+				re->shaderRGBA[0] = ci->color1[0] * 255;
+				re->shaderRGBA[1] = ci->color1[1] * 255;
+				re->shaderRGBA[2] = ci->color1[2] * 255;
+				re->shaderRGBA[3] = 255;
+
+				le->color[0] = ci->color1[0] * 0.75;
+				le->color[1] = ci->color1[1] * 0.75;
+				le->color[2] = ci->color1[2] * 0.75;
+				le->color[3] = 1.0f;
+
+				recolor[0] = ci->color2[0] * 255;
+				recolor[1] = ci->color2[1] * 255;
+				recolor[2] = ci->color2[2] * 255;
+				recolor[3] = 255;
+
+				lecolor[0] = ci->color2[0] * 0.75;
+				lecolor[1] = ci->color2[1] * 0.75;
+				lecolor[2] = ci->color2[2] * 0.75;
+				lecolor[3] = 1.0f;
+			}
+
+			if (*v->string) {
+				SC_ByteVec3ColorFromCvar(recolor, v);
+				recolor[3] = 255;
+				SC_Vec3ColorFromCvar(lecolor, v);
+				lecolor[0] *= 0.75;
+				lecolor[1] *= 0.75;
+				lecolor[2] *= 0.75;
+				lecolor[3] = 1.0f;
+			} else {
+				recolor[0] = ci->color2[0] * 255;
+				recolor[1] = ci->color2[1] * 255;
+				recolor[2] = ci->color2[2] * 255;
+				recolor[3] = 255;
+
+				lecolor[0] = ci->color2[0] * 0.75;
+				lecolor[1] = ci->color2[1] * 0.75;
+				lecolor[2] = ci->color2[2] * 0.75;
+				lecolor[3] = 1.0f;
+			}
+
+		} else if (!CG_IsUs(ci)  &&  enemyRail  &&  (*cg_enemyRailColor1.string  ||  cg_enemyRailColor1Team.integer  ||  *cg_enemyRailColor2.string  ||  cg_enemyRailColor2Team.integer)) {
 			const vmCvar_t *v;
 
 			if (cg_enemyRailColor1Team.integer) {
@@ -692,20 +756,22 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 
 	if (!cg_railFromMuzzle.integer) {
 		// nudge down a bit so it isn't exactly in center
+		//FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
 		if ((CG_IsUs(ci)  &&  cg_railNudge.integer)  ||
-			(cgs.gametype >= GT_TEAM  &&  CG_IsTeammate(ci)  &&  cg_teamRailNudge.integer  &&  !CG_IsUs(ci))  ||
-			(cgs.gametype >= GT_TEAM  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))  ||
-			(cgs.gametype < GT_TEAM  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))) {
+			(CG_IsTeamGame(cgs.gametype)  &&  CG_IsTeammate(ci)  &&  cg_teamRailNudge.integer  &&  !CG_IsUs(ci))  ||
+			(CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))  ||
+			(!CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))) {
 			//Com_Printf("nudging  us:%d  enemy%d\n", CG_IsUs(ci), CG_IsEnemy(ci));
 			re->origin[2] -= 8;
 			re->oldorigin[2] -= 8;
 		}
 	}
 
+	//FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
 	if ((CG_IsUs(ci)  &&  !cg_railRings.integer)  ||
-			(cgs.gametype >= GT_TEAM  &&  CG_IsTeammate(ci)  &&  !cg_teamRailRings.integer)  ||
-			(cgs.gametype >= GT_TEAM  &&  CG_IsEnemy(ci)  &&  !cg_enemyRailRings.integer)  ||
-			(cgs.gametype < GT_TEAM  &&  CG_IsEnemy(ci)  &&  !cg_enemyRailRings.integer)) {
+		(CG_IsTeamGame(cgs.gametype)  &&  CG_IsTeammate(ci)  &&  !cg_teamRailRings.integer)  ||
+		(CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  !cg_enemyRailRings.integer)  ||
+		(!CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  !cg_enemyRailRings.integer)) {
 		return;
 	}
 
@@ -2217,7 +2283,20 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 
 	// set custom shading for railgun refire rate
 	if ( ps ) {
-		if (cg_railUseOwnColors.integer  &&  CG_IsUs(&cgs.clientinfo[cg.snap->ps.clientNum])) {
+		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfRailColors.integer) {
+			VectorCopy(ci->color1, origColor1);
+			VectorCopy(ci->color2, origColor2);
+
+			if (ci->team == TEAM_RED) {
+				SC_Vec3ColorFromCvar(ci->color1, &cg_cpmaNtfRedRailColor);
+				SC_Vec3ColorFromCvar(ci->color2, &cg_cpmaNtfRedRailColor);
+			} else {
+				SC_Vec3ColorFromCvar(ci->color1, &cg_cpmaNtfBlueRailColor);
+				SC_Vec3ColorFromCvar(ci->color2, &cg_cpmaNtfBlueRailColor);
+			}
+
+			revertColors = qtrue;
+		} else if (cg_railUseOwnColors.integer  &&  CG_IsUs(&cgs.clientinfo[cg.snap->ps.clientNum])) {
 			VectorCopy(ci->color1, origColor1);
 			VectorCopy(ci->color2, origColor2);
 			VectorCopy(cg.color1, ci->color1);
@@ -2254,7 +2333,7 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 			gun.shaderRGBA[2] = 255 * ci->color1[2];
 			gun.shaderRGBA[3] = 255;
 		}
-	} else {
+	} else {  // not ps
 		if (weaponNum == WP_RAILGUN) {
 			qboolean teamRail;
 			qboolean enemyRail;
@@ -2269,7 +2348,15 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 
 			teamRail = CG_IsTeammate(ci);
 			enemyRail = CG_IsEnemy(ci);
-			if (cgs.gametype < GT_TEAM) {
+
+			if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfRailColors.integer) {
+				if (ci->team == TEAM_RED) {
+					SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_cpmaNtfRedRailColor);
+				} else {
+					SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_cpmaNtfBlueRailColor);
+				}
+				gun.shaderRGBA[3] = 255;
+			} else if (!CG_IsTeamGame(cgs.gametype)) {
 				if (!CG_IsUs(ci)) {
 					if (*cg_enemyRailItemColor.string) {
 						SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_enemyRailItemColor);
@@ -2536,8 +2623,15 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 	if ( weaponNum == WP_RAILGUN ) {
 		//clientInfo_t	*ci;
 
+		//FIXME flash.shaderRGBA[3] = 255; ?
 		//ci = &cgs.clientinfo[ cent->currentState.clientNum ];
-		if (cg_railUseOwnColors.integer  &&  CG_IsUs(ci)) {
+		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfRailColors.integer) {
+			if (ci->team == TEAM_RED) {
+				SC_ByteVec3ColorFromCvar(flash.shaderRGBA, &cg_cpmaNtfRedRailColor);
+			} else {
+				SC_ByteVec3ColorFromCvar(flash.shaderRGBA, &cg_cpmaNtfBlueRailColor);
+			}
+		} else if (cg_railUseOwnColors.integer  &&  CG_IsUs(ci)) {
 			flash.shaderRGBA[0] = 255 * cg.color1[0];
 			flash.shaderRGBA[1] = 255 * cg.color1[1];
 			flash.shaderRGBA[2] = 255 * cg.color1[2];
@@ -3681,11 +3775,22 @@ void CG_MissileHitWall( int weapon, int clientNum, const vec3_t origin, const ve
 	alphaFade = (mark == cgs.media.energyMarkShader);	// plasma fades alpha, all others fade color
 	if ( weapon == WP_RAILGUN ) {
 		float	*color;
+		float vcolor[3];
 
 		//FIXME enemy colors
 		// colorize with client color
 		color = cgs.clientinfo[clientNum].color1;
-		if (cg_railUseOwnColors.integer  &&  CG_IsUs(&cgs.clientinfo[clientNum])) {
+
+		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfRailColors.integer) {
+			if (cgs.clientinfo[clientNum].team == TEAM_RED) {
+				SC_Vec3ColorFromCvar(vcolor, &cg_cpmaNtfRedRailColor);
+				color = vcolor;
+			} else {
+				SC_Vec3ColorFromCvar(vcolor, &cg_cpmaNtfBlueRailColor);
+				color = vcolor;
+			}
+			//vcolor[3] = 1.0f;
+		} else if (cg_railUseOwnColors.integer  &&  CG_IsUs(&cgs.clientinfo[clientNum])) {
 			color = cg.color1;
 		}
 		CG_ImpactMark( mark, origin, ourDir, random()*360, color[0],color[1], color[2],1, alphaFade, radius, qfalse, energy, qtrue );

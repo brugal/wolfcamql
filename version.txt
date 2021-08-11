@@ -1,4 +1,4 @@
-12.5test5
+12.5test6
 
 * ioquake3 patches
 
@@ -39,7 +39,37 @@
     cg_cpmaNtfBlueHeadColor
     cg_cpmaNtfBlueTorsoColor
     cg_cpmaNtfBlueLegsColor
+    cg_cpmaNtfModelSkin
 
+* bug fix:  freecam was adding predictable step events
+* bug fix:  don't show armor client item timers in cpma ntf
+* bug fix:  cg_ignoreClientHeadModel 2  was also ignoring head models in quake3 demos
+* bug fix:  'prepare your team' warm up announcement didn't check team game mode correctly
+* bug fix:  incorrect grenade color team mode check
+* bug fix:  incorrect game mode check for rail and bullet team hit sound when /following player
+* add single player icon
+* bug fix:  missing game types for ui CG_GAME_TYPE
+* bug fix:  lead audio announcer not played in single player
+* cg_audioAnnouncerLead 2  enables lead announcements in red rover
+* bug fix:  red rover round start sound not played
+* cg_redRoverRoundStartSound
+* bug fix:  CG_GAME_STATUS showing team instead of individual status for red rover
+* bug fix:  single player not playing fraglimit warnings
+* cpma ntf team rail color support
+
+    cg_cpmaUseNtfColors
+    cg_cpmaNtfRedRailColor
+    cg_cpmaNtfBlueRailColor
+
+* fx:  powerup information available.  Ex:
+
+    player/torso/trail {
+        if pwquad {  // also pwbattlesuit, pwregen, ...
+	    color 0.2 0.75 1.0
+	    size 200 + rand*32
+	    light
+	}
+    }
 
 ---------------------------------
 12.4  2020-12-04

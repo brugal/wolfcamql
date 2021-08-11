@@ -1589,8 +1589,6 @@ void CG_NewClientInfo( int clientNum ) {
 		memset( ci, 0, sizeof( *ci ) );
 		memset(ciOrig, 0, sizeof(*ciOrig));
 
-		//cgs.newConnectedClient[clientNum] = qfalse;
-		//CG_BuildSpectatorString();  // don't need always called in cg_servercmds.c
 		CG_RemoveClientFromScores(clientNum);
 		cgs.lastConnectedDisconnectedPlayer = clientNum;
 		cgs.needToCheckSkillRating = qtrue;
@@ -1771,8 +1769,18 @@ void CG_NewClientInfo( int clientNum ) {
 	model = Info_ValueForKey(configstring, "model");
 	hmodel = Info_ValueForKey(configstring, "hmodel");
 
-	if (cg_ignoreClientHeadModel.integer == 2  &&  cgs.protocol == PROTOCOL_QL) {
-		v = model;
+	// Quake Live doesn't use 'headmodel' for in game models but it is still
+	// set in player's config strings.  If it's not ignored you'll see a lot
+	// of random head models from people testing the setting.
+	//
+	// '2' ignores only for Quake Live demos
+
+	if (cg_ignoreClientHeadModel.integer == 2) {
+		if (cgs.protocol == PROTOCOL_QL) {
+			v = model;
+		} else {
+			v = hmodel;
+		}
 	} else if (cg_ignoreClientHeadModel.integer) {
 		v = model;
 	} else {
@@ -1786,8 +1794,12 @@ void CG_NewClientInfo( int clientNum ) {
 	if (!cgs.clientinfo[clientNum].infoValid  ||  strcmp(s, cgs.clientinfo[clientNum].modelString)  ||  strcmp(v, cgs.clientinfo[clientNum].headString)) {
 		// unedited model
 
-		if (cg_ignoreClientHeadModel.integer == 2  &&  cgs.protocol == PROTOCOL_QL) {
-			v = model;
+		if (cg_ignoreClientHeadModel.integer == 2) {
+			if (cgs.protocol == PROTOCOL_QL) {
+				v = model;
+			} else {
+				v = hmodel;
+			}
 		} else if (cg_ignoreClientHeadModel.integer) {
 			v = model;
 		} else {
@@ -1910,8 +1922,12 @@ void CG_NewClientInfo( int clientNum ) {
 	}
 
 	// head model
-	if (cg_ignoreClientHeadModel.integer == 2  &&  cgs.protocol == PROTOCOL_QL) {
-		v = model;
+	if (cg_ignoreClientHeadModel.integer == 2) {
+		if (cgs.protocol == PROTOCOL_QL) {
+			v = model;
+		} else {
+			v = hmodel;
+		}
 	} else if (cg_ignoreClientHeadModel.integer) {
 		v = model;
 	} else {
@@ -1995,8 +2011,6 @@ void CG_NewClientInfo( int clientNum ) {
 
 	if (!ci->infoValid) {
 		// this is a new client connecting
-		//cgs.newConnectedClient[clientNum] = qtrue;
-		//CG_BuildSpectatorString();  // will do it already in cg_servercmds.c
 		cgs.lastConnectedDisconnectedPlayer = clientNum;
 		cgs.needToCheckSkillRating = qtrue;
 		Q_strncpyz(cgs.lastConnectedDisconnectedPlayerName, newInfo.name, sizeof(cgs.lastConnectedDisconnectedPlayerName));

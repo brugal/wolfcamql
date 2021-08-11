@@ -469,7 +469,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 			if (mod == MOD_THAW) {
 				s = va("You thawed %s", targetName);
 			} else {
-				if (cg_teamKillWarning.integer  &&  (cgs.gametype >= GT_TEAM  &&  (cgs.gametype != GT_CA  &&  cgs.gametype != GT_RED_ROVER  &&  cgs.gametype != GT_DOMINATION  &&  cgs.gametype != GT_CTFS))  &&  target >= 0  &&  target < MAX_CLIENTS  &&  CG_IsTeammate(&cgs.clientinfo[target])) {
+				if (cg_teamKillWarning.integer  &&  (CG_IsTeamGame(cgs.gametype)  &&  (cgs.gametype != GT_CA  &&  cgs.gametype != GT_RED_ROVER  &&  cgs.gametype != GT_DOMINATION  &&  cgs.gametype != GT_CTFS))  &&  target >= 0  &&  target < MAX_CLIENTS  &&  CG_IsTeammate(&cgs.clientinfo[target])) {
 					s = va("You fragged %s\n\n^1Watch your fire!", targetName);
 				} else {
 					s = va("You fragged %s", targetName);
@@ -2474,7 +2474,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
                 wclients[clientNum].perKillwstats[WP_RAILGUN].hits++;
                 if (wolfcam_following  &&  clientNum == wcg.clientNum) {
                     //CG_Printf ("  ^3xxxx hit %d  %s\n", tr.entityNum, cgs.clientinfo[tr.entityNum].name);
-					if (cgs.gametype >= GT_TEAM) {
+					if (CG_IsTeamGame(cgs.gametype)) {
 						if (cgs.clientinfo[tr.entityNum].infoValid  &&  cgs.clientinfo[tr.entityNum].team != cgs.clientinfo[clientNum].team) {
 							wcg.playHitSound = qtrue;
 						} else if (cgs.clientinfo[tr.entityNum].infoValid) {
@@ -2527,10 +2527,10 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
             if (es->otherEntityNum == wcg.clientNum) {
                 //CG_Printf ("hitting  %d!!!\n", es->weapon);
                 //CG_StartLocalSound( cgs.media.hitSound, CHAN_LOCAL_SOUND);
-				if (cgs.gametype < GT_TEAM) {
+				if (!CG_IsTeamGame(cgs.gametype)) {
 					//FIXME check if corpse
 					wcg.playHitSound = qtrue;
-				} else if (cgs.gametype >= GT_TEAM) {
+				} else {
 					if (es->eventParm < MAX_CLIENTS  &&  cgs.clientinfo[es->eventParm].infoValid) {
 						if (cgs.clientinfo[es->eventParm].team != cgs.clientinfo[wcg.clientNum].team) {
 							//FIXME check if corpse
@@ -3896,6 +3896,12 @@ void CG_CheckEvents( centity_t *cent ) {
 
 void CG_AddClientSidePredictableEvent (int event, int eventParam)
 {
+	// freecam can add EV_STEP*
+	//FIXME 2021-08-01 what about step smoothing for freecam?
+	if (cg.demoPlayback) {
+		return;
+	}
+
 	if (cg.clientSideEventSequence >= MAX_PREDICTED_EVENTS) {
 		CG_Printf("^3cg.clientSideEventSequence >= MAX_PREDICTED_EVENTS\n");
 		return;

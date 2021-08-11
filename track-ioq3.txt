@@ -7746,3 +7746,7 @@ the demo.
 
 2021-07-06-01
     Fix line not removed in previous commit.
+
+2021-07-20-01
+    OpenGL2: Flip normals for backfacing triangles.
+    https://github.com/ioquake/ioq3/issues/513

@@ -275,6 +275,22 @@ enum {
 	TOKEN_ENEMY,
 	TOKEN_TEAMMATE,
 	TOKEN_INEYES,
+	TOKEN_PWSPAWNPROTECTION,
+	TOKEN_PWQUAD,
+	TOKEN_PWBATTLESUIT,
+	TOKEN_PWHASTE,
+	TOKEN_PWINVIS,
+	TOKEN_PWREGEN,
+	TOKEN_PWFLIGHT,
+	TOKEN_PWREDFLAG,
+	TOKEN_PWBLUEFLAG,
+	TOKEN_PWNEUTRALFLAG,
+	TOKEN_PWINVULNERABILITY,
+	TOKEN_PWSCOUT,
+	TOKEN_PWGUARD,
+	TOKEN_PWDOUBLER,
+	TOKEN_PWARMORREGEN,
+	TOKEN_PWFROZEN,
 	TOKEN_TEAM,
 	TOKEN_SURFACETYPE,
 	TOKEN_GAMETYPE,
@@ -515,6 +531,23 @@ static fxToken_t fxTokens[] = {
 	{ "enemy", TOKEN_ENEMY },
 	{ "teammate", TOKEN_TEAMMATE },
 	{ "ineyes", TOKEN_INEYES },
+
+	{ "pwspawnprotection", TOKEN_PWSPAWNPROTECTION },
+	{ "pwquad", TOKEN_PWQUAD },
+	{ "pwbattlesuit", TOKEN_PWBATTLESUIT },
+	{ "pwhaste", TOKEN_PWHASTE },
+	{ "pwinvis", TOKEN_PWINVIS },
+	{ "pwregen", TOKEN_PWREGEN },
+	{ "pwflight", TOKEN_PWFLIGHT },
+	{ "pwredflag", TOKEN_PWREDFLAG },
+	{ "pwblueflag", TOKEN_PWBLUEFLAG },
+	{ "pwneutralflag", TOKEN_PWNEUTRALFLAG },
+	{ "pwinvulnerability", TOKEN_PWINVULNERABILITY },
+	{ "pwscout", TOKEN_PWSCOUT },
+	{ "pwguard", TOKEN_PWGUARD },
+	{ "pwdoubler", TOKEN_PWDOUBLER },
+	{ "pwarmorregen", TOKEN_PWARMORREGEN },
+	{ "pwfrozen", TOKEN_PWFROZEN },
 	{ "surfacetype", TOKEN_SURFACETYPE },
 	{ "gametype", TOKEN_GAMETYPE },
 	{ "inwater", TOKEN_INWATER },
@@ -1270,6 +1303,54 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
 				break;
 			case TOKEN_INEYES:
 				goto ineyestoken;
+				break;
+			case TOKEN_PWSPAWNPROTECTION:
+				goto pwspawnprotectiontoken;
+				break;
+			case TOKEN_PWQUAD:
+				goto pwquadtoken;
+				break;
+			case TOKEN_PWBATTLESUIT:
+				goto pwbattlesuittoken;
+				break;
+			case TOKEN_PWHASTE:
+				goto pwhastetoken;
+				break;
+			case TOKEN_PWINVIS:
+				goto pwinvistoken;
+				break;
+			case TOKEN_PWREGEN:
+				goto pwregentoken;
+				break;
+			case TOKEN_PWFLIGHT:
+				goto pwflighttoken;
+				break;
+			case TOKEN_PWREDFLAG:
+				goto pwredflagtoken;
+				break;
+			case TOKEN_PWBLUEFLAG:
+				goto pwblueflagtoken;
+				break;
+			case TOKEN_PWNEUTRALFLAG:
+				goto pwneutralflagtoken;
+				break;
+			case TOKEN_PWINVULNERABILITY:
+				goto pwinvulnerabilitytoken;
+				break;
+			case TOKEN_PWSCOUT:
+				goto pwscouttoken;
+				break;
+			case TOKEN_PWGUARD:
+				goto pwguardtoken;
+				break;
+			case TOKEN_PWDOUBLER:
+				goto pwdoublertoken;
+				break;
+			case TOKEN_PWARMORREGEN:
+				goto pwarmorregentoken;
+				break;
+			case TOKEN_PWFROZEN:
+				goto pwfrozentoken;
 				break;
 			case TOKEN_TEAM:
 				goto teamtoken;
@@ -2228,6 +2309,103 @@ static const char *CG_Q3mmeMathExt (const char *script, const char *end, float *
 		ineyestoken:
             ops[numOps] = OP_VAL;
             ops[numOps + 1] = ScriptVars.inEyes;
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwspawnprotection")) {
+		pwspawnprotectiontoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & PWEX_SPAWNPROTECTION;
+            numOps += 2;
+			goto handledToken;
+
+		} else if (!Q_stricmpt(token, "pwquad")) {
+		pwquadtoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_QUAD);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwbattlesuit")) {
+		pwbattlesuittoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_BATTLESUIT);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwhaste")) {
+		pwhastetoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_HASTE);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwinvis")) {
+		pwinvistoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_INVIS);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwregen")) {
+		pwregentoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_REGEN);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwflight")) {
+		pwflighttoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_FLIGHT);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwredflag")) {
+		pwredflagtoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_REDFLAG);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwblueflag")) {
+		pwblueflagtoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_BLUEFLAG);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwneutralflag")) {
+		pwneutralflagtoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_NEUTRALFLAG);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwinvulnerability")) {
+		pwinvulnerabilitytoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_INVULNERABILITY);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwscout")) {
+		pwscouttoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_SCOUT);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwguard")) {
+		pwguardtoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_GUARD);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwdoubler")) {
+		pwdoublertoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_DOUBLER);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwarmorregen")) {
+		pwarmorregentoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_ARMORREGEN);
+            numOps += 2;
+			goto handledToken;
+		} else if (!Q_stricmpt(token, "pwfrozen")) {
+		pwfrozentoken:
+            ops[numOps] = OP_VAL;
+            ops[numOps + 1] = ScriptVars.powerups & (1 << PW_FROZEN);
             numOps += 2;
 			goto handledToken;
 #if 0
@@ -7534,6 +7712,8 @@ void CG_CopyPlayerDataToScriptData (centity_t *cent)
 	}
 	VectorCopy(ci->color1, ScriptVars.color1);
 	VectorCopy(ci->color2, ScriptVars.color2);
+
+	ScriptVars.powerups = cent->currentState.powerups;
 
 	if (clientNum == cg.snap->ps.clientNum) {
 		ScriptVars.parentCent =  &cg.predictedPlayerEntity;

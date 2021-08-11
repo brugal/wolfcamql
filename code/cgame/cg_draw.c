@@ -3923,6 +3923,10 @@ static float CG_DrawRedArmorTimer (float x, float y, int cgtime, int ourClientNu
 	float w;
 	float xAlign;
 
+	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
+		return y;
+	}
+
 	for (i = 0;  i < cg.numRedArmors;  i++) {
 		titem = &cg.redArmors[i];
 
@@ -3993,6 +3997,10 @@ static float CG_DrawYellowArmorTimer (float x, float y, int cgtime, int ourClien
 	float w;
 	float xAlign;
 
+	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
+		return y;
+	}
+
 	for (i = 0;  i < cg.numYellowArmors;  i++) {
 		titem = &cg.yellowArmors[i];
 
@@ -4061,6 +4069,10 @@ static float CG_DrawGreenArmorTimer (float x, float y, int cgtime, int ourClient
 	const char *s;
 	float w;
 	float xAlign;
+
+	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
+		return y;
+	}
 
 	for (i = 0;  i < cg.numGreenArmors;  i++) {
 		titem = &cg.greenArmors[i];
@@ -5200,7 +5212,7 @@ static void CG_DrawUpperRight( void ) {
 
 	y = 0;
 
-	if ( cgs.gametype >= GT_TEAM && cg_drawTeamOverlay.integer == 1 ) {
+	if ( CG_IsTeamGame(cgs.gametype) && cg_drawTeamOverlay.integer == 1 ) {
 		y = CG_DrawTeamOverlay( y, qtrue, qtrue );
 	}
 	if ( cg_drawSnapshot.integer ) {
@@ -5794,7 +5806,7 @@ static void CG_DrawLowerRight( void ) {
 
 	y = 480 - ICON_SIZE;
 
-	if ( cgs.gametype >= GT_TEAM && cg_drawTeamOverlay.integer == 2 ) {
+	if ( CG_IsTeamGame(cgs.gametype) && cg_drawTeamOverlay.integer == 2 ) {
 		y = CG_DrawTeamOverlay( y, qtrue, qfalse );
 	}
 	if (cg_drawScores.integer) {
@@ -6052,7 +6064,7 @@ static void CG_DrawLowerLeft( void ) {
 
 	y = 480 - ICON_SIZE;
 
-	if ( cgs.gametype >= GT_TEAM && cg_drawTeamOverlay.integer == 3 ) {
+	if ( CG_IsTeamGame(cgs.gametype) && cg_drawTeamOverlay.integer == 3 ) {
 		y = CG_DrawTeamOverlay( y, qfalse, qfalse );
 	}
 
@@ -7044,18 +7056,28 @@ static void CG_RoundAnnouncements (void)
 						}
 					}
 				} else {
-					if (cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
-						int ourClientNum;
+					if (cgs.gametype == GT_RED_ROVER) {
 
-						CG_StartLocalSound(cgs.media.kamikazeRespawnSound, CHAN_LOCAL);
-
-						if (wolfcam_following) {
-							ourClientNum = wcg.clientNum;
-						} else {
-							ourClientNum = cg.snap->ps.clientNum;
+						// 2021-08-06 thought this gong sound was only for
+						// 'infected' but seems to be for regular red rover
+						// as well
+						if (cg_redRoverRoundStartSound.integer) {
+							CG_StartLocalSound(cgs.media.kamikazeRespawnSound, CHAN_LOCAL);
 						}
-						if (cgs.clientinfo[ourClientNum].team == TEAM_RED) {
-							CG_StartLocalSound(cgs.media.countBiteSound, CHAN_ANNOUNCER);
+
+						if (cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_allowServerOverride.integer) {
+							int ourClientNum;
+
+							if (wolfcam_following) {
+								ourClientNum = wcg.clientNum;
+							} else {
+								ourClientNum = cg.snap->ps.clientNum;
+							}
+							if (cgs.clientinfo[ourClientNum].team == TEAM_RED) {
+								CG_StartLocalSound(cgs.media.countBiteSound, CHAN_ANNOUNCER);
+							} else {
+								CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
+							}
 						} else {
 							CG_StartLocalSound(cgs.media.countFightSound, CHAN_ANNOUNCER);
 						}
@@ -7650,7 +7672,7 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum, const char *to
 				}
 			}
 
-			if (cgs.gametype >= GT_TEAM) {
+			if (CG_IsTeamGame(cgs.gametype)) {
 				extString[j].i = TEXT_PIC_PAINT_ICON;
 				j++;
 				if (0) {  //(suicide) {
@@ -7692,7 +7714,7 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum, const char *to
 				}
 			}
 
-			if (cgs.gametype >= GT_TEAM) {
+			if (CG_IsTeamGame(cgs.gametype)) {
 				extString[j].i = TEXT_PIC_PAINT_ICON;
 				j++;
 				if (suicide) {
@@ -9241,7 +9263,7 @@ static void CG_DrawSpectator(void) {
 	if (CG_IsDuelGame(cgs.gametype)) {
 		CG_DrawBigString(320 - 15 * 8, 460, "waiting to play", 1.0F);
 	}
-	else if ( cgs.gametype >= GT_TEAM ) {
+	else if ( CG_IsTeamGame(cgs.gametype) ) {
 		CG_DrawBigString(320 - 39 * 8, 460, "press ESC and use the JOIN menu to play", 1.0F);
 	}
 }
@@ -9566,7 +9588,7 @@ static qboolean CG_DrawScoreboard (void)
 			} else if (cgs.gametype == GT_RACE  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("endscore_menu_race");
 			} else {
-				if ( cgs.gametype >= GT_TEAM ) {
+				if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER ) {
 					cg.menuScoreboard = Menus_FindByName("endteamscore_menu");
 					if (!cg.menuScoreboard) {
 						Com_Printf("couldn't find teamscore_menu\n");
@@ -9604,7 +9626,7 @@ static qboolean CG_DrawScoreboard (void)
 			} else if (cgs.gametype == GT_RACE  &&  !cg_scoreBoardOld.integer) {
 				cg.menuScoreboard = Menus_FindByName("score_menu_race");
 			} else {
-				if (cgs.gametype >= GT_TEAM) {
+				if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
 					cg.menuScoreboard = Menus_FindByName("teamscore_menu");
 					if (!cg.menuScoreboard) {
 						Com_Printf("couldn't find teamscore_menu\n");
@@ -9989,7 +10011,7 @@ static void CG_WarmupAnnouncements (void)
 		if (cg_audioAnnouncerWarmup.integer) {
 			switch ( sec ) {
 			case 8:
-				if ((cgs.gametype >= GT_TEAM && cgs.gametype <= GT_HARVESTER)  ||  cgs.gametype == GT_FREEZETAG) {
+				if (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) {
 					CG_StartLocalSound(cgs.media.countPrepareTeamSound, CHAN_ANNOUNCER);
 				} else {
 					CG_StartLocalSound(cgs.media.countPrepareSound, CHAN_ANNOUNCER);
@@ -10166,6 +10188,8 @@ static void CG_DrawWarmup( void ) {
 			s = "Hoonymode";
 		} else if (cgs.gametype == GT_RACE) {
 			s = "Race";
+		} else if (cgs.gametype == GT_SINGLE_PLAYER) {
+			s = "Single Player";
 		} else {
 			s = va("unknown: %d", cgs.gametype);
 		}
@@ -10931,7 +10955,7 @@ static void CG_Draw2D( void ) {
 		}
 	}
 
-	if ( cgs.gametype >= GT_TEAM ) {
+	if ( CG_IsTeamGame(cgs.gametype) ) {
 #ifndef MISSIONPACK  //FIXME check
 		CG_DrawTeamInfo();
 #endif

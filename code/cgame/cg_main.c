@@ -893,6 +893,12 @@ vmCvar_t cg_cpmaNtfBlueHeadColor;
 vmCvar_t cg_cpmaNtfBlueTorsoColor;
 vmCvar_t cg_cpmaNtfBlueLegsColor;
 
+vmCvar_t cg_cpmaNtfModelSkin;
+
+vmCvar_t cg_cpmaUseNtfRailColors;
+vmCvar_t cg_cpmaNtfRedRailColor;
+vmCvar_t cg_cpmaNtfBlueRailColor;
+
 vmCvar_t cg_ourModel;
 vmCvar_t cg_ourHeadSkin;
 vmCvar_t cg_ourTorsoSkin;
@@ -1308,6 +1314,8 @@ vmCvar_t cg_colorCodeUseForegroundAlpha;
 vmCvar_t cg_chaseThirdPerson;
 vmCvar_t cg_chaseUpdateFreeCam;
 vmCvar_t cg_chaseMovementKeys;
+
+vmCvar_t cg_redRoverRoundStartSound;
 
 // end cvar_t
 
@@ -2103,6 +2111,12 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_cpmaNtfBlueTorsoColor), "0x00a5ff", CVAR_ARCHIVE },
 	{ cvp(cg_cpmaNtfBlueLegsColor), "0x0000ff", CVAR_ARCHIVE },
 
+	{ cvp(cg_cpmaNtfModelSkin), "bright", CVAR_ARCHIVE },
+
+	{ cvp(cg_cpmaUseNtfRailColors), "1", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfRedRailColor), "0xff5a00", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfBlueRailColor), "0x00a5ff", CVAR_ARCHIVE },
+
 	//FIXME these two have already been set to default values and can't be ""
 	{ &cg_ourModel, "model", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE },
 	{ &cg_ourHeadModel, "headmodel", DEFAULT_MODEL, CVAR_USERINFO | CVAR_ARCHIVE },
@@ -2532,6 +2546,8 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_chaseThirdPerson), "1", CVAR_ARCHIVE },
 	{ cvp(cg_chaseUpdateFreeCam), "1", CVAR_ARCHIVE },
 	{ cvp(cg_chaseMovementKeys), "1", CVAR_ARCHIVE },
+
+	{ cvp(cg_redRoverRoundStartSound), "1", CVAR_ARCHIVE },
 
 };
 
@@ -3247,7 +3263,7 @@ static void CG_RegisterAnnouncerSounds (void)
 	cgs.media.countPrepareTeamSound = trap_S_RegisterSound( va("%s/prepare_your_team.wav", baseDir), qtrue );
 #endif
 
-	if ( cgs.gametype >= GT_TEAM || cg_buildScript.integer ) {
+	if ( CG_IsTeamGame(cgs.gametype) || cg_buildScript.integer ) {
 		cgs.media.redLeadsSound = trap_S_RegisterSound( va("%s/red_leads.wav", baseDir), qtrue );
 		cgs.media.blueLeadsSound = trap_S_RegisterSound( va("%s/blue_leads.wav", baseDir), qtrue );
 		cgs.media.teamsTiedSound = trap_S_RegisterSound( va("%s/teams_tied.wav", baseDir), qtrue );
@@ -3400,7 +3416,7 @@ static void CG_RegisterSounds( void ) {
 
 	CG_RegisterAnnouncerSounds();
 
-	if ( cgs.gametype >= GT_TEAM || cg_buildScript.integer ) {
+	if ( CG_IsTeamGame(cgs.gametype) || cg_buildScript.integer ) {
 
 		cgs.media.captureAwardSound = trap_S_RegisterSound( "sound/teamplay/flagcapture_yourteam.wav", qtrue );
 		cgs.media.hitTeamSound = trap_S_RegisterSound( "sound/feedback/hit_teammate.wav", qtrue );
@@ -4367,6 +4383,7 @@ static void CG_RegisterGraphics( void ) {
 	cgs.media.gametypeIcon[GT_RACE] = trap_R_RegisterShader("ui/assets/hud/race");
 	// ui/assets/hud/health.png looks a bit like it
 	cgs.media.gametypeIcon[GT_NTF] = trap_R_RegisterShader("wc/hud/ntf");
+	cgs.media.gametypeIcon[GT_SINGLE_PLAYER] = trap_R_RegisterShader("wc/hud/sp");
 
 	cgs.media.infiniteAmmo = trap_R_RegisterShader("icons/infinite");
 	//cgs.media.premiumIcon = trap_R_RegisterShader("ui/assets/score/premium_icon");
@@ -4502,14 +4519,6 @@ void CG_BuildSpectatorString(void) {
 #endif
 		}
 	}
-
-#if 0  //FIXME eliminate this stuff
-	for (i = 0;  i < MAX_CLIENTS;  i++) {
-		if (cgs.newConnectedClient[i]) {
-			Q_strcat(slist, sizeof(slist), va("%s     ", cgs.clientinfo[i].name));
-		}
-	}
-#endif
 
 #if 0
 	i = strlen(cg.spectatorList);
@@ -5529,7 +5538,7 @@ void CG_SetScoreSelection (menuDef_t *menu)
 	}
 
 
-	if ( cgs.gametype >= GT_TEAM ) {  //FIXME team game
+	if ( CG_IsTeamGame(cgs.gametype) ) {
 		feeder = FEEDER_REDTEAM_LIST;
 		i = red;
 
@@ -5547,7 +5556,7 @@ void CG_SetScoreSelection (menuDef_t *menu)
 static clientInfo_t * CG_InfoFromScoreIndex (int index, int team, int *scoreIndex) {
 	int i, count;
 
-	if (cgs.gametype >= GT_TEAM  ||  cgs.gametype == GT_FFA) {
+	if (CG_IsTeamGame(cgs.gametype)  ||  cgs.gametype == GT_FFA) {
 		count = 0;
 		for (i = 0; i < cg.numScores; i++) {
 			if (cg.scores[i].team == team) {
@@ -7598,7 +7607,7 @@ static qhandle_t CG_FeederItemImage(float feederID, int index) {
 }
 
 static void CG_FeederSelection (float feederID, int index) {
-	if ( cgs.gametype >= GT_TEAM ) {  //FIXME team game
+	if ( CG_IsTeamGame(cgs.gametype) ) {
 		int i, count;
 		int team = (feederID == FEEDER_REDTEAM_LIST) ? TEAM_RED : TEAM_BLUE;
 		count = 0;
@@ -7796,8 +7805,6 @@ void CG_CreateScoresFromClientInfo (void)
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		const clientInfo_t *ci;
 		score_t *s;
-
-		//cgs.newConnectedClient[i] = qfalse;
 
 		ci = &cgs.clientinfo[i];
 		if (!ci->infoValid) {

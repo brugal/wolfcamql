@@ -28,7 +28,7 @@ static void RegisterTeamClientModelnameWithFallback (clientInfo_t *ci, const cha
 
 		// sounds
 		dir = cg.teamModel.modelName;
-		fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+		fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 		for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
 			s = cg_customSoundNames[i];
@@ -228,42 +228,57 @@ static void Wolfcam_LoadTeamModel (void)
 
 static void Wolfcam_LoadNtfModels (void)
 {
+	const char *skinName;
+	//FIXME in cg. ?
+	static int modc_skin = -1;
+
 	if (!(cgs.cpma  &&  cgs.gametype == GT_NTF)) {
 		return;
 	}
 
+	if (modc_skin != cg_cpmaNtfModelSkin.modificationCount) {
+		modc_skin = cg_cpmaNtfModelSkin.modificationCount;
+
+		cg.ntfSniperModelLoaded = qfalse;
+		cg.ntfFighterModelLoaded = qfalse;
+		cg.ntfScoutModelLoaded = qfalse;
+		cg.ntfTankModelLoaded = qfalse;
+	}
+
+	skinName = cg_cpmaNtfModelSkin.string;
+
 	if (!cg.ntfSniperModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfSniperModel, cgs.ntfSniperModelName, "pm", cgs.ntfSniperModelName, "pm", "", qtrue)) {
-			Com_Printf("^1couldn't load ntf Sniper model");
+		if (!CG_RegisterClientModelname(&cg.ntfSniperModel, cgs.ntfSniperModelName, skinName, cgs.ntfSniperModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf Sniper model '%s/%s'\n", cgs.ntfSniperModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Sniper model : '%s'\n", cgs.ntfSniperModelName);
+			Com_Printf("loaded ntf Sniper model : '%s/%s'\n", cgs.ntfSniperModelName, skinName);
 		}
 		cg.ntfSniperModelLoaded = qtrue;
 	}
 
 	if (!cg.ntfFighterModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfFighterModel, cgs.ntfFighterModelName, "pm", cgs.ntfFighterModelName, "pm", "", qtrue)) {
-			Com_Printf("^1couldn't load ntf Fighter model");
+		if (!CG_RegisterClientModelname(&cg.ntfFighterModel, cgs.ntfFighterModelName, skinName, cgs.ntfFighterModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf Fighter model '%s/%s'\n", cgs.ntfFighterModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Fighter model : '%s'\n", cgs.ntfFighterModelName);
+			Com_Printf("loaded ntf Fighter model : '%s/%s'\n", cgs.ntfFighterModelName, skinName);
 		}
 		cg.ntfFighterModelLoaded = qtrue;
 	}
 
 	if (!cg.ntfScoutModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfScoutModel, cgs.ntfScoutModelName, "pm", cgs.ntfScoutModelName, "pm", "", qtrue)) {
-			Com_Printf("^1couldn't load ntf Scout model");
+		if (!CG_RegisterClientModelname(&cg.ntfScoutModel, cgs.ntfScoutModelName, skinName, cgs.ntfScoutModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf Scout model '%s/%s'\n", cgs.ntfScoutModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Scout model : '%s'\n", cgs.ntfScoutModelName);
+			Com_Printf("loaded ntf Scout model : '%s/%s'\n", cgs.ntfScoutModelName, skinName);
 		}
 		cg.ntfScoutModelLoaded = qtrue;
 	}
 
 	if (!cg.ntfTankModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfTankModel, cgs.ntfTankModelName, "pm", cgs.ntfTankModelName, "pm", "", qtrue)) {
-			Com_Printf("^1couldn't load ntf Tank model");
+		if (!CG_RegisterClientModelname(&cg.ntfTankModel, cgs.ntfTankModelName, skinName, cgs.ntfTankModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf Tank model '%s/%s'\n", cgs.ntfTankModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Tank model : '%s'\n", cgs.ntfTankModelName);
+			Com_Printf("loaded ntf Tank model : '%s/%s'\n", cgs.ntfTankModelName, skinName);
 		}
 		cg.ntfTankModelLoaded = qtrue;
 	}
@@ -415,7 +430,7 @@ static void Wolfcam_LoadOurModel (void)
 
 		// sounds
 		dir = cg.ourModel.modelName;
-		//fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+		//fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 		for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
 			s = cg_customSoundNames[i];
@@ -588,7 +603,7 @@ static void Wolfcam_LoadFallbackModel (void)
 
 		// sounds
 		dir = cg.fallbackModel.modelName;
-		//fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+		//fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 		for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
 			s = cg_customSoundNames[i];
@@ -764,7 +779,7 @@ static void Wolfcam_LoadEnemyModel (void)
 
 			// sounds
 			dir = cg.enemyModel.modelName;
-			fallback = (cgs.gametype >= GT_TEAM) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
+			fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 			for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
 				s = cg_customSoundNames[i];

@@ -207,8 +207,8 @@ static void CG_DrawClientScore( int y, const score_t *score, const float *color,
 
 		localClient = qtrue;
 
-		if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR 
-			|| cgs.gametype >= GT_TEAM ) {
+		if ( cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR
+			 || (CG_IsTeamGame(cgs.gametype)  &&  cgs.gametype != GT_RED_ROVER) ) {
 			rank = -1;
 		} else {
 			rank = cg.snap->ps.persistant[PERS_RANK] & ~RANK_TIED_FLAG;
@@ -416,23 +416,6 @@ static int CG_TeamScoreboard( int y, team_t team, float fade, int maxClients, in
 		count++;
 	}
 
-#if 0
-	// draw clients that might have connected since the last scores update
-	if (team == TEAM_SPECTATOR  &&  cg.demoPlayback) {
-		for (i = 0;  i < MAX_CLIENTS;  i++) {
-			if (cgs.newConnectedClient[i]) {
-				score_t sc;
-				memset(&sc, 0, sizeof(sc));
-				sc.client = i;
-				sc.team = TEAM_SPECTATOR;  //ci->team;
-
-				CG_DrawClientScore( y + lineHeight * count, &sc, color, fade, lineHeight == SB_NORMAL_HEIGHT );
-				count++;
-			}
-		}
-	}
-#endif
-
 	return count;
 }
 
@@ -600,7 +583,7 @@ qboolean CG_DrawOldScoreboard( void ) {
 
 	localClient = qfalse;
 
-	if ( cgs.gametype >= GT_TEAM ) {
+	if ( CG_IsTeamGame(cgs.gametype) ) {
 		//
 		// teamplay scoreboard
 		//
@@ -731,7 +714,7 @@ void CG_DrawTourneyScoreboard( void ) {
 	// print the two scores
 
 	y = 160;
-	if ( cgs.gametype >= GT_TEAM ) {
+	if ( CG_IsTeamGame(cgs.gametype) ) {
 		//
 		// teamplay scoreboard
 		//

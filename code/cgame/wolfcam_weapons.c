@@ -204,7 +204,7 @@ void Wolfcam_AddPlayerWeapon (const refEntity_t *parent, centity_t *cent, int te
 
 			teamRail = CG_IsTeammate(ci);
 			enemyRail = CG_IsEnemy(ci);
-			if (cgs.gametype < GT_TEAM) {
+			if (!CG_IsTeamGame(cgs.gametype)) {
 				if (!CG_IsUs(ci)) {
 					if (*cg_enemyRailItemColor.string) {
 						SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_enemyRailItemColor);
