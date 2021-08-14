@@ -1762,7 +1762,7 @@ void CG_NewClientInfo( int clientNum ) {
 		newInfo.countryFlag = 0;
 
 		if (*v  &&  cgs.cpma  && cgs.gametype == GT_NTF) {
-			newInfo.teamClass = atoi(v);
+			newInfo.ntfClass = atoi(v);
 		}
 	}
 
@@ -4695,18 +4695,18 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 
 		if (freecamPovSettings  &&  cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			switch (cgs.clientinfo[cent->currentState.clientNum].teamClass) {
-			case TEAMCLASS_SNIPER:
-				CG_CopyClientInfoModel(&cg.ntfSniperModel, ci);
+			switch (cgs.clientinfo[cent->currentState.clientNum].ntfClass) {
+			case 0:
+				CG_CopyClientInfoModel(&cg.ntfClass0Model, ci);
 				break;
-			case TEAMCLASS_FIGHTER:
-				CG_CopyClientInfoModel(&cg.ntfFighterModel, ci);
+			case 1:
+				CG_CopyClientInfoModel(&cg.ntfClass1Model, ci);
 				break;
-			case TEAMCLASS_SCOUT:
-				CG_CopyClientInfoModel(&cg.ntfScoutModel, ci);
+			case 2:
+				CG_CopyClientInfoModel(&cg.ntfClass2Model, ci);
 				break;
-			case TEAMCLASS_TANK:
-				CG_CopyClientInfoModel(&cg.ntfTankModel, ci);
+			case 3:
+				CG_CopyClientInfoModel(&cg.ntfClass3Model, ci);
 				break;
 			default:
 				break;
@@ -5105,18 +5105,18 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 	} else if (CG_IsEnemy(ci)) {
 		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			switch (cgs.clientinfo[cent->currentState.clientNum].teamClass) {
-			case TEAMCLASS_SNIPER:
-				CG_CopyClientInfoModel(&cg.ntfSniperModel, ci);
+			switch (cgs.clientinfo[cent->currentState.clientNum].ntfClass) {
+			case 0:
+				CG_CopyClientInfoModel(&cg.ntfClass0Model, ci);
 				break;
-			case TEAMCLASS_FIGHTER:
-				CG_CopyClientInfoModel(&cg.ntfFighterModel, ci);
+			case 1:
+				CG_CopyClientInfoModel(&cg.ntfClass1Model, ci);
 				break;
-			case TEAMCLASS_SCOUT:
-				CG_CopyClientInfoModel(&cg.ntfScoutModel, ci);
+			case 2:
+				CG_CopyClientInfoModel(&cg.ntfClass2Model, ci);
 				break;
-			case TEAMCLASS_TANK:
-				CG_CopyClientInfoModel(&cg.ntfTankModel, ci);
+			case 3:
+				CG_CopyClientInfoModel(&cg.ntfClass3Model, ci);
 				break;
 			default:
 				break;
@@ -5210,18 +5210,18 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 	} else if (CG_IsTeammate(ci)) {
 		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			switch (cgs.clientinfo[cent->currentState.clientNum].teamClass) {
-			case TEAMCLASS_SNIPER:
-				CG_CopyClientInfoModel(&cg.ntfSniperModel, ci);
+			switch (cgs.clientinfo[cent->currentState.clientNum].ntfClass) {
+			case 0:
+				CG_CopyClientInfoModel(&cg.ntfClass0Model, ci);
 				break;
-			case TEAMCLASS_FIGHTER:
-				CG_CopyClientInfoModel(&cg.ntfFighterModel, ci);
+			case 1:
+				CG_CopyClientInfoModel(&cg.ntfClass1Model, ci);
 				break;
-			case TEAMCLASS_SCOUT:
-				CG_CopyClientInfoModel(&cg.ntfScoutModel, ci);
+			case 2:
+				CG_CopyClientInfoModel(&cg.ntfClass2Model, ci);
 				break;
-			case TEAMCLASS_TANK:
-				CG_CopyClientInfoModel(&cg.ntfTankModel, ci);
+			case 3:
+				CG_CopyClientInfoModel(&cg.ntfClass3Model, ci);
 				break;
 			default:
 				break;

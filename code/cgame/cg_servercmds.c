@@ -1132,37 +1132,31 @@ static void CG_CpmaSetNtfModel (int csNum, qboolean firstCall, qboolean csChange
 	name = Info_ValueForKey(info, "n");
 	model = Info_ValueForKey(info, "m");
 
+#if 0
+	if (!*name  &&  (firstCall  ||  csChange)) {
+		Com_Printf("^1empty ntf name for CS %d\n", csNum);
+		return;
+	}
+#endif
+
 	if (!*model  &&  (firstCall  ||  csChange)) {
 		Com_Printf("^1empty ntf model for CS %d\n", csNum);
 		return;
 	}
 
-	if (!strcmp(name, "Fighter")) {
-		if (strcmp(model, cgs.ntfFighterModelName)) {
-			Q_strncpyz(cgs.ntfFighterModelName, model, sizeof(cgs.ntfFighterModelName));
-			cg.ntfFighterModelLoaded = qfalse;
-		}
-	} else if (!strcmp(name, "Scout")) {
-		if (strcmp(model, cgs.ntfScoutModelName)) {
-			Q_strncpyz(cgs.ntfScoutModelName, model, sizeof(cgs.ntfScoutModelName));
-			cg.ntfScoutModelLoaded = qfalse;
-		}
-	} else if (!strcmp(name, "Sniper")) {
-		if (strcmp(model, cgs.ntfSniperModelName)) {
-			Q_strncpyz(cgs.ntfSniperModelName, model, sizeof(cgs.ntfSniperModelName));
-			cg.ntfSniperModelLoaded = qfalse;
-		}
-	} else if (!strcmp(name, "Tank")) {
-		if (strcmp(model, cgs.ntfTankModelName)) {
-			Q_strncpyz(cgs.ntfTankModelName, model, sizeof(cgs.ntfTankModelName));
-			cg.ntfTankModelLoaded = qfalse;
-		}
-	} else {
-		if (firstCall  ||  csChange) {
-			Com_Printf("^1unknown ntf class name '%s' for CS %d\n", name, csNum);
-		}
+	if (csNum == CSCPMA_NTF_CLASS_0) {
+		Q_strncpyz(cgs.ntfClass0ModelName, model, sizeof(cgs.ntfClass0ModelName));
+		cg.ntfClass0ModelLoaded = qfalse;
 
-		return;
+	} else if (csNum == CSCPMA_NTF_CLASS_1) {
+		Q_strncpyz(cgs.ntfClass1ModelName, model, sizeof(cgs.ntfClass1ModelName));
+		cg.ntfClass1ModelLoaded = qfalse;
+	} else if (csNum == CSCPMA_NTF_CLASS_2) {
+		Q_strncpyz(cgs.ntfClass2ModelName, model, sizeof(cgs.ntfClass2ModelName));
+		cg.ntfClass2ModelLoaded = qfalse;
+	} else if (csNum == CSCPMA_NTF_CLASS_3) {
+		Q_strncpyz(cgs.ntfClass3ModelName, model, sizeof(cgs.ntfClass3ModelName));
+		cg.ntfClass3ModelLoaded = qfalse;
 	}
 
 	if (firstCall  ||  csChange) {
@@ -1414,8 +1408,9 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 		 */
 
 		// always the same order?
+		// 2021-08-13  no
 		for (i = 0;  i < 4;  i++) {
-			CG_CpmaSetNtfModel(CSCPMA_NTF_FIGHTER + i, firstCall, qfalse);
+			CG_CpmaSetNtfModel(CSCPMA_NTF_CLASS_0 + i, firstCall, qfalse);
 		}
 	}
 
@@ -2191,7 +2186,7 @@ static qboolean CG_CpmaCs (int num)
 		}
 	} else if (num == CSCPMA_GAMESTATE) {
 		CG_CpmaParseGameState(qfalse);
-	} else if (num >= CSCPMA_NTF_FIGHTER  &&  num <= CSCPMA_NTF_TANK) {
+	} else if (num >= CSCPMA_NTF_CLASS_0  &&  num <= CSCPMA_NTF_CLASS_3) {
 		if (cgs.gametype == GT_NTF) {
 			CG_CpmaSetNtfModel(num, qfalse, qtrue);
 		}

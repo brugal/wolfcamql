@@ -463,7 +463,7 @@ typedef struct {
 	qboolean hasTeamInfo;
 	clientRewards_t clientRewards;
 
-	teamclass_t teamClass;  // cpma ntf class
+	int ntfClass;  // cpma ntf class
 
 } clientInfo_t;
 
@@ -1208,14 +1208,14 @@ typedef struct {
 	clientInfo_t fallbackModelBlue;
 	clientInfo_t serverModel;
 
-	clientInfo_t ntfSniperModel;
-	qboolean ntfSniperModelLoaded;
-	clientInfo_t ntfFighterModel;
-	qboolean ntfFighterModelLoaded;
-	clientInfo_t ntfScoutModel;
-	qboolean ntfScoutModelLoaded;
-	clientInfo_t ntfTankModel;
-	qboolean ntfTankModelLoaded;
+	clientInfo_t ntfClass0Model;
+	qboolean ntfClass0ModelLoaded;
+	clientInfo_t ntfClass1Model;
+	qboolean ntfClass1ModelLoaded;
+	clientInfo_t ntfClass2Model;
+	qboolean ntfClass2ModelLoaded;
+	clientInfo_t ntfClass3Model;
+	qboolean ntfClass3ModelLoaded;
 
 	qboolean teamModelTeamSkinFound;
 	qboolean teamModelTeamHeadSkinFound;
@@ -2509,11 +2509,11 @@ typedef struct {
 
 	int numberOfRaceCheckPoints;
 
-	// cpma ntf models:  sniper, fighter, scout, tank
-	char ntfSniperModelName[MAX_QPATH];
-	char ntfFighterModelName[MAX_QPATH];
-	char ntfScoutModelName[MAX_QPATH];
-	char ntfTankModelName[MAX_QPATH];
+	// cpma ntf models  ex: sniper, fighter, scout, tank
+	char ntfClass0ModelName[MAX_QPATH];
+	char ntfClass1ModelName[MAX_QPATH];
+	char ntfClass2ModelName[MAX_QPATH];
+	char ntfClass3ModelName[MAX_QPATH];
 
 } cgs_t;
 

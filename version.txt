@@ -1,4 +1,4 @@
-12.5test6
+12.5test7
 
 * ioquake3 patches
 
@@ -57,7 +57,7 @@
 * bug fix:  single player not playing fraglimit warnings
 * cpma ntf team rail color support
 
-    cg_cpmaUseNtfColors
+    cg_cpmaUseNtfRailColors
     cg_cpmaNtfRedRailColor
     cg_cpmaNtfBlueRailColor
 

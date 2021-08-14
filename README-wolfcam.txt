@@ -1915,7 +1915,7 @@ Player Models:
 
 * color skins for all models, they are generated automatically from the already available red and blue skins you can use r_colorSkinsFuzz (the amount that the difference between red and blue skins will signal a match and not replace with white: default 20)  and r_colorSkinsIntensity (default 1.0) and the /createcolorskins  vid_restart to tweak them.  You can then use skin overrides to allow either team or enemies to keep their models but use colorized skins:    ex:  set cg_enemyModel "", then cg_enemyHeadSkin "color", cg_enemyTorsoSkin "color", cg_enemyLegsSkin "color", same for team
 
-* cg_ignoreClientHeadModel [0: use head model set by player,  1: ignore and use 'model' setting,  2: (default) ignore for quake live demos and use 'model' setting]
+* cg_ignoreClientHeadModel [0: use head model set by player,  1: ignore and use 'model' setting,  2: (default) ignore only for quake live demos and use 'model' setting]
 
   Quake Live doesn't use 'headmodel' for in game models but it is still set in
   player's config strings.  If it's not ignored you'll see a lot of random head
@@ -3133,7 +3133,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * cpma ntf team rail color support
 
-    cg_cpmaUseNtfColors
+    cg_cpmaUseNtfRailColors
     cg_cpmaNtfRedRailColor
     cg_cpmaNtfBlueRailColor
 

@@ -239,48 +239,48 @@ static void Wolfcam_LoadNtfModels (void)
 	if (modc_skin != cg_cpmaNtfModelSkin.modificationCount) {
 		modc_skin = cg_cpmaNtfModelSkin.modificationCount;
 
-		cg.ntfSniperModelLoaded = qfalse;
-		cg.ntfFighterModelLoaded = qfalse;
-		cg.ntfScoutModelLoaded = qfalse;
-		cg.ntfTankModelLoaded = qfalse;
+		cg.ntfClass0ModelLoaded = qfalse;
+		cg.ntfClass1ModelLoaded = qfalse;
+		cg.ntfClass2ModelLoaded = qfalse;
+		cg.ntfClass3ModelLoaded = qfalse;
 	}
 
 	skinName = cg_cpmaNtfModelSkin.string;
 
-	if (!cg.ntfSniperModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfSniperModel, cgs.ntfSniperModelName, skinName, cgs.ntfSniperModelName, skinName, "", qtrue)) {
-			Com_Printf("^3couldn't load ntf Sniper model '%s/%s'\n", cgs.ntfSniperModelName, skinName);
+	if (!cg.ntfClass0ModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfClass0Model, cgs.ntfClass0ModelName, skinName, cgs.ntfClass0ModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf class 0 model '%s/%s'\n", cgs.ntfClass0ModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Sniper model : '%s/%s'\n", cgs.ntfSniperModelName, skinName);
+			Com_Printf("loaded ntf class 0 model : '%s/%s'\n", cgs.ntfClass0ModelName, skinName);
 		}
-		cg.ntfSniperModelLoaded = qtrue;
+		cg.ntfClass0ModelLoaded = qtrue;
 	}
 
-	if (!cg.ntfFighterModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfFighterModel, cgs.ntfFighterModelName, skinName, cgs.ntfFighterModelName, skinName, "", qtrue)) {
-			Com_Printf("^3couldn't load ntf Fighter model '%s/%s'\n", cgs.ntfFighterModelName, skinName);
+	if (!cg.ntfClass1ModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfClass1Model, cgs.ntfClass1ModelName, skinName, cgs.ntfClass1ModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf class 1 model '%s/%s'\n", cgs.ntfClass1ModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Fighter model : '%s/%s'\n", cgs.ntfFighterModelName, skinName);
+			Com_Printf("loaded ntf class 1 model : '%s/%s'\n", cgs.ntfClass1ModelName, skinName);
 		}
-		cg.ntfFighterModelLoaded = qtrue;
+		cg.ntfClass1ModelLoaded = qtrue;
 	}
 
-	if (!cg.ntfScoutModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfScoutModel, cgs.ntfScoutModelName, skinName, cgs.ntfScoutModelName, skinName, "", qtrue)) {
-			Com_Printf("^3couldn't load ntf Scout model '%s/%s'\n", cgs.ntfScoutModelName, skinName);
+	if (!cg.ntfClass2ModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfClass2Model, cgs.ntfClass2ModelName, skinName, cgs.ntfClass2ModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf class 2 model '%s/%s'\n", cgs.ntfClass2ModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Scout model : '%s/%s'\n", cgs.ntfScoutModelName, skinName);
+			Com_Printf("loaded ntf class 2 model : '%s/%s'\n", cgs.ntfClass2ModelName, skinName);
 		}
-		cg.ntfScoutModelLoaded = qtrue;
+		cg.ntfClass2ModelLoaded = qtrue;
 	}
 
-	if (!cg.ntfTankModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfTankModel, cgs.ntfTankModelName, skinName, cgs.ntfTankModelName, skinName, "", qtrue)) {
-			Com_Printf("^3couldn't load ntf Tank model '%s/%s'\n", cgs.ntfTankModelName, skinName);
+	if (!cg.ntfClass3ModelLoaded) {
+		if (!CG_RegisterClientModelname(&cg.ntfClass3Model, cgs.ntfClass3ModelName, skinName, cgs.ntfClass3ModelName, skinName, "", qtrue)) {
+			Com_Printf("^3couldn't load ntf class 3 model '%s/%s'\n", cgs.ntfClass3ModelName, skinName);
 		} else {
-			Com_Printf("loaded ntf Tank model : '%s/%s'\n", cgs.ntfTankModelName, skinName);
+			Com_Printf("loaded ntf class 3 model : '%s/%s'\n", cgs.ntfClass3ModelName, skinName);
 		}
-		cg.ntfTankModelLoaded = qtrue;
+		cg.ntfClass3ModelLoaded = qtrue;
 	}
 }
 
