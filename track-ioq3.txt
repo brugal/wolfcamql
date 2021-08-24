@@ -7750,3 +7750,8 @@ the demo.
 2021-07-20-01
     OpenGL2: Flip normals for backfacing triangles.
     https://github.com/ioquake/ioq3/issues/513
+
+2021-08-15-01
+    Fix compiling against SDL 2.0.17
+
+    KMOD_RESERVED was replaced with KMOD_SCROLL.

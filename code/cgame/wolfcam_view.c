@@ -11,6 +11,7 @@
 
 #include "wolfcam_local.h"
 
+// also loads sounds
 static void RegisterTeamClientModelnameWithFallback (clientInfo_t *ci, const char *modelName, const char *skinName, const char *headModelName, const char *headSkinName, const char *teamName, qboolean dontForceTeamSkin)
 {
 	if (CG_RegisterClientModelname(ci, modelName, skinName, headModelName, headSkinName, "", dontForceTeamSkin)) {
@@ -226,6 +227,43 @@ static void Wolfcam_LoadTeamModel (void)
 	}
 }
 
+static qboolean Wolfcam_LoadNtfModel (clientInfo_t *ci, const char *modelName, const char *skinName)
+{
+	qboolean r;
+	const char *dir, *s, *fallback;
+	int i;
+
+	r = CG_RegisterClientModelname(ci, modelName, skinName, modelName, skinName, "", qtrue);
+
+	ci->newAnims = qfalse;
+	if (ci->torsoModel) {
+		orientation_t tag;
+		// if the torso model has the "tag_flag"
+		if (trap_R_LerpTag(&tag, ci->torsoModel, 0, 0, 1, "tag_flag")) {
+			ci->newAnims = qtrue;
+		}
+	}
+
+	// sounds
+	dir = modelName;
+	fallback = DEFAULT_TEAM_MODEL;
+
+	for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
+		s = cg_customSoundNames[i];
+		if (!s) {
+			break;
+		}
+
+		ci->sounds[i] = 0;
+		// if the model didn't load use the sounds of the default model
+		ci->sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
+		if (!ci->sounds[i])
+			ci->sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", fallback, s + 1), qfalse);
+	}
+
+	return r;
+}
+
 static void Wolfcam_LoadNtfModels (void)
 {
 	const char *skinName;
@@ -248,8 +286,9 @@ static void Wolfcam_LoadNtfModels (void)
 	skinName = cg_cpmaNtfModelSkin.string;
 
 	if (!cg.ntfClass0ModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfClass0Model, cgs.ntfClass0ModelName, skinName, cgs.ntfClass0ModelName, skinName, "", qtrue)) {
+		if (!Wolfcam_LoadNtfModel(&cg.ntfClass0Model, cgs.ntfClass0ModelName, skinName)) {
 			Com_Printf("^3couldn't load ntf class 0 model '%s/%s'\n", cgs.ntfClass0ModelName, skinName);
+			Wolfcam_LoadNtfModel(&cg.ntfClass0Model, DEFAULT_TEAM_MODEL, "bright");
 		} else {
 			Com_Printf("loaded ntf class 0 model : '%s/%s'\n", cgs.ntfClass0ModelName, skinName);
 		}
@@ -257,8 +296,9 @@ static void Wolfcam_LoadNtfModels (void)
 	}
 
 	if (!cg.ntfClass1ModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfClass1Model, cgs.ntfClass1ModelName, skinName, cgs.ntfClass1ModelName, skinName, "", qtrue)) {
+		if (!Wolfcam_LoadNtfModel(&cg.ntfClass1Model, cgs.ntfClass1ModelName, skinName)) {
 			Com_Printf("^3couldn't load ntf class 1 model '%s/%s'\n", cgs.ntfClass1ModelName, skinName);
+			Wolfcam_LoadNtfModel(&cg.ntfClass1Model, DEFAULT_TEAM_MODEL, "bright");
 		} else {
 			Com_Printf("loaded ntf class 1 model : '%s/%s'\n", cgs.ntfClass1ModelName, skinName);
 		}
@@ -266,8 +306,9 @@ static void Wolfcam_LoadNtfModels (void)
 	}
 
 	if (!cg.ntfClass2ModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfClass2Model, cgs.ntfClass2ModelName, skinName, cgs.ntfClass2ModelName, skinName, "", qtrue)) {
+		if (!Wolfcam_LoadNtfModel(&cg.ntfClass2Model, cgs.ntfClass2ModelName, skinName)) {
 			Com_Printf("^3couldn't load ntf class 2 model '%s/%s'\n", cgs.ntfClass2ModelName, skinName);
+			Wolfcam_LoadNtfModel(&cg.ntfClass2Model, DEFAULT_TEAM_MODEL, "bright");
 		} else {
 			Com_Printf("loaded ntf class 2 model : '%s/%s'\n", cgs.ntfClass2ModelName, skinName);
 		}
@@ -275,8 +316,9 @@ static void Wolfcam_LoadNtfModels (void)
 	}
 
 	if (!cg.ntfClass3ModelLoaded) {
-		if (!CG_RegisterClientModelname(&cg.ntfClass3Model, cgs.ntfClass3ModelName, skinName, cgs.ntfClass3ModelName, skinName, "", qtrue)) {
+		if (!Wolfcam_LoadNtfModel(&cg.ntfClass3Model, cgs.ntfClass3ModelName, skinName)) {
 			Com_Printf("^3couldn't load ntf class 3 model '%s/%s'\n", cgs.ntfClass3ModelName, skinName);
+			Wolfcam_LoadNtfModel(&cg.ntfClass3Model, DEFAULT_TEAM_MODEL, "bright");
 		} else {
 			Com_Printf("loaded ntf class 3 model : '%s/%s'\n", cgs.ntfClass3ModelName, skinName);
 		}
@@ -484,7 +526,7 @@ static void Wolfcam_LoadFallbackModel (void)
 		modc_legsColor = cg_ourLegsColor.modificationCount;
 	}
 #endif
-	
+
 	if (//modc_headSkin != cg_ourHeadSkin.modificationCount  ||
 		//modc_torsoSkin != cg_ourTorsoSkin.modificationCount  ||
 		//modc_legsSkin != cg_ourLegsSkin.modificationCount  ||

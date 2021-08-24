@@ -1026,6 +1026,8 @@ Audio messages not dependent on cg_draw2d, use:
 
   With 'cl_renderer opengl2' use 'r_useFbo 1'.
 
+  to save without blur use mme_saveDepth 2
+
 * cg_plasmaStyle same as quakelive (2: purple bubble trails)
 
 * r_jpegCompressionQuality 90 (default)  for screen-shots, jpg video dump, and 'cl_aviCodec mjpeg'

@@ -44,50 +44,11 @@ void R_MME_GetShot( void* output, mmeShotType_t type ) {
 void R_MME_GetStencil( void *output ) {
 	qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, output ); 
 }
+#endif
 
-void R_MME_GetDepth( byte *output ) {
-	float focusStart, focusEnd, focusMul;
-	float zBase, zAdd, zRange;
-	int i, pixelCount;
-	byte *temp;
+// R_MME_GetDepth() in inc_tr_init.c since it needs to access backEndState_t
 
-	if ( mme_depthRange->value <= 0 )
-		return;
-	
-	pixelCount = glConfig.vidWidth * glConfig.vidHeight;
-
-	focusStart = mme_depthFocus->value - mme_depthRange->value;
-	focusEnd = mme_depthFocus->value + mme_depthRange->value;
-	focusMul = 255.0f / (2 * mme_depthRange->value);
-
-	zRange = backEnd.sceneZfar - r_znear->value;
-	zBase = ( backEnd.sceneZfar + r_znear->value ) / zRange;
-	zAdd =  ( 2 * backEnd.sceneZfar * r_znear->value ) / zRange;
-
-	temp = (byte *)ri.Hunk_AllocateTempMemory( pixelCount * sizeof( float ) );
-	qglDepthRange( 0.0f, 1.0f );
-	qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, GL_FLOAT, temp ); 
-	/* Could probably speed this up a bit with SSE but frack it for now */
-	for ( i=0 ; i < pixelCount; i++ ) {
-		/* Read from the 0 - 1 depth */
-		float zVal = ((float *)temp)[i];
-		int outVal;
-		/* Back to the original -1 to 1 range */
-		zVal = zVal * 2.0f - 1.0f;
-		/* Back to the original z values */
-		zVal = zAdd / ( zBase - zVal );
-		/* Clip and scale the range that's been selected */
-		if (zVal <= focusStart)
-			outVal = 0;
-		else if (zVal >= focusEnd)
-			outVal = 255;
-		else 
-			outVal = (zVal - focusStart) * focusMul;
-		output[i] = outVal;
-	}
-	ri.Hunk_FreeTempMemory( temp );
-}
-
+#if 0
 void R_MME_SaveShot( mmeShot_t *shot, int width, int height, float fps, byte *inBuf, qboolean audio, int aSize, byte *aBuf ) {
 	mmeShotFormat_t format;
 	char *extension;

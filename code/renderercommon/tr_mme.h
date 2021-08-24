@@ -51,7 +51,7 @@ typedef struct {
 typedef struct {
 	mmeBlurControl_t control;
 	// mmeBlurBlock_t shot, depth, stencil;
-	mmeBlurBlock_t shot;
+	mmeBlurBlock_t shot, depth;
 
 	float dofFocus, dofRadius;
 
@@ -106,6 +106,8 @@ int R_MME_MultiPassNext (qboolean useMain);
 
 //void R_MME_GetMultiShot (byte * target, int width, int height, int glMode);
 byte *R_MME_GetPassData (qboolean useMain);
+
+void R_MME_GetDepth( byte *output );
 
 void MME_AccumClearSSE( void *w, const void *r, short int mul, int count );
 void MME_AccumAddSSE( void* w, const void* r, short int mul, int count );

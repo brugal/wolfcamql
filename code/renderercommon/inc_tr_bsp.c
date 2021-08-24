@@ -1,4 +1,5 @@
-
+// inc_*  files referenced as #include since they need to access renderer
+// (rendergl1 or rendergl2) specific data
 
 void R_LoadAdvertisements( lump_t *l )
 {

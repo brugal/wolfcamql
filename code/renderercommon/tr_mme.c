@@ -162,15 +162,22 @@ void R_MME_CheckCvars (qboolean init, shotData_t *shotData)
 
 		if (blurTotal > 0) {
 			if (!R_MME_MakeBlurBlock(&shotData->shot, pixelCount * 3, &shotData->control, shotData)) {
-				ri.Printf(PRINT_ALL, "^1blur block creation failed\n");
+				ri.Printf(PRINT_ALL, "^1blur block shot creation failed\n");
 				shotData->allocFailed = qtrue;
 				goto alloc_Skip;
+			}
+
+			if (mme_saveDepth->integer > 0  &&  mme_saveDepth->integer != 2) {
+				if (!R_MME_MakeBlurBlock(&shotData->depth, pixelCount * 1, &shotData->control, shotData)) {
+					ri.Printf(PRINT_ALL, "^1blur block depth creation failed\n");
+					shotData->allocFailed = qtrue;
+					goto alloc_Skip;
+				}
 			}
 		}
 
 #if 0  //FIXME implement
 		R_MME_MakeBlurBlock( &blurData.stencil, pixelCount * 1, blurControl );
-		R_MME_MakeBlurBlock( &blurData.depth, pixelCount * 1, blurControl );
 #endif
 
 		R_MME_JitterTable( shotData->jitter[0], blurTotal );
@@ -387,16 +394,6 @@ void R_MME_Init(void) {
 	if (mme_dofVisualize->integer) {
 		shotDataMain.forceReset = qtrue;
 	}
-
-#if 0
-	//FIXME testing
-	shotDataMain.dofFocus = 1024;
-	shotDataMain.dofRadius = 5;
-
-	//FIXME testing
-	shotDataLeft.dofFocus = 1024;
-	shotDataLeft.dofRadius = 5;
-#endif
 }
 
 void R_MME_InitMemory (qboolean verbose, shotData_t *shotData)
@@ -421,7 +418,7 @@ void R_MME_InitMemory (qboolean verbose, shotData_t *shotData)
 		dofFrames = mme_dofFrames->integer;
 	}
 
-	// R_MME_MakeBlurBlock() allocates 4*size (size is pixelcount * (3 or 1)), also increase if depth or stencil blur used
+	// R_MME_MakeBlurBlock() allocates 4*size (size is pixelcount * (3 or 1))
 	if ((bl + ovr) > 0) {
 		m += 4;
 	}
@@ -429,8 +426,19 @@ void R_MME_InitMemory (qboolean verbose, shotData_t *shotData)
 		m += 4;
 	}
 
+	shotData->workSize = (glConfig.vidWidth * glConfig.vidHeight * 4 * m);
+
+	if (mme_saveDepth->integer > 0  &&  mme_saveDepth->integer != 2) {
+		shotData->workSize += (glConfig.vidWidth * glConfig.vidHeight * 1 * m);
+	}
+
+	//FIXME also increase if stencil blur used
+
+	// extra space
+
 	//FIXME too much extra added
-	shotData->workSize = (glConfig.vidWidth * glConfig.vidHeight * 4 * m) + (1 * 1024 * 1024);
+	//FIXME 2021-08-20 besides alignment, why is extra even added?
+	shotData->workSize += (1 * 1024 * 1024);
 
 	if (!shotData->workAlloc) {
 		shotData->workAlloc = calloc(shotData->workSize + 16, 1);

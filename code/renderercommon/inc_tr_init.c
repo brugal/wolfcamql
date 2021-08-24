@@ -1,3 +1,5 @@
+// inc_*  files referenced as #include since they need to access renderer
+// (rendergl1 or rendergl2) specific data
 
 //FIXME hack, older jpeg-6b could accept rgba input buffer, now it has to be rgb
 static void convert_rgba_to_rgb (byte *buffer, int width, int height)
@@ -37,6 +39,54 @@ static void swap_bgr (byte *buffer, int width, int height, qboolean hasAlpha)
 		buffer[i] = buffer[i + 2];
 		buffer[i + 2] = temp;
 	}
+}
+
+void R_MME_GetDepth (byte *output)
+{
+	float focusStart, focusEnd, focusMul;
+	float zBase, zAdd, zRange;
+	int i, pixelCount;
+	byte *temp;
+
+	if (mme_depthRange->value <= 0)  {
+		return;
+	}
+
+	pixelCount = glConfig.vidWidth * glConfig.vidHeight;
+
+	focusStart = mme_depthFocus->value - mme_depthRange->value;
+	focusEnd = mme_depthFocus->value + mme_depthRange->value;
+	focusMul = 255.0f / (2 * mme_depthRange->value);
+
+	zRange = backEnd.viewParms.zFar - r_znear->value;
+	zBase = ( backEnd.viewParms.zFar + r_znear->value ) / zRange;
+	zAdd =  ( 2 * backEnd.viewParms.zFar * r_znear->value ) / zRange;
+
+	//temp = (byte *)ri.Hunk_AllocateTempMemory( pixelCount * sizeof( float ) );
+	temp = (byte *)*ri.Video_DepthBuffer;
+	temp += 18;
+
+	qglDepthRange( 0.0f, 1.0f );
+	qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, GL_FLOAT, (GLfloat *)temp );
+	/* Could probably speed this up a bit with SSE but frack it for now */
+	for ( i=0 ; i < pixelCount; i++ ) {
+		/* Read from the 0 - 1 depth */
+		GLfloat zVal = ((GLfloat *)temp)[i];
+		int outVal;
+		/* Back to the original -1 to 1 range */
+		zVal = zVal * 2.0f - 1.0f;
+		/* Back to the original z values */
+		zVal = zAdd / ( zBase - zVal );
+		/* Clip and scale the range that's been selected */
+		if (zVal <= focusStart)
+			outVal = 0;
+		else if (zVal >= focusEnd)
+			outVal = 255;
+		else
+			outVal = (zVal - focusStart) * focusMul;
+		output[i] = outVal;
+	}
+	//ri.Hunk_FreeTempMemory( temp );
 }
 
 const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
@@ -157,11 +207,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 					for (i = 0; i < shotData->control.overlapFrames; i++) {
 						R_MME_BlurOverlapAdd(&shotData->shot, i);
 
+						if (mme_saveDepth->integer > 0  &&  mme_saveDepth->integer != 2) {
+							R_MME_BlurOverlapAdd(&shotData->depth, i);
+						}
+
 						//FIXME implement
 #if 0
-						if ( mme_saveDepth->integer ) {
-							R_MME_BlurOverlapAdd( blurDepth, i );
-						}
 						if ( mme_saveStencil->integer ) {
 							R_MME_BlurOverlapAdd( blurStencil, i );
 						}
@@ -182,13 +233,16 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 					R_MME_BlurOverlapAdd(&shotData->shot, 0);
 				}
 
-#if 0  //FIXME implement
-				if ( mme_saveDepth->integer == 1 ) {
-					R_MME_GetDepth( R_MME_BlurOverlapBuf( blurDepth ) ); 
-					R_MME_BlurOverlapAdd( blurDepth, 0 );
+				if (mme_saveDepth->integer > 0  &&  mme_saveDepth->integer != 2) {
+					byte *shotBuf = R_MME_BlurOverlapBuf(&shotData->depth);
+
+					R_MME_GetDepth(shotBuf);
+					R_MME_BlurOverlapAdd(&shotData->depth, 0);
 				}
+
+#if 0  //FIXME implement
 				if ( mme_saveStencil->integer == 1 ) {
-					R_MME_GetStencil( R_MME_BlurOverlapBuf( blurStencil ) ); 
+					R_MME_GetStencil( R_MME_BlurOverlapBuf( blurStencil ) );
 					R_MME_BlurOverlapAdd( blurStencil, 0 );
 				}
 #endif
@@ -203,12 +257,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 				R_MME_BlurAccumAdd(&shotData->shot, outAlign);
 
-#if 0  //FIXME implement
-				if ( mme_saveDepth->integer == 1 ) {
-					R_MME_GetDepth( (byte *)outAlign );
-					R_MME_BlurAccumAdd( blurDepth, outAlign );
+				if (mme_saveDepth->integer > 0  &&  mme_saveDepth->integer != 2) {
+					R_MME_GetDepth((byte *)outAlign);
+					R_MME_BlurAccumAdd(&shotData->depth, outAlign);
 				}
 
+#if 0  //FIXME implement
 				if ( mme_saveStencil->integer == 1 ) {
 					R_MME_GetStencil( (byte *)outAlign );
 					R_MME_BlurAccumAdd( blurStencil, outAlign );
@@ -222,11 +276,13 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				shotData->control.totalIndex = 0;
 				R_MME_BlurAccumShift(&shotData->shot);
 
+				//FIXME 2021-08-20 what is this for?
 				outAlign = shotData->shot.accum;
 
+				if (mme_saveDepth->integer > 0  &&  mme_saveDepth->integer != 2) {
+					R_MME_BlurAccumShift(&shotData->depth);
+				}
 #if 0  //FIXME implement
-				if ( mme_saveDepth->integer == 1 )
-					R_MME_BlurAccumShift( blurDepth );
 				if ( mme_saveStencil->integer == 1 )
 					R_MME_BlurAccumShift( blurStencil );
 #endif
@@ -240,11 +296,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				goto dontwrite;
 			}
 
+			// we are going to write out shot data
 			memcpy(fetchBuffer + 18, shotData->shot.accum, shotData->pixelCount * 3);
 		} else {
 			// shouldn't happen
 		}
 	}
+
+	// write out shot data
 
 	if (cmd->tga) {
 		byte *buffer;
@@ -765,7 +824,9 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
  done:
 
-	if (mme_saveDepth->integer) {  //(cmd->saveDepth) {
+	// now depth
+
+	if (mme_saveDepth->integer > 0) {
 		int count;
 
 		if (blurFrames > 1) {
@@ -789,53 +850,70 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			}
 		}
 
-		//if ( mme_saveDepth->integer && mme_depthRange->value > 0 ) {
 		if (mme_depthRange->value > 0) {
-			float focusStart, focusEnd, focusMul;
-			float zBase, zAdd, zRange;
-			int i;
-			GLfloat *out;
 			byte *buffer;
 
-			focusStart = mme_depthFocus->value - mme_depthRange->value;
-			focusEnd = mme_depthFocus->value + mme_depthRange->value;
-			focusMul = 255.0f / (2 * mme_depthRange->value);
+			if (mme_saveDepth->integer == 2) {
+				//FIXME duplicate code in R_MME_GetDepth()
+				float focusStart, focusEnd, focusMul;
+				float zBase, zAdd, zRange;
+				int i;
+				GLfloat *out;
 
-			zRange = backEnd.viewParms.zFar - r_znear->value;
-            zBase = ( backEnd.viewParms.zFar + r_znear->value ) / zRange;
-			zAdd =  ( 2 * backEnd.viewParms.zFar * r_znear->value ) / zRange;
+				focusStart = mme_depthFocus->value - mme_depthRange->value;
+				focusEnd = mme_depthFocus->value + mme_depthRange->value;
+				focusMul = 255.0f / (2 * mme_depthRange->value);
 
-			//outAlign = (__m64 *)(fetchBuffer + 18);
-			//outAlign = *ri.Video_DepthBuffer;
-			buffer = (byte *)*ri.Video_DepthBuffer;
-			buffer += 18;
-			out = (GLfloat *)buffer;
+				zRange = backEnd.viewParms.zFar - r_znear->value;
+				zBase = ( backEnd.viewParms.zFar + r_znear->value ) / zRange;
+				zAdd =  ( 2 * backEnd.viewParms.zFar * r_znear->value ) / zRange;
 
-			qglDepthRange( 0.0f, 1.0f );
-			qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, GL_FLOAT, out );
+				//outAlign = (__m64 *)(fetchBuffer + 18);
+				//outAlign = *ri.Video_DepthBuffer;
+				buffer = (byte *)*ri.Video_DepthBuffer;
+				buffer += 18;
+				out = (GLfloat *)buffer;
 
-			/* Could probably speed this up a bit with SSE but frack it for now */
-			for (i=0;i<shotData->pixelCount;i++) {
-				/* Read from the 0 - 1 depth */
-				//float zVal = ((float *)outAlign)[i];
-				GLfloat zVal = out[i];
-				int outVal;
-				/* Back to the original -1 to 1 range */
-				zVal = zVal * 2.0f - 1.0f;
-				/* Back to the original z values */
-				zVal = zAdd / ( zBase - zVal );
-				/* Clip and scale the range that's been selected */
-				if (zVal <= focusStart)
-					outVal = 0;
-				else if (zVal >= focusEnd)
-					outVal = 255;
-				else
-					outVal = (zVal - focusStart) * focusMul;
-				//((byte *)out)[i] = outVal;
-				cmd->encodeBuffer[18 + i * 3 + 0] = outVal;
-				cmd->encodeBuffer[18 + i * 3 + 1] = outVal;
-				cmd->encodeBuffer[18 + i * 3 + 2] = outVal;
+				qglDepthRange( 0.0f, 1.0f );
+				qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, GL_FLOAT, out );
+
+				/* Could probably speed this up a bit with SSE but frack it for now */
+				for (i=0;i<shotData->pixelCount;i++) {
+					/* Read from the 0 - 1 depth */
+					//float zVal = ((float *)outAlign)[i];
+					GLfloat zVal = out[i];
+					int outVal;
+					/* Back to the original -1 to 1 range */
+					zVal = zVal * 2.0f - 1.0f;
+					/* Back to the original z values */
+					zVal = zAdd / ( zBase - zVal );
+					/* Clip and scale the range that's been selected */
+					if (zVal <= focusStart)
+						outVal = 0;
+					else if (zVal >= focusEnd)
+						outVal = 255;
+					else
+						outVal = (zVal - focusStart) * focusMul;
+					//((byte *)out)[i] = outVal;
+					cmd->encodeBuffer[18 + i * 3 + 0] = outVal;
+					cmd->encodeBuffer[18 + i * 3 + 1] = outVal;
+					cmd->encodeBuffer[18 + i * 3 + 2] = outVal;
+				}
+			} else {  // using depth blur
+				int i;
+
+				for (i = 0;  i < shotData->pixelCount;  i++) {
+					int outVal;
+
+					outVal = ((byte *)shotData->depth.accum)[i];
+
+					cmd->encodeBuffer[18 + i * 3 + 0] = outVal;
+					cmd->encodeBuffer[18 + i * 3 + 1] = outVal;
+					cmd->encodeBuffer[18 + i * 3 + 2] = outVal;
+				}
 			}
+
+			// write out depth data
 
 			if (cmd->tga) {
 				buffer = cmd->encodeBuffer;
@@ -910,8 +988,8 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				}
 				//ri.CL_WriteAVIVideoFrame(ri.afdDepth, cmd->encodeBuffer + 18, cmd->width * cmd->height * 3);
 			}
-		}
-	}
+		}  // mme_depthRange->value > 0
+	}  // mme_saveDepth
 
  dontwrite:
 	//ri.Hunk_FreeTempMemory( outAlloc );

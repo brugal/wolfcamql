@@ -2141,7 +2141,6 @@ No background file.
 * R_IssuePendingRenderCommands() added in 51df89ab132b8e05d9854df507c73e54fbd2884b  'Remove the SMP renderer feature'  -- 2018-08-10 hack added to only run R_IssuePendingRenderCommands() at the end of frame
 * most of tr_mme* not renderercommon/ should be client/
 * conditional compilation for mmx q3mme blur code
-* documentation:  depth saving doesn't blur
 * opengl2 seeking after vid_restart with mode change still rendering with old mode:  ex:  +demo rapha-ot1 +set r_mode 5, in console /r_mode -1  (1365 x 768), /vid_restart, seek ...
 * opengl2 elder outside purple sky not being rendered (drawn as white texture), also longestyard sky incorrect  -- 2018-08-23 it's r_picmip >= 9 and it happens with 12.0 release
 
@@ -2321,7 +2320,6 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
  X  06: Joseph
 ]
 
-* github issues:  zdepth antialiasing and blur
 * warning for vm_ui 1 and missing qvm
 * option to force demo protocol
 * osp decryption off:  20 instead of 2 multiplier
@@ -2366,6 +2364,18 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
             //FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
             if ((CG_IsUs(ci)  &&  cg_railNudge.integer)  ||
 
+
+* ammo boxes showing null model and simple items showing as ammopack/backpack icon
+* cpma ntf enemy color option
+* cpma level timer direction
+* bullseye update
+
+  splines copy-assignment warning
+  cross compile %lld warning
+
+* python scripts are python2
+* blur visualize  shotData->shot.accum
+* can be more than 4 ntf custom models
 
 
 ----
