@@ -1127,40 +1127,32 @@ static void CG_CpmaSetNtfModel (int csNum, qboolean firstCall, qboolean csChange
 	const char *info;
 	const char *name;
 	const char *model;
+	int index;
 
+	if (csNum < CSCPMA_NTF_CLASS_0  ||  csNum > CSCPMA_NTF_CLASS_7) {
+		Com_Printf("^1%s invalid config string number %d\n", __func__, csNum);
+		return;
+	}
+
+	index = csNum - CSCPMA_NTF_CLASS_0;
 	info = CG_ConfigString(csNum);
+
+	if (!*info) {
+		cgs.ntfClassModelName[index][0] = '\0';
+		cg.ntfClassModelLoaded[index] = qfalse;
+		return;
+	}
+
 	name = Info_ValueForKey(info, "n");
 	model = Info_ValueForKey(info, "m");
 
-#if 0
-	if (!*name  &&  (firstCall  ||  csChange)) {
-		Com_Printf("^1empty ntf name for CS %d\n", csNum);
-		return;
-	}
-#endif
-
-	if (!*model  &&  (firstCall  ||  csChange)) {
-		Com_Printf("^1empty ntf model for CS %d\n", csNum);
-		return;
-	}
-
-	if (csNum == CSCPMA_NTF_CLASS_0) {
-		Q_strncpyz(cgs.ntfClass0ModelName, model, sizeof(cgs.ntfClass0ModelName));
-		cg.ntfClass0ModelLoaded = qfalse;
-
-	} else if (csNum == CSCPMA_NTF_CLASS_1) {
-		Q_strncpyz(cgs.ntfClass1ModelName, model, sizeof(cgs.ntfClass1ModelName));
-		cg.ntfClass1ModelLoaded = qfalse;
-	} else if (csNum == CSCPMA_NTF_CLASS_2) {
-		Q_strncpyz(cgs.ntfClass2ModelName, model, sizeof(cgs.ntfClass2ModelName));
-		cg.ntfClass2ModelLoaded = qfalse;
-	} else if (csNum == CSCPMA_NTF_CLASS_3) {
-		Q_strncpyz(cgs.ntfClass3ModelName, model, sizeof(cgs.ntfClass3ModelName));
-		cg.ntfClass3ModelLoaded = qfalse;
+	if (strcmp(cgs.ntfClassModelName[index], model)) {
+		Q_strncpyz(cgs.ntfClassModelName[index], model, sizeof(cgs.ntfClassModelName[index]));
+		cg.ntfClassModelLoaded[index] = qfalse;
 	}
 
 	if (firstCall  ||  csChange) {
-		Com_Printf("^5ntf %s : %s\n", name, model);
+		Com_Printf("^5ntf %d %s : %s\n", index, name, model);
 	}
 }
 
@@ -1409,7 +1401,7 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 
 		// always the same order?
 		// 2021-08-13  no
-		for (i = 0;  i < 4;  i++) {
+		for (i = 0;  i < 8;  i++) {
 			CG_CpmaSetNtfModel(CSCPMA_NTF_CLASS_0 + i, firstCall, qfalse);
 		}
 	}
@@ -2051,6 +2043,11 @@ te + ts + td == serverTime
 
 		  t   gametype
 
+          newer cpma versions (1.52?) add:
+
+          ot  overtime type
+          od  overtime duration
+
 		**********/
 
 		// older cpma demos don't set g_gametype in CS_SERVERINFO, always get it from here
@@ -2167,6 +2164,17 @@ te + ts + td == serverTime
 
 		cgs.cpmaLastTe = te;
 		cgs.cpmaLastTd = td;
+
+		x = atoi(Info_ValueForKey(str, "od"));
+		if (x > 0) {
+			cgs.cpmaOvertimeDuration = x;
+		} else {
+			if (CG_IsDuelGame(cgs.gametype)) {
+				cgs.cpmaOvertimeDuration = 120;
+			} else {
+				cgs.cpmaOvertimeDuration = 300;
+			}
+		}
 }
 
 static qboolean CG_CpmaCs (int num)
@@ -2186,7 +2194,7 @@ static qboolean CG_CpmaCs (int num)
 		}
 	} else if (num == CSCPMA_GAMESTATE) {
 		CG_CpmaParseGameState(qfalse);
-	} else if (num >= CSCPMA_NTF_CLASS_0  &&  num <= CSCPMA_NTF_CLASS_3) {
+	} else if (num >= CSCPMA_NTF_CLASS_0  &&  num <= CSCPMA_NTF_CLASS_7) {
 		if (cgs.gametype == GT_NTF) {
 			CG_CpmaSetNtfModel(num, qfalse, qtrue);
 		}

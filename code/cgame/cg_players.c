@@ -1763,6 +1763,10 @@ void CG_NewClientInfo( int clientNum ) {
 
 		if (*v  &&  cgs.cpma  && cgs.gametype == GT_NTF) {
 			newInfo.ntfClass = atoi(v);
+			if (newInfo.ntfClass < 0  ||  newInfo.ntfClass >= MAX_CPMA_NTF_MODELS) {
+				Com_Printf("^3invalid ntf class %d for client number %d\n", newInfo.ntfClass, clientNum);
+				newInfo.ntfClass = 0;
+			}
 		}
 	}
 
@@ -4695,22 +4699,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 
 		if (freecamPovSettings  &&  cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			switch (cgs.clientinfo[cent->currentState.clientNum].ntfClass) {
-			case 0:
-				CG_CopyClientInfoModel(&cg.ntfClass0Model, ci);
-				break;
-			case 1:
-				CG_CopyClientInfoModel(&cg.ntfClass1Model, ci);
-				break;
-			case 2:
-				CG_CopyClientInfoModel(&cg.ntfClass2Model, ci);
-				break;
-			case 3:
-				CG_CopyClientInfoModel(&cg.ntfClass3Model, ci);
-				break;
-			default:
-				break;
-			}
+			CG_CopyClientInfoModel(&cg.ntfClassModel[cgs.clientinfo[cent->currentState.clientNum].ntfClass], ci);
 
 			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
 				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
@@ -5105,24 +5094,16 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 	} else if (CG_IsEnemy(ci)) {
 		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			switch (cgs.clientinfo[cent->currentState.clientNum].ntfClass) {
-			case 0:
-				CG_CopyClientInfoModel(&cg.ntfClass0Model, ci);
-				break;
-			case 1:
-				CG_CopyClientInfoModel(&cg.ntfClass1Model, ci);
-				break;
-			case 2:
-				CG_CopyClientInfoModel(&cg.ntfClass2Model, ci);
-				break;
-			case 3:
-				CG_CopyClientInfoModel(&cg.ntfClass3Model, ci);
-				break;
-			default:
-				break;
-			}
+			CG_CopyClientInfoModel(&cg.ntfClassModel[cgs.clientinfo[cent->currentState.clientNum].ntfClass], ci);
 
-			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+			if (cg_cpmaUseNtfEnemyColors.integer) {
+				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_enemyHeadColor);
+				head->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_enemyTorsoColor);
+				torso->shaderRGBA[3] = 255;
+				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_enemyLegsColor);
+				legs->shaderRGBA[3] = 255;
+			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
 				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
 				head->shaderRGBA[3] = 255;
 				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
@@ -5210,22 +5191,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 	} else if (CG_IsTeammate(ci)) {
 		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			switch (cgs.clientinfo[cent->currentState.clientNum].ntfClass) {
-			case 0:
-				CG_CopyClientInfoModel(&cg.ntfClass0Model, ci);
-				break;
-			case 1:
-				CG_CopyClientInfoModel(&cg.ntfClass1Model, ci);
-				break;
-			case 2:
-				CG_CopyClientInfoModel(&cg.ntfClass2Model, ci);
-				break;
-			case 3:
-				CG_CopyClientInfoModel(&cg.ntfClass3Model, ci);
-				break;
-			default:
-				break;
-			}
+			CG_CopyClientInfoModel(&cg.ntfClassModel[cgs.clientinfo[cent->currentState.clientNum].ntfClass], ci);
 
 			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
 				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);

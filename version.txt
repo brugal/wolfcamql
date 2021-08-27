@@ -1,4 +1,4 @@
-12.5test8
+12.5test9
 
 * ioquake3 patches
 
@@ -33,6 +33,7 @@
 * cpma ntf player model support
 
     cg_cpmaUseNtfModels
+    cg_cpmaUseNtfEnemyColors
     cg_cpmaNtfRedHeadColor
     cg_cpmaNtfRedTorsoColor
     cg_cpmaNtfRedLegsColor
@@ -72,6 +73,9 @@
     }
 
 * blur applied to depth capture, use mme_saveDepth 2 to capture without blur
+* bug fix:  cg_levelTimerDirection 3 and cg_levelTimerOvertimeReset 0 showed negative times after first overtime
+* bug fix:  cg_levelTimerDirection 3 showed negative time in overtime with ctf
+* bug fix:  count down level timer showed negative time in cpma overtime
 
 ---------------------------------
 12.4  2020-12-04

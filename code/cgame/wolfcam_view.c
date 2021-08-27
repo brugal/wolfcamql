@@ -267,6 +267,7 @@ static qboolean Wolfcam_LoadNtfModel (clientInfo_t *ci, const char *modelName, c
 static void Wolfcam_LoadNtfModels (void)
 {
 	const char *skinName;
+	int i;
 	//FIXME in cg. ?
 	static int modc_skin = -1;
 
@@ -277,52 +278,27 @@ static void Wolfcam_LoadNtfModels (void)
 	if (modc_skin != cg_cpmaNtfModelSkin.modificationCount) {
 		modc_skin = cg_cpmaNtfModelSkin.modificationCount;
 
-		cg.ntfClass0ModelLoaded = qfalse;
-		cg.ntfClass1ModelLoaded = qfalse;
-		cg.ntfClass2ModelLoaded = qfalse;
-		cg.ntfClass3ModelLoaded = qfalse;
+		for (i = 0;  i < MAX_CPMA_NTF_MODELS;  i++) {
+			cg.ntfClassModelLoaded[i] = qfalse;
+		}
 	}
 
 	skinName = cg_cpmaNtfModelSkin.string;
 
-	if (!cg.ntfClass0ModelLoaded) {
-		if (!Wolfcam_LoadNtfModel(&cg.ntfClass0Model, cgs.ntfClass0ModelName, skinName)) {
-			Com_Printf("^3couldn't load ntf class 0 model '%s/%s'\n", cgs.ntfClass0ModelName, skinName);
-			Wolfcam_LoadNtfModel(&cg.ntfClass0Model, DEFAULT_TEAM_MODEL, "bright");
-		} else {
-			Com_Printf("loaded ntf class 0 model : '%s/%s'\n", cgs.ntfClass0ModelName, skinName);
-		}
-		cg.ntfClass0ModelLoaded = qtrue;
-	}
+	for (i = 0;  i < MAX_CPMA_NTF_MODELS;  i++) {
+		if (*cgs.ntfClassModelName[i]) {
+			if (!cg.ntfClassModelLoaded[i]) {
+				if (!Wolfcam_LoadNtfModel(&cg.ntfClassModel[i], cgs.ntfClassModelName[i], skinName)) {
+					Com_Printf("^3couldn't load ntf class %d model '%s/%s'\n", i, cgs.ntfClassModelName[i], skinName);
+					Wolfcam_LoadNtfModel(&cg.ntfClassModel[i], DEFAULT_TEAM_MODEL, "bright");
+				} else {
+					Com_Printf("loaded ntf class %d model : '%s/%s'\n", i, cgs.ntfClassModelName[i], skinName);
+				}
 
-	if (!cg.ntfClass1ModelLoaded) {
-		if (!Wolfcam_LoadNtfModel(&cg.ntfClass1Model, cgs.ntfClass1ModelName, skinName)) {
-			Com_Printf("^3couldn't load ntf class 1 model '%s/%s'\n", cgs.ntfClass1ModelName, skinName);
-			Wolfcam_LoadNtfModel(&cg.ntfClass1Model, DEFAULT_TEAM_MODEL, "bright");
-		} else {
-			Com_Printf("loaded ntf class 1 model : '%s/%s'\n", cgs.ntfClass1ModelName, skinName);
+			}
 		}
-		cg.ntfClass1ModelLoaded = qtrue;
-	}
 
-	if (!cg.ntfClass2ModelLoaded) {
-		if (!Wolfcam_LoadNtfModel(&cg.ntfClass2Model, cgs.ntfClass2ModelName, skinName)) {
-			Com_Printf("^3couldn't load ntf class 2 model '%s/%s'\n", cgs.ntfClass2ModelName, skinName);
-			Wolfcam_LoadNtfModel(&cg.ntfClass2Model, DEFAULT_TEAM_MODEL, "bright");
-		} else {
-			Com_Printf("loaded ntf class 2 model : '%s/%s'\n", cgs.ntfClass2ModelName, skinName);
-		}
-		cg.ntfClass2ModelLoaded = qtrue;
-	}
-
-	if (!cg.ntfClass3ModelLoaded) {
-		if (!Wolfcam_LoadNtfModel(&cg.ntfClass3Model, cgs.ntfClass3ModelName, skinName)) {
-			Com_Printf("^3couldn't load ntf class 3 model '%s/%s'\n", cgs.ntfClass3ModelName, skinName);
-			Wolfcam_LoadNtfModel(&cg.ntfClass3Model, DEFAULT_TEAM_MODEL, "bright");
-		} else {
-			Com_Printf("loaded ntf class 3 model : '%s/%s'\n", cgs.ntfClass3ModelName, skinName);
-		}
-		cg.ntfClass3ModelLoaded = qtrue;
+		cg.ntfClassModelLoaded[i] = qtrue;
 	}
 }
 

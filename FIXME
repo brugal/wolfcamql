@@ -2366,16 +2366,10 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 
 * ammo boxes showing null model and simple items showing as ammopack/backpack icon
-* cpma ntf enemy color option
-* cpma level timer direction
-* bullseye update
-
-  splines copy-assignment warning
-  cross compile %lld warning
-
 * python scripts are python2
 * blur visualize  shotData->shot.accum
-* can be more than 4 ntf custom models
+* cg_qlhud 0  -9999 score stretches flag icon ntf_test1.dm_68  -- same in q3
+* overtime in q3 (non-cpma) with countdown level timer
 
 
 ----

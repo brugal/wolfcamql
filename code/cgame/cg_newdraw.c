@@ -6550,8 +6550,10 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 
 	  //Com_Printf("timeplayed %d   cgs.timelimit %d\n", timePlayed, cgs.timelimit);
 
-	  if (cgs.protocol == PROTOCOL_Q3) {
+	  // check overtime
 
+	  if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
+		  //FIXME
 	  } else if (cgs.realTimelimit) {
 		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
 			  // ignore g_overtime value for round based games
@@ -6564,7 +6566,11 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 				  break;
 
 			  default:
-				  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+				  if (cgs.cpma) {
+					  overTimeAmount = cgs.cpmaOvertimeDuration * 1000;
+				  } else {
+					  overTimeAmount = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_overtime")) * 1000;
+				  }
 				  break;
 			  }
 			  if (overTimeAmount) {
@@ -6572,13 +6578,14 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 				  // above value is zero based index
 				  numOverTimes++;
 
-				  if (cg_levelTimerOvertimeReset.integer) {
+				  if (cg_levelTimerOvertimeReset.integer  ||  cg_levelTimerDirection.integer == 3) {
+					  // the check for cg_levelTimerDirection.integer == 3 is for multiple overtimes, if reset isn't forced it will show negative times after the first overtime
 					  overTimeOffset = (timePlayed - (cgs.timelimit * 60 * 1000)) % overTimeAmount;
 				  } else {
 					  overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
 				  }
 			  } else {
-				  overTimeAmount = cgs.timelimit;
+				  overTimeAmount = cgs.timelimit * 60 * 1000;
 				  numOverTimes = 1;
 				  overTimeOffset = timePlayed - (cgs.timelimit * 60 * 1000);
 			  }
@@ -6625,6 +6632,8 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 			  //Com_Printf("yes overtime\n");
 			  msec = overTimeAmount - overTimeOffset;
 			  //Com_Printf("m %d\n", msec);
+			  //Com_Printf("^3overtime amount: %d\n", overTimeAmount);
+			  //FIXME 2021-08-27 why the check for these types and not g_overtime being 0?
 			  if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
 				  //msec += (numOverTimes * cg_levelTimerDefaultTimeLimit.integer * 60 * 1000);
 				  msec = -overTimeOffset;
@@ -6646,6 +6655,7 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 		  if (msec < 0) {  // defaults to dir 3 behavior
 			  if (numOverTimes) {
 				  msec = overTimeAmount - overTimeOffset;
+				  //FIXME 2021-08-27 (see other check above) why are these special cases?  non timelimit game types with overtime?
 				  if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_FREEZETAG) {
 					  msec = -overTimeOffset;
 					  while (msec < 0) {

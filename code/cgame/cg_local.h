@@ -1208,14 +1208,8 @@ typedef struct {
 	clientInfo_t fallbackModelBlue;
 	clientInfo_t serverModel;
 
-	clientInfo_t ntfClass0Model;
-	qboolean ntfClass0ModelLoaded;
-	clientInfo_t ntfClass1Model;
-	qboolean ntfClass1ModelLoaded;
-	clientInfo_t ntfClass2Model;
-	qboolean ntfClass2ModelLoaded;
-	clientInfo_t ntfClass3Model;
-	qboolean ntfClass3ModelLoaded;
+	clientInfo_t ntfClassModel[MAX_CPMA_NTF_MODELS];
+	qboolean ntfClassModelLoaded[MAX_CPMA_NTF_MODELS];
 
 	qboolean teamModelTeamSkinFound;
 	qboolean teamModelTeamHeadSkinFound;
@@ -2344,6 +2338,8 @@ typedef struct {
 	int				roundtimelimit;
 	int				capturelimit;
 	int				timelimit;
+	// timelmit can be modified by level timer display options, this is the
+	// original value
 	int				realTimelimit;
 	int				maxclients;
 	char			mapname[MAX_QPATH];
@@ -2482,6 +2478,7 @@ typedef struct {
 	//int cpmaTimeoutTime;
 	int cpmaLastTe;
 	int cpmaLastTd;
+	int cpmaOvertimeDuration;
 
 	int startRaceFlagModel;
 	int endRaceFlagModel;
@@ -2509,12 +2506,8 @@ typedef struct {
 
 	int numberOfRaceCheckPoints;
 
-	// cpma ntf models  ex: sniper, fighter, scout, tank
-	char ntfClass0ModelName[MAX_QPATH];
-	char ntfClass1ModelName[MAX_QPATH];
-	char ntfClass2ModelName[MAX_QPATH];
-	char ntfClass3ModelName[MAX_QPATH];
-
+	// cpma ntf models  ex: sniper, fighter, scout, tank, custom* ...
+	char ntfClassModelName[MAX_CPMA_NTF_MODELS][MAX_QPATH];
 } cgs_t;
 
 
@@ -3290,6 +3283,7 @@ extern vmCvar_t cg_teamFlagColor;
 extern vmCvar_t cg_neutralFlagColor;
 
 extern vmCvar_t cg_cpmaUseNtfModels;
+extern vmCvar_t cg_cpmaUseNtfEnemyColors;
 extern vmCvar_t cg_cpmaNtfRedHeadColor;
 extern vmCvar_t cg_cpmaNtfRedTorsoColor;
 extern vmCvar_t cg_cpmaNtfRedLegsColor;

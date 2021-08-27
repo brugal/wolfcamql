@@ -58,6 +58,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define DOMINATION_POINT_DISTANCE 128
 
+#define MAX_CPMA_NTF_MODELS 8
+
 //
 // config strings are a general means of communicating variable length strings
 // from the server to all connected clients.
@@ -370,10 +372,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define CSCPMA_RATE 726  // not sure
 // 727  max packet dup?  seen:  4
 
+// 2021-08-25 8 max slots for ntf classes.  Tested with cpma-1.52 and over
+// 20 files in classes/
 #define CSCPMA_NTF_CLASS_0 728
 #define CSCPMA_NTF_CLASS_1 729
 #define CSCPMA_NTF_CLASS_2 730
 #define CSCPMA_NTF_CLASS_3 731
+#define CSCPMA_NTF_CLASS_4 732
+#define CSCPMA_NTF_CLASS_5 733
+#define CSCPMA_NTF_CLASS_6 734
+#define CSCPMA_NTF_CLASS_7 735
 
 #define CSCPMA_SNAPS 746
 #define CSCPMA_MAX_PACKETS 747

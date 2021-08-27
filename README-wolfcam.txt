@@ -1051,6 +1051,8 @@ Audio messages not dependent on cg_draw2d, use:
 
 * cg_levelTimerOvertimeReset:  0: (default) shows total overtime amount, 1: shows current overtime amount
 
+   when cg_levelTimerDirection is 3 (always count down) this setting is ignored and it always shows current overtime amount
+
 * r_lightmapColor to tint the lightmap
   extreme example:  r_lightmapColor "0xff0000" to make all the lights red
   better example: r_lightmapcolor "0xffafaf" to turn down blue and green a bit, without completely eliminating them
@@ -3125,6 +3127,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cpma ntf player model support
 
     cg_cpmaUseNtfModels
+    cg_cpmaUseNtfEnemyColors
     cg_cpmaNtfRedHeadColor
     cg_cpmaNtfRedTorsoColor
     cg_cpmaNtfRedLegsColor

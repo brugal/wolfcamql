@@ -886,6 +886,7 @@ vmCvar_t cg_teamFlagColor;
 vmCvar_t cg_neutralFlagColor;
 
 vmCvar_t cg_cpmaUseNtfModels;
+vmCvar_t cg_cpmaUseNtfEnemyColors;
 vmCvar_t cg_cpmaNtfRedHeadColor;
 vmCvar_t cg_cpmaNtfRedTorsoColor;
 vmCvar_t cg_cpmaNtfRedLegsColor;
@@ -2104,6 +2105,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_neutralFlagColor), "0xf6f600", CVAR_ARCHIVE },
 
 	{ cvp(cg_cpmaUseNtfModels), "1", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaUseNtfEnemyColors), "1", CVAR_ARCHIVE },
 	{ cvp(cg_cpmaNtfRedHeadColor), "0xff5a00", CVAR_ARCHIVE },
 	{ cvp(cg_cpmaNtfRedTorsoColor), "0xff5a00", CVAR_ARCHIVE },
 	{ cvp(cg_cpmaNtfRedLegsColor), "0xff0000", CVAR_ARCHIVE },
