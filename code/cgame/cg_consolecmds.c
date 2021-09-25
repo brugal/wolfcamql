@@ -6050,9 +6050,9 @@ static void CG_ClientOverrideClearClient (int clientNum)
 	ci = &cgs.clientinfo[clientNum];
 
 	ci->override = qfalse;
-	ci->hasHeadColor = qfalse;
-	ci->hasTorsoColor = qfalse;
-	ci->hasLegsColor = qfalse;
+	ci->hasOverrideHeadColor = qfalse;
+	ci->hasOverrideTorsoColor = qfalse;
+	ci->hasOverrideLegsColor = qfalse;
 	ci->hasHeadSkin = qfalse;
 	ci->hasTorsoSkin = qfalse;
 	ci->hasLegsSkin = qfalse;
@@ -6291,30 +6291,30 @@ static void CG_ClientOverride_f (void)
 			//Info_SetValueForKey(buffer, key, value);
 			if (!Q_stricmpn(key, "headcolor", strlen("headcolor"))) {
 				if (!Q_stricmpn(value, "clear", strlen("clear"))) {
-					cgs.clientinfo[j].hasHeadColor = qfalse;
+					cgs.clientinfo[j].hasOverrideHeadColor = qfalse;
 				} else {
 					color = Com_HexStrToInt(value);
-					SC_ByteVecColorFromInt(cgs.clientinfo[j].headColor, color);
-					cgs.clientinfo[j].headColor[3] = 255;
-					cgs.clientinfo[j].hasHeadColor = qtrue;
+					SC_ByteVecColorFromInt(cgs.clientinfo[j].overrideHeadColor, color);
+					cgs.clientinfo[j].overrideHeadColor[3] = 255;
+					cgs.clientinfo[j].hasOverrideHeadColor = qtrue;
 				}
 			} else if (!Q_stricmpn(key, "torsocolor", strlen("torsocolor"))) {
 				if (!Q_stricmpn(value, "clear", strlen("clear"))) {
-					cgs.clientinfo[j].hasTorsoColor = qfalse;
+					cgs.clientinfo[j].hasOverrideTorsoColor = qfalse;
 				} else {
 					color = Com_HexStrToInt(value);
-					SC_ByteVecColorFromInt(cgs.clientinfo[j].torsoColor, color);
-					cgs.clientinfo[j].torsoColor[3] = 255;
-					cgs.clientinfo[j].hasTorsoColor = qtrue;
+					SC_ByteVecColorFromInt(cgs.clientinfo[j].overrideTorsoColor, color);
+					cgs.clientinfo[j].overrideTorsoColor[3] = 255;
+					cgs.clientinfo[j].hasOverrideTorsoColor = qtrue;
 				}
 			} else if (!Q_stricmpn(key, "legscolor", strlen("legscolor"))) {
 				if (!Q_stricmpn(value, "clear", strlen("clear"))) {
-					cgs.clientinfo[j].hasLegsColor = qfalse;
+					cgs.clientinfo[j].hasOverrideLegsColor = qfalse;
 				} else {
 					color = Com_HexStrToInt(value);
-					SC_ByteVecColorFromInt(cgs.clientinfo[j].legsColor, color);
-					cgs.clientinfo[j].legsColor[3] = 255;
-					cgs.clientinfo[j].hasLegsColor = qtrue;
+					SC_ByteVecColorFromInt(cgs.clientinfo[j].overrideLegsColor, color);
+					cgs.clientinfo[j].overrideLegsColor[3] = 255;
+					cgs.clientinfo[j].hasOverrideLegsColor = qtrue;
 				}
 			} else if (!Q_stricmpn(key, "headskin", strlen("headskin"))) {
 				if (!Q_stricmpn(value, "clear", strlen("clear"))) {
@@ -6394,21 +6394,21 @@ static void CG_ClientOverride_f (void)
 				//FIMXE oops
 				memcpy(&tmpCi, ci, sizeof(tmpCi));
 
-				if (cgs.clientinfo[j].hasHeadColor) {
+				if (cgs.clientinfo[j].hasOverrideHeadColor) {
 					changeHeadColor = qtrue;
-					memcpy(headColor, cgs.clientinfo[j].headColor, sizeof(headColor));
+					memcpy(headColor, cgs.clientinfo[j].overrideHeadColor, sizeof(headColor));
 				} else {
 					changeHeadColor = qfalse;
 				}
-				if (cgs.clientinfo[j].hasTorsoColor) {
+				if (cgs.clientinfo[j].hasOverrideTorsoColor) {
 					changeTorsoColor = qtrue;
-					memcpy(torsoColor, cgs.clientinfo[j].torsoColor, sizeof(torsoColor));
+					memcpy(torsoColor, cgs.clientinfo[j].overrideTorsoColor, sizeof(torsoColor));
 				} else {
 					changeTorsoColor = qfalse;
 				}
-				if (cgs.clientinfo[j].hasLegsColor) {
+				if (cgs.clientinfo[j].hasOverrideLegsColor) {
 					changeLegsColor = qtrue;
-					memcpy(legsColor, cgs.clientinfo[j].legsColor, sizeof(legsColor));
+					memcpy(legsColor, cgs.clientinfo[j].overrideLegsColor, sizeof(legsColor));
 				} else {
 					changeLegsColor = qfalse;
 				}
@@ -6436,19 +6436,19 @@ static void CG_ClientOverride_f (void)
 				cgs.clientinfo[j].override = qtrue;
 
 				if (changeHeadColor) {
-					memcpy(cgs.clientinfo[j].headColor, headColor, sizeof(headColor));
-					cgs.clientinfo[j].headColor[3] = 255;
-					cgs.clientinfo[j].hasHeadColor = qtrue;
+					memcpy(cgs.clientinfo[j].overrideHeadColor, headColor, sizeof(headColor));
+					cgs.clientinfo[j].overrideHeadColor[3] = 255;
+					cgs.clientinfo[j].hasOverrideHeadColor = qtrue;
 				}
 				if (changeTorsoColor) {
-					memcpy(cgs.clientinfo[j].torsoColor, torsoColor, sizeof(torsoColor));
-					cgs.clientinfo[j].torsoColor[3] = 255;
-					cgs.clientinfo[j].hasTorsoColor = qtrue;
+					memcpy(cgs.clientinfo[j].overrideTorsoColor, torsoColor, sizeof(torsoColor));
+					cgs.clientinfo[j].overrideTorsoColor[3] = 255;
+					cgs.clientinfo[j].hasOverrideTorsoColor = qtrue;
 				}
 				if (changeLegsColor) {
-					memcpy(cgs.clientinfo[j].legsColor, legsColor, sizeof(legsColor));
-					cgs.clientinfo[j].legsColor[3] = 255;
-					cgs.clientinfo[j].hasLegsColor = qtrue;
+					memcpy(cgs.clientinfo[j].overrideLegsColor, legsColor, sizeof(legsColor));
+					cgs.clientinfo[j].overrideLegsColor[3] = 255;
+					cgs.clientinfo[j].hasOverrideLegsColor = qtrue;
 				}
 
 				CG_LoadClientInfo(&cgs.clientinfo[j], j, qtrue);

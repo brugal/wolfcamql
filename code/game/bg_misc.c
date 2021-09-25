@@ -116,6 +116,10 @@ An item fires all of its targets when it is picked up.  If the toucher can't car
 */
 
 // ql dm 90
+//
+// this needs to be the biggest bg_itemlist* since other protocols and mods
+// copy their values into here
+
 gitem_t	bg_itemlist[] =
 {
 	{

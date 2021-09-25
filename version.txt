@@ -1,4 +1,4 @@
-12.5test9
+12.5test10
 
 * ioquake3 patches
 
@@ -33,6 +33,9 @@
 * cpma ntf player model support
 
     cg_cpmaUseNtfModels
+
+        setting to 2 also sets first person view model based on ntf class
+
     cg_cpmaUseNtfEnemyColors
     cg_cpmaNtfRedHeadColor
     cg_cpmaNtfRedTorsoColor
@@ -41,6 +44,9 @@
     cg_cpmaNtfBlueTorsoColor
     cg_cpmaNtfBlueLegsColor
     cg_cpmaNtfModelSkin
+    cg_cpmaNtfScoreboardClassModel
+
+        shows class model in scoreboard
 
 * bug fix:  freecam was adding predictable step events
 * bug fix:  don't show armor client item timers in cpma ntf
@@ -76,6 +82,48 @@
 * bug fix:  cg_levelTimerDirection 3 and cg_levelTimerOvertimeReset 0 showed negative times after first overtime
 * bug fix:  cg_levelTimerDirection 3 showed negative time in overtime with ctf
 * bug fix:  count down level timer showed negative time in cpma overtime
+* remove cpma unknown command console message for 'it' and 'itr'
+* cg_drawAttacker 1 shows changed model (team model, enemy model, etc...), 2 shows original model
+* cg_statusBarHeadStyle  0 (default) show original model except with cg_forceModel, 1 show changed model
+* bug fix:  headmodel "" would use sarge head model to calculate player height
+* options to set models, skins, colors based on red or blue team
+
+    cg_redTeamModel
+    cg_redTeamHeadModel
+    cg_redTeamHeadSkin
+    cg_redTeamTorsoSkin
+    cg_redTeamLegsSkin
+    cg_redTeamHeadColor
+    cg_redTeamTorsoColor
+    cg_redTeamLegsColor
+
+    cg_redTeamRailColor1
+    cg_redTeamRailColor2
+    cg_redTeamRailItemColor
+
+    cg_redTeamRailRings
+    cg_redTeamRailNudge
+
+    cg_redTeamFlagColor
+
+  and equivalent cg_blueTeam* cvars
+
+  Use of the settings is controlled with:
+
+    cg_useCustomRedBlueModels
+    cg_useCustomRedBlueRail
+    cg_useCustomRedBlueFlagColor
+
+  0 ignores red/blue team settings, 1 uses them as a fallback for teammate and enemy settings (ex: cg_enemyModel "" will then check cg_redTeamModel or cg_blueTeamModel), 2 force and ignore teammate and enemy settings
+
+* bug fix: if teammate and enemy color cvars weren't set it wouldn't fallback to player set colors
+* bug fix:  cg_flagStyle 3 in freecam without team settings used the wrong flag model
+* removed cg_enemyRailItemColorTeam, cg_teamRailItemColorTeam, cg_enemyRailColor1Team, cg_enemyRailColor2Team, cg_teamRailColor1Team, cg_teamRailColor2Team, cg_weaponRedTeamColor, cg_weaponBlueTeamColor
+
+   cg_redTeamRailItemColor, cg_blueTeamRailItemColor, cg_redTeamRailColor1, cg_redTeamRailColor2, cg_blueTeamRailColor1, cg_blueTeamRailColor2, and cg_useCustomRedBlueRail should be used instead
+
+* cg_railUseOwnColors new options:  2: check teammate and red/blue team settings then fallback to demo colors, 3:  same as 2 but fallback to color1 and color2
+
 
 ---------------------------------
 12.4  2020-12-04

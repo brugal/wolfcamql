@@ -383,22 +383,28 @@ typedef struct {
 
 	qhandle_t		legsModel;
 	qhandle_t		legsSkin;
-	qhandle_t		legsTeamSkinAlt;
+	qhandle_t		legsTeammateSkinAlt;
 	qhandle_t		legsEnemySkinAlt;
 	qhandle_t legsOurSkinAlt;
+	qhandle_t legsRedTeamSkinAlt;
+	qhandle_t legsBlueTeamSkinAlt;
 
 	qhandle_t		torsoModel;
 	qhandle_t		torsoSkin;
-	qhandle_t		torsoTeamSkinAlt;
+	qhandle_t		torsoTeammateSkinAlt;
 	qhandle_t		torsoEnemySkinAlt;
 	qhandle_t torsoOurSkinAlt;
+	qhandle_t torsoRedTeamSkinAlt;
+	qhandle_t torsoBlueTeamSkinAlt;
 
 	qhandle_t		headModel;
 	qhandle_t		headSkin;
 	qhandle_t setHeadSkin;
-	qhandle_t		headTeamSkinAlt;
+	qhandle_t		headTeammateSkinAlt;
 	qhandle_t		headEnemySkinAlt;
 	qhandle_t headOurSkinAlt;
+	qhandle_t headRedTeamSkinAlt;
+	qhandle_t headBlueTeamSkinAlt;
 
 	qhandle_t headModelFallback;
 	qhandle_t headSkinFallback;
@@ -416,15 +422,24 @@ typedef struct {
 	qboolean spectatorOnly;  // not in que to play
 	int quePosition;
 
+	byte cpmaHeadColor[4];
+	byte cpmaTorsoColor[4];
+	byte cpmaLegsColor[4];
+
+	// these store the result of teammate, enemy, override, etc. settings
+	byte selectedHeadColor[4];
+	byte selectedTorsoColor[4];
+	byte selectedLegsColor[4];
+
 	// client override
 	qboolean override;
 
-	qboolean hasHeadColor;
-	byte headColor[4];
-	qboolean hasTorsoColor;
-	byte torsoColor[4];
-	qboolean hasLegsColor;
-	byte legsColor[4];
+	qboolean hasOverrideHeadColor;
+	byte overrideHeadColor[4];
+	qboolean hasOverrideTorsoColor;
+	byte overrideTorsoColor[4];
+	qboolean hasOverrideLegsColor;
+	byte overrideLegsColor[4];
 
 	qboolean hasHeadSkin;
 	qboolean hasTorsoSkin;
@@ -1194,15 +1209,22 @@ typedef struct {
 	char			testModelName[MAX_QPATH];
 	qboolean		testGun;
 
-	clientInfo_t	enemyModel;
+	clientInfo_t enemyModel;
 	clientInfo_t enemyModelRed;
 	clientInfo_t enemyModelBlue;
-	clientInfo_t	teamModel;
-	clientInfo_t	teamModelRed;
-	clientInfo_t	teamModelBlue;
-	clientInfo_t	ourModel;
-	clientInfo_t	ourModelRed;
-	clientInfo_t	ourModelBlue;
+
+	// our teammates
+	clientInfo_t teammateModel;
+	clientInfo_t teammateModelRed;
+	clientInfo_t teammateModelBlue;
+
+	clientInfo_t ourModel;
+	clientInfo_t ourModelRed;
+	clientInfo_t ourModelBlue;
+
+	clientInfo_t redTeamModel;
+	clientInfo_t blueTeamModel;
+
 	clientInfo_t fallbackModel;
 	clientInfo_t fallbackModelRed;
 	clientInfo_t fallbackModelBlue;
@@ -1211,16 +1233,23 @@ typedef struct {
 	clientInfo_t ntfClassModel[MAX_CPMA_NTF_MODELS];
 	qboolean ntfClassModelLoaded[MAX_CPMA_NTF_MODELS];
 
-	qboolean teamModelTeamSkinFound;
-	qboolean teamModelTeamHeadSkinFound;
-	qboolean enemyModelTeamSkinFound;
-	qboolean enemyModelTeamHeadSkinFound;
-	qboolean ourModelUsingTeamColorSkin;
-	qboolean ourModelUsingTeamColorHeadSkin;
+	// *TCSkin and *TCHeadSkin are for '-teamColor' or 'default' skin that picks either 'red' or 'blue'
+	qboolean teammateModelUsingTCSkin;
+	qboolean teammateModelUsingTCHeadSkin;
+	qboolean enemyModelUsingTCSkin;
+	qboolean enemyModelUsingTCHeadSkin;
+	qboolean ourModelUsingTCSkin;
+	qboolean ourModelUsingTCHeadSkin;
+	qboolean redTeamModelUsingTCSkin;
+	qboolean redTeamModelUsingTCHeadSkin;
+	qboolean blueTeamModelUsingTCSkin;
+	qboolean blueTeamModelUsingTCHeadSkin;
 
-	byte			enemyColors[3][4];
-	byte			teamColors[3][4];
-	byte ourColors[3][4];
+	byte enemyModelColors[3][4];
+	byte teammateModelColors[3][4];
+	byte ourModelColors[3][4];
+	byte redTeamModelColors[3][4];
+	byte blueTeamModelColors[3][4];
 
 	//byte			deadBodyColor[4];
 	//byte			grenadeColor[3];
@@ -2506,6 +2535,7 @@ typedef struct {
 
 	int numberOfRaceCheckPoints;
 
+	int backpackItemIndex;
 	// cpma ntf models  ex: sniper, fighter, scout, tank, custom* ...
 	char ntfClassModelName[MAX_CPMA_NTF_MODELS][MAX_QPATH];
 } cgs_t;
@@ -3228,10 +3258,6 @@ extern vmCvar_t wolfcam_painHealthFadeTime;
 extern vmCvar_t wolfcam_painHealthValidTime;
 extern vmCvar_t wolfcam_painHealthStyle;
 
-extern vmCvar_t cg_weaponRedTeamColor;
-extern vmCvar_t cg_weaponBlueTeamColor;
-//extern vmCvar_t cg_noTeamColor;
-
 extern vmCvar_t cg_hudRedTeamColor;
 extern vmCvar_t cg_hudBlueTeamColor;
 extern vmCvar_t cg_hudNoTeamColor;
@@ -3250,17 +3276,12 @@ extern vmCvar_t cg_enemyTorsoColor;
 extern vmCvar_t cg_enemyLegsColor;
 extern vmCvar_t cg_enemyRailColor1;
 extern vmCvar_t cg_enemyRailColor2;
-extern vmCvar_t cg_enemyRailColor1Team;
-extern vmCvar_t cg_enemyRailColor2Team;
 extern vmCvar_t cg_enemyRailItemColor;
-extern vmCvar_t cg_enemyRailItemColorTeam;
 //extern vmCvar_t cg_enemyOldRail;
 extern vmCvar_t cg_enemyRailRings;
 extern vmCvar_t cg_enemyRailNudge;
 extern vmCvar_t cg_enemyFlagColor;
 
-extern vmCvar_t cg_useDefaultTeamSkins;
-extern vmCvar_t cg_ignoreClientHeadModel;
 extern vmCvar_t cg_teamModel;
 extern vmCvar_t cg_teamHeadModel;
 extern vmCvar_t cg_teamHeadSkin;
@@ -3271,14 +3292,50 @@ extern vmCvar_t cg_teamTorsoColor;
 extern vmCvar_t cg_teamLegsColor;
 extern vmCvar_t cg_teamRailColor1;
 extern vmCvar_t cg_teamRailColor2;
-extern vmCvar_t cg_teamRailColor1Team;
-extern vmCvar_t cg_teamRailColor2Team;
 extern vmCvar_t cg_teamRailItemColor;
-extern vmCvar_t cg_teamRailItemColorTeam;
 //extern vmCvar_t cg_teamOldRail;
 extern vmCvar_t cg_teamRailRings;
 extern vmCvar_t cg_teamRailNudge;
 extern vmCvar_t cg_teamFlagColor;
+
+extern vmCvar_t cg_redTeamModel;
+extern vmCvar_t cg_redTeamHeadModel;
+extern vmCvar_t cg_redTeamHeadSkin;
+extern vmCvar_t cg_redTeamTorsoSkin;
+extern vmCvar_t cg_redTeamLegsSkin;
+extern vmCvar_t cg_redTeamHeadColor;
+extern vmCvar_t cg_redTeamTorsoColor;
+extern vmCvar_t cg_redTeamLegsColor;
+extern vmCvar_t cg_redTeamRailColor1;
+extern vmCvar_t cg_redTeamRailColor2;
+extern vmCvar_t cg_redTeamRailItemColor;
+//extern vmCvar_t cg_redTeamOldRail;
+extern vmCvar_t cg_redTeamRailRings;
+extern vmCvar_t cg_redTeamRailNudge;
+extern vmCvar_t cg_redTeamFlagColor;
+
+extern vmCvar_t cg_blueTeamModel;
+extern vmCvar_t cg_blueTeamHeadModel;
+extern vmCvar_t cg_blueTeamHeadSkin;
+extern vmCvar_t cg_blueTeamTorsoSkin;
+extern vmCvar_t cg_blueTeamLegsSkin;
+extern vmCvar_t cg_blueTeamHeadColor;
+extern vmCvar_t cg_blueTeamTorsoColor;
+extern vmCvar_t cg_blueTeamLegsColor;
+extern vmCvar_t cg_blueTeamRailColor1;
+extern vmCvar_t cg_blueTeamRailColor2;
+extern vmCvar_t cg_blueTeamRailItemColor;
+//extern vmCvar_t cg_blueTeamOldRail;
+extern vmCvar_t cg_blueTeamRailRings;
+extern vmCvar_t cg_blueTeamRailNudge;
+extern vmCvar_t cg_blueTeamFlagColor;
+
+extern vmCvar_t cg_useCustomRedBlueModels;
+extern vmCvar_t cg_useCustomRedBlueRail;
+extern vmCvar_t cg_useCustomRedBlueFlagColor;
+
+extern vmCvar_t cg_useDefaultTeamSkins;
+extern vmCvar_t cg_ignoreClientHeadModel;
 
 extern vmCvar_t cg_neutralFlagColor;
 
@@ -3292,6 +3349,7 @@ extern vmCvar_t cg_cpmaNtfBlueTorsoColor;
 extern vmCvar_t cg_cpmaNtfBlueLegsColor;
 
 extern vmCvar_t cg_cpmaNtfModelSkin;
+extern vmCvar_t cg_cpmaNtfScoreboardClassModel;
 
 extern vmCvar_t cg_cpmaUseNtfRailColors;
 extern vmCvar_t cg_cpmaNtfRedRailColor;
@@ -3718,6 +3776,8 @@ extern vmCvar_t cg_chaseUpdateFreeCam;
 extern vmCvar_t cg_chaseMovementKeys;
 
 extern vmCvar_t cg_redRoverRoundStartSound;
+
+extern vmCvar_t cg_statusBarHeadStyle;
 
 // end cvar_t
 

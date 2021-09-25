@@ -25,7 +25,7 @@ packageFilesDir = "package-files"
 files = os.listdir(packageFilesDir)
 for f in files:
     fpath = os.path.join(packageFilesDir, f)
-    print "copying package file: " + fpath
+    print("copying package file: " + fpath)
     if os.path.isdir(fpath):
         #shutil.copytree(fpath, os.path.join(packageDir, f))
         copytree(fpath, os.path.join(packageDir, f))
@@ -35,7 +35,7 @@ for f in files:
 baseFiles = ["COPYING.txt", "COPYING-backtrace.txt", "CREDITS-wolfcam.txt", "CREDITS-openarena.txt", "README-ioquake3.txt", "README-wolfcam.txt", "opengl2-readme.md", "version.txt", "unifont-LICENSE.txt", "voip-readme.txt"]
 
 for f in baseFiles:
-    print "copying base file: " + f
+    print("copying base file: " + f)
     shutil.copy(f, packageDir)
 
 # 64-bit
@@ -44,7 +44,7 @@ libDir = os.path.join("code", "libs", "win64")
 buildDir = os.path.join("build", "release-mingw32-x86_64")
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
-print "copying 64-bit Windows binaries..."
+print("copying 64-bit Windows binaries...")
 try:
     shutil.copy2(os.path.join(libDir, "SDL264.dll"), packageDir)
     shutil.copy2(os.path.join(libDir, "backtrace64.dll"), packageDir)
@@ -56,7 +56,7 @@ try:
     shutil.copy2(os.path.join(buildDir, "baseq3", "qagamex86_64.dll"), wolfcamDir)
     shutil.copy2(os.path.join(buildDir, "baseq3", "uix86_64.dll"), wolfcamDir)
 except IOError as err:
-    print err
+    print(err)
 
 # 32-bit
 
@@ -64,7 +64,7 @@ libDir = os.path.join("code", "libs", "win32")
 buildDir = os.path.join("build", "release-mingw32-x86")
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
-print "copying 32-bit Windows binaries..."
+print("copying 32-bit Windows binaries...")
 try:
     shutil.copy2(os.path.join(libDir, "SDL2.dll"), packageDir)
     shutil.copy2(os.path.join(libDir, "backtrace.dll"), packageDir)
@@ -76,7 +76,7 @@ try:
     shutil.copy2(os.path.join(buildDir, "baseq3", "qagamex86.dll"), wolfcamDir)
     shutil.copy2(os.path.join(buildDir, "baseq3", "uix86.dll"), wolfcamDir)
 except IOError as err:
-    print err
+    print(err)
 
-print "copying misc files..."
+print("copying misc files...")
 shutil.copy2(os.path.join("ui", "wcmenudef.h"), os.path.join(packageDir, "wolfcam-ql", "ui"))

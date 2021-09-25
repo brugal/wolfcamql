@@ -1401,7 +1401,7 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 
 		// always the same order?
 		// 2021-08-13  no
-		for (i = 0;  i < 8;  i++) {
+		for (i = 0;  i < MAX_CPMA_NTF_MODELS;  i++) {
 			CG_CpmaSetNtfModel(CSCPMA_NTF_CLASS_0 + i, firstCall, qfalse);
 		}
 	}
@@ -5600,6 +5600,18 @@ static void CG_ServerCommand( void ) {
 
 		if (!Q_stricmp(cmd, "stuff")) {
 			// misc commands, stoprecord ...
+			return;
+		}
+
+		if (!Q_stricmp(cmd, "it")) {
+			//FIXME can use for client item timer
+			// item timer
+			return;
+		}
+
+		if (!Q_stricmp(cmd, "itr")) {
+			//FIXME can use for client item timer
+			// item timer reset?
 			return;
 		}
 	}

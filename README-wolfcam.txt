@@ -922,6 +922,8 @@ Fonts can also be used for hud config elements:
 
   WCG_2ND_PLYR_READY  same as CG_2ND_PLYR_READY without status text
 
+  WCG_REAL_PLAYER_HEAD  draw real player head/icon without substituting team color skins
+
 * cg_gametype variable checking corresponds to quake with additional support for quake3 and cpma gametypes:
 
   0   ffa
@@ -1464,7 +1466,8 @@ Available tokens:
 
 * cg_enemyRailNudge and cg_teamRailNudge
 
-* cg_railUseOwnColors
+* cg_railUseOwnColors  0:  use colors set in demo, 1:  use color1 and color2, 2:  check teammate and red/blue team settings then fallback to demo colors, 3:  same as 2 but fallback to color1 and color2
+
 
 * cg_railFromMuzzle default 0  Will always make the rail origin the muzzle point.  It takes into account the different gun positions based on first and third person views and also takes into account any gun position changes made with the cg_gun* cvars.  It also passes the adjusted origin to the fx scripting system.
 
@@ -1999,14 +2002,44 @@ Player Models:
 * cg_enemyRailColor1
 * cg_enemyRailColor2
 
-* cg_enemyRailColor1Team  (use team color)
-* cg_enemyRailColor2Team  (use team color)
-    For both cg_enemyRailColor1Team and cg_enemyRailColor2Team the colors are set using cg_weapon[Red|Blue|No]TeamColor  which is a hex value
-
 * cg_enemyRailItemColor  the color of the actual gun they hold, default is "" which uses whatever the player's color1 is.
 * cg_enemyRailRings
 
 * for cg_team* same options as cg_enemy*
+
+* options to set models, skins, colors based on red or blue team
+
+    cg_redTeamModel
+    cg_redTeamHeadModel
+    cg_redTeamHeadSkin
+    cg_redTeamTorsoSkin
+    cg_redTeamLegsSkin
+    cg_redTeamHeadColor
+    cg_redTeamTorsoColor
+    cg_redTeamLegsColor
+
+    cg_redTeamRailColor1
+    cg_redTeamRailColor2
+    cg_redTeamRailItemColor
+
+    cg_redTeamRailRings
+    cg_redTeamRailNudge
+
+    cg_redTeamFlagColor
+
+  and equivalent cg_blueTeam* cvars
+
+  Use of the settings is controlled with:
+
+    cg_useCustomRedBlueModels
+    cg_useCustomRedBlueRail
+    cg_useCustomRedBlueFlagColor
+
+  0 ignores red/blue team settings, 1 uses them as a fallback for teammate and enemy settings (ex: cg_enemyModel "" will then check cg_redTeamModel or cg_blueTeamModel), 2 force and ignore teammate and enemy settings
+
+* cg_statusBarHeadStyle  0 (default) show original model except with cg_forceModel, 1 show changed model
+
+* cg_drawAttacker 1 shows changed model (team model, enemy model, etc...), 2 shows original model
 
 * cg_wh [0:  no wall hack, 1:  wall hack shader applied to all players, 2:  wall hack shader applied only to enemies, 3:  wall hack shader applied only to teammates]
 
@@ -3127,6 +3160,9 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cpma ntf player model support
 
     cg_cpmaUseNtfModels
+
+        setting to 2 also sets first person view model based on ntf class
+
     cg_cpmaUseNtfEnemyColors
     cg_cpmaNtfRedHeadColor
     cg_cpmaNtfRedTorsoColor
@@ -3135,6 +3171,9 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
     cg_cpmaNtfBlueTorsoColor
     cg_cpmaNtfBlueLegsColor
     cg_cpmaNtfModelSkin
+    cg_cpmaNtfScoreboardClassModel
+
+        shows class models in scoreboard
 
 * cpma ntf team rail color support
 

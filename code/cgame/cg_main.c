@@ -833,10 +833,6 @@ vmCvar_t wolfcam_painHealthStyle;
 
 vmCvar_t cg_interpolateMissiles;
 
-vmCvar_t cg_weaponBlueTeamColor;
-vmCvar_t cg_weaponRedTeamColor;
-//vmCvar_t cg_noTeamColor;
-
 vmCvar_t cg_hudRedTeamColor;
 vmCvar_t cg_hudBlueTeamColor;
 vmCvar_t cg_hudNoTeamColor;
@@ -855,16 +851,11 @@ vmCvar_t cg_enemyTorsoColor;
 vmCvar_t cg_enemyLegsColor;
 vmCvar_t cg_enemyRailColor1;
 vmCvar_t cg_enemyRailColor2;
-vmCvar_t cg_enemyRailColor1Team;
-vmCvar_t cg_enemyRailColor2Team;
 vmCvar_t cg_enemyRailItemColor;
-vmCvar_t cg_enemyRailItemColorTeam;
 vmCvar_t cg_enemyRailRings;
 vmCvar_t cg_enemyRailNudge;
 vmCvar_t cg_enemyFlagColor;
 
-vmCvar_t cg_useDefaultTeamSkins;
-vmCvar_t cg_ignoreClientHeadModel;
 vmCvar_t cg_teamModel;
 vmCvar_t cg_teamHeadModel;
 vmCvar_t cg_teamHeadSkin;
@@ -875,13 +866,49 @@ vmCvar_t cg_teamTorsoColor;
 vmCvar_t cg_teamLegsColor;
 vmCvar_t cg_teamRailColor1;
 vmCvar_t cg_teamRailColor2;
-vmCvar_t cg_teamRailColor1Team;
-vmCvar_t cg_teamRailColor2Team;
 vmCvar_t cg_teamRailItemColor;
-vmCvar_t cg_teamRailItemColorTeam;
 vmCvar_t cg_teamRailRings;
 vmCvar_t cg_teamRailNudge;
 vmCvar_t cg_teamFlagColor;
+
+vmCvar_t cg_redTeamModel;
+vmCvar_t cg_redTeamHeadModel;
+vmCvar_t cg_redTeamHeadSkin;
+vmCvar_t cg_redTeamTorsoSkin;
+vmCvar_t cg_redTeamLegsSkin;
+vmCvar_t cg_redTeamHeadColor;
+vmCvar_t cg_redTeamTorsoColor;
+vmCvar_t cg_redTeamLegsColor;
+vmCvar_t cg_redTeamRailColor1;
+vmCvar_t cg_redTeamRailColor2;
+vmCvar_t cg_redTeamRailItemColor;
+//vmCvar_t cg_redTeamOldRail;
+vmCvar_t cg_redTeamRailRings;
+vmCvar_t cg_redTeamRailNudge;
+vmCvar_t cg_redTeamFlagColor;
+
+vmCvar_t cg_blueTeamModel;
+vmCvar_t cg_blueTeamHeadModel;
+vmCvar_t cg_blueTeamHeadSkin;
+vmCvar_t cg_blueTeamTorsoSkin;
+vmCvar_t cg_blueTeamLegsSkin;
+vmCvar_t cg_blueTeamHeadColor;
+vmCvar_t cg_blueTeamTorsoColor;
+vmCvar_t cg_blueTeamLegsColor;
+vmCvar_t cg_blueTeamRailColor1;
+vmCvar_t cg_blueTeamRailColor2;
+vmCvar_t cg_blueTeamRailItemColor;
+//vmCvar_t cg_blueTeamOldRail;
+vmCvar_t cg_blueTeamRailRings;
+vmCvar_t cg_blueTeamRailNudge;
+vmCvar_t cg_blueTeamFlagColor;
+
+vmCvar_t cg_useCustomRedBlueModels;
+vmCvar_t cg_useCustomRedBlueRail;
+vmCvar_t cg_useCustomRedBlueFlagColor;
+
+vmCvar_t cg_useDefaultTeamSkins;
+vmCvar_t cg_ignoreClientHeadModel;
 
 vmCvar_t cg_neutralFlagColor;
 
@@ -895,6 +922,7 @@ vmCvar_t cg_cpmaNtfBlueTorsoColor;
 vmCvar_t cg_cpmaNtfBlueLegsColor;
 
 vmCvar_t cg_cpmaNtfModelSkin;
+vmCvar_t cg_cpmaNtfScoreboardClassModel;
 
 vmCvar_t cg_cpmaUseNtfRailColors;
 vmCvar_t cg_cpmaNtfRedRailColor;
@@ -1317,6 +1345,8 @@ vmCvar_t cg_chaseUpdateFreeCam;
 vmCvar_t cg_chaseMovementKeys;
 
 vmCvar_t cg_redRoverRoundStartSound;
+
+vmCvar_t cg_statusBarHeadStyle;
 
 // end cvar_t
 
@@ -2050,10 +2080,6 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_useOriginalInterpolation, "cg_useOriginalInterpolation", "0", CVAR_ARCHIVE },
 	{ &cg_drawBBox, "cg_drawBBox", "0", CVAR_ARCHIVE },
 
-	{ &cg_weaponRedTeamColor, "cg_weaponRedTeamColor", "0xf40000", CVAR_ARCHIVE },
-	{ &cg_weaponBlueTeamColor, "cg_weaponBlueTeamColor", "0x3266f4", CVAR_ARCHIVE },
-	// cg_noTeamColor
-
 	{ &cg_hudRedTeamColor, "cg_hudRedTeamColor", "0xfe3219", CVAR_ARCHIVE },
 	{ &cg_hudBlueTeamColor, "cg_hudBlueTeamColor", "0x3366ff", CVAR_ARCHIVE },
 	{ &cg_hudNoTeamColor, "cg_hudNoTeamColor", "0xfecb32", CVAR_ARCHIVE },
@@ -2072,17 +2098,12 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_enemyLegsColor, "cg_enemyLegsColor", "0x2a8000", CVAR_ARCHIVE },
 	{ &cg_enemyRailColor1, "cg_enemyRailColor1", "", CVAR_ARCHIVE },
 	{ &cg_enemyRailColor2, "cg_enemyRailColor2", "", CVAR_ARCHIVE },
-	{ &cg_enemyRailColor1Team, "cg_enemyRailColor1Team", "0", CVAR_ARCHIVE },
-	{ &cg_enemyRailColor2Team, "cg_enemyRailColor2Team", "0", CVAR_ARCHIVE },
 	//	{ &cg_enemyOldRail, "cg_enemyOldRail", "1", CVAR_ARCHIVE },
 	{ &cg_enemyRailRings, "cg_enemyRailRings", "0", CVAR_ARCHIVE },
 	{ &cg_enemyRailNudge, "cg_enemyRailNudge", "1", CVAR_ARCHIVE },
 	{ &cg_enemyRailItemColor, "cg_enemyRailItemColor", "", CVAR_ARCHIVE },
-	{ &cg_enemyRailItemColorTeam, "cg_enemyRailItemColorTeam", "0", CVAR_ARCHIVE },
 	{ cvp(cg_enemyFlagColor), "0x00ff00", CVAR_ARCHIVE },
 
-	{ &cg_useDefaultTeamSkins, "cg_useDefaultTeamSkins", "1", CVAR_ARCHIVE },
-	{ cvp(cg_ignoreClientHeadModel), "2", CVAR_ARCHIVE },
 	{ &cg_teamModel, "cg_teamModel", "", CVAR_ARCHIVE },
 	{ cvp(cg_teamHeadModel), "", CVAR_ARCHIVE },
 	{ &cg_teamHeadSkin, "cg_teamHeadSkin", "", CVAR_ARCHIVE },
@@ -2093,14 +2114,51 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_teamLegsColor, "cg_teamLegsColor", "0xffffff", CVAR_ARCHIVE },
 	{ &cg_teamRailColor1, "cg_teamRailColor1", "", CVAR_ARCHIVE },
 	{ &cg_teamRailColor2, "cg_teamRailColor2", "", CVAR_ARCHIVE },
-	{ &cg_teamRailColor1Team, "cg_teamRailColor1Team", "0", CVAR_ARCHIVE },
-	{ &cg_teamRailColor2Team, "cg_teamRailColor2Team", "0", CVAR_ARCHIVE },
 	//{ &cg_teamOldRail, "cg_teamOldRail", "1", CVAR_ARCHIVE },
 	{ &cg_teamRailRings, "cg_teamRailRings", "0", CVAR_ARCHIVE },
 	{ &cg_teamRailNudge, "cg_teamRailNudge", "1", CVAR_ARCHIVE },
 	{ &cg_teamRailItemColor, "cg_teamRailItemColor", "", CVAR_ARCHIVE },
-	{ &cg_teamRailItemColorTeam, "cg_teamRailItemColorTeam", "0", CVAR_ARCHIVE },
 	{ cvp(cg_teamFlagColor), "0xffffff", CVAR_ARCHIVE },
+
+	{ cvp(cg_redTeamModel), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamHeadModel), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamHeadSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamTorsoSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamLegsSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamHeadColor), "0xff0000", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamTorsoColor), "0xff0000", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamLegsColor), "0xff0000", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamRailColor1), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamRailColor2), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamRailItemColor), "", CVAR_ARCHIVE },
+	//{ cvp(cg_redTeamOldRail), "1", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamRailRings), "", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamRailNudge), "1", CVAR_ARCHIVE },
+	{ cvp(cg_redTeamFlagColor), "0xff0000", CVAR_ARCHIVE },
+
+	{ cvp(cg_blueTeamModel), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamHeadModel), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamHeadSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamTorsoSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamLegsSkin), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamHeadColor), "0x0000ff", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamTorsoColor), "0x0000ff", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamLegsColor), "0x0000ff", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamRailColor1), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamRailColor2), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamRailItemColor), "", CVAR_ARCHIVE },
+	//{ cvp(cg_blueTeamOldRail), "1", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamRailRings), "", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamRailNudge), "0", CVAR_ARCHIVE },
+	{ cvp(cg_blueTeamFlagColor), "0x0000ff", CVAR_ARCHIVE },
+
+	{ cvp(cg_useCustomRedBlueModels), "0", CVAR_ARCHIVE },
+	{ cvp(cg_useCustomRedBlueRail), "0", CVAR_ARCHIVE },
+	{ cvp(cg_useCustomRedBlueFlagColor), "0", CVAR_ARCHIVE },
+
+	{ &cg_useDefaultTeamSkins, "cg_useDefaultTeamSkins", "1", CVAR_ARCHIVE },
+	{ cvp(cg_ignoreClientHeadModel), "2", CVAR_ARCHIVE },
+
 
 	{ cvp(cg_neutralFlagColor), "0xf6f600", CVAR_ARCHIVE },
 
@@ -2114,6 +2172,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_cpmaNtfBlueLegsColor), "0x0000ff", CVAR_ARCHIVE },
 
 	{ cvp(cg_cpmaNtfModelSkin), "bright", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaNtfScoreboardClassModel), "1", CVAR_ARCHIVE },
 
 	{ cvp(cg_cpmaUseNtfRailColors), "1", CVAR_ARCHIVE },
 	{ cvp(cg_cpmaNtfRedRailColor), "0xff5a00", CVAR_ARCHIVE },
@@ -2550,6 +2609,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_chaseMovementKeys), "1", CVAR_ARCHIVE },
 
 	{ cvp(cg_redRoverRoundStartSound), "1", CVAR_ARCHIVE },
+	{ cvp(cg_statusBarHeadStyle), "0", CVAR_ARCHIVE },
 
 };
 
@@ -4238,6 +4298,8 @@ static void CG_RegisterGraphics( void ) {
 				cgs.yellowArmorItem = item;
 			} else if (!Q_stricmp(item->pickup_name, "Red Armor")) {
 				cgs.redArmorItem = item;
+			} else if (!Q_stricmp(item->pickup_name, "Backpack")) {
+				cgs.backpackItemIndex = i;
 			}
 
 			CG_LoadingItem( i );
@@ -4245,11 +4307,11 @@ static void CG_RegisterGraphics( void ) {
 		}
 	}
 
-	// check if cpma backpack was added
+	// check if cpma backpack was added, if not use ql ammopack
 	if (cgs.cpma) {
 		itemInfo_t *itemInfo;
 
-		itemInfo = &cg_items[bg_numItemsCpma - 2];
+		itemInfo = &cg_items[cgs.backpackItemIndex];
 
 		if (!itemInfo->models[0]) {
 			itemInfo->models[0] = trap_R_RegisterModel("models/powerups/ammo/ammopack.md3");
@@ -6442,7 +6504,12 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 		switch (column) {
 		case 0:
 			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
-				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
+				if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaNtfScoreboardClassModel.integer) {
+					//FIXME 2021-09-06 red and blue icons
+					*handle = cg.ntfClassModel[cgs.clientinfo[sp->client].ntfClass].modelIcon;
+				} else {
+					*handle = cgs.clientinfoOrig[sp->client].modelIcon;
+				}
 			} else {  // default is cg_scoreBoardStyle.integer == 1
 				if (version >= 1) {
 					*handle = cg_weapons[ts->bestWeapon].weaponIcon;

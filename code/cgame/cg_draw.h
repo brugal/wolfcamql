@@ -44,7 +44,7 @@ void CG_Text_Paint_Bottom (float x, float y, float scale, const vec4_t color, co
 void CG_Text_Paint_old(float x, float y, float scale, const vec4_t color, const char *text, float adjust, int limit, int style, int fontIndex);
 
 void CG_Draw3DModel( float x, float y, float w, float h, qhandle_t model, qhandle_t skin, const vec3_t origin, const vec3_t angles );
-void CG_DrawHead( float x, float y, float w, float h, int clientNum, const vec3_t headAngles, qboolean useDefaultTeamSkin );
+void CG_DrawHead( float x, float y, float w, float h, int clientNum, const vec3_t headAngles, qboolean useDefaultTeamSkin, qboolean useChangedModel, qboolean isScoreboard );
 void CG_DrawFlagModel( float x, float y, float w, float h, int team, qboolean force2D );
 void CG_DrawTeamBackground( int x, int y, int w, int h, float alpha, int team );
 

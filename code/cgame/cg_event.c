@@ -2379,6 +2379,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			return;
 		}
 
+		//FIXME check in CG_RailTrail()
 		if (cg_railUseOwnColors.integer  &&  CG_IsUs(ci)) {
 			VectorCopy(ci->color1, origColor1);
 			VectorCopy(ci->color2, origColor2);

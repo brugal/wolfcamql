@@ -19,7 +19,7 @@ while 1:
 f.close()
 
 if VERSIONSTRING == "":
-    print "couldn't get VERSIONSTRING"
+    print("couldn't get VERSIONSTRING")
     sys.exit(1)
 
 packageDir = os.path.join("package-release", "wolfcamql%s" % VERSIONSTRING)
@@ -35,7 +35,7 @@ packageFilesDir = "package-files"
 files = os.listdir(packageFilesDir)
 for f in files:
     fpath = os.path.join(packageFilesDir, f)
-    print "copying package file: " + fpath
+    print("copying package file: " + fpath)
     if os.path.isdir(fpath):
         shutil.copytree(fpath, os.path.join(packageDir, f))
     else:
@@ -44,14 +44,14 @@ for f in files:
 baseFiles = ["COPYING.txt", "COPYING-backtrace.txt", "CREDITS-wolfcam.txt", "CREDITS-openarena.txt", "README-ioquake3.txt", "README-wolfcam.txt", "opengl2-readme.md", "version.txt", "unifont-LICENSE.txt", "voip-readme.txt"]
 
 for f in baseFiles:
-    print "copying base file: " + f
+    print("copying base file: " + f)
     shutil.copy(f, packageDir)
 
 libDir = os.path.join("code", "libs", "win64")
 buildDir = os.path.join("build", "release-mingw32-x86_64")
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
-print "copying Windows binaries..."
+print("copying Windows binaries...")
 try:
     shutil.copy2(os.path.join(libDir, "SDL264.dll"), packageDir)
     shutil.copy2(os.path.join(libDir, "backtrace64.dll"), packageDir)
@@ -63,12 +63,12 @@ try:
     shutil.copy2(os.path.join(buildDir, "baseq3", "qagamex86_64.dll"), wolfcamDir)
     shutil.copy2(os.path.join(buildDir, "baseq3", "uix86_64.dll"), wolfcamDir)
 except IOError as err:
-    print err
+    print(err)
 
 buildDir = os.path.join("build", "release-linux-x86_64")
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
-print "copying Linux binaries..."
+print("copying Linux binaries...")
 try:
     shutil.copy2(os.path.join(buildDir, "ioquake3.x86_64"), packageDir)
     shutil.move(os.path.join(packageDir, "ioquake3.x86_64"), os.path.join(packageDir, "wolfcamql.x86_64"))
@@ -78,13 +78,13 @@ try:
     shutil.copy2(os.path.join(buildDir, "baseq3", "qagamex86_64.so"), wolfcamDir)
     shutil.copy2(os.path.join(buildDir, "baseq3", "uix86_64.so"), wolfcamDir)
 except IOError as err:
-    print err
+    print(err)
 
 libDir = os.path.join("code", "libs", "macosx")
 buildDir = "mac-binaries"
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
-print "copying Mac OS X binaries..."
+print("copying Mac OS X binaries...")
 try:
     shutil.copy2(os.path.join(libDir, "libSDL2-2.0.0.dylib"), packageDir)
     shutil.copy2(os.path.join(buildDir, "wolfcamqlmac"), packageDir)
@@ -94,13 +94,13 @@ try:
     shutil.copy2(os.path.join(buildDir, "qagamex86_64.dylib"), wolfcamDir)
     shutil.copy2(os.path.join(buildDir, "uix86_64.dylib"), wolfcamDir)
 except IOError as err:
-    print err
+    print(err)
 
-print "copying misc files..."
+print("copying misc files...")
 shutil.copy2(os.path.join("ui", "wcmenudef.h"), os.path.join(packageDir, "wolfcam-ql", "ui"))
 
 
-print "building source..."
+print("building source...")
 ignoreFiles = [ ".hg", ".hgignore", "build", "package-files", "package-release", os.path.join("code", "libs"), "macwolfcambuild", "update-mac-binaries.sh", os.path.join("backtrace", "build"), "mac-binaries" ]
 
 for f in glob.glob(os.path.join("backtrace", "binutils*gz")):
@@ -109,12 +109,12 @@ for f in glob.glob(os.path.join("backtrace", "binutils*gz")):
 tar = tarfile.open(os.path.join(packageDir, "wolfcamql-src.tar.bz2"), "w:bz2")
 
 def tarFilter(tarinfo):
-    #print "tar file: " + tarinfo.name
+    #print("tar file: " + tarinfo.name)
     if tarinfo.name in ignoreFiles:
-        print "skipping " + tarinfo.name
+        print("skipping " + tarinfo.name)
         return None
     if os.path.isdir(tarinfo.name):
-        print "adding dir: " + tarinfo.name
+        print("adding dir: " + tarinfo.name)
     return tarinfo
 
 topFiles = os.listdir(".")
@@ -122,7 +122,7 @@ for f in topFiles:
     tar.add(f, filter=tarFilter)
 tar.close()
 
-print "creating package zip..."
+print("creating package zip...")
 log = logging.getLogger("make-package")
 osh = logging.StreamHandler(sys.stdout)
 osh.setFormatter(logging.Formatter("zip: %(message)s"))

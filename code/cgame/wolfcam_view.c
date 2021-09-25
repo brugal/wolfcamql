@@ -18,17 +18,17 @@ static void RegisterTeamClientModelnameWithFallback (clientInfo_t *ci, const cha
 		const char *dir, *fallback, *s;
 		int i;
 
-		cg.teamModel.newAnims = qfalse;
-		if (cg.teamModel.torsoModel) {
+		cg.teammateModel.newAnims = qfalse;
+		if (cg.teammateModel.torsoModel) {
 			orientation_t tag;
 			// if the torso model has the "tag_flag"
-			if (trap_R_LerpTag(&tag, cg.teamModel.torsoModel, 0, 0, 1, "tag_flag")) {
-				cg.teamModel.newAnims = qtrue;
+			if (trap_R_LerpTag(&tag, cg.teammateModel.torsoModel, 0, 0, 1, "tag_flag")) {
+				cg.teammateModel.newAnims = qtrue;
 			}
 		}
 
 		// sounds
-		dir = cg.teamModel.modelName;
+		dir = cg.teammateModel.modelName;
 		fallback = (CG_IsTeamGame(cgs.gametype)) ? DEFAULT_TEAM_MODEL : DEFAULT_MODEL;
 
 		for (i = 0;  i < MAX_CUSTOM_SOUNDS;  i++) {
@@ -36,11 +36,11 @@ static void RegisterTeamClientModelnameWithFallback (clientInfo_t *ci, const cha
 			if (!s) {
 				break;
 			}
-			cg.teamModel.sounds[i] = 0;
+			cg.teammateModel.sounds[i] = 0;
 			// if the model didn't load use the sounds of the default model
-			cg.teamModel.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
-			if (!cg.teamModel.sounds[i])
-				cg.teamModel.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", fallback, s + 1), qfalse);
+			cg.teammateModel.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", dir, s + 1), qfalse);
+			if (!cg.teammateModel.sounds[i])
+				cg.teammateModel.sounds[i] = trap_S_RegisterSound(va("sound/player/%s/%s", fallback, s + 1), qfalse);
 		}
 	}
 }
@@ -79,7 +79,8 @@ void CG_GetModelAndSkinName (const char *s, char *model, char *skin)
 	Q_strncpyz(skin, p, MAX_QPATH);
 }
 
-static void Wolfcam_LoadTeamModel (void)
+// teammates
+static void Wolfcam_LoadTeammateModel (void)
 {
 	char modelStr[MAX_QPATH];
 	char *skin;
@@ -100,12 +101,12 @@ static void Wolfcam_LoadTeamModel (void)
 		cg_teamTorsoColor.modificationCount != modc_torsoColor  ||
 		cg_teamLegsColor.modificationCount != modc_legsColor
 		) {
-		SC_ByteVec3ColorFromCvar(cg.teamColors[0], &cg_teamHeadColor);
-		cg.teamColors[0][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.teamColors[1], &cg_teamTorsoColor);
-		cg.teamColors[1][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.teamColors[2], &cg_teamLegsColor);
-		cg.teamColors[2][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.teammateModelColors[0], &cg_teamHeadColor);
+		cg.teammateModelColors[0][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.teammateModelColors[1], &cg_teamTorsoColor);
+		cg.teammateModelColors[1][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.teammateModelColors[2], &cg_teamLegsColor);
+		cg.teammateModelColors[2][3] = 255;
 		modc_headColor = cg_teamHeadColor.modificationCount;
 		modc_torsoColor = cg_teamTorsoColor.modificationCount;
 		modc_legsColor = cg_teamLegsColor.modificationCount;
@@ -130,26 +131,26 @@ static void Wolfcam_LoadTeamModel (void)
 		return;
 	}
 
-	Com_Printf("loading team models\n");
+	Com_Printf("loading teammate models\n");
 
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		clientInfo_t *ci;
 
 		ci = &cgs.clientinfo[i];
-		ci->headTeamSkinAlt = 0;
-		ci->torsoTeamSkinAlt = 0;
-		ci->legsTeamSkinAlt = 0;
+		ci->headTeammateSkinAlt = 0;
+		ci->torsoTeammateSkinAlt = 0;
+		ci->legsTeammateSkinAlt = 0;
 	}
 	// reset since cg.ourModel can fallback to using original player models
-	cg.ourModel.headTeamSkinAlt = 0;
-	cg.ourModel.torsoTeamSkinAlt = 0;
-	cg.ourModel.legsTeamSkinAlt = 0;
-	cg.ourModelRed.headTeamSkinAlt = 0;
-	cg.ourModelRed.torsoTeamSkinAlt = 0;
-	cg.ourModelRed.legsTeamSkinAlt = 0;
-	cg.ourModelBlue.headTeamSkinAlt = 0;
-	cg.ourModelBlue.torsoTeamSkinAlt = 0;
-	cg.ourModelBlue.legsTeamSkinAlt = 0;
+	cg.ourModel.headTeammateSkinAlt = 0;
+	cg.ourModel.torsoTeammateSkinAlt = 0;
+	cg.ourModel.legsTeammateSkinAlt = 0;
+	cg.ourModelRed.headTeammateSkinAlt = 0;
+	cg.ourModelRed.torsoTeammateSkinAlt = 0;
+	cg.ourModelRed.legsTeammateSkinAlt = 0;
+	cg.ourModelBlue.headTeammateSkinAlt = 0;
+	cg.ourModelBlue.torsoTeammateSkinAlt = 0;
+	cg.ourModelBlue.legsTeammateSkinAlt = 0;
 
 	if (*cg_teamModel.string) {
 		Q_strncpyz(modelStr, cg_teamModel.string, sizeof(modelStr));
@@ -165,65 +166,408 @@ static void Wolfcam_LoadTeamModel (void)
 
 	if ((skin = strchr(modelStr, '/')) == NULL) {
 		skin = "default";
-		cg.teamModelTeamSkinFound = qtrue;
+		cg.teammateModelUsingTCSkin = qtrue;
 	} else {
 		*skin++ = 0;
-		cg.teamModelTeamSkinFound = qfalse;
+		cg.teammateModelUsingTCSkin = qfalse;
 	}
 
 	if (!Q_stricmp(skin, TEAM_COLOR_SKIN)) {
-		cg.teamModelTeamSkinFound = qtrue;
+		cg.teammateModelUsingTCSkin = qtrue;
 	}
 
 	if ((headSkin = strchr(headModelStr, '/')) == NULL) {
 		headSkin = "default";
-		cg.teamModelTeamHeadSkinFound = qtrue;
+		cg.teammateModelUsingTCHeadSkin = qtrue;
 	} else {
 		*headSkin++ = 0;
-		cg.teamModelTeamHeadSkinFound = qfalse;
+		cg.teammateModelUsingTCHeadSkin = qfalse;
 	}
 
 	if (!Q_stricmp(headSkin, TEAM_COLOR_SKIN)) {
-		cg.teamModelTeamHeadSkinFound = qtrue;
+		cg.teammateModelUsingTCHeadSkin = qtrue;
 	}
 
-	Q_strncpyz(cg.teamModel.modelName, modelStr, sizeof(cg.teamModel.modelName));
-	Q_strncpyz(cg.teamModel.skinName, skin, sizeof(cg.teamModel.skinName));
-	Q_strncpyz(cg.teamModelRed.modelName, modelStr, sizeof(cg.teamModelRed.modelName));
-	Q_strncpyz(cg.teamModelRed.skinName, skin, sizeof(cg.teamModelRed.skinName));
-	Q_strncpyz(cg.teamModelBlue.modelName, modelStr, sizeof(cg.teamModelBlue.modelName));
-	Q_strncpyz(cg.teamModelBlue.skinName, skin, sizeof(cg.teamModelBlue.skinName));
+	Q_strncpyz(cg.teammateModel.modelName, modelStr, sizeof(cg.teammateModel.modelName));
+	Q_strncpyz(cg.teammateModel.skinName, skin, sizeof(cg.teammateModel.skinName));
+	Q_strncpyz(cg.teammateModelRed.modelName, modelStr, sizeof(cg.teammateModelRed.modelName));
+	Q_strncpyz(cg.teammateModelRed.skinName, skin, sizeof(cg.teammateModelRed.skinName));
+	Q_strncpyz(cg.teammateModelBlue.modelName, modelStr, sizeof(cg.teammateModelBlue.modelName));
+	Q_strncpyz(cg.teammateModelBlue.skinName, skin, sizeof(cg.teammateModelBlue.skinName));
 
 
-	Q_strncpyz(cg.teamModel.headModelName, headModelStr, sizeof(cg.teamModel.headModelName));
-	Q_strncpyz(cg.teamModel.headSkinName, headSkin, sizeof(cg.teamModel.headSkinName));
-	Q_strncpyz(cg.teamModelRed.headModelName, headModelStr, sizeof(cg.teamModelRed.headModelName));
-	Q_strncpyz(cg.teamModelRed.headSkinName, headSkin, sizeof(cg.teamModelRed.headSkinName));
-	Q_strncpyz(cg.teamModelBlue.headModelName, headModelStr, sizeof(cg.teamModelBlue.headModelName));
-	Q_strncpyz(cg.teamModelBlue.headSkinName, headSkin, sizeof(cg.teamModelBlue.headSkinName));
+	Q_strncpyz(cg.teammateModel.headModelName, headModelStr, sizeof(cg.teammateModel.headModelName));
+	Q_strncpyz(cg.teammateModel.headSkinName, headSkin, sizeof(cg.teammateModel.headSkinName));
+	Q_strncpyz(cg.teammateModelRed.headModelName, headModelStr, sizeof(cg.teammateModelRed.headModelName));
+	Q_strncpyz(cg.teammateModelRed.headSkinName, headSkin, sizeof(cg.teammateModelRed.headSkinName));
+	Q_strncpyz(cg.teammateModelBlue.headModelName, headModelStr, sizeof(cg.teammateModelBlue.headModelName));
+	Q_strncpyz(cg.teammateModelBlue.headSkinName, headSkin, sizeof(cg.teammateModelBlue.headSkinName));
 
-	RegisterTeamClientModelnameWithFallback(&cg.teamModel, cg.teamModel.modelName, cg.teamModel.skinName, cg.teamModel.headModelName, cg.teamModel.headSkinName, "", qtrue);
+	RegisterTeamClientModelnameWithFallback(&cg.teammateModel, cg.teammateModel.modelName, cg.teammateModel.skinName, cg.teammateModel.headModelName, cg.teammateModel.headSkinName, "", qtrue);
 
-	cg.teamModelRed.team = TEAM_RED;
-	RegisterTeamClientModelnameWithFallback(&cg.teamModelRed, cg.teamModelRed.modelName, cg.teamModelRed.skinName, cg.teamModelRed.headModelName, cg.teamModelRed.headSkinName, "", qfalse);
+	cg.teammateModelRed.team = TEAM_RED;
+	RegisterTeamClientModelnameWithFallback(&cg.teammateModelRed, cg.teammateModelRed.modelName, cg.teammateModelRed.skinName, cg.teammateModelRed.headModelName, cg.teammateModelRed.headSkinName, "", qfalse);
 
-	cg.teamModelBlue.team = TEAM_BLUE;
-	RegisterTeamClientModelnameWithFallback(&cg.teamModelBlue, cg.teamModelBlue.modelName, cg.teamModelBlue.skinName, cg.teamModelBlue.headModelName, cg.teamModelBlue.headSkinName, "", qfalse);
+	cg.teammateModelBlue.team = TEAM_BLUE;
+	RegisterTeamClientModelnameWithFallback(&cg.teammateModelBlue, cg.teammateModelBlue.modelName, cg.teammateModelBlue.skinName, cg.teammateModelBlue.headModelName, cg.teammateModelBlue.headSkinName, "", qfalse);
 
 	if (!*cg_teamModel.string) {
 		// prevent loading legs and torso, use original client values
-		cg.teamModel.legsModel = 0;
-		cg.teamModel.torsoModel = 0;
-		cg.teamModelRed.legsModel = 0;
-		cg.teamModelRed.torsoModel = 0;
-		cg.teamModelBlue.legsModel = 0;
-		cg.teamModelBlue.torsoModel = 0;
+		cg.teammateModel.legsModel = 0;
+		cg.teammateModel.torsoModel = 0;
+		cg.teammateModelRed.legsModel = 0;
+		cg.teammateModelRed.torsoModel = 0;
+		cg.teammateModelBlue.legsModel = 0;
+		cg.teammateModelBlue.torsoModel = 0;
 	}
 
 	if (!*cg_teamHeadModel.string) {
-		cg.teamModel.headModel = 0;
-		cg.teamModelRed.headModel = 0;
-		cg.teamModelBlue.headModel = 0;
+		cg.teammateModel.headModel = 0;
+		cg.teammateModelRed.headModel = 0;
+		cg.teammateModelBlue.headModel = 0;
+	}
+}
+
+static void Wolfcam_LoadRedTeamModel (void)
+{
+	char modelStr[MAX_QPATH];
+	char *skin;
+	char headModelStr[MAX_QPATH];
+	char *headSkin;
+	int i;
+	//FIXME in cg. ?
+	static int modc_model = -1;
+	static int modc_headModel = -1;
+	static int modc_headSkin = -1;
+	static int modc_torsoSkin = -1;
+	static int modc_legsSkin = -1;
+	static int modc_headColor = -1;
+	static int modc_torsoColor = -1;
+	static int modc_legsColor = -1;
+
+	if (cg_redTeamHeadColor.modificationCount != modc_headColor  ||
+		cg_redTeamTorsoColor.modificationCount != modc_torsoColor  ||
+		cg_redTeamLegsColor.modificationCount != modc_legsColor
+		) {
+		SC_ByteVec3ColorFromCvar(cg.redTeamModelColors[0], &cg_redTeamHeadColor);
+		cg.redTeamModelColors[0][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.redTeamModelColors[1], &cg_redTeamTorsoColor);
+		cg.redTeamModelColors[1][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.redTeamModelColors[2], &cg_redTeamLegsColor);
+		cg.redTeamModelColors[2][3] = 255;
+		modc_headColor = cg_redTeamHeadColor.modificationCount;
+		modc_torsoColor = cg_redTeamTorsoColor.modificationCount;
+		modc_legsColor = cg_redTeamLegsColor.modificationCount;
+	}
+
+	//FIXME team*skin change doesn't need to reload model
+	if (cg_redTeamModel.modificationCount != modc_model  ||
+		cg_redTeamHeadModel.modificationCount != modc_headModel  ||
+
+		cg_redTeamHeadSkin.modificationCount != modc_headSkin  ||
+		cg_redTeamTorsoSkin.modificationCount != modc_torsoSkin  ||
+		cg_redTeamLegsSkin.modificationCount != modc_legsSkin
+
+) {
+		modc_model = cg_redTeamModel.modificationCount;
+		modc_headModel = cg_redTeamHeadModel.modificationCount;
+
+		modc_headSkin = cg_redTeamHeadSkin.modificationCount;
+		modc_torsoSkin = cg_redTeamTorsoSkin.modificationCount;
+		modc_legsSkin = cg_redTeamLegsSkin.modificationCount;
+	} else {
+		return;
+	}
+
+	Com_Printf("loading red team models\n");
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		clientInfo_t *ci;
+
+		ci = &cgs.clientinfo[i];
+		ci->headRedTeamSkinAlt = 0;
+		ci->torsoRedTeamSkinAlt = 0;
+		ci->legsRedTeamSkinAlt = 0;
+
+		// also teammate and enemy ones since red/blue team settings could be fallbacks
+		ci->headTeammateSkinAlt = 0;
+		ci->torsoTeammateSkinAlt = 0;
+		ci->legsTeammateSkinAlt = 0;
+
+		ci->headEnemySkinAlt = 0;
+		ci->torsoEnemySkinAlt = 0;
+		ci->legsEnemySkinAlt = 0;
+	}
+	// reset since cg.ourModel can fallback to using original player models
+	cg.ourModel.headRedTeamSkinAlt = 0;
+	cg.ourModel.torsoRedTeamSkinAlt = 0;
+	cg.ourModel.legsRedTeamSkinAlt = 0;
+	cg.ourModel.headTeammateSkinAlt = 0;
+	cg.ourModel.torsoTeammateSkinAlt = 0;
+	cg.ourModel.legsTeammateSkinAlt = 0;
+
+	cg.ourModelRed.headRedTeamSkinAlt = 0;
+	cg.ourModelRed.torsoRedTeamSkinAlt = 0;
+	cg.ourModelRed.legsRedTeamSkinAlt = 0;
+	cg.ourModelRed.headTeammateSkinAlt = 0;
+	cg.ourModelRed.torsoTeammateSkinAlt = 0;
+	cg.ourModelRed.legsTeammateSkinAlt = 0;
+
+	cg.ourModelBlue.headRedTeamSkinAlt = 0;
+	cg.ourModelBlue.torsoRedTeamSkinAlt = 0;
+	cg.ourModelBlue.legsRedTeamSkinAlt = 0;
+	cg.ourModelBlue.headTeammateSkinAlt = 0;
+	cg.ourModelBlue.torsoTeammateSkinAlt = 0;
+	cg.ourModelBlue.legsTeammateSkinAlt = 0;
+
+	if (*cg_redTeamModel.string) {
+		Q_strncpyz(modelStr, cg_redTeamModel.string, sizeof(modelStr));
+	} else {
+		Q_strncpyz(modelStr, DEFAULT_MODEL, sizeof(modelStr));
+	}
+
+	if (*cg_redTeamHeadModel.string) {
+		Q_strncpyz(headModelStr, cg_redTeamHeadModel.string, sizeof(headModelStr));
+	} else {
+		Q_strncpyz(headModelStr, DEFAULT_MODEL, sizeof(headModelStr));
+	}
+
+	if ((skin = strchr(modelStr, '/')) == NULL) {
+		skin = "default";
+		cg.redTeamModelUsingTCSkin = qtrue;
+	} else {
+		*skin++ = 0;
+		cg.redTeamModelUsingTCSkin = qfalse;
+	}
+
+	if (!Q_stricmp(skin, TEAM_COLOR_SKIN)) {
+		cg.redTeamModelUsingTCSkin = qtrue;
+	}
+
+	if ((headSkin = strchr(headModelStr, '/')) == NULL) {
+		headSkin = "default";
+		cg.redTeamModelUsingTCHeadSkin = qtrue;
+	} else {
+		*headSkin++ = 0;
+		cg.redTeamModelUsingTCHeadSkin = qfalse;
+	}
+
+	if (!Q_stricmp(headSkin, TEAM_COLOR_SKIN)) {
+		cg.redTeamModelUsingTCHeadSkin = qtrue;
+	}
+
+	Q_strncpyz(cg.redTeamModel.modelName, modelStr, sizeof(cg.redTeamModel.modelName));
+	Q_strncpyz(cg.redTeamModel.skinName, skin, sizeof(cg.redTeamModel.skinName));
+	//Q_strncpyz(cg.teamModelRed.modelName, modelStr, sizeof(cg.teamModelRed.modelName));
+	//Q_strncpyz(cg.teamModelRed.skinName, skin, sizeof(cg.teamModelRed.skinName));
+	//Q_strncpyz(cg.teamModelBlue.modelName, modelStr, sizeof(cg.teamModelBlue.modelName));
+	//Q_strncpyz(cg.teamModelBlue.skinName, skin, sizeof(cg.teamModelBlue.skinName));
+
+
+	Q_strncpyz(cg.redTeamModel.headModelName, headModelStr, sizeof(cg.redTeamModel.headModelName));
+	Q_strncpyz(cg.redTeamModel.headSkinName, headSkin, sizeof(cg.redTeamModel.headSkinName));
+	//Q_strncpyz(cg.teamModelRed.headModelName, headModelStr, sizeof(cg.teamModelRed.headModelName));
+	//Q_strncpyz(cg.teamModelRed.headSkinName, headSkin, sizeof(cg.teamModelRed.headSkinName));
+	//Q_strncpyz(cg.teamModelBlue.headModelName, headModelStr, sizeof(cg.teamModelBlue.headModelName));
+	//Q_strncpyz(cg.teamModelBlue.headSkinName, headSkin, sizeof(cg.teamModelBlue.headSkinName));
+
+	//RegisterTeamClientModelnameWithFallback(&cg.redTeamModel, cg.redTeamModel.modelName, cg.redTeamModel.skinName, cg.redTeamModel.headModelName, cg.redTeamModel.headSkinName, "", qtrue);
+
+	cg.redTeamModel.team = TEAM_RED;
+	RegisterTeamClientModelnameWithFallback(&cg.redTeamModel, cg.redTeamModel.modelName, cg.redTeamModel.skinName, cg.redTeamModel.headModelName, cg.redTeamModel.headSkinName, "", qfalse);
+
+
+	//RegisterTeamClientModelnameWithFallback(&cg.teamModelRed, cg.teamModelRed.modelName, cg.teamModelRed.skinName, cg.teamModelRed.headModelName, cg.teamModelRed.headSkinName, "", qfalse);
+
+	//cg.teamModelBlue.team = TEAM_BLUE;
+	//RegisterTeamClientModelnameWithFallback(&cg.teamModelBlue, cg.teamModelBlue.modelName, cg.teamModelBlue.skinName, cg.teamModelBlue.headModelName, cg.teamModelBlue.headSkinName, "", qfalse);
+
+	if (!*cg_redTeamModel.string) {
+		// prevent loading legs and torso, use original client values
+		cg.redTeamModel.legsModel = 0;
+		cg.redTeamModel.torsoModel = 0;
+		//cg.teamModelRed.legsModel = 0;
+		//cg.teamModelRed.torsoModel = 0;
+		//cg.teamModelBlue.legsModel = 0;
+		//cg.teamModelBlue.torsoModel = 0;
+	}
+
+	if (!*cg_redTeamHeadModel.string) {
+		cg.redTeamModel.headModel = 0;
+		//cg.teamModelRed.headModel = 0;
+		//cg.teamModelBlue.headModel = 0;
+	}
+}
+
+static void Wolfcam_LoadBlueTeamModel (void)
+{
+	char modelStr[MAX_QPATH];
+	char *skin;
+	char headModelStr[MAX_QPATH];
+	char *headSkin;
+	int i;
+	//FIXME in cg. ?
+	static int modc_model = -1;
+	static int modc_headModel = -1;
+	static int modc_headSkin = -1;
+	static int modc_torsoSkin = -1;
+	static int modc_legsSkin = -1;
+	static int modc_headColor = -1;
+	static int modc_torsoColor = -1;
+	static int modc_legsColor = -1;
+
+	if (cg_blueTeamHeadColor.modificationCount != modc_headColor  ||
+		cg_blueTeamTorsoColor.modificationCount != modc_torsoColor  ||
+		cg_blueTeamLegsColor.modificationCount != modc_legsColor
+		) {
+		SC_ByteVec3ColorFromCvar(cg.blueTeamModelColors[0], &cg_blueTeamHeadColor);
+		cg.blueTeamModelColors[0][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.blueTeamModelColors[1], &cg_blueTeamTorsoColor);
+		cg.blueTeamModelColors[1][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.blueTeamModelColors[2], &cg_blueTeamLegsColor);
+		cg.blueTeamModelColors[2][3] = 255;
+		modc_headColor = cg_blueTeamHeadColor.modificationCount;
+		modc_torsoColor = cg_blueTeamTorsoColor.modificationCount;
+		modc_legsColor = cg_blueTeamLegsColor.modificationCount;
+	}
+
+	//FIXME team*skin change doesn't need to reload model
+	if (cg_blueTeamModel.modificationCount != modc_model  ||
+		cg_blueTeamHeadModel.modificationCount != modc_headModel  ||
+
+		cg_blueTeamHeadSkin.modificationCount != modc_headSkin  ||
+		cg_blueTeamTorsoSkin.modificationCount != modc_torsoSkin  ||
+		cg_blueTeamLegsSkin.modificationCount != modc_legsSkin
+
+) {
+		modc_model = cg_blueTeamModel.modificationCount;
+		modc_headModel = cg_blueTeamHeadModel.modificationCount;
+
+		modc_headSkin = cg_blueTeamHeadSkin.modificationCount;
+		modc_torsoSkin = cg_blueTeamTorsoSkin.modificationCount;
+		modc_legsSkin = cg_blueTeamLegsSkin.modificationCount;
+	} else {
+		return;
+	}
+
+	Com_Printf("loading blue team models\n");
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		clientInfo_t *ci;
+
+		ci = &cgs.clientinfo[i];
+		ci->headBlueTeamSkinAlt = 0;
+		ci->torsoBlueTeamSkinAlt = 0;
+		ci->legsBlueTeamSkinAlt = 0;
+
+		// also teammate and enemy ones since red/blue team settings could be fallbacks
+		ci->headTeammateSkinAlt = 0;
+		ci->torsoTeammateSkinAlt = 0;
+		ci->legsTeammateSkinAlt = 0;
+
+		ci->headEnemySkinAlt = 0;
+		ci->torsoEnemySkinAlt = 0;
+		ci->legsEnemySkinAlt = 0;
+
+	}
+	// reset since cg.ourModel can fallback to using original player models
+	cg.ourModel.headBlueTeamSkinAlt = 0;
+	cg.ourModel.torsoBlueTeamSkinAlt = 0;
+	cg.ourModel.legsBlueTeamSkinAlt = 0;
+	cg.ourModel.headTeammateSkinAlt = 0;
+	cg.ourModel.torsoTeammateSkinAlt = 0;
+	cg.ourModel.legsTeammateSkinAlt = 0;
+
+	cg.ourModelRed.headBlueTeamSkinAlt = 0;
+	cg.ourModelRed.torsoBlueTeamSkinAlt = 0;
+	cg.ourModelRed.legsBlueTeamSkinAlt = 0;
+	cg.ourModelRed.headTeammateSkinAlt = 0;
+	cg.ourModelRed.torsoTeammateSkinAlt = 0;
+	cg.ourModelRed.legsTeammateSkinAlt = 0;
+
+	cg.ourModelBlue.headBlueTeamSkinAlt = 0;
+	cg.ourModelBlue.torsoBlueTeamSkinAlt = 0;
+	cg.ourModelBlue.legsBlueTeamSkinAlt = 0;
+	cg.ourModelBlue.headTeammateSkinAlt = 0;
+	cg.ourModelBlue.torsoTeammateSkinAlt = 0;
+	cg.ourModelBlue.legsTeammateSkinAlt = 0;
+
+	if (*cg_blueTeamModel.string) {
+		Q_strncpyz(modelStr, cg_blueTeamModel.string, sizeof(modelStr));
+	} else {
+		Q_strncpyz(modelStr, DEFAULT_MODEL, sizeof(modelStr));
+	}
+
+	if (*cg_blueTeamHeadModel.string) {
+		Q_strncpyz(headModelStr, cg_blueTeamHeadModel.string, sizeof(headModelStr));
+	} else {
+		Q_strncpyz(headModelStr, DEFAULT_MODEL, sizeof(headModelStr));
+	}
+
+	if ((skin = strchr(modelStr, '/')) == NULL) {
+		skin = "default";
+		cg.blueTeamModelUsingTCSkin = qtrue;
+	} else {
+		*skin++ = 0;
+		cg.blueTeamModelUsingTCSkin = qfalse;
+	}
+
+	if (!Q_stricmp(skin, TEAM_COLOR_SKIN)) {
+		cg.blueTeamModelUsingTCSkin = qtrue;
+	}
+
+	if ((headSkin = strchr(headModelStr, '/')) == NULL) {
+		headSkin = "default";
+		cg.blueTeamModelUsingTCHeadSkin = qtrue;
+	} else {
+		*headSkin++ = 0;
+		cg.blueTeamModelUsingTCHeadSkin = qfalse;
+	}
+
+	if (!Q_stricmp(headSkin, TEAM_COLOR_SKIN)) {
+		cg.blueTeamModelUsingTCHeadSkin = qtrue;
+	}
+
+	Q_strncpyz(cg.blueTeamModel.modelName, modelStr, sizeof(cg.blueTeamModel.modelName));
+	Q_strncpyz(cg.blueTeamModel.skinName, skin, sizeof(cg.blueTeamModel.skinName));
+	//Q_strncpyz(cg.teamModelRed.modelName, modelStr, sizeof(cg.teamModelRed.modelName));
+	//Q_strncpyz(cg.teamModelRed.skinName, skin, sizeof(cg.teamModelRed.skinName));
+	//Q_strncpyz(cg.teamModelBlue.modelName, modelStr, sizeof(cg.teamModelBlue.modelName));
+	//Q_strncpyz(cg.teamModelBlue.skinName, skin, sizeof(cg.teamModelBlue.skinName));
+
+
+	Q_strncpyz(cg.blueTeamModel.headModelName, headModelStr, sizeof(cg.blueTeamModel.headModelName));
+	Q_strncpyz(cg.blueTeamModel.headSkinName, headSkin, sizeof(cg.blueTeamModel.headSkinName));
+	//Q_strncpyz(cg.teamModelRed.headModelName, headModelStr, sizeof(cg.teamModelRed.headModelName));
+	//Q_strncpyz(cg.teamModelRed.headSkinName, headSkin, sizeof(cg.teamModelRed.headSkinName));
+	//Q_strncpyz(cg.teamModelBlue.headModelName, headModelStr, sizeof(cg.teamModelBlue.headModelName));
+	//Q_strncpyz(cg.teamModelBlue.headSkinName, headSkin, sizeof(cg.teamModelBlue.headSkinName));
+
+	//RegisterTeamClientModelnameWithFallback(&cg.redTeamModel, cg.redTeamModel.modelName, cg.redTeamModel.skinName, cg.redTeamModel.headModelName, cg.redTeamModel.headSkinName, "", qtrue);
+
+	cg.blueTeamModel.team = TEAM_BLUE;
+	RegisterTeamClientModelnameWithFallback(&cg.blueTeamModel, cg.blueTeamModel.modelName, cg.blueTeamModel.skinName, cg.blueTeamModel.headModelName, cg.blueTeamModel.headSkinName, "", qfalse);
+
+
+	//RegisterTeamClientModelnameWithFallback(&cg.teamModelRed, cg.teamModelRed.modelName, cg.teamModelRed.skinName, cg.teamModelRed.headModelName, cg.teamModelRed.headSkinName, "", qfalse);
+
+	//cg.teamModelBlue.team = TEAM_BLUE;
+	//RegisterTeamClientModelnameWithFallback(&cg.teamModelBlue, cg.teamModelBlue.modelName, cg.teamModelBlue.skinName, cg.teamModelBlue.headModelName, cg.teamModelBlue.headSkinName, "", qfalse);
+
+	if (!*cg_blueTeamModel.string) {
+		// prevent loading legs and torso, use original client values
+		cg.blueTeamModel.legsModel = 0;
+		cg.blueTeamModel.torsoModel = 0;
+		//cg.teamModelRed.legsModel = 0;
+		//cg.teamModelRed.torsoModel = 0;
+		//cg.teamModelBlue.legsModel = 0;
+		//cg.teamModelBlue.torsoModel = 0;
+	}
+
+	if (!*cg_blueTeamHeadModel.string) {
+		cg.blueTeamModel.headModel = 0;
+		//cg.teamModelRed.headModel = 0;
+		//cg.teamModelBlue.headModel = 0;
 	}
 }
 
@@ -326,12 +670,12 @@ static void Wolfcam_LoadOurModel (void)
 		cg_ourTorsoColor.modificationCount != modc_torsoColor  ||
 		cg_ourLegsColor.modificationCount != modc_legsColor
 		) {
-		SC_ByteVec3ColorFromCvar(cg.ourColors[0], &cg_ourHeadColor);
-		cg.ourColors[0][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.ourColors[1], &cg_ourTorsoColor);
-		cg.ourColors[1][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.ourColors[2], &cg_ourLegsColor);
-		cg.ourColors[2][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.ourModelColors[0], &cg_ourHeadColor);
+		cg.ourModelColors[0][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.ourModelColors[1], &cg_ourTorsoColor);
+		cg.ourModelColors[1][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.ourModelColors[2], &cg_ourLegsColor);
+		cg.ourModelColors[2][3] = 255;
 		modc_headColor = cg_ourHeadColor.modificationCount;
 		modc_torsoColor = cg_ourTorsoColor.modificationCount;
 		modc_legsColor = cg_ourLegsColor.modificationCount;
@@ -376,16 +720,17 @@ static void Wolfcam_LoadOurModel (void)
 		}
 
 		if (!Q_stricmp(skin, TEAM_COLOR_SKIN)) {
-			cg.ourModelUsingTeamColorSkin = qtrue;
+			cg.ourModelUsingTCSkin = qtrue;
 		} else {
-			cg.ourModelUsingTeamColorSkin = qfalse;
+			cg.ourModelUsingTCSkin = qfalse;
 		}
 
 		if (*cg_ourHeadModel.string) {
 			Q_strncpyz(headModelStr, cg_ourHeadModel.string, sizeof(headModelStr));
 		} else {
-			// silence warnings
-			Q_strncpyz(headModelStr, DEFAULT_MODEL, sizeof(headModelStr));
+			// match what will eventually be used since player height is
+			// calculated using this model
+			Q_strncpyz(headModelStr, modelStr, sizeof(headModelStr));
 		}
 		if ((headSkin = strchr(headModelStr, '/')) == NULL) {
 			headSkin = "default";
@@ -394,9 +739,9 @@ static void Wolfcam_LoadOurModel (void)
 		}
 
 		if (!Q_stricmp(headSkin, TEAM_COLOR_SKIN)) {
-			cg.ourModelUsingTeamColorHeadSkin = qtrue;
+			cg.ourModelUsingTCHeadSkin = qtrue;
 		} else {
-			cg.ourModelUsingTeamColorHeadSkin = qfalse;
+			cg.ourModelUsingTCHeadSkin = qfalse;
 		}
 
 		Q_strncpyz(cg.ourModel.modelName, modelStr, sizeof(cg.ourModel.modelName));
@@ -491,12 +836,12 @@ static void Wolfcam_LoadFallbackModel (void)
 		cg_ourTorsoColor.modificationCount != modc_torsoColor  ||
 		cg_ourLegsColor.modificationCount != modc_legsColor
 		) {
-		SC_ByteVec3ColorFromCvar(cg.ourColors[0], &cg_ourHeadColor);
-		cg.ourColors[0][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.ourColors[1], &cg_ourTorsoColor);
-		cg.ourColors[1][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.ourColors[2], &cg_ourLegsColor);
-		cg.ourColors[2][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.ourModelColors[0], &cg_ourHeadColor);
+		cg.ourModelColors[0][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.ourModelColors[1], &cg_ourTorsoColor);
+		cg.ourModelColors[1][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.ourModelColors[2], &cg_ourLegsColor);
+		cg.ourModelColors[2][3] = 255;
 		modc_headColor = cg_ourHeadColor.modificationCount;
 		modc_torsoColor = cg_ourTorsoColor.modificationCount;
 		modc_legsColor = cg_ourLegsColor.modificationCount;
@@ -532,20 +877,20 @@ static void Wolfcam_LoadFallbackModel (void)
 		clientInfo_t *ci;
 
 		ci = &cgs.clientinfo[i];
-		ci->headTeamSkinAlt = 0;
-		ci->torsoTeamSkinAlt = 0;
-		ci->legsTeamSkinAlt = 0;
+		ci->headTeammateSkinAlt = 0;
+		ci->torsoTeammateSkinAlt = 0;
+		ci->legsTeammateSkinAlt = 0;
 	}
 	// reset since cg.ourModel can fallback to using original player models
-	cg.ourModel.headTeamSkinAlt = 0;
-	cg.ourModel.torsoTeamSkinAlt = 0;
-	cg.ourModel.legsTeamSkinAlt = 0;
-	cg.ourModelRed.headTeamSkinAlt = 0;
-	cg.ourModelRed.torsoTeamSkinAlt = 0;
-	cg.ourModelRed.legsTeamSkinAlt = 0;
-	cg.ourModelBlue.headTeamSkinAlt = 0;
-	cg.ourModelBlue.torsoTeamSkinAlt = 0;
-	cg.ourModelBlue.legsTeamSkinAlt = 0;
+	cg.ourModel.headTeammateSkinAlt = 0;
+	cg.ourModel.torsoTeammateSkinAlt = 0;
+	cg.ourModel.legsTeammateSkinAlt = 0;
+	cg.ourModelRed.headTeammateSkinAlt = 0;
+	cg.ourModelRed.torsoTeammateSkinAlt = 0;
+	cg.ourModelRed.legsTeammateSkinAlt = 0;
+	cg.ourModelBlue.headTeammateSkinAlt = 0;
+	cg.ourModelBlue.torsoTeammateSkinAlt = 0;
+	cg.ourModelBlue.legsTeammateSkinAlt = 0;
 
 	if (1) {  //(*cg_fallbackModel.string  ||  *cg_fallbackHeadModel.string) {
 		if (*cg_fallbackModel.string) {
@@ -658,12 +1003,12 @@ static void Wolfcam_LoadEnemyModel (void)
 		cg_enemyTorsoColor.modificationCount != modc_torsoColor  ||
 		cg_enemyLegsColor.modificationCount != modc_legsColor
 		) {
-		SC_ByteVec3ColorFromCvar(cg.enemyColors[0], &cg_enemyHeadColor);
-		cg.enemyColors[0][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.enemyColors[1], &cg_enemyTorsoColor);
-		cg.enemyColors[1][3] = 255;
-		SC_ByteVec3ColorFromCvar(cg.enemyColors[2], &cg_enemyLegsColor);
-		cg.enemyColors[2][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.enemyModelColors[0], &cg_enemyHeadColor);
+		cg.enemyModelColors[0][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.enemyModelColors[1], &cg_enemyTorsoColor);
+		cg.enemyModelColors[1][3] = 255;
+		SC_ByteVec3ColorFromCvar(cg.enemyModelColors[2], &cg_enemyLegsColor);
+		cg.enemyModelColors[2][3] = 255;
 		modc_headColor = cg_enemyHeadColor.modificationCount;
 		modc_torsoColor = cg_enemyTorsoColor.modificationCount;
 		modc_legsColor = cg_enemyLegsColor.modificationCount;
@@ -692,9 +1037,9 @@ static void Wolfcam_LoadEnemyModel (void)
 			ci->legsEnemySkinAlt = 0;
 
 			// reset these because of fallback models for teammates matching enemy model
-			ci->headTeamSkinAlt = 0;
-			ci->torsoTeamSkinAlt = 0;
-			ci->legsTeamSkinAlt = 0;
+			ci->headTeammateSkinAlt = 0;
+			ci->torsoTeammateSkinAlt = 0;
+			ci->legsTeammateSkinAlt = 0;
 
 		}
 		// not used currently, but change here to be consistent with team skins
@@ -725,14 +1070,14 @@ static void Wolfcam_LoadEnemyModel (void)
 
 		if ((skin = strchr(modelStr, '/')) == NULL) {
 			skin = "default";
-			cg.enemyModelTeamSkinFound = qtrue;
+			cg.enemyModelUsingTCSkin = qtrue;
 		} else {
-			cg.enemyModelTeamSkinFound = qfalse;
+			cg.enemyModelUsingTCSkin = qfalse;
 			*skin++ = 0;
 		}
 
 		if (!Q_stricmp(skin, TEAM_COLOR_SKIN)) {
-			cg.enemyModelTeamSkinFound = qtrue;
+			cg.enemyModelUsingTCSkin = qtrue;
 		}
 
 		if (*cg_enemyHeadModel.string) {
@@ -743,9 +1088,9 @@ static void Wolfcam_LoadEnemyModel (void)
 
 		if ((headSkin = strchr(headModelStr, '/')) == NULL) {
 			headSkin = "default";
-			cg.enemyModelTeamHeadSkinFound = qtrue;
+			cg.enemyModelUsingTCHeadSkin = qtrue;
 		} else {
-			cg.enemyModelTeamHeadSkinFound = qfalse;
+			cg.enemyModelUsingTCHeadSkin = qfalse;
 			*headSkin++ = 0;
 		}
 
@@ -848,7 +1193,9 @@ void Wolfcam_LoadModels (void)
 	}
 
 	Wolfcam_LoadOurModel();
-	Wolfcam_LoadTeamModel();
+	Wolfcam_LoadTeammateModel();
+	Wolfcam_LoadRedTeamModel();
+	Wolfcam_LoadBlueTeamModel();
 	Wolfcam_LoadNtfModels();
 	Wolfcam_LoadEnemyModel();
 	Wolfcam_LoadFallbackModel();
@@ -860,20 +1207,20 @@ void Wolfcam_LoadModels (void)
 			clientInfo_t *ci;
 
 			ci = &cgs.clientinfo[i];
-			ci->headTeamSkinAlt = 0;
-			ci->torsoTeamSkinAlt = 0;
-			ci->legsTeamSkinAlt = 0;
+			ci->headTeammateSkinAlt = 0;
+			ci->torsoTeammateSkinAlt = 0;
+			ci->legsTeammateSkinAlt = 0;
 		}
 		// reset since cg.ourModel can fallback to using original player models
-		cg.ourModel.headTeamSkinAlt = 0;
-		cg.ourModel.torsoTeamSkinAlt = 0;
-		cg.ourModel.legsTeamSkinAlt = 0;
-		cg.ourModelRed.headTeamSkinAlt = 0;
-		cg.ourModelRed.torsoTeamSkinAlt = 0;
-		cg.ourModelRed.legsTeamSkinAlt = 0;
-		cg.ourModelBlue.headTeamSkinAlt = 0;
-		cg.ourModelBlue.torsoTeamSkinAlt = 0;
-		cg.ourModelBlue.legsTeamSkinAlt = 0;
+		cg.ourModel.headTeammateSkinAlt = 0;
+		cg.ourModel.torsoTeammateSkinAlt = 0;
+		cg.ourModel.legsTeammateSkinAlt = 0;
+		cg.ourModelRed.headTeammateSkinAlt = 0;
+		cg.ourModelRed.torsoTeammateSkinAlt = 0;
+		cg.ourModelRed.legsTeammateSkinAlt = 0;
+		cg.ourModelBlue.headTeammateSkinAlt = 0;
+		cg.ourModelBlue.torsoTeammateSkinAlt = 0;
+		cg.ourModelBlue.legsTeammateSkinAlt = 0;
 
 		modc_disallow = cg_disallowEnemyModelForTeammates.modificationCount;
 	}

@@ -429,6 +429,7 @@ static void CG_DrawPlayerHead (const rectDef_t *rect, qboolean draw2D, qboolean 
 	float		x = rect->x;
 	int clientNum;
 	qboolean useDamageTime;
+	qboolean useChangedModel = qfalse;
 
 	if (!cg.snap) {
 		return;
@@ -483,8 +484,11 @@ static void CG_DrawPlayerHead (const rectDef_t *rect, qboolean draw2D, qboolean 
 	angles[YAW] = cg.headStartYaw + ( cg.headEndYaw - cg.headStartYaw ) * frac;
 	angles[PITCH] = cg.headStartPitch + ( cg.headEndPitch - cg.headStartPitch ) * frac;
 
+	if (cg_statusBarHeadStyle.integer == 1) {
+		useChangedModel = qtrue;
+	}
 
-	CG_DrawHead( x, rect->y, rect->w, rect->h, clientNum, angles, useDefaultTeamSkin );
+	CG_DrawHead( x, rect->y, rect->w, rect->h, clientNum, angles, useDefaultTeamSkin, useChangedModel, qfalse );
 }
 
 static void CG_DrawSelectedPlayerHealth( const rectDef_t *rect, float scale, const vec4_t color, qhandle_t shader, int textStyle, const fontInfo_t *font, int align ) {
@@ -1059,7 +1063,7 @@ static void CG_DrawBlueFlagHead(const rectDef_t *rect) {
       vec3_t angles;
       VectorClear( angles );
  		  angles[YAW] = 180 + 20 * sin( cg.time / 650.0 );;
-		  CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles, qtrue );
+		  CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles, qtrue, qfalse, qfalse );
       return;
     }
   }
@@ -1160,7 +1164,7 @@ static void CG_DrawRedFlagHead(const rectDef_t *rect) {
       vec3_t angles;
       VectorClear( angles );
  		  angles[YAW] = 180 + 20 * sin( cg.time / 650.0 );;
-		  CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles, qtrue );
+		  CG_DrawHead( rect->x, rect->y, rect->w, rect->h, 0,angles, qtrue, qfalse, qfalse );
       return;
     }
   }

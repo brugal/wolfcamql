@@ -156,10 +156,10 @@ static void CG_DrawClientScore( int y, const score_t *score, const float *color,
 	headAngles[YAW] = 180;
 	if( largeFormat ) {
 		CG_DrawHead( headx, y - ( ICON_SIZE - BIGCHAR_HEIGHT ) / 2, ICON_SIZE, ICON_SIZE, 
-					 score->client, headAngles, qtrue );
+					 score->client, headAngles, qtrue, qfalse, qtrue );
 	}
 	else {
-		CG_DrawHead( headx, y, 16, 16, score->client, headAngles, qtrue );
+		CG_DrawHead( headx, y, 16, 16, score->client, headAngles, qtrue, qfalse, qtrue );
 	}
 
 #ifdef MISSIONPACK

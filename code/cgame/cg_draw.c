@@ -2927,7 +2927,7 @@ CG_DrawHead
 Used for both the status bar and the scoreboard
 ================
 */
-void CG_DrawHead( float x, float y, float w, float h, int clientNum, const vec3_t headAngles, qboolean useDefaultTeamSkin ) {
+void CG_DrawHead( float x, float y, float w, float h, int clientNum, const vec3_t headAngles, qboolean useDefaultTeamSkin, qboolean useChangedModel, qboolean isScoreboard ) {
 	clipHandle_t	cm;
 	const clientInfo_t	*ci;
 	float			len;
@@ -2935,7 +2935,18 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, const vec3_
 	vec3_t			mins, maxs;
 	vec4_t color;
 
-	ci = &cgs.clientinfoOrig[ clientNum ];
+	if (useChangedModel) {
+		ci = &cgs.clientinfo[clientNum];
+	} else {
+		ci = &cgs.clientinfoOrig[clientNum];
+	}
+
+	if (isScoreboard  &&  cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaNtfScoreboardClassModel.integer) {
+		ci = &cg.ntfClassModel[cgs.clientinfo[clientNum].ntfClass];
+		useDefaultTeamSkin = qtrue;
+	}
+
+	// useDefaultTeamSkin always true except for WCG_REAL_PLAYER_HEAD
 
 	if ( cg_draw3dIcons.integer ) {
 		cm = ci->headModel;
@@ -2957,10 +2968,22 @@ void CG_DrawHead( float x, float y, float w, float h, int clientNum, const vec3_
 		// allow per-model tweaking
 		VectorAdd( origin, ci->headOffset, origin );
 
-		color[0] = (float)cgs.clientinfo[clientNum].headColor[0] / 255.0;
-		color[1] = (float)cgs.clientinfo[clientNum].headColor[1] / 255.0;
-		color[2] = (float)cgs.clientinfo[clientNum].headColor[2] / 255.0;
-		color[3] = (float)cgs.clientinfo[clientNum].headColor[3] / 255.0;
+		color[0] = (float)ci->selectedHeadColor[0] / 255.0;
+		color[1] = (float)ci->selectedHeadColor[1] / 255.0;
+		color[2] = (float)ci->selectedHeadColor[2] / 255.0;
+		color[3] = (float)ci->selectedHeadColor[3] / 255.0;
+
+		if (isScoreboard  &&  cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaNtfScoreboardClassModel.integer) {
+			if (cgs.clientinfo[clientNum].team == TEAM_RED) {
+				SC_Vec3ColorFromCvar(color, &cg_cpmaNtfRedHeadColor);
+				color[3] = 1.0f;
+			} else if (cgs.clientinfo[clientNum].team == TEAM_BLUE) {
+				SC_Vec3ColorFromCvar(color, &cg_cpmaNtfBlueHeadColor);
+				color[3] = 1.0f;
+			} else {
+				color[0] = color[1] = color[2] = color[3] = 1.0f;
+			}
+		}
 
 		if (useDefaultTeamSkin) {
 			CG_Draw3DModelExt(x, y, w, h, ci->headModel, ci->headSkin, origin, headAngles, color);
@@ -3056,6 +3079,7 @@ static void CG_DrawStatusBarHead( float x ) {
 	float		frac;
 	int y;
 	int clientNum;
+	qboolean useChangedModel = qfalse;
 
 	//if (!cg_drawStatusBarHead.integer) {
 	//	return;
@@ -3122,8 +3146,12 @@ static void CG_DrawStatusBarHead( float x ) {
 		clientNum = cg.snap->ps.clientNum;
 	}
 
+	if (cg_statusBarHeadStyle.integer == 1) {
+		useChangedModel = qtrue;
+	}
+
 	CG_DrawHead( x, y, size, size,
-				 clientNum, angles, qtrue );
+				 clientNum, angles, qtrue, useChangedModel, qfalse );
 }
 #endif // MISSIONPACK
 
@@ -3454,6 +3482,7 @@ static int Wolfcam_DrawAttacker( float y ) {
 	const char	*info;
 	const char	*name;
 	int			clientNum;
+	qboolean useChangedModel = qfalse;
     trace_t trace;
     vec3_t start, forward, end;
     //int content;
@@ -3524,7 +3553,11 @@ static int Wolfcam_DrawAttacker( float y ) {
 	angles[PITCH] = 0;
 	angles[YAW] = 180;
 	angles[ROLL] = 0;
-	CG_DrawHead( x, y, size, size, clientNum, angles, qtrue );
+
+	if (cg_drawAttacker.integer == 2) {
+		useChangedModel = qtrue;
+	}
+	CG_DrawHead( x, y, size, size, clientNum, angles, qtrue, qfalse, useChangedModel, qfalse );
 
 	info = CG_ConfigString( CS_PLAYERS + clientNum );
 	name = Info_ValueForKey(  info, "n" );
@@ -3559,6 +3592,7 @@ static float CG_DrawAttacker( float y ) {
 	//const char	*info;
 	//	const char	*name;
 	int			clientNum = 0;  // silence compiler
+	qboolean useChangedModel = qtrue;
 	vec4_t color;
 	float x, w;
 	int style, align;
@@ -3662,8 +3696,12 @@ static float CG_DrawAttacker( float y ) {
 		x -= size;
 	}
 
+	if (cg_drawAttacker.integer == 2) {
+		useChangedModel = qfalse;
+	}
+
 	trap_R_SetColor(color);
-	CG_DrawHead( x, y, size, size, clientNum, angles, qtrue );
+	CG_DrawHead( x, y, size, size, clientNum, angles, qtrue, useChangedModel, qfalse );
 
 	x = cg_drawAttackerX.value;
 	if (align == 1) {
@@ -3716,7 +3754,7 @@ static float CG_DrawAttacker( float y ) {
 	} else if (align == 2) {
 		x -= size;
 	}
-	//CG_DrawHead( 640 - size, y, size, size, clientNum, angles, qtrue );
+	//CG_DrawHead( 640 - size, y, size, size, clientNum, angles, qtrue, qfalse, qfalse );
 
 
 	info = CG_ConfigString( CS_PLAYERS + clientNum );

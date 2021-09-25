@@ -161,9 +161,6 @@ void Wolfcam_AddPlayerWeapon (const refEntity_t *parent, centity_t *cent, int te
 	float flashSize;
 	float dlight[3];
 	float f;
-	qboolean revertColors = qfalse;
-	vec3_t origColor1;
-	vec3_t origColor2;
 
 	if (!cent->inCurrentSnapshot) {
 		// this can happen with /follow which can stay in victim position
@@ -191,75 +188,68 @@ void Wolfcam_AddPlayerWeapon (const refEntity_t *parent, centity_t *cent, int te
 	if (0) {  //( ps ) {
 	} else {
 		if (weaponNum == WP_RAILGUN) {
-			qboolean teamRail;
+			qboolean teammateRail;
 			qboolean enemyRail;
 
-			if (cg_railUseOwnColors.integer  &&  CG_IsUs(ci)) {
-				VectorCopy(ci->color1, origColor1);
-				VectorCopy(ci->color2, origColor2);
-				VectorCopy(cg.color1, ci->color1);
-				VectorCopy(cg.color2, ci->color2);
-				revertColors = qtrue;
-			}
-
-			teamRail = CG_IsTeammate(ci);
+			teammateRail = CG_IsTeammate(ci);
 			enemyRail = CG_IsEnemy(ci);
 			if (!CG_IsTeamGame(cgs.gametype)) {
+				//FIXME CG_IsUs(ci) always true
 				if (!CG_IsUs(ci)) {
-					if (*cg_enemyRailItemColor.string) {
-						SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_enemyRailItemColor);
-						gun.shaderRGBA[3] = 255;
-					} else {
-						gun.shaderRGBA[0] = 255 * ci->color1[0];
-						gun.shaderRGBA[1] = 255 * ci->color1[1];
-						gun.shaderRGBA[2] = 255 * ci->color1[2];
-						gun.shaderRGBA[3] = 255;
-					}
 				} else {
-					gun.shaderRGBA[0] = 255 * ci->color1[0];
-					gun.shaderRGBA[1] = 255 * ci->color1[1];
-					gun.shaderRGBA[2] = 255 * ci->color1[2];
+					vec3_t color1;
+
+					if (cg_railUseOwnColors.integer == 1  ||  cg_railUseOwnColors.integer == 3) {
+						VectorCopy(cg.color1, color1);
+					} else {
+						VectorCopy(ci->color1, color1);
+					}
+
+					// not team game
+
+					gun.shaderRGBA[0] = 255 * color1[0];
+					gun.shaderRGBA[1] = 255 * color1[1];
+					gun.shaderRGBA[2] = 255 * color1[2];
 					gun.shaderRGBA[3] = 255;
 				}
 			} else {  // team game
-				if (!CG_IsUs(ci)  &&  teamRail) {
-					if (cg_teamRailItemColorTeam.integer) {
-						if (ci->team == TEAM_RED) {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponRedTeamColor);
-						} else {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponBlueTeamColor);
-						}
-						gun.shaderRGBA[3] = 255;
-					} else if (*cg_teamRailItemColor.string) {
-						SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_teamRailItemColor);
-						gun.shaderRGBA[3] = 255;
-					} else {
-						gun.shaderRGBA[0] = 255 * ci->color1[0];
-						gun.shaderRGBA[1] = 255 * ci->color1[1];
-						gun.shaderRGBA[2] = 255 * ci->color1[2];
-						gun.shaderRGBA[3] = 255;
-					}
+				//FIXME CG_IsUs(ci)  always true
+				if (!CG_IsUs(ci)  &&  teammateRail) {
+					//FIXME CG_IsUs(ci)  always true
 				} else if (!CG_IsUs(ci)  &&  enemyRail) {
-					if (cg_enemyRailItemColorTeam.integer) {
-						if (ci->team == TEAM_RED) {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponRedTeamColor);
-						} else {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponBlueTeamColor);
-						}
-						gun.shaderRGBA[3] = 255;
-					} else if (*cg_enemyRailItemColor.string) {
-						SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_enemyRailItemColor);
-						gun.shaderRGBA[3] = 255;
-					} else {
-						gun.shaderRGBA[0] = 255 * ci->color1[0];
-						gun.shaderRGBA[1] = 255 * ci->color1[1];
-						gun.shaderRGBA[2] = 255 * ci->color1[2];
-						gun.shaderRGBA[3] = 255;
-					}
 				} else {  // us
-					gun.shaderRGBA[0] = 255 * ci->color1[0];
-					gun.shaderRGBA[1] = 255 * ci->color1[1];
-					gun.shaderRGBA[2] = 255 * ci->color1[2];
+					vec3_t color1;
+
+					if (cg_railUseOwnColors.integer == 1  ||  cg_railUseOwnColors.integer == 3) {
+						VectorCopy(cg.color1, color1);
+					} else {
+						VectorCopy(ci->color1, color1);
+					}
+
+					if (cg_railUseOwnColors.integer == 2  ||  cg_railUseOwnColors.integer == 3) {
+						// check teammate and red/blue settings
+						if (cg_useCustomRedBlueRail.integer == 2  ||  cg_useCustomRedBlueRail.integer == 1) {
+							if (ci->team == TEAM_RED) {
+								if (*cg_redTeamRailColor1.string) {
+									SC_Vec3ColorFromCvar(color1, &cg_redTeamRailColor1);
+								}
+							} else if (ci->team == TEAM_BLUE) {
+								if (*cg_blueTeamRailColor1.string) {
+									SC_Vec3ColorFromCvar(color1, &cg_blueTeamRailColor1);
+								}
+							}
+						}
+					}
+
+					if (cg_useCustomRedBlueRail.integer == 1) {
+						if (*cg_teamRailColor1.string) {
+							SC_Vec3ColorFromCvar(color1, &cg_teamRailColor1);
+						}
+					}
+
+					gun.shaderRGBA[0] = 255 * color1[0];
+					gun.shaderRGBA[1] = 255 * color1[1];
+					gun.shaderRGBA[2] = 255 * color1[2];
 					gun.shaderRGBA[3] = 255;
 				}
 			}
@@ -373,10 +363,6 @@ void Wolfcam_AddPlayerWeapon (const refEntity_t *parent, centity_t *cent, int te
 			//Com_Printf("returning for %d (%d)\n", cent - cg_entities, cent->currentState.number);
 			//goto bolt;
 			// not called, in case code changes
-			if (revertColors) {
-				VectorCopy(origColor1, ci->color1);
-				VectorCopy(origColor2, ci->color2);
-			}
 			return;
 		}
 	}
@@ -405,18 +391,40 @@ void Wolfcam_AddPlayerWeapon (const refEntity_t *parent, centity_t *cent, int te
 
 	// colorize the railgun blast
 	if ( weaponNum == WP_RAILGUN ) {
-		//clientInfo_t	*ci;
+		vec3_t color1;
 
-		//ci = &cgs.clientinfo[ cent->currentState.clientNum ];
-		if (cg_railUseOwnColors.integer  &&  CG_IsUs(ci)) {
-			flash.shaderRGBA[0] = 255 * cg.color1[0];
-			flash.shaderRGBA[1] = 255 * cg.color1[1];
-			flash.shaderRGBA[2] = 255 * cg.color1[2];
+		if (cg_railUseOwnColors.integer == 1  ||  cg_railUseOwnColors.integer == 3) {
+			VectorCopy(cg.color1, color1);
 		} else {
-			flash.shaderRGBA[0] = 255 * ci->color1[0];
-			flash.shaderRGBA[1] = 255 * ci->color1[1];
-			flash.shaderRGBA[2] = 255 * ci->color1[2];
+			VectorCopy(ci->color1, color1);
 		}
+
+		if (CG_IsTeamGame(cgs.gametype)) {
+			if (cg_railUseOwnColors.integer == 2  ||  cg_railUseOwnColors.integer == 3) {
+				// check teammate and red/blue settings
+				if (cg_useCustomRedBlueRail.integer == 2  ||  cg_useCustomRedBlueRail.integer == 1) {
+					if (ci->team == TEAM_RED) {
+						if (*cg_redTeamRailColor1.string) {
+							SC_Vec3ColorFromCvar(color1, &cg_redTeamRailColor1);
+						}
+					} else if (ci->team == TEAM_BLUE) {
+						if (*cg_blueTeamRailColor1.string) {
+							SC_Vec3ColorFromCvar(color1, &cg_blueTeamRailColor1);
+						}
+					}
+				}
+			}
+
+			if (cg_useCustomRedBlueRail.integer == 1) {
+				if (*cg_teamRailColor1.string) {
+					SC_Vec3ColorFromCvar(color1, &cg_teamRailColor1);
+				}
+			}
+		}
+
+		flash.shaderRGBA[0] = 255 * color1[0];
+		flash.shaderRGBA[1] = 255 * color1[1];
+		flash.shaderRGBA[2] = 255 * color1[2];
 	}
 
 	if (0) {  //(weapon->hasFlashScript) {
@@ -493,11 +501,6 @@ void Wolfcam_AddPlayerWeapon (const refEntity_t *parent, centity_t *cent, int te
 		}
 	} else {
 		//Com_Printf("%f no...\n", cg.ftime);
-	}
-
-	if (revertColors) {
-		VectorCopy(origColor1, ci->color1);
-		VectorCopy(origColor2, ci->color2);
 	}
 }
 

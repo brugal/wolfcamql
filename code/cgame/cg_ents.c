@@ -1526,15 +1526,14 @@ static void CG_Item ( centity_t *cent ) {
 	modelindex = es->modelindex;
 
 	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
-		//FIXME 2021-07-09 is this correct check for backpack?
-		// 2021-07-15 yes, from em92:
+		// from em92:
 		//    According to http://games.linuxdude.com/tamaps/archive/cpm1_dev_docs/step3.txt
 		//    EF_BACKPACK is used to set dropped entity as backpack.
 		//
-		// not sure if modelindex2 check is needed
+		// non zero modelindex2 value for items indicates it is dropped
+		//FIXME need to check for only certian giType?  (weapon, ammo, etc...)
 		if (es->modelindex2 == 1  &&  es->eFlags == EF_BACKPACK) {
-			//FIXME get index at game start
-			modelindex = bg_numItemsCpma - 2;
+			modelindex = cgs.backpackItemIndex;
 		}
 	}
 
@@ -1661,19 +1660,57 @@ static void CG_Item ( centity_t *cent ) {
 				team = TEAM_FREE;
 			}
 
-			if (team == TEAM_RED  ||  team == TEAM_BLUE) {
-				if ((team == TEAM_RED  &&  item->giTag == PW_REDFLAG)  ||  (team == TEAM_BLUE  &&  item->giTag == PW_BLUEFLAG)) {
-					// team color
-					ent.hModel = cgs.media.neutralFlagModel3;
-					SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_teamFlagColor);
-					ent.shaderRGBA[3] = 255;
-				} else {
-					// enemy color
-					ent.hModel = cgs.media.neutralFlagModel3;
-					SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_enemyFlagColor);
-					ent.shaderRGBA[3] = 255;
-				}
+			ent.hModel = cgs.media.neutralFlagModel3;
+
+			if (item->giTag == PW_REDFLAG) {
+				ent.shaderRGBA[0] = 255;
+				ent.shaderRGBA[1] = 0;
+				ent.shaderRGBA[2] = 0;
+				ent.shaderRGBA[3] = 255;
+			} else if (item->giTag == PW_BLUEFLAG) {
+				ent.shaderRGBA[0] = 0;
+				ent.shaderRGBA[1] = 0;
+				ent.shaderRGBA[2] = 255;
+				ent.shaderRGBA[3] = 255;
 			} else {
+				ent.shaderRGBA[0] = 255;
+				ent.shaderRGBA[1] = 255;
+				ent.shaderRGBA[2] = 255;
+				ent.shaderRGBA[3] = 255;
+			}
+
+			if (cg_useCustomRedBlueFlagColor.integer == 1  ||  cg_useCustomRedBlueFlagColor.integer == 2) {
+				// fallback or override for enemy and teammate settings
+				if (item->giTag == PW_REDFLAG) {
+					if (*cg_redTeamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_redTeamFlagColor);
+					}
+				} else if (item->giTag == PW_BLUEFLAG) {
+					if (*cg_blueTeamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_blueTeamFlagColor);
+					}
+				}
+			}
+
+			if (team == TEAM_RED  ||  team == TEAM_BLUE) {
+				if (cg_useCustomRedBlueFlagColor.integer != 2) {
+					if ((team == TEAM_RED  &&  item->giTag == PW_REDFLAG)  ||  (team == TEAM_BLUE  &&  item->giTag == PW_BLUEFLAG)) {
+						// team color
+						if (*cg_teamFlagColor.string) {
+							SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_teamFlagColor);
+							ent.shaderRGBA[3] = 255;
+						}
+					} else {
+						// enemy color
+						if (*cg_enemyFlagColor.string) {
+							SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_enemyFlagColor);
+							ent.shaderRGBA[3] = 255;
+						}
+					}
+				}
+			} else {  // team free or spec
+#if 0
+				//FIXME 2021-09-20 why is the model changed?  these are brighter?
 				if (item->giTag == PW_REDFLAG) {
 					ent.hModel = cgs.media.redFlagModel2;
 				} else if (item->giTag == PW_BLUEFLAG) {
@@ -1681,6 +1718,7 @@ static void CG_Item ( centity_t *cent ) {
 				} else {
 					ent.hModel = cgs.media.neutralFlagModel2;
 				}
+#endif
 			}
 		} else if (cg_flagStyle.integer == 3  &&  item->giTag == PW_NEUTRALFLAG) {
 			ent.hModel = cgs.media.neutralFlagModel3;

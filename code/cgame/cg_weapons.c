@@ -296,12 +296,13 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 	localEntity_t *le;
 	refEntity_t   *re;
 	qboolean enemyRail;
-	qboolean teamRail;
+	qboolean teammateRail;
 	byte recolor[4];
 	float lecolor[4];
 	vec3_t ourStart;
 	float w;
 	int RADIUS, ROTATION, SPACING;
+	qboolean useRings;
 
 	if (EffectScripts.weapons[WP_RAILGUN].hasTrailScript) {
 		CG_FX_RailTrail(ci, start, end);
@@ -355,6 +356,7 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 		VectorCopy(end, re->oldorigin);
 		w = cg_railQLRailRingWhiteValue.value;
 
+		//FIXME 2021-09-24 color options??
 		re->shaderRGBA[0] = ci->color2[0] * 255.0 * w;
 		re->shaderRGBA[1] = ci->color2[1] * 255.0 * w;
 		re->shaderRGBA[2] = ci->color2[2] * 255.0 * w;
@@ -366,12 +368,52 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 		le->color[3] = 1.0 * w;
 
 		if (!cg_railFromMuzzle.integer) {
-			//FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
-			if ((CG_IsUs(ci)  &&  cg_railNudge.integer)  ||
-				(CG_IsTeamGame(cgs.gametype)  &&  CG_IsTeammate(ci)  &&  cg_teamRailNudge.integer  &&  !CG_IsUs(ci))  ||
-				(CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))  ||
-				(!CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))) {
+			qboolean useNudge = qfalse;
 
+			// nudge down a bit so it isn't exactly in center
+
+			if (CG_IsTeamGame(cgs.gametype)  ||  CG_IsUs(ci)) {
+				if (cg_useCustomRedBlueRail.integer == 2  ||  cg_useCustomRedBlueRail.integer == 1) {
+					// fallback to red/blue team settings
+					if (ci->team == TEAM_RED) {
+						if (*cg_redTeamRailNudge.string) {
+							useNudge = cg_redTeamRailNudge.integer;
+						}
+					} else if (ci->team == TEAM_BLUE) {
+						if (*cg_blueTeamRailNudge.string) {
+							useNudge = cg_blueTeamRailNudge.integer;
+						}
+					}
+				}
+
+				if (cg_useCustomRedBlueRail.integer != 2) {
+					if (CG_IsUs(ci)) {
+						if (cg.freecam  &&  cg_freecam_useTeamSettings.integer  &&  CG_IsTeamGame(cgs.gametype)) {
+							if (*cg_teamRailNudge.string) {
+								useNudge = cg_teamRailNudge.integer;
+							}
+						} else {
+							if (*cg_railNudge.string) {
+								useNudge = cg_railNudge.integer;
+							}
+						}
+					} else if (CG_IsTeammate(ci)) {
+						if (*cg_teamRailNudge.string) {
+							useNudge = cg_teamRailNudge.integer;
+						}
+					} else {
+						if (*cg_enemyRailNudge.string) {
+							useNudge = cg_enemyRailNudge.integer;
+						}
+					}
+				}
+			} else {  // not team game and not us, so it is enemy
+				if (cg_enemyRailNudge.integer) {
+					useNudge = qtrue;
+				}
+			}
+
+			if (useNudge) {
 				re->origin[2] -= 8;
 				re->oldorigin[2] -= 8;
 			}
@@ -485,7 +527,6 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 				lecolor[3] = 1.0f;
 			}
 
-
 		} else {
 			re->shaderRGBA[0] = ci->color1[0] * 255;
 			re->shaderRGBA[1] = ci->color1[1] * 255;
@@ -509,7 +550,7 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 		}
 	} else {  // team game
 		enemyRail = CG_IsEnemy(ci);
-		teamRail = CG_IsTeammate(ci);
+		teammateRail = CG_IsTeammate(ci);
 
 		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfRailColors.integer) {
 			const vmCvar_t *v;
@@ -574,178 +615,93 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 				lecolor[3] = 1.0f;
 			}
 
-		} else if (!CG_IsUs(ci)  &&  enemyRail  &&  (*cg_enemyRailColor1.string  ||  cg_enemyRailColor1Team.integer  ||  *cg_enemyRailColor2.string  ||  cg_enemyRailColor2Team.integer)) {
-			const vmCvar_t *v;
+		} else {  // not cpma ntf and use cpma ntf rail colors
+			qboolean checkTeammateSettings;
+			vec3_t color1;
+			vec3_t color2;
 
-			if (cg_enemyRailColor1Team.integer) {
-				if (ci->team == TEAM_RED) {
-					v = &cg_weaponRedTeamColor;
-				} else {
-					v = &cg_weaponBlueTeamColor;
+			VectorCopy(ci->color1, color1);
+			VectorCopy(ci->color2, color2);
+
+			checkTeammateSettings = qfalse;
+
+			if (CG_IsUs(ci)) {
+				// 1 color1, color2
+				// 2 demo
+				// 3 color1 color2
+
+				if (cg_railUseOwnColors.integer == 1  ||  cg_railUseOwnColors.integer == 3) {
+					VectorCopy(cg.color1, color1);
+					VectorCopy(cg.color2, color2);
+				}
+
+				if (cg.freecam  &&  cg_freecam_useTeamSettings.integer) {
+					checkTeammateSettings = qtrue;
+				} else if (cg_railUseOwnColors.integer == 2  ||  cg_railUseOwnColors.integer == 3) {
+					checkTeammateSettings = qtrue;
 				}
 			} else {
-				v = &cg_enemyRailColor1;
+				checkTeammateSettings = qtrue;
 			}
 
-			if (*v->string) {
-				SC_ByteVec3ColorFromCvar(re->shaderRGBA, v);
-				re->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(recolor, v);
-				recolor[3] = 255;
-
-				SC_Vec3ColorFromCvar(le->color, v);
-				le->color[0] *= 0.75;
-				le->color[1] *= 0.75;
-				le->color[2] *= 0.75;
-				le->color[3] = 1.0f;
-				Vector4Copy(le->color, lecolor);
-			} else {
-				re->shaderRGBA[0] = ci->color1[0] * 255;
-				re->shaderRGBA[1] = ci->color1[1] * 255;
-				re->shaderRGBA[2] = ci->color1[2] * 255;
-				re->shaderRGBA[3] = 255;
-
-				le->color[0] = ci->color1[0] * 0.75;
-				le->color[1] = ci->color1[1] * 0.75;
-				le->color[2] = ci->color1[2] * 0.75;
-				le->color[3] = 1.0f;
-
-				recolor[0] = ci->color2[0] * 255;
-				recolor[1] = ci->color2[1] * 255;
-				recolor[2] = ci->color2[2] * 255;
-				recolor[3] = 255;
-
-				lecolor[0] = ci->color2[0] * 0.75;
-				lecolor[1] = ci->color2[1] * 0.75;
-				lecolor[2] = ci->color2[2] * 0.75;
-				lecolor[3] = 1.0f;
-			}
-
-			if (cg_enemyRailColor2Team.integer) {
+			//Com_Printf("check teammate settings %d\n", checkTeammateSettings);
+			if (checkTeammateSettings  &&  (cg_useCustomRedBlueRail.integer == 2  ||  cg_useCustomRedBlueRail.integer == 1)) {
 				if (ci->team == TEAM_RED) {
-					v = &cg_weaponRedTeamColor;
-				} else {
-					v = &cg_weaponBlueTeamColor;
+					if (*cg_redTeamRailColor1.string) {
+						SC_Vec3ColorFromCvar(color1, &cg_redTeamRailColor1);
+					}
+					if (*cg_redTeamRailColor2.string) {
+						SC_Vec3ColorFromCvar(color2, &cg_redTeamRailColor2);
+					}
+				} else if (ci->team == TEAM_BLUE) {
+					if (*cg_blueTeamRailColor1.string) {
+						SC_Vec3ColorFromCvar(color1, &cg_blueTeamRailColor1);
+					}
+					if (*cg_blueTeamRailColor2.string) {
+						SC_Vec3ColorFromCvar(color2, &cg_blueTeamRailColor2);
+					}
 				}
-			} else {
-				v = &cg_enemyRailColor2;
 			}
 
-			if (*v->string) {
-				SC_ByteVec3ColorFromCvar(recolor, v);
-				recolor[3] = 255;
-				SC_Vec3ColorFromCvar(lecolor, v);
-				lecolor[0] *= 0.75;
-				lecolor[1] *= 0.75;
-				lecolor[2] *= 0.75;
-				lecolor[3] = 1.0f;
-			} else {
-				recolor[0] = ci->color2[0] * 255;
-				recolor[1] = ci->color2[1] * 255;
-				recolor[2] = ci->color2[2] * 255;
-				recolor[3] = 255;
-
-				lecolor[0] = ci->color2[0] * 0.75;
-				lecolor[1] = ci->color2[1] * 0.75;
-				lecolor[2] = ci->color2[2] * 0.75;
-				lecolor[3] = 1.0f;
-			}
-		} else if (!CG_IsUs(ci)  &&  teamRail  &&  (*cg_teamRailColor1.string  ||  cg_teamRailColor1Team.integer  ||  *cg_teamRailColor2.string  ||  cg_teamRailColor2Team.integer)) {
-			const vmCvar_t *v;
-
-			if (cg_teamRailColor1Team.integer) {
-				if (ci->team == TEAM_RED) {
-					v = &cg_weaponRedTeamColor;
-				} else {
-					v = &cg_weaponBlueTeamColor;
+			// 2 forces red/blue settings above
+			if (checkTeammateSettings  &&  cg_useCustomRedBlueRail.integer != 2) {
+				if (enemyRail) {
+					if (*cg_enemyRailColor1.string) {
+						SC_Vec3ColorFromCvar(color1, &cg_enemyRailColor1);
+					}
+					if (*cg_enemyRailColor2.string) {
+						SC_Vec3ColorFromCvar(color2, &cg_enemyRailColor2);
+					}
+				} else if (teammateRail) {
+					if (*cg_teamRailColor1.string) {
+						SC_Vec3ColorFromCvar(color1, &cg_teamRailColor1);
+					}
+					if (*cg_teamRailColor2.string) {
+						SC_Vec3ColorFromCvar(color2, &cg_teamRailColor2);
+					}
 				}
-			} else {
-				v = &cg_teamRailColor1;
 			}
 
-			if (*v->string) {
-				SC_ByteVec3ColorFromCvar(re->shaderRGBA, v);
-				re->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(recolor, v);
-				recolor[3] = 255;
-
-				SC_Vec3ColorFromCvar(le->color, v);
-				le->color[0] *= 0.75;
-				le->color[1] *= 0.75;
-				le->color[2] *= 0.75;
-				le->color[3] = 1.0f;
-				Vector4Copy(le->color, lecolor);
-			} else {
-				re->shaderRGBA[0] = ci->color1[0] * 255;
-				re->shaderRGBA[1] = ci->color1[1] * 255;
-				re->shaderRGBA[2] = ci->color1[2] * 255;
-				re->shaderRGBA[3] = 255;
-
-				le->color[0] = ci->color1[0] * 0.75;
-				le->color[1] = ci->color1[1] * 0.75;
-				le->color[2] = ci->color1[2] * 0.75;
-				le->color[3] = 1.0f;
-
-				recolor[0] = ci->color2[0] * 255;
-				recolor[1] = ci->color2[1] * 255;
-				recolor[2] = ci->color2[2] * 255;
-				recolor[3] = 255;
-
-				lecolor[0] = ci->color2[0] * 0.75;
-				lecolor[1] = ci->color2[1] * 0.75;
-				lecolor[2] = ci->color2[2] * 0.75;
-				lecolor[3] = 1.0f;
-			}
-
-			if (cg_teamRailColor2Team.integer) {
-				if (ci->team == TEAM_RED) {
-					v = &cg_weaponRedTeamColor;
-				} else {
-					v = &cg_weaponBlueTeamColor;
-				}
-			} else {
-				v = &cg_teamRailColor2;
-			}
-
-			if (*v->string) {
-				SC_ByteVec3ColorFromCvar(recolor, v);
-				recolor[3] = 255;
-				SC_Vec3ColorFromCvar(lecolor, v);
-				lecolor[0] *= 0.75;
-				lecolor[1] *= 0.75;
-				lecolor[2] *= 0.75;
-				lecolor[3] = 1.0f;
-			} else {
-				recolor[0] = ci->color2[0] * 255;
-				recolor[1] = ci->color2[1] * 255;
-				recolor[2] = ci->color2[2] * 255;
-				recolor[3] = 255;
-
-				lecolor[0] = ci->color2[0] * 0.75;
-				lecolor[1] = ci->color2[1] * 0.75;
-				lecolor[2] = ci->color2[2] * 0.75;
-				lecolor[3] = 1.0f;
-			}
-		} else {
-			re->shaderRGBA[0] = ci->color1[0] * 255;
-			re->shaderRGBA[1] = ci->color1[1] * 255;
-			re->shaderRGBA[2] = ci->color1[2] * 255;
+			//Com_Printf("    color1 %f %f %f\n", color1[0], color1[1], color1[2]);
+			re->shaderRGBA[0] = color1[0] * 255;
+			re->shaderRGBA[1] = color1[1] * 255;
+			re->shaderRGBA[2] = color1[2] * 255;
 			re->shaderRGBA[3] = 255;
 
-			le->color[0] = ci->color1[0] * 0.75;
-			le->color[1] = ci->color1[1] * 0.75;
-			le->color[2] = ci->color1[2] * 0.75;
+			le->color[0] = color1[0] * 0.75;
+			le->color[1] = color1[1] * 0.75;
+			le->color[2] = color1[2] * 0.75;
 			le->color[3] = 1.0f;
 
-            recolor[0] = ci->color2[0] * 255;
-            recolor[1] = ci->color2[1] * 255;
-            recolor[2] = ci->color2[2] * 255;
-            recolor[3] = 255;
+			recolor[0] = color2[0] * 255;
+			recolor[1] = color2[1] * 255;
+			recolor[2] = color2[2] * 255;
+			recolor[3] = 255;
 
-            lecolor[0] = ci->color2[0] * 0.75;
-            lecolor[1] = ci->color2[1] * 0.75;
-            lecolor[2] = ci->color2[2] * 0.75;
-            lecolor[3] = 1.0f;
+			lecolor[0] = color2[0] * 0.75;
+			lecolor[1] = color2[1] * 0.75;
+			lecolor[2] = color2[2] * 0.75;
+			lecolor[3] = 1.0f;
 		}
 	}
 
@@ -755,25 +711,105 @@ void CG_RailTrail (const clientInfo_t *ci, const vec3_t start, const vec3_t end)
 	VectorScale (vec, SPACING, vec);
 
 	if (!cg_railFromMuzzle.integer) {
+		qboolean useNudge = qfalse;
+
 		// nudge down a bit so it isn't exactly in center
-		//FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
-		if ((CG_IsUs(ci)  &&  cg_railNudge.integer)  ||
-			(CG_IsTeamGame(cgs.gametype)  &&  CG_IsTeammate(ci)  &&  cg_teamRailNudge.integer  &&  !CG_IsUs(ci))  ||
-			(CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))  ||
-			(!CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  cg_enemyRailNudge.integer  &&  !CG_IsUs(ci))) {
-			//Com_Printf("nudging  us:%d  enemy%d\n", CG_IsUs(ci), CG_IsEnemy(ci));
+
+		if (CG_IsTeamGame(cgs.gametype)  ||  CG_IsUs(ci)) {
+			if (cg_useCustomRedBlueRail.integer == 2  ||  cg_useCustomRedBlueRail.integer == 1) {
+				// fallback or use red/blue team settings
+				if (ci->team == TEAM_RED) {
+					if (*cg_redTeamRailNudge.string) {
+						useNudge = cg_redTeamRailNudge.integer;
+					}
+				} else if (ci->team == TEAM_BLUE) {
+					if (*cg_blueTeamRailNudge.string) {
+						useNudge = cg_blueTeamRailNudge.integer;
+					}
+				}
+			}
+
+			if (cg_useCustomRedBlueRail.integer != 2) {
+				if (CG_IsUs(ci)) {
+					if (cg.freecam  &&  cg_freecam_useTeamSettings.integer  &&  CG_IsTeamGame(cgs.gametype)) {
+						if (*cg_teamRailNudge.string) {
+							useNudge = cg_teamRailNudge.integer;
+						}
+					} else {
+						if (*cg_railNudge.string) {
+							useNudge = cg_railNudge.integer;
+						}
+					}
+				} else if (CG_IsTeammate(ci)) {
+					if (*cg_teamRailNudge.string) {
+						useNudge = cg_teamRailNudge.integer;
+					}
+				} else {
+					if (*cg_enemyRailNudge.string) {
+						useNudge = cg_enemyRailNudge.integer;
+					}
+				}
+			}
+		} else {  // not team game and not us, so it is enemy
+			if (*cg_enemyRailNudge.string) {
+				useNudge = cg_enemyRailNudge.integer;
+			}
+		}
+
+		if (useNudge) {
 			re->origin[2] -= 8;
 			re->oldorigin[2] -= 8;
 		}
 	}
 
-	//FIXME 2021-08-07 last two checks don't make sense, why the check for team game?
-	if ((CG_IsUs(ci)  &&  !cg_railRings.integer)  ||
-		(CG_IsTeamGame(cgs.gametype)  &&  CG_IsTeammate(ci)  &&  !cg_teamRailRings.integer)  ||
-		(CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  !cg_enemyRailRings.integer)  ||
-		(!CG_IsTeamGame(cgs.gametype)  &&  CG_IsEnemy(ci)  &&  !cg_enemyRailRings.integer)) {
+	useRings = qfalse;
+
+	if (CG_IsTeamGame(cgs.gametype)  ||  CG_IsUs(ci)) {
+		if (cg_useCustomRedBlueRail.integer == 2  ||  cg_useCustomRedBlueRail.integer == 1) {
+			// fallback or use red/blue team settings
+			if (ci->team == TEAM_RED) {
+				if (*cg_redTeamRailRings.string) {
+					useRings = cg_redTeamRailRings.integer;
+				}
+			} else if (ci->team == TEAM_BLUE) {
+				if (*cg_blueTeamRailRings.string) {
+					useRings = cg_blueTeamRailRings.integer;
+				}
+			}
+		}
+
+		if (cg_useCustomRedBlueRail.integer != 2) {
+			if (CG_IsUs(ci)) {
+				if (cg.freecam  &&  cg_freecam_useTeamSettings.integer  &&  CG_IsTeamGame(cgs.gametype)) {
+					if (*cg_teamRailRings.string) {
+						useRings = cg_teamRailRings.integer;
+					}
+				} else {
+					if (*cg_railRings.string) {
+						useRings = cg_railRings.integer;
+					}
+				}
+			} else if (CG_IsTeammate(ci)) {
+				if (*cg_teamRailRings.string) {
+					useRings = cg_teamRailRings.integer;
+				}
+			} else {
+				if (*cg_enemyRailRings.string) {
+					useRings = cg_enemyRailRings.integer;
+				}
+			}
+		}
+	} else {  // not team game and not us, so it is enemy
+		if (*cg_enemyRailRings.string) {
+			useRings = cg_enemyRailRings.integer;
+		}
+	}
+
+	if (!useRings) {
 		return;
 	}
+
+	// rail rings
 
 	skip = -1;
 
@@ -2374,45 +2410,37 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 					gun.shaderRGBA[3] = 255;
 				}
 			} else {  // team game
-				if (!CG_IsUs(ci)  &&  teamRail) {
-					if (cg_teamRailItemColorTeam.integer) {
-						if (ci->team == TEAM_RED) {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponRedTeamColor);
-						} else {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponBlueTeamColor);
+				// default
+				gun.shaderRGBA[0] = 255 * ci->color1[0];
+				gun.shaderRGBA[1] = 255 * ci->color1[1];
+				gun.shaderRGBA[2] = 255 * ci->color1[2];
+				gun.shaderRGBA[3] = 255;
+
+				if (cg_useCustomRedBlueRail.integer == 2  ||  cg_useCustomRedBlueRail.integer == 1) {
+					// fallback to red/blue team settings
+					if (ci->team == TEAM_RED) {
+						if (*cg_redTeamRailItemColor.string) {
+							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_redTeamRailItemColor);
 						}
-						gun.shaderRGBA[3] = 255;
-					} else if (*cg_teamRailItemColor.string) {
-						SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_teamRailItemColor);
-						gun.shaderRGBA[3] = 255;
-					} else {
-						gun.shaderRGBA[0] = 255 * ci->color1[0];
-						gun.shaderRGBA[1] = 255 * ci->color1[1];
-						gun.shaderRGBA[2] = 255 * ci->color1[2];
-						gun.shaderRGBA[3] = 255;
-					}
-				} else if (!CG_IsUs(ci)  &&  enemyRail) {
-					if (cg_enemyRailItemColorTeam.integer) {
-						if (ci->team == TEAM_RED) {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponRedTeamColor);
-						} else {
-							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_weaponBlueTeamColor);
+					} else if (ci->team == TEAM_BLUE) {
+						if (*cg_blueTeamRailItemColor.string) {
+							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_blueTeamRailItemColor);
 						}
-						gun.shaderRGBA[3] = 255;
-					} else if (*cg_enemyRailItemColor.string) {
-						SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_enemyRailItemColor);
-						gun.shaderRGBA[3] = 255;
-					} else {
-						gun.shaderRGBA[0] = 255 * ci->color1[0];
-						gun.shaderRGBA[1] = 255 * ci->color1[1];
-						gun.shaderRGBA[2] = 255 * ci->color1[2];
-						gun.shaderRGBA[3] = 255;
 					}
-				} else {  // us
-					gun.shaderRGBA[0] = 255 * ci->color1[0];
-					gun.shaderRGBA[1] = 255 * ci->color1[1];
-					gun.shaderRGBA[2] = 255 * ci->color1[2];
-					gun.shaderRGBA[3] = 255;
+				}
+
+				if (cg_useCustomRedBlueRail.integer != 2) {
+					if (!CG_IsUs(ci)  &&  teamRail) {
+						if (*cg_teamRailItemColor.string) {
+							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_teamRailItemColor);
+							gun.shaderRGBA[3] = 255;
+						}
+					} else if (!CG_IsUs(ci)  &&  enemyRail) {
+						if (*cg_enemyRailItemColor.string) {
+							SC_ByteVec3ColorFromCvar(gun.shaderRGBA, &cg_enemyRailItemColor);
+							gun.shaderRGBA[3] = 255;
+						}
+					}
 				}
 			}
 

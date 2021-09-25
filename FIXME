@@ -130,7 +130,7 @@
 * save granularity in file
 * smooth speed
 * play camera while paused
-***** viewpoint stuff is fucked, you need to look ahead to see if it's a viewpoint or viewent, likewise if the cam point is viewent it needs to look head to see if it's viewent of viewpoint
+***** viewpoint stuff is fucked, you need to look ahead to see if it's a viewpoint or viewent, likewise if the cam point is viewent it needs to look ahead to see if it's viewent of viewpoint
 * how are angles treated before going to ent
 * select cam points and /transition viewpoints  will change all selected to have viewpoints and move evenly from the first to the last
 * add, edit, basically anything stops camera playing -- also need to stop camera playing  CG_TimeChange()
@@ -2365,12 +2365,24 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
             if ((CG_IsUs(ci)  &&  cg_railNudge.integer)  ||
 
 
-* ammo boxes showing null model and simple items showing as ammopack/backpack icon
-* python scripts are python2
 * blur visualize  shotData->shot.accum
 * cg_qlhud 0  -9999 score stretches flag icon ntf_test1.dm_68  -- same in q3
 * overtime in q3 (non-cpma) with countdown level timer
+* check if cpma cg_levelTimerDirection 4 works with real end game time
+* cpma ntf option to use ntf class for pov model
+* demo streaming
 
+* cg_cpmaNtfScoreboardClassModel for ql hud use red and blue icons not pm or bright
+* ctf demo tankjr orange?
+* cpma unknown global team sound 9
+* loading screen shows sarge icon for all players in cpma (missing pm skin?)
+* freecam team settings not setting team color if model or skins aren't set -- 2021-09-13 that's ok could be something like cpma where players set their own colors, need to check other code so that it works like that
+
+* cg_railQL using ci->color2 directly and not checking teammate/enemy settings
+* teammate settings and cg_railNudge, cg_railRings, cg_railRadius, cg_railRotation, cg_railSpacing  -- like cg_useCustomRedBlueTeamRail
+* cinfo unused in CG_Player()
+* delete cvar command
+* CG_RailTrail (not EV_* caller) should be checking cg_railUseOwnColors
 
 ----
 

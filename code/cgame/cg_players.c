@@ -707,7 +707,8 @@ static void CG_GetPlayerHeight (clientInfo_t *ci)
 	}
 #endif
 
-	//Com_Printf("height %f  [%f -> %f] %s\n", height, maxs[2], mins[2], ci->modelName);
+	//Com_Printf("^4height %f  [%f -> %f] %s\n", height, maxs[2], mins[2], ci->modelName);
+	//Com_Printf("models %d %d %d  %s\n", ci->legsModel, ci->torsoModel, ci->headModel, ci->name);
 
 	ci->playerModelHeight = height;
 }
@@ -1197,12 +1198,13 @@ void CG_CopyClientInfoModel (const clientInfo_t *from, clientInfo_t *to)
 		to->headSkin = from->headSkin;
 	}
 
+#if 0  //FIXME not needed anymore?
 	if (cgs.cpma) {
-		memcpy(to->headColor, from->headColor, sizeof(to->headColor));
-		memcpy(to->torsoColor, from->torsoColor, sizeof(to->torsoColor));
-		memcpy(to->legsColor, from->legsColor, sizeof(to->legsColor));
+		memcpy(to->selectedHeadColor, from->selectedHeadColor, sizeof(to->selectedHeadColor));
+		memcpy(to->selectedTorsoColor, from->selectedTorsoColor, sizeof(to->selectedTorsoColor));
+		memcpy(to->selectedLegsColor, from->selectedLegsColor, sizeof(to->selectedLegsColor));
 	}
-
+#endif
 }
 
 #if 0  // wolfcam
@@ -1653,9 +1655,9 @@ void CG_NewClientInfo( int clientNum ) {
 
 		VectorSet(newInfo.color1, 1, 1, 1);
 		VectorSet(newInfo.color2, 1, 1, 1);
-		Vector4Set(newInfo.headColor, 255, 255, 255, 255);
-		Vector4Set(newInfo.torsoColor, 255, 255, 255, 255);
-		Vector4Set(newInfo.legsColor, 255, 255, 255, 255);
+		Vector4Set(newInfo.cpmaHeadColor, 255, 255, 255, 255);
+		Vector4Set(newInfo.cpmaTorsoColor, 255, 255, 255, 255);
+		Vector4Set(newInfo.cpmaLegsColor, 255, 255, 255, 255);
 
 		v = Info_ValueForKey(configstring, "c1");
 		if (*v) {
@@ -1663,24 +1665,24 @@ void CG_NewClientInfo( int clientNum ) {
 			v++;
 			if (*v) {
 				CG_CpmaColorFromString(v, color);
-				newInfo.headColor[0] = 255 * color[0];
-				newInfo.headColor[1] = 255 * color[1];
-				newInfo.headColor[2] = 255 * color[2];
-				newInfo.headColor[3] = 255;
+				newInfo.cpmaHeadColor[0] = 255 * color[0];
+				newInfo.cpmaHeadColor[1] = 255 * color[1];
+				newInfo.cpmaHeadColor[2] = 255 * color[2];
+				newInfo.cpmaHeadColor[3] = 255;
 				v++;
 				if (*v) {
 					CG_CpmaColorFromString(v, color);
-					newInfo.torsoColor[0] = 255 * color[0];
-					newInfo.torsoColor[1] = 255 * color[1];
-					newInfo.torsoColor[2] = 255 * color[2];
-					newInfo.torsoColor[3] = 255;
+					newInfo.cpmaTorsoColor[0] = 255 * color[0];
+					newInfo.cpmaTorsoColor[1] = 255 * color[1];
+					newInfo.cpmaTorsoColor[2] = 255 * color[2];
+					newInfo.cpmaTorsoColor[3] = 255;
 					v++;
 					if (*v) {
 						CG_CpmaColorFromString(v, color);
-						newInfo.legsColor[0] = 255 * color[0];
-						newInfo.legsColor[1] = 255 * color[1];
-						newInfo.legsColor[2] = 255 * color[2];
-						newInfo.legsColor[3] = 255;
+						newInfo.cpmaLegsColor[0] = 255 * color[0];
+						newInfo.cpmaLegsColor[1] = 255 * color[1];
+						newInfo.cpmaLegsColor[2] = 255 * color[2];
+						newInfo.cpmaLegsColor[3] = 255;
 						v++;
 						if (*v) {
 							CG_CpmaColorFromString(v, newInfo.color2);
@@ -2003,9 +2005,9 @@ void CG_NewClientInfo( int clientNum ) {
 	}
 #endif
 
-	newInfo.headTeamSkinAlt = 0;
-	newInfo.torsoTeamSkinAlt = 0;
-	newInfo.legsTeamSkinAlt = 0;
+	newInfo.headTeammateSkinAlt = 0;
+	newInfo.torsoTeammateSkinAlt = 0;
+	newInfo.legsTeammateSkinAlt = 0;
 	newInfo.headEnemySkinAlt = 0;
 	newInfo.torsoEnemySkinAlt = 0;
 	newInfo.legsEnemySkinAlt = 0;
@@ -3041,7 +3043,7 @@ static void CG_PlayerPowerups( centity_t *cent, const refEntity_t *torso ) {
 	ci = &cgs.clientinfo[ cent->currentState.clientNum ];
 	// redflag
 	if ( powerups & ( 1 << PW_REDFLAG ) ) {
-		if (cg_flagStyle.integer == 3) {
+		if (cg_flagStyle.integer == 3) {  // holographic model which can be colorized
 			int clientNum;
 			int team;
 			byte bcolor[3];
@@ -3057,12 +3059,40 @@ static void CG_PlayerPowerups( centity_t *cent, const refEntity_t *torso ) {
 			}
 
 			if (team == TEAM_RED) {
-				// team color
-				SC_ByteVec3ColorFromCvar(bcolor, &cg_teamFlagColor);
+				// teammate color
+				bcolor[0] = bcolor[1] = bcolor[2] = 0;
+
+				if (cg_useCustomRedBlueFlagColor.integer == 1  ||  cg_useCustomRedBlueFlagColor.integer == 2) {
+					// fallback or override for teammate settings
+					if (*cg_redTeamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_redTeamFlagColor);
+					}
+				}
+
+				if (cg_useCustomRedBlueFlagColor.integer != 2) {
+					if (*cg_teamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_teamFlagColor);
+					}
+				}
+
 				CG_TrailItemExt(cent, cgs.media.neutralFlagModel3, bcolor[0], bcolor[1], bcolor[2], 255);
 			} else if (team == TEAM_BLUE) {
 				// enemy color
-				SC_ByteVec3ColorFromCvar(bcolor, &cg_enemyFlagColor);
+				bcolor[0] = bcolor[1] = bcolor[2] = 0;
+
+				if (cg_useCustomRedBlueFlagColor.integer == 1  ||  cg_useCustomRedBlueFlagColor.integer == 2) {
+					// fallback or override for enemy settings
+					if (*cg_redTeamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_redTeamFlagColor);
+					}
+				}
+
+				if (cg_useCustomRedBlueFlagColor.integer != 2) {
+					if (*cg_enemyFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_enemyFlagColor);
+					}
+				}
+
 				CG_TrailItemExt(cent, cgs.media.neutralFlagModel3, bcolor[0], bcolor[1], bcolor[2], 255);
 			} else {  // no team, free floating spec demo
 				CG_TrailItem(cent, cgs.media.redFlagModel2);
@@ -3100,12 +3130,40 @@ static void CG_PlayerPowerups( centity_t *cent, const refEntity_t *torso ) {
 			}
 
 			if (team == TEAM_BLUE) {
-				// team color
-				SC_ByteVec3ColorFromCvar(bcolor, &cg_teamFlagColor);
+				// teammate color
+				bcolor[0] = bcolor[1] = bcolor[2] = 0;
+
+				if (cg_useCustomRedBlueFlagColor.integer == 1  ||  cg_useCustomRedBlueFlagColor.integer == 2) {
+					// fallback or override for teammate settings
+					if (*cg_blueTeamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_blueTeamFlagColor);
+					}
+				}
+
+				if (cg_useCustomRedBlueFlagColor.integer != 2) {
+					if (*cg_teamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_teamFlagColor);
+					}
+				}
+
 				CG_TrailItemExt(cent, cgs.media.neutralFlagModel3, bcolor[0], bcolor[1], bcolor[2], 255);
 			} else if (team == TEAM_RED) {
 				// enemy color
-				SC_ByteVec3ColorFromCvar(bcolor, &cg_enemyFlagColor);
+				bcolor[0] = bcolor[1] = bcolor[2] = 0;
+
+				if (cg_useCustomRedBlueFlagColor.integer == 1  ||  cg_useCustomRedBlueFlagColor.integer == 2) {
+					// fallback or override for enemy settings
+					if (*cg_blueTeamFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_blueTeamFlagColor);
+					}
+				}
+
+				if (cg_useCustomRedBlueFlagColor.integer != 2) {
+					if (*cg_enemyFlagColor.string) {
+						SC_ByteVec3ColorFromCvar(bcolor, &cg_enemyFlagColor);
+					}
+				}
+
 				CG_TrailItemExt(cent, cgs.media.neutralFlagModel3, bcolor[0], bcolor[1], bcolor[2], 255);
 			} else {  // no team, free floating spec demo
 				CG_TrailItem(cent, cgs.media.blueFlagModel2);
@@ -4350,22 +4408,76 @@ static int CG_LightVerts( const vec3_t normal, int numVerts, polyVert_t *verts )
 
 #define SKIN_INVALID -1
 
-static void CG_LoadAltTeamSkins (clientInfo_t *ci, qboolean useTeamModel)
+// useTeammateModel option used with cg_forcePovModel
+
+static void CG_LoadAltTeammateSkins (clientInfo_t *ci, qboolean useTeammateModel)
 {
 	char modelStr[MAX_QPATH];
 	char skinStr[MAX_QPATH];
+	const char *headSkin;
+	const char *torsoSkin;
+	const char *legsSkin;
+
+	headSkin = cg_teamHeadSkin.string;
+	if (!*headSkin  &&  cg_useCustomRedBlueModels.integer == 1) {
+		// fallback to red and blue team models settings
+		// teammate model might be different from those settings so skin
+		// reference needs to be updated
+		if (ci->team == TEAM_RED) {
+			if (*cg_redTeamHeadSkin.string) {
+				headSkin = cg_redTeamHeadSkin.string;
+			}
+		} else {
+			if (*cg_blueTeamHeadSkin.string) {
+				headSkin = cg_blueTeamHeadSkin.string;
+			}
+		}
+	}
+
+	torsoSkin = cg_teamTorsoSkin.string;
+	if (!*torsoSkin  &&  cg_useCustomRedBlueModels.integer == 1) {
+		// fallback to red and blue team models settings
+		// teammate model might be different from those settings so skin
+		// reference needs to be updated
+		if (ci->team == TEAM_RED) {
+			if (*cg_redTeamTorsoSkin.string) {
+				torsoSkin = cg_redTeamTorsoSkin.string;
+			}
+		} else {
+			if (*cg_blueTeamTorsoSkin.string) {
+				torsoSkin = cg_blueTeamTorsoSkin.string;
+			}
+		}
+	}
+
+   	legsSkin = cg_teamLegsSkin.string;
+	if (!*legsSkin  &&  cg_useCustomRedBlueModels.integer == 1) {
+		// fallback to red and blue team models settings
+		// teammate model might be different from those settings so skin
+		// reference needs to be updated
+		if (ci->team == TEAM_RED) {
+			if (*cg_redTeamLegsSkin.string) {
+				legsSkin = cg_redTeamLegsSkin.string;
+			}
+		} else {
+			if (*cg_blueTeamLegsSkin.string) {
+				legsSkin = cg_blueTeamLegsSkin.string;
+			}
+		}
+	}
 
 	//Com_Printf("%s  '%s' '%s' '%s'\n", ci->name, ci->modelName, modelStr, skinStr);
-	//Com_Printf("new alt skins\n");
-	if (*cg_teamHeadSkin.string) {
-		CG_GetModelAndSkinName(cg_teamHeadSkin.string, modelStr, skinStr);
+	//Com_Printf("new alt teammate skins\n");
+	if (*headSkin) {
+		CG_GetModelAndSkinName(headSkin, modelStr, skinStr);
 		if (!*modelStr) {
-			if (*cg_teamHeadModel.string  &&  useTeamModel) {
+			if (*cg_teamHeadModel.string  &&  useTeammateModel) {
 				CG_GetModelName(cg_teamHeadModel.string, modelStr);
 			} else {
 				Q_strncpyz(modelStr, ci->headModelName, sizeof(modelStr));
 			}
 		}
+
 		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
 			if (CG_IsTeamGame(cgs.gametype)) {
 				if (ci->team == TEAM_RED) {
@@ -4380,21 +4492,23 @@ static void CG_LoadAltTeamSkins (clientInfo_t *ci, qboolean useTeamModel)
 			}
 		}
 
-		ci->headTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/head_%s.skin", modelStr, skinStr));
-		if (!ci->headTeamSkinAlt) {
-			Com_Printf("^3couldn't load team head skin %s %s\n", modelStr, skinStr);
-			ci->headTeamSkinAlt = SKIN_INVALID;
+		ci->headTeammateSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/head_%s.skin", modelStr, skinStr));
+		if (!ci->headTeammateSkinAlt) {
+			Com_Printf("^3couldn't load teammate head skin %s %s\n", modelStr, skinStr);
+			ci->headTeammateSkinAlt = SKIN_INVALID;
 		}
 	}
-	if (*cg_teamTorsoSkin.string) {
-		CG_GetModelAndSkinName(cg_teamTorsoSkin.string, modelStr, skinStr);
+
+	if (*torsoSkin) {
+		CG_GetModelAndSkinName(torsoSkin, modelStr, skinStr);
 		if (!*modelStr) {
-			if (*cg_teamModel.string  &&  useTeamModel) {
+			if (*cg_teamModel.string  &&  useTeammateModel) {
 				CG_GetModelName(cg_teamModel.string, modelStr);
 			} else {
 				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
 			}
 		}
+
 		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
 			if (CG_IsTeamGame(cgs.gametype)) {
 				if (ci->team == TEAM_RED) {
@@ -4408,22 +4522,24 @@ static void CG_LoadAltTeamSkins (clientInfo_t *ci, qboolean useTeamModel)
 				Q_strncpyz(skinStr, "default", sizeof(skinStr));
 			}
 		}
-		//Com_Printf("^6team torso:  %s %s\n", modelStr, skinStr);
-		ci->torsoTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/upper_%s.skin", modelStr, skinStr));
-		if (!ci->torsoTeamSkinAlt) {
-			Com_Printf("^3couldn't load team torso skin: %s %s\n", modelStr, skinStr);
-			ci->torsoTeamSkinAlt = SKIN_INVALID;
+		//Com_Printf("^6teammate torso:  %s %s\n", modelStr, skinStr);
+		ci->torsoTeammateSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/upper_%s.skin", modelStr, skinStr));
+		if (!ci->torsoTeammateSkinAlt) {
+			Com_Printf("^3couldn't load teammate torso skin: %s %s\n", modelStr, skinStr);
+			ci->torsoTeammateSkinAlt = SKIN_INVALID;
 		}
 	}
-	if (*cg_teamLegsSkin.string) {
-		CG_GetModelAndSkinName(cg_teamLegsSkin.string, modelStr, skinStr);
+
+	if (*legsSkin) {
+		CG_GetModelAndSkinName(legsSkin, modelStr, skinStr);
 		if (!*modelStr) {
-			if (*cg_teamModel.string  &&  useTeamModel) {
+			if (*cg_teamModel.string  &&  useTeammateModel) {
 				CG_GetModelName(cg_teamModel.string, modelStr);
 			} else {
 				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
 			}
 		}
+
 		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
 			if (CG_IsTeamGame(cgs.gametype)) {
 				if (ci->team == TEAM_RED) {
@@ -4438,10 +4554,212 @@ static void CG_LoadAltTeamSkins (clientInfo_t *ci, qboolean useTeamModel)
 			}
 		}
 
-		ci->legsTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/lower_%s.skin", modelStr, skinStr));
-		if (!ci->legsTeamSkinAlt) {
-			Com_Printf("^3couldn't load team legs skin: %s %s\n", modelStr, skinStr);
-			ci->legsTeamSkinAlt = SKIN_INVALID;
+		ci->legsTeammateSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/lower_%s.skin", modelStr, skinStr));
+		if (!ci->legsTeammateSkinAlt) {
+			Com_Printf("^3couldn't load teammate legs skin: %s %s\n", modelStr, skinStr);
+			ci->legsTeammateSkinAlt = SKIN_INVALID;
+		}
+	}
+}
+
+static void CG_LoadAltRedTeamSkins (clientInfo_t *ci, qboolean useRedTeamModel)
+{
+	char modelStr[MAX_QPATH];
+	char skinStr[MAX_QPATH];
+
+	//Com_Printf("%s  '%s' '%s' '%s'\n", ci->name, ci->modelName, modelStr, skinStr);
+	//Com_Printf("new alt red team skins\n");
+	if (*cg_redTeamHeadSkin.string) {
+		CG_GetModelAndSkinName(cg_redTeamHeadSkin.string, modelStr, skinStr);
+		if (!*modelStr) {
+			if (*cg_redTeamHeadModel.string  &&  useRedTeamModel) {
+				CG_GetModelName(cg_redTeamHeadModel.string, modelStr);
+			} else {
+				Q_strncpyz(modelStr, ci->headModelName, sizeof(modelStr));
+			}
+		}
+
+		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				if (ci->team == TEAM_RED) {
+					Q_strncpyz(skinStr, "red", sizeof(skinStr));
+				} else if (ci->team == TEAM_BLUE) {
+					Q_strncpyz(skinStr, "blue", sizeof(skinStr));
+				} else {
+					Q_strncpyz(skinStr, "default", sizeof(skinStr));
+				}
+			} else {
+				Q_strncpyz(skinStr, "default", sizeof(skinStr));
+			}
+		}
+
+		ci->headRedTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/head_%s.skin", modelStr, skinStr));
+		if (!ci->headRedTeamSkinAlt) {
+			Com_Printf("^3couldn't load red team head skin %s %s\n", modelStr, skinStr);
+			ci->headRedTeamSkinAlt = SKIN_INVALID;
+		}
+	}
+
+	if (*cg_redTeamTorsoSkin.string) {
+		CG_GetModelAndSkinName(cg_redTeamTorsoSkin.string, modelStr, skinStr);
+		if (!*modelStr) {
+			if (*cg_redTeamModel.string  &&  useRedTeamModel) {
+				CG_GetModelName(cg_redTeamModel.string, modelStr);
+			} else {
+				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
+			}
+		}
+
+		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				if (ci->team == TEAM_RED) {
+					Q_strncpyz(skinStr, "red", sizeof(skinStr));
+				} else if (ci->team == TEAM_BLUE) {
+					Q_strncpyz(skinStr, "blue", sizeof(skinStr));
+				} else {
+					Q_strncpyz(skinStr, "default", sizeof(skinStr));
+				}
+			} else {
+				Q_strncpyz(skinStr, "default", sizeof(skinStr));
+			}
+		}
+		//Com_Printf("^6red team torso:  %s %s\n", modelStr, skinStr);
+		ci->torsoRedTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/upper_%s.skin", modelStr, skinStr));
+		if (!ci->torsoRedTeamSkinAlt) {
+			Com_Printf("^3couldn't load red team torso skin: %s %s\n", modelStr, skinStr);
+			ci->torsoRedTeamSkinAlt = SKIN_INVALID;
+		}
+	}
+
+	if (*cg_redTeamLegsSkin.string) {
+		CG_GetModelAndSkinName(cg_redTeamLegsSkin.string, modelStr, skinStr);
+		if (!*modelStr) {
+			if (*cg_redTeamModel.string  &&  useRedTeamModel) {
+				CG_GetModelName(cg_redTeamModel.string, modelStr);
+			} else {
+				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
+			}
+		}
+
+		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				if (ci->team == TEAM_RED) {
+					Q_strncpyz(skinStr, "red", sizeof(skinStr));
+				} else if (ci->team == TEAM_BLUE) {
+					Q_strncpyz(skinStr, "blue", sizeof(skinStr));
+				} else {
+					Q_strncpyz(skinStr, "default", sizeof(skinStr));
+				}
+			} else {
+				Q_strncpyz(skinStr, "default", sizeof(skinStr));
+			}
+		}
+
+		ci->legsRedTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/lower_%s.skin", modelStr, skinStr));
+		if (!ci->legsRedTeamSkinAlt) {
+			Com_Printf("^3couldn't load red team legs skin: %s %s\n", modelStr, skinStr);
+			ci->legsRedTeamSkinAlt = SKIN_INVALID;
+		}
+	}
+}
+
+static void CG_LoadAltBlueTeamSkins (clientInfo_t *ci, qboolean useBlueTeamModel)
+{
+	char modelStr[MAX_QPATH];
+	char skinStr[MAX_QPATH];
+
+	//Com_Printf("%s  '%s' '%s' '%s'\n", ci->name, ci->modelName, modelStr, skinStr);
+	//Com_Printf("new alt blue team skins\n");
+	if (*cg_blueTeamHeadSkin.string) {
+		CG_GetModelAndSkinName(cg_blueTeamHeadSkin.string, modelStr, skinStr);
+		if (!*modelStr) {
+			if (*cg_blueTeamHeadModel.string  &&  useBlueTeamModel) {
+				CG_GetModelName(cg_blueTeamHeadModel.string, modelStr);
+			} else {
+				Q_strncpyz(modelStr, ci->headModelName, sizeof(modelStr));
+			}
+		}
+
+		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				if (ci->team == TEAM_RED) {
+					Q_strncpyz(skinStr, "red", sizeof(skinStr));
+				} else if (ci->team == TEAM_BLUE) {
+					Q_strncpyz(skinStr, "blue", sizeof(skinStr));
+				} else {
+					Q_strncpyz(skinStr, "default", sizeof(skinStr));
+				}
+			} else {
+				Q_strncpyz(skinStr, "default", sizeof(skinStr));
+			}
+		}
+
+		ci->headBlueTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/head_%s.skin", modelStr, skinStr));
+		if (!ci->headBlueTeamSkinAlt) {
+			Com_Printf("^3couldn't load blue team head skin %s %s\n", modelStr, skinStr);
+			ci->headBlueTeamSkinAlt = SKIN_INVALID;
+		}
+	}
+
+	if (*cg_blueTeamTorsoSkin.string) {
+		CG_GetModelAndSkinName(cg_blueTeamTorsoSkin.string, modelStr, skinStr);
+		if (!*modelStr) {
+			if (*cg_blueTeamModel.string  &&  useBlueTeamModel) {
+				CG_GetModelName(cg_blueTeamModel.string, modelStr);
+			} else {
+				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
+			}
+		}
+
+		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				if (ci->team == TEAM_RED) {
+					Q_strncpyz(skinStr, "red", sizeof(skinStr));
+				} else if (ci->team == TEAM_BLUE) {
+					Q_strncpyz(skinStr, "blue", sizeof(skinStr));
+				} else {
+					Q_strncpyz(skinStr, "default", sizeof(skinStr));
+				}
+			} else {
+				Q_strncpyz(skinStr, "default", sizeof(skinStr));
+			}
+		}
+		//Com_Printf("^6blue team torso:  %s %s\n", modelStr, skinStr);
+		ci->torsoBlueTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/upper_%s.skin", modelStr, skinStr));
+		if (!ci->torsoBlueTeamSkinAlt) {
+			Com_Printf("^3couldn't load blue team torso skin: %s %s\n", modelStr, skinStr);
+			ci->torsoBlueTeamSkinAlt = SKIN_INVALID;
+		}
+	}
+
+	if (*cg_blueTeamLegsSkin.string) {
+		CG_GetModelAndSkinName(cg_blueTeamLegsSkin.string, modelStr, skinStr);
+		if (!*modelStr) {
+			if (*cg_blueTeamModel.string  &&  useBlueTeamModel) {
+				CG_GetModelName(cg_blueTeamModel.string, modelStr);
+			} else {
+				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
+			}
+		}
+
+		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				if (ci->team == TEAM_RED) {
+					Q_strncpyz(skinStr, "red", sizeof(skinStr));
+				} else if (ci->team == TEAM_BLUE) {
+					Q_strncpyz(skinStr, "blue", sizeof(skinStr));
+				} else {
+					Q_strncpyz(skinStr, "default", sizeof(skinStr));
+				}
+			} else {
+				Q_strncpyz(skinStr, "default", sizeof(skinStr));
+			}
+		}
+
+		ci->legsBlueTeamSkinAlt = CG_RegisterSkinVertexLight(va("models/players/%s/lower_%s.skin", modelStr, skinStr));
+		if (!ci->legsBlueTeamSkinAlt) {
+			Com_Printf("^3couldn't load blue team legs skin: %s %s\n", modelStr, skinStr);
+			ci->legsBlueTeamSkinAlt = SKIN_INVALID;
 		}
 	}
 }
@@ -4450,11 +4768,62 @@ static void CG_LoadAltEnemySkins (clientInfo_t *ci)
 {
 	char modelStr[MAX_QPATH];
 	char skinStr[MAX_QPATH];
+	const char *headSkin;
+	const char *torsoSkin;
+	const char *legsSkin;
 
 	//Com_Printf("enemy\n");
 
-	if (*cg_enemyHeadSkin.string) {
-		CG_GetModelAndSkinName(cg_enemyHeadSkin.string, modelStr, skinStr);
+	headSkin = cg_enemyHeadSkin.string;
+	if (!*headSkin  &&  CG_IsTeamGame(cgs.gametype)  &&  cg_useCustomRedBlueModels.integer == 1) {
+		// fallback to red and blue team models settings
+		// enemy model might be different from those settings so skin
+		// reference needs to be update
+		if (ci->team == TEAM_RED) {
+			if (*cg_redTeamHeadSkin.string) {
+				headSkin = cg_redTeamHeadSkin.string;
+			}
+		} else {
+			if (*cg_blueTeamHeadSkin.string) {
+				headSkin = cg_blueTeamHeadSkin.string;
+			}
+		}
+	}
+
+	torsoSkin = cg_enemyTorsoSkin.string;
+	if (!*torsoSkin  &&  CG_IsTeamGame(cgs.gametype)  &&  cg_useCustomRedBlueModels.integer == 1) {
+		// fallback to red and blue team models settings
+		// enemy model might be different from those settings so skin
+		// reference needs to be update
+		if (ci->team == TEAM_RED) {
+			if (*cg_redTeamTorsoSkin.string) {
+				torsoSkin = cg_redTeamTorsoSkin.string;
+			}
+		} else {
+			if (*cg_blueTeamTorsoSkin.string) {
+				torsoSkin = cg_blueTeamTorsoSkin.string;
+			}
+		}
+	}
+
+	legsSkin = cg_enemyLegsSkin.string;
+	if (!*legsSkin  &&  CG_IsTeamGame(cgs.gametype)  &&  cg_useCustomRedBlueModels.integer == 1) {
+		// fallback to red and blue team models settings
+		// enemy model might be different from those settings so skin
+		// reference needs to be update
+		if (ci->team == TEAM_RED) {
+			if (*cg_redTeamLegsSkin.string) {
+				legsSkin = cg_redTeamLegsSkin.string;
+			}
+		} else {
+			if (*cg_blueTeamLegsSkin.string) {
+				legsSkin = cg_blueTeamLegsSkin.string;
+			}
+		}
+	}
+
+	if (*headSkin) {
+		CG_GetModelAndSkinName(headSkin, modelStr, skinStr);
 		if (!*modelStr) {
 			if (*cg_enemyHeadModel.string) {
 				CG_GetModelName(cg_enemyHeadModel.string, modelStr);
@@ -4462,6 +4831,7 @@ static void CG_LoadAltEnemySkins (clientInfo_t *ci)
 				Q_strncpyz(modelStr, ci->headModelName, sizeof(modelStr));
 			}
 		}
+
 		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
 			if (CG_IsTeamGame(cgs.gametype)) {
 				if (ci->team == TEAM_RED) {
@@ -4483,8 +4853,9 @@ static void CG_LoadAltEnemySkins (clientInfo_t *ci)
 		}
 		//Com_Printf("models/players/%s/head_%s.skin\n", modelStr, skinStr);
 	}
-	if (*cg_enemyTorsoSkin.string) {
-		CG_GetModelAndSkinName(cg_enemyTorsoSkin.string, modelStr, skinStr);
+
+	if (*torsoSkin) {
+		CG_GetModelAndSkinName(torsoSkin, modelStr, skinStr);
 		if (!*modelStr) {
 			if (*cg_enemyModel.string) {
 				CG_GetModelName(cg_enemyModel.string, modelStr);
@@ -4492,6 +4863,7 @@ static void CG_LoadAltEnemySkins (clientInfo_t *ci)
 				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
 			}
 		}
+
 		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
 			if (CG_IsTeamGame(cgs.gametype)) {
 				if (ci->team == TEAM_RED) {
@@ -4513,8 +4885,9 @@ static void CG_LoadAltEnemySkins (clientInfo_t *ci)
 			ci->torsoEnemySkinAlt = SKIN_INVALID;
 		}
 	}
-	if (*cg_enemyLegsSkin.string) {
-		CG_GetModelAndSkinName(cg_enemyLegsSkin.string, modelStr, skinStr);
+
+	if (*legsSkin) {
+		CG_GetModelAndSkinName(legsSkin, modelStr, skinStr);
 		if (!*modelStr) {
 			if (*cg_enemyModel.string) {
 				CG_GetModelName(cg_enemyModel.string, modelStr);
@@ -4522,6 +4895,7 @@ static void CG_LoadAltEnemySkins (clientInfo_t *ci)
 				Q_strncpyz(modelStr, ci->modelName, sizeof(modelStr));
 			}
 		}
+
 		if (!Q_stricmp(skinStr, TEAM_COLOR_SKIN)) {
 			if (CG_IsTeamGame(cgs.gametype)) {
 				if (ci->team == TEAM_RED) {
@@ -4541,6 +4915,7 @@ static void CG_LoadAltEnemySkins (clientInfo_t *ci)
 			Com_Printf("^3couldn't load enemy legs skin: %s %s\n", modelStr, skinStr);
 			ci->legsEnemySkinAlt = SKIN_INVALID;
 		}
+		//Com_Printf("^4models/players/%s/head_%s.skin\n", modelStr, skinStr);
 	}
 }
 
@@ -4642,34 +5017,42 @@ static void CG_LoadAltOurSkins (clientInfo_t *ci)
 	}
 }
 
-// modifies ci-> head|torso|legs models and skins and ci-> alt team|enemy skins
+// modifies ci-> head|torso|legs models and skins and ci-> alt teammate, enemy, redBlue team skins
 
 void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_t *legs, refEntity_t *torso, refEntity_t *head)
 {
-	qboolean usingFallbackTeamModel = qfalse;
+	int team;
+	qboolean usingFallbackTeammateModel = qfalse;
 
+	// cpma player config strings set these colors
 	if (cgs.cpma) {
-		memcpy(head->shaderRGBA, ci->headColor, sizeof(head->shaderRGBA));
-		memcpy(torso->shaderRGBA, ci->torsoColor, sizeof(torso->shaderRGBA));
-		memcpy(legs->shaderRGBA, ci->legsColor, sizeof(legs->shaderRGBA));
+		memcpy(head->shaderRGBA, ci->cpmaHeadColor, sizeof(head->shaderRGBA));
+		memcpy(torso->shaderRGBA, ci->cpmaTorsoColor, sizeof(torso->shaderRGBA));
+		memcpy(legs->shaderRGBA, ci->cpmaLegsColor, sizeof(legs->shaderRGBA));
 	}
 
 	if (cg_clientOverrideIgnoreTeamSettings.integer  &&  cgs.clientinfo[cent->currentState.clientNum].override) {
+		//FIXME 2021-09-19 never true, looks like it was only used in some commented code (maybe test code, see cinfo in CG_Player()
 		if (ci != &cgs.clientinfo[cent->currentState.clientNum]) {
 			memcpy(ci, &cgs.clientinfo[cent->currentState.clientNum], sizeof(*ci));
 		}
 
-		if (ci->hasHeadColor) {
-			memcpy(head->shaderRGBA, ci->headColor, sizeof(head->shaderRGBA));
+		if (ci->hasOverrideHeadColor) {
+			memcpy(head->shaderRGBA, ci->overrideHeadColor, sizeof(head->shaderRGBA));
 		}
-		if (ci->hasTorsoColor) {
-			memcpy(torso->shaderRGBA, ci->torsoColor, sizeof(torso->shaderRGBA));
+		if (ci->hasOverrideTorsoColor) {
+			memcpy(torso->shaderRGBA, ci->overrideTorsoColor, sizeof(torso->shaderRGBA));
 		}
-		if (ci->hasLegsColor) {
-			memcpy(legs->shaderRGBA, ci->legsColor, sizeof(legs->shaderRGBA));
+		if (ci->hasOverrideLegsColor) {
+			memcpy(legs->shaderRGBA, ci->overrideLegsColor, sizeof(legs->shaderRGBA));
 		}
 
-		if (cg_entities[cent->currentState.clientNum].currentState.eFlags & EF_DEAD  ||  (cent->currentState.clientNum != cent->currentState.number &&  cent !=&cg.predictedPlayerEntity)) {
+		// save changed colors
+		memcpy(ci->selectedHeadColor, head->shaderRGBA, sizeof(ci->selectedHeadColor));
+		memcpy(ci->selectedTorsoColor, torso->shaderRGBA, sizeof(ci->selectedTorsoColor));
+		memcpy(ci->selectedLegsColor, legs->shaderRGBA, sizeof(ci->selectedLegsColor));
+
+		if (cg_entities[cent->currentState.clientNum].currentState.eFlags & EF_DEAD  ||  (cent->currentState.clientNum != cent->currentState.number &&  cent != &cg.predictedPlayerEntity)) {
 			//Com_Printf("%s  %d %d\n", cgs.clientinfo[cent->currentState.clientNum].name, cent->currentState.clientNum, cent->currentState.number);
 			if (!CG_IsUs(ci)  &&  *cg_deadBodyColor.string) {
 				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_deadBodyColor);
@@ -4681,17 +5064,23 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			}
 		}
 
+		// dead body color already set and skipping server settings
 		return;
 	}
 
 
 	if (cg_forceModel.integer) {
-		// skip team and enemy model settings
+		// skip teammate, enemy, and red/blue team model settings
 		goto server_settings;
 	}
 
+	team = cgs.clientinfo[cent->currentState.clientNum].team;
+
 	if (CG_IsUs(ci)) {
 		qboolean freecamPovSettings = qfalse;
+		qboolean usesTeammateHeadSkin;
+		qboolean usesTeammateTorsoSkin;
+		qboolean usesTeammateLegsSkin;
 
 		if (cg.freecam  &&  CG_IsTeamGame(cgs.gametype)  &&  cg_freecam_useTeamSettings.integer  &&  cg_forcePovModelIgnoreFreecamTeamSettings.integer == 0) {
 			freecamPovSettings = qtrue;
@@ -4701,21 +5090,73 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 			CG_CopyClientInfoModel(&cg.ntfClassModel[cgs.clientinfo[cent->currentState.clientNum].ntfClass], ci);
 
-			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
-				head->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
-				torso->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
-				legs->shaderRGBA[3] = 255;
-			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
-				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
-				head->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
-				torso->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
-				legs->shaderRGBA[3] = 255;
+			if (team == TEAM_RED) {
+				if (*cg_cpmaNtfRedHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
+			} else if (team == TEAM_BLUE) {
+				if (*cg_cpmaNtfBlueHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
 			}
+
+			// go check for dead body color
+			goto server_settings;
+		}
+
+		if (freecamPovSettings == qfalse  &&  cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer == 2) {
+			// use cpma ntf model for first person view
+			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+			CG_CopyClientInfoModel(&cg.ntfClassModel[cgs.clientinfo[cent->currentState.clientNum].ntfClass], ci);
+
+			if (team == TEAM_RED) {
+				if (*cg_cpmaNtfRedHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
+			} else if (team == TEAM_BLUE) {
+				if (*cg_cpmaNtfBlueHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
+			}
+
+			// go check for dead body color
+			//FIXME 2021-09-09 shouldn't first person view skip dead body color?
 			goto server_settings;
 		}
 
@@ -4723,32 +5164,36 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 			CG_CopyClientInfoModel(&cg.ourModel, ci);
 
-			//FIXME -teamcolor skin
-			//ci->torsoSkin = cg.ourModelRed.torsoSkin;
-
+			// even though cg_forcePovModel 2 is set and that ignores team settings, "-teamColor" skin could be used so you still might need to check team
 			if (CG_IsTeamGame(cgs.gametype)) {
-				if (cg.ourModelUsingTeamColorSkin) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+				if (cg.ourModelUsingTCSkin) {
+					if (team == TEAM_RED) {
 						ci->torsoSkin = cg.ourModelRed.torsoSkin;
 						ci->legsSkin = cg.ourModelRed.legsSkin;
-					} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
+					} else if (team == TEAM_BLUE) {
 						ci->torsoSkin = cg.ourModelBlue.torsoSkin;
 						ci->legsSkin = cg.ourModelBlue.legsSkin;
 					}
 				}
 
-				if (cg.ourModelUsingTeamColorHeadSkin) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+				if (cg.ourModelUsingTCHeadSkin) {
+					if (team == TEAM_RED) {
 						ci->headSkin = cg.ourModelRed.headSkin;
-					} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
+					} else if (team == TEAM_BLUE) {
 						ci->headSkin = cg.ourModelBlue.headSkin;
 					}
 				}
 			}
 
-			memcpy(head->shaderRGBA, &cg.ourColors[0], sizeof(head->shaderRGBA));
-			memcpy(torso->shaderRGBA, &cg.ourColors[1], sizeof(torso->shaderRGBA));
-			memcpy(legs->shaderRGBA, &cg.ourColors[2], sizeof(legs->shaderRGBA));
+			if (*cg_ourHeadColor.string) {
+				memcpy(head->shaderRGBA, &cg.ourModelColors[0], sizeof(head->shaderRGBA));
+			}
+			if (*cg_ourTorsoColor.string) {
+				memcpy(torso->shaderRGBA, &cg.ourModelColors[1], sizeof(torso->shaderRGBA));
+			}
+			if (*cg_ourLegsColor.string) {
+				memcpy(legs->shaderRGBA, &cg.ourModelColors[2], sizeof(legs->shaderRGBA));
+			}
 
 			// disallow enemy model for teammates even here?  -- 2016-05-26 don't think so since cg_forcePovModel 2 ignores team settings
 
@@ -4768,16 +5213,16 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 					lastHeadModel = ci->headModel;
 					lastTeam = ci->team;
 
-					// reset alt our skins for own model
+					// reset alt 'our' skins for own model
 					cg.ourModel.headOurSkinAlt = 0;
 					cg.ourModel.torsoOurSkinAlt = 0;
 					cg.ourModel.legsOurSkinAlt = 0;
-					cg.ourModelRed.headTeamSkinAlt = 0;
-					cg.ourModelRed.torsoTeamSkinAlt = 0;
-					cg.ourModelRed.legsTeamSkinAlt = 0;
-					cg.ourModelBlue.headTeamSkinAlt = 0;
-					cg.ourModelBlue.torsoTeamSkinAlt = 0;
-					cg.ourModelBlue.legsTeamSkinAlt = 0;
+					cg.ourModelRed.headTeammateSkinAlt = 0;
+					cg.ourModelRed.torsoTeammateSkinAlt = 0;
+					cg.ourModelRed.legsTeammateSkinAlt = 0;
+					cg.ourModelBlue.headTeammateSkinAlt = 0;
+					cg.ourModelBlue.torsoTeammateSkinAlt = 0;
+					cg.ourModelBlue.legsTeammateSkinAlt = 0;
 				}
 			}
 
@@ -4816,8 +5261,9 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 
 					CG_LoadAltOurSkins(cio);
 					//Com_Printf("    ^5loaded alt team skins for '%s'\n", ci->name);
+					//FIXME 2021-09-09 do we need to re-copy to ci now?
 
-					// don't modify [head]model name
+					// don't modify original [head]model name
 					Q_strncpyz(cio->modelName, origModelName, sizeof(cio->modelName));
 					Q_strncpyz(cio->headModelName, origHeadModelName, sizeof(cio->headModelName));
 					cio->team = origTeam;
@@ -4833,25 +5279,113 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 					ci->legsSkin = cio->legsOurSkinAlt;
 				}
 			}
+
+			memcpy(ci->selectedHeadColor, head->shaderRGBA, sizeof(ci->selectedHeadColor));
+			memcpy(ci->selectedTorsoColor, torso->shaderRGBA, sizeof(ci->selectedTorsoColor));
+			memcpy(ci->selectedLegsColor, legs->shaderRGBA, sizeof(ci->selectedLegsColor));
+
+			// skip dead body color and server settings
 			return;
 		}
 
 		if (cg_forcePovModel.integer  &&  freecamPovSettings == qfalse) {
+			// cg_forcePovModel with set team skins and colors option
+
 			if (CG_IsTeamGame(cgs.gametype)) {
-				memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(head->shaderRGBA));
-				memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(torso->shaderRGBA));
-				memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(legs->shaderRGBA));
+				// cg_useCustomRedBlueModels
+				//  0:  ignore  -- use this if not 0,1,2
+				//  1:  use as fallback if teammate or enemy isn't set
+				//  2:  use instead of teammate and enemy settings
+
+				if (cg_useCustomRedBlueModels.integer == 1) {
+					if (!*cg_teamHeadColor.string) {
+						if (team == TEAM_RED) {
+							if (*cg_redTeamHeadColor.string) {
+								memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+							}
+						} else if (team == TEAM_BLUE) {
+							if (*cg_blueTeamHeadColor.string) {
+								memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+							}
+						}
+					} else {
+						memcpy(head->shaderRGBA, &cg.teammateModelColors[0], sizeof(head->shaderRGBA));
+					}
+
+					if (!*cg_teamTorsoColor.string) {
+						if (team == TEAM_RED) {
+							if (*cg_redTeamTorsoColor.string) {
+								memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+							}
+						} else if (team == TEAM_BLUE) {
+							if (*cg_blueTeamTorsoColor.string) {
+								memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+							}
+						}
+					} else {
+						memcpy(torso->shaderRGBA, &cg.teammateModelColors[1], sizeof(torso->shaderRGBA));
+					}
+
+					if (!*cg_teamLegsColor.string) {
+						if (team == TEAM_RED) {
+							if (*cg_redTeamLegsColor.string) {
+								memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+							}
+						} else if (team == TEAM_BLUE) {
+							if (*cg_blueTeamLegsColor.string) {
+								memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
+							}
+						}
+					} else {
+						memcpy(legs->shaderRGBA, &cg.teammateModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				} else if (cg_useCustomRedBlueModels.integer == 2) {
+					if (team == TEAM_RED) {
+						if (*cg_redTeamHeadColor.string) {
+							memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+						}
+						if (*cg_redTeamTorsoColor.string) {
+							memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+						}
+						if (*cg_redTeamLegsColor.string) {
+							memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+						}
+					} else if (team == TEAM_BLUE) {
+						if (*cg_blueTeamHeadColor.string) {
+							memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+						}
+						if (*cg_blueTeamTorsoColor.string) {
+							memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+						}
+						if (*cg_blueTeamLegsColor.string) {
+							memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
+						}
+					}
+				} else {   // cg_useCustomRedBlueModels 0  behavior
+					if (*cg_teamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.teammateModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_teamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.teammateModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_teamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.teammateModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
 
 				CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 
-				if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+				// start with default red and blue skins and then see if
+				// custom teammate or custom red/blue ones are used
+
+				if (team == TEAM_RED) {
 					CG_CopyClientInfoModel(&cg.ourModelRed, ci);
-				} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
+				} else if (team == TEAM_BLUE) {
 					CG_CopyClientInfoModel(&cg.ourModelBlue, ci);
 				}
 
 				if (cg.ourModel.headModel) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+					if (team == TEAM_RED) {
 						ci->headSkin = cg.ourModelRed.headSkin;
 					} else {
 						ci->headSkin = cg.ourModelBlue.headSkin;
@@ -4860,10 +5394,10 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 
 				// disallow enemy teammate model
 				if ((cg_disallowEnemyModelForTeammates.integer  &&  cg_disallowEnemyModelForTeammates.integer != 2)  &&  ci->legsModel == cg.enemyModel.legsModel) {
-					usingFallbackTeamModel = qtrue;
+					usingFallbackTeammateModel = qtrue;
 
 					// team game
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+					if (team == TEAM_RED) {
 						CG_CopyClientInfoModel(&cg.fallbackModelRed, ci);
 					} else {
 						CG_CopyClientInfoModel(&cg.fallbackModelBlue, ci);
@@ -4886,26 +5420,47 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 						lastHeadModel = ci->headModel;
 						lastTeam = ci->team;
 
-						// reset alt team skins for own model
-						cg.ourModel.headTeamSkinAlt = 0;
-						cg.ourModel.torsoTeamSkinAlt = 0;
-						cg.ourModel.legsTeamSkinAlt = 0;
-						cg.ourModelRed.headTeamSkinAlt = 0;
-						cg.ourModelRed.torsoTeamSkinAlt = 0;
-						cg.ourModelRed.legsTeamSkinAlt = 0;
-						cg.ourModelBlue.headTeamSkinAlt = 0;
-						cg.ourModelBlue.torsoTeamSkinAlt = 0;
-						cg.ourModelBlue.legsTeamSkinAlt = 0;
+						// reset alt teammate skins for own model
+						cg.ourModel.headTeammateSkinAlt = 0;
+						cg.ourModel.torsoTeammateSkinAlt = 0;
+						cg.ourModel.legsTeammateSkinAlt = 0;
+						cg.ourModelRed.headTeammateSkinAlt = 0;
+						cg.ourModelRed.torsoTeammateSkinAlt = 0;
+						cg.ourModelRed.legsTeammateSkinAlt = 0;
+						cg.ourModelBlue.headTeammateSkinAlt = 0;
+						cg.ourModelBlue.torsoTeammateSkinAlt = 0;
+						cg.ourModelBlue.legsTeammateSkinAlt = 0;
 
+						// reset alt red/blue skins for own model
+						//FIXME are all the models needed?
+						cg.ourModel.headRedTeamSkinAlt = 0;
+						cg.ourModel.torsoRedTeamSkinAlt = 0;
+						cg.ourModel.legsRedTeamSkinAlt = 0;
+						cg.ourModel.headBlueTeamSkinAlt = 0;
+						cg.ourModel.torsoBlueTeamSkinAlt = 0;
+						cg.ourModel.legsBlueTeamSkinAlt = 0;
 
+						cg.ourModelRed.headRedTeamSkinAlt = 0;
+						cg.ourModelRed.torsoRedTeamSkinAlt = 0;
+						cg.ourModelRed.legsRedTeamSkinAlt = 0;
+						cg.ourModelRed.headBlueTeamSkinAlt = 0;
+						cg.ourModelRed.torsoBlueTeamSkinAlt = 0;
+						cg.ourModelRed.legsBlueTeamSkinAlt = 0;
+
+						cg.ourModelBlue.headRedTeamSkinAlt = 0;
+						cg.ourModelBlue.torsoRedTeamSkinAlt = 0;
+						cg.ourModelBlue.legsRedTeamSkinAlt = 0;
+						cg.ourModelBlue.headBlueTeamSkinAlt = 0;
+						cg.ourModelBlue.torsoBlueTeamSkinAlt = 0;
+						cg.ourModelBlue.legsBlueTeamSkinAlt = 0;
 					}
 				}
 
 				// here is where you do it
-				if (*cg_teamHeadSkin.string  ||  *cg_teamTorsoSkin.string  ||  *cg_teamLegsSkin.string) {
+				if (*cg_teamHeadSkin.string  ||  *cg_teamTorsoSkin.string  ||  *cg_teamLegsSkin.string  ||  *cg_redTeamHeadSkin.string  ||  *cg_redTeamTorsoSkin.string  ||  *cg_redTeamLegsSkin.string  ||  *cg_blueTeamHeadSkin.string  ||  *cg_blueTeamTorsoSkin.string  ||  *cg_blueTeamLegsSkin.string) {
 					clientInfo_t *cio;
 
-					//FIXME red/blue
+					//FIXME red/blue  2021-09-10 are they both needed?
 					if (ci->team == TEAM_RED) {
 						cio = &cg.ourModelRed;
 					} else if (ci->team == TEAM_BLUE) {
@@ -4914,9 +5469,18 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 						cio = &cg.ourModel;
 					}
 
-					if ((!cio->headTeamSkinAlt  &&  *cg_teamHeadSkin.string)  ||
-						(!cio->torsoTeamSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
-						(!cio->legsTeamSkinAlt  &&  *cg_teamLegsSkin.string)
+					if ((!cio->headTeammateSkinAlt  &&  *cg_teamHeadSkin.string)  ||
+						(!cio->torsoTeammateSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
+						(!cio->legsTeammateSkinAlt  &&  *cg_teamLegsSkin.string)  ||
+
+						(!cio->headRedTeamSkinAlt  &&  *cg_redTeamHeadSkin.string)  ||
+						(!cio->torsoRedTeamSkinAlt  &&  *cg_redTeamTorsoSkin.string)  ||
+						(!cio->legsRedTeamSkinAlt  &&  *cg_redTeamLegsSkin.string)  ||
+
+						(!cio->headBlueTeamSkinAlt  &&  *cg_blueTeamHeadSkin.string)  ||
+						(!cio->torsoBlueTeamSkinAlt  &&  *cg_blueTeamTorsoSkin.string)  ||
+						(!cio->legsBlueTeamSkinAlt  &&  *cg_blueTeamLegsSkin.string)
+
 						) {
 						const clientInfo_t *origCi = &cgs.clientinfoOrig[cent->currentState.clientNum];
 						//FIXME hack for changing model and headmodel name
@@ -4928,7 +5492,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 						Q_strncpyz(origHeadModelName, cio->headModelName, sizeof(origHeadModelName));
 
 						// hack to use original values as defaults
-						if (usingFallbackTeamModel) {
+						if (usingFallbackTeammateModel) {
 							if (*cg_fallbackModel.string) {
 								Q_strncpyz(cio->modelName, cg.fallbackModel.modelName, sizeof(cio->modelName));
 								//Com_Printf("^2model %s\n", cio->modelName);
@@ -4948,25 +5512,104 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 							}
 						}
 
-						CG_LoadAltTeamSkins(cio, qfalse);
+						if (team == TEAM_RED) {
+							CG_LoadAltRedTeamSkins(cio, qfalse);
+						} else {
+							CG_LoadAltBlueTeamSkins(cio, qfalse);
+						}
+
+						if (cg_useCustomRedBlueModels.integer != 2) {
+							CG_LoadAltTeammateSkins(cio, qfalse);
+						}
+
 						//Com_Printf("    ^5loaded alt team skins for '%s'\n", ci->name);
 
-						// don't modify [head]model name
+						// don't modify model or headModel name
 						Q_strncpyz(cio->modelName, origModelName, sizeof(cio->modelName));
 						Q_strncpyz(cio->headModelName, origHeadModelName, sizeof(cio->headModelName));
 					} // end alt skin set
 
-					if ((cio->headTeamSkinAlt != 0  &&  cio->headTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamHeadSkin.string) {
-						ci->headSkin = cio->headTeamSkinAlt;
+					if (cg_useCustomRedBlueModels.integer == 1) {
+						// custom red/blue fallback
+						if ((cio->headTeammateSkinAlt != 0  &&  cio->headTeammateSkinAlt != SKIN_INVALID)  &&  *cg_teamHeadSkin.string) {
+							ci->headSkin = cio->headTeammateSkinAlt;
+						} else {
+							if (team == TEAM_RED) {
+								if ((cio->headRedTeamSkinAlt != 0  &&  cio->headRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamHeadSkin.string) {
+									ci->headSkin = cio->headRedTeamSkinAlt;
+								}
+							} else {
+								if ((cio->headBlueTeamSkinAlt != 0  &&  cio->headBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamHeadSkin.string) {
+									ci->headSkin = cio->headBlueTeamSkinAlt;
+								}
+							}
+						}
+
+						if ((cio->torsoTeammateSkinAlt != 0  &&  cio->torsoTeammateSkinAlt != SKIN_INVALID)  &&  *cg_teamTorsoSkin.string) {
+							ci->torsoSkin = cio->torsoTeammateSkinAlt;
+						} else {
+							if (team == TEAM_RED) {
+								if ((cio->torsoRedTeamSkinAlt != 0  &&  cio->torsoRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamTorsoSkin.string) {
+									ci->torsoSkin = cio->torsoRedTeamSkinAlt;
+								}
+							} else {
+								if ((cio->torsoBlueTeamSkinAlt != 0  &&  cio->torsoBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamTorsoSkin.string) {
+									ci->torsoSkin = cio->torsoBlueTeamSkinAlt;
+								}
+							}
+						}
+
+						if ((cio->legsTeammateSkinAlt != 0  &&  cio->legsTeammateSkinAlt != SKIN_INVALID)  &&  *cg_teamLegsSkin.string) {
+							ci->legsSkin = cio->legsTeammateSkinAlt;
+						} else {
+							if (team == TEAM_RED) {
+								if ((cio->legsRedTeamSkinAlt != 0  &&  cio->legsRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamLegsSkin.string) {
+									ci->legsSkin = cio->legsRedTeamSkinAlt;
+								}
+							} else {
+								if ((cio->legsBlueTeamSkinAlt != 0  &&  cio->legsBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamLegsSkin.string) {
+									ci->legsSkin = cio->legsBlueTeamSkinAlt;
+								}
+							}
+						}
+						//Com_Printf("alt: '%s'\n", ci->name);
+					} else if (cg_useCustomRedBlueModels.integer == 2) {
+						// forced red/blue
+						if (team == TEAM_RED) {
+							if ((cio->headRedTeamSkinAlt != 0  &&  cio->headRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamHeadSkin.string) {
+								ci->headSkin = cio->headRedTeamSkinAlt;
+							}
+							if ((cio->torsoRedTeamSkinAlt != 0  &&  cio->torsoRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamTorsoSkin.string) {
+								ci->torsoSkin = cio->torsoRedTeamSkinAlt;
+							}
+							if ((cio->legsRedTeamSkinAlt != 0  &&  cio->legsRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamLegsSkin.string) {
+								ci->legsSkin = cio->legsRedTeamSkinAlt;
+							}
+						} else {  // team blue
+							if ((cio->headBlueTeamSkinAlt != 0  &&  cio->headBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamHeadSkin.string) {
+								ci->headSkin = cio->headBlueTeamSkinAlt;
+							}
+							if ((cio->torsoBlueTeamSkinAlt != 0  &&  cio->torsoBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamTorsoSkin.string) {
+								ci->torsoSkin = cio->torsoBlueTeamSkinAlt;
+							}
+							if ((cio->legsBlueTeamSkinAlt != 0  &&  cio->legsBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamLegsSkin.string) {
+								ci->legsSkin = cio->legsBlueTeamSkinAlt;
+							}
+						}
+						//Com_Printf("alt: '%s'\n", ci->name);
+					} else {  // cg_useCustomRedBlueModels 0  behavior
+						if ((cio->headTeammateSkinAlt != 0  &&  cio->headTeammateSkinAlt != SKIN_INVALID)  &&  *cg_teamHeadSkin.string) {
+							ci->headSkin = cio->headTeammateSkinAlt;
+						}
+						if ((cio->torsoTeammateSkinAlt != 0  &&  cio->torsoTeammateSkinAlt != SKIN_INVALID)  &&  *cg_teamTorsoSkin.string) {
+							ci->torsoSkin = cio->torsoTeammateSkinAlt;
+						}
+						if ((cio->legsTeammateSkinAlt != 0  &&  cio->legsTeammateSkinAlt != SKIN_INVALID)  &&  *cg_teamLegsSkin.string) {
+							ci->legsSkin = cio->legsTeammateSkinAlt;
+						}
+						//Com_Printf("alt: '%s'\n", ci->name);
 					}
-					if ((cio->torsoTeamSkinAlt != 0  &&  cio->torsoTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamTorsoSkin.string) {
-						ci->torsoSkin = cio->torsoTeamSkinAlt;
-					}
-					if ((cio->legsTeamSkinAlt != 0  &&  cio->legsTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamLegsSkin.string) {
-						ci->legsSkin = cio->legsTeamSkinAlt;
-					}
-					//Com_Printf("alt: '%s'\n", ci->name);
-				}  // if *cg_team[legs|torso|head]skin.string
+				}  // if *cg_team[legs|torso|head]skin.string or red/blue custom skins
 			} else {  // not team game
 				// at this point cg_forcePovModel 1  (not 2)  is set
 				CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
@@ -4978,63 +5621,280 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 				//FIXME alt skins?  -- 2016-05-27  no that's team baseed
 			}
 
+			// save selected colors
+			memcpy(ci->selectedHeadColor, head->shaderRGBA, sizeof(ci->selectedHeadColor));
+			memcpy(ci->selectedTorsoColor, torso->shaderRGBA, sizeof(ci->selectedTorsoColor));
+			memcpy(ci->selectedLegsColor, legs->shaderRGBA, sizeof(ci->selectedLegsColor));
+
+			//FIXME 2021-09-02 dead body color check?
 			return;
 		}  // force pov model  &&  freecamPovSettings == qfalse
 
 		//Com_Printf("us: %d  %s %s\n", cent->currentState.clientNum, cgs.clientinfo[cent->currentState.clientNum].name, ci->name);
 
 		if (cg.freecam  &&  CG_IsTeamGame(cgs.gametype)  &&  cg_freecam_useTeamSettings.integer) {
-			if (*cg_teamModel.string  ||  *cg_teamHeadModel.string) {
-				CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-				if (cg.teamModelTeamSkinFound) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-						CG_CopyClientInfoModel(&cg.teamModelRed, ci);
-					} else {
-						CG_CopyClientInfoModel(&cg.teamModelBlue, ci);
+
+			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+
+			usesTeammateHeadSkin = qfalse;
+			usesTeammateTorsoSkin = qfalse;
+			usesTeammateLegsSkin = qfalse;
+
+			if (*cg_teamHeadSkin.string) {
+				usesTeammateHeadSkin = qtrue;
+			}
+			if (*cg_teamTorsoSkin.string) {
+				usesTeammateTorsoSkin = qtrue;
+			}
+			if (*cg_teamLegsSkin.string) {
+				usesTeammateLegsSkin = qtrue;
+			}
+
+			if (cg_useCustomRedBlueModels.integer == 1) {
+				// teammate settings fallback to red/blue team settings
+				if (ci->team == TEAM_RED) {
+					if (*cg_redTeamHeadSkin.string) {
+						usesTeammateHeadSkin = qtrue;
+					}
+					if (*cg_redTeamTorsoSkin.string) {
+						usesTeammateTorsoSkin = qtrue;
+					}
+					if (*cg_redTeamLegsSkin.string) {
+						usesTeammateLegsSkin = qtrue;
 					}
 				} else {
-					CG_CopyClientInfoModel(&cg.teamModel, ci);
+					if (*cg_blueTeamHeadSkin.string) {
+						usesTeammateHeadSkin = qtrue;
+					}
+					if (*cg_blueTeamTorsoSkin.string) {
+						usesTeammateTorsoSkin = qtrue;
+					}
+					if (*cg_blueTeamLegsSkin.string) {
+						usesTeammateLegsSkin = qtrue;
+					}
+				}
+			}
+			if (cg_useCustomRedBlueModels.integer == 1  ||  cg_useCustomRedBlueModels.integer == 2) {
+				// 1: use as fallback for teammate
+				// 2: use instead of teammate settings
+
+				if (team == TEAM_RED) {
+					if (*cg_redTeamModel.string  ||  *cg_redTeamHeadModel.string) {
+						// only copies head, torso, or legs if they are not zero in both source and destination
+						CG_CopyClientInfoModel(&cg.redTeamModel, ci);
+					}
+				} else if (team == TEAM_BLUE) {
+					if (*cg_blueTeamModel.string  ||  *cg_blueTeamHeadModel.string) {
+						CG_CopyClientInfoModel(&cg.blueTeamModel, ci);
+					}
+				} else {
+					// pass, no change
 				}
 
-				if (cg.teamModel.headModel) {
-					if (cg.teamModelTeamHeadSkinFound) {
-						if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-							ci->headSkin = cg.teamModelRed.headSkin;
+				if (cg_useCustomRedBlueModels.integer == 2) {
+					// won't be doing this check later since it will depend on teammate settings
+					if ((cg_disallowEnemyModelForTeammates.integer  &&  cg_disallowEnemyModelForTeammates.integer != 2)  &&  ci->legsModel == cg.enemyModel.legsModel) {
+						usingFallbackTeammateModel = qtrue;
+
+						// team game
+						if (team == TEAM_RED) {
+							CG_CopyClientInfoModel(&cg.fallbackModelRed, ci);
 						} else {
-							ci->headSkin = cg.teamModelBlue.headSkin;
+							CG_CopyClientInfoModel(&cg.fallbackModelBlue, ci);
+						}
+					}
+				}
+
+				if (team == TEAM_RED) {
+					if (*cg_redTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_redTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_redTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				} else {
+					if (*cg_blueTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_blueTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_blueTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
+
+			} else {  // cg_useCustomRedBlueModels 0 behavior
+				// ignore
+			}
+
+			if ((*cg_teamModel.string  ||  *cg_teamHeadModel.string)  &&  cg_useCustomRedBlueModels.integer != 2) {
+				CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+				if (cg.teammateModelUsingTCSkin) {
+					if (team == TEAM_RED) {
+						CG_CopyClientInfoModel(&cg.teammateModelRed, ci);
+					} else {
+						CG_CopyClientInfoModel(&cg.teammateModelBlue, ci);
+					}
+				} else {
+					CG_CopyClientInfoModel(&cg.teammateModel, ci);
+				}
+
+				if (cg.teammateModel.headModel) {
+					if (cg.teammateModelUsingTCHeadSkin) {
+						if (team == TEAM_RED) {
+							ci->headSkin = cg.teammateModelRed.headSkin;
+						} else {
+							ci->headSkin = cg.teammateModelBlue.headSkin;
 						}
 					} else {
-						ci->headSkin = cg.teamModel.headSkin;
+						ci->headSkin = cg.teammateModel.headSkin;
 					}
 				}
 
 				// cg_forcePovModel is 0 at this point
 				if ((cg_disallowEnemyModelForTeammates.integer  &&  cg_disallowEnemyModelForTeammates.integer != 2)  &&  ci->legsModel == cg.enemyModel.legsModel) {
-					usingFallbackTeamModel = qtrue;
+					usingFallbackTeammateModel = qtrue;
 
 					// team game
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+					if (team == TEAM_RED) {
 						CG_CopyClientInfoModel(&cg.fallbackModelRed, ci);
 					} else {
 						CG_CopyClientInfoModel(&cg.fallbackModelBlue, ci);
 					}
 				}
 
-				memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(head->shaderRGBA));
-				memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(torso->shaderRGBA));
-				memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(legs->shaderRGBA));
+				if (*cg_teamHeadColor.string) {
+					memcpy(head->shaderRGBA, &cg.teammateModelColors[0], sizeof(head->shaderRGBA));
+				}
+				if (*cg_teamTorsoColor.string) {
+					memcpy(torso->shaderRGBA, &cg.teammateModelColors[1], sizeof(torso->shaderRGBA));
+				}
+				if (*cg_teamLegsColor.string) {
+					memcpy(legs->shaderRGBA, &cg.teammateModelColors[2], sizeof(legs->shaderRGBA));
+				}
 			} else {  // models not set
-				CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+				//CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 			}
 
 			// here is where you do it
-			if (*cg_teamHeadSkin.string  ||  *cg_teamTorsoSkin.string  ||  *cg_teamLegsSkin.string) {
-				if ((!ci->headTeamSkinAlt  &&  *cg_teamHeadSkin.string)  ||
-					(!ci->torsoTeamSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
-					(!ci->legsTeamSkinAlt  &&  *cg_teamLegsSkin.string)
+			if (cg_useCustomRedBlueModels.integer == 1  ||  cg_useCustomRedBlueModels.integer == 2) {
+				// 1: use as fallback for teammate
+				// 2: use instead of teammate settings
+
+				if (team == TEAM_RED  &&  (*cg_redTeamHeadSkin.string  ||  *cg_redTeamTorsoSkin.string  ||  *cg_redTeamLegsSkin.string)) {
+					if ((!ci->headRedTeamSkinAlt  &&  *cg_redTeamHeadSkin.string)  ||
+					(!ci->torsoRedTeamSkinAlt  &&  *cg_redTeamTorsoSkin.string)  ||
+					(!ci->legsRedTeamSkinAlt  &&  *cg_redTeamLegsSkin.string)
+					) {
+						//FIXME might be using fallbackmodel
+						if (usingFallbackTeammateModel) {
+							//FIXME hack for changing model and headmodel name temporarily
+							char origModelName[MAX_QPATH];
+							char origHeadModelName[MAX_QPATH];
+
+							Q_strncpyz(origModelName, ci->modelName, sizeof(origModelName));
+							Q_strncpyz(origHeadModelName, ci->headModelName, sizeof(origHeadModelName));
+							if (*cg_fallbackModel.string) {
+								Q_strncpyz(ci->modelName, cg.fallbackModel.modelName, sizeof(ci->modelName));
+							}
+
+							if (*cg_fallbackHeadModel.string) {
+								Q_strncpyz(ci->headModelName, cg.fallbackModel.headModelName, sizeof(ci->headModelName));
+							}
+
+							CG_LoadAltRedTeamSkins(ci, qtrue);
+
+							// don't modify model or headModel name
+							Q_strncpyz(ci->modelName, origModelName, sizeof(ci->modelName));
+							Q_strncpyz(ci->headModelName, origHeadModelName, sizeof(ci->headModelName));
+						} else {
+							CG_LoadAltRedTeamSkins(ci, qtrue);
+						}
+					}
+					if ((ci->headRedTeamSkinAlt != 0  &&  ci->headRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamHeadSkin.string) {
+						ci->headSkin = ci->headRedTeamSkinAlt;
+					}
+					if ((ci->torsoRedTeamSkinAlt != 0  &&  ci->torsoRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamTorsoSkin.string) {
+						ci->torsoSkin = ci->torsoRedTeamSkinAlt;
+					}
+					if ((ci->legsRedTeamSkinAlt != 0  &&  ci->legsRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamLegsSkin.string) {
+						ci->legsSkin = ci->legsRedTeamSkinAlt;
+					}
+
+					if (*cg_redTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_redTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_redTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+
+				} else if (team == TEAM_BLUE  &&  (*cg_blueTeamHeadSkin.string  ||  *cg_blueTeamTorsoSkin.string  ||  *cg_blueTeamLegsSkin.string)) {
+					if ((!ci->headBlueTeamSkinAlt  &&  *cg_blueTeamHeadSkin.string)  ||
+					(!ci->torsoBlueTeamSkinAlt  &&  *cg_blueTeamTorsoSkin.string)  ||
+					(!ci->legsBlueTeamSkinAlt  &&  *cg_blueTeamLegsSkin.string)
+					) {
+						//FIXME might be using fallbackmodel
+						if (usingFallbackTeammateModel) {
+							//FIXME hack for changing model and headmodel name temporarily
+							char origModelName[MAX_QPATH];
+							char origHeadModelName[MAX_QPATH];
+
+							Q_strncpyz(origModelName, ci->modelName, sizeof(origModelName));
+							Q_strncpyz(origHeadModelName, ci->headModelName, sizeof(origHeadModelName));
+							if (*cg_fallbackModel.string) {
+								Q_strncpyz(ci->modelName, cg.fallbackModel.modelName, sizeof(ci->modelName));
+							}
+
+							if (*cg_fallbackHeadModel.string) {
+								Q_strncpyz(ci->headModelName, cg.fallbackModel.headModelName, sizeof(ci->headModelName));
+							}
+
+							//FIXME check useBlueTeamModel
+							CG_LoadAltBlueTeamSkins(ci, qtrue);
+
+							// don't modify model or headModel name
+							Q_strncpyz(ci->modelName, origModelName, sizeof(ci->modelName));
+							Q_strncpyz(ci->headModelName, origHeadModelName, sizeof(ci->headModelName));
+						} else {
+							CG_LoadAltBlueTeamSkins(ci, qtrue);
+						}
+					}
+					if ((ci->headBlueTeamSkinAlt != 0  &&  ci->headBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamHeadSkin.string) {
+						ci->headSkin = ci->headBlueTeamSkinAlt;
+					}
+					if ((ci->torsoBlueTeamSkinAlt != 0  &&  ci->torsoBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamTorsoSkin.string) {
+						ci->torsoSkin = ci->torsoBlueTeamSkinAlt;
+					}
+					if ((ci->legsBlueTeamSkinAlt != 0  &&  ci->legsBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamLegsSkin.string) {
+						ci->legsSkin = ci->legsBlueTeamSkinAlt;
+					}
+
+					if (*cg_blueTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_blueTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_blueTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
+			}
+
+			if ((usesTeammateHeadSkin  ||  usesTeammateTorsoSkin  ||  usesTeammateLegsSkin)  &&  cg_useCustomRedBlueModels.integer != 2) {
+				if ((!ci->headTeammateSkinAlt  &&  usesTeammateHeadSkin)  ||
+					(!ci->torsoTeammateSkinAlt  &&  usesTeammateTorsoSkin)  ||
+					(!ci->legsTeammateSkinAlt  &&  usesTeammateLegsSkin)
 					) {
 					//FIXME might be using fallbackmodel
-					if (usingFallbackTeamModel) {
+					if (usingFallbackTeammateModel) {
 						//FIXME hack for changing model and headmodel name temporarily
 						char origModelName[MAX_QPATH];
 						char origHeadModelName[MAX_QPATH];
@@ -5049,28 +5909,36 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 							Q_strncpyz(ci->headModelName, cg.fallbackModel.headModelName, sizeof(ci->headModelName));
 						}
 
-						CG_LoadAltTeamSkins(ci, qtrue);
+						CG_LoadAltTeammateSkins(ci, qtrue);
 
-						// don't modify [head]model name
+						// don't modify model or headModel name
 						Q_strncpyz(ci->modelName, origModelName, sizeof(ci->modelName));
 						Q_strncpyz(ci->headModelName, origHeadModelName, sizeof(ci->headModelName));
 					} else {
-						CG_LoadAltTeamSkins(ci, qtrue);
+						CG_LoadAltTeammateSkins(ci, qtrue);
 					}
 				}
-				if ((ci->headTeamSkinAlt != 0  &&  ci->headTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamHeadSkin.string) {
-					ci->headSkin = ci->headTeamSkinAlt;
+				if ((ci->headTeammateSkinAlt != 0  &&  ci->headTeammateSkinAlt != SKIN_INVALID)  &&  usesTeammateHeadSkin) {
+					ci->headSkin = ci->headTeammateSkinAlt;
 				}
-				if ((ci->torsoTeamSkinAlt != 0  &&  ci->torsoTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamTorsoSkin.string) {
-					ci->torsoSkin = ci->torsoTeamSkinAlt;
+				if ((ci->torsoTeammateSkinAlt != 0  &&  ci->torsoTeammateSkinAlt != SKIN_INVALID)  &&  usesTeammateTorsoSkin) {
+					ci->torsoSkin = ci->torsoTeammateSkinAlt;
 				}
-				if ((ci->legsTeamSkinAlt != 0  &&  ci->legsTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamLegsSkin.string) {
-					ci->legsSkin = ci->legsTeamSkinAlt;
+				if ((ci->legsTeammateSkinAlt != 0  &&  ci->legsTeammateSkinAlt != SKIN_INVALID)  &&  usesTeammateLegsSkin) {
+					ci->legsSkin = ci->legsTeammateSkinAlt;
 				}
-				memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(head->shaderRGBA));
-				memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(torso->shaderRGBA));
-				memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(legs->shaderRGBA));
+
+				if (*cg_teamHeadColor.string) {
+					memcpy(head->shaderRGBA, &cg.teammateModelColors[0], sizeof(head->shaderRGBA));
+				}
+				if (*cg_teamTorsoColor.string) {
+					memcpy(torso->shaderRGBA, &cg.teammateModelColors[1], sizeof(torso->shaderRGBA));
+				}
+				if (*cg_teamLegsColor.string) {
+					memcpy(legs->shaderRGBA, &cg.teammateModelColors[2], sizeof(legs->shaderRGBA));
+				}
 			}
+
 		} else {  // else !(cg.freecam  &&  CG_IsTeamGame(cgs.gametype)  &&  cg_freecam_useTeamSettings.integer)
 
 			//FIXME use team settings or cg_our* for third person view?  or maybe change freecam check above to also check thirdperson?
@@ -5081,7 +5949,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 				//Com_Printf("^6FIXME settting us to enemy model\n");
 				// cg_forcePovModel is 0 at this point so we are using demo taker pov model
 				if (CG_IsTeamGame(cgs.gametype)) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+					if (team == TEAM_RED) {
 						CG_CopyClientInfoModel(&cg.fallbackModelRed, ci);
 					} else {
 						CG_CopyClientInfoModel(&cg.fallbackModelBlue, ci);
@@ -5092,204 +5960,592 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			}
 		}
 	} else if (CG_IsEnemy(ci)) {
+		qboolean usesEnemyHeadSkin;
+		qboolean usesEnemyTorsoSkin;
+		qboolean usesEnemyLegsSkin;
+
 		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 			CG_CopyClientInfoModel(&cg.ntfClassModel[cgs.clientinfo[cent->currentState.clientNum].ntfClass], ci);
 
 			if (cg_cpmaUseNtfEnemyColors.integer) {
-				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_enemyHeadColor);
-				head->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_enemyTorsoColor);
-				torso->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_enemyLegsColor);
-				legs->shaderRGBA[3] = 255;
-			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
-				head->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
-				torso->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
-				legs->shaderRGBA[3] = 255;
-			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
-				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
-				head->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
-				torso->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
-				legs->shaderRGBA[3] = 255;
+				if (*cg_enemyHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_enemyHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_enemyTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_enemyTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_enemyLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_enemyLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
+			} else if (team == TEAM_RED) {
+				if (*cg_cpmaNtfRedHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
+			} else if (team == TEAM_BLUE) {
+				if (*cg_cpmaNtfBlueHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
 			}
+
+			// go check for dead body color
 			goto server_settings;
 		}
 
-		if (EM_Loaded == 1) {
+		// allow original legs, torso, or head if cg_enemyModel or cg_enemyHeadModel is set to ""
+		CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 
-			// hack to allow original legs, torso, or head if
-			// cg_enemyModel or cg_enemyHeadModel is set to ""
-			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			if (CG_IsTeamGame(cgs.gametype)  &&  cg.enemyModelTeamSkinFound) {
-				if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-					CG_CopyClientInfoModel(&cg.enemyModelRed, ci);
-				} else {
-					CG_CopyClientInfoModel(&cg.enemyModelBlue, ci);
+		if (CG_IsTeamGame(cgs.gametype)  &&  (cg_useCustomRedBlueModels.integer == 1  ||  cg_useCustomRedBlueModels.integer == 2)) {
+			// 1: use as fallback for enemy settings
+			// 2: use instead of enemy settings
+			if (team == TEAM_RED)  {
+				if (*cg_redTeamModel.string  ||  *cg_redTeamHeadModel.string) {
+					// only copies head, torso, or legs if they are not zero in both source and destination
+					CG_CopyClientInfoModel(&cg.redTeamModel, ci);
+				}
+			} else if (team == TEAM_BLUE) {
+				if (*cg_blueTeamModel.string  ||  *cg_blueTeamHeadModel.string) {
+					CG_CopyClientInfoModel(&cg.blueTeamModel, ci);
+				}
+			} else {
+				// pass, no change
+			}
+		}
+
+		if (EM_Loaded == 1) {
+			if (CG_IsTeamGame(cgs.gametype)) {
+				if (cg_useCustomRedBlueModels.integer != 2) {
+					if (cg.enemyModelUsingTCSkin) {
+						if (team == TEAM_RED) {
+							CG_CopyClientInfoModel(&cg.enemyModelRed, ci);
+						} else {
+							CG_CopyClientInfoModel(&cg.enemyModelBlue, ci);
+						}
+					} else {
+						CG_CopyClientInfoModel(&cg.enemyModel, ci);
+					}
 				}
 			} else {
 				CG_CopyClientInfoModel(&cg.enemyModel, ci);
 			}
 
-			if (cg.enemyModel.headModel) {
-				if (CG_IsTeamGame(cgs.gametype)  &&  cg.enemyModelTeamHeadSkinFound) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-						ci->headSkin = cg.enemyModelRed.headSkin;
+			if (!CG_IsTeamGame(cgs.gametype)  ||  cg_useCustomRedBlueModels.integer != 2) {
+				if (cg.enemyModel.headModel) {
+					if (CG_IsTeamGame(cgs.gametype)  &&  cg.enemyModelUsingTCHeadSkin) {
+						if (team == TEAM_RED) {
+							ci->headSkin = cg.enemyModelRed.headSkin;
+						} else {
+							ci->headSkin = cg.enemyModelBlue.headSkin;
+						}
 					} else {
-						ci->headSkin = cg.enemyModelBlue.headSkin;
+						ci->headSkin = cg.enemyModel.headSkin;
 					}
-				} else {
-					ci->headSkin = cg.enemyModel.headSkin;
 				}
 			}
-
-			if (*cg_enemyHeadColor.string) {
-				memcpy(head->shaderRGBA, &cg.enemyColors[0], sizeof(head->shaderRGBA));
-			}
-			if (*cg_enemyTorsoColor.string) {
-				memcpy(torso->shaderRGBA, &cg.enemyColors[1], sizeof(torso->shaderRGBA));
-			}
-			if (*cg_enemyLegsColor.string) {
-				memcpy(legs->shaderRGBA, &cg.enemyColors[2], sizeof(legs->shaderRGBA));
-			}
-		} else {
-			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 		}
 
-		if (*cg_enemyHeadSkin.string  ||  *cg_enemyTorsoSkin.string  ||  *cg_enemyLegsSkin.string) {
-			//Com_Printf("%s  %d %d %d\n", ci->name, ci->headEnemySkinAlt, ci->torsoEnemySkinAlt, ci->legsEnemySkinAlt);
-			if ((!ci->headEnemySkinAlt  &&  *cg_enemyHeadSkin.string)  ||
-				(!ci->torsoEnemySkinAlt  &&  *cg_enemyTorsoSkin.string)  ||
-				(!ci->legsEnemySkinAlt  &&  *cg_enemyLegsSkin.string)
-				) {
-				CG_LoadAltEnemySkins(ci);
+		if (CG_IsTeamGame(cgs.gametype)  &&  (cg_useCustomRedBlueModels.integer == 1  ||  cg_useCustomRedBlueModels.integer == 2)) {
+			if (team == TEAM_RED) {
+				if (*cg_redTeamHeadColor.string) {
+					memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+				}
+				if (*cg_redTeamTorsoColor.string) {
+					memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+				}
+				if (*cg_redTeamLegsColor.string) {
+					memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+				}
+			} else {
+				if (*cg_blueTeamHeadColor.string) {
+					memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+				}
+				if (*cg_blueTeamTorsoColor.string) {
+					memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+				}
+				if (*cg_blueTeamLegsColor.string) {
+					memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
+				}
 			}
-			if ((ci->headEnemySkinAlt != 0  &&  ci->headEnemySkinAlt != SKIN_INVALID)  &&  *cg_enemyHeadSkin.string) {
-				ci->headSkin = ci->headEnemySkinAlt;
-			}
-			if ((ci->torsoEnemySkinAlt != 0  &&  ci->torsoEnemySkinAlt != SKIN_INVALID)  &&  *cg_enemyTorsoSkin.string) {
-				ci->torsoSkin = ci->torsoEnemySkinAlt;
-			}
-			if ((ci->legsEnemySkinAlt != 0  &&  ci->legsEnemySkinAlt != SKIN_INVALID)  &&  *cg_enemyLegsSkin.string) {
-				ci->legsSkin = ci->legsEnemySkinAlt;
-			}
+		}
+
+		if (!CG_IsTeamGame(cgs.gametype)  ||  cg_useCustomRedBlueModels.integer != 2) {
 			if (*cg_enemyHeadColor.string) {
-				memcpy(head->shaderRGBA, &cg.enemyColors[0], sizeof(head->shaderRGBA));
+				memcpy(head->shaderRGBA, &cg.enemyModelColors[0], sizeof(head->shaderRGBA));
 			}
 			if (*cg_enemyTorsoColor.string) {
-				memcpy(torso->shaderRGBA, &cg.enemyColors[1], sizeof(torso->shaderRGBA));
+				memcpy(torso->shaderRGBA, &cg.enemyModelColors[1], sizeof(torso->shaderRGBA));
 			}
 			if (*cg_enemyLegsColor.string) {
-				memcpy(legs->shaderRGBA, &cg.enemyColors[2], sizeof(legs->shaderRGBA));
+				memcpy(legs->shaderRGBA, &cg.enemyModelColors[2], sizeof(legs->shaderRGBA));
+			}
+		}
+
+		if (CG_IsTeamGame(cgs.gametype)  &&  (cg_useCustomRedBlueModels.integer == 1  ||  cg_useCustomRedBlueModels.integer == 2)) {
+			if (team == TEAM_RED) {
+				if (*cg_redTeamHeadSkin.string  ||  *cg_redTeamTorsoSkin.string  ||  *cg_redTeamLegsSkin.string) {
+					//Com_Printf("%s  %d %d %d\n", ci->name, ci->headEnemySkinAlt, ci->torsoEnemySkinAlt, ci->legsEnemySkinAlt);
+					if ((!ci->headRedTeamSkinAlt  &&  *cg_redTeamHeadSkin.string)  ||
+						(!ci->torsoRedTeamSkinAlt  &&  *cg_redTeamTorsoSkin.string)  ||
+						(!ci->legsRedTeamSkinAlt  &&  *cg_redTeamLegsSkin.string)
+						) {
+						CG_LoadAltRedTeamSkins(ci, qfalse);
+					}
+					if ((ci->headRedTeamSkinAlt != 0  &&  ci->headRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamHeadSkin.string) {
+						ci->headSkin = ci->headRedTeamSkinAlt;
+					}
+					if ((ci->torsoRedTeamSkinAlt != 0  &&  ci->torsoRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamTorsoSkin.string) {
+						ci->torsoSkin = ci->torsoRedTeamSkinAlt;
+					}
+					if ((ci->legsRedTeamSkinAlt != 0  &&  ci->legsRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamLegsSkin.string) {
+						ci->legsSkin = ci->legsRedTeamSkinAlt;
+					}
+
+					if (*cg_redTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_redTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_redTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
+			} else if (team == TEAM_BLUE) {
+				if (*cg_blueTeamHeadSkin.string  ||  *cg_blueTeamTorsoSkin.string  ||  *cg_blueTeamLegsSkin.string) {
+					//Com_Printf("%s  %d %d %d\n", ci->name, ci->headEnemySkinAlt, ci->torsoEnemySkinAlt, ci->legsEnemySkinAlt);
+					if ((!ci->headBlueTeamSkinAlt  &&  *cg_blueTeamHeadSkin.string)  ||
+						(!ci->torsoBlueTeamSkinAlt  &&  *cg_blueTeamTorsoSkin.string)  ||
+						(!ci->legsBlueTeamSkinAlt  &&  *cg_blueTeamLegsSkin.string)
+						) {
+						CG_LoadAltBlueTeamSkins(ci, qfalse);
+					}
+					if ((ci->headBlueTeamSkinAlt != 0  &&  ci->headBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamHeadSkin.string) {
+						ci->headSkin = ci->headBlueTeamSkinAlt;
+					}
+					if ((ci->torsoBlueTeamSkinAlt != 0  &&  ci->torsoBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamTorsoSkin.string) {
+						ci->torsoSkin = ci->torsoBlueTeamSkinAlt;
+					}
+					if ((ci->legsBlueTeamSkinAlt != 0  &&  ci->legsBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamLegsSkin.string) {
+						ci->legsSkin = ci->legsBlueTeamSkinAlt;
+					}
+
+					if (*cg_blueTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_blueTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_blueTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
+			}
+		}
+
+		usesEnemyHeadSkin = qfalse;
+		usesEnemyTorsoSkin = qfalse;
+		usesEnemyLegsSkin = qfalse;
+
+		if (*cg_enemyHeadSkin.string) {
+			usesEnemyHeadSkin = qtrue;
+		}
+		if (*cg_enemyTorsoSkin.string) {
+			usesEnemyTorsoSkin = qtrue;
+		}
+		if (*cg_enemyLegsSkin.string) {
+			usesEnemyLegsSkin = qtrue;
+		}
+
+		if (CG_IsTeamGame(cgs.gametype)  &&  cg_useCustomRedBlueModels.integer == 1) {
+			// enemy settings fallback to red/blue team settings
+			if (ci->team == TEAM_RED) {
+				if (*cg_redTeamHeadSkin.string) {
+					usesEnemyHeadSkin = qtrue;
+				}
+				if (*cg_redTeamTorsoSkin.string) {
+					usesEnemyTorsoSkin = qtrue;
+				}
+				if (*cg_redTeamLegsSkin.string) {
+					usesEnemyLegsSkin = qtrue;
+				}
+			} else {
+				if (*cg_blueTeamHeadSkin.string) {
+					usesEnemyHeadSkin = qtrue;
+				}
+				if (*cg_blueTeamTorsoSkin.string) {
+					usesEnemyTorsoSkin = qtrue;
+				}
+				if (*cg_blueTeamLegsSkin.string) {
+					usesEnemyLegsSkin = qtrue;
+				}
+			}
+		}
+
+		if (!CG_IsTeamGame(cgs.gametype)  ||  cg_useCustomRedBlueModels.integer != 2) {
+			if (usesEnemyHeadSkin  ||  usesEnemyTorsoSkin  ||  usesEnemyLegsSkin) {
+				//Com_Printf("%s  %d %d %d\n", ci->name, ci->headEnemySkinAlt, ci->torsoEnemySkinAlt, ci->legsEnemySkinAlt);
+				if ((!ci->headEnemySkinAlt  &&  usesEnemyHeadSkin)  ||
+					(!ci->torsoEnemySkinAlt  &&  usesEnemyTorsoSkin)  ||
+					(!ci->legsEnemySkinAlt  &&  usesEnemyLegsSkin)
+					) {
+					CG_LoadAltEnemySkins(ci);
+				}
+				//Com_Printf("^2new %s  %d %d %d\n", ci->name, ci->headEnemySkinAlt, ci->torsoEnemySkinAlt, ci->legsEnemySkinAlt);
+				if ((ci->headEnemySkinAlt != 0  &&  ci->headEnemySkinAlt != SKIN_INVALID)  &&  usesEnemyHeadSkin) {
+					ci->headSkin = ci->headEnemySkinAlt;
+				}
+				if ((ci->torsoEnemySkinAlt != 0  &&  ci->torsoEnemySkinAlt != SKIN_INVALID)  &&  usesEnemyTorsoSkin) {
+					ci->torsoSkin = ci->torsoEnemySkinAlt;
+				}
+				if ((ci->legsEnemySkinAlt != 0  &&  ci->legsEnemySkinAlt != SKIN_INVALID)  &&  usesEnemyLegsSkin) {
+					ci->legsSkin = ci->legsEnemySkinAlt;
+				}
+
+				if (*cg_enemyHeadColor.string) {
+					memcpy(head->shaderRGBA, &cg.enemyModelColors[0], sizeof(head->shaderRGBA));
+				}
+				if (*cg_enemyTorsoColor.string) {
+					memcpy(torso->shaderRGBA, &cg.enemyModelColors[1], sizeof(torso->shaderRGBA));
+				}
+				if (*cg_enemyLegsColor.string) {
+					memcpy(legs->shaderRGBA, &cg.enemyModelColors[2], sizeof(legs->shaderRGBA));
+				}
 			}
 		}
 	} else if (CG_IsTeammate(ci)) {
+		qboolean usesTeammateHeadSkin;
+		qboolean usesTeammateTorsoSkin;
+		qboolean usesTeammateLegsSkin;
+
 		if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaUseNtfModels.integer) {
 			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 			CG_CopyClientInfoModel(&cg.ntfClassModel[cgs.clientinfo[cent->currentState.clientNum].ntfClass], ci);
 
-			if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
-				head->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
-				torso->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
-				legs->shaderRGBA[3] = 255;
-			} else if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_BLUE) {
-				SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
-				head->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
-				torso->shaderRGBA[3] = 255;
-				SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
-				legs->shaderRGBA[3] = 255;
+			if (team == TEAM_RED) {
+				if (*cg_cpmaNtfRedHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfRedHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfRedTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfRedLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfRedLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
+			} else if (team == TEAM_BLUE) {
+				if (*cg_cpmaNtfBlueHeadColor.string) {
+					SC_ByteVec3ColorFromCvar(head->shaderRGBA, &cg_cpmaNtfBlueHeadColor);
+					head->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueTorsoColor.string) {
+					SC_ByteVec3ColorFromCvar(torso->shaderRGBA, &cg_cpmaNtfBlueTorsoColor);
+					torso->shaderRGBA[3] = 255;
+				}
+				if (*cg_cpmaNtfBlueLegsColor.string) {
+					SC_ByteVec3ColorFromCvar(legs->shaderRGBA, &cg_cpmaNtfBlueLegsColor);
+					legs->shaderRGBA[3] = 255;
+				}
 			}
+
+			// go check for dead body color
 			goto server_settings;
 		}
 
-		if (*cg_teamModel.string  ||  *cg_teamHeadModel.string) {
-			CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-			if (cg.teamModelTeamSkinFound) {
-				if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-					CG_CopyClientInfoModel(&cg.teamModelRed, ci);
-				} else {
-					CG_CopyClientInfoModel(&cg.teamModelBlue, ci);
-				}
-			} else {
-				CG_CopyClientInfoModel(&cg.teamModel, ci);
-			}
+		CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
 
-			if (cg.teamModel.headModel) {
-				if (cg.teamModelTeamHeadSkinFound) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-						ci->headSkin = cg.teamModelRed.headSkin;
-					} else {
-						ci->headSkin = cg.teamModelBlue.headSkin;
-					}
-				} else {
-					ci->headSkin = cg.teamModel.headSkin;
-				}
-			}
+		if (cg_useCustomRedBlueModels.integer == 1  ||  cg_useCustomRedBlueModels.integer == 2) {
+			if (team == TEAM_RED) {
+				if (*cg_redTeamModel.string  ||  *cg_redTeamHeadModel.string) {
+					CG_CopyClientInfoModel(&cg.redTeamModel, ci);
 
-			if (cg.teamModel.legsModel == 0  &&  cg.enemyModel.legsModel  &&  cg.fallbackModel.legsModel) {  // using player's own models (cg.teamModel.legsModel == 0)
-				if (cg_disallowEnemyModelForTeammates.integer  &&  ci->legsModel == cg.enemyModel.legsModel) {
-					usingFallbackTeamModel = qtrue;
-					//FIXME checK:   not using team skin check since ourModel uses different logic
-					//Com_Printf("^6disallow model for '%s'\n", ci->name);
-
-					if (1) {  //(cg.ourModelTeamSkinFound) {
-						if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
+#if 0
+					if (cg.redTeamModel.legsModel == 0  &&  cg.enemyModel.legsModel  &&  cg.fallbackModel.legsModel) {  // using player's own models (cg.redTeamModel.legsModel == 0)
+						if (cg_disallowEnemyModelForTeammates.integer  &&  ci->legsModel == cg.enemyModel.legsModel) {
+							usingFallbackTeammateModel = qtrue;
+							//FIXME checK:   not using team skin check since ourModel uses different logic
+							//Com_Printf("^6disallow model for '%s'\n", ci->name);
 							CG_CopyClientInfoModel(&cg.fallbackModelRed, ci);
-						} else {
+						}
+					}
+#endif
+
+					if (*cg_redTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_redTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_redTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
+			} else if (team == TEAM_BLUE) {
+				if (*cg_blueTeamModel.string  ||  *cg_blueTeamHeadModel.string) {
+					CG_CopyClientInfoModel(&cg.blueTeamModel, ci);
+
+#if 0
+					if (cg.blueTeamModel.legsModel == 0  &&  cg.enemyModel.legsModel  &&  cg.fallbackModel.legsModel) {  // using player's own models (cg.blueTeamModel.legsModel == 0)
+						if (cg_disallowEnemyModelForTeammates.integer  &&  ci->legsModel == cg.enemyModel.legsModel) {
+							usingFallbackTeammateModel = qtrue;
+							//FIXME checK:   not using team skin check since ourModel uses different logic
+							//Com_Printf("^6disallow model for '%s'\n", ci->name);
 							CG_CopyClientInfoModel(&cg.fallbackModelBlue, ci);
 						}
-					} else {
-						CG_CopyClientInfoModel(&cg.fallbackModel, ci);
+					}
+#endif
+
+					if (*cg_blueTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_blueTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_blueTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
 					}
 				}
 			}
+		}
 
-
-			memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(head->shaderRGBA));
-			memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(torso->shaderRGBA));
-			memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(legs->shaderRGBA));
-		} else {  // team model and headmodel cvars not set
-
-			memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(head->shaderRGBA));
-			memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(torso->shaderRGBA));
-			memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(legs->shaderRGBA));
-
-			if (cg.enemyModel.legsModel  &&  cg.fallbackModel.legsModel  &&  cg_disallowEnemyModelForTeammates.integer  &&  cgs.clientinfoOrig[cent->currentState.clientNum].legsModel == cg.enemyModel.legsModel) {
-				usingFallbackTeamModel = qtrue;
-				//FIXME check:  not using team skin check since ourModel uses different logic
-				CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
-				//Com_Printf("^6disallow model for '%s'\n", ci->name);
-				if (1) {  //(cg.ourModelTeamSkinFound) {
-					if (cgs.clientinfo[cent->currentState.clientNum].team == TEAM_RED) {
-						CG_CopyClientInfoModel(&cg.fallbackModelRed, ci);
-					} else {
-						CG_CopyClientInfoModel(&cg.fallbackModelBlue, ci);
-					}
+		if (cg_useCustomRedBlueModels.integer != 2  &&  (*cg_teamModel.string  ||  *cg_teamHeadModel.string)) {
+			//CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+			if (cg.teammateModelUsingTCSkin) {
+				if (team == TEAM_RED) {
+					CG_CopyClientInfoModel(&cg.teammateModelRed, ci);
 				} else {
-					CG_CopyClientInfoModel(&cg.fallbackModel, ci);
+					CG_CopyClientInfoModel(&cg.teammateModelBlue, ci);
 				}
 			} else {
-				CG_CopyClientInfoModel(&cgs.clientinfoOrig[cent->currentState.clientNum], ci);
+				CG_CopyClientInfoModel(&cg.teammateModel, ci);
 			}
-		}  // done set teammate model if team model and headmodel cvars not set
+
+			if (cg.teammateModel.headModel) {
+				if (cg.teammateModelUsingTCHeadSkin) {
+					if (team == TEAM_RED) {
+						ci->headSkin = cg.teammateModelRed.headSkin;
+					} else {
+						ci->headSkin = cg.teammateModelBlue.headSkin;
+					}
+				} else {
+					ci->headSkin = cg.teammateModel.headSkin;
+				}
+			}
+
+			if (*cg_teamHeadColor.string) {
+				memcpy(head->shaderRGBA, &cg.teammateModelColors[0], sizeof(head->shaderRGBA));
+			}
+			if (*cg_teamTorsoColor.string) {
+				memcpy(torso->shaderRGBA, &cg.teammateModelColors[1], sizeof(torso->shaderRGBA));
+			}
+			if (*cg_teamLegsColor.string) {
+				memcpy(legs->shaderRGBA, &cg.teammateModelColors[2], sizeof(legs->shaderRGBA));
+			}
+		} else {  // teammate model and headmodel cvars not set
+
+			if (*cg_teamHeadColor.string) {
+				memcpy(head->shaderRGBA, &cg.teammateModelColors[0], sizeof(head->shaderRGBA));
+			}
+			if (*cg_teamTorsoColor.string) {
+				memcpy(torso->shaderRGBA, &cg.teammateModelColors[1], sizeof(torso->shaderRGBA));
+			}
+			if (*cg_teamLegsColor.string) {
+				memcpy(legs->shaderRGBA, &cg.teammateModelColors[2], sizeof(legs->shaderRGBA));
+			}
+
+		}
+
+		if (cg_disallowEnemyModelForTeammates.integer  &&  ci->legsModel == cg.enemyModel.legsModel  &&  cg.enemyModel.legsModel  &&  cg.fallbackModel.legsModel) {
+			usingFallbackTeammateModel = qtrue;
+
+			//Com_Printf("^6disallow model for '%s'\n", ci->name);
+			if (team == TEAM_RED) {
+				CG_CopyClientInfoModel(&cg.fallbackModelRed, ci);
+			} else {
+				CG_CopyClientInfoModel(&cg.fallbackModelBlue, ci);
+			}
+		}
+
+		//FIXME testing
+		//usingFallbackTeammateModel = qfalse;
+
+		if (cg_useCustomRedBlueModels.integer == 1  ||  cg_useCustomRedBlueModels.integer == 2) {
+			if (team == TEAM_RED) {
+				if (*cg_redTeamHeadSkin.string  ||  *cg_redTeamTorsoSkin.string  ||  *cg_redTeamLegsSkin.string) {
+					if ((!ci->headRedTeamSkinAlt  &&  *cg_redTeamHeadSkin.string)  ||
+						(!ci->torsoRedTeamSkinAlt  &&  *cg_redTeamTorsoSkin.string)  ||
+						(!ci->legsRedTeamSkinAlt  &&  *cg_redTeamLegsSkin.string)
+						) {
+
+						if (usingFallbackTeammateModel) {
+							//FIXME hack for changing model and headmodel name temporarily
+							char origModelName[MAX_QPATH];
+							char origHeadModelName[MAX_QPATH];
+
+							Q_strncpyz(origModelName, ci->modelName, sizeof(origModelName));
+							Q_strncpyz(origHeadModelName, ci->headModelName, sizeof(origHeadModelName));
+
+							if (*cg_fallbackModel.string) {
+								Q_strncpyz(ci->modelName, cg.fallbackModel.modelName, sizeof(ci->modelName));
+							}
+
+							if (*cg_fallbackHeadModel.string) {
+								Q_strncpyz(ci->headModelName, cg.fallbackModel.headModelName, sizeof(ci->headModelName));
+							}
+
+							CG_LoadAltRedTeamSkins(ci, qfalse);
+
+							// don't modify [head]model name
+							Q_strncpyz(ci->modelName, origModelName, sizeof(ci->modelName));
+							Q_strncpyz(ci->headModelName, origHeadModelName, sizeof(ci->headModelName));
+						} else {
+							CG_LoadAltRedTeamSkins(ci, qfalse);
+						}
+					}
+					if ((ci->headRedTeamSkinAlt != 0  &&  ci->headRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamHeadSkin.string) {
+						ci->headSkin = ci->headRedTeamSkinAlt;
+					}
+					if ((ci->torsoRedTeamSkinAlt != 0  &&  ci->torsoRedTeamSkinAlt != SKIN_INVALID)  &&  *cg_redTeamTorsoSkin.string) {
+						ci->torsoSkin = ci->torsoRedTeamSkinAlt;
+					}
+					if ((ci->legsRedTeamSkinAlt != 0  &&  ci->legsRedTeamSkinAlt != SKIN_INVALID) &&  *cg_redTeamLegsSkin.string) {
+						ci->legsSkin = ci->legsRedTeamSkinAlt;
+					}
+
+					if (*cg_redTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.redTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_redTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.redTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_redTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.redTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
+			} else {
+				if (*cg_blueTeamHeadSkin.string  ||  *cg_blueTeamTorsoSkin.string  ||  *cg_blueTeamLegsSkin.string) {
+					if ((!ci->headBlueTeamSkinAlt  &&  *cg_blueTeamHeadSkin.string)  ||
+						(!ci->torsoBlueTeamSkinAlt  &&  *cg_blueTeamTorsoSkin.string)  ||
+						(!ci->legsBlueTeamSkinAlt  &&  *cg_blueTeamLegsSkin.string)
+						) {
+
+						if (usingFallbackTeammateModel) {
+							//FIXME hack for changing model and headmodel name temporarily
+							char origModelName[MAX_QPATH];
+							char origHeadModelName[MAX_QPATH];
+
+							Q_strncpyz(origModelName, ci->modelName, sizeof(origModelName));
+							Q_strncpyz(origHeadModelName, ci->headModelName, sizeof(origHeadModelName));
+
+							if (*cg_fallbackModel.string) {
+								Q_strncpyz(ci->modelName, cg.fallbackModel.modelName, sizeof(ci->modelName));
+							}
+
+							if (*cg_fallbackHeadModel.string) {
+								Q_strncpyz(ci->headModelName, cg.fallbackModel.headModelName, sizeof(ci->headModelName));
+							}
+
+							CG_LoadAltBlueTeamSkins(ci, qfalse);
+
+							// don't modify [head]model name
+							Q_strncpyz(ci->modelName, origModelName, sizeof(ci->modelName));
+							Q_strncpyz(ci->headModelName, origHeadModelName, sizeof(ci->headModelName));
+						} else {
+							CG_LoadAltBlueTeamSkins(ci, qfalse);
+						}
+					}
+					if ((ci->headBlueTeamSkinAlt != 0  &&  ci->headBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamHeadSkin.string) {
+						ci->headSkin = ci->headBlueTeamSkinAlt;
+					}
+					if ((ci->torsoBlueTeamSkinAlt != 0  &&  ci->torsoBlueTeamSkinAlt != SKIN_INVALID)  &&  *cg_blueTeamTorsoSkin.string) {
+						ci->torsoSkin = ci->torsoBlueTeamSkinAlt;
+					}
+					if ((ci->legsBlueTeamSkinAlt != 0  &&  ci->legsBlueTeamSkinAlt != SKIN_INVALID) &&  *cg_blueTeamLegsSkin.string) {
+						ci->legsSkin = ci->legsBlueTeamSkinAlt;
+					}
+
+					if (*cg_blueTeamHeadColor.string) {
+						memcpy(head->shaderRGBA, &cg.blueTeamModelColors[0], sizeof(head->shaderRGBA));
+					}
+					if (*cg_blueTeamTorsoColor.string) {
+						memcpy(torso->shaderRGBA, &cg.blueTeamModelColors[1], sizeof(torso->shaderRGBA));
+					}
+					if (*cg_blueTeamLegsColor.string) {
+						memcpy(legs->shaderRGBA, &cg.blueTeamModelColors[2], sizeof(legs->shaderRGBA));
+					}
+				}
+			}
+		}
+
+		usesTeammateHeadSkin = qfalse;
+		usesTeammateTorsoSkin = qfalse;
+		usesTeammateLegsSkin = qfalse;
+
+		if (*cg_teamHeadSkin.string) {
+			usesTeammateHeadSkin = qtrue;
+		}
+		if (*cg_teamTorsoSkin.string) {
+			usesTeammateTorsoSkin = qtrue;
+		}
+		if (*cg_teamLegsSkin.string) {
+			usesTeammateLegsSkin = qtrue;
+		}
+
+		if (cg_useCustomRedBlueModels.integer == 1) {
+			// teammate settings fallback to red/blue team settings
+			if (ci->team == TEAM_RED) {
+				if (*cg_redTeamHeadSkin.string) {
+					usesTeammateHeadSkin = qtrue;
+				}
+				if (*cg_redTeamTorsoSkin.string) {
+					usesTeammateTorsoSkin = qtrue;
+				}
+				if (*cg_redTeamLegsSkin.string) {
+					usesTeammateLegsSkin = qtrue;
+				}
+			}  else {
+				if (*cg_blueTeamHeadSkin.string) {
+					usesTeammateHeadSkin = qtrue;
+				}
+				if (*cg_blueTeamTorsoSkin.string) {
+					usesTeammateTorsoSkin = qtrue;
+				}
+				if (*cg_blueTeamLegsSkin.string) {
+					usesTeammateLegsSkin = qtrue;
+				}
+			}
+		}
 
 		// here is where you do it
-		if (*cg_teamHeadSkin.string  ||  *cg_teamTorsoSkin.string  ||  *cg_teamLegsSkin.string) {
-			if ((!ci->headTeamSkinAlt  &&  *cg_teamHeadSkin.string)  ||
-				(!ci->torsoTeamSkinAlt  &&  *cg_teamTorsoSkin.string)  ||
-				(!ci->legsTeamSkinAlt  &&  *cg_teamLegsSkin.string)
+		if (cg_useCustomRedBlueModels.integer != 2  &&  (usesTeammateHeadSkin  ||  usesTeammateTorsoSkin  ||  usesTeammateLegsSkin)) {
+			if ((!ci->headTeammateSkinAlt  &&  usesTeammateHeadSkin)  ||
+				(!ci->torsoTeammateSkinAlt  &&  usesTeammateTorsoSkin)  ||
+				(!ci->legsTeammateSkinAlt  &&  usesTeammateLegsSkin)
 				) {
 
-				if (usingFallbackTeamModel) {
+				if (usingFallbackTeammateModel) {
 					//FIXME hack for changing model and headmodel name temporarily
 					char origModelName[MAX_QPATH];
 					char origHeadModelName[MAX_QPATH];
@@ -5305,31 +6561,43 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 						Q_strncpyz(ci->headModelName, cg.fallbackModel.headModelName, sizeof(ci->headModelName));
 					}
 
-					CG_LoadAltTeamSkins(ci, qtrue);
+					CG_LoadAltTeammateSkins(ci, qfalse);
 
 					// don't modify [head]model name
 					Q_strncpyz(ci->modelName, origModelName, sizeof(ci->modelName));
 					Q_strncpyz(ci->headModelName, origHeadModelName, sizeof(ci->headModelName));
 				} else {
-					CG_LoadAltTeamSkins(ci, qtrue);
+					CG_LoadAltTeammateSkins(ci, qtrue);
 				}
 			}
-			if ((ci->headTeamSkinAlt != 0  &&  ci->headTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamHeadSkin.string) {
-				ci->headSkin = ci->headTeamSkinAlt;
+			if ((ci->headTeammateSkinAlt != 0  &&  ci->headTeammateSkinAlt != SKIN_INVALID)  &&  usesTeammateHeadSkin) {
+				ci->headSkin = ci->headTeammateSkinAlt;
 			}
-			if ((ci->torsoTeamSkinAlt != 0  &&  ci->torsoTeamSkinAlt != SKIN_INVALID)  &&  *cg_teamTorsoSkin.string) {
-				ci->torsoSkin = ci->torsoTeamSkinAlt;
+			if ((ci->torsoTeammateSkinAlt != 0  &&  ci->torsoTeammateSkinAlt != SKIN_INVALID)  &&  usesTeammateTorsoSkin) {
+				ci->torsoSkin = ci->torsoTeammateSkinAlt;
 			}
-			if ((ci->legsTeamSkinAlt != 0  &&  ci->legsTeamSkinAlt != SKIN_INVALID) &&  *cg_teamLegsSkin.string) {
-				ci->legsSkin = ci->legsTeamSkinAlt;
+			if ((ci->legsTeammateSkinAlt != 0  &&  ci->legsTeammateSkinAlt != SKIN_INVALID) &&  usesTeammateLegsSkin) {
+				ci->legsSkin = ci->legsTeammateSkinAlt;
 			}
-			memcpy(head->shaderRGBA, &cg.teamColors[0], sizeof(head->shaderRGBA));
-			memcpy(torso->shaderRGBA, &cg.teamColors[1], sizeof(torso->shaderRGBA));
-			memcpy(legs->shaderRGBA, &cg.teamColors[2], sizeof(legs->shaderRGBA));
+
+			if (*cg_teamHeadColor.string) {
+				memcpy(head->shaderRGBA, &cg.teammateModelColors[0], sizeof(head->shaderRGBA));
+			}
+			if (*cg_teamTorsoColor.string) {
+				memcpy(torso->shaderRGBA, &cg.teammateModelColors[1], sizeof(torso->shaderRGBA));
+			}
+			if (*cg_teamLegsColor.string) {
+				memcpy(legs->shaderRGBA, &cg.teammateModelColors[2], sizeof(legs->shaderRGBA));
+			}
 		}  // end team*skin cvars set
 	}  // end CG_IsTeammate(ci)
 
  server_settings:
+
+	// save values so they can be used in CG_DrawHead()
+	memcpy(ci->selectedHeadColor, head->shaderRGBA, sizeof(ci->selectedHeadColor));
+	memcpy(ci->selectedTorsoColor, torso->shaderRGBA, sizeof(ci->selectedTorsoColor));
+	memcpy(ci->selectedLegsColor, legs->shaderRGBA, sizeof(ci->selectedLegsColor));
 
 	if (cent == &cg.predictedPlayerEntity) {
 		//return;

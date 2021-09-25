@@ -10,7 +10,7 @@ if len(sys.argv) > 1  and  sys.argv[1] == "local":
     buildLocal = True
 
 if os.path.ismount(shareDir) == False  and  buildLocal != True:
-    print "mac share isn't mounted"
+    print("mac share isn't mounted")
     sys.exit(1)
 
 ignoreFiles = [ ".hg", ".hgignore", "backtrace", "build", "package-files",
@@ -24,12 +24,12 @@ ignoreFiles = [ ".hg", ".hgignore", "backtrace", "build", "package-files",
 tar = tarfile.open(os.path.join(destDir, "macsrc.tar.gz"), "w:gz")
 
 def tarFilter(tarinfo):
-    #print "tar file: " + tarinfo.name
+    #print("tar file: " + tarinfo.name)
     if tarinfo.name in ignoreFiles:
-        print "skipping " + tarinfo.name
+        print("skipping " + tarinfo.name)
         return None
     if os.path.isdir(tarinfo.name):
-        print "adding dir: " + tarinfo.name
+        print("adding dir: " + tarinfo.name)
     return tarinfo
 
 topFiles = os.listdir(".")
