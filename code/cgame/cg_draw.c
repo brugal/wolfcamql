@@ -11186,7 +11186,7 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	if (cg_animationsIgnoreTimescale.integer) {
 		cg.refdef.time = cg.realTime;
 	}
-	cg.refdef.time *= cg_animationsRate.value;
+	cg.refdef.time = cg.ftime * cg_animationsRate.value;
 
 	if (0) {  //(cg.demoSeeking) {
 		trap_R_ClearScene();
