@@ -218,6 +218,7 @@ static void CL_ReadExtraDemoMessage (demoFile_t *df);
 static void CL_CheckWorkshopDownload (void);
 
 void CL_StopVideo_f (void);
+static void stream_demo_look_ahead (void);
 
 /*
 ===============
@@ -1481,6 +1482,11 @@ void CL_ReadDemoMessage (qboolean seeking)
 	//Com_Printf("snaps in demo: %d\n", di.snapsInDemo);
 
 
+	//FIXME hack
+	if (di.streaming) {
+		di.snapsInDemo = 22965;
+	}
+	
 	if ( !di.testParse  &&  di.snapCount < maxRewindBackups  &&
 		 ((!di.gotFirstSnap  &&  !(clc.state >= CA_CONNECTED && clc.state < CA_PRIMED))
       ||
@@ -1517,6 +1523,120 @@ void CL_ReadDemoMessage (qboolean seeking)
 
 keep_reading:
 
+	if (di.streaming) {
+		int currentPos;
+		int endPos;
+		int retVal;
+		int seqNum;
+		int messageLength;
+		qboolean debug = qfalse;
+
+		if (Cvar_VariableIntegerValue("debug_demo_stream")) {
+			debug = qtrue;
+		}
+
+		stream_demo_look_ahead();
+
+		if (!di.waitingForStream) {
+			di.streamWaitTime = cls.realtime;
+		}
+
+		di.waitingForStream = qtrue;
+
+		currentPos = FS_FTell(clc.demoReadFile);
+		retVal = FS_Seek(clc.demoReadFile, 0L, FS_SEEK_END);
+		if (retVal != 0) {
+			Com_Printf("^1demo streaming couldn't seek to end of demo, current position %d\n", currentPos);
+			CL_DemoCompleted();
+			return;
+		}
+		endPos = FS_FTell(clc.demoReadFile);
+		if ((endPos - currentPos) < 8) {
+			if (debug) {
+				Com_Printf("^2demo streaming waiting for sequence number and message length, current position %d\n", currentPos);
+			}
+			retVal = FS_Seek(clc.demoReadFile, currentPos, FS_SEEK_SET);
+			if (retVal != 0) {
+				Com_Printf("^1demo streaming couldn't set current position after checking for sequence number and message length sizes, current position %d\n", currentPos);
+				CL_DemoCompleted();
+				return;
+			}
+
+			// keep waiting
+			di.numSnaps--;
+			return;
+		}
+
+		retVal = FS_Seek(clc.demoReadFile, currentPos, FS_SEEK_SET);
+		if (retVal != 0) {
+			Com_Printf("^1demo streaming couldn't set current position preparing to read sequence number, current position %d\n", currentPos);
+			CL_DemoCompleted();
+			return;
+		}
+
+		// get the sequence number
+		r = FS_Read( &seqNum, 4, clc.demoReadFile);
+		if ( r != 4 ) {
+			Com_Printf("^1demo streaming couldn't get sequence number, current position %d\n", currentPos);
+			CL_DemoCompleted ();
+			return;
+		}
+
+		// get the length
+		r = FS_Read (&messageLength, 4, clc.demoReadFile);
+		if ( r != 4 ) {
+			Com_Printf("^1demo streaming couldn't get message length, current position %d\n", currentPos);
+			CL_DemoCompleted ();
+			return;
+		}
+
+		messageLength = LittleLong(messageLength);
+
+		if (messageLength == -1) {
+			// /stoprecord writes last sequence number and length as -1
+			if (debug) {
+				Com_Printf("^2demo streaming end of demo, current position %d\n", currentPos);
+			}
+
+			// just in case it's needed for recording demo from demo
+			clc.serverMessageSequence = LittleLong(seqNum);
+
+			CL_DemoCompleted ();
+			return;
+		}
+
+		if ((endPos - currentPos - 8) < messageLength) {
+			if (debug) {
+				//Com_Printf("cl.serverTime %d\n", cl.serverTime);
+				Com_Printf("^2demo streaming waiting for message, need %d, current position %d\n", messageLength - (endPos - currentPos - 8), currentPos);
+			}
+			retVal = FS_Seek(clc.demoReadFile, currentPos, FS_SEEK_SET);
+			if (retVal != 0) {
+				Com_Printf("^1demo streaming couldn't set current position after checking for enough message data, current position %d\n", currentPos);
+				CL_DemoCompleted();
+				return;
+			}
+
+			// keep waiting
+			di.numSnaps--;
+			return;
+		}
+
+		// there is enough demo file data to read message, reset file position and keep reading normally
+		retVal = FS_Seek(clc.demoReadFile, currentPos, FS_SEEK_SET);
+		if (retVal != 0) {
+			Com_Printf("^1demo streaming couldn't set current position after enough message data validated, current position %d\n", currentPos);
+			CL_DemoCompleted();
+			return;
+		}
+
+		di.waitingForStream = qfalse;
+		if (di.streamWaitTime) {
+			cls.realtime = di.streamWaitTime;
+			di.streamWaitTime = 0;
+		}
+	}
+
 	// get the sequence number
 	r = FS_Read( &s, 4, clc.demoReadFile);
 	if ( r != 4 ) {
@@ -1542,6 +1662,7 @@ keep_reading:
 	}
 	buf.cursize = LittleLong( buf.cursize );
 	if ( buf.cursize == -1 ) {
+		// /stoprecord writes last sequence number and length as -1
 		CL_DemoCompleted ();
 		return;
 	}
@@ -1560,7 +1681,7 @@ keep_reading:
 
 	// hack for broken demos
 	//FIXME also check if clc.serverMessageSequence is valid
-	if (com_brokenDemo->integer  &&  (buf.cursize > MAX_MSGLEN  ||  buf.cursize < 0)) {  //  ||  clc.serverMessageSequence < 0) {
+	if (!di.streaming  &&  com_brokenDemo->integer  &&  (buf.cursize > MAX_MSGLEN  ||  buf.cursize < 0)) {  //  ||  clc.serverMessageSequence < 0) {
 		Com_Printf("  ^6broken demo pos: %d  seq: %d -> %d  bad size: %d\n", FS_FTell(clc.demoReadFile) - 8, prevServerMessageSequence, clc.serverMessageSequence, buf.cursize);
 		//buf.cursize = 16;
 		// -7
@@ -1683,7 +1804,7 @@ keep_reading:
 #endif
 	}
 
-	if (!di.testParse  &&  clc.demoplaying) {
+	if (!di.testParse  &&  clc.demoplaying  &&  !di.streaming) {
 		for (i = 1;  i < di.numDemoFiles;  i++) {
 			demoFile_t *df;
 			int pos;
@@ -2297,6 +2418,147 @@ static void parse_demo (void)
 	Cmd_RemoveCommand("voip");
 }
 
+static void stream_demo_look_ahead (void)
+{
+	int currentPos;
+	int r;
+	msg_t buf;
+	byte bufData[MAX_MSGLEN];
+	demoFile_t df;
+	qboolean debug = qfalse;
+
+	if (di.endOfDemo) {
+		return;
+	}
+
+	if (Cvar_VariableIntegerValue("debug_demo_stream_look_ahead")) {
+		debug = qtrue;
+	}
+
+	currentPos = FS_FTell(clc.demoReadFile);
+
+	while (!di.endOfDemo) {
+		//FIXME duplicate code
+		int endPos;
+		int seqNum;
+		int messageLength;
+
+		r = FS_Seek(clc.demoReadFile, 0L, FS_SEEK_END);
+		if (r != 0) {
+			Com_Printf("^1%s() couldn't seek to end of demo, current position %d\n", __FUNCTION__, currentPos);
+			CL_DemoCompleted();
+			return;
+		}
+
+		endPos = FS_FTell(clc.demoReadFile);
+		if ((endPos - di.demoPos) < 8) {
+			if (debug) {
+				Com_Printf("^4%s() waiting for sequence number and message length, demo position %d\n", __FUNCTION__, di.demoPos);
+			}
+			// keep waiting
+			break;
+		}
+
+		r = FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+		if (r != 0) {
+			Com_Printf("^1%s() couldn't set current position preparing to read sequence number, demo position %d\n", __FUNCTION__, di.demoPos);
+			CL_DemoCompleted();
+			return;
+		}
+
+		// get the sequence number
+		r = FS_Read(&seqNum, 4, clc.demoReadFile);
+		if (r != 4) {
+			Com_Printf("^1%s() couldn't get sequence number, demo position %d\n", __FUNCTION__, di.demoPos);
+			CL_DemoCompleted ();
+			return;
+		}
+
+		// get the length
+		r = FS_Read(&messageLength, 4, clc.demoReadFile);
+		if (r != 4) {
+			Com_Printf("^1%s() couldn't get message length, demo position %d\n", __FUNCTION__, di.demoPos);
+			CL_DemoCompleted ();
+			return;
+		}
+
+		messageLength = LittleLong(messageLength);
+
+		if (messageLength == -1) {
+			// /stoprecord writes last sequence number and length as -1
+			if (debug) {
+				Com_Printf("^4%s() end of demo, demo position %d\n", __FUNCTION__, di.demoPos);
+			}
+			di.endOfDemo = qtrue;
+			break;
+		}
+
+		if ((endPos - di.demoPos - 8) < messageLength) {
+			if (debug) {
+				Com_Printf("^4%s() waiting for message, need %d, demo position %d\n", __FUNCTION__, messageLength - (endPos - di.demoPos - 8), di.demoPos);
+			}
+			// keep waiting
+			break;
+		}
+
+		// there is enough demo file data to read message
+
+		MSG_Init(&buf, bufData, sizeof(bufData));
+		buf.cursize = messageLength;
+
+		if (buf.cursize > buf.maxsize) {
+			Com_Printf("^1%s() demo message length greater than max size, demo position %d\n", __FUNCTION__, di.demoPos);
+			di.endOfDemo = qtrue;
+			break;
+		}
+
+		if (buf.cursize < 0) {  // -1 handled above
+			Com_Printf("^1%s() negative message size, demo position %d\n", __FUNCTION__, di.demoPos);
+			di.endOfDemo = qtrue;
+			break;
+		}
+
+		r = FS_Read(buf.data, buf.cursize, clc.demoReadFile);
+		if (r != buf.cursize) {
+			// truncated demo
+			// should have been handled in waiting check before
+			Com_Printf("^3%s() truncated demo shouldn't happen, demo position %d\n", __FUNCTION__, di.demoPos);
+			di.endOfDemo = qtrue;
+			break;
+		}
+
+		buf.readcount = 0;
+
+		//FIXME obits, timeouts, item pickups, etc...
+		//  for now just checking for future server times to allow fast forwarding
+
+		memset(&df, 0, sizeof(df));
+		// df.f must be zero since this will be accessed:
+		//    &cl.snapshots[df->num][newSnap.deltaNum & PACKET_MASK];
+		CL_ParseExtraServerMessage(&df, &buf, qtrue);
+
+		if (df.serverTime > di.lastServerTime) {
+			di.lastServerTime = df.serverTime;
+		}
+
+		if (di.firstServerTime <= 0) {
+			di.firstServerTime = df.serverTime;
+		}
+
+		//FIXME this is really server messages in demo
+		di.snapsInDemo++;
+		di.demoPos = FS_FTell(clc.demoReadFile);
+	}
+
+	r = FS_Seek(clc.demoReadFile, currentPos, FS_SEEK_SET);
+	if (r != 0) {
+		Com_Printf("^1%s() couldn't reset position, current position %d\n", __FUNCTION__, currentPos);
+		CL_DemoCompleted();
+		return;
+	}
+}
+
+// used with playback from multiple demo files at once
 static void CL_ReadExtraDemoMessage (demoFile_t *df)
 {
 	int			r;
@@ -2332,6 +2594,7 @@ static void CL_ReadExtraDemoMessage (demoFile_t *df)
 	buf.cursize = LittleLong( buf.cursize );
 
 	if ( buf.cursize == -1 ) {
+		// /stoprecord writes last sequence number and length as -1
 		//CL_DemoCompleted ();
 		Com_Printf("demoFile %d done\n", df->f);
 		return;
@@ -2351,10 +2614,10 @@ static void CL_ReadExtraDemoMessage (demoFile_t *df)
 
 	//clc.lastPacketTime = cls.realtime;
 	buf.readcount = 0;
-	CL_ParseExtraServerMessage(df, &buf);
+	CL_ParseExtraServerMessage(df, &buf, qfalse);
 }
 
-static qhandle_t CL_OpenDemoFile (const char *arg)
+static qhandle_t CL_OpenDemoFile (const char *arg, qboolean streaming)
 {
 	char name[MAX_OSPATH];
 	char demoPathName[MAX_OSPATH];
@@ -2506,7 +2769,7 @@ done:
 	Cvar_Set("cl_demoFile", name);
 	Cvar_Set("cl_demoFileBaseName", FS_BaseName(name));
 
-	if (file  &&  cl_keepDemoFileInMemory->integer) {
+	if (file  &&  cl_keepDemoFileInMemory->integer  &&  !streaming) {
 		FS_FileLoadInMemory(file);
 	}
 
@@ -2560,7 +2823,7 @@ void CL_PlayDemo_f (void)
 
 	CL_Disconnect( qtrue );
 
-	clc.demoReadFile = CL_OpenDemoFile(arg);
+	clc.demoReadFile = CL_OpenDemoFile(arg, qfalse);
 	if (!clc.demoReadFile) {
 		Com_Printf("^1CL_PlayDemo_f() couldn't open demo file '%s'\n", arg);
 		return;
@@ -2591,8 +2854,8 @@ void CL_PlayDemo_f (void)
 		//arg = Cmd_Argv(i);
 		arg = DemoNames[i - 1];
 		Com_Printf("^4'%s'\n", arg);
-		//di.demoFiles[di.numDemoFiles].f = CL_OpenDemoFile(arg);
-		file = CL_OpenDemoFile(arg);
+		//di.demoFiles[di.numDemoFiles].f = CL_OpenDemoFile(arg, qfalse);
+		file = CL_OpenDemoFile(arg, qfalse);
 		if (!file) {
 			Com_Printf("^3CL_PlayDemo_f couldn't open '%s'\n", arg);
 			continue;
@@ -2609,6 +2872,125 @@ void CL_PlayDemo_f (void)
 	Con_Close();
 
 	parse_demo();
+
+	// CL_CheckWorkshopDownload() advances to CA_CONNECTED
+	clc.state = CA_DOWNLOADINGWORKSHOPS;
+	clc.demoplaying = qtrue;
+	clc.demoPlayBegin = Sys_Milliseconds();
+
+	// let CL_CheckWorkshopDownload() know it needs to initialize
+	clc.demoWorkshopsString = NULL;
+	Q_strncpyz( clc.servername, arg, sizeof( clc.servername ) );
+
+
+#ifdef LEGACY_PROTOCOL
+#if 0  //FIXME check
+	if(protocol <= com_legacyprotocol->integer)
+		clc.compat = qtrue;
+	else
+		clc.compat = qfalse;
+#endif
+#endif
+
+	Com_Printf("^5checking workshops\n");
+	// check immediately so it doesn't flash download screen if the file
+	// is present or steamcmd not available
+	CL_CheckWorkshopDownload();
+}
+
+void CL_StreamDemo_f (void)
+{
+	const char *arg;
+	int i;
+	int n;
+
+#if 0
+	if (clc.state == CA_CONNECTING) {
+		// recursive call
+		Com_Printf("^1CL_PlayDemo_f: invalid state\n");
+		return;
+	}
+#endif
+
+	n = Cmd_Argc();
+
+	if (n < 2) {
+		Com_Printf("streamdemo <demoname>\n");
+		return;
+	}
+
+	// make sure a local server is killed
+	// 2 means don't force disconnect of local client
+	Cvar_Set( "sv_killserver", "2" );
+	Cvar_Set("com_workshopids", "");
+
+#if 0
+	for (i = 1;  i < n  &&  i <= MAX_DEMO_FILES;  i++) {
+		arg = Cmd_Argv(i);
+		Q_strncpyz(DemoNames[i - 1], arg, MAX_OSPATH);
+	}
+
+	arg = DemoNames[0];
+#endif
+
+	arg = Cmd_Argv(1);
+
+	CL_Disconnect( qtrue );
+
+	clc.demoReadFile = CL_OpenDemoFile(arg, qtrue);
+	if (!clc.demoReadFile) {
+		Com_Printf("^1CL_StreamDemo_f() couldn't open demo file '%s'\n", arg);
+		return;
+	}
+
+	//FIXME
+	memset(&di, 0, sizeof(di));
+	
+	//FIXME
+	for (i = 0;  i < MAX_DEMO_FILES;  i++) {
+		di.demoFiles[i].num = i;
+	}
+	di.demoFiles[0].f = clc.demoReadFile;
+	di.demoFiles[0].valid = qtrue;
+	di.numDemoFiles++;
+
+#if 0
+	//n = Cmd_Argc();
+	for (i = 2;  i < n  &&  i <= MAX_DEMO_FILES;  i++) {
+		qhandle_t file;
+		demoFile_t *df;
+
+#if 0
+		if (di.numDemoFiles > MAX_DEMO_FILES) {
+			Com_Printf("^3CL_PlayDemo_f MAX_DEMO_FILES(%d)\n", MAX_DEMO_FILES);
+			break;
+		}
+#endif
+
+		//arg = Cmd_Argv(i);
+		arg = DemoNames[i - 1];
+		Com_Printf("^4'%s'\n", arg);
+		//di.demoFiles[di.numDemoFiles].f = CL_OpenDemoFile(arg, qtrue);
+		file = CL_OpenDemoFile(arg, qtrue);
+		if (!file) {
+			Com_Printf("^3CL_PlayDemo_f couldn't open '%s'\n", arg);
+			continue;
+		}
+		Com_Printf("%d\n", file);
+		df = &di.demoFiles[di.numDemoFiles];
+		df->f = file;
+		df->valid = qtrue;
+		di.numDemoFiles++;
+	}
+#endif
+
+	di.streaming = qtrue;
+
+	//Q_strncpyz( clc.demoName, Cmd_Argv(1), sizeof( clc.demoName ) );
+
+	Con_Close();
+
+	//parse_demo();
 
 	// CL_CheckWorkshopDownload() advances to CA_CONNECTED
 	clc.state = CA_DOWNLOADINGWORKSHOPS;
@@ -6343,6 +6725,7 @@ void CL_Init ( void ) {
 	Cmd_AddCommand ("record", CL_Record_f);
 	Cmd_AddCommand ("demo", CL_PlayDemo_f);
 	Cmd_SetCommandCompletionFunc( "demo", CL_CompleteDemoName );
+	Cmd_AddCommand ("streamdemo", CL_StreamDemo_f);
 	Cmd_AddCommand ("cinematic", CL_PlayCinematic_f);
 	Cmd_AddCommand ("cinematic_restart", CL_RestartCinematic_f);
 	Cmd_AddCommand ("cinematiclist", CL_ListCinematic_f);

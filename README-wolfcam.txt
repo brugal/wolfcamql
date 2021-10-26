@@ -3054,6 +3054,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 
 * com_brokenDemo  this is set on the command and tries to continue parsing of demo files that have errors.  Broken demo playback isn't guaranteed and setting this cvar can lead to very long demo parsing times.
 
+* /streamdemo [demo file]  command to allow playback of demos that are still being written to
+
 * cg_itemTimers  in world quake live item timers (0: not visible, 1: visible, 2: visible with depth hack)
 * cg_itemTimersScale  size scale of in world timers
 * cg_itemTimersOffset  vertical displacement of in world timers
@@ -3180,6 +3182,14 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
     cg_cpmaUseNtfRailColors
     cg_cpmaNtfRedRailColor
     cg_cpmaNtfBlueRailColor
+
+* cg_cpmaInvisibility  1: for cpma demos, 2: for all demos
+
+  This renders only a skull and weapon flash for players with invisibility
+  powerup.  It uses this model if available:
+
+    models/powerups/instant/invis_head.md3
+    models/powerups/instant/invis_head_skin.tga
 
 * cg_debugevents > 1 shows predictable events
 

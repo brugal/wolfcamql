@@ -2053,7 +2053,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 			}
 		}
 
-	// other commands
+		// other commands
 		switch ( cmd ) {
 		default:
 			Parse_Error (ERR_DROP, "CL_ParseServerMessage: Illegible server message %d", cmd);
@@ -2097,7 +2097,8 @@ void CL_ParseServerMessage( msg_t *msg ) {
 	}
 }
 
-void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
+// used with demo playback from multiple files and with demo streaming
+void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg, qboolean justPeek)
 {
 	int			cmd;
 	//int reliableAcknowledge;
@@ -2159,7 +2160,7 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
 			}
 		}
 
-	// other commands
+		// other commands
 		switch ( cmd ) {
 		default:
 			//Parse_Error (ERR_DROP, "CL_ParseServerMessage: Illegible server message %d", cmd);
@@ -2174,7 +2175,7 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
 			CL_ParseExtraGamestate(df, msg);
 			break;
 		case svc_snapshot:
-			CL_ParseExtraSnapshot(df, msg, NULL, qfalse);
+			CL_ParseExtraSnapshot(df, msg, NULL, justPeek);
 			break;
 		case svc_download:
 			CL_ParseExtraDownload(df, msg);
@@ -2188,5 +2189,3 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg)
 		}
 	}
 }
-
-

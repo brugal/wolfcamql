@@ -5618,7 +5618,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 				if ((cg_disallowEnemyModelForTeammates.integer  &&  cg_disallowEnemyModelForTeammates.integer != 2)  &&  ci->legsModel == cg.enemyModel.legsModel) {
 					CG_CopyClientInfoModel(&cg.fallbackModel, ci);
 				}
-				//FIXME alt skins?  -- 2016-05-27  no that's team baseed
+				//FIXME alt skins?  -- 2016-05-27  no that's team based
 			}
 
 			// save selected colors
@@ -5946,7 +5946,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 			//Com_Printf("us: %d  '%s'  legs:%d  enemyLegs:%d\n", cent->currentState.clientNum, cgs.clientinfo[cent->currentState.clientNum].name, ci->legsModel, cg.enemyModel.legsModel);
 
 			if ((cg_disallowEnemyModelForTeammates.integer &&  cg_disallowEnemyModelForTeammates.integer != 2)  &&  ci->legsModel == cg.enemyModel.legsModel) {
-				//Com_Printf("^6FIXME settting us to enemy model\n");
+				//Com_Printf("^6FIXME setting us to enemy model\n");
 				// cg_forcePovModel is 0 at this point so we are using demo taker pov model
 				if (CG_IsTeamGame(cgs.gametype)) {
 					if (team == TEAM_RED) {
@@ -7063,9 +7063,13 @@ void CG_Player ( centity_t *cent ) {
 	}
 
 
-	CG_AddRefEntityWithPowerups( &legs, &cent->currentState, ci->team );
-	//CG_AddRefEntityWithPowerups( &legs, &cent->currentState, ci->team );
+	if (cent->currentState.powerups & (1 << PW_INVIS)  &&  (cg_cpmaInvisibility.integer > 1  ||  (cgs.cpma  &&  cg_cpmaInvisibility.integer == 1))) {
+		// pass
+	} else {
+		CG_AddRefEntityWithPowerups( &legs, &cent->currentState, ci->team );
+	}
 
+	//FIXME fx shader with cpma invisibility?
 	if (cg.ftime < cent->extraShaderEndTime  &&  cent->extraShader) {
 		legs.customShader = cent->extraShader;
 		CG_AddRefEntity(&legs);
@@ -7144,7 +7148,13 @@ void CG_Player ( centity_t *cent ) {
 
 	}
 
-	CG_AddRefEntityWithPowerups( &torso, &cent->currentState, ci->team );
+	if (cent->currentState.powerups & (1 << PW_INVIS)  &&  (cg_cpmaInvisibility.integer > 1  ||  (cgs.cpma  &&  cg_cpmaInvisibility.integer == 1))) {
+		// pass
+	} else {
+		CG_AddRefEntityWithPowerups( &torso, &cent->currentState, ci->team );
+	}
+
+	//FIXME fx shader with cpma invisibility?
 	if (cg.ftime < cent->extraShaderEndTime  &&  cent->extraShader) {
 		torso.customShader = cent->extraShader;
 		CG_AddRefEntity(&torso);
@@ -7519,7 +7529,32 @@ void CG_Player ( centity_t *cent ) {
         cent->lastHeadDistanceTime = ScriptVars.lastDistanceTime;
 	}
 
-	CG_AddRefEntityWithPowerups( &head, &cent->currentState, ci->team );
+	if (cent->currentState.powerups & (1 << PW_INVIS)  &&  (cg_cpmaInvisibility.integer > 1  ||  (cgs.cpma  &&  cg_cpmaInvisibility.integer == 1))) {
+		memset(&skull, 0, sizeof(skull));
+		skull.shadowPlane = shadowPlane;
+		skull.renderfx = renderfx;
+		VectorCopy(head.origin, skull.lightingOrigin);
+		VectorCopy(head.origin, skull.origin);
+		VectorCopy(head.axis[0], skull.axis[0]);
+		VectorCopy(head.axis[1], skull.axis[1]);
+		VectorCopy(head.axis[2], skull.axis[2]);
+		if (cgs.media.invisHeadModel) {
+			skull.hModel = cgs.media.invisHeadModel;
+		} else {
+			skull.hModel = cgs.media.kamikazeHeadModel;
+
+			// this can also work:
+			//skull.hModel = cgs.media.gibSkull;
+
+			//FIXME some transparency to match cpma version
+			// skull.customShader = trap_R_RegisterShaderNoMip(...);
+		}
+		CG_AddRefEntity(&skull);
+	} else {
+		CG_AddRefEntityWithPowerups( &head, &cent->currentState, ci->team );
+	}
+
+	//FIXME fx shader with cpma invisibility?
 	if (cg.ftime < cent->extraShaderEndTime  &&  cent->extraShader) {
 		head.customShader = cent->extraShader;
 		CG_AddRefEntity(&head);

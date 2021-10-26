@@ -269,7 +269,9 @@ qboolean Wolfcam_InterpolateEntityPosition (centity_t *cent)
 		while (1) {
 			r = trap_PeekSnapshot(cgs.processedSnapshotNum + i, &tmpSnapshot);
 			if (!r) {
-				Com_Printf("FIXME wc interp couldn't peek at next snapshot\n");
+				if (!(cg.demoPlayback  &&  cg.demoStreaming  &&  cg.demoWaitingForStream)) {  // don't spam
+					Com_Printf("FIXME wc interp couldn't peek at next snapshot\n");
+				}
 				wcg.centityAdded[number] = qtrue;
 				return qtrue;  //FIXME don't return since you might not even need the next snapshot
 			}

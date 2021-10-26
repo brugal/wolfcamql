@@ -1743,7 +1743,7 @@ void CG_ProcessSnapshots( void ) {
 			// if we still don't have a nextframe, we will just have to
 			// extrapolate
 			if ( !snap ) {
-				if (cg.demoPlayback  &&  !SC_Cvar_Get_Int("cl_freezeDemo")  &&  SC_Cvar_Get_Float("timescale") == 1.0) {
+				if (cg.demoPlayback  &&  !SC_Cvar_Get_Int("cl_freezeDemo")  &&  !cg.demoWaitingForStream  &&  SC_Cvar_Get_Float("timescale") == 1.0) {
 					CG_Printf("processsnapshots()  couldn't get nextsnap %d\n", cgs.processedSnapshotNum);
 				}
 				break;

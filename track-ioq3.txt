@@ -7755,3 +7755,11 @@ the demo.
     Fix compiling against SDL 2.0.17
 
     KMOD_RESERVED was replaced with KMOD_SCROLL.
+
+2021-09-25-01
+    qsort cannot be called with NULL
+
+    resolves #519
+
+2021-09-27-01
+    GHA deprecated Ubuntu 16.04 - update to 18.04

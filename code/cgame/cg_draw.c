@@ -6635,6 +6635,20 @@ static void CG_DrawDisconnect( void ) {
 		return;
 	}
 
+	if (cg.demoPlayback  &&  cg.demoStreaming  &&  cg.demoWaitingForStream) {
+		// blink
+		//if ( ( cg.time >> 9 ) & 1 ) {
+		if ((cg.realTime >> 9) & 1) {
+			return;
+		}
+
+		s = "^3Waiting For Demo Stream";
+		QLWideScreen = WIDESCREEN_CENTER;
+		w = CG_DrawStrlen( s, &cgs.media.bigchar );
+		CG_DrawBigString( 320 - w/2, 50, s, 1.0F);
+		return;
+	}
+
     //CG_Printf ("cmd.serverTime:%d  cg.snap->ps.commandTime:%d  cg.time:%d\n", cmd.serverTime, cg.snap->ps.commandTime, cg.time);
     if (cg.demoPlayback  &&  cg_timescale.value != 1.0f) {
 		//FIXME take timescale into account
@@ -11186,6 +11200,8 @@ void CG_DrawActive( stereoFrame_t stereoView ) {
 	if (cg_animationsIgnoreTimescale.integer) {
 		cg.refdef.time = cg.realTime;
 	}
+	//cg.refdef.time *= cg_animationsRate.value;
+	// agkr234: Fixed stuttering in cg_animationsRate at low timescales
 	cg.refdef.time = cg.ftime * cg_animationsRate.value;
 
 	if (0) {  //(cg.demoSeeking) {

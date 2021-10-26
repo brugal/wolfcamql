@@ -2538,7 +2538,11 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 			}
 		}
 
-		CG_AddWeaponWithPowerups( &gun, cent->currentState.powerups );
+		if (!ps  &&  (cent->currentState.powerups & (1 << PW_INVIS)  &&  (cg_cpmaInvisibility.integer > 1  ||  (cgs.cpma  &&  cg_cpmaInvisibility.integer == 1)))) {
+			// pass
+		} else {
+			CG_AddWeaponWithPowerups( &gun, cent->currentState.powerups );
+		}
 	}
 
 	// add the spinning barrel
@@ -2578,7 +2582,11 @@ void CG_AddPlayerWeapon( const refEntity_t *parent, const playerState_t *ps, cen
 			}
 		}
 
-		CG_AddWeaponWithPowerups( &barrel, cent->currentState.powerups );
+		if (!ps  &&  (cent->currentState.powerups & (1 << PW_INVIS)  &&  (cg_cpmaInvisibility.integer > 1  ||  (cgs.cpma  &&  cg_cpmaInvisibility.integer == 1)))) {
+			// pass
+		} else {
+			CG_AddWeaponWithPowerups( &barrel, cent->currentState.powerups );
+		}
 	}
 
 	// make sure we aren't looking at cg.predictedPlayerEntity for LG

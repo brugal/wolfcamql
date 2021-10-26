@@ -21,6 +21,6 @@ float CG_CalcSpline (int step, float tension);
 
 void CG_AdjustOriginToAvoidSolid (vec3_t origin, const centity_t *cent);
 
-void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demoPlayback, qboolean videoRecording, int ioverf, qboolean draw);
+void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demoPlayback, qboolean demoStreaming, qboolean demoWaitingForStream, qboolean videoRecording, int ioverf, qboolean draw);
 
 #endif  // cg_view_h_included

@@ -981,6 +981,9 @@ typedef struct {
 
 	qboolean	paused;
 	qboolean	demoPlayback;
+	qboolean demoStreaming;
+	qboolean demoWaitingForStream;
+
 	qboolean	levelShot;			// taking a level menu screenshot
 	int			deferredPlayerLoading;
 	qboolean	loading;			// don't defer players at initial startup
@@ -1885,6 +1888,9 @@ typedef struct {
 	qhandle_t	heartShader;
 	qhandle_t	invulnerabilityPowerupModel;
 #endif
+
+	// cpma invis
+	qhandle_t invisHeadModel;
 
 	qhandle_t 	caScoreRed;
 	qhandle_t	caScoreBlue;
@@ -3778,6 +3784,7 @@ extern vmCvar_t cg_chaseMovementKeys;
 extern vmCvar_t cg_redRoverRoundStartSound;
 
 extern vmCvar_t cg_statusBarHeadStyle;
+extern vmCvar_t cg_cpmaInvisibility;
 
 // end cvar_t
 

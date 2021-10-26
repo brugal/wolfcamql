@@ -5674,7 +5674,7 @@ extern int QstrcmpCount;
 
 #endif
 
-void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demoPlayback, qboolean videoRecording, int ioverf, qboolean draw)
+void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demoPlayback, qboolean demoStreaming, qboolean demoWaitingForStream, qboolean videoRecording, int ioverf, qboolean draw)
 {
 	int		inwater = qfalse;
 	int currentWeapon;
@@ -5769,6 +5769,8 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 #endif
 
 	cg.demoPlayback = demoPlayback;
+	cg.demoStreaming = demoStreaming;
+	cg.demoWaitingForStream = demoWaitingForStream;
 
 	trap_autoWriteConfig(qtrue);
 

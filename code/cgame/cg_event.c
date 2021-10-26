@@ -2727,34 +2727,28 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			}
 
 			team = cgs.clientinfo[cn].team;
+
 			if (cgs.cpma  &&  (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF)) {
-#if 0
-				if (team == TEAM_RED) {
-					team = TEAM_BLUE;
-				} else if (team == TEAM_BLUE) {
-					team = TEAM_RED;
-				}
-#endif
 				//Com_Printf("^6eventParm %d\n", es->eventParm);
 				switch (es->eventParm) {
-				case GTS_RED_CAPTURE: // CTF: red team captured the blue flag, 1FCTF: red team captured the neutral flag
+				case GTSCPMA_RED_CAPTURE: // CTF: red team captured the blue flag, 1FCTF: red team captured the neutral flag
 					if ( team == TEAM_RED )
 						CG_AddBufferedSound( cgs.media.captureYourTeamSound );
 					else
 						CG_AddBufferedSound( cgs.media.captureOpponentSound );
 					break;
-				case GTS_BLUE_CAPTURE: // CTF: blue team captured the red flag, 1FCTF: blue team captured the neutral flag
+				case GTSCPMA_BLUE_CAPTURE: // CTF: blue team captured the red flag, 1FCTF: blue team captured the neutral flag
 					if ( team == TEAM_BLUE )
 						CG_AddBufferedSound( cgs.media.captureYourTeamSound );
 					else
 						CG_AddBufferedSound( cgs.media.captureOpponentSound );
 					break;
-				case GTS_RED_RETURN: // red flag returned
+				case GTSCPMA_RED_RETURN: // red flag returned
 					if ( team == TEAM_RED )
 						CG_AddBufferedSound( cgs.media.returnYourTeamSound );
 					else
 						CG_AddBufferedSound( cgs.media.returnOpponentSound );
-					//
+
 					if (cg_audioAnnouncerFlagStatus.integer) {
 						if (team == TEAM_RED) {
 							CG_AddBufferedSound(cgs.media.yourFlagReturnedSound);
@@ -2765,12 +2759,12 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						}
 					}
 					break;
-				case GTS_BLUE_RETURN: // blue flag returned
+				case GTSCPMA_BLUE_RETURN: // blue flag returned
 					if ( team == TEAM_BLUE )
 						CG_AddBufferedSound( cgs.media.returnYourTeamSound );
 					else
 						CG_AddBufferedSound( cgs.media.returnOpponentSound );
-					//
+
 					if (cg_audioAnnouncerFlagStatus.integer) {
 						if (team == TEAM_BLUE) {
 							CG_AddBufferedSound(cgs.media.yourFlagReturnedSound);
@@ -2782,7 +2776,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					}
 					break;
 
-				case GTS_RED_TAKEN: // red flag taken
+				case GTSCPMA_RED_TAKEN: // red flag taken
 					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
 					if (cg.snap->ps.powerups[PW_REDFLAG] || cg.snap->ps.powerups[PW_NEUTRALFLAG]) {
 						//FIXME wolfcam what?
@@ -2815,7 +2809,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						}  // flag taken sound
 					}
 					break;
-				case GTS_BLUE_TAKEN: // blue flag taken
+				case GTSCPMA_BLUE_TAKEN: // blue flag taken
 					// if this player picked up the flag then a sound is played in CG_CheckLocalSounds
 					if (cg.snap->ps.powerups[PW_BLUEFLAG] || cg.snap->ps.powerups[PW_NEUTRALFLAG]) {
 						//FIXME wolfcam what?
@@ -2845,19 +2839,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						}
 					}
 					break;
-#if 1  //def MPACK
-				case GTS_REDOBELISK_ATTACKED: // Overload: red obelisk is being attacked
-					if (team == TEAM_RED) {
-						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
-					}
-					break;
-				case GTS_BLUEOBELISK_ATTACKED: // Overload: blue obelisk is being attacked
-					if (team == TEAM_BLUE) {
-						CG_AddBufferedSound( cgs.media.yourBaseIsUnderAttackSound );
-					}
-					break;
-#endif
-				case GTS_REDTEAM_SCORED:
+				case GTSCPMA_REDTEAM_SCORED:
 					if (cg_audioAnnouncerScore.integer) {
 						if (team == TEAM_RED) {
 							CG_AddBufferedSound(cgs.media.yourTeamScoredSound);
@@ -2871,8 +2853,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						CG_CenterPrint("Red Scores", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 					}
 					break;
-				case GTS_REDTEAM_TOOK_LEAD:  //GTS_BLUETEAM_SCORED:  //FIXME
-					//FIXME 2015-07-16 change index enums
+				case GTSCPMA_BLUETEAM_SCORED:
 					if (cg_audioAnnouncerScore.integer) {
 						if (team == TEAM_BLUE) {
 							CG_AddBufferedSound(cgs.media.yourTeamScoredSound);
@@ -2886,27 +2867,21 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						CG_CenterPrint("Blue Scores", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 					}
 					break;
-				case 999:  //GTS_REDTEAM_TOOK_LEAD:  //FIXME
-					//FIXME 2015-07-16 set index enum
+				case GTSCPMA_REDTEAM_TOOK_LEAD:
 					if (cg_audioAnnouncerLead.integer) {
 						CG_AddBufferedSound(cgs.media.redLeadsSound);
 					}
 					break;
-				case GTS_BLUETEAM_TOOK_LEAD:
+				case GTSCPMA_BLUETEAM_TOOK_LEAD:
 					if (cg_audioAnnouncerLead.integer) {
 						CG_AddBufferedSound(cgs.media.blueLeadsSound);
 					}
 					break;
-				case GTS_TEAMS_ARE_TIED:
+				case GTSCPMA_TEAMS_ARE_TIED:
 					if (cg_audioAnnouncerLead.integer) {
 						CG_AddBufferedSound( cgs.media.teamsTiedSound );
 					}
 					break;
-#if  1  //def MPACK
-				case GTS_KAMIKAZE:
-					CG_StartLocalSound(cgs.media.kamikazeFarSound, CHAN_ANNOUNCER);
-					break;
-#endif
 				default:
 					CG_Printf("^3cpma unknown global team sound: %d\n", es->eventParm);
 					//CG_PrintEntityStatep(es);

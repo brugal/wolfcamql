@@ -1055,6 +1055,20 @@ typedef enum {
 	GTS_PLAYER_INFECTED,  // guess, in red rover halloween infected
 } global_team_sound_t;
 
+typedef enum {
+	GTSCPMA_RED_CAPTURE,
+	GTSCPMA_BLUE_CAPTURE,
+	GTSCPMA_RED_RETURN,
+	GTSCPMA_BLUE_RETURN,
+	GTSCPMA_RED_TAKEN,
+	GTSCPMA_BLUE_TAKEN,  // 5
+	GTSCPMA_REDTEAM_SCORED,
+	GTSCPMA_BLUETEAM_SCORED,
+	GTSCPMA_REDTEAM_TOOK_LEAD,
+	GTSCPMA_BLUETEAM_TOOK_LEAD,
+	GTSCPMA_TEAMS_ARE_TIED,  // 10
+} global_team_sound_cpma_t;
+
 // animations
 typedef enum {
 	BOTH_DEATH1,

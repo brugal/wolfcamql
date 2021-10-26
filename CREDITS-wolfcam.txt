@@ -32,6 +32,7 @@ em92 (Eugene Molotov):
   * backtrace syntax fix
 
 Cyrax (Eugene C.):  screenMap shader directive from Quake3e
+agkr234: Fixed stuttering in cg_animationsRate at low timescales
 
 zeroql:  sending me some of the stuff he was working on and motivating me to keep working on this program
 KittenIgnition:  helping others, ideas and suggestions, beta testing

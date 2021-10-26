@@ -237,3 +237,15 @@ wc/hud/sp
 		alphaFunc GE128
 	}
 }
+
+// cpma invis powerup skull
+models/powerups/instant/invis_head_skin
+{
+        nopicmip
+        {
+                map models/powerups/instant/invis_head_skin.tga
+                blendfunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+                depthWrite
+                rgbGen identity
+        }
+}

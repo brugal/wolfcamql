@@ -87,7 +87,7 @@ Q_EXPORT intptr_t vmMain( int command, int arg0, int arg1, int arg2, int arg3, i
 		return CG_ConsoleCommand();
 	case CG_DRAW_ACTIVE_FRAME:
 		//Com_Printf("^5active start\n");
-		CG_DrawActiveFrame(arg0, arg1, arg2, arg3, arg4, arg5);
+		CG_DrawActiveFrame(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 		//Com_Printf("^5active end\n");
 		return 0;
 	case CG_CROSSHAIR_PLAYER:
@@ -1347,6 +1347,8 @@ vmCvar_t cg_chaseMovementKeys;
 vmCvar_t cg_redRoverRoundStartSound;
 
 vmCvar_t cg_statusBarHeadStyle;
+vmCvar_t cg_cpmaInvisibility;
+
 
 // end cvar_t
 
@@ -2610,6 +2612,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 
 	{ cvp(cg_redRoverRoundStartSound), "1", CVAR_ARCHIVE },
 	{ cvp(cg_statusBarHeadStyle), "0", CVAR_ARCHIVE },
+	{ cvp(cg_cpmaInvisibility), "1", CVAR_ARCHIVE },
 
 };
 
@@ -4320,6 +4323,9 @@ static void CG_RegisterGraphics( void ) {
 			itemInfo->icon = trap_R_RegisterShaderNoMip("icons/ammo_pack");
 		}
 	}
+
+	// cpma invis skull model
+	cgs.media.invisHeadModel = trap_R_RegisterModel("models/powerups/instant/invis_head.md3");
 
 	// wall marks
 	cgs.media.bulletMarkShader = trap_R_RegisterShader( "gfx/damage/bullet_mrk" );

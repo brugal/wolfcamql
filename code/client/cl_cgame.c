@@ -289,11 +289,16 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 	int serverMessageSequence;
 	int cmdCount;
 	qboolean snapshotInMessage;
+	qboolean silent = qfalse;
 
 	clSnap = &csn;
 
 	if (!clc.demoplaying) {
 		return qfalse;
+	}
+
+	if (di.streaming) {
+		silent = qtrue;
 	}
 
 	if (snapshotNumber <= cl.snap.messageNum) {
@@ -327,7 +332,9 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 		memset(buffer, 0, sizeof(buffer));
 		r = FS_Read( &buffer, 4, clc.demoReadFile);
 		if ( r != 4 ) {
-			Com_Printf("CL_PeekSnapshot couldn't read sequence number\n");
+			if (!silent) {
+				Com_Printf("CL_PeekSnapshot couldn't read sequence number\n");
+			}
 			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
 			clc.lastPacketTime = lastPacketTimeOrig;
 			cl.parseEntitiesNum = parseEntitiesNumOrig;
@@ -343,7 +350,9 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 		// get the length
 		r = FS_Read (&buf.cursize, 4, clc.demoReadFile);
 		if ( r != 4 ) {
-			Com_Printf("CL_PeekSnapshot couldn't get length\n");
+			if (!silent) {
+				Com_Printf("CL_PeekSnapshot couldn't get length\n");
+			}
 			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
 			clc.lastPacketTime = lastPacketTimeOrig;
 			cl.parseEntitiesNum = parseEntitiesNumOrig;
@@ -379,7 +388,9 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 
 		r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
 		if ( r != buf.cursize ) {
-			Com_Printf("CL_PeekSnapshot Demo file was truncated.\n");
+			if (!silent) {
+				Com_Printf("CL_PeekSnapshot Demo file was truncated.\n");
+			}
 			FS_Seek(clc.demoReadFile, origPosition, FS_SEEK_SET);
 			clc.lastPacketTime = lastPacketTimeOrig;
 			cl.parseEntitiesNum = parseEntitiesNumOrig;
@@ -1605,7 +1616,7 @@ void CL_CGameRendering( stereoFrame_t stereo ) {
 	int startTime;
 
 	startTime = Sys_Milliseconds();
-	VM_Call(cgvm, CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying, CL_VideoRecording(&afdMain), (int)(Overf * SUBTIME_RESOLUTION), qtrue);
+	VM_Call(cgvm, CG_DRAW_ACTIVE_FRAME, cl.serverTime, stereo, clc.demoplaying, di.streaming, di.waitingForStream, CL_VideoRecording(&afdMain), (int)(Overf * SUBTIME_RESOLUTION), qtrue);
 	clc.cgameTime += (Sys_Milliseconds() - startTime);
 	VM_Debug( 0 );
 	//cl.draw = qtrue;
@@ -1815,6 +1826,9 @@ void CL_SetCGameTime( void ) {
 			if (!cl_freezeDemo->integer) {  //  ||  (cl_freezeDemo->integer  &&  cl.vidRestarted)) {
 				//Com_Printf("%s read demo message\n", __FUNCTION__);
 				CL_ReadDemoMessage(qfalse);
+				if (di.waitingForStream) {
+					return;
+				}
 			}
 		}
 		if ( cl.newSnapshots ) {
@@ -1848,7 +1862,7 @@ void CL_SetCGameTime( void ) {
 
 	// get our current view of time
 
-	if (clc.demoplaying  &&  cl_freezeDemo->integer) {
+	if (clc.demoplaying  &&  (cl_freezeDemo->integer  ||  di.waitingForStream)) {
 		//
 
 	} else {
@@ -1964,7 +1978,12 @@ void CL_SetCGameTime( void ) {
 					Com_Printf("%s cl.serverTime >= cl.snap.serverTime   %d  %d  %d\n", __FUNCTION__, cl.serverTime, cl.snap.serverTime, loopCount);
 				}
 			}
+
 			CL_ReadDemoMessage(qfalse);
+			if (di.waitingForStream) {
+				return;
+			}
+
 			if (!di.testParse  &&  clc.state == CA_ACTIVE  &&  cl.serverTime > cl.snap.serverTime  &&  com_timescaleSafe->integer) {  //  &&  com_timescale->value > 1.0) {
 				if (com_timescale->value > 1.0) {  //(!di.offlineDemo) {  //FIXME offlinedemo  ||  (di.offlineDemo  &&  cl.serverTime > cl.snap.serverTime)) {
 					//Com_Printf("setcgametime timescale %f  framecount %d\n", com_timescale->value, cls.framecount);
@@ -1986,7 +2005,7 @@ void CL_SetCGameTime( void ) {
 
 #if 0
 							cl.draw = qfalse;
-							VM_Call(cgvm, CG_DRAW_ACTIVE_FRAME, cl.snap.serverTime, STEREO_CENTER, clc.demoplaying, CL_VideoRecording(&afdMain), (int)(Overf * SUBTIME_RESOLUTION), qfalse);
+							VM_Call(cgvm, CG_DRAW_ACTIVE_FRAME, cl.snap.serverTime, STEREO_CENTER, clc.demoplaying, di.streaming, di.waitingForStream, CL_VideoRecording(&afdMain), (int)(Overf * SUBTIME_RESOLUTION), qfalse);
 							cl.draw = qtrue;
 							cls.framecount++;
 #endif

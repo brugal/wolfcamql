@@ -484,6 +484,10 @@ typedef struct {
 	int numTeamSwitches;
 
 	int gametype;
+
+	qboolean streaming;
+	qboolean waitingForStream;
+	int streamWaitTime;
 } demoInfo_t;
 
 extern demoInfo_t di;
@@ -690,7 +694,7 @@ void CL_Voip_f( void );
 
 void CL_SystemInfoChanged( void );
 void CL_ParseServerMessage( msg_t *msg );
-void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg);
+void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg, qboolean justPeek);
 
 //====================================================================
 

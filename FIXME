@@ -709,7 +709,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * cg_roll --  for fov
 * 2012-09-23  prev update:
     bot chat using vtell, end of game map voting, etc..
-* colored icon for hud 'head' element
 * better align description in docs
 * colorfade fx doc
 
@@ -2370,12 +2369,9 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * overtime in q3 (non-cpma) with countdown level timer
 * check if cpma cg_levelTimerDirection 4 works with real end game time
 * cpma ntf option to use ntf class for pov model
-* demo streaming
 
 * cg_cpmaNtfScoreboardClassModel for ql hud use red and blue icons not pm or bright
 * ctf demo tankjr orange?
-* cpma unknown global team sound 9
-* loading screen shows sarge icon for all players in cpma (missing pm skin?)
 * freecam team settings not setting team color if model or skins aren't set -- 2021-09-13 that's ok could be something like cpma where players set their own colors, need to check other code so that it works like that
 
 * cg_railQL using ci->color2 directly and not checking teammate/enemy settings
@@ -2383,6 +2379,24 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * cinfo unused in CG_Player()
 * delete cvar command
 * CG_RailTrail (not EV_* caller) should be checking cg_railUseOwnColors
+* where else can cg.refdef.time = cg.ftime be used ? (see agkr234 fix)
+* /streamdemo
+
+    - +info  demo size junk
+    - other checks for streaming
+      * check demoInfo_t
+      * leveltimerdirection cg_demosmoothing loopdemo
+
+       trap_GetLastServerTime
+
+    - /seeksync
+
+       * show offset in +info screen
+
+* rewind backups based on time not fixed number, alloc()
+* di.snapsInDemo is counting messages in demo, not snaps, maybe rename
+* cg_cpmaInvisitility without invis_head.md3 make a little transparent to match
+
 
 ----
 

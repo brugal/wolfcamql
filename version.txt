@@ -1,4 +1,4 @@
-12.5test10
+12.5test11
 
 * ioquake3 patches
 
@@ -123,7 +123,17 @@
    cg_redTeamRailItemColor, cg_blueTeamRailItemColor, cg_redTeamRailColor1, cg_redTeamRailColor2, cg_blueTeamRailColor1, cg_blueTeamRailColor2, and cg_useCustomRedBlueRail should be used instead
 
 * cg_railUseOwnColors new options:  2: check teammate and red/blue team settings then fallback to demo colors, 3:  same as 2 but fallback to color1 and color2
+* bug fix:  cpma incorrect team lead and score announcer message
+* fixed stuttering in cg_animationsRate at low timescales (agkr234)
+* bug fix:  loading screen for cpma demos using incorrect player icons
+* /streamdemo [demo file]  command to allow playback of demos that are still being written to
+* cg_cpmaInvisibility  1: for cpma demos, 2: for all demos
 
+  This renders only a skull and weapon flash for players with invisibility
+  powerup.  It uses this model if available:
+
+    models/powerups/instant/invis_head.md3
+    models/powerups/instant/invis_head_skin.tga
 
 ---------------------------------
 12.4  2020-12-04

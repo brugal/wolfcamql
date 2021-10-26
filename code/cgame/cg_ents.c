@@ -1531,7 +1531,7 @@ static void CG_Item ( centity_t *cent ) {
 		//    EF_BACKPACK is used to set dropped entity as backpack.
 		//
 		// non zero modelindex2 value for items indicates it is dropped
-		//FIXME need to check for only certian giType?  (weapon, ammo, etc...)
+		//FIXME need to check for only certain giType?  (weapon, ammo, etc...)
 		if (es->modelindex2 == 1  &&  es->eFlags == EF_BACKPACK) {
 			modelindex = cgs.backpackItemIndex;
 		}
@@ -1695,7 +1695,7 @@ static void CG_Item ( centity_t *cent ) {
 			if (team == TEAM_RED  ||  team == TEAM_BLUE) {
 				if (cg_useCustomRedBlueFlagColor.integer != 2) {
 					if ((team == TEAM_RED  &&  item->giTag == PW_REDFLAG)  ||  (team == TEAM_BLUE  &&  item->giTag == PW_BLUEFLAG)) {
-						// team color
+						// teammate color
 						if (*cg_teamFlagColor.string) {
 							SC_ByteVec3ColorFromCvar(ent.shaderRGBA, &cg_teamFlagColor);
 							ent.shaderRGBA[3] = 255;
