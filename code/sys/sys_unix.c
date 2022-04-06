@@ -73,6 +73,9 @@ static char QuakeLivePath[MAX_OSPATH] = { 0 };
 // Used to store the GOG Quake 3 installation path
 //static char gogPath[ MAX_OSPATH ] = { 0 };
 
+// Used to store the Microsoft Store Quake 3 installation path
+static char microsoftStorePath[MAX_OSPATH] = { 0 };
+
 /*
 ==================
 Sys_DefaultHomePath
@@ -223,6 +226,18 @@ char *Sys_GogPath( void )
 
 	return "";
 }
+
+/*
+================
+Sys_MicrosoftStorePath
+================
+*/
+char* Sys_MicrosoftStorePath(void)
+{
+        // Microsoft Store doesn't exist on Mac/Linux
+        return microsoftStorePath;
+}
+
 
 /*
 ================

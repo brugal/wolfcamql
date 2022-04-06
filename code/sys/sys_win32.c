@@ -55,6 +55,9 @@ static char QuakeLivePath[MAX_OSPATH] = { 0 };
 // Used to store the GOG Quake 3 installation path
 //static char gogPath[ MAX_OSPATH ] = { 0 };
 
+// Used to store the Microsoft Store Quake 3 installation path
+static char microsoftStorePath[MAX_OSPATH] = { 0 };
+
 static qboolean DisableScreenBlanking = qfalse;
 
 #ifndef DEDICATED
@@ -350,6 +353,20 @@ char *Sys_GogPath( void )
 #endif
 
 	return "";
+}
+
+/*
+================
+Sys_MicrosoftStorePath
+================
+*/
+char* Sys_MicrosoftStorePath(void)
+{
+        if (!microsoftStorePath[0]) 
+        {
+                Q_strcat(microsoftStorePath, MAX_OSPATH, "C:\\Program Files\\ModifiableWindowsApps\\Quake 3\\EN");
+        }
+        return microsoftStorePath;
 }
 
 /*

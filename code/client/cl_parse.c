@@ -924,6 +924,11 @@ void CL_ParseGamestate( msg_t *msg ) {
 					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
 				} else if (strlen(value) == 0) {
 					Com_Printf("^5protocol not set, setting to %d and then checking com_protocol\n", PROTOCOL_QL);
+					//FIXME fallback to file extension instead,
+					// 2022-03-31 q3 demo with no protocol
+					// \configstrings 0
+				    // 0: \dmflags\0\fraglimit\7\g_gametype\1\mapname\ztn3tourney1\sv_allowDownload\1\sv_dlURL\http://n2.q3msk.ru/files/maps\sv_floodProtect\1\sv_hostname\   ^3MOSCOW 1v1#2   \sv_maxclients\15\sv_minRate\50000\timelimit\7\version\Q3 1.32e linux-x86_64 Jan 30 2022\Players_Active\2 3 \Score_Time\Waiting for Players\capturelimit\0\g_motd\http://q3msk.ru - MOSCOW DUEL #2\g_needpass\0\g_smoothClients\1\gamename\osp\gameversion\OSP v1.03a\server_promode\0\.Admin\RateX7\.E-mail\unknown\.Location\Moscow, RU
+
 					Cvar_Set("protocol", va("%d", PROTOCOL_QL));
 				} else {
 					Com_Printf("^3unknown protocol %d, trying dm %d\n", p, PROTOCOL_QL);

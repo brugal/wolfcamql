@@ -1,4 +1,9 @@
-init with svn 1753
+# init with svn 1753
+#
+# to help tracking git try:
+#    git log -p --topo-order --first-parent
+#
+#       "--graph" helps with more than one parent shown
 
 2011-02-17
 
@@ -7627,6 +7632,13 @@ the demo.
 2019-11-17-01
     E2K: fixed build by MCST lcc compiler when using USE_CURL=1 option
 
+# 2022-04-01 checking back with git log -p --topo-order --first-parent
+
+2020-02-11-01
+    Merge pull request #428 from tomkidd/master
+
+    Additional updates to the Xcode project
+
 2019-11-20-01
     Use `r_texturemode GL_LINEAR_MIPMAP_LINEAR` by default
 
@@ -7763,3 +7775,20 @@ the demo.
 
 2021-09-27-01
     GHA deprecated Ubuntu 16.04 - update to 18.04
+
+2021-10-02-01
+    Addressed string concatenation issue and added dummy method for Mac/Linux
+
+2021-10-02-02
+    Added missing variable.
+
+# 2022-04-01 from here using git log -p --topo-order --first-parent
+
+# 2022-04-01 think this is the one that updates SDL way back in the history (now need --topo-order --first-parent), directly copying SDL from current ioquake3
+
+2021-10-22-01 (skip)
+    Merge pull request #481 from tomkidd/xcode
+
+    Upgrades to Xcode project and Apple Silicon support
+
+
