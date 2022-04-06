@@ -156,6 +156,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define idx64 1
 #define ARCH_STRING "x86_64"
 #define Q3_LITTLE_ENDIAN
+#elif defined __aarch64__
+#define ARCH_STRING "arm64"
+#define Q3_LITTLE_ENDIAN
+#ifndef NO_VM_COMPILED
+#define NO_VM_COMPILED
+#endif
 #endif
 
 #define DLL_EXT ".dylib"
@@ -164,7 +170,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //================================================================= LINUX ===
 
-#if defined(__linux__) || defined(__FreeBSD_kernel__)  || defined(__GNU__)
+#if defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__GNU__)
 
 #include <endian.h>
 

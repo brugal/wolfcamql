@@ -7784,9 +7784,17 @@ the demo.
 
 # 2022-04-01 from here using git log -p --topo-order --first-parent
 
+
 # 2022-04-01 think this is the one that updates SDL way back in the history (now need --topo-order --first-parent), directly copying SDL from current ioquake3
 
-2021-10-22-01 (skip)
+# skipping SDL2 update:
+#  * breaks SDL264.dll naming
+#  * can't tell which version the headers are from (diff against 2.0.16
+#    doesn't match)
+#  * Windows *.a files are 2.0.14 instead of 2.0.16?
+#    https://github.com/ioquake/ioq3/issues/529
+
+2021-10-22-01 (skip SDL2 update)
     Merge pull request #481 from tomkidd/xcode
 
     Upgrades to Xcode project and Apple Silicon support
