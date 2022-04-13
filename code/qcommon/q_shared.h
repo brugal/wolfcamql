@@ -55,6 +55,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define STEAMPATH_NAME			"Quake Live"  // "Quake 3 Arena"
   #define STEAMPATH_APPID			"2200"
   #define GOGPATH_ID				"1441704920"
+  #define MSSTORE_PATH				"Quake 3"
   #define GAMENAME_FOR_MASTER		"WolfcamqlGame"
   #define CINEMATICS_LOGO			"idlogo.RoQ"
   #define CINEMATICS_INTRO			"intro.RoQ"
