@@ -2397,7 +2397,6 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * di.snapsInDemo is counting messages in demo, not snaps, maybe rename
 * cg_cpmaInvisitility without invis_head.md3 make a little transparent to match
 
-* zlib update
 * extension fallback for demos without protocol config string value
 
 * ioquake3 sdl update 64-bit windows build tries to load SDL2.dll
