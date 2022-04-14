@@ -18,7 +18,9 @@ ignoreFiles = [ ".hg", ".hgignore", "backtrace", "build", "package-files",
                 os.path.join("code", "libs", "win64"), "mac-binaries",
                 os.path.join("misc", "msvc"), os.path.join("misc", "msvc10"),
                 os.path.join("misc", "msvc11"),
-                os.path.join("misc", "msvc12"), os.path.join("misc", "nsis")
+                os.path.join("misc", "msvc12"),
+                os.path.join("misc", "msvc142"),
+                os.path.join("misc", "nsis")
 ]
 
 tar = tarfile.open(os.path.join(destDir, "macsrc.tar.gz"), "w:gz")
