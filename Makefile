@@ -291,7 +291,8 @@ UIDIR=$(MOUNT_DIR)/ui
 Q3UIDIR=$(MOUNT_DIR)/q3_ui
 JPDIR=$(MOUNT_DIR)/jpeg-9d
 FREETYPEDIR=$(MOUNT_DIR)/freetype-2.10.4
-SPEEXDIR=$(MOUNT_DIR)/libspeex-1.2beta3
+SPEEXDIR=$(MOUNT_DIR)/libspeex-1.2.0
+SPEEXDSPDIR=$(MOUNT_DIR)/libspeexdsp-1.2rc3
 OGGDIR=$(MOUNT_DIR)/libogg-1.3.5
 VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.7
 OPUSDIR=$(MOUNT_DIR)/opus-1.2.1
@@ -1256,8 +1257,9 @@ ifeq ($(USE_VOIP),1)
   SERVER_CFLAGS += -DUSE_VOIP
   NEED_OPUS=1
   ifeq ($(USE_INTERNAL_SPEEX),1)
-    SPEEX_CFLAGS += -DFLOATING_POINT -DUSE_ALLOCA -I$(SPEEXDIR)/include
+    SPEEX_CFLAGS += -DFLOATING_POINT -DUSE_ALLOCA -DEXPORT="" -I$(SPEEXDIR)/include -I$(SPEEXDSPDIR)/include
   else
+    #FIXME 2022-04-21 speexdsp?
     SPEEX_CFLAGS ?= $(shell $(PKG_CONFIG) --silence-errors --cflags speex speexdsp || true)
     SPEEX_LIBS ?= $(shell $(PKG_CONFIG) --silence-errors --libs speex speexdsp || echo -lspeex -lspeexdsp)
   endif
@@ -2257,12 +2259,14 @@ Q3OBJ += \
   $(B)/client/quant_lsp.o \
   $(B)/client/resample.o \
   $(B)/client/sb_celp.o \
+  $(B)/client/scal.o \
   $(B)/client/smallft.o \
   $(B)/client/speex.o \
   $(B)/client/speex_callbacks.o \
   $(B)/client/speex_header.o \
   $(B)/client/stereo.o \
   $(B)/client/vbr.o \
+  $(B)/client/vorbis_psy.o \
   $(B)/client/vq.o \
   $(B)/client/window.o
 endif
@@ -3099,6 +3103,9 @@ $(B)/client/%.o: $(BLIBDIR)/%.c
 	$(DO_BOT_CC)
 
 $(B)/client/%.o: $(SPEEXDIR)/%.c
+	$(DO_CC)
+
+$(B)/client/%.o: $(SPEEXDSPDIR)/%.c
 	$(DO_CC)
 
 $(B)/client/%.o: $(OGGDIR)/src/%.c

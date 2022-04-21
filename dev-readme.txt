@@ -32,4 +32,11 @@ convert -background none wolfcamql.svg -define icon:auto-resize=256,128,64,48,32
 
 ----
 
-2020-11-27 updating to speex-1.2.0 from speex-1.2beta3 takes out needed structure: SpeexPreprocessState
+2020-11-27 updating to speex-1.2.0 from speex-1.2beta3 takes out needed structure: SpeexPreprocessState -- 2022-04-19 dsp functions were put in a separate library: speexdsp-1.2rc3.tar.gz
+2022-04-21 for libspeex copy win32/config.h into main source directory -- not needed
+
+for both libspeex and libspeexdsp:
+  include/speex/speexdsp_config_types.h add '#ifdef _MSC_VER' wrapper
+
+libspeexdsp-1.2rc3/fftwrap.c add '#define USE_KISS_FFT'
+
