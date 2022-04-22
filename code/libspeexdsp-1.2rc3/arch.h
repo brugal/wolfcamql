@@ -35,6 +35,9 @@
 #ifndef ARCH_H
 #define ARCH_H
 
+// 2022-04-21 wc get rid of this here
+#define EXPORT
+
 /* A couple test to catch stupid option combinations */
 #ifdef FIXED_POINT
 

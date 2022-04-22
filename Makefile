@@ -1257,7 +1257,7 @@ ifeq ($(USE_VOIP),1)
   SERVER_CFLAGS += -DUSE_VOIP
   NEED_OPUS=1
   ifeq ($(USE_INTERNAL_SPEEX),1)
-    SPEEX_CFLAGS += -DFLOATING_POINT -DUSE_ALLOCA -DEXPORT="" -I$(SPEEXDIR)/include -I$(SPEEXDSPDIR)/include
+    SPEEX_CFLAGS += -DFLOATING_POINT -DUSE_ALLOCA -I$(SPEEXDIR)/include -I$(SPEEXDSPDIR)/include
   else
     #FIXME 2022-04-21 speexdsp?
     SPEEX_CFLAGS ?= $(shell $(PKG_CONFIG) --silence-errors --cflags speex speexdsp || true)
@@ -1638,6 +1638,7 @@ endif
 makedirs:
 	@$(MKDIR) $(B)/autoupdater
 	@$(MKDIR) $(B)/client/opus
+	@$(MKDIR) $(B)/client/speex
 	@$(MKDIR) $(B)/client/vorbis
 	@$(MKDIR) $(B)/splines
 	@$(MKDIR) $(B)/renderergl1
@@ -2227,48 +2228,48 @@ SPLINES += \
 ifeq ($(USE_VOIP),1)
 ifeq ($(USE_INTERNAL_SPEEX),1)
 Q3OBJ += \
-  $(B)/client/bits.o \
-  $(B)/client/buffer.o \
-  $(B)/client/cb_search.o \
-  $(B)/client/exc_10_16_table.o \
-  $(B)/client/exc_10_32_table.o \
-  $(B)/client/exc_20_32_table.o \
-  $(B)/client/exc_5_256_table.o \
-  $(B)/client/exc_5_64_table.o \
-  $(B)/client/exc_8_128_table.o \
-  $(B)/client/fftwrap.o \
-  $(B)/client/filterbank.o \
-  $(B)/client/filters.o \
-  $(B)/client/gain_table.o \
-  $(B)/client/gain_table_lbr.o \
-  $(B)/client/hexc_10_32_table.o \
-  $(B)/client/hexc_table.o \
-  $(B)/client/high_lsp_tables.o \
-  $(B)/client/jitter.o \
-  $(B)/client/kiss_fft.o \
-  $(B)/client/kiss_fftr.o \
-  $(B)/client/lpc.o \
-  $(B)/client/lsp.o \
-  $(B)/client/lsp_tables_nb.o \
-  $(B)/client/ltp.o \
-  $(B)/client/mdf.o \
-  $(B)/client/modes.o \
-  $(B)/client/modes_wb.o \
-  $(B)/client/nb_celp.o \
-  $(B)/client/preprocess.o \
-  $(B)/client/quant_lsp.o \
-  $(B)/client/resample.o \
-  $(B)/client/sb_celp.o \
-  $(B)/client/scal.o \
-  $(B)/client/smallft.o \
-  $(B)/client/speex.o \
-  $(B)/client/speex_callbacks.o \
-  $(B)/client/speex_header.o \
-  $(B)/client/stereo.o \
-  $(B)/client/vbr.o \
-  $(B)/client/vorbis_psy.o \
-  $(B)/client/vq.o \
-  $(B)/client/window.o
+  $(B)/client/speex/bits.o \
+  $(B)/client/speex/buffer.o \
+  $(B)/client/speex/cb_search.o \
+  $(B)/client/speex/exc_10_16_table.o \
+  $(B)/client/speex/exc_10_32_table.o \
+  $(B)/client/speex/exc_20_32_table.o \
+  $(B)/client/speex/exc_5_256_table.o \
+  $(B)/client/speex/exc_5_64_table.o \
+  $(B)/client/speex/exc_8_128_table.o \
+  $(B)/client/speex/fftwrap.o \
+  $(B)/client/speex/filterbank.o \
+  $(B)/client/speex/filters.o \
+  $(B)/client/speex/gain_table.o \
+  $(B)/client/speex/gain_table_lbr.o \
+  $(B)/client/speex/hexc_10_32_table.o \
+  $(B)/client/speex/hexc_table.o \
+  $(B)/client/speex/high_lsp_tables.o \
+  $(B)/client/speex/jitter.o \
+  $(B)/client/speex/kiss_fft.o \
+  $(B)/client/speex/kiss_fftr.o \
+  $(B)/client/speex/lpc.o \
+  $(B)/client/speex/lsp.o \
+  $(B)/client/speex/lsp_tables_nb.o \
+  $(B)/client/speex/ltp.o \
+  $(B)/client/speex/mdf.o \
+  $(B)/client/speex/modes.o \
+  $(B)/client/speex/modes_wb.o \
+  $(B)/client/speex/nb_celp.o \
+  $(B)/client/speex/preprocess.o \
+  $(B)/client/speex/quant_lsp.o \
+  $(B)/client/speex/resample.o \
+  $(B)/client/speex/sb_celp.o \
+  $(B)/client/speex/scal.o \
+  $(B)/client/speex/smallft.o \
+  $(B)/client/speex/speex.o \
+  $(B)/client/speex/speex_callbacks.o \
+  $(B)/client/speex/speex_header.o \
+  $(B)/client/speex/stereo.o \
+  $(B)/client/speex/vbr.o \
+  $(B)/client/speex/vorbis_psy.o \
+  $(B)/client/speex/vq.o \
+  $(B)/client/speex/window.o
 endif
 endif
 
@@ -3102,10 +3103,10 @@ $(B)/client/%.o: $(CMDIR)/%.c
 $(B)/client/%.o: $(BLIBDIR)/%.c
 	$(DO_BOT_CC)
 
-$(B)/client/%.o: $(SPEEXDIR)/%.c
+$(B)/client/speex/%.o: $(SPEEXDIR)/%.c
 	$(DO_CC)
 
-$(B)/client/%.o: $(SPEEXDSPDIR)/%.c
+$(B)/client/speex/%.o: $(SPEEXDSPDIR)/%.c
 	$(DO_CC)
 
 $(B)/client/%.o: $(OGGDIR)/src/%.c

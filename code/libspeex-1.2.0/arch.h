@@ -35,6 +35,9 @@
 #ifndef ARCH_H
 #define ARCH_H
 
+// 2022-04-21 wc get rid of this here
+#define EXPORT
+
 #ifndef SPEEX_VERSION
 #define SPEEX_MAJOR_VERSION 1         /**< Major Speex version. */
 #define SPEEX_MINOR_VERSION 1         /**< Minor Speex version. */
