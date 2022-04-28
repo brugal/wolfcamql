@@ -6,7 +6,9 @@ compile external ogg and vorbis mac os x:
 
 compile freetype mac os x:
 
-  CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" ./configure --with-zlib=no --with-bzip2=no --with-png=no
+  # zlib has version information, try to use the same one
+
+  CPPFLAGS="-I/Users/acano/share/zlib-1.2.12" CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" ./configure --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
   make
   cp objs/.libs/libfreetype.a ...
 
@@ -14,7 +16,9 @@ compile freetype mac os x:
 
 compile freetype win32 (from linux):
 
-  ./configure --host=i686-w64-mingw32 --with-zlib=no --with-bzip2=no --with-png=no
+  # zlib has version information, try to use the same one
+
+  CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.2.12 ./configure --host=i686-w64-mingw32 --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
   make
   cp objs/.libs/libfreetype.a ...
 
