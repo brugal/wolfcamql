@@ -1,4 +1,4 @@
-12.5test20
+12.5test21
 
 * ioquake3 patches
 
@@ -138,6 +138,8 @@
 * update zlib to version 1.2.12
 * update libogg to version 1.3.5
 * update libspeex to version 1.2.0
+* update freetype to version 2.12.0
+* check demo file extension for protocol number if it's not set in config strings
 
 ---------------------------------
 12.4  2020-12-04
