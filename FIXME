@@ -2397,13 +2397,25 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * di.snapsInDemo is counting messages in demo, not snaps, maybe rename
 * cg_cpmaInvisitility without invis_head.md3 make a little transparent to match
 
-* extension fallback for demos without protocol config string value
+* extension fallback for demos without protocol config string value  -- make sure cl_demofile is set correctly before the check
 
 * ioquake3 sdl update 64-bit windows build tries to load SDL2.dll
 * ioquake3 sdl update doesn't seem to use SDL2 2.0.16 headers (some dev version?)
 * update SDL2 to 2.0.16 to try and match ioquake3
 
-* 32-bit windows build cl_cgame build error (string format) vm create fail with cgame*.dll
+* 32-bit windows build:  cl_cgame build error (string format)
+* 32-bit windows build:  vm create fail with cgame*.dll
+
+    2022-04-29  has libgcc_s_dw2-1.dll dependency, Dependency Walker shows
+       __divdi3 and __udivdi3 imports
+
+    https://www.spinics.net/lists/newbies/msg60799.html
+
+    """
+     2. Link statically libgcc using flags:
+	-static-libgcc -lgcc
+    """
+
 
 
 ----
