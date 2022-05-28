@@ -2416,7 +2416,10 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 	-static-libgcc -lgcc
     """
 
+* freetype CVE-2022-27404 -- 2022-05-11 not vulnerable since face index is always zero
 
+* czm*.dm_68 armor/health bug
+* backtrace binutils upgrade
 
 ----
 

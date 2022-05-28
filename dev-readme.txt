@@ -1,3 +1,6 @@
+#compile zlib win32 from linux
+
+----
 
 compile external ogg and vorbis mac os x:
 
@@ -43,4 +46,35 @@ for both libspeex and libspeexdsp:
   include/speex/speexdsp_config_types.h add '#ifdef _MSC_VER' wrapper
 
 libspeexdsp-1.2rc3/fftwrap.c add '#define USE_KISS_FFT'
+
+----
+
+compile curl win32 (from linux):
+
+# libcurl.a linked with -lcrypt32
+
+CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.2.12 ./configure --host=i686-w64-mingw32 --with-schannel
+
+...
+
+checking for sys/types.h... (cached) yes
+checking for poll.h... (cached) no
+checking for sys/poll.h... (cached) no
+checking for in_addr_t... no
+checking for in_addr_t equivalent... unknown
+configure: error: Cannot find a type to use in place of in_addr_t
+
+
+# 2022-05-25 current ioq3 version has progress meter enabled
+
+compile curl win32 (from Windows mysys2)
+
+pacman -S --needed base-devel mingw-w64-x86_64-toolchain mingw-w64-i686-toolchain
+pacman -S mingw-w64-cross-binutils
+
+open terminal with mingw32.exe / mingw64.exe
+
+CPPFLAGS="-I/home/acano/zlib-1.2.12" ./configure --with-schannel --disable-shared --disable-ldap --disable-pthreads --without-zstd --enable-progress-meter
+
+make
 
