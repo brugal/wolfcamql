@@ -2404,19 +2404,6 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * update SDL2 to 2.0.16 to try and match ioquake3
 
 * 32-bit windows build:  cl_cgame build error (string format)
-* 32-bit windows build:  vm create fail with cgame*.dll
-
-    2022-04-29  has libgcc_s_dw2-1.dll dependency, Dependency Walker shows
-       __divdi3 and __udivdi3 imports
-
-    https://www.spinics.net/lists/newbies/msg60799.html
-
-    """
-     2. Link statically libgcc using flags:
-	-static-libgcc -lgcc
-    """
-
-* freetype CVE-2022-27404 -- 2022-05-11 not vulnerable since face index is always zero
 
 * czm*.dm_68 armor/health bug
 * backtrace binutils upgrade
