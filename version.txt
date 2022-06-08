@@ -1,4 +1,4 @@
-12.5test23
+12.5test24
 
 * ioquake3 patches
 
@@ -141,6 +141,7 @@
 * update freetype to version 2.12.1
 * check demo file extension for protocol number if it's not set in config strings
 * update libcurl to version 7.83.1
+* update backtrace library
 
 ---------------------------------
 12.4  2020-12-04

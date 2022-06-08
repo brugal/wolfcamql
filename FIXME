@@ -2406,7 +2406,14 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * 32-bit windows build:  cl_cgame build error (string format)
 
 * czm*.dm_68 armor/health bug
-* backtrace binutils upgrade
+
+* since 12.5test9 not in 12.5test7
+
+  renderer_opengl1_x86_64.dll crash
+
+  set mme_savedepth 1
+  video avi wav
+
 
 ----
 

@@ -4,7 +4,7 @@
 
         http://www.codingnow.com
 
-    Copyright (C) 2019-2020, Angelo Cano
+    Copyright (C) 2019-2022, Angelo Cano
 
  	Use, modification and distribution are subject to the "New BSD License"
  	as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.
@@ -23,7 +23,7 @@
  */
 
 #define PACKAGE "wolfcamql-backtrace"
-#define PACKAGE_VERSION "1.4"
+#define PACKAGE_VERSION "1.5"
 
 #include <windows.h>
 #include <imagehlp.h>
@@ -137,14 +137,14 @@ lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 	if (data->func)
 		return;
 
-	if (!(bfd_get_section_flags(abfd, sec) & SEC_ALLOC))
+	if (!(bfd_section_flags(sec) & SEC_ALLOC))
 		return;
 
-	bfd_vma vma = bfd_get_section_vma(abfd, sec);
+	bfd_vma vma = bfd_section_vma(sec);
 
 	counter = data->counter - (data->module_base - data->preferred_base);
 
-	if (counter < vma || vma + bfd_get_section_size(sec) <= counter)
+	if (counter < vma || vma + bfd_section_size(sec) <= counter)
 		return;
 
 	offset = counter - vma;

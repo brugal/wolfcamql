@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BINUTILS_DIR=`pwd`/build/32/binutils-2.33.1
+BINUTILS_DIR=`pwd`/build/32/binutils-2.38
 
 i686-w64-mingw32-windres -i resource.rc -o build/resource32.o
 
