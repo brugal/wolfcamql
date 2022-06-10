@@ -853,7 +853,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		if (mme_depthRange->value > 0) {
 			byte *buffer;
 
-			if (mme_saveDepth->integer == 2) {
+			if (!useBlur  ||  mme_saveDepth->integer == 2) {
 				//FIXME duplicate code in R_MME_GetDepth()
 				float focusStart, focusEnd, focusMul;
 				float zBase, zAdd, zRange;
