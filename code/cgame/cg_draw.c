@@ -1287,7 +1287,8 @@ static void CG_DrawCpmaMvdIndicator (void)
 	}
 
 	// only with demo taker view
-	if (cg.snap->ps.clientNum != cg.clientNum) {
+	// check if cg.clientNum is invalid since it might be GTV
+	if (cgs.clientinfo[cg.clientNum].infoValid  &&  cg.snap->ps.clientNum != cg.clientNum) {
 		return;
 	}
 
@@ -6146,12 +6147,12 @@ static void CG_DrawTeamInfo( void ) {
 
 		h = (cgs.teamChatPos - cgs.teamLastChatPos) * TINYCHAR_HEIGHT;
 
-		if ( cgs.clientinfo[cg.clientNum].team == TEAM_RED ) {
+		if ( cgs.clientinfo[cg.clientNum].team == TEAM_RED  &&  cgs.clientinfo[cg.clientNum].infoValid ) {
 			hcolor[0] = 1.0f;
 			hcolor[1] = 0.0f;
 			hcolor[2] = 0.0f;
 			hcolor[3] = 0.33f;
-		} else if ( cgs.clientinfo[cg.clientNum].team == TEAM_BLUE ) {
+		} else if ( cgs.clientinfo[cg.clientNum].team == TEAM_BLUE  &&  cgs.clientinfo[cg.clientNum].infoValid ) {
 			hcolor[0] = 0.0f;
 			hcolor[1] = 0.0f;
 			hcolor[2] = 1.0f;

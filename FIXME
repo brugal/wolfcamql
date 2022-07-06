@@ -2405,8 +2405,6 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * 32-bit windows build:  cl_cgame build error (string format)
 
-* czm*.dm_68 armor/health bug
-
 
 ----
 

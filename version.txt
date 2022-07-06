@@ -1,4 +1,4 @@
-12.5test25
+12.5test26
 
 * ioquake3 patches
 
@@ -142,6 +142,7 @@
 * check demo file extension for protocol number if it's not set in config strings
 * update libcurl to version 7.83.1
 * update backtrace library
+* cpma mvd not detected with gtv
 
 ---------------------------------
 12.4  2020-12-04

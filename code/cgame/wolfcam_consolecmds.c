@@ -192,7 +192,7 @@ void Wolfcam_Follow_f (void)
 		wcg.followMode = WOLFCAM_FOLLOW_DEMO_TAKER;
         //trap_Cvar_Set ("cg_thirdPerson", "0");  //FIXME wolfcam
 		cg.freecam = qfalse;
-		if (cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR) {
+		if (cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR  ||  !cgs.clientinfo[cg.clientNum].infoValid) {
 			trap_SendConsoleCommand("exec spectator.cfg\n");
 		} else if (cg.snap  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
 			trap_SendConsoleCommand("exec spectator.cfg\n");

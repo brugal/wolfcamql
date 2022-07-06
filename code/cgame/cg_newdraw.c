@@ -8624,7 +8624,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 
 	  // chopping off color code like ql
-	  if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR) {
+	  if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR  &&  cgs.clientinfo[cg.clientNum].infoValid) {
 		  int i;
 		  const score_t *sc;
 		  const ctfPlayerScore_t *cs;

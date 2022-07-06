@@ -1210,7 +1210,8 @@ qboolean CG_IsCpmaMvd (void)
 		return qfalse;
 	}
 
-	if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR) {
+	// GTV can have cg.clientNum without valid player info
+	if (cgs.clientinfo[cg.clientNum].team != TEAM_SPECTATOR  &&  cgs.clientinfo[cg.clientNum].infoValid) {
 		return qfalse;
 	}
 

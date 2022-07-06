@@ -5958,7 +5958,11 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 		int team;
 		int pm_type;
 
-		team = cgs.clientinfo[cg.clientNum].team;
+		if (!cgs.clientinfo[cg.clientNum].infoValid) {
+			team = TEAM_SPECTATOR;
+		} else {
+			team = cgs.clientinfo[cg.clientNum].team;
+		}
 		pm_type = cg.snap->ps.pm_type;
 
 		if (lastTeam != team) {
@@ -6529,7 +6533,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 			if (wolfcam_following) {
 				trap_SendConsoleCommand("exec follow.cfg\n");
 			} else {
-				if (cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR) {
+				if (cgs.clientinfo[cg.clientNum].team == TEAM_SPECTATOR  ||  !cgs.clientinfo[cg.clientNum].infoValid) {
 					trap_SendConsoleCommand("exec spectator.cfg\n");
 				} else if (cg.snap  &&  cg.snap->ps.pm_type == PM_SPECTATOR) {
 					trap_SendConsoleCommand("exec spectator.cfg\n");

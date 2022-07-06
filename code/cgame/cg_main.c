@@ -8039,6 +8039,17 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	cg.qlColors = val;
 
 	cg.clientNum = clientNum;
+	if (cg.clientNum < 0  ||  cg.clientNum >= MAX_CLIENTS) {
+		static qboolean clientNumWarning = qfalse;
+
+		// could this happen with something like GTV?  warn once
+		if (!clientNumWarning) {
+			Com_Printf("^3Warning invalid clientNum: %d\n", cg.clientNum);
+			clientNumWarning = qtrue;
+		}
+
+		cg.clientNum = MAX_CLIENTS - 1;
+	}
 
 	cgs.firstServerMessageNum = serverMessageNum;
 	cgs.processedSnapshotNum = serverMessageNum;
