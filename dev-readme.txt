@@ -1,3 +1,6 @@
+MacOS version used:  macOS Sierra 10.12.6
+
+-------
 #compile zlib win32 from linux
 
 ----
@@ -78,3 +81,53 @@ CPPFLAGS="-I/home/acano/zlib-1.2.12" ./configure --with-schannel --disable-share
 
 make
 
+-------
+
+SDL 2.0.16
+
+win32:
+
+  ./configure --host=i686-w64-mingw32
+
+win64:
+
+  in Makefile.in change libSDL2 references to libSDL264
+
+  ./configure --host=x86_64-w64-mingw32
+
+macosx:
+
+   how to combine libraries from different architectures:
+
+       lipo lib1.dylib lib2.dylib -output combined.dylib -create
+
+   how to separate libraries:
+
+       lipo libx.a -thin armv6 -output libx-armv6.a
+
+   how to change dylib loading path:
+
+       #install_name_tool -change /usr/local/lib/libSDL2-2.0.0.dylib  @executable_path/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
+       # but the first one will be 'id'
+       install_name_tool -id @executable_path/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
+
+   how to check dylib loading paths:
+
+       otool -L libSDL2-2.0.0.dylib
+
+   CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" LDFLAGS="-arch i386 -arch x86_64" ./configure
+   make
+
+   mkdir out
+   cp build/.libs/libSDL2main.a out/libsdl2main-both.a
+   cp build/.libs/libSDL2-2.0.0.dylib out/libsdl2-both.dylib
+
+   copy ppc versions into out/
+   cd out/
+
+   lipo libsdl2-both.dylib libSDL2-ppc.dylib -output libSDL2-2.0.0.dylib -create
+   install_name_tool -id @executable_path/libSDL2-2.0.0.dylib libSDL2-2.0.0.dylib
+
+   lipo libsdl2main-both.a libsdl2main-ppc.a -output libSDL2main.a -create
+
+ old ppc versions (libSDL2-ppc.dylib and libsdl2main-ppc.a) are kept in code/libs/macosx/ppc

@@ -86,13 +86,14 @@ wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
 print("copying Mac OS X binaries...")
 try:
-    shutil.copy2(os.path.join(libDir, "libSDL2-2.0.0.dylib"), packageDir)
     shutil.copy2(os.path.join(buildDir, "wolfcamqlmac"), packageDir)
     shutil.copy2(os.path.join(buildDir, "renderer_opengl1_x86_64.dylib"), packageDir)
     shutil.copy2(os.path.join(buildDir, "renderer_opengl2_x86_64.dylib"), packageDir)
     shutil.copy2(os.path.join(buildDir, "cgamex86_64.dylib"), wolfcamDir)
     shutil.copy2(os.path.join(buildDir, "qagamex86_64.dylib"), wolfcamDir)
     shutil.copy2(os.path.join(buildDir, "uix86_64.dylib"), wolfcamDir)
+    # last so that it's not copied if the above ones don't exist
+    shutil.copy2(os.path.join(libDir, "libSDL2-2.0.0.dylib"), packageDir)
 except IOError as err:
     print(err)
 

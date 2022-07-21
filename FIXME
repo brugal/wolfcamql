@@ -2401,7 +2401,6 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * ioquake3 sdl update 64-bit windows build tries to load SDL2.dll
 * ioquake3 sdl update doesn't seem to use SDL2 2.0.16 headers (some dev version?)
-* update SDL2 to 2.0.16 to try and match ioquake3
 
 * 32-bit windows build:  cl_cgame build error (string format)
 
