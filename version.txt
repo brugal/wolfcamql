@@ -1,4 +1,4 @@
-12.5test27
+12.5  2022-08-02
 
 * ioquake3 patches
 
