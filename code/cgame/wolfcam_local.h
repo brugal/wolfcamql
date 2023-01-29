@@ -57,6 +57,8 @@ typedef struct {
 	qboolean playTeamHitSound;
 
 	int weaponSelectTime;
+	int damageSum[MAX_CLIENTS];
+	int damageTime[MAX_CLIENTS];
 
 } wcg_t;
 

@@ -455,6 +455,28 @@ void CG_DamagePlum (int client, const vec3_t org, int score, int weapon)
 	localEntity_t	*le;
 	refEntity_t		*re;
 	vec3_t			angles;
+	int ourClientNum;
+
+	if (cg_damagePlumSumHack.integer) {
+		if (cg.time > wcg.damageTime[client] + cg_damagePlumTime.integer) {
+			wcg.damageSum[client] = 0;
+		}
+
+		score += wcg.damageSum[client];
+		wcg.damageSum[client] = score;
+
+		if (wolfcam_following) {
+			ourClientNum = wcg.clientNum;
+		} else {
+			ourClientNum = cg.snap->ps.clientNum;
+		}
+
+		if (client == ourClientNum) {
+			CG_HideDamagePlums(client, weapon);
+		}
+	}
+
+	wcg.damageTime[client] = cg.time;
 
 	le = CG_AllocLocalEntity();
 	le->leFlags = client;

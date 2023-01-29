@@ -1444,6 +1444,8 @@ void CG_TransitionPlayerState( const playerState_t *ps, playerState_t *ops ) {
 		if (ps->weapon != ops->weapon) {
 			cg.weaponSelectTime = cg.time;
 			cg.weaponSelect = ps->weapon;
+			wcg.damageSum[ps->clientNum] = 0;
+			wcg.damageTime[ps->clientNum] = 0;
 			// this seems to fix bug in weapon instant switch demos where
 			// the fire sound of the old weapon is heard:
 			//cg.predictedPlayerEntity.currentState.weapon = ps->weapon;

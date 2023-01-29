@@ -2728,6 +2728,10 @@ You can use it in order to un-grab the mouse pointer without having to bring dow
 * cg_damagePlumScale
 * cg_damagePlumColor  if this is set it will override colors from cg_damagePlumColorStyle
 * cg_damagePlumAlpha
+* cg_damagePlumSumHack
+
+  If enabled, damage plums will show sum of damage dealt. Like in Quake Champions.
+  Note, that this hack does not differ targets. Example, if you fire plasma to different enemies at the same time, damage plum will will show overall damage given to both enemies.
 
 * cg_drawFPS (2: higher precision and use given time in cgame not real time -- for debugging,  3:  use current frame value not average of last four)
 
