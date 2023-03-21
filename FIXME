@@ -2404,6 +2404,16 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * 32-bit windows build:  cl_cgame build error (string format)
 
+* demo listing:  stay in same folder as viewed demo
+
+* zf  .mme support
+* stopfresh github #45  cnq3 152 renderer features
+
+* em92 damage plums pull
+* kr3m  q3plus demo
+* damageplumshack only demo
+* damage plum check ql colors
+
 
 ----
 

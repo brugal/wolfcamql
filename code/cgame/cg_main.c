@@ -556,7 +556,6 @@ vmCvar_t cg_damagePlumColor;
 vmCvar_t cg_damagePlumAlpha;
 vmCvar_t cg_damagePlumSumHack;
 
-
 vmCvar_t 	cg_smoothClients;
 vmCvar_t	pmove_fixed;
 //vmCvar_t	cg_pmove_fixed;

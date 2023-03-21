@@ -177,9 +177,35 @@ static void Demos_MenuEvent( void *ptr, int event ) {
 		Demos_PlayDemoOrChangeDir();
 		break;
 
-	case ID_BACK:
-		UI_PopMenu();
+	case ID_BACK: {
+		const char *slash;
+
+		slash = strchr(s_demos.dirName, '/');
+		if (!slash) {
+			UI_PopMenu();
+		} else {
+			// hack, set '../' as selected demo/dir
+			int i;
+
+			for (i = 0;  i < s_demos.list.numitems;  i++) {
+				const char *fname;
+
+				fname = s_demos.list.itemnames[i];
+				if (!Q_stricmpn(fname, "../", strlen("../"))) {
+					s_demos.list.curvalue = i;
+					break;
+				}
+			}
+
+			if (i < s_demos.list.numitems) {
+				// found '../'
+				Demos_PlayDemoOrChangeDir();
+			} else {
+				UI_PopMenu();
+			}
+		}
 		break;
+	}
 
 	case ID_LEFT:
 		//ScrollList_Key( &s_demos.list, K_LEFTARROW );
@@ -205,7 +231,11 @@ static sfxHandle_t UI_DemosMenu_Key (int key)
 
 	//Com_Printf("ui demo menu key: %d  (curvalue %d, oldvalue %d)  m->nitems %d\n", key, s_demos.list.curvalue, s_demos.list.oldvalue, s_demos.menu.nitems);
 	if (key == K_ENTER  ||  key == K_KP_ENTER) {
-		Demos_PlayDemoOrChangeDir();
+		// if 'back' button has focus don't play demo or change dir
+		//Com_Printf("focus: %d\n", Menu_ItemAtCursor(&s_demos.menu) == &s_demos.back);
+		if (Menu_ItemAtCursor(&s_demos.menu) != &s_demos.back) {
+			Demos_PlayDemoOrChangeDir();
+		}
 	}
 	//item = Menu_ItemAtCursor( &s_demos.menu );
 

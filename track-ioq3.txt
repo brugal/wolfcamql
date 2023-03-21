@@ -7934,3 +7934,34 @@ the demo.
 
 2022-03-21-01
     More predictable mesh normals generation
+
+2022-01-04-01
+    vm_x86.c: Add `defined(_M_IX86) || defined(_M_X64)` (fix for VS2019)
+
+2022-09-22-01
+    Add keys for SDL 2.0.14's new gamepad buttons
+
+    This fixes the additional buttons triggering binds for ioq3 left
+    and right joystick direction keys.
+
+2022-09-22-02
+    Fix in_availableJoysticks cvar not updating
+
+    When in_restart is called or SDL controller added/remove event is
+    received, IN_InitJoystick() tried to update the list but instead
+    of updating the cvar Cvar_Get() just printed a developer message:
+
+      Warning: cvar "in_availableJoysticks" given initial values:
+      "first joystick
+      ", "first joystick
+      second joystick
+      "
+
+2022-11-23-01
+    Fix (disabled) Wavelet sound decompression
+
+    The first chunk of Wavelet sound was decoded as ADPCM and then
+    following chunks were decoded as Wavelet. It played as static
+    noise.
+
+    Using Wavelet compression requires engine code changes to enable.

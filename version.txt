@@ -1,3 +1,14 @@
+12.6test1
+
+* ioquake3 patches
+* bug fix: ENTER key would play demo even if BACK button was selected in demo UI
+* bug fix: demo UI BACK button didn't change to parent directory
+* cg_damagePlumSumHack
+
+  If enabled, damage plums will show sum of damage dealt. Like in Quake Champions.
+  Note, that this hack does not differ targets. Example, if you fire plasma to different enemies at the same time, damage plum will will show overall damage given to both enemies.
+
+---------------------------------
 12.5  2022-08-02
 
 * ioquake3 patches

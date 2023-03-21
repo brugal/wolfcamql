@@ -30,6 +30,7 @@ em92 (Eugene Molotov):
   * bug fix:  loading flag models and sounds for cpma NTF gametype
   * bug fix:  opengl2 renderer 'animmap' limit 8 instead of 2048
   * backtrace syntax fix
+  * cg_damagePlumSumHack
 
 Cyrax (Eugene C.):  screenMap shader directive from Quake3e
 agkr234: Fixed stuttering in cg_animationsRate at low timescales

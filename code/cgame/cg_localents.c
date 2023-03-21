@@ -3314,7 +3314,6 @@ void CG_ClearFxExternalForces (void)
 }
 #endif
 
-
 void CG_HideDamagePlums (int client, int weapon) {
 	localEntity_t	*le, *next;
 

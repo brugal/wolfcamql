@@ -167,4 +167,5 @@ void CG_UpdateFxExternalForces (void);
 void CG_AddFxExternalForce (fxExternalForce_t *force);
 void CG_ClearFxExternalForces (void);
 void CG_HideDamagePlums (int client, int weapon);
+
 #endif  // cg_localents_h_included
