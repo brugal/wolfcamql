@@ -3313,3 +3313,16 @@ void CG_ClearFxExternalForces (void)
 	}
 }
 #endif
+
+
+void CG_HideDamagePlums (int client, int weapon) {
+	localEntity_t	*le, *next;
+
+	le = cg_activeLocalEntities.prev;
+	for ( ; le != &cg_activeLocalEntities ; le = next ) {
+		next = le->prev;
+		if (le->leType == LE_DAMAGEPLUM && le->leFlags == client && le->angles.trDuration == weapon) {
+			le->endTime = cg.time;
+		}
+	}
+}

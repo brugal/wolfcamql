@@ -2984,6 +2984,7 @@ extern vmCvar_t cg_damagePlumPointSize;
 extern vmCvar_t cg_damagePlumScale;
 extern vmCvar_t cg_damagePlumColor;
 extern vmCvar_t cg_damagePlumAlpha;
+extern vmCvar_t cg_damagePlumSumHack;
 
 extern	vmCvar_t		cg_smoothClients;
 extern	vmCvar_t		pmove_fixed;

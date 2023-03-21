@@ -554,6 +554,7 @@ vmCvar_t cg_damagePlumPointSize;
 vmCvar_t cg_damagePlumScale;
 vmCvar_t cg_damagePlumColor;
 vmCvar_t cg_damagePlumAlpha;
+vmCvar_t cg_damagePlumSumHack;
 
 
 vmCvar_t 	cg_smoothClients;
@@ -1804,6 +1805,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_damagePlumScale), "1.0", CVAR_ARCHIVE },
 	{ cvp(cg_damagePlumColor), "", CVAR_ARCHIVE },
 	{ cvp(cg_damagePlumAlpha), "255", CVAR_ARCHIVE },
+	{ cvp(cg_damagePlumSumHack), "0", CVAR_ARCHIVE },
 
 	{ &cg_smoothClients, "cg_smoothClients", "0", CVAR_USERINFO | CVAR_ARCHIVE},
 	{ &cg_cameraMode, "com_cameraMode", "0", CVAR_CHEAT},

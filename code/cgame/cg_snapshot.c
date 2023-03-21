@@ -927,6 +927,8 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		wclients[i].landTime = 0;
 		wclients[i].jumpTime = 0;
+		wcg.damageSum[i] = 0;
+		wcg.damageTime[i] = 0;
 	}
 
 	cg.centerPrintLines = 0;
