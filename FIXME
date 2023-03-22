@@ -2409,9 +2409,8 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * zf  .mme support
 * stopfresh github #45  cnq3 152 renderer features
 
-* em92 damage plums pull
 * kr3m  q3plus demo
-* damageplumshack only demo
+* damageplumshack reset weapon switch only in demo?  -- cg_playerstate.c
 * damage plum check ql colors
 
 

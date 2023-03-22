@@ -57,9 +57,6 @@ typedef struct {
 	qboolean playTeamHitSound;
 
 	int weaponSelectTime;
-	int damageSum[MAX_CLIENTS];
-	int damageTime[MAX_CLIENTS];
-
 } wcg_t;
 
 //FIXME wolfcam mg42
@@ -186,6 +183,9 @@ typedef struct {
 	qboolean aliveThisRound;
 
 	int jumpTime;
+
+	int damagePlumSum;
+	int damagePlumTime;
 
 } wclient_t;
 

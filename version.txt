@@ -1,4 +1,4 @@
-12.6test2
+12.6test3
 
 * ioquake3 patches
 * bug fix: ENTER key would play demo even if BACK button was selected in demo UI

@@ -456,14 +456,22 @@ void CG_DamagePlum (int client, const vec3_t org, int score, int weapon)
 	refEntity_t		*re;
 	vec3_t			angles;
 	int ourClientNum;
+	wclient_t *wc;
+
+	if (client >= MAX_CLIENTS  ||  client < 0) {
+		CG_Printf("^3WARNING: CG_DamagePlum() invalid client number %d\n", client);
+		return;
+	}
+
+	wc = &wclients[client];
 
 	if (cg_damagePlumSumHack.integer) {
-		if (cg.time > wcg.damageTime[client] + cg_damagePlumTime.integer) {
-			wcg.damageSum[client] = 0;
+		if (cg.time > wc->damagePlumTime + cg_damagePlumTime.integer) {
+			wc->damagePlumSum = 0;
 		}
 
-		score += wcg.damageSum[client];
-		wcg.damageSum[client] = score;
+		score += wc->damagePlumSum;
+		wc->damagePlumSum = score;
 
 		if (wolfcam_following) {
 			ourClientNum = wcg.clientNum;
@@ -476,7 +484,7 @@ void CG_DamagePlum (int client, const vec3_t org, int score, int weapon)
 		}
 	}
 
-	wcg.damageTime[client] = cg.time;
+	wc->damagePlumTime = cg.time;
 
 	le = CG_AllocLocalEntity();
 	le->leFlags = client;
