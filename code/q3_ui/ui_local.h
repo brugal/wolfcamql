@@ -98,6 +98,7 @@ extern vmCvar_t	ui_ioq3;
 extern vmCvar_t ui_doubleClickTime;
 
 extern vmCvar_t ui_demoSortDirFirst;
+extern vmCvar_t ui_demoStayInFolder;
 
 //
 // ui_qmenu.c
@@ -369,7 +370,7 @@ extern void Controls_Cache( void );
 //
 // ui_demo2.c
 //
-extern void UI_DemosMenu (qboolean useQuakeLiveDir);
+extern void UI_DemosMenu (qboolean useQuakeLiveDir, const char *lastdemodir);
 extern void Demos_Cache( void );
 
 //

@@ -1,4 +1,4 @@
-12.6test3
+12.6test4
 
 * ioquake3 patches
 * bug fix: ENTER key would play demo even if BACK button was selected in demo UI
@@ -7,6 +7,8 @@
 
   If enabled, damage plums will show sum of damage dealt. Like in Quake Champions.
   Note, that this hack does not differ targets. Example, if you fire plasma to different enemies at the same time, damage plum will will show overall damage given to both enemies.
+
+* ui_demoStayInFolder  return to the same demo folder listing after demo playback
 
 ---------------------------------
 12.5  2022-08-02

@@ -119,11 +119,11 @@ void Main_MenuEvent (void* ptr, int event) {
 		break;
 
 	case ID_DEMOS:
-		UI_DemosMenu(qfalse);
+		UI_DemosMenu(qfalse, NULL);
 		break;
 
 	case ID_QLDEMOS:
-		UI_DemosMenu(qtrue);
+		UI_DemosMenu(qtrue, NULL);
 		break;
 
 	case ID_CINEMATICS:
@@ -312,6 +312,7 @@ void UI_MainMenu( void ) {
 	qboolean teamArena = qfalse;
 	int		style = UI_CENTER | UI_DROPSHADOW | UI_SMALLFONT;
 	int type;
+	char lastDemoDirBuffer[MAX_OSPATH];
 
 	trap_Cvar_Set( "sv_killserver", "1" );
 
@@ -511,4 +512,11 @@ void UI_MainMenu( void ) {
 	uis.menusp = 0;
 	UI_PushMenu ( &s_main.menu );
 
+	if (ui_demoStayInFolder.integer) {
+		lastDemoDirBuffer[0] = '\0';
+		trap_Cvar_VariableStringBuffer("lastdemodir", lastDemoDirBuffer, sizeof(lastDemoDirBuffer));
+		if (lastDemoDirBuffer[0]) {
+			UI_DemosMenu(qfalse, lastDemoDirBuffer);
+		}
+	}
 }

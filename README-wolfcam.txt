@@ -3152,6 +3152,7 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * r_useCoreContext enables core context with opengl2
 * s_sdlWindowsForceDirectSound, needed for video recording if wsapi reports more than 2 channels
 * ui_demoSortDirFirst to list directories first in demo listing
+* ui_demoStayInFolder  return to the same demo folder listing after demo playback
 
 * cpma ntf backpack support
 

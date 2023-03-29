@@ -2404,14 +2404,13 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * 32-bit windows build:  cl_cgame build error (string format)
 
-* demo listing:  stay in same folder as viewed demo
-
 * zf  .mme support
 * stopfresh github #45  cnq3 152 renderer features
 
 * kr3m  q3plus demo
 * damageplumshack reset weapon switch only in demo?  -- cg_playerstate.c
 * damage plum check ql colors
+* ui_demos2.c demo dir uses MAX_OSPATH which is only 256
 
 
 ----

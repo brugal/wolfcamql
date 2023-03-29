@@ -147,6 +147,10 @@ static void Demos_PlayDemoOrChangeDir (void)
 		UI_PushMenu(&s_demos.menu);
 		return;
 	} else {
+		trap_Cvar_Set("lastdemodir", s_demos.dirName);
+		trap_Cvar_SetValue("lastdemodir_curvalue", s_demos.list.curvalue);
+		trap_Cvar_SetValue("lastdemodir_top", s_demos.list.top);
+
 		//FIXME hack
 		//Com_Printf("^3dirName '%s'  fname '%s'\n", s_demos.dirName, fname);
 		UI_ForceMenuOff();
@@ -182,6 +186,7 @@ static void Demos_MenuEvent( void *ptr, int event ) {
 
 		slash = strchr(s_demos.dirName, '/');
 		if (!slash) {
+			trap_Cvar_Set("lastdemodir", "");
 			UI_PopMenu();
 		} else {
 			// hack, set '../' as selected demo/dir
@@ -201,6 +206,7 @@ static void Demos_MenuEvent( void *ptr, int event ) {
 				// found '../'
 				Demos_PlayDemoOrChangeDir();
 			} else {
+				trap_Cvar_Set("lastdemodir", "");
 				UI_PopMenu();
 			}
 		}
@@ -238,6 +244,11 @@ static sfxHandle_t UI_DemosMenu_Key (int key)
 		}
 	}
 	//item = Menu_ItemAtCursor( &s_demos.menu );
+
+	// hack
+	if (key == K_ESCAPE) {
+		trap_Cvar_Set("lastdemodir", "");
+	}
 
 	return Menu_DefaultKey( &s_demos.menu, key );
 }
@@ -476,13 +487,29 @@ void Demos_Cache( void ) {
 UI_DemosMenu
 ===============
 */
-void UI_DemosMenu (qboolean useQuakeLiveDir)
+//void UI_DemosMenu (qboolean useQuakeLiveDir, const char *lastdemodir, int top, int curvalue)
+void UI_DemosMenu (qboolean useQuakeLiveDir, const char *lastdemodir)
 {
 	UseQuakeLiveDir = useQuakeLiveDir;
-	if (UseQuakeLiveDir) {
-		Demos_MenuInit("ql:demos");
+
+	if (lastdemodir) {
+		int curvalue, top;
+
+		Demos_MenuInit(lastdemodir);
+		curvalue = trap_Cvar_VariableValue("lastdemodir_curvalue");
+		top = trap_Cvar_VariableValue("lastdemodir_top");
+
+		//Com_Printf("numitems %d  curvalue %d  top %d\n", s_demos.list.numitems, curvalue, top);
+		if (curvalue <= s_demos.list.numitems  &&  top <= s_demos.list.numitems) {
+			s_demos.list.curvalue = curvalue;
+			s_demos.list.top = top;
+		}
 	} else {
-		Demos_MenuInit("demos");
+		if (UseQuakeLiveDir) {
+			Demos_MenuInit("ql:demos");
+		} else {
+			Demos_MenuInit("demos");
+		}
 	}
 	UI_PushMenu(&s_demos.menu);
 }
