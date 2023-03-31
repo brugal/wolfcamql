@@ -7965,3 +7965,50 @@ the demo.
     noise.
 
     Using Wavelet compression requires engine code changes to enable.
+
+2022-09-02-01
+    Update to SDL 2.24.0 and add separate macOS UB2 dylib
+
+    Update mingw and macOS SDL libraries to 2.24.0. (MSVC .lib files and
+    Xcode project haven't been updated.)
+
+    There is now a separate SDL dylib for macOS Universal Binary 1 and 2
+    because SDL 2.24.0 dropped support for macOS 10.6 (which is last to
+    support x86). Documentation says SDL 2.24.0 also dropped macOS 10.7
+    and 10.8 too. So UB2 is now 10.9 or later while 10.5 to 10.8 live in
+    UB1.
+
+    Compiled using osxcross with macOS 11.3 SDK. Ran "strip -x" on Windows
+    and macOS libraries. Ad-hoc signed dylib using PyOxidizer rcodesign to
+    fix digest checksums after strip.
+
+2022-09-02-02
+    Update macOS UB1 to SDL 2.0.22
+
+    Fix crash when scrolling using touchpad on macOS 10.6 (I fixed it
+    in SDL 2.0.18) and fix failing to start on x86 due to ioq3 SDL dylib
+    having absolute path instead of "@executable_path/libSDL2-2.0.0.dylib".
+
+    SDL 2.24.0 removed macOS 10.6 support (last with x86). Offically at
+    least, they also dropped x86_64 on macOS 10.7 and 10.8. So ioq3 UB1
+    is limited to SDL 2.0.22.
+
+    - Update x86 and x86_64 to SDL 2.0.22. Compiled with 10.13 SDK as
+      10.14 SDK dropped running on older than macOS 10.9 and I ran
+      "strip -x" on the libraries. Ad-hoc signed with PyOxidizer rcodesign.
+    - PPC is still MAN-AT-ARMS' SDL 2.0.1 build but I ran "strip -x"
+      on it to reduce the file size.
+    - ARM64 build was removed from UB1 as UB2 with SDL 2.24.0 should
+      be used instead.
+
+2022-09-03-01
+    Fix running make-macosx{,-ub2}.sh on Linux
+
+    osxcross doesn't support ppc so it's not possible to compile Universal
+    Binary 1.
+
+2022-09-08-01
+    Update MSVC .lib files to SDL 2.24.0
+
+    Built with Visual Studio 2022 with PlatformToolSet v141_xp.
+    x64 built with TargetName SDL264 / SDL264main to use SDL264.dll.

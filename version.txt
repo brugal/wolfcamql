@@ -1,6 +1,10 @@
-12.6test4
+12.6test5
 
 * ioquake3 patches
+
+  - bug fixes
+  - SDL update (2.24.0, 2.0.22 macOS UB1)
+
 * bug fix: ENTER key would play demo even if BACK button was selected in demo UI
 * bug fix: demo UI BACK button didn't change to parent directory
 * cg_damagePlumSumHack
