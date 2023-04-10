@@ -8137,6 +8137,15 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 			cgs.defrag = qtrue;
 		} else if (*Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "defrag_vers")) {
 			cgs.defrag = qtrue;
+		} else if (!Q_stricmp("q3plus", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "gamename"))
+				   ||
+
+				   // saw in older demo
+				   ( !Q_stricmp("q3plus", Info_ValueForKey(CG_ConfigString(CS_SYSTEMINFO), "fs_game"))  &&  !Q_stricmp("excessiveplus", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "gamename")) )
+				   ) {
+			//FIXME gametypes
+			Com_Printf("^5q3plus detected\n");
+			cgs.q3plus = qtrue;
 		}
 	} else if (cgs.realProtocol == 73) {
 		memcpy(&bg_itemlist, &bg_itemlistQldm73, sizeof(gitem_t) * bg_numItemsQldm73);

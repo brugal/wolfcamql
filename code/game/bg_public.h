@@ -1365,4 +1365,6 @@ int BG_ModToWeapon (int mod);
 #define KAMI_BOOMSPHERE_MAXRADIUS		720
 #define KAMI_SHOCKWAVE2_MAXRADIUS		704
 
+#define Q3PLUS_INFINITE_AMMO 16960
+
 #endif  // bg_public_h_included

@@ -383,6 +383,8 @@ void CG_DrawInformation (qboolean loading)
 				Com_sprintf(buf, sizeof(buf), "cpma: %s", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "server_gameplay"));
 			} else if (cgs.defrag) {
 				Com_sprintf(buf, sizeof(buf), "defrag");
+			} else if (cgs.q3plus) {
+				Com_sprintf(buf, sizeof(buf), "q3plus");
 			} else {
 				Com_sprintf(buf, sizeof(buf), "%s", CG_ConfigString(CS_GAME_VERSION));
 			}

@@ -234,6 +234,184 @@ static void CG_ParseScores( void ) {
 }
 #undef MAX_OLD_SCORE_TIME
 
+static void CG_ParseScoresQ3Plus( void ) {
+	int		i;
+	int redCount = 0;
+	int blueCount = 0;
+	int redTotalPing = 0;
+	int blueTotalPing = 0;
+	int SCSIZE;
+
+	cg.scoresValid = qtrue;
+
+	//FIXME first is a letter?
+	//cg.numScores = atoi( CG_Argv( 1 ) );
+
+	/*
+	command: 'scores'
+	2:45 argv[1]: X
+	2:45 argv[2]: 9
+	2:45 argv[3]: 2
+	2:45 argv[4]: 3
+	2:45 argv[5]: 0
+	2:45 argv[6]: 0
+	*/
+
+	cg.numScores = atoi(CG_Argv(2));
+
+	if ( cg.numScores > MAX_CLIENTS ) {
+		Com_Printf("^3CG_ParseScoresQ3Plus() cg.numScores (%d) > MAX_CLIENTS (%d)\n", cg.numScores, MAX_CLIENTS);
+		cg.numScores = MAX_CLIENTS;
+	}
+
+	for (i = 0;  i < MAX_CLIENTS;  i++) {
+		cgs.clientinfo[i].scoreValid = qfalse;
+		cg.clientHasScore[i] = qfalse;
+	}
+
+	cg.teamScores[0] = atoi( CG_Argv( 3 ) );
+	cg.teamScores[1] = atoi( CG_Argv( 4 ) );
+
+	// argv 5 and 6 unknown
+
+	cg.avgRedPing = 0;
+	cg.avgBluePing = 0;
+	//memset( cg.scores, 0, sizeof( cg.scores ) );
+
+	SCSIZE = 12;
+
+	for ( i = 0 ; i < cg.numScores ; i++ ) {
+		int clientNum;
+		char countryCode[3];
+		clientInfo_t *ci;
+		clientInfo_t *ciOrig;
+
+		// score index number
+		// atoi( CG_Argv( i * SCSIZE + 7 ) );
+
+		clientNum = atoi( CG_Argv( i * SCSIZE + 8 ) );
+		if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
+			CG_Printf("^1CG_ParseScoresQ3Plus() invalid client number %d\n", clientNum);
+		}
+		cg.scores[i].client = clientNum;
+
+		/*
+          score     ping    time
+          kills     loss    idle
+		*/
+		cg.scores[i].score = atoi( CG_Argv( i * SCSIZE + 9 ) );
+
+		cg.scores[i].frags = atoi( CG_Argv( i * SCSIZE + 10 ) );
+
+		cg.scores[i].ping = atoi( CG_Argv( i * SCSIZE + 11 ) );
+
+		// loss?
+		// atoi( CG_Argv( i * SCSIZE + 12 ) );
+
+		cg.scores[i].time = atoi( CG_Argv( i * SCSIZE + 13 ) );
+
+		// idle?
+		// 14 ?
+		// 15 ?
+
+		// freezetag dead state is here ('ready')
+		cg.scores[i].powerups = atoi( CG_Argv( i * SCSIZE + 16 ) );
+
+		// country
+		countryCode[0] = (CG_Argv(i * SCSIZE + 17))[0];
+		countryCode[1] = (CG_Argv(i * SCSIZE + 17))[1];
+		countryCode[2] = '\0';
+
+		// unknown
+		// atoi(CG_Argv(i * SCSIZE + 18));
+
+		//////////////////////
+
+		//Com_Printf("score %d %s\n", i, cgs.clientinfo[cg.scores[i].client].name);
+		//Com_Printf("sc %d (%d  %d)\n", i, cg.scores[i].scoreFlags, cg.scores[i].alive);
+		//Com_Printf("sc %d (%d  %d %d  -- %d %d)\n", i, cg.scores[i].scoreFlags, cg.scores[i].perfect, cg.scores[i].captures, cg.scores[i].frags, cg.scores[i].deaths);
+
+#if 0
+		Com_Printf("%d  %d  %d  %d\n",
+				   atoi(CG_Argv(i * SCSIZE + 18)),
+				   atoi(CG_Argv(i * SCSIZE + 19)),
+				   atoi(CG_Argv(i * SCSIZE + 20)),
+				   atoi(CG_Argv(i * SCSIZE + 21)));
+
+		Com_Printf("accuracy: %d\n", cg.scores[i].accuracy);
+#endif
+
+		if ( cg.scores[i].client < 0 || cg.scores[i].client >= MAX_CLIENTS ) {
+			Com_Printf("FIXME score->client invalid: %d\n", cg.scores[i].client);
+			cg.scores[i].client = 0;
+		}
+
+		ci = &cgs.clientinfo[cg.scores[i].client];
+		ciOrig = &cgs.clientinfoOrig[cg.scores[i].client];
+
+		if (ci->countryCode[0] != countryCode[0]  ||  ci->countryCode[1] != countryCode[1]) {
+			ci->countryCode[0] = countryCode[0];
+			ci->countryCode[1] = countryCode[1];
+
+			ciOrig->countryCode[0] = countryCode[0];
+			ciOrig->countryCode[1] = countryCode[1];
+
+			SC_Lowercase(countryCode);
+
+			ci->countryFlag = trap_R_RegisterShaderNoMip(va("ui/assets/flags/%s.png", countryCode));
+			ciOrig->countryFlag = ci->countryFlag;
+		}
+
+		cgs.clientinfo[ cg.scores[i].client ].score = cg.scores[i].score;
+		cgs.clientinfo[ cg.scores[i].client ].powerups = cg.scores[i].powerups;
+		cgs.clientinfo[cg.scores[i].client].scoreIndexNum = i;
+
+		cgs.clientinfo[cg.scores[i].client].scoreValid = qtrue;
+		cg.clientHasScore[cg.scores[i].client] = qtrue;
+
+		cg.scores[i].team = cgs.clientinfo[cg.scores[i].client].team;
+
+		//Com_Printf("^1sss  %s  score %d\n", cgs.clientinfo[cg.scores[i].client].name, cgs.clientinfo[cg.scores[i].client].score);
+
+		if (cg.scores[i].team == TEAM_RED) {
+			redCount++;
+			redTotalPing += cg.scores[i].ping;
+		} else if (cg.scores[i].team == TEAM_BLUE) {
+			blueCount++;
+			blueTotalPing += cg.scores[i].ping;
+		}
+	}
+
+	if (redCount) {
+		cg.avgRedPing = redTotalPing / redCount;
+	} else {
+		cg.avgRedPing = 0;
+	}
+
+	if (blueCount) {
+		cg.avgBluePing = blueTotalPing / blueCount;
+	} else {
+		cg.avgBluePing = 0;
+	}
+
+	//Com_Printf("^5red ping %d  blue ping %d\n", cg.avgRedPing, cg.avgBluePing);
+
+#if 1  //def MPACK
+	CG_SetScoreSelection(NULL);
+#endif
+
+	if (CG_IsDuelGame(cgs.gametype)) {
+		CG_SetDuelPlayers();
+	}
+
+	// check sizes
+	if (CG_Argc() != (i * SCSIZE + 7)) {
+		CG_Printf("^1CG_ParseScoresQ3Plus() argc (%d) != %d\n", CG_Argc(), (i * SCSIZE + 7));
+	}
+
+//#undef SCSIZE
+}
+
 static void CG_ParseRRScores (void)
 {
 	int		i;
@@ -1183,6 +1361,55 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 	if (cgs.protocol == PROTOCOL_Q3) {
 		if (cgs.cpma) {
 			// done in CG_CpmaParseGameState()
+		} else if (cgs.q3plus) {
+			switch (cgs.gametype) {
+			case 2:
+				cgs.gametype = GT_SINGLE_PLAYER;
+				break;
+			case 4:
+				cgs.gametype = GT_CTF;
+				break;
+			case 5:
+				//FIXME RTF
+
+				/*
+Return the Flag
+
+RTF (g_gametype 5). This one is more difficult than the regular Capture the Flag but also the better team game.
+
+Though the only difference is that you have to carry your own flag back to your base, it is harder than it sounds!
+
+Be aware of double flag carriers, they can be your best friends but also your worst enemies.
+				*/
+				cgs.gametype = GT_CTF;
+				break;
+			case 6:
+				cgs.gametype = GT_1FCTF;
+				break;
+			case 7:
+				cgs.gametype = GT_CA;
+				break;
+			case 8:
+				cgs.gametype = GT_FREEZETAG;
+				break;
+			case 9:
+				//FIXME PTL
+				/*
+Protect the Leader
+
+PTL (g_gametype 9). This one is an all-new teamplay gametype where you have to prevent that your leader gets hurt.
+
+Each team has a granted team leader who is carrying your team's flag.
+
+The enemy team of course tries to kill your leader to win the round and it is your job to prevent this!
+
+The one who kills the leader gets the new leader and automatically is hunted by the other team.
+				*/
+				cgs.gametype = GT_CTF;
+				break;
+			default:
+				break;
+			}
 		} else {
 			switch (cgs.gametype) {
 			case 2:
@@ -5333,21 +5560,21 @@ static void CG_ServerCommand( void ) {
 	char		text[MAX_SAY_TEXT];
 	int i;
 	char args[4][MAX_QPATH];
+	int argc;
 
 	cmd = CG_Argv(0);
 
 	if (cg_debugServerCommands.integer == 1) {
 		Com_Printf("^3command: '%s'\n", cmd);
-		i = 1;
-		while (1) {
-			if (!*CG_Argv(i)) {
-				break;
-			}
+
+		// 2023-04-10  this loop used to check until !*CG_Argv(i), don't remember why
+		argc = trap_Argc();
+		for (i = 1;  i < argc; i++) {
 			CG_Printf("argv[%d]: %s\n", i, CG_Argv(i));
-			i++;
 		}
 	}
 
+	// CG_Argv() uses static buffer
 	cmd = CG_Argv(0);
 
 	if ( !cmd[0] ) {
@@ -5435,10 +5662,29 @@ static void CG_ServerCommand( void ) {
 				cg.lastChatBeepTime = cg.time;
 			}
 		}
-		Q_strncpyz( text, CG_Argv(1), MAX_SAY_TEXT );
+
+		if (cgs.q3plus) {
+			Q_strncpyz( text, CG_Argv(5), MAX_SAY_TEXT );
+		} else {
+			Q_strncpyz( text, CG_Argv(1), MAX_SAY_TEXT );
+		}
 		CG_RemoveChatEscapeChar( text );
-		CG_Printf( "%s\n", text );
-		CG_PrintToScreen("%s", text);
+
+		if (cgs.q3plus) {  // with client number
+			int c;
+
+			c = atoi(CG_Argv(1));
+			if (c < 0  ||  c >= MAX_CLIENTS) {
+				Com_Printf("^3q3plus chat invalid client number: %d\n", c);
+				c = 0;
+			}
+
+			CG_Printf( "[%s] %s^7: ^2%s\n", CG_Argv(1), cgs.clientinfo[c].name, text );
+			CG_PrintToScreen("[%s] %s^7: ^2%s", CG_Argv(1), cgs.clientinfo[c].name, text);
+		} else {
+			CG_Printf( "%s\n", text );
+			CG_PrintToScreen("%s", text);
+		}
 		//Q_strncpyz(cg.lastChatString, text, sizeof(cg.lastChatString));
 		return;
 	}
@@ -5489,7 +5735,11 @@ static void CG_ServerCommand( void ) {
 #endif
 
 	if ( !strcmp( cmd, "scores" ) ) {
-		CG_ParseScores();
+		if (cgs.q3plus) {
+			CG_ParseScoresQ3Plus();
+		} else {
+			CG_ParseScores();
+		}
 		Wolfcam_ScoreData();
 		CG_BuildSpectatorString();
 		//Com_Printf("^3scores\n");
@@ -5789,13 +6039,9 @@ static void CG_ServerCommand( void ) {
 
 	CG_Printf( "Unknown client game command: %s\n", CG_Argv(0) );
 	if (cg_debugServerCommands.integer == 2) {
-		i = 1;
-		while (1) {
-			if (!*CG_Argv(i)) {
-				break;
-			}
+		argc = trap_Argc();
+		for (i = 1; i < argc;  i++) {
 			CG_Printf("argv[%d]: %s\n", i, CG_Argv(i));
-			i++;
 		}
 	}
 }

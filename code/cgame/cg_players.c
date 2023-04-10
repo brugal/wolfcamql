@@ -4281,7 +4281,12 @@ void CG_AddRefEntityWithPowerups( refEntity_t *ent, const entityState_t *state, 
 			}
 		}
 		if ( state->powerups & ( 1 << PW_BATTLESUIT ) ) {
-			ent->customShader = cgs.media.battleSuitShader;
+			if (cgs.q3plus  &&  cgs.gametype == GT_FREEZETAG) {
+				// 2023-04-07 q3plus also disables battle suit in freetag
+				ent->customShader = cgs.media.iceShader[0];  //FIXME index
+			} else {
+				ent->customShader = cgs.media.battleSuitShader;
+			}
 			CG_AddRefEntity(ent);
 		}
 		if (CG_FreezeTagFrozen(state->clientNum)  &&  ent->hModel != cg_weapons[WP_GRENADE_LAUNCHER].missileModel  &&  ent->hModel != cg_weapons[WP_ROCKET_LAUNCHER].missileModel  &&  ent->hModel != cg_weapons[WP_BFG].missileModel  &&  ent->hModel != cg_weapons[WP_PROX_LAUNCHER].missileModel  &&  ent->hModel != cgs.media.blueProxMine) {

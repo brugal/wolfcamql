@@ -2058,7 +2058,7 @@ Player Models:
 * cg_itemSize
 * cg_itemFx same as quake live
 
-* quake3 demo playback support (vanilla q3 and specific support for cpma, osp, and defrag)
+* quake3 demo playback support (vanilla q3 and specific support for cpma, osp, defrag, and some q3plus features)
    ex:  copy map_cpm3a.pk3 into wolfcamql/wolfcam-ql/
         wolfcamql.exe +demo ratelpajuo
 

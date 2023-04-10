@@ -111,6 +111,12 @@ static void CG_Obituary( const entityState_t *ent ) {
 	attacker = ent->otherEntityNum2;
 	mod = ent->eventParm;
 
+	if (cgs.q3plus) {
+		if (mod == 0  &&  cgs.gametype == GT_FREEZETAG) {
+			mod = MOD_THAW;
+		}
+	}
+
 	if (attacker == ourClientNum  &&  attacker != target  &&  !cg.freecam  &&  cg_killBeep.integer > 0  &&  cg_killBeep.integer <= 8) {
 		if (target >= 0  &&  target < MAX_CLIENTS  &&  CG_IsEnemy(&cgs.clientinfo[target])) {
 			CG_StartLocalSound(cgs.media.killBeep[cg_killBeep.integer - 1], CHAN_KILLBEEP_SOUND);
@@ -3460,6 +3466,15 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		if (cgs.cpma  ||  cgs.osp) {
 			//clientNum = CG_CheckClientEventCpma(clientNum, es);
 			//cent = &cg_entities[clientNum];
+		}
+
+		if (cgs.q3plus  &&  cgs.gametype == GT_FREEZETAG) {
+			if (*EffectScripts.thawed) {
+				CG_FX_ThawPlayer(cent);
+			} else {
+				CG_ThawPlayer(cent);
+			}
+			break;
 		}
 
 		if (cgs.gametype == GT_FREEZETAG) {

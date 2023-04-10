@@ -1,4 +1,4 @@
-12.6test5
+12.6test6
 
 * ioquake3 patches
 
@@ -13,6 +13,11 @@
   Note, that this hack does not differ targets. Example, if you fire plasma to different enemies at the same time, damage plum will will show overall damage given to both enemies.
 
 * ui_demoStayInFolder  return to the same demo folder listing after demo playback
+* q3plus support
+
+  - identify game types (RTF and PTL treated as CTF)
+
+* bug fix:  cg_debugServerCommands would stop printing after empty argument
 
 ---------------------------------
 12.5  2022-08-02

@@ -2407,10 +2407,25 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * zf  .mme support
 * stopfresh github #45  cnq3 152 renderer features
 
-* kr3m  q3plus demo
+* q3plus
+  - leader board
+  - unknown config string 30: 1
+  - rtf and ptl game types
+  - alive status freezetag
+  - older q3plus:  Bad item index 36 on entity, ts_dm5 -- just ql version? -- also q3 version
+  - scores has kill weapon list?
+  - team overlay shows freeze percentage and changes color for frozen players
+  - g5rtf1.dm_68 has "vchat", "vtell"
+  - rtf flag status -- can have both and own team carrying own flag is different status
+  - info screen show rtf, ptl
+  - ca treated as end of game after rounds end, cs 30: 1 at real end?
+  - cap, score limits
+  - ptl not showing regen when you are the leader
+
 * damageplumshack reset weapon switch only in demo?  -- cg_playerstate.c
 * damage plum check ql colors
 * ui_demos2.c demo dir uses MAX_OSPATH which is only 256
+
 
 
 ----

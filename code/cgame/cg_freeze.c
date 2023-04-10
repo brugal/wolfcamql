@@ -20,6 +20,16 @@ qboolean CG_FreezeTagFrozen (int clientNum)
     }
 #endif
 
+#if 0
+    if (cgs.q3plus) {
+        if (cg_entities[clientNum].currentState.powerups & (1 << PW_BATTLESUIT)) {
+            return qtrue;
+        } else {
+            return qfalse;
+        }
+    }
+#endif
+
     //if (cg_entities[clientNum].currentState.eFlags & EF_DEAD) {
     //if (cg_entities[clientNum].currentState.weapon == WP_NONE) {
     //if (cg_entities[clientNum].currentState.powerups & 0x8000) {

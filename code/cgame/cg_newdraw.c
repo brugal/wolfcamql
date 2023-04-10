@@ -382,7 +382,7 @@ static void CG_DrawPlayerAmmoValue (const rectDef_t *rect, float scale, const ve
 			value = cg.snap->ps.ammo[weapon];
 		}
 
-		if ( value > -1 ) {
+		if ( value > -1  &&  !(cgs.q3plus  &&  value == Q3PLUS_INFINITE_AMMO)) {
 			if (shader) {
 				trap_R_SetColor( color );
 				CG_DrawPic(rect->x, rect->y, rect->w, rect->h, shader);
@@ -6338,7 +6338,7 @@ void CG_DrawWeaponBar( void ) {
 			Vector4Copy(colorWhite, textColor);
 		}
 
-		if (ammo < 0) {
+		if (ammo < 0  ||  (cgs.q3plus  &&  ammo == Q3PLUS_INFINITE_AMMO)) {
 			trap_R_SetColor(colorWhite);
 			CG_DrawPic(x + 18, y , 16, 16, cgs.media.infiniteAmmo);
 		} else if (cg_weaponBar.integer == 1  ||  cg_weaponBar.integer == 3) {

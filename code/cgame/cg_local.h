@@ -462,6 +462,8 @@ typedef struct {
 	// end override
 
 	qhandle_t countryFlag;
+	char countryCode[2];  //  q3plus
+
 	char clanTag[MAX_QPATH * 2];
 	char whiteClanTag[MAX_QPATH];
 	char fullClanName[MAX_STRING_CHARS];
@@ -2510,6 +2512,8 @@ typedef struct {
 	qboolean osp;
 	qboolean ospEncrypt;
 	qboolean defrag;
+	qboolean q3plus;
+
 	//int cpmaTimeoutTime;
 	int cpmaLastTe;
 	int cpmaLastTd;
