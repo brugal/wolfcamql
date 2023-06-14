@@ -8012,3 +8012,48 @@ the demo.
 
     Built with Visual Studio 2022 with PlatformToolSet v141_xp.
     x64 built with TargetName SDL264 / SDL264main to use SDL264.dll.
+
+2023-04-02-01
+    Document USE_INTERNAL_VORBIS in README
+
+2023-04-17-01 (ignore .github)
+    Update CI to Ubuntu 20.04
+
+2023-04-18-01
+    Update SECURITY.md
+
+2023-04-19-01
+    Add protocol handler support
+
+    This lets the user click a link in a web browser to very easily join a Quake 3 multiplayer game. As browser-based matchmaking websites become more popular, this makes it a lot more convenient and simple to play Quake 3 with others.
+
+    The links have the following URI format: quake3://connect/example.com:27950. The format has been designed to be flexible to allow more types of links in the future and avoiding having to make a breaking change. At the moment, "connect" is the only supported command.
+
+2023-04-18-02
+    Fix bad client reliableAcknowledge DOS exploit
+
+    Having a reliableAcknowledge of 0x7FFFFFFF causes a massive
+    loop to be executed in SV_UpdateServerCommandsToClient due to the + 1 overflow.
+
+2023-06-07-01 (ignore .github)
+    Update CI to macOS 11
+
+    macOS 10.15 is not available anymore.
+
+2023-06-07-02 (ignore .github)
+    Update CI actions version
+
+    checkout and upload-artifact v2 are deprecated.
+
+2023-06-10-01
+    Fix macOS client/server failing to start from terminal
+
+    The macOS client and server were completely unusable when run from a
+    terminal. They blocked forever in `[NSApp run];` which was called by
+    Sys_InitProtocolHandler(). `applicationDidFinishLaunching` was never
+    called to exit the NSApp run loop.
+
+    Use SDL's SDL_DROPFILE event to receive URLs to handle on macOS instead.
+    This also handles URLs while the game is running (connect to new server)
+    instead of nothing happening when clicking a link while the game is
+    running.

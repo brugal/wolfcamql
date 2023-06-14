@@ -2399,9 +2399,6 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * extension fallback for demos without protocol config string value  -- make sure cl_demofile is set correctly before the check
 
-* ioquake3 sdl update 64-bit windows build tries to load SDL2.dll
-* ioquake3 sdl update doesn't seem to use SDL2 2.0.16 headers (some dev version?)
-
 * 32-bit windows build:  cl_cgame build error (string format)
 
 * zf  .mme support
@@ -2426,6 +2423,7 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * damage plum check ql colors
 * ui_demos2.c demo dir uses MAX_OSPATH which is only 256
 
+* q3 tga header bug
 
 
 ----

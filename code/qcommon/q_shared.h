@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define CINEMATICS_LOGO		"foologo.roq"
   #define CINEMATICS_INTRO		"intro.roq"
 //  #define LEGACY_PROTOCOL		// You probably don't need this for your standalone game
+//  #define PROTOCOL_HANDLER		"foobar"
 #else
   #define PRODUCT_NAME				"wolfcamql"
   #define BASEGAME					"baseq3"
@@ -60,6 +61,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #define CINEMATICS_LOGO			"idlogo.RoQ"
   #define CINEMATICS_INTRO			"intro.RoQ"
   #define LEGACY_PROTOCOL
+  #define PROTOCOL_HANDLER			"wolfcamql"
 #endif
 
 // Heartbeat for dpmaster protocol. You shouldn't change this unless you know what you're doing
