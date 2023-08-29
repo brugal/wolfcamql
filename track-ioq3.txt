@@ -8057,3 +8057,72 @@ the demo.
     This also handles URLs while the game is running (connect to new server)
     instead of nothing happening when clicking a link while the game is
     running.
+
+2023-06-11-01
+    nsis: Remove Speex library
+
+    The game doesn't support it anymore.
+
+2023-06-11-02
+    nsis: Require installing SDL
+
+    It's required to run and unlikely to be installed system wide.
+
+2023-06-11-03
+    nsis: Display ioquake3 version
+
+    Display version in the installer and add/remove software.
+
+2023-06-11-04
+    nsis: Add better descriptions for OpenAL and libcurl
+
+2023-06-11-05
+    nsis: Fix CustomUrlArguments for protocol handler
+
+2023-06-11-06
+    nsis: Only uninstall protocol handler for this installation
+
+2023-07-06-01
+    Don't list mod directories at Windows drive root
+
+    The mod list on Windows would search the root of the drive if
+    fs_basepath, fs_homepath, fs_steampath, or fs_gogpath are blank ("")
+    (which is usually the case).
+
+    The issue is in the low-level Sys_ListFiles() but it only affects the
+    mod menu, on Windows. It cannot be abused by console commands to
+    list system files outside of the virtual filesystem.
+
+    ---
+
+    If a directory at the root of the drive of the working directory
+    contained a pk3 file, the directory was listed in the mods menu. The
+    virtual filesystem doesn't add blank directory names to the search path
+    so it cannot load mods from the drive root. (Unless of course you set a
+    fs_*path cvar to "C:\".)
+
+    Sys_ListFiles() with blank directory caused Windows to use "\*" for the
+    search path and "\" prefix means root of drive. Unix opendir("") failed
+    so nothing was listed for blank directory.
+
+    Sys_ListFilteredFiles() with blank directory _and_ specifying subdirs
+    could access any directory (on Windows and Unix-like) but no code uses
+    this or makes it accessible.
+
+    These functions are only used for initializing the virtual filesystem
+    and listing mods. They are not accessible by anything else such as a
+    console command. Only the mods menu, on Windows, is affected.
+
+2023-07-25-01
+    Add AppStream metadata
+
+2023-08-07-01
+    Update org.ioquake3.ioquake3.metainfo.xml
+
+    fixed the case of the filename and removed the hotlinked screenshots of original quake 3.
+
+2023-08-12-01
+    Merge pull request #397 from rawr51919/master
+
+2023-08-15-01
+    Improve AppStream metainfo

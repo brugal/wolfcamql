@@ -2425,6 +2425,8 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * q3 tga header bug
 
+* zoofeel high poly count cpma models
+* issue #50  hmg not in map load
 
 ----
 
