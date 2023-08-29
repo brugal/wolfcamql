@@ -477,7 +477,7 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 		// check for all digit string so you don't trip up with '1f'
 		isDigitString = qtrue;
 		for (i = 0;  i < strlen(value);  i++) {
-			if (!isdigit(value[i])) {
+			if (!isdigit(value[i])  &&  value[i] != ' ') {
 				isDigitString = qfalse;
 				break;
 			}

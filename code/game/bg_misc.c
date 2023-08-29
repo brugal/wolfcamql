@@ -1025,7 +1025,7 @@ Only in One Flag CTF games
 	},
 
 	{
-		"weap_hmg",
+		"weapon_hmg",
 		"sound/misc/w_pkup.wav",
 		{ "models/weapons3/hmg/hmg.md3", 0, 0, 0 },
 		"icons/weap_hmg",
@@ -2014,7 +2014,7 @@ Only in One Flag CTF games
 	},
 
 	{
-		"weap_hmg",
+		"weapon_hmg",
 		"sound/misc/w_pkup.wav",
 		{ "models/weapons3/hmg/hmg.md3", 0, 0, 0 },
 		"icons/weap_hmg",

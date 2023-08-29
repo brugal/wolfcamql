@@ -1,4 +1,4 @@
-12.6test8
+12.6test9
 
 * ioquake3 patches
 
@@ -18,6 +18,8 @@
   - identify game types (RTF and PTL treated as CTF)
 
 * bug fix:  cg_debugServerCommands would stop printing after empty argument
+* bug fix:  map loading incorrect 'not_gametype' digit string check
+* bug fix:  typo in HMG class name (prevented map spawing)
 
 ---------------------------------
 12.5  2022-08-02
