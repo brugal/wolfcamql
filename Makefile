@@ -297,7 +297,7 @@ OGGDIR=$(MOUNT_DIR)/libogg-1.3.5
 VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.7
 OPUSDIR=$(MOUNT_DIR)/opus-1.2.1
 OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.12
-ZDIR=$(MOUNT_DIR)/zlib-1.2.12
+ZDIR=$(MOUNT_DIR)/zlib-1.3
 TOOLSDIR=$(MOUNT_DIR)/tools
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
 LBURGDIR=$(MOUNT_DIR)/tools/lcc/lburg
@@ -2207,6 +2207,7 @@ ifneq ($(USE_INTERNAL_ZLIB),0)
     $(B)/renderergl1/adler32.o \
     $(B)/renderergl1/crc32.o \
     $(B)/renderergl1/deflate.o \
+    $(B)/renderergl1/infback.o \
     $(B)/renderergl1/inffast.o \
     $(B)/renderergl1/inflate.o \
     $(B)/renderergl1/inftrees.o \
@@ -2217,6 +2218,7 @@ ifneq ($(USE_INTERNAL_ZLIB),0)
     $(B)/renderergl2/adler32.o \
     $(B)/renderergl2/crc32.o \
     $(B)/renderergl2/deflate.o \
+    $(B)/renderergl2/infback.o \
     $(B)/renderergl2/inffast.o \
     $(B)/renderergl2/inflate.o \
     $(B)/renderergl2/inftrees.o \
@@ -2484,6 +2486,7 @@ Q3OBJ += \
   $(B)/client/adler32.o \
   $(B)/client/crc32.o \
   $(B)/client/deflate.o \
+  $(B)/client/infback.o \
   $(B)/client/inffast.o \
   $(B)/client/inflate.o \
   $(B)/client/inftrees.o \
@@ -2669,6 +2672,7 @@ Q3DOBJ += \
   $(B)/ded/adler32.o \
   $(B)/ded/crc32.o \
   $(B)/ded/deflate.o \
+  $(B)/ded/infback.o \
   $(B)/ded/inffast.o \
   $(B)/ded/inflate.o \
   $(B)/ded/inftrees.o \
