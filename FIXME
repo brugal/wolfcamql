@@ -2427,7 +2427,6 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 
 * zoofeel high poly count cpma models
 * missing SDL stdout and stderr files  -- SDL264main.lib from ioquake3?
-* code/libs/win*  libSDL264.a old
 
 
 ----
