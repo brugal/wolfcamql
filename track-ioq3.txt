@@ -8126,3 +8126,166 @@ the demo.
 
 2023-08-15-01
     Improve AppStream metainfo
+
+2023-08-17-01
+    Build QVMs even if there is no QVM JIT
+
+    The QVM interpreter works on all platforms. If building QVMs is an
+    issue, that should probably be handled separate from whether there
+    is a QVM JIT compiler.
+
+    This enables building QVMs by default on Linux arm64.
+
+2023-11-18-01
+    OpenGL2: Fix border for cg_viewsize using HDR/FB-MSAA w/postProcess
+
+    If using renderFBO (r_hdr 1 or r_ext_framebuffer_multisample > 0) and
+    r_postProcess 1, the viewport border (cg_viewsize < 100) which is drawn
+    before the world scene was drawn to the renderFBO but not copied to the
+    default framebuffer.
+
+    Now 2D before the world scene is drawn to the default framebuffer
+    directly for r_postProcess 1 like 2D drawn after the world scene.
+
+2023-11-18-02 (skip removed in later patch)
+    OpenGL2: Fix r_clear when using HDR/FB-MSAA
+
+2023-11-20-01
+    OpenGL2: Fix FB-MSAA on AMD Windows driver
+
+    Fix r_ext_framebuffer_multisample > 0 causing the screen to always be
+    solid black when using AMD Windows driver.
+
+    The AMD Windows driver requires binding renderbuffer for it to be valid.
+    The OpenGL2 renderer uses GL_EXT_direct_state_access that shouldn't
+    require this. It would be required for Core/GL_ARB_direct_state_access.
+    It seems like a driver bug.
+
+2023-11-22-01
+    OpenGL2: Fix updating the loading screen with r_cubeMapping 1
+
+    Generating cubemaps set backEnd.viewParms.isMirror = qtrue while the
+    loading screen said 'loading... maps/q3dm1.bsp' and it just stayed like
+    that until done loading (no additional messages or item icons) because
+    all 2D drawing was culled due to flipped culling for isMirror.
+
+    This was noticed because a recent commit fixed RB_ShowImages() to be
+    drawn to the screen instead of draw into renderFbo and never blit to
+    the screen. Now the loading screen draws over it as expected.
+
+    Mentioned commit: a81df34905fab89ad478237c269fc26bb1262489
+    "OpenGL2: Fix border for cg_viewsize using HDR/FB-MSAA w/postProcess"
+
+2023-12-20-01
+    OpenGL2: Fix q3map2 lightstyles effects
+
+    Fixes World of Padman wop_trashmap.
+
+    For r_mergeLightmaps 1
+    - Fix tcMod transform on "map $lightmap" stages
+    - Fix external lightmap image texcoords if shader also has an internal
+      lightmap
+
+    For r_sunlightMode 1
+    - Fix "tcGen lightmap" stages with blendFunc GL_SRC_ALPHA GL_ONE being
+      converted to white image + modulate lightmap and drawing incorrectly
+
+2023-12-22-01
+    OpenGL2: Fix parsing q3gl2_sun without two additional tokens
+
+    If mapLightScale and shadowScale weren't included at the end of
+    q3gl2_sun, the next shader line was skipped by SkipRestOfLine().
+
+    COM_ParseExt() with allowLineBreaks=qfalse, returns "" once and
+    then goes to the next line anyway. (Doesn't work well multiple
+    "optional" tokens. It looks like a vanilla bug.)
+
+2023-12-26-01
+    Fix building QVMs on Linux with Windows line endings
+
+    On non-Windows, compiling QVM tools failed if dagcheck.md had CRLF line
+    endings and compiling QVMs failed if game source had CRLF line endings.
+
+    Also made Windows open the files as binary (no automatic CRLF to LF) so
+    it behaves the same as on non-Windows.
+
+2024-01-06-01
+    OpenGL2: Fix applying tcMod turb
+
+    Shader stage tcMods for matrix and turb effects need to be applied in
+    order for turb to be correct and all tcMod turb need to be applied
+    instead of only the last one.
+
+    Quake 3's textures/liquids/slime1 had tcMod turb and then tcMod scale.
+    OpenGL2 applied the matrix first and then turb which had the wrong result.
+
+2024-02-08-01
+    OpenGL2: Fix sun rays being affected by the viewport size
+
+    Using r_drawSunRays 1, r_hdr 0, cg_viewsize 50 caused the sun rays to
+    only draw properly in the bottom right quarter of the world viewport.
+
+    The scissor rectangle for the world viewport was applied to the first
+    FBO_FastBlit() in RB_SunRays().
+
+    Set glScissor() in FBO_FastBlit() as it's done in FBO_Blit() and
+    FBO_BlitFromTexture(). Sun rays probably worked correctly with r_hdr 1
+    because the blit for HDR changed the scissor state.
+
+2024-02-09-01
+    OpenGL2: Fix merged lightmap hacks to have real lightmap index
+
+    This fixes the texcoord range to be 0.0 to 1.0 for external lightmaps in
+    shaders that also have an internal lightmap. (Instead of 2.0 to 3.0 for
+    example.) This only affects clampMap as repeating wrapping sampled the
+    correct location. I haven't found such a shader but I need to get real
+    lightmap index for future merged lightmap hacks.
+
+2024-02-10-01
+    OpenGL2: Fix using merged lightmaps with tcGen environment
+
+    tcGen environment generates texcoords in range of 0.0 to 1.0 and they
+    need to be offset to the position/size in the merged lightmap atlas.
+
+    This also needs to be after tcMods so they apply for the original range.
+    This fixes tcMod scale used by main_q3abanner and shinygrate1_4.
+
+    This issue was visible on the blue monitor (comp3c) near the plasmagun
+    in q3dm0 and the Quake III Arena banner in q3dm17.
+
+    Affected shaders in Quake 3 and Team Arena maps:
+
+    textures/base_wall/comp3
+    textures/base_wall/comp3b
+    textures/base_wall/comp3b_dark
+    textures/base_wall/comp3c
+    textures/base_wall/main_q3abanner
+    textures/base_wall/shinygrate1_4
+    textures/sfx/teslacoil
+
+    All of the shaders are used by q3dm0 but other maps also use some.
+
+2024-02-10-02
+    OpenGL2: Fix hack for tcMod transform on merged lightmaps
+
+    When using merged lightmaps, only change tcMod transform for tcGen
+    lightmap.
+
+2024-02-13-01
+    OpenGL2: Fix flares behind mirror being visible
+
+    When r_ext_framebuffer_multisample > 0 was used, flares behind the
+    mirror in q3tourney6 were incorrectly visible. This was because it
+    checks scene depth in the depth prepass which only drew opaque
+    surfaces. It also needs to contain depth for mirror/portal surfaces.
+
+2024-02-17-01
+    Fix running on Windows XP
+
+    Newer mingw-w64 changed default Windows version compatibility.
+    Need to specify older behavior for EnumProcesses() to avoid "missing
+    K32EnumProcesses()" runtime error.
+
+2024-02-26-01 (ignore .github)
+    Fix GitHub Actions CI deprecation warnings
+

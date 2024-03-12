@@ -366,9 +366,7 @@ void RB_BeginDrawingView (void) {
 	{
 		FBO_t *fbo = backEnd.viewParms.targetFbo;
 
-		// FIXME: HUGE HACK: render to the screen fbo if we've already postprocessed the frame and aren't drawing more world
-		// drawing more world check is in case of double renders, such as skyportals
-		if (fbo == NULL && !(backEnd.framePostProcessed && (backEnd.refdef.rdflags & RDF_NOWORLDMODEL)))
+		if (fbo == NULL && (!r_postProcess->integer || !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)))
 			fbo = tr.renderFbo;
 
 		if (tr.usingFinalFrameBufferObject  &&  fbo == NULL) {
@@ -1480,7 +1478,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		qboolean dontMerge;
 
 		if ( drawSurf->sort == oldSort && drawSurf->cubemapIndex == oldCubemapIndex) {
-			if (backEnd.depthFill && shader && shader->sort != SS_OPAQUE)
+			if (backEnd.depthFill && shader && (shader->sort != SS_OPAQUE && shader->sort != SS_PORTAL))
 				continue;
 
 			// fast path, same as previous sort
@@ -1527,7 +1525,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 			oldCubemapIndex = cubemapIndex;
 		}
 
-		if (backEnd.depthFill && shader && shader->sort != SS_OPAQUE)
+		if (backEnd.depthFill && shader && (shader->sort != SS_OPAQUE && shader->sort != SS_PORTAL))
 			continue;
 
 		//
@@ -1768,13 +1766,12 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 		ri.Printf( PRINT_ALL, "qglTexSubImage2D %i, %i: %i msec\n", cols, rows, end - start );
 	}
 
-	// FIXME: HUGE hack
 	if (glRefConfig.framebufferObject)
 	{
 		if (tr.usingFinalFrameBufferObject) {
-			FBO_Bind(backEnd.framePostProcessed ? tr.finalFbo : tr.renderFbo);
+			FBO_Bind(r_postProcess->integer ? tr.finalFbo : tr.renderFbo);
 		} else {
-			FBO_Bind(backEnd.framePostProcessed ? NULL : tr.renderFbo);
+			FBO_Bind(r_postProcess->integer ? NULL : tr.renderFbo);
 		}
 	}
 
@@ -1856,9 +1853,9 @@ static void RE_StretchRawRectScreen (const byte *data)
 	if (glRefConfig.framebufferObject)
 	{
 		if (tr.usingFinalFrameBufferObject) {
-			FBO_Bind(backEnd.framePostProcessed ? tr.finalFbo : tr.renderFbo);
+			FBO_Bind(r_postProcess->integer ? tr.finalFbo : tr.renderFbo);
 		} else {
-			FBO_Bind(backEnd.framePostProcessed ? NULL : tr.renderFbo);
+			FBO_Bind(r_postProcess->integer ? NULL : tr.renderFbo);
 		}
 	}
 
@@ -1987,12 +1984,11 @@ const void *RB_StretchPic ( const void *data ) {
 
 	cmd = (const stretchPicCommand_t *)data;
 
-	// FIXME: HUGE hack
 	if (glRefConfig.framebufferObject) {
 		if (tr.usingFinalFrameBufferObject) {
-			FBO_Bind(backEnd.framePostProcessed ? tr.finalFbo : tr.renderFbo);
+			FBO_Bind(r_postProcess->integer ? tr.finalFbo : tr.renderFbo);
 		} else {
-			FBO_Bind(backEnd.framePostProcessed ? NULL : tr.renderFbo);
+			FBO_Bind(r_postProcess->integer ? NULL : tr.renderFbo);
 		}
 	}
 	
@@ -2418,6 +2414,13 @@ const void	*RB_DrawSurfs( const void *data ) {
 			qglGenerateTextureMipmapEXT(cubemap->image->texnum, GL_TEXTURE_CUBE_MAP);
 	}
 
+	// FIXME? backEnd.viewParms doesn't get properly initialized for 2D drawing.
+	// r_cubeMapping 1 generates cubemaps with R_RenderCubemapSide()
+	// and sets isMirror = qtrue. Clear it here to prevent it from leaking
+	// to 2D drawing and causing the loading screen to be culled.
+	backEnd.viewParms.isMirror = qfalse;
+	backEnd.viewParms.flags = 0;
+
 	return (const void *)(cmd + 1);
 }
 
@@ -2577,8 +2580,7 @@ const void *RB_ClearDepth(const void *data)
 
 	if (glRefConfig.framebufferObject)
 	{
-		if (!tr.renderFbo || backEnd.framePostProcessed)
-		{
+		if (!tr.renderFbo) {
 			if (tr.usingFinalFrameBufferObject) {
 				FBO_Bind(tr.finalFbo);
 			} else {
@@ -2648,7 +2650,7 @@ const void	*RB_SwapBuffers( const void *data, qboolean endFrame ) {
 
 	if (glRefConfig.framebufferObject)
 	{
-		if (!backEnd.framePostProcessed)
+		if (!r_postProcess->integer)
 		{
 			if (tr.msaaResolveFbo && r_hdr->integer)
 			{
@@ -2722,7 +2724,6 @@ const void	*RB_SwapBuffers( const void *data, qboolean endFrame ) {
 		}
 	}
 
-	backEnd.framePostProcessed = qfalse;
 	backEnd.projection2D = qfalse;
 
 	return (const void *)(cmd + 1);
@@ -3037,8 +3038,6 @@ const void *RB_PostProcess(const void *data)
 #endif
 
 	//RB_ColorCorrect();
-	
-	backEnd.framePostProcessed = qtrue;
 
 	return (const void *)(cmd + 1);
 }
