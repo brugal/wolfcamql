@@ -366,7 +366,8 @@ void RB_BeginDrawingView (void) {
 	{
 		FBO_t *fbo = backEnd.viewParms.targetFbo;
 
-		if (fbo == NULL && (!r_postProcess->integer || !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)))
+		//if (fbo == NULL && (!r_postProcess->integer || !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)))
+		if (fbo == NULL)
 			fbo = tr.renderFbo;
 
 		if (tr.usingFinalFrameBufferObject  &&  fbo == NULL) {
@@ -1768,11 +1769,14 @@ void RE_StretchRaw (int x, int y, int w, int h, int cols, int rows, const byte *
 
 	if (glRefConfig.framebufferObject)
 	{
+		/*
 		if (tr.usingFinalFrameBufferObject) {
 			FBO_Bind(r_postProcess->integer ? tr.finalFbo : tr.renderFbo);
 		} else {
 			FBO_Bind(r_postProcess->integer ? NULL : tr.renderFbo);
 		}
+		*/
+		FBO_Bind(tr.renderFbo);
 	}
 
 	RB_SetGL2D();
@@ -1852,11 +1856,15 @@ static void RE_StretchRawRectScreen (const byte *data)
 	// FIXME: HUGE hack
 	if (glRefConfig.framebufferObject)
 	{
+		/*
 		if (tr.usingFinalFrameBufferObject) {
 			FBO_Bind(r_postProcess->integer ? tr.finalFbo : tr.renderFbo);
 		} else {
 			FBO_Bind(r_postProcess->integer ? NULL : tr.renderFbo);
 		}
+		*/
+		// 2024-04-04 wc  not sure...
+		FBO_Bind(tr.renderFbo);
 	}
 
 	RB_SetGL2D();
@@ -1985,11 +1993,14 @@ const void *RB_StretchPic ( const void *data ) {
 	cmd = (const stretchPicCommand_t *)data;
 
 	if (glRefConfig.framebufferObject) {
+		/*
 		if (tr.usingFinalFrameBufferObject) {
 			FBO_Bind(r_postProcess->integer ? tr.finalFbo : tr.renderFbo);
 		} else {
 			FBO_Bind(r_postProcess->integer ? NULL : tr.renderFbo);
 		}
+		*/
+		FBO_Bind(tr.renderFbo);
 	}
 	
 	RB_SetGL2D();
@@ -2650,29 +2661,26 @@ const void	*RB_SwapBuffers( const void *data, qboolean endFrame ) {
 
 	if (glRefConfig.framebufferObject)
 	{
-		if (!r_postProcess->integer)
+		if (tr.msaaResolveFbo && r_hdr->integer)
 		{
-			if (tr.msaaResolveFbo && r_hdr->integer)
-			{
-				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
-				FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-				if (tr.usingFinalFrameBufferObject) {
-					FBO_FastBlit(tr.msaaResolveFbo, NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-				} else {
-					FBO_FastBlit(tr.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-				}
+			// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
+			FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			if (tr.usingFinalFrameBufferObject) {
+				FBO_FastBlit(tr.msaaResolveFbo, NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			} else {
+				FBO_FastBlit(tr.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 			}
-			else if (tr.renderFbo)
-			{
-				if (tr.usingFinalFrameBufferObject) {
-					FBO_FastBlit(tr.renderFbo, NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-				} else {
-					FBO_FastBlit(tr.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-				}
-			}
-
-			//FBO_FastBlit(tr.renderFbo, NULL, (void *)-1, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		}
+		else if (tr.renderFbo)
+		{
+			if (tr.usingFinalFrameBufferObject) {
+				FBO_FastBlit(tr.renderFbo, NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			} else {
+					FBO_FastBlit(tr.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			}
+		}
+
+		//FBO_FastBlit(tr.renderFbo, NULL, (void *)-1, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 		//ri.Printf(PRINT_ALL, "frame...\n");
 	}
@@ -2774,7 +2782,7 @@ RB_PostProcess
 const void *RB_PostProcess(const void *data)
 {
 	const postProcessCommand_t *cmd = data;
-	FBO_t *srcFbo;
+	FBO_t *srcFbo, *dstFbo;
 	ivec4_t srcBox, dstBox;
 	qboolean autoExposure;
 
@@ -2795,6 +2803,8 @@ const void *RB_PostProcess(const void *data)
 	}
 
 	srcFbo = tr.renderFbo;
+	dstFbo = tr.renderFbo;
+
 	if (tr.msaaResolveFbo)
 	{
 		// Resolve the MSAA before anything else
@@ -2828,12 +2838,19 @@ const void *RB_PostProcess(const void *data)
 		if (r_hdr->integer && (r_toneMap->integer || r_forceToneMap->integer))
 		{
 			autoExposure = r_autoExposure->integer || r_forceAutoExposure->integer;
+			/*
 			if (tr.usingFinalFrameBufferObject) {
 				RB_ToneMap(srcFbo, srcBox, tr.finalFbo, dstBox, autoExposure);
 			} else {
 				RB_ToneMap(srcFbo, srcBox, NULL, dstBox, autoExposure);
 			}
+			*/
+			// Use an intermediate FBO because it can't blit to the same FBO directly
+			// and can't read from an MSAA dstFbo later.
+			RB_ToneMap(srcFbo, srcBox, tr.screenScratchFbo, srcBox, autoExposure);
+			FBO_FastBlit(tr.screenScratchFbo, srcBox, srcFbo, srcBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 		}
+		/*
 		else if (r_cameraExposure->value == 0.0f)
 		{
 			if (tr.usingFinalFrameBufferObject) {
@@ -2842,7 +2859,8 @@ const void *RB_PostProcess(const void *data)
 				FBO_FastBlit(srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 			}
 		}
-		else
+		*/
+		else if (r_cameraExposure->value != 0.0f)
 		{
 			vec4_t color;
 
@@ -2851,11 +2869,15 @@ const void *RB_PostProcess(const void *data)
 			color[2] = pow(2, r_cameraExposure->value); //exp2(r_cameraExposure->value);
 			color[3] = 1.0f;
 
+			/*
 			if (tr.usingFinalFrameBufferObject) {
 				FBO_Blit(srcFbo, srcBox, NULL, tr.finalFbo, dstBox, NULL, color, 0);
 			} else {
 				FBO_Blit(srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0);
 			}
+			*/
+
+			FBO_BlitFromTexture(tr.whiteImage, NULL, NULL, srcFbo, srcBox, NULL, color, GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO);
 		}
 	}
 
@@ -2863,7 +2885,7 @@ const void *RB_PostProcess(const void *data)
 		if (tr.usingFinalFrameBufferObject) {
 			RB_SunRays(tr.finalFbo, srcBox, tr.finalFbo, dstBox);
 		} else {
-			RB_SunRays(NULL, srcBox, NULL, dstBox);
+			RB_SunRays(srcFbo, srcBox, srcFbo, dstBox);
 		}
 	}
 
@@ -2871,11 +2893,20 @@ const void *RB_PostProcess(const void *data)
 		if (tr.usingFinalFrameBufferObject) {
 			RB_BokehBlur(tr.finalFbo, srcBox, tr.finalFbo, dstBox, backEnd.refdef.blurFactor);
 		} else {
-			RB_BokehBlur(NULL, srcBox, NULL, dstBox, backEnd.refdef.blurFactor);
+			RB_BokehBlur(srcFbo, srcBox, srcFbo, dstBox, backEnd.refdef.blurFactor);
 		}
 	} else {
-		RB_GaussianBlur(backEnd.refdef.blurFactor);
+		//RB_GaussianBlur(backEnd.refdef.blurFactor);
+		if (tr.usingFinalFrameBufferObject) {
+			RB_GaussianBlur(NULL, tr.finalFbo, backEnd.refdef.blurFactor);
+		} else {
+			RB_GaussianBlur(srcFbo, srcFbo, backEnd.refdef.blurFactor);
+		}
 	}
+
+	// 2024-04-04 wtf?  they are always equal
+	if (srcFbo != dstFbo)
+		FBO_FastBlit(srcFbo, srcBox, dstFbo, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
 #if 0
 	if (0)
@@ -2894,7 +2925,7 @@ const void *RB_PostProcess(const void *data)
 		if (tr.usingFinalFrameBufferObject) {
 			FBO_FastBlit(tr.finalFbo, NULL, tr.quarterFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		} else {
-			FBO_FastBlit(NULL, NULL, tr.quarterFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			FBO_FastBlit(dstFbo, NULL, tr.quarterFbo[0], NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 		}
 
 		iQtrBox[0] = backEnd.viewParms.viewportX      * tr.quarterImage[0]->width / (float)glConfig.vidWidth;
@@ -2945,7 +2976,7 @@ const void *RB_PostProcess(const void *data)
 			FBO_FastBlit(tr.quarterFbo[1], NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 			FBO_Bind(tr.finalFbo);
 		} else {
-			FBO_FastBlit(tr.quarterFbo[1], NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+			FBO_FastBlit(tr.quarterFbo[1], NULL, dstFbo, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 			FBO_Bind(NULL);
 		}
 	}
@@ -2954,85 +2985,85 @@ const void *RB_PostProcess(const void *data)
 	if (0 && r_sunlightMode->integer)
 	{
 		ivec4_t dstBox;
-		FBO_t *dstFbo = NULL;
+		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
-			dstFbo = tr.finalFbo;
+			dstFboTmp = tr.finalFbo;
 		}
 
 		VectorSet4(dstBox, 0, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[0], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[0], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 128, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[1], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[1], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 256, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[2], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[2], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 384, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[3], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[3], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 	}
 
 	if (0 && r_shadows->integer == 4)
 	{
 		ivec4_t dstBox;
-		FBO_t *dstFbo = NULL;
+		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
-			dstFbo = tr.finalFbo;
+			dstFboTmp = tr.finalFbo;
 		}
 
 		VectorSet4(dstBox, 512 + 0, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[0], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.pshadowMaps[0], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 512 + 128, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[1], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.pshadowMaps[1], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 512 + 256, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[2], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.pshadowMaps[2], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 512 + 384, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[3], NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.pshadowMaps[3], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 	}
 
 	if (0)
 	{
 		ivec4_t dstBox;
-		FBO_t *dstFbo = NULL;
+		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
-			dstFbo = tr.finalFbo;
+			dstFboTmp = tr.finalFbo;
 		}
 
 		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 		VectorSet4(dstBox, 512, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.screenShadowImage, NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.screenShadowImage, NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 	}
 
 	if (0)
 	{
 		ivec4_t dstBox;
-		FBO_t *dstFbo = NULL;
+		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
-			dstFbo = tr.finalFbo;
+			dstFboTmp = tr.finalFbo;
 		}
 
 		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, dstFbo, dstBox, NULL, NULL, 0);
+		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
 	}
 
 #if 0
 	if (r_cubeMapping->integer && tr.numCubemaps)
 	{
 		ivec4_t dstBox;
-		FBO_t *dstFbo = NULL;
+		FBO_t *dstFboTmp = dstFbo;
 		int cubemapIndex = R_CubemapForPoint( backEnd.viewParms.or.origin );
 
 		if (tr.usingFinalFrameBufferObject) {
-			dstFbo = tr.finalFbo;
+			dstFboTmp = tr.finalFbo;
 		}
 
 		if (cubemapIndex)
 		{
 			VectorSet4(dstBox, 0, glConfig.vidHeight - 256, 256, 256);
-			//FBO_BlitFromTexture(tr.renderCubeImage, NULL, NULL, NULL, dstBox, &tr.testcubeShader, NULL, 0);
-			FBO_BlitFromTexture(tr.cubemaps[cubemapIndex - 1].image, NULL, NULL, dstFbo, dstBox, &tr.testcubeShader, NULL, 0);
+			//FBO_BlitFromTexture(tr.renderCubeImage, NULL, NULL, dstFboTmp, dstBox, &tr.testcubeShader, NULL, 0);
+			FBO_BlitFromTexture(tr.cubemaps[cubemapIndex - 1].image, NULL, NULL, dstFboTmp, dstBox, &tr.testcubeShader, NULL, 0);
 		}
 	}
 #endif

@@ -8289,3 +8289,16 @@ the demo.
 2024-02-26-01 (ignore .github)
     Fix GitHub Actions CI deprecation warnings
 
+2024-03-02-01
+    OpenGL2: Don't mix drawing to default framebuffer and FBO
+
+    Don't draw the world scene to a separate FBO from the rest of the
+    screen.
+
+    This fixes the world scene having HOM instead of seeing through to the
+    previously drawn content. World of Padman uses this to have a separate
+    3D scene for the sky and world in wop_padship for dynamic skybox.
+
+    This also makes r_ext_framebuffer_multisample apply to HUD models
+    instead of depending on r_ext_multisample (which doesn't work on Linux
+    with some Intel graphics).
