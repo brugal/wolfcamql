@@ -8302,3 +8302,15 @@ the demo.
     This also makes r_ext_framebuffer_multisample apply to HUD models
     instead of depending on r_ext_multisample (which doesn't work on Linux
     with some Intel graphics).
+
+2024-04-17-01
+    opengl1: Fix skybox in OpenGL 1.1
+
+    Fix six image skybox having a black border around the sides of the sky
+    when using OpenGL 1.1 (using CL_CLAMP instead of GL_CLAMP_TO_EDGE).
+
+    It's technically visible in q3dm10 but it's more obvious in Team Arena
+    maps such as mpteam6.
+
+2024-04-18-01
+    Update SECURITY.md
