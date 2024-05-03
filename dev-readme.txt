@@ -14,7 +14,7 @@ compile freetype mac os x:
 
   # zlib has version information, try to use the same one
 
-  CPPFLAGS="-I/Users/acano/share/zlib-1.3" CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" ./configure --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
+  CPPFLAGS="-I/Users/acano/share/zlib-1.3.1" CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" ./configure --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
   make
   cp objs/.libs/libfreetype.a ...
 
@@ -24,7 +24,7 @@ compile freetype win32 (from linux):
 
   # zlib has version information, try to use the same one
 
-  CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.3 ./configure --host=i686-w64-mingw32 --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
+  CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
   make
   cp objs/.libs/libfreetype.a ...
 
@@ -56,7 +56,7 @@ compile curl win32 (from linux):
 
 # libcurl.a linked with -lcrypt32
 
-CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.3 ./configure --host=i686-w64-mingw32 --with-schannel
+CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-schannel
 
 ...
 
@@ -77,7 +77,7 @@ pacman -S mingw-w64-cross-binutils
 
 open terminal with mingw32.exe / mingw64.exe
 
-CPPFLAGS="-I/home/acano/zlib-1.3" ./configure --with-schannel --disable-shared --disable-ldap --disable-pthreads --without-zstd --enable-progress-meter
+CPPFLAGS="-I/home/acano/zlib-1.3.1" ./configure --with-schannel --disable-shared --disable-ldap --disable-pthreads --without-zstd --enable-progress-meter
 
 make
 
