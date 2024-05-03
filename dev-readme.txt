@@ -1,5 +1,15 @@
 MacOS version used:  macOS Sierra 10.12.6
 
+----
+
+32-bit Windows build from Linux:
+
+  ARCH=x86 ./cross.sh
+
+64-bit Windows build from Linux:
+
+  ./cross.sh
+
 -------
 #compile zlib win32 from linux
 
