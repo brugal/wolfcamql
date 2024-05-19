@@ -1177,6 +1177,12 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 		qboolean ntWorkStation;
 
 		//FIXME GetVersionEx() is deprecated since Windows 8 and will show as Windows 8 even for Windows 10 if there isn't a manifest showing win10 support
+		// 2024-05-19  Java checks like this:
+		//    https://github.com/openjdk/jdk/blob/master/src/hotspot/os/windows/os_windows.cpp
+		//
+		//    Get the full path to \Windows\System32\kernel32.dll and use that for
+		//    determining what version of Windows we're running on.
+
 		memset(&viex, 0, sizeof(viex));
 		memset(&si, 0, sizeof(si));
 
@@ -1290,8 +1296,22 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 			case 0:
 				if (ntWorkStation) {
 					osname = "Windows 10";
+
+					// Windows 11 doesn't update major/minor versions
+					if (vi.dwBuildNumber >= 22000) {
+						osname = "Windows 11";
+					}
 				} else {
-					osname = "Windows Server 2016";
+					// Windows Server versions > 2016 don't update major/minor versions
+
+					// build number info from https://github.com/openjdk/jdk/blob/master/src/hotspot/os/windows/os_windows.cpp
+					if (vi.dwBuildNumber > 20347) {
+						osname = "Windows Server 2022";
+					} else if (vi.dwBuildNumber > 17762) {
+						osname = "Windows Server 2019";
+					} else {
+						osname = "Windows Server 2016";
+					}
 				}
 				break;
 			default:
