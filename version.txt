@@ -1,4 +1,4 @@
-12.6test17
+12.6test18
 
 * ioquake3 patches
 

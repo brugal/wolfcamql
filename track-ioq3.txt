@@ -8314,3 +8314,12 @@ the demo.
 
 2024-04-18-01
     Update SECURITY.md
+
+2024-05-15-01
+    Use nanosleep(2) instead of usleep(3)
+
+    usleep(3) was declared obsolete in POSIX.1-2001 and removed in
+    POSIX.1-2008 and nanosleep(2) was recommended to be used instead.
+
+2024-05-18-01
+    Makefile: fix compilation on FreeBSD

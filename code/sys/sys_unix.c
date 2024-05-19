@@ -44,6 +44,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <libgen.h>
 #include <fcntl.h>
 #include <fenv.h>
+#include <time.h>
 #include <execinfo.h>
 
 //#define _GNU_SOURCE
@@ -895,11 +896,15 @@ void Sys_Sleep( int msec )
 	}
 	else
 	{
+		struct timespec req;
+
 		// With nothing to select() on, we can't wait indefinitely
 		if( msec < 0 )
 			msec = 10;
 
-		usleep( msec * 1000 );
+		req.tv_sec = msec/1000;
+		req.tv_nsec = (msec%1000)*1000000;
+		nanosleep(&req, NULL);
 	}
 }
 
