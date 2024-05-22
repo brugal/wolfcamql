@@ -1,4 +1,4 @@
-12.6test18
+12.6  2024-05-22
 
 * ioquake3 patches
 

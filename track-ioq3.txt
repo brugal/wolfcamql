@@ -8323,3 +8323,8 @@ the demo.
 
 2024-05-18-01
     Makefile: fix compilation on FreeBSD
+
+2024-05-20-01 (ignore .github)
+    Update macOS version for GitHub CI
+
+    macOS 11 runner image is scheduled to be removed next month.
