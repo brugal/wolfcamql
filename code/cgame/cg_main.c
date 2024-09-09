@@ -3634,7 +3634,7 @@ static void CG_RegisterSounds( void ) {
 	cg.proxTickSoundIndex = -999;
 
 	for ( i = 1 ; i < MAX_SOUNDS ; i++ ) {
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			soundName = CG_ConfigString(CS_SOUNDS +i - 1);
 		} else {
 			soundName = CG_ConfigString(CS_SOUNDS + i);
@@ -4548,7 +4548,7 @@ void CG_BuildSpectatorString(void) {
 		sc = &cg.scores[i];
 		if (sc->team == TEAM_SPECTATOR) {
 
-			if (cg_spectatorListSkillRating.integer  &&  cgs.clientinfo[sc->client].knowSkillRating  &&  cgs.protocol == PROTOCOL_QL   &&  cgs.realProtocol < 91) {
+			if (cg_spectatorListSkillRating.integer  &&  cgs.clientinfo[sc->client].knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL   &&  cgs.realProtocol < 91) {
 				Q_strcat(slist, sizeof(slist), va("^5(%d)", cgs.clientinfo[sc->client].skillRating));
 			}
 			if (*cgs.clientinfo[sc->client].clanTag) {
@@ -4561,7 +4561,7 @@ void CG_BuildSpectatorString(void) {
 			if (cg_spectatorListScore.integer) {
 				Q_strcat(slist, sizeof(slist), va("^3(%d)", sc->score));
 			}
-			if (cg_spectatorListQue.integer  &&  cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)) {
+			if (cg_spectatorListQue.integer  &&  cgs.protocolClass == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)) {
 				if (cgs.clientinfo[sc->client].spectatorOnly) {
 					Q_strcat(slist, sizeof(slist), "^7(^5s^7)");
 				} else {
@@ -4573,7 +4573,7 @@ void CG_BuildSpectatorString(void) {
 
 #if 0
 			//Com_Printf("%s\n", cgs.clientinfo[sc->client].name);
-			if (cgs.clientinfo[sc->client].knowSkillRating  &&  cg_spectatorListSkillRating.integer  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+			if (cgs.clientinfo[sc->client].knowSkillRating  &&  cg_spectatorListSkillRating.integer  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 				//Com_Printf("know for %s\n", cgs.clientinfo[sc->client].name);
 				if (*cgs.clientinfo[sc->client].clanTag) {
 					Q_strcat(slist, sizeof(slist), va("^5(%d)%s %s^3(%d)^7     ", cgs.clientinfo[sc->client].skillRating, cgs.clientinfo[sc->client].clanTag, cgs.clientinfo[sc->client].name, sc->score));
@@ -4727,7 +4727,11 @@ qboolean CG_ConfigStringIndexToQ3 (int *index)
 	}
 	if (*index >= CS_LOCATIONS  &&  *index < CS_LOCATIONS + MAX_LOCATIONS) {
 		n = *index - CS_LOCATIONS;
-		*index = CSQ3_LOCATIONS + n;
+		if (cgs.realProtocol < 46) {
+			*index = CSQ3DM3_LOCATIONS + n;
+		} else {
+			*index = CSQ3_LOCATIONS + n;
+		}
 		return qtrue;
 	}
 
@@ -4808,10 +4812,18 @@ qboolean CG_ConfigStringIndexToQ3 (int *index)
 		n = CSQ3_SOUNDS;
 		break;
 	case CS_LOCATIONS:
-		n = CSQ3_LOCATIONS;
+		if (cgs.realProtocol < 46) {
+			n = CSQ3DM3_LOCATIONS;
+		} else {
+			n = CSQ3_LOCATIONS;
+		}
 		break;
 	case CS_PARTICLES:
-		n = CSQ3_PARTICLES;
+		if (cgs.realProtocol < 46) {
+			n = CSQ3DM3_PARTICLES;
+		} else {
+			n = CSQ3_PARTICLES;
+		}
 		break;
 
 	default:
@@ -4859,96 +4871,90 @@ qboolean CG_ConfigStringIndexFromQ3 (int *index)
 		*index = CS_PLAYERS + n;
 		return qtrue;
 	}
-	if (*index >= CSQ3_LOCATIONS  &&  *index < CSQ3_LOCATIONS + MAX_LOCATIONS) {
-		n = *index - CSQ3_LOCATIONS;
-		*index = CS_LOCATIONS + n;
-		return qtrue;
+
+	if (cgs.realProtocol < 46) {
+		if (*index >= CSQ3DM3_LOCATIONS  &&  *index < CSQ3DM3_LOCATIONS + MAX_LOCATIONS) {
+			n = *index - CSQ3DM3_LOCATIONS;
+			*index = CS_LOCATIONS + n;
+			return qtrue;
+		} else if (*index >= CSQ3DM3_PARTICLES  &&  *index < CSQ3DM3_PARTICLES + MAX_LOCATIONS) {
+			n = *index - CSQ3DM3_PARTICLES;
+			*index = CS_PARTICLES + n;
+			return qtrue;
+		}
+	} else {
+		if (*index >= CSQ3_LOCATIONS  &&  *index < CSQ3_LOCATIONS + MAX_LOCATIONS) {
+			n = *index - CSQ3_LOCATIONS;
+			*index = CS_LOCATIONS + n;
+			return qtrue;
+		} else if (*index >= CSQ3_PARTICLES  &&  *index < CSQ3_PARTICLES + MAX_LOCATIONS) {
+			n = *index - CSQ3_PARTICLES;
+			*index = CS_PARTICLES + n;
+			return qtrue;
+		}
 	}
 
-	switch (*index) {
-	case CSQ3_SERVERINFO:
+	if (*index == CSQ3_SERVERINFO) {
 		n = CS_SERVERINFO;
-		break;
-	case CSQ3_SYSTEMINFO:
+	} else if (*index == CSQ3_SYSTEMINFO) {
 		n = CS_SYSTEMINFO;
-		break;
-	case CSQ3_MUSIC:
+	} else if (*index == CSQ3_MUSIC) {
 		n = CS_MUSIC;
-		break;
-	case CSQ3_MESSAGE:
+	} else if (*index == CSQ3_MESSAGE) {
 		n = CS_MESSAGE;
-		break;
-	case CSQ3_MOTD:
+	} else if (*index == CSQ3_MOTD) {
 		n = CS_MOTD;
-		break;
-	case CSQ3_WARMUP:
+	} else if (*index == CSQ3_WARMUP) {
 		n = CS_WARMUP;
-		break;
-	case CSQ3_SCORES1:
+	} else if (*index == CSQ3_SCORES1) {
 		n = CS_SCORES1;
-		break;
-	case CSQ3_SCORES2:
+	} else if (*index == CSQ3_SCORES2) {
 		n = CS_SCORES2;
-		break;
-	case CSQ3_VOTE_TIME:
+	} else if (*index == CSQ3_VOTE_TIME) {
 		n = CS_VOTE_TIME;
-		break;
-	case CSQ3_VOTE_STRING:
+	} else if (*index == CSQ3_VOTE_STRING) {
 		n = CS_VOTE_STRING;
-		break;
-	case CSQ3_VOTE_YES:
+	} else if (*index == CSQ3_VOTE_YES) {
 		n = CS_VOTE_YES;
-		break;
-	case CSQ3_VOTE_NO:
+	} else if (*index == CSQ3_VOTE_NO) {
 		n = CS_VOTE_NO;
-		break;
-	case CSQ3_TEAMVOTE_TIME:
+	} else if (*index == CSQ3_TEAMVOTE_TIME) {
 		n = CS_TEAMVOTE_TIME;
-		break;
-	case CSQ3_TEAMVOTE_STRING:
+	} else if (*index == CSQ3_TEAMVOTE_STRING) {
 		n = CS_TEAMVOTE_STRING;
-		break;
-	case CSQ3_TEAMVOTE_YES:
+	} else if (*index == CSQ3_TEAMVOTE_YES) {
 		n = CS_TEAMVOTE_YES;
-		break;
-	case CSQ3_TEAMVOTE_NO:
+	} else if (*index == CSQ3_TEAMVOTE_NO) {
 		n = CS_TEAMVOTE_NO;
-		break;
-	case CSQ3_GAME_VERSION:
+	} else if (*index == CSQ3_GAME_VERSION) {
 		n = CS_GAME_VERSION;
-		break;
-	case CSQ3_LEVEL_START_TIME:
+	} else if (*index == CSQ3_LEVEL_START_TIME) {
 		n = CS_LEVEL_START_TIME;
-		break;
-	case CSQ3_INTERMISSION:
+	} else if (*index == CSQ3_INTERMISSION) {
 		n = CS_INTERMISSION;
-		break;
-	case CSQ3_FLAGSTATUS:
+	} else if (*index == CSQ3_FLAGSTATUS) {
 		n = CS_FLAGSTATUS;
-		break;
-	case CSQ3_SHADERSTATE:
+	} else if (*index == CSQ3_SHADERSTATE) {
 		n = CS_SHADERSTATE;
-		break;
-	case CSQ3_BOTINFO:
+	} else if (*index == CSQ3_BOTINFO) {
 		n = CS_BOTINFO;
-		break;
-	case CSQ3_ITEMS:
+	} else if (*index == CSQ3_ITEMS) {
 		n = CS_ITEMS;
-		break;
-	case CSQ3_MODELS:
+	} else if (*index == CSQ3_MODELS) {
 		n = CS_MODELS;
-		break;
-	case CSQ3_SOUNDS:
+	} else if (*index == CSQ3_SOUNDS) {
 		n = CS_SOUNDS;
-		break;
-	case CSQ3_LOCATIONS:
+#if 0  // these are handled above, use ranges
+	} else if (*index == CSQ3_LOCATIONS  &&  cgs.realProtocol >= 46) {
 		n = CS_LOCATIONS;
-		break;
-	case CSQ3_PARTICLES:
+	} else if (*index == CSQ3DM3_LOCATIONS  &&  cgs.realProtocol < 46) {
+		n = CS_LOCATIONS;
+	} else if (*index == CSQ3_PARTICLES  && cgs.realProtocol >= 46) {
 		n = CS_PARTICLES;
-		break;
-
-	default:
+	} else if (*index == CSQ3DM3_PARTICLES  &&  cgs.realProtocol < 46) {
+		n = CS_PARTICLES;
+#endif
+	} else {
 		//Com_Printf("unknown q3 config string %d\n", *index);
 		n = *index;
 		return qfalse;
@@ -5064,7 +5070,7 @@ const char *CG_ConfigString( int index ) {
 	}
 
 	n = index;
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		CG_ConfigStringIndexToQ3(&n);
 	}
 
@@ -6102,14 +6108,14 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			return "";
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
 			return "";
 		case 2:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -6146,7 +6152,7 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 			}
 
 			// using obituary to track players still alive
-			if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+			if (cgs.protocolClass == PROTOCOL_QL  ||  cgs.cpma) {
 				alive = wclients[sp->client].aliveThisRound;
 			}
 
@@ -6167,7 +6173,7 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 			}
 			break;
 		case 5:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass == PROTOCOL_Q3) {
 				clanTag = info->clanTag;
 				if (*clanTag) {
 					s = va("^7%s ^7%s", clanTag, info->name);
@@ -6178,7 +6184,7 @@ static const char *CG_FeederItemTextCa (float feederID, int index, int column, q
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^1%d  ^7%s ^7%s", info->skillRating, clanTag, info->name);
 					} else {
@@ -6303,7 +6309,7 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 	if (info && info->infoValid) {
 		switch (column) {
 		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else {  // default is cg_scoreBoardStyle.integer == 1
 				int bestWeapon;
@@ -6321,14 +6327,14 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 			}
 			return "";
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
 			return "";
 		case 2:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -6364,7 +6370,7 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 			}
 			break;
 		case 5:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass == PROTOCOL_Q3) {
 				clanTag = info->clanTag;
 				if (*clanTag) {
 					s = va("^7%s ^7%s", clanTag, info->name);
@@ -6386,7 +6392,7 @@ static const char *CG_FeederItemTextTdm (float feederID, int index, int column, 
 				}
 
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6510,7 +6516,7 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 	if (info && info->infoValid) {
 		switch (column) {
 		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass != PROTOCOL_QL) {
 				if (cgs.cpma  &&  cgs.gametype == GT_NTF  &&  cg_cpmaNtfScoreboardClassModel.integer) {
 					//FIXME 2021-09-06 red and blue icons
 					*handle = cg.ntfClassModel[cgs.clientinfo[sp->client].ntfClass].modelIcon;
@@ -6529,14 +6535,14 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			}
 			return "";
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
 			return "";
 		case 2:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -6603,7 +6609,7 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 			}
 			break;
 		case 5:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol == PROTOCOL_Q3) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass == PROTOCOL_Q3) {
 				clanTag = info->clanTag;
 				if (*clanTag) {
 					s = va("^7%s ^7%s", clanTag, info->name);
@@ -6623,7 +6629,7 @@ static const char *CG_FeederItemTextCtf (float feederID, int index, int column, 
 				}
 
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6728,7 +6734,7 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 	if (info && info->infoValid) {
 		switch (column) {
 		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else {  // default is cg_scoreBoardStyle.integer == 1
 				int bestWeapon;
@@ -6747,7 +6753,7 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 			return "";
 
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
@@ -6755,7 +6761,7 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 			return "";
 
 		case 2:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -6800,7 +6806,7 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 				}
 			}
 #endif
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				alive = wclients[sp->client].aliveThisRound;
 			}
 
@@ -6843,7 +6849,7 @@ static const char *CG_FeederItemTextFreezetag (float feederID, int index, int co
 				}
 
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -6968,7 +6974,7 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 		switch (column) {
 		case 0:
 #if 0
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
 				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
@@ -6983,7 +6989,7 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			return "";
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
@@ -6991,7 +6997,7 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 			return "";
 
 		case 2:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -7041,7 +7047,7 @@ static const char *CG_FeederItemTextFfa (float feederID, int index, int column, 
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -7153,7 +7159,7 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 
 		case 0:
 #if 0
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
 				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
@@ -7168,14 +7174,14 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 			*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			return "";
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
 			return "";
 		case 2:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -7223,7 +7229,7 @@ static const char *CG_FeederItemTextRedRover (float feederID, int index, int col
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -7328,7 +7334,7 @@ static const char *CG_FeederItemTextRace (float feederID, int index, int column,
 	if (info && info->infoValid) {
 		switch (column) {
 		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
 				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
@@ -7340,7 +7346,7 @@ static const char *CG_FeederItemTextRace (float feederID, int index, int column,
 			}
 			return "";
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
@@ -7351,7 +7357,7 @@ static const char *CG_FeederItemTextRace (float feederID, int index, int column,
 				return va("^3%d%%", info->handicap);
 			}
 #endif
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -7399,7 +7405,7 @@ static const char *CG_FeederItemTextRace (float feederID, int index, int column,
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -7511,7 +7517,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 	if (info && info->infoValid) {
 		switch (column) {
 		case 0:
-			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocol != PROTOCOL_QL) {
+			if (cg_scoreBoardStyle.integer == 0  ||  cgs.protocolClass != PROTOCOL_QL) {
 				*handle = cgs.clientinfoOrig[sp->client].modelIcon;
 			} else if (cgs.clientinfoOrig[sp->client].countryFlag  &&  cg_scoreBoardStyle.integer == 2) {
 				*handle = cgs.clientinfoOrig[sp->client].countryFlag;
@@ -7523,12 +7529,12 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 			}
 			return "";
 		case 1:
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				if (cgs.clientinfoOrig[sp->client].premiumSubscriber) {
 					*handle = cgs.media.premiumIcon;
 				}
 			}
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				int startingHealth;
 
 				startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -7562,7 +7568,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 				alive = sp->alive;
 
 				// using obituary to track players still alive
-				if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+				if (cgs.protocolClass == PROTOCOL_QL  ||  cgs.cpma) {
 					alive = wclients[sp->client].aliveThisRound;
 				}
 
@@ -7577,7 +7583,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 			}
 			if (cg_scoreBoardStyle.integer == 0) {
 				//FIXME spacing
-				if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.protocolClass == PROTOCOL_QL) {
 					int startingHealth;
 
 					startingHealth = atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_startingHealth"));
@@ -7606,7 +7612,7 @@ static const char *CG_FeederItemText (float feederID, int index, int column, qha
 				return s;
 			} else {
 				clanTag = info->clanTag;
-				if (info->knowSkillRating  &&  cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+				if (info->knowSkillRating  &&  cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 					if (*clanTag) {
 						s = va("^3%3d   ^1%d  ^7%s ^7%s", sp->accuracy, info->skillRating, clanTag, info->name);
 					} else {
@@ -7933,12 +7939,12 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	cg.demoPlayback = demoPlayback;
 	cgs.realProtocol = SC_Cvar_Get_Int("protocol");
 	Com_Printf("client set protocol: %d\n", cgs.realProtocol);
-	if (cgs.realProtocol >= 66  &&  cgs.realProtocol <= 71) {
-		cgs.protocol = PROTOCOL_Q3;
+	if (cgs.realProtocol >= 43  &&  cgs.realProtocol <= 71) {
+		cgs.protocolClass = PROTOCOL_Q3;
 	} else if (cgs.realProtocol == 73  ||  cgs.realProtocol == 90  ||  cgs.realProtocol == 91) {
-		cgs.protocol = PROTOCOL_QL;
+		cgs.protocolClass = PROTOCOL_QL;
 	} else {
-		cgs.protocol = PROTOCOL_QL;
+		cgs.protocolClass = PROTOCOL_QL;
 	}
 
 	//Com_Printf("^3ctfs  %d\n", GT_CTFS);
@@ -7964,7 +7970,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		PW_NUM_POWERUPS = PW91_NUM_POWERUPS;
 	}
 
-	if (cgs.protocol == PROTOCOL_Q3) {  //FIXME hack
+	if (cgs.protocolClass == PROTOCOL_Q3) {  //FIXME hack
 		// start as baseq3
 		memcpy(&bg_itemlist, &bg_itemlistQ3, sizeof(gitem_t) * bg_numItemsQ3);
 		bg_numItems = bg_numItemsQ3;
@@ -8007,6 +8013,12 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		PERS_ASSIST_COUNT = 12;
 		PERS_GAUNTLET_FRAG_COUNT = 13;
 		PERS_CAPTURES = 14;
+
+		if (cgs.realProtocol < 46) {
+			//FIXME double check 46 might just be missing PERS_CAPTURES
+			// no PERS_DEFEND_COUNT, PERS_ASSIST_COUNT, or PERS_CAPTURES
+			PERS_GAUNTLET_FRAG_COUNT = 11;
+		}
 	}
 
 	// fx scripting uses cent->currentState.clientNum and it can happen
@@ -8113,7 +8125,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	trap_GetGameState( &cgs.gameState );
 
 	cgs.rocketSpeed = 900;
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		cgs.rocketSpeed = 800;
 		if (!Q_stricmp("cpma-1", CG_ConfigString(CS_GAME_VERSION))) {  //FIXME hack
 			cgs.cpma = qtrue;
@@ -8147,6 +8159,18 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 			Com_Printf("^5q3plus detected\n");
 			cgs.q3plus = qtrue;
 		}
+
+		if (cgs.realProtocol == 46) {
+			// team arena items might have been accidentally enabled
+			//FIXME others?  not in Q3 1.25v
+			if (!Q_stricmpn("Q3 1.25p", Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "version"), strlen("Q3 1.25p"))) {
+				//Com_Printf("^5sldfkjsldkfjlsdkfjdkfj\n");
+				memcpy(&bg_itemlist, &bg_itemlistQ3_125p, sizeof(gitem_t) * bg_numItemsQ3_125p);
+				bg_numItems = bg_numItemsQ3_125p;
+				WP_NUM_WEAPONS = 14;  // no hmg
+			}
+		}
+
 	} else if (cgs.realProtocol == 73) {
 		memcpy(&bg_itemlist, &bg_itemlistQldm73, sizeof(gitem_t) * bg_numItemsQldm73);
 		bg_numItems = bg_numItemsQldm73;
@@ -8185,7 +8209,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	cgs.levelStartTime = atoi( s );
 
 	CG_ParseServerinfo(qtrue, qfalse);
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		Com_Printf("^5ql%s ^5version %d.%d.%d.%d\n", cgs.isQuakeLiveBetaDemo ? " ^6beta" : "", cgs.qlversion[0], cgs.qlversion[1], cgs.qlversion[2], cgs.qlversion[3]);
 	}
 
@@ -8267,7 +8291,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	// quakelive custom game modes, /devmap /give item..  just have to
 	// always load all weapons so that projectiles will be present
 	//FIXME ugh, terrible hack
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		int idx;
 
 	    //for (item = bg_itemlist + 1;  item->classname;  item++) {
@@ -8411,7 +8435,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	CG_ReloadQ3mmeScripts(cg_fxfile.string);
 	CG_CreateNameSprites();
-	if (cgs.protocol == PROTOCOL_QL  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cgs.gametype == GT_RED_ROVER) {
+	if (cgs.protocolClass == PROTOCOL_QL  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cgs.gametype == GT_RED_ROVER) {
 		CG_LoadInfectedGameTypeModels();
 	}
 
@@ -8483,7 +8507,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 
 	if (cg.demoPlayback) {
 		trap_Get_Demo_Timeouts(&cgs.numTimeouts, cgs.timeOuts);
-		if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+		if (cgs.protocolClass == PROTOCOL_QL  ||  cgs.cpma) {
 			trap_GetRoundStartTimes(&cg.numRoundStarts, cg.roundStarts);
 		}
 	}

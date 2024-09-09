@@ -923,7 +923,7 @@ qboolean CG_GameTimeout (void)
 {
 	qboolean inTimeout = qfalse;
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		if (cgs.timeoutBeginTime) {
 			if (!cgs.timeoutEndTime) {  // ref pause
 				inTimeout = qtrue;
@@ -1202,7 +1202,7 @@ qboolean CG_CpmaIsRoundWarmup (void)
  */
 qboolean CG_IsCpmaMvd (void)
 {
-	if (cgs.protocol != PROTOCOL_Q3  ||  !cgs.cpma) {
+	if (cgs.protocolClass != PROTOCOL_Q3  ||  !cgs.cpma) {
 		return qfalse;
 	}
 

@@ -354,13 +354,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	CSQ3_SOUNDS				(CSQ3_MODELS+MAX_MODELS)
 #define	CSQ3_PLAYERS				(CSQ3_SOUNDS+MAX_SOUNDS)
 #define CSQ3_LOCATIONS			(CSQ3_PLAYERS+MAX_CLIENTS)
-#define CSQ3_PARTICLES			(CSQ3_LOCATIONS+MAX_LOCATIONS) 
+#define CSQ3_PARTICLES			(CSQ3_LOCATIONS+MAX_LOCATIONS)
 
 #define CSQ3_MAX					(CSQ3_PARTICLES+MAX_LOCATIONS)
 
 #if (CSQ3_MAX) > MAX_CONFIGSTRINGS
 #error overflow: (CSQ3_MAX) > MAX_CONFIGSTRINGS
 #endif
+
+// from Uber Demo Tools:  dm3 had MAX_CLIENTS set as 128!
+#define CSQ3DM3_LOCATIONS (CSQ3_LOCATIONS + 64)
+#define CSQ3DM3_PARTICLES (CSQ3DM3_LOCATIONS+MAX_LOCATIONS)
+#define CSQ3DM3_MAX (CSQ3DM3_PARTICLES+MAX_LOCATIONS)
 
 // cpma
 #define CSCPMA_GAMESTATE 672
@@ -1024,6 +1029,122 @@ typedef enum {
 
 } entity_event_q3_t;
 
+typedef enum {
+	EVQ3DM3_NONE,
+
+	EVQ3DM3_FOOTSTEP,
+	EVQ3DM3_FOOTSTEP_METAL,
+	EVQ3DM3_FOOTSPLASH,
+	EVQ3DM3_FOOTWADE,
+	EVQ3DM3_SWIM,
+
+	EVQ3DM3_STEP_4,  // 6
+	EVQ3DM3_STEP_8,
+	EVQ3DM3_STEP_12,
+	EVQ3DM3_STEP_16,
+
+	EVQ3DM3_FALL_SHORT,
+	EVQ3DM3_FALL_MEDIUM,
+	EVQ3DM3_FALL_FAR,
+
+	EVQ3DM3_JUMP_PAD,			// boing sound at origin, jump sound on player
+
+	EVQ3DM3_JUMP,  // 14
+	EVQ3DM3_WATER_TOUCH,	// foot touches
+	EVQ3DM3_WATER_LEAVE,	// foot leaves
+	EVQ3DM3_WATER_UNDER,	// head touches
+	EVQ3DM3_WATER_CLEAR,	// head leaves
+
+	EVQ3DM3_ITEM_PICKUP,			// normal item pickups are predictable
+	EVQ3DM3_GLOBAL_ITEM_PICKUP,	// powerup / team sounds are broadcast to everyone
+
+	EVQ3DM3_NOAMMO,
+	EVQ3DM3_CHANGE_WEAPON,
+	EVQ3DM3_FIRE_WEAPON,  // 23
+
+	// above same as q3
+
+	EVQ3DM3_USE_ITEM0,  // 24
+	EVQ3DM3_USE_ITEM1,
+	EVQ3DM3_USE_ITEM2,
+	EVQ3DM3_USE_ITEM3,
+	EVQ3DM3_USE_ITEM4,
+	EVQ3DM3_USE_ITEM5,
+	EVQ3DM3_USE_ITEM6,
+	EVQ3DM3_USE_ITEM7,
+	EVQ3DM3_USE_ITEM8,
+	EVQ3DM3_USE_ITEM9,
+	EVQ3DM3_USE_ITEM10,
+	EVQ3DM3_USE_ITEM11,  // 35
+	EVQ3DM3_USE_ITEM12,
+	EVQ3DM3_USE_ITEM13,
+	EVQ3DM3_USE_ITEM14,
+	EVQ3DM3_USE_ITEM15,
+
+	EVQ3DM3_ITEM_RESPAWN,
+	EVQ3DM3_ITEM_POP,
+	EVQ3DM3_PLAYER_TELEPORT_IN,
+	EVQ3DM3_PLAYER_TELEPORT_OUT,  // 43
+
+	// above same as q3
+
+	EVQ3DM3_GRENADE_BOUNCE,		// eventParm will be the soundindex
+
+	EVQ3DM3_GENERAL_SOUND,
+	EVQ3DM3_GLOBAL_SOUND,		// no attenuation
+
+	// not defined in protocol 43
+	//EVQ3DM3_GLOBAL_TEAM_SOUND,
+
+	EVQ3DM3_BULLET_HIT_FLESH,  // 47
+	EVQ3DM3_BULLET_HIT_WALL,
+
+	EVQ3DM3_MISSILE_HIT,  // 49
+	EVQ3DM3_MISSILE_MISS,  // 50
+
+	// not defined in protocol 43
+	//EVQ3DM3_MISSILE_MISS_METAL,
+
+	EVQ3DM3_RAILTRAIL,  // 51
+	EVQ3DM3_SHOTGUN,
+	EVQ3DM3_BULLET,				// otherEntity is the shooter
+
+	EVQ3DM3_PAIN,  // 54
+	EVQ3DM3_DEATH1,
+	EVQ3DM3_DEATH2,  // 56
+	EVQ3DM3_DEATH3,
+	EVQ3DM3_OBITUARY,  // 58
+
+	EVQ3DM3_POWERUP_QUAD,  // 59
+	EVQ3DM3_POWERUP_BATTLESUIT,
+	EVQ3DM3_POWERUP_REGEN,
+
+	EVQ3DM3_GIB_PLAYER,			// gib a previously living player
+	EVQ3DM3_SCOREPLUM,			// score plum
+
+//#ifdef MISSIONPACK
+	EVQ3DM3_PROXIMITY_MINE_STICK,  // 64
+	EVQ3DM3_PROXIMITY_MINE_TRIGGER,
+	EVQ3DM3_KAMIKAZE,			// kamikaze explodes
+	EVQ3DM3_OBELISKEXPLODE,		// obelisk explodes
+	EVQ3DM3_OBELISKPAIN,			// obelisk is in pain
+	EVQ3DM3_INVUL_IMPACT,		// invulnerability sphere impact
+	EVQ3DM3_JUICED,				// invulnerability juiced effect
+	EVQ3DM3_LIGHTNINGBOLT,		// lightning bolt bounced of invulnerability sphere
+//#endif
+
+	EVQ3DM3_DEBUG_LINE,  // 72
+	EVQ3DM3_STOPLOOPINGSOUND,
+	EVQ3DM3_TAUNT,
+	EVQ3DM3_TAUNT_YES,
+	EVQ3DM3_TAUNT_NO,
+	EVQ3DM3_TAUNT_FOLLOWME,
+	EVQ3DM3_TAUNT_GETFLAG,
+	EVQ3DM3_TAUNT_GUARDBASE,
+	EVQ3DM3_TAUNT_PATROL
+
+} entity_event_q3dm3_t;
+
 #define EVCPMA_FIRE_GRAPPLE 67
 #define EVCPMA_TAUNT 78
 
@@ -1256,11 +1377,13 @@ typedef struct gitem_s {
 // included in both the game dll and the client
 extern	gitem_t	bg_itemlist[];  // ql dm 90
 extern const gitem_t bg_itemlistQ3[];
+extern const gitem_t bg_itemlistQ3_125p[];
 extern const gitem_t bg_itemlistCpma[];
 extern const gitem_t bg_itemlistQldm73[];
 extern const gitem_t bg_itemlistQldm91[];
 extern	int		bg_numItems;
 extern	int		bg_numItemsQ3;
+extern	int		bg_numItemsQ3_125p;
 extern	int		bg_numItemsCpma;
 extern int bg_numItemsQldm73;
 extern int bg_numItemsQldm91;

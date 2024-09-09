@@ -219,6 +219,7 @@ static void CL_CheckWorkshopDownload (void);
 
 void CL_StopVideo_f (void);
 static void stream_demo_look_ahead (void);
+static qboolean check_for_older_uncompressed_demo (void);
 
 /*
 ===============
@@ -791,14 +792,22 @@ void CL_Record_f( void ) {
 	if ( Cmd_Argc() == 2 ) {
 		s = Cmd_Argv(1);
 		Q_strncpyz( demoName, s, sizeof( demoName ) );
-		Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, clc.realProtocol);
+		if (clc.realProtocol < 48) {
+			Com_sprintf(name, sizeof(name), "demos/%s.dm3", demoName);
+		} else {
+			Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, clc.realProtocol);
+		}
 	} else {
 		int		number;
 
 		// scan for a free demo name
 		for ( number = 0 ; number <= 9999 ; number++ ) {
 			CL_DemoFilename( number, demoName, sizeof( demoName ) );
-			Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, clc.realProtocol);
+			if (clc.realProtocol < 48) {
+				Com_sprintf(name, sizeof(name), "demos/%s.dm3", demoName);
+			} else {
+				Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, clc.realProtocol);
+			}
 
 			if (!FS_FileExists(name))
 				break;	// file doesn't exist
@@ -826,11 +835,19 @@ void CL_Record_f( void ) {
 	clc.demowaiting = qtrue;
 
 	// write out the gamestate message
-	MSG_Init (&buf, bufData, sizeof(bufData));
-	MSG_Bitstream(&buf);
+	if (clc.realProtocol <= 48) {
+		MSG_InitOOB(&buf, bufData, sizeof(bufData));
+	} else {
+		MSG_Init (&buf, bufData, sizeof(bufData));
+		MSG_Bitstream(&buf);
+	}
 
 	// NOTE, MRE: all server->client messages now acknowledge
-	MSG_WriteLong( &buf, clc.reliableSequence );
+	// protocol 43 doesn't have this
+	//FIXME what about 44, 45 ?
+	if (clc.realProtocol > 43) {
+		MSG_WriteLong( &buf, clc.reliableSequence );
+	}
 
 	MSG_WriteByte (&buf, svc_gamestate);
 	MSG_WriteLong (&buf, clc.serverCommandSequence );
@@ -844,6 +861,7 @@ void CL_Record_f( void ) {
 		MSG_WriteByte (&buf, svc_configstring);
 		MSG_WriteShort (&buf, i);
 		MSG_WriteBigString (&buf, s);
+		//Com_Printf("%d: '%s'\n", i, s);
 	}
 
 	// baselines
@@ -855,19 +873,38 @@ void CL_Record_f( void ) {
 		}
 		MSG_WriteByte (&buf, svc_baseline);
 		MSG_WriteDeltaEntity (&buf, &nullstate, ent, qtrue );
+		//Com_Printf("wrote ent %d\n", i);
 	}
 
-	MSG_WriteByte( &buf, svc_EOF );
+	if (clc.realProtocol > 48) {
+		MSG_WriteByte( &buf, svc_EOF );
+	}
 
 	// finished writing the gamestate stuff
 
-	// write the client num
-	MSG_WriteLong(&buf, clc.clientNum);
-	// write the checksum feed
-	MSG_WriteLong(&buf, clc.checksumFeed);
+	//FIXME protocol >= 66
+	if (clc.realProtocol <= 48) {
+		// pass, no clientNum or checksumFeed
+		//FIXME is this right?  -- 2024-08-22 yes
+		MSG_WriteByte( &buf, svc_bad );
+		//MSG_WriteByte( &buf, svc_EOF );
+#if 1
+		if ((buf.bit & 7) != 0) {
+			buf.cursize++;
+			buf.bit = buf.cursize << 3;
+		}
+#endif
+		//MSG_WriteByte( &buf, svc_EOF );
+	} else {
+		// write the client num
+		MSG_WriteLong(&buf, clc.clientNum);
+		// write the checksum feed
+		MSG_WriteLong(&buf, clc.checksumFeed);
 
-	// finished writing the client packet
-	MSG_WriteByte( &buf, svc_EOF );
+		// finished writing the client packet
+		MSG_WriteByte( &buf, svc_EOF );
+	}
+
 
 	// write it to the demo file
 	len = LittleLong( clc.serverMessageSequence - 1 );
@@ -1013,19 +1050,36 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 	playerState_t tmpps;
 	qboolean haveSnapshot = qfalse;
 
-	MSG_BeginReading(inMsg);
-
-	MSG_Init(&outMsg, data, sizeof(data));
-	MSG_Bitstream(&outMsg);
+	if (clc.realProtocol <= 48) {
+		MSG_BeginReadingOOB(inMsg);
+		MSG_InitOOB(&outMsg, data, sizeof(data));
+	} else {
+		MSG_BeginReading(inMsg);
+		MSG_Init(&outMsg, data, sizeof(data));
+		MSG_Bitstream(&outMsg);
+	}
 
 	// CL_ParseServerMessage
 
 	// reliable seq ack
-	r = MSG_ReadLong(inMsg);
-	MSG_WriteLong(&outMsg, r);
+	// NOTE, MRE: all server->client messages now acknowledge
+	// protocol 43 doesn't have this
+	//FIXME what about 44, 45 ?
+	if (clc.realProtocol >= 46) {
+		r = MSG_ReadLong(inMsg);
+		MSG_WriteLong(&outMsg, r);
+	}
 
 	while (1) {
 		qboolean dataFollowsEOF = qfalse;
+
+		if (clc.realProtocol <= 48) {
+			if (inMsg->readcount == inMsg->cursize) {
+				// "END OF MESSAGE"
+				//Com_Printf("wrnd END OF MESSAGE\n");
+				break;
+			}
+		}
 
 		cmd = MSG_ReadByte(inMsg);
 		MSG_WriteByte(&outMsg, cmd);
@@ -1048,7 +1102,7 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			break;
 		}
 
-		//Com_Printf("cmd: %d\n", cmd);
+		//Com_Printf("wrnd cmd: %d  (%d  %d)\n", cmd, inMsg->readcount, inMsg->cursize);
 
 		switch ( cmd ) {
 		default:
@@ -1093,13 +1147,23 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 				}
 			}
 
-			// client num
-			r = MSG_ReadLong(inMsg);
-			MSG_WriteLong(&outMsg, r);
+			//FIXME protocol >= 66
+			if (clc.realProtocol <= 48) {
+				// pass, no clientNum or checksumFeed
+				//FIXME is this right?
+				if ((outMsg.bit & 7) != 0) {
+					outMsg.cursize++;
+					outMsg.bit = outMsg.cursize << 3;
+				}
+			} else {
+				// client num
+				r = MSG_ReadLong(inMsg);
+				MSG_WriteLong(&outMsg, r);
 
-			// checksum feed
-			r = MSG_ReadLong(inMsg);
-			MSG_WriteLong(&outMsg, r);
+				// checksum feed
+				r = MSG_ReadLong(inMsg);
+				MSG_WriteLong(&outMsg, r);
+			}
 
 			break;
 		case svc_snapshot: {
@@ -1108,6 +1172,12 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			//CL_ParseSnapshot( msg, NULL, qfalse );
 
 			haveSnapshot = qtrue;
+
+			if (clc.realProtocol < 46) {
+				r = MSG_ReadLong(inMsg);  // Client command sequence.
+				MSG_WriteLong(&outMsg, r);
+			}
+
 			// server time
 			r = MSG_ReadLong(inMsg);
 			MSG_WriteLong(&outMsg, r);
@@ -1141,7 +1211,14 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 			while (1) {
 				int newnum = MSG_ReadBits(inMsg, GENTITYNUM_BITS);
 
+				//Com_Printf("write: %d   (%d - %d)\n", newnum, inMsg->readcount, inMsg->cursize);
+
 				if (newnum == (MAX_GENTITIES - 1)) {
+					break;
+				}
+
+				if (inMsg->readcount > inMsg->cursize) {
+					Com_Printf("^1%s parse packet entities end of message: %d > %d entity: %d\n", __FUNCTION__, inMsg->readcount, inMsg->cursize, newnum);
 					break;
 				}
 
@@ -1274,6 +1351,15 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 		}
 
 		}
+
+		if (clc.realProtocol <= 48) {
+			// _inMsg.GoToNextByte();
+			//Com_Printf("nextbyte  %d  %d\n", msg->readcount, msg->bit);
+			if ((inMsg->bit & 7) != 0) {
+				inMsg->readcount++;
+				inMsg->bit = inMsg->readcount << 3;
+			}
+		}
 	}
 
  done:
@@ -1287,7 +1373,12 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 
 	//////////////////////////////////////////
 
-	MSG_WriteByte(&outMsg, svc_EOF);
+	//FIXME is this right for protocol <= 48 ?, 2024-08-18 no error in quake3 127
+	if (clc.realProtocol < 48) {
+		MSG_WriteByte(&outMsg, svc_bad);
+	} else {
+		MSG_WriteByte(&outMsg, svc_EOF);
+	}
 
 	len = LittleLong(cl.snap.messageNum);
 	FS_Write(&len, 4, clc.demoWriteFile);
@@ -1298,7 +1389,7 @@ static void CL_WriteNonDeltaDemoMessage (msg_t *inMsg)
 	if (di.firstNonDeltaMessageNumWritten == -1) {
 		di.firstNonDeltaMessageNumWritten = cl.snap.messageNum;
 	}
-	Com_Printf("writing non delta for %d %d\n", cl.snap.messageNum, clc.serverMessageSequence);
+	//Com_Printf("writing non delta for %d %d\n", cl.snap.messageNum, clc.serverMessageSequence);
 }
 
 // not very strict validation, just checks if it's close enough to something valid
@@ -1307,7 +1398,9 @@ static qboolean CL_CheckForValidServerMessage (msg_t *msg)
 	int cmd;
 	int v;
 
-	MSG_Bitstream(msg);
+	if (!di.olderUncompressedDemo) {
+		MSG_Bitstream(msg);
+	}
 
 	// get the reliable sequence acknowledge number
 	v = MSG_ReadLong( msg );
@@ -1323,6 +1416,13 @@ static qboolean CL_CheckForValidServerMessage (msg_t *msg)
 		if (msg->readcount > msg->cursize) {
 			Com_Printf("%s: readcount > cursize   %d > %d\n", __FUNCTION__, msg->readcount, msg->cursize);
 			return qfalse;
+		}
+
+		if (clc.realProtocol <= 48) {
+			if (msg->readcount == msg->cursize) {
+				Com_Printf("slkdjfsldkfj\n");
+				break;
+			}
 		}
 
 		cmd = MSG_ReadByte(msg);
@@ -1378,6 +1478,10 @@ static qboolean CL_CheckForValidServerMessage (msg_t *msg)
 
 			//FIXME CL_ParseSnapshot(msg, NULL, clc.serverMessageSequence, qfalse);
 			Com_Printf("%s: snapshot\n", __FUNCTION__);
+
+			if (clc.realProtocol < 48) {
+				MSG_ReadLong(msg);  // Client command sequence
+			}
 
 			serverTime = MSG_ReadLong(msg);
 			if (serverTime < 0) {
@@ -1486,7 +1590,7 @@ void CL_ReadDemoMessage (qboolean seeking)
 	if (di.streaming) {
 		di.snapsInDemo = 22965;
 	}
-	
+
 	if ( !di.testParse  &&  di.snapCount < maxRewindBackups  &&
 		 ((!di.gotFirstSnap  &&  !(clc.state >= CA_CONNECTED && clc.state < CA_PRIMED))
       ||
@@ -1534,6 +1638,13 @@ keep_reading:
 		if (Cvar_VariableIntegerValue("debug_demo_stream")) {
 			debug = qtrue;
 		}
+
+		//FIXME 2024-07-28  this is a mess, should have commented why it was needed, the stream can have data written after this returns and what this would have detected as not enough data for message might have it afterwards, that could mess up the snap/message count, for something like that maybe only read the demo/stream end position once
+
+		// changeset:   9050:074cb4fb2345
+	    // user:        acano
+		// date:        Thu Oct 21 06:22:18 2021 -0400
+		// summary:     demo streaming look ahead to allow fast forwarding
 
 		stream_demo_look_ahead();
 
@@ -1651,8 +1762,28 @@ keep_reading:
 		//Com_Printf("^3server message sequence: %d -> %d\n", prevServerMessageSequence, clc.serverMessageSequence);
 	}
 
+	if (!di.checkedForOlderUncompressedDemo) {
+		int demoPos;
+
+		demoPos = FS_FTell(clc.demoReadFile);
+		di.checkedForOlderUncompressedDemo = qtrue;
+		//di.olderUncompressedDemo = qtrue;
+		//di.olderUncompressedDemoProtocol = 48;
+		di.olderUncompressedDemo = check_for_older_uncompressed_demo();
+		FS_Seek(clc.demoReadFile, demoPos, FS_SEEK_SET);
+		//Com_Printf("^2 fffffffffffff hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh  %d\n", di.olderUncompressedDemoProtocol);
+		//FIXME hack for com_protocol check in msg.c
+		if (di.olderUncompressedDemo) {
+			Cvar_Set("protocol", va("%d", di.olderUncompressedDemoProtocol));
+		}
+	}
+
 	// init the message
-	MSG_Init( &buf, bufData, sizeof( bufData ) );
+	if (di.olderUncompressedDemo) {
+		MSG_InitOOB( &buf, bufData, sizeof( bufData ) );
+	} else {
+		MSG_Init( &buf, bufData, sizeof( bufData ) );
+	}
 
 	// get the length
 	r = FS_Read (&buf.cursize, 4, clc.demoReadFile);
@@ -1745,6 +1876,16 @@ keep_reading:
 
 	clc.lastPacketTime = cls.realtime;
 	buf.readcount = 0;
+
+#if 0
+	// testing CL_CheckForValidServerMessage
+	if (CL_CheckForValidServerMessage(&buf)) {
+		Com_Printf("gooood\n");
+	}
+	buf.readcount = 0;
+	buf.bit = 0;
+#endif
+
 	CL_ParseServerMessage( &buf );
 
 	if (!di.testParse  &&   clc.demorecording  &&  clc.demoplaying  &&  !seeking) {
@@ -1773,9 +1914,20 @@ keep_reading:
 					const int voipSize = clc.voipOutgoingDataSize;
 					msg_t fakemsg;
 					byte fakedata[MAX_MSGLEN];
-					MSG_Init (&fakemsg, fakedata, sizeof (fakedata));
-					MSG_Bitstream (&fakemsg);
-					MSG_WriteLong (&fakemsg, clc.reliableAcknowledge);
+
+					if (di.olderUncompressedDemo) {
+						MSG_InitOOB (&fakemsg, fakedata, sizeof(fakedata));
+					} else {
+						MSG_Init (&fakemsg, fakedata, sizeof (fakedata));
+						MSG_Bitstream (&fakemsg);
+					}
+
+
+					if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 48) {
+						// pass
+					} else {
+						MSG_WriteLong (&fakemsg, clc.reliableAcknowledge);
+					}
 					MSG_WriteByte (&fakemsg, svc_voip);
 					//MSG_WriteShort (&fakemsg, clc.clientNum);
 					//FIXME hack in case demo already has voip
@@ -1914,7 +2066,9 @@ static void check_events (const entityState_t *es, int serverTime)
 		clientNum = 0;
 	}
 
-	if (((di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90)  &&  event == EV_OBITUARY)  ||  (di.protocol == PROTOCOL_Q3  &&  event == EVQ3_OBITUARY)) {
+	//Com_Printf("di.protocol %d  com_protocol->integer %d  event %d\n", di.protocol, com_protocol->integer, event);
+
+	if (((di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90)  &&  event == EV_OBITUARY)  ||  ((di.protocol <= 71  &&  di.protocol >= 48)  &&  event == EVQ3_OBITUARY)  ||  (di.protocol < 48  &&  event == EVQ3DM3_OBITUARY)) {
 		int target, attacker, mod;
 
 		if (di.obitNum >= MAX_DEMO_OBITS) {
@@ -2004,7 +2158,7 @@ static void check_events (const entityState_t *es, int serverTime)
 		//	di.clientAlive[target] = qfalse;
 		//}
 		return;
-	} else if (((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73  ||  com_protocol->integer == 90)  &&  (event == EV_ITEM_PICKUP_SPEC  ||  event == EV_ITEM_PICKUP))  ||  (com_protocol->integer == PROTOCOL_Q3  &&  event == EVQ3_ITEM_PICKUP)) {
+	} else if (((com_protocol->integer == PROTOCOL_QL  ||  com_protocol->integer == 73  ||  com_protocol->integer == 90)  &&  (event == EV_ITEM_PICKUP_SPEC  ||  event == EV_ITEM_PICKUP))  ||  ((com_protocol->integer <= 71  &&  com_protocol->integer >= 48)  &&  event == EVQ3_ITEM_PICKUP)  ||  (com_protocol->integer < 48  &&  event == EVQ3DM3_ITEM_PICKUP)) {
 		//Com_Printf("%d  pickup item %d\n", cl.snap.serverTime, es->eventParm);
 		if (di.numItemPickups >= MAX_ITEM_PICKUPS) {
 			Com_Printf("^3max pickups\n");
@@ -2027,6 +2181,8 @@ static void check_events (const entityState_t *es, int serverTime)
 			item = &bg_itemlist[index];
 		} else {
 			index = es->eventParm;
+
+			// bg_itemListCpma should be ok if you only check armor and megahealth pickups (ex: quake3 1.25p has different bg_itemlist but it's the same up to those items)
 			if (1) {  //(di.cpma) {  //FIXME
 				item = &bg_itemlistCpma[index];
 			} else {
@@ -2096,6 +2252,7 @@ static void parse_new_snapshot (const clSnapshot_t *snap, const clSnapshot_t *ol
 	entityState_t es;
 	int i;
 	int count;
+	int et_events;
 
 	if (!oldSnap) {
 		Com_Printf("%s() !oldSnap\n", __FUNCTION__);
@@ -2186,9 +2343,15 @@ static void parse_new_snapshot (const clSnapshot_t *snap, const clSnapshot_t *ol
 			}
 		}
 
+		if (di.protocol < 48) {
+			et_events = 12;
+		} else {
+			et_events = ET_EVENTS;  // 13
+		}
+
 		// CG_CheckEvents
 		//FIXME 2020-06-15 encrypted cpma mvd
-		if (es.eType > ET_EVENTS) {
+		if (es.eType > et_events) {
 			if (di.entityPreviousEvent[num]) {
 				goto skip;  // already fired
 			}
@@ -2197,7 +2360,7 @@ static void parse_new_snapshot (const clSnapshot_t *snap, const clSnapshot_t *ol
 				es.number = es.otherEntityNum;
 			}
 			di.entityPreviousEvent[num] = 1;
-			es.event = es.eType - ET_EVENTS;
+			es.event = es.eType - et_events;
 		} else {
 			// check for events riding with another entity
 			if (es.event == di.entityPreviousEvent[num]) {
@@ -2218,6 +2381,130 @@ static void parse_new_snapshot (const clSnapshot_t *snap, const clSnapshot_t *ol
 	}
 }
 
+static qboolean check_for_older_uncompressed_demo (void)
+{
+	int r;
+	msg_t buf;
+	byte bufData[MAX_MSGLEN];
+	int s;
+	int i;
+	qboolean hasProtocol = qfalse;
+	qboolean hasGamename = qfalse;
+	qboolean hasVersion = qfalse;
+	qboolean hasMapname = qfalse;
+
+	//FIXME demo streaming
+
+	FS_Seek(clc.demoReadFile, 0, FS_SEEK_SET);
+
+	// get the sequence number
+	r = FS_Read(&s, 4, clc.demoReadFile);
+	if (r != 4) {
+		FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+		return qfalse;
+	}
+
+	MSG_InitOOB(&buf, bufData, sizeof(bufData));
+
+	// get the length
+	r = FS_Read(&buf.cursize, 4, clc.demoReadFile);
+	if (r != 4) {
+		FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+		return qfalse;
+	}
+	buf.cursize = LittleLong(buf.cursize);
+	if (buf.cursize == -1) {
+		// /stoprecord writes last sequence number and length as -1
+		FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+		return qfalse;
+	}
+
+	if (buf.cursize > buf.maxsize) {
+		FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+		return qfalse;
+	}
+
+	if (buf.cursize < 0) {
+		FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+		return qfalse;
+	}
+
+	r = FS_Read( buf.data, buf.cursize, clc.demoReadFile );
+	if ( r != buf.cursize ) {
+		// maybe truncated demo file
+		//Com_Printf( "Demo file was truncated.\n");
+		FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+		return qfalse;
+	}
+
+	//clc.lastPacketTime = cls.realtime;
+	buf.readcount = 0;
+	//CL_ParseServerMessage( &buf );
+
+	// parse server message
+
+	// get the reliable sequence acknowledge number
+	// protocol 43 doesn't have this
+	// clc.reliableAcknowledge = MSG_ReadLong( msg );
+
+	//cmd = MSG_ReadByte(&buf);
+
+	//Com_Printf("    cmd %d\n", cmd);
+
+	// just look through the data to find required settings:
+	//     protocol, gamename, version, mapname
+
+	for (i = 0;  i < buf.cursize;  i++) {
+		int bytesLeft = buf.cursize - i;
+		const char *str = (const char *) (buf.data + i);
+
+		// protocol/46
+		if (!hasProtocol  &&  bytesLeft >= 11) {
+			if (!Q_strncmp(str, "protocol\\", 9)) {
+				char b[3];
+
+				hasProtocol = qtrue;
+
+				b[0] = str[9];
+				b[1] = str[10];
+				b[2] = '\0';
+
+				di.olderUncompressedDemoProtocol = atoi(b);
+			}
+		}
+
+		// gamename/
+		if (!hasGamename  &&  bytesLeft >= 10) {
+			if (!Q_strncmp(str, "gamename\\", 9)) {
+				hasGamename = qtrue;
+			}
+		}
+
+		// version/
+		if (!hasVersion  &&  bytesLeft >= 9) {
+			if (!Q_strncmp(str, "version\\", 8)) {
+				hasVersion = qtrue;
+			}
+		}
+
+		// mapname/
+		if (!hasMapname  &&  bytesLeft >= 9) {
+			if (!Q_strncmp(str, "mapname\\", 8)) {
+				hasMapname = qtrue;
+			}
+		}
+	}
+
+	FS_Seek(clc.demoReadFile, di.demoPos, FS_SEEK_SET);
+
+	if (hasProtocol  &&  hasGamename  &&  hasVersion  &&  hasMapname) {
+		Com_Printf("^5older demo protocol detected: %d\n", di.olderUncompressedDemoProtocol);
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
 extern qboolean Msg_TestParse;
 extern qboolean Msg_Abort;
 
@@ -2231,8 +2518,6 @@ static void parse_demo (void)
 	int lastMessageNum = -1;
 	clSnapshot_t *oldSnap = NULL;
 	int i;
-
-	//return;
 
 	tstart = Sys_Milliseconds();
 	//memset(&di, 0, sizeof(di));
@@ -2249,6 +2534,24 @@ static void parse_demo (void)
 	Msg_TestParse = qtrue;
 
 	di.demoPos = FS_FTell(clc.demoReadFile);
+
+	// check for protocol 46 - 48
+	//di.olderUncompressedDemo = check_for_older_uncompressed_demo();
+	if (!di.checkedForOlderUncompressedDemo) {
+		int demoPos;
+
+		demoPos = FS_FTell(clc.demoReadFile);
+		di.checkedForOlderUncompressedDemo = qtrue;
+		//di.olderUncompressedDemo = qtrue;
+		//di.olderUncompressedDemoProtocol = 48;
+		di.olderUncompressedDemo = check_for_older_uncompressed_demo();
+		FS_Seek(clc.demoReadFile, demoPos, FS_SEEK_SET);
+		//FIXME hack for com_protocol check in msg.c
+		if (di.olderUncompressedDemo) {
+			Cvar_Set("protocol", va("%d", di.olderUncompressedDemoProtocol));
+		}
+	}
+
     // get gameState
     CL_ReadDemoMessage(qfalse);
 	//CL_SkipDemoMessage();
@@ -2355,7 +2658,6 @@ static void parse_demo (void)
 			} else {
 				//Com_Printf("...\n");
 			}
-
 
 			//oldSnap = snap;
 		}
@@ -2503,20 +2805,41 @@ static void stream_demo_look_ahead (void)
 
 		// there is enough demo file data to read message
 
-		MSG_Init(&buf, bufData, sizeof(bufData));
-		buf.cursize = messageLength;
-
-		if (buf.cursize > buf.maxsize) {
+		if (messageLength > sizeof(bufData)) {
 			Com_Printf("^1%s() demo message length greater than max size, demo position %d\n", __FUNCTION__, di.demoPos);
 			di.endOfDemo = qtrue;
 			break;
 		}
 
-		if (buf.cursize < 0) {  // -1 handled above
+		if (messageLength < 0) {  // -1 handled above
 			Com_Printf("^1%s() negative message size, demo position %d\n", __FUNCTION__, di.demoPos);
 			di.endOfDemo = qtrue;
 			break;
 		}
+
+		if (!di.checkedForOlderUncompressedDemo) {
+			int demoPos;
+
+			demoPos = FS_FTell(clc.demoReadFile);
+			di.checkedForOlderUncompressedDemo = qtrue;
+			//di.olderUncompressedDemo = qtrue;
+			//di.olderUncompressedDemoProtocol = 48;
+			di.olderUncompressedDemo = check_for_older_uncompressed_demo();
+			FS_Seek(clc.demoReadFile, demoPos, FS_SEEK_SET);
+			//FIXME hack for com_protocol check in msg.c
+			if (di.olderUncompressedDemo) {
+				Cvar_Set("protocol", va("%d", di.olderUncompressedDemoProtocol));
+			}
+			//Com_Printf("^2hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh  %d\n", di.olderUncompressedDemoProtocol);
+		}
+
+		if (di.olderUncompressedDemo) {
+			MSG_InitOOB(&buf, bufData, sizeof(bufData));
+		} else {
+			MSG_Init(&buf, bufData, sizeof(bufData));
+		}
+
+		buf.cursize = messageLength;
 
 		r = FS_Read(buf.data, buf.cursize, clc.demoReadFile);
 		if (r != buf.cursize) {
@@ -2576,19 +2899,27 @@ static void CL_ReadExtraDemoMessage (demoFile_t *df)
 	if ( r != 4 ) {
 		//CL_DemoCompleted ();
 		Com_Printf("demoFile %d ended\n", df->f);
+		//FIXME
+		//Com_Error(ERR_DROP, "FIXME other demo file truncated");
 		return;
 	}
 	df->serverMessageSequence = LittleLong( s );
 	//Com_Printf("demoFile %d  sequence %d (%d)\n", df->f, df->serverMessageSequence, clc.serverMessageSequence);
 
 	// init the message
-	MSG_Init(&buf, bufData, sizeof(bufData));
+	if (clc.realProtocol <= 48) {
+		MSG_InitOOB(&buf, bufData, sizeof(bufData));
+	} else {
+		MSG_Init(&buf, bufData, sizeof(bufData));
+	}
 
 	// get the length
 	r = FS_Read (&buf.cursize, 4, df->f);
 	if ( r != 4 ) {
 		//CL_DemoCompleted ();
 		Com_Printf("demoFile %d truncated\n", df->f);
+		//FIXME
+		//Com_Error(ERR_DROP, "FIXME other demo file truncated");
 		return;
 	}
 	buf.cursize = LittleLong( buf.cursize );
@@ -2673,6 +3004,34 @@ static qhandle_t CL_OpenDemoFile (const char *arg, qboolean streaming)
 	// check if demo name didn't have an extension
 	if (!file) {
 		for (i = 0;  i < ARRAY_LEN(demo_protocols)  &&  !file;  i++) {
+			if (demo_protocols[i] > 43  &&  demo_protocols[i] < 48) {
+				// already checked .dm3 with protocol 43
+				continue;
+			}
+
+			if (demo_protocols[i] == 43) {
+				Com_sprintf(name, sizeof(name), "%s.dm3", demoPathName);
+				FS_FOpenFileRead(name, &file, qtrue);
+				if (!file) {
+					Com_sprintf(name, sizeof(name), "%s.DM3", demoPathName);
+					FS_FOpenFileRead(name, &file, qtrue);
+					if (!file) {
+						// :/
+						Com_sprintf(name, sizeof(name), "%s.dM3", demoPathName);
+						FS_FOpenFileRead(name, &file, qtrue);
+						if (!file) {
+							// :{   :/
+							Com_sprintf(name, sizeof(name), "%s.Dm3", demoPathName);
+							FS_FOpenFileRead(name, &file, qtrue);
+						}
+					}
+				}
+
+				if (file) {
+					break;
+				}
+			}
+
 			Com_sprintf(name, sizeof(name), "%s.dm_%d", demoPathName, demo_protocols[i]);
 			FS_FOpenFileRead(name, &file, qtrue);
 			if (!file) {
@@ -2945,7 +3304,7 @@ void CL_StreamDemo_f (void)
 
 	//FIXME
 	memset(&di, 0, sizeof(di));
-	
+
 	//FIXME
 	for (i = 0;  i < MAX_DEMO_FILES;  i++) {
 		di.demoFiles[i].num = i;
@@ -2991,6 +3350,7 @@ void CL_StreamDemo_f (void)
 	Con_Close();
 
 	//parse_demo();
+	//FIXME without parse_demo() how do you check for protocol <= 48?
 
 	// CL_CheckWorkshopDownload() advances to CA_CONNECTED
 	clc.state = CA_DOWNLOADINGWORKSHOPS;
@@ -3431,7 +3791,7 @@ void CL_ForwardCommandToServer( const char *string ) {
 	cmd = Cmd_Argv(0);
 
 	//printf("cmd: '%s'  '%s'\n", cmd, string);
-	
+
 	// ignore key up commands
 	if ( cmd[0] == '-' ) {
 		return;

@@ -71,7 +71,8 @@ FIXME 2019-12-07 test other uses of longjmp(): jpeg
 #include "../client/cl_console.h"
 #endif
 
-int demo_protocols[NUM_DEMO_PROTOCOLS] = { 66, 67, 68, 69, 70, 71, 73, 90, 91 };  // 69 ?  oa?
+//FIXME protocols between 43 and 48:  do they all exist?
+int demo_protocols[NUM_DEMO_PROTOCOLS] = { 43, 44, 45, 46, 47, 48, 66, 67, 68, 69, 70, 71, 73, 90, 91 };  // 69 ?  oa?
 
 #define MAX_NUM_ARGVS	50
 

@@ -423,11 +423,11 @@ qboolean Wolfcam_InterpolateEntityPosition (centity_t *cent)
 		}
 	}
 
-	if (ping > 80  &&  cgs.protocol == PROTOCOL_QL) {
+	if (ping > 80  &&  cgs.protocolClass == PROTOCOL_QL) {
 		ping = 80;
 	}
 
-	if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
+	if (cgs.protocolClass == PROTOCOL_Q3  &&  !cgs.cpma) {
 		ping = 0;  // no antilag
 	}
 

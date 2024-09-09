@@ -56,6 +56,9 @@ static void Parse_Error (int code, const char *fmt, ...)
 
 	if (di.testParse) {
 		Com_Printf(S_COLOR_RED "demo error: '%s'\n", errorMsg);
+		if (Cvar_VariableIntegerValue("debug_demo_strict")) {
+			Com_Error(code, "%s", errorMsg);
+		}
 	} else {
 		if (com_brokenDemo->integer) {
 			Com_Printf(S_COLOR_RED "demo error: '%s'\n", errorMsg);
@@ -133,6 +136,22 @@ void CL_ParsePacketEntities( msg_t *msg, const clSnapshot_t *oldframe, clSnapsho
 	}
 
 	while ( 1 ) {
+
+#if 0
+		Com_Printf("ppack  %d : %d\n", msg->readcount, msg->cursize);
+
+		if (msg->readcount == msg->cursize) {
+			Com_Printf("xxxxxxxxxuuuuuuuuuuuuuuu here\n");
+		}
+
+		//FIXME protocol
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 48) {
+			if (msg->readcount == msg->cursize) {
+				Com_Printf("uuuuuuuuuuuuuuu here\n");
+			}
+		}
+#endif
+
 		// read the entity index number
 		newnum = MSG_ReadBits( msg, GENTITYNUM_BITS );
 
@@ -366,7 +385,6 @@ static void CL_ParseExtraSnapshot (demoFile_t *df, msg_t *msg, clSnapshot_t *sn,
 
 	//cl.newSnapshots = qtrue;
 
-
 	//Com_Printf("%s snap set\n", __FUNCTION__);
 }
 
@@ -407,6 +425,11 @@ void CL_ParseSnapshot (msg_t *msg, clSnapshot_t *sn, int serverMessageSequence, 
 	// message before we got to svc_snapshot
 	newSnap.serverCommandNum = clc.serverCommandSequence;
 	//Com_Printf("parse snap: %d\n", newSnap.serverCommandNum);
+
+	if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 46) {
+		//FIXME store/use
+		MSG_ReadLong(msg);  // Client command sequence.
+	}
 
 	newSnap.serverTime = MSG_ReadLong( msg );
 
@@ -773,14 +796,20 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 	// parse all the configstrings and baselines
 	//cl.gameState.dataCount = 1;	// leave a 0 at the beginning for uninitialized configstrings
 
-	//Com_Printf("parse gamestate...\n");
+	//Com_Printf("parse extra gamestate... buf->oob %d\n", msg->oob);
 
 	while ( 1 ) {
 		cmd = MSG_ReadByte( msg );
 
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48  &&  cmd == svc_bad) {
+			break;
+		}
+
 		if ( cmd == svc_EOF ) {
 			break;
 		}
+
+		//Com_Printf("extra cmd %d\n", cmd);
 
 		if ( cmd == svc_configstring ) {
 			//int		len;
@@ -805,12 +834,14 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 #endif
 
 			//Com_Printf("cs %d '%s'\n", i, s);
+			//Com_Printf("cs %d\n", i);
 
 			// append it to the gameState string buffer
 			//cl.gameState.stringOffsets[ i ] = cl.gameState.dataCount;
 			//Com_Memcpy( cl.gameState.stringData + cl.gameState.dataCount, s, len + 1 );
 			//cl.gameState.dataCount += len + 1;
 		} else if ( cmd == svc_baseline ) {
+			//Com_Printf("extra delta entity\n");
 			newnum = MSG_ReadBits( msg, GENTITYNUM_BITS );
 			if ( newnum < 0 || newnum >= MAX_GENTITIES ) {
 				//Parse_Error( ERR_DROP, "Baseline number out of range: %i", newnum );
@@ -829,14 +860,19 @@ static void CL_ParseExtraGamestate (demoFile_t *df, msg_t *msg)
 		}
 	}
 
-	//clc.clientNum = MSG_ReadLong(msg);
-	//clientNum = MSG_ReadLong(msg);
-	MSG_ReadLong(msg);
+	//FIXME protocol >= 66
+	if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+		// pass, no clientNum or checksumFeed
+	} else {
+		//clc.clientNum = MSG_ReadLong(msg);
+		//clientNum = MSG_ReadLong(msg);
+		MSG_ReadLong(msg);
 
-	// read the checksum feed
-	//clc.checksumFeed = MSG_ReadLong( msg );
-	//checksumFeed = MSG_ReadLong(msg);
-	MSG_ReadLong(msg);
+		// read the checksum feed
+		//clc.checksumFeed = MSG_ReadLong( msg );
+		//checksumFeed = MSG_ReadLong(msg);
+		MSG_ReadLong(msg);
+	}
 
 	// parse useful values out of CS_SERVERINFO
 	//CL_ParseServerInfo();
@@ -877,6 +913,12 @@ void CL_ParseGamestate( msg_t *msg ) {
 	while ( 1 ) {
 		cmd = MSG_ReadByte( msg );
 
+		//Com_Printf("ggggg  %d  (%d %d)\n", cmd, msg->readcount, msg->bit);
+
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48  &&  cmd == svc_bad) {
+			break;
+		}
+
 		if ( cmd == svc_EOF ) {
 			break;
 		}
@@ -902,6 +944,8 @@ void CL_ParseGamestate( msg_t *msg ) {
 				return;
 			}
 
+			//Com_Printf("config string %d: '%s'\n", i, s);
+
 			// server info, get protocol here
 			if (i == 0) {
 				const char *value;
@@ -914,7 +958,9 @@ void CL_ParseGamestate( msg_t *msg ) {
 				Cvar_Set("real_protocol", value);
 				clc.realProtocol = p;
 
-				if (p >= 66  &&  p <= 71) {
+				if (p >= 43  &&  p <= 48) {
+					Cvar_Set("protocol", va("%d", p));
+				} else if (p >= 66  &&  p <= 71) {
 					Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
 				} else if (p == 73) {  //FIXME define
 					Cvar_Set("protocol", "73");
@@ -934,12 +980,24 @@ void CL_ParseGamestate( msg_t *msg ) {
 						Com_Printf("^5protocol not set, setting based on file extension and then checking com_protocol\n");
 						//ext = COM_GetExtension(DemoNames[0]);
 						ext = COM_GetExtension(cl_demoFile->string);
-						if (!Q_stricmpn(ext, "dm_66", 5)  ||
-							!Q_stricmpn(ext, "dm_67", 5)  ||
-							!Q_stricmpn(ext, "dm_68", 5)  ||
-							!Q_stricmpn(ext, "dm_69", 5)  ||
-							!Q_stricmpn(ext, "dm_70", 5)  ||
-							!Q_stricmpn(ext, "dm_71", 5)) {
+
+						if (!Q_stricmpn(ext, "dm3", 3)) {
+							Com_Printf("Q3Demo demo extension found\n");
+							//FIXME define
+							//FIXME 2024-09-04 wont really work for 44 - 47
+							Cvar_Set("protocol", va("%d", 43));
+						} else if (!Q_stricmpn(ext, "dm_46", 5)  ||
+								   !Q_stricmpn(ext, "dm_47", 5)  ||
+								   !Q_stricmpn(ext, "dm_48", 5)) {
+							Com_Printf("Q3 demo extension found\n");
+							//FIXME define
+							Cvar_Set("protocol", va("%d", 48));
+						} else if (!Q_stricmpn(ext, "dm_66", 5)  ||
+								   !Q_stricmpn(ext, "dm_67", 5)  ||
+								   !Q_stricmpn(ext, "dm_68", 5)  ||
+								   !Q_stricmpn(ext, "dm_69", 5)  ||
+								   !Q_stricmpn(ext, "dm_70", 5)  ||
+								   !Q_stricmpn(ext, "dm_71", 5)) {
 							Com_Printf("Q3 demo extension found\n");
 							Cvar_Set("protocol", va("%d", PROTOCOL_Q3));
 						} else {
@@ -993,6 +1051,9 @@ void CL_ParseGamestate( msg_t *msg ) {
 			cl.gameState.dataCount += len + 1;
 		} else if ( cmd == svc_baseline ) {
 			newnum = MSG_ReadBits( msg, GENTITYNUM_BITS );
+			//newnum = MSG_ReadBits(msg, 9);
+
+			//Com_Printf("  baseline %d\n", newnum);
 			if ( newnum < 0 || newnum >= MAX_GENTITIES ) {
 				Parse_Error( ERR_DROP, "CL_ParseGamesate Baseline number out of range: %i", newnum );
 				return;
@@ -1001,14 +1062,19 @@ void CL_ParseGamestate( msg_t *msg ) {
 			es = &cl.entityBaselines[ newnum ];
 			MSG_ReadDeltaEntity( msg, &nullstate, es, newnum );
 		} else {
-			Parse_Error(ERR_DROP, "CL_ParseGamestate: bad command byte", cmd);
+			Parse_Error(ERR_DROP, "CL_ParseGamestate: bad command byte %d", cmd);
 			return;
 		}
 	}
 
-	clc.clientNum = MSG_ReadLong(msg);
-	// read the checksum feed
-	clc.checksumFeed = MSG_ReadLong( msg );
+	//FIXME protocol >= 66
+	if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+		// pass, no clientNum or checksumFeed
+	} else {
+		clc.clientNum = MSG_ReadLong(msg);
+		// read the checksum feed
+		clc.checksumFeed = MSG_ReadLong( msg );
+	}
 
 	// save old gamedir
 	Cvar_VariableStringBuffer("fs_game", oldGame, sizeof(oldGame));
@@ -1665,14 +1731,14 @@ void CL_ParseCommandString( msg_t *msg ) {
 	}
 
 	//Com_Printf("cs (%d) '%s'\n", seq, s);
-	
+
 	// see if we have already executed stored it off
 	if ( clc.serverCommandSequence >= seq ) {
 		return;
 	}
 
 	//Com_Printf("^2cs (%d) '%s'\n", seq, s);
-	
+
 	clc.serverCommandSequence = seq;
 
 	index = seq & (MAX_RELIABLE_COMMANDS-1);
@@ -1706,7 +1772,7 @@ void CL_ParseCommandString( msg_t *msg ) {
 
 		// models used in demos also team switches
 		if (  ((di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90)  &&  (csnum >= CS_PLAYERS  &&  csnum < (CS_PLAYERS + MAX_CLIENTS)))  ||
-			  (di.protocol == PROTOCOL_Q3  &&  (csnum >= CSQ3_PLAYERS  &&  csnum < (CSQ3_PLAYERS + MAX_CLIENTS)))
+			  (di.protocol <= PROTOCOL_Q3  &&  (csnum >= CSQ3_PLAYERS  &&  csnum < (CSQ3_PLAYERS + MAX_CLIENTS)))
 			) {
 			char *model;
 			//char *skin;
@@ -1717,8 +1783,8 @@ void CL_ParseCommandString( msg_t *msg ) {
 			//Com_Printf("^3cs (%d): '%s'\n", seq, s);
 			if (di.protocol == PROTOCOL_QL  ||  di.protocol == 73  ||  di.protocol == 90) {
 				clientNum = csnum - CS_PLAYERS;
-			} else if (di.protocol == PROTOCOL_Q3) {
-				clientNum= csnum - CSQ3_PLAYERS;
+			} else if (di.protocol <= PROTOCOL_Q3) {
+				clientNum = csnum - CSQ3_PLAYERS;
 			}
 
 			p = s + strlen("cs XXX ");
@@ -2030,10 +2096,17 @@ void CL_ParseServerMessage( msg_t *msg ) {
 		Com_Printf ("------------------\n");
 	}
 
-	MSG_Bitstream(msg);
+	if (!di.olderUncompressedDemo) {
+		MSG_Bitstream(msg);
+	}
 
 	// get the reliable sequence acknowledge number
-	clc.reliableAcknowledge = MSG_ReadLong( msg );
+	// protocol 43 doesn't have this
+	if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 46) {
+		// pass
+	} else {
+		clc.reliableAcknowledge = MSG_ReadLong( msg );
+	}
 	//
 	if ( clc.reliableAcknowledge < clc.reliableSequence - MAX_RELIABLE_COMMANDS ) {
 		//Com_Printf("^1***************** skipping reliable sequence: %d  %d\n", clc.reliableAcknowledge, clc.reliableSequence);
@@ -2051,7 +2124,34 @@ void CL_ParseServerMessage( msg_t *msg ) {
 			return;
 		}
 
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+			if (msg->readcount == msg->cursize) {
+				SHOWNET( msg, "END OF MESSAGE" );
+				//SHOWNET( msg, "END OF MESSAGE (size)" );
+				break;
+			}
+		}
+
 		cmd = MSG_ReadByte( msg );
+
+#if 0  // testing voip with protocol 43
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 48) {
+			if (cmd == svc_bad) {
+				//MSG_ReadByte(msg);
+				//MSG_ReadByte(msg);
+				//break;
+				Com_Printf("%d -> %d  svc_bad look ahead: %d\n", msg->readcount, msg->cursize, MSG_LookaheadByte(msg));
+				while (msg->readcount <= msg->cursize) {
+					Com_Printf("%d ", MSG_ReadByte(msg));
+				}
+
+				Com_Printf("-==0==-\n");
+				break;
+			}
+		}
+#endif
+
+		//Com_Printf("^3cmd: %d  readcount: %d  msg->cursize: %d\n", cmd, msg->readcount, msg->cursize);
 
 		// See if this is an extension command after the EOF, which means we
 		// have speex voip data.
@@ -2067,6 +2167,7 @@ void CL_ParseServerMessage( msg_t *msg ) {
 
 		if (cmd == svc_EOF) {
 			SHOWNET( msg, "END OF MESSAGE" );
+			//SHOWNET( msg, "END OF MESSAGE (eof)" );
 			break;
 		}
 
@@ -2119,6 +2220,15 @@ void CL_ParseServerMessage( msg_t *msg ) {
 			break;
 #endif
 		}
+
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+			// _inMsg.GoToNextByte();
+			//Com_Printf("nextbyte  %d  %d\n", msg->readcount, msg->bit);
+			if ((msg->bit & 7) != 0) {
+				msg->readcount++;
+				msg->bit = msg->readcount << 3;
+			}
+		}
 	}
 }
 
@@ -2134,11 +2244,23 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg, qboolean justPeek)
 		Com_Printf ("------------------\n");
 	}
 
-	MSG_Bitstream(msg);
+	//FIXME protocol 48 check not good
+	//if (clc.realProtocol > 48) {  //(!di.olderUncompressedDemo) {
+	if (!di.olderUncompressedDemo) {
+		MSG_Bitstream(msg);
+	} else {
+	    // pass
+		//Com_Printf("yes  %d  %d\n", di.olderUncompressedDemo, di.olderUncompressedDemoProtocol);
+	}
 
 	// get the reliable sequence acknowledge number
-	//reliableAcknowledge = MSG_ReadLong( msg );
-	MSG_ReadLong(msg);
+	// protocol 43 doesn't have this
+	if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 48) {
+		// pass
+	} else {
+		//reliableAcknowledge = MSG_ReadLong( msg );
+		MSG_ReadLong(msg);
+	}
 
 #if 0
 	//
@@ -2153,8 +2275,15 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg, qboolean justPeek)
 	while ( 1 ) {
 		if ( msg->readcount > msg->cursize ) {
 			//Parse_Error (ERR_DROP,"CL_ParseServerMessage: read past end of server message");
-			Com_Printf("^1CL_ParseExtraServerMessage() read past end of server message demoFile %d", df->f);
+			Com_Printf("^1CL_ParseExtraServerMessage() read past end of server message demoFile %d  (%d  > %d)\n", df->f, msg->readcount, msg->cursize);
 			return;
+		}
+
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+			if (msg->readcount == msg->cursize) {
+				SHOWNET( msg, "END OF MESSAGE" );
+				break;
+			}
 		}
 
 		cmd = MSG_ReadByte( msg );
@@ -2185,11 +2314,13 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg, qboolean justPeek)
 			}
 		}
 
+		//Com_Printf("extra server message %d\n", cmd);
+
 		// other commands
 		switch ( cmd ) {
 		default:
 			//Parse_Error (ERR_DROP, "CL_ParseServerMessage: Illegible server message %d", cmd);
-			Com_Printf("^1CL_ParseExtraServerMessage: Illegible server message %d for demoFile %d", cmd, df->f);
+			Com_Printf("^1CL_ParseExtraServerMessage: Illegible server message %d for demoFile %d\n", cmd, df->f);
 			return;
 		case svc_nop:
 			break;
@@ -2211,6 +2342,15 @@ void CL_ParseExtraServerMessage (demoFile_t *df, msg_t *msg, qboolean justPeek)
 			CL_ParseExtraVoip(df, msg);
 #endif
 			break;
+		}
+
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+			// _inMsg.GoToNextByte();
+			//Com_Printf("nextbyte  %d  %d\n", msg->readcount, msg->bit);
+			if ((msg->bit & 7) != 0) {
+				msg->readcount++;
+				msg->bit = msg->readcount << 3;
+			}
 		}
 	}
 }

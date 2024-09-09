@@ -1222,7 +1222,7 @@ static void CG_Draw1stPlacePlayerModel (float x, float y, float w, float h)
 		head.hModel = ci->headModel;
 		head.customSkin = ci->headSkin;
 
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			weaponNum = WP_NONE;
 
 			if (cgs.gametype == GT_TOURNAMENT) {
@@ -1301,7 +1301,7 @@ static void CG_Draw1stPlacePlayerModel (float x, float y, float w, float h)
 		head.hModel = ci->headModel;
 		head.customSkin = ci->headSkin;
 
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			weaponNum = WP_NONE;
 
 			if (cgs.gametype == GT_TOURNAMENT) {
@@ -1709,7 +1709,7 @@ static void CG_OneFlagStatus (const rectDef_t *rect, qboolean colorize)
 static void CG_DrawCTFPowerUp(const rectDef_t *rect) {
 	int		value;
 
-	if (cgs.protocol == PROTOCOL_Q3) {  //FIXME team arena
+	if (cgs.protocolClass == PROTOCOL_Q3) {  //FIXME team arena
 		return;
 	}
 
@@ -1721,7 +1721,7 @@ static void CG_DrawCTFPowerUp(const rectDef_t *rect) {
 		value = cg.snap->ps.stats[STAT_PERSISTANT_POWERUP];
 		if ( value ) {
 			//Com_Printf("ctf powerup %d\n", value);
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				//FIXME  this is absolutely fucked up, why is this happening?????
 
 				if (value == 0) {
@@ -1927,7 +1927,7 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 
 				// kill counters
 				if (cg_powerupKillCounter.integer  &&  !wolfcam_following) {
-					if (item->giTag == PW_QUAD  &&  cgs.protocol == PROTOCOL_QL  &&  cg_quadKillCounter.integer == 1  &&  ps->stats[STAT_QUAD_KILL_COUNT] > 0) {
+					if (item->giTag == PW_QUAD  &&  cgs.protocolClass == PROTOCOL_QL  &&  cg_quadKillCounter.integer == 1  &&  ps->stats[STAT_QUAD_KILL_COUNT] > 0) {
 						float sc;
 
 						sc = 0.25;
@@ -1958,7 +1958,7 @@ static void CG_DrawAreaPowerUp(const rectDef_t *rect, int align, float special, 
 										  scale * 0.29333, color, va(" x %d", ps->stats[STAT_QUAD_KILL_COUNT]), 0, 0, 0, font);
 						}
 					}
-					if (item->giTag == PW_BATTLESUIT  &&  cgs.protocol == PROTOCOL_QL  &&  cg_battleSuitKillCounter.integer == 1  &&  ps->stats[STAT_BATTLE_SUIT_KILL_COUNT] > 0) {
+					if (item->giTag == PW_BATTLESUIT  &&  cgs.protocolClass == PROTOCOL_QL  &&  cg_battleSuitKillCounter.integer == 1  &&  ps->stats[STAT_BATTLE_SUIT_KILL_COUNT] > 0) {
 						float sc;
 
 						sc = 0.25;
@@ -2393,7 +2393,7 @@ float CG_GetValue(int ownerDraw) {
 
   case CG_RED_TIMEOUT_COUNT:
 	  f = 0;
-	  if (cgs.protocol == PROTOCOL_QL) {
+	  if (cgs.protocolClass == PROTOCOL_QL) {
 		  f = atof(CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT));
 	  }
 	  return f;
@@ -2401,7 +2401,7 @@ float CG_GetValue(int ownerDraw) {
 
   case CG_BLUE_TIMEOUT_COUNT:
 	  f = 0;
-	  if (cgs.protocol == PROTOCOL_QL) {
+	  if (cgs.protocolClass == PROTOCOL_QL) {
 		  f = atof(CG_ConfigString(CS_BLUE_TEAM_TIMEOUTS_LEFT));
 	  }
 	  return f;
@@ -3691,7 +3691,7 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 
 	if (flags & CG_SHOW_IF_PLYR1) {
 		// this is only used in duel scoreboard to prevent seeing pickups from other player
-		if (cgs.protocol != PROTOCOL_QL  ||  wolfcam_following  ||  cg.demoPlayback) {
+		if (cgs.protocolClass != PROTOCOL_QL  ||  wolfcam_following  ||  cg.demoPlayback) {
 			return qtrue;
 		}
 
@@ -3710,7 +3710,7 @@ static qboolean CG_OwnerDrawVisible2 (int flags)
 
 	if (flags & CG_SHOW_IF_PLYR2) {
 		// this is only used in duel scoreboard to prevent seeing pickups from other player
-		if (cgs.protocol != PROTOCOL_QL  ||  wolfcam_following  ||  cg.demoPlayback) {
+		if (cgs.protocolClass != PROTOCOL_QL  ||  wolfcam_following  ||  cg.demoPlayback) {
 			return qtrue;
 		}
 
@@ -5376,7 +5376,7 @@ static void CG_Draw1stPlaceScore (const rectDef_t *rect, float scale, const vec4
 	int scoreStringLength;
 	vec4_t scoreColor;
 
-	if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
+	if (cgs.protocolClass == PROTOCOL_Q3  &&  !cgs.cpma) {
 		CG_OspCalcPlacements();
 	}
 
@@ -5600,7 +5600,7 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 	int scoreStringLength;
 	vec4_t scoreColor;
 
-	if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
+	if (cgs.protocolClass == PROTOCOL_Q3  &&  !cgs.cpma) {
 		CG_OspCalcPlacements();
 	}
 
@@ -6202,7 +6202,7 @@ void CG_DrawWeaponBar( void ) {
 	}
 
 	maxWeapons = WP_NUM_WEAPONS;
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		maxWeapons = WP_GRAPPLING_HOOK;
 	}
 
@@ -6556,7 +6556,7 @@ int CG_GetCurrentTimeWithDirection (int *numberOfOvertimes)
 
 	  // check overtime
 
-	  if (cgs.protocol == PROTOCOL_Q3  &&  !cgs.cpma) {
+	  if (cgs.protocolClass == PROTOCOL_Q3  &&  !cgs.cpma) {
 		  //FIXME
 	  } else if (cgs.realTimelimit) {
 		  if (timePlayed > (cgs.timelimit * 60 * 1000)) {
@@ -7531,7 +7531,7 @@ static void CG_Draw1stPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->redArmorTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-04 fixed offsets
@@ -7559,7 +7559,7 @@ static void CG_Draw1stPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->yellowArmorTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-04 fixed offsets
@@ -7587,7 +7587,7 @@ static void CG_Draw1stPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->greenArmorTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-04 fixed offsets
@@ -7615,7 +7615,7 @@ static void CG_Draw1stPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->megaHealthTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-04 fixed offsets
@@ -7689,7 +7689,7 @@ static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->redArmorTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-05 fixed offsets
@@ -7717,7 +7717,7 @@ static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->yellowArmorTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-05 fixed offsets
@@ -7745,7 +7745,7 @@ static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->greenArmorTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-05 fixed offsets
@@ -7773,7 +7773,7 @@ static void CG_Draw2ndPlayerPickups (const rectDef_t *rect, float scale, int sty
 			textRect.y = y + h;
 			CG_Text_Paint_Align(&textRect, scale, color, s, 0, 0, style, font, align);
 		}
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			s = va("%.2f", ds->megaHealthTime);
 			if (cg_wideScreen.integer == 7) {
 				// 2018-10-05 fixed offsets
@@ -7794,7 +7794,7 @@ static void CG_SetArmorColor (float alpha)
 {
 	vec4_t color;
 
-	if (cgs.protocol != PROTOCOL_QL  &&  !cgs.cpma) {
+	if (cgs.protocolClass != PROTOCOL_QL  &&  !cgs.cpma) {
 		return;
 	}
 
@@ -8529,7 +8529,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  }
 
 		  if (cg.snap->ps.pm_type == PM_INTERMISSION) {
-			  if ( (cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
+			  if ( (cgs.protocolClass == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
 				   ||
 				   (cgs.cpma  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.duelForfeit)
 				   ) {
@@ -9066,7 +9066,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  font = &cgDC.Assets.textFont;
 	  }
 
-	  if (cgs.protocol == PROTOCOL_QL) {
+	  if (cgs.protocolClass == PROTOCOL_QL) {
 		  if (atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_timeoutcount"))) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("TO: %s", CG_ConfigString(CS_RED_TEAM_TIMEOUTS_LEFT)), 0, 0, textStyle, font, align);
 		  }
@@ -9078,7 +9078,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  font = &cgDC.Assets.textFont;
 	  }
 
-	  if (cgs.protocol == PROTOCOL_QL) {
+	  if (cgs.protocolClass == PROTOCOL_QL) {
 		  if (atoi(Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "g_timeoutcount"))) {
 			  CG_Text_Paint_Align(&rect, scale, color, va("TO: %s", CG_ConfigString(CS_BLUE_TEAM_TIMEOUTS_LEFT)), 0, 0, textStyle, font, align);
 		  }
@@ -9295,7 +9295,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  font = &cgDC.Assets.textFont;
 	  }
 
-	  if (cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 1) {
+	  if (cgs.protocolClass == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 1) {
 		  CG_Text_Paint_Align(&rect, scale, color, "-", 0, 0, textStyle, font, align);
 		  break;
 	  }
@@ -9534,7 +9534,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  font = &cgDC.Assets.textFont;
 	  }
 
-	  if ((cgs.protocol == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 2)  ||
+	  if ((cgs.protocolClass == PROTOCOL_QL  &&  cg.duelForfeit  &&  cg.duelPlayerForfeit == 2)  ||
 		  /* with cpma we are always placing forfeiting player in second duel slot */
 		  (cgs.cpma  &&  cg.duelForfeit)
 		  ) {
@@ -9972,7 +9972,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else {
 			  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_BEST_ITEM_CONTROL2), 0, 0, textStyle, font, align);
 		  }
-	  } else if (cgs.protocol == PROTOCOL_QL) {
+	  } else if (cgs.protocolClass == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_BEST_ITEM_CONTROL), 0, 0, textStyle, font, align);
 	  }
 	  break;
@@ -9996,7 +9996,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else {
 			  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_ACCURATE2), 0, 0, textStyle, font, align);
 		  }
-	  } else if (cgs.protocol == PROTOCOL_QL) {
+	  } else if (cgs.protocolClass == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_ACCURATE), 0, 0, textStyle, font, align);
 	  }
 	  break;
@@ -10020,7 +10020,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else {
 			  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_DAMAGE_DEALT2), 0, 0, textStyle, font, align);
 		  }
-	  } else if (cgs.protocol == PROTOCOL_QL) {
+	  } else if (cgs.protocolClass == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MOST_DAMAGE_DEALT), 0, 0, textStyle, font, align);
 	  }
 	  break;
@@ -10093,7 +10093,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  }
 	  }
 
-	  if (cgs.protocol == PROTOCOL_QL) {
+	  if (cgs.protocolClass == PROTOCOL_QL) {
 		  // 2018-07-17 ql shows hostname as part of message in menudef.h:
 		  //
 		  //  "#define CG_MATCH_DETAILS  8"
@@ -11256,7 +11256,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  ownerName = Info_ValueForKey(CG_ConfigString(CS_SERVERINFO), "sv_owner");
 	  if (!ownerName  ||  !*ownerName) {
-		  if (cgs.protocol == PROTOCOL_QL) {
+		  if (cgs.protocolClass == PROTOCOL_QL) {
 			  ownerName = "Quake Live";
 		  } else {
 			  ownerName = "Quake 3";
@@ -11510,7 +11510,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else {
 			  Com_Printf("^3CG_MOST_VALUABLE_OFFENSIVE_PLYR invalid player number %d\n", n);
 		  }
-	  } else if (cgs.protocol == PROTOCOL_QL) {
+	  } else if (cgs.protocolClass == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP_OFFENSE), 0, 0, textStyle, font, align);
 	  }
 	  break;
@@ -11530,7 +11530,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  } else {
 			  Com_Printf("^3CG_MOST_VALUABLE_DEFENSIVE_PLYR invalid player number %d\n", n);
 		  }
-	  } else if (cgs.protocol == PROTOCOL_QL) {
+	  } else if (cgs.protocolClass == PROTOCOL_QL) {
 		  CG_Text_Paint_Align(&rect, scale, color, CG_ConfigString(CS_MVP_DEFENSE), 0, 0, textStyle, font, align);
 	  }
 	  break;
@@ -11766,7 +11766,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   }
 
   case CG_PLAYER_HASKEY: {
-	  if (cgs.protocol != PROTOCOL_QL) {
+	  if (cgs.protocolClass != PROTOCOL_QL) {
 		  break;
 	  }
 

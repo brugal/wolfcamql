@@ -345,7 +345,11 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 
 		// init the message
 		memset(&buf, 0, sizeof(msg_t));
-		MSG_Init(&buf, bufData, sizeof(bufData));
+		if (di.olderUncompressedDemo) {
+			MSG_InitOOB(&buf, bufData, sizeof(bufData));
+		} else {
+			MSG_Init(&buf, bufData, sizeof(bufData));
+		}
 
 		// get the length
 		r = FS_Read (&buf.cursize, 4, clc.demoReadFile);
@@ -401,10 +405,18 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 		buf.readcount = 0;
 
 		//  CL_ParseServerMessage( &buf );
-		MSG_Bitstream(&buf);
+		if (!di.olderUncompressedDemo) {
+			MSG_Bitstream(&buf);
+		}
+
 		// get the reliable sequence acknowledge number
 		//clc.reliableAcknowledge = MSG_ReadLong( msg );
-		MSG_ReadLong(&buf);
+		// protocol 43 doesn't have this
+		if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 46) {
+			// pass
+		} else {
+			MSG_ReadLong(&buf);
+		}
 
 		//
 		// parse the message
@@ -425,8 +437,22 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 				break;
 			}
 
+			if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+				if (buf.readcount == buf.cursize) {
+					//SHOWNET( msg, "END OF MESSAGE" );
+					break;
+				}
+			}
+
 			cmd = MSG_ReadByte(&buf);
 
+#if 0  // testing voip with protocol 43
+			if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol < 48) {
+				if (cmd == svc_bad) {
+					break;
+				}
+			}
+#endif
 			// See if this is an extension command after the EOF, which means we
 			// have speex voip data.
 			if ((cmd == svc_EOF) && (MSG_LookaheadByte( &buf ) == svc_extension)) {
@@ -447,7 +473,7 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 
 			switch (cmd) {
 			default:
-				Com_Error (ERR_DROP,"CL_PeekSnapshot: Illegible server message");
+				Com_Error (ERR_DROP,"CL_PeekSnapshot: Illegible server message %d", cmd);
 				break;
 			case svc_nop:
 				break;
@@ -504,6 +530,19 @@ qboolean CL_PeekSnapshot (int snapshotNumber, snapshot_t *snapshot)
 				break;
 #endif
 			}
+
+			//Com_Printf("look ahead1 %d\n", MSG_LookaheadByte( &buf ));
+
+			if (di.olderUncompressedDemo  &&  di.olderUncompressedDemoProtocol <= 48) {
+				// _inMsg.GoToNextByte();
+				//Com_Printf("nextbyte  %d  %d\n", msg->readcount, msg->bit);
+				if ((buf.bit & 7) != 0) {
+					buf.readcount++;
+					buf.bit = buf.readcount << 3;
+				}
+			}
+
+			//Com_Printf("look ahead2 %d\n", MSG_LookaheadByte( &buf ));
 		}  // while (1)  reading commands
 
  alldone:

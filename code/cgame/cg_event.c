@@ -195,7 +195,7 @@ static void CG_Obituary( const entityState_t *ent ) {
 		//if (target == cg.snap->ps.clientNum  &&  cg.clientNum == cg.snap->ps.clientNum) {
 		if (target == cg.clientNum) {
 			if (cgs.gametype == GT_CA  ||  cgs.gametype == GT_CTFS) {
-				if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.protocolClass == PROTOCOL_QL) {
 					int roundTime;
 
 					roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
@@ -1157,6 +1157,8 @@ static int CG_EntityEventFromQ3 (int event)
 {
 	int e;
 
+	//Com_Printf("   event in: %d\n", event);
+
 	if (cgs.cpma  &&  event >= EVQ3_PROXIMITY_MINE_STICK) {
 		switch (event) {
 		case EVQ3_PROXIMITY_MINE_STICK:
@@ -1172,265 +1174,534 @@ static int CG_EntityEventFromQ3 (int event)
 
 	e = -1;
 
-	switch (event) {
-	case EVQ3_NONE:
-		e = EV_NONE;
-		break;
-	case EVQ3_FOOTSTEP:
-		e = EV_FOOTSTEP;
-		break;
-	case EVQ3_FOOTSTEP_METAL:
-		e = EV_FOOTSTEP_METAL;
-		break;
-	case EVQ3_FOOTSPLASH:
-		e = EV_FOOTSPLASH;
-		break;
-	case EVQ3_FOOTWADE:
-		e = EV_FOOTWADE;
-		break;
-	case EVQ3_SWIM:
-		e = EV_SWIM;
-		break;
-	case EVQ3_STEP_4:
-		e = EV_STEP_4;
-		break;
-	case EVQ3_STEP_8:
-		e = EV_STEP_8;
-		break;
-	case EVQ3_STEP_12:
-		e = EV_STEP_12;
-		break;
-	case EVQ3_STEP_16:
-		e = EV_STEP_16;
-		break;
-	case EVQ3_FALL_SHORT:
-		e = EV_FALL_SHORT;
-		break;
-	case EVQ3_FALL_MEDIUM:
-		e = EV_FALL_MEDIUM;
-		break;
-	case EVQ3_FALL_FAR:
-		e = EV_FALL_FAR;
-		break;
-	case EVQ3_JUMP_PAD:			// boing sound at origin, jump sound on player
-		e = EV_JUMP_PAD;
-		break;
-	case EVQ3_JUMP:
-		e = EV_JUMP;
-		break;
-	case EVQ3_WATER_TOUCH:	// foot touches
-		e = EV_WATER_TOUCH;
-		break;
-	case EVQ3_WATER_LEAVE:	// foot leaves
-		e = EV_WATER_LEAVE;
-		break;
-	case EVQ3_WATER_UNDER:	// head touches
-		e = EV_WATER_UNDER;
-		break;
-	case EVQ3_WATER_CLEAR:	// head leaves
-		e = EV_WATER_CLEAR;
-		break;
-	case EVQ3_ITEM_PICKUP:			// normal item pickups are predictable
-		e = EV_ITEM_PICKUP;
-		break;
-	case EVQ3_GLOBAL_ITEM_PICKUP:	// powerup / team sounds are broadcast to everyone
-		e = EV_GLOBAL_ITEM_PICKUP;
-		break;
-	case EVQ3_NOAMMO:
-		e = EV_NOAMMO;
-		break;
-	case EVQ3_CHANGE_WEAPON:
-		e = EV_CHANGE_WEAPON;
-		break;
-	case EVQ3_FIRE_WEAPON:
-		e = EV_FIRE_WEAPON;
-		break;
-	case EVQ3_USE_ITEM0:
-		e = EV_USE_ITEM0;
-		break;
-	case EVQ3_USE_ITEM1:
-		e = EV_USE_ITEM1;
-		break;
-	case EVQ3_USE_ITEM2:
-		e = EV_USE_ITEM2;
-		break;
-	case EVQ3_USE_ITEM3:
-		e = EV_USE_ITEM3;
-		break;
-	case EVQ3_USE_ITEM4:
-		e = EV_USE_ITEM4;
-		break;
-	case EVQ3_USE_ITEM5:
-		e = EV_USE_ITEM5;
-		break;
-	case EVQ3_USE_ITEM6:
-		e = EV_USE_ITEM6;
-		break;
-	case EVQ3_USE_ITEM7:
-		e = EV_USE_ITEM7;
-		break;
-	case EVQ3_USE_ITEM8:
-		e = EV_USE_ITEM8;
-		break;
-	case EVQ3_USE_ITEM9:
-		e = EV_USE_ITEM9;
-		break;
-	case EVQ3_USE_ITEM10:
-		e = EV_USE_ITEM10;
-		break;
-	case EVQ3_USE_ITEM11:
-		e = EV_USE_ITEM11;
-		break;
-	case EVQ3_USE_ITEM12:
-		e = EV_USE_ITEM12;
-		break;
-	case EVQ3_USE_ITEM13:
-		e = EV_USE_ITEM13;
-		break;
-	case EVQ3_USE_ITEM14:
-		e = EV_USE_ITEM14;
-		break;
-	case EVQ3_USE_ITEM15:
-		e = EV_USE_ITEM15;
-		break;
-	case EVQ3_ITEM_RESPAWN:
-		e = EV_ITEM_RESPAWN;
-		break;
-	case EVQ3_ITEM_POP:
-		e = EV_ITEM_POP;
-		break;
-	case EVQ3_PLAYER_TELEPORT_IN:
-		e = EV_PLAYER_TELEPORT_IN;
-		break;
-	case EVQ3_PLAYER_TELEPORT_OUT:
-		e = EV_PLAYER_TELEPORT_OUT;
-		break;
-	case EVQ3_GRENADE_BOUNCE:		// eventParm will be the soundindex
-		e = EV_GRENADE_BOUNCE;
-		break;
-	case EVQ3_GENERAL_SOUND:
-		e = EV_GENERAL_SOUND;
-		break;
-	case EVQ3_GLOBAL_SOUND:		// no attenuation
-		e = EV_GLOBAL_SOUND;
-		break;
-	case EVQ3_GLOBAL_TEAM_SOUND:
-		e = EV_GLOBAL_TEAM_SOUND;
-		break;
-	case EVQ3_BULLET_HIT_FLESH:
-		e = EV_BULLET_HIT_FLESH;
-		break;
-	case EVQ3_BULLET_HIT_WALL:
-		e = EV_BULLET_HIT_WALL;
-		break;
-	case EVQ3_MISSILE_HIT:
-		e = EV_MISSILE_HIT;
-		break;
-	case EVQ3_MISSILE_MISS:
-		e = EV_MISSILE_MISS;
-		break;
-	case EVQ3_MISSILE_MISS_METAL:
-		e = EV_MISSILE_MISS_METAL;
-		break;
-	case EVQ3_RAILTRAIL:
-		e = EV_RAILTRAIL;
-		break;
-	case EVQ3_SHOTGUN:
-		e = EV_SHOTGUN;
-		break;
-	case EVQ3_BULLET:				// otherEntity is the shooter
-		Com_Printf("FIXME q3 EV_BULLET\n");
-		//e = EV_BULLET;
-		e = EV_BULLET_HIT_FLESH;
-		break;
-	case EVQ3_PAIN:
-		e = EV_PAIN;
-		break;
-	case EVQ3_DEATH1:
-		e = EV_DEATH1;
-		break;
-	case EVQ3_DEATH2:
-		e = EV_DEATH2;
-		break;
-	case EVQ3_DEATH3:
-		e = EV_DEATH3;
-		break;
-	case EVQ3_OBITUARY:
-		e = EV_OBITUARY;
-		break;
-	case EVQ3_POWERUP_QUAD:
-		e = EV_POWERUP_QUAD;
-		break;
-	case EVQ3_POWERUP_BATTLESUIT:
-		e = EV_POWERUP_BATTLESUIT;
-		break;
-	case EVQ3_POWERUP_REGEN:
-		e = EV_POWERUP_REGEN;
-		break;
-	case EVQ3_GIB_PLAYER:			// gib a previously living player
-		e = EV_GIB_PLAYER;
-		break;
-	case EVQ3_SCOREPLUM:			// score plum
-		e = EV_SCOREPLUM;
-		break;
-//#ifdef MISSIONPACK
-	case EVQ3_PROXIMITY_MINE_STICK:
-		e = EV_PROXIMITY_MINE_STICK ;
-		break;
-	case EVQ3_PROXIMITY_MINE_TRIGGER:
-		e = EV_PROXIMITY_MINE_TRIGGER ;
-		break;
-	case EVQ3_KAMIKAZE:			// kamikaze explodes
-		e = EV_KAMIKAZE;
-		break;
-	case EVQ3_OBELISKEXPLODE:		// obelisk explodes
-		e = EV_OBELISKEXPLODE;
-		break;
-	case EVQ3_OBELISKPAIN:			// obelisk is in pain
-		e = EV_OBELISKPAIN;
-		break;
-	case EVQ3_INVUL_IMPACT:		// invulnerability sphere impact
-		e = EV_INVUL_IMPACT;
-		break;
-	case EVQ3_JUICED:				// invulnerability juiced effect
-		e = EV_JUICED;
-		break;
-	case EVQ3_LIGHTNINGBOLT:		// lightning bolt bounced of invulnerability sphere
-		e = EV_LIGHTNINGBOLT;
-		break;
-//#endif
-	case EVQ3_DEBUG_LINE:
-		e = EV_DEBUG_LINE;
-		break;
-	case EVQ3_STOPLOOPINGSOUND:
-		e = EV_STOPLOOPINGSOUND;
-		break;
-	case EVQ3_TAUNT:
-		e = EV_TAUNT;
-		break;
-	case EVQ3_TAUNT_YES:
-		e = EV_TAUNT_YES;
-		break;
-	case EVQ3_TAUNT_NO:
-		e = EV_TAUNT_NO;
-		break;
-	case EVQ3_TAUNT_FOLLOWME:
-		e = EV_TAUNT_FOLLOWME;
-		break;
-	case EVQ3_TAUNT_GETFLAG:
-		e = EV_TAUNT_GETFLAG;
-		break;
-	case EVQ3_TAUNT_GUARDBASE:
-		e = EV_TAUNT_GUARDBASE;
-		break;
-	case EVQ3_TAUNT_PATROL:
-		e = EV_TAUNT_PATROL;
-		break;
+	if (cgs.realProtocol < 46) {
+		switch (event) {
+		case EVQ3DM3_NONE:
+			e = EV_NONE;
+			break;
+		case EVQ3DM3_FOOTSTEP:
+			e = EV_FOOTSTEP;
+			break;
+		case EVQ3DM3_FOOTSTEP_METAL:
+			e = EV_FOOTSTEP_METAL;
+			break;
+		case EVQ3DM3_FOOTSPLASH:
+			e = EV_FOOTSPLASH;
+			break;
+		case EVQ3DM3_FOOTWADE:
+			e = EV_FOOTWADE;
+			break;
+		case EVQ3DM3_SWIM:
+			e = EV_SWIM;
+			break;
+		case EVQ3DM3_STEP_4:
+			e = EV_STEP_4;
+			break;
+		case EVQ3DM3_STEP_8:
+			e = EV_STEP_8;
+			break;
+		case EVQ3DM3_STEP_12:
+			e = EV_STEP_12;
+			break;
+		case EVQ3DM3_STEP_16:
+			e = EV_STEP_16;
+			break;
+		case EVQ3DM3_FALL_SHORT:
+			e = EV_FALL_SHORT;
+			break;
+		case EVQ3DM3_FALL_MEDIUM:
+			e = EV_FALL_MEDIUM;
+			break;
+		case EVQ3DM3_FALL_FAR:
+			e = EV_FALL_FAR;
+			break;
+		case EVQ3DM3_JUMP_PAD:			// boing sound at origin, jump sound on player
+			e = EV_JUMP_PAD;
+			break;
+		case EVQ3DM3_JUMP:
+			e = EV_JUMP;
+			break;
+		case EVQ3DM3_WATER_TOUCH:	// foot touches
+			e = EV_WATER_TOUCH;
+			break;
+		case EVQ3DM3_WATER_LEAVE:	// foot leaves
+			e = EV_WATER_LEAVE;
+			break;
+		case EVQ3DM3_WATER_UNDER:	// head touches
+			e = EV_WATER_UNDER;
+			break;
+		case EVQ3DM3_WATER_CLEAR:	// head leaves
+			e = EV_WATER_CLEAR;
+			break;
+		case EVQ3DM3_ITEM_PICKUP:			// normal item pickups are predictable
+			e = EV_ITEM_PICKUP;
+			break;
+		case EVQ3DM3_GLOBAL_ITEM_PICKUP:	// powerup / team sounds are broadcast to everyone
+			e = EV_GLOBAL_ITEM_PICKUP;
+			break;
+		case EVQ3DM3_NOAMMO:
+			e = EV_NOAMMO;
+			break;
+		case EVQ3DM3_CHANGE_WEAPON:
+			e = EV_CHANGE_WEAPON;
+			break;
+		case EVQ3DM3_FIRE_WEAPON:
+			e = EV_FIRE_WEAPON;
+			break;
+		case EVQ3DM3_USE_ITEM0:
+			e = EV_USE_ITEM0;
+			break;
+		case EVQ3DM3_USE_ITEM1:
+			e = EV_USE_ITEM1;
+			break;
+		case EVQ3DM3_USE_ITEM2:
+			e = EV_USE_ITEM2;
+			break;
+		case EVQ3DM3_USE_ITEM3:
+			e = EV_USE_ITEM3;
+			break;
+		case EVQ3DM3_USE_ITEM4:
+			e = EV_USE_ITEM4;
+			break;
+		case EVQ3DM3_USE_ITEM5:
+			e = EV_USE_ITEM5;
+			break;
+		case EVQ3DM3_USE_ITEM6:
+			e = EV_USE_ITEM6;
+			break;
+		case EVQ3DM3_USE_ITEM7:
+			e = EV_USE_ITEM7;
+			break;
+		case EVQ3DM3_USE_ITEM8:
+			e = EV_USE_ITEM8;
+			break;
+		case EVQ3DM3_USE_ITEM9:
+			e = EV_USE_ITEM9;
+			break;
+		case EVQ3DM3_USE_ITEM10:
+			e = EV_USE_ITEM10;
+			break;
+		case EVQ3DM3_USE_ITEM11:
+			e = EV_USE_ITEM11;
+			break;
+		case EVQ3DM3_USE_ITEM12:
+			e = EV_USE_ITEM12;
+			break;
+		case EVQ3DM3_USE_ITEM13:
+			e = EV_USE_ITEM13;
+			break;
+		case EVQ3DM3_USE_ITEM14:
+			e = EV_USE_ITEM14;
+			break;
+		case EVQ3DM3_USE_ITEM15:
+			e = EV_USE_ITEM15;
+			break;
+		case EVQ3DM3_ITEM_RESPAWN:
+			e = EV_ITEM_RESPAWN;
+			break;
+		case EVQ3DM3_ITEM_POP:
+			e = EV_ITEM_POP;
+			break;
+		case EVQ3DM3_PLAYER_TELEPORT_IN:
+			e = EV_PLAYER_TELEPORT_IN;
+			break;
+		case EVQ3DM3_PLAYER_TELEPORT_OUT:
+			e = EV_PLAYER_TELEPORT_OUT;
+			break;
+		case EVQ3DM3_GRENADE_BOUNCE:		// eventParm will be the soundindex
+			e = EV_GRENADE_BOUNCE;
+			break;
+		case EVQ3DM3_GENERAL_SOUND:
+			e = EV_GENERAL_SOUND;
+			break;
+		case EVQ3DM3_GLOBAL_SOUND:		// no attenuation
+			e = EV_GLOBAL_SOUND;
+			break;
 
-	default:
-		Com_Printf("unknown q3 event %d\n", event);
-		e = event;
-		break;
+		// not in protocol 43
+		//case EVQ3DM3_GLOBAL_TEAM_SOUND:
+		//		e = EV_GLOBAL_TEAM_SOUND;
+		//		break;
+
+		case EVQ3DM3_BULLET_HIT_FLESH:
+			e = EV_BULLET_HIT_FLESH;
+			break;
+		case EVQ3DM3_BULLET_HIT_WALL:
+			e = EV_BULLET_HIT_WALL;
+			break;
+		case EVQ3DM3_MISSILE_HIT:
+			e = EV_MISSILE_HIT;
+			break;
+		case EVQ3DM3_MISSILE_MISS:
+			e = EV_MISSILE_MISS;
+			break;
+
+		// not in protocol 43
+		//case EVQ3DM3_MISSILE_MISS_METAL:
+		//	e = EV_MISSILE_MISS_METAL;
+		//	break;
+
+		case EVQ3DM3_RAILTRAIL:
+			e = EV_RAILTRAIL;
+			break;
+		case EVQ3DM3_SHOTGUN:
+			e = EV_SHOTGUN;
+			break;
+		case EVQ3DM3_BULLET:				// otherEntity is the shooter
+			Com_Printf("FIXME q3 EV_BULLET\n");
+			//e = EV_BULLET;
+			e = EV_BULLET_HIT_FLESH;
+			break;
+		case EVQ3DM3_PAIN:
+			e = EV_PAIN;
+			break;
+		case EVQ3DM3_DEATH1:
+			e = EV_DEATH1;
+			break;
+		case EVQ3DM3_DEATH2:
+			e = EV_DEATH2;
+			break;
+		case EVQ3DM3_DEATH3:
+			e = EV_DEATH3;
+			break;
+		case EVQ3DM3_OBITUARY:
+			e = EV_OBITUARY;
+			break;
+		case EVQ3DM3_POWERUP_QUAD:
+			e = EV_POWERUP_QUAD;
+			break;
+		case EVQ3DM3_POWERUP_BATTLESUIT:
+			e = EV_POWERUP_BATTLESUIT;
+			break;
+		case EVQ3DM3_POWERUP_REGEN:
+			e = EV_POWERUP_REGEN;
+			break;
+		case EVQ3DM3_GIB_PLAYER:			// gib a previously living player
+			e = EV_GIB_PLAYER;
+			break;
+		case EVQ3DM3_SCOREPLUM:			// score plum
+			e = EV_SCOREPLUM;
+			break;
+			//#ifdef MISSIONPACK
+		case EVQ3DM3_PROXIMITY_MINE_STICK:
+			e = EV_PROXIMITY_MINE_STICK ;
+			break;
+		case EVQ3DM3_PROXIMITY_MINE_TRIGGER:
+			e = EV_PROXIMITY_MINE_TRIGGER ;
+			break;
+		case EVQ3DM3_KAMIKAZE:			// kamikaze explodes
+			e = EV_KAMIKAZE;
+			break;
+		case EVQ3DM3_OBELISKEXPLODE:		// obelisk explodes
+			e = EV_OBELISKEXPLODE;
+			break;
+		case EVQ3DM3_OBELISKPAIN:			// obelisk is in pain
+			e = EV_OBELISKPAIN;
+			break;
+		case EVQ3DM3_INVUL_IMPACT:		// invulnerability sphere impact
+			e = EV_INVUL_IMPACT;
+			break;
+		case EVQ3DM3_JUICED:				// invulnerability juiced effect
+			e = EV_JUICED;
+			break;
+		case EVQ3DM3_LIGHTNINGBOLT:		// lightning bolt bounced of invulnerability sphere
+			e = EV_LIGHTNINGBOLT;
+			break;
+			//#endif
+		case EVQ3DM3_DEBUG_LINE:
+			e = EV_DEBUG_LINE;
+			break;
+		case EVQ3DM3_STOPLOOPINGSOUND:
+			e = EV_STOPLOOPINGSOUND;
+			break;
+		case EVQ3DM3_TAUNT:
+			e = EV_TAUNT;
+			break;
+		case EVQ3DM3_TAUNT_YES:
+			e = EV_TAUNT_YES;
+			break;
+		case EVQ3DM3_TAUNT_NO:
+			e = EV_TAUNT_NO;
+			break;
+		case EVQ3DM3_TAUNT_FOLLOWME:
+			e = EV_TAUNT_FOLLOWME;
+			break;
+		case EVQ3DM3_TAUNT_GETFLAG:
+			e = EV_TAUNT_GETFLAG;
+			break;
+		case EVQ3DM3_TAUNT_GUARDBASE:
+			e = EV_TAUNT_GUARDBASE;
+			break;
+		case EVQ3DM3_TAUNT_PATROL:
+			e = EV_TAUNT_PATROL;
+			break;
+
+		default:
+			Com_Printf("unknown q3 dm3 event %d\n", event);
+			e = event;
+			break;
+		}
+	} else {
+		switch (event) {
+		case EVQ3_NONE:
+			e = EV_NONE;
+			break;
+		case EVQ3_FOOTSTEP:
+			e = EV_FOOTSTEP;
+			break;
+		case EVQ3_FOOTSTEP_METAL:
+			e = EV_FOOTSTEP_METAL;
+			break;
+		case EVQ3_FOOTSPLASH:
+			e = EV_FOOTSPLASH;
+			break;
+		case EVQ3_FOOTWADE:
+			e = EV_FOOTWADE;
+			break;
+		case EVQ3_SWIM:
+			e = EV_SWIM;
+			break;
+		case EVQ3_STEP_4:
+			e = EV_STEP_4;
+			break;
+		case EVQ3_STEP_8:
+			e = EV_STEP_8;
+			break;
+		case EVQ3_STEP_12:
+			e = EV_STEP_12;
+			break;
+		case EVQ3_STEP_16:
+			e = EV_STEP_16;
+			break;
+		case EVQ3_FALL_SHORT:
+			e = EV_FALL_SHORT;
+			break;
+		case EVQ3_FALL_MEDIUM:
+			e = EV_FALL_MEDIUM;
+			break;
+		case EVQ3_FALL_FAR:
+			e = EV_FALL_FAR;
+			break;
+		case EVQ3_JUMP_PAD:			// boing sound at origin, jump sound on player
+			e = EV_JUMP_PAD;
+			break;
+		case EVQ3_JUMP:
+			e = EV_JUMP;
+			break;
+		case EVQ3_WATER_TOUCH:	// foot touches
+			e = EV_WATER_TOUCH;
+			break;
+		case EVQ3_WATER_LEAVE:	// foot leaves
+			e = EV_WATER_LEAVE;
+			break;
+		case EVQ3_WATER_UNDER:	// head touches
+			e = EV_WATER_UNDER;
+			break;
+		case EVQ3_WATER_CLEAR:	// head leaves
+			e = EV_WATER_CLEAR;
+			break;
+		case EVQ3_ITEM_PICKUP:			// normal item pickups are predictable
+			e = EV_ITEM_PICKUP;
+			break;
+		case EVQ3_GLOBAL_ITEM_PICKUP:	// powerup / team sounds are broadcast to everyone
+			e = EV_GLOBAL_ITEM_PICKUP;
+			break;
+		case EVQ3_NOAMMO:
+			e = EV_NOAMMO;
+			break;
+		case EVQ3_CHANGE_WEAPON:
+			e = EV_CHANGE_WEAPON;
+			break;
+		case EVQ3_FIRE_WEAPON:
+			e = EV_FIRE_WEAPON;
+			break;
+		case EVQ3_USE_ITEM0:
+			e = EV_USE_ITEM0;
+			break;
+		case EVQ3_USE_ITEM1:
+			e = EV_USE_ITEM1;
+			break;
+		case EVQ3_USE_ITEM2:
+			e = EV_USE_ITEM2;
+			break;
+		case EVQ3_USE_ITEM3:
+			e = EV_USE_ITEM3;
+			break;
+		case EVQ3_USE_ITEM4:
+			e = EV_USE_ITEM4;
+			break;
+		case EVQ3_USE_ITEM5:
+			e = EV_USE_ITEM5;
+			break;
+		case EVQ3_USE_ITEM6:
+			e = EV_USE_ITEM6;
+			break;
+		case EVQ3_USE_ITEM7:
+			e = EV_USE_ITEM7;
+			break;
+		case EVQ3_USE_ITEM8:
+			e = EV_USE_ITEM8;
+			break;
+		case EVQ3_USE_ITEM9:
+			e = EV_USE_ITEM9;
+			break;
+		case EVQ3_USE_ITEM10:
+			e = EV_USE_ITEM10;
+			break;
+		case EVQ3_USE_ITEM11:
+			e = EV_USE_ITEM11;
+			break;
+		case EVQ3_USE_ITEM12:
+			e = EV_USE_ITEM12;
+			break;
+		case EVQ3_USE_ITEM13:
+			e = EV_USE_ITEM13;
+			break;
+		case EVQ3_USE_ITEM14:
+			e = EV_USE_ITEM14;
+			break;
+		case EVQ3_USE_ITEM15:
+			e = EV_USE_ITEM15;
+			break;
+		case EVQ3_ITEM_RESPAWN:
+			e = EV_ITEM_RESPAWN;
+			break;
+		case EVQ3_ITEM_POP:
+			e = EV_ITEM_POP;
+			break;
+		case EVQ3_PLAYER_TELEPORT_IN:
+			e = EV_PLAYER_TELEPORT_IN;
+			break;
+		case EVQ3_PLAYER_TELEPORT_OUT:
+			e = EV_PLAYER_TELEPORT_OUT;
+			break;
+		case EVQ3_GRENADE_BOUNCE:		// eventParm will be the soundindex
+			e = EV_GRENADE_BOUNCE;
+			break;
+		case EVQ3_GENERAL_SOUND:
+			e = EV_GENERAL_SOUND;
+			break;
+		case EVQ3_GLOBAL_SOUND:		// no attenuation
+			e = EV_GLOBAL_SOUND;
+			break;
+		case EVQ3_GLOBAL_TEAM_SOUND:
+			e = EV_GLOBAL_TEAM_SOUND;
+			break;
+		case EVQ3_BULLET_HIT_FLESH:
+			e = EV_BULLET_HIT_FLESH;
+			break;
+		case EVQ3_BULLET_HIT_WALL:
+			e = EV_BULLET_HIT_WALL;
+			break;
+		case EVQ3_MISSILE_HIT:
+			e = EV_MISSILE_HIT;
+			break;
+		case EVQ3_MISSILE_MISS:
+			e = EV_MISSILE_MISS;
+			break;
+		case EVQ3_MISSILE_MISS_METAL:
+			e = EV_MISSILE_MISS_METAL;
+			break;
+		case EVQ3_RAILTRAIL:
+			e = EV_RAILTRAIL;
+			break;
+		case EVQ3_SHOTGUN:
+			e = EV_SHOTGUN;
+			break;
+		case EVQ3_BULLET:				// otherEntity is the shooter
+			Com_Printf("FIXME q3 EV_BULLET\n");
+			//e = EV_BULLET;
+			e = EV_BULLET_HIT_FLESH;
+			break;
+		case EVQ3_PAIN:
+			e = EV_PAIN;
+			break;
+		case EVQ3_DEATH1:
+			e = EV_DEATH1;
+			break;
+		case EVQ3_DEATH2:
+			e = EV_DEATH2;
+			break;
+		case EVQ3_DEATH3:
+			e = EV_DEATH3;
+			break;
+		case EVQ3_OBITUARY:
+			e = EV_OBITUARY;
+			break;
+		case EVQ3_POWERUP_QUAD:
+			e = EV_POWERUP_QUAD;
+			break;
+		case EVQ3_POWERUP_BATTLESUIT:
+			e = EV_POWERUP_BATTLESUIT;
+			break;
+		case EVQ3_POWERUP_REGEN:
+			e = EV_POWERUP_REGEN;
+			break;
+		case EVQ3_GIB_PLAYER:			// gib a previously living player
+			e = EV_GIB_PLAYER;
+			break;
+		case EVQ3_SCOREPLUM:			// score plum
+			e = EV_SCOREPLUM;
+			break;
+			//#ifdef MISSIONPACK
+		case EVQ3_PROXIMITY_MINE_STICK:
+			e = EV_PROXIMITY_MINE_STICK ;
+			break;
+		case EVQ3_PROXIMITY_MINE_TRIGGER:
+			e = EV_PROXIMITY_MINE_TRIGGER ;
+			break;
+		case EVQ3_KAMIKAZE:			// kamikaze explodes
+			e = EV_KAMIKAZE;
+			break;
+		case EVQ3_OBELISKEXPLODE:		// obelisk explodes
+			e = EV_OBELISKEXPLODE;
+			break;
+		case EVQ3_OBELISKPAIN:			// obelisk is in pain
+			e = EV_OBELISKPAIN;
+			break;
+		case EVQ3_INVUL_IMPACT:		// invulnerability sphere impact
+			e = EV_INVUL_IMPACT;
+			break;
+		case EVQ3_JUICED:				// invulnerability juiced effect
+			e = EV_JUICED;
+			break;
+		case EVQ3_LIGHTNINGBOLT:		// lightning bolt bounced of invulnerability sphere
+			e = EV_LIGHTNINGBOLT;
+			break;
+			//#endif
+		case EVQ3_DEBUG_LINE:
+			e = EV_DEBUG_LINE;
+			break;
+		case EVQ3_STOPLOOPINGSOUND:
+			e = EV_STOPLOOPINGSOUND;
+			break;
+		case EVQ3_TAUNT:
+			e = EV_TAUNT;
+			break;
+		case EVQ3_TAUNT_YES:
+			e = EV_TAUNT_YES;
+			break;
+		case EVQ3_TAUNT_NO:
+			e = EV_TAUNT_NO;
+			break;
+		case EVQ3_TAUNT_FOLLOWME:
+			e = EV_TAUNT_FOLLOWME;
+			break;
+		case EVQ3_TAUNT_GETFLAG:
+			e = EV_TAUNT_GETFLAG;
+			break;
+		case EVQ3_TAUNT_GUARDBASE:
+			e = EV_TAUNT_GUARDBASE;
+			break;
+		case EVQ3_TAUNT_PATROL:
+			e = EV_TAUNT_PATROL;
+			break;
+
+		default:
+			Com_Printf("unknown q3 event %d\n", event);
+			e = event;
+			break;
+		}
 	}
 
 	if (e == -1) {
@@ -1476,7 +1747,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 	es = &cent->currentState;
 	event = es->event & ~EV_EVENT_BITS;
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		event = CG_EntityEventFromQ3(event);
 	}
 
@@ -1486,7 +1757,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		CG_Printf("id:%d ent:%3i  event:%3i serverTime: %d ", id, es->number, event, cg.snap->serverTime);
 	}
 
-	if (cent->currentState.eType >= ET_EVENTS) {
+	if ((cgs.realProtocol >= 46  &&  cent->currentState.eType >= ET_EVENTS)  ||  (cgs.realProtocol < 46  &&  cent->currentState.eType >= (ET_EVENTS - 1))) {
 		//Com_Printf("yes %d\n", cent->currentState.eType);
 		if (cg.filter.events) {
 			return;
@@ -2034,7 +2305,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 		DEBUGNAME("EV_FIRE_WEAPON");
 		if (es->number >= MAX_CLIENTS) {
-			if (cgs.protocol == PROTOCOL_QL  &&  es->weapon == WP_GRENADE_LAUNCHER) {
+			if (cgs.protocolClass == PROTOCOL_QL  &&  es->weapon == WP_GRENADE_LAUNCHER) {
 				// this is ok, can have 'world' weapons like the grenades
 				// in silentnight.bsp
 			} else {
@@ -2661,7 +2932,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 				CG_StartSound (NULL, es->number, CHAN_VOICE, cgs.gameSounds[ n ] );
 			} else {
-				if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.protocolClass == PROTOCOL_QL) {
 					s = CG_ConfigString( CS_SOUNDS + n - 1);
 				} else {
 					s = CG_ConfigString(CS_SOUNDS + n);
@@ -2697,7 +2968,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
             else
                 CG_StartSound (NULL, wcg.clientNum, CHAN_AUTO, cgs.gameSounds[n]);
 		} else {
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				s = CG_ConfigString( CS_SOUNDS + n - 1);
 			} else {
 				s = CG_ConfigString(CS_SOUNDS + n);
@@ -3316,7 +3587,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 		//CG_PrintEntityStatep(es);
 
-		if (cgs.protocol == PROTOCOL_Q3  &&  CG_WaterLevel(&cg_entities[clientNum]) == 3) {
+		if (cgs.protocolClass == PROTOCOL_Q3  &&  CG_WaterLevel(&cg_entities[clientNum]) == 3) {
 			CG_StartSound(NULL, clientNum, CHAN_VOICE, CG_CustomSound(clientNum, "*drown.wav"));
 		} else {
 			CG_StartSound( NULL, clientNum, CHAN_VOICE,
@@ -3453,7 +3724,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	case EV_GIB_PLAYER:
 		DEBUGNAME("EV_GIB_PLAYER");
 		if (es->number >= MAX_CLIENTS) {
-			if (1) {  //(!cgs.protocol == PROTOCOL_QL) {
+			if (1) {  //(!cgs.protocolClass == PROTOCOL_QL) {
 				// can't get client number in ql
 				//CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
 				//CG_PrintEntityStatep(es);
@@ -3546,7 +3817,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	case EV_THAW_PLAYER: {
 		DEBUGNAME("EV_THAW_PLAYER");
 		if (es->number >= MAX_CLIENTS) {
-			if (cgs.protocol != PROTOCOL_QL) {
+			if (cgs.protocolClass != PROTOCOL_QL) {
 				// can't get client number in ql
 				CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
 				//Com_Printf("158  %s\n", cgs.clientinfo[es->number - 158].name);
@@ -3564,7 +3835,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	case EV_THAW_TICK: {
 		DEBUGNAME("EV_THAW_TICK");
 		if (es->number >= MAX_CLIENTS) {
-			if (cgs.protocol != PROTOCOL_QL) {
+			if (cgs.protocolClass != PROTOCOL_QL) {
 				// can't get client number in ql
 				CG_Printf("^3FIXME event %d  %s  num %d  clientNum %d\n", event, eventName, es->number, es->clientNum);
 			}
@@ -3699,6 +3970,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 		DEBUGNAME("EV_AWARD");
 
+		//Com_Printf("event EV_AWARD %d %d  %d\n", es->clientNum, es->modelindex2, es->generic1);
 		// clientNum:  clientNum
 		// modelindex2:  count
 		// generic1:  award type
@@ -3852,7 +4124,7 @@ CG_CheckEvents
 */
 void CG_CheckEvents( centity_t *cent ) {
 	// check for event-only entities
-	if ( cent->currentState.eType > ET_EVENTS ) {
+	if ( (cgs.realProtocol >= 46  &&  cent->currentState.eType > ET_EVENTS)  ||  (cgs.realProtocol < 46  &&  cent->currentState.eType > (ET_EVENTS - 1)) ) {
 		if ( cent->previousEvent ) {
 			//Com_Printf("%d %d already fired\n", cent - cg_entities, cent->currentState.eType - ET_EVENTS);
 			return;	// already fired
@@ -3864,7 +4136,11 @@ void CG_CheckEvents( centity_t *cent ) {
 
 		cent->previousEvent = 1;
 
-		cent->currentState.event = cent->currentState.eType - ET_EVENTS;
+		if (cgs.realProtocol < 46) {
+			cent->currentState.event = cent->currentState.eType - ET_EVENTS + 1;
+		} else {
+			cent->currentState.event = cent->currentState.eType - ET_EVENTS;
+		}
 	} else {
 		// check for events riding with another entity
 		if ( cent->currentState.event == cent->previousEvent ) {

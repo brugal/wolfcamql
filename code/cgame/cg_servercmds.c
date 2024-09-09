@@ -130,8 +130,13 @@ static void CG_ParseScores( void ) {
 	cg.avgBluePing = 0;
 	//memset( cg.scores, 0, sizeof( cg.scores ) );
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		SCSIZE = 18;
+	} else if (cgs.realProtocol < 46) {
+		SCSIZE = 6;
+	} else if (cgs.realProtocol == 46) {
+		//FIXME some team arena stuff enabled?
+		SCSIZE = 15;
 	} else {
 		SCSIZE = 14;
 	}
@@ -149,20 +154,29 @@ static void CG_ParseScores( void ) {
 		cg.scores[i].time = atoi( CG_Argv( i * SCSIZE + 7 ) );
 		cg.scores[i].scoreFlags = atoi( CG_Argv( i * SCSIZE + 8 ) );
 		cg.scores[i].powerups = atoi( CG_Argv( i * SCSIZE + 9 ) );
-		cg.scores[i].accuracy = atoi(CG_Argv(i * SCSIZE + 10));
-		cg.scores[i].impressiveCount = atoi(CG_Argv(i * SCSIZE + 11));
-		cg.scores[i].excellentCount = atoi(CG_Argv(i * SCSIZE + 12));
-		cg.scores[i].gauntletCount = atoi(CG_Argv(i * SCSIZE + 13));
-		cg.scores[i].defendCount = atoi(CG_Argv(i * SCSIZE + 14));
-		cg.scores[i].assistCount = atoi(CG_Argv(i * SCSIZE + 15));
-		cg.scores[i].perfect = atoi(CG_Argv(i * SCSIZE + 16));
-		cg.scores[i].captures = atoi(CG_Argv(i * SCSIZE + 17));
 
-		if (cgs.protocol == PROTOCOL_QL) {
-			cg.scores[i].alive = atoi(CG_Argv(i * SCSIZE + 18));
-			cg.scores[i].frags = atoi(CG_Argv(i * SCSIZE + 19));
-			cg.scores[i].deaths = atoi(CG_Argv(i * SCSIZE + 20));
-			cg.scores[i].bestWeapon = atoi(CG_Argv(i * SCSIZE + 21));
+		if (cgs.realProtocol >= 46) {
+			cg.scores[i].accuracy = atoi(CG_Argv(i * SCSIZE + 10));
+			cg.scores[i].impressiveCount = atoi(CG_Argv(i * SCSIZE + 11));
+			cg.scores[i].excellentCount = atoi(CG_Argv(i * SCSIZE + 12));
+			cg.scores[i].gauntletCount = atoi(CG_Argv(i * SCSIZE + 13));
+			cg.scores[i].defendCount = atoi(CG_Argv(i * SCSIZE + 14));
+			cg.scores[i].assistCount = atoi(CG_Argv(i * SCSIZE + 15));
+			cg.scores[i].perfect = atoi(CG_Argv(i * SCSIZE + 16));
+			cg.scores[i].captures = atoi(CG_Argv(i * SCSIZE + 17));
+
+#if 0
+			//FIXME what is the last one for protocol 46?
+			// 2024-09-08  so far only seen it set to 0, maybe accidentally enabled team area stuff
+			Com_Printf("  scores  clientNum %d : SC-15 %d\n", clientNum, atoi(CG_Argv(i * SCSIZE + 18)));
+#endif
+
+			if (cgs.protocolClass == PROTOCOL_QL) {
+				cg.scores[i].alive = atoi(CG_Argv(i * SCSIZE + 18));
+				cg.scores[i].frags = atoi(CG_Argv(i * SCSIZE + 19));
+				cg.scores[i].deaths = atoi(CG_Argv(i * SCSIZE + 20));
+				cg.scores[i].bestWeapon = atoi(CG_Argv(i * SCSIZE + 21));
+			}
 		}
 
 		//Com_Printf("score %d %s\n", i, cgs.clientinfo[cg.scores[i].client].name);
@@ -1048,6 +1062,29 @@ static void CG_ParseTeamInfo( void ) {
   0.1.0.263
   0.1.0.258
   0.1.0.256  QuakeLive  0.1.0.256 linux-i386 Aug 10 2009 19:56:10
+
+  Quake 3:
+
+  version\Q3 1.27h win-x86 Jan  8 2001  -- protocol 48
+  version\Q3 1.27g linux-i386 Dec 18 2000  -- protocol 48
+
+  version\Q3 1.25y win-x86 Oct 12 2000  -- protocol 46
+
+  version\Q3 1.25v win-x86 Oct  9 2000  -- protocol 46
+
+  version\Q3 1.25p win-x86 Sep 22 2000  -- protocol 46
+
+  version\Q3 1.17 win-x86 Apr 27 2000  -- protocol 45
+
+    https://discourse.ioquake.org/t/quake-3-changelog-version-history/375
+
+    * To help facilitate a rapid transition to the new codebase we have also bumped the network protocol version [to protocol 45]. This means 1.17 is not network compatibile with any prior version.
+
+  version\Q3 1.16n win-x86 Mar 14 2000  -- protocol 43
+
+  version\Q3 1.15c win-x86 Jan 13 2000  -- protocol 43
+
+  version\Q3 1.09 win-x86 Nov 12 1999  -- protocol 43
 */
 
 #define BUFFER_LENGTH 1024
@@ -1290,7 +1327,7 @@ void CG_LoadInfectedGameTypeModels (void)
 
 static void CG_SetScorePlace (void)
 {
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -1358,7 +1395,7 @@ void CG_ParseServerinfo (qboolean firstCall, qboolean seeking)
 
 	//FIXME PROTOCOL_Q3
 	cgs.gametype = atoi( Info_ValueForKey( info, "g_gametype" ) );
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (cgs.cpma) {
 			// done in CG_CpmaParseGameState()
 		} else if (cgs.q3plus) {
@@ -1430,7 +1467,7 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 				break;
 			}
 		}
-	} else if (cgs.protocol == PROTOCOL_QL) {
+	} else if (cgs.protocolClass == PROTOCOL_QL) {
 		if (cgs.gametype == 2) {
 			cgs.gametype = GT_RACE;
 		}
@@ -1459,7 +1496,7 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 		cgs.timelimit = atoi( Info_ValueForKey( info, "timelimit" ) );
 		cgs.realTimelimit = cgs.timelimit;
 
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			str = CG_ConfigString(CS_ROUND_STATUS);
 			cgs.roundNum = atoi(Info_ValueForKey(str, "round"));
 			cgs.roundTurn = atoi(Info_ValueForKey(str, "turn"));
@@ -1573,7 +1610,7 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 		Q_strncpyz(cgs.voteString, CG_ConfigString(CS_VOTE_STRING), sizeof(cgs.voteString));
 
 		//FIXME team votes
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			//FIXME team vote not seen yet in ql
 		} else {
 			cgs.teamVoteTime[0] = atoi(CG_ConfigStringNoConvert(CSQ3_TEAMVOTE_TIME + 0));
@@ -1589,7 +1626,7 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 		}
 	}
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		if (firstCall) {
 			Q_strncpyz(cgs.redTeamClanTag, "Red Team", sizeof(cgs.redTeamClanTag));
 			Q_strncpyz(cgs.redTeamName, "Red Team", sizeof(cgs.redTeamName));
@@ -1633,7 +1670,7 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 		}
 	}
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -1682,7 +1719,7 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 
 	//FIXME breaks with seeking
 	if (
-		(cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol <= 90)  &&
+		(cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol <= 90)  &&
 		(cgs.lastConnectedDisconnectedPlayer > -1  &&  cgs.lastConnectedDisconnectedPlayerName[0]  &&  cgs.lastConnectedDisconnectedPlayerClientInfo  &&  cgs.needToCheckSkillRating)
 		) {
 		for (i = 0, numClients = 0;  i < MAX_CLIENTS;  i++) {
@@ -1802,7 +1839,7 @@ void CG_ParseWarmup( void ) {
 	if (cgs.cpma) {
 		info = CG_ConfigStringNoConvert(CSCPMA_GAMESTATE);
 		warmup = atoi(Info_ValueForKey(info, "tw"));
-	} else if (cgs.protocol == PROTOCOL_QL) {
+	} else if (cgs.protocolClass == PROTOCOL_QL) {
 		info = CG_ConfigString( CS_WARMUP );
 		warmup = atoi(Info_ValueForKey(info, "time"));
 	} else {
@@ -1862,7 +1899,7 @@ Called on load to set the initial values from configure strings
 void CG_SetConfigValues( void ) {
 	const char *s;
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		cgs.scores1 = atoi( CG_ConfigString( CS_SCORES1 ) );
 		cgs.scores2 = atoi( CG_ConfigString( CS_SCORES2 ) );
 	} else if (!cgs.cpma) {
@@ -1882,7 +1919,7 @@ void CG_SetConfigValues( void ) {
 	}
 #endif
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		if (cgs.realProtocol < 91) {
 			cgs.dominationRedPoints = atoi(CG_ConfigStringNoConvert(CS_DOMINATION_RED_POINTS));
 			cgs.dominationBluePoints = atoi(CG_ConfigStringNoConvert(CS_DOMINATION_BLUE_POINTS));
@@ -1896,7 +1933,7 @@ void CG_SetConfigValues( void ) {
 	}
 
 	//FIXME GT_1FCTF see cg_servercmds.c
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		cgs.redPlayersLeft = atoi(CG_ConfigString(CS_RED_PLAYERS_LEFT));
 		cgs.bluePlayersLeft = atoi(CG_ConfigString(CS_BLUE_PLAYERS_LEFT));
 	} else {
@@ -1904,7 +1941,7 @@ void CG_SetConfigValues( void ) {
 		cgs.bluePlayersLeft = 0;
 	}
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -2019,7 +2056,7 @@ void CG_InterMissionHit (void)
 
 static qboolean CG_IsModelConfigString (int num, int *modelNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (num >= CSQ3_MODELS  &&  num < CSQ3_MODELS + MAX_MODELS) {
 			*modelNum = num - CSQ3_MODELS;
 			return qtrue;
@@ -2036,7 +2073,7 @@ static qboolean CG_IsModelConfigString (int num, int *modelNum)
 
 static qboolean CG_IsSoundConfigString (int num, int *soundNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (num >= CSQ3_SOUNDS  &&  num < CSQ3_SOUNDS + MAX_SOUNDS) {
 			*soundNum = num - CSQ3_SOUNDS;
 			return qtrue;
@@ -2053,7 +2090,7 @@ static qboolean CG_IsSoundConfigString (int num, int *soundNum)
 
 static qboolean CG_IsPlayerConfigString (int num, int *clientNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (num >= CSQ3_PLAYERS  &&  num < CSQ3_PLAYERS + MAX_CLIENTS) {
 			*clientNum = num - CSQ3_PLAYERS;
 			return qtrue;
@@ -2071,10 +2108,17 @@ static qboolean CG_IsPlayerConfigString (int num, int *clientNum)
 #if 0
 static qboolean CG_IsLocationConfigString (int num, int *locationNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
-		if (num >= CSQ3_LOCATIONS  &&  num < CSQ3_LOCATIONS + MAX_LOCATIONS) {
-			*locationNum = num - CSQ3_LOCATIONS;
-			return qtrue;
+	if (cgs.protocolClass == PROTOCOL_Q3) {
+		if (cgs.realProtocol < 46) {
+			if (num >= CSQ3DM3_LOCATIONS  &&  num < CSQ3DM3_LOCATIONS + MAX_LOCATIONS) {
+				*locationNum = num - CSQ3DM3_LOCATIONS;
+				return qtrue;
+			}
+		} else {
+			if (num >= CSQ3_LOCATIONS  &&  num < CSQ3_LOCATIONS + MAX_LOCATIONS) {
+				*locationNum = num - CSQ3_LOCATIONS;
+				return qtrue;
+			}
 		}
 	} else {
 		if (num >= CS_LOCATIONS  &&  num < CS_PARTICLES) {
@@ -2089,7 +2133,7 @@ static qboolean CG_IsLocationConfigString (int num, int *locationNum)
 
 static qboolean CG_IsTeamVoteTime (int num, int *newNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (num >= CSQ3_TEAMVOTE_TIME  &&  num <= CSQ3_TEAMVOTE_TIME + 1) {
 			*newNum = num - CSQ3_TEAMVOTE_TIME;
 			return qtrue;
@@ -2106,7 +2150,7 @@ static qboolean CG_IsTeamVoteTime (int num, int *newNum)
 
 static qboolean CG_IsTeamVoteYes (int num, int *newNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (num >= CSQ3_TEAMVOTE_YES  &&  num <= CSQ3_TEAMVOTE_YES + 1) {
 			*newNum = num - CSQ3_TEAMVOTE_YES;
 			return qtrue;
@@ -2123,7 +2167,7 @@ static qboolean CG_IsTeamVoteYes (int num, int *newNum)
 
 static qboolean CG_IsTeamVoteNo (int num, int *newNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (num >= CSQ3_TEAMVOTE_NO  &&  num <= CSQ3_TEAMVOTE_NO + 1) {
 			*newNum = num - CSQ3_TEAMVOTE_NO;
 			return qtrue;
@@ -2140,7 +2184,7 @@ static qboolean CG_IsTeamVoteNo (int num, int *newNum)
 
 static qboolean CG_IsTeamVoteString (int num, int *newNum)
 {
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (num >= CSQ3_TEAMVOTE_STRING  &&  num <= CSQ3_TEAMVOTE_STRING + 1) {
 			*newNum = num - CSQ3_TEAMVOTE_STRING;
 			return qtrue;
@@ -2489,7 +2533,7 @@ static void CG_ConfigStringModified( void ) {
 
 	Q_strncpyz(buf, str, sizeof(buf));
 
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		CG_ConfigStringIndexFromQ3(&num);
 		if (SC_Cvar_Get_Int("debug_configstring")) {
 			Com_Printf("%d  -->  %d\n", numOrig, num);
@@ -2516,13 +2560,13 @@ static void CG_ConfigStringModified( void ) {
 		CG_ParseWarmup();
 	} else if ( num == CS_SCORES1  &&  !cgs.cpma) {
 		cgs.scores1 = atoi( str );
-		if (cgs.protocol != PROTOCOL_QL) {
+		if (cgs.protocolClass != PROTOCOL_QL) {
 			cgs.firstPlace[0] = '\0';
 			cgs.secondPlace[0] = '\0';
 		}
 	} else if ( num == CS_SCORES2  &&  !cgs.cpma) {
 		cgs.scores2 = atoi( str );
-		if (cgs.protocol != PROTOCOL_QL) {
+		if (cgs.protocolClass != PROTOCOL_QL) {
 			cgs.firstPlace[0] = '\0';
 			cgs.secondPlace[0] = '\0';
 		}
@@ -2570,7 +2614,7 @@ static void CG_ConfigStringModified( void ) {
 		}
 
 		//FIXME quakelive has qtrue for intermission
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			if (*str) {
 				cg.intermissionStarted = qtrue;
 			} else {
@@ -2631,7 +2675,7 @@ static void CG_ConfigStringModified( void ) {
 	else if ( num == CS_SHADERSTATE ) {
 		CG_ShaderStateChanged();
 
-	} else if (cgs.protocol == PROTOCOL_Q3) {
+	} else if (cgs.protocolClass == PROTOCOL_Q3) {
 		if (cgs.cpma) {
 			if (CG_CpmaCs(num)) {
 				return;
@@ -3568,7 +3612,7 @@ static void CG_RemoveChatEscapeChar( char *text ) {
 	int len;
 	char orig[MAX_STRING_CHARS];
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -4259,7 +4303,7 @@ static void CG_ParseScores_Ffa (void)
 	cg.avgBluePing = 0;
 	//memset( cg.scores, 0, sizeof( cg.scores ) );
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		SCSIZE = 18;
 	} else {
 		SCSIZE = 14;
@@ -5635,7 +5679,7 @@ static void CG_ServerCommand( void ) {
 			CG_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
 		} else if (!Q_stricmpn(cmd, "team vote passed", 16)  &&  cg_audioAnnouncerTeamVote.integer) {
 			CG_StartLocalSound( cgs.media.votePassed, CHAN_ANNOUNCER );
-		} else if (cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  !Q_stricmpn(cmd, "Game has been forfeited", 23)) {
+		} else if (cgs.protocolClass == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  !Q_stricmpn(cmd, "Game has been forfeited", 23)) {
 			//FIXME bad hack
 			Com_Printf("^5forfeit...\n");
 			cg.duelForfeit = qtrue;
@@ -5866,7 +5910,7 @@ static void CG_ServerCommand( void ) {
 		}
 	}
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		// crash tutorial
 		if (!Q_stricmp(cmd, "playSound")) {
 			if (!cg_ignoreServerPlaySound.integer) {

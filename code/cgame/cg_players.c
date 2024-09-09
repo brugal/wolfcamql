@@ -1752,7 +1752,7 @@ void CG_NewClientInfo( int clientNum ) {
 	}
 
 	v = Info_ValueForKey(configstring, "c");
-	if (*v  &&  cgs.protocol == PROTOCOL_QL) {
+	if (*v  &&  cgs.protocolClass == PROTOCOL_QL) {
 		if (!Q_stricmp("n/a", v)) {
 			newInfo.countryFlag = trap_R_RegisterShaderNoMip("ui/assets/flags/none.png");
 		} else if (*v) {
@@ -1782,7 +1782,7 @@ void CG_NewClientInfo( int clientNum ) {
 	// '2' ignores only for Quake Live demos
 
 	if (cg_ignoreClientHeadModel.integer == 2) {
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			v = model;
 		} else {
 			v = hmodel;
@@ -1801,7 +1801,7 @@ void CG_NewClientInfo( int clientNum ) {
 		// unedited model
 
 		if (cg_ignoreClientHeadModel.integer == 2) {
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				v = model;
 			} else {
 				v = hmodel;
@@ -1929,7 +1929,7 @@ void CG_NewClientInfo( int clientNum ) {
 
 	// head model
 	if (cg_ignoreClientHeadModel.integer == 2) {
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			v = model;
 		} else {
 			v = hmodel;
@@ -3598,7 +3598,7 @@ void CG_FloatEntNumbers (void)
 			continue;
 		}
 
-		if (cent->currentState.eType >= ET_EVENTS) {
+		if ((cgs.realProtocol >= 46  &&  cent->currentState.eType >= ET_EVENTS)  ||  (cgs.realProtocol < 46  &&  cent->currentState.eType >= (ET_EVENTS - 1))) {
 			//continue;
 		}
 
@@ -6642,7 +6642,7 @@ void CG_CheckForModelChange (const centity_t *cent, clientInfo_t *ci, refEntity_
 		return;
 	}
 
-	if (cgs.protocol == PROTOCOL_QL  &&  cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_playerModelAllowServerOverride.integer) {
+	if (cgs.protocolClass == PROTOCOL_QL  &&  cgs.gametype == GT_RED_ROVER  &&  cgs.customServerSettings & SERVER_SETTING_INFECTED  &&  cg_playerModelAllowServerOverride.integer) {
 		if (ci->team == TEAM_RED) {
 			if (!Q_stricmp(ci->whiteName, "Infected Mastermind")) {
 				CG_CopyClientInfoModel(&cgs.urielInfected, ci);

@@ -22,6 +22,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "q_shared.h"
 #include "qcommon.h"
 
+#define BitValue(data, pos) ((data >> pos) & 1)
+#define BitSet(data, pos) (data |= (1 << pos))
+#define BitClear(data, pos) (data &= ~(1 << pos))
+
 static huffman_t		msgHuff;
 
 static qboolean			msgInit = qfalse;
@@ -153,23 +157,89 @@ void MSG_WriteBits( msg_t *msg, int value, int bits ) {
 			return;
 		}
 
-		if ( bits == 8 ) {
-			msg->data[msg->cursize] = value;
-			msg->cursize += 1;
-			msg->bit += 8;
-		} else if ( bits == 16 ) {
-			short temp = value;
+		if (com_protocol->integer > 48) {
+			if ( bits == 8 ) {
+				msg->data[msg->cursize] = value;
+				msg->cursize += 1;
+				msg->bit += 8;
+			} else if ( bits == 16 ) {
+				short temp = value;
 
-			CopyLittleShort( &msg->data[msg->cursize], &temp );
-			msg->cursize += 2;
-			msg->bit += 16;
-		} else if ( bits==32 ) {
-			CopyLittleLong( &msg->data[msg->cursize], &value );
-			msg->cursize += 4;
-			msg->bit += 32;
+				CopyLittleShort( &msg->data[msg->cursize], &temp );
+				msg->cursize += 2;
+				msg->bit += 16;
+			} else if ( bits==32 ) {
+				CopyLittleLong( &msg->data[msg->cursize], &value );
+				msg->cursize += 4;
+				msg->bit += 32;
+			} else {
+				MSG_Error(ERR_DROP, "can't write %d bits", bits);
+				return;
+			}
 		} else {
-			MSG_Error(ERR_DROP, "can't write %d bits", bits);
-			return;
+			if (bits > 32) {
+				MSG_Error(ERR_DROP, "can't write %d bits (more than 32)", bits);
+				return;
+			}
+
+			// data is written as little-endian
+			byte ldata[4];
+			const byte *p;
+
+			p = (byte *)&value;
+
+#if defined( Q3_BIG_ENDIAN )
+			ldata[0] = p[3];
+			ldata[1] = p[2];
+			ldata[2] = p[1];
+			ldata[3] = p[0];
+#else
+			ldata[0] = p[0];
+			ldata[1] = p[1];
+			ldata[2] = p[2];
+			ldata[3] = p[3];
+#endif
+
+			//FIXME special case where bit count aligns to byte boundary
+
+			//Com_Printf("  x writebits %d  %d, current bit %d\n", bits, value, msg->bit % 8);
+			
+			for (i = 0;  i < bits;  i++) {
+				byte *in, *out;
+				int inIndex, outIndex;
+				
+				out = &msg->data[msg->cursize];
+				outIndex = msg->bit % 8;
+				inIndex = i % 8;
+
+				if (i < 8) {
+					in = &ldata[0];
+				} else if (i < 16) {
+					in = &ldata[1];
+				} else if (i < 24) {
+					in = &ldata[2];
+				} else {
+					in = &ldata[3];
+				}
+
+				if (BitValue(*in, inIndex)) {
+					BitSet(*out, outIndex);
+				} else {
+					BitClear(*out, outIndex);
+				}
+
+				msg->bit += 1;
+				msg->cursize = msg->bit >> 3;
+			}
+			//FIXME declare variables above
+			//FIXME
+
+			if (0) {
+				MSG_Error(ERR_DROP, "FIXME write %d bits", bits);
+				return;
+			}
+			//msg->bit += bits;
+			//msg->cursize = msg->bit >> 3;
 		}
 	} else {
 		value &= (0xffffffff >> (32 - bits));
@@ -227,31 +297,76 @@ int MSG_ReadBits( msg_t *msg, int bits ) {
 			return 0;
 		}
 
-		if(bits==8)
-		{
-			value = msg->data[msg->readcount];
-			msg->readcount += 1;
-			msg->bit += 8;
-		}
-		else if(bits==16)
-		{
-			short temp;
+		//FIXME use real_protocol cvar?
+		if (com_protocol->integer > 48) {
+			if(bits==8)
+			{
+				value = msg->data[msg->readcount];
+				msg->readcount += 1;
+				msg->bit += 8;
+			}
+			else if(bits==16)
+			{
+				short temp;
 
-			CopyLittleShort(&temp, &msg->data[msg->readcount]);
-			value = temp;
-			msg->readcount += 2;
-			msg->bit += 16;
-		}
-		else if(bits==32)
-		{
-			CopyLittleLong(&value, &msg->data[msg->readcount]);
-			msg->readcount += 4;
-			msg->bit += 32;
+				CopyLittleShort(&temp, &msg->data[msg->readcount]);
+				value = temp;
+				msg->readcount += 2;
+				msg->bit += 16;
+			}
+			else if(bits==32)
+			{
+				CopyLittleLong(&value, &msg->data[msg->readcount]);
+				msg->readcount += 4;
+				msg->bit += 32;
+			}
+			else
+			{
+				MSG_Error(ERR_DROP, "can't read %d bits", bits);
+				return 0;
+			}
 		}
 		else
 		{
-			MSG_Error(ERR_DROP, "can't read %d bits", bits);
-			return 0;
+			if (bits > 32) {
+				MSG_Error(ERR_DROP, "can't read %d bits (more than 32)", bits);
+				return 0;
+			}
+
+			//Com_Printf("ppp %d\n", com_protocol->integer);
+
+			//FIXME declare variables above
+
+			// from Uber Demo Tools
+			uint64_t readBits = *(const uint64_t*)&msg->data[msg->readcount];
+
+#if defined( Q3_BIG_ENDIAN )
+			{
+				uint64_t tmp = readBits;
+				byte *to = (byte *)&readBits;
+				byte *from = (byte *)&tmp;
+
+				to[0] = from[7];
+				to[1] = from[6];
+				to[2] = from[5];
+				to[3] = from[4];
+
+				to[4] = from[3];
+				to[5] = from[2];
+				to[6] = from[1];
+				to[7] = from[0];
+			}
+#endif
+			const uint64_t bitPosition = (uint64_t)msg->bit & 7;
+			const uint64_t diff = 64 - (uint64_t)bits;
+			readBits >>= bitPosition;
+			readBits <<= diff;
+			readBits >>= diff;
+			value = (int32_t)readBits;
+			msg->bit += bits;
+			msg->readcount = msg->bit >> 3;
+
+			//Com_Printf("^3bits (%d): %d  readcount: %d  value %d\n", bits, msg->bit, msg->readcount, value);
 		}
 	} else {
 		nbits = 0;
@@ -1090,11 +1205,414 @@ netField_t	entityStateFieldsQ3[] =
 { NETF(frame), 16 },
 };
 
+// from Uber Demo Tools
+netField_t	entityStateFieldsQ3dm43[] =
+{
+	{ NETF(eType), 8 },
+	{ NETF(eFlags), 16 },
+	{ NETF(pos.trType), 8 },
+	{ NETF(pos.trTime), 32 },
+	{ NETF(pos.trDuration), 32 },
+	{ NETF(pos.trBase[0]), 0 },
+	{ NETF(pos.trBase[1]), 0 },
+	{ NETF(pos.trBase[2]), 0 },
+	{ NETF(pos.trDelta[0]), 0 },
+	{ NETF(pos.trDelta[1]), 0 },
+	{ NETF(pos.trDelta[2]), 0 },
+	{ NETF(apos.trType), 8 },
+	{ NETF(apos.trTime), 32 },
+	{ NETF(apos.trDuration), 32 },
+	{ NETF(apos.trBase[0]), 0 },
+	{ NETF(apos.trBase[1]), 0 },
+	{ NETF(apos.trBase[2]), 0 },
+	{ NETF(apos.trDelta[0]), 0 },
+	{ NETF(apos.trDelta[1]), 0 },
+	{ NETF(apos.trDelta[2]), 0 },
+	{ NETF(time), 32 },
+	{ NETF(time2), 32 },
+	{ NETF(origin[0]), 0 },
+	{ NETF(origin[1]), 0 },
+	{ NETF(origin[2]), 0 },
+	{ NETF(origin2[0]), 0 },
+	{ NETF(origin2[1]), 0 },
+	{ NETF(origin2[2]), 0 },
+	{ NETF(angles[0]), 0 },
+	{ NETF(angles[1]), 0 },
+	{ NETF(angles[2]), 0 },
+	{ NETF(angles2[0]), 0 },
+	{ NETF(angles2[1]), 0 },
+	{ NETF(angles2[2]), 0 },
+	{ NETF(otherEntityNum), 10 },
+	{ NETF(otherEntityNum2), 10 },
+	{ NETF(groundEntityNum), 10 },
+	{ NETF(loopSound), 8 },
+	{ NETF(constantLight), 32 },
+	{ NETF(modelindex), 8 },
+	{ NETF(modelindex2), 8 },
+	{ NETF(frame), 16 },
+	{ NETF(clientNum), 8 },
+	{ NETF(solid), 24 },
+	{ NETF(event), 10 },
+	{ NETF(eventParm), 8 },
+	{ NETF(powerups), 16 },
+	{ NETF(weapon), 8 },
+	{ NETF(legsAnim), 8 },
+	{ NETF(torsoAnim), 8 },
+};
+
+netField_t	entityStateFieldsQ3dm46[] =
+{
+	{ NETF(eType), 8 },
+	{ NETF(eFlags), 19 },  // Changed from 16 to 19...
+	{ NETF(pos.trType), 8 },
+	{ NETF(pos.trTime), 32 },
+	{ NETF(pos.trDuration), 32 },
+	{ NETF(pos.trBase[0]), 0 },
+	{ NETF(pos.trBase[1]), 0 },
+	{ NETF(pos.trBase[2]), 0 },
+	{ NETF(pos.trDelta[0]), 0 },
+	{ NETF(pos.trDelta[1]), 0 },
+	{ NETF(pos.trDelta[2]), 0 },
+	{ NETF(apos.trType), 8 },
+	{ NETF(apos.trTime), 32 },
+	{ NETF(apos.trDuration), 32 },
+	{ NETF(apos.trBase[0]), 0 },
+	{ NETF(apos.trBase[1]), 0 },
+	{ NETF(apos.trBase[2]), 0 },
+	{ NETF(apos.trDelta[0]), 0 },
+	{ NETF(apos.trDelta[1]), 0 },
+	{ NETF(apos.trDelta[2]), 0 },
+	{ NETF(time), 32 },
+	{ NETF(time2), 32 },
+	{ NETF(origin[0]), 0 },
+	{ NETF(origin[1]), 0 },
+	{ NETF(origin[2]), 0 },
+	{ NETF(origin2[0]), 0 },
+	{ NETF(origin2[1]), 0 },
+	{ NETF(origin2[2]), 0 },
+	{ NETF(angles[0]), 0 },
+	{ NETF(angles[1]), 0 },
+	{ NETF(angles[2]), 0 },
+	{ NETF(angles2[0]), 0 },
+	{ NETF(angles2[1]), 0 },
+	{ NETF(angles2[2]), 0 },
+	{ NETF(otherEntityNum), 10 },
+	{ NETF(otherEntityNum2), 10 },
+	{ NETF(groundEntityNum), 10 },
+	{ NETF(loopSound), 8 },
+	{ NETF(constantLight), 32 },
+	{ NETF(modelindex), 8 },
+	{ NETF(modelindex2), 8 },
+	{ NETF(frame), 16 },
+	{ NETF(clientNum), 8 },
+	{ NETF(solid), 24 },
+	{ NETF(event), 10 },
+	{ NETF(eventParm), 8 },
+	{ NETF(powerups), 16 },
+	{ NETF(weapon), 8 },
+	{ NETF(legsAnim), 8 },
+	{ NETF(torsoAnim), 8 },
+	{ NETF(generic1), 8 },   //FIXME not sure if this is the same as dm_48
+};
+
+// from Uber Demo Tools
+netField_t	entityStateFieldsQ3dm48[] =
+{
+	{ NETF(eType), 8 },
+	{ NETF(eFlags), 19 },  // Changed from 16 to 19...
+	{ NETF(pos.trType), 8 },
+	{ NETF(pos.trTime), 32 },
+	{ NETF(pos.trDuration), 32 },
+	{ NETF(pos.trBase[0]), 0 },
+	{ NETF(pos.trBase[1]), 0 },
+	{ NETF(pos.trBase[2]), 0 },
+	{ NETF(pos.trDelta[0]), 0 },
+	{ NETF(pos.trDelta[1]), 0 },
+	{ NETF(pos.trDelta[2]), 0 },
+	{ NETF(apos.trType), 8 },
+	{ NETF(apos.trTime), 32 },
+	{ NETF(apos.trDuration), 32 },
+	{ NETF(apos.trBase[0]), 0 },
+	{ NETF(apos.trBase[1]), 0 },
+	{ NETF(apos.trBase[2]), 0 },
+	{ NETF(apos.trDelta[0]), 0 },
+	{ NETF(apos.trDelta[1]), 0 },
+	{ NETF(apos.trDelta[2]), 0 },
+	{ NETF(time), 32 },
+	{ NETF(time2), 32 },
+	{ NETF(origin[0]), 0 },
+	{ NETF(origin[1]), 0 },
+	{ NETF(origin[2]), 0 },
+	{ NETF(origin2[0]), 0 },
+	{ NETF(origin2[1]), 0 },
+	{ NETF(origin2[2]), 0 },
+	{ NETF(angles[0]), 0 },
+	{ NETF(angles[1]), 0 },
+	{ NETF(angles[2]), 0 },
+	{ NETF(angles2[0]), 0 },
+	{ NETF(angles2[1]), 0 },
+	{ NETF(angles2[2]), 0 },
+	{ NETF(otherEntityNum), 10 },
+	{ NETF(otherEntityNum2), 10 },
+	{ NETF(groundEntityNum), 10 },
+	{ NETF(loopSound), 8 },
+	{ NETF(constantLight), 32 },
+	{ NETF(modelindex), 8 },
+	{ NETF(modelindex2), 8 },
+	{ NETF(frame), 16 },
+	{ NETF(clientNum), 8 },
+	{ NETF(solid), 24 },
+	{ NETF(event), 10 },
+	{ NETF(eventParm), 8 },
+	{ NETF(powerups), 16 },
+	{ NETF(weapon), 8 },
+	{ NETF(legsAnim), 8 },
+	{ NETF(torsoAnim), 8 },
+	{ NETF(generic1), 8 },
+};
+
 
 // if (int)f == f and (int)f + ( 1<<(FLOAT_INT_BITS-1) ) < ( 1 << FLOAT_INT_BITS )
 // the float will be sent with FLOAT_INT_BITS, otherwise all 32 bits will be sent
 #define	FLOAT_INT_BITS	13
 #define	FLOAT_INT_BIAS	(1<<(FLOAT_INT_BITS-1))
+
+// from Uber Demo Tools
+/*
+The entity number has already been read from the message, which
+is how the from state is identified.
+
+If the delta removes the entity, entityState_t->number will be set to MAX_GENTITIES-1
+
+Can go from either a baseline or a previous packet_entity
+*/
+
+// @NOTE: Same values for dm3 and dm_48 confirmed.
+static const uint8_t KnownBitMasks[32][7] =
+{
+	{ 0x60, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x60, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0xE1, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00 },
+	{ 0x60, 0x80, 0x00, 0x00, 0x00, 0x10, 0x00 },
+	{ 0xE0, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0xE0, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00 },
+	{ 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x20, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x60, 0x80, 0x00, 0x00, 0x01, 0x00, 0x00 },
+	{ 0xED, 0x07, 0x00, 0x00, 0x00, 0x80, 0x00 },
+	{ 0xE0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0xED, 0x07, 0x00, 0x00, 0x00, 0x30, 0x00 },
+	{ 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0xE0, 0xC0, 0x00, 0x00, 0x00, 0x10, 0x00 },
+	{ 0x60, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00 },
+	{ 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0xE1, 0x00, 0x00, 0x00, 0x04, 0x20, 0x00 },
+	{ 0xE1, 0x00, 0xC0, 0x01, 0x20, 0x20, 0x00 },
+	{ 0xE0, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00 },
+	{ 0x60, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x40, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x60, 0xC0, 0x00, 0x00, 0x01, 0x00, 0x00 },
+	{ 0x60, 0xC0, 0x00, 0x00, 0x00, 0x10, 0x00 },
+	{ 0x60, 0x80, 0x00, 0x00, 0x01, 0x00, 0x01 },
+	{ 0x60, 0x80, 0x00, 0x00, 0x00, 0x30, 0x00 },
+	{ 0xE0, 0x80, 0x00, 0x00, 0x00, 0x10, 0x00 },
+	{ 0x20, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x60, 0x80, 0x00, 0x00, 0x00, 0x00, 0x02 },
+	{ 0xE0, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00 }
+};
+
+#if 0
+static void print_byte_bits (uint8_t number)
+{
+        int i;
+        unsigned int mask;
+
+        // 1000 0000 0000 0000 0000 0000 0000 0000
+        mask = 1 << 7;
+
+        for (i = 0;  i < 8;  i++) {
+                Com_Printf("%c", number & mask ? '1' : '0');
+                //if (i > 0  &&  i % 4 == 3) {
+                //        Com_Printf(" ");
+                //}
+
+                mask >>= 1;
+        }
+}
+#endif
+
+void MSG_WriteDeltaEntityDM3( msg_t *msg, struct entityState_s *from, struct entityState_s *to,
+						   qboolean force ) {
+	int			i, j, lc;
+	int			numFields;
+	netField_t	*field;
+	int			trunc;
+	float		fullFloat;
+	int			*fromF, *toF;
+	int32_t	maskIndex;
+	uint8_t	bitMask[7] = { 0, 0, 0, 0, 0, 0, 0 };  // 50-51 bits used only
+	qboolean knownBitMaskFound = qfalse;
+
+	if (com_protocol->integer < 46) {
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm43);
+	} else if (com_protocol->integer == 46) {
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm46);
+	} else if (com_protocol->integer <= 48) {
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm48);
+	} else {
+		Com_Printf("FIXME MSG_WriteDeltaEntityDM3 unknown numFileds for protocol %d\n", com_protocol->integer);
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm48);
+	}
+
+	// all fields should be 32 bits to avoid any compiler packing issues
+	// the "number" field is not part of the field list
+	// if this assert fails, someone added a field to the entityState_t
+	// struct without updating the message fields
+	//assert( numFields + 1 == sizeof( *from )/4 );
+
+	// a NULL to is a delta remove message
+	if ( to == NULL ) {
+		if ( from == NULL ) {
+			return;
+		}
+		MSG_WriteBits( msg, from->number, GENTITYNUM_BITS );
+		MSG_WriteBits( msg, 1, 1 );
+		return;
+	}
+
+	if ( to->number < 0 || to->number >= MAX_GENTITIES ) {
+		MSG_Error (ERR_FATAL, "MSG_WriteDeltaEntityDM3: Bad entity number: %i", to->number );
+		return;
+	}
+
+	lc = 0;
+	// build the change vector as bytes so it is endien independent
+	if (com_protocol->integer < 48) {
+		field = entityStateFieldsQ3dm43;
+	} else if (com_protocol->integer == 48) {
+		field = entityStateFieldsQ3dm48;
+	} else {
+		Com_Printf("FIXME MSG_WriteDeltaEntityDM3 unknown field for protocol %d\n", com_protocol->integer);
+		field = entityStateFieldsQ3dm48;
+	}
+
+	for ( i = 0 ; i < numFields ; i++, field++ ) {
+		const int32_t byteIndex = i >> 3;
+		const int32_t bitIndex = i & 7;
+
+		fromF = (int *)( (byte *)from + field->offset );
+		toF = (int *)( (byte *)to + field->offset );
+		if ( *fromF != *toF ) {
+			lc = i+1;
+			// set bit
+			bitMask[byteIndex] |= (1 << bitIndex);
+		} else {
+			// clear bit
+			bitMask[byteIndex] &= ~(1 << bitIndex);
+		}
+	}
+
+	if ( lc == 0 ) {
+		// nothing at all changed
+		if ( !force ) {
+			return;		// nothing at all
+		}
+		// write two bits for no change
+		MSG_WriteBits( msg, to->number, GENTITYNUM_BITS );
+		MSG_WriteBits( msg, 0, 1 );		// not removed
+		MSG_WriteBits( msg, 0, 1 );		// no delta
+		return;
+	}
+
+	MSG_WriteBits( msg, to->number, GENTITYNUM_BITS );
+	MSG_WriteBits( msg, 0, 1 );			// not removed
+	MSG_WriteBits( msg, 1, 1 );			// we have a delta
+
+	// check known bit masks
+	for (i = 0;  i < 32;  i++) {
+		for (j = 0;  j < 7;  j++) {
+			if (bitMask[j] != KnownBitMasks[i][j]) {
+				break;
+			}
+		}
+		if (j >= 7) {
+			knownBitMaskFound = qtrue;
+			break;
+		}
+	}
+
+	//if (i >= 0x1F) {
+	if (!knownBitMaskFound) {
+		maskIndex = 0x1F;
+	} else {
+		maskIndex = i;
+	}
+
+	MSG_WriteBits(msg, maskIndex, 5);
+
+	if (maskIndex == 0x1F) {
+		for (i = 0;  i < 6;  i++) {
+			MSG_WriteBits(msg, bitMask[i], 8);
+		}
+
+		//FIXME	what is condisdered Dm3 ?
+		if (com_protocol->integer < 46) {
+			MSG_WriteBits(msg, bitMask[6], 2);
+		} else {
+			MSG_WriteBits(msg, bitMask[6], 3);
+		}
+	}
+
+	if (com_protocol->integer < 46) {
+		field = entityStateFieldsQ3dm43;
+	} else if (com_protocol->integer == 46) {
+		field = entityStateFieldsQ3dm46;
+	} else if (com_protocol->integer <= 48) {
+		field = entityStateFieldsQ3dm48;
+	} else {
+		Com_Printf("FIXME MSG_WriteDeltaEntityDM3 unknown field for protocol %d\n", com_protocol->integer);
+		field = entityStateFieldsQ3dm48;
+	}
+
+	for ( i = 0; i < lc ; i++, field++ ) {
+		const int32_t byteIndex = i >> 3;
+		const int32_t bitIndex = i & 7;
+
+		fromF = (int *)( (byte *)from + field->offset );
+		toF = (int *)( (byte *)to + field->offset );
+
+		//if ( *fromF == *toF ) {
+		//	MSG_WriteBits( msg, 0, 1 );     // no change
+		//	continue;
+		//}
+
+		if ((bitMask[byteIndex] & (1 << bitIndex)) == 0) {
+			continue;
+		}
+
+		if ( field->bits == 0 ) {
+			// float
+			fullFloat = *(float *)toF;
+			trunc = (int)fullFloat;
+
+			if ( trunc == fullFloat && trunc + FLOAT_INT_BIAS >= 0 &&
+				 trunc + FLOAT_INT_BIAS < ( 1 << FLOAT_INT_BITS ) ) {
+				// send as small integer
+				MSG_WriteBits(msg, 0, 1);
+				MSG_WriteBits( msg, trunc + FLOAT_INT_BIAS, FLOAT_INT_BITS );
+			} else {
+				// send as full floating point value
+				MSG_WriteBits( msg, 1, 1 );
+				MSG_WriteBits( msg, *toF, 32 );
+			}
+		} else {
+			MSG_WriteBits(msg, *toF, field->bits);
+		}
+	}
+}
 
 /*
 ==================
@@ -1115,6 +1633,11 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 	int			trunc;
 	float		fullFloat;
 	int			*fromF, *toF;
+
+	if (com_protocol->integer >= 43  &&  com_protocol->integer <= 48) {
+		MSG_WriteDeltaEntityDM3(msg, from, to, force);
+		return;
+	}
 
 	//numFields = ARRAY_LEN( entityStateFields );
 	if (com_protocol->integer == PROTOCOL_Q3) {
@@ -1242,6 +1765,170 @@ void MSG_WriteDeltaEntity( msg_t *msg, struct entityState_s *from, struct entity
 	}
 }
 
+// based on Uber Demo Tools information
+static void MSG_ReadDeltaEntityDM3( msg_t *msg, entityState_t *from, entityState_t *to, int number) {
+	int32_t i;
+	int			numFields;
+	netField_t	*field;
+	int			print;
+	int			trunc;
+	int			startBit, endBit;
+	int			deltaFound;
+
+	int32_t maskIndex;
+	uint8_t bitMask[7];  // 50-51 bits used only
+
+	//Com_Printf("^3start: %d + %d\n", msg->readcount, msg->bit);
+	startBit = msg->bit;
+
+	// check for a remove
+	if ( MSG_ReadBits( msg, 1 ) == 1 ) {
+		Com_Memset( to, 0, sizeof( *to ) );
+		to->number = MAX_GENTITIES - 1;
+		if ( cl_shownet && ( cl_shownet->integer >= 2 || cl_shownet->integer == -1 ) ) {
+			Com_Printf( "%3i: #%-3i remove\n", msg->readcount, number );
+		}
+		return;
+	}
+
+	// check for no delta
+	deltaFound = MSG_ReadBits(msg, 1);
+	//Com_Printf("deltaFound: %d\n", deltaFound);
+	if ( deltaFound == 0 ) {
+		*to = *from;
+		to->number = number;
+		//Com_Printf("no delta for %d\n", number);
+		return;
+	}
+
+#if 0
+	// shownet 2/3 will interleave with other printed info, -1 will
+	// just print the delta records`
+	if ( cl_shownet && ( cl_shownet->integer >= 2 || cl_shownet->integer == -1 ) ) {
+		print = 1;
+		Com_Printf( "%3i: #%-3i ", msg->readcount, to->number );
+	} else {
+		print = 0;
+	}
+#endif
+
+	to->number = number;
+
+	maskIndex = MSG_ReadBits(msg, 5);
+
+#if 1
+	// shownet 2/3 will interleave with other printed info, -1 will
+	// just print the delta records`
+	if ( cl_shownet && ( cl_shownet->integer >= 2 || cl_shownet->integer == -1 ) ) {
+		print = 1;
+		Com_Printf( "%3i: #%-3i ", msg->readcount, to->number );
+
+		//Com_Printf( "%3i: #%-3i ", (msg->bit + (8 - 1)) / 8, to->number );
+		//Com_Printf( "%3f: #%-3i ", (float)msg->bit / 8.0f, to->number );
+
+		// match quake 3 :
+		//Com_Printf( "%3i: #%-3i ", (msg->bit + 2) / 8, to->number );
+
+		//Com_Printf(" (%d) ", msg->bit);
+	} else {
+		print = 0;
+	}
+#endif
+
+	if (maskIndex == 0x1F) {
+		for (i = 0;  i < 6;  i++) {
+			bitMask[i] = (uint8_t)MSG_ReadBits(msg, 8);
+		}
+		//FIXME what is considered Dm3 ?
+		// bitMask[6] = (u8)ReadBits(_protocol == udtProtocol::Dm3 ? 2 : 3);
+
+		bitMask[6] = (uint8_t)MSG_ReadBits(msg, com_protocol->integer < 46 ? 2 : 3);
+	} else {
+		//Com_Printf("xxxx not 0x1F  %d\n", maskIndex);
+		// Let's not use memcpy for 7 bytes...
+		for (i = 0;  i < 7;  i++) {
+			bitMask[i] = KnownBitMasks[maskIndex][i];
+		}
+	}
+
+#if 0
+	for (i = 0;  i < 7;  i++) {
+		Com_Printf("bitMask[%d] ", i);
+		print_byte_bits(bitMask[i]);
+		Com_Printf("\n");
+	}
+
+	Com_Printf("\n");
+#endif
+
+	if (com_protocol->integer < 46) {
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm43);
+		field = entityStateFieldsQ3dm43;
+	} else if (com_protocol->integer == 46) {
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm46);
+		field = entityStateFieldsQ3dm46;
+	} else if (com_protocol->integer <= 48) {
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm48);
+		field = entityStateFieldsQ3dm48;
+	} else {
+		//FIXME
+		Com_Printf("FIXME ReadDeltaEntityDm3 unknown numFields and field for protocol %d\n", com_protocol->integer);
+		numFields = ARRAY_LEN(entityStateFieldsQ3dm48);
+		field = entityStateFieldsQ3dm48;
+	}
+
+	//Com_Printf("numFields %d\n", numFields);
+	if ( print ) {
+		Com_Printf("<uc> ");
+	}
+
+	for (i = 0;  i < numFields;  i++, field++) {
+		const int32_t *fromF = (int32_t *)((uint8_t *)from + field->offset);
+		int32_t *toF = (int32_t *)((uint8_t *)to + field->offset);
+
+		const int32_t byteIndex = i >> 3;
+		const int32_t bitIndex = i & 7;
+		if ((bitMask[byteIndex] & (1 << bitIndex)) == 0) {
+			*toF = *fromF;
+			continue;
+		}
+
+		//Com_Printf("fname %s\n", field->name);
+
+		if (field->bits == 0) {
+			// float
+			if ( MSG_ReadBits( msg, 1 ) == 0 ) {
+				// integral float
+				trunc = MSG_ReadBits( msg, FLOAT_INT_BITS );
+				// bias to allow equal parts positive and negative
+				trunc -= FLOAT_INT_BIAS;
+				*(float *)toF = trunc;
+				if ( print ) {
+					Com_Printf( "%s:%i ", field->name, trunc );
+				}
+			} else {
+				// full floating point value
+				*toF = MSG_ReadBits( msg, 32 );
+				if ( print ) {
+					Com_Printf( "%s:%f ", field->name, *(float *)toF );
+				}
+			}
+		} else {
+			*toF = MSG_ReadBits(msg, field->bits);
+			if ( print ) {
+				Com_Printf( "%s:%i ", field->name, *toF );
+			}
+		}
+	}
+
+	if ( print ) {
+		endBit = msg->bit;
+		Com_Printf( " (%i bits)\n", endBit - startBit  );
+	}
+
+	return;
+}
+
 /*
 ==================
 MSG_ReadDeltaEntity
@@ -1267,6 +1954,12 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 
 	if ( number < 0 || number >= MAX_GENTITIES) {
 		MSG_Error( ERR_DROP, "Bad delta entity number: %i", number );
+		return;
+	}
+
+	if (com_protocol->integer >= 43  &&  com_protocol->integer <= 48) {
+		//Com_Printf("dm3....\n");
+		MSG_ReadDeltaEntityDM3(msg, from, to, number);
 		return;
 	}
 
@@ -1310,6 +2003,7 @@ void MSG_ReadDeltaEntity( msg_t *msg, entityState_t *from, entityState_t *to,
 	lc = MSG_ReadByte(msg);
 
 	if (lc > numFields  ||  lc < 0) {
+		Com_Printf("com_protocol %d\n", com_protocol->integer);
 		MSG_Error(ERR_DROP, "invalid entityState field count: %d, numFields %d", lc, numFields);
 		//Com_Printf("^3invalid entityState field count: %d, numFields %d", lc, numFields);
 		return;
@@ -1599,6 +2293,325 @@ netField_t	playerStateFieldsQ3[] =
 { PSF(loopSound), 16 },
 };
 
+// from Uber Demo Tools
+netField_t	playerStateFieldsQ3dm43[] =
+{
+	{ PSF(commandTime), 32 },
+	{ PSF(pm_type), 8 },
+	{ PSF(bobCycle), 8 },
+	{ PSF(pm_flags), 16 },
+	{ PSF(pm_time), 16 },
+	{ PSF(origin[0]), 0 },
+	{ PSF(origin[1]), 0 },
+	{ PSF(origin[2]), 0 },
+	{ PSF(velocity[0]), 0 },
+	{ PSF(velocity[1]), 0 },
+	{ PSF(velocity[2]), 0 },
+	{ PSF(weaponTime), 16 },
+	{ PSF(gravity), 16 },
+	{ PSF(speed), 16 },
+	{ PSF(delta_angles[0]), 16 },
+	{ PSF(delta_angles[1]), 16 },
+	{ PSF(delta_angles[2]), 16 },
+	{ PSF(groundEntityNum), 10 },
+	{ PSF(legsTimer), 8 },
+	{ PSF(torsoTimer), 12 },
+	{ PSF(legsAnim), 8 },
+	{ PSF(torsoAnim), 8 },
+	{ PSF(movementDir), 4 },
+	{ PSF(eFlags), 16 },
+	{ PSF(eventSequence), 16 },
+	{ PSF(events[0]), 8 },
+	{ PSF(events[1]), 8 },
+	{ PSF(eventParms[0]), 8 },
+	{ PSF(eventParms[1]), 8 },
+	{ PSF(externalEvent), 8 },
+	{ PSF(externalEventParm), 8 },
+	{ PSF(clientNum), 8 },
+	{ PSF(weapon), 5 },
+	{ PSF(weaponstate), 4 },
+	{ PSF(viewangles[0]), 0 },
+	{ PSF(viewangles[1]), 0 },
+	{ PSF(viewangles[2]), 0 },
+	{ PSF(viewheight), 8 },
+	{ PSF(damageEvent), 8 },
+	{ PSF(damageYaw), 8 },
+	{ PSF(damagePitch), 8 },
+	{ PSF(damageCount), 8 },
+	{ PSF(grapplePoint[0]), 0 },
+	{ PSF(grapplePoint[1]), 0 },
+	{ PSF(grapplePoint[2]), 0 },
+};
+
+netField_t	playerStateFieldsQ3dm46[] =
+{
+	{ PSF(commandTime), 32 },
+	{ PSF(pm_type), 8 },
+	{ PSF(bobCycle), 8 },
+	{ PSF(pm_flags), 16 },
+	{ PSF(pm_time), 16 },  //FIXME maybe negative like dm_48 ?
+	{ PSF(origin[0]), 0 },
+	{ PSF(origin[1]), 0 },
+	{ PSF(origin[2]), 0 },
+	{ PSF(velocity[0]), 0 },
+	{ PSF(velocity[1]), 0 },
+	{ PSF(velocity[2]), 0 },
+	{ PSF(weaponTime), 16 },  //FIXME maybe negative like dm_48?
+	{ PSF(gravity), 16 },
+	{ PSF(speed), 16 },
+	{ PSF(delta_angles[0]), 16 },
+	{ PSF(delta_angles[1]), 16 },
+	{ PSF(delta_angles[2]), 16 },
+	{ PSF(groundEntityNum), 10 },
+	{ PSF(legsTimer), 8 },
+	{ PSF(torsoTimer), 12 },
+	{ PSF(legsAnim), 8 },
+	{ PSF(torsoAnim), 8 },
+	{ PSF(movementDir), 4 },
+	{ PSF(eFlags), 16 },
+	{ PSF(eventSequence), 16 },
+	{ PSF(events[0]), 8 },
+	{ PSF(events[1]), 8 },
+	{ PSF(eventParms[0]), 8 },
+	{ PSF(eventParms[1]), 8 },
+	{ PSF(externalEvent), 10 },  //FIXME maybe changed to 10 like dm_48 ?
+	{ PSF(externalEventParm), 8 },
+	{ PSF(clientNum), 8 },
+	{ PSF(weapon), 5 },
+	{ PSF(weaponstate), 4 },
+	{ PSF(viewangles[0]), 0 },
+	{ PSF(viewangles[1]), 0 },
+	{ PSF(viewangles[2]), 0 },
+	{ PSF(viewheight), -8 },  // now negative?
+	{ PSF(damageEvent), 8 },
+	{ PSF(damageYaw), 8 },
+	{ PSF(damagePitch), 8 },
+	{ PSF(damageCount), 8 },
+	{ PSF(grapplePoint[0]), 0 },
+	{ PSF(grapplePoint[1]), 0 },
+	{ PSF(grapplePoint[2]), 0 },
+	{ PSF(jumppad_ent), 10 },  // new
+	{ PSF(loopSound), 16 },    // new
+};
+
+// from Uber Demo Tools
+netField_t	playerStateFieldsQ3dm48[] =
+{
+	{ PSF(commandTime), 32 },
+	{ PSF(pm_type), 8 },
+	{ PSF(bobCycle), 8 },
+	{ PSF(pm_flags), 16 },
+	{ PSF(pm_time), -16 },  //FIXME wc negative?
+	{ PSF(origin[0]), 0 },
+	{ PSF(origin[1]), 0 },
+	{ PSF(origin[2]), 0 },
+	{ PSF(velocity[0]), 0 },
+	{ PSF(velocity[1]), 0 },
+	{ PSF(velocity[2]), 0 },
+	{ PSF(weaponTime), -16 },  //FIXME wc negative?
+	{ PSF(gravity), 16 },
+	{ PSF(speed), 16 },
+	{ PSF(delta_angles[0]), 16 },
+	{ PSF(delta_angles[1]), 16 },
+	{ PSF(delta_angles[2]), 16 },
+	{ PSF(groundEntityNum), 10 },
+	{ PSF(legsTimer), 8 },
+	{ PSF(torsoTimer), 12 },
+	{ PSF(legsAnim), 8 },
+	{ PSF(torsoAnim), 8 },
+	{ PSF(movementDir), 4 },
+	{ PSF(eFlags), 16 },
+	{ PSF(eventSequence), 16 },
+	{ PSF(events[0]), 8 },
+	{ PSF(events[1]), 8 },
+	{ PSF(eventParms[0]), 8 },
+	{ PSF(eventParms[1]), 8 },
+	{ PSF(externalEvent), 10 },  // Changed from 8 to 10...
+	{ PSF(externalEventParm), 8 },
+	{ PSF(clientNum), 8 },
+	{ PSF(weapon), 5 },
+	{ PSF(weaponstate), 4 },
+	{ PSF(viewangles[0]), 0 },
+	{ PSF(viewangles[1]), 0 },
+	{ PSF(viewangles[2]), 0 },
+	{ PSF(viewheight), -8 },  //FIXME wc negative?
+	{ PSF(damageEvent), 8 },
+	{ PSF(damageYaw), 8 },
+	{ PSF(damagePitch), 8 },
+	{ PSF(damageCount), 8 },
+	{ PSF(grapplePoint[0]), 0 },
+	{ PSF(grapplePoint[1]), 0 },
+	{ PSF(grapplePoint[2]), 0 },
+	{ PSF(jumppad_ent), 10 },  // New in dm_48.
+	{ PSF(loopSound), 16 },    // New in dm_48.
+	{ PSF(generic1), 8 },      // New in dm_48.
+};
+
+
+void MSG_WriteDeltaPlayerstateDM3( msg_t *msg, struct playerState_s *from, struct playerState_s *to ) {
+	int				i;
+	playerState_t	dummy;
+	int				statsbits;
+	int				persistantbits;
+	int				ammobits;
+	int				powerupbits;
+	int				numFields;
+	netField_t		*field;
+	int				*fromF, *toF;
+	float			fullFloat;
+	int				trunc;
+
+	if (!from) {
+		from = &dummy;
+		Com_Memset (&dummy, 0, sizeof(dummy));
+	}
+
+	//FIXME double check 45, and what about 47?
+	if (com_protocol->integer < 46) {
+		numFields = ARRAY_LEN(playerStateFieldsQ3dm43);
+	} else if (com_protocol->integer == 46) {
+		numFields = ARRAY_LEN(playerStateFieldsQ3dm46);
+	} else if (com_protocol->integer <= 48) {
+		numFields = ARRAY_LEN( playerStateFieldsQ3dm48);
+	} else {
+		//FIXME
+		Com_Printf("FIXME MSG_WriteDeltaPlayerstateDM3 unknown numFields for protocol %d\n", com_protocol->integer);
+		numFields = ARRAY_LEN(playerStateFieldsQ3dm48);
+	}
+
+	if (com_protocol->integer < 46) {
+		field = playerStateFieldsQ3dm43;
+	} else if (com_protocol->integer == 46) {
+		field = playerStateFieldsQ3dm46;
+	} else if (com_protocol->integer <= 48) {
+		field = playerStateFieldsQ3dm48;
+	} else {  // also qldm 73
+		//FIXME
+		Com_Printf("FIXME MSG_WriteDeltaPlayerstateDM3 unknown field for protocol %d\n", com_protocol->integer);
+		field = playerStateFieldsQ3dm48;
+	}
+
+	for (i = 0;  i < numFields;  i++, field++) {
+		fromF = (int *)( (byte *)from + field->offset );
+		toF = (int *)( (byte *)to + field->offset );
+
+		if (*fromF == *toF) {
+			MSG_WriteBits(msg, 0, 1);  // no change
+			continue;
+		}
+
+		MSG_WriteBits(msg, 1, 1);  // changed
+
+		if (field->bits == 0) {
+			// float
+			fullFloat = *(float *)toF;
+			trunc = (int)fullFloat;
+
+			if ( trunc == fullFloat && trunc + FLOAT_INT_BIAS >= 0 &&
+				 trunc + FLOAT_INT_BIAS < ( 1 << FLOAT_INT_BITS ) ) {
+				// send as small integer
+				MSG_WriteBits( msg, 0, 1 );
+				MSG_WriteBits( msg, trunc + FLOAT_INT_BIAS, FLOAT_INT_BITS );
+
+			} else {
+				// send as full floating point value
+				MSG_WriteBits( msg, 1, 1 );
+				MSG_WriteBits( msg, *toF, 32 );
+			}
+
+		} else {
+			// integer
+			MSG_WriteBits( msg, *toF, field->bits );
+		}
+	}
+
+	//
+	// send the arrays
+	//
+	statsbits = 0;
+	for (i=0 ; i<MAX_STATS ; i++) {
+		if (to->stats[i] != from->stats[i]) {
+			statsbits |= 1<<i;
+		}
+	}
+	persistantbits = 0;
+	for (i=0 ; i<MAX_PERSISTANT ; i++) {
+		if (to->persistant[i] != from->persistant[i]) {
+			persistantbits |= 1<<i;
+		}
+	}
+	ammobits = 0;
+	for (i=0 ; i<MAX_WEAPONS ; i++) {
+		if (to->ammo[i] != from->ammo[i]) {
+			ammobits |= 1<<i;
+		}
+	}
+	powerupbits = 0;
+	for (i=0 ; i<MAX_POWERUPS ; i++) {
+		if (to->powerups[i] != from->powerups[i]) {
+			powerupbits |= 1<<i;
+		}
+	}
+
+	if (!statsbits && !persistantbits && !ammobits && !powerupbits) {
+		MSG_WriteBits( msg, 0, 1 );	// no change
+		oldsize += 4;
+		return;
+	}
+
+	// not in protocol <= 48
+	//MSG_WriteBits( msg, 1, 1 );	// changed
+
+	if ( statsbits ) {
+		MSG_WriteBits( msg, 1, 1 );	// changed
+		MSG_WriteBits( msg, statsbits, 16 );  // 16 : MAX_STATS
+		for (i=0 ; i<MAX_STATS ; i++)
+			if (statsbits & (1<<i) ) {
+				MSG_WriteBits (msg, to->stats[i], -16);
+			}
+	} else {
+		MSG_WriteBits( msg, 0, 1 );	// no change
+	}
+
+
+	if ( persistantbits ) {
+		MSG_WriteBits( msg, 1, 1 );	// changed
+		MSG_WriteBits( msg, persistantbits, 16 );
+		for (i=0 ; i<MAX_PERSISTANT ; i++)
+			if (persistantbits & (1<<i) ) {
+				// @TODO: Can those be negative too?
+				MSG_WriteBits (msg, to->persistant[i], 16);
+			}
+	} else {
+		MSG_WriteBits( msg, 0, 1 );	// no change
+	}
+
+
+	if ( ammobits ) {
+		MSG_WriteBits( msg, 1, 1 );	// changed
+		MSG_WriteBits( msg, ammobits, 16 );
+		for (i=0 ; i<MAX_WEAPONS ; i++)
+			if (ammobits & (1<<i) ) {
+				// @TODO: Can those be negative too?
+				MSG_WriteBits (msg, to->ammo[i], -16);
+			}
+	} else {
+		MSG_WriteBits( msg, 0, 1 );	// no change
+	}
+
+
+	if ( powerupbits ) {
+		MSG_WriteBits( msg, 1, 1 );	// changed
+		MSG_WriteBits( msg, powerupbits, 16 );
+		for (i=0 ; i<MAX_POWERUPS ; i++)
+			if (powerupbits & (1<<i) ) {
+				MSG_WriteBits( msg, to->powerups[i], 32 );
+			}
+	} else {
+		MSG_WriteBits( msg, 0, 1 );	// no change
+	}
+}
+
 /*
 =============
 MSG_WriteDeltaPlayerstate
@@ -1617,6 +2630,11 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 	int				*fromF, *toF;
 	float			fullFloat;
 	int				trunc, lc;
+
+	if (com_protocol->integer >= 43  &&  com_protocol->integer <= 48) {
+		MSG_WriteDeltaPlayerstateDM3(msg, from, to);
+		return;
+	}
 
 	if (!from) {
 		from = &dummy;
@@ -1773,6 +2791,155 @@ void MSG_WriteDeltaPlayerstate( msg_t *msg, struct playerState_s *from, struct p
 	}
 }
 
+static void MSG_ReadDeltaPlayerstateDM3 (msg_t *msg, playerState_t *from, playerState_t *to ) {
+	int			i;
+	netField_t	*field;
+	int			numFields;
+	int			startBit, endBit;
+	int			print;
+	int			trunc;
+	int32_t mask;
+
+	// already done
+#if 0
+	if ( !from ) {
+		from = &dummy;
+		Com_Memset( &dummy, 0, sizeof( dummy ) );
+	}
+	*to = *from;
+#endif
+
+	startBit = msg->bit;
+
+	// shownet 2/3 will interleave with other printed info, -2 will
+	// just print the delta records
+	if ( cl_shownet && ( cl_shownet->integer >= 2 || cl_shownet->integer == -2 ) ) {
+		print = 1;
+		Com_Printf( "%3i: playerstate ", msg->readcount );
+	} else {
+		print = 0;
+	}
+
+	if (com_protocol->integer < 46) {
+		numFields = ARRAY_LEN(playerStateFieldsQ3dm43);
+		field = playerStateFieldsQ3dm43;
+	} else if (com_protocol->integer == 46) {
+		numFields = ARRAY_LEN(playerStateFieldsQ3dm46);
+		field = playerStateFieldsQ3dm46;
+	} else if (com_protocol->integer <= 48) {
+		numFields = ARRAY_LEN(playerStateFieldsQ3dm48);
+		field = playerStateFieldsQ3dm48;
+	} else {
+		//FIXME
+		Com_Printf("FIXME MSG_ReadDeltaPlayerstateDM3 unknown numFields and field for protocol %d\n", com_protocol->integer);
+		numFields = ARRAY_LEN(playerStateFieldsQ3dm48);
+		field = playerStateFieldsQ3dm48;
+	}
+
+	for (i = 0;  i < numFields;  i++, field++) {
+		int32_t *toF;
+
+		if (!MSG_ReadBits(msg, 1)) {
+			//Com_Printf("no %s\n", field->name);
+			continue;
+		}
+
+		toF = (int32_t *)((uint8_t *)to + field->offset);
+		//Com_Printf("field->name %s\n", field->name);
+
+		// *toF = ReadField(filed->bits);
+
+		if (field->bits == 0) {
+			// float
+			if ( MSG_ReadBits( msg, 1 ) == 0 ) {
+				// integral float
+				trunc = MSG_ReadBits( msg, FLOAT_INT_BITS );
+				// bias to allow equal parts positive and negative
+				trunc -= FLOAT_INT_BIAS;
+				*(float *)toF = trunc;
+				if ( print ) {
+					Com_Printf( "%s:%i ", field->name, trunc );
+				}
+			} else {
+				// full floating point value
+				*toF = MSG_ReadBits( msg, 32 );
+				if ( print ) {
+					Com_Printf( "%s:%f ", field->name, *(float *)toF );
+				}
+			}
+		} else {
+			*toF = MSG_ReadBits(msg, field->bits);
+			if ( print ) {
+				Com_Printf( "%s:%i ", field->name, *toF );
+			}
+		}
+	}
+
+	//FIXME MSG_ReadShort() instead of MSG_ReadBits(16) ?  short() has overflow check to return -1
+
+	//Com_Printf( " temppppp  (%i bits)\n", msg->bit - startBit  );
+
+	//Com_Printf("    next bit:  %d\n", MSG_ReadBits(msg, 1));
+
+	// Stats array.
+	if (MSG_ReadBits(msg, 1)) {
+		LOG("PS_STATS");
+
+		mask = MSG_ReadBits(msg, 16);
+		for (i = 0;  i < MAX_STATS;  i++) {
+			if ((mask & (1 << i)) != 0) {   // bit set?
+				// Stats can be negative
+				//  to->stats[i] = ReadSignedShort();
+				//   ReadBits(-16)
+				to->stats[i] = MSG_ReadBits(msg, -16);
+			}
+		}
+	}
+
+	// Persistent array.
+	if (MSG_ReadBits(msg, 1)) {
+		LOG("PS_PERSISTANT");
+
+		mask = MSG_ReadBits(msg, 16);
+		for (i = 0;  i < MAX_PERSISTANT;  i++) {
+			if ((mask & (1 << i)) != 0) {   // bit set?
+				// @TODO: Can those be negative too?
+				to->persistant[i] = MSG_ReadBits(msg, 16);
+			}
+		}
+	}
+
+	// Ammo array.
+	if (MSG_ReadBits(msg, 1)) {
+		LOG("PS_AMMO");
+
+		mask = MSG_ReadBits(msg, 16);
+		for (i = 0;  i < MAX_WEAPONS;  i++) {
+			if ((mask & (1 << i)) != 0) {   // bit set?
+				// @TODO: Can those be negative too?
+				to->ammo[i] = MSG_ReadBits(msg, 16);
+			}
+		}
+	}
+
+	// Power-ups array.
+	if (MSG_ReadBits(msg, 1)) {
+		LOG("PS_POWERUPS");
+
+		mask = MSG_ReadBits(msg, 16);
+		for (i = 0;  i < MAX_POWERUPS;  i++) {
+			if ((mask & (1 << i)) != 0) {   // bit set?
+				// Yep, we read 32 bits.
+				to->powerups[i] = MSG_ReadBits(msg, 32);
+			}
+		}
+	}
+
+	if ( print ) {
+		endBit = msg->bit;
+		Com_Printf( " (%i bits)\n", endBit - startBit  );
+	}
+}
 
 /*
 ===================
@@ -1795,6 +2962,11 @@ void MSG_ReadDeltaPlayerstate (msg_t *msg, playerState_t *from, playerState_t *t
 		Com_Memset( &dummy, 0, sizeof( dummy ) );
 	}
 	*to = *from;
+
+	if (com_protocol->integer >= 43  &&  com_protocol->integer <= 48) {
+		MSG_ReadDeltaPlayerstateDM3(msg, from, to);
+		return;
+	}
 
 	if ( msg->bit == 0 ) {
 		startBit = msg->readcount * 8 - GENTITYNUM_BITS;

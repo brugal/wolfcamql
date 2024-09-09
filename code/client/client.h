@@ -430,6 +430,11 @@ typedef struct {
 	qboolean endOfDemo;
 	qboolean testParse;
 
+	// is it protocol 43 - 48
+	qboolean checkedForOlderUncompressedDemo;
+	qboolean olderUncompressedDemo;
+	int olderUncompressedDemoProtocol;
+
 	demoObit_t obit[MAX_DEMO_OBITS];
 	int obitNum;
 	//qboolean clientAlive[MAX_CLIENTS];

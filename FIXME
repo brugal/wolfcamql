@@ -1836,7 +1836,6 @@ No locals.
 * ^  flag icon more visible?
 * overflow player name in end game stats : engame-stats-player-name-overflow.dm_91
 * zoom 2 pov  stuck  zoom-stuck-2-57.dm_91  -- 2016-07-31  seems to be a fov script, can't fix
-* confusion between cgs.protocol and cgs.realProtocol
 * /at now+3sec  (offset for 'now' and also option to run only once)
 * option for /wait with exact time instead of frame time
 * q3mme command time based demo smoothing
@@ -2429,6 +2428,111 @@ Q_GetCpFromUtf8  invalid number of bytes specified in utf8 character 255
 * missing SDL stdout and stderr files  -- SDL264main.lib from ioquake3?
 
 * VM crash with .wolfcamql/baseq3/z-cpma-pak153b2.pk3
+
+* demo protocol 43-48
+
+  43 working
+  44 no demos
+  45 working  -- treated as 43
+  46 working
+  47
+  48 working
+
+  - protocol 46 double check CS_LOCATIONS with team demo
+  - protocol 45 /record
+  - protocol 45 voip
+  - protocol 46 voip
+  - protocol 45 streaming
+  - protocol 46 streaming
+  - protocol 45 check PERS_
+
+    quake3 1.25 change log says:  Two new medals will be awarded to players during Capture the Flag games.  These medals recognize individual player actions that often go unheralded in the heat of play.
+
+  - protocol 46
+
+  - protocol 46 scores SCSIZE = 15, what is the last one?
+
+  - protocol 46 check PERS_CAPTURES
+
+  - protocol 45  /share/tmp/si_*  CS_WARMUP not -1 during warmup before ready -- shows big number countdown
+
+  - client connect in demo parsing with protocol 43 might not be correct
+
+  - multiple demos :  /demo duel.dm_48 old12.dm_48
+
+     duel.dm_48 old18.dm_48
+
+     (warmup) 62:02 processsnapshots()  couldn't get nextsnap 3506
+(warmup) 62:02 processsnapshots()  couldn't get nextsnap 3506
+(warmup) 62:02 processsnapshots()  couldn't get nextsnap 3507
+(warmup) 62:02 processsnapshots()  couldn't get nextsnap 3507
+(warmup) 62:02 processsnapshots()  couldn't get nextsnap 3507
+(warmup) 62:02 processsnapshots()  couldn't get nextsnap 3508
+(warmup) 62:02 processsnapshots()  couldn't get nextsnap 3508
+
+  - CL_ParseExtraServerMessage  not checking protocol correctly
+
+  - recording
+
+     * tested protocol 48 output in quake3 127 and it seems to be working
+
+  - option to force protocol
+  - impact of not having client number in demo messages
+  - unknown command viewlist  - is that just osp?  -- 2024-08-23  yes
+
+  - test /share/tmp/demo000.dm_48 and /share/tmp/demo001.dm_48
+
+  - don't check com_protocol in msg.c
+  - /streamdemo check protocol 43
+  - protocol 43 /players  no main client number in demos?
+  - tdm.dm3  protocol 43  no end of game stats (Timelimit hit not checked correctly?)
+
+  - speex voip
+  - /streamdemo   spamming:
+
+Opening IP socket: 0.0.0.0:27960
+disconnect
+checking workshops
+hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
+CL_ParseExtraServerMessage: Illegible server message 117 for demoFile 0CL_ParseExtraServerMessage: Illegible server message 193 for demoFile 0CL_ParseExtraServerMessage: Illegible server message 203 for demoFile 0CL_ParseExtraServerMessage: Illegible server message 193 for demoFile 0CL_ParseExtraServerMessage: Illegible server message 186 for demoFile
+
+
+  - why doesn't stream_demo_look_ahead() get full message?
+
+stream_demo_look_ahead() waiting for message, need 16, demo position 0
+Com_Error(): CL_ParseServerMessage: Illegible server message 117********************
+
+acano@debian:/share/tmp/stream1$ python slow-copy.py duel.dm_48  x.dm_48
+3800
+len: 3800, position 3800
+100
+len: 100, position 3900
+^[OS^[OS^[OS^[OS^CTraceback (most recent call last):
+  File "/share/tmp/stream1/slow-copy.py", line 13, in <module>
+    numKBstr = input()
+               ^^^^^^^
+KeyboardInterrupt
+
+* stream_demo_look_ahead()  why was that added?
+
+
+* 		//FIXME 2024-07-28  this is a mess, should have commented why it was needed, the stream can have data written after this returns and what this would have detected as not enough data for message might have it afterwards, that could mess up the snap/message count, for something like that maybe only read the demo/stream end position once
+		// hereeee1111111
+		stream_demo_look_ahead();
+
+changeset:   9050:074cb4fb2345
+user:        acano
+date:        Thu Oct 21 06:22:18 2021 -0400
+summary:     demo streaming look ahead to allow fast forwarding
+
+
+* /streamdemo   can't quit (f4 ) while in checking for workshop screen
+
+* check demo streaming and /record if you don't even have gamestate yet
+
+* multiple demos with smaller second one:
+
+  CL_ReadExtraDemoMessage  demo file 2 ended  spammed if second is shorter and nothing to break outer loop?
 
 ----
 

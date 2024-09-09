@@ -279,7 +279,7 @@ static void CG_TransitionSnapshot( void ) {
 			//Com_Printf("missile %d pos.trTime %d  server time %d  %d  %s\n", cg.snap->entities[i].number, cg.snap->entities[i].pos.trTime, cg.snap->serverTime, cg.snap->serverTime - cg.snap->entities[i].pos.trTime, weapNames[cg.snap->entities[i].weapon]);
 		}
 
-		if (cgs.protocol == PROTOCOL_QL  &&  cg.snap->entities[i].eType == ET_ITEM) {
+		if (cgs.protocolClass == PROTOCOL_QL  &&  cg.snap->entities[i].eType == ET_ITEM) {
 			const entityState_t *es = &cg.snap->entities[i];
 			// check if we can update client item timers with ingame timer
 			// pie info
@@ -380,7 +380,7 @@ static void CG_TransitionSnapshot( void ) {
 	}
 
 	// set first and second place names if possible
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		if (CG_IsDuelGame(cgs.gametype)) {
 			if (cgs.clientinfo[cg.snap->ps.clientNum].team != TEAM_SPECTATOR) {
 				int otherDuelPlayer;
@@ -842,7 +842,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cgs.levelStartTime = atoi(CG_ConfigString(CS_LEVEL_START_TIME));
 	cg.intermissionStarted = atoi(CG_ConfigString(CS_INTERMISSION));
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		int roundTime;
 
 		//Com_Printf("^2 round status: '%s'\n", CG_ConfigString(CS_ROUND_STATUS));
@@ -870,7 +870,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 		cgs.roundNum = 0;
 	}
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		cgs.timeoutBeginTime = atoi(CG_ConfigString(CS_TIMEOUT_BEGIN_TIME));
 		cgs.timeoutEndTime = atoi(CG_ConfigString(CS_TIMEOUT_END_TIME));
 		cgs.timeoutCountingDown = qfalse;
@@ -1291,7 +1291,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	}
 
 	cgs.thirtySecondWarningPlayed = qfalse;
-	if (cgs.roundStarted  &&  cgs.protocol == PROTOCOL_QL) {
+	if (cgs.roundStarted  &&  cgs.protocolClass == PROTOCOL_QL) {
 		ival = cg.time - atoi(CG_ConfigString(CS_ROUND_TIME));
 		if (cgs.roundtimelimit - (ival / 1000) < 30) {
 			cgs.thirtySecondWarningPlayed = qtrue;
@@ -1371,7 +1371,7 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 
 	// get alive status for scoreboard
 
-	if (cgs.protocol == PROTOCOL_QL  ||  cgs.cpma) {
+	if (cgs.protocolClass == PROTOCOL_QL  ||  cgs.cpma) {
 		int roundStartTime = 0;
 
 		for (i = cg.numRoundStarts - 1;  i >= 0;  i--) {

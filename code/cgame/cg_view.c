@@ -1496,7 +1496,7 @@ static int CG_CalcViewValues( void ) {
 		// back away from character
 
 		// hack for ql setting spec health to 0, don't use third person offset
-		if (cgs.protocol == PROTOCOL_QL  &&   cg.snap->ps.clientNum == cg.clientNum  &&  cg.snap->ps.stats[STAT_HEALTH] <= 0  &&  cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) {
+		if (cgs.protocolClass == PROTOCOL_QL  &&   cg.snap->ps.clientNum == cg.clientNum  &&  cg.snap->ps.stats[STAT_HEALTH] <= 0  &&  cg.snap->ps.persistant[PERS_TEAM] == TEAM_SPECTATOR) {
 			if (cg_specOffsetQL.integer == 1) {
 				CG_OffsetQuakeLiveSpec();
 			} else if (cg_specOffsetQL.integer == 2) {
@@ -4713,7 +4713,7 @@ static void CG_FreeCam (void)
 
 static void CG_CheckSkillRating (void)
 {
-	if (!cgs.needToCheckSkillRating  ||  cgs.protocol != PROTOCOL_QL) {
+	if (!cgs.needToCheckSkillRating  ||  cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -6064,7 +6064,7 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 
 		useClientNum = qfalse;
 		// only ql sets owner (otherEntityNum) for missiles
-		if (cg_autoChaseMissile.integer == 1  &&  cgs.protocol == PROTOCOL_QL) {
+		if (cg_autoChaseMissile.integer == 1  &&  cgs.protocolClass == PROTOCOL_QL) {
 			useClientNum = qtrue;
 		} else {
 			// use any missile
@@ -6176,10 +6176,14 @@ void CG_DrawActiveFrame (int serverTime, stereoFrame_t stereoView, qboolean demo
 #if 0
 		Com_Printf("exCount:%d  defendCount:%d  assistCount:%d  gauntFragCount:%d  attArmor:%d\n",
 				   cg.snap->ps.persistant[PERS_EXCELLENT_COUNT],
+				   // not in protocol 43
 				   cg.snap->ps.persistant[PERS_DEFEND_COUNT],
+				   // not in protocol 43
 				   cg.snap->ps.persistant[PERS_ASSIST_COUNT],
 				   cg.snap->ps.persistant[PERS_GAUNTLET_FRAG_COUNT],
+				   // not in protocol 43
 				   cg.snap->ps.persistant[PERS_CAPTURES],
+				   // not in protocol 43
 				   cg.snap->ps.persistant[PERS_ATTACKEE_ARMOR]);
 #endif
 

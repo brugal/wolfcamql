@@ -349,7 +349,7 @@ static int CG_TeamScoreboard( int y, team_t team, float fade, int maxClients, in
 		}
 	}
 
-	if (cgs.protocol == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.snap->ps.pm_type == PM_INTERMISSION  &&  cg.duelForfeit) {
+	if (cgs.protocolClass == PROTOCOL_QL  &&  CG_IsDuelGame(cgs.gametype)  &&  cg.snap->ps.pm_type == PM_INTERMISSION  &&  cg.duelForfeit) {
 		if (team == TEAM_FREE) {
 			CG_DrawClientScoreQlForfeit(y + lineHeight * count, 0, fade);
 			count++;

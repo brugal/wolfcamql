@@ -49,5 +49,10 @@ Maverick and quake live developers for information regarding dm90 and dm91 proto
 Dmitry 'qrealka' Loginov:  cpma pro-sound description
 Ravensoft:  png output from Jedi Academy
 GNU Unifont:  font files
-Gian 'myT' Schellenbaum:  information regarding cpma 1.5[01] changes
+Gian 'myT' Schellenbaum:  information regarding cpma 1.5[01] changes, older demo protocol information from Uber Demo Tools
 Jaco Kroon:  backtrace code
+Thilo Shulz and Zack Middleton:  information about older Quake 3 protocols
+
+    https://github.com/zturtleman/lilium-arena-classic
+
+        "Credit for Quake 3 protocol 43 goes to Thilo Schulz (for ioEF) and Zack Middleton."

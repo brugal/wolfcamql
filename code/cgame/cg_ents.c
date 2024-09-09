@@ -205,7 +205,7 @@ static void CG_EntityEffects( const centity_t *cent ) {
 		}
 	} else if (cent->currentState.loopSound) {
 
-		//Com_Printf("%d loop %d  '%s'\n", cent->currentState.number, cent->currentState.loopSound, CG_ConfigString(CS_SOUNDS + cent->currentState.loopSound - (cgs.protocol == PROTOCOL_QL ? 1 : 0)));
+		//Com_Printf("%d loop %d  '%s'\n", cent->currentState.number, cent->currentState.loopSound, CG_ConfigString(CS_SOUNDS + cent->currentState.loopSound - (cgs.protocolClass == PROTOCOL_QL ? 1 : 0)));
 
 		if (cent->currentState.eType != ET_SPEAKER) {
 			//Com_Printf("^3adding loop sound to %d  %d  %s\n", cent->currentState.number, cent->currentState.loopSound, CG_ConfigString( CS_SOUNDS + cent->currentState.loopSound));
@@ -1077,7 +1077,7 @@ static void CG_TieredArmorAvailability (const centity_t *cent, const gitem_t *it
 		return;
 	}
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -1150,7 +1150,7 @@ static void CG_DrawTimerPie (const centity_t *cent)
 	qhandle_t currentShader;
 	int num5Chunks;
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -1299,7 +1299,7 @@ static void CG_DrawPowerupRespawnPOI (const centity_t *cent)
 	vec3_t org;
 	float minWidth, maxWidth, radius, dist;
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -1393,7 +1393,7 @@ static void CG_DrawPowerupAvailable (const centity_t *cent)
 	float frac;
 	float total;
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 
@@ -1944,7 +1944,7 @@ static void CG_Missile( centity_t *cent ) {
 				clientNum = s1->clientNum;
 			}
 
-			if (cgs.protocol == PROTOCOL_QL  &&  (clientNum >= 0  &&  clientNum < MAX_CLIENTS)) {
+			if (cgs.protocolClass == PROTOCOL_QL  &&  (clientNum >= 0  &&  clientNum < MAX_CLIENTS)) {
 				CG_CopyPlayerDataToScriptData(&cg_entities[clientNum]);
 			} else {
 				ScriptVars.inEyes = qfalse;
@@ -3251,7 +3251,7 @@ static void CG_AddCEntity( centity_t *cent ) {
 	int entNum;
 
 	// event-only entities will have been dealt with already
-	if ( cent->currentState.eType >= ET_EVENTS ) {
+	if ( (cgs.realProtocol >= 46  &&  cent->currentState.eType >= ET_EVENTS)  ||  (cgs.realProtocol < 46  &&  cent->currentState.eType >= (ET_EVENTS - 1)) ) {
 		return;
 	}
 

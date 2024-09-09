@@ -7065,7 +7065,7 @@ static void CG_RoundAnnouncements (void)
 
 #if 0
 	//FIXME cpma and others...
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		return;
 	}
 #endif
@@ -7200,7 +7200,7 @@ static void CG_DrawCenter (void)
 			return;
 		} else {
 			//FIXME dont use centerprint it will hover around after match has restarted
-			if (cgs.protocol == PROTOCOL_QL) {
+			if (cgs.protocolClass == PROTOCOL_QL) {
 				CG_CenterPrint(va("Match resumes in ^5%d ^7seconds", (cgs.timeoutEndTime - cg.time) / 1000 + 1), SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 				//if (cgs.timeoutEndTime - cg.snap->serverTime == 0) {
 				if (cgs.timeoutEndTime - cg.time == 0) {
@@ -7213,7 +7213,7 @@ static void CG_DrawCenter (void)
 	}
 
 	if (cgs.timeoutCountingDown) {
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			// clear message
 			CG_CenterPrint("", SCREEN_HEIGHT * 0.30, BIGCHAR_WIDTH);
 		}
@@ -10127,7 +10127,7 @@ static void CG_DrawWarmup( void ) {
 		x = cg_drawWaitingForPlayersX.value;
 		y = cg_drawWaitingForPlayersY.value;
 
-		if (cgs.protocol == PROTOCOL_QL  &&  *CG_ConfigString(CS_READY_UP_TIME)) {
+		if (cgs.protocolClass == PROTOCOL_QL  &&  *CG_ConfigString(CS_READY_UP_TIME)) {
 			readyUpTime = atoi(CG_ConfigString(CS_READY_UP_TIME));
 			if (readyUpTime > cg.time) {
 				int nx;

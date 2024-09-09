@@ -1270,7 +1270,7 @@ static void CG_ListEntities_f (void)
 		ent = &cent->currentState;
 		if (ent->eType < 0) {
 			etypeStr = "invalid";
-		} else if (ent->eType >= ET_EVENTS) {
+		} else if ((cgs.realProtocol >= 46  &&  ent->eType >= ET_EVENTS)  ||  (cgs.realProtocol < 46  &&  ent->eType >= (ET_EVENTS - 1))) {
 			etypeStr = "event";
 		} else {
 			etypeStr = entTypes[ent->eType];
@@ -6382,7 +6382,7 @@ static void CG_ClientOverride_f (void)
 			} else {
 				//Com_Printf("change config string: '%s' '%s' '%s'\n", key, value, buffer);
 				Info_SetValueForKey(buffer, key, value);
-				if (cgs.protocol == PROTOCOL_Q3) {
+				if (cgs.protocolClass == PROTOCOL_Q3) {
 					CG_ChangeConfigString(buffer, CSQ3_PLAYERS + j);
 				} else {
 					CG_ChangeConfigString(buffer, CS_PLAYERS + j);
@@ -8035,7 +8035,7 @@ static void CG_SeekNextRound_f (void)
 	if (roundStartIndex > -1) {
 		int roundTime;
 
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			roundTime = atoi(CG_ConfigString(CS_ROUND_TIME));
 
 			// ql specific

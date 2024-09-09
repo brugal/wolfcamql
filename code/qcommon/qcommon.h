@@ -252,8 +252,8 @@ extern mapNames_t MapNames[];
 
 // maintain a list of compatible protocols for demo playing
 // NOTE: that stuff only works with two digits protocols
-// 66, 67, 68, 69, 70, 71, 73, 90, 91
-#define NUM_DEMO_PROTOCOLS 9  //FIXME err....  ARRAY_LEN()
+// 43, 44, 45, 46, 47, 48, 66, 67, 68, 69, 70, 71, 73, 90, 91
+#define NUM_DEMO_PROTOCOLS 15  //FIXME err....  ARRAY_LEN()
 extern int demo_protocols[NUM_DEMO_PROTOCOLS];
 
 #if !defined UPDATE_SERVER_NAME && !defined STANDALONE

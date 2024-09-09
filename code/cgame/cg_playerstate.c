@@ -615,6 +615,8 @@ void CG_PushReward (sfxHandle_t sfx, qhandle_t shader, int rewardCount)
 {
 	int i;
 
+	//Com_Printf("^3  reward   %d\n", rewardCount);
+
 	if (cg_rewardsStack.integer == 0  &&  (cg.time - cg.rewardTime) < cg_drawRewardsTime.integer) {  // uhmm, nice name
 		for (i = (cg.rewardStack);  i >= 0;  i--) {
 			//Com_Printf("%d:  %d  --> %d\n", i, shader, cg.rewardShader[i]);
@@ -799,7 +801,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 
 		//Com_Printf("^3%d\n", ps->generic1);
 
-		if (cgs.protocol == PROTOCOL_QL) {
+		if (cgs.protocolClass == PROTOCOL_QL) {
 			n = ps->generic1 / 64;
 		} else if (cgs.cpma) {
 			n = (ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS]) / 26;
@@ -844,7 +846,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 				//FIXME
 				// it's not based on info in peristant[], tested with godmode + bots
 				// it's in ps->generic1
-				if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.protocolClass == PROTOCOL_QL) {
 					n = ps->generic1 / 64;
 				} else if (cgs.cpma) {
 					n = (ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS]) / 26;
@@ -883,7 +885,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 				//FIXME
 				// it's not based on info in peristant[], tested with godmode + bots
 				// it's in ps->generic1
-				if (cgs.protocol == PROTOCOL_QL) {
+				if (cgs.protocolClass == PROTOCOL_QL) {
 					n = ps->generic1 / 64;
 				} else if (cgs.cpma) {
 					n = (ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS]) / 26;
@@ -917,7 +919,7 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 #endif
 	} else if ( ps->persistant[PERS_HITS] < ops->persistant[PERS_HITS] ) {
         if ((!wolfcam_following  ||  (wolfcam_following  &&  wcg.clientNum == cg.snap->ps.clientNum))  &&  !cg.freecam  &&  !cg.cameraMode) {
-			if (cg_hitBeep.integer  &&  cgs.protocol == PROTOCOL_QL) {
+			if (cg_hitBeep.integer  &&  cgs.protocolClass == PROTOCOL_QL) {
 				CG_StartLocalSound( cgs.media.hitTeamSound, CHAN_LOCAL_SOUND );
 			}
 		}
@@ -956,11 +958,15 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 	cg.rewardAssist = qfalse;
 #endif
 
-	if (ps->persistant[PERS_CAPTURES] > ops->persistant[PERS_CAPTURES]  &&  cg_rewardCapture.integer) {
-		CG_PushReward(cgs.media.captureAwardSound, cgs.media.medalCapture, ps->persistant[PERS_CAPTURES]);
-		reward = qtrue;
-		//Com_Printf("capture\n");
+	// not in protocol 46
+	if (cgs.realProtocol >= 48) {
+		if (ps->persistant[PERS_CAPTURES] > ops->persistant[PERS_CAPTURES]  &&  cg_rewardCapture.integer) {
+			CG_PushReward(cgs.media.captureAwardSound, cgs.media.medalCapture, ps->persistant[PERS_CAPTURES]);
+			reward = qtrue;
+			//Com_Printf("capture\n");
+		}
 	}
+
 	if (ps->persistant[PERS_IMPRESSIVE_COUNT] > ops->persistant[PERS_IMPRESSIVE_COUNT]  &&  cg_rewardImpressive.integer) {
 		//cg.rewardImpressive = qtrue;
 		//Com_Printf("^3impressive\n");
@@ -1010,20 +1016,24 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 		reward = qtrue;
 		//Com_Printf("gauntlet frag\n");
 	}
-	if (ps->persistant[PERS_DEFEND_COUNT] > ops->persistant[PERS_DEFEND_COUNT]  &&  cg_rewardDefend.integer) {
-		//cg.rewardDefend = qtrue;
 
-		CG_PushReward(cgs.media.defendSound, cgs.media.medalDefend, ps->persistant[PERS_DEFEND_COUNT]);
-		reward = qtrue;
-		//Com_Printf("defend\n");
-	}
-	if (ps->persistant[PERS_ASSIST_COUNT] > ops->persistant[PERS_ASSIST_COUNT]  &&  cg_rewardAssist.integer) {
-		//cg.rewardAssist = qtrue;
+	if (cgs.realProtocol >= 46) {
+		if (ps->persistant[PERS_DEFEND_COUNT] > ops->persistant[PERS_DEFEND_COUNT]  &&  cg_rewardDefend.integer) {
+			//cg.rewardDefend = qtrue;
 
-		CG_PushReward(cgs.media.assistSound, cgs.media.medalAssist, ps->persistant[PERS_ASSIST_COUNT]);
-		reward = qtrue;
-		//Com_Printf("assist\n");
+			CG_PushReward(cgs.media.defendSound, cgs.media.medalDefend, ps->persistant[PERS_DEFEND_COUNT]);
+			reward = qtrue;
+			//Com_Printf("defend\n");
+		}
+		if (ps->persistant[PERS_ASSIST_COUNT] > ops->persistant[PERS_ASSIST_COUNT]  &&  cg_rewardAssist.integer) {
+			//cg.rewardAssist = qtrue;
+			//Com_Printf("^3  assist\n");
+			CG_PushReward(cgs.media.assistSound, cgs.media.medalAssist, ps->persistant[PERS_ASSIST_COUNT]);
+			reward = qtrue;
+			//Com_Printf("assist\n");
+		}
 	}
+
 	// if any of the player event bits changed
 	//Com_Printf("%d:  %d  %d -> %d  client %d %d\n", cg.time, PERS_PLAYEREVENTS, ops->persistant[PERS_PLAYEREVENTS], ps->persistant[PERS_PLAYEREVENTS], ops->clientNum, ps->clientNum);
 
@@ -1258,7 +1268,7 @@ static void test_persStats (const playerState_t *ps)
 {
 	int i;
 
-	if (cgs.protocol == PROTOCOL_Q3) {
+	if (cgs.protocolClass == PROTOCOL_Q3) {
 		for (i = STAT_MAX_HEALTH + 1;  i < 16;  i++) {
 			if (ps->stats[i]) {
 				if (SC_Cvar_Get_Int("cg_debugstats")) {

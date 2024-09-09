@@ -371,10 +371,10 @@ void CG_DrawInformation (qboolean loading)
 		y += PROP_HEIGHT * lines;
 
 		// ranked or mod
-		if (cgs.protocol == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
+		if (cgs.protocolClass == PROTOCOL_QL  &&  cgs.realProtocol < 91) {
 			value = atoi(Info_ValueForKey(info, "sv_ranked"));
 			Com_sprintf(buf, sizeof(buf), "(%s server)", value ? "ranked" : "unranked");
-		} else if (cgs.protocol == PROTOCOL_Q3) {  // mod:  baseq3, osp, cpma, etc..
+		} else if (cgs.protocolClass == PROTOCOL_Q3) {  // mod:  baseq3, osp, cpma, etc..
 			if (cgs.ospEncrypt) {
 				Com_sprintf(buf, sizeof(buf), "osp ^6encrypted");
 			} else if (cgs.osp) {
@@ -488,7 +488,7 @@ void CG_DrawInformation (qboolean loading)
 		s = "Unknown Gametype";
 	}
 
-	if (cgs.protocol != PROTOCOL_QL) {
+	if (cgs.protocolClass != PROTOCOL_QL) {
 		lines = UI_DrawProportionalString3(320, y, s, UI_CENTER | UI_SMALLFONT | UI_DROPSHADOW, colorYellow);
 		y += PROP_HEIGHT * lines;
 	} else {
@@ -556,7 +556,7 @@ void CG_DrawInformation (qboolean loading)
 		}
 	}
 
-	if (cgs.protocol == PROTOCOL_QL) {
+	if (cgs.protocolClass == PROTOCOL_QL) {
 		const char *p;
 
 		if (cgs.realProtocol < 91) {

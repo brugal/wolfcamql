@@ -2503,7 +2503,7 @@ typedef struct {
 	qboolean serverHaveCustomModelString;
 	qboolean serverAllowCustomHead;
 	int realProtocol;
-	int protocol;
+	int protocolClass;
 	qboolean cpma;
 	int cpmaVersionMajor;
 	int cpmaVersionMinor;

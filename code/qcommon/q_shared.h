@@ -26,6 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // q_shared.h -- included first by ALL program modules.
 // A user mod should never modify this file
 
+#define PROTOCOL_Q3DEMO 43
+#define PROTOCOL_Q3ORIG 46
 #define PROTOCOL_Q3 68
 #define PROTOCOL_QL 91  // latest ql protocol
 #define SERVER_PROTOCOL 91  // devmap
