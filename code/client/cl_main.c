@@ -1420,7 +1420,7 @@ static qboolean CL_CheckForValidServerMessage (msg_t *msg)
 
 		if (clc.realProtocol <= 48) {
 			if (msg->readcount == msg->cursize) {
-				Com_Printf("slkdjfsldkfj\n");
+				//Com_Printf("slkdjfsldkfj\n");
 				break;
 			}
 		}

@@ -178,6 +178,14 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 		fetchBufferHasRGB = qfalse;
 	}
 
+	// ioquake3: OpenGL ES is only required to support reading GL_RGBA
+	if (qglesMajorVersion >= 1) {
+		glMode = GL_RGBA;
+		fetchBufferHasAlpha = qtrue;
+		fetchBufferHasRGB = qtrue;
+		useBlur = qfalse;
+	}
+
 	if (!useBlur) {
 		//ri.Printf(PRINT_ALL, "no blur pic count: %d\n", cmd->picCount + 1);
 		if ((cmd->picCount + 1) % frameRateDivider != 0) {

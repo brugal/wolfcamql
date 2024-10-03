@@ -433,6 +433,11 @@ static void InitQLGlslShadersAndPrograms (void)
 		return;
 	}
 
+	//FIXME support?
+	if (qglesMajorVersion) {
+		return;
+	}
+
 	bloomTextureScale = r_BloomTextureScale->value;
 	if (bloomTextureScale < 0.01) {
 		bloomTextureScale = 0.01;
@@ -501,6 +506,7 @@ static void InitQLGlslShadersAndPrograms (void)
 	qglCompileShader(tr.mainVs);
 	qglGetShaderiv(tr.mainVs, GL_COMPILE_STATUS, &compiled);
 	if (!compiled) {
+		ri.Printf(PRINT_ALL, "^1compile status mainVs: %d\n", compiled);
 		GLSL_PrintLog(tr.mainVs, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
 		GLSL_PrintLog(tr.mainVs, GLSL_PRINTLOG_SHADER_INFO, qfalse);
 	}
@@ -538,6 +544,7 @@ static void InitQLGlslShadersAndPrograms (void)
 	qglCompileShader(tr.mainMultiVs);
 	qglGetShaderiv(tr.mainMultiVs, GL_COMPILE_STATUS, &compiled);
 	if (!compiled) {
+		ri.Printf(PRINT_ALL, "^1compile status mainMultiVs: %d\n", compiled);
 		GLSL_PrintLog(tr.mainMultiVs, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
 		GLSL_PrintLog(tr.mainMultiVs, GLSL_PRINTLOG_SHADER_INFO, qfalse);
 	}
@@ -562,6 +569,11 @@ static void InitCameraPathShadersAndProgram (void)
 	const char *shaderExtensions;
 	GLint compiled;
 	GLint linked;
+
+	//FIXME
+	if (qglesMajorVersion) {
+		return;
+	}
 
 	// hack, cpvbo added to tess.vao
 	R_BindVao(tess.vao);
@@ -883,8 +895,16 @@ static void InitOpenGL( void )
 		qglGetIntegerv( GL_MAX_TEXTURE_IMAGE_UNITS, &temp );
 		glConfig.numTextureUnits = temp;
 
+		qglGetIntegerv( GL_MAX_VERTEX_ATTRIBS, &temp );
+		glRefConfig.maxVertexAttribs = temp;
+
 		// reserve 160 components for other uniforms
-		qglGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &temp );
+		if ( qglesMajorVersion ) {
+			qglGetIntegerv( GL_MAX_VERTEX_UNIFORM_VECTORS, &temp );
+			temp *= 4;
+		} else {
+			qglGetIntegerv( GL_MAX_VERTEX_UNIFORM_COMPONENTS, &temp );
+		}
 		glRefConfig.glslMaxAnimatedBones = Com_Clamp( 0, IQM_MAX_JOINTS, ( temp - 160 ) / 16 );
 		if ( glRefConfig.glslMaxAnimatedBones < 12 ) {
 			glRefConfig.glslMaxAnimatedBones = 0;
@@ -1058,21 +1078,43 @@ Return value must be freed with ri.Hunk_FreeTempMemory()
 byte *RB_ReadPixels(int x, int y, int width, int height, size_t *offset, int *padlen)
 {
 	byte *buffer, *bufstart;
-	int padwidth, linelen;
-	GLint packAlign;
-	
+	int padwidth, linelen, bytesPerPixel;
+	int yin, xin, xout;
+	GLint packAlign, format;
+
+	// OpenGL ES is only required to support reading GL_RGBA
+	if (qglesMajorVersion >= 1) {
+		format = GL_RGBA;
+		bytesPerPixel = 4;
+	} else {
+		format = GL_RGB;
+		bytesPerPixel = 3;
+	}
+
 	qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 	
-	linelen = width * 3;
+	linelen = width * bytesPerPixel;
 	padwidth = PAD(linelen, packAlign);
 	
 	// Allocate a few more bytes so that we can choose an alignment we like
 	buffer = ri.Hunk_AllocateTempMemory(padwidth * height + *offset + packAlign - 1);
-	
-	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
 
-	qglReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, bufstart);
-	
+	bufstart = PADP((intptr_t) buffer + *offset, packAlign);
+	qglReadPixels(x, y, width, height, format, GL_UNSIGNED_BYTE, bufstart);
+
+	linelen = width * 3;
+
+	// Convert RGBA to RGB, in place, line by line
+	if (format == GL_RGBA) {
+		for (yin = 0; yin < height; yin++) {
+			for (xin = 0, xout = 0; xout < linelen; xin += 4, xout += 3) {
+				bufstart[yin*padwidth + xout + 0] = bufstart[yin*padwidth + xin + 0];
+				bufstart[yin*padwidth + xout + 1] = bufstart[yin*padwidth + xin + 1];
+				bufstart[yin*padwidth + xout + 2] = bufstart[yin*padwidth + xin + 2];
+			}
+		}
+	}
+
 	*offset = bufstart - buffer;
 	*padlen = padwidth - linelen;
 	
@@ -2018,8 +2060,15 @@ void R_Register( void )
 	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_ARCHIVE );
 	r_finish = ri.Cvar_Get ("r_finish", "0", CVAR_ARCHIVE);
 	r_textureMode = ri.Cvar_Get( "r_textureMode", "GL_LINEAR_MIPMAP_LINEAR", CVAR_ARCHIVE );
+#ifdef __EMSCRIPTEN__
+	// Under Emscripten we don't throttle framerate with com_maxfps by default, so enable
+	// vsync by default instead.
+	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "1",
+								  CVAR_ARCHIVE | CVAR_LATCH );
+#else
 	r_swapInterval = ri.Cvar_Get( "r_swapInterval", "0",
 					CVAR_ARCHIVE | CVAR_LATCH );
+#endif
 	r_gamma = ri.Cvar_Get( "r_gamma", "1", CVAR_ARCHIVE );
 	r_facePlaneCull = ri.Cvar_Get ("r_facePlaneCull", "1", CVAR_ARCHIVE );
 

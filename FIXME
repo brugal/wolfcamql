@@ -2534,6 +2534,72 @@ summary:     demo streaming look ahead to allow fast forwarding
 
   CL_ReadExtraDemoMessage  demo file 2 ended  spammed if second is shorter and nothing to break outer loop?
 
+* ioquake3 OpenGL ES support in inc_tr_init.c :
+
+	// OpenGL ES is only required to support reading GL_RGBA
+	if (qglesMajorVersion >= 1) {
+		format = GL_RGBA;
+		bytesPerPixel = 4;
+	} else {
+		format = GL_RGB;
+		bytesPerPixel = 3;
+	}
+
+  - blur disabled
+
+* ioquake3 OpenGL ES support:
+
+renderergl2/glsl/rectscreen_fp.glsl:uniform sampler2DRect backBufferTex;
+
+void main()
+{
+	gl_FragColor = texture2DRect(backBufferTex, mvTexCoord[0].xy);
+}
+
+Shader info log:
+0:2(12): warning: extension `GL_ARB_texture_rectangle' unsupported in fragment shader
+0:5(9): error: illegal use of reserved word `sampler2DRect'
+0:5(9): error: syntax error, unexpected ERROR_TOK
+
+recursive error after: Couldn't compile shader
+
+  no backbuffertex :  ql gamma correction and other things
+
+* OpenGL ES ql and wc shader fixes
+* OpenGL ES camera path shader
+
+loaded 115 GLSL shaders (48 gen 42 light 25 etc) in  0.14 seconds
+------- R_InitVaos -------
+glsl/cameraline.vs ->
+glsl/cameraline.fs ->
+camera path shader program ->
+Program info log:
+error: vertex shader lacks `main'
+
+Initializing Shaders
+
+* cyp.dm_91  OpenGL ES
+
+GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_shader.c at line 4306
+
+  2024-10-01  glGetTexImage not in OpenGL ES
+
+    - used in RE_GetShaderImageData()
+    - from ioquake3 patch 2024-06-05-01 'OpenGL2: Add OpenGL ES 2.0+ support':
+        "It's missing support for framebuffer objects which should be
+         possible on ES 2."
+
+* opengl es test with ati and angle, maybe:
+
+    SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1");
+    SDL_SetHint(SDL_HINT_VIDEO_WIN_D3DCOMPILER, "none");
+
+   with above:
+
+     Com_Error(): GL_VERSION is NULL----- Client Shutdown (Client fatal crashed: GL_VERSION is NULL) -----
+
+   also Chrome angle libraries in "Program Files (x86)" are 64-bit
+
 ----
 
 

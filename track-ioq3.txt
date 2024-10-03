@@ -8328,3 +8328,234 @@ the demo.
     Update macOS version for GitHub CI
 
     macOS 11 runner image is scheduled to be removed next month.
+
+2024-06-05-01
+    OpenGL2: Add OpenGL ES 2.0+ support
+
+    This mainly targets OpenGL ES 2.0 but it also supports compiling GLSL as
+    ESSL 3.00. It's missing support for framebuffer objects which should be
+    possible on ES 2. (Though using renderbuffers instead of textures.)
+
+    opengl1 cvars that are not supported will display a message and disable
+    the cvar. This has not been reviewed for new opengl2 cvars. Enabling
+    cvars may cause rendering issues. Some of the broken cvars may be
+    possible to support using OpenGL ES 3 features.
+
+    The game displays okay with the default cvars.
+
+2024-06-05-02
+    OpenGL2: Add run-time support for unsigned short indexes
+
+    OpenGL ES 2 is only required to support unsigned short for indexes.
+
+2018-07-20-01
+    OpenGL2: Use CPU vertex animation if too few vertex attributes
+
+    OpenGL ES has a minimum of 8 vertex attributes while desktop OpenGL has
+    a minimum of 16. Vertex animation uses attributes 10 to 12.
+
+2024-06-06-01
+    OpenGL2: Fix issues running under WebGL
+
+2024-06-06-02
+    OpenGL2: Fallback to OpenGL ES if OpenGL fails
+
+2024-06-06-03
+    Add minimal emscripten support
+
+2024-06-07-01
+    Fix emscripten build directions
+
+2024-06-08-01
+    Use BASEGAME for emscripten assets
+
+2024-06-09-01
+    Fix using emscripten 3.1.27+
+
+    emscripten 3.1.27 reduced the stack size from 5MB to 64KB. This caused
+    run-time errors: Uncaught RuntimeError: index out of bounds
+
+    Co-authored-by: James Darpinian <jdarpinian@gmail.com>
+
+2024-06-09-02
+    Allow building for emscripten with "emmake make"
+
+    Co-authored-by: James Darpinian <jdarpinian@gmail.com>
+
+2024-06-09-03
+    Add -ffast-math for emscripten to match other platforms
+
+    Co-authored-by: James Darpinian <jdarpinian@gmail.com>
+
+2024-06-07-02
+    Add .vscode and baseq3 to gitignore
+
+2024-06-07-03
+    Rebuild every target if Makefile changes
+
+2024-06-07-04
+    ioquake3.html replaces Emscripten-generated HTML shell
+
+    This enables several things:
+    * Optionally load pk3 files from a web server at runtime instead of bundling
+ them with Emscripten at build time
+    * Set command line arguments via URL param
+    * It's not ugly
+
+2024-06-07-05
+    Get rid of "Nothing to be done for _.zip" message
+
+2024-06-07-06
+    Fix build when specifying PLATFORM=emscripten manually instead of using emmake
+
+2024-06-07-07
+    Silence compiler warnings
+
+2024-06-07-08
+    Support debug Emscripten build
+
+2024-06-07-09 (ignore .github)
+    Speed up GitHub Actions with -j
+
+2024-06-07-10 (ignore .github)
+    Add GitHub Actions workflow for web/Emscripten
+
+2024-06-07-11
+    Add Emscripten to README
+
+2024-06-09-01
+    Add DEPEND_MAKEFILE to disable rebuild on Makefile edit
+
+2024-06-09-02
+    Add BUILD_RENDERER_OPENGL1 to disable opengl1
+
+    Have emscripten disable BUILD_RENDERER_OPENGL1 instead of hardcoded to
+    disable opengl1 client.
+
+2024-06-09-03
+    Clean up emscripten in Makefile
+
+    - Remove emscripten build steps from Makefile (see readme)
+    - USE_CURL=0 has no effect
+    - HAVE_VM_COMPILED=false has no effect
+    - WebGL 1 and 2 are supported by the OpenGL2 renderer
+    - FULL_ES2 (client-side arrays) isn't needed
+    - Rename EMSCRIPTENOBJ to GENERATEDTARGETS and separate it from
+      TARGETS so it's more readable.
+
+2024-06-10-01
+    Make emscripten --preload-file opt-in
+
+2024-06-10-02
+    Allow web client to use unzipped QVMs
+
+    Compile the QVMs and automatically uses them when not using --preload-file.
+
+2024-06-09-04
+    Customize the web client HTML file
+
+    Modify the client HTML file when copying it to the build directory to
+    apply current CLIENTBIN and BASEGAME. It always loads engine/data from
+    the current directory (no need to try to locate the build directory).
+
+2024-06-09-05
+    Add support for overriding basegame to web client
+
+    List files for multiple games in a single client-config.json file so
+    that com_basegame argument can pick different game data.
+
+    Use ioquake3.html?com_basegame=demoq3 (or tademo) to run the Quake 3 or
+    Team Arena demo. They require new QVMs from baseq3/missionpack to run.
+
+2024-06-10-01
+    Add support for mods to web client
+
+    ioquake3.html?fs_game=missionpack will run Team Arena when not using
+    --preload-file.
+
+2024-06-10-02
+    Rename client-config.json based on CLIENTBIN
+
+    Also make viewing client.html directly use client-config.json in the
+    same directory so it's possible to "live edit" both the files without
+    having to run make.
+
+2024-06-24-01
+    Fix web client vid_restart with r_mode -2
+
+    If getting the display index of the existing window fails, fallback to
+    the default display size instead of falling back to 640x480.
+
+    emscripten r_mode -2 worked on window creation but vid_restart fellback
+    to 640x480.
+
+2024-06-24-02
+    Fix framerate throttling in Emscripten builds
+
+    Default com_maxfps to 0 under Emscripten. Under Emscripten the browser
+    handles throttling the frame rate. Manual framerate throttling interacts
+    poorly with Emscripten's browser-driven event loop.
+
+2024-07-13-01
+    Fix compiling without PATCH_STITCHING defined
+
+2024-07-27-01
+    OpenGL2: Don't project sun shadows onto nothing
+
+    Don't project sun shadows (r_forceSun 1) on to view depth equal to 1.0
+    (nothing drawn or skybox). This caused a full second shadow of the
+    entire level in tr.screenShadowImage. It would move as the camera far
+    plane changed and rotate/stretch strangely as the camera view changed.
+
+    It was visible in-game on lightmapped transparent surfaces facing the
+    skybox and happen to overlap the extra shadow of the level.
+
+    This affected the glass in wop_padship's underwater room.
+
+2024-08-27-01
+    OpenGL2: Fix still projecting sun shadows onto nothing
+
+    Increase the range for clamping the screen shadow depth to 1.0 (nothing
+    drawn). Old epsilon ~0.00000006, new 0.001. This fixes it on another
+    computer.
+
+2024-01-21-01
+    Add better directions/error for missing default pk3 files
+
+2024-01-21-02
+    Make Team Arena pk3 error show when missing all pk3 files
+
+    The error was only displayed for Team Arena if one of the Team Arena pk3s
+    were found. Fix it to be display when trying to run Team Arena even with
+    no Team Arena pk3s present.
+
+2024-01-21-03
+    Make copy to clipboard in Windows error dialog include error message
+
+    There is a copy to clipboard option but the error itself wasn't printed
+    to the console so it wasn't copied to the clipboard.
+
+    Unix-like platforms print it to the console so it's written in
+    crashlog.txt.
+
+2024-01-21-04
+    Use XDG_DATA_HOME for Flatpak
+
+    Use XDG_DATA_HOME for Flatpak so that fs_homepath is accessible without
+    special permissions/handling. This changes the home path for Flatpak
+    from ~/.q3a/ to ~/.var/app/org.ioquake3.ioquake3/data/q3a/.
+
+2024-01-21-05
+    Show fs_homepath in Flatpak missing pk3 error
+
+    Tell users to copy pk3 files to fs_homepath as fs_basepath is not user
+    writable.
+
+2024-08-29-01
+    OpenGL2: Increase flare limit to match opengl1
+
+2024-09-24-01
+    Fix reading non-sequential lumps in AAS files in pk3 files
+
+    FS_Seek() doesn't always return 0 on success. If the file in a pk3 file
+    it returns the seek offset. This change doesn't fix any known AAS files.

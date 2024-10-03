@@ -489,6 +489,11 @@ static void RE_DrawPathLines (void)
 	}
 #endif
 
+	//FIXME
+	if (qglesMajorVersion) {
+		return;
+	}
+
 	if (!tr.cpshaderprogram) {
 		return;
 	}
@@ -1490,7 +1495,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 		R_DecomposeSort( drawSurf->sort, &entityNum, &shader, &fogNum, &dlighted, &pshadowed );
 		cubemapIndex = drawSurf->cubemapIndex;
 
-				if (r_ignoreEntityMergable->integer == 0) {
+		if (r_ignoreEntityMergable->integer == 0) {
 			useMergable = qtrue;
 		} else if (r_ignoreEntityMergable->integer == 2  &&  mme_saveDepth->integer == 0) {
 			useMergable = qtrue;
@@ -1932,6 +1937,7 @@ static void RE_StretchRawRectScreen (const byte *data)
 }
 
 void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int client, qboolean dirty) {
+	byte *buffer;
 	GLuint texture;
 
 	if (!tr.scratchImage[client])
@@ -1946,7 +1952,18 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int
 	if ( cols != tr.scratchImage[client]->width || rows != tr.scratchImage[client]->height ) {
 		tr.scratchImage[client]->width = tr.scratchImage[client]->uploadWidth = cols;
 		tr.scratchImage[client]->height = tr.scratchImage[client]->uploadHeight = rows;
-		qglTextureImage2DEXT(texture, GL_TEXTURE_2D, 0, GL_RGB8, cols, rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+		if ( qglesMajorVersion >= 1 ) {
+			buffer = ri.Hunk_AllocateTempMemory( 3 * cols * rows );
+
+			R_ConvertTextureFormat( data, cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buffer );
+			qglTextureImage2DEXT(texture, GL_TEXTURE_2D, 0, GL_RGB, cols, rows, 0, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+
+			ri.Hunk_FreeTempMemory( buffer );
+		} else {
+			qglTextureImage2DEXT(texture, GL_TEXTURE_2D, 0, GL_RGB8, cols, rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		}
+
 		qglTextureParameterfEXT(texture, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		qglTextureParameterfEXT(texture, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 		qglTextureParameterfEXT(texture, GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1955,7 +1972,16 @@ void RE_UploadCinematic (int w, int h, int cols, int rows, const byte *data, int
 		if (dirty) {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
-			qglTextureSubImage2DEXT(texture, GL_TEXTURE_2D, 0, 0, 0, cols, rows, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			if ( qglesMajorVersion >= 1 ) {
+				buffer = ri.Hunk_AllocateTempMemory( 3 * cols * rows );
+
+				R_ConvertTextureFormat( data, cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buffer );
+				qglTextureSubImage2DEXT(texture, GL_TEXTURE_2D, 0, 0, 0, cols, rows, GL_RGB, GL_UNSIGNED_BYTE, buffer);
+
+				ri.Hunk_FreeTempMemory( buffer );
+			} else {
+				qglTextureSubImage2DEXT(texture, GL_TEXTURE_2D, 0, 0, 0, cols, rows, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			}
 		}
 	}
 }
@@ -2392,14 +2418,14 @@ const void	*RB_DrawSurfs( const void *data ) {
 			if (glRefConfig.occlusionQuery)
 			{
 				tr.sunFlareQueryActive[tr.sunFlareQueryIndex] = qtrue;
-				qglBeginQuery(GL_SAMPLES_PASSED, tr.sunFlareQuery[tr.sunFlareQueryIndex]);
+				qglBeginQuery(glRefConfig.occlusionQueryTarget, tr.sunFlareQuery[tr.sunFlareQueryIndex]);
 			}
 
 			RB_DrawSun(0.3, tr.sunFlareShader);
 
 			if (glRefConfig.occlusionQuery)
 			{
-				qglEndQuery(GL_SAMPLES_PASSED);
+				qglEndQuery(glRefConfig.occlusionQueryTarget);
 			}
 
 			FBO_Bind(oldFbo);
@@ -2695,7 +2721,9 @@ const void	*RB_SwapBuffers( const void *data, qboolean endFrame ) {
 	//FIXME not enough to set scissor to size of viewport like in RB_SetGL2D()?
 	qglDisable(GL_SCISSOR_TEST);
 
-	RB_ColorCorrect();
+	if (!qglesMajorVersion) {
+		RB_ColorCorrect();
+	}
 
 	qglEnable(GL_SCISSOR_TEST);
 

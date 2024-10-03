@@ -4283,11 +4283,12 @@ void RE_GetShaderImageDimensions (qhandle_t h, int *width, int *height)
 	*height = shader->stages[0]->bundle[0].image[0]->uploadHeight;
 }
 
+//FBO_t *FBO_Create(const char *name, int width, int height);
+
 void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 {
 	shader_t *shader;
 	image_t *image;
-
 
 	shader = R_GetShaderByHandle(h);
 	//image = &shader->stages[0].bundle[0].image;
@@ -4296,6 +4297,46 @@ void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 	//if (r_smp->integer) {
 	//	R_SyncRenderThread();
 	//}
+
+	//FIXME glGetTexImage() not supported
+	if (qglesMajorVersion >= 1) {
+		int width, height;
+		GLuint fbo;
+		//FBO_t *fbo;
+		FBO_t *currentFbo;
+
+		//FIXME 2024-10-01  qglGenFramebuffers() crashing
+		//  from ioquake3 patch 2024-06-05-01 'OpenGL2: Add OpenGL ES 2.0+ support' :
+		//  "It's missing support for framebuffer objects which should be
+		// possible on ES 2."
+		return;
+
+		currentFbo = glState.currentFBO;
+
+		width = shader->stages[0]->bundle[0].image[0]->uploadWidth;
+		height = shader->stages[0]->bundle[0].image[0]->uploadHeight;
+
+		//ri.Printf(PRINT_ALL, "     %p qglGenFramebuffers\n", qglGenFramebuffers);
+		//fbo = FBO_Create("_getImage", width, height);
+
+		qglGenFramebuffers(1, &fbo);
+
+		//FBO_Bind(fbo);
+		//ri.Printf(PRINT_ALL, "     done\n");
+
+		//qglBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		qglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, image->texnum, 0);
+
+		qglReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		FBO_Bind(currentFbo);
+
+		//qglDeleteFramebuffers(1, &fbo);
+
+		return;
+	}
+
 
 	GL_BindMultiTexture(GL_TEXTURE0_ARB, GL_TEXTURE_2D, image->texnum);
 	qglGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
