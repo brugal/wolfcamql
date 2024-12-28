@@ -8559,3 +8559,19 @@ the demo.
 
     FS_Seek() doesn't always return 0 on success. If the file in a pk3 file
     it returns the seek offset. This change doesn't fix any known AAS files.
+
+2024-10-10-01
+    Change URL for missing files dialog
+
+2024-10-11-01
+    Prevent SV_DropClient() from being called recursively if the client is dropped by a kick or timeout and has too many reliable commands
+
+2024-12-04-01
+    cl_cgame.c: Fixed a typo in a comment.
+
+2024-12-24-01 (skip .github)
+    Update build.yml to macos-13 (#701)
+
+    macos-12 is outdated, this commit simply updates the build.yml file to attempt to use macos-13
+
+    see https://github.com/actions/runner-images/issues/10721 for more details on this change.
