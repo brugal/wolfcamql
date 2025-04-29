@@ -8575,3 +8575,25 @@ the demo.
     macos-12 is outdated, this commit simply updates the build.yml file to attempt to use macos-13
 
     see https://github.com/actions/runner-images/issues/10721 for more details on this change.
+
+2025-03-08-01
+    Rename LCC constexpr function to constantexpr, avoiding C23 keyword clash
+
+2025-03-16-01
+    Rename CHAR_WIDTH to CHARACTER_WIDTH
+
+    For some time glibc has defined a macro with the same name in limits.h.
+    Avoid the warning by renaming our macro.
+
+2025-04-02-01 (skip .github)
+    Update FUNDING.yml
+
+    just a url change
+
+2025-04-25-01
+    Update README.md
+
+    Removing references to bugzilla, which is no-longer available for submitting bugs and patches.
+
+2025-04-25-02 (skip .github)
+    Update build.yml with ubuntu-24.04 (#718)

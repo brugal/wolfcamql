@@ -2845,7 +2845,7 @@ static void CG_DrawField (int x, int y, int width, int value) {
 	l = strlen(num);
 	if (l > width)
 		l = width;
-	x += 2 + CHAR_WIDTH*(width - l);
+	x += 2 + CHARACTER_WIDTH*(width - l);
 
 	ptr = num;
 	while (*ptr && l)
@@ -2855,8 +2855,8 @@ static void CG_DrawField (int x, int y, int width, int value) {
 		else
 			frame = *ptr -'0';
 
-		CG_DrawPic( x,y, CHAR_WIDTH, CHAR_HEIGHT, cgs.media.numberShaders[frame] );
-		x += CHAR_WIDTH;
+		CG_DrawPic( x,y, CHARACTER_WIDTH, CHAR_HEIGHT, cgs.media.numberShaders[frame] );
+		x += CHARACTER_WIDTH;
 		ptr++;
 		l--;
 	}
@@ -3269,11 +3269,11 @@ static void CG_DrawStatusBar( void ) {
 		origin[1] = 0;
 		origin[2] = 0;
 		angles[YAW] = 90 + 20 * sin( cg.time / 1000.0 );
-		CG_Draw3DModel( CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE,
+		CG_Draw3DModel( CHARACTER_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE,
 					   cg_weapons[ cent->currentState.weapon ].ammoModel, 0, origin, angles );
 	}
 
-	CG_DrawStatusBarHead( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE );
+	CG_DrawStatusBarHead( 185 + CHARACTER_WIDTH*3 + TEXT_ICON_SPACE );
 
 	if (wolfcam_following) {
 		int powerups;
@@ -3289,11 +3289,11 @@ static void CG_DrawStatusBar( void ) {
 	}
 
 	if (haveRedFlag) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED );
+		CG_DrawStatusBarFlag( 185 + CHARACTER_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_RED );
 	} else if (haveBlueFlag) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE );
+		CG_DrawStatusBarFlag( 185 + CHARACTER_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_BLUE );
 	} else if (haveNeutralFlag) {
-		CG_DrawStatusBarFlag( 185 + CHAR_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE );
+		CG_DrawStatusBarFlag( 185 + CHARACTER_WIDTH*3 + TEXT_ICON_SPACE + ICON_SIZE, TEAM_FREE );
 	}
 
 
@@ -3302,7 +3302,7 @@ static void CG_DrawStatusBar( void ) {
 		origin[1] = 0;
 		origin[2] = -10;
 		angles[YAW] = ( cg.time & 2047 ) * 360 / 2048.0;
-		CG_Draw3DModel( 370 + CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE,
+		CG_Draw3DModel( 370 + CHARACTER_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE,
 					   cgs.media.armorModel, 0, origin, angles );
 	}
 	//FIXME wolfcam
@@ -3363,7 +3363,7 @@ static void CG_DrawStatusBar( void ) {
 
 				icon = cg_weapons[cent->currentState.weapon].ammoIcon;
 				if ( icon ) {
-					CG_DrawPic( CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE, icon );
+					CG_DrawPic( CHARACTER_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE, icon );
 				}
 			}
 		}
@@ -3409,8 +3409,8 @@ static void CG_DrawStatusBar( void ) {
 	if (!wolfcam_following  ||  (wolfcam_following  &&  value != INVALID_WOLFCAM_HEALTH)) {
 		if (painHealth  &&  wolfcam_painHealthStyle.integer == 1  &&  cgs.realProtocol >= 90  &&  value >= 80) {
 			// since protocol 90 ql doesn't send real health value just 20, 40, 60, 80
-			// x += 2 + CHAR_WIDTH*(3 - l)
-			CG_DrawPic(185 + (2 + CHAR_WIDTH*2), 432, CHAR_WIDTH, CHAR_HEIGHT, cgs.media.numberShaders[STAT_MINUS]);
+			// x += 2 + CHARACTER_WIDTH*(3 - l)
+			CG_DrawPic(185 + (2 + CHARACTER_WIDTH*2), 432, CHARACTER_WIDTH, CHAR_HEIGHT, cgs.media.numberShaders[STAT_MINUS]);
 		} else {
 			CG_DrawField ( 185, 432, 3, value);
 		}
@@ -3429,7 +3429,7 @@ static void CG_DrawStatusBar( void ) {
 		trap_R_SetColor( NULL );
 		// if we didn't draw a 3D icon, draw a 2D icon for armor
 		if ( !cg_draw3dIcons.integer && cg_drawIcons.integer ) {
-			CG_DrawPic( 370 + CHAR_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE, cgs.media.yellowArmorIcon );
+			CG_DrawPic( 370 + CHARACTER_WIDTH*3 + TEXT_ICON_SPACE, 432, ICON_SIZE, ICON_SIZE, cgs.media.yellowArmorIcon );
 		}
 
 	}
@@ -3444,7 +3444,7 @@ static void CG_DrawStatusBar( void ) {
 			value = 99;
 		}
 		trap_R_SetColor( colors[0] );
-		CG_DrawField (640 - (CHAR_WIDTH*2 + TEXT_ICON_SPACE + ICON_SIZE), 432, 2, value);
+		CG_DrawField (640 - (CHARACTER_WIDTH*2 + TEXT_ICON_SPACE + ICON_SIZE), 432, 2, value);
 		trap_R_SetColor( NULL );
 		// if we didn't draw a 3D icon, draw a 2D icon for armor
 		if ( !cg_draw3dIcons.integer && cg_drawIcons.integer ) {
@@ -5761,7 +5761,7 @@ static float CG_DrawPowerups( float y ) {
 	}
 
 	// draw the icons and timers
-	x = 640 - ICON_SIZE - CHAR_WIDTH * 2;
+	x = 640 - ICON_SIZE - CHARACTER_WIDTH * 2;
 	for ( i = 0 ; i < active ; i++ ) {
 		item = BG_FindItemForPowerup( sorted[i] );
 

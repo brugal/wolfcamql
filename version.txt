@@ -1,4 +1,4 @@
-12.7test3
+12.7test4
 
 * protocol 48 (dm_48), 46 (dm3), 45 (dm3), and 43 (dm3) support
 * bug fix:  CS_PARTICLE index range incorrectly calculated for protocol 68

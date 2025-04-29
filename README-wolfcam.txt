@@ -451,7 +451,7 @@ Ex:
         }
     }
 
-  Note:  /runfix might not work correctly run when the game or demo is paused since fx emitter blocks are not evaulated when paused.
+  Note:  /runfx might not work correctly run when the game or demo is paused since fx emitter blocks are not evaulated when paused.
 
 * /runfxall <script name>  will run script against all present fx entities
   see scripts/alltest.fx :
@@ -3206,4 +3206,4 @@ brugal
 
 basturdo@yahoo.com
 
-Copyright (C) 2009-2024 Angelo Cano
+Copyright (C) 2009-2025 Angelo Cano
