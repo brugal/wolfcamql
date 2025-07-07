@@ -92,6 +92,8 @@ cvar_t	*cl_aviCodec;
 cvar_t *cl_aviAllowLargeFiles;
 cvar_t *cl_aviFetchMode;
 cvar_t *cl_aviExtension;
+cvar_t *cl_aviPipeCommand;
+cvar_t *cl_aviPipeExtension;
 cvar_t *cl_aviNoAudioHWOutput;
 cvar_t	*cl_forceavidemo;
 cvar_t *cl_freezeDemoPauseVideoRecording;
@@ -6075,6 +6077,7 @@ void CL_Video_f( void )
   qboolean jpg;
   qboolean png;
   qboolean noSoundAvi;
+  qboolean pipe;
 
   if (!clc.demoplaying) {  //  ||  clc.state == CA_CONNECTING) {
 	  Com_Printf( "^1The video command can only be used when playing back demos\n" );
@@ -6087,6 +6090,7 @@ void CL_Video_f( void )
   jpg = qfalse;
   png = qfalse;
   noSoundAvi = qfalse;
+  pipe = qfalse;
   filename[0] = '\0';
   SplitVideo = qfalse;
 
@@ -6107,6 +6111,8 @@ void CL_Video_f( void )
 		  png = qtrue;
 	  } else if (!Q_stricmp(Cmd_Argv(i), "split")) {
 		  SplitVideo = qtrue;
+	  } else if (!Q_stricmp(Cmd_Argv(i), "pipe")) {
+		  pipe = qtrue;
 	  } else if (!Q_stricmp(Cmd_Argv(i), "name")) {
 		  if (!Q_stricmp(Cmd_Argv(i + 1), ":demoname")) {
 			  char dnameBuffer[MAX_OSPATH];
@@ -6157,10 +6163,10 @@ void CL_Video_f( void )
 	  }
 
 	  if (SplitVideo  &&  Cvar_VariableIntegerValue("r_anaglyphMode") == 19) {
-		  CL_OpenAVIForWriting(&afdDepthLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qtrue, qtrue);
-		  CL_OpenAVIForWriting(&afdDepthRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qtrue, qfalse);
+		  CL_OpenAVIForWriting(&afdDepthLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, pipe, qtrue, qtrue, qtrue);
+		  CL_OpenAVIForWriting(&afdDepthRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, pipe, qtrue, qtrue, qfalse);
 	  } else {
-		  CL_OpenAVIForWriting(&afdDepth, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qtrue, qfalse, qfalse);
+		  CL_OpenAVIForWriting(&afdDepth, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, pipe, qtrue, qfalse, qfalse);
 	  }
   }
 
@@ -6169,11 +6175,11 @@ void CL_Video_f( void )
 	  if (!ExtraVideoBuffer) {
 		  Com_Error(ERR_DROP, "Couldn't allocate memory for extra video buffer");
 	  }
-	  CL_OpenAVIForWriting(&afdLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qfalse, qtrue, qtrue);
-	  CL_OpenAVIForWriting(&afdRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, qfalse, qtrue, qfalse);
+	  CL_OpenAVIForWriting(&afdLeft, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, pipe, qfalse, qtrue, qtrue);
+	  CL_OpenAVIForWriting(&afdRight, filename, qfalse, avi, avi ? qtrue : noSoundAvi, wav, tga, jpg, png, pipe, qfalse, qtrue, qfalse);
   }
   //Com_Printf("^2video cl_aviFrameRate %d\n", cl_aviFrameRate->integer);
-  CL_OpenAVIForWriting(&afdMain, filename, qfalse, avi, noSoundAvi, wav, tga, jpg, png, qfalse, qfalse, qfalse);
+  CL_OpenAVIForWriting(&afdMain, filename, qfalse, avi, noSoundAvi, wav, tga, jpg, png, pipe, qfalse, qfalse, qfalse);
 
   if (CL_VideoRecording(&afdMain)) {
 	  s_soundtime = s_paintedtime;
@@ -6912,6 +6918,8 @@ void CL_Init ( void ) {
 	cl_aviAllowLargeFiles = Cvar_Get("cl_aviAllowLargeFiles", "1", CVAR_ARCHIVE);
 	cl_aviFetchMode = Cvar_Get("cl_aviFetchMode", "GL_RGB", CVAR_ARCHIVE);
 	cl_aviExtension = Cvar_Get("cl_aviExtension", "avi", CVAR_ARCHIVE);
+	cl_aviPipeCommand = Cvar_Get("cl_aviPipeCommand", "-threads 0 -c:a aac -c:v libx264 -preset ultrafast -y -pix_fmt yuv420p -crf 19", CVAR_ARCHIVE);
+	cl_aviPipeExtension = Cvar_Get("cl_aviPipeExtension", "mkv", CVAR_ARCHIVE);
 	cl_aviNoAudioHWOutput = Cvar_Get("cl_aviNoAudioHWOutput", "1", CVAR_ARCHIVE);
 	cl_freezeDemoPauseVideoRecording = Cvar_Get("cl_freezeDemoPauseVideoRecording", "0", CVAR_ARCHIVE);
 	cl_freezeDemoPauseMusic = Cvar_Get("cl_freezeDemoPauseMusic", "1", CVAR_ARCHIVE);

@@ -222,15 +222,21 @@ cl_aviCodec  uncompressed, mjpeg, huffyuv
 
 cl_aviAllowLargeFiles 1  to allow opendml avi files (up to about 500 gigabytes)
 
-/video [avi, avins, tga, jpg, png, wav, split, name <file basename>]
+/video [avi, avins, tga, jpg, png, wav, split, pipe, name <file basename>]
   All files stored in video/
 
-  ex:  /video tga wav    to dump tga screen-shots and a wav sound recording
-  ex:  /video avins wav name myNewVideo     avi file with no sound and a wav file
+  ex:  '/video tga wav'    to dump tga screen-shots and a wav sound recording
+  ex:  '/video avins wav name myNewVideo'     avi file with no sound and a wav file
+  ex:  '/video name testVid pipe'  pipe avi ouptut to ffmpeg
 
   'name :demoname' will use the current demo filename as the video file basename
 
   'split' option records extra right and left videos with r_anaglyphMode settings.  See extensions to r_anaglyphMode.
+
+  'pipe' option writes avi file to ffmpeg pipe
+
+     output file extension and format is controlled with cl_aviPipeExtension
+     ffmpeg options are in cl_aviPipeCommand
 
   r_jpegCompressionQuality   controls jpeg compression quality
   r_pngZlibCompression  choose between high speed or higher compression size

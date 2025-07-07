@@ -4699,3 +4699,42 @@ char *FS_BaseName (const char *path)
 
 	return baseName;
 }
+
+fileHandle_t FS_PipeOpen (const char *cmd)
+{
+	fileHandle_t f;
+
+	if (!fs_searchpaths) {
+		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
+	}
+
+	f = FS_HandleForFile();
+	fsh[f].zipFile = qfalse;
+
+	fsh[f].handleFiles.file.o = Sys_Popen(cmd);
+
+	if (!fsh[f].handleFiles.file.o) {
+		Com_Error(ERR_FATAL, "FS_PipeOpen: '%s' errno %d\n", cmd, errno);
+	}
+
+	Q_strncpyz(fsh[f].name, cmd, sizeof(fsh[f].name));
+
+	fsh[f].handleSync = qfalse;
+
+	return f;
+}
+
+int FS_PipeClose (fileHandle_t f)
+{
+	int exitCode;
+
+	if (!fs_searchpaths) {
+		Com_Error( ERR_FATAL, "Filesystem call made without initialization" );
+	}
+
+	exitCode = Sys_Pclose(fsh[f].handleFiles.file.o);
+
+	Com_Memset(&fsh[f], 0, sizeof(fsh[f]));
+
+	return exitCode;
+}

@@ -755,6 +755,9 @@ void FS_SortFileList(char **filelist, int numfiles);
 void FS_ReplaceSeparators (char *path);
 char *FS_BaseName (const char *path);
 
+fileHandle_t FS_PipeOpen (const char *cmd);
+int FS_PipeClose (fileHandle_t f);
+
 /*
 ==============================================================
 
@@ -1203,6 +1206,9 @@ dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *t
 
 void Sys_RemovePIDFile( const char *gamedir );
 void Sys_InitPIDFile( const char *gamedir );
+
+FILE *Sys_Popen (const char *command);
+int Sys_Pclose (FILE *stream);
 
 /* This is based on the Adaptive Huffman algorithm described in Sayood's Data
  * Compression book.  The ranks are not actually stored, but implicitly defined

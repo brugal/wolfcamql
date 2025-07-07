@@ -565,7 +565,7 @@ writing the actual data can begin
 // us:  called internally if odml isn't used and a series of avi files is
 // written for one recording
 
-qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean png, qboolean depth, qboolean split, qboolean left)
+qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean png, qboolean pipe, qboolean depth, qboolean split, qboolean left)
 {
     byte *cBuffer, *eBuffer;
     int size;
@@ -625,6 +625,7 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   afd->depth = depth;
   afd->split = split;
   afd->left = left;
+  afd->pipe = pipe;
 
   // Don't start if a framerate has not been chosen
   if( cl_aviFrameRate->integer <= 0 ) {
@@ -664,33 +665,48 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   Com_sprintf(afd->fileName, MAX_QPATH, "videos/%s-%04d.%s", afd->givenFileName, afd->vidFileCount, cl_aviExtension->string);
   //Com_Printf("%s\n", afd->fileName);
 
-  if( ( afd->f = FS_FOpenFileWrite( afd->fileName ) ) <= 0 ) {
-      Com_Printf("CL_OpenAVIForWriting()  couldn't open video file\n");
-      return qfalse;
-  }
+  if (afd->pipe) {
+      char command[MAX_STRING_CHARS];
 
-  if( ( afd->idxF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_FILENAME_EXT))) <= 0 )
-  {
-      Com_Printf("CL_OpenAVIForWriting() couldn't open standard index file '%s'\n", va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
-      FS_FCloseFile( afd->f );
-      return qfalse;
-  }
-  if( ( afd->idxVF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT))) <= 0)
-  {
-      Com_Printf("CL_OpenAVIForWriting() couldn't open video index file\n");
-      FS_FCloseFile( afd->f );
-      FS_FCloseFile(afd->idxF);
-      return qfalse;
-  }
-  if( ( afd->idxAF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT))) <= 0)
-  {
-      Com_Printf("CL_OpenAVIForWriting() couldn't open audio index file\n");
-      FS_FCloseFile( afd->f );
-      FS_FCloseFile(afd->idxF);
-      FS_FCloseFile(afd->idxVF);
-      return qfalse;
-  }
+      // avi passed in to ffmpeg is broken (missing header information, file size limit ignored) so this depends on ffmpeg error correction.
 
+      //afd->f = FS_PipeOpen("ffmpeg -f avi -i - -threads 0 -c:a aac -c:v libx264 -preset ultrafast -y -pix_fmt yuv420p -crf 19 C:\\Share\\tmp\\fvid.mkv 2> C:\\Share\\tmp\\ffmpeg.log");
+
+      Com_sprintf(command, sizeof(command), "ffmpeg -f avi -i - %s \"%s%c%s%cvideos%c%s.%s\" 2> \"%s%c%s%cvideos%c%s-ffmpeg.log\"", cl_aviPipeCommand->string, Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName, cl_aviPipeExtension->string, Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName);
+
+      //Com_Printf("pipe command: %s\n", command);
+      afd->f = FS_PipeOpen(command);
+
+      if (afd->f <= 0) {
+          Com_Printf("CL_OpenAVIForWriting()  couldn't open video pipe\n");
+          Com_Printf("pipe command: %s\n", command);
+          return qfalse;
+      }
+  } else {
+      if( ( afd->f = FS_FOpenFileWrite( afd->fileName ) ) <= 0 ) {
+          Com_Printf("CL_OpenAVIForWriting()  couldn't open video file\n");
+          return qfalse;
+      }
+
+      if( ( afd->idxF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_FILENAME_EXT))) <= 0 ) {
+          Com_Printf("CL_OpenAVIForWriting() couldn't open standard index file '%s'\n", va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
+          FS_FCloseFile( afd->f );
+          return qfalse;
+      }
+      if( ( afd->idxVF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT))) <= 0) {
+          Com_Printf("CL_OpenAVIForWriting() couldn't open video index file\n");
+          FS_FCloseFile( afd->f );
+          FS_FCloseFile(afd->idxF);
+          return qfalse;
+      }
+      if( ( afd->idxAF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT))) <= 0) {
+          Com_Printf("CL_OpenAVIForWriting() couldn't open audio index file\n");
+          FS_FCloseFile( afd->f );
+          FS_FCloseFile(afd->idxF);
+          FS_FCloseFile(afd->idxVF);
+          return qfalse;
+      }
+  }
 
   //Com_Printf("getting stream handle\n");
   afd->file = FS_FileForHandle(afd->f);
@@ -701,7 +717,7 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   afd->height = cls.glconfig.vidHeight;
 
   //if (cl_aviUseOpenDml->integer) {
-  if (cl_aviAllowLargeFiles->integer) {
+  if (cl_aviAllowLargeFiles->integer  &&  !afd->pipe) {
       afd->useOpenDml = qtrue;
       //Com_Printf("opendml large avi support\n");
   } else {
@@ -812,10 +828,13 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   afd->riffSize = bufIndex;
 
   bufIndex = 0;
-  START_CHUNK(afd, "idx1");
-  SafeFS_Write( buffer, bufIndex, afd->idxF );
 
-  CL_InitIndexes(afd);
+  if (!afd->pipe) {
+      START_CHUNK(afd, "idx1");
+      SafeFS_Write( buffer, bufIndex, afd->idxF );
+
+      CL_InitIndexes(afd);
+  }
 
   afd->moviSize = 4; // For the "movi"
   afd->fileOpen = qtrue;
@@ -879,13 +898,17 @@ static qboolean CL_CheckRiffSize (aviFileData_t *afd, int bytesToAdd)
   if( newRiffSize > afd->newRiffOrCloseFileSize )
   {
 
+      if (afd->pipe) {
+          return qfalse;
+      }
+
       if (!afd->useOpenDml) {
           // Close the current file...
           CL_CloseAVI(afd, qtrue);
 
           // ...And open a new one
           //CL_OpenAVIForWriting( va( "%s_", afd->fileName ), qtrue );
-          CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->png, afd->depth, afd->split, afd->left);
+          CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->png, afd->pipe, afd->depth, afd->split, afd->left);
           return qtrue;
       } else {
           //FIXME
@@ -910,7 +933,7 @@ static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuff
   int   chunkSize = 8 + size;
   int   paddingSize = PAD( size, 2 ) - size;
   byte  padding[ 4 ] = { 0 };
-  int64_t currentFileSize;
+  int64_t currentFileSize = 0;
 
   if( !afd->fileOpen ) {
       Com_Printf("^1CL_WriteAVIVideoFrame() file not open\n");
@@ -931,9 +954,10 @@ static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuff
 
   chunkOffset = afd->riffSize - afd->moviOffset - 8;
 
-  fseeko(afd->file, 0, SEEK_END);
-
-  currentFileSize = ftello(afd->file);
+  if (!afd->pipe) {
+      fseeko(afd->file, 0, SEEK_END);
+      currentFileSize = ftello(afd->file);
+  }
 
   bufIndex = 0;
   WRITE_STRING( "00dc" );
@@ -961,7 +985,7 @@ static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuff
       Com_Printf("^1size != afd->maxRecordSize  %d  %d\n", size, afd->maxRecordSize);
   }
 
-  if (afd->riffCount == 1) {
+  if (afd->riffCount == 1  &&  !afd->pipe) {
       // Index
       bufIndex = 0;
       WRITE_STRING( "00dc" );           //dwIdentifier
@@ -971,6 +995,10 @@ static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuff
       SafeFS_Write( buffer, 16, afd->idxF );
 
       afd->numIndices++;
+  }
+
+  if (afd->pipe) {
+      return;
   }
 
   // +8  points directly to data and skips header
@@ -1107,11 +1135,13 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
     int   chunkSize = 8 + bytesInBuffer;
     int   paddingSize = PAD( bytesInBuffer, 2 ) - bytesInBuffer;
     byte  padding[ 4 ] = { 0 };
-    int64_t currentFileSize;
+    int64_t currentFileSize = 0;
 
 
-    fseeko(afd->file, 0, SEEK_END);
-    currentFileSize = ftello(afd->file);
+    if (!afd->pipe) {
+        fseeko(afd->file, 0, SEEK_END);
+        currentFileSize = ftello(afd->file);
+    }
 
     bufIndex = 0;
     WRITE_STRING( "01wb" );
@@ -1127,7 +1157,7 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
     afd->moviSize += ( chunkSize + paddingSize );
     afd->a.totalBytes += bytesInBuffer;
 
-    if (afd->riffCount == 1) {
+    if (afd->riffCount == 1  &&  !afd->pipe) {
         afd->numAudioFrames++;
 
         // Index
@@ -1141,10 +1171,12 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
         afd->numIndices++;
     }
 
-    // +8  points directly to data and skips header
-    fwrite4((currentFileSize + 8) - afd->moviDataOffset, afd->idxAF);
-    //fwrite4(bytesInBuffer | 0x80000000L, afd->idxAF);  // 0x80000000 == key frame
-    fwrite4(bytesInBuffer, afd->idxAF);
+    if (!afd->pipe) {
+        // +8  points directly to data and skips header
+        fwrite4((currentFileSize + 8) - afd->moviDataOffset, afd->idxAF);
+        //fwrite4(bytesInBuffer | 0x80000000L, afd->idxAF);  // 0x80000000 == key frame
+        fwrite4(bytesInBuffer, afd->idxAF);
+    }
 
     afd->numAIndices++;
     afd->audioSize += bytesInBuffer;
@@ -1185,6 +1217,10 @@ static void CL_PadEndOfFile (const aviFileData_t *afd)
     int i;
     int64_t pos;
 
+    if (afd->pipe) {
+        return;
+    }
+
     fseeko(afd->file, 0, SEEK_END);
     pos = ftello(afd->file);
 
@@ -1203,6 +1239,10 @@ static void CL_PadEndOfFileExt (const aviFileData_t *afd, int pad)
     int paddingSize;
     int i;
     int64_t pos;
+
+    if (afd->pipe) {
+        return;
+    }
 
     fseeko(afd->file, 0, SEEK_END);
     pos = ftello(afd->file);
@@ -1238,6 +1278,10 @@ static void CL_WriteIndexes (aviFileData_t *afd)
 
   if( !afd->fileOpen ) {
       Com_Printf("^1CL_WriteIndexes() file not open\n");
+      return;
+  }
+
+  if (afd->pipe) {
       return;
   }
 
@@ -1458,6 +1502,10 @@ static void CL_CloseRiff (const aviFileData_t *afd)
     int64_t sz;
     int64_t pos;
 
+    if (afd->pipe) {
+        return;
+    }
+
     // riff 1 closed in WriteIndexes()
     if (afd->riffCount > 1) {
     //if (afd->useOpenDml) {  //(afd->riffCount > 1) {
@@ -1513,72 +1561,74 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
         return qfalse;
     }
 
-  //FIXME need to flush audio maybe
+    //FIXME need to flush audio maybe
 
-  CL_WriteIndexes(afd);
-  CL_CloseRiff(afd);
-  //CL_WriteIndexes(afd);
+    if (!afd->pipe) {
+        CL_WriteIndexes(afd);
+        CL_CloseRiff(afd);
+        //CL_WriteIndexes(afd);
 
-  // finalize header
+        // finalize header
 
-  //FS_Seek(afd->f, 4, FS_SEEK_SET);  // "RIFF" size
-  //fwrite4(afd->fileSize1 - 8, afd->f);
+        //FS_Seek(afd->f, 4, FS_SEEK_SET);  // "RIFF" size
+        //fwrite4(afd->fileSize1 - 8, afd->f);
 
-  FS_Seek(afd->f, afd->mainHeaderNumVideoFramesHeaderOffset, FS_SEEK_SET);
-  // not the total frames in file, only in the standard first riff
-  fwrite4(afd->numVideoFrames, afd->f);
+        FS_Seek(afd->f, afd->mainHeaderNumVideoFramesHeaderOffset, FS_SEEK_SET);
+        // not the total frames in file, only in the standard first riff
+        fwrite4(afd->numVideoFrames, afd->f);
 
-  FS_Seek(afd->f, afd->mainHeaderMaxRecordSizeHeaderOffset, FS_SEEK_SET);
-  fwrite4(afd->maxRecordSize, afd->f);
+        FS_Seek(afd->f, afd->mainHeaderMaxRecordSizeHeaderOffset, FS_SEEK_SET);
+        fwrite4(afd->maxRecordSize, afd->f);
 
-  FS_Seek(afd->f, afd->numVideoFramesHeaderOffset, FS_SEEK_SET);
-  // even though opendml has header information for total number of video
-  // frames, other applications set this to the total as well
-  // 2015-07-15  if this isn't set to the real length programs like Windows
-  // Media Player, Windows dir list, and Adobe Premiere will believe that the
-  // file is too short.
-  fwrite4(afd->odmlNumVideoFrames, afd->f);
+        FS_Seek(afd->f, afd->numVideoFramesHeaderOffset, FS_SEEK_SET);
+        // even though opendml has header information for total number of video
+        // frames, other applications set this to the total as well
+        // 2015-07-15  if this isn't set to the real length programs like Windows
+        // Media Player, Windows dir list, and Adobe Premiere will believe that the
+        // file is too short.
+        fwrite4(afd->odmlNumVideoFrames, afd->f);
 
-  FS_Seek(afd->f, afd->videoHeaderMaxRecordSizeHeaderOffset, FS_SEEK_SET);
-  fwrite4(afd->maxRecordSize, afd->f);
+        FS_Seek(afd->f, afd->videoHeaderMaxRecordSizeHeaderOffset, FS_SEEK_SET);
+        fwrite4(afd->maxRecordSize, afd->f);
 
-  if (afd->audio) {
-      FS_Seek(afd->f, afd->numAudioFramesHeaderOffset, FS_SEEK_SET);
-      fwrite4(afd->a.totalBytes / afd->a.sampleSize, afd->f);
-  }
-
-
-  //FS_Seek(afd->f, afd->moviOffset1 + 4, FS_SEEK_SET);  // Skip "LIST"
-  //fwrite4(afd->moviSize1, afd->f);
+        if (afd->audio) {
+            FS_Seek(afd->f, afd->numAudioFramesHeaderOffset, FS_SEEK_SET);
+            fwrite4(afd->a.totalBytes / afd->a.sampleSize, afd->f);
+        }
 
 
-  if (afd->useOpenDml) {
-      //fseeko(afd->file, afd->mainHeaderNumVideoFramesHeaderOffset, SEEK_SET);
-      //fwrite4(afd->odmlNumVideoFrames, afd->f);
+        //FS_Seek(afd->f, afd->moviOffset1 + 4, FS_SEEK_SET);  // Skip "LIST"
+        //fwrite4(afd->moviSize1, afd->f);
 
-      //fseeko(afd->file, afd->numVideoFramesHeaderOffset, SEEK_SET);
-      //fwrite4(afd->odmlNumVideoFrames, afd->f);
 
-      //FIXME  wrong, whatever
-      //fseeko(afd->file, afd->numAudioFramesHeaderOffset, SEEK_SET);
-      //fwrite4(afd->odmlNumAudioFrames, afd->f);
+        if (afd->useOpenDml) {
+            //fseeko(afd->file, afd->mainHeaderNumVideoFramesHeaderOffset, SEEK_SET);
+            //fwrite4(afd->odmlNumVideoFrames, afd->f);
 
-      FS_Seek(afd->f, afd->odmlDmlhHeaderOffset, FS_SEEK_SET);
-      fwrite4(afd->odmlNumVideoFrames, afd->f);
-      //Com_Printf("odml:  video %lld  audio  %lld  total %lld\n", afd->odmlNumVideoFrames, afd->odmlNumAudioFrames, afd->odmlNumVideoFrames + afd->odmlNumAudioFrames);
-  } else {
-      //Com_Printf( "Wrote %d:%d (%d) frames to %s\n", afd->numVideoFrames, afd->numAudioFrames, afd->numVideoFrames + afd->numAudioFrames, afd->fileName );
-  }
+            //fseeko(afd->file, afd->numVideoFramesHeaderOffset, SEEK_SET);
+            //fwrite4(afd->odmlNumVideoFrames, afd->f);
+
+            //FIXME  wrong, whatever
+            //fseeko(afd->file, afd->numAudioFramesHeaderOffset, SEEK_SET);
+            //fwrite4(afd->odmlNumAudioFrames, afd->f);
+
+            FS_Seek(afd->f, afd->odmlDmlhHeaderOffset, FS_SEEK_SET);
+            fwrite4(afd->odmlNumVideoFrames, afd->f);
+            //Com_Printf("odml:  video %lld  audio  %lld  total %lld\n", afd->odmlNumVideoFrames, afd->odmlNumAudioFrames, afd->odmlNumVideoFrames + afd->odmlNumAudioFrames);
+        } else {
+            //Com_Printf( "Wrote %d:%d (%d) frames to %s\n", afd->numVideoFrames, afd->numAudioFrames, afd->numVideoFrames + afd->numAudioFrames, afd->fileName );
+        }
 
 #if 0
-  //FIXME testing
-  fseeko(afd->file, 0, SEEK_END);
+        //FIXME testing
+        fseeko(afd->file, 0, SEEK_END);
 
-  fwriteString("JUNK", afd->f);
-  fwrite4(16, afd->f);
-  fwrite8(0xdeadbeaf, afd->f);
-  fwrite8(0xdeadbeaf, afd->f);
+        fwriteString("JUNK", afd->f);
+        fwrite4(16, afd->f);
+        fwrite8(0xdeadbeaf, afd->f);
+        fwrite8(0xdeadbeaf, afd->f);
 #endif
+    }
 
   if (!us) {
       free(afd->cBuffer);
@@ -1591,16 +1641,21 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
       }
   }
 
-  FS_FCloseFile( afd->f );
-  if (!afd->avi) {
-      FS_HomeRemove(afd->fileName);
+  if (afd->pipe) {
+      FS_PipeClose(afd->f);
+  } else {
+      FS_FCloseFile( afd->f );
+      if (!afd->avi) {
+          FS_HomeRemove(afd->fileName);
+      }
+      //FS_FCloseFile(afd->idxF);
+      FS_FCloseFile(afd->idxVF);
+      FS_FCloseFile(afd->idxAF);
+      //FS_HomeRemove(va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
+      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
+      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
   }
-  //FS_FCloseFile(afd->idxF);
-  FS_FCloseFile(afd->idxVF);
-  FS_FCloseFile(afd->idxAF);
-  //FS_HomeRemove(va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
-  FS_HomeRemove(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
-  FS_HomeRemove(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
+
   afd->fileOpen = qfalse;
   afd->file = NULL;
   afd->recording = qfalse;
@@ -1645,6 +1700,10 @@ static void CL_NewRiff (aviFileData_t *afd)
       return;
   }
 
+  if (afd->pipe) {
+      return;
+  }
+
   //pos = ftello(afd->file);
 
 
@@ -1659,7 +1718,7 @@ static void CL_NewRiff (aviFileData_t *afd)
       //Com_Printf("MAX_OPENDML_INDEX_ENTRIES * 2 starting new file\n");
       CL_CloseAVI(afd, qtrue);
       //CL_OpenAVIForWriting(va("%s_", afd->fileName), qtrue);
-      CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->png, afd->depth, afd->split, afd->left);
+      CL_OpenAVIForWriting(afd, afd->givenFileName, qtrue, afd->avi, afd->noSoundAvi, afd->wav, afd->tga, afd->jpg, afd->png, afd->pipe, afd->depth, afd->split, afd->left);
       return;
   }
 
@@ -1710,7 +1769,9 @@ static void CL_NewRiff (aviFileData_t *afd)
       return;
   }
 
-  CL_InitIndexes(afd);
+  if (!afd->pipe) {
+      CL_InitIndexes(afd);
+  }
 }
 
 /*

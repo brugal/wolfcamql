@@ -43,6 +43,7 @@ typedef struct aviFileData_s
     qboolean depth;
     qboolean split;
     qboolean left;
+    qboolean pipe;
 
     int startTime;
 

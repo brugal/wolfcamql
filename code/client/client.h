@@ -571,6 +571,9 @@ extern	cvar_t	*cl_aviCodec;
 extern cvar_t *cl_aviAllowLargeFiles;
 extern cvar_t *cl_aviFetchMode;
 extern cvar_t *cl_aviExtension;
+extern cvar_t *cl_aviPipeCommand;
+extern cvar_t *cl_aviPipeExtension;
+
 extern cvar_t *cl_freezeDemoPauseVideoRecording;
 extern cvar_t *cl_freezeDemoPauseMusic;
 
@@ -811,7 +814,7 @@ qboolean CL_Netchan_Process( netchan_t *chan, msg_t *msg );
 //
 // cl_avi.c
 //
-qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *filename, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean png, qboolean depth, qboolean split, qboolean left);
+qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *filename, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean png, qboolean pipe, qboolean depth, qboolean split, qboolean left);
 void CL_TakeVideoFrame (aviFileData_t *afd);
 void CL_WriteAVIVideoFrame (aviFileData_t *afd, const byte *imageBuffer, int size);
 void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size);

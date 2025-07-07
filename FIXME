@@ -1839,7 +1839,6 @@ No locals.
 * /at now+3sec  (offset for 'now' and also option to run only once)
 * option for /wait with exact time instead of frame time
 * q3mme command time based demo smoothing
-* q3mme video pipe -- https://github.com/brugal/wolfcamql/issues/27
 * /follow duel player maybe play hitsounds if damage plum present
 * vm cgame create failed:  not enough storage to process this command
 * doc for cg_roundScoreBoard
@@ -2599,6 +2598,9 @@ GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_shader.c at line 430
      Com_Error(): GL_VERSION is NULL----- Client Shutdown (Client fatal crashed: GL_VERSION is NULL) -----
 
    also Chrome angle libraries in "Program Files (x86)" are 64-bit
+
+* popen async functions rename to make clearer
+* ffmpeg pipe opens another console in Windows
 
 ----
 

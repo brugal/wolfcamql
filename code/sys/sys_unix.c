@@ -2017,3 +2017,25 @@ void Sys_DisableScreenBlanking (void)
 {
 	// nothing
 }
+
+FILE *Sys_Popen (const char *command)
+{
+	FILE *f;
+
+	f = popen(command, "w");
+	if (!f) {
+		Com_Printf("^1%s  couldn't open pipe: '%s' errno: %d\n", __FUNCTION__, command, errno);
+	}
+
+	return f;
+}
+
+int Sys_Pclose (FILE *stream)
+{
+	int exitCode;
+
+	exitCode = pclose(stream);
+	if (exitCode == -1) {
+		Com_Printf("^1%s  couldn't close pipe, errno: %d\n", __FUNCTION__, errno);
+	}
+}

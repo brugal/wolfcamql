@@ -2056,3 +2056,27 @@ void Sys_DisableScreenBlanking (void)
 		lastTime = currentTime;
 	}
 }
+
+FILE *Sys_Popen (const char *command)
+{
+	FILE *f;
+
+	f = _popen(command, "wb");
+	if (!f) {
+		Com_Printf("^1%s  couldn't open pipe: '%s' errno: %d\n", __FUNCTION__, command, errno);
+	}
+
+	return f;
+}
+
+int Sys_Pclose (FILE *stream)
+{
+	int exitCode;
+
+	exitCode = _pclose(stream);
+	if (exitCode == -1) {
+		Com_Printf("^1%s  couldn't close pipe, errno: %d\n", __FUNCTION__, errno);
+	}
+
+	return exitCode;
+}
