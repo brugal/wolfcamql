@@ -2599,8 +2599,15 @@ GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_shader.c at line 430
 
    also Chrome angle libraries in "Program Files (x86)" are 64-bit
 
-* popen async functions rename to make clearer
+* popen async functions rename to make clearer -- 2025-07-13 probably just leave it:  other uses of pipes (com_pipefile and q3mme ffmpeg pipe)
 * ffmpeg pipe opens another console in Windows
+* close github issue 55 (ffmpeg pipe)
+
+  - ffmpeg pipe (done)
+  - client and other info available in fx
+  - inherit model option
+  - fx str compare
+  - general script string compare (see ifeq)
 
 ----
 

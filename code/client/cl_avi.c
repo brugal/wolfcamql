@@ -668,7 +668,41 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   if (afd->pipe) {
       char command[MAX_STRING_CHARS];
 
-      // avi passed in to ffmpeg is broken (missing header information, file size limit ignored) so this depends on ffmpeg error correction.
+      /*
+        The avi file passed in to ffmpeg is broken (missing header information,
+        file size limit ignored) so this depends on ffmpeg error correction.
+
+        That will probably continue to work in the future but changes in how
+        they deal with broken files might affect this.  Right now they discard
+        avi data once it has been processed and that's what we want.  They
+        might one day decide they need to keep that data around until the file
+        has been parsed completely.
+
+        Another option is to pass in raw video and audio.  See:
+
+            https://stackoverflow.com/questions/63762351/ffmpeg-raw-video-and-audio-stdin
+
+        ----
+        Use a named pipe (FIFO). Simplified example for Linux/macOS:
+
+            1) Make named pipes:
+
+                mkfifo video
+                mkfifo audio
+
+            2) Output/pipe video and audio to stdout. This is using ffmpeg to generate video and audio to the named pipes just for demonstration purposes.
+
+                ffmpeg -y -re -f lavfi -i testsrc2=s=1280x720:r=25 -f rawvideo video & ffmpeg -y -re -f lavfi -i sine=r=44100 -f s16le audio
+
+            3) Use the named pipes as inputs for ffmpeg:
+
+                ffmpeg -f rawvideo -video_size 320x240 -pixel_format yuv420p -framerate 25 -i video -f s16le -sample_rate 44100 -channels 1 -i audio -t 10 output.mp4
+
+
+        answered Oct 5, 2020 at 19:24
+        llogan
+        ----
+      */
 
       //afd->f = FS_PipeOpen("ffmpeg -f avi -i - -threads 0 -c:a aac -c:v libx264 -preset ultrafast -y -pix_fmt yuv420p -crf 19 C:\\Share\\tmp\\fvid.mkv 2> C:\\Share\\tmp\\ffmpeg.log");
 

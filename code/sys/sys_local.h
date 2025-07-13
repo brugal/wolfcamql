@@ -77,6 +77,12 @@ qboolean Sys_FileIsDirectory (const char *path);
 qboolean Sys_FileExists (const char *path);
 qboolean Sys_CopyFile (const char *src, const char *dest);
 
+/* Strange naming like PopenClose() used to make it different from other 'pipe'
+   uses.  See ioquake3 com_pipefile which is mkfifo based and doesn't work in
+   Windows.  This uses popen() in Unix and CreatePipe() in Windows.  Just added
+   q3mme ffmpeg avi pipe and that uses popen() for both Unix and Windows.
+*/
+
 typedef struct {
     void *data;
 } popenData_t;
