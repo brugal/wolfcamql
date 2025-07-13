@@ -8597,3 +8597,17 @@ the demo.
 
 2025-04-25-02 (skip .github)
     Update build.yml with ubuntu-24.04 (#718)
+
+2025-05-15-01 (skip .github)
+    Lets use an older ubuntu image for more compatibility (#719)
+
+2024-07-07-01
+    OpenGL2: Disable the VAO cache by default
+
+    The VAO surface cache uses glBufferSubData and triggers a very slow
+    path in some GLES implementations. Specifically I have observed 10x
+    frame times under Emscripten with ANGLE/Metal on macOS and with Mali
+    on Android.
+
+2025-05-16-01
+    fix minor spelling errors

@@ -1970,6 +1970,8 @@ extern	cvar_t	*r_printShaders;
 
 extern cvar_t	*r_marksOnTriangleMeshes;
 
+extern cvar_t *r_vaoCache;
+
 extern cvar_t *r_pngZlibCompression;
 extern cvar_t *r_contrast;
 
