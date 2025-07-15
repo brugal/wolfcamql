@@ -562,8 +562,8 @@ writing the actual data can begin
 ===============
 */
 
-// us:  called internally if odml isn't used and a series of avi files is
-// written for one recording
+// us:  called internally if odml or pipe isn't used and a series of avi files
+// is written for one recording
 
 qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolean us, qboolean avi, qboolean noSoundAvi, qboolean wav, qboolean tga, qboolean jpg, qboolean png, qboolean pipe, qboolean depth, qboolean split, qboolean left)
 {
@@ -667,6 +667,8 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
 
   if (afd->pipe) {
       char command[MAX_STRING_CHARS];
+      char videoFileName[MAX_STRING_CHARS];
+      char logFileName[MAX_STRING_CHARS];
 
       /*
         The avi file passed in to ffmpeg is broken (missing header information,
@@ -704,11 +706,29 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
         ----
       */
 
+      // FS_FOpenFileWrite() below will created needed paths
+      Com_sprintf(videoFileName, sizeof(videoFileName), "%s%c%s%cvideos%c%s.%s", Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName, cl_aviPipeExtension->string);
+
+      Com_sprintf(logFileName, sizeof(logFileName), "%s%c%s%cvideos%c%s-ffmpeg.log", Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName);
+
+      FS_ReplaceSeparators(videoFileName);
+      FS_ReplaceSeparators(logFileName);
+
+      if (FS_CreatePath(videoFileName)) {
+          Com_Printf("CL_OpenAVIForWriting() video pipe couldn't create path for '%s'\n", videoFileName);
+          return qfalse;
+      }
+
       //afd->f = FS_PipeOpen("ffmpeg -f avi -i - -threads 0 -c:a aac -c:v libx264 -preset ultrafast -y -pix_fmt yuv420p -crf 19 C:\\Share\\tmp\\fvid.mkv 2> C:\\Share\\tmp\\ffmpeg.log");
 
-      Com_sprintf(command, sizeof(command), "ffmpeg -f avi -i - %s \"%s%c%s%cvideos%c%s.%s\" 2> \"%s%c%s%cvideos%c%s-ffmpeg.log\"", cl_aviPipeCommand->string, Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName, cl_aviPipeExtension->string, Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName);
+      //Com_sprintf(command, sizeof(command), "ffmpeg -f avi -i - %s \"%s%c%s%cvideos%c%s.%s\" 2> \"%s%c%s%cvideos%c%s-ffmpeg.log\"", cl_aviPipeCommand->string, Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName, cl_aviPipeExtension->string, Cvar_VariableString("fs_homepath"), PATH_SEP, Cvar_VariableString("fs_game"), PATH_SEP, PATH_SEP, afd->givenFileName);
 
-      //Com_Printf("pipe command: %s\n", command);
+      Com_sprintf(command, sizeof(command), "ffmpeg -f avi -i - %s \"%s\" 2> \"%s\"", cl_aviPipeCommand->string, videoFileName,  logFileName);
+
+      if (Cvar_VariableIntegerValue("debug_ffmpeg_pipe")) {
+          Com_Printf("ffmpeg pipe command: %s\n", command);
+      }
+
       afd->f = FS_PipeOpen(command);
 
       if (afd->f <= 0) {

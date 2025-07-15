@@ -1,4 +1,4 @@
-12.7test6
+12.7test7
 
 * ffmpeg avi pipe option
 * protocol 48 (dm_48), 46 (dm3), 45 (dm3), and 43 (dm3) support

@@ -1,4 +1,4 @@
-------------------------------------------------------------------------
+-----------------------------------------------------------------------
 Introduction:
 
 WolfcamQL is a quakelive/quake3 demo player with some hopefully helpful options for demo viewing and movie making:
@@ -237,6 +237,7 @@ cl_aviAllowLargeFiles 1  to allow opendml avi files (up to about 500 gigabytes)
 
      output file extension and format is controlled with cl_aviPipeExtension
      ffmpeg options are in cl_aviPipeCommand
+     set debug_ffmpeg_pipe cvar for debugging information
 
   r_jpegCompressionQuality   controls jpeg compression quality
   r_pngZlibCompression  choose between high speed or higher compression size
