@@ -1115,6 +1115,9 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 	}
 	case CG_R_REGISTERMODEL:
 		return re.RegisterModel( VMA(1) );
+	case CG_R_GETMODELNAME:
+		re.GetModelName(args[1], VMA(2), args[3]);
+		return 0;
 	case CG_R_REGISTERSKIN:
 		return re.RegisterSkin( VMA(1) );
 	case CG_R_REGISTERSHADER:

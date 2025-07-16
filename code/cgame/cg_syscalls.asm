@@ -151,4 +151,4 @@ equ trap_GetRoundStartTimes -154
 equ trap_GetTeamSwitchTime -155
 equ trap_R_BeginHud -156
 equ trap_R_UpdateDof -157
-
+equ trap_R_GetModelName -158

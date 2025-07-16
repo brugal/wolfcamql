@@ -7052,6 +7052,8 @@ void CG_Player ( centity_t *cent ) {
 
 		VectorCopy(legs.origin, ScriptVars.origin);
 
+		trap_R_GetModelName(legs.hModel, ScriptVars.model, sizeof(ScriptVars.model));
+
 		VectorCopy(cent->lastLegsIntervalPosition, ScriptVars.lastIntervalPosition);
         ScriptVars.lastIntervalTime = cent->lastLegsIntervalTime;
         VectorCopy(cent->lastLegsDistancePosition, ScriptVars.lastDistancePosition);
@@ -7134,6 +7136,9 @@ void CG_Player ( centity_t *cent ) {
 		VectorCopy(torso.axis[2], ScriptVars.axis[2]);
 
 		VectorCopy(torso.origin, ScriptVars.origin);
+
+		trap_R_GetModelName(torso.hModel, ScriptVars.model, sizeof(ScriptVars.model));
+		//Com_Printf("torso: %s\n", ScriptVars.model);
 
 		//Com_Printf("torsotime %f\n", cent->lastTorsoIntervalTime);
 
@@ -7516,6 +7521,8 @@ void CG_Player ( centity_t *cent ) {
 
 		//CG_CopyStaticCentDataToScript(cent);
 		VectorCopy(head.origin, ScriptVars.origin);
+
+		trap_R_GetModelName(head.hModel, ScriptVars.model, sizeof(ScriptVars.model));
 
 		//Com_Printf("headtime %f\n", cent->lastHeadIntervalTime);
 

@@ -219,6 +219,19 @@ model_t	*R_GetModelByHandle( qhandle_t index ) {
 	return mod;
 }
 
+void R_GetModelName (qhandle_t index, char *name, int sz) {
+	model_t *mod;
+
+	// out of range gets the defualt model
+	if ( index < 1 || index >= tr.numModels ) {
+		mod = tr.models[0];
+	} else {
+		mod = tr.models[index];
+	}
+
+	Q_strncpyz(name, mod->name, sz);
+}
+
 //===============================================================================
 
 /*

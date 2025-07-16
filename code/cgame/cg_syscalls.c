@@ -238,6 +238,10 @@ qhandle_t trap_R_RegisterModel( const char *name ) {
 	return syscall( CG_R_REGISTERMODEL, name );
 }
 
+void trap_R_GetModelName (qhandle_t model, char *modelName, size_t szModelName) {
+       syscall(CG_R_GETMODELNAME, model, modelName, szModelName);
+}
+
 qhandle_t trap_R_RegisterSkin( const char *name ) {
 	return syscall( CG_R_REGISTERSKIN, name );
 }
