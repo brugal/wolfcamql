@@ -1570,6 +1570,11 @@ void Sys_PlatformInit (qboolean useBacktrace, qboolean useConsoleOutput)
 		signal(SIGBUS, Sys_SigHandler);
 	}
 
+	// ffmpeg video pipe can send SIGPIPE.  Can't ignore since the writes
+	// will not report an error.
+	// signal(SIGPIPE, SIG_IGN);
+	signal(SIGPIPE, Sys_SigHandler);
+
 	Sys_SetFloatEnv();
 
 	stdinIsATTY = isatty( STDIN_FILENO ) &&
@@ -2038,4 +2043,6 @@ int Sys_Pclose (FILE *stream)
 	if (exitCode == -1) {
 		Com_Printf("^1%s  couldn't close pipe, errno: %d\n", __FUNCTION__, errno);
 	}
+
+	return exitCode;
 }

@@ -262,6 +262,10 @@ cl_freezeDemoPauseVideoRecording  to pause recording of video/screen-shots while
 
 cl_aviExtension  allow changing '.avi' extension to something else to avoid Windows indexing of video file
 
+cl_aviPrimeAudioRate  make audio dwScale and dwRate mutually prime
+
+cl_aviAudioWaitForVideoFrame  to delay writing audio before first video frame
+
 ------------------------------------------------------------------
 
 q3mme fx scripting
@@ -317,6 +321,8 @@ Some additions to q3mme fx scripting:
 * modulus math operator '%'.  Note: both input values are rounded to the nearest integer
 
 * player/head/trail, player/torso/trail, player/legs/trail, player/flight
+
+  For head, torso, and legs trail 'model' is initialzed to match the one added to the rendered view..
 
 * the following are passed on to the scripting system where appropriate:  team, clientnum (less than 0 signifies non-player), enemy, teammate, ineyes, surfacetype (for impacts).  You could have something like custom rails and rockets per team or different settings for enemies and also first person view.  See wolfcam-ql/scripts/q3mme.fx for more info.
 

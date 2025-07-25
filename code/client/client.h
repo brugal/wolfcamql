@@ -573,6 +573,8 @@ extern cvar_t *cl_aviFetchMode;
 extern cvar_t *cl_aviExtension;
 extern cvar_t *cl_aviPipeCommand;
 extern cvar_t *cl_aviPipeExtension;
+extern cvar_t *cl_aviPrimeAudioRate;
+extern cvar_t *cl_aviAudioWaitForVideoFrame;
 
 extern cvar_t *cl_freezeDemoPauseVideoRecording;
 extern cvar_t *cl_freezeDemoPauseMusic;

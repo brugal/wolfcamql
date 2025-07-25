@@ -3813,16 +3813,16 @@ PrintCvarMatches
 ===============
 */
 static void PrintCvarMatches( const char *s ) {
-	char value[ TRUNCATE_LENGTH ];
+	//char value[ TRUNCATE_LENGTH ];
 	cvar_t *cv;
 
 	if ( !Q_stricmpn( s, shortestMatch, strlen( shortestMatch ) ) ) {
-		Com_TruncateLongString( value, Cvar_VariableString( s ) );
+		//Com_TruncateLongString( value, Cvar_VariableString( s ) );
 		cv = Cvar_FindVar(s);
-		if (!Q_stricmp(value, cv->resetString)) {
-			Com_Printf("    %s = \"%s" S_COLOR_WHITE "\"  " S_COLOR_CYAN "default \"%s" S_COLOR_CYAN "\"\n", s, value, cv->resetString);
+		if (!Q_stricmp(cv->string, cv->resetString)) {
+			Com_Printf("    %s = \"%s" S_COLOR_WHITE "\"  " S_COLOR_CYAN "default" S_COLOR_CYAN "\n", s, cv->string);
 		} else {
-			Com_Printf(S_COLOR_YELLOW "    %s = \"%s" S_COLOR_YELLOW "\"  " S_COLOR_CYAN "default \"%s" S_COLOR_CYAN "\"\n", s, value, cv->resetString);
+			Com_Printf(S_COLOR_YELLOW "    %s = \"%s" S_COLOR_YELLOW "\"  " S_COLOR_CYAN "default \"%s" S_COLOR_CYAN "\"\n", s, cv->string, cv->resetString);
 		}
 
 

@@ -60,6 +60,8 @@ static byte buffer[ MAX_AVI_BUFFER ];
 static byte buffer2[8];
 static int  bufIndex = 0;
 
+static qboolean PipeUsed = qfalse;
+
 /*
 ===============
 SafeFS_Write
@@ -71,7 +73,14 @@ static ID_INLINE void SafeFS_Write( const void *buffer, int len, fileHandle_t f 
 
     r = FS_Write(buffer, len, f);
     if (r < len) {
-        Com_Error(ERR_DROP, "SafeFS_Write()  failed to write to file %d < %d  f:%d", r, len, f);
+        if (PipeUsed) {
+            // This is only for Windows.  Unix sends SIGPIPE.  In Linux if you
+            // ignore the signal, fwrite() will not report an error.
+            Com_Printf("^1SafeFS_Write()  failed to write to file %d < %d  f:%d\n", r, len, f);
+            Com_Error(ERR_DROP, "error writing to video pipe, see *-ffmpeg.log file for more information");
+        } else {
+            Com_Error(ERR_DROP, "SafeFS_Write()  failed to write to file %d < %d  f:%d", r, len, f);
+        }
     }
 
     FS_Flush(f);
@@ -419,9 +428,13 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
             // "dwScale and dwRate should be mutually prime. Tests have shown
             // that for example 10,000,000/400,000 instead of 25/1 results
             // in files that don't work on some hardware mpeg4 players"
-            WRITE_4BYTES( 1 );  //dwTimescale
-            WRITE_4BYTES( afd->a.rate );  //dwDataRate
-
+            if (cl_aviPrimeAudioRate->integer) {
+                WRITE_4BYTES( 1 );  //dwTimescale
+                WRITE_4BYTES( afd->a.rate );  //dwDataRate
+            } else {
+                WRITE_4BYTES( afd->a.sampleSize );  //dwTimescale
+                WRITE_4BYTES( afd->a.sampleSize * afd->a.rate );  //dwDataRate
+            }
 
             WRITE_4BYTES( 0 );                  //dwStartTime
             afd->numAudioFramesHeaderOffset = bufIndex;
@@ -626,6 +639,11 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   afd->split = split;
   afd->left = left;
   afd->pipe = pipe;
+  if (pipe) {
+      PipeUsed = qtrue;
+  } else {
+      PipeUsed = qfalse;
+  }
 
   // Don't start if a framerate has not been chosen
   if( cl_aviFrameRate->integer <= 0 ) {
@@ -662,7 +680,12 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
       //Q_strncpyz(afd->givenFileName, afd->fileName, MAX_QPATH);
   }
 
-  Com_sprintf(afd->fileName, MAX_QPATH, "videos/%s-%04d.%s", afd->givenFileName, afd->vidFileCount, cl_aviExtension->string);
+  if (cl_aviAllowLargeFiles->integer) {
+      Com_sprintf(afd->fileName, MAX_QPATH, "videos/%s.%s", afd->givenFileName, cl_aviExtension->string);
+  } else {
+      Com_sprintf(afd->fileName, MAX_QPATH, "videos/%s-%04d.%s", afd->givenFileName, afd->vidFileCount, cl_aviExtension->string);
+  }
+
   //Com_Printf("%s\n", afd->fileName);
 
   if (afd->pipe) {
@@ -988,6 +1011,7 @@ static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuff
   int   paddingSize = PAD( size, 2 ) - size;
   byte  padding[ 4 ] = { 0 };
   int64_t currentFileSize = 0;
+  int debugAviFrames;
 
   if( !afd->fileOpen ) {
       Com_Printf("^1CL_WriteAVIVideoFrame() file not open\n");
@@ -1026,6 +1050,11 @@ static void CL_WriteAVIVideoFrameReal (aviFileData_t *afd, const byte *imageBuff
   //afd->odmlFileSize += (chunkSize + paddingSize);
 
   afd->odmlNumVideoFrames++;  // total
+
+  debugAviFrames = Cvar_VariableIntegerValue("debug_avi_frames");
+  if (debugAviFrames > 2) {
+      Com_Printf("  video frame %" PRIi64 " written\n", afd->odmlNumVideoFrames);
+  }
 
   if (afd->riffCount == 1) {
       afd->numVideoFrames++;  // riff 1
@@ -1135,6 +1164,7 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
 {
   //static byte pcmCaptureBuffer[ PCM_BUFFER_SIZE ] = { 0 };
   int bytesInBuffer;
+  int debugAviFrames;
 
   bytesInBuffer = afd->PcmBytesInBuffer;
 
@@ -1148,6 +1178,17 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
   if( !afd->fileOpen ) {
       Com_Printf("^1CL_WriteAVIAudioFrame() file not open\n");
       return;
+  }
+
+  debugAviFrames = Cvar_VariableIntegerValue("debug_avi_frames");
+
+  if (afd->pipe  ||  afd->avi) {
+      if (cl_aviAudioWaitForVideoFrame->integer  &&  afd->odmlNumVideoFrames == 0) {
+          if (debugAviFrames) {
+              Com_Printf("audio write waiting for video frames...\n");
+          }
+          return;
+      }
   }
 
   //Com_Printf("bytesInBuffer %d\n", bytesInBuffer);
@@ -1235,6 +1276,14 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
     afd->numAIndices++;
     afd->audioSize += bytesInBuffer;
     afd->odmlNumAudioFrames++;
+
+    if (debugAviFrames) {
+        Com_Printf("audio frame %" PRIi64 "  video frame %" PRIi64, afd->odmlNumAudioFrames, afd->odmlNumVideoFrames);
+        if (debugAviFrames > 1) {
+            Com_Printf(", audio bytes %d, size %d", bytesInBuffer, size);
+        }
+        Com_Printf("\n");
+    }
 
     bytesInBuffer = 0;
   }
@@ -1602,6 +1651,7 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
     //int r;
     int pos;
     //char sbuf[MAX_QPATH];
+    int debugAviFrames;
 
 #if 0
     if( !afd->fileOpen ) {
@@ -1682,6 +1732,11 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
         fwrite8(0xdeadbeaf, afd->f);
         fwrite8(0xdeadbeaf, afd->f);
 #endif
+    }
+
+    debugAviFrames = Cvar_VariableIntegerValue("debug_avi_frames");
+    if (debugAviFrames) {
+        Com_Printf("avi closed, wrote: audio frames %" PRIi64 "  video frames %" PRIi64 " (%f seconds)  audio bytes: %d (%f seconds)\n", afd->odmlNumAudioFrames, afd->odmlNumVideoFrames, (double)afd->odmlNumVideoFrames / (double)afd->frameRate, afd->a.totalBytes, (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8));
     }
 
   if (!us) {

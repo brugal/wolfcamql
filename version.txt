@@ -1,5 +1,11 @@
-12.7test8
+12.7test9
 
+* video file counter not appended to file name if using cl_aviAllowLargeFiles
+* cl_aviAudioWaitForVideoFrame  to delay writing audio before first video frame
+* cvar tab completion doesn't truncate long values
+* cvar tab completion doesn't print value twice if cvar is set to default
+* bug fix: cvar tab completion would show it as changed from default if the string value was too long
+* cl_aviPrimeAudioRate  to control if audio dwScale and dwRate are mutually prime
 * fx:  player trails initialize 'model' to match player
 * ffmpeg avi pipe option
 * protocol 48 (dm_48), 46 (dm3), 45 (dm3), and 43 (dm3) support

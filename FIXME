@@ -2604,10 +2604,66 @@ GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_shader.c at line 430
 * close github issue 55 (ffmpeg pipe)
 
   - ffmpeg pipe (done)
+
+     SIGPIPE exit 141 in macos and linux if ffmpeg isn't found
+        2025-07-25 just adding to signal handler and exiting gracefully but no message to check *ffmpeg.log
+
   - client and other info available in fx
-  - inherit model option
   - fx str compare
   - general script string compare (see ifeq)
+  - audio delayed
+
+
+    https://en.wikipedia.org/wiki/Audio_Video_Interleave#Limitations
+
+       - no time codes
+
+    https://superuser.com/questions/982342/in-ffmpeg-how-to-delay-only-the-audio-of-a-mp4-video-without-converting-the-au
+
+    --
+        If you need to delay video by 3.84 seconds, use a command like this:
+
+              ffmpeg -i "movie.mp4" -itsoffset 3.84 -i "movie.mp4" -map 1:v -map 0:a -c copy "movie-video-delayed.mp4"
+
+        answered Oct 6, 2015 at 20:58
+        Weaver's user avatar
+        Weaver
+    --
+
+      -itsoffset -0.4
+
+    https://stackoverflow.com/questions/35416110/ffmpeg-concat-video-and-audio-out-of-sync
+
+    --
+        ffprobe -v quiet -show_entries stream=start_time,duration output.MOV
+
+        start_time=-0.247500
+        duration=6.131125
+        start_time=-0.257333
+        duration=6.155333
+    --
+
+    https://github.com/FFmpeg/FFmpeg/blob/master/libavformat/avidec.c
+
+    audio length is longer since it begins to be written before first video frame
+
+    https://stackoverflow.com/questions/7766129/converting-avi-to-mp4-audio-is-out-of-sync
+
+    --
+        try adding -async 1 to your command...
+
+        From Manual: -async samples_per_second:
+
+        Audio sync method. "Stretches/squeezes" the audio stream to match the timestamps, the parameter is the maximum samples per second by which the audio is changed. -async 1 is a special case where only the start of the audio stream is corrected without any later correction.
+
+        answered Oct 17, 2011 at 11:11
+        mblaettermann
+    --
+
+* fx:  player model with skin
+* fwrite4(afd->a.totalBytes / afd->a.sampleSize, afd->f);
+
+  totalBytes is int so 300+ minute limit
 
 ----
 

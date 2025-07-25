@@ -95,6 +95,9 @@ cvar_t *cl_aviExtension;
 cvar_t *cl_aviPipeCommand;
 cvar_t *cl_aviPipeExtension;
 cvar_t *cl_aviNoAudioHWOutput;
+cvar_t *cl_aviPrimeAudioRate;
+cvar_t *cl_aviAudioWaitForVideoFrame;
+
 cvar_t	*cl_forceavidemo;
 cvar_t *cl_freezeDemoPauseVideoRecording;
 cvar_t *cl_freezeDemoPauseMusic;
@@ -6921,6 +6924,9 @@ void CL_Init ( void ) {
 	cl_aviPipeCommand = Cvar_Get("cl_aviPipeCommand", "-threads 0 -c:a aac -c:v libx264 -preset ultrafast -y -pix_fmt yuv420p -crf 19", CVAR_ARCHIVE);
 	cl_aviPipeExtension = Cvar_Get("cl_aviPipeExtension", "mkv", CVAR_ARCHIVE);
 	cl_aviNoAudioHWOutput = Cvar_Get("cl_aviNoAudioHWOutput", "1", CVAR_ARCHIVE);
+	cl_aviPrimeAudioRate = Cvar_Get("cl_aviPrimeAudioRate", "1", CVAR_ARCHIVE);
+	cl_aviAudioWaitForVideoFrame = Cvar_Get("cl_aviAudioWaitForVideoFrame", "1", CVAR_ARCHIVE);
+
 	cl_freezeDemoPauseVideoRecording = Cvar_Get("cl_freezeDemoPauseVideoRecording", "0", CVAR_ARCHIVE);
 	cl_freezeDemoPauseMusic = Cvar_Get("cl_freezeDemoPauseMusic", "1", CVAR_ARCHIVE);
 	cl_forceavidemo = Cvar_Get ("cl_forceavidemo", "0", 0);
