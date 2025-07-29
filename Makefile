@@ -260,13 +260,6 @@ ifndef DEBUG_CFLAGS
 DEBUG_CFLAGS=-ggdb -O0
 endif
 
-EXTRA_C_WARNINGS = -Wimplicit -Wstrict-prototypes
-
-#EXTRA_C_WARNINGS += -Wformat=2 -Wno-format-zero-length -Wformat-security -Wno-format-nonliteral
-#EXTRA_C_WARNINGS += -Wstrict-aliasing=2 -Wmissing-format-attribute
-#EXTRA_C_WARNINGS += -Wdisabled-optimization
-#EXTRA_C_WARNINGS += -Werror-implicit-function-declaration
-
 ifdef CLANG
 CFLAGS=-Qunused-arguments
 CC=clang
@@ -301,9 +294,9 @@ JPDIR=$(MOUNT_DIR)/jpeg-9d
 FREETYPEDIR=$(MOUNT_DIR)/freetype-2.12.1
 SPEEXDIR=$(MOUNT_DIR)/libspeex-1.2.0
 SPEEXDSPDIR=$(MOUNT_DIR)/libspeexdsp-1.2rc3
-OGGDIR=$(MOUNT_DIR)/libogg-1.3.5
+OGGDIR=$(MOUNT_DIR)/libogg-1.3.6
 VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.7
-OPUSDIR=$(MOUNT_DIR)/opus-1.2.1
+OPUSDIR=$(MOUNT_DIR)/opus-1.5.2
 OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.12
 ZDIR=$(MOUNT_DIR)/zlib-1.3.1
 TOOLSDIR=$(MOUNT_DIR)/tools
@@ -400,12 +393,14 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   endif
 
   ifdef CGAME_HARD_LINKED
-    BASE_CFLAGS = -p -g -rdynamic -Wall -fno-strict-aliasing \
-      -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse $(CGAME_HARD_LINKED)
+    WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+    WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
+    BASE_CFLAGS = -p -g -rdynamic -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse $(CGAME_HARD_LINKED)
     SSE2_CFLAGS = -msse2
   else
-    BASE_CFLAGS = -g -rdynamic -Wall -fno-strict-aliasing \
-      -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse
+    WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+    WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
+    BASE_CFLAGS = -g -rdynamic -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse
     SSE2_CFLAGS = -msse2
   endif
 
@@ -758,8 +753,9 @@ ifdef MINGW
     $(error Cannot find a suitable cross compiler for $(PLATFORM))
   endif
 
-  BASE_CFLAGS = -g -gdwarf-3 -Wall -fno-strict-aliasing \
-    -DUSE_ICON -msse
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
+  BASE_CFLAGS = -g -gdwarf-3 -DUSE_ICON -msse
   SSE2_CFLAGS = -msse2
 
   ifeq ($(ARCH),x86)
@@ -923,9 +919,9 @@ ifeq ($(PLATFORM),freebsd)
   TOOLS_CC=cc
 
   # flags
-  BASE_CFLAGS = \
-    -Wall -fno-strict-aliasing \
-    -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
+  BASE_CFLAGS = -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
   HAVE_VM_COMPILED = true
 
@@ -978,8 +974,9 @@ else # ifeq freebsd
 
 ifeq ($(PLATFORM),openbsd)
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing \
-     -pipe -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
+  BASE_CFLAGS = -pipe -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
 
   OPTIMIZEVM = -O3
@@ -1062,7 +1059,9 @@ ifeq ($(PLATFORM),netbsd)
   SHLIBLDFLAGS=-shared $(LDFLAGS)
   THREAD_LIBS=-lpthread
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
+  BASE_CFLAGS =
 
   ifeq ($(ARCH),x86)
     HAVE_VM_COMPILED=true
@@ -1118,8 +1117,9 @@ ifeq ($(PLATFORM),sunos)
     endif
   endif
 
-  BASE_CFLAGS = -Wall -fno-strict-aliasing \
-    -pipe -DUSE_ICON
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
+  BASE_CFLAGS = -pipe -DUSE_ICON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
 
   OPTIMIZEVM = -O3 -funroll-loops
@@ -1520,6 +1520,14 @@ BASE_CFLAGS += -DPRODUCT_VERSION=\\\"$(VERSION)\\\" -DWOLFCAM_VERSION=\\\"$(VERS
 
 BASE_CFLAGS += -D_FILE_OFFSET_BITS=64
 
+WARNINGS_CFLAGS += -Wformat=2 -Wno-format-zero-length -Wformat-security \
+  -Wno-format-nonliteral -Wstrict-aliasing=2 -Wmissing-format-attribute \
+  -Wdisabled-optimization -Werror-implicit-function-declaration
+WARNINGS_CXXFLAGS += -Wformat=2 -Wno-format-zero-length -Wformat-security \
+  -Wno-format-nonliteral -Wstrict-aliasing=2 -Wmissing-format-attribute \
+  -Wdisabled-optimization
+THIRDPARTY_CFLAGS += -Wno-strict-prototypes
+
 ifeq ($(V),1)
 echo_cmd=@:
 Q=
@@ -1530,33 +1538,43 @@ endif
 
 define DO_CC
 $(echo_cmd) "CC $<"
-$(Q)$(CC) $(NOTSHLIBCFLAGS) $(EXTRA_C_WARNINGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
+$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(WARNINGS_CFLAGS) -o $@ -c $<
+endef
+
+define DO_THIRDPARTY_CC
+$(echo_cmd) "THIRDPARTY_CC $<"
+$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(THIRDPARTY_CFLAGS) -o $@ -c $<
 endef
 
 # -fwrapv for $(SPLINES) gcc warning
 define DO_CXX
 $(echo_cmd) "CXX $<"
-$(Q)$(CXX) $(CLIENT_CXXFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
+$(Q)$(CXX) $(CLIENT_CXXFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(WARNINGS_CXXFLAGS) -o $@ -c $<
 endef
 
 define DO_CC_ALTIVEC
 $(echo_cmd) "CC $<"
-$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(ALTIVEC_CFLAGS) -o $@ -c $<
+$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(WARNINGS_CFLAGS) $(ALTIVEC_CFLAGS) -o $@ -c $<
 endef
 
 define DO_REF_CC
 $(echo_cmd) "REF_CC $<"
-$(Q)$(CC) $(SHLIBCFLAGS) $(EXTRA_C_WARNINGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) -o $@ -c $<
+$(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(WARNINGS_CFLAGS) -o $@ -c $<
+endef
+
+define DO_THIRDPARTY_REF_CC
+$(echo_cmd) "THIRDPARTY_REF_CC $<"
+$(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(THIRDPARTY_CFLAGS) -o $@ -c $<
 endef
 
 define DO_REF_CC_ALTIVEC
 $(echo_cmd) "REF_CC $<"
-$(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(ALTIVEC_CFLAGS) -o $@ -c $<
+$(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(WARNINGS_CFLAGS) $(ALTIVEC_CFLAGS) -o $@ -c $<
 endef
 
 define DO_REF_CC_SSE2
 $(echo_cmd) "REF_CC $<"
-$(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(SSE2_CFLAGS) -o $@ -c $<
+$(Q)$(CC) $(SHLIBCFLAGS) $(CFLAGS) $(CLIENT_CFLAGS) $(OPTIMIZE) $(WARNINGS_CFLAGS) $(SSE2_CFLAGS) -o $@ -c $<
 endef
 
 define DO_REF_STR
@@ -1567,7 +1585,7 @@ endef
 
 define DO_BOT_CC
 $(echo_cmd) "BOT_CC $<"
-$(Q)$(CC) $(NOTSHLIBCFLAGS) $(EXTRA_C_WARNINGS) $(CFLAGS) $(BOTCFLAGS) $(OPTIMIZE) -DBOTLIB -o $@ -c $<
+$(Q)$(CC) $(NOTSHLIBCFLAGS) $(CFLAGS) $(BOTCFLAGS) $(OPTIMIZE) $(WARNINGS_CFLAGS) -DBOTLIB -o $@ -c $<
 endef
 
 ifeq ($(GENERATE_DEPENDENCIES),1)
@@ -1576,49 +1594,49 @@ endif
 
 define DO_SHLIB_CC
 $(echo_cmd) "SHLIB_CC $<"
-$(Q)$(CC) $(BASEGAME_CFLAGS) $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(BASEGAME_CFLAGS) $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
 define DO_GAME_CC
 $(echo_cmd) "GAME_CC $<"
-$(Q)$(CC) $(BASEGAME_CFLAGS) -DQAGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(BASEGAME_CFLAGS) -DQAGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
 define DO_CGAME_CC
 $(echo_cmd) "CGAME_CC $<"
-$(Q)$(CC) $(BASEGAME_CFLAGS) -DCGAMESO -DCGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(BASEGAME_CFLAGS) -DCGAMESO -DCGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
 define DO_UI_CC
 $(echo_cmd) "UI_CC $<"
-$(Q)$(CC) $(BASEGAME_CFLAGS) -DUI $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(BASEGAME_CFLAGS) -DUI $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
 define DO_SHLIB_CC_MISSIONPACK
 $(echo_cmd) "SHLIB_CC_MISSIONPACK $<"
-$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
 define DO_GAME_CC_MISSIONPACK
 $(echo_cmd) "GAME_CC_MISSIONPACK $<"
-$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK -DQAGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK -DQAGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
 define DO_CGAME_CC_MISSIONPACK
 $(echo_cmd) "CGAME_CC_MISSIONPACK $<"
-$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK -DCGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK -DCGAME $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
 define DO_UI_CC_MISSIONPACK
 $(echo_cmd) "UI_CC_MISSIONPACK $<"
-$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK -DUI $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) -o $@ -c $<
+$(Q)$(CC) $(MISSIONPACK_CFLAGS) -DMISSIONPACK -DUI $(SHLIBCFLAGS) $(CFLAGS) $(OPTIMIZEVM) $(WARNINGS_CFLAGS) -o $@ -c $<
 $(Q)$(DO_QVM_DEP)
 endef
 
@@ -1629,7 +1647,12 @@ endef
 
 define DO_DED_CC
 $(echo_cmd) "DED_CC $<"
-$(Q)$(CC) $(NOTSHLIBCFLAGS) -DDEDICATED $(CFLAGS) $(SERVER_CFLAGS) $(OPTIMIZE) -o $@ -c $<
+$(Q)$(CC) $(NOTSHLIBCFLAGS) -DDEDICATED $(CFLAGS) $(SERVER_CFLAGS) $(OPTIMIZE) $(WARNINGS_CFLAGS) -o $@ -c $<
+endef
+
+define DO_THIRDPARTY_DED_CC
+$(echo_cmd) "THIRDPARTY_DED_CC $<"
+$(Q)$(CC) $(NOTSHLIBCFLAGS) -DDEDICATED $(CFLAGS) $(SERVER_CFLAGS) $(OPTIMIZE) $(THIRDPARTY_CFLAGS) -o $@ -c $<
 endef
 
 define DO_WINDRES
@@ -1717,8 +1740,14 @@ ifeq ($(PLATFORM),mingw32)
 	@echo "  WINDRES: $(WINDRES)"
 endif
 	@echo ""
-	@echo "  EXTRA_C_WARNINGS:"
-	$(call print_wrapped, $(EXTRA_C_WARNINGS))
+	@echo "  WARNINGS_CFLAGS:"
+	$(call print_wrapped, $(WARNINGS_CFLAGS))
+	@echo ""
+	@echo "  WARNINGS_CXXFLAGS:"
+	$(call print_wrapped, $(WARNINGS_CXXFLAGS))
+	@echo ""
+	@echo "  THIRDPARTY_CFLAGS:"
+	$(call print_wrapped, $(THIRDPARTY_CFLAGS))
 	@echo ""
 	@echo "  CFLAGS:"
 	$(call print_wrapped, $(CFLAGS) $(OPTIMIZE))
@@ -2432,6 +2461,7 @@ Q3OBJ += \
   $(B)/client/opus/opus_multistream_encoder.o \
   $(B)/client/opus/opus_multistream_decoder.o \
   $(B)/client/opus/repacketizer.o \
+  $(B)/client/opus/extensions.o \
   \
   $(B)/client/opus/bands.o \
   $(B)/client/opus/celt.o \
@@ -3252,37 +3282,37 @@ $(B)/client/%.o: $(BLIBDIR)/%.c
 	$(DO_BOT_CC)
 
 $(B)/client/speex/%.o: $(SPEEXDIR)/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/speex/%.o: $(SPEEXDSPDIR)/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/%.o: $(OGGDIR)/src/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/%.o: $(GDIR)/%.c
 	$(DO_CC)
 
 $(B)/client/vorbis/%.o: $(VORBISDIR)/lib/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/opus/%.o: $(OPUSDIR)/src/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/opus/%.o: $(OPUSDIR)/celt/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/opus/%.o: $(OPUSDIR)/silk/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/opus/%.o: $(OPUSDIR)/silk/float/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/%.o: $(OPUSFILEDIR)/src/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/%.o: $(ZDIR)/%.c
-	$(DO_CC)
+	$(DO_THIRDPARTY_CC)
 
 $(B)/client/%.o: $(SDLDIR)/%.c
 	$(DO_CC)
@@ -3304,10 +3334,10 @@ $(B)/renderergl1/%.o: $(SDLDIR)/%.c
 	$(DO_REF_CC)
 
 $(B)/renderergl1/%.o: $(JPDIR)/%.c
-	$(DO_REF_CC)
+	$(DO_THIRDPARTY_REF_CC)
 
 $(B)/renderergl1/%.o: $(ZDIR)/%.c
-	$(DO_REF_CC)
+	$(DO_THIRDPARTY_REF_CC)
 
 $(B)/renderergl1/%.o: $(RCOMMONDIR)/%.c
 	$(DO_REF_CC)
@@ -3331,7 +3361,7 @@ $(B)/renderergl2/glsl/%.o: $(B)/renderergl2/glsl/%.c
 	$(DO_REF_CC)
 
 $(B)/renderergl2/%.o: $(ZDIR)/%.c
-	$(DO_REF_CC)
+	$(DO_THIRDPARTY_REF_CC)
 
 $(B)/renderergl2/%.o: $(RCOMMONDIR)/%.c
 	$(DO_REF_CC)
@@ -3354,7 +3384,7 @@ $(B)/ded/%.o: $(CMDIR)/%.c
 	$(DO_DED_CC)
 
 $(B)/ded/%.o: $(ZDIR)/%.c
-	$(DO_DED_CC)
+	$(DO_THIRDPARTY_DED_CC)
 
 $(B)/ded/%.o: $(BLIBDIR)/%.c
 	$(DO_BOT_CC)

@@ -8611,3 +8611,38 @@ the demo.
 
 2025-05-16-01
     fix minor spelling errors
+
+2025-06-19-01
+    Replace various sprintf calls with snprintf calls
+
+2025-06-19-02
+    Expand buffers to prevent potential truncation
+
+2025-06-16-01 (skip .github)
+    Update build.yml to replace deprecated windows-2019 with windows-2022
+
+    GitHub is ending support for the windows-2019 runner image and windows-2022 
+will be the minimum supported version by the end of June, 2025. We need to updat
+e before this date. More information about this change is here: https://github.c
+om/actions/runner-images/issues/12045
+
+2025-07-13-01
+    Add a script for updating 3rd party libraries
+
+2025-07-13-02
+    Update xiph.org internal libs
+
+2025-07-13-03
+    Fix GCC warning
+
+2025-07-13-04
+    Fix a few misleading indentation warnings
+
+2025-07-14-01  (skip, gets reverted)
+    define guards to prevent warnings
+
+2025-07-14-02
+    Update zlib
+
+2025-07-14-03
+    Separate out CFLAGS so that third party code is compiled with warnings disabled

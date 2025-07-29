@@ -346,7 +346,6 @@ static int callsys(char **av) {
 			else
 				i++;
 		}
-		//FIXME free if not NULL?  cppcheck
 		argv[j] = NULL;
 		executable = strsave( argv[0] );
 		argv[0] = stringf( "\"%s\"", argv[0] );
@@ -438,7 +437,7 @@ static char *exists(char *name) {
 			b = b->link;
 			if (b->str[0]) {
 				char buf[1024];
-				sprintf(buf, "%s/%s", b->str, name);
+				snprintf(buf, sizeof(buf), "%s/%s", b->str, name);
 				if (access(buf, 4) == 0)
 					return strsave(buf);
 			} else if (access(name, 4) == 0)
