@@ -8646,3 +8646,40 @@ om/actions/runner-images/issues/12045
 
 2025-07-14-03
     Separate out CFLAGS so that third party code is compiled with warnings disabled
+
+2025-07-14-04
+    Update libjpeg
+
+2025-07-14-05
+    Treat unzip.c and ioapi.c as third party code
+
+2025-07-14-06
+    Use correct abs function in FBO_FastBlit
+
+2025-07-14-07
+    Add CC_VERSION to info message
+
+2025-07-14-08
+    Selectively disable -Warray-bounds
+
+2025-06-28-01
+    Use PFNGETFOLDERPATHA typedef
+
+    FARPROC is defined with an empty parameter list, which newer versions of GCC consider equivalent to (void). Compilation fails when qSHGetFolderPath gets called with arguments.
+
+2025-07-18-01
+    Revert "define guards to prevent warnings" (fixes #737)
+
+    This reverts commit 20634976e91b1e6380e34735bfc74a18505cc356.
+
+2025-07-18-02
+    Undefine real error codes to fix warnings
+
+2025-07-20-01
+    Be slightly more targetted in cleaning up jpeg source
+
+2025-07-16-01
+    Update curl
+
+2025-07-18-01
+    Fix curl deprecations and remove FTP support

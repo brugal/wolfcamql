@@ -1461,12 +1461,7 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		char *output;
 
 		if (args[1] >= di.numPlayerInfo) {
-			// 2021-08-25 Debian stable x86_64-w64-mingw32-gcc (GCC) 10-win32 20210110 is defining __USE_MINGW_ANSI_STDIO which uses %lld for PRIdPTR
-#if defined(__MINGW32__)
-			Com_Printf("^1CL_CgameSystemCalls CG_GET_EXTRA_PLAYER_INFO invalid number %" "I64d"  "\n", args[1]);
-#else
 			Com_Printf("^1CL_CgameSystemCalls CG_GET_EXTRA_PLAYER_INFO invalid number %" PRIdPTR "\n", args[1]);
-#endif
 			return 0;
 		}
 

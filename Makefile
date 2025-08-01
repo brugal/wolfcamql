@@ -290,7 +290,8 @@ BLIBDIR=$(MOUNT_DIR)/botlib
 NDIR=$(MOUNT_DIR)/null
 UIDIR=$(MOUNT_DIR)/ui
 Q3UIDIR=$(MOUNT_DIR)/q3_ui
-JPDIR=$(MOUNT_DIR)/jpeg-9d
+JPDIR=$(MOUNT_DIR)/jpeg-9f
+CURLDIR=$(MOUNT_DIR)/curl-8.15.0
 FREETYPEDIR=$(MOUNT_DIR)/freetype-2.12.1
 SPEEXDIR=$(MOUNT_DIR)/libspeex-1.2.0
 SPEEXDSPDIR=$(MOUNT_DIR)/libspeexdsp-1.2rc3
@@ -346,6 +347,11 @@ else
   CURL_LIBS ?= -lcurl
   OPENAL_LIBS ?= -lopenal
 endif
+
+#FIXME 2025-07-31 not sure why this is added, code/client/cl_curl.h references header directly
+#ifeq ($(USE_LOCAL_HEADERS),1)
+#  CURL_CFLAGS+=-I$(CURLDIR)/include
+#endif
 
 # Use sdl2-config if all else fails
 ifeq ($(SDL_CFLAGS),)
@@ -859,9 +865,9 @@ ifdef MINGW
       ifeq ($(USE_LOCAL_HEADERS),1)
         CLIENT_CFLAGS += -DCURL_STATICLIB
         ifeq ($(ARCH),x86_64)
-          CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a -lcrypt32
+          CLIENT_LIBS += $(LIBSDIR)/win64/libcurl.a -lcrypt32 -lbcrypt -lsecur32 -liphlpapi
         else
-          CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a -lcrypt32
+          CLIENT_LIBS += $(LIBSDIR)/win32/libcurl.a -lcrypt32 -lbcrypt -lsecur32 -liphlpapi
         endif
       else
         CLIENT_LIBS += $(CURL_LIBS)
@@ -1241,6 +1247,9 @@ endif #emscripten
 ifndef CC
   CC=gcc
 endif
+
+CC_VERSION=$(shell $(CC) --version | head -n1)
+CXX_VERSION=$(shell $(CXX) --version | head -n1)
 
 ifndef RANLIB
   RANLIB=ranlib
@@ -1734,8 +1743,10 @@ targets: makedirs
 	@echo "  COMPILE_ARCH: $(COMPILE_ARCH)"
 	@echo "  HAVE_VM_COMPILED: $(HAVE_VM_COMPILED)"
 	@echo "  PKG_CONFIG: $(PKG_CONFIG)"
-	@echo "  CXX: $(CXX)"
 	@echo "  CC: $(CC)"
+	@echo "  CC_VERSION: $(CC_VERSION)"
+	@echo "  CXX: $(CXX)"
+	@echo "  CXX_VERSION: $(CXX_VERSION)"
 ifeq ($(PLATFORM),mingw32)
 	@echo "  WINDRES: $(WINDRES)"
 endif
@@ -3314,6 +3325,12 @@ $(B)/client/%.o: $(OPUSFILEDIR)/src/%.c
 $(B)/client/%.o: $(ZDIR)/%.c
 	$(DO_THIRDPARTY_CC)
 
+$(B)/client/ioapi.o: $(CMDIR)/ioapi.c
+	$(DO_THIRDPARTY_CC)
+
+$(B)/client/unzip.o: $(CMDIR)/unzip.c
+	$(DO_THIRDPARTY_CC)
+
 $(B)/client/%.o: $(SDLDIR)/%.c
 	$(DO_CC)
 
@@ -3385,6 +3402,12 @@ $(B)/ded/%.o: $(CMDIR)/%.c
 
 $(B)/ded/%.o: $(ZDIR)/%.c
 	$(DO_THIRDPARTY_DED_CC)
+
+$(B)/ded/ioapi.o: $(CMDIR)/ioapi.c
+	$(DO_THIRDPARTY_CC)
+
+$(B)/ded/unzip.o: $(CMDIR)/unzip.c
+	$(DO_THIRDPARTY_CC)
 
 $(B)/ded/%.o: $(BLIBDIR)/%.c
 	$(DO_BOT_CC)

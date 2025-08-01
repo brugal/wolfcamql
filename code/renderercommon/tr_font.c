@@ -1404,7 +1404,11 @@ void R_InitFreeType (void) {
 
 	// add fallback fonts
 	//
-	// for ql Windows also add : l_10646.ttf  segoeui.ttf  arialuni.ttf
+	// for ql Windows also add :
+	//
+	//    'Lucida Sans Unicode'  l_10646.ttf
+	//    'Segoe UI'  segoeui.ttf
+	//    'Arial Unicode MS'  arialuni.ttf
 	//
 
 	if (r_defaultQlFontFallbacks->integer) {
