@@ -407,8 +407,8 @@ Ex:
 * 'loopcount'  as an alternative to 'loop':
 
   repeat 6 {
-    t0  loop  // will go from 0.0 -> 1.0  (0.0, 1.666, ...)
-    t1  loopcount // will go from 1 to 6  (1, 2, ...)
+    t0  loop  // will go from 0.0 -> 1.0  (0.0, 0.1666, ...)
+    t1  loopcount // will go from 0 to 5  (0, 1, ...)
   }
 
 * cullDistance render token and cullDistanceValue variable to prevent rendering of entities far away.  Ex:

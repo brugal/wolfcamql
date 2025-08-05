@@ -6069,16 +6069,8 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
                 return qtrue;
             }
 
-			ScriptVars.selectedSoundList = f * (float)(ScriptVars.numSoundList - 1);
-
-#if 0
-            if (!hasMathToken) {
-                ScriptVars.selectedSoundList = ScriptVars.selectedSoundList % ScriptVars.numSoundList;
-            } else {
-				ScriptVars.selectedSoundList *= (ScriptVars.numSoundList - 1);
-				Com_Printf("sound list selected: %d\n", ScriptVars.selectedSoundList);
-			}
-#endif
+			// truncate
+			ScriptVars.selectedSoundList = (int)(f * (float)ScriptVars.numSoundList) % ScriptVars.numSoundList;
 
             if (ScriptVars.selectedSoundList >= ScriptVars.numSoundList) {
                 Com_Printf("^1Error ScriptVars.selectedSoundList >= ScriptVars.numSoundList\n");
@@ -6152,16 +6144,8 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
                 return qtrue;
             }
 
-			ScriptVars.selectedSoundList = f * (float)(ScriptVars.numSoundList - 1);
-
-#if 0
-            if (!hasMathToken) {
-                ScriptVars.selectedSoundList = ScriptVars.selectedSoundList % ScriptVars.numSoundList;
-            } else {
-				ScriptVars.selectedSoundList *= (ScriptVars.numSoundList - 1);
-				Com_Printf("sound list selected: %d\n", ScriptVars.selectedSoundList);
-			}
-#endif
+			// truncate
+			ScriptVars.selectedSoundList = (int)(f * (float)ScriptVars.numSoundList) % ScriptVars.numSoundList;
 
             if (ScriptVars.selectedSoundList >= ScriptVars.numSoundList) {
                 Com_Printf("^1Error ScriptVars.selectedSoundList >= ScriptVars.numSoundList\n");
@@ -6235,16 +6219,8 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
                 return qtrue;
             }
 
-			ScriptVars.selectedSoundList = f * (float)(ScriptVars.numSoundList - 1);
-
-#if 0
-            if (!hasMathToken) {
-                ScriptVars.selectedSoundList = ScriptVars.selectedSoundList % ScriptVars.numSoundList;
-            } else {
-				ScriptVars.selectedSoundList *= (ScriptVars.numSoundList - 1);
-				Com_Printf("sound list selected: %d\n", ScriptVars.selectedSoundList);
-			}
-#endif
+			// truncate
+			ScriptVars.selectedSoundList = (int)(f * (float)ScriptVars.numSoundList) % ScriptVars.numSoundList;
 
             if (ScriptVars.selectedSoundList >= ScriptVars.numSoundList) {
                 Com_Printf("^1Error ScriptVars.selectedSoundList >= ScriptVars.numSoundList\n");
@@ -6385,18 +6361,10 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
                 return qtrue;
             }
 
-			ScriptVars.selectedModelList = f * (float)(ScriptVars.numModelList - 1);
+			// truncate
+			ScriptVars.selectedModelList = (int)(f * (float)ScriptVars.numModelList) % ScriptVars.numModelList;
 			//Com_Printf("selected: %d  %f\n", ScriptVars.selectedModelList, f);
 
-#if 0
-            if (!hasMathToken) {
-                //ScriptVars.selectedModelList = ScriptVars.selectedModelList % ScriptVars.numModelList;
-				ScriptVars.selectedModelList = f * (float)(ScriptVars.numModelList - 1);
-            } else {
-				//ScriptVars.selectedModelList *= (float)(ScriptVars.numModelList - 1);
-				Com_Printf("selected: %d\n", ScriptVars.selectedModelList);
-			}
-#endif
             if (ScriptVars.selectedModelList >= ScriptVars.numModelList) {
                 Com_Printf("^1Error ScriptVars.selectedModelList >= ScriptVars.numModelList\n");
                 return qtrue;
@@ -6465,7 +6433,8 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
                 return qtrue;
             }
 
-			ScriptVars.selectedShaderList = f * (float)(ScriptVars.numShaderList - 1);
+			// truncate
+			ScriptVars.selectedShaderList = (int)(f * (float)ScriptVars.numShaderList) % ScriptVars.numShaderList;
             if (ScriptVars.selectedShaderList >= ScriptVars.numShaderList) {
                 Com_Printf("^1Error ScriptVars.selectedShaderList >= ScriptVars.numShaderList\n");
                 return qtrue;

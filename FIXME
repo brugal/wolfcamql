@@ -182,8 +182,6 @@
 * fx beam and fade options
 * fx add loopCount
 * fx treat sprites separately -- renderer
-* fx modellist and soundlist using 'loop' 0 likely called twice, and last num never called
-* fx *list loop might just mean random, so not like soundList
 * fx cullnear draw closer of overlapping sprites  -- 2016-06-04 what?  implementation seems to just be based on radius and distance
 * impact sparks aligned to vieworg?  and also gib sparks
 * fx + localents and draw ent numbers -- maybe for models (gibs)
@@ -2660,10 +2658,25 @@ GL_CheckErrors: GL_INVALID_OPERATION in code/renderergl2/tr_shader.c at line 430
         mblaettermann
     --
 
+    https://learn.microsoft.com/en-us/previous-versions/ms779632(v=vs.85)
+
+    --
+    dwInitialFrames
+
+Specifies the initial frame for interleaved files. Noninterleaved files should specify zero. If you are creating interleaved files, specify the number of frames in the file prior to the initial frame of the AVI sequence in this member.
+
+To give the audio driver enough audio to work with, the audio data in an interleaved file must be skewed from the video data. Typically, the audio data should be moved forward enough frames to allow approximately 0.75 seconds of audio data to be preloaded. The dwInitialRecords member should be set to the number of frames the audio is skewed. Also set the same value for the dwInitialFrames member of the AVISTREAMHEADER structure in the audio stream header
+    --
+
 * fx:  player model with skin
 * fwrite4(afd->a.totalBytes / afd->a.sampleSize, afd->f);
 
   totalBytes is int so 300+ minute limit
+
+* ioquake3: 2025-07-20-01
+    Be slightly more targetted in cleaning up jpeg source
+
+  - check changes and add to jpeg-9f/*changes.diff
 
 ----
 

@@ -1,5 +1,6 @@
-12.7test11
+12.7test12
 
+* bug fix: fx *list commands incorrectly calculating indexes
 * update curl to version 8.15.0
 * update jpeg to version 9f
 * update opus to version 1.5.2
