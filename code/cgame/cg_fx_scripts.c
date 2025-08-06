@@ -74,6 +74,8 @@ static int EmittedEntities = 0;
 
 //static qboolean WithinComment = qfalse;
 
+qboolean DebugInterval = qfalse;
+
 enum {
 	// runscript()
 
@@ -5382,11 +5384,7 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 					runBlock = qtrue;
 				}
 			}
-			if (runBlock  &&  ScriptVars.lastDistanceTime == -1) {
-				runBlock = qfalse;
-				VectorCopy(ScriptVars.origin, ScriptVars.lastDistancePosition);
-				ScriptVars.lastDistanceTime = cg.ftime;
-			}
+
             if (runBlock) {
 				vec3_t newOrigin;
 				float oldDistance;
@@ -5723,14 +5721,12 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
             }
 			if (parsingEmitterScriptLevel == 0) {
 			if (cg.ftime - ScriptVars.lastIntervalTime >= (f * 1000.0)) {
-				//Com_Printf("^3interval %f\n", cg.ftime - ScriptVars.lastIntervalTime);
+				if (DebugInterval) {
+					Com_Printf("^3interval %f  client %d  cgtime %f\n", cg.ftime - ScriptVars.lastIntervalTime, ScriptVars.clientNum, cg.ftime);
+				}
                 runBlock = qtrue;
             }
-			if (runBlock  &&  ScriptVars.lastIntervalTime == -1) {
-				runBlock = qfalse;
-				VectorCopy(ScriptVars.origin, ScriptVars.lastIntervalPosition);
-				ScriptVars.lastIntervalTime = cg.ftime;
-			}
+
             if (runBlock  &&  f > 0.0) {
 				int count;
 
@@ -5745,11 +5741,12 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 				cg.time = cg.ftime;
 
 				count = 0;
-				//while (cgftimeOrig - ScriptVars.lastIntervalTime >= (f * 1000.0)) {
-				//if (1) {  //while (cg.ftime < cgftimeOrig) {
-				while (cg.ftime < cgftimeOrig) {
+
+				while (cg.ftime < (cgftimeOrig - (f * 1000.0))) {
+					double ftimeStart;
+
                     VectorCopy(ScriptVars.origin, ScriptVars.lastIntervalPosition);
-                    //ScriptVars.lastIntervalTime = cg.ftime;
+					ftimeStart = cg.ftime;
 
 					cg.ftime += (f * 1000.0);
 					cg.time = cg.ftime;
@@ -5763,7 +5760,9 @@ qboolean CG_RunQ3mmeScript (const char *script, const char *emitterEnd)
 						//Com_Printf("^1interval max count\n");
 						//break;
 					}
-					//Com_Printf("count: %d  %f < %f  f:%f\n", count, cg.ftime, cgftimeOrig, f);
+					if (DebugInterval) {
+						Com_Printf("  count: %d  %f < %f  f:%f  new iv start: %f  wait for: %f\n", count, ftimeStart, cgftimeOrig, f, cg.ftime, cg.ftime + (f * 1000.0));
+					}
 				}
 
 				cg.ftime = cgftimeOrig;
@@ -7617,6 +7616,12 @@ void CG_ResetFXIntervalAndDistance (centity_t *cent)
 
 	cent->lastHeadIntervalTime = cg.ftime;
 	cent->lastHeadDistanceTime = cg.ftime;
+
+	cent->flightPositionData.intervalTime = cg.ftime;
+	cent->flightPositionData.distanceTime = cg.ftime;
+
+	cent->hastePositionData.intervalTime = cg.ftime;
+	cent->hastePositionData.distanceTime = cg.ftime;
 }
 
 void CG_ReloadQ3mmeScripts (const char *fileName)

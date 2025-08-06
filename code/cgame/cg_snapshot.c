@@ -141,6 +141,7 @@ static void CG_SetInitialSnapshot( snapshot_t *snap ) {
 
 	BG_PlayerStateToEntityState( &snap->ps, &cg_entities[ snap->ps.clientNum ].currentState, qfalse );
 	CG_ResetEntity(&cg_entities[snap->ps.clientNum]);
+	CG_ResetFXIntervalAndDistance(&cg.predictedPlayerEntity);
 
 	// sort out solid entities
 	CG_BuildSolidList();
@@ -759,24 +760,10 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 			memset(cent, 0, sizeof(*cent));
 		}
 
-		// let fx system reset
-		cent->lastFlashIntervalTime = -1;
-		cent->lastFlashDistanceTime = -1;
-		cent->lastModelIntervalTime = -1;
-		cent->lastModelDistanceTime = -1;
-		cent->lastTrailIntervalTime = -1;
-		cent->lastTrailDistanceTime = -1;
-		cent->lastImpactIntervalTime = -1;
-		cent->lastImpactDistanceTime = -1;
-		//VectorCopy(cent->currentState.origin, cent->lastDistancePosition);
-		//VectorCopy(cent->currentState.origin, cent->lastModelDistancePosition);
-		cent->flightPositionData.intervalTime = -1;
-		cent->flightPositionData.distanceTime = -1;
-		cent->hastePositionData.intervalTime = -1;
-		cent->hastePositionData.distanceTime = -1;
+		CG_ResetFXIntervalAndDistance(cent);
 	}
 
-	memset(&cg.predictedPlayerEntity, 0, sizeof(cg.predictedPlayerEntity));
+	// cg.predictedPlayerEntity cleared a bit later
 
 	if (1) {  //(rewinding) {
 		CG_InitLocalEntities();
@@ -797,19 +784,9 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 	cgs.secondPlace[0] = '\0';
 	trap_GetGameState(&cgs.gameState);
 	CG_ParseServerinfo(qfalse, qtrue);
-	//memset(cgs.clientinfo, 0, sizeof(cgs.clientinfo));
-	//memset(cgs.clientinfoOrig, 0, sizeof(cgs.clientinfoOrig));
+
 	for (i = 0;  i < MAX_CLIENTS;  i++) {
 		const char *clientString;
-		//clientInfo_t *ci;
-
-		//ci = &cgs.clientinfo[i];
-		//ci->medkitUsageTime = 0;
-		//ci->invulnerabilityStartTime = 0;
-		//ci->invulnerabilityStopTime = 0;
-		//ci->breathPuffTime = 0;
-
-		//cgs.clientinfo[i].hitTime = 0;
 
 		clientString = CG_ConfigString(CS_PLAYERS + i);
 		if (!clientString[0]) {
@@ -818,12 +795,13 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 			continue;
 		}
 		CG_NewClientInfo(i);
-		//CG_ResetPlayerEntity(&cg_entities[i]);  // CG_ResetPlayerEntity ?
 	}
+
 	memset(&cg.predictedPlayerState, 0, sizeof(playerState_t));
-	//pe = cg.predictedPlayerEntity.pe;
 	memset(&cg.predictedPlayerEntity, 0, sizeof(cg.predictedPlayerEntity));
-	//cg.predictedPlayerEntity.pe = pe;  //FIXME hack
+
+	CG_ResetFXIntervalAndDistance(&cg.predictedPlayerEntity);
+
 	cg.scoresValid = qfalse;
 	CG_CreateScoresFromClientInfo();
 	CG_BuildSpectatorString();

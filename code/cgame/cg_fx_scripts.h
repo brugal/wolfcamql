@@ -169,6 +169,8 @@ extern qboolean EmitterScript;
 extern qboolean DistanceScript;
 extern qboolean PlainScript;  //FIXME hack
 
+extern qboolean DebugInterval;
+
 #define MAX_FX_SCRIPT_SIZE  (1024 * 32)
 #define MAX_FX_EXTRA 128
 #define MAX_FX 256

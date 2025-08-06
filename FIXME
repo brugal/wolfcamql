@@ -465,7 +465,6 @@ GLimp_Shutdown: mode 4 lastMode 4
 * fx repeat allow stacking -- or test in q3mme
 * fx impact and rail + velocity (reflected impact) and old demos
 * fx doc and esr post
-* fx still need interval and dist for head, torso, and legs separated
 * fx -- fuck need last[model|trail|impact|distance][Interval|Distance] position and time
 * fx cvar for fx_min_[interval|distance]
 * fx parent crap
@@ -1221,7 +1220,6 @@ command echo ^2legs trail %origin0 %origin1 %origin2 %cgtime
 
 legs trail -296.5502620 -330.8210451 26.4838262 35614.000000e
 
-* fx torso/legs/head trails start initial game/frame from 0,0,0  -- skip first
 * check fx command:
 
 trap_autoWriteConfig(qfalse);

@@ -1,5 +1,8 @@
-12.7test12
+12.7test13
 
+* bug fix: fx player legs, torso, and head interval time not reset in initial snapshot for predicted player entity
+* bug fix: fx interval block could be run ahead of specified time
+* bug fix: fx player legs, torso, and head interval time not reset after seeking
 * bug fix: fx *list commands incorrectly calculating indexes
 * update curl to version 8.15.0
 * update jpeg to version 9f

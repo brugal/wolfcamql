@@ -7039,7 +7039,16 @@ void CG_Player ( centity_t *cent ) {
 	legs.renderfx = renderfx;
 	VectorCopy (legs.origin, legs.oldorigin);	// don't positionally lerp at all
 
-	if (*EffectScripts.playerLegsTrail) {
+	if (*EffectScripts.playerLegsTrail) {   //  &&  clientNum == 2) {  //  &&  !(cg.snap->snapFlags & SNAPFLAG_NOT_ACTIVE)) {
+		if (SC_Cvar_Get_Int("debug_legs_interval")) {
+			if (!cg.paused) {
+				Com_Printf("legs trail for clientNum %d  %f\n", clientNum, cg.ftime);
+				DebugInterval = qtrue;
+			}
+		} else {
+			DebugInterval = qfalse;
+		}
+
 		CG_ResetScriptVars();
 		CG_CopyPlayerDataToScriptData(cent);
 		//CG_CopyStaticCentDataToScript(cent);
@@ -7661,6 +7670,8 @@ void CG_ResetPlayerEntity ( centity_t *cent ) {
 	cent->lastLgFireFrameCount = 0;
 	cent->lastLgImpactFrameCount = 0;
 	cent->lastLgImpactTime = 0;
+
+	CG_ResetFXIntervalAndDistance(cent);
 
 	if ( cg_debugPosition.integer ) {
 		CG_Printf("%i ResetPlayerEntity yaw=%f\n", cent->currentState.number, cent->pe.torso.yawAngle );
