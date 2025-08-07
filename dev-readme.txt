@@ -62,10 +62,12 @@ libspeexdsp-1.2rc3/fftwrap.c add '#define USE_KISS_FFT'
 
 ----
 
+2025-08-07 curl not used for Windows in ioquake3
+
 2025-07-31 curl-8.15.0
 
 # libcurl.a linked with -lcrypt32
-# 2025-07-31 linked with -lcrypt32 -lbcrypt -lSecur32 -lIphlpapi
+# 2025-07-31 linked with -lcrypt32 -lbcrypt -lsecur32 -liphlpapi
 
 compile curl win32 (from linux):
 

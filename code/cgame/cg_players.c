@@ -7039,7 +7039,7 @@ void CG_Player ( centity_t *cent ) {
 	legs.renderfx = renderfx;
 	VectorCopy (legs.origin, legs.oldorigin);	// don't positionally lerp at all
 
-	if (*EffectScripts.playerLegsTrail) {   //  &&  clientNum == 2) {  //  &&  !(cg.snap->snapFlags & SNAPFLAG_NOT_ACTIVE)) {
+	if (*EffectScripts.playerLegsTrail) {
 		if (SC_Cvar_Get_Int("debug_legs_interval")) {
 			if (!cg.paused) {
 				Com_Printf("legs trail for clientNum %d  %f\n", clientNum, cg.ftime);

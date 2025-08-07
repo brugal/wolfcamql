@@ -8683,3 +8683,18 @@ om/actions/runner-images/issues/12045
 
 2025-07-18-01
     Fix curl deprecations and remove FTP support
+
+2025-07-18-02
+    Add abstract frontend to HTTP support and stop using curl on Windows
+
+2025-07-16-01
+    Disable USE_HTTP on Emscripten
+
+2025-07-17-01
+    Pull out non curl specific code from the curl backend
+
+2025-07-18-01
+    Implement WinINet based HTTP downloads
+
+2025-07-22-01
+    Remove more dead 3rd party code

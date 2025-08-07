@@ -34,9 +34,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "cl_avi.h"
 #include "../sys/sys_local.h"
 
-#ifdef USE_CURL
-#include "cl_curl.h"
-#endif /* USE_CURL */
+#ifdef USE_HTTP
+#include "cl_http.h"
+#endif /* USE_HTTP */
 
 #ifdef USE_VOIP
 #include "speex/speex.h"
@@ -207,14 +207,11 @@ typedef struct {
 	fileHandle_t download;
 	char		downloadTempName[MAX_OSPATH];
 	char		downloadName[MAX_OSPATH];
-#ifdef USE_CURL
-	qboolean	cURLEnabled;
-	qboolean	cURLUsed;
-	qboolean	cURLDisconnected;
+#ifdef USE_HTTP
+	qboolean	httpUsed;
+	qboolean	disconnectedForHttpDownload;
 	char		downloadURL[MAX_OSPATH];
-	CURL		*downloadCURL;
-	CURLM		*downloadCURLM;
-#endif /* USE_CURL */
+#endif /* USE_HTTP */
 	int		sv_allowDownload;
 	char		sv_dlURL[MAX_CVAR_VALUE_STRING];
 	int			downloadNumber;
