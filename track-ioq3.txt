@@ -8698,3 +8698,32 @@ om/actions/runner-images/issues/12045
 
 2025-07-22-01
     Remove more dead 3rd party code
+
+2025-07-23-01
+    Fix server compile flags for unzip.c and ioapi.c
+
+2025-07-23-02
+    Revert "Rename CHAR_WIDTH to CHARACTER_WIDTH"
+
+    This reverts commit 526edd37f9752c839572e14f6b09779eb60a150f.
+
+2025-07-23-03
+    Ignore CHAR_WIDTH from C23 spec
+
+2024-05-15-01
+    Fix possible CGame network buffer overflow
+
+2024-05-15-02
+    Add range check for UI text buffer
+
+    It can't overflow because buff and text have the same max length (1024
+    and MAX_TOKENLENGTH).
+
+2024-05-15-03
+    Replace strncpy usage with Q_strncpyz
+
+2025-07-24-01
+    Match literal .
+
+2025-07-24-02
+    Update OpenAL (headers)

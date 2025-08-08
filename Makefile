@@ -291,6 +291,7 @@ OGGDIR=$(MOUNT_DIR)/libogg-1.3.6
 VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.7
 OPUSDIR=$(MOUNT_DIR)/opus-1.5.2
 OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.12
+OPENALDIR=${MOUNT_DIR}/openal-soft-1.24.3
 ZDIR=$(MOUNT_DIR)/zlib-1.3.1
 TOOLSDIR=$(MOUNT_DIR)/tools
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
@@ -340,10 +341,10 @@ else
   OPENAL_LIBS ?= -lopenal
 endif
 
-#FIXME 2025-07-31 not sure why this is added, code/client/cl_curl.h references header directly
-#ifeq ($(USE_LOCAL_HEADERS),1)
-#  CURL_CFLAGS+=-I$(CURLDIR)/include
-#endif
+ifeq ($(USE_LOCAL_HEADERS),1)
+  CURL_CFLAGS+=-I$(CURLDIR)/include
+  OPENAL_CFLAGS+=-I${OPENALDIR}/include
+endif
 
 # Use sdl2-config if all else fails
 ifeq ($(SDL_CFLAGS),)
@@ -1338,7 +1339,7 @@ ifeq ($(PLATFORM),emscripten)
 endif
 
 ifeq ($(USE_OPENAL),1)
-  CLIENT_CFLAGS += -DUSE_OPENAL
+  CLIENT_CFLAGS += ${OPENAL_CFLAGS} -DUSE_OPENAL
   ifeq ($(USE_OPENAL_DLOPEN),1)
     CLIENT_CFLAGS += -DUSE_OPENAL_DLOPEN
   endif
@@ -3374,10 +3375,10 @@ $(B)/ded/%.o: $(ZDIR)/%.c
 	$(DO_THIRDPARTY_DED_CC)
 
 $(B)/ded/ioapi.o: $(CMDIR)/ioapi.c
-	$(DO_THIRDPARTY_CC)
+	$(DO_THIRDPARTY_DED_CC)
 
 $(B)/ded/unzip.o: $(CMDIR)/unzip.c
-	$(DO_THIRDPARTY_CC)
+	$(DO_THIRDPARTY_DED_CC)
 
 $(B)/ded/%.o: $(BLIBDIR)/%.c
 	$(DO_BOT_CC)
