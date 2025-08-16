@@ -1,5 +1,9 @@
-12.7test15
+12.7test16
 
+* bug fix: /ecam rebase help message missing dir and dirna options
+* /ecam rotate <pitch> <yaw> <roll>
+* change:  '/ecam rebase dir[na]' doesn't update origin, need to use '/ecam rebase origin' separately
+* bug fix: '/ecam rebase dir[na]' incorrect rotation
 * bug fix: fx player legs, torso, and head interval time not reset in initial snapshot for predicted player entity
 * bug fix: fx interval block could be run ahead of specified time
 * bug fix: fx player legs, torso, and head interval time not reset after seeking

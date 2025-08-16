@@ -407,7 +407,27 @@ typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
 typedef vec_t vec5_t[5];
 
+/* 2025-08-15  There are multiple definitions of quaternions.  This one is
+   used in renderergl?/tr_model_iqm.c.
+
+   q3mme camera has typedef float Quat_t[4]
+
+   id camera in splines/ has class quat_t {
+      public:
+        float                   x;
+        float                   y;
+        float                   z;
+        float                   w;
+       ...
+
+   wc added Quaternion_t for cgame/ camera rotation fix
+*/
 typedef vec_t quat_t[4];
+typedef struct {
+	double w;     // scalar
+	double v[3];  // vector
+} Quaternion_t;
+
 
 typedef	int	fixed4_t;
 typedef	int	fixed8_t;

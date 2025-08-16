@@ -1133,6 +1133,9 @@ alue, or 'reset' to reset to default fixed velocity>
 /ecam rebase [origin | angles | dir | dirna | time | timen <server time>]
    edit camera times to start now or at the time given time, use current angles, origin, or direction as the new starting values
    note:  dirna updates the camera direction without altering camera angles
+/ecam rotate <pitch> <yaw> <roll>
+/ecam roatena <pitch> <yaw> <roll>
+   rotate without angle updates
 /ecam shifttime <milliseconds>
 /ecam smooth velocity
    change camera times to have the final immediate velocity of a camera point

@@ -56,3 +56,4 @@ Thilo Shulz and Zack Middleton:  information about older Quake 3 protocols
     https://github.com/zturtleman/lilium-arena-classic
 
         "Credit for Quake 3 protocol 43 goes to Thilo Schulz (for ioEF) and Zack Middleton."
+Stefan Harr:  quaternion vector multiplication from cannon.js

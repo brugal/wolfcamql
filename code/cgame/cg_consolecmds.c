@@ -3960,7 +3960,126 @@ static void CG_ResetCameraVelocities (int cameraNum)
 }
 
 
+// https://github.com/schteppe/cannon.js/blob/master/src/math/Quaternion.js
+static void QuaternionMultVec3 (Quaternion_t q, vec3_t v, vec3_t output)
+{
+	double x, y, z;
+	double qx, qy, qz, qw;
+	double ix, iy, iz, iw;
+
+	VectorClear(output);
+
+	// roll (x), pitch (y), yaw (z), but quake 3 is
+	// pitch (x) v[0], yaw (y) v[1], roll (z) v[2]
+	x = v[0];
+	y = v[1];
+	z = v[2];
+
+	qx = q.v[0];
+	qy = q.v[1];
+	qz = q.v[2];
+	qw = q.w;
+
+	// q*v
+	ix =  qw * x + qy * z - qz * y;
+	iy =  qw * y + qz * x - qx * z;
+	iz =  qw * z + qx * y - qy * x;
+	iw = -qx * x - qy * y - qz * z;
+
+	output[0] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
+	output[1] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
+	output[2] = iz * qw + iw * -qz + ix * -qy - iy * -qx;
+}
+
+// https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+static void QuaternionFromEulerAngles (double roll, double pitch, double yaw, Quaternion_t *q) // roll (x), pitch (y), yaw (z), angles are in radians
+{
+	// Abbreviations for the various angular functions
+
+	double cr = cos(roll * 0.5);
+	double sr = sin(roll * 0.5);
+	double cp = cos(pitch * 0.5);
+	double sp = sin(pitch * 0.5);
+	double cy = cos(yaw * 0.5);
+	double sy = sin(yaw * 0.5);
+
+	q->w = cr * cp * cy + sr * sp * sy;
+	// q.x
+	q->v[0] = sr * cp * cy - cr * sp * sy;
+	// q.y
+	q->v[1] = cr * sp * cy + sr * cp * sy;
+	// q.z
+	q->v[2] = cr * cp * sy - sr * sp * cy;
+}
+
 static vec3_t Old[MAX_CAMERAPOINTS];
+
+static void rotate_camera_path (double pitch, double yaw, double roll, qboolean noAngles)
+{
+	Quaternion_t rot;
+	vec3_t baseOrigin;
+	int i;
+
+	if (cg.numCameraPoints < 1) {
+		return;
+	}
+
+	QuaternionFromEulerAngles(roll, pitch, yaw, &rot);
+	VectorCopy(cg.cameraPoints[0].origin, baseOrigin);
+
+	// used for angle adjustment later
+	VectorCopy(baseOrigin, Old[0]);
+
+	for (i = 1;  i < cg.numCameraPoints;  i++) {
+		vec3_t dir;
+		vec3_t out;
+		vec3_t aout;
+		// debugging
+		//vec3_t ndir;
+
+		// used for angle adjustment later
+		VectorCopy(cg.cameraPoints[i].origin, Old[i]);
+
+		VectorSubtract(cg.cameraPoints[i].origin, baseOrigin, dir);
+		//Com_Printf(" %d : orig length %f", i, VectorLength(dir));
+
+		QuaternionMultVec3(rot, dir, out);
+		VectorAdd(baseOrigin, out, aout);
+		VectorCopy(aout, cg.cameraPoints[i].origin);
+
+		//VectorSubtract(cg.cameraPoints[i].origin, baseOrigin, ndir);
+		//Com_Printf("   new length %f\n", VectorLength(ndir));
+	}
+
+	if (!noAngles) {
+		for (i = 0;  i < cg.numCameraPoints;  i++) {
+			vec3_t forward;
+			vec3_t viewPoint;
+			vec3_t viewPointRotated;
+			vec3_t dir;
+			vec3_t out;
+			vec3_t newViewDir;
+			vec3_t newAngles;
+
+			AngleVectors(cg.cameraPoints[i].angles, forward, NULL, NULL);
+			VectorNormalize(forward);
+			VectorMA(Old[i], 10, forward, viewPoint);
+
+			VectorSubtract(viewPoint, baseOrigin, dir);
+
+			QuaternionMultVec3(rot, dir, out);
+			VectorAdd(baseOrigin, out, viewPointRotated);
+			VectorSubtract(viewPointRotated, cg.cameraPoints[i].origin, newViewDir);
+			vectoangles(newViewDir, newAngles);
+			VectorCopy(newAngles, cg.cameraPoints[i].angles);
+		}
+		//Com_Printf("angles adjusted\n");
+	}
+
+	CG_CameraResetInternalLengths();
+	CG_UpdateCameraInfo();
+}
 
 static const char *EcamHelpDoc = "\n"
 "Edit all currently selected camera points\n"
@@ -3983,6 +4102,9 @@ static const char *EcamHelpDoc = "\n"
 "   edit camera times to start now or at the time given time, use current\n"
 "   angles, origin, or direction as the new starting values\n"
 "   note:  dirna updates the camera direction without altering camera angles\n"
+"/ecam rotate <pitch> <yaw> <roll>\n"
+"/ecam roatena <pitch> <yaw> <roll>\n"
+"   rotate without angle updates\n"
 "/ecam shifttime <milliseconds>\n"
 "/ecam smooth velocity\n"
 "   change camera times to have the final immediate velocity of a camera point\n"
@@ -4038,9 +4160,51 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 		return;
 	}
 
+	if (!Q_stricmp(CG_Argv(1), "rotate")) {
+		double pitch, yaw, roll;
+
+		if (CG_Argc() < 5) {
+			Com_Printf("usage: ecam rotate <pitch> <yaw> <roll>\n");
+			return;
+		}
+
+		if (cg.numCameraPoints < 1) {
+			Com_Printf("no camera points\n");
+			return;
+		}
+
+		pitch = DEG2RAD(atof(CG_Argv(2)));
+		yaw = DEG2RAD(atof(CG_Argv(3)));
+		roll = DEG2RAD(atof(CG_Argv(4)));
+
+		rotate_camera_path(pitch, yaw, roll, qfalse);
+		return;
+	}
+
+	if (!Q_stricmp(CG_Argv(1), "rotatena")) {
+		double pitch, yaw, roll;
+
+		if (CG_Argc() < 5) {
+			Com_Printf("usage: ecam rotatena <pitch> <yaw> <roll>\n");
+			return;
+		}
+
+		if (cg.numCameraPoints < 1) {
+			Com_Printf("no camera points\n");
+			return;
+		}
+
+		pitch = DEG2RAD(atof(CG_Argv(2)));
+		yaw = DEG2RAD(atof(CG_Argv(3)));
+		roll = DEG2RAD(atof(CG_Argv(4)));
+
+		rotate_camera_path(pitch, yaw, roll, qtrue);
+		return;
+	}
+
 	if (!Q_stricmp(CG_Argv(1), "rebase")) {
 		if (CG_Argc() < 3) {
-			Com_Printf("usage: ecam rebase [origin | angles | time | timen <server time>] ...\n");
+			Com_Printf("usage: ecam rebase [origin | angles | dir | dirna | time | timen <server time>] ...\n");
 			return;
 		}
 
@@ -4079,23 +4243,10 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				CG_UpdateCameraInfo();
 			}
 
-
 			if (!Q_stricmp(CG_Argv(n), "dir")  ||  !Q_stricmp(CG_Argv(n), "dirna")) {
-				vec3_t origForward, origRight, origUp;
-				vec3_t newForward, newRight, newUp;
-				vec3_t df, dr, du;
 				qboolean noAngles;
-				vec3_t p;
-				vec3_t origOrigin, newOrigin;
-				float scale;
-				vec3_t angles;
-				vec3_t dir;
-				vec3_t tmpAngles;
-				vec3_t fUp;
-
-				if (cg.numCameraPoints < 2) {
-					return;
-				}
+				vec3_t diff;
+				double pitch, yaw, roll;
 
 				if (!Q_stricmp(CG_Argv(n), "dirna")) {
 					noAngles = qtrue;
@@ -4103,102 +4254,15 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 					noAngles = qfalse;
 				}
 
-				AngleVectors(cg.refdefViewAngles, newForward, newRight, newUp);
-				VectorNormalize(newForward);
-				VectorNormalize(newRight);
-				VectorNormalize(newUp);
+				AnglesSubtract(cg.refdefViewAngles, cg.cameraPoints[0].angles, diff);
+				pitch = DEG2RAD(diff[0]);
+				yaw = DEG2RAD(diff[1]);
+				roll = DEG2RAD(diff[2]);
 
-				VectorSubtract(cg.cameraPoints[1].origin, cg.cameraPoints[0].origin, origForward);
-				VectorNormalize(origForward);
-				vectoangles(origForward, angles);
-				AngleVectors(angles, origForward, origRight, origUp);
-				//AngleVectors(cg.cameraPoints[0].angles, NULL, NULL, aUp);
-				//AngleVectors(cg.cameraPoints[0].angles, origForward, origRight, origUp);
+				rotate_camera_path(pitch, yaw, roll, noAngles);
+				//Com_Printf("diff: %f %f %f\n", diff[0], diff[1], diff[2]);
 
-				VectorCopy(cg.cameraPoints[0].origin, origOrigin);
-				VectorCopy(cg.refdef.vieworg, cg.cameraPoints[0].origin);
-				VectorCopy(cg.refdef.vieworg, newOrigin);
-				VectorCopy(origOrigin, Old[0]);
-
-				for (i = 1;  i < cg.numCameraPoints;  i++) {
-					cp = &cg.cameraPoints[i];
-
-					VectorCopy(cp->origin, Old[i]);
-
-					VectorClear(p);
-					ProjectPointOntoVector(cp->origin, origOrigin, origForward, p);
-					VectorSubtract(p, origOrigin, df);
-					ProjectPointOntoVector(cp->origin, origOrigin, origRight, p);
-					VectorSubtract(p, origOrigin, dr);
-					ProjectPointOntoVector(cp->origin, origOrigin, origUp, p);
-					VectorSubtract(p, origOrigin, du);
-
-					VectorClear(cp->origin);
-					scale = VectorGetScale(df, origForward);
-					VectorMA(newOrigin, scale, newForward, cp->origin);
-					scale = VectorGetScale(dr, origRight);
-					VectorMA(cp->origin, scale, newRight, cp->origin);
-					scale = VectorGetScale(du, origUp);
-					VectorMA(cp->origin, scale, newUp, cp->origin);
-
-				}
-
-				for (i = 0;  i < cg.numCameraPoints;  i++) {
-					if (!noAngles) {
-						float roll;
-						vec3_t forward, anglePoint;
-						vec3_t newAnglePoint;
-						vec3_t realUp;
-						vec3_t finalUp;
-						float f, g;
-
-						cp = &cg.cameraPoints[i];
-
-						roll = cp->angles[ROLL];
-						VectorCopy(cp->angles, tmpAngles);
-						tmpAngles[ROLL] = 0;
-						AngleVectors(tmpAngles, forward, NULL, realUp);
-						VectorNormalize(forward);
-						VectorMA(Old[i], 10, forward, anglePoint);
-						VectorSubtract(anglePoint, Old[i], dir);
-						vectoangles(dir, tmpAngles);
-						AngleVectors(tmpAngles, NULL, NULL, fUp);
-						f = AngleBetweenVectors(fUp, realUp);
-						Com_Printf("%d:  %f   (%f %f)  (%f %f)\n", i, f, realUp[0], realUp[1], fUp[0], fUp[1]);
-
-						VectorClear(p);
-						ProjectPointOntoVector(anglePoint, origOrigin, origForward, p);
-						VectorSubtract(p, origOrigin, df);
-						ProjectPointOntoVector(anglePoint, origOrigin, origRight, p);
-						VectorSubtract(p, origOrigin, dr);
-						ProjectPointOntoVector(anglePoint, origOrigin, origUp, p);
-						VectorSubtract(p, origOrigin, du);
-
-						VectorClear(newAnglePoint);
-						scale = VectorGetScale(df, origForward);
-						VectorMA(newOrigin, scale, newForward, newAnglePoint);
-						scale = VectorGetScale(dr, origRight);
-						VectorMA(newAnglePoint, scale, newRight, newAnglePoint);
-						scale = VectorGetScale(du, origUp);
-						VectorMA(newAnglePoint, scale, newUp, newAnglePoint);
-
-						VectorSubtract(newAnglePoint, cp->origin, dir);
-						vectoangles(dir, cp->angles);
-						cp->angles[YAW] = AngleNormalize180(cp->angles[YAW]);
-						cp->angles[PITCH] = AngleNormalize180(cp->angles[PITCH]);
-						AngleVectors(cp->angles, NULL, NULL, finalUp);
-
-						//f = AngleBetweenVectors(realUp, origUp);
-						g = AngleBetweenVectors(finalUp, newUp);
-
-						Com_Printf("%d:  %f  %f\n", i, f, g);
-						cp->angles[ROLL] = roll;  //90;  //roll;
-
-					}
-				}
-
-				CG_CameraResetInternalLengths();
-				CG_UpdateCameraInfo();
+				return;
 			}
 
 			if (!Q_stricmp(CG_Argv(n), "time")) {
