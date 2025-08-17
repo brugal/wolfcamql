@@ -1187,6 +1187,10 @@ typedef struct {
 	float		damageTime;
 	float		damageX, damageY, damageValue;
 
+	// damage feedback
+	int			lastDamageTime;
+	int			nextDamageFeedbackTime;
+
 	// status bar head
 	float		headYaw;
 	float		headEndPitch;
@@ -3596,6 +3600,7 @@ extern vmCvar_t cg_animationsRate;
 extern vmCvar_t cg_quadFireSound;
 extern vmCvar_t cg_kickScale;
 extern vmCvar_t cg_fallKick;
+extern vmCvar_t cg_damageFeedbackInterval;
 
 // referenced in menu files with cvarTest
 extern vmCvar_t cg_gameType;

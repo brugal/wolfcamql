@@ -1490,6 +1490,7 @@ Available tokens:
 * cg_gunSize (first person) and cg_gunSizeThirdPerson
 
 * cg_kickScale same as quakelive
+* cg_damageFeedbackInterval   Minimum time in milliseconds between view kicks (cg_kickScale) and damage blobs (cg_screenDamage) when taking damage.
 * cg_fallKick (0: no view or weapon change, 1: (default) view and weapon change, 2: only weapon sway)
 
 * cg_crosshairColor "0xffffff"
