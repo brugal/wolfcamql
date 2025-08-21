@@ -1154,6 +1154,7 @@ vmCvar_t cg_animationsRate;
 vmCvar_t cg_quadFireSound;
 vmCvar_t cg_kickScale;
 vmCvar_t cg_fallKick;
+vmCvar_t cg_damageFeedbackInterval;
 
 vmCvar_t cg_gameType;
 vmCvar_t cg_compMode;
@@ -2408,6 +2409,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_animationsRate, "cg_animationsRate", "1", CVAR_ARCHIVE },
 	{ &cg_quadFireSound, "cg_quadFireSound", "1", CVAR_ARCHIVE },
 	{ &cg_kickScale, "cg_kickScale", "0", CVAR_ARCHIVE },
+	{ &cg_damageFeedbackInterval, "cg_damageFeedbackInterval", "800", CVAR_ARCHIVE },
 	{ cvp(cg_fallKick), "1", CVAR_ARCHIVE },
 	{ &cg_gameType, "cg_gameType", "0", CVAR_ARCHIVE },
 	{ &cg_compMode, "cg_compMode", "0", CVAR_ARCHIVE },
