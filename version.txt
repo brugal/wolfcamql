@@ -1,5 +1,6 @@
-12.7test16
+12.7test17
 
+* cg_damageFeedbackInterval Minimum time in milliseconds between view kicks (cg_kickScale) and damage blobs (cg_screenDamage) when taking damage. (fnva funieva)
 * bug fix: /ecam rebase help message missing dir and dirna options
 * /ecam rotate <pitch> <yaw> <roll>
 * change:  '/ecam rebase dir[na]' doesn't update origin, need to use '/ecam rebase origin' separately

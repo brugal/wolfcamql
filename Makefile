@@ -658,7 +658,7 @@ ifeq ($(PLATFORM),darwin)
       #
       # code/libs/macosx-ub/libSDL2-2.0.0.dylib contents
       # - ppc build is SDL 2.0.1 with a header change so it compiles
-      # - x86/x86_64 build are SDL 2.0.22
+      # - x86/x86_64 builds are SDL 2.0.22
       MACLIBSDIR=$(LIBSDIR)/macosx-ub
       ifneq ($(findstring $(ARCH),ppc ppc64),)
         BASE_CFLAGS += -I$(SDLHDIR)/include-macppc

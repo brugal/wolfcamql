@@ -1491,6 +1491,9 @@ Available tokens:
 
 * cg_kickScale same as quakelive
 * cg_damageFeedbackInterval   Minimum time in milliseconds between view kicks (cg_kickScale) and damage blobs (cg_screenDamage) when taking damage.
+
+  default is 800 which matches older versions of ql, 0 will match current ql
+
 * cg_fallKick (0: no view or weapon change, 1: (default) view and weapon change, 2: only weapon sway)
 
 * cg_crosshairColor "0xffffff"

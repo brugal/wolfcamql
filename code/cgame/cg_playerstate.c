@@ -474,16 +474,13 @@ static void CG_DamageFeedback( int yawByte, int pitchByte, int damage ) {
 		kick = 10;
 	}
 
-	if (cg_damageFeedbackInterval.integer > 0 &&
-    	cg.time < cg.nextDamageFeedbackTime &&
-    	(cg.nextDamageFeedbackTime - cg.time) <= (cg_damageFeedbackInterval.integer + 1)) {
-    	return;
-	}
-
 	cg.damageValue = kick;
-	cg.v_dmg_time = cg.time + DAMAGE_TIME;
 	cg.damageTime = cg.snap->serverTime;
-	cg.nextDamageFeedbackTime = cg.time + cg_damageFeedbackInterval.integer;
+	if (cg.snap->serverTime - cg.v_dmg_time > cg_damageFeedbackInterval.integer) {
+		cg.v_dmg_time = cg.snap->serverTime;
+	} else {
+		//Com_Printf("skipping view damage %d\n", cg.snap->serverTime);
+	}
 }
 
 

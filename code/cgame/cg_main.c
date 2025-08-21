@@ -2409,6 +2409,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ &cg_animationsRate, "cg_animationsRate", "1", CVAR_ARCHIVE },
 	{ &cg_quadFireSound, "cg_quadFireSound", "1", CVAR_ARCHIVE },
 	{ &cg_kickScale, "cg_kickScale", "0", CVAR_ARCHIVE },
+	// fnva: "I set it to 800 by default because thats how it looked like in old QL."
 	{ &cg_damageFeedbackInterval, "cg_damageFeedbackInterval", "800", CVAR_ARCHIVE },
 	{ cvp(cg_fallKick), "1", CVAR_ARCHIVE },
 	{ &cg_gameType, "cg_gameType", "0", CVAR_ARCHIVE },

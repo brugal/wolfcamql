@@ -783,8 +783,28 @@ static void CG_OffsetFirstPersonView (qboolean ignoreHealth)
 
 
 	// add angles based on damage kick
+
+	/*
+	  OpenArena later added cg_kickScale and they apply it like this:
+
+	  ratio = cg.time - cg.damageTime;
+	  if ( ... ) {
+	      ...
+		  angles[PITCH] += ratio * cg.v_dmg_pitch * cg_kickScale.value;
+		  angles[ROLL] += ratio * cg.v_dmg_roll * cg_kickScale.value;
+	  } else {
+	      ...
+		  if ( ... ) {
+		      angles[PITCH] += ratio * cg.v_dmg_pitch * cg_kickScale.value;
+			  angles[ROLL] += ratio * cg.v_dmg_roll * cg_kickScale.value;
+		  }
+	  }
+
+	  That probably makes more sense but doesn't match QuakeLive.
+     */
+
 	if ( cg.damageTime ) {
-		ratio = cg.time - cg.damageTime;
+		ratio = cg.time - cg.v_dmg_time;
 		ratio *= cg_kickScale.value;
 		if ( ratio < DAMAGE_DEFLECT_TIME ) {
 			ratio /= DAMAGE_DEFLECT_TIME;
@@ -1230,7 +1250,7 @@ static void CG_DamageBlendBlob( void ) {
 	}
 
 	maxTime = DAMAGE_TIME;
-	t = cg.time - cg.damageTime;
+	t = cg.time - cg.v_dmg_time;
 	if ( t <= 0 || t >= maxTime ) {
 		return;
 	}

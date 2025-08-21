@@ -1187,10 +1187,6 @@ typedef struct {
 	float		damageTime;
 	float		damageX, damageY, damageValue;
 
-	// damage feedback
-	int			lastDamageTime;
-	int			nextDamageFeedbackTime;
-
 	// status bar head
 	float		headYaw;
 	float		headEndPitch;
@@ -1201,6 +1197,22 @@ typedef struct {
 	int			headStartTime;
 
 	// view movement
+
+	/*
+	  v_dmg_time isn't used in quake3 but it is used in games like rtcw:
+
+	  https://github.com/id-Software/RTCW-SP/blob/master/src/cgame/cg_draw.c
+
+      static void CG_DrawFlashDamage( void ) {
+         ...
+
+         if ( cg.v_dmg_time > cg.time ) {
+		    redFlash = fabs( cg.v_dmg_pitch * ( ( cg.v_dmg_time - cg.time ) / DAMAGE_TIME ) );
+
+	  Using it again for view damage (kick and blood/flash blend) to avoid
+	  changing cg.damageTime since cg.damageTime is also used for HUD
+	  elements.
+	*/
 	float		v_dmg_time;
 	float		v_dmg_pitch;
 	float		v_dmg_roll;
