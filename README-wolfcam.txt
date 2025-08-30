@@ -264,7 +264,9 @@ cl_aviExtension  allow changing '.avi' extension to something else to avoid Wind
 
 cl_aviPrimeAudioRate  make audio dwScale and dwRate mutually prime
 
-cl_aviAudioWaitForVideoFrame  to delay writing audio before first video frame
+cl_aviAudioWaitForVideoFrame  to delay writing audio before specified number of video frames
+
+cl_aviAudioMatchVideoLength  to try and match audio and video data lengths (only works with large avi and ffmpeg pipe)
 
 ------------------------------------------------------------------
 
@@ -975,8 +977,13 @@ Fonts can also be used for hud config elements:
 
 * s_useTimescale  adjust audio pitch according to timescale
 * s_forceScale  force audio to scale pitch
+
 * s_showMiss  debug cvar to show skipped sounds (1:  skipped because of max repeat rate, 2: also show if it was skipped because of max number of sounds being played, >2:  show if sound channel couldn't be allocated)
-* s_show  >2 will only output when a sound is played
+
+* s_show 2 also outputs a line showing total
+* s_show 3 will only output when a sound is played
+* s_show 4 draws sound information to screen instead of printing to console
+
 * s_maxSoundRepeatTime  skip playing a sound if it is repeated this often in milliseconds  (default is 0 to match quakelive, q3 is 50)  Noticeable with lg hit beeps
 * s_maxSoundInstances  (96: default similar to quake live, -1: q3 code which limits either 4 or 8 sounds attached to an entity -- with the bug of the 3d world counting as an entity)
 * s_qlAttenuate  (0: q3 style -- use smaller distance for sound volume calculation and always play at full volume sounds within 80 game units, 1: default calculate sound volumes like quake live)
@@ -3219,6 +3226,8 @@ automated scripting examples:  playdemolist.py and recorddemolist.py
 * cg_debugevents > 1 shows predictable events
 
 * cg_redRoverRoundStartSound
+
+* cl_volumeShowMeter  debugging volume meter
 
 ----------
 

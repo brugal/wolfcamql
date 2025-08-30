@@ -1153,18 +1153,102 @@ void CL_WriteAVIVideoFrame (aviFileData_t *afd, const byte *imageBuffer, int siz
     CL_WriteAVIVideoFrameReal(afd, newBuffer, newSize);
 }
 
+typedef struct pcmlist_t {
+    byte *buffer;
+    int size;
+    double duration;
+    struct pcmlist_t *next;
+} pcmlist_t;
+
+static pcmlist_t *PcmListHead = NULL;
+static pcmlist_t *PcmListLast = NULL;
+static unsigned int PcmListCount = 0;
+
+static void pcm_list_add (const aviFileData_t *afd, const byte *pcmBuffer, int size)
+{
+    pcmlist_t *p;
+
+    p = malloc(sizeof(struct pcmlist_t));
+    if (p == NULL) {
+        Com_Error(ERR_DROP, "%s couldn't allocate memory for pcm list, errno %d", __FUNCTION__, errno);
+    }
+    memset(p, 0, sizeof(struct pcmlist_t));
+
+    p->buffer = malloc(size);
+    if (p->buffer == NULL) {
+        Com_Error(ERR_DROP, "%s couldn't allocate memory for pcm list buffer, errno %d", __FUNCTION__, errno);
+    }
+
+    memcpy(p->buffer, pcmBuffer, size);
+    p->duration = (double)size / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8);
+    p->size = size;
+
+    //Com_Printf("%d  duration %f\n", PcmListCount, p->duration);
+    if (PcmListHead == NULL) {
+        PcmListHead = p;
+    } else {
+        if (PcmListLast == NULL) {
+            Com_Error(ERR_DROP, "%s PcmListLast == NULL\n", __FUNCTION__);
+        }
+
+        PcmListLast->next = p;
+    }
+
+    PcmListLast = p;
+    PcmListCount++;
+}
+
+static void pcm_list_free_first (void)
+{
+    pcmlist_t *next;
+
+    if (PcmListHead == NULL) {
+        return;
+    }
+
+    next = PcmListHead->next;
+
+    free(PcmListHead->buffer);
+    free(PcmListHead);
+
+    PcmListHead = next;
+    PcmListCount--;
+}
+
+static void pcm_list_free_all (void)
+{
+    pcmlist_t *p;
+
+    p = PcmListHead;
+
+    while (p != NULL) {
+        pcmlist_t *next;
+
+        next = p->next;
+
+        free(p->buffer);
+        free(p);
+
+        p = next;
+        PcmListCount--;
+    }
+
+    PcmListHead = NULL;
+    PcmListLast = NULL;
+}
+
 /*
 ===============
 CL_WriteAVIAudioFrame
 ===============
 */
 
-
 void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
 {
-  //static byte pcmCaptureBuffer[ PCM_BUFFER_SIZE ] = { 0 };
   int bytesInBuffer;
   int debugAviFrames;
+  double totalVideoTime, totalAudioTime;
+  qboolean checkDuration;
 
   bytesInBuffer = afd->PcmBytesInBuffer;
 
@@ -1183,9 +1267,9 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
   debugAviFrames = Cvar_VariableIntegerValue("debug_avi_frames");
 
   if (afd->pipe  ||  afd->avi) {
-      if (cl_aviAudioWaitForVideoFrame->integer  &&  afd->odmlNumVideoFrames == 0) {
+      if (cl_aviAudioWaitForVideoFrame->integer > afd->odmlNumVideoFrames) {
           if (debugAviFrames) {
-              Com_Printf("audio write waiting for video frames...\n");
+              Com_Printf("audio write waiting for (%d) video frames...\n", cl_aviAudioWaitForVideoFrame->integer);
           }
           return;
       }
@@ -1224,72 +1308,299 @@ void CL_WriteAVIAudioFrame (aviFileData_t *afd, const byte *pcmBuffer, int size)
       }
   }
 
-  // Only write if we have a frame's worth of audio
+    // Only write if we have a frame's worth of audio
   if (bytesInBuffer >= (int)ceil( (float)afd->a.rate / (float)afd->frameRate ) * afd->a.sampleSize) {
-    int   chunkOffset = afd->riffSize - afd->moviOffset - 8;
-    int   chunkSize = 8 + bytesInBuffer;
-    int   paddingSize = PAD( bytesInBuffer, 2 ) - bytesInBuffer;
-    byte  padding[ 4 ] = { 0 };
-    int64_t currentFileSize = 0;
+      pcm_list_add(afd, afd->pcmCaptureBuffer, bytesInBuffer);
+      bytesInBuffer = 0;
 
+      if (debugAviFrames > 1) {
+          Com_Printf("  %d audio pcm list\n", PcmListCount);
+      }
+  }
 
-    if (!afd->pipe) {
-        fseeko(afd->file, 0, SEEK_END);
-        currentFileSize = ftello(afd->file);
-    }
+  totalVideoTime = (double)afd->odmlNumVideoFrames / (double)afd->frameRate;
+  totalAudioTime = (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8);
 
-    bufIndex = 0;
-    WRITE_STRING( "01wb" );
-    WRITE_4BYTES( bytesInBuffer );
+  // check if it is time to add audio
 
-    SafeFS_Write( buffer, 8, afd->f );
-    SafeFS_Write( afd->pcmCaptureBuffer, bytesInBuffer, afd->f );
-    SafeFS_Write( padding, paddingSize, afd->f );
-    //CL_PadEndOfFile(afd);
+  if ((!afd->pipe  &&  !afd->useOpenDml)  ||  cl_aviAudioMatchVideoLength->integer == 0) {
+      // write audio right away
+      checkDuration = qfalse;
+  } else {
+      checkDuration = qtrue;
+  }
 
-    afd->riffSize += ( chunkSize + paddingSize );
+  while ((checkDuration  &&  totalAudioTime < totalVideoTime  &&  PcmListCount > 0)  ||  (!checkDuration  &&  PcmListCount > 0)) {
+      pcmlist_t *p;
+      int chunkOffset;
+      int chunkSize;
+      int paddingSize;
+      byte padding[ 4 ] = { 0 };
+      int64_t currentFileSize = 0;
+      int pcmBytes;
 
-    afd->moviSize += ( chunkSize + paddingSize );
-    afd->a.totalBytes += bytesInBuffer;
+      p = PcmListHead;
+      pcmBytes = p->size;
 
-    if (afd->riffCount == 1  &&  !afd->pipe) {
-        afd->numAudioFrames++;
+      if (checkDuration  &&  (totalAudioTime + p->duration) > totalVideoTime) {
+          break;
+      }
 
-        // Index
-        bufIndex = 0;
-        WRITE_STRING( "01wb" );           //dwIdentifier
-        WRITE_4BYTES( 0 );                //dwFlags
-        WRITE_4BYTES( chunkOffset );      //dwOffset
-        WRITE_4BYTES( bytesInBuffer );    //dwLength
-        SafeFS_Write( buffer, 16, afd->idxF );
+      chunkOffset = afd->riffSize - afd->moviOffset - 8;
+      chunkSize = 8 + pcmBytes;
+      paddingSize = PAD( pcmBytes, 2 ) - pcmBytes;
 
-        afd->numIndices++;
-    }
+      if (!afd->pipe) {
+          fseeko(afd->file, 0, SEEK_END);
+          currentFileSize = ftello(afd->file);
+      }
 
-    if (!afd->pipe) {
-        // +8  points directly to data and skips header
-        fwrite4((currentFileSize + 8) - afd->moviDataOffset, afd->idxAF);
-        //fwrite4(bytesInBuffer | 0x80000000L, afd->idxAF);  // 0x80000000 == key frame
-        fwrite4(bytesInBuffer, afd->idxAF);
-    }
+      bufIndex = 0;
+      WRITE_STRING( "01wb" );
+      WRITE_4BYTES( pcmBytes );
 
-    afd->numAIndices++;
-    afd->audioSize += bytesInBuffer;
-    afd->odmlNumAudioFrames++;
+      SafeFS_Write( buffer, 8, afd->f );
+      SafeFS_Write( p->buffer, pcmBytes, afd->f );
+      SafeFS_Write( padding, paddingSize, afd->f );
+      //CL_PadEndOfFile(afd);
 
-    if (debugAviFrames) {
-        Com_Printf("audio frame %" PRIi64 "  video frame %" PRIi64, afd->odmlNumAudioFrames, afd->odmlNumVideoFrames);
-        if (debugAviFrames > 1) {
-            Com_Printf(", audio bytes %d, size %d", bytesInBuffer, size);
-        }
-        Com_Printf("\n");
-    }
+      afd->riffSize += ( chunkSize + paddingSize );
 
-    bytesInBuffer = 0;
+      afd->moviSize += ( chunkSize + paddingSize );
+      afd->a.totalBytes += pcmBytes;
+
+      if (afd->riffCount == 1  &&  !afd->pipe) {
+          afd->numAudioFrames++;
+
+          // Index
+          bufIndex = 0;
+          WRITE_STRING( "01wb" );           //dwIdentifier
+          WRITE_4BYTES( 0 );                //dwFlags
+          WRITE_4BYTES( chunkOffset );      //dwOffset
+          WRITE_4BYTES( pcmBytes );    //dwLength
+          SafeFS_Write( buffer, 16, afd->idxF );
+
+          afd->numIndices++;
+      }
+
+      if (!afd->pipe) {
+          // +8  points directly to data and skips header
+          fwrite4((currentFileSize + 8) - afd->moviDataOffset, afd->idxAF);
+          //fwrite4(bytesInBuffer | 0x80000000L, afd->idxAF);  // 0x80000000 == key frame
+          fwrite4(pcmBytes, afd->idxAF);
+      }
+
+      afd->numAIndices++;
+      afd->audioSize += pcmBytes;
+      afd->odmlNumAudioFrames++;
+
+      if (debugAviFrames) {
+          Com_Printf("audio frame %" PRIi64 "  video frame %" PRIi64, afd->odmlNumAudioFrames, afd->odmlNumVideoFrames);
+          if (debugAviFrames > 1) {
+              Com_Printf(", audio bytes %d, size %d, pcmlist %d", pcmBytes, size, PcmListCount);
+          }
+          Com_Printf("\n");
+      }
+
+      pcm_list_free_first();
+
+      totalAudioTime = (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8);
   }
 
  done:
   afd->PcmBytesInBuffer = bytesInBuffer;
+}
+
+static void CL_FlushAndPadAVIAudioFrame (aviFileData_t *afd)
+{
+    int debugAviFrames;
+    double totalVideoTime, totalAudioTime;
+    int sizeNeeded;
+
+    if( !afd->audio  &&  !afd->noSoundAvi)
+        return;
+
+    if (!afd->wav  &&  !afd->avi) {
+        return;
+    }
+
+    if( !afd->fileOpen ) {
+        Com_Printf("^1%s() file not open\n", __FUNCTION__);
+        return;
+    }
+
+    debugAviFrames = Cvar_VariableIntegerValue("debug_avi_frames");
+
+    memset(afd->pcmCaptureBuffer, 0, sizeof(afd->pcmCaptureBuffer));
+
+    totalVideoTime = (double)afd->odmlNumVideoFrames / (double)afd->frameRate;
+    totalAudioTime = (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8);
+
+    if (PcmListCount > 0) {
+        pcmlist_t *p;
+        int chunkOffset;
+        int chunkSize;
+        int paddingSize;
+        byte padding[ 4 ] = { 0 };
+        int64_t currentFileSize = 0;
+        int pcmBytes;
+
+        p = PcmListHead;
+
+        // enough audio available otherwise would have been written out already
+        sizeNeeded = (totalVideoTime - totalAudioTime) * (double)(afd->a.bits / 8) * (double)afd->a.channels * (double)afd->a.rate;
+        p->size = sizeNeeded;
+
+        //FIXME duplicate code
+        pcmBytes = p->size;
+
+        chunkOffset = afd->riffSize - afd->moviOffset - 8;
+        chunkSize = 8 + pcmBytes;
+        paddingSize = PAD( pcmBytes, 2 ) - pcmBytes;
+
+        if (!afd->pipe) {
+            fseeko(afd->file, 0, SEEK_END);
+            currentFileSize = ftello(afd->file);
+        }
+
+        bufIndex = 0;
+        WRITE_STRING( "01wb" );
+        WRITE_4BYTES( pcmBytes );
+
+        SafeFS_Write( buffer, 8, afd->f );
+        SafeFS_Write( p->buffer, pcmBytes, afd->f );
+        SafeFS_Write( padding, paddingSize, afd->f );
+        //CL_PadEndOfFile(afd);
+
+        afd->riffSize += ( chunkSize + paddingSize );
+
+        afd->moviSize += ( chunkSize + paddingSize );
+        afd->a.totalBytes += pcmBytes;
+
+        if (afd->riffCount == 1  &&  !afd->pipe) {
+            afd->numAudioFrames++;
+
+            // Index
+            bufIndex = 0;
+            WRITE_STRING( "01wb" );           //dwIdentifier
+            WRITE_4BYTES( 0 );                //dwFlags
+            WRITE_4BYTES( chunkOffset );      //dwOffset
+            WRITE_4BYTES( pcmBytes );    //dwLength
+            SafeFS_Write( buffer, 16, afd->idxF );
+
+            afd->numIndices++;
+        }
+
+        if (!afd->pipe) {
+            // +8  points directly to data and skips header
+            fwrite4((currentFileSize + 8) - afd->moviDataOffset, afd->idxAF);
+            //fwrite4(bytesInBuffer | 0x80000000L, afd->idxAF);  // 0x80000000 == key frame
+            fwrite4(pcmBytes, afd->idxAF);
+        }
+
+        afd->numAIndices++;
+        afd->audioSize += pcmBytes;
+        afd->odmlNumAudioFrames++;
+
+        if (debugAviFrames) {
+            Com_Printf("flush audio frame %" PRIi64 "  video frame %" PRIi64, afd->odmlNumAudioFrames, afd->odmlNumVideoFrames);
+            if (debugAviFrames > 1) {
+                Com_Printf(", audio bytes %d", pcmBytes);
+            }
+            Com_Printf("\n");
+        }
+
+        //pcm_list_free_first();
+
+        totalAudioTime = (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8);
+    }
+
+    while (totalAudioTime < totalVideoTime) {
+        int chunkOffset;
+        int chunkSize;
+        int paddingSize;
+        byte padding[ 4 ] = { 0 };
+        int64_t currentFileSize = 0;
+        int pcmBytes;
+
+        // pad with silence
+        sizeNeeded = (totalVideoTime - totalAudioTime) * (double)(afd->a.bits / 8) * (double)afd->a.channels * (double)afd->a.rate;
+
+        if (debugAviFrames) {
+            Com_Printf("zero pad bytes needed %d\n", sizeNeeded);
+        }
+
+        if (sizeNeeded > sizeof(afd->pcmCaptureBuffer)) {
+            sizeNeeded = sizeof(afd->pcmCaptureBuffer);
+        }
+
+        if (sizeNeeded < ((afd->a.bits / 8) * afd->a.channels)) {
+            break;
+        }
+
+        //FIXME duplicate code
+        pcmBytes = sizeNeeded;
+
+        chunkOffset = afd->riffSize - afd->moviOffset - 8;
+        chunkSize = 8 + pcmBytes;
+        paddingSize = PAD( pcmBytes, 2 ) - pcmBytes;
+
+        if (!afd->pipe) {
+            fseeko(afd->file, 0, SEEK_END);
+            currentFileSize = ftello(afd->file);
+        }
+
+        bufIndex = 0;
+        WRITE_STRING( "01wb" );
+        WRITE_4BYTES( pcmBytes );
+
+        SafeFS_Write( buffer, 8, afd->f );
+        SafeFS_Write( afd->pcmCaptureBuffer, pcmBytes, afd->f );
+        SafeFS_Write( padding, paddingSize, afd->f );
+        //CL_PadEndOfFile(afd);
+
+        afd->riffSize += ( chunkSize + paddingSize );
+
+        afd->moviSize += ( chunkSize + paddingSize );
+        afd->a.totalBytes += pcmBytes;
+
+        if (afd->riffCount == 1  &&  !afd->pipe) {
+            afd->numAudioFrames++;
+
+            // Index
+            bufIndex = 0;
+            WRITE_STRING( "01wb" );           //dwIdentifier
+            WRITE_4BYTES( 0 );                //dwFlags
+            WRITE_4BYTES( chunkOffset );      //dwOffset
+            WRITE_4BYTES( pcmBytes );    //dwLength
+            SafeFS_Write( buffer, 16, afd->idxF );
+
+            afd->numIndices++;
+        }
+
+        if (!afd->pipe) {
+            // +8  points directly to data and skips header
+            fwrite4((currentFileSize + 8) - afd->moviDataOffset, afd->idxAF);
+            //fwrite4(bytesInBuffer | 0x80000000L, afd->idxAF);  // 0x80000000 == key frame
+            fwrite4(pcmBytes, afd->idxAF);
+        }
+
+        afd->numAIndices++;
+        afd->audioSize += pcmBytes;
+        afd->odmlNumAudioFrames++;
+
+        if (debugAviFrames) {
+            Com_Printf("zero pad audio frame %" PRIi64 "  video frame %" PRIi64, afd->odmlNumAudioFrames, afd->odmlNumVideoFrames);
+            if (debugAviFrames > 1) {
+                Com_Printf(", audio bytes %d", pcmBytes);
+            }
+            Com_Printf("\n");
+        }
+
+        //pcm_list_free_first();
+
+        totalAudioTime = (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8);
+    }
 }
 
 /*
@@ -1665,7 +1976,9 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
         return qfalse;
     }
 
-    //FIXME need to flush audio maybe
+    if ((afd->pipe  ||  afd->useOpenDml)  &&  cl_aviAudioMatchVideoLength->integer) {
+        CL_FlushAndPadAVIAudioFrame(afd);
+    }
 
     if (!afd->pipe) {
         CL_WriteIndexes(afd);
@@ -1736,7 +2049,7 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
 
     debugAviFrames = Cvar_VariableIntegerValue("debug_avi_frames");
     if (debugAviFrames) {
-        Com_Printf("avi closed, wrote: audio frames %" PRIi64 "  video frames %" PRIi64 " (%f seconds)  audio bytes: %d (%f seconds)\n", afd->odmlNumAudioFrames, afd->odmlNumVideoFrames, (double)afd->odmlNumVideoFrames / (double)afd->frameRate, afd->a.totalBytes, (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8));
+        Com_Printf("avi closed, wrote: audio frames %" PRIi64 "  video frames %" PRIi64 " (%f seconds)  audio bytes: %d (%f seconds), PcmListCount %d\n", afd->odmlNumAudioFrames, afd->odmlNumVideoFrames, (double)afd->odmlNumVideoFrames / (double)afd->frameRate, afd->a.totalBytes, (double)afd->a.totalBytes / (double)afd->a.rate / (double)afd->a.channels / (double)(afd->a.bits / 8), PcmListCount);
     }
 
   if (!us) {
@@ -1770,6 +2083,7 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
   afd->recording = qfalse;
 
   if (!us) {
+      pcm_list_free_all();
       afd->PcmBytesInBuffer = 0;
   }
 

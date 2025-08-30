@@ -607,8 +607,10 @@ static void S_Base_StartSoundEx (const vec3_t origin, int entityNum, int entchan
 		S_memoryLoad(sfx);
 	}
 
-	if ( s_show->integer == 1 ) {
+	if ( s_show->integer == 1) {
 		Com_Printf("%f  %i : %s  (%d -> %d)\n", (float)cl.serverTime + Overf, s_paintedtime, sfx->soundName, listener_number, entityNum);
+	} else if (s_show->integer == 4) {
+		SCR_DrawSmallStringExt(10, 150, SMALLCHAR_WIDTH, SMALLCHAR_HEIGHT, va("%f  %i : %s  (%d -> %d)", (float)cl.serverTime + Overf, s_paintedtime, sfx->soundName, listener_number, entityNum), colorCyan, qfalse, qfalse);
 	}
 
 	time = S_Milliseconds();
@@ -1387,7 +1389,7 @@ static void S_Base_Update( void ) {
 	//
 	// debugging output
 	//
-	if ( s_show->integer >= 2 ) {
+	if ( s_show->integer == 2  ||  s_show->integer == 3) {
 		total = 0;
 		ch = s_channels;
 		for (i=0 ; i<MAX_CHANNELS; i++, ch++) {

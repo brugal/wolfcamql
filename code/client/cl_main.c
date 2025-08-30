@@ -97,6 +97,7 @@ cvar_t *cl_aviPipeExtension;
 cvar_t *cl_aviNoAudioHWOutput;
 cvar_t *cl_aviPrimeAudioRate;
 cvar_t *cl_aviAudioWaitForVideoFrame;
+cvar_t *cl_aviAudioMatchVideoLength;
 
 cvar_t	*cl_forceavidemo;
 cvar_t *cl_freezeDemoPauseVideoRecording;
@@ -155,6 +156,8 @@ cvar_t *cl_demoFileCheckSystem;
 cvar_t *cl_demoFile;
 cvar_t *cl_demoFileBaseName;
 cvar_t *cl_downloadWorkshops;
+
+cvar_t *cl_volumeShowMeter;
 
 clientActive_t		cl;
 clientConnection_t	clc;
@@ -6976,6 +6979,7 @@ void CL_Init ( void ) {
 	cl_aviNoAudioHWOutput = Cvar_Get("cl_aviNoAudioHWOutput", "1", CVAR_ARCHIVE);
 	cl_aviPrimeAudioRate = Cvar_Get("cl_aviPrimeAudioRate", "1", CVAR_ARCHIVE);
 	cl_aviAudioWaitForVideoFrame = Cvar_Get("cl_aviAudioWaitForVideoFrame", "1", CVAR_ARCHIVE);
+	cl_aviAudioMatchVideoLength = Cvar_Get("cl_aviAudioMatchVideoLength", "1", CVAR_ARCHIVE);
 
 	cl_freezeDemoPauseVideoRecording = Cvar_Get("cl_freezeDemoPauseVideoRecording", "0", CVAR_ARCHIVE);
 	cl_freezeDemoPauseMusic = Cvar_Get("cl_freezeDemoPauseMusic", "1", CVAR_ARCHIVE);
@@ -7139,6 +7143,7 @@ void CL_Init ( void ) {
 	cl_demoFile = Cvar_Get("cl_demoFile", "", CVAR_ROM);
 	cl_demoFileBaseName = Cvar_Get("cl_demoFileBaseName", "", CVAR_ROM);
 	cl_downloadWorkshops = Cvar_Get("cl_downloadWorkshops", "1", CVAR_ARCHIVE);
+	cl_volumeShowMeter = Cvar_Get("cl_volumeShowMeter", "0", CVAR_ARCHIVE);
 
 	//
 	// register our commands

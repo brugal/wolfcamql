@@ -373,7 +373,7 @@ void SCR_DrawDemoRecording( void ) {
 SCR_DrawVoipMeter
 =================
 */
-void SCR_DrawVoipMeter( void ) {
+static void SCR_DrawVoipMeter( void ) {
 	char	buffer[16];
 	char	string[256];
 	int limit, i;
@@ -405,6 +405,49 @@ void SCR_DrawVoipMeter( void ) {
 	SCR_DrawStringExt( 320 - strlen( string ) * 4, 10, 8, string, g_color_table[7], qtrue, qfalse );
 }
 #endif
+
+/*
+=================
+SCR_DrawVolumeMeter
+=================
+*/
+static void SCR_DrawVolumeMeter( void ) {
+	char	buffer[16];
+	char	string[256];
+	int limit, i;
+
+	if (!cl_volumeShowMeter->integer)
+		return;  // player doesn't want to show meter at all.
+
+#if 0
+	else if (!cl_voipSend->integer)
+		return;  // not recording at the moment.
+	else if (clc.state != CA_ACTIVE)
+		return;  // not connected to a server.
+	else if (!clc.voipEnabled  &&  !clc.demoplaying)
+		return;  // server doesn't support VoIP.
+	else if (clc.demoplaying  &&  !clc.demorecording)
+		return;  // playing back a demo.
+	else if (!cl_voip->integer)
+		return;  // client has VoIP support disabled.
+#endif
+
+	limit = (int) (clc.audioPower * 10.0f);
+	if (limit > 10)
+		limit = 10;
+
+	for (i = 0; i < limit; i++)
+		buffer[i] = '*';
+	while (i < 10)
+		buffer[i++] = ' ';
+	buffer[i] = '\0';
+
+	sprintf( string, "Volume: [%s]", buffer );
+	SCR_DrawStringExt( 320 - strlen( string ) * 4, 200, 8, string, g_color_table[7], qtrue, qfalse );
+
+	sprintf(string, "%f dB", clc.audioDecibels);
+	SCR_DrawStringExt( 320 - strlen( string ) * 4, 220, 8, string, g_color_table[7], qtrue, qfalse );
+}
 
 
 
@@ -552,6 +595,7 @@ void SCR_DrawScreenField( stereoFrame_t stereoFrame ) {
 #ifdef USE_VOIP
 			SCR_DrawVoipMeter();
 #endif
+			SCR_DrawVolumeMeter();
 			break;
 		}
 	}

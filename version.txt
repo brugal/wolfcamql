@@ -1,5 +1,8 @@
-12.7test17
+12.7test18
 
+* cl_volumeShowMeter  debugging volume meter
+* s_show >= 2 changed:  need s_show 3 to only output when sound is played
+* s_show 4 draws sound information to screen instead of printing to console
 * cg_damageFeedbackInterval Minimum time in milliseconds between view kicks (cg_kickScale) and damage blobs (cg_screenDamage) when taking damage. (fnva funieva)
 * bug fix: /ecam rebase help message missing dir and dirna options
 * /ecam rotate <pitch> <yaw> <roll>
@@ -14,7 +17,8 @@
 * update opus to version 1.5.2
 * update libogg to version 1.3.6
 * video file counter not appended to file name if using cl_aviAllowLargeFiles
-* cl_aviAudioWaitForVideoFrame  to delay writing audio before first video frame
+* cl_aviAudioMatchVideoLength  to try and match audio and video data lengths (only works with large avi and ffmpeg pipe)
+* cl_aviAudioWaitForVideoFrame  to delay writing audio before specified number of video frames
 * cvar tab completion doesn't truncate long values
 * cvar tab completion doesn't print value twice if cvar is set to default
 * bug fix: cvar tab completion would show it as changed from default if the string value was too long

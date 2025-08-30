@@ -280,6 +280,9 @@ typedef struct {
 	byte voipOutgoingGeneration;
 	byte voipOutgoingData[1024];
 	float voipPower;
+
+	float audioPower;
+	float audioDecibels;
 #endif
 
 #ifdef LEGACY_PROTOCOL
@@ -572,6 +575,7 @@ extern cvar_t *cl_aviPipeCommand;
 extern cvar_t *cl_aviPipeExtension;
 extern cvar_t *cl_aviPrimeAudioRate;
 extern cvar_t *cl_aviAudioWaitForVideoFrame;
+extern cvar_t *cl_aviAudioMatchVideoLength;
 
 extern cvar_t *cl_freezeDemoPauseVideoRecording;
 extern cvar_t *cl_freezeDemoPauseMusic;
@@ -627,6 +631,8 @@ extern cvar_t *cl_demoFileCheckSystem;
 extern cvar_t *cl_demoFile;
 extern cvar_t *cl_demoFileBaseName;
 extern cvar_t *cl_downloadWorkshops;
+
+extern cvar_t *cl_volumeShowMeter;
 
 extern double Overf;
 

@@ -185,6 +185,79 @@ void S_TransferPaintBuffer(int endtime)
 			paintbuffer[i].left = paintbuffer[i].right = sin((s_paintedtime+i)*0.1)*20000*256;
 	}
 
+	if (cl_volumeShowMeter->integer) {
+		//double audioPower = 0.0;
+		//uint64_t sum;
+		double sum = 0.0;
+		double rms;
+
+		count = (endtime - s_paintedtime);
+#if 0
+		for (i = 0;  i < count;  i++) {
+			int val;
+			float s;
+
+			val = paintbuffer[i].left >> 8;
+			if (val > 0x7fff) {
+				val = 0x7fff;
+			} else if (val < -32768) {
+				val = -32768;
+			}
+			s = fabs((float)val);
+			audioPower += s * s;
+
+			val = paintbuffer[i].right >> 8;
+			if (val > 0x7fff) {
+				val = 0x7fff;
+			} else if (val < -32768) {
+				val = -32768;
+			}
+			s = fabs((float)val);
+			audioPower += s * s;
+		}
+
+		clc.audioPower = (audioPower / (32768.0f * 32768.0f *
+										((float)(count * 2)))) * 100.0f;
+		//Com_Printf("volume %f power\n", clc.audioPower);
+#endif
+
+		for (i = 0;  i < count;  i++) {
+			int val;
+			//float s;
+
+			val = paintbuffer[i].left >> 8;
+			if (val > 0x7fff) {
+				val = 0x7fff;
+			} else if (val < -32768) {
+				val = -32768;
+			}
+			//s = fabs((float)val);
+			//audioPower += s * s;
+			sum += (double)(val * val);
+
+			val = paintbuffer[i].right >> 8;
+			if (val > 0x7fff) {
+				val = 0x7fff;
+			} else if (val < -32768) {
+				val = -32768;
+			}
+			//s = fabs((float)val);
+			//audioPower += s * s;
+			sum += (double)(val * val);
+		}
+
+		clc.audioPower = ((double)sum / (32768.0f * 32768.0f *
+										((float)(count * 2)))) * 100.0f;
+
+		rms = sqrt(sum / (double)(count * 2));
+		if (rms <= 0) {
+			clc.audioDecibels = -90.0;
+		} else {
+			clc.audioDecibels = 20.0 * log10(rms / 32768.0);
+		}
+
+	}
+
 
 	if (dma.samplebits == 16 && dma.channels == 2)
 	{	// optimized case
