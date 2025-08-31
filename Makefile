@@ -669,8 +669,8 @@ ifeq ($(PLATFORM),darwin)
 
     # We copy sdlmain before ranlib'ing it so that subversion doesn't think
     #  the file has been modified by each build.
-    LIBSDLMAIN=$(B)/libSDL2main.a
-    LIBSDLMAINSRC=$(MACLIBSDIR)/libSDL2main.a
+    LIBSDLMAIN = $(B)/libSDL2main.a
+    LIBSDLMAINSRC = $(MACLIBSDIR)/libSDL2main.a
     CLIENT_LIBS += $(MACLIBSDIR)/libSDL2-2.0.0.dylib
     RENDERER_LIBS += $(MACLIBSDIR)/libSDL2-2.0.0.dylib
     CLIENT_EXTRA_FILES += $(MACLIBSDIR)/libSDL2-2.0.0.dylib

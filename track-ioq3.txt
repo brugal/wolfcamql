@@ -8727,3 +8727,15 @@ om/actions/runner-images/issues/12045
 
 2025-07-24-02
     Update OpenAL (headers)
+
+2025-07-24-03 (skip)
+    Remove macOS ppc support
+
+2025-07-24-04
+    Add macOS SDL build script
+
+2025-07-24-05
+    Move library versions to lib-versions.sh
+
+2025-07-24-06
+    Add SDL to update script
