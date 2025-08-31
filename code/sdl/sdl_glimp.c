@@ -605,7 +605,19 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 		int profileMask;
 		qboolean preferOpenGLES;
 
+		/*
+			2025-08-31 ppc SDL build is 2.0.1
+
+			commit f869bffe971de35fa1c26156121f2fd8e143ff1e
+			Author: Zack Middleton <zack@cloemail.com>
+			Date:   Thu Jun 6 17:05:04 2024 -0500
+
+			OpenGL2: Fallback to OpenGL ES if OpenGL fails
+		*/
+#if SDL_VERSION_ATLEAST(2, 0, 2)
 		SDL_GL_ResetAttributes();
+#endif
+
 		SDL_GL_GetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, &profileMask );
 
 		preferOpenGLES = ( r_preferOpenGLES->integer == 1 ||
