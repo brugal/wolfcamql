@@ -661,9 +661,11 @@ ifeq ($(PLATFORM),darwin)
       # - x86/x86_64 builds are SDL 2.0.22
       MACLIBSDIR=$(LIBSDIR)/macosx-ub
       ifneq ($(findstring $(ARCH),ppc ppc64),)
-        BASE_CFLAGS += -I$(SDLHDIR)/include-macppc
+        SDLHDIR=$(MOUNT_DIR)/SDL2-2.0.1
+        BASE_CFLAGS += -I$(SDLHDIR)/include
       else
-        BASE_CFLAGS += -I$(SDLHDIR)/include-2.0.22
+        SDLHDIR=$(MOUNT_DIR)/SDL2-2.0.22
+        BASE_CFLAGS += -I$(SDLHDIR)/include
       endif
     endif
 
