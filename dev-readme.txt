@@ -99,17 +99,27 @@ make
 
 -------
 
-SDL 2.0.16
+SDL 2.32.8
 
 win32:
 
   ./configure --host=i686-w64-mingw32
+
+  .lib files can be copied from SDL release packages
 
 win64:
 
   in Makefile.in change libSDL2 references to libSDL264
 
   ./configure --host=x86_64-w64-mingw32
+
+  .lib files need to be re-built if you change the name.  Ex:
+
+        ioquake3 patch 2022-09-08-01
+            Update MSVC .lib files to SDL 2.24.0
+
+            Built with Visual Studio 2022 with PlatformToolSet v141_xp.
+            x64 built with TargetName SDL264 / SDL264main to use SDL264.dll.
 
 macosx:
 

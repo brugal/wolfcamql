@@ -1,4 +1,4 @@
-12.7test19
+12.7test20
 
 * cl_volumeShowMeter  debugging volume meter
 * s_show >= 2 changed:  need s_show 3 to only output when sound is played
@@ -33,6 +33,7 @@
   - Update xiph.org internal libs
   - Update libjpeg
   - Update curl
+  - Update SDL (2.32.8)
 
 ---------------------------------
 12.6  2024-05-22
