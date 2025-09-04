@@ -3515,6 +3515,7 @@ extern vmCvar_t cg_demoSmoothing;
 extern vmCvar_t cg_demoSmoothingAngles;
 extern vmCvar_t cg_demoSmoothingTeleportCheck;
 extern vmCvar_t cg_drawCameraPath;
+extern vmCvar_t cg_drawCameraPathAngles;
 
 extern vmCvar_t cg_drawCameraPointInfo;
 extern vmCvar_t cg_drawCameraPointInfoX;

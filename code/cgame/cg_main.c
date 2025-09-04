@@ -1056,6 +1056,7 @@ vmCvar_t cg_demoSmoothing;
 vmCvar_t cg_demoSmoothingAngles;
 vmCvar_t cg_demoSmoothingTeleportCheck;
 vmCvar_t cg_drawCameraPath;
+vmCvar_t cg_drawCameraPathAngles;
 
 vmCvar_t cg_drawCameraPointInfo;
 vmCvar_t cg_drawCameraPointInfoX;
@@ -2313,6 +2314,7 @@ static cvarTable_t cvarTable[] = { // bk001129
 	{ cvp(cg_demoSmoothingAngles), "1", CVAR_ARCHIVE },
 	{ cvp(cg_demoSmoothingTeleportCheck), "1", CVAR_ARCHIVE },
 	{ &cg_drawCameraPath, "cg_drawCameraPath", "1", CVAR_ARCHIVE },
+	{ cvp(cg_drawCameraPathAngles), "0", CVAR_ARCHIVE },
 
 	{ &cg_drawCameraPointInfo, "cg_drawCameraPointInfo", "1", CVAR_ARCHIVE },
 	{ &cg_drawCameraPointInfoX, "cg_drawCameraPointInfoX", "60", CVAR_ARCHIVE },

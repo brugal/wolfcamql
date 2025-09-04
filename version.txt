@@ -1,5 +1,6 @@
-12.7test20
+12.7test21
 
+* cg_drawCameraPathAngles option to draw line showing the angle view of camera points
 * cl_volumeShowMeter  debugging volume meter
 * s_show >= 2 changed:  need s_show 3 to only output when sound is played
 * s_show 4 draws sound information to screen instead of printing to console

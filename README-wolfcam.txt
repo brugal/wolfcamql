@@ -1212,6 +1212,9 @@ Velocity:
     default  bind BACKSPACE "toggle cg_draw2d 0 1 2"
 
   cg_drawCameraPath
+
+  cg_drawCameraPathAngles option to draw line showing the angle view of camera points
+
   cg_drawCameraPointInfo [0: disable camera point information, 1:  info for wolfcamql or q3mme camera points, 2:  info for wolfcamql camera points, 3:  info for q3mme camera points]
   cg_drawCameraPointInfo[X, Y, Align, Style, Font, PointSize, Scale, Color, SelectedColor, Alpha, BackgroundColor, BackgroundAlpha]
 

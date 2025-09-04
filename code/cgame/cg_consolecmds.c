@@ -3971,8 +3971,9 @@ static void QuaternionMultVec3 (Quaternion_t q, vec3_t v, vec3_t output)
 
 	// roll (x), pitch (y), yaw (z), but quake 3 is
 	// pitch (x) v[0], yaw (y) v[1], roll (z) v[2]
-	x = v[0];
-	y = v[1];
+	//FIXME 2025-09-04  I don't understand why it's '1 0 2'
+	x = v[1];
+	y = v[0];
 	z = v[2];
 
 	qx = q.v[0];
@@ -3986,8 +3987,8 @@ static void QuaternionMultVec3 (Quaternion_t q, vec3_t v, vec3_t output)
 	iz =  qw * z + qx * y - qy * x;
 	iw = -qx * x - qy * y - qz * z;
 
-	output[0] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
-	output[1] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
+	output[1] = ix * qw + iw * -qx + iy * -qz - iz * -qy;
+	output[0] = iy * qw + iw * -qy + iz * -qx - ix * -qz;
 	output[2] = iz * qw + iw * -qz + ix * -qy - iy * -qx;
 }
 
@@ -4072,6 +4073,11 @@ static void rotate_camera_path (double pitch, double yaw, double roll, qboolean 
 			VectorAdd(baseOrigin, out, viewPointRotated);
 			VectorSubtract(viewPointRotated, cg.cameraPoints[i].origin, newViewDir);
 			vectoangles(newViewDir, newAngles);
+
+			newAngles[0] = AngleNormalize180(newAngles[0]);
+			newAngles[1] = AngleNormalize180(newAngles[1]);
+			newAngles[2] = AngleNormalize180(newAngles[2]);
+
 			VectorCopy(newAngles, cg.cameraPoints[i].angles);
 		}
 		//Com_Printf("angles adjusted\n");
@@ -4177,6 +4183,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 		yaw = DEG2RAD(atof(CG_Argv(3)));
 		roll = DEG2RAD(atof(CG_Argv(4)));
 
+		//Com_Printf("pitch %f  yaw %f  roll %f\n", pitch, yaw, roll);
 		rotate_camera_path(pitch, yaw, roll, qfalse);
 		return;
 	}
@@ -4247,6 +4254,10 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				qboolean noAngles;
 				vec3_t diff;
 				double pitch, yaw, roll;
+				cameraPoint_t *cp;
+				int debug;
+
+				debug = SC_Cvar_Get_Int("debug_ecam_dir");
 
 				if (!Q_stricmp(CG_Argv(n), "dirna")) {
 					noAngles = qtrue;
@@ -4254,13 +4265,24 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 					noAngles = qfalse;
 				}
 
-				AnglesSubtract(cg.refdefViewAngles, cg.cameraPoints[0].angles, diff);
+				cp = &cg.cameraPoints[0];
+				//AnglesSubtract(cg.refdefViewAngles, cp->angles, diff);
+				AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);
+
 				pitch = DEG2RAD(diff[0]);
 				yaw = DEG2RAD(diff[1]);
 				roll = DEG2RAD(diff[2]);
 
+				if (debug) {
+					Com_Printf("start: (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+				}
+
 				rotate_camera_path(pitch, yaw, roll, noAngles);
-				//Com_Printf("diff: %f %f %f\n", diff[0], diff[1], diff[2]);
+
+				if (debug) {
+					AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);
+					Com_Printf("end:   (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+				}
 
 				return;
 			}

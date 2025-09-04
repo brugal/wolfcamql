@@ -101,6 +101,8 @@ make
 
 SDL 2.32.8
 
+2025-09-03  ioquake3 doesn't rename libSDL2 to libSDL264 anymore
+
 win32:
 
   ./configure --host=i686-w64-mingw32

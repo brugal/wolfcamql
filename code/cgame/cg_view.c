@@ -4817,6 +4817,7 @@ static void CG_DrawSplinePoints (void)
 	byte color2[4];
 	//byte color3[4];
 	byte selectedColor[4];
+	byte viewLineColor[4];
 	//clientInfo_t ci;
 	//centity_t cent;
 	//vec3_t lastDrawn;
@@ -4915,6 +4916,8 @@ static void CG_DrawSplinePoints (void)
 	MAKERGBA(color, 0, 255, 255, 255);
 	MAKERGBA(color2, 255, 0, 255, 255);
 	MAKERGBA(selectedColor, 255, 255, 0, 255);
+	MAKERGBA(viewLineColor, 0xFF, 0xA5, 0x00, 255);  // orange
+
 	for (i = 0;  i < cg.numCameraPoints;  i++) {
 		cp = &cg.cameraPoints[i];
 
@@ -4928,6 +4931,16 @@ static void CG_DrawSplinePoints (void)
 			CG_FloatNumber(i, cp->origin, RF_DEPTHHACK, color, 1.0);
 		}
 
+		if (cg_drawCameraPathAngles.integer) {
+			vec3_t forward;
+			vec3_t viewPoint;
+
+			AngleVectors(cp->angles, forward, NULL, NULL);
+			VectorNormalize(forward);
+			// FIXME option for distance
+			VectorMA(cp->origin, 100, forward, viewPoint);
+			CG_SimpleRailTrail(cp->origin, viewPoint, 100, viewLineColor);
+		}
 	}
 
 #if 0
