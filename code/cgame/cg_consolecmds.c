@@ -4014,9 +4014,30 @@ static void QuaternionFromEulerAngles (double roll, double pitch, double yaw, Qu
 	q->v[2] = cr * cp * sy - sr * sp * cy;
 }
 
+// from code/rendergl2/tr_model_iqm.c
+static void QuaternionNormalize (Quaternion_t *q)
+{
+	double length, ilength;
+
+	length = q->v[0]*q->v[0] + q->v[1]*q->v[1] + q->v[2]*q->v[2] + q->w*q->w;
+
+	if (length) {
+		/* writing it this way allows gcc to recognize that rsqrt can be used */
+		ilength = 1/(double)sqrt (length);
+		/* sqrt(length) = length * (1 / sqrt(length)) */
+		length *= ilength;
+		q->v[0] = q->v[0]*ilength;
+		q->v[1] = q->v[1]*ilength;
+		q->v[2] = q->v[2]*ilength;
+		q->w = q->w*ilength;
+	} else {
+		q->v[0] = q->v[1] = q->v[2] = 0;
+		q->w = -1;
+	}
+}
 static vec3_t Old[MAX_CAMERAPOINTS];
 
-static void rotate_camera_path (double pitch, double yaw, double roll, qboolean noAngles)
+static void rotate_camera_path (Quaternion_t *q, double pitch, double yaw, double roll, qboolean noAngles)
 {
 	Quaternion_t rot;
 	vec3_t baseOrigin;
@@ -4026,7 +4047,17 @@ static void rotate_camera_path (double pitch, double yaw, double roll, qboolean 
 		return;
 	}
 
-	QuaternionFromEulerAngles(roll, pitch, yaw, &rot);
+	if (q) {
+		rot.v[0] = q->v[0];
+		rot.v[1] = q->v[1];
+		rot.v[2] = q->v[2];
+		rot.w = q->w;
+	} else {
+		QuaternionFromEulerAngles(roll, pitch, yaw, &rot);
+	}
+
+	QuaternionNormalize(&rot);
+
 	VectorCopy(cg.cameraPoints[0].origin, baseOrigin);
 
 	// used for angle adjustment later
@@ -4168,6 +4199,8 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 
 	if (!Q_stricmp(CG_Argv(1), "rotate")) {
 		double pitch, yaw, roll;
+		cameraPoint_t *cp;
+		int debug;
 
 		if (CG_Argc() < 5) {
 			Com_Printf("usage: ecam rotate <pitch> <yaw> <roll>\n");
@@ -4183,8 +4216,22 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 		yaw = DEG2RAD(atof(CG_Argv(3)));
 		roll = DEG2RAD(atof(CG_Argv(4)));
 
-		//Com_Printf("pitch %f  yaw %f  roll %f\n", pitch, yaw, roll);
-		rotate_camera_path(pitch, yaw, roll, qfalse);
+		debug = SC_Cvar_Get_Int("debug_ecam_dir");
+		cp = &cg.cameraPoints[0];
+
+		if (debug) {
+			//Com_Printf("start: (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+			Com_Printf("start: (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2]);
+		}
+
+		rotate_camera_path(NULL, pitch, yaw, roll, qfalse);
+
+		if (debug) {
+			//AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);
+			//Com_Printf("end:   (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+			Com_Printf("end: (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2]);
+		}
+
 		return;
 	}
 
@@ -4205,7 +4252,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 		yaw = DEG2RAD(atof(CG_Argv(3)));
 		roll = DEG2RAD(atof(CG_Argv(4)));
 
-		rotate_camera_path(pitch, yaw, roll, qtrue);
+		rotate_camera_path(NULL, pitch, yaw, roll, qtrue);
 		return;
 	}
 
@@ -4254,6 +4301,12 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				qboolean noAngles;
 				vec3_t diff;
 				double pitch, yaw, roll;
+				vec3_t forwardRefdef;
+				vec3_t forwardCameraPoint;
+				double refLength, camLength;
+				vec3_t a;
+				double dotProduct;
+				Quaternion_t rot;
 				cameraPoint_t *cp;
 				int debug;
 
@@ -4269,15 +4322,80 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				//AnglesSubtract(cg.refdefViewAngles, cp->angles, diff);
 				AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);
 
-				pitch = DEG2RAD(diff[0]);
-				yaw = DEG2RAD(diff[1]);
-				roll = DEG2RAD(diff[2]);
+				AngleVectors(cg.refdefViewAngles, forwardRefdef, NULL, NULL);
+				AngleVectors(cp->angles, forwardCameraPoint, NULL, NULL);
+
+				//VectorNormalize(forwardRefdef);
+				//VectorNormalize(forwardCameraPoint);
+
+				/*
+				  https://stackoverflow.com/questions/1171849/finding-quaternion-representing-the-rotation-from-one-vector-to-another
+
+				  Quaternion q;
+				  vector a = crossproduct(v1, v2);
+				  q.xyz = a;
+				  q.w = sqrt((v1.Length ^ 2) * (v2.Length ^ 2)) + dotproduct(v1, v2);
+
+				  Don't forget to normalize q.
+
+				  answered Jul 23, 2009 at 14:04
+				  DigitalZebra
+				*/
+
+				/* FIXME also:
+				   https://github.com/toji/gl-matrix/blob/f0583ef53e94bc7e78b78c8a24f09ed5e2f7a20c/src/gl-matrix/quat.js#L54
+
+ 				   checks for CrossProduct() and DotProduct()
+				*/
+
+				refLength = VectorLength(forwardRefdef);
+				camLength = VectorLength(forwardCameraPoint);
+
+				CrossProduct(forwardRefdef, forwardCameraPoint, a);
+
+				dotProduct = DotProduct(forwardRefdef, forwardCameraPoint);
+
+				//FIXE check dotProduct < -0.999999 ?
+				if (debug) {
+					Com_Printf("    ^3dotProduct %f\n", dotProduct);
+				}
+
+				// roll, pitch, yaw
+#if 0
+				rot.v[0] = a[2];
+				rot.v[1] = a[0];
+				rot.v[2] = a[1];
+#endif
+
+				//FIXME 2025-09-04 again with '1 0 2'
+				rot.v[0] = a[1];
+				rot.v[1] = a[0];
+				rot.v[2] = a[2];
+
+#if 0
+				rot.v[0] = a[0];
+				rot.v[1] = a[1];
+				rot.v[2] = a[2];
+#endif
+
+				rot.w = sqrt((refLength * refLength) * (camLength * camLength)) + dotProduct;
+
+				QuaternionNormalize(&rot);
+
+				//pitch = DEG2RAD(AngleNormalize360(diff[0]));
+				//yaw = DEG2RAD(AngleNormalize360(diff[1]));
+				//roll = DEG2RAD(AngleNormalize360(diff[2]));
+
+				pitch = DEG2RAD(AngleNormalize180(diff[0]));
+				yaw = DEG2RAD(AngleNormalize180(diff[1]));
+				roll = DEG2RAD(AngleNormalize180(diff[2]));
 
 				if (debug) {
 					Com_Printf("start: (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
 				}
 
-				rotate_camera_path(pitch, yaw, roll, noAngles);
+				//rotate_camera_path(NULL, pitch, yaw, roll, noAngles);
+				rotate_camera_path(&rot, pitch, yaw, roll, noAngles);
 
 				if (debug) {
 					AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);

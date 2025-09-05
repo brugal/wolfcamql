@@ -2678,6 +2678,9 @@ To give the audio driver enough audio to work with, the audio data in an interle
 
 * for small avi with multiple files still could keep track of the total audio and video times
 * QuaternionMultVec3  why does it turn out to be '1 0 2' ?
+* /ecam rebase origin
+
+still broken, check lost world
 
 ----
 
