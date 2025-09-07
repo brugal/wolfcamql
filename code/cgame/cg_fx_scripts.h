@@ -258,11 +258,10 @@ typedef struct effectScripts_s {
 	char impactFlesh[MAX_FX_SCRIPT_SIZE];
 
 	//FIXME ugly
-	char extra[MAX_FX_SCRIPT_SIZE][MAX_FX_EXTRA];
-	//char extraNames[MAX_QPATH][MAX_FX_EXTRA];
+	char extra[MAX_FX_EXTRA][MAX_FX_SCRIPT_SIZE];
 	int numExtra;
 
-	char names[MAX_QPATH][MAX_FX];
+	char names[MAX_FX][MAX_QPATH];
 	char *ptr[MAX_FX];
 	int numEffects;
 

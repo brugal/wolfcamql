@@ -7447,8 +7447,6 @@ static void CG_ParseQ3mmeEffect (const char *name, char *lastLine, fileHandle_t 
 
     } else if (EffectScripts.numExtra < MAX_FX_EXTRA) {
 		CG_SetQ3mmeFXScript(name, EffectScripts.extra[EffectScripts.numExtra], MAX_FX_SCRIPT_SIZE, handle, lastLine);
-		//Q_strncpyz(EffectScripts.extraNames[EffectScripts.numExtra], name, MAX_QPATH);
-		//Com_Printf("^6extra effect: '%s'\n", EffectScripts.extraNames[EffectScripts.numExtra]);
 		Com_Printf("^6extra effect:  '%s'\n", name);
 		EffectScripts.numExtra++;
 		return;

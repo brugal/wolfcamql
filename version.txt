@@ -1,5 +1,6 @@
-12.7test22
+12.7test23
 
+* bug fix: corrupt fx script index when more than one extra effect defined
 * cg_drawCameraPathAngles option to draw line showing the angle view of camera points
 * cl_volumeShowMeter  debugging volume meter
 * s_show >= 2 changed:  need s_show 3 to only output when sound is played
