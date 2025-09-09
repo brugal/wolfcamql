@@ -1,5 +1,7 @@
-12.7test23
+12.7test24
 
+* remove r_znear restrictions
+* bug fix: crash with fx custom scripts
 * bug fix: corrupt fx script index when more than one extra effect defined
 * cg_drawCameraPathAngles option to draw line showing the angle view of camera points
 * cl_volumeShowMeter  debugging volume meter

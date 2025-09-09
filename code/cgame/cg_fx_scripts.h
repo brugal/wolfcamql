@@ -266,8 +266,8 @@ typedef struct effectScripts_s {
 	int numEffects;
 
 	//FIXME hack
-	//jitFxToken_t jitToken[MAX_FX_SCRIPT_SIZE * MAX_FX_EXTRA + 7 * sizeof(int) * WP_NUM_WEAPONS];
-	jitFxToken_t *jitToken[MAX_FX_SCRIPT_SIZE * MAX_FX_EXTRA + 7 * sizeof(int) * WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS];
+	//FIXME 2025-09-08 this is insane
+	jitFxToken_t *jitToken[MAX_FX_SCRIPT_SIZE * MAX_FX + (7 * sizeof(int) * WP_MAX_NUM_WEAPONS_ALL_PROTOCOLS)];
 } effectScripts_t;
 
 extern effectScripts_t EffectScripts;

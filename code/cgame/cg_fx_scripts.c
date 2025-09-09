@@ -618,6 +618,7 @@ static const char *CG_GetFxTokenExt (const char *inputString, char *token, qbool
 		jt = NULL;
 	}
 
+	//Com_Printf("  jitIndex %d  sizeof:  %ld  length: %ld\n", jitIndex, sizeof(EffectScripts.jitToken), ARRAY_LEN(EffectScripts.jitToken));
 	//Com_Printf(" -- CG_GetFxTokenExt() '%s'\n", PrintShort(inputString, 8));
 
 	if (jt  &&  jt->valid) {
