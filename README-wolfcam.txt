@@ -262,8 +262,6 @@ cl_freezeDemoPauseVideoRecording  to pause recording of video/screen-shots while
 
 cl_aviExtension  allow changing '.avi' extension to something else to avoid Windows indexing of video file
 
-cl_aviPrimeAudioRate  make audio dwScale and dwRate mutually prime
-
 cl_aviAudioWaitForVideoFrame  to delay writing audio before specified number of video frames
 
 cl_aviAudioMatchVideoLength  to try and match audio and video data lengths (only works with large avi and ffmpeg pipe)

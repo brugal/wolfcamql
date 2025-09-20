@@ -428,7 +428,12 @@ static void CL_CreateAVIHeader (aviFileData_t *afd)
             // "dwScale and dwRate should be mutually prime. Tests have shown
             // that for example 10,000,000/400,000 instead of 25/1 results
             // in files that don't work on some hardware mpeg4 players"
-            if (cl_aviPrimeAudioRate->integer) {
+            //
+            // 2025-09-20 removing cl_aviPrimeAudioRate: audio sync issues
+            // with ffmpeg
+
+            //if (cl_aviPrimeAudioRate->integer) {
+            if (Cvar_VariableIntegerValue("prime_audio_rate")) {
                 WRITE_4BYTES( 1 );  //dwTimescale
                 WRITE_4BYTES( afd->a.rate );  //dwDataRate
             } else {

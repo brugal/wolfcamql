@@ -1,5 +1,6 @@
-12.7test24
+12.7test25
 
+* remove cl_aviPrimeAudioRate can cause audio sync issues
 * remove r_znear restrictions
 * bug fix: crash with fx custom scripts
 * bug fix: corrupt fx script index when more than one extra effect defined
