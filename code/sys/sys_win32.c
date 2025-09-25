@@ -38,7 +38,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <io.h>
 #include <conio.h>
 #include <wincrypt.h>
-#include <shfolder.h>
 #include <shlobj.h>
 #include <psapi.h>
 #include <float.h>
@@ -109,31 +108,14 @@ Sys_DefaultHomePath
 char *Sys_DefaultHomePath( void )
 {
 	TCHAR szPath[MAX_PATH];
-	PFNSHGETFOLDERPATHA qSHGetFolderPath;
-	HMODULE shfolder = LoadLibrary("shfolder.dll");
-
-	if(shfolder == NULL)
-	{
-		Com_Printf("Unable to load SHFolder.dll\n");
-		return NULL;
-	}
 
 	if(!*homePath && com_homepath)
 	{
 		// SHGetFolderPath() is deprecated since Vista
-		qSHGetFolderPath = (PFNSHGETFOLDERPATHA)GetProcAddress(shfolder, "SHGetFolderPathA");
-		if(qSHGetFolderPath == NULL)
-		{
-			Com_Printf("Unable to find SHGetFolderPath in SHFolder.dll\n");
-			FreeLibrary(shfolder);
-			return NULL;
-		}
-
-		if( !SUCCEEDED( qSHGetFolderPath( NULL, CSIDL_APPDATA,
+		if( !SUCCEEDED( SHGetFolderPathA( NULL, CSIDL_APPDATA,
 						NULL, 0, szPath ) ) )
 		{
 			Com_Printf("Unable to detect CSIDL_APPDATA\n");
-			FreeLibrary(shfolder);
 			return NULL;
 		}
 
@@ -145,15 +127,12 @@ char *Sys_DefaultHomePath( void )
 			Q_strcat(homePath, sizeof(homePath), HOMEPATH_NAME_WIN);
 	}
 
-	FreeLibrary(shfolder);
 	return homePath;
 }
 
 char *Sys_QuakeLiveDir (void)
 {
 	TCHAR szPath[MAX_PATH];
-	PFNSHGETFOLDERPATHA qSHGetFolderPath;
-	HMODULE shfolder;
 	const char *override = NULL;
 	// "LocalLow\\id Software\\quakelive\\home\\baseq3";
 	// "id Software\\quakelive\\home\\baseq3";
@@ -215,27 +194,10 @@ char *Sys_QuakeLiveDir (void)
 		}  // while (count < 2)
 
 		// try old quake live stand alone directory
-		shfolder = LoadLibrary("shfolder.dll");
-
-		if(shfolder == NULL)
-		{
-			Com_Printf("Unable to load SHFolder.dll\n");
-			return NULL;
-		}
-
-		qSHGetFolderPath = (PFNSHGETFOLDERPATHA)GetProcAddress(shfolder, "SHGetFolderPathA");
-		if(qSHGetFolderPath == NULL)
-		{
-			Com_Printf("Unable to find SHGetFolderPath in SHFolder.dll\n");
-			FreeLibrary(shfolder);
-			return NULL;
-		}
-
-		if( !SUCCEEDED( qSHGetFolderPath( NULL, CSIDL_APPDATA,
+		if( !SUCCEEDED( SHGetFolderPathA( NULL, CSIDL_APPDATA,
 						NULL, 0, szPath ) ) )
 		{
 			Com_Printf("Unable to detect CSIDL_APPDATA\n");
-			FreeLibrary(shfolder);
 			return NULL;
 		}
 		/*
@@ -256,7 +218,6 @@ char *Sys_QuakeLiveDir (void)
 			}
 		}
 		FS_ReplaceSeparators(QuakeLivePath);
-		FreeLibrary(shfolder);
 	}
 
 	//Com_Printf("qpath '%s'\n", QuakeLivePath);
@@ -370,32 +331,13 @@ char* Sys_MicrosoftStorePath(void)
 	if (!microsoftStorePath[0]) 
 	{
 		TCHAR szPath[MAX_PATH];
-		PFNSHGETFOLDERPATHA qSHGetFolderPath;
-		HMODULE shfolder = LoadLibrary("shfolder.dll");
 
-		if(shfolder == NULL)
-		{
-			Com_Printf("Unable to load SHFolder.dll\n");
-			return microsoftStorePath;
-		}
-
-		qSHGetFolderPath = (PFNSHGETFOLDERPATHA)GetProcAddress(shfolder, "SHGetFolderPathA");
-		if(qSHGetFolderPath == NULL)
-		{
-			Com_Printf("Unable to find SHGetFolderPath in SHFolder.dll\n");
-			FreeLibrary(shfolder);
-			return microsoftStorePath;
-		}
-
-		if( !SUCCEEDED( qSHGetFolderPath( NULL, CSIDL_PROGRAM_FILES,
+		if( !SUCCEEDED( SHGetFolderPathA( NULL, CSIDL_PROGRAM_FILES,
 						NULL, 0, szPath ) ) )
 		{
 			Com_Printf("Unable to detect CSIDL_PROGRAM_FILES\n");
-			FreeLibrary(shfolder);
 			return microsoftStorePath;
 		}
-
-		FreeLibrary(shfolder);
 
 		// default: C:\Program Files\ModifiableWindowsApps\Quake 3\EN
 		Com_sprintf(microsoftStorePath, sizeof(microsoftStorePath), "%s%cModifiableWindowsApps%c%s%cEN", szPath, PATH_SEP, PATH_SEP, MSSTORE_PATH, PATH_SEP);

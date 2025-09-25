@@ -830,9 +830,9 @@ ifdef MINGW
   # 2021-02-26 cygwin g++ is automatically adding libwinpthread dependency
   #   checked cygwin 3.1.7 with both gcc 9.2.0 and 10.2.0
   ifeq ($(COMPILE_PLATFORM),cygwin)
-    LIBS= -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,-Bdynamic,--no-whole-archive -lws2_32 -lwinmm -lpsapi -static-libgcc -static-libstdc++
+    LIBS= -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,-Bdynamic,--no-whole-archive -lws2_32 -lwinmm -lpsapi -lshell32 -static-libgcc -static-libstdc++
   else
-    LIBS= -lws2_32 -lwinmm -lpsapi -static-libgcc -static-libstdc++
+    LIBS= -lws2_32 -lwinmm -lpsapi -lshell32 -static-libgcc -static-libstdc++
     # 2022-04-29 i686-w64-mingw32-gcc (GCC) 10-win32 20210110 : cgamex86.dll
     # using libgcc_s_dw2-1.dll (needs symbols __divdi3 and __udivdi3)
     CGAME_LIBS += -static-libgcc

@@ -8742,3 +8742,17 @@ om/actions/runner-images/issues/12045
 
 2025-07-24-07
     Update SDL
+
+2025-07-25-01
+    *Don't* configure SDL so that we get the generic SDL_config.h
+
+2025-07-25-02
+    *Don't* configure zlib so we get the generic zconf.h
+
+2025-07-27-01
+    Call SHGetFolderPathA directly
+
+    Removing shfolder.h satisfies MSVC, and calling the function directly makes PFNSHGETFOLDERPATHA unnecessary.
+
+2025-07-29-01
+    Cleanup opus and vorbis more
