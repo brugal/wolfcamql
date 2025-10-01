@@ -49,7 +49,7 @@
 extern "C" {
 #endif
 
-#ifdef USE_LOCAL_HEADERS
+#ifdef USE_INTERNAL_ZLIB
   #include "../zlib-1.3.1/zlib.h"
 #else
   #include <zlib.h>

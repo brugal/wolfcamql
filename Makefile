@@ -207,6 +207,10 @@ ifndef USE_INTERNAL_LIBS
 USE_INTERNAL_LIBS=1
 endif
 
+ifndef USE_INTERNAL_CURL_HEADERS
+USE_INTERNAL_CURL_HEADERS=$(USE_INTERNAL_LIBS)
+endif
+
 ifndef USE_INTERNAL_SPEEX
 USE_INTERNAL_SPEEX=$(USE_INTERNAL_LIBS)
 endif
@@ -214,6 +218,10 @@ endif
 ifndef USE_INTERNAL_OGG
 USE_INTERNAL_OGG=$(USE_INTERNAL_LIBS)
 NEED_OGG=1
+endif
+
+ifndef USE_INTERNAL_OPENAL_HEADERS
+USE_INTERNAL_OPENAL_HEADERS=$(USE_INTERNAL_LIBS)
 endif
 
 ifndef USE_INTERNAL_VORBIS
@@ -224,6 +232,10 @@ ifndef USE_INTERNAL_OPUS
 USE_INTERNAL_OPUS=$(USE_INTERNAL_LIBS)
 endif
 
+ifndef USE_INTERNAL_SDL
+USE_INTERNAL_SDL=$(USE_INTERNAL_LIBS)
+endif
+
 ifndef USE_INTERNAL_ZLIB
 USE_INTERNAL_ZLIB=$(USE_INTERNAL_LIBS)
 endif
@@ -232,12 +244,12 @@ ifndef USE_INTERNAL_JPEG
 USE_INTERNAL_JPEG=$(USE_INTERNAL_LIBS)
 endif
 
-ifndef USE_LOCAL_HEADERS
-USE_LOCAL_HEADERS=$(USE_INTERNAL_LIBS)
-endif
-
 ifndef USE_RENDERER_DLOPEN
 USE_RENDERER_DLOPEN=1
+endif
+
+ifndef USE_ARCHLESS_FILENAMES
+USE_ARCHLESS_FILENAMES=0
 endif
 
 ifndef USE_YACC
@@ -341,8 +353,11 @@ else
   OPENAL_LIBS ?= -lopenal
 endif
 
-ifeq ($(USE_LOCAL_HEADERS),1)
+ifeq ($(USE_INTERNAL_CURL_HEADERS),1)
   CURL_CFLAGS+=-I$(CURLDIR)/include
+endif
+
+ifeq ($(USE_INTERNAL_OPENAL_HEADERS),1)
   OPENAL_CFLAGS+=-I${OPENALDIR}/include
 endif
 
@@ -394,12 +409,12 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   ifdef CGAME_HARD_LINKED
     WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
     WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
-    BASE_CFLAGS = -p -g -rdynamic -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse $(CGAME_HARD_LINKED)
+    BASE_CFLAGS = -p -g -rdynamic -pipe -DUSE_ICON -msse $(CGAME_HARD_LINKED)
     SSE2_CFLAGS = -msse2
   else
     WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
     WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
-    BASE_CFLAGS = -g -rdynamic -pipe -DUSE_ICON -DARCH_STRING=\\\"$(ARCH)\\\" -msse
+    BASE_CFLAGS = -g -rdynamic -pipe -DUSE_ICON -msse
     SSE2_CFLAGS = -msse2
   endif
 
@@ -611,7 +626,7 @@ ifeq ($(PLATFORM),darwin)
   BASE_CFLAGS += -fno-strict-aliasing -fno-common -pipe
 
   ifeq ($(USE_OPENAL),1)
-    ifneq ($(USE_LOCAL_HEADERS),1)
+    ifneq ($(USE_INTERNAL_OPENAL_HEADERS),1)
       CLIENT_CFLAGS += -I/System/Library/Frameworks/OpenAL.framework/Headers
     endif
     ifneq ($(USE_OPENAL_DLOPEN),1)
@@ -640,7 +655,7 @@ ifeq ($(PLATFORM),darwin)
   CLIENT_LIBS += -framework IOKit
   RENDERER_LIBS += -framework OpenGL
 
-  ifeq ($(USE_LOCAL_HEADERS),1)
+  ifeq ($(USE_INTERNAL_SDL),1)
     ifeq ($(shell test $(MAC_OS_X_VERSION_MIN_REQUIRED) -ge 1090; echo $$?),0)
       # Universal Binary 2 - for running on macOS 10.9 or later
       # x86_64 (10.9 or later), arm64 (11.0 or later)
@@ -867,7 +882,7 @@ ifdef MINGW
   CLIENT_LIBS += -lmingw32
   RENDERER_LIBS += -lmingw32
 
-  ifeq ($(USE_LOCAL_HEADERS),1)
+  ifeq ($(USE_INTERNAL_SDL),1)
     CLIENT_CFLAGS += -I$(SDLHDIR)/include
     ifeq ($(ARCH),x86)
       CLIENT_LIBS += $(LIBSDIR)/win32/libSDL2main.a \
@@ -1232,11 +1247,21 @@ endif
 TARGETS =
 
 ifndef FULLBINEXT
-  FULLBINEXT=.$(ARCH)$(BINEXT)
+  ifeq ($(USE_ARCHLESS_FILENAMES),1)
+    FULLBINEXT=$(BINEXT)
+  else
+    FULLBINEXT=.$(ARCH)$(BINEXT)
+  endif
 endif
 
 ifndef SHLIBNAME
-  SHLIBNAME=$(ARCH).$(SHLIBEXT)
+  ifeq ($(USE_ARCHLESS_FILENAMES),1)
+    SHLIBNAME=.$(SHLIBEXT)
+    RSHLIBNAME=$(SHLIBNAME)
+  else
+    SHLIBNAME=$(ARCH).$(SHLIBEXT)
+    RSHLIBNAME=_$(SHLIBNAME)
+  endif
 endif
 
 ifneq ($(BUILD_SERVER),0)
@@ -1248,10 +1273,10 @@ ifneq ($(BUILD_CLIENT),0)
     TARGETS += $(B)/$(CLIENTBIN)$(FULLBINEXT)
 
     ifneq ($(BUILD_RENDERER_OPENGL1),0)
-      TARGETS += $(B)/renderer_opengl1_$(SHLIBNAME)
+      TARGETS += $(B)/renderer_opengl1$(RSHLIBNAME)
     endif
     ifneq ($(BUILD_RENDERER_OPENGL2),0)
-      TARGETS += $(B)/renderer_opengl2_$(SHLIBNAME)
+      TARGETS += $(B)/renderer_opengl2$(RSHLIBNAME)
     endif
   else
     ifneq ($(BUILD_RENDERER_OPENGL1),0)
@@ -1467,12 +1492,28 @@ ifdef DEFAULT_BASEDIR
   BASE_CFLAGS += -DDEFAULT_BASEDIR=\\\"$(DEFAULT_BASEDIR)\\\"
 endif
 
-ifeq ($(USE_LOCAL_HEADERS),1)
-  BASE_CFLAGS += -DUSE_LOCAL_HEADERS
+ifeq ($(USE_INTERNAL_OPENAL_HEADERS),1)
+  BASE_CFLAGS += -DUSE_INTERNAL_OPENAL_HEADERS
+endif
+
+ifeq ($(USE_INTERNAL_CURL_HEADERS),1)
+  BASE_CFLAGS += -DUSE_INTERNAL_CURL_HEADERS
+endif
+
+ifeq ($(USE_INTERNAL_SDL),1)
+  BASE_CFLAGS += -DUSE_INTERNAL_SDL_HEADERS
+endif
+
+ifeq ($(USE_INTERNAL_ZLIB),1)
+  BASE_CFLAGS += -DUSE_INTERNAL_ZLIB
 endif
 
 ifeq ($(BUILD_STANDALONE),1)
   BASE_CFLAGS += -DSTANDALONE
+endif
+
+ifeq ($(USE_ARCHLESS_FILENAMES),1)
+  BASE_CFLAGS += -DUSE_ARCHLESS_FILENAMES
 endif
 
 ifeq ($(GENERATE_DEPENDENCIES),1)
@@ -1633,7 +1674,7 @@ endef
 
 define DO_WINDRES
 $(echo_cmd) "WINDRES $<"
-$(Q)$(WINDRES) -i $< -o $@
+$(Q)$(WINDRES) -Imisc -i $< -o $@
 endef
 
 
@@ -2094,7 +2135,6 @@ Q3OBJ = \
   \
   $(B)/client/unzip.o \
   $(B)/client/ioapi.o \
-  $(B)/client/puff.o \
   $(B)/client/vm.o \
   $(B)/client/vm_interpreted.o \
   \
@@ -2199,7 +2239,9 @@ Q3R2OBJ = \
   $(B)/renderergl2/tr_world.o \
   \
   $(B)/renderergl1/sdl_gamma.o \
-  $(B)/renderergl1/sdl_glimp.o
+  $(B)/renderergl1/sdl_glimp.o \
+  \
+  $(B)/renderergl2/puff.o
 
 Q3R2STRINGOBJ = \
   $(B)/renderergl2/glsl/bokeh_fp.o \
@@ -2271,20 +2313,20 @@ Q3ROBJ = \
   $(B)/renderergl1/tr_world.o \
   \
   $(B)/renderergl1/sdl_gamma.o \
-  $(B)/renderergl1/sdl_glimp.o
+  $(B)/renderergl1/sdl_glimp.o \
+  \
+  $(B)/renderergl1/puff.o
 
 ifneq ($(USE_RENDERER_DLOPEN), 0)
   Q3ROBJ += \
     $(B)/renderergl1/q_shared.o \
-    $(B)/renderergl1/puff.o \
     $(B)/renderergl1/q_math.o \
     $(B)/renderergl1/tr_subs.o
 
   Q3R2OBJ += \
-    $(B)/renderergl1/q_shared.o \
-    $(B)/renderergl1/puff.o \
-    $(B)/renderergl1/q_math.o \
-    $(B)/renderergl1/tr_subs.o
+    $(B)/renderergl2/q_shared.o \
+    $(B)/renderergl2/q_math.o \
+    $(B)/renderergl2/tr_subs.o
 endif
 
 ifneq ($(USE_INTERNAL_JPEG),0)
@@ -2676,12 +2718,12 @@ $(B)/$(CLIENTBIN)$(FULLBINEXT): $(Q3OBJ) $(SPLINES) $(LIBSDLMAIN) $(EXTRACLIENTB
 		$(NOTSHLIBLDFLAGS) -o $@ $(Q3OBJ) $(SPLINES) \
 		$(LIBSDLMAIN) $(CLIENT_LIBS) $(LIBS)
 
-$(B)/renderer_opengl1_$(SHLIBNAME): $(Q3ROBJ) $(JPGOBJ)
+$(B)/renderer_opengl1$(RSHLIBNAME): $(Q3ROBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3ROBJ) $(JPGOBJ) \
 		$(THREAD_LIBS) $(LIBSDLMAIN) $(RENDERER_LIBS) $(LIBS)
 
-$(B)/renderer_opengl2_$(SHLIBNAME): $(Q3R2OBJ) $(Q3R2STRINGOBJ) $(JPGOBJ)
+$(B)/renderer_opengl2$(RSHLIBNAME): $(Q3R2OBJ) $(Q3R2STRINGOBJ) $(JPGOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(CFLAGS) $(SHLIBLDFLAGS) -o $@ $(Q3R2OBJ) $(Q3R2STRINGOBJ) $(JPGOBJ) \
 		$(THREAD_LIBS) $(LIBSDLMAIN) $(RENDERER_LIBS) $(LIBS)
@@ -3350,6 +3392,9 @@ $(B)/renderergl2/glsl/%.c: $(RGL2DIR)/glsl/%.glsl $(STRINGIFY)
 $(B)/renderergl2/glsl/%.o: $(B)/renderergl2/glsl/%.c
 	$(DO_REF_CC)
 
+$(B)/renderergl2/%.o: $(CMDIR)/%.c
+	$(DO_REF_CC)
+
 $(B)/renderergl2/%.o: $(ZDIR)/%.c
 	$(DO_THIRDPARTY_REF_CC)
 
@@ -3489,9 +3534,15 @@ $(B)/$(MISSIONPACK)/qcommon/%.asm: $(CMDIR)/%.c $(Q3LCC)
 # EMSCRIPTEN
 #############################################################################
 
-$(B)/$(CLIENTBIN).html: $(WEBDIR)/client.html
+EMSCRIPTEN_PRELOAD_FILE_SWITCH := $(if $(filter 1,$(EMSCRIPTEN_PRELOAD_FILE)),ON,OFF)
+$(B)/$(CLIENTBIN).html: $(WEBDIR)/client.html.in
 	$(echo_cmd) "SED $@"
-	$(Q)sed 's/__CLIENTBIN__/$(CLIENTBIN)/g;s/__BASEGAME__/$(BASEGAME)/g;s/__EMSCRIPTEN_PRELOAD_FILE__/$(EMSCRIPTEN_PRELOAD_FILE)/g' < $< > $@
+	$(Q)sed \
+		-e 's/@CLIENT_NAME@/$(CLIENTBIN)/g;' \
+		-e 's/@CLIENT_BINARY@/$(CLIENTBIN)_opengl2.$(ARCH)/g;' \
+		-e 's/@BASEGAME@/$(BASEGAME)/g;' \
+		-e 's/@EMSCRIPTEN_PRELOAD_FILE@/$(EMSCRIPTEN_PRELOAD_FILE_SWITCH)/g' \
+		< $< > $@
 
 $(B)/$(CLIENTBIN)-config.json: $(WEBDIR)/client-config.json
 	$(echo_cmd) "CP $@"
@@ -3524,10 +3575,10 @@ ifneq ($(BUILD_CLIENT),0)
   ifneq ($(USE_RENDERER_DLOPEN),0)
 	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/$(CLIENTBIN)$(FULLBINEXT) $(COPYBINDIR)/$(CLIENTBIN)$(FULLBINEXT)
     ifneq ($(BUILD_RENDERER_OPENGL1),0)
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/renderer_opengl1_$(SHLIBNAME) $(COPYBINDIR)/renderer_opengl1_$(SHLIBNAME)
+	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/renderer_opengl1$(RSHLIBNAME) $(COPYBINDIR)/renderer_opengl1_$(SHLIBNAME)
     endif
     ifneq ($(BUILD_RENDERER_OPENGL2),0)
-	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/renderer_opengl2_$(SHLIBNAME) $(COPYBINDIR)/renderer_opengl2_$(SHLIBNAME)
+	$(INSTALL) $(STRIP_FLAG) -m 0755 $(BR)/renderer_opengl2$(RSHLIBNAME) $(COPYBINDIR)/renderer_opengl2_$(SHLIBNAME)
     endif
   else
     ifneq ($(BUILD_RENDERER_OPENGL1),0)

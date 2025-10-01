@@ -144,6 +144,7 @@ Makefile.local:
   BUILD_STANDALONE     - build binaries suited for stand-alone games
   SERVERBIN            - rename 'ioq3ded' server binary
   CLIENTBIN            - rename 'ioquake3' client binary
+  USE_ARCHLESS_FILENAMES don't include the architecture in binary filenames
   USE_RENDERER_DLOPEN  - build and use the renderer in a library
   BUILD_RENDERER_OPENGL1 build the opengl1 client / renderer library
   BUILD_RENDERER_OPENGL2 build the opengl2 client / renderer library
@@ -163,7 +164,6 @@ Makefile.local:
   USE_INTERNAL_LIBS    - build internal libraries instead of dynamically
                          linking against system libraries; this just sets
                          the default for USE_INTERNAL_ZLIB etc.
-                         and USE_LOCAL_HEADERS
   USE_INTERNAL_SPEEX   - build internal speex library instead of dynamically
                          linking against system libspeex
   USE_INTERNAL_ZLIB    - build and link against internal zlib
@@ -171,7 +171,6 @@ Makefile.local:
   USE_INTERNAL_OGG     - build and link against internal ogg library
   USE_INTERNAL_OPUS    - build and link against internal opus/opusfile libraries
   USE_INTERNAL_VORBIS  - build and link against internal Vorbis library
-  USE_LOCAL_HEADERS    - use headers local to ioq3 instead of system ones
   DEBUG_CFLAGS         - C compiler flags to use for building debug version
   COPYDIR              - the target installation directory
   TEMPDIR              - specify user defined directory for temp files

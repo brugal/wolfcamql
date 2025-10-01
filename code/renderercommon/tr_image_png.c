@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "tr_common.h"
 
-#include "../qcommon/puff.h"
+#include "puff.h"
 
 #ifdef USE_LOCAL_HEADERS
   #include "../zlib-1.3.1/zlib.h"

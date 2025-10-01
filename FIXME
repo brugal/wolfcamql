@@ -2666,6 +2666,8 @@ Specifies the initial frame for interleaved files. Noninterleaved files should s
 To give the audio driver enough audio to work with, the audio data in an interleaved file must be skewed from the video data. Typically, the audio data should be moved forward enough frames to allow approximately 0.75 seconds of audio data to be preloaded. The dwInitialRecords member should be set to the number of frames the audio is skewed. Also set the same value for the dwInitialFrames member of the AVISTREAMHEADER structure in the audio stream header
     --
 
+    https://www.virtualdub.org/blog2/entry_027.html
+
 * fx:  player model with skin
 * fwrite4(afd->a.totalBytes / afd->a.sampleSize, afd->f);
 

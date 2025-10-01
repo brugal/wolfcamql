@@ -8756,3 +8756,44 @@ om/actions/runner-images/issues/12045
 
 2025-07-29-01
     Cleanup opus and vorbis more
+
+2025-07-29-02
+    Adjust resource path to quake3.ico
+
+    I'm aware this probably breaks the MSVC build, but
+
+    a) I think it's probably broken already
+    b) I have good reasons that will hopefully make this a non-issue anyway
+
+2022-03-03-01
+    Replace USE_LOCAL_HEADERS with USE_INTERNAL_*
+
+2025-07-29-03
+    Remove USE_LOCAL_HEADERS
+
+2025-07-26-01
+    CLIENT: restore older curl version support
+
+2025-07-29-04
+    Move Linux ARCH_STRING definition out of Makefile
+
+2025-07-30-01
+    Fix incorrect architecture detection on Windows
+
+2025-07-31-01
+    Make client.html and Autotools style input file
+
+2025-07-31-02
+    Add USE_ARCHLESS_FILENAMES
+
+2025-07-31-03
+    Make the fallback renderer the default renderer
+
+2025-08-01-01
+    Allow Windows icon to be set by defining WINDOWS_ICON_PATH
+
+2025-08-01-02
+    Merge identical tr_subs.c into renderercommon
+
+2025-08-01-03
+    Move puff.* to renderercommon

@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "client.h"
 
-#ifdef USE_LOCAL_HEADERS
+#ifdef USE_INTERNAL_CURL_HEADERS
   #include "curl/curl.h"
 #else
   #include <curl/curl.h>
@@ -295,7 +295,11 @@ void CL_HTTP_BeginDownload( const char *remoteURL )
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_FAILONERROR, 1);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_FOLLOWLOCATION, 1);
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_MAXREDIRS, 5);
+#if CURL_AT_LEAST_VERSION(7,85,0)
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_PROTOCOLS_STR, "http,https");
+#else
+	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
 	qcurl_easy_setopt_warn(downloadCURL, CURLOPT_BUFFERSIZE, CURL_MAX_READ_SIZE);
 	downloadCURLM = qcurl_multi_init();
 	if(!downloadCURLM) {
