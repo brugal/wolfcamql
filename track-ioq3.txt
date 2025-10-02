@@ -8797,3 +8797,9 @@ om/actions/runner-images/issues/12045
 
 2025-08-01-03
     Move puff.* to renderercommon
+
+2025-08-02-01
+    Move third party code to code/thirdparty
+
+2025-08-02-02
+    ...and adjust update-libs.sh to match

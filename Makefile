@@ -294,17 +294,17 @@ BLIBDIR=$(MOUNT_DIR)/botlib
 NDIR=$(MOUNT_DIR)/null
 UIDIR=$(MOUNT_DIR)/ui
 Q3UIDIR=$(MOUNT_DIR)/q3_ui
-JPDIR=$(MOUNT_DIR)/jpeg-9f
-CURLDIR=$(MOUNT_DIR)/curl-8.15.0
-FREETYPEDIR=$(MOUNT_DIR)/freetype-2.12.1
-SPEEXDIR=$(MOUNT_DIR)/libspeex-1.2.0
-SPEEXDSPDIR=$(MOUNT_DIR)/libspeexdsp-1.2rc3
-OGGDIR=$(MOUNT_DIR)/libogg-1.3.6
-VORBISDIR=$(MOUNT_DIR)/libvorbis-1.3.7
-OPUSDIR=$(MOUNT_DIR)/opus-1.5.2
-OPUSFILEDIR=$(MOUNT_DIR)/opusfile-0.12
-OPENALDIR=${MOUNT_DIR}/openal-soft-1.24.3
-ZDIR=$(MOUNT_DIR)/zlib-1.3.1
+JPDIR=$(MOUNT_DIR)/thirdparty/jpeg-9f
+CURLDIR=$(MOUNT_DIR)/thirdparty/curl-8.15.0
+FREETYPEDIR=$(MOUNT_DIR)/thirdparty/freetype-2.12.1
+SPEEXDIR=$(MOUNT_DIR)/thirdparty/libspeex-1.2.0
+SPEEXDSPDIR=$(MOUNT_DIR)/thirdparty/libspeexdsp-1.2rc3
+OGGDIR=$(MOUNT_DIR)/thirdparty/libogg-1.3.6
+VORBISDIR=$(MOUNT_DIR)/thirdparty/libvorbis-1.3.7
+OPUSDIR=$(MOUNT_DIR)/thirdparty/opus-1.5.2
+OPUSFILEDIR=$(MOUNT_DIR)/thirdparty/opusfile-0.12
+OPENALDIR=${MOUNT_DIR}/thirdparty/openal-soft-1.24.3
+ZDIR=$(MOUNT_DIR)/thirdparty/zlib-1.3.1
 TOOLSDIR=$(MOUNT_DIR)/tools
 Q3ASMDIR=$(MOUNT_DIR)/tools/asm
 LBURGDIR=$(MOUNT_DIR)/tools/lcc/lburg
@@ -317,8 +317,8 @@ TOMSFASTMATHSRCDIR=$(AUTOUPDATERSRCDIR)/rsa_tools/tomsfastmath-0.13.1
 LOKISETUPDIR=misc/setup
 NSISDIR=misc/nsis
 WEBDIR=$(MOUNT_DIR)/web
-SDLHDIR=$(MOUNT_DIR)/SDL2-2.32.8
-LIBSDIR=$(MOUNT_DIR)/libs
+SDLHDIR=$(MOUNT_DIR)/thirdparty/SDL2-2.32.8
+LIBSDIR=$(MOUNT_DIR)/thirdparty/libs
 
 bin_path=$(shell which $(1) 2> /dev/null)
 
@@ -671,15 +671,15 @@ ifeq ($(PLATFORM),darwin)
       # SDL 2.0.4,  last with Mac OS X 10.5 (x86/x86_64)
       # SDL 2.0.22, last with Mac OS X 10.6 (x86/x86_64)
       #
-      # code/libs/macosx-ub/libSDL2-2.0.0.dylib contents
+      # code/thirdparty/libs/macosx-ub/libSDL2-2.0.0.dylib contents
       # - ppc build is SDL 2.0.1 with a header change so it compiles
       # - x86/x86_64 builds are SDL 2.0.22
       MACLIBSDIR=$(LIBSDIR)/macosx-ub
       ifneq ($(findstring $(ARCH),ppc ppc64),)
-        SDLHDIR=$(MOUNT_DIR)/SDL2-2.0.1
+        SDLHDIR=$(MOUNT_DIR)/thirdparty/SDL2-2.0.1
         BASE_CFLAGS += -I$(SDLHDIR)/include
       else
-        SDLHDIR=$(MOUNT_DIR)/SDL2-2.0.22
+        SDLHDIR=$(MOUNT_DIR)/thirdparty/SDL2-2.0.22
         BASE_CFLAGS += -I$(SDLHDIR)/include
       endif
     endif

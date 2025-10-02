@@ -14,8 +14,8 @@ if os.path.ismount(shareDir) == False  and  buildLocal != True:
     sys.exit(1)
 
 ignoreFiles = [ ".hg", ".hgignore", "backtrace", "build", "package-files",
-                "package-release", os.path.join("code", "libs", "win32"),
-                os.path.join("code", "libs", "win64"), "mac-binaries",
+                "package-release", os.path.join("code", "thirdparty", "libs", "win32"),
+                os.path.join("code", "thirdparty", "libs", "win64"), "mac-binaries",
                 os.path.join("misc", "msvc"), os.path.join("misc", "msvc10"),
                 os.path.join("misc", "msvc11"),
                 os.path.join("misc", "msvc12"),

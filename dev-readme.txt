@@ -34,7 +34,7 @@ compile freetype win32 (from linux):
 
   # zlib has version information, try to use the same one
 
-  CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
+  CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/thirdparty/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
   make
   cp objs/.libs/libfreetype.a ...
 
@@ -72,7 +72,7 @@ libspeexdsp-1.2rc3/fftwrap.c add '#define USE_KISS_FFT'
 compile curl win32 (from linux):
 
 
-CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-schannel --without-libpsl
+CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/thirdparty/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-schannel --without-libpsl
 
 ...
 
@@ -158,4 +158,4 @@ macosx:
 
    lipo libsdl2main-both.a libsdl2main-ppc.a -output libSDL2main.a -create
 
- old ppc versions (libSDL2-ppc.dylib and libsdl2main-ppc.a) are kept in code/libs/macosx/ppc
+ old ppc versions (libSDL2-ppc.dylib and libsdl2main-ppc.a) are kept in code/thirdparty/libs/macosx/ppc

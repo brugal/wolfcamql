@@ -40,7 +40,7 @@ for f in baseFiles:
 
 # 64-bit
 
-libDir = os.path.join("code", "libs", "win64")
+libDir = os.path.join("code", "thirdparty", "libs", "win64")
 buildDir = os.path.join("build", "release-mingw32-x86_64")
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
@@ -63,7 +63,7 @@ else:
 
 # 32-bit
 
-libDir = os.path.join("code", "libs", "win32")
+libDir = os.path.join("code", "thirdparty", "libs", "win32")
 buildDir = os.path.join("build", "release-mingw32-x86")
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 

@@ -47,7 +47,7 @@ for f in baseFiles:
     print("copying base file: " + f)
     shutil.copy(f, packageDir)
 
-libDir = os.path.join("code", "libs", "win64")
+libDir = os.path.join("code", "thirdparty", "libs", "win64")
 buildDir = os.path.join("build", "release-mingw32-x86_64")
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
@@ -80,7 +80,7 @@ try:
 except IOError as err:
     print(err)
 
-libDir = os.path.join("code", "libs", "macosx")
+libDir = os.path.join("code", "thirdparty", "libs", "macosx")
 buildDir = "mac-binaries"
 wolfcamDir = os.path.join(packageDir, "wolfcam-ql")
 
@@ -102,7 +102,7 @@ shutil.copy2(os.path.join("ui", "wcmenudef.h"), os.path.join(packageDir, "wolfca
 
 
 print("building source...")
-ignoreFiles = [ ".hg", ".hgignore", "build", "package-files", "package-release", os.path.join("code", "libs"), "macwolfcambuild", "update-mac-binaries.sh", os.path.join("backtrace", "build"), "mac-binaries" ]
+ignoreFiles = [ ".hg", ".hgignore", "build", "package-files", "package-release", os.path.join("code", "thirdparty", "libs"), "macwolfcambuild", "update-mac-binaries.sh", os.path.join("backtrace", "build"), "mac-binaries" ]
 
 for f in glob.glob(os.path.join("backtrace", "binutils*gz")):
     ignoreFiles.append(f)
