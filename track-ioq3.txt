@@ -8803,3 +8803,127 @@ om/actions/runner-images/issues/12045
 
 2025-08-02-02
     ...and adjust update-libs.sh to match
+
+2025-08-03-01 (skip cmake)
+    CMake build system
+
+2025-08-03-02 (skip .github)
+    CI configuration for CMake
+
+2025-08-04-01 (skip cmake)
+    Can't forget the sparc VM!
+
+2025-08-04-02
+    Update build-macos-sdl.sh for thirdparty
+
+2025-08-04-03 (skip cmake)
+    Add missing USE_ICON to RENDERER_DEFINITION
+
+2025-08-05-01
+    Map SDL gamepad buttons to keys explicitly
+
+2025-08-05-02
+    http -> https on URLs
+
+2025-08-05-03
+    Whitespace fixes
+
+2025-08-05-04 (skip .github)
+    Disable Makefile CI build products
+
+2025-08-07-01 (skip cmake)
+    Use the correct file name for the ARM VM
+
+2025-08-07-02
+    Simplify VM sources for old architectures
+
+2025-08-07-03
+    Add architecture guards to VMs
+
+2025-08-07-04
+    Move responsibility for defining NO_VM_COMPILED from build system to q_platform.h
+
+2025-08-07-05 (skip cmake)
+    Just build all (now guarded) architecture specific vm_*
+
+2025-08-06-01 (skip cmake)
+    Detect architecture from the compiler instead of the host
+
+2025-08-07-06 (skip cmake)
+    Link game modules to COMMON_LIBRARIES
+
+2025-08-07-07 (skip cmake)
+    Fix typo when trying to include curl directories
+
+2025-08-09-01 (skip cmake)
+    Add CMake USE_INTERNAL_SDL option, defaulting to ON
+
+2025-08-09-02 (skip cmake)
+    Fix missing USE_INTERNAL_SDL_HEADERS definitions
+
+2025-08-09-03
+    Update TODO location
+
+    Discourseify.
+
+2025-08-10-01 (skip cmake)
+    Unconditionally rebuild QVM tools every time
+
+2025-08-10-02 (skip .github)
+    Add a USE_INTERNAL_LIBS=OFF build to CI
+
+2025-08-12-01 (skip cmake)
+    Document reasons for contents of COMMON_LIBRARIES
+
+2025-08-12-02
+    Rewrite the LCC process spawning code on Windows, to handle file names containing spaces
+
+2025-08-12-03 skip
+    Warn users that the Makefile is now deprecated (#750)
+
+    For now it's a skippable message, with REQUIRE_DEPRECATION_ACK=1 it
+    becomes a hard error that the user must explicitly acknowledge.
+
+2025-08-13-01 (skip cmake)
+    Add guards preventing various illogical combinations of BUILD_* options
+
+2025-08-13-02
+    Updating README.md for CMake (#758)
+
+    This is part of the CMake update project #748
+
+    The README.md needs to be updated for CMake. This is my first step at it. Not all changes are done, but this may be a good start.
+
+    The standalone instructions are slightly updated, but may not be accurate and will need to be updated later on.
+
+    All of the makefile "options" still need to be sorted.
+
+2025-08-13-03 (skip cmake)
+    Improve QVM tools dependencies
+
+2025-08-13-04
+    Remove clientHtmlFallback
+
+2025-08-13-05
+    Emscripten build instructions + various tweaks
+
+2025-08-13-06 (skip cmake portion)
+    CMake install configuration
+
+    This is 99% for *nix based operating systems; it may work elsewhere but
+    it's not recommended.
+
+2025-08-13-07
+    Update configuration section of README
+
+2025-08-13-08
+    Minor corrections
+
+2025-08-13-09
+    Don't need triple backticks for non-blocks
+
+2025-08-13-10 (skip cmake)
+    Enable ASM language as required
+
+2025-08-13-11
+    Quick typo fix in README.md

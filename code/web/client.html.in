@@ -12,8 +12,6 @@ canvas { max-width: 100%; max-height: 100%; min-width: 100%; min-height: 100%; o
 const CLIENT_NAME = '@CLIENT_NAME@';
 const BASEGAME = '@BASEGAME@';
 const EMSCRIPTEN_PRELOAD_FILE = '@EMSCRIPTEN_PRELOAD_FILE@' === 'ON';
-// Detect if it's not the generated HTML file.
-let clientHtmlFallback = (CLIENT_NAME === '@'+'CLIENT_NAME@');
 
 // Path or URL containing the client engine .js, .wasm, and possibly .data.
 let enginePath = './';
@@ -21,14 +19,6 @@ let enginePath = './';
 let dataPath = './';
 // Path or URL for config file that specifies the files to load for each fs_game.
 let configFilename = `./${CLIENT_NAME}-config.json`;
-
-// If displaying the unmodified HTML file, fallback to defaults.
-if (clientHtmlFallback) {
-    CLIENT_NAME='ioquake3';
-    BASEGAME='baseq3';
-    EMSCRIPTEN_PRELOAD_FILE=false;
-    configFilename='./client-config.json';
-}
 
 if (window.location.protocol === 'file:') throw new Error(`Unfortunately browser security restrictions prevent loading wasm from a file: URL. This file must be loaded from a web server. The easiest way to do this is probably to use Python\'s built-in web server by running \`python3 -m http.server\` in the top level source directory and then navigate to http://localhost:8000/build/debug-emscripten-wasm32/${CLIENT_NAME}.html`);
 
@@ -48,28 +38,6 @@ let generatedArguments = `
 // Note that unfortunately "+" needs to be encoded as "%2b" in URL query strings or it will be stripped by the browser.
 const queryArgs = urlParams.get('args');
 if (queryArgs) generatedArguments += ` ${queryArgs} `;
-
-// If displaying the unmodified HTML file, the engine and data are probably located in a different directory.
-if (clientHtmlFallback) {
-    // If buildPath is not specified, try to find a build in one of a few default paths.
-    let buildPath = urlParams.get('buildPath');
-    if (buildPath && !buildPath.endsWith('/')) buildPath += '/';
-    const buildPaths = buildPath ? [buildPath] : ['../../build/debug-emscripten-wasm32/', '../../build/release-emscripten-wasm32/', './'];
-    const scriptPaths = buildPaths.map(buildPath => buildPath + `@CLIENT_BINARY@.js`);
-    const scriptResponses = await Promise.all(scriptPaths.map(p => fetch(p, {method: 'HEAD'})));
-    const validBuilds = scriptResponses.filter(r => r.ok).length;
-    const goodURL = (newPath) => {
-        const url = new URL(window.location);
-        url.searchParams.set('buildPath', newPath);
-        return url.toString().replace(/%2f/gi, '/');
-    };
-    if (validBuilds === 0) throw new Error(`Didn't find any wasm builds. Run \`emmake make debug\` to build one, or use the buildPath query parameter to specify a directory containing @CLIENT_BINARY@.[js,wasm,data], e.g. ${goodURL('../../build/debug-emscripten-wasm32/')}`);
-    if (validBuilds > 1) throw new Error(`Found multiple valid builds at the following paths: [${buildPaths.filter((path, i)=>scriptResponses[i].ok)}]. Please specify which one to run by adding a buildPath query parameter to the URL, e.g. ${goodURL(buildPaths.filter((path, i)=>scriptResponses[i].ok)[0])}`);
-    const buildIndex = scriptResponses.findIndex(r => r.ok);
-
-    enginePath = buildPaths[buildIndex];
-    dataPath = buildPaths[buildIndex];
-}
 
 const dataURL = new URL(dataPath, location.origin + location.pathname);
 

@@ -26,7 +26,7 @@ BUILD_DIR="build"
 cmake -S . -B ${BUILD_DIR} -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_OSX_ARCHITECTURES:STRING="x86_64;arm64"
 cmake --build ${BUILD_DIR} --parallel $(sysctl -n hw.ncpu)
 
-DEST_DIR="${ROOT_DIR}/code/libs/macos/"
+DEST_DIR="${ROOT_DIR}/code/thirdparty/libs/macos/"
 mkdir -p ${DEST_DIR}
 
 cp ${BUILD_DIR}/libSDL2-2.0.0.dylib ${DEST_DIR}

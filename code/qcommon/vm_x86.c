@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 // vm_x86.c -- load time compiler and execution environment for x86
 
+#if defined (__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
+
 #include "vm_local.h"
 
 #ifdef _WIN32
@@ -42,7 +44,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   #endif
 #endif
 
-#if defined (__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
 static void VM_Destroy_Compiled(vm_t* self);
 
 /*

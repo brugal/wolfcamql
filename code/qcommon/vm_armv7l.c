@@ -30,6 +30,8 @@ http://www.heyrick.co.uk/armwiki/Category:Opcodes
 ARMv7-A_ARMv7-R_DDI0406_2007.pdf
 */
 
+#ifdef __arm__
+
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/time.h>
@@ -1220,3 +1222,5 @@ int VM_CallCompiled(vm_t *vm, int *args)
 
 	return retVal;
 }
+
+#endif // __arm__

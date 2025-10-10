@@ -9,16 +9,18 @@
                    |                                       |
                    `--------- https://ioquake3.org --------'
 
-The intent of this project is to provide a baseline Quake 3 which may be used
-for further development and baseq3 fun.
+The intent of this project is to provide a baseline engine which may be used
+for further development and to play _Quake 3: Arena,_ _Team Arena,_ and mods.
+
 Some of the major features currently implemented are:
 
+  * CMake meta-build system
   * SDL 2 backend
   * OpenAL sound API support (multiple speaker support and better sound
     quality)
   * Full x86_64 support on Linux
   * VoIP support, both in-game and external support through Mumble.
-  * MinGW compilation support on Windows and cross compilation support on Linux
+  * MinGW compilation support on Windows
   * AVI video capture of demos
   * Much improved console autocompletion
   * Persistent console history
@@ -27,7 +29,7 @@ Some of the major features currently implemented are:
   * Much improved QVM tools
   * Support for various esoteric operating systems
   * cl_guid support
-  * HTTP/FTP download redirection (using cURL)
+  * Web server download redirection
   * Multiuser support on Windows systems (user specific game data
     is stored in "%APPDATA%\Quake3")
   * PNG support
@@ -74,113 +76,107 @@ https://discourse.ioquake.org
 </p>
 
 # Compilation and installation
+**Note that for all of these platforms, if you want to play _Quake 3: Arena_ or 
+the expansion pack, _Team Arena_, you'll still need to buy a copy of the game.**
+The _Quake 3_ game source code is freely available under the GPLv2, not the game data.
 
-For *nix
-  1. Change to the directory containing this readme.
-  2. Run 'make'.
+You can make your own mod that either requires the original game data or a new game  
+that does not. Please read the **Creating standalone games** section for more information
+on the latter.
+
+For *nix,
+  1. `git clone git://github.com/ioquake/ioq3.git`
+  2. `cd ioq3`
+  3. Install dependencies according to your operating system's instructions.  
+     for apt-based systems, `sudo apt install cmake libsdl2-dev`
+  4. `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release`
+     `cmake --build build`
+  5. The resulting files will be in the `build` directory.
 
 For Windows,
-  1. Please refer to the excellent instructions here:
-     https://ioquake3.org/help/building-ioquake3/
+  1. Install Visual Studio Community Edition from Microsoft.
+     https://visualstudio.microsoft.com/vs/community/
+  2. Install CMake https://cmake.org/cmake/download
+  3. Clone our git repository either using the command-line or a GUI tool:  
+      `git clone git://github.com/ioquake/ioq3.git`
+  4. Compile using Visual Studio by selecting our CMakeLists.txt and clicking Build.
+  5. Or using the command-line:  
+     `cmake -S . -B build -G "Visual Studio 17 2022"`
+     `cmake --build build --config Release`
 
-For macOS, building a Universal Binary (macOS 10.5 to 10.8, x86_64, x86, ppc)
-  1. Install MacOSX SDK packages from XCode.  For maximum compatibility,
-     install MacOSX10.5.sdk and MacOSX10.6.sdk.
-  2. Change to the directory containing this README file.
-  3. Run './make-macosx-ub.sh'
-  4. Copy the resulting ioquake3.app in /build/release-darwin-universal
-     to your /Applications/ioquake3 folder.
+For macOS,
+  1. Install XCode.
+  2. Install CMake via homebrew https://brew.sh or your package manager of choice.
+  3. `git clone git://github.com/ioquake/ioq3.git`
+  4. `cd ioq3`
+  5. `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release`
+  6. `cmake --build build`
+  7. Copy the resulting `ioquake3.app` in `/build/`
+     to your `/Applications/ioquake3` folder.
 
-For macOS, building a Universal Binary 2 (macOS 10.9+, arm64, x86_64)
-  1. Install MacOSX SDK packages from XCode.  Building for arm64 requires
-     MacOSX11.sdk or later.
-  2. Change to the directory containing this README file.
-  3. Run './make-macosx-ub2.sh'
-  4. Copy the resulting ioquake3.app in /build/release-darwin-universal2
-     to your /Applications/ioquake3 folder.
-
-For Web, building with Emscripten
+For Emscripten,
   1. Follow the installation instructions for the Emscripten SDK including
-     setting up the environment with emsdk_env.
-  2. Run `emmake make debug` (or release).
-  3. Copy or symlink your baseq3 pk3 files into the `build/debug-emscripten-wasm32/baseq3`
+     setting up the environment with emsdk_env. https://emscripten.org/
+  2. `git clone git://github.com/ioquake/ioq3.git`
+  3. `cd ioq3`
+  4. `emcmake -S . -B build -DCMAKE_BUILD_TYPE=Release`
+  5. `cmake --build build`
+  3. Copy or symlink your baseq3 pk3 files into the `build/Release/baseq3`
      directory so they can be loaded at run-time. Only game files listed in
      `client-config.json` will be loaded.
   4. Start a web server serving this directory. `python3 -m http.server`
      is an easy default that you may already have installed.
-  5. Open `http://localhost:8000/build/debug-emscripten-wasm32/ioquake3.html`
+  5. Open `http://localhost:8000/build/Release/ioquake3.html`
      in a web browser. Open the developer console to see errors and warnings.
   6. Debugging the C code is possible using a Chrome extension. For details
      see https://developer.chrome.com/blog/wasm-debugging-2020
 
 Installation, for *nix
-  1. Set the COPYDIR variable in the shell to be where you installed Quake 3
-     to. By default it will be /usr/local/games/quake3 if you haven't set it.
-     This is the path as used by the original Linux Q3 installer and subsequent
-     point releases.
-  2. Run 'make copyfiles'.
+  1. Set the CMAKE_INSTALL_PREFIX to your prefered installation directory.
+     By default it will be set to /opt/quake3/.
+  2. `cmake --install build`.
 
-It is also possible to cross compile for Windows under *nix using MinGW. Your
-distribution may have mingw32 packages available. On debian/Ubuntu, you need to
-install 'mingw-w64'. Thereafter cross compiling is simply a case running
-'PLATFORM=mingw32 ARCH=x86 make' in place of 'make'. ARCH may also be set to
-x86_64.
-
-The following variables may be set, either on the command line or in
-Makefile.local:
+The following CMake variables may be set, using `-D` on the command line.
 
 ```
-  DEPEND_MAKEFILE      - set to 0 to disable rebuilding all targets when
-                         the Makefile or Makefile.local is changed
-  CFLAGS               - use this for custom CFLAGS
-  V                    - set to show cc command line when building
-  DEFAULT_BASEDIR      - extra path to search for baseq3 and such
-  BUILD_SERVER         - build the 'ioq3ded' server binary
-  BUILD_CLIENT         - build the 'ioquake3' client binary
-  BUILD_BASEGAME       - build the 'baseq3' binaries
-  BUILD_MISSIONPACK    - build the 'missionpack' binaries
-  BUILD_GAME_SO        - build the game shared libraries
-  BUILD_GAME_QVM       - build the game qvms
-  BUILD_STANDALONE     - build binaries suited for stand-alone games
-  SERVERBIN            - rename 'ioq3ded' server binary
-  CLIENTBIN            - rename 'ioquake3' client binary
-  USE_ARCHLESS_FILENAMES don't include the architecture in binary filenames
-  USE_RENDERER_DLOPEN  - build and use the renderer in a library
-  BUILD_RENDERER_OPENGL1 build the opengl1 client / renderer library
-  BUILD_RENDERER_OPENGL2 build the opengl2 client / renderer library
-  USE_YACC             - use yacc to update code/tools/lcc/lburg/gram.c
-  BASEGAME             - rename 'baseq3'
-  BASEGAME_CFLAGS      - custom CFLAGS for basegame
-  MISSIONPACK          - rename 'missionpack'
-  MISSIONPACK_CFLAGS   - custom CFLAGS for missionpack (default '-DMISSIONPACK')
-  USE_OPENAL           - use OpenAL where available
-  USE_OPENAL_DLOPEN    - link with OpenAL at runtime
-  USE_HTTP             - enable http download support
-  USE_CODEC_VORBIS     - enable Ogg Vorbis support
-  USE_CODEC_OPUS       - enable Ogg Opus support
-  USE_MUMBLE           - enable Mumble support
-  USE_VOIP             - enable built-in VoIP support
-  USE_FREETYPE         - enable FreeType support for rendering fonts
-  USE_INTERNAL_LIBS    - build internal libraries instead of dynamically
-                         linking against system libraries; this just sets
-                         the default for USE_INTERNAL_ZLIB etc.
-  USE_INTERNAL_SPEEX   - build internal speex library instead of dynamically
-                         linking against system libspeex
-  USE_INTERNAL_ZLIB    - build and link against internal zlib
-  USE_INTERNAL_JPEG    - build and link against internal JPEG library
-  USE_INTERNAL_OGG     - build and link against internal ogg library
-  USE_INTERNAL_OPUS    - build and link against internal opus/opusfile libraries
-  USE_INTERNAL_VORBIS  - build and link against internal Vorbis library
-  DEBUG_CFLAGS         - C compiler flags to use for building debug version
-  COPYDIR              - the target installation directory
-  TEMPDIR              - specify user defined directory for temp files
+  BUILD_SERVER            - build the 'ioq3ded' server binary
+  BUILD_CLIENT            - build the 'ioquake3' client binary
+  BUILD_RENDERER_OPENGL1  - build the opengl1 client / renderer library
+  BUILD_RENDERER_OPENGL2  - build the opengl2 client / renderer library
+  BUILD_GAME_LIBRARIES    - build the game shared libraries
+  BUILD_GAME_QVMS         - build the game qvms
+  BUILD_STANDALONE        - build binaries suited for stand-alone games
+
+  USE_ARCHLESS_FILENAMES  - don't include the architecture in binary filenames
+  USE_RENDERER_DLOPEN     - build and use the renderer in a library
+  USE_OPENAL              - use OpenAL where available
+  USE_OPENAL_DLOPEN       - link with OpenAL at runtime
+  USE_HTTP                - enable http download support
+  USE_CODEC_VORBIS        - enable Ogg Vorbis support
+  USE_CODEC_OPUS          - enable Ogg Opus support
+  USE_MUMBLE              - enable Mumble support
+  USE_VOIP                - enable built-in VoIP support
+  USE_FREETYPE            - enable FreeType support for rendering fonts
+
+  USE_INTERNAL_LIBS       - build internal libraries instead of dynamically
+                            linking against system libraries; this just sets
+                            the default for USE_INTERNAL_ZLIB etc.
+  USE_INTERNAL_SDL        - link against internal SDL (if available)
+  USE_INTERNAL_ZLIB       - build and link against internal zlib
+  USE_INTERNAL_JPEG       - build and link against internal JPEG library
+  USE_INTERNAL_OGG        - build and link against internal ogg library
+  USE_INTERNAL_VORBIS     - build and link against internal Vorbis library
+  USE_INTERNAL_OPUS       - build and link against internal opus/opusfile libraries
+
   EMSCRIPTEN_PRELOAD_FILE - set to 1 to package 'baseq3' (BASEGAME) directory
                             containing pk3s and loose files as a single
                             .data file that is loaded instead of listing
                             individual files in client-config.json
+
+  CMAKE_BUILD_TYPE        - on single config CMake, set to Debug or Release
 ```
 
-The defaults for these variables differ depending on the target platform.
+The defaults for these variables may differ depending on the target platform.
 
 
 # OpenGL ES support
@@ -193,7 +189,8 @@ The opengl1 renderer does not have OpenGL ES support.
 
 The opengl2 renderer will try both OpenGL and OpenGL ES APIs to find one that
 works. The `r_preferOpenGLES` cvar controls which API to try first.
-Set it to -1 for auto (default), 0 for OpenGL, and 1 for OpenGL ES. It should be set using command line arguments:
+Set it to -1 for auto (default), 0 for OpenGL, and 1 for OpenGL ES. It should be
+set using command line arguments:
 
     ioquake3 +set cl_renderer opengl2 +set r_preferOpenGLES 1
 
@@ -405,7 +402,7 @@ Set it to -1 for auto (default), 0 for OpenGL, and 1 for OpenGL ES. It should be
 
 ## pk3dir
 
-ioquake3 has a useful new feature for mappers. Paths in a game directory with
+_ioquake3_ has a useful new feature for mappers. Paths in a game directory with
 the extension ".pk3dir" are treated like pk3 files. This means you can keep
 all files specific to your map in one directory tree and easily zip this
 folder for distribution.
@@ -447,10 +444,10 @@ Have you finished the daunting task of removing all dependencies on the Q3
 game data? You probably now want to give your users the opportunity to play
 the game without owning a copy of Q3, which consequently means removing cd-key
 and authentication server checks. In addition to being a straightforward Q3
-client, ioquake3 also purports to be a reliable and stable code base on which
+client, _ioquake3_ also purports to be a reliable and stable code base on which
 to base your game project.
 
-However, before you start compiling your own version of ioquake3, you have to
+However, before you start compiling your own version of _ioquake3_, you have to
 ask yourself: Have we changed or will we need to change anything of importance
 in the engine?
 
@@ -486,13 +483,13 @@ Example line:
 
 If you really changed parts that would make vanilla ioquake3 incompatible with
 your mod, we have included another way to conveniently build a stand-alone
-binary. Just run make with the option BUILD_STANDALONE=1. Don't forget to edit
-the PRODUCT_NAME and subsequent #defines in qcommon/q_shared.h with
+binary. Edit /cmake/identity.cmake and run cmake with the option BUILD_STANDALONE=1.
+Don't forget to edit the PRODUCT_NAME and subsequent #defines in qcommon/q_shared.h with
 information appropriate for your project.
 
 ## Standalone game licensing
 
-While a lot of work has been put into ioquake3 that you can benefit from free
+While a lot of work has been put into _ioquake3_ that you can benefit from free
 of charge, it does not mean that you have no obligations to fulfill. Please be
 aware that as soon as you start distributing your game with an engine based on
 our sources we expect you to fully comply with the requirements as stated in
@@ -566,7 +563,7 @@ Maintainers
   * Thilo Schulz <arny@ats.s.bawue.de>
   * Tim Angus <tim@ngus.net>
   * Tony J. White <tjw@tjw.org>
-  * Jack Slater <jack@ioquake.org>
+  * Jack "Mr. Nuclear Monster" Slater <jack@ioquake.org>
   * Zack Middleton <zturtleman@gmail.com>
 
 Significant contributions from
@@ -578,5 +575,6 @@ Significant contributions from
   * Vincent S. Cojot <vincent at cojot dot name>
   * optical <alex@rigbo.se>
   * Aaron Gyes <floam@aaron.gy>
+  * surrealchemist
 
 
