@@ -2401,14 +2401,11 @@ endif
 
 ifeq ($(ARCH),x86)
   Q3OBJ += \
-    $(B)/client/snd_mixa.o \
-    $(B)/client/matha.o \
     $(B)/client/snapvector.o \
     $(B)/client/ftola.o
 endif
 ifeq ($(ARCH),x86_64)
   Q3OBJ += \
-    $(B)/client/snd_mixa.o \
     $(B)/client/ftola.o \
     $(B)/client/snapvector.o
 endif
@@ -2831,7 +2828,6 @@ Q3DOBJ = \
 
 ifeq ($(ARCH),x86)
   Q3DOBJ += \
-      $(B)/ded/matha.o \
       $(B)/ded/snapvector.o \
       $(B)/ded/ftola.o
 endif
@@ -3281,7 +3277,7 @@ $(B)/$(MISSIONPACK)/vm/ui.qvm: $(MPUIVMOBJ) $(UIDIR)/ui_syscalls.asm $(Q3ASM)
 $(B)/splines/%.o: $(SPLINESDIR)/%.cpp
 	$(DO_CXX)
 
-$(B)/client/%.o: $(ASMDIR)/%.s
+$(B)/client/%.o: $(ASMDIR)/%.S
 	$(DO_AS)
 
 # k8 so inline assembler knows about SSE
@@ -3401,7 +3397,7 @@ $(B)/renderergl2/%.o: $(RGL2DIR)/%.c
 	$(DO_REF_CC)
 
 
-$(B)/ded/%.o: $(ASMDIR)/%.s
+$(B)/ded/%.o: $(ASMDIR)/%.S
 	$(DO_AS)
 
 # k8 so inline assembler knows about SSE

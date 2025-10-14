@@ -3440,9 +3440,7 @@ void CL_ShutdownAll(qboolean shutdownRef)
 		CL_StopRecord_f();
 
 	//Com_Printf("CL_ShutdownAll()\n");
-#ifdef USE_HTTP
-	CL_HTTP_Shutdown();
-#endif
+
 	// clear sounds
 	S_DisableSounds();
 	// shutdown CGame
@@ -4428,7 +4426,6 @@ void CL_DownloadsComplete( void ) {
 	// if we downloaded with HTTP
 	if(clc.httpUsed) {
 		clc.httpUsed = qfalse;
-		CL_HTTP_Shutdown();
 		if( clc.disconnectedForHttpDownload ) {
 			if(clc.downloadRestart) {
 				FS_Restart(clc.checksumFeed);
@@ -7246,6 +7243,10 @@ void CL_Shutdown(char *finalmsg, qboolean disconnect, qboolean quit)
 
 	CL_ClearMemory(qtrue);
 	CL_Snd_Shutdown();
+
+#ifdef USE_HTTP
+	CL_HTTP_Shutdown();
+#endif
 
 	Cmd_RemoveCommand ("cmd");
 	Cmd_RemoveCommand ("configstrings");

@@ -8927,3 +8927,125 @@ om/actions/runner-images/issues/12045
 
 2025-08-13-11
     Quick typo fix in README.md
+
+2025-08-14-01 (skip cmake)
+    Enquote WINDOWS_ICON_PATH
+
+2025-08-19-01 (skip cmake)
+    Add -fno-string-aliasing (issue #760)
+
+2025-08-15-01
+    Add Windows ARM platform
+
+2025-08-20-01 (skip cmake)
+    cmake: Don't override CMAKE_INSTALL_PREFIX if set by user
+
+    The README says that it can be changed, but it was hard-coded here.
+
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-20-02 (skip cmake)
+    cmake: Allow PRODUCT_VERSION to be overridden at build-time
+
+    In packaging systems like Debian's, typically the build will not have
+    a .git/ directory available; or if it does, the commit ID will be a
+    downstream packaging commit that means nothing to upstream developers.
+    However, the packaging can inject a more meaningful version number if
+    given a way to do so.
+
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-22-01
+    Fix GCC x86 build
+
+2025-08-22-02 (skip cmake)
+    Add -fvisibility=hidden to GCC/Clang compiler flags
+
+2025-08-22-03 (skip cmake)
+    cmake: Only link snd_mixa into the client, not the dedicated server
+
+    On i386 it references symbols from other client-only sound code.
+
+    Resolves: https://github.com/ioquake/ioq3/issues/770
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-23-01
+    Fix HTTP downloads being disabled after first download (issue #768)
+
+2025-08-23-02
+    asm: Remove unused S_PaintChannelFrom8
+
+    This is `#if 0` anyway, and has been since the initial Quake 3 Arena GPL
+    release, so clearly it hasn't been used for some time.
+
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-23-03
+    Add DEFAULT_RELATIVE_BASEDIR
+
+    Sys_BinaryPathRelative takes a parameter which is path concatenated with
+    Sys_BinaryPath, and resolved to a canonical path. The intended use case
+    is to facilitate the situation where you want the game data directory to
+    exist outside the same directory in which the binary lives, but relative
+    to it. More specifically, if you want to distriute multiple binaries for
+    different architectures, in the same tree, this allows for a means of
+    having said binaries in architecture subdirectories, with a shared data
+    directory, e.g.:
+
+      ioq3/x86/ioquake3.exe etc.
+      ioq3/x86_64/ioquake3.exe etc.
+      ioq3/baseq3/pak0.pk3 etc.
+
+    Here, when building you would define DEFAULT_RELATIVE_BASEDIR=".." by
+    appending it to the build system CFLAGS, and then the executables will
+    by default look in their parent directory for the data.
+
+2025-08-22-01
+    Remove unused matha.S
+
+    Before commit a7d33b1c "(bug #3639) BoxOnPlaneSide rewrite" there
+    was more code here, but since then the only thing left is the
+    Invert24To16 function, to which I couldn't find any references since
+    the beginning of ioquake3's git history.
+
+    Resolves: https://github.com/ioquake/ioq3/issues/774
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-23-01
+    client: Remove i386 GNU assembler version of S_WriteLinearBlastStereo16()
+
+    This was the last remaining GNU assembler code that was in its own
+    independent source file, as opposed to being embedded in C code with
+    GNU `__asm__ volatile` or MSVC `__asm` (which tends to be much easier
+    to deal with in a modern build system).
+
+    When the Quake 3 engine was originally written, this might have been
+    an "expensive" function when written in portable C, but after 25 years
+    of CPU development it's less likely to matter (and modern compilers
+    might produce faster results from the C code anyway).
+
+    Resolves: https://github.com/ioquake/ioq3/issues/778
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-25-01 (skip cmake)
+    cmake: define USE_CODEC regardless of USE_INTERNAL
+
+2025-08-25-02 (skip .github)
+    Update USE_INTERNAL_LIBS OFF dependencies
+
+2025-08-25-03 (skip cmake)
+    Simplify find_include_dirs
+
+2025-08-25-04 (skip cmake)
+    Add missing INCLUDE_DIRS/DEFINITIONS for Opus and Vorbis
+
+2025-08-25-05 (skip .github)
+    Added more VS stuff to .gitignore
+
+2025-08-27-01
+    OCD
+
+2025-08-28-01
+    Update sv_init.c to point to new directory server address
+
+    directory.ioquake3.org has a new ip address as well
