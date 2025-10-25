@@ -873,8 +873,9 @@ typedef enum {
 	EV_OBELISKEXPLODE = 68,
 	EV_OBELISKPAIN = 69,
 	EV_INVUL_IMPACT = 70,		// invulnerability sphere impact
+	EV_JUICED = 71,				// invulnerability juiced effect
+	EV_LIGHTNINGBOLT = 72,		// lightning bolt bounced of invulnerability sphere
 
-	EV_DEBUG_LINE = 72,  // guess
 	EV_STOPLOOPINGSOUND = 73, // guess
 	EV_TAUNT = 74,
 	EV_TAUNT_YES,  // guess
@@ -913,12 +914,7 @@ typedef enum {
 	EV_STEP_24,
 
 	//FIXME these are definately wrong -- just getting it to compile
-
-
-
-	EV_JUICED,				// invulnerability juiced effect
-	EV_LIGHTNINGBOLT,		// lightning bolt bounced of invulnerability sphere
-
+	EV_DEBUG_LINE,  // guess
 } entity_event_t;
 
 
