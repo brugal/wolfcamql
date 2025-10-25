@@ -2582,7 +2582,6 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		break;
 	case EV_JUICED:
 		DEBUGNAME("EV_JUICED");
-		CG_Printf("^3FIXME juiced in quakelive\n");
 		CG_InvulnerabilityJuiced( cent->lerpOrigin );
 		break;
 	case EV_LIGHTNINGBOLT:

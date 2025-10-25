@@ -1,5 +1,7 @@
-12.7test30
+12.7test31
 
+* fallback to dlc_gibs for EV_JUICED
+* fix EV_JUICED and EV_LIGHTNINGBOLT index (yumirak)
 * remove cl_aviPrimeAudioRate can cause audio sync issues
 * remove r_znear restrictions
 * bug fix: crash with fx custom scripts
