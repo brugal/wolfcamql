@@ -90,8 +90,8 @@ For *nix,
   3. Install dependencies according to your operating system's instructions.  
      for apt-based systems, `sudo apt install cmake libsdl2-dev`
   4. `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release`
-     `cmake --build build`
-  5. The resulting files will be in the `build` directory.
+  5. `cmake --build build`
+  6. The resulting files will be in the `build` directory.
 
 For Windows,
   1. Install Visual Studio Community Edition from Microsoft.
@@ -100,9 +100,8 @@ For Windows,
   3. Clone our git repository either using the command-line or a GUI tool:  
       `git clone git://github.com/ioquake/ioq3.git`
   4. Compile using Visual Studio by selecting our CMakeLists.txt and clicking Build.
-  5. Or using the command-line:  
-     `cmake -S . -B build -G "Visual Studio 17 2022"`
-     `cmake --build build --config Release`
+  5. Or using the command-line: `cmake -S . -B build -G "Visual Studio 17 2022"`
+  6. `cmake --build build --config Release`
 
 For macOS,
   1. Install XCode.

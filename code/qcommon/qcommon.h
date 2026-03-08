@@ -617,8 +617,6 @@ qboolean FS_ConditionalRestart(int checksumFeed, qboolean disconnect);
 void	FS_Restart( int checksumFeed );
 // shutdown and restart the filesystem so changes to fs_gamedir can take effect
 
-void FS_AddGameDirectory( const char *path, const char *dir );
-
 char	**FS_ListFiles( const char *directory, const char *extension, int *numfiles );
 // directory should not have either a leading or trailing /
 // if extension is "/", only subdirectories will be returned
@@ -630,10 +628,11 @@ qboolean FS_FileExists( const char *file );
 const char *FS_FindSystemFile (const char *file);
 qboolean FS_VirtualFileExists (const char *file);
 
-qboolean FS_CreatePath (char *OSPath);
+qboolean FS_CreatePath (const char *OSPath);
 
 int FS_FindVM(void **startSearch, char *found, int foundlen, const char *name, int enableDll);
 
+char   *FS_BaseDir_BuildOSPath( const char *base, const char *qpath );
 char   *FS_BuildOSPath( const char *base, const char *game, const char *qpath );
 qboolean FS_CompareZipChecksum(const char *zipfile);
 
@@ -649,9 +648,9 @@ fileHandle_t	FS_FOpenFileAppend( const char *filename );
 fileHandle_t	FS_FCreateOpenPipeFile( const char *filename );
 // will properly create any needed paths and deal with seperater character issues
 
-fileHandle_t FS_SV_FOpenFileWrite( const char *filename );
-long		FS_SV_FOpenFileRead( const char *filename, fileHandle_t *fp );
-void	FS_SV_Rename( const char *from, const char *to, qboolean safe );
+fileHandle_t FS_BaseDir_FOpenFileWrite( const char *filename );
+long		FS_BaseDir_FOpenFileRead( const char *filename, fileHandle_t *fp );
+void	FS_BaseDir_Rename( const char *from, const char *to, qboolean safe );
 void FS_FOpenSysFileRead (const char *filename, fileHandle_t *file);
 long		FS_FOpenFileRead( const char *qpath, fileHandle_t *file, qboolean uniqueFILE );
 // if uniqueFILE is true, then a new FILE will be fopened even if the file
@@ -739,8 +738,6 @@ qboolean FS_CheckDirTraversal(const char *checkdir);
 qboolean FS_InvalidGameDir(const char *gamedir);
 qboolean FS_idPak(char *pak, char *base, int numPaks);
 qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring );
-
-void FS_Rename( const char *from, const char *to );
 
 void FS_Remove( const char *osPath );
 void FS_HomeRemove( const char *homePath );
@@ -1168,7 +1165,6 @@ char	*Sys_MicrosoftStorePath(void);
 char    *Sys_DefaultAppPath(void);
 #endif
 
-void  Sys_SetDefaultHomePath(const char *path);
 char	*Sys_DefaultHomePath(void);
 const char *Sys_Dirname( char *path );
 const char *Sys_Basename( char *path );

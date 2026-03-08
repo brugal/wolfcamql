@@ -9052,3 +9052,104 @@ om/actions/runner-images/issues/12045
 
 2025-08-21-01
     Remove architecture from binary filenames
+
+2025-08-22-01
+    Fallback on legacy game library name if canonical name doesn't exist
+
+2025-08-30-01
+    Allow ARCH_STRING to be undefined
+
+2025-08-30-02 (skip cmake)
+    Add SOURCE_DATE_EPOCH support
+
+2025-08-30-03 (skip cmake)
+    Fix QVM tool dependencies on Windows
+
+2025-08-30-04
+    qcommon: Assume that unknown architectures don't have a JIT for QVMs
+
+    We need specific code for any architecture that does have a JIT, so we
+    can safely assume that any other architecture does not.
+
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-30-05
+    qcommon: Reverse the sense of NO_VM_COMPILED
+
+    Instead of defining NO_VM_COMPILED on the unlimited number of CPU
+    architectures where we don't have a JIT for QVM bytecode, define
+    HAVE_VM_COMPILED on the finite number of architectures where we do
+    (x86, PowerPC, Sparc or 32-bit ARM).
+
+    Signed-off-by: Simon McVittie <smcv@debian.org>
+
+2025-08-30-06 (skip cmake)
+    Update Makefile to point to the news post...
+
+2025-08-30-07
+    q3a.service to use new non-arch specific binary & URL fix
+
+2025-08-30-08
+    Update start_server.sh for archless ioq3ded
+
+2025-08-31-01
+    First attempt at updating server_compile.sh for CMake
+
+    for https://github.com/ioquake/ioq3/issues/786
+
+2025-08-30-09
+    Update README.md to fix the fix for the fix about the backticks.
+
+    I'm pretty sure this formatting was good the last time I touched it. Lets try it this way.
+
+2025-08-31-01
+    Merge branch 'main' of https://github.com/ioquake/ioq3
+
+2025-08-31-02
+    Need a replacement for cmake copyfiles here in server_compile.sh
+
+2025-08-31-03
+    Updated for DCMAKE_INSTALL_PREFIX as a replacement for copyfiles
+
+2025-08-25-01
+    Reduce duplication in FS path search code
+
+2025-09-01-01
+    Add FS_BaseDir_BuildOSPath and replace hacky uses of FS_BuildOSPath
+
+2025-09-01-02
+    Rename FS_SV_* to FS_BaseDir_*
+
+2025-09-01-03
+    Add const to FS_CreatePath argument
+
+2025-09-01-04
+    Replace FS_*_FOpenFileWrite bodies with call to FS_OSPath_FOpenFileWrite
+
+2025-09-01-05
+    Remove unused FS_Rename
+
+2025-09-01-06
+    Remove (non-existent) Sys_SetDefaultHomePath declaration
+
+2025-09-01-07
+    Remove redundant buffers on *nix
+
+2025-09-01-08
+    Remove unused homedir botlib variable
+
+2025-09-01-09
+    Add null/empty parameter guard to FS_CreatePath
+
+2025-09-02-01
+    Move online store defines closer to where they're used
+
+    It makes little sense to centralise the definitions for things like
+    Steam, GoG, etc.. These paths are only useful in the case where the user
+    has derived the data from such a store, has installed ioq3 in a separate
+    location, and we want it do be able to find said data. If a derivative
+    project has deployed (binaries and all) on e.g. Steam then for them
+    fs_basepath will already be correct, and fs_steampath is not useful.
+
+2025-09-05-01
+    More generic de-duplication of path vars

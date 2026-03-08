@@ -1,4 +1,4 @@
-12.7test33
+12.7test34
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -42,6 +42,7 @@
   - Update libjpeg
   - Update curl
   - Update SDL (2.32.8)
+  - Remove architecture from binary filenames
 
 ---------------------------------
 12.6  2024-05-22
