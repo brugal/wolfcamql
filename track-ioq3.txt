@@ -9153,3 +9153,27 @@ om/actions/runner-images/issues/12045
 
 2025-09-05-01
     More generic de-duplication of path vars
+
+2025-09-06-01 (skip cmake)
+    Remove build systems replaced by CMake
+
+2025-09-06-02 (skip cmake)
+    Require positive Makefile deprecation acknowledgement
+
+2025-09-06-03 (skip .github)
+    FIX CI building via Makfile
+
+2025-09-06-04
+    Fix uninitialised variable warning
+
+2025-09-07-01 (skip cmake)
+    Fixes to emscripten cmake
+
+2025-09-07-02 (skip cmake)
+    Add q3rcc and q3cpp to dependency chain
+
+2025-09-06-01 (skip cmake)
+    Fix warnings not being disabled for zlib
+
+2025-09-06-02
+    Fix various warnings

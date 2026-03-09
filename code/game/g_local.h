@@ -45,7 +45,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // gentity->flags
 #define	FL_GODMODE				0x00000010
 #define	FL_NOTARGET				0x00000020
-#define	FL_TEAMSLAVE			0x00000400	// not the first on the team
+#define	FL_TEAMMEMBER			0x00000400	// not the first on the team
 #define FL_NO_KNOCKBACK			0x00000800
 #define FL_DROPPED_ITEM			0x00001000
 #define FL_NO_BOTS				0x00002000	// spawn point not for bot use

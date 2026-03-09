@@ -1421,7 +1421,7 @@ void RB_RenderDrawSurfList( drawSurf_t *drawSurfs, int numDrawSurfs ) {
 	//qglDepthRange (0, 1);  // testing
 
 	if (r_drawSun->integer) {
-		RB_DrawSun(0.1, tr.sunShader);
+		RB_DrawSun(0.1f, tr.sunShader);
 	}
 
 	RE_DrawPathLines();

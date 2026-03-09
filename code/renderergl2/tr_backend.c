@@ -2404,7 +2404,7 @@ const void	*RB_DrawSurfs( const void *data ) {
 
 		if (r_drawSun->integer)
 		{
-			RB_DrawSun(0.1, tr.sunShader);
+			RB_DrawSun(0.1f, tr.sunShader);
 		}
 
 		if (glRefConfig.framebufferObject && r_drawSunRays->integer)
@@ -2421,7 +2421,7 @@ const void	*RB_DrawSurfs( const void *data ) {
 				qglBeginQuery(glRefConfig.occlusionQueryTarget, tr.sunFlareQuery[tr.sunFlareQueryIndex]);
 			}
 
-			RB_DrawSun(0.3, tr.sunFlareShader);
+			RB_DrawSun(0.3f, tr.sunFlareShader);
 
 			if (glRefConfig.occlusionQuery)
 			{
@@ -3012,68 +3012,68 @@ const void *RB_PostProcess(const void *data)
 
 	if (0 && r_sunlightMode->integer)
 	{
-		ivec4_t dstBox;
+		ivec4_t dstBox2;
 		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
 			dstFboTmp = tr.finalFbo;
 		}
 
-		VectorSet4(dstBox, 0, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[0], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 128, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[1], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 256, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[2], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 384, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.sunShadowDepthImage[3], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
+		VectorSet4(dstBox2, 0, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[0], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
+		VectorSet4(dstBox2, 128, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[1], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
+		VectorSet4(dstBox2, 256, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[2], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
+		VectorSet4(dstBox2, 384, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.sunShadowDepthImage[3], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
 	}
 
 	if (0 && r_shadows->integer == 4)
 	{
-		ivec4_t dstBox;
+		ivec4_t dstBox2;
 		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
 			dstFboTmp = tr.finalFbo;
 		}
 
-		VectorSet4(dstBox, 512 + 0, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[0], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512 + 128, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[1], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512 + 256, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[2], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512 + 384, glConfig.vidHeight - 128, 128, 128);
-		FBO_BlitFromTexture(tr.pshadowMaps[3], NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
+		VectorSet4(dstBox2, 512 + 0, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.pshadowMaps[0], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
+		VectorSet4(dstBox2, 512 + 128, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.pshadowMaps[1], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
+		VectorSet4(dstBox2, 512 + 256, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.pshadowMaps[2], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
+		VectorSet4(dstBox2, 512 + 384, glConfig.vidHeight - 128, 128, 128);
+		FBO_BlitFromTexture(tr.pshadowMaps[3], NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
 	}
 
 	if (0)
 	{
-		ivec4_t dstBox;
+		ivec4_t dstBox2;
 		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
 			dstFboTmp = tr.finalFbo;
 		}
 
-		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
-		VectorSet4(dstBox, 512, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.screenShadowImage, NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
+		VectorSet4(dstBox2, 256, glConfig.vidHeight - 256, 256, 256);
+		FBO_BlitFromTexture(tr.renderDepthImage, NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
+		VectorSet4(dstBox2, 512, glConfig.vidHeight - 256, 256, 256);
+		FBO_BlitFromTexture(tr.screenShadowImage, NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
 	}
 
 	if (0)
 	{
-		ivec4_t dstBox;
+		ivec4_t dstBox2;
 		FBO_t *dstFboTmp = dstFbo;
 
 		if (tr.usingFinalFrameBufferObject) {
 			dstFboTmp = tr.finalFbo;
 		}
 
-		VectorSet4(dstBox, 256, glConfig.vidHeight - 256, 256, 256);
-		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, dstFboTmp, dstBox, NULL, NULL, 0);
+		VectorSet4(dstBox2, 256, glConfig.vidHeight - 256, 256, 256);
+		FBO_BlitFromTexture(tr.sunRaysImage, NULL, NULL, dstFboTmp, dstBox2, NULL, NULL, 0);
 	}
 
 #if 0

@@ -1204,7 +1204,7 @@ Return the time in msec until we expect to be called next
 ====================
 */
 
-int SV_SendQueuedPackets()
+int SV_SendQueuedPackets(void)
 {
 	int numBlocks;
 	int dlStart, deltaT, delayT;

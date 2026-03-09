@@ -103,7 +103,7 @@ static void *GPA(char *str)
 CL_HTTP_Init
 =================
 */
-qboolean CL_HTTP_Init()
+qboolean CL_HTTP_Init(void)
 {
 	if(cURLLib)
 		return qtrue;
@@ -158,7 +158,7 @@ qboolean CL_HTTP_Init()
 CL_HTTP_Available
 =================
 */
-qboolean CL_HTTP_Available()
+qboolean CL_HTTP_Available(void)
 {
 	return cURLLib != NULL;
 }

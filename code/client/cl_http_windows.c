@@ -104,7 +104,7 @@ void CL_HTTP_BeginDownload(const char *remoteURL)
     BOOL success;
 
     hUrl = InternetOpenUrlA(hInternet, remoteURL,
-                            va("Referer: ioQ3://%s\r\n", NET_AdrToString(clc.serverAddress)), -1,
+                            va("Referer: ioQ3://%s\r\n", NET_AdrToString(clc.serverAddress)), (DWORD)-1,
                             INTERNET_FLAG_HYPERLINK |
                                 INTERNET_FLAG_NO_CACHE_WRITE |
                                 INTERNET_FLAG_NO_COOKIES |
@@ -149,7 +149,7 @@ qboolean CL_HTTP_PerformDownload(void)
         clc.downloadCount += bytesRead;
         Cvar_SetValue("cl_downloadCount", clc.downloadCount);
 
-        int bytesWritten = FS_Write(readBuffer, bytesRead, clc.download);
+        DWORD bytesWritten = (DWORD)FS_Write(readBuffer, bytesRead, clc.download);
         DropIf(bytesWritten != bytesRead, "bytesWritten != bytesRead");
 
         return qfalse;

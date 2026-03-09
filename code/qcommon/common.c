@@ -1588,6 +1588,8 @@ void Com_TouchMemory( void ) {
 
 	end = Sys_Milliseconds();
 
+	(void)sum; // Suppress warning
+
 	Com_Printf( "Com_TouchMemory: %i msec\n", end - start );
 }
 
@@ -1710,6 +1712,8 @@ void Hunk_SmallLog( void) {
 #ifdef HUNK_DEBUG
 		Com_sprintf(buf, sizeof(buf), "size = %8d: %s, line: %d (%s)\r\n", locsize, block->file, block->line, block->label);
 		FS_Write(buf, strlen(buf), logfile);
+#else
+		(void)locsize; // Suppress warning
 #endif
 		size += block->size;
 		numBlocks++;
@@ -2899,7 +2903,7 @@ static void Com_DetectAltivec(void)
 		static qboolean altivec = qfalse;
 		static qboolean detected = qfalse;
 		if (!detected) {
-			altivec = ( Sys_GetProcessorFeatures( ) & CF_ALTIVEC );
+			altivec = !!( Sys_GetProcessorFeatures( ) & CF_ALTIVEC );
 			detected = qtrue;
 		}
 

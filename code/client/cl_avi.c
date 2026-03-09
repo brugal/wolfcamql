@@ -68,11 +68,11 @@ static qboolean PipeUsed = qfalse;
 SafeFS_Write
 ===============
 */
-static ID_INLINE void SafeFS_Write( const void *buffer, int len, fileHandle_t f )
+static ID_INLINE void SafeFS_Write( const void *buf, int len, fileHandle_t f )
 {
     int r;
 
-    r = FS_Write(buffer, len, f);
+    r = FS_Write(buf, len, f);
     if (r < len) {
         if (PipeUsed) {
             // This is only for Windows.  Unix sends SIGPIPE.  In Linux if you
