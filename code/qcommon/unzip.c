@@ -78,7 +78,7 @@ woven in by Terry Thorsen 1/2003.
 
 
 //FIXME
-void Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
+void Com_Printf( const char *msg, ... ) Q_PRINTF_FUNC(1, 2);
 
 
 static const char unz_copyright[] =

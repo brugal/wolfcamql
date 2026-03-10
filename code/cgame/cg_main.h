@@ -9,9 +9,9 @@ int CG_CrosshairPlayer( void );
 int CG_LastAttacker( void );
 void CG_AddChatLine (const char *line);
 
-void QDECL CG_PrintToScreen( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
-void QDECL CG_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
-void QDECL CG_Error( const char *msg, ... ) __attribute__ ((noreturn, format (printf, 1, 2)));
+void QDECL CG_PrintToScreen( const char *msg, ... ) Q_PRINTF_FUNC(1, 2);
+void QDECL CG_Printf( const char *msg, ... ) Q_PRINTF_FUNC(1, 2);
+void QDECL CG_Error( const char *msg, ... ) Q_NO_RETURN Q_PRINTF_FUNC(1, 2);
 
 const char *CG_Argv( int arg );
 int CG_Argc (void);

@@ -111,19 +111,33 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //#pragma intrinsic( memset, memcpy )
 #endif
 
-//Ignore __attribute__ on non-gcc platforms
-#ifndef __GNUC__
-#  ifndef __attribute__
-#    define __attribute__(x)
-#  endif
+#ifdef __GNUC__
+#define Q_UNUSED_VAR __attribute__((unused))
+#define Q_NO_RETURN __attribute__((noreturn))
+
+#ifdef __MINGW32__
+// For some reason MinGW wants both gnu_printf and ms_printf
+#define Q_PRINTF_FUNC(fmt, va) \
+       __attribute__((format(gnu_printf, fmt, va))) \
+       __attribute__((format(ms_printf, fmt, va)))
+#else
+#define Q_PRINTF_FUNC(fmt, va) __attribute__((format(printf, fmt, va)))
 #endif
 
-#ifdef __GNUC__
-#define UNUSED_VAR __attribute__((unused))
-#define NO_WARNING_UNUSED_FUNCTION __attribute__((unused))
+#define Q_SCANF_FUNC(fmt, va) __attribute__((format(scanf, fmt, va)))
+#define Q_ALIGN(x) __attribute__((aligned(x)))
+#define Q_NO_WARNING_UNUSED_FUNCTION __attribute__((unused))
+#define Q_CONSTRUCTOR __attribute__((constructor))
+#define Q_DESTRUCTOR __attribute__((destructor))
 #else
-#define UNUSED_VAR
-#define NO_WARNING_UNUSED_FUNCTION
+#define Q_UNUSED_VAR
+#define Q_NO_RETURN
+#define Q_PRINTF_FUNC(fmt, va)
+#define Q_SCANF_FUNC(fmt, va)
+#define Q_ALIGN(x)
+#define Q_NO_WARNING_UNUSED_FUNCTION
+#define Q_CONSTRUCTOR
+#define Q_DESTRUCTOR
 #endif
 
 #define STRING(s)			#s
@@ -192,7 +206,7 @@ typedef int intptr_t;
 #ifdef _WIN32
   // vsnprintf is ISO/IEC 9899:1999
   // abstracting this to make it portable
-  int Q_vsnprintf(char *str, size_t size, const char *format, va_list ap);
+int Q_vsnprintf(char *str, size_t size, const char *format, va_list ap) Q_PRINTF_FUNC(3, 0);
 #else
   #define Q_vsnprintf vsnprintf
 #endif
@@ -224,12 +238,6 @@ typedef int		clipHandle_t;
 #define PADLEN(base, alignment) (PAD((base), (alignment)) - (base))
 
 #define PADP(base, alignment)   ((void *) PAD((intptr_t) (base), (alignment)))
-
-#ifdef __GNUC__
-#define QALIGN(x) __attribute__((aligned(x)))
-#else
-#define QALIGN(x)
-#endif
 
 #ifndef NULL
 #define NULL ((void *)0)
@@ -816,8 +824,8 @@ int		COM_GetCurrentParseLine( void );
 char	*COM_Parse( char **data_p );
 char	*COM_ParseExt( char **data_p, qboolean allowLineBreak );
 int		COM_Compress( char *data_p );
-void	COM_ParseError( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
-void	COM_ParseWarning( char *format, ... ) __attribute__ ((format (printf, 1, 2)));
+void	COM_ParseError( char *format, ... ) Q_PRINTF_FUNC(1, 2);
+void	COM_ParseWarning( char *format, ... ) Q_PRINTF_FUNC(1, 2);
 //int		COM_ParseInfos( char *buf, int max, char infos[][MAX_INFO_STRING] );
 
 #define MAX_TOKENLENGTH		1024
@@ -852,7 +860,7 @@ void Parse2DMatrix (char **buf_p, int y, int x, float *m);
 void Parse3DMatrix (char **buf_p, int z, int y, int x, float *m);
 int Com_HexStrToInt( const char *str );
 
-int QDECL Com_sprintf (char *dest, int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+int QDECL Com_sprintf (char *dest, int size, const char *fmt, ...) Q_PRINTF_FUNC(3, 4);
 
 char *Com_SkipTokens( char *s, int numTokens, char *sep );
 char *Com_SkipCharset( char *s, char *sep );
@@ -933,7 +941,7 @@ float	LittleFloat (const float *l);
 
 void	Swap_Init (void);
 */
-char	* QDECL va(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+char	* QDECL va(const char *format, ...) Q_PRINTF_FUNC(1, 2);
 
 #define TRUNCATE_LENGTH	64
 void Com_TruncateLongString( char *buffer, const char *s );
@@ -953,8 +961,8 @@ qboolean Info_Validate( const char *s );
 void Info_NextPair( const char **s, char *key, char *value );
 
 // this is only here so the functions in q_shared.c and bg_*.c can link
-void	QDECL Com_Error( int level, const char *error, ... ) __attribute__ ((noreturn, format(printf, 2, 3)));
-void	QDECL Com_Printf( const char *msg, ... ) __attribute__ ((format (printf, 1, 2)));
+void	QDECL Com_Error( int level, const char *error, ... ) Q_NO_RETURN Q_PRINTF_FUNC(2, 3);
+void	QDECL Com_Printf( const char *msg, ... ) Q_PRINTF_FUNC(1, 2);
 
 
 /*

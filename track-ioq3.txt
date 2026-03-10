@@ -9177,3 +9177,22 @@ om/actions/runner-images/issues/12045
 
 2025-09-06-02
     Fix various warnings
+
+2025-09-07-01
+    Wrap __attribute__s in macros
+
+2025-09-07-02
+    Enable format warnings under MinGW
+
+2025-09-07-03
+    Fix macOS deprecated constants
+
+2025-09-07-04
+    Fix quotes in comments
+
+2025-09-07-05
+    Better warning fix (that doesn't crash)
+
+2025-09-08-01
+    Fix typo
+

@@ -389,7 +389,7 @@ Error handler for jump/call to invalid instruction number
 =================
 */
 
-static void __attribute__((__noreturn__)) ErrJump(void)
+static void Q_NO_RETURN  ErrJump(void)
 { 
 	Com_Error(ERR_DROP, "program tried to execute code outside VM");
 }

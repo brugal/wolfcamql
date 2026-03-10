@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 static HINTERNET hInternet = NULL;
 static HINTERNET hUrl = NULL;
 
-static void DropIf(qboolean condition, const char *fmt, ...)
+static Q_PRINTF_FUNC(2, 3) void DropIf(qboolean condition, const char *fmt, ...)
 {
     char buffer[1024];
 

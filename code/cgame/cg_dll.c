@@ -14,8 +14,8 @@ int DllMain (void *h, int r, void *res)
 }
 
 #if 0
-void __attribute__ ((constructor)) Dll_Init (void);
-void __attribute__ ((destructor)) Dll_Fini (void);
+void Q_CONSTRUCTOR ((constructor)) Dll_Init (void);
+void Q_DESTRUCTOR ((destructor)) Dll_Fini (void);
 
 void Dll_Init (void)
 {

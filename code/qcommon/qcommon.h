@@ -25,13 +25,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../qcommon/cm_public.h"
 
-//Ignore __attribute__ on non-gcc platforms
-#ifndef __GNUC__
-#ifndef __attribute__
-#define __attribute__(x)
-#endif
-#endif
-
 //#define	PRE_RELEASE_DEMO
 
 //============================================================================
@@ -164,7 +157,7 @@ void		NET_Restart_f( void );
 void		NET_Config( qboolean enableNetworking );
 void		NET_FlushPacketQueue(void);
 void		NET_SendPacket (netsrc_t sock, int length, const void *data, netadr_t to);
-void		QDECL NET_OutOfBandPrint( netsrc_t net_socket, netadr_t adr, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+void		QDECL NET_OutOfBandPrint( netsrc_t net_socket, netadr_t adr, const char *format, ...) Q_PRINTF_FUNC(3, 4);
 void		QDECL NET_OutOfBandData( netsrc_t sock, netadr_t adr, byte *format, int len );
 
 qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
@@ -698,7 +691,7 @@ int		FS_FTell( fileHandle_t f );
 
 void	FS_Flush( fileHandle_t f );
 
-void 	QDECL FS_Printf( fileHandle_t f, const char *fmt, ... ) __attribute__ ((format (printf, 2, 3)));
+void 	QDECL FS_Printf( fileHandle_t f, const char *fmt, ... ) Q_PRINTF_FUNC(2, 3);
 // like fprintf
 
 int		FS_FOpenFileByMode( const char *qpath, fileHandle_t *f, fsMode_t mode );
@@ -853,10 +846,10 @@ void		Info_Print( const char *s );
 
 void		Com_BeginRedirect (char *buffer, int buffersize, void (*flush)(char *));
 void		Com_EndRedirect( void );
-void 		QDECL Com_Printf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
-void 		QDECL Com_DPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
-void 		QDECL Com_Error( int code, const char *fmt, ... ) __attribute__ ((noreturn, format (printf, 2, 3)));
-void 		Com_Quit_f( void )  __attribute__ ((noreturn));
+void 		QDECL Com_Printf( const char *fmt, ... ) Q_PRINTF_FUNC(1, 2);
+void 		QDECL Com_DPrintf( const char *fmt, ... ) Q_PRINTF_FUNC(1, 2);
+void 		QDECL Com_Error( int code, const char *fmt, ... ) Q_NO_RETURN Q_PRINTF_FUNC(2, 3);
+void 		Com_Quit_f( void ) Q_NO_RETURN;
 void		Com_GameRestart(int checksumFeed, qboolean disconnect);
 
 int			Com_Milliseconds( void );	// will be journaled properly
@@ -1123,8 +1116,8 @@ qboolean Sys_DllExtension( const char *name );
 
 char	*Sys_GetCurrentUser( void );
 
-void	QDECL Sys_Error( const char *error, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
-void	Sys_Quit (void) __attribute__ ((noreturn));
+void	QDECL Sys_Error( const char *error, ...) Q_NO_RETURN Q_PRINTF_FUNC(1, 2);
+void	Sys_Quit (void) Q_NO_RETURN;
 char	*Sys_GetClipboardData( void );	// note that this isn't journaled...
 
 void	Sys_Print( const char *msg );

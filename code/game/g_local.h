@@ -608,10 +608,10 @@ void SetLeader(int team, int client);
 void CheckTeamLeader( int team );
 void G_RunThink (gentity_t *ent);
 void AddTournamentQueue(gclient_t *client);
-void QDECL G_LogPrintf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
+void QDECL G_LogPrintf( const char *fmt, ... ) Q_PRINTF_FUNC(1, 2);
 void SendScoreboardMessageToAllClients( void );
-void QDECL G_Printf( const char *fmt, ... ) __attribute__ ((format (printf, 1, 2)));
-void QDECL G_Error( const char *fmt, ... ) __attribute__ ((noreturn, format (printf, 1, 2)));
+void QDECL G_Printf( const char *fmt, ... ) Q_PRINTF_FUNC(1, 2);
+void QDECL G_Error( const char *fmt, ... ) Q_NO_RETURN Q_PRINTF_FUNC(1, 2);
 
 //
 // g_client.c
@@ -762,7 +762,7 @@ extern vmCvar_t g_ammoPackHack;
 extern vmCvar_t g_wolfcamVersion;
 
 void	trap_Print( const char *text );
-void    trap_Error( const char *text ) __attribute__((noreturn));
+void    trap_Error( const char *text ) Q_NO_RETURN;
 int		trap_Milliseconds( void );
 int	trap_RealTime (qtime_t *qtime, qboolean now, int convertTime);
 int		trap_Argc( void );

@@ -814,7 +814,7 @@ qboolean Q_isdigit (char c)
 qboolean Q_isanumber( const char *s )
 {
 	char *p;
-	double UNUSED_VAR d;
+	double Q_UNUSED_VAR d;
 
 	if( *s == '\0' )
 		return qfalse;

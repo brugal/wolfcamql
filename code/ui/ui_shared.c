@@ -301,7 +301,7 @@ void String_Init(void) {
 PC_SourceWarning
 =================
 */
-static NO_WARNING_UNUSED_FUNCTION __attribute__((format(printf, 2, 3))) void PC_SourceWarning (int handle, char *format, ...)
+static Q_NO_WARNING_UNUSED_FUNCTION Q_PRINTF_FUNC(2, 3) void PC_SourceWarning (int handle, char *format, ...)
 {
 	int line;
 	char filename[128];
@@ -325,7 +325,7 @@ static NO_WARNING_UNUSED_FUNCTION __attribute__((format(printf, 2, 3))) void PC_
 PC_SourceError
 =================
 */
-static __attribute__((format(printf, 2, 3))) void PC_SourceError (int handle, char *format, ...)
+static Q_PRINTF_FUNC(2, 3) void PC_SourceError (int handle, char *format, ...)
 {
 	int line;
 	char filename[128];

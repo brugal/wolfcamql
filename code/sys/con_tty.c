@@ -89,7 +89,7 @@ send "\b \b"
 static void CON_Back( void )
 {
 	char key;
-	size_t UNUSED_VAR size;
+	size_t Q_UNUSED_VAR size;
 
 	key = '\b';
 	size = write(STDOUT_FILENO, &key, 1);
@@ -150,7 +150,7 @@ static void CON_Show( void )
 		ttycon_hide--;
 		if (ttycon_hide == 0)
 		{
-			size_t UNUSED_VAR size;
+			size_t Q_UNUSED_VAR size;
 			size = write(STDOUT_FILENO, TTY_CONSOLE_PROMPT, strlen(TTY_CONSOLE_PROMPT));
 			if (TTY_con.cursor)
 			{
@@ -352,7 +352,7 @@ char *CON_Input( void )
 	char key;
 	unsigned char ukey;
 	field_t *history;
-	size_t UNUSED_VAR size;
+	size_t Q_UNUSED_VAR size;
 	int i;
 	static int needUtf8Bytes = 0;
 
