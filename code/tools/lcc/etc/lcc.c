@@ -219,9 +219,19 @@ char *basename(char *name) {
 #ifdef WIN32
 #include <windows.h>
 
+static int argumentNeedsQuoted(const char *arg) {
+	if (arg && *arg == '"' && arg[strlen(arg) - 1] == '"') {
+		// Assume that if it's already fully quoted, it doesn't
+		// need any further quoting or escaping
+		return 0;
+	}
+
+	return !*arg || strpbrk(arg, " \t\"");
+}
+
 static char *quoteArgument(const char *arg) {
 	// Quote if it has spaces, tabs, or is empty
-	if(!*arg || strpbrk(arg, " \t\"")) {
+	if(argumentNeedsQuoted(arg)) {
 		size_t length = strlen(arg);
 		size_t bufferSize = length * 2 + 3; // maximum escapes + quotes + terminator
 		char *buffer = (char *)malloc(bufferSize);

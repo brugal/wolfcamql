@@ -42,11 +42,14 @@ for f in files:
     else:
         shutil.copy2(fpath, packageDir)
 
-baseFiles = ["COPYING.txt", "COPYING-backtrace.txt", "CREDITS-wolfcam.txt", "CREDITS-openarena.txt", "README-ioquake3.txt", "README-wolfcam.txt", "opengl2-readme.md", "version.txt", "unifont-LICENSE.txt", "voip-readme.txt"]
+baseFiles = ["COPYING.txt", "COPYING-backtrace.txt", "CREDITS-wolfcam.txt", "CREDITS-openarena.txt", "README-ioquake3.txt", "README-wolfcam.txt", "version.txt"]
 
 for f in baseFiles:
     print("copying base file: " + f)
     shutil.copy(f, packageDir)
+
+print("copying docs")
+copytree("docs", os.path.join(packageDir, "docs"))
 
 if build64:  # 64-bit
     libDir = os.path.join("code", "thirdparty", "libs", "win64")

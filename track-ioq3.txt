@@ -9196,3 +9196,59 @@ om/actions/runner-images/issues/12045
 2025-09-08-01
     Fix typo
 
+2025-09-08-02
+    Add -Wshadow to compiler warnings
+
+2025-09-10-01 (skip cmake)
+    Fold install(...) calls into set_output_dirs
+
+2025-09-11-01 (skip cmake)
+    Remove pointless conditional
+
+2025-09-11-02 (skip cmake)
+    Set CMAKE_INSTALL_PREFIX default more correctly
+
+2025-09-10-02 (skip cmake)
+    Basic Windows NSIS installer
+
+2025-09-10-03 (skip cmake)
+    Basic macOS dmg generation
+
+2025-09-12-01 (skip .github)
+    Basic standalone Debian package
+
+2025-09-15-01 (skip cmake)
+    Fix emscripten preload file not working for a symlinked directory
+
+2025-09-15-02
+    Note former maintainers, remove zturtleman funding link (#798)
+
+    * Update readme to note former maintainers
+
+    * Remove my funding link
+
+2025-09-18-01 (skip cmake)
+    Revert CMake minimum to previous value (by setting cmake_policy)
+
+2025-09-18-02 (skip cmake)
+    Do post configure function(s) more generically
+
+2025-09-19-01
+    Don't add quotes when not needed for LCC process spawning
+
+2025-09-21-01
+    Update CONTRIBUTING.md for the year 2025 (#757)
+
+    Removed a bunch of out-of-date links and information and updated a few parts.
+
+2025-09-06-01
+    Increase start server map limit in Team Arena ui to match q3_ui
+
+    Allow reading more scripts/*.arena files and allow up to 1024 maps
+    instead of 128.
+
+2025-09-22-01
+    SV_RehashBans_f may be executed when the server isn't running (#785)
+
+2025-09-25-01
+    Move non-essential documentation to docs subdir

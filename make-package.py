@@ -30,6 +30,19 @@ if os.path.exists(packageDir):
 
 os.makedirs(packageDir)
 
+# shutil.copytree() fails if destination dir exists
+def copytree (src, dest):
+    if not os.path.exists(dest):
+        os.makedirs(dest)
+
+    for f in os.listdir(src):
+        s = os.path.join(src, f)
+        d = os.path.join(dest, f)
+        if os.path.isdir(s):
+            copytree(s, d)
+        else:
+            shutil.copy2(s, d)
+
 packageFilesDir = "package-files"
 
 files = os.listdir(packageFilesDir)
@@ -41,11 +54,14 @@ for f in files:
     else:
         shutil.copy2(fpath, packageDir)
 
-baseFiles = ["COPYING.txt", "COPYING-backtrace.txt", "CREDITS-wolfcam.txt", "CREDITS-openarena.txt", "README-ioquake3.txt", "README-wolfcam.txt", "opengl2-readme.md", "version.txt", "unifont-LICENSE.txt", "voip-readme.txt"]
+baseFiles = ["COPYING.txt", "COPYING-backtrace.txt", "CREDITS-wolfcam.txt", "CREDITS-openarena.txt", "README-ioquake3.txt", "README-wolfcam.txt", "version.txt"]
 
 for f in baseFiles:
     print("copying base file: " + f)
     shutil.copy(f, packageDir)
+
+print("copying docs")
+copytree("docs", os.path.join(packageDir, "docs"))
 
 libDir = os.path.join("code", "thirdparty", "libs", "win64")
 buildDir = os.path.join("build", "release-mingw32-x86_64")

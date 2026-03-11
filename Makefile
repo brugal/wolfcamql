@@ -403,12 +403,12 @@ ifneq (,$(findstring "$(PLATFORM)", "linux" "gnu_kfreebsd" "kfreebsd-gnu" "gnu")
   endif
 
   ifdef CGAME_HARD_LINKED
-    WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+    WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wshadow -Wstrict-prototypes
     WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
     BASE_CFLAGS = -p -g -rdynamic -pipe -DUSE_ICON -msse $(CGAME_HARD_LINKED)
     SSE2_CFLAGS = -msse2
   else
-    WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+    WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wshadow -Wstrict-prototypes
     WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
     BASE_CFLAGS = -g -rdynamic -pipe -DUSE_ICON -msse
     SSE2_CFLAGS = -msse2
@@ -761,7 +761,7 @@ ifdef MINGW
     $(error Cannot find a suitable cross compiler for $(PLATFORM))
   endif
 
-  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wshadow -Wstrict-prototypes
   WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
   BASE_CFLAGS = -g -gdwarf-3 -DUSE_ICON -msse
   SSE2_CFLAGS = -msse2
@@ -913,7 +913,7 @@ ifeq ($(PLATFORM),freebsd)
   TOOLS_CC=cc
 
   # flags
-  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wshadow -Wstrict-prototypes
   WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
   BASE_CFLAGS = -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
@@ -966,7 +966,7 @@ else # ifeq freebsd
 
 ifeq ($(PLATFORM),openbsd)
 
-  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wshadow -Wstrict-prototypes
   WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
   BASE_CFLAGS = -pipe -DUSE_ICON -DMAP_ANONYMOUS=MAP_ANON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
@@ -1045,7 +1045,7 @@ ifeq ($(PLATFORM),netbsd)
   SHLIBLDFLAGS=-shared $(LDFLAGS)
   THREAD_LIBS=-lpthread
 
-  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wshadow -Wstrict-prototypes
   WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
   BASE_CFLAGS =
 
@@ -1103,7 +1103,7 @@ ifeq ($(PLATFORM),sunos)
     endif
   endif
 
-  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wstrict-prototypes
+  WARNINGS_CFLAGS = -Wall -fno-strict-aliasing -Wimplicit -Wshadow -Wstrict-prototypes
   WARNINGS_CXXFLAGS = -Wall -fno-strict-aliasing
   BASE_CFLAGS = -pipe -DUSE_ICON
   CLIENT_CFLAGS += $(SDL_CFLAGS)
@@ -1193,7 +1193,7 @@ ifeq ($(PLATFORM),emscripten)
 
   # These allow a warning-free build.
   # Some of these warnings may actually be legit problems and should be fixed at some point.
-  BASE_CFLAGS+=-Wno-deprecated-non-prototype -Wno-dangling-else -Wno-implicit-const-int-float-conversion -Wno-misleading-indentation -Wno-format-overflow -Wno-logical-not-parentheses -Wno-absolute-value
+  BASE_CFLAGS+=-Wno-deprecated-non-prototype -Wno-dangling-else -Wno-implicit-const-int-float-conversion -Wshadow -Wno-misleading-indentation -Wno-format-overflow -Wno-logical-not-parentheses -Wno-absolute-value
 
   DEBUG_CFLAGS=-g3 -O0 # -fsanitize=address -fsanitize=undefined
   # Emscripten needs debug compiler flags to be passed to the linker as well
@@ -1517,7 +1517,7 @@ BASE_CFLAGS += -D_FILE_OFFSET_BITS=64
 
 WARNINGS_CFLAGS += -Wformat=2 -Wno-format-zero-length -Wformat-security \
   -Wno-format-nonliteral -Wstrict-aliasing=2 -Wmissing-format-attribute \
-  -Wdisabled-optimization -Werror-implicit-function-declaration
+  -Wdisabled-optimization -Werror-implicit-function-declaration -Wshadow
 WARNINGS_CXXFLAGS += -Wformat=2 -Wno-format-zero-length -Wformat-security \
   -Wno-format-nonliteral -Wstrict-aliasing=2 -Wmissing-format-attribute \
   -Wdisabled-optimization
