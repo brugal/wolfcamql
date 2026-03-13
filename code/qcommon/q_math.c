@@ -76,13 +76,13 @@ vec4_t	g_color_table_q3[8] =
 	};
 
 vec4_t		colorBlack	= {0.0f, 0.0f, 0.0f, 1.0f};
-vec4_t		colorRed	= { 0.96f, 0, 0.0f, 1.0f };  //{1, 0, 0, 1};
-vec4_t		colorGreen	= { 0, 0.96f, 0.0f, 1.0f };  //{0, 1, 0, 1};
-vec4_t		colorBlue	= { 0.196f, 0.4f, 0.96, 1.0f };  //{0, 0, 1, 1};
-vec4_t		colorYellow	= { 0.96f, 0.96f, 0, 1.0f };  //{1, 1, 0, 1};
-vec4_t		colorMagenta= { 0.96f, 0.0f, 0.96, 1.0f };  //{1, 0, 1, 1};
-vec4_t		colorCyan	= { 0.0f, 0.96f, 0.96, 1.0f };  //{0, 1, 1, 1};
-vec4_t		colorWhite	= { 0.96f, 0.96f, 0.96, 1.0f };  //{1, 1, 1, 1};
+vec4_t		colorRed	= { 0.96f, 0.0f, 0.0f, 1.0f };  //{1, 0, 0, 1};
+vec4_t		colorGreen	= { 0.0f, 0.96f, 0.0f, 1.0f };  //{0, 1, 0, 1};
+vec4_t		colorBlue	= { 0.196f, 0.4f, 0.96f, 1.0f };  //{0, 0, 1, 1};
+vec4_t		colorYellow	= { 0.96f, 0.96f, 0.0f, 1.0f };  //{1, 1, 0, 1};
+vec4_t		colorMagenta= { 0.96f, 0.0f, 0.96f, 1.0f };  //{1, 0, 1, 1};
+vec4_t		colorCyan	= { 0.0f, 0.96f, 0.96f, 1.0f };  //{0, 1, 1, 1};
+vec4_t		colorWhite	= { 0.96f, 0.96f, 0.96f, 1.0f };  //{1, 1, 1, 1};
 
 vec4_t		colorLtGrey	= {0.75f, 0.75f, 0.75f, 1.0f};
 vec4_t		colorMdGrey	= {0.5f, 0.5f, 0.5f, 1.0f};
@@ -94,7 +94,7 @@ vec4_t		qlcolorGreen	= { 0.0f, 0.96f, 0.0f, 1.0f };  //{0, 1, 0, 1};
 vec4_t		qlcolorBlue	= { 0.196f, 0.4f, 0.96f, 1.0f };  //{0, 0, 1, 1};
 vec4_t		qlcolorYellow	= { 0.96f, 0.96f, 0.0f, 1.0f };  //{1, 1, 0, 1};
 vec4_t		qlcolorMagenta= { 0.96f, 0.0f, 0.96f, 1.0f };  //{1, 0, 1, 1};
-vec4_t		qlcolorCyan	= { 0, 0.96f, 0.96f, 1.0f };  //{0, 1, 1, 1};
+vec4_t		qlcolorCyan	= { 0.0f, 0.96f, 0.96f, 1.0f };  //{0, 1, 1, 1};
 vec4_t		qlcolorWhite	= { 0.96f, 0.96f, 0.96f, 1.0f };  //{1, 1, 1, 1};
 
 vec4_t		q3colorRed	= {1.0f, 0.0f, 0.0f, 1.0f};
