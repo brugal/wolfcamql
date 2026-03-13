@@ -1,4 +1,4 @@
-12.7test37
+12.7test38
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -43,6 +43,7 @@
   - Update curl
   - Update SDL (2.32.8)
   - Remove architecture from binary filenames
+  - Implement ShowNormals in RendererGL2
 
 ---------------------------------
 12.6  2024-05-22

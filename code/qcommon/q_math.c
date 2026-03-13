@@ -31,74 +31,79 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_shared.h"
 
-vec3_t	vec3_origin = {0,0,0};
-vec3_t	axisDefault[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
+vec3_t	vec3_origin = {0.0f, 0.0f, 0.0f};
+vec3_t	axisDefault[3] =
+{
+	{1.0f, 0.0f, 0.0f},
+	{0.0f, 1.0f, 0.0f},
+	{0.0f, 0.0f, 1.0f}
+};
 
 vec4_t	g_color_table[8] =
 	{
-	{0.0, 0.0, 0.0, 1.0},
-	{0.996, 0.0, 0.0, 1.0},  // fe0000
-	{0.0, 0.996, 0.0, 1.0},  // 00fe00
-	{0.996, 0.996, 0.0, 1.0},  // fefe00
-	{0.196, 0.4, 0.996, 1.0},  // 3266fe
-	{0.0, 0.996, 0.996, 1.0},  // 00fefe
-	{0.996, 0.0, 0.996, 1.0},  // fe00fe
-	{0.996, 0.996, 0.996, 1.0},  // fefefe
+	{0.0f, 0.0f, 0.0f, 1.0f},
+	{0.996f, 0.0f, 0.0f, 1.0f},  // fe0000
+	{0.0f, 0.996f, 0.0f, 1.0f},  // 00fe00
+	{0.996f, 0.996f, 0.0f, 1.0f},  // fefe00
+	{0.196f, 0.4f, 0.996f, 1.0f},  // 3266fe
+	{0.0f, 0.996f, 0.996f, 1.0f},  // 00fefe
+	{0.996f, 0.0f, 0.996f, 1.0f},  // fe00fe
+	{0.996f, 0.996f, 0.996f, 1.0f},  // fefefe
 	};
 
 vec4_t	g_color_table_ql[8] =
 	{
-	{0.0, 0.0, 0.0, 1.0},
-	{0.996, 0.0, 0.0, 1.0},  // fe0000
-	{0.0, 0.996, 0.0, 1.0},  // 00fe00
-	{0.996, 0.996, 0.0, 1.0},  // fefe00
-	{0.196, 0.4, 0.996, 1.0},  // 3266fe
-	{0.0, 0.996, 0.996, 1.0},  // 00fefe
-	{0.996, 0.0, 0.996, 1.0},  // fe00fe
-	{0.996, 0.996, 0.996, 1.0},  // fefefe
+	{0.0f, 0.0f, 0.0f, 1.0f},
+	{0.996f, 0.0f, 0.0f, 1.0f},  // fe0000
+	{0.0f, 0.996f, 0.0f, 1.0f},  // 00fe00
+	{0.996f, 0.996f, 0.0f, 1.0f},  // fefe00
+	{0.196f, 0.4f, 0.996f, 1.0f},  // 3266fe
+	{0.0f, 0.996f, 0.996f, 1.0f},  // 00fefe
+	{0.996f, 0.0f, 0.996f, 1.0f},  // fe00fe
+	{0.996f, 0.996f, 0.996f, 1.0f},  // fefefe
 	};
 
 vec4_t	g_color_table_q3[8] =
 	{
-	{0.0, 0.0, 0.0, 1.0},
-	{1.0, 0.0, 0.0, 1.0},
-	{0.0, 1.0, 0.0, 1.0},
-	{1.0, 1.0, 0.0, 1.0},
-	{0.0, 0.0, 1.0, 1.0},
-	{0.0, 1.0, 1.0, 1.0},
-	{1.0, 0.0, 1.0, 1.0},
-	{1.0, 1.0, 1.0, 1.0},
+	{0.0f, 0.0f, 0.0f, 1.0f},
+	{1.0f, 0.0f, 0.0f, 1.0f},
+	{0.0f, 1.0f, 0.0f, 1.0f},
+	{1.0f, 1.0f, 0.0f, 1.0f},
+	{0.0f, 0.0f, 1.0f, 1.0f},
+	{0.0f, 1.0f, 1.0f, 1.0f},
+	{1.0f, 0.0f, 1.0f, 1.0f},
+	{1.0f, 1.0f, 1.0f, 1.0f},
 	};
 
-vec4_t		colorBlack	= {0, 0, 0, 1};
-vec4_t		colorRed	= { 0.96, 0, 0, 1 };  //{1, 0, 0, 1};
-vec4_t		colorGreen	= { 0, 0.96, 0, 1 };  //{0, 1, 0, 1};
-vec4_t		colorBlue	= { 0.196, 0.4, 0.96, 1 };  //{0, 0, 1, 1};
-vec4_t		colorYellow	= { 0.96, 0.96, 0, 1 };  //{1, 1, 0, 1};
-vec4_t		colorMagenta= { 0.96, 0, 0.96, 1 };  //{1, 0, 1, 1};
-vec4_t		colorCyan	= { 0, 0.96, 0.96, 1 };  //{0, 1, 1, 1};
-vec4_t		colorWhite	= { 0.96, 0.96, 0.96, 1 };  //{1, 1, 1, 1};
+vec4_t		colorBlack	= {0.0f, 0.0f, 0.0f, 1.0f};
+vec4_t		colorRed	= { 0.96f, 0, 0.0f, 1.0f };  //{1, 0, 0, 1};
+vec4_t		colorGreen	= { 0, 0.96f, 0.0f, 1.0f };  //{0, 1, 0, 1};
+vec4_t		colorBlue	= { 0.196f, 0.4f, 0.96, 1.0f };  //{0, 0, 1, 1};
+vec4_t		colorYellow	= { 0.96f, 0.96f, 0, 1.0f };  //{1, 1, 0, 1};
+vec4_t		colorMagenta= { 0.96f, 0.0f, 0.96, 1.0f };  //{1, 0, 1, 1};
+vec4_t		colorCyan	= { 0.0f, 0.96f, 0.96, 1.0f };  //{0, 1, 1, 1};
+vec4_t		colorWhite	= { 0.96f, 0.96f, 0.96, 1.0f };  //{1, 1, 1, 1};
 
-vec4_t		colorLtGrey	= {0.75, 0.75, 0.75, 1};
-vec4_t		colorMdGrey	= {0.5, 0.5, 0.5, 1};
-vec4_t		colorDkGrey	= {0.25, 0.25, 0.25, 1};
+vec4_t		colorLtGrey	= {0.75f, 0.75f, 0.75f, 1.0f};
+vec4_t		colorMdGrey	= {0.5f, 0.5f, 0.5f, 1.0f};
+vec4_t		colorDkGrey	= {0.25f, 0.25f, 0.25f, 1.0f};
 
 
-vec4_t		qlcolorRed	= { 0.96, 0, 0, 1 };  //{1, 0, 0, 1};
-vec4_t		qlcolorGreen	= { 0, 0.96, 0, 1 };  //{0, 1, 0, 1};
-vec4_t		qlcolorBlue	= { 0.196, 0.4, 0.96, 1 };  //{0, 0, 1, 1};
-vec4_t		qlcolorYellow	= { 0.96, 0.96, 0, 1 };  //{1, 1, 0, 1};
-vec4_t		qlcolorMagenta= { 0.96, 0, 0.96, 1 };  //{1, 0, 1, 1};
-vec4_t		qlcolorCyan	= { 0, 0.96, 0.96, 1 };  //{0, 1, 1, 1};
-vec4_t		qlcolorWhite	= { 0.96, 0.96, 0.96, 1 };  //{1, 1, 1, 1};
+vec4_t		qlcolorRed	= { 0.96f, 0.0f, 0.0f, 1.0f };  //{1, 0, 0, 1};
+vec4_t		qlcolorGreen	= { 0.0f, 0.96f, 0.0f, 1.0f };  //{0, 1, 0, 1};
+vec4_t		qlcolorBlue	= { 0.196f, 0.4f, 0.96f, 1.0f };  //{0, 0, 1, 1};
+vec4_t		qlcolorYellow	= { 0.96f, 0.96f, 0.0f, 1.0f };  //{1, 1, 0, 1};
+vec4_t		qlcolorMagenta= { 0.96f, 0.0f, 0.96f, 1.0f };  //{1, 0, 1, 1};
+vec4_t		qlcolorCyan	= { 0, 0.96f, 0.96f, 1.0f };  //{0, 1, 1, 1};
+vec4_t		qlcolorWhite	= { 0.96f, 0.96f, 0.96f, 1.0f };  //{1, 1, 1, 1};
 
-vec4_t		q3colorRed	= {1, 0, 0, 1};
-vec4_t		q3colorGreen	= {0, 1, 0, 1};
-vec4_t		q3colorBlue	= {0, 0, 1, 1};
-vec4_t		q3colorYellow	= {1, 1, 0, 1};
-vec4_t		q3colorMagenta= {1, 0, 1, 1};
-vec4_t		q3colorCyan	= {0, 1, 1, 1};
-vec4_t		q3colorWhite	=  {1, 1, 1, 1};
+vec4_t		q3colorRed	= {1.0f, 0.0f, 0.0f, 1.0f};
+vec4_t		q3colorGreen	= {0.0f, 1.0f, 0.0f, 1.0f};
+vec4_t		q3colorBlue	= {0.0f, 0.0f, 1.0f, 1.0f};
+vec4_t		q3colorYellow	= {1.0f, 1.0f, 0.0f, 1.0f};
+vec4_t		q3colorMagenta= {1.0f, 0.0f, 1.0f, 1.0f};
+vec4_t		q3colorCyan	= {0.0f, 1.0f, 1.0f, 1.0f};
+vec4_t		q3colorWhite	=  {1.0f, 1.0f, 1.0f, 1.0f};
 
 void Q_SetColors (qboolean ql)
 {
@@ -128,9 +133,9 @@ void Q_SetColors (qboolean ql)
 		}
 	}
 
-	Vector4Set(colorLtGrey, 0.75, 0.75, 0.75, 1);
-	Vector4Set(colorMdGrey, 0.5, 0.5, 0.5, 1);
-	Vector4Set(colorDkGrey, 0.25, 0.25, 0.25, 1);
+	Vector4Set(colorLtGrey, 0.75f, 0.75f, 0.75f, 1.0f);
+	Vector4Set(colorMdGrey, 0.5f, 0.5f, 0.5f, 1.0f);
+	Vector4Set(colorDkGrey, 0.25f, 0.25f, 0.25f, 1.0f);
 }
 
 void Q_SetColorTable (int n, float r, float g, float b, float a)

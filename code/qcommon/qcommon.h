@@ -596,9 +596,9 @@ issues.
 #define	MAX_FILE_HANDLES	64
 
 #ifdef DEDICATED
-#	define Q3CONFIG_CFG "q3config_server.cfg"
+#      define Q3CONFIG_CFG CONFIG_PREFIX "_server.cfg"
 #else
-#	define Q3CONFIG_CFG "q3config.cfg"
+#      define Q3CONFIG_CFG CONFIG_PREFIX ".cfg"
 #endif
 
 qboolean FS_Initialized( void );
@@ -1192,6 +1192,7 @@ typedef enum
 } dialogType_t;
 
 dialogResult_t Sys_Dialog( dialogType_t type, const char *message, const char *title );
+qboolean Sys_OpenFolderInFileManager( const char *path, qboolean create );
 
 void Sys_RemovePIDFile( const char *gamedir );
 void Sys_InitPIDFile( const char *gamedir );

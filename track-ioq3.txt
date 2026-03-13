@@ -9252,3 +9252,107 @@ om/actions/runner-images/issues/12045
 
 2025-09-25-01
     Move non-essential documentation to docs subdir
+
+2025-09-16-01
+    Import macOS code signing certificate from environment variables
+
+2025-09-18-01 (skip cmake)
+    Code sign on macOS
+
+2025-09-18-02
+    macOS notarization
+
+2025-09-25-01
+    Add macOS code sign/notarization setup doc
+
+2025-09-25-02
+    Provide better advice re pak0.pk3 location on macOS
+
+2025-09-26-01
+    Improve dmg cosmetics
+
+2025-09-26-01 (skip cmake)
+    Change CONTACT_EMAIL to something more real
+
+2025-09-27-01 (skip cmake)
+    Set CMP0177 directly rather than by version
+
+2025-10-03-01
+    Make sound channel exhaustion warning a Com_DPrintf
+
+2025-10-04-01
+    Implement ShowNormals in RendererGL2
+
+2025-04-19-01
+    Set the overflow flag when the number of bits written reaches the maximum size
+
+2025-10-05-01
+    Update README.md to point to guides for players and sysadmins (#807)
+
+2025-10-05-02
+    Update README.md small formatting change and added a link
+
+2025-10-06-01
+    Fix warnings
+
+2025-10-07-01
+    (Optionally) put the build products in a subdir, in the dmg
+
+2025-10-07-02 (skip cmake)
+    Don't set USE_ICON on macOS; the icon is derived from the bundle
+
+2025-10-07-03
+    Remove unused/outdated null_* files
+
+2025-01-25-01
+    Drop build date from generated file
+
+    for reproducible builds.
+
+    Without this, dagcheck.c in the debugsource package
+    varies across builds.
+
+2025-10-08-01 (skip cmake)
+    Don't append the git revision if tagged to match the current version
+
+2025-10-08-02 (skip .github)
+    Centralise version extraction
+
+2025-10-08-03 (skip .github)
+    Publish a release if the git tag exactly matches the current version number
+
+2025-10-11-01
+    Move Sys_Exec within the file
+
+2025-10-11-02
+    Add Sys_OpenFolderInFileManager
+
+2025-10-11-03
+    When pak?.pk3 missing, open the destination folder in the file manager
+
+2025-10-12-01 (skip cmake)
+    When arch detection fails, show the compiler output
+
+2025-10-09-01
+    Add CONFIG_PREFIX, for customising the config name
+
+2025-10-04-01
+    Extend size of serverInfo_t.hostName (handle longer server names)
+
+2025-10-04-02
+    Render ANSI black text inverse (so that it is readable on black terminals)
+
+2025-10-04-03
+    Remove inconsistent '.' in server message
+
+2025-10-06-01
+    Stricter Info_Validate
+
+2025-10-06-02
+    Better un-pure client error message
+
+2025-10-07-01
+    Use PRODUCT_NAME in config file comments
+
+2025-10-17-01
+    Fix MSVC double truncation warnings

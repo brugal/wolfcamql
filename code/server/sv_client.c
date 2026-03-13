@@ -539,7 +539,7 @@ void SV_DirectConnect( netadr_t from ) {
 			}
 		}
 		else {
-			NET_OutOfBandPrint( NS_SERVER, from, "print\nServer is full.\n" );
+			NET_OutOfBandPrint( NS_SERVER, from, "print\nServer is full\n" );
 			Com_DPrintf ("Rejected a connection.\n");
 			return;
 		}
@@ -1391,7 +1391,10 @@ static void SV_VerifyPaks_f( client_t *cl ) {
 			cl->lastSnapshotTime = 0;
 			cl->state = CS_ACTIVE;
 			SV_SendClientSnapshot( cl );
-			SV_DropClient( cl, "Unpure client detected. Invalid .PK3 files referenced!" );
+			SV_DropClient( cl, "Unpure Client. "
+                               "You may need to enable in-game downloads "
+                               "to connect to this server (set "
+                               "cl_allowDownload 1)" );
 		}
 	}
 }
