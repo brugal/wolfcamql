@@ -766,23 +766,23 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
           return qfalse;
       }
   } else {
-      if( ( afd->f = FS_FOpenFileWrite( afd->fileName ) ) <= 0 ) {
+      if( ( afd->f = FS_FOpenFileWrite_HomeData( afd->fileName ) ) <= 0 ) {
           Com_Printf("CL_OpenAVIForWriting()  couldn't open video file\n");
           return qfalse;
       }
 
-      if( ( afd->idxF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_FILENAME_EXT))) <= 0 ) {
+      if( ( afd->idxF = FS_FOpenFileWrite_HomeData(va("%s%s", afd->fileName, INDEX_FILENAME_EXT))) <= 0 ) {
           Com_Printf("CL_OpenAVIForWriting() couldn't open standard index file '%s'\n", va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
           FS_FCloseFile( afd->f );
           return qfalse;
       }
-      if( ( afd->idxVF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT))) <= 0) {
+      if( ( afd->idxVF = FS_FOpenFileWrite_HomeData(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT))) <= 0) {
           Com_Printf("CL_OpenAVIForWriting() couldn't open video index file\n");
           FS_FCloseFile( afd->f );
           FS_FCloseFile(afd->idxF);
           return qfalse;
       }
-      if( ( afd->idxAF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT))) <= 0) {
+      if( ( afd->idxAF = FS_FOpenFileWrite_HomeData(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT))) <= 0) {
           Com_Printf("CL_OpenAVIForWriting() couldn't open audio index file\n");
           FS_FCloseFile( afd->f );
           FS_FCloseFile(afd->idxF);
@@ -929,7 +929,7 @@ qboolean CL_OpenAVIForWriting (aviFileData_t *afd, const char *fileName, qboolea
   if (!us  &&  wav  &&  afd == &afdMain) {
       //Com_sprintf(sbuf, MAX_QPATH, "videos/%s.wav", afd->givenFileName);
       Com_sprintf(sbuf, MAX_QPATH, "videos/%s.wav", afd->givenFileName);
-      afd->wavFile = FS_FOpenFileWrite(sbuf);
+      afd->wavFile = FS_FOpenFileWrite_HomeData(sbuf);
       if (!afd->wavFile) {
           Com_Printf("couldn't open wav file\n");
       }
@@ -1763,10 +1763,10 @@ static void CL_WriteIndexes (aviFileData_t *afd)
       //fwrite4(0, afd->f);
 
       //Com_Printf("^2%d [%d] %lld  (%d)  video\n", afd->riffCount, afd->numVIndexEntries, indexPos, indexSize);
-      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
+      FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
   } else {
       FS_FCloseFile(afd->idxVF);
-      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
+      FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
   }
 
   if (afd->useOpenDml  &&  afd->audio) {
@@ -1828,11 +1828,11 @@ static void CL_WriteIndexes (aviFileData_t *afd)
 
       //Com_Printf("^2%d [%d] %lld  (%d)  audio\n", afd->riffCount, afd->numAIndexEntries, indexPos, indexSize);
 
-      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
+      FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
       fseeko(afd->file, 0, SEEK_END);
   } else {
       FS_FCloseFile(afd->idxAF);
-      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
+      FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
   }
 
   if (afd->riffCount == 1) {  //(!afd->useOpenDml  &&  afd->riffCount == 1) {
@@ -1913,7 +1913,7 @@ static void CL_WriteIndexes (aviFileData_t *afd)
       //Com_Printf("riff1 afd->fileSize1 %d  afd->moviSize1 %d\n", afd->fileSize1, afd->moviSize1);
       //Com_Printf("close riff 1\n");
 
-      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
+      FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
   }
 }
 
@@ -2074,14 +2074,14 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
   } else {
       FS_FCloseFile( afd->f );
       if (!afd->avi) {
-          FS_HomeRemove(afd->fileName);
+          FS_Remove_HomeData(afd->fileName);
       }
       //FS_FCloseFile(afd->idxF);
       FS_FCloseFile(afd->idxVF);
       FS_FCloseFile(afd->idxAF);
-      //FS_HomeRemove(va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
-      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
-      FS_HomeRemove(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
+      //FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_FILENAME_EXT));
+      FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT));
+      FS_Remove_HomeData(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT));
   }
 
   afd->fileOpen = qfalse;
@@ -2107,7 +2107,7 @@ qboolean CL_CloseAVI (aviFileData_t *afd, qboolean us)
 #if 0
           if (!afd->wav) {
               Com_sprintf(sbuf, MAX_QPATH, "videos/%s.wav", afd->givenFileName);
-              FS_HomeRemove(sbuf);
+              FS_HomeRemove_HomeData(sbuf);
           }
 #endif
       }
@@ -2180,7 +2180,7 @@ static void CL_NewRiff (aviFileData_t *afd)
 
   afd->riffCount++;
 
-  if( ( afd->idxVF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT))) <= 0)
+  if( ( afd->idxVF = FS_FOpenFileWrite_HomeData(va("%s%s", afd->fileName, INDEX_VIDEO_FILENAME_EXT))) <= 0)
   {
       Com_Printf("CL_NewRiff() couldn't open video index file\n");
       FS_FCloseFile( afd->f );
@@ -2189,7 +2189,7 @@ static void CL_NewRiff (aviFileData_t *afd)
       return;
   }
 
-  if( ( afd->idxAF = FS_FOpenFileWrite(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT))) <= 0)
+  if( ( afd->idxAF = FS_FOpenFileWrite_HomeData(va("%s%s", afd->fileName, INDEX_AUDIO_FILENAME_EXT))) <= 0)
   {
       Com_Printf("CL_NewRiff() couldn't open audio index file\n");
       FS_FCloseFile( afd->f );

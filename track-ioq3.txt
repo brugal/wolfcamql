@@ -9356,3 +9356,42 @@ om/actions/runner-images/issues/12045
 
 2025-10-17-01
     Fix MSVC double truncation warnings
+
+2025-10-17-02
+    Use FS_CreatePath in Sys_ErrorDialog
+
+2025-10-17-03 (skip .github)
+    FreeBSD CI build
+
+2025-10-17-04 (skip .github)
+    OpenBSD CI build
+
+2025-10-17-05 (skip cmake)
+    Fix OpenBSD build
+
+2025-10-18-01 (skip cmake)
+    Use CMAKE_DL_LIBS
+
+2025-10-18-02
+    Change renderergl1 r_mode default to match renderergl2
+
+2025-10-18-03 (skip cmake)
+    Handle case where ioq3 is present as a git submodule
+
+2025-10-06-01
+    Fix flare visibility in mirrors
+
+    Compute the flare's depth with the same projection used for the scene, then compare it to the depth we read.
+
+2025-10-18-01
+    Fix Com_Filter
+
+    Com_Filter uses a limited sort of proto-regex syntax including a
+    character class like construct, but prior to this change these did not
+    work if preceded by a * glob.
+
+2025-10-18-02
+    Fix demo command file completion
+
+2025-09-01-01
+    XDG home directory support

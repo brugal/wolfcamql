@@ -250,7 +250,10 @@ typedef struct searchpath_s {
 
 static	char		fs_gamedir[MAX_OSPATH];	// this will be a single file name with no separators
 static	cvar_t		*fs_debug;
-static	cvar_t		*fs_homepath;
+static	cvar_t		*fs_homeconfigpath;
+static	cvar_t		*fs_homedatapath;
+static	cvar_t		*fs_homestatepath;
+
 static cvar_t *fs_searchWorkshops;
 
 static	cvar_t		*fs_apppath;
@@ -617,14 +620,14 @@ void FS_Remove( const char *osPath ) {
 
 /*
 ===========
-FS_HomeRemove
+FS_Remove_HomeData
 
 ===========
 */
-void FS_HomeRemove( const char *homePath ) {
+void FS_Remove_HomeData( const char *homePath ) {
 	FS_CheckFilenameIsMutable( homePath, __func__ );
 
-	remove( FS_BuildOSPath( fs_homepath->string,
+	remove( FS_BuildOSPath( fs_homedatapath->string,
 			fs_gamedir, homePath ) );
 }
 
@@ -652,7 +655,7 @@ qboolean FS_FileInPathExists(const char *testpath)
 
 /*
 ================
-FS_FileExists
+FS_FileExists_HomeData
 
 Tests if the file exists in the current gamedir, this DOES NOT
 search the paths.  This is to determine if opening a file to write
@@ -660,9 +663,9 @@ search the paths.  This is to determine if opening a file to write
 NOTE TTimo: this goes with FS_FOpenFileWrite for opening the file afterwards
 ================
 */
-qboolean FS_FileExists(const char *file)
+qboolean FS_FileExists_HomeData(const char *file)
 {
-	return FS_FileInPathExists(FS_BuildOSPath(fs_homepath->string, fs_gamedir, file));
+	return FS_FileInPathExists(FS_BuildOSPath(fs_homedatapath->string, fs_gamedir, file));
 }
 
 // this includes files in search paths
@@ -677,14 +680,14 @@ qboolean FS_VirtualFileExists (const char *file)
 
 /*
 ================
-FS_BaseDir_FileExists
+FS_BaseDir_FileExists_HomeData
 
 Tests if the file exists
 ================
 */
-qboolean FS_BaseDir_FileExists( const char *file )
+qboolean FS_BaseDir_FileExists_HomeData( const char *file )
 {
-	return FS_FileInPathExists(FS_BaseDir_BuildOSPath(fs_homepath->string, file));
+	return FS_FileInPathExists(FS_BaseDir_BuildOSPath(fs_homedatapath->string, file));
 }
 
 
@@ -694,7 +697,7 @@ const char *FS_FindSystemFile (const char *file)
 	FILE *f;
 	char *testpath;
 
-	testpath = FS_BuildOSPath(fs_homepath->string, fs_gamedir, file);
+	testpath = FS_BuildOSPath(fs_homedatapath->string, fs_gamedir, file);
 	f = Sys_FOpen(testpath, "rb");
 	if (f) {
 		fclose(f);
@@ -750,13 +753,32 @@ static fileHandle_t FS_OSPath_FOpenFileWrite( const char *ospath, const char *fi
 
 /*
 ===========
-FS_BaseDir_FOpenFileWrite
-
+FS_BaseDir_FOpenFileWrite_HomeConfig
 ===========
 */
-fileHandle_t FS_BaseDir_FOpenFileWrite( const char *filename ) {
+fileHandle_t FS_BaseDir_FOpenFileWrite_HomeConfig( const char *filename ) {
 	return FS_OSPath_FOpenFileWrite(
-		FS_BaseDir_BuildOSPath(fs_homepath->string, filename), filename);
+		FS_BaseDir_BuildOSPath(fs_homeconfigpath->string, filename), filename);
+}
+
+/*
+===========
+FS_BaseDir_FOpenFileWrite_HomeData
+===========
+*/
+fileHandle_t FS_BaseDir_FOpenFileWrite_HomeData( const char *filename ) {
+	return FS_OSPath_FOpenFileWrite(
+		FS_BaseDir_BuildOSPath(fs_homedatapath->string, filename), filename);
+}
+
+/*
+===========
+FS_BaseDir_FOpenFileWrite_HomeState
+===========
+*/
+fileHandle_t FS_BaseDir_FOpenFileWrite_HomeState( const char *filename ) {
+	return FS_OSPath_FOpenFileWrite(
+		FS_BaseDir_BuildOSPath(fs_homestatepath->string, filename), filename);
 }
 
 /*
@@ -818,11 +840,11 @@ long FS_BaseDir_FOpenFileRead(const char *filename, fileHandle_t *fp)
 
 /*
 ===========
-FS_BaseDir_Rename
+FS_BaseDir_Rename_HomeData
 
 ===========
 */
-void FS_BaseDir_Rename( const char *from, const char *to, qboolean safe ) {
+void FS_BaseDir_Rename_HomeData( const char *from, const char *to, qboolean safe ) {
 	char			*from_ospath, *to_ospath;
 
 	if ( !fs_searchpaths ) {
@@ -832,11 +854,11 @@ void FS_BaseDir_Rename( const char *from, const char *to, qboolean safe ) {
 	// don't let sound stutter
 	S_ClearSoundBuffer();
 
-	from_ospath = FS_BaseDir_BuildOSPath( fs_homepath->string, from );
-	to_ospath = FS_BaseDir_BuildOSPath( fs_homepath->string, to );
+	from_ospath = FS_BaseDir_BuildOSPath( fs_homedatapath->string, from );
+	to_ospath = FS_BaseDir_BuildOSPath( fs_homedatapath->string, to );
 
 	if ( fs_debug->integer ) {
-		Com_Printf( "FS_BaseDir_Rename: %s --> %s\n", from_ospath, to_ospath );
+		Com_Printf( "FS_BaseDir_Rename_HomeData: %s --> %s\n", from_ospath, to_ospath );
 	}
 
 	if ( safe ) {
@@ -884,22 +906,41 @@ void FS_FCloseFile( fileHandle_t f ) {
 
 /*
 ===========
-FS_FOpenFileWrite
-
+FS_FOpenFileWrite_HomeConfig
 ===========
 */
-fileHandle_t FS_FOpenFileWrite( const char *filename ) {
+fileHandle_t FS_FOpenFileWrite_HomeConfig( const char *filename ) {
 	return FS_OSPath_FOpenFileWrite(
-		FS_BuildOSPath(fs_homepath->string, fs_gamedir, filename), filename);
+		FS_BuildOSPath(fs_homeconfigpath->string, fs_gamedir, filename), filename);
 }
 
 /*
 ===========
-FS_FOpenFileAppend
+FS_FOpenFileWrite_HomeData
+===========
+*/
+fileHandle_t FS_FOpenFileWrite_HomeData( const char *filename ) {
+	return FS_OSPath_FOpenFileWrite(
+		FS_BuildOSPath(fs_homedatapath->string, fs_gamedir, filename), filename);
+}
+
+/*
+===========
+FS_FOpenFileWrite_HomeState
+===========
+*/
+fileHandle_t FS_FOpenFileWrite_HomeState( const char *filename ) {
+	return FS_OSPath_FOpenFileWrite(
+		FS_BuildOSPath(fs_homestatepath->string, fs_gamedir, filename), filename);
+}
+
+/*
+===========
+FS_FOpenFileAppend_HomeData
 
 ===========
 */
-fileHandle_t FS_FOpenFileAppend( const char *filename ) {
+fileHandle_t FS_FOpenFileAppend_HomeData( const char *filename ) {
 	char			*ospath;
 	fileHandle_t	f;
 
@@ -915,10 +956,10 @@ fileHandle_t FS_FOpenFileAppend( const char *filename ) {
 	// don't let sound stutter
 	S_ClearSoundBuffer();
 
-	ospath = FS_BuildOSPath( fs_homepath->string, fs_gamedir, filename );
+	ospath = FS_BuildOSPath( fs_homedatapath->string, fs_gamedir, filename );
 
 	if ( fs_debug->integer ) {
-		Com_Printf( "FS_FOpenFileAppend: %s\n", ospath );
+		Com_Printf( "FS_FOpenFileAppend_HomeData: %s\n", ospath );
 	}
 
 	FS_CheckFilenameIsMutable( ospath, __func__ );
@@ -958,7 +999,7 @@ fileHandle_t FS_FCreateOpenPipeFile( const char *filename ) {
 	// don't let sound stutter
 	S_ClearSoundBuffer();
 
-	ospath = FS_BuildOSPath( fs_homepath->string, fs_gamedir, filename );
+	ospath = FS_BuildOSPath( fs_homedatapath->string, fs_gamedir, filename );
 
 	if ( fs_debug->integer ) {
 		Com_Printf( "FS_FCreateOpenPipeFile: %s\n", ospath );
@@ -1304,7 +1345,7 @@ long FS_FOpenFileReadDir(const char *filename, searchpath_t *search, fileHandle_
 		// if you are using FS_ReadFile to find out if a file exists,
 		//   this test can make the search fail although the file is in the directory
 		// I had the problem on https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=8
-		// turned out I used FS_FileExists instead
+		// turned out I used FS_FileExists_HomeData instead
 		if(!unpure && fs_numServerPaks)
 		{
 			if(!FS_IsExt(filename, ".cfg", len) &&		// for config files
@@ -2087,7 +2128,7 @@ void FS_WriteFile( const char *qpath, const void *buffer, int size ) {
 		Com_Error( ERR_FATAL, "FS_WriteFile: NULL parameter" );
 	}
 
-	f = FS_FOpenFileWrite( qpath );
+	f = FS_FOpenFileWrite_HomeData( qpath );
 	if ( !f ) {
 		Com_Printf( "Failed to open %s\n", qpath );
 		return;
@@ -2324,7 +2365,9 @@ Returns a uniqued list of files that match the given criteria
 from all search paths
 ===============
 */
-char **FS_ListFilteredFiles( const char *path, const char *extension, char *filter, int *numfiles, qboolean allowNonPureFilesOnDisk ) {
+char **FS_ListFilteredFiles( const char *path, const char *extension,
+	char *filter, int *numfiles, qboolean stripPath,
+	qboolean allowNonPureFilesOnDisk ) {
 	int				nfiles;
 	char			**listCopy;
 	char			*list[MAX_FOUND_FILES];
@@ -2332,7 +2375,7 @@ char **FS_ListFilteredFiles( const char *path, const char *extension, char *filt
 	int				i;
 	int				pathLength;
 	int				extensionLength;
-	int				length, pathDepth, temp;
+	int				length, pathDepth, pathSkip;
 	pack_t			*pak;
 	fileInPack_t	*buildBuffer;
 	char			zpath[MAX_ZPATH];
@@ -2417,13 +2460,23 @@ char **FS_ListFilteredFiles( const char *path, const char *extension, char *filt
 
 				// check for directory match
 				name = buildBuffer[i].name;
-				//
+
+				if (stripPath) {
+					pathSkip = pathLength;
+					if (pathLength) {
+						pathSkip++; // include the '/'
+					}
+				} else {
+					pathSkip = 0;
+				}
+
 				if (filter) {
 					// case insensitive
 					if (!Com_FilterPath( filter, name, qfalse ))
 						continue;
+
 					// unique the match
-					nfiles = FS_AddFileToList( name, list, nfiles );
+					nfiles = FS_AddFileToList( name + pathSkip, list, nfiles );
 				}
 				else {
 
@@ -2442,13 +2495,9 @@ char **FS_ListFilteredFiles( const char *path, const char *extension, char *filt
 					if ( Q_stricmp( name + length - extensionLength, extension ) ) {
 						continue;
 					}
-					// unique the match
 
-					temp = pathLength;
-					if (pathLength) {
-						temp++; // include the '/'
-					}
-					nfiles = FS_AddFileToList( name + temp, list, nfiles );
+					// unique the match
+					nfiles = FS_AddFileToList( name + pathSkip, list, nfiles );
 				}
 			}
 		} else if (search->dir) { // scan for files in the filesystem
@@ -2495,7 +2544,7 @@ FS_ListFiles
 =================
 */
 char **FS_ListFiles( const char *path, const char *extension, int *numfiles ) {
-	return FS_ListFilteredFiles( path, extension, NULL, numfiles, qfalse );
+	return FS_ListFilteredFiles( path, extension, NULL, numfiles, qtrue, qfalse );
 }
 
 /*
@@ -2902,7 +2951,7 @@ void FS_NewDir_f( void ) {
 
 	Com_Printf( "---------------\n" );
 
-	dirnames = FS_ListFilteredFiles( "", "", filter, &ndirs, qfalse );
+	dirnames = FS_ListFilteredFiles( "", "", filter, &ndirs, qfalse, qfalse );
 
 	FS_SortFileList(dirnames, ndirs);
 
@@ -3342,7 +3391,7 @@ qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring ) {
 				// Local name
 				Q_strcat( neededpaks, len, "@");
 				// Do we have one with the same name?
-				if ( FS_BaseDir_FileExists( va( "%s.pk3", fs_serverReferencedPakNames[i] ) ) )
+				if ( FS_BaseDir_FileExists_HomeData( va( "%s.pk3", fs_serverReferencedPakNames[i] ) ) )
 				{
 					char st[MAX_ZPATH];
 					// We already have one called this, we need to download it to another name
@@ -3369,7 +3418,7 @@ qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring ) {
 				Q_strcat( neededpaks, len, fs_serverReferencedPakNames[i] );
 				Q_strcat( neededpaks, len, ".pk3" );
 				// Do we have one with the same name?
-				if ( FS_BaseDir_FileExists( va( "%s.pk3", fs_serverReferencedPakNames[i] ) ) )
+				if ( FS_BaseDir_FileExists_HomeData( va( "%s.pk3", fs_serverReferencedPakNames[i] ) ) )
 				{
 					Q_strcat( neededpaks, len, " (local file exists with wrong checksum)");
 				}
@@ -3505,9 +3554,9 @@ static void FS_AddWorkshopsToSearchPath (void)
 				//FIXME resolve '../'
 				FS_AddGameDirectory(va("%s/../../../workshop/content/%d", path, QUAKELIVE_STEAM_APP_ID), buffer);
 
-				path = Cvar_VariableString("fs_homepath");
+				path = Cvar_VariableString("fs_homedatapath");
 				if (!*path) {
-					path = Sys_DefaultHomePath();
+					path = Sys_DefaultHomeDataPath();
 				}
 				FS_AddGameDirectory(va("%s/workshop", path), buffer);
 				count = 0;
@@ -3568,7 +3617,9 @@ FS_InitPathVars
 static void FS_InitPathVars( void ) {
 	memset( fs_pathVars, 0, sizeof( fs_pathVars ) );
 
-	FS_AddPathVar( fs_homepath );
+	FS_AddPathVar( fs_homeconfigpath );
+	FS_AddPathVar( fs_homedatapath );
+	FS_AddPathVar( fs_homestatepath );
 	FS_AddPathVar( fs_basepath );
 	FS_AddPathVar( fs_apppath );
 	//FS_AddPathVar( fs_steampath );
@@ -3583,8 +3634,19 @@ FS_Startup
 */
 static void FS_Startup( const char *gameName )
 {
-	const char *homePath;
 	int i;
+	cvar_t *fs_homepath = Cvar_Get("fs_homepath", "", CVAR_INIT|CVAR_PROTECTED);
+	const char *configPath = Sys_DefaultHomeConfigPath();
+	const char *dataPath = Sys_DefaultHomeDataPath();
+	const char *statePath = Sys_DefaultHomeStatePath();
+
+	if(*(fs_homepath)->string) {
+		// Setting fs_homepath manually overrides everything else
+		configPath = dataPath = statePath = fs_homepath->string;
+	} else if(!*configPath || !*dataPath || !*statePath) {
+		// #shouldneverhappen; just a sensible fallback
+		configPath = dataPath = statePath = Sys_DefaultInstallPath();
+	}
 
 	Com_Printf( "----- FS_Startup -----\n" );
 
@@ -3597,11 +3659,9 @@ static void FS_Startup( const char *gameName )
 	fs_searchWorkshops = Cvar_Get("fs_searchWorkshops", "1", CVAR_ARCHIVE);
 	fs_steamcmd = Cvar_Get("fs_steamcmd", "", CVAR_ARCHIVE);
 
-	homePath = Sys_DefaultHomePath();
-	if (!homePath || !homePath[0]) {
-		homePath = fs_basepath->string;
-	}
-	fs_homepath = Cvar_Get ("fs_homepath", homePath, CVAR_INIT|CVAR_PROTECTED );
+	fs_homeconfigpath = Cvar_Get ("fs_homeconfigpath", configPath, CVAR_INIT|CVAR_PROTECTED );
+	fs_homedatapath = Cvar_Get ("fs_homedatapath", dataPath, CVAR_INIT|CVAR_PROTECTED );
+	fs_homestatepath = Cvar_Get ("fs_homestatepath", statePath, CVAR_INIT|CVAR_PROTECTED );
 	fs_gamedirvar = Cvar_Get ("fs_game", "wolfcam-ql", CVAR_INIT|CVAR_SYSTEMINFO );
 
 #if 0  // quake live
@@ -3637,9 +3697,9 @@ static void FS_Startup( const char *gameName )
 		Com_Error( ERR_DROP, "Invalid fs_game '%s'", fs_gamedirvar->string );
 	}
 
-	if (fs_homepath->string[0] && Q_stricmp(fs_homepath->string, fs_basepath->string)) {
-		FS_CreatePath ( fs_homepath->string );
-	}
+	FS_CreatePath(fs_homeconfigpath->string);
+	FS_CreatePath(fs_homedatapath->string);
+	FS_CreatePath(fs_homestatepath->string);
 
 	FS_AddGameDirectories(gameName);
 
@@ -3969,7 +4029,7 @@ static void FS_CheckPak0( void )
 #endif
 
 	if(installHome)
-		installPath = fs_homepath->string;
+		installPath = fs_homedatapath->string;
 	else
 		installPath = fs_basepath->string;
 
@@ -4389,6 +4449,9 @@ void FS_InitFilesystem( void ) {
 	// has already been initialized
 	Com_StartupVariable("fs_basepath");
 	Com_StartupVariable("fs_homepath");
+	Com_StartupVariable("fs_homeconfigpath");
+	Com_StartupVariable("fs_homedatapath");
+	Com_StartupVariable("fs_homestatepath");
 	Com_StartupVariable("fs_game");
 
 	if(!FS_FilenameCompare(Cvar_VariableString("fs_game"), com_basegame->string))
@@ -4544,7 +4607,7 @@ int		FS_FOpenFileByMode( const char *qpath, fileHandle_t *f, fsMode_t mode ) {
 		r = FS_FOpenFileRead( qpath, f, qtrue );
 		break;
 	case FS_WRITE:
-		*f = FS_FOpenFileWrite( qpath );
+		*f = FS_FOpenFileWrite_HomeData( qpath );
 		r = 0;
 		if (*f == 0) {
 			r = -1;
@@ -4553,7 +4616,7 @@ int		FS_FOpenFileByMode( const char *qpath, fileHandle_t *f, fsMode_t mode ) {
 	case FS_APPEND_SYNC:
 		sync = qtrue;
 	case FS_APPEND:
-		*f = FS_FOpenFileAppend( qpath );
+		*f = FS_FOpenFileAppend_HomeData( qpath );
 		r = 0;
 		if (*f == 0) {
 			r = -1;
@@ -4592,14 +4655,15 @@ void	FS_Flush( fileHandle_t f ) {
 	fflush(fsh[f].handleFiles.file.o);
 }
 
-void	FS_FilenameCompletion( const char *dir, const char *ext,
+void	FS_FilenameCompletion( const char *dir, const char *ext, char *filter,
 							   qboolean stripExt, void(*callback)(const char *s), qboolean allowNonPureFilesOnDisk ) {
 	char	**filenames;
 	int		nfiles;
 	int		i;
 	char	filename[ MAX_STRING_CHARS ];
 
-	filenames = FS_ListFilteredFiles( dir, ext, NULL, &nfiles, allowNonPureFilesOnDisk );
+	filenames = FS_ListFilteredFiles( dir, ext, filter,
+			&nfiles, qtrue, allowNonPureFilesOnDisk );
 
 	FS_SortFileList( filenames, nfiles );
 

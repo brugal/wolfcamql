@@ -30,7 +30,7 @@ extern "C" {
 int FS_Write( const void *buffer, int len, fileHandle_t h );
 int FS_ReadFile( const char *qpath, void **buffer );
 void FS_FreeFile( void *buffer );
-fileHandle_t FS_FOpenFileWrite( const char *filename );
+fileHandle_t FS_FOpenFileWrite_HomeData( const char *filename );
 void FS_FCloseFile( fileHandle_t f );
 }
 
@@ -750,7 +750,7 @@ qboolean idCameraDef::load(const char *filename) {
 }
 
 void idCameraDef::save(const char *filename) {
-	fileHandle_t file = FS_FOpenFileWrite(filename);
+	fileHandle_t file = FS_FOpenFileWrite_HomeData(filename);
 	if (file) {
 		int i;
 		idStr s = "cameraPathDef { \n"; 

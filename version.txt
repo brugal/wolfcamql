@@ -1,4 +1,4 @@
-12.7test39
+12.7test40
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -44,6 +44,7 @@
   - Update SDL (2.32.8)
   - Remove architecture from binary filenames
   - Implement ShowNormals in RendererGL2
+  - XDG home directory support
 
 ---------------------------------
 12.6  2024-05-22

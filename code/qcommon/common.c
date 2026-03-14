@@ -330,7 +330,7 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 			time( &aclock );
 			newtime = localtime( &aclock );
 
-			logfile = FS_FOpenFileWrite( "qconsole.log" );
+			logfile = FS_FOpenFileWrite_HomeData( "qconsole.log" );
 
 			if(logfile)
 			{
@@ -785,7 +785,7 @@ int Com_Filter(char *filter, char *name, int casesensitive)
 		if (*filter == '*') {
 			filter++;
 			for (i = 0; *filter; i++) {
-				if (*filter == '*' || *filter == '?') break;
+				if (*filter == '*' || *filter == '?' || *filter == '[') break;
 				buf[i] = *filter;
 				filter++;
 			}
@@ -2229,8 +2229,8 @@ void Com_InitJournaling( void ) {
 
 	if ( com_journal->integer == 1 ) {
 		Com_Printf( "Journaling events\n");
-		com_journalFile = FS_FOpenFileWrite( "journal.dat" );
-		com_journalDataFile = FS_FOpenFileWrite( "journaldata.dat" );
+		com_journalFile = FS_FOpenFileWrite_HomeState( "journal.dat" );
+		com_journalDataFile = FS_FOpenFileWrite_HomeState( "journaldata.dat" );
 	} else if ( com_journal->integer == 2 ) {
 		Com_Printf( "Replaying journaled events\n");
 		FS_FOpenFileRead( "journal.dat", &com_journalFile, qtrue );
@@ -2872,7 +2872,7 @@ static void Com_WriteCDKey( const char *filename, const char *ikey ) {
 #ifndef _WIN32
 	savedumask = umask(0077);
 #endif
-	f = FS_BaseDir_FOpenFileWrite( fbuffer );
+	f = FS_BaseDir_FOpenFileWrite_HomeState( fbuffer );
 	if ( !f ) {
 		Com_Printf ("Couldn't write CD key to %s.\n", fbuffer );
 		goto out;
@@ -3271,7 +3271,7 @@ void Com_ReadFromPipe( void )
 void Com_WriteConfigToFile( const char *filename ) {
 	fileHandle_t	f;
 
-	f = FS_FOpenFileWrite( filename );
+	f = FS_FOpenFileWrite_HomeConfig( filename );
 	if ( !f ) {
 		Com_Printf ("Couldn't write %s.\n", filename );
 		return;
@@ -3737,7 +3737,7 @@ void Com_Shutdown (void) {
 
 	if( pipefile ) {
 		FS_FCloseFile( pipefile );
-		FS_HomeRemove( com_pipefile->string );
+		FS_Remove_HomeData( com_pipefile->string );
 	}
 
 }
@@ -3913,13 +3913,14 @@ void Field_CompleteKeyname( void )
 Field_CompleteFilename
 ===============
 */
-void Field_CompleteFilename( const char *dir,
-							 const char *ext, qboolean stripExt, qboolean allowNonPureFilesOnDisk, qboolean *foundMatch )
+void Field_CompleteFilename( const char *dir, const char *ext,
+				char *filter, qboolean stripExt,
+				qboolean allowNonPureFilesOnDisk, qboolean *foundMatch )
 {
 	matchCount = 0;
 	shortestMatch[ 0 ] = 0;
 
-	FS_FilenameCompletion( dir, ext, stripExt, FindMatches, allowNonPureFilesOnDisk );
+	FS_FilenameCompletion( dir, ext, filter, stripExt, FindMatches, allowNonPureFilesOnDisk );
 	if (foundMatch) {
 		*foundMatch = qtrue;
 	}
@@ -3932,7 +3933,7 @@ void Field_CompleteFilename( const char *dir,
 			*foundMatch = qfalse;
 		}
 		//Com_Printf("^3field incomplete\n");
-		FS_FilenameCompletion( dir, ext, stripExt, PrintMatches, allowNonPureFilesOnDisk );
+		FS_FilenameCompletion( dir, ext, filter, stripExt, PrintMatches, allowNonPureFilesOnDisk );
 	}
 #endif
 }

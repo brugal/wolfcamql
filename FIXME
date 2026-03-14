@@ -2686,6 +2686,7 @@ still broken, check lost world
 
 * new shadow warnings
 * more stuff to docs/
+* make-package.py ignore .git
 
 ----
 

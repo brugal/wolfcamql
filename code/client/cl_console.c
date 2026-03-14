@@ -227,7 +227,7 @@ void Con_Dump_f (void)
 	}
 #endif
 
-	f = FS_FOpenFileWrite( filename );
+	f = FS_FOpenFileWrite_HomeData( filename );
 	if (!f)
 	{
 		Com_Printf ("ERROR: couldn't open %s.\n", filename);
@@ -434,7 +434,7 @@ Cmd_CompleteTxtName
 */
 void Cmd_CompleteTxtName( char *args, int argNum ) {
 	if( argNum == 2 ) {
-		Field_CompleteFilename( "", "txt", qfalse, qtrue, NULL );
+		Field_CompleteFilename( "", "txt", NULL, qfalse, qtrue, NULL );
 	}
 }
 

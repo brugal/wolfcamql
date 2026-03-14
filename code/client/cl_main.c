@@ -816,7 +816,7 @@ void CL_Record_f( void ) {
 				Com_sprintf(name, sizeof(name), "demos/%s.%s%d", demoName, DEMOEXT, clc.realProtocol);
 			}
 
-			if (!FS_FileExists(name))
+			if (!FS_FileExists_HomeData(name))
 				break;	// file doesn't exist
 		}
 	}
@@ -824,7 +824,7 @@ void CL_Record_f( void ) {
 	// open the demo file
 
 	Com_Printf ("recording to %s.\n", name);
-	clc.demoWriteFile = FS_FOpenFileWrite( name );
+	clc.demoWriteFile = FS_FOpenFileWrite_HomeData( name );
 	if ( !clc.demoWriteFile ) {
 		Com_Printf ("ERROR: couldn't open.\n");
 		return;
@@ -1016,7 +1016,7 @@ void CL_DemoCompleted( void )
 				else
 					numFrames = clc.timeDemoFrames - 1;
 
-				f = FS_FOpenFileWrite( cl_timedemoLog->string );
+				f = FS_FOpenFileWrite_HomeData( cl_timedemoLog->string );
 				if( f )
 				{
 					FS_Printf( f, "# %s", buffer );
@@ -2021,12 +2021,12 @@ static void CL_CompleteDemoName( char *args, int argNum )
 		//Com_Printf("^1wolfcam\n");
 
 		// don't use extension since multiple protocols are supported
-		Field_CompleteFilename( "demos", "", qfalse, qfalse, &foundMatch );
+		Field_CompleteFilename( "demos", "", NULL, qfalse, qfalse, &foundMatch );
 
 		//Com_Printf("^1ql\n");
 
 		// don't use extension since multiple protocols are supported
-		Field_CompleteFilename("ql:demos", "", qfalse, qtrue, &foundMatch);
+		Field_CompleteFilename("ql:demos", "", NULL, qfalse, qtrue, &foundMatch);
 
 	}
 }
@@ -4534,7 +4534,7 @@ static void CL_BeginHttpDownload( const char *remoteURL ) {
 	CL_HTTP_BeginDownload(remoteURL);
 	Q_strncpyz(clc.downloadURL, remoteURL, sizeof(clc.downloadURL));
 
-	clc.download = FS_BaseDir_FOpenFileWrite(clc.downloadTempName);
+	clc.download = FS_BaseDir_FOpenFileWrite_HomeData(clc.downloadTempName);
 	if(!clc.download) {
 		Com_Error(ERR_DROP, "CL_BeginHTTPDownload: failed to open "
 			"%s for writing", clc.downloadTempName);
@@ -4570,7 +4570,7 @@ void CL_NextDownload(void)
 	// A download has finished, check whether this matches a referenced checksum
 	if(*clc.downloadName)
 	{
-		char *zippath = FS_BaseDir_BuildOSPath(Cvar_VariableString("fs_homepath"), clc.downloadName);
+		char *zippath = FS_BaseDir_BuildOSPath(Cvar_VariableString("fs_homedatapath"), clc.downloadName);
 
 		if(!FS_CompareZipChecksum(zippath))
 			Com_Error(ERR_DROP, "Incorrect checksum for file: %s", clc.downloadName);
@@ -5414,7 +5414,7 @@ static void CL_CheckWorkshopDownload (void)
 	if (clc.currentWorkshop[0] != '\0') {  // downloading workshop
 		char buffer[1024];
 		const char *retp;
-		const char *homePath;
+		const char *homeDataPath;
 
 		// get new workshop
 		//Com_Printf("^6getting workshop %s\n", currentWorkshop);
@@ -5424,18 +5424,18 @@ static void CL_CheckWorkshopDownload (void)
 		if (clc.wfp == NULL) {
 			const char *s;
 
-			homePath = Cvar_VariableString("fs_homepath");
-			if (!*homePath) {
-				homePath = Sys_DefaultHomePath();
+			homeDataPath = Cvar_VariableString("fs_homedatapath");
+			if (!*homeDataPath) {
+				homeDataPath = Sys_DefaultHomeDataPath();
 			}
 
 			//FIXME not here
 			// make sure wolfcam workshop folder exists
-			Com_sprintf(checkPath, sizeof(checkPath), "%s%cworkshop", homePath, PATH_SEP);
+			Com_sprintf(checkPath, sizeof(checkPath), "%s%cworkshop", homeDataPath, PATH_SEP);
 			Sys_Mkdir(checkPath);
 
-			//Com_sprintf(checkPath, sizeof(checkPath), "%s/workshop/%s", homePath, currentWorkshop);
-			Com_sprintf(checkPath, sizeof(checkPath), "%s%cworkshop%c%s", homePath, PATH_SEP, PATH_SEP, clc.currentWorkshop);
+			//Com_sprintf(checkPath, sizeof(checkPath), "%s/workshop/%s", homeDataPath, currentWorkshop);
+			Com_sprintf(checkPath, sizeof(checkPath), "%s%cworkshop%c%s", homeDataPath, PATH_SEP, PATH_SEP, clc.currentWorkshop);
 
 			if (Sys_FileExists(checkPath)  &&  Sys_FileIsDirectory(checkPath)) {
 				Com_Printf("^6workshop %s already present\n", clc.currentWorkshop);
@@ -5591,7 +5591,7 @@ void CL_Frame ( int msec, double fmsec ) {
 				clc.download = 0;
 			}
 
-			FS_BaseDir_Rename(clc.downloadTempName, clc.downloadName, qfalse);
+			FS_BaseDir_Rename_HomeData(clc.downloadTempName, clc.downloadName, qfalse);
 			clc.downloadRestart = qtrue;
 			CL_NextDownload();
 		}
@@ -6002,10 +6002,10 @@ void CL_InitRef ( void ) {
 	ri.FS_FreeFileList = FS_FreeFileList;
 	ri.FS_ListFiles = FS_ListFiles;
 	ri.FS_FileIsInPAK = FS_FileIsInPAK;
-	ri.FS_FileExists = FS_FileExists;
+	ri.FS_FileExists = FS_FileExists_HomeData;
 	ri.FS_FindSystemFile = FS_FindSystemFile;
 	ri.FS_FCloseFile = FS_FCloseFile;
-	ri.FS_FOpenFileWrite = FS_FOpenFileWrite;
+	ri.FS_FOpenFileWrite = FS_FOpenFileWrite_HomeData;
 
 	ri.Cvar_Get = Cvar_Get;
 	ri.Cvar_Set = Cvar_Set;
@@ -6748,7 +6748,7 @@ static void CL_GenerateQKey(void)
 		Com_Printf( "QKEY building random string\n" );
 		Com_RandomBytes( buff, sizeof(buff) );
 
-		f = FS_BaseDir_FOpenFileWrite( QKEY_FILE );
+		f = FS_BaseDir_FOpenFileWrite_HomeState( QKEY_FILE );
 		if( !f ) {
 			Com_Printf( "QKEY could not open %s for write\n",
 				QKEY_FILE );
@@ -6812,7 +6812,7 @@ void CL_Sayto_f( void ) {
 
 static void CL_PrintDataDir_f (void)
 {
-	Com_Printf("homepath: '%s'\n", Sys_DefaultHomePath());
+	Com_Printf("homedatapath: '%s'\n", Sys_DefaultHomeDataPath());
 	Com_Printf("qlpath: '%s'\n", Sys_QuakeLiveDir());
 }
 
