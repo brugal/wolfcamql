@@ -9395,3 +9395,64 @@ om/actions/runner-images/issues/12045
 
 2025-09-01-01
     XDG home directory support
+
+2025-10-26-01
+    Flush logfile when writing hunk log
+
+2025-10-26-02
+    Set MIN_COMHUNKMEGS to match DEF_COMHUNKMEGS
+
+    Changes in ioq3, most notably in the OpenGL 2 renderer, have gradually
+    increased the mininum memory requirements, to the point where the
+    original value is too low for the Team Arena game, among other things,
+    so increase the minimum to match our (already increased) default. More
+    information in issue #816.
+
+2025-10-26-03 (skip .github)
+    Workaround macOS dmg build error with CMake (#819)
+
+    * Workaround macOS dmg build error with CMake
+
+    Retry the macOS workflow multiple times in order to work around this issue with CMake:
+    https://gitlab.kitware.com/cmake/cmake/-/issues/25671
+
+    Solution stolen wholesale from SDL and @madebr
+    Thank you!
+    https://github.com/libsdl-org/SDL/pull/9816
+
+2025-10-27-01 (skip .github)
+    chore: upgrade Emscripten (#729)
+
+    * chore: upgrade Emscripten
+
+    I do not have a particular reason for this.
+    Just hoping that this might bring some performance improvement,
+    perhaps.
+    I have tested it, but I have not noticed a significant difference.
+
+    * 4.0.18 appears to be the latest now
+
+    ---------
+
+    Co-authored-by: Jack Slater <903791+NuclearMonster@users.noreply.github.com>
+
+2025-10-26-01
+    Update README.md to remind people where our project code is (#813)
+
+    * Update README.md to remind people where our project code is
+
+2025-10-27-01
+    Correct comment re console history
+
+2025-10-27-02
+    Remove commented code
+
+2025-10-27-03
+    Increase MAX_PATCH_PLANES
+
+    Some custom maps apparently need a larger value for MAX_PATCH_PLANES.
+    These snuck under the limit with original Q3 due to the vagaries of
+    floating point error/modern compilers/fastmath etc.. See issue #186.
+
+2025-10-27-04
+    Use full screen width for console

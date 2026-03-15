@@ -343,9 +343,10 @@ static void Con_CheckResize (void)
 {
 	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
 
+	// this can be called before video and cvars initialized
 	if (con_lineWidth) {
 		if (*con_lineWidth->string) {
-			width = con_lineWidth->integer;  //(SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
+			width = con_lineWidth->integer;
 		} else {
 			width = (cls.glconfig.vidWidth / SMALLCHAR_WIDTH) - 2;
 		}
@@ -354,6 +355,8 @@ static void Con_CheckResize (void)
 			width = 1;
 		}
 	} else {
+		//width = (cls.glconfig.vidWidth / SMALLCHAR_WIDTH) - 2;
+		//FIXME fake reasonable temporary value, see below
 		width = (SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
 	}
 
@@ -363,10 +366,26 @@ static void Con_CheckResize (void)
 	//printf("resizing console...\n");
 
 	//FIXME this can't happen
-	if (width < 1)			// video hasn't been initialized yet
+	// 2026-03-15  original quake3 code set this above:
+	//
+	//    width = (SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
+	//
+	// but they might have tried to use cls.glconfig values based on the
+	// 'video hasn't been initialized yet' comment.
+	//
+	// ioquake3 2025-10-27 'Use full screen width for console' commit changed
+	// to use:
+	//
+	//    width = (cls.glconfig.vidWidth / SMALLCHAR_WIDTH) - 2;
+	//
+	// Now the check is needed and you can't just return if width isn't valid.
+	// Later code checks that other console variables are reasonable.  Ex:
+	// con.totallines set to zero locks things up.
+	if (width < 1)			// q3: video hasn't been initialized yet
 	{
-		//width = DEFAULT_CONSOLE_WIDTH;
-		width = con_lineWidth->integer;
+		//width = con_lineWidth->integer;
+		// con_lineWidth cvar might still be NULL, just setting fake reasonable value
+		width = DEFAULT_CONSOLE_WIDTH;
 		con.linewidth = width;
 		con.totallines = CON_TEXTSIZE / con.linewidth;
 		for(i=0; i<CON_TEXTSIZE; i++) {

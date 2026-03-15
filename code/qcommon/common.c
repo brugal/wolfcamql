@@ -77,8 +77,8 @@ int demo_protocols[NUM_DEMO_PROTOCOLS] = { 43, 44, 45, 46, 47, 48, 66, 67, 68, 6
 #define MAX_NUM_ARGVS	50
 
 #define MIN_DEDICATED_COMHUNKMEGS 1
-#define MIN_COMHUNKMEGS		56
 #define DEF_COMHUNKMEGS		256
+#define MIN_COMHUNKMEGS                DEF_COMHUNKMEGS
 #define DEF_COMZONEMEGS		24
 #define DEF_COMHUNKMEGS_S	XSTRING(DEF_COMHUNKMEGS)
 #define DEF_COMZONEMEGS_S	XSTRING(DEF_COMZONEMEGS)
@@ -1663,6 +1663,7 @@ void Hunk_Log( void) {
 	FS_Write(buf, strlen(buf), logfile);
 	Com_sprintf(buf, sizeof(buf), "%d hunk blocks\r\n", numBlocks);
 	FS_Write(buf, strlen(buf), logfile);
+	FS_Flush(logfile);
 }
 
 static void Com_MemoryRemaining_f (void)
@@ -1722,6 +1723,7 @@ void Hunk_SmallLog( void) {
 	FS_Write(buf, strlen(buf), logfile);
 	Com_sprintf(buf, sizeof(buf), "%d hunk blocks\r\n", numBlocks);
 	FS_Write(buf, strlen(buf), logfile);
+	FS_Flush(logfile);
 }
 
 /*
