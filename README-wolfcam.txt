@@ -1314,6 +1314,7 @@ Note that camera point creation will also record the effects of fx camera vibrat
 * cg_deathStyle [0: don't alter view angles, 1: turn towards killer (like quake3 and quake live)(default), 2: keep tracking killer after you die, 3: set yaw to 0 (old behavior), 4: tilt camera like quake1]
 
 * con_scale  increase/decrease size of console font
+* con_scaleNotify to scale console lines in q3 hud
 
 * con_lineWidth  Maximum number of characters in console line.  Default is "" which matches screen width.
 

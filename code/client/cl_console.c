@@ -25,7 +25,18 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "cl_console.h"
 #include "keys.h"
 
-int g_console_field_width = 78;
+#define MIN_CON_SCALE 0.001f
+#define        DEFAULT_CONSOLE_WIDTH   78
+// these become scaled values
+int g_console_field_width = DEFAULT_CONSOLE_WIDTH;
+int g_smallchar_scaled_width = SMALLCHAR_WIDTH;
+int g_smallchar_scaled_height = SMALLCHAR_HEIGHT;
+int g_smallchar_notify_scaled_width = SMALLCHAR_WIDTH;
+int g_smallchar_notify_scaled_height = SMALLCHAR_HEIGHT;
+
+#define	NUM_CON_TIMES 4
+
+#define		CON_TEXTSIZE	(32768 * 10)
 
 typedef struct {
 	char color;
@@ -35,9 +46,6 @@ typedef struct {
 } consoleChar_t;
 
 
-#define	NUM_CON_TIMES 4
-
-#define		CON_TEXTSIZE	(32768 * 10)
 typedef struct {
 	qboolean	initialized;
 
@@ -68,14 +76,12 @@ static console_t	con;
 static cvar_t		*con_conspeed;
 static cvar_t		*con_autoclear;
 static cvar_t		*con_notifytime;
+static cvar_t		*con_scale;
+static cvar_t		*con_scaleNotify;
 static cvar_t		*con_transparency;
 static cvar_t *con_fracSize;
 static cvar_t *con_rgb;
-static cvar_t *con_scale;
 static cvar_t *con_lineWidth;
-
-#define	DEFAULT_CONSOLE_WIDTH	78
-#define MIN_CON_SCALE 0.001f
 
 static void Con_CalcFirstLine (void);
 
@@ -344,11 +350,24 @@ static void Con_CheckResize (void)
 	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
 
 	// this can be called before video and cvars initialized
+
+	if (con_scale != NULL)
+	{
+		float conScale = con_scale->value;
+
+		if (conScale < MIN_CON_SCALE) {
+			conScale = MIN_CON_SCALE;
+		}
+
+		g_smallchar_scaled_width = (int)((float)SMALLCHAR_WIDTH * conScale);
+		g_smallchar_scaled_height = (int)((float)SMALLCHAR_HEIGHT * conScale);
+	}
+
 	if (con_lineWidth) {
 		if (*con_lineWidth->string) {
 			width = con_lineWidth->integer;
 		} else {
-			width = (cls.glconfig.vidWidth / SMALLCHAR_WIDTH) - 2;
+			width = (cls.glconfig.vidWidth / g_smallchar_scaled_width) - 2;
 		}
 
 		if (width <= 0) {
@@ -425,7 +444,6 @@ static void Con_CheckResize (void)
 			con.text[i].numUtf8Bytes = 1;
 		}
 
-
 		for (i=0 ; i<numlines ; i++)
 		{
 			for (j=0 ; j<numchars ; j++)
@@ -473,6 +491,8 @@ void Con_Init (void) {
 	con_fracSize = Cvar_Get ("con_fracSize", "0", CVAR_ARCHIVE);
 	con_rgb = Cvar_Get("con_rgb", "", CVAR_ARCHIVE);
 	con_scale = Cvar_Get("con_scale", "1.0", CVAR_ARCHIVE);
+	//Cvar_CheckRange(con_scale, 1.0f, 4.0f, qfalse);
+	con_scaleNotify = Cvar_Get("con_scaleNotify", "1.0", CVAR_ARCHIVE);
 	con_lineWidth = Cvar_Get("con_lineWidth", "", CVAR_ARCHIVE);
 
 	Field_Clear( &g_consoleField );
@@ -742,21 +762,13 @@ static void Con_DrawInput (void) {
 	float y;
 	float cwidth;
 	float cheight;
-	float conScale;
 
 	if ( clc.state != CA_DISCONNECTED && !(Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
 		return;
 	}
 
-	cheight = SMALLCHAR_HEIGHT;
-	cwidth = SMALLCHAR_WIDTH;
-
-	conScale = con_scale->value;
-	if (conScale < MIN_CON_SCALE) {
-		conScale = MIN_CON_SCALE;
-	}
-	cheight *= conScale;
-	cwidth *= conScale;
+	cheight = g_smallchar_scaled_height;
+	cwidth = g_smallchar_scaled_width;
 
 	y = con.vislines - ( cheight * 2.0 );
 
@@ -772,7 +784,7 @@ static void Con_DrawInput (void) {
 	re.SetColor(con.color);
 
 	Field_VariableSizeDraw( &g_consoleField, con.xadjust + 2 * cwidth, y,
-							cwidth - 3 * cwidth, SMALLCHAR_WIDTH, cwidth, cheight, qtrue, qtrue );
+							cwidth - 3 * cwidth, SMALLCHAR_WIDTH, qtrue, cwidth, cheight, qtrue, qtrue );
 }
 
 
@@ -791,9 +803,23 @@ void Con_DrawNotify (void)
 	int		time;
 	int		skip;
 	int		currentColor;
+	int		cwidth = SMALLCHAR_WIDTH;
+	int		cheight = SMALLCHAR_HEIGHT;
 
 	if (cl_noprint  &&  cl_noprint->integer > 0) {
 		return;
+	}
+
+	if (con_scaleNotify) {
+		float conScale;
+
+		conScale = con_scaleNotify->value;
+		if (conScale < MIN_CON_SCALE) {
+			conScale = MIN_CON_SCALE;
+		}
+		cwidth = (int)((float)SMALLCHAR_WIDTH * conScale);
+		cheight = (int)((float)SMALLCHAR_HEIGHT * conScale);
+
 	}
 
 	currentColor = 7;
@@ -825,10 +851,11 @@ void Con_DrawNotify (void)
 				currentColor = ColorIndexForNumber(text[x].color);
 				re.SetColor( g_color_table[currentColor] );
 			}
-			SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*SMALLCHAR_WIDTH, v + SMALLCHAR_HEIGHT, text[x].codePoint);
+			//SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*cwidth, v + cheight, text[x].codePoint);
+			SCR_DrawSmallCharExt(cl_conXOffset->integer + con.xadjust + (x+1)*cwidth, v + cheight, cwidth, cheight, text[x].codePoint);
 		}
 
-		v += SMALLCHAR_HEIGHT;
+		v += cheight;
 	}
 
 	re.SetColor( NULL );
@@ -857,6 +884,7 @@ void Con_DrawNotify (void)
 	}
 }
 
+// used with quake live workshop download progress update
 void Con_DrawConsoleLinesOver (int xpos, int ypos, int numLines)
 {
 	int		x;
@@ -865,6 +893,8 @@ void Con_DrawConsoleLinesOver (int xpos, int ypos, int numLines)
 	consoleChar_t *text;
 	int		i;
 	int		currentColor;
+
+	//FIXME scale option, maybe use con_scaleNotify?
 
 	currentColor = 7;
 	re.SetColor(g_color_table[currentColor]);
@@ -973,6 +1003,10 @@ static void Con_DrawSolidConsole( float frac ) {
 
 	i = strlen( Q3_VERSION );
 
+	// ioquake3 scales this based on con_scale, quake live scales up and
+	// currently overflows but it's independent of con_scale
+	// keep q3 version
+
 	for (x=0 ; x<i ; x++) {
 		SCR_DrawSmallChar( cls.glconfig.vidWidth - ( i - x + 1 ) * SMALLCHAR_WIDTH,
 						   lines - SMALLCHAR_HEIGHT, Q3_VERSION[x] );
@@ -981,15 +1015,12 @@ static void Con_DrawSolidConsole( float frac ) {
 	re.SetColor( g_color_table[ColorIndex(COLOR_RED)] );
 
 	// draw the text
-	cwidth = SMALLCHAR_WIDTH;
-	cheight = SMALLCHAR_HEIGHT;
-
+	cwidth = g_smallchar_scaled_width;
+	cheight = g_smallchar_scaled_height;
 	conScale = con_scale->value;
 	if (conScale < MIN_CON_SCALE) {
 		conScale = MIN_CON_SCALE;
 	}
-	cwidth *= conScale;
-	cheight *= conScale;
 
 	con.vislines = lines;
 	rows = (lines - cwidth) / cwidth;		// rows of text to draw

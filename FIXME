@@ -2684,9 +2684,15 @@ To give the audio driver enough audio to work with, the audio data in an interle
 
 still broken, check lost world
 
+* update libfreetype
+
+--  ioquake3 patches
+
 * new shadow warnings
 * more stuff to docs/
 * make-package.py ignore .git
+* "xdg_data_pattern=\"demos/*.dm_* *.log *.pk3 *.txt \\\n"   wc  cameras, cache, other stuff
+* check ioquake3 CL_InitRenderer setting g_console_field_width
 
 ----
 

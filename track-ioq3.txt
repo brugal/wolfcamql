@@ -9456,3 +9456,6 @@ om/actions/runner-images/issues/12045
 
 2025-10-27-04
     Use full screen width for console
+
+2025-10-27-05
+    Add con_scale, for high DPI displays

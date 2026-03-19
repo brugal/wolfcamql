@@ -155,6 +155,11 @@ static void SCR_DrawChar (int x, int y, float size, int ch)
 					   cls.charSetShader );
 }
 
+//FIXME ioquake3 uses g_smallchar_* with this function, the only places this
+// is used (almost everything else uses SCR_DrawSmallCharExt() which scales) is
+// drawing the version number in console and quake live workshop downloads.
+// For workshop downloads not sure what to use so keeping this as is for now.
+
 /*
 ** SCR_DrawSmallChar
 ** small chars are drawn at native screen resolution

@@ -721,6 +721,8 @@ qboolean CL_UpdateVisiblePings_f( int source );
 //
 // console
 //
+extern int g_smallchar_scaled_width;
+extern int g_smallchar_scaled_height;
 
 // not used outside of cl_console.c
 //void Con_CheckResize (void);

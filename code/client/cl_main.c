@@ -5858,7 +5858,11 @@ void CL_InitRenderer ( void ) {
 		cls.whiteShader = re.RegisterShader("wcwhite");
 	}
 	cls.consoleShader = re.RegisterShader("wc/console");
-	g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
+
+	//FIXME ioquake3 sets it here based on g_smallchar_width_scaled, quake live
+	// is fixed value
+	g_console_field_width = cls.glconfig.vidWidth / g_smallchar_scaled_width - 2;
+	//g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
 	g_consoleField.widthInChars = g_console_field_width;
 
 	re.RegisterFont("q3big", 16, &cls.consoleFont);
