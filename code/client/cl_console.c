@@ -31,8 +31,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 int g_console_field_width = DEFAULT_CONSOLE_WIDTH;
 int g_smallchar_scaled_width = SMALLCHAR_WIDTH;
 int g_smallchar_scaled_height = SMALLCHAR_HEIGHT;
-int g_smallchar_notify_scaled_width = SMALLCHAR_WIDTH;
-int g_smallchar_notify_scaled_height = SMALLCHAR_HEIGHT;
+//int g_smallchar_notify_scaled_width = SMALLCHAR_WIDTH;
+//int g_smallchar_notify_scaled_height = SMALLCHAR_HEIGHT;
 
 #define	NUM_CON_TIMES 4
 
@@ -828,6 +828,8 @@ void Con_DrawNotify (void)
 	v = 0;
 	for (i= con.current-NUM_CON_TIMES+1 ; i<=con.current ; i++)
 	{
+		int linelength = 0;
+
 		if (i < 0)
 			continue;
 		time = con.times[i % NUM_CON_TIMES];
@@ -853,10 +855,34 @@ void Con_DrawNotify (void)
 			}
 			//SCR_DrawSmallChar(cl_conXOffset->integer + con.xadjust + (x+1)*cwidth, v + cheight, text[x].codePoint);
 			SCR_DrawSmallCharExt(cl_conXOffset->integer + con.xadjust + (x+1)*cwidth, v + cheight, cwidth, cheight, text[x].codePoint);
+			linelength++;
 		}
 
-		v += cheight;
+		if (linelength > 0) {
+			v += cheight;
+		}
 	}
+
+	// 2026-03-21 wc: not sure what they are doing with the 'int linelength' thing, skipping  -- ok so ioquake3 patch:
+	//
+	//    Fix incorrect 'say:' prompt offset
+	//
+	// was maybe the y offset increasing more and more when there are
+	// increasing notify lines shown.  It becomes clearer visually with the
+	// patch that follows which increases notify lines:
+	//
+	//    Add con_notifylines, to configure number of lines in notify area
+	//
+	// 'int linelength' skips cleared lines (text[.] == ' ') ex: /clear
+
+	// v is in native coordinates, convert to 640x480 for SCR_DrawBigString
+	if (v > 0) {  // notify lines were added
+		v += cheight;  // wc:  no, nothing
+	}
+	v *= 480.0f / cls.glconfig.vidHeight;
+	//v += 8; //16;  // wc:  was 8 (touches previous notify line), shouldn't it be BIGCHAR_HEIGHT?
+	//v += 16;
+	v += 8;  // if there are no notify lines this will offset a bit so it's not right at the top
 
 	re.SetColor( NULL );
 
