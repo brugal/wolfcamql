@@ -77,6 +77,10 @@ qboolean Sys_OpenFolderInPlatformFileManager( const char *path );
 char *Sys_ParseProtocolUri( const char *uri );
 #endif
 
+#ifdef USE_AUTOUPDATER
+void Sys_LaunchAutoupdater(int argc, char **argv);
+#endif
+
 void Sys_Backtrace_f (void);
 qboolean Sys_FileIsDirectory (const char *path);
 qboolean Sys_FileExists (const char *path);

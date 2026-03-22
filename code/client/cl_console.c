@@ -34,7 +34,7 @@ int g_smallchar_scaled_height = SMALLCHAR_HEIGHT;
 //int g_smallchar_notify_scaled_width = SMALLCHAR_WIDTH;
 //int g_smallchar_notify_scaled_height = SMALLCHAR_HEIGHT;
 
-#define	NUM_CON_TIMES 4
+#define	NUM_CON_TIMES 17
 
 #define		CON_TEXTSIZE	(32768 * 10)
 
@@ -76,6 +76,7 @@ static console_t	con;
 static cvar_t		*con_conspeed;
 static cvar_t		*con_autoclear;
 static cvar_t		*con_notifytime;
+static cvar_t		*con_notifylines;
 static cvar_t		*con_scale;
 static cvar_t		*con_scaleNotify;
 static cvar_t		*con_transparency;
@@ -485,6 +486,8 @@ void Con_Init (void) {
 	int		i;
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_ARCHIVE);
+	con_notifylines = Cvar_Get ("con_notifylines", "3", CVAR_ARCHIVE);
+	Cvar_CheckRange(con_notifylines, 1, NUM_CON_TIMES - 1, qtrue);
 	con_conspeed = Cvar_Get ("con_conspeed", "3", CVAR_ARCHIVE);
 	con_autoclear = Cvar_Get("con_autoclear", "1", CVAR_ARCHIVE);
 	con_transparency = Cvar_Get ("con_transparency", "0.04", CVAR_ARCHIVE);
@@ -826,7 +829,7 @@ void Con_DrawNotify (void)
 	re.SetColor( g_color_table[currentColor] );
 
 	v = 0;
-	for (i= con.current-NUM_CON_TIMES+1 ; i<=con.current ; i++)
+	for (i= con.current-con_notifylines->integer ; i<=con.current ; i++)
 	{
 		int linelength = 0;
 

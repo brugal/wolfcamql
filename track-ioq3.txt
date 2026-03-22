@@ -9465,3 +9465,27 @@ om/actions/runner-images/issues/12045
 
 2025-10-27-07
     Make con_* variables CVAR_ARCHIVE
+
+2025-10-27-08
+    Add con_notifylines, to configure number of lines in notify area
+
+2025-10-31-01
+    Open file manager folder for Team Arena when missing
+
+2025-10-31-02
+    Add range for con_scale
+
+2025-11-02-01 (skip .github)
+    Add Linux 32-bit build to CI
+
+2025-11-05-01
+    Revert "Bug 5066 - Plasmagun and BFG don't play the explosion when they hit players, patch by Ensiform" (#824)
+
+2025-11-05-02 (skip Makefile)
+    Delete Makefile
+
+2025-11-02-01
+    Guard autoupdater more completely
+
+2025-11-02-02
+    Move autoupdater to its own repo (https://github.com/ioquake/autoupdater)

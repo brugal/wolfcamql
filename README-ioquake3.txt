@@ -258,7 +258,10 @@ the above locations, if desired.
   con_autoclear			    - Set to 0 to disable clearing console
   				      input text when console is closed
   con_scale                         - Scales console text to make it legible at
-                                      high resolutions
+                                      high resolutions. Defaults to 1. Maximum
+                                      is 4. Accepts fractional values (1.5).
+  con_notifylines                   - The number of lines to display in the
+                                      notify area
 
   in_joystickUseAnalog              - Do not translate joystick axis events
                                       to keyboard commands

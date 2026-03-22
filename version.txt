@@ -1,4 +1,4 @@
-12.7test43
+12.7test44
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -46,6 +46,7 @@
   - Remove architecture from binary filenames
   - Implement ShowNormals in RendererGL2
   - XDG home directory support
+  - con_notifylines, to configure number of lines in notify area
 
 ---------------------------------
 12.6  2024-05-22

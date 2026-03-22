@@ -811,6 +811,10 @@ int main( int argc, char **argv )
 	qboolean demoNameAsArg;
 	qboolean gotFirstArg;
 
+#ifdef USE_AUTOUPDATER
+	Sys_LaunchAutoupdater(argc, argv);
+#endif
+
 #ifndef DEDICATED
 	// SDL version check
 
