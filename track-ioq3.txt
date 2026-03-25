@@ -9154,7 +9154,7 @@ om/actions/runner-images/issues/12045
 2025-09-05-01
     More generic de-duplication of path vars
 
-2025-09-06-01 (skip cmake)
+2025-09-06-01 (skip cmake, kept main Makefile)
     Remove build systems replaced by CMake
 
 2025-09-06-02 (skip cmake)
@@ -9489,3 +9489,46 @@ om/actions/runner-images/issues/12045
 
 2025-11-02-02
     Move autoupdater to its own repo (https://github.com/ioquake/autoupdater)
+
+2025-11-01-01
+    renderergl2: reimplement greyscale as backend post after all 2D+3D draws
+
+    Fixes #654 - HUD/UI previously bypassed greyscale.
+    r_greyscale now supports partial desaturation [0-1].
+    Removed unused legacy logic from tr_shade.c
+
+2025-11-01-02
+    renderergl2: allow DDS fallback when r_ext_compressed_textures=0
+
+    R_LoadImage now tries .dds as a final fallback when compressed textures are disabled.
+
+    This allows assets to ship as DDS-only without requiring duplicate PNG/TGA for every texture.
+
+    Fixes #583.
+
+2025-11-06-01
+    refactor: name some magic numbers in `bg_pmove`
+
+2025-11-06-02
+    refactor: `#define DEAD_HEIGHT -8`
+
+    From the research conducted in
+    https://github.com/ioquake/ioq3/issues/794
+    we can probably conclude that the `self->r.maxs[2] = -8;`
+    in `player_die()` is related to `pm->maxs[2] = -8;`
+    in `PM_CheckDuck()`. Let's make this clear with a named constant.
+
+2025-11-11-01
+    Increase DEF_COMZONEMEGS
+
+2025-11-11-02
+    Reorganise misc directory
+
+2025-11-11-03
+    Remove obsolete installer/package scripts
+
+2025-11-11-04
+    Add Technical Guidelines to CONTRIBUTING.md
+
+2025-11-11-05 (skip .github)
+    Update GHA to use macos-15 (-13 is being deprecated)

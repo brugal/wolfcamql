@@ -310,8 +310,6 @@ Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
 AUTOUPDATERSRCDIR=$(MOUNT_DIR)/autoupdater
 LIBTOMCRYPTSRCDIR=$(AUTOUPDATERSRCDIR)/rsa_tools/libtomcrypt-1.17
 TOMSFASTMATHSRCDIR=$(AUTOUPDATERSRCDIR)/rsa_tools/tomsfastmath-0.13.1
-LOKISETUPDIR=misc/setup
-NSISDIR=misc/nsis
 WEBDIR=$(MOUNT_DIR)/web
 SDLHDIR=$(MOUNT_DIR)/thirdparty/SDL2-2.32.8
 LIBSDIR=$(MOUNT_DIR)/thirdparty/libs
@@ -1652,7 +1650,7 @@ endef
 
 define DO_WINDRES
 $(echo_cmd) "WINDRES $<"
-$(Q)$(WINDRES) -Imisc -i $< -o $@
+$(Q)$(WINDRES) -Imisc/windows -i $< -o $@
 endef
 
 
@@ -2236,6 +2234,8 @@ Q3R2STRINGOBJ = \
   $(B)/renderergl2/glsl/fogpass_vp.o \
   $(B)/renderergl2/glsl/generic_fp.o \
   $(B)/renderergl2/glsl/generic_vp.o \
+  $(B)/renderergl2/glsl/greyscale_fp.o \
+  $(B)/renderergl2/glsl/greyscale_vp.o \
   $(B)/renderergl2/glsl/lightall_fp.o \
   $(B)/renderergl2/glsl/lightall_vp.o \
   $(B)/renderergl2/glsl/pshadow_fp.o \
@@ -3590,11 +3590,6 @@ ifneq ($(BUILD_GAME_SO),0)
 endif
 
 clean: clean-debug clean-release
-ifeq ($(PLATFORM),mingw32)
-	@$(MAKE) -C $(NSISDIR) clean
-else
-	@$(MAKE) -C $(LOKISETUPDIR) clean
-endif
 
 clean-debug:
 	@$(MAKE) clean2 B=$(BD)
@@ -3629,18 +3624,6 @@ distclean: clean toolsclean
 	@rm -rf mac-binaries/cgame.dylib mac-binaries/qagame.dylib mac-binaries/ui.dylib mac-binaries/wolfcamqlmac mac-binaries/renderer_opengl1.dylib
 
 installer: release
-ifdef MINGW
-	@$(MAKE) VERSION=$(VERSION) -C $(NSISDIR) V=$(V) \
-		SDLDLL=$(SDLDLL) \
-		USE_RENDERER_DLOPEN=$(USE_RENDERER_DLOPEN) \
-		USE_OPENAL_DLOPEN=$(USE_OPENAL_DLOPEN) \
-		USE_INTERNAL_SPEEX=$(USE_INTERNAL_SPEEX) \
-		USE_INTERNAL_OPUS=$(USE_INTERNAL_OPUS) \
-		USE_INTERNAL_ZLIB=$(USE_INTERNAL_ZLIB) \
-		USE_INTERNAL_JPEG=$(USE_INTERNAL_JPEG)
-else
-	@$(MAKE) VERSION=$(VERSION) -C $(LOKISETUPDIR) V=$(V)
-endif
 
 dist:
 	git archive --format zip --output $(CLIENTBIN)-$(VERSION).zip HEAD

@@ -2686,6 +2686,10 @@ still broken, check lost world
 
 * update libfreetype
 
+* /devmap q3 hud hit tab for scores:
+
+    Q_GetCpFromUtf8  invalid number of bytes specified in UTF-8 character 250
+
 --  ioquake3 patches
 
 * new shadow warnings
@@ -2693,6 +2697,12 @@ still broken, check lost world
 * make-package.py ignore .git
 * "xdg_data_pattern=\"demos/*.dm_* *.log *.pk3 *.txt \\\n"   wc  cameras, cache, other stuff
 * check ioquake3 CL_InitRenderer setting g_console_field_width
+
+* stringify.c no longer used and doesn't handle quotes in comments, see:
+
+    greyscale_fp
+
+    "// From Rec. 709-1 4.2 "Derivation of luminance signal"\n"
 
 ----
 

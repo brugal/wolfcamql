@@ -435,6 +435,9 @@ void RB_BeginDrawingView (void) {
 	// we will only draw a sun if there was sky rendered in this view
 	backEnd.skyRenderedThisView = qfalse;
 
+	// cache the clamped greyscale value
+	backEnd.greyscale = Com_Clamp(0.0f, 1.0f, r_greyscale->value);
+
 	// clip to the plane of the portal
 	if ( backEnd.viewParms.isPortal ) {
 #if 0
@@ -2643,6 +2646,98 @@ const void *RB_ClearDepth(const void *data)
 	return (const void *)(cmd + 1);
 }
 
+/*
+=============
+RB_DrawGreyscale
+
+=============
+*/
+static void RB_DrawGreyscale(const FBO_t *src)
+{
+	if (!src || !src->colorImage[0])
+		return;
+
+	if (glRefConfig.framebufferObject) {
+		if (tr.usingFinalFrameBufferObject) {
+			FBO_Bind(tr.finalFbo);
+		} else {
+			FBO_Bind(NULL);
+		}
+	}
+
+	qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+	GL_State(GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO);
+
+	GLSL_BindProgram(&tr.greyscaleShader);
+	GLSL_SetUniformInt(&tr.greyscaleShader, UNIFORM_TEXTUREMAP, 0);
+	GLSL_SetUniformFloat(&tr.greyscaleShader, UNIFORM_GREYSCALE, backEnd.greyscale);
+	GL_BindToTMU(src->colorImage[0], 0);
+
+	vec4_t quadVerts[4] = {
+		{ 0.0f,                      0.0f,                       0.0f, 1.0f },
+		{ (float)glConfig.vidWidth,  0.0f,                       0.0f, 1.0f },
+		{ (float)glConfig.vidWidth,  (float)glConfig.vidHeight,  0.0f, 1.0f },
+		{ 0.0f,                      (float)glConfig.vidHeight,  0.0f, 1.0f },
+	};
+
+	vec2_t texCoords[4] = { {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f}, {0.0f, 0.0f} };
+
+	RB_InstantQuad2(quadVerts, texCoords);
+}
+
+/*
+=============
+RB_PresentToScreen
+
+=============
+*/
+static void RB_PresentToScreen(void)
+{
+	if (!glRefConfig.framebufferObject)
+		return;
+
+	const FBO_t *src = NULL;
+
+	if (tr.renderFbo && tr.renderFbo->colorImage[0])
+	{
+		// texture-backed render FBO
+		src = tr.renderFbo;
+	}
+	else if (tr.msaaResolveFbo && r_hdr->integer)
+	{
+		// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
+		FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+		src = tr.msaaResolveFbo;
+	}
+
+	if (src)
+	{
+		if (backEnd.greyscale > 0.0f)
+		{
+			//FIXME tr.usingFinalFrameBufferObject
+			RB_DrawGreyscale(src);
+		}
+		else
+		{
+			if (tr.usingFinalFrameBufferObject) {
+				FBO_FastBlit(src, NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			} else {
+				FBO_FastBlit(src, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			}
+
+		}
+		return;
+	}
+
+	//FIXME check
+#if 0
+	if (tr.renderFbo)
+	{
+		//FBO_FastBlit(tr.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
+#endif
+}
 
 /*
 =============
@@ -2685,37 +2780,13 @@ const void	*RB_SwapBuffers( const void *data, qboolean endFrame ) {
 		ri.Hunk_FreeTempMemory( stencilReadback );
 	}
 
-	if (glRefConfig.framebufferObject)
-	{
-		if (tr.msaaResolveFbo && r_hdr->integer)
-		{
-			// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
-			FBO_FastBlit(tr.renderFbo, NULL, tr.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			if (tr.usingFinalFrameBufferObject) {
-				FBO_FastBlit(tr.msaaResolveFbo, NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			} else {
-				FBO_FastBlit(tr.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			}
-		}
-		else if (tr.renderFbo)
-		{
-			if (tr.usingFinalFrameBufferObject) {
-				FBO_FastBlit(tr.renderFbo, NULL, tr.finalFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			} else {
-					FBO_FastBlit(tr.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-			}
-		}
-
-		//FBO_FastBlit(tr.renderFbo, NULL, (void *)-1, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-		//ri.Printf(PRINT_ALL, "frame...\n");
-	}
+	RB_PresentToScreen();
 
 	qglDisable(GL_SCISSOR_TEST);
 	//RB_QLPostProcessing();
 	qglEnable(GL_SCISSOR_TEST);
 
-	
+
 	// 2017-03-23 qglScissor() not working with bloom and 3d icons which set
 	//  a new scissor value  --  GL_RENDERER: AMD Radeon R9 M370X
 	//FIXME not enough to set scissor to size of viewport like in RB_SetGL2D()?

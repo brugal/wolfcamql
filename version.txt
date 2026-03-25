@@ -1,4 +1,4 @@
-12.7test44
+12.7test45
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -47,6 +47,7 @@
   - Implement ShowNormals in RendererGL2
   - XDG home directory support
   - con_notifylines, to configure number of lines in notify area
+  - renderergl2: reimplement greyscale as backend post after all 2D+3D draws
 
 ---------------------------------
 12.6  2024-05-22
