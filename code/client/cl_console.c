@@ -362,6 +362,14 @@ static void Con_CheckResize (void)
 
 		g_smallchar_scaled_width = (int)((float)SMALLCHAR_WIDTH * conScale);
 		g_smallchar_scaled_height = (int)((float)SMALLCHAR_HEIGHT * conScale);
+
+		if (g_smallchar_scaled_width < 1) {
+			g_smallchar_scaled_width = 1;
+		}
+
+		if (g_smallchar_scaled_height < 1) {
+			g_smallchar_scaled_height = 1;
+		}
 	}
 
 	if (con_lineWidth) {

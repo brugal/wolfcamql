@@ -9532,3 +9532,20 @@ om/actions/runner-images/issues/12045
 
 2025-11-11-05 (skip .github)
     Update GHA to use macos-15 (-13 is being deprecated)
+
+2025-11-11-06
+    Fix macOS SDL build script paths
+
+2025-11-18-01
+    Print warning when a render command is dropped
+
+2025-11-18-02
+    Double MAX_RENDER_COMMANDS
+
+    Following changes to the console code, it turned out that at very high
+    resolutions, the large number of glyphs rendered would cause render
+    commands to be dropped; avoid this by simply raising the maximum number
+    of render commands.
+
+2025-11-18-03
+    refactor: un-magic `#define INVUL_RADIUS 42`

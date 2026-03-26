@@ -146,10 +146,20 @@ void *R_GetCommandBufferReserved( int bytes, int reservedBytes ) {
 
 	// always leave room for the end of list command
 	if ( cmdList->used + bytes + sizeof( int ) + reservedBytes > MAX_RENDER_COMMANDS ) {
+		static int lastDroppedTime = 0;
+
 		if ( bytes > MAX_RENDER_COMMANDS - sizeof( int ) ) {
 			ri.Error( ERR_FATAL, "R_GetCommandBuffer: bad size %i", bytes );
 		}
 		// if we run out of room, just start dropping commands
+		//ri.Printf( PRINT_WARNING, "Failed to allocate render command of size %d\n", bytes );
+
+		// don't spam message since it will make console unresponsive
+		if (ri.RealMilliseconds() - lastDroppedTime > 1000) {
+			ri.Printf(PRINT_ALL, "^3R_GetCommandBuffer() command dropped\n");
+			lastDroppedTime = ri.RealMilliseconds();
+		}
+
 		return NULL;
 	}
 

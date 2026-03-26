@@ -147,6 +147,7 @@ void *R_GetCommandBufferReserved( int bytes, int reservedBytes ) {
 		}
 
 		// if we run out of room, just start dropping commands
+		//ri.Printf( PRINT_WARNING, "Failed to allocate render command of size %d\n", bytes );
 
 		// don't spam message since it will make console unresponsive
 		if (ri.RealMilliseconds() - lastDroppedTime > 1000) {
