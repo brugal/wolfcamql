@@ -292,7 +292,7 @@ UIDIR=$(MOUNT_DIR)/ui
 Q3UIDIR=$(MOUNT_DIR)/q3_ui
 JPDIR=$(MOUNT_DIR)/thirdparty/jpeg-9f
 CURLDIR=$(MOUNT_DIR)/thirdparty/curl-8.15.0
-FREETYPEDIR=$(MOUNT_DIR)/thirdparty/freetype-2.12.1
+FREETYPEDIR=$(MOUNT_DIR)/thirdparty/freetype-2.14.3
 SPEEXDIR=$(MOUNT_DIR)/thirdparty/libspeex-1.2.0
 SPEEXDSPDIR=$(MOUNT_DIR)/thirdparty/libspeexdsp-1.2rc3
 OGGDIR=$(MOUNT_DIR)/thirdparty/libogg-1.3.6
@@ -3621,7 +3621,7 @@ toolsclean2:
 
 distclean: clean toolsclean
 	@rm -rf $(BUILD_DIR)
-	@rm -rf mac-binaries/cgame.dylib mac-binaries/qagame.dylib mac-binaries/ui.dylib mac-binaries/wolfcamqlmac mac-binaries/renderer_opengl1.dylib
+	@rm -rf mac-binaries/cgame.dylib mac-binaries/qagame.dylib mac-binaries/ui.dylib mac-binaries/wolfcamqlmac mac-binaries/renderer_opengl1.dylib mac-binaries/renderer_opengl2.dylib
 
 installer: release
 

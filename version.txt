@@ -1,4 +1,4 @@
-12.7test46
+12.7test47
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -36,6 +36,7 @@
 * protocol 48 (dm_48), 46 (dm3), 45 (dm3), and 43 (dm3) support
 * bug fix:  CS_PARTICLE index range incorrectly calculated for protocol 68
 * con_scaleNotify to scale console lines in q3 hud
+* update freetype to version 2.14.3
 * ioquake3 patches
 
   - OpenGL2: Add OpenGL ES 2.0+ support

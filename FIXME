@@ -2690,6 +2690,8 @@ still broken, check lost world
 
     Q_GetCpFromUtf8  invalid number of bytes specified in UTF-8 character 250
 
+* make clean not working
+
 --  ioquake3 patches
 
 * new shadow warnings
