@@ -871,6 +871,7 @@ int main( int argc, char **argv )
 		}
 	}
 	Sys_PlatformInit(useBacktrace, useConsoleOutput);
+	Sys_SetMaxFileLimit( );
 
 #ifdef __APPLE__
 	// This is passed if we are launched by double-clicking

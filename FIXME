@@ -2684,13 +2684,9 @@ To give the audio driver enough audio to work with, the audio data in an interle
 
 still broken, check lost world
 
-* update libfreetype
-
 * /devmap q3 hud hit tab for scores:
 
     Q_GetCpFromUtf8  invalid number of bytes specified in UTF-8 character 250
-
-* make clean not working
 
 --  ioquake3 patches
 

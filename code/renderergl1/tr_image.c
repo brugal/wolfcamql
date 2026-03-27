@@ -1154,7 +1154,8 @@ static imageExtToLoaderMap_t imageLoaders[ ] =
 	{ "png",  R_LoadPNG },
 	{ "tga",  R_LoadTGA },
 	{ "pcx",  R_LoadPCX },
-	{ "bmp",  R_LoadBMP }
+	{ "bmp",  R_LoadBMP },
+	{ "pvr",  R_LoadPVR }
 };
 
 static int numImageLoaders = ARRAY_LEN( imageLoaders );

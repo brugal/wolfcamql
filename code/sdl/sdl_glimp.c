@@ -454,7 +454,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 	int samples;
 	int i = 0;
 	SDL_Surface *icon = NULL;
-	Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL;
+	Uint32 flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL;
 	SDL_DisplayMode desktopMode;
 	int display = 0;
 	int x = SDL_WINDOWPOS_UNDEFINED, y = SDL_WINDOWPOS_UNDEFINED;
@@ -782,38 +782,6 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 			glConfig.visibleWindowHeight = vidHeight;
 		}
 
-		if( ( SDL_window = SDL_CreateWindow( CLIENT_WINDOW_TITLE, x, y,
-											 vidWidth, vidHeight, flags ) ) == NULL )
-		{
-			ri.Printf( PRINT_DEVELOPER, "SDL_CreateWindow failed: %s\n", SDL_GetError( ) );
-			continue;
-		}
-
-		if( fullscreen )
-		{
-			SDL_DisplayMode desiredMode;
-
-			switch( testColorBits )
-			{
-			case 16: desiredMode.format = SDL_PIXELFORMAT_RGB565; break;
-			case 24: desiredMode.format = SDL_PIXELFORMAT_RGB24;  break;
-			default: ri.Printf( PRINT_DEVELOPER, "testColorBits is %d, can't fullscreen\n", testColorBits ); continue;
-			}
-
-			desiredMode.w = vidWidth;
-			desiredMode.h = vidHeight;
-			desiredMode.refresh_rate = glConfig.displayFrequency = ri.Cvar_VariableIntegerValue( "r_displayRefresh" );
-			desiredMode.driverdata = NULL;
-
-			if( SDL_SetWindowDisplayMode( SDL_window, &desiredMode ) < 0 )
-			{
-				ri.Printf( PRINT_DEVELOPER, "SDL_SetWindowDisplayMode failed: %s\n", SDL_GetError( ) );
-				continue;
-			}
-		}
-
-		SDL_SetWindowIcon( SDL_window, icon );
-
 		for ( type = 0; type < numContexts; type++ ) {
 			char contextName[32];
 
@@ -837,9 +805,18 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, contexts[type].majorVersion );
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, contexts[type].minorVersion );
 
+			if( ( SDL_window = SDL_CreateWindow( CLIENT_WINDOW_TITLE, x, y,
+					 glConfig.vidWidth, glConfig.vidHeight, flags ) ) == NULL )
+			{
+				ri.Printf( PRINT_DEVELOPER, "SDL_CreateWindow failed: %s\n", SDL_GetError( ) );
+				break;
+			}
+
 			SDL_glContext = SDL_GL_CreateContext( SDL_window );
 			if ( !SDL_glContext )
 			{
+				SDL_DestroyWindow( SDL_window );
+				SDL_window = NULL;
 				ri.Printf( PRINT_ALL, "SDL_GL_CreateContext() for %s context failed: %s\n", contextName, SDL_GetError() );
 				continue;
 			}
@@ -850,6 +827,8 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 				GLimp_ClearProcAddresses();
 				SDL_GL_DeleteContext( SDL_glContext );
 				SDL_glContext = NULL;
+				SDL_DestroyWindow( SDL_window );
+				SDL_window = NULL;
 				continue;
 			}
 
@@ -868,6 +847,8 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 					GLimp_ClearProcAddresses();
 					SDL_GL_DeleteContext( SDL_glContext );
 					SDL_glContext = NULL;
+					SDL_DestroyWindow( SDL_window );
+					SDL_window = NULL;
 					continue;
 				}
 			}
@@ -875,11 +856,40 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 			break;
 		}
 
+		if ( !SDL_window ) {
+			continue;
+		}
+
 		if ( !SDL_glContext ) {
 			SDL_DestroyWindow( SDL_window );
 			SDL_window = NULL;
 			continue;
 		}
+
+		if( fullscreen )
+		{
+			SDL_DisplayMode desiredMode;
+
+			switch( testColorBits )
+			{
+				case 16: desiredMode.format = SDL_PIXELFORMAT_RGB565; break;
+				case 24: desiredMode.format = SDL_PIXELFORMAT_RGB24;  break;
+				default: ri.Printf( PRINT_DEVELOPER, "testColorBits is %d, can't fullscreen\n", testColorBits ); continue;
+			}
+
+			desiredMode.w = glConfig.vidWidth;
+			desiredMode.h = glConfig.vidHeight;
+			desiredMode.refresh_rate = glConfig.displayFrequency = ri.Cvar_VariableIntegerValue( "r_displayRefresh" );
+			desiredMode.driverdata = NULL;
+
+			if( SDL_SetWindowDisplayMode( SDL_window, &desiredMode ) < 0 )
+			{
+				ri.Printf( PRINT_DEVELOPER, "SDL_SetWindowDisplayMode failed: %s\n", SDL_GetError( ) );
+				continue;
+			}
+		}
+
+		SDL_SetWindowIcon( SDL_window, icon );
 
 		qglClearColor( 0, 0, 0, 1 );
 		qglClear( GL_COLOR_BUFFER_BIT );
@@ -915,6 +925,8 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 		ri.Printf( PRINT_ALL, "Couldn't get a visual\n" );
 		return RSERR_INVALID_MODE;
 	}
+
+	SDL_ShowWindow( SDL_window );
 
 	GLimp_DetectAvailableModes();
 

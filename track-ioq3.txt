@@ -9549,3 +9549,70 @@ om/actions/runner-images/issues/12045
 
 2025-11-18-03
     refactor: un-magic `#define INVUL_RADIUS 42`
+
+2025-11-23-01
+    add support for loading PVR images
+
+    this is from Q3A for Dreamcast
+
+2025-11-24-01 (skip zlib: used to compile other software)
+    Remove some dead library code (issue #839)
+
+2025-11-24-02 (skip cmake)
+    Enable LTO if available
+
+2025-11-19-01
+    Use case-insensitive comparison for all Info_Key functions
+
+    Info_ValueForKey performs case-insensitive comparisons on key names, other functions should also be case-insensitive for consistency.
+
+2025-11-25-01 (skip cmake)
+    Disable LTO on debug builds
+
+2025-12-03-01 (skip cmake)
+    Fix Windows dedicated server console
+
+    Use con_win32.c instead of con_passive.c to fix the Windows dedicated server interactive console under CMake.
+
+2025-12-04-01
+    Improve PVR image support
+
+2025-12-04-02
+    fix: `s_list` command with `s_useOpenAL 1` (#844)
+
+    The code is pretty much copy-pasted from `S_Base_SoundList`.
+    Some things from the original `S_Base_SoundList` are not implemented,
+    e.g. compression and the final "free memory" line.
+
+2025-12-06-01 (skip .git)
+    Remove Makefile things from .gitignore
+
+2025-12-27-01
+    First attempt at a policy for AI/LLM contributions. (#850)
+
+    * First attempt at a policy for AI/LLM contributions.
+
+    Thanks Calinou, and smallmodel
+
+    Co-authored-by: Hugo Locurcio <hugo.locurcio@hugo.pro>
+
+2025-11-05-01
+    Create SDL window after all SDL_GL_SetAttribute calls
+
+2025-12-03-01
+    Set the maximum file limit for POSIX systems
+
+    Resolves an issue where the macOS application's dylibs could not be
+    loaded because there were too many maps; on macOS the default maximum
+    number of open files is 256.
+
+2026-01-14-01 (skip cmake)
+    Allow execution of VM code on macOS
+
+    The Q3 VM compiles native code that is unsigned, which since Tahoe (possibly earlier) requires an entitlement to be set in order to execute it.
+
+2026-01-30-01
+    first attempt at fixing up the contributing.md
+
+2026-03-09-01 (done)
+    Fix incorrect variable reference
