@@ -3685,7 +3685,6 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	}
 
 	if (clc.speexInitialized) {
-		int i;
 		speex_bits_destroy(&clc.speexEncoderBits);
 		speex_encoder_destroy(clc.speexEncoder);
 		speex_preprocess_state_destroy(clc.speexPreprocessor);
@@ -3697,7 +3696,6 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	}
 
 	if (clc.voipCodecInitialized) {
-		int i;
 		opus_encoder_destroy(clc.opusEncoder);
 		for (i = 0; i < MAX_CLIENTS; i++) {
 			opus_decoder_destroy(clc.opusDecoder[i]);

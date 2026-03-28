@@ -2484,7 +2484,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		{
 			const gitem_t *item;
 			int index;
-			int i;
+			int j;
 			float len, newLen;
 			int bestItem;
 			vec3_t delta;
@@ -2507,11 +2507,11 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 					//Com_Printf("Mega Health respawn\n");
 				} else if (!Q_stricmp(item->pickup_name, "Yellow Armor")) {
 					//Com_Printf("Yellow Armor respawn\n");
-					for (i = 0, len = 99999.0, bestItem = 0;  i < cg.numYellowArmors;  i++) {
-						VectorSubtract(es->pos.trBase, cg.yellowArmors[i].origin, delta);
+					for (j = 0, len = 99999.0, bestItem = 0;  j < cg.numYellowArmors;  j++) {
+						VectorSubtract(es->pos.trBase, cg.yellowArmors[j].origin, delta);
 						newLen = VectorLength(delta);
 						if (newLen < len) {
-							bestItem = i;
+							bestItem = j;
 							len = newLen;
 						}
 					}
@@ -2855,16 +2855,16 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
         }
 
 		if (*EffectScripts.weapons[WP_MACHINEGUN].impactFleshScript) {
-			int clientNum;
+			int tclientNum;
 
-			//clientNum = es->otherEntityNum;  //es->eventParm;
-			clientNum = es->eventParm;
-			if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
-				clientNum = 0;
+			//tclientNum = es->otherEntityNum;  //es->eventParm;
+			tclientNum = es->eventParm;
+			if (tclientNum < 0  ||  tclientNum >= MAX_CLIENTS) {
+				tclientNum = 0;
 			}
 
 			CG_ResetScriptVars();
-			CG_CopyPlayerDataToScriptData(&cg_entities[clientNum]);
+			CG_CopyPlayerDataToScriptData(&cg_entities[tclientNum]);
 			VectorCopy(es->pos.trBase, ScriptVars.origin);
 			VectorCopy(dir, ScriptVars.dir);
 			VectorSet(ScriptVars.end, 0, 0, 0);
@@ -2875,17 +2875,17 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			}
 			CG_RunQ3mmeScript(EffectScripts.weapons[WP_MACHINEGUN].impactFleshScript, NULL);
 		} else if (*EffectScripts.impactFlesh) {
-			int clientNum;
+			int tclientNum;
 
-			//clientNum = es->otherEntityNum;  //es->eventParm;
-			clientNum = es->eventParm;
-			if (clientNum < 0  ||  clientNum >= MAX_CLIENTS) {
-				clientNum = 0;
+			//tclientNum = es->otherEntityNum;  //es->eventParm;
+			tclientNum = es->eventParm;
+			if (tclientNum < 0  ||  tclientNum >= MAX_CLIENTS) {
+				tclientNum = 0;
 				//Com_Printf("wtf... %d\n", es->eventParm);
 			}
 
 			CG_ResetScriptVars();
-			CG_CopyPlayerDataToScriptData(&cg_entities[clientNum]);
+			CG_CopyPlayerDataToScriptData(&cg_entities[tclientNum]);
 			VectorCopy(es->pos.trBase, ScriptVars.origin);
 			VectorCopy(dir, ScriptVars.dir);
 			VectorSet(ScriptVars.end, 0, 0, 0);
@@ -3381,7 +3381,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 				}
 				break;
 			case GTS_ROUND_OVER: {
-				const char *s;
+				const char *st;
 				char *s2;
 				char snum[128];
 				char buffer[MAX_STRING_CHARS];
@@ -3399,10 +3399,10 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 
 				buffer[0] = '\0';
 				strcat(buffer, "Round Winners:\n");
-				s = CG_ConfigString(CS_ROUND_WINNERS);
+				st = CG_ConfigString(CS_ROUND_WINNERS);
 				s2 = snum;
-				while (*s) {
-					s2[0] = s[0];
+				while (*st) {
+					s2[0] = st[0];
 					if (s2[0] == ' '  ||  s2[0] == '\0') {
 						s2[0] = '\0';
 						n = atoi(snum);
@@ -3414,7 +3414,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 						s2 = snum;
 					}
 					s2++;
-					s++;
+					st++;
 				}
 
 				CG_CenterPrint(va("%s", buffer), SCREEN_HEIGHT * 0.20, BIGCHAR_WIDTH);
@@ -3626,7 +3626,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	// powerup events
 	//
 	case EV_POWERUP_QUAD: {
-		int i;
+		int j;
 		int bestItem;
 		vec3_t delta;
 		float len;
@@ -3643,16 +3643,16 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		CG_StartSound (NULL, clientNum, CHAN_ITEM, cgs.media.quadSound );
 
 		//Com_Printf("EV_POWERUP_QUAD\n");
-		for (i = 0, len = 99999.0, bestItem = 0;  i < cg.numQuads;  i++) {
-			VectorSubtract(es->pos.trBase, cg.quads[i].origin, delta);
+		for (j = 0, len = 99999.0, bestItem = 0;  j < cg.numQuads;  j++) {
+			VectorSubtract(es->pos.trBase, cg.quads[j].origin, delta);
 			newLen = VectorLength(delta);
 			if (newLen < len) {
-				bestItem = i;
+				bestItem = j;
 				len = newLen;
 			}
 		}
 		// quad can be picked up again
-		//t = ((cg.redArmors[i].pickupTime / 1000) + cg.redArmors[i].respawnLength) - (cg.time / 1000);
+		//t = ((cg.redArmors[j].pickupTime / 1000) + cg.redArmors[j].respawnLength) - (cg.time / 1000);
 
 		//if ((cg.time - cg.quads[bestItem].pickupTime) / 1000 >= cg.quads[bestItem].respawnLength) {
 		if ( (cg.quads[bestItem].pickupTime / 1000) + cg.quads[bestItem].respawnLength <= (cg.time / 1000)) {
@@ -3665,7 +3665,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		break;
 	}
 	case EV_POWERUP_BATTLESUIT: {
-		int i;
+		int j;
 		int bestItem;
 		vec3_t delta;
 		float len;
@@ -3681,11 +3681,11 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		}
 		CG_StartSound (NULL, clientNum, CHAN_ITEM, cgs.media.protectSound );
 
-		for (i = 0, len = 99999.0, bestItem = 0;  i < cg.numBattleSuits;  i++) {
-			VectorSubtract(es->pos.trBase, cg.battleSuits[i].origin, delta);
+		for (j = 0, len = 99999.0, bestItem = 0;  j < cg.numBattleSuits;  j++) {
+			VectorSubtract(es->pos.trBase, cg.battleSuits[j].origin, delta);
 			newLen = VectorLength(delta);
 			if (newLen < len) {
-				bestItem = i;
+				bestItem = j;
 				len = newLen;
 			}
 		}
@@ -3965,7 +3965,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 	case EV_AWARD: {
 		qhandle_t shader = 0;
 		sfxHandle_t sfx;
-		clientInfo_t *ci;
+		clientInfo_t *tci;
 
 		DEBUGNAME("EV_AWARD");
 
@@ -3979,7 +3979,7 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 			break;
 		}
 
-		ci = &cgs.clientinfo[es->clientNum];
+		tci = &cgs.clientinfo[es->clientNum];
 
 		// multi sound:  comboKill, rampage, revenge, midair
 
@@ -4072,9 +4072,9 @@ void CG_EntityEvent( centity_t *cent, const vec3_t position ) {
 		}
 
 		if (shader) {
-			ci->clientRewards.startTime = cg.time;
-			ci->clientRewards.shader = shader;
-			ci->clientRewards.sfx = sfx;
+			tci->clientRewards.startTime = cg.time;
+			tci->clientRewards.shader = shader;
+			tci->clientRewards.sfx = sfx;
 		}
 
 		break;

@@ -1654,7 +1654,7 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 	}
 
 	if (cgs.cpma  &&  cgs.gametype == GT_NTF) {
-		int i;
+		int j;
 
 		/*
  728: n\Fighter\m\sarge\s\280\h\100\a\100\ac\1\jd\1\w3\10,25,5,10\w5\5,25,5,10\w8\50,100,25,50\
@@ -1665,8 +1665,8 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 
 		// always the same order?
 		// 2021-08-13  no
-		for (i = 0;  i < MAX_CPMA_NTF_MODELS;  i++) {
-			CG_CpmaSetNtfModel(CSCPMA_NTF_CLASS_0 + i, firstCall, qfalse);
+		for (j = 0;  j < MAX_CPMA_NTF_MODELS;  j++) {
+			CG_CpmaSetNtfModel(CSCPMA_NTF_CLASS_0 + j, firstCall, qfalse);
 		}
 	}
 
@@ -1762,16 +1762,16 @@ The one who kills the leader gets the new leader and automatically is hunted by 
 	CG_ParseVersion(info);
 
 	if (CG_CheckQlVersion(0, 1, 0, 495)) {
-		const char *val;
+		const char *v;
 
 		info = CG_ConfigString(CS_ARMOR_TIERED);
-		val = Info_ValueForKey(info, "armor_tiered");
-		if (*val) {
-			cgs.armorTiered = atoi(val);
+		v = Info_ValueForKey(info, "armor_tiered");
+		if (*v) {
+			cgs.armorTiered = atoi(v);
 		} else {
 			cgs.armorTiered = qfalse;
 		}
-		trap_Cvar_Set("cg_armorTiered", val);
+		trap_Cvar_Set("cg_armorTiered", v);
 	}
 
 
@@ -6047,7 +6047,7 @@ static void CG_ServerCommand( void ) {
 		}
 
 		if (!strcmp(cmd, "acc")) {
-			int i;
+			int j;
 			int maxWeapons;
 
 			cg.serverAccuracyStatsTime = cg.time;
@@ -6056,9 +6056,9 @@ static void CG_ServerCommand( void ) {
 			maxWeapons = WP_NUM_WEAPONS;
 
 			//CG_Printf("acc: \n");
-			for (i = WP_NONE;  i < maxWeapons;  i++) {
-				//CG_Printf("  %s    %s\n", CG_Argv(i + 1), weapNames[i]);
-				cg.serverAccuracyStats[i] = atoi(CG_Argv(i + 1));
+			for (j = WP_NONE;  j < maxWeapons;  j++) {
+				//CG_Printf("  %s    %s\n", CG_Argv(j + 1), weapNames[j]);
+				cg.serverAccuracyStats[j] = atoi(CG_Argv(j + 1));
 			}
 			return;
 		}

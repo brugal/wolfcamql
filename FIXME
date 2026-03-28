@@ -2690,10 +2690,8 @@ still broken, check lost world
 
 --  ioquake3 patches
 
-* new shadow warnings
-* more stuff to docs/
-* make-package.py ignore .git
-* "xdg_data_pattern=\"demos/*.dm_* *.log *.pk3 *.txt \\\n"   wc  cameras, cache, other stuff
+* "xdg_data_pattern=\"demos/*.dm_* *.log *.pk3 *.txt \\\n"   wc  cameras, cache, other stuff  -- 2026-03-28 ok, default is to just copy unmatched files
+
 * check ioquake3 CL_InitRenderer setting g_console_field_width
 
 * stringify.c no longer used and doesn't handle quotes in comments, see:

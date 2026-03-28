@@ -157,15 +157,15 @@ void R_ClearRemappedShader (const char *shaderName)
 void R_ClearAllRemappedShaders_f (void)
 {
 	int i;
-	shader_t *shader;
+	shader_t *tshader;
 
 	for (i = 0;  i < tr.numShaders;  i++) {
-		shader = tr.shaders[i];
+		tshader = tr.shaders[i];
 
-		if (shader->userRemappedShader) {
-			//ri.Printf(PRINT_ALL, "%4d %s -> %s\n", shader->name, shader->userRemappedShader->name);
-			shader->userRemappedShader = NULL;
-			shader->remappedShaderKeepLightmap = qfalse;
+		if (tshader->userRemappedShader) {
+			//ri.Printf(PRINT_ALL, "%4d %s -> %s\n", tshader->name, tshader->userRemappedShader->name);
+			tshader->userRemappedShader = NULL;
+			tshader->remappedShaderKeepLightmap = qfalse;
 		}
 	}
 }
@@ -3879,13 +3879,13 @@ void	R_ShaderList_f (void) {
 void R_ListRemappedShaders_f (void)
 {
 	int i;
-	shader_t *shader;
+	shader_t *tshader;
 
 	for (i = 0;  i < tr.numShaders;  i++) {
-		shader = tr.shaders[i];
+		tshader = tr.shaders[i];
 
-		if (shader->userRemappedShader) {
-			ri.Printf(PRINT_ALL, "%5d %s -> %s\n", i, shader->name, shader->userRemappedShader->name);
+		if (tshader->userRemappedShader) {
+			ri.Printf(PRINT_ALL, "%5d %s -> %s\n", i, tshader->name, tshader->userRemappedShader->name);
 		}
 	}
 }
@@ -4234,16 +4234,16 @@ void R_InitShaders( void ) {
 
 void RE_ReplaceShaderImage (qhandle_t h, const ubyte *data, int width, int height)
 {
-	shader_t *shader;
+	shader_t *tshader;
 	image_t *image;
 
-	shader = R_GetShaderByHandle(h);
-	//ri.Printf(PRINT_ALL, "RE_ReplaceShaderImage %d  %s\n", h, shader->name);
-	if (shader == tr.defaultShader) {
+	tshader = R_GetShaderByHandle(h);
+	//ri.Printf(PRINT_ALL, "RE_ReplaceShaderImage %d  %s\n", h, tshader->name);
+	if (tshader == tr.defaultShader) {
 		ri.Printf(PRINT_ALL, "RE_ReplaceShaderImage default shader returning\n");
 		return;
 	}
-	image = shader->stages[0]->bundle[0].image[0];
+	image = tshader->stages[0]->bundle[0].image[0];
 	//ri.Printf(PRINT_ALL, "image->texum %d  %s\n", image->texnum, image->imgName[0] != '\0' ? image->imgName : "");
 
 	//FIXME if width and height unchanged?
@@ -4259,15 +4259,15 @@ qhandle_t RE_RegisterShaderFromData (const char *name, ubyte *data, int width, i
 {
 	qhandle_t h;
 	image_t *image;
-	shader_t *shader;
+	shader_t *tshader;
 
 	//FIXME discarding const :  (ubyte *)data
 	//image = R_CreateImage(name, (ubyte *)data, width, height, mipmap, allowPicmip, wrapClampMode);
 	image = R_CreateImage(name, (ubyte *)data, width, height, IMGTYPE_COLORALPHA, IMGFLAG_CLAMPTOEDGE, 0);
 	h = RE_RegisterShaderFromImage(name, lightmapIndex, image, qfalse);  //qfalse);
-	shader = R_GetShaderByHandle(h);
+	tshader = R_GetShaderByHandle(h);
 	//FIXME
-	shader->stages[0]->stateBits &= ~GLS_DEPTHTEST_DISABLE;
+	tshader->stages[0]->stateBits &= ~GLS_DEPTHTEST_DISABLE;
 
 	GL_CheckErrors();
 
@@ -4276,23 +4276,23 @@ qhandle_t RE_RegisterShaderFromData (const char *name, ubyte *data, int width, i
 
 void RE_GetShaderImageDimensions (qhandle_t h, int *width, int *height)
 {
-	shader_t *shader;
+	shader_t *tshader;
 
-	shader = R_GetShaderByHandle(h);
-	*width = shader->stages[0]->bundle[0].image[0]->uploadWidth;
-	*height = shader->stages[0]->bundle[0].image[0]->uploadHeight;
+	tshader = R_GetShaderByHandle(h);
+	*width = tshader->stages[0]->bundle[0].image[0]->uploadWidth;
+	*height = tshader->stages[0]->bundle[0].image[0]->uploadHeight;
 }
 
 //FBO_t *FBO_Create(const char *name, int width, int height);
 
 void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 {
-	shader_t *shader;
+	shader_t *tshader;
 	image_t *image;
 
-	shader = R_GetShaderByHandle(h);
-	//image = &shader->stages[0].bundle[0].image;
-	image = shader->stages[0]->bundle[0].image[0];
+	tshader = R_GetShaderByHandle(h);
+	//image = &tshader->stages[0].bundle[0].image;
+	image = tshader->stages[0]->bundle[0].image[0];
 
 	//if (r_smp->integer) {
 	//	R_SyncRenderThread();
@@ -4313,8 +4313,8 @@ void RE_GetShaderImageData (qhandle_t h, ubyte *data)
 
 		currentFbo = glState.currentFBO;
 
-		width = shader->stages[0]->bundle[0].image[0]->uploadWidth;
-		height = shader->stages[0]->bundle[0].image[0]->uploadHeight;
+		width = tshader->stages[0]->bundle[0].image[0]->uploadWidth;
+		height = tshader->stages[0]->bundle[0].image[0]->uploadHeight;
 
 		//ri.Printf(PRINT_ALL, "     %p qglGenFramebuffers\n", qglGenFramebuffers);
 		//fbo = FBO_Create("_getImage", width, height);

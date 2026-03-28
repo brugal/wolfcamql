@@ -852,14 +852,14 @@ void RB_StageIteratorSky( void ) {
 		if (r_fastsky->integer == 2  &&  !(backEnd.refdef.rdflags & RDF_NOWORLDMODEL)) {
 			clearBits |= GL_COLOR_BUFFER_BIT;	// FIXME: only if sky shaders have been used
 			if (*r_fastSkyColor->string) {
-				int v, tr, tg, tb;
+				int v, sr, sg, sb;
 
 				v = r_fastSkyColor->integer;
-				tr = (v & 0xff0000) / 0x010000;
-				tg = (v & 0x00ff00) / 0x000100;
-				tb = (v & 0x0000ff) / 0x000001;
+				sr = (v & 0xff0000) / 0x010000;
+				sg = (v & 0x00ff00) / 0x000100;
+				sb = (v & 0x0000ff) / 0x000001;
 
-				qglClearColor((float)tr / 255.0, (float)tg / 255.0, (float)tb / 255.0, 1.0);
+				qglClearColor((float)sr / 255.0, (float)sg / 255.0, (float)sb / 255.0, 1.0);
 			} else {
 				qglClearColor(0.0f, 0.0f, 0.0f, 1.0f);	// FIXME: get color of sky
 			}

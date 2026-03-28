@@ -2421,12 +2421,12 @@ float CG_GetValue(int ownerDraw) {
 			  es = &cg_entities[wcg.clientNum].currentState;
 			  f = sqrt (es->pos.trDelta[0] * es->pos.trDelta[0] + es->pos.trDelta[1] * es->pos.trDelta[1]);
 		  } else {
-			  const playerState_t *ps;
+			  const playerState_t *tps;
 
-			  //ps = &cg.predictedPlayerState;
-			  ps = &cg.snap->ps;
-			  f = sqrt( ps->velocity[0] * ps->velocity[0] +
-							ps->velocity[1] * ps->velocity[1] );
+			  //tps = &cg.predictedPlayerState;
+			  tps = &cg.snap->ps;
+			  f = sqrt( tps->velocity[0] * tps->velocity[0] +
+							tps->velocity[1] * tps->velocity[1] );
 		  }
 	  }
 	  return f;
@@ -5757,9 +5757,9 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 						// + 2 skip ^7 added with CG_SafeColorName()
 						s = va("2. %s", cgs.clientinfo[wcg.clientNum].name + 2);
 					} else {
-						int rank;
+						int trank;
 
-						rank = 1;
+						trank = 1;
 						for (i = 0;  i < MAX_CLIENTS;  i++) {
 							if (!cgs.clientinfo[i].infoValid) {
 								continue;
@@ -5769,11 +5769,11 @@ static void CG_Draw2ndPlaceScore (const rectDef_t *rect, float scale, const vec4
 							}
 
 							if (cgs.clientinfo[i].score > cgs.clientinfo[wcg.clientNum].score) {
-								rank++;
+								trank++;
 							}
 						}
 						// + 2 skip ^7 added with CG_SafeColorName()
-						s = va("%d. %s", rank, cgs.clientinfo[wcg.clientNum].name + 2);
+						s = va("%d. %s", trank, cgs.clientinfo[wcg.clientNum].name + 2);
 						score = cgs.clientinfo[wcg.clientNum].score;
 					}
 				} else {  // not /follow
@@ -8497,7 +8497,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
   case CG_MATCH_WINNER:  {
 	  vec4_t ourColor = { 1, 1, 1, 1 };
-	  float x;
+	  float tx;
 
 	  // 2018-07-08 ql doesn't support align right
 	  if (cg_wideScreen.integer == 7  &&  align == ITEM_ALIGN_RIGHT) {
@@ -8517,7 +8517,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  const char *playerName = "";
 		  char endText[1024];
 		  const char *fullText = "";
-		  float w;
+		  float tw;
 		  int wideScreenOrig;
 
 		  // testing
@@ -8544,29 +8544,29 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  }
 
 		  fullText = va("%s ^7%s", playerName, endText);
-		  w = CG_Text_Width(fullText, scale, 0, font);
+		  tw = CG_Text_Width(fullText, scale, 0, font);
 
 		  if (align == ITEM_ALIGN_CENTER) {
-			  x = rect.x - (w / 2);
+			  tx = rect.x - (tw / 2);
 		  } else if (align == ITEM_ALIGN_RIGHT) {
-			  x = rect.x - w;
+			  tx = rect.x - tw;
 		  } else {  // ITEM_ALIGN_LEFT or invalid value
-			  x = rect.x;
+			  tx = rect.x;
 		  }
 
 		  // we have to split text painting since the first part (player name) might be using a different alpha value for color
 
-		  CG_Text_Paint(x, rect.y, scale, color, playerName, 0, 0, textStyle, font);
+		  CG_Text_Paint(tx, rect.y, scale, color, playerName, 0, 0, textStyle, font);
 
 		  //FIXME 2018-07-13 horrible widescreen hack so that the spacing between the two text paints() isn't stretched, need text paint() that supports alpha change
 		  wideScreenOrig = cg_wideScreen.integer;
 		  if (cg_wideScreen.integer == 7) {
 			  cg_wideScreen.integer = 5;
 		  }
-		  x += CG_Text_Width(playerName, scale, 0, font);
+		  tx += CG_Text_Width(playerName, scale, 0, font);
 		  cg_wideScreen.integer = wideScreenOrig;
 
-		  CG_Text_Paint(x, rect.y, scale, ourColor, endText, 0, 0, textStyle, font);
+		  CG_Text_Paint(tx, rect.y, scale, ourColor, endText, 0, 0, textStyle, font);
 	  } else {  // team game
 
 		  // 2018-07-08 ql shows 'Teams are tied with a score of 0' -- 2018-07-13 has color and alpha from hud for 'Teams are tied' but overrides colors for Blue|Red leads/wins
@@ -8634,7 +8634,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  int captures = 0;
 		  int defends = 0;
 		  char placeString[32];
-		  char *s;
+		  char *st;
 
 		  //FIXME wolfcam following
 
@@ -8661,17 +8661,17 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  }
 
 		  // 2018-07-28 ignore RANK_TIED_FLAG to match quake live
-		  //s = CG_PlaceString((cg.snap->ps.persistant[PERS_RANK] &= ~RANK_TIED_FLAG) + 1);
+		  //st = CG_PlaceString((cg.snap->ps.persistant[PERS_RANK] &= ~RANK_TIED_FLAG) + 1);
 		  Q_strncpyz(placeString, CG_PlaceString((cg.snap->ps.persistant[PERS_RANK] &= ~RANK_TIED_FLAG) + 1), sizeof(placeString));
-		  s = placeString;
+		  st = placeString;
 
 		  // ignore colorized '1st', '2nd', etc.
-		  if (s[0] == '^') {
-			  s += 2;
+		  if (st[0] == '^') {
+			  st += 2;
 		  }
-		  if (strlen(s) > 1) {
-			  if (s[strlen(s) - 2] == '^') {
-				  s[strlen(s) - 2] = '\0';
+		  if (strlen(st) > 1) {
+			  if (st[strlen(st) - 2] == '^') {
+				  st[strlen(st) - 2] = '\0';
 			  }
 		  }
 
@@ -8688,7 +8688,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  if (cg_wideScreen.integer == 7) {
 				  // pass
 			  } else {
-				  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a time of %s", s, CG_GetTimeString(cg.snap->ps.persistant[PERS_SCORE])), 0, 0, textStyle, font, align);
+				  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a time of %s", st, CG_GetTimeString(cg.snap->ps.persistant[PERS_SCORE])), 0, 0, textStyle, font, align);
 			  }
 		  } else if (cgs.gametype == GT_CTF  ||  cgs.gametype == GT_1FCTF  ||  cgs.gametype == GT_OBELISK  ||  cgs.gametype == GT_HARVESTER  ||  cgs.gametype == GT_CTFS  ||  cgs.gametype == GT_NTF) {  //FIXME OBELISK like quakelive -- even if wrong
 			  if (captures) {
@@ -8710,9 +8710,9 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  } else {
 				  // 2018-07-28 quake live missing period at the end but not for other game types
 				  if (cg_wideScreen.integer == 7) {
-					  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+					  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d", st, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 				  } else {
-					  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d.", s, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
+					  CG_Text_Paint_Align(&rect, scale, color, va("You finished %s with a score of %d.", st, cg.snap->ps.persistant[PERS_SCORE]), 0, 0, textStyle, font, align);
 				  }
 			  }
 		  }
@@ -8730,7 +8730,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
   }
   case CG_PLYR_BEST_WEAPON_NAME: {
-	  int w;
+	  int wp;
 
 	  // 2018-07-05 ql ignores text align
 	  if (cg_wideScreen.integer == 7) {
@@ -8742,13 +8742,13 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  break;
 	  }
 
-	  w = cg.scores[cg.selectedScore].bestWeapon;
-	  if (w < 0  ||  w > MAX_WEAPONS) {
-		  Com_Printf("^1CG_PLYR_BEST_WEAPON_NAME invalid weapon number %d\n", w);
+	  wp = cg.scores[cg.selectedScore].bestWeapon;
+	  if (wp < 0  ||  wp > MAX_WEAPONS) {
+		  Com_Printf("^1CG_PLYR_BEST_WEAPON_NAME invalid weapon number %d\n", wp);
 		  break;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, weapNamesCasual[w], 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, weapNamesCasual[wp], 0, 0, textStyle, font, align);
 
 	  // debugging
 	  //CG_Text_Paint_Align(&rect, scale, colorGreen, va("%d", cg.selectedScore), 0, 0, textStyle, font, align);
@@ -8796,7 +8796,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case CG_PLAYER_COUNTS:  {
 	  int i;
 	  int count;
-	  const clientInfo_t *ci;
+	  const clientInfo_t *tci;
 	  int maxPlayers;
 	  int teamSize;
 
@@ -8805,11 +8805,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  //FIXME don't do it every time
 	  count = 0;
 	  for (i = 0;  i < MAX_CLIENTS;  i++) {
-		  ci = &cgs.clientinfo[i];
-		  if (!ci->infoValid) {
+		  tci = &cgs.clientinfo[i];
+		  if (!tci->infoValid) {
 			  continue;
 		  }
-		  if (ci->team == TEAM_SPECTATOR) {
+		  if (tci->team == TEAM_SPECTATOR) {
 			  // ql includes the specs  -- 2018-07-06 probably a bug
 			  if (cg_wideScreen.integer == 7) {  // bug compatibility
 				  // pass, count as player
@@ -8846,7 +8846,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  int i;
 	  int count;
-	  const clientInfo_t *ci;
+	  const clientInfo_t *tci;
 	  const char *teamSizeStr;
 	  int teamSize;
 
@@ -8859,11 +8859,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  // assuming this is only used for team games  -- 2018-07-06 yes but ql does draw something ('0 Players') for non-team games
 	  count = 0;
 	  for (i = 0;  i < MAX_CLIENTS;  i++) {
-		  ci = &cgs.clientinfo[i];
-		  if (!ci->infoValid) {
+		  tci = &cgs.clientinfo[i];
+		  if (!tci->infoValid) {
 			  continue;
 		  }
-		  if (ci->team != TEAM_RED) {
+		  if (tci->team != TEAM_RED) {
 			  continue;
 		  }
 		  count++;
@@ -8897,7 +8897,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 
 	  int i;
 	  int count;
-	  const clientInfo_t *ci;
+	  const clientInfo_t *tci;
 	  const char *teamSizeStr;
 	  int teamSize;
 
@@ -8910,11 +8910,11 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  //FIXME assuming this is only used for team games -- 2018-07-06 yes but ql does draw something (0 Players)
 	  count = 0;
 	  for (i = 0;  i < MAX_CLIENTS;  i++) {
-		  ci = &cgs.clientinfo[i];
-		  if (!ci->infoValid) {
+		  tci = &cgs.clientinfo[i];
+		  if (!tci->infoValid) {
 			  continue;
 		  }
-		  if (ci->team != TEAM_BLUE) {
+		  if (tci->team != TEAM_BLUE) {
 			  continue;
 		  }
 		  count++;
@@ -9098,7 +9098,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   case WCG_FOLLOW_PLAYER_NAME_EX:
   case CG_FOLLOW_PLAYER_NAME_EX: {
 	  char name[MAX_QPATH * 2];
-	  floatint_t tmpExtString[MAX_QPATH * 2];
+	  floatint_t xtmpExtString[MAX_QPATH * 2];
 	  const char *namep;
 	  const clientInfo_t *cinfo;
 
@@ -9116,7 +9116,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  if (CG_IsTeamGame(cgs.gametype)  &&  (cinfo->team == TEAM_RED  ||  cinfo->team == TEAM_BLUE)) {
 			  float textWidth;
 			  float textHeight;
-			  float x;
+			  float tx;
 			  int i;
 			  int slen;
 			  int teamColor;
@@ -9131,28 +9131,28 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 			  }
 
 			  slen = strlen(name);
-			  tmpExtString[0].i = TEXT_PIC_PAINT_COLOR;
-			  tmpExtString[1].i = teamColor;
+			  xtmpExtString[0].i = TEXT_PIC_PAINT_COLOR;
+			  xtmpExtString[1].i = teamColor;
 
 			  for (i = 2;  i < slen  &&  i < ((MAX_QPATH * 2) - 1) ;  i++) {
-				  tmpExtString[i].i = name[i];
+				  xtmpExtString[i].i = name[i];
 			  }
 
-			  tmpExtString[i].i = 0;
+			  xtmpExtString[i].i = 0;
 
 			  textHeight = CG_Text_Height(name, scale, 0, font);
 			  textWidth = CG_Text_Width(name, scale, 0, font);
-			  //textWidth = CG_Text_Pic_Width(tmpExtString, scale, 1.0, 0, textHeight, font);
+			  //textWidth = CG_Text_Pic_Width(xtmpExtString, scale, 1.0, 0, textHeight, font);
 
 			  if (align == ITEM_ALIGN_CENTER) {
-				  x = rect.x - (textWidth / 2.0);
+				  tx = rect.x - (textWidth / 2.0);
 			  } else if (align == ITEM_ALIGN_RIGHT) {
-				  x = rect.x - textWidth;
+				  tx = rect.x - textWidth;
 			  } else {
-				  x = rect.x;
+				  tx = rect.x;
 			  }
 
-			  CG_Text_Pic_Paint(x, rect.y, scale, colorWhite, tmpExtString, 0, 0, textStyle, font, textHeight, 1.0);
+			  CG_Text_Pic_Paint(tx, rect.y, scale, colorWhite, xtmpExtString, 0, 0, textStyle, font, textHeight, 1.0);
 		  } else {
 			  // not using forced colors
 			  CG_Text_Paint_Align(&rect, scale, color, name, 0, 0, textStyle, font, align);
@@ -9266,8 +9266,8 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
   // 2018-08-02 ql end_scoreboard_duel
 
   case CG_1ST_PLYR: {
-	  const clientInfo_t *ci;
-	  const char *s;
+	  const clientInfo_t *tci;
+	  const char *st;
 
 	  //FIXME 2018-09-26 ql uses '...' if name doesn't fit
 
@@ -9275,20 +9275,20 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
 			  break;
 		  } else {
-			  ci = &cgs.clientinfo[cg.duelPlayer1];
+			  tci = &cgs.clientinfo[cg.duelPlayer1];
 		  }
 		  // Com_Printf("^3invalid duel scores......\n");
 	  } else {
-		  ci = &cg.duelScores[0].ci;
+		  tci = &cg.duelScores[0].ci;
 	  }
 
-	  if (*ci->clanTag) {
-		  s = va("%s ^7%s", ci->clanTag, ci->name);
+	  if (*tci->clanTag) {
+		  st = va("%s ^7%s", tci->clanTag, tci->name);
 	  } else {
-		  s = ci->name;
+		  st = tci->name;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, st, 0, 0, textStyle, font, align);
 	  break;
   }
   case CG_1ST_PLYR_SCORE:
@@ -9465,7 +9465,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_1ST_PLYR_FLAG: {
-	  const clientInfo_t *ci;
+	  const clientInfo_t *tci;
 
 	  if (cg_wideScreen.integer == 7) {  // ql bug compatbility
 		  if (!cg.duelScoresValid) {
@@ -9474,32 +9474,32 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 
 	  if (cg.duelScoresValid) {
-		  ci = &cg.duelScores[0].ci;
+		  tci = &cg.duelScores[0].ci;
 	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
-		  ci = &cgs.clientinfo[cg.duelPlayer1];
+		  tci = &cgs.clientinfo[cg.duelPlayer1];
 	  } else {
 		  break;
 	  }
 
-	  if (ci->countryFlag) {
-		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, ci->countryFlag);
+	  if (tci->countryFlag) {
+		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, tci->countryFlag);
 	  }
 	  break;
   }
 
   case CG_1ST_PLYR_FULLCLAN: {
 	  // 2018-08-01 not in ql
-	  const clientInfo_t *ci;
+	  const clientInfo_t *tci;
 
 	  if (cg.duelScoresValid) {
-		  ci = &cg.duelScores[0].ci;
+		  tci = &cg.duelScores[0].ci;
 	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer1)) {
-		  ci = &cgs.clientinfo[cg.duelPlayer1];
+		  tci = &cgs.clientinfo[cg.duelPlayer1];
 	  } else {
 		  break;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, ci->fullClanName, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, tci->fullClanName, 0, 0, textStyle, font, align);
 	  break;
   }
 
@@ -9508,26 +9508,26 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  break;
 
   case CG_2ND_PLYR: {
-	  const clientInfo_t *ci;
-	  const char *s;
+	  const clientInfo_t *tci;
+	  const char *st;
 
 	  if (!cg.duelScoresValid) {
 		  if (!CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
 			  break;
 		  } else {
-			  ci = &cgs.clientinfo[cg.duelPlayer2];
+			  tci = &cgs.clientinfo[cg.duelPlayer2];
 		  }
 	  } else {
-		  ci = &cg.duelScores[1].ci;
+		  tci = &cg.duelScores[1].ci;
 	  }
 
-	  if (*ci->clanTag) {
-		  s = va("%s ^7%s", ci->clanTag, ci->name);
+	  if (*tci->clanTag) {
+		  st = va("%s ^7%s", tci->clanTag, tci->name);
 	  } else {
-		  s = ci->name;
+		  st = tci->name;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, s, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, st, 0, 0, textStyle, font, align);
 	  break;
   }
   case CG_2ND_PLYR_SCORE:
@@ -9703,7 +9703,7 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 	  break;
   case CG_2ND_PLYR_FLAG: {
-	  const clientInfo_t *ci;
+	  const clientInfo_t *tci;
 
 	  if (cg_wideScreen.integer == 7) {  // ql bug compatibility
 		  if (!cg.duelScoresValid) {
@@ -9712,31 +9712,31 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  }
 
 	  if (cg.duelScoresValid) {
-		  ci = &cg.duelScores[1].ci;
+		  tci = &cg.duelScores[1].ci;
 	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
-		  ci = &cgs.clientinfo[cg.duelPlayer2];
+		  tci = &cgs.clientinfo[cg.duelPlayer2];
 	  } else {
 		  break;
 	  }
 
-	  if (ci->countryFlag) {
-		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, ci->countryFlag);
+	  if (tci->countryFlag) {
+		  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, tci->countryFlag);
 	  }
 	  break;
   }
   case CG_2ND_PLYR_FULLCLAN: {
 	  // 2018-08-06 not in ql
-	  const clientInfo_t *ci;
+	  const clientInfo_t *tci;
 
 	  if (cg.duelScoresValid) {
-		  ci = &cg.duelScores[1].ci;
+		  tci = &cg.duelScores[1].ci;
 	  } else if (CG_DuelPlayerInfoValid(cg.duelPlayer2)) {
-		  ci = &cgs.clientinfo[cg.duelPlayer2];
+		  tci = &cgs.clientinfo[cg.duelPlayer2];
 	  } else {
 		  break;
 	  }
 
-	  CG_Text_Paint_Align(&rect, scale, color, ci->fullClanName, 0, 0, textStyle, font, align);
+	  CG_Text_Paint_Align(&rect, scale, color, tci->fullClanName, 0, 0, textStyle, font, align);
 	  break;
   }
 
@@ -9786,58 +9786,58 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  //FIXME 2018-09-27  missing CG_VOTEGAMETYPE1 CG_VOTEGAMETYPE2 CG_VOTEGAMETYPE3
 
   case CG_VOTESHOT1: {
-	  qhandle_t shader = 0;
+	  qhandle_t tshader = 0;
 	  const char *info;
 
 	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
 	  if (*info) {
-		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_0")));
+		  //tshader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_0")));
 		  if (CG_FileExists(va("levelshots/preview/%s", Info_ValueForKey(info, "map_0")))) {
-			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_0")));
+			  tshader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_0")));
 		  }
 	  }
-	  if (!shader) {
-		  shader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
+	  if (!tshader) {
+		  tshader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
 	  }
 
-	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
+	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, tshader);
 	  break;
   }
   case CG_VOTESHOT2: {
-	  qhandle_t shader = 0;
+	  qhandle_t tshader = 0;
 	  const char *info;
 
 	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
 	  if (*info) {
-		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_1")));
+		  //tshader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_1")));
 		  if (CG_FileExists(va("levelshots/preview/%s", Info_ValueForKey(info, "map_1")))) {
-			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_1")));
+			  tshader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_1")));
 			  //shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/overlay"));
 		  }
 	  }
-	  if (!shader) {
-		  shader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
+	  if (!tshader) {
+		  tshader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
 	  }
 
-	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
+	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, tshader);
 	  break;
   }
   case CG_VOTESHOT3: {
-	  qhandle_t shader = 0;
+	  qhandle_t tshader = 0;
 	  const char *info;
 
 	  info = CG_ConfigString(CS_MAP_VOTE_INFO);
 	  if (*info) {
-		  //shader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_2")));
+		  //tshader = trap_R_RegisterShaderNoMip(va("levelshots/%s", Info_ValueForKey(info, "map_2")));
 		  if (CG_FileExists(va("levelshots/preview/%s", Info_ValueForKey(info, "map_2")))) {
-			  shader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_2")));
+			  tshader = trap_R_RegisterShaderNoMip(va("levelshots/preview/%s", Info_ValueForKey(info, "map_2")));
 		  }
 	  }
-	  if (!shader) {
-		  shader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
+	  if (!tshader) {
+		  tshader = trap_R_RegisterShaderNoMip("levelshots/preview/default");
 	  }
 
-	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, shader);
+	  CG_DrawPic(rect.x, rect.y, rect.w, rect.h, tshader);
 	  break;
   }
 
@@ -11775,27 +11775,27 @@ void CG_OwnerDraw (float x, float y, float w, float h, float text_x, float text_
 	  if (wolfcam_following  &&  wcg.clientNum != cg.snap->ps.clientNum) {
 		  // pass
 	  } else {
-		  qhandle_t shader;
+		  qhandle_t tshader;
 		  int spacing = 0;
 
 
 		  //FIXME other keys besides gold, don't know what it will look like
 
 		  if (cg.snap->ps.stats[STAT_MAP_KEYS] & 0x1) {
-			  shader = cgs.media.silverKeyIcon;
-			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, shader);
+			  tshader = cgs.media.silverKeyIcon;
+			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, tshader);
 			  spacing += 10;
 		  }
 
 		  if (cg.snap->ps.stats[STAT_MAP_KEYS] & 0x2) {
-			  shader = cgs.media.goldKeyIcon;
-			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, shader);
+			  tshader = cgs.media.goldKeyIcon;
+			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, tshader);
 			  spacing += 10;
 		  }
 
 		  if (cg.snap->ps.stats[STAT_MAP_KEYS] & 0x4) {
-			  shader = cgs.media.masterKeyIcon;
-			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, shader);
+			  tshader = cgs.media.masterKeyIcon;
+			  CG_DrawPic(rect.x + spacing, rect.y, rect.w, rect.h, tshader);
 			  spacing += 10;
 		  }
 	  }

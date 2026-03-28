@@ -2342,35 +2342,35 @@ image_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLe
 			byte *r, *g, *b;
 			//byte *a;
 			byte *xpic;
-			int width;
-			int height;
-			int tr, tg, tb;
+			int swidth;
+			int sheight;
+			int sr, sg, sb;
 			int v;
 
 			//ri.Printf(PRINT_ALL,"^2yes....\n");
 			v = r_lightmapColor->integer;
-			tr = (v & 0xff0000) / 0x010000;
-			tg = (v & 0x00ff00) / 0x000100;
-			tb = (v & 0x0000ff) / 0x000001;
+			sr = (v & 0xff0000) / 0x010000;
+			sg = (v & 0x00ff00) / 0x000100;
+			sb = (v & 0x0000ff) / 0x000001;
 
 			xpic = (byte *)pic;
-			width = image->width;
-			height = image->height;
+			swidth = image->width;
+			sheight = image->height;
 
-			for (y = 0;  y < height;  y++) {
-				for (x = 0;  x < width;  x++) {
+			for (y = 0;  y < sheight;  y++) {
+				for (x = 0;  x < swidth;  x++) {
 					int avg;
 
-					r = &xpic[(width * 4) * y   + x * 4   + 0];
-					g = &xpic[(width * 4) * y   + x * 4   + 1];
-					b = &xpic[(width * 4) * y   + x * 4   + 2];
-					//a = &xpic[(width * 4) * y   + x * 4   + 3];
+					r = &xpic[(swidth * 4) * y   + x * 4   + 0];
+					g = &xpic[(swidth * 4) * y   + x * 4   + 1];
+					b = &xpic[(swidth * 4) * y   + x * 4   + 2];
+					//a = &xpic[(swidth * 4) * y   + x * 4   + 3];
 					//*g = 0;
 					//*b = 0;
 					avg = ((*r + *g + *b) / 3) * r_greyscaleValue->value;
-					*r = (byte)((float)avg * (float)tr / 255.0);
-					*g = (byte)((float)avg * (float)tg / 255.0);
-					*b = (byte)((float)avg * (float)tb / 255.0);
+					*r = (byte)((float)avg * (float)sr / 255.0);
+					*g = (byte)((float)avg * (float)sg / 255.0);
+					*b = (byte)((float)avg * (float)sb / 255.0);
 				}
 			}
 
@@ -2384,21 +2384,21 @@ image_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLe
 			byte *r, *g, *b;
 			//byte *a;
 			byte *xpic;
-			int width;
-			int height;
+			int swidth;
+			int sheight;
 
 			xpic = (byte *)pic;
-			width = image->width;
-			height = image->height;
+			swidth = image->width;
+			sheight = image->height;
 
-			for (y = 0;  y < height;  y++) {
-				for (x = 0;  x < width;  x++) {
+			for (y = 0;  y < sheight;  y++) {
+				for (x = 0;  x < swidth;  x++) {
 					int avg;
 
-					r = &xpic[(width * 4) * y   + x * 4   + 0];
-					g = &xpic[(width * 4) * y   + x * 4   + 1];
-					b = &xpic[(width * 4) * y   + x * 4   + 2];
-					//a = &xpic[(width * 4) * y   + x * 4   + 3];
+					r = &xpic[(swidth * 4) * y   + x * 4   + 0];
+					g = &xpic[(swidth * 4) * y   + x * 4   + 1];
+					b = &xpic[(swidth * 4) * y   + x * 4   + 2];
+					//a = &xpic[(swidth * 4) * y   + x * 4   + 3];
 					//*g = 0;
 					//*b = 0;
 					avg = ((*r + *g + *b) / 3) * r_picmipGreyScaleValue->value;
@@ -2416,22 +2416,22 @@ image_t *R_CreateImage2( const char *name, byte *pic, int width, int height, GLe
 				byte *r, *g, *b;
 				//byte *a;
 				byte *xpic;
-				int width;
-				int height;
+				int swidth;
+				int sheight;
 
 				xpic = (byte *)pic;
-				width = image->width;
-				height = image->height;
+				swidth = image->width;
+				sheight = image->height;
 
-				ri.Printf(PRINT_ALL, "^2 %d x %d  '%s'\n", width, height, name);
-				for (y = 0;  y < height;  y++) {
-					for (x = 0;  x < width;  x++) {
+				ri.Printf(PRINT_ALL, "^2 %d x %d  '%s'\n", swidth, sheight, name);
+				for (y = 0;  y < sheight;  y++) {
+					for (x = 0;  x < swidth;  x++) {
 						int avg;
 
-						r = &xpic[(width * 4) * y   + x * 4   + 0];
-						g = &xpic[(width * 4) * y   + x * 4   + 1];
-						b = &xpic[(width * 4) * y   + x * 4   + 2];
-						//a = &xpic[(width * 4) * y   + x * 4   + 3];
+						r = &xpic[(swidth * 4) * y   + x * 4   + 0];
+						g = &xpic[(swidth * 4) * y   + x * 4   + 1];
+						b = &xpic[(swidth * 4) * y   + x * 4   + 2];
+						//a = &xpic[(swidth * 4) * y   + x * 4   + 3];
 						//*g = 0;
 						//*b = 0;
 

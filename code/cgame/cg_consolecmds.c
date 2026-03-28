@@ -1417,6 +1417,9 @@ static void CG_PrintScores_f (void)
 #define pp(x) Com_Printf(#x ": %d\n", s->x)
 #define ppf(x) Com_Printf(#x ": %f\n", s->x)
 
+#define ppw(x) Com_Printf(#x ": %d\n", ws->x)
+#define ppwf(x) Com_Printf(#x ": %f\n", ws->x)
+
 static void CG_DumpStats_f (void)
 {
 	qboolean fallbackToOldScores = qtrue;
@@ -1463,15 +1466,15 @@ static void CG_DumpStats_f (void)
 
 			sbackup = s;
 			for (j = 1;  j < WP_NUM_WEAPONS;  j++) {
-				const duelWeaponStats_t *s = &sbackup->weaponStats[j];
+				const duelWeaponStats_t *ws = &sbackup->weaponStats[j];
 
 				Com_Printf("weapon %d\n", j);
 				Com_Printf("weapon name: %s\n", weapNamesCasual[j]);
-				pp(hits);
-				pp(atts);
-				pp(accuracy);
-				pp(damage);
-				pp(kills);
+				ppw(hits);
+				ppw(atts);
+				ppw(accuracy);
+				ppw(damage);
+				ppw(kills);
 			}
 		}
 	} else {
@@ -1609,6 +1612,9 @@ static void CG_DumpStats_f (void)
 }
 #undef pp
 #undef ppf
+
+#undef ppw
+#undef ppwf
 
 static void CG_SetLoopStart_f (void)
 {
@@ -2925,13 +2931,13 @@ static void CG_UpdateCameraInfoExt (int startUpdatePoint)
 
 	cg.numSplinePoints = 0;
 	for (i = 0;  i < ourUpdateStartPoint;  i++) {
-		cameraPoint_t *cp;
+		cameraPoint_t *tcp;
 
-		cp = &cg.cameraPoints[i];
-		if (!(cp->flags & CAM_ORIGIN)) {
+		tcp = &cg.cameraPoints[i];
+		if (!(tcp->flags & CAM_ORIGIN)) {
 			continue;
 		}
-		cg.numSplinePoints += cp->numSplines;
+		cg.numSplinePoints += tcp->numSplines;
 	}
 
 	granularity = 0.025;  //FIXME cvar
@@ -3356,7 +3362,7 @@ static void CG_UpdateCameraInfoExt (int startUpdatePoint)
 			posInterpolate_t posType = posBezier;
 			double cameraTime;
 			double startTime, endTime;
-			vec3_t start, end;
+			vec3_t vstart, vend;
 			double timeSlice;
 			int numSplines;
 
@@ -3382,20 +3388,20 @@ static void CG_UpdateCameraInfoExt (int startUpdatePoint)
 				startTime = ((double)(j + 0) * timeSlice) + cp->cgtime;
 				endTime = ((double)(j + 1) * timeSlice) + cp->cgtime;
 
-				CG_CameraSplineOriginAt(startTime, posType, start);
-				CG_CameraSplineOriginAt(endTime, posType, end);
+				CG_CameraSplineOriginAt(startTime, posType, vstart);
+				CG_CameraSplineOriginAt(endTime, posType, vend);
 
-				cp->originDistance += Distance(start, end);
+				cp->originDistance += Distance(vstart, vend);
 			}
 
 			cp->originAvgVelocity = cp->originDistance / (cpnext->cgtime - cp->cgtime) * 1000.0;
 
 			startTime = cp->cgtime;
 			endTime = ((double)(1) * timeSlice) + cp->cgtime;
-			CG_CameraSplineOriginAt(startTime, posType, start);
-			CG_CameraSplineOriginAt(endTime, posType, end);
+			CG_CameraSplineOriginAt(startTime, posType, vstart);
+			CG_CameraSplineOriginAt(endTime, posType, vend);
 
-			cp->originImmediateInitialVelocity = Distance(start, end) / (endTime - startTime) * 1000.0;
+			cp->originImmediateInitialVelocity = Distance(vstart, vend) / (endTime - startTime) * 1000.0;
 
 			if (cp->originAvgVelocity > 0.001) {
 				if (cp->useOriginVelocity) {
@@ -3411,10 +3417,10 @@ static void CG_UpdateCameraInfoExt (int startUpdatePoint)
 
 			startTime = ((double)(numSplines - 1) * timeSlice) + cp->cgtime;
 			endTime = ((double)(numSplines - 0) * timeSlice) + cp->cgtime;
-			CG_CameraSplineOriginAt(startTime, posType, start);
-			CG_CameraSplineOriginAt(endTime, posType, end);
+			CG_CameraSplineOriginAt(startTime, posType, vstart);
+			CG_CameraSplineOriginAt(endTime, posType, vend);
 
-			cp->originImmediateFinalVelocity = Distance(start, end) / (endTime - startTime) * 1000.0;
+			cp->originImmediateFinalVelocity = Distance(vstart, vend) / (endTime - startTime) * 1000.0;
 			if (cp->originAvgVelocity > 0.001) {
 				if (cp->useOriginVelocity) {
 					cp->originImmediateFinalVelocity *= (cp->originFinalVelocity / cp->originAvgVelocity);
@@ -3877,48 +3883,48 @@ static void CG_UpdateCameraInfoExt (int startUpdatePoint)
 	//FIXME maybe not here
 	// curve type spline points for drawpath
 	if (cg.numSplinePoints < MAX_SPLINEPOINTS) {
-		const cameraPoint_t *cp;
+		const cameraPoint_t *tcp;
 
-		//for (cp = cg.cameraPointsPointer;  cp != NULL;  cp = cp->next) {
-		for (cp = &cg.cameraPoints[ourUpdateStartPoint];  cp != NULL;  cp = cp->next) {
-			const cameraPoint_t *cpnext;
+		//for (tcp = cg.cameraPointsPointer;  tcp != NULL;  tcp = tcp->next) {
+		for (tcp = &cg.cameraPoints[ourUpdateStartPoint];  tcp != NULL;  tcp = tcp->next) {
+			const cameraPoint_t *tcpnext;
 			int numSplinePoints;
 			long double t;
 			long double timeSlice;
-			int i;
+			int ix;
 
-			if (!(cp->flags & CAM_ORIGIN)) {
+			if (!(tcp->flags & CAM_ORIGIN)) {
 				continue;
 			}
-			if (cp->type != CAMERA_CURVE) {
+			if (tcp->type != CAMERA_CURVE) {
 				continue;
 			}
-			if (!cp->hasQuadratic) {  // already handled above
-				VectorCopy(cp->origin, cg.splinePoints[cp->splineStart]);
+			if (!tcp->hasQuadratic) {  // already handled above
+				VectorCopy(tcp->origin, cg.splinePoints[tcp->splineStart]);
 				continue;
 			}
 
-			cpnext = cp->next;
-			while (cpnext  &&  !(cpnext->flags & CAM_ORIGIN)) {
-				cpnext = cpnext->next;
+			tcpnext = tcp->next;
+			while (tcpnext  &&  !(tcpnext->flags & CAM_ORIGIN)) {
+				tcpnext = tcpnext->next;
 			}
 
-			if (!cpnext) {
+			if (!tcpnext) {
 				Com_Printf("^3curve spline calc !cpnext\n");
 				break;
 			}
 
-			numSplinePoints = cpnext->splineStart - cp->splineStart;
-			timeSlice = (cpnext->cgtime - cp->cgtime) / (long double)numSplinePoints;
-			for (i = 0;  i < numSplinePoints;  i++) {
-				int j;
+			numSplinePoints = tcpnext->splineStart - tcp->splineStart;
+			timeSlice = (tcpnext->cgtime - tcp->cgtime) / (long double)numSplinePoints;
+			for (ix = 0;  ix < numSplinePoints;  ix++) {
+				int jx;
 
-				t = (cp->cgtime - cp->quadraticStartTime) + (timeSlice * i);
+				t = (tcp->cgtime - tcp->quadraticStartTime) + (timeSlice * ix);
 				// in seconds
 				t /= 1000.0;
 
-				for (j = 0;  j < 3;  j++) {
-					cg.splinePoints[cp->splineStart + i][j] = cp->a[j] * t * t + cp->b[j] * t + cp->c[j];
+				for (jx = 0;  jx < 3;  jx++) {
+					cg.splinePoints[tcp->splineStart + ix][jx] = tcp->a[jx] * t * t + tcp->b[jx] * t + tcp->c[jx];
 				}
 			}
 		}
@@ -4199,7 +4205,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 
 	if (!Q_stricmp(CG_Argv(1), "rotate")) {
 		double pitch, yaw, roll;
-		cameraPoint_t *cp;
+		cameraPoint_t *tcp;
 		int debug;
 
 		if (CG_Argc() < 5) {
@@ -4217,19 +4223,19 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 		roll = DEG2RAD(atof(CG_Argv(4)));
 
 		debug = SC_Cvar_Get_Int("debug_ecam_dir");
-		cp = &cg.cameraPoints[0];
+		tcp = &cg.cameraPoints[0];
 
 		if (debug) {
-			//Com_Printf("start: (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
-			Com_Printf("start: (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2]);
+			//Com_Printf("start: (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", tcp->angles[0], tcp->angles[1], tcp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+			Com_Printf("start: (%f %f %f)\n", tcp->angles[0], tcp->angles[1], tcp->angles[2]);
 		}
 
 		rotate_camera_path(NULL, pitch, yaw, roll, qfalse);
 
 		if (debug) {
-			//AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);
-			//Com_Printf("end:   (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
-			Com_Printf("end: (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2]);
+			//AnglesSubtract(tcp->angles, cg.refdefViewAngles, diff);
+			//Com_Printf("end:   (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", tcp->angles[0], tcp->angles[1], tcp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+			Com_Printf("end: (%f %f %f)\n", tcp->angles[0], tcp->angles[1], tcp->angles[2]);
 		}
 
 		return;
@@ -4307,7 +4313,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				vec3_t a;
 				double dotProduct;
 				Quaternion_t rot;
-				cameraPoint_t *cp;
+				cameraPoint_t *tcp;
 				int debug;
 
 				debug = SC_Cvar_Get_Int("debug_ecam_dir");
@@ -4318,12 +4324,12 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 					noAngles = qfalse;
 				}
 
-				cp = &cg.cameraPoints[0];
-				//AnglesSubtract(cg.refdefViewAngles, cp->angles, diff);
-				AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);
+				tcp = &cg.cameraPoints[0];
+				//AnglesSubtract(cg.refdefViewAngles, tcp->angles, diff);
+				AnglesSubtract(tcp->angles, cg.refdefViewAngles, diff);
 
 				AngleVectors(cg.refdefViewAngles, forwardRefdef, NULL, NULL);
-				AngleVectors(cp->angles, forwardCameraPoint, NULL, NULL);
+				AngleVectors(tcp->angles, forwardCameraPoint, NULL, NULL);
 
 				//VectorNormalize(forwardRefdef);
 				//VectorNormalize(forwardCameraPoint);
@@ -4391,15 +4397,15 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 				roll = DEG2RAD(AngleNormalize180(diff[2]));
 
 				if (debug) {
-					Com_Printf("start: (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+					Com_Printf("start: (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", tcp->angles[0], tcp->angles[1], tcp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
 				}
 
 				//rotate_camera_path(NULL, pitch, yaw, roll, noAngles);
 				rotate_camera_path(&rot, pitch, yaw, roll, noAngles);
 
 				if (debug) {
-					AnglesSubtract(cp->angles, cg.refdefViewAngles, diff);
-					Com_Printf("end:   (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", cp->angles[0], cp->angles[1], cp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
+					AnglesSubtract(tcp->angles, cg.refdefViewAngles, diff);
+					Com_Printf("end:   (%f %f %f) -> (%f %f %f)   (%f %f %f)\n", tcp->angles[0], tcp->angles[1], tcp->angles[2], cg.refdefViewAngles[0], cg.refdefViewAngles[1], cg.refdefViewAngles[2], diff[0], diff[1], diff[2]);
 				}
 
 				return;
@@ -4485,22 +4491,22 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 	}
 
 	if (!Q_stricmp(CG_Argv(1), "scale")) {
-		double s;
+		double sc;
 
 		if (CG_Argc() < 3) {
 			Com_Printf("usage: ecam scale <speed up/down scale value>\n");
 			return;
 		}
 
-		s = atof(CG_Argv(2));
+		sc = atof(CG_Argv(2));
 
-		if (s <= 0.0) {
+		if (sc <= 0.0) {
 			Com_Printf("invalid scale value\n");
 			Com_Printf("usage: ecam scale <speed up/down scale value>\n");
 			return;
 		}
 
-		s = 1.0 / s;
+		sc = 1.0 / sc;
 
 		for (i = cg.selectedCameraPointMin;  i < cg.selectedCameraPointMax;  i++) {
 			double origTimeLength;
@@ -4513,7 +4519,7 @@ static void CG_ChangeSelectedCameraPoints_f (void)
 
 			origNextTime = cpnext->cgtime;
 			origTimeLength = cpnext->cgtime - cp->cgtime;
-			newTimeLength = origTimeLength * s;
+			newTimeLength = origTimeLength * sc;
 
 			cpnext->cgtime = cp->cgtime + newTimeLength;
 			diff = origNextTime - cpnext->cgtime;

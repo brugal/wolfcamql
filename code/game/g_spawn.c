@@ -467,7 +467,7 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 	// quake live addition
 	if (G_SpawnString("not_gametype", NULL, &value)) {
 		qboolean isDigitString;
-		int i;
+		int j;
 
 		// 2019-01-31 older quake live maps used numbers instead of
 		// strings for the gametypes.  Ex (2009 map):
@@ -476,8 +476,8 @@ void G_SpawnGEntityFromSpawnVars( void ) {
 
 		// check for all digit string so you don't trip up with '1f'
 		isDigitString = qtrue;
-		for (i = 0;  i < strlen(value);  i++) {
-			if (!isdigit(value[i])  &&  value[i] != ' ') {
+		for (j = 0;  j < strlen(value);  j++) {
+			if (!isdigit(value[j])  &&  value[j] != ' ') {
 				isDigitString = qfalse;
 				break;
 			}

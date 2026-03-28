@@ -495,17 +495,17 @@ qboolean CG_DrawOldScoreboard( void ) {
 			if (cgs.clientinfo[wcg.clientNum].team != TEAM_SPECTATOR) {
 				if (CG_IsCpmaMvd()) {
 					int rank;
-					int i;
+					int j;
 
 					rank = 1;
-					for (i = 0;  i < MAX_CLIENTS;  i++) {
-						if (!cgs.clientinfo[i].infoValid) {
+					for (j = 0;  j < MAX_CLIENTS;  j++) {
+						if (!cgs.clientinfo[j].infoValid) {
 							continue;
 						}
-						if (cgs.clientinfo[i].team == TEAM_SPECTATOR) {
+						if (cgs.clientinfo[j].team == TEAM_SPECTATOR) {
 							continue;
 						}
-						if (cgs.clientinfo[i].score > cgs.clientinfo[wcg.clientNum].score) {
+						if (cgs.clientinfo[j].score > cgs.clientinfo[wcg.clientNum].score) {
 							rank++;
 						}
 					}

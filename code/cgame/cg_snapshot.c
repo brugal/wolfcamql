@@ -734,33 +734,33 @@ void CG_ResetTimeChange (int serverTime, int ioverf)
 
 	//memset(cg_entities, 0, sizeof(cg_entities));
 	for (i = 0;  i < MAX_GENTITIES;  i++) {
-		centity_t *cent;
+		centity_t *tcent;
 		//lerpFrame_t legs, torso, flag;
 
-		cent = &cg_entities[i];
+		tcent = &cg_entities[i];
 		if (i < MAX_CLIENTS * 2) {
-			//pe = cent->pe;
-			memset(cent, 0, sizeof(*cent));
+			//pe = tcent->pe;
+			memset(tcent, 0, sizeof(*tcent));
 
-			//cent->pe = pe;
+			//tcent->pe = pe;
 			//FIXME hack
 #if 0
 			if (cg.latestSnapshotTime >= origServerTime) {
-				cent->pe.legs = pe.legs;
-				cent->pe.torso = pe.torso;
-				cent->pe.flag = pe.flag;
+				tcent->pe.legs = pe.legs;
+				tcent->pe.torso = pe.torso;
+				tcent->pe.flag = pe.flag;
 			}
 #endif
 			if (i < MAX_CLIENTS) {
-				cent->currentState.clientNum = i;
-				cent->currentState.number = i;
+				tcent->currentState.clientNum = i;
+				tcent->currentState.number = i;
 			}
 
 		} else {
-			memset(cent, 0, sizeof(*cent));
+			memset(tcent, 0, sizeof(*tcent));
 		}
 
-		CG_ResetFXIntervalAndDistance(cent);
+		CG_ResetFXIntervalAndDistance(tcent);
 	}
 
 	// cg.predictedPlayerEntity cleared a bit later

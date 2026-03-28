@@ -95,8 +95,8 @@ void R_MME_CheckCvars (qboolean init, shotData_t *shotData)
 {
 	int pixelCount, blurTotal, passTotal;
 	//mmeBlurControl_t* blurControl = &blurData.control;
-	mmeBlurControl_t* passControl;
-	passData_t *passData;
+	mmeBlurControl_t* passControl = NULL;
+	passData_t *passData = NULL;
 
 	if (shotData == &shotDataMain) {
 		passControl = &passDataMain.control;

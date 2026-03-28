@@ -1169,27 +1169,27 @@ qboolean RE_GetGlyphInfo (fontInfo_t *fontInfo, int charValue, glyphInfo_t *glyp
 				if (fallbackFonts != NULL) {
 					face = fallbackFonts->face;
 				} else {
-					const glyphInfo_t *glyph;
+					const glyphInfo_t *tglyph;
 
 					ri.Printf(PRINT_WARNING, "RE_GetGlyphInfo no font fallbacks defined, using stub for %c 0x%x\n", charValue, charValue);
 					//*glyphOut = realFont->baseGlyphs[0];
 					//*g = realFont->baseGlyphs[0];
-					glyph = &realFont->baseGlyphs['*'];
+					tglyph = &realFont->baseGlyphs['*'];
 
 					//FIXME duplicate code
-					g->height = glyph->height;
-					g->top = glyph->top;
-					g->bottom = glyph->bottom;
-					g->pitch = glyph->pitch;
-					g->xSkip = glyph->xSkip;
-					g->left = glyph->left;
-					g->imageWidth = glyph->imageWidth;
-					g->imageHeight = glyph->imageHeight;
-					g->s = glyph->s;
-					g->t = glyph->t;
-					g->s2 = glyph->s2;
-					g->t2 = glyph->t2;
-					g->glyph = glyph->glyph;
+					g->height = tglyph->height;
+					g->top = tglyph->top;
+					g->bottom = tglyph->bottom;
+					g->pitch = tglyph->pitch;
+					g->xSkip = tglyph->xSkip;
+					g->left = tglyph->left;
+					g->imageWidth = tglyph->imageWidth;
+					g->imageHeight = tglyph->imageHeight;
+					g->s = tglyph->s;
+					g->t = tglyph->t;
+					g->s2 = tglyph->s2;
+					g->t2 = tglyph->t2;
+					g->glyph = tglyph->glyph;
 					g->next = NULL;
 
 					goto addnewglyphtolist;

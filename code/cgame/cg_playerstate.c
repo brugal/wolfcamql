@@ -845,24 +845,24 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 			if (cg_hitBeep.integer == 1) {
 				CG_StartLocalSound( cgs.media.hitSound, CHAN_LOCAL_SOUND );
 			} else if (cg_hitBeep.integer == 2) {
-				int n;
+				int tn;
 				qhandle_t sh;
 
 				//FIXME
 				// it's not based on info in peristant[], tested with godmode + bots
 				// it's in ps->generic1
 				if (cgs.protocolClass == PROTOCOL_QL) {
-					n = ps->generic1 / 64;
+					tn = ps->generic1 / 64;
 				} else if (cgs.cpma) {
-					n = (ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS]) / 26;
-					if (n > 3) {
-						n = 3;
+					tn = (ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS]) / 26;
+					if (tn > 3) {
+						tn = 3;
 					}
 				} else {
-					n = 0;
+					tn = 0;
 				}
 
-				switch (n) {
+				switch (tn) {
 				case 0:
 					sh = cgs.media.hitSound0;
 					break;
@@ -884,24 +884,24 @@ static void CG_CheckLocalSounds( const playerState_t *ps, const playerState_t *o
 				//CG_StartSound( NULL, cg.snap->ps.clientNum, CHAN_ITEM, sh);
 				//Com_Printf("%f hitbeep\n", cg.ftime);
 			} else if (cg_hitBeep.integer == 3) {
-				int n;
+				int tn;
 				qhandle_t sh;
 
 				//FIXME
 				// it's not based on info in peristant[], tested with godmode + bots
 				// it's in ps->generic1
 				if (cgs.protocolClass == PROTOCOL_QL) {
-					n = ps->generic1 / 64;
+					tn = ps->generic1 / 64;
 				} else if (cgs.cpma) {
-					n = (ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS]) / 26;
-					if (n > 3) {
-						n = 3;
+					tn = (ps->persistant[PERS_HITS] - ops->persistant[PERS_HITS]) / 26;
+					if (tn > 3) {
+						tn = 3;
 					}
 				} else {
-					n = 0;
+					tn = 0;
 				}
 
-				switch (n) {
+				switch (tn) {
 				case 3:
 					sh = cgs.media.hitSound0;
 					break;

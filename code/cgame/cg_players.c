@@ -1944,20 +1944,20 @@ void CG_NewClientInfo( int clientNum ) {
 		// forcemodel makes everyone use a single model
 		// to prevent load hitches
 		char modelStr[MAX_QPATH];
-		char *skin;
+		char *tskin;
 
 		if(0) {  //( CG_IsTeamGame(cgs.gametype) ) {
 			Q_strncpyz( newInfo.headModelName, DEFAULT_TEAM_HEAD, sizeof( newInfo.headModelName ) );
 			Q_strncpyz( newInfo.headSkinName, "default", sizeof( newInfo.headSkinName ) );
 		} else {
 			trap_Cvar_VariableStringBuffer( "headmodel", modelStr, sizeof( modelStr ) );
-			if ( ( skin = strchr( modelStr, '/' ) ) == NULL) {
-				skin = "default";
+			if ( ( tskin = strchr( modelStr, '/' ) ) == NULL) {
+				tskin = "default";
 			} else {
-				*skin++ = 0;
+				*tskin++ = 0;
 			}
 
-			Q_strncpyz( newInfo.headSkinName, skin, sizeof( newInfo.headSkinName ) );
+			Q_strncpyz( newInfo.headSkinName, tskin, sizeof( newInfo.headSkinName ) );
 			Q_strncpyz( newInfo.headModelName, modelStr, sizeof( newInfo.headModelName ) );
 		}
 

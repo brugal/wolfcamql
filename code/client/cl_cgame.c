@@ -1436,7 +1436,6 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		int clientNum;
 		int startTime;
 		int *teamSwitchTime;
-		int i;
 
 		clientNum = args[1];
 		startTime = args[2];
@@ -1473,7 +1472,6 @@ intptr_t CL_CgameSystemCalls( intptr_t *args ) {
 		const char *name;
 		char *output;
 		int sz;
-		int i;
 
 		name = (const char *)VMA(1);
 		output = (char *)VMA(2);

@@ -616,27 +616,27 @@ int huffyuv_encode_frame (AVCodecContext *avctx, unsigned char *buf, int buf_siz
     if (0) {  //(avctx->pix_fmt == PIX_FMT_YUV422P || avctx->pix_fmt == PIX_FMT_YUV420P){
 
     } else if (1) {  // if(avctx->pix_fmt == PIX_FMT_RGB32){
-        //x// uint8_t *data = p->data[0] + (height-1)*p->linesize[0];
-        uint8_t *data = p->data[0];  // + (height-1)*p->linesize[0];
+        //x// uint8_t *vdata = p->data[0] + (height-1)*p->linesize[0];
+        uint8_t *vdata = p->data[0];  // + (height-1)*p->linesize[0];
         //x// const int stride = -p->linesize[0];
         const int stride = p->linesize[0];
         //const int fake_stride = -fake_ystride;
         int y;
         int leftr, leftg, leftb;
 
-        put_bits(&s->pb, 8, leftr= data[R]);
-        put_bits(&s->pb, 8, leftg= data[G]);
-        put_bits(&s->pb, 8, leftb= data[B]);
+        put_bits(&s->pb, 8, leftr= vdata[R]);
+        put_bits(&s->pb, 8, leftg= vdata[G]);
+        put_bits(&s->pb, 8, leftb= vdata[B]);
         put_bits(&s->pb, 8, 0);
 
         //Com_Printf("width %d  height %d  linesize %d\n", width, height, p->linesize[0]);
-        //sub_left_prediction_bgr32(s, s->temp[0], data+4, width-1, &leftr, &leftg, &leftb);
-        sub_left_prediction_rgb24(s, s->temp[0], data+3, width-1, &leftr, &leftg, &leftb);
+        //sub_left_prediction_bgr32(s, s->temp[0], vdata+4, width-1, &leftr, &leftg, &leftb);
+        sub_left_prediction_rgb24(s, s->temp[0], vdata+3, width-1, &leftr, &leftg, &leftb);
         //encode_bgr_bitstream(s, width-1);
         encode_bgra_bitstream(s, width-1, 3);
 
         for(y=1; y<s->height; y++){
-            uint8_t *dst = data + y*stride;
+            uint8_t *dst = vdata + y*stride;
             if (0) {  //(s->predictor == PLANE && s->interlaced < y){
             }else{
                 //sub_left_prediction_bgr32(s, s->temp[0], dst, width, &leftr, &leftg, &leftb);

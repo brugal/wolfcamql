@@ -1385,7 +1385,7 @@ int Wolfcam_OffsetFirstPersonView (void)
 
 	//FIXME 1 0 ?
 	if (cg_demoSmoothing.integer > 2) {
-		float f;
+		float tf;
 		const snapshot_t *old;
 		const snapshot_t *new;
 		const entityState_t *esNew;
@@ -1449,19 +1449,19 @@ int Wolfcam_OffsetFirstPersonView (void)
 				//Com_Printf("^2teleport, skipping\n");
 				useSmoothing = qfalse;
 			}
-			f = (cg.ftime - (double)old->serverTime) / (double)(new->serverTime - old->serverTime);
+			tf = (cg.ftime - (double)old->serverTime) / (double)(new->serverTime - old->serverTime);
 
-			origin[0] = esOld->pos.trBase[0] + f * (esNew->pos.trBase[0] - esOld->pos.trBase[0]);
-			origin[1] = esOld->pos.trBase[1] + f * (esNew->pos.trBase[1] - esOld->pos.trBase[1]);
-			origin[2] = esOld->pos.trBase[2] + f * (esNew->pos.trBase[2] - esOld->pos.trBase[2]);
+			origin[0] = esOld->pos.trBase[0] + tf * (esNew->pos.trBase[0] - esOld->pos.trBase[0]);
+			origin[1] = esOld->pos.trBase[1] + tf * (esNew->pos.trBase[1] - esOld->pos.trBase[1]);
+			origin[2] = esOld->pos.trBase[2] + tf * (esNew->pos.trBase[2] - esOld->pos.trBase[2]);
 			VectorCopy(origin, cg.refdef.vieworg);
 
 			if (cg_demoSmoothingAngles.integer) {
 				vec3_t angles;
 
-				angles[0] = LerpAngleNear(esOld->apos.trBase[0], esNew->apos.trBase[0], f);
-				angles[1] = LerpAngleNear(esOld->apos.trBase[1], esNew->apos.trBase[1], f);
-				angles[2] = LerpAngleNear(esOld->apos.trBase[2], esNew->apos.trBase[2], f);
+				angles[0] = LerpAngleNear(esOld->apos.trBase[0], esNew->apos.trBase[0], tf);
+				angles[1] = LerpAngleNear(esOld->apos.trBase[1], esNew->apos.trBase[1], tf);
+				angles[2] = LerpAngleNear(esOld->apos.trBase[2], esNew->apos.trBase[2], tf);
 				VectorCopy(angles, cg.refdefViewAngles);
 				if (useSmoothing) {
 					// for lg beam

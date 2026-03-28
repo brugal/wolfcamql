@@ -6342,7 +6342,7 @@ static void CG_DrawReward (void)
 	if (cg_drawRewards.integer == 3) {  // cpma style multiple icons
 		int mimp, mexc, mgau, mdef, mass, mcap;
 		int numMedals;
-		int count;
+		int tcount;
 		qboolean skip[MAX_REWARDSTACK];
 
 		memset(skip, 0, sizeof(skip));
@@ -6399,7 +6399,7 @@ static void CG_DrawReward (void)
 			}
 		}
 
-		count = 0;
+		tcount = 0;
 		for (i = 0;  i < (cg.rewardStack + 1);  i++) {
 			if (skip[i]) {
 				continue;
@@ -6430,11 +6430,11 @@ static void CG_DrawReward (void)
 				x -= (imageWidth * (numMedals));
 			}
 
-			CG_DrawPic(x + ((float)ICON_SIZE * imageScale * count), y, (float)ICON_SIZE * imageScale, (float)ICON_SIZE * imageScale, cg.rewardShader[i] );
-			CG_Text_Paint(x + imageWidth / 2 - tw / 2 + ((float)ICON_SIZE * imageScale * count), y + imageWidth + (float)th * 1.5, textScale, color, buf, 0, 0, cg_drawRewardsStyle.integer, font);
+			CG_DrawPic(x + ((float)ICON_SIZE * imageScale * tcount), y, (float)ICON_SIZE * imageScale, (float)ICON_SIZE * imageScale, cg.rewardShader[i] );
+			CG_Text_Paint(x + imageWidth / 2 - tw / 2 + ((float)ICON_SIZE * imageScale * tcount), y + imageWidth + (float)th * 1.5, textScale, color, buf, 0, 0, cg_drawRewardsStyle.integer, font);
 
-			count++;
-			if (count >= numMedals) {
+			tcount++;
+			if (tcount >= numMedals) {
 				break;
 			}
 		}
@@ -6796,10 +6796,10 @@ static void CG_DrawLagometer( void ) {
 		if (wclients[wcg.clientNum].serverPingSamples) {
 			ping = wclients[wcg.clientNum].serverPingAccum / wclients[wcg.clientNum].serverPingSamples;
 			if (cg_lagometerFlash.integer  &&  ping >= cg_lagometerFlashValue.integer) {
-				vec4_t color;
-				VectorCopy(colorYellow, color);
-				color[3] = 0.3 * (float)lagometerAlpha / 255.0;
-				CG_FillRect(x, y, picSize, picSize, color);
+				vec4_t tcolor;
+				VectorCopy(colorYellow, tcolor);
+				tcolor[3] = 0.3 * (float)lagometerAlpha / 255.0;
+				CG_FillRect(x, y, picSize, picSize, tcolor);
 			}
 			//CG_DrawBigString (x, y + 20, va("%d", ping), 1.0);
 			s = va("%d", ping);
@@ -6837,11 +6837,11 @@ static void CG_DrawLagometer( void ) {
 	}
 
 	if (tcount > 0  &&  cg_lagometerFlash.integer  &&  totalSum / tcount >= cg_lagometerFlashValue.integer) {
-		vec4_t color;
-		VectorCopy(colorYellow, color);
-		color[3] = 0.3 * (float)lagometerAlpha / 255.0;
+		vec4_t tcolor;
+		VectorCopy(colorYellow, tcolor);
+		tcolor[3] = 0.3 * (float)lagometerAlpha / 255.0;
 
-		CG_FillRect(x, y, picSize, picSize, color);
+		CG_FillRect(x, y, picSize, picSize, tcolor);
 	}
 
 	ax = x;
@@ -7679,16 +7679,16 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum, const char *to
 			j++;
 		} else if (c == 'T') {
 			int team;
-			int ourClientNum;
+			int tourClientNum;
 
 			if (wolfcam_following) {
-				ourClientNum = wcg.clientNum;
+				tourClientNum = wcg.clientNum;
 			} else {
-				ourClientNum = cg.snap->ps.clientNum;
+				tourClientNum = cg.snap->ps.clientNum;
 			}
 
 			if (lastFrag) {
-				team = cgs.clientinfo[ourClientNum].team;
+				team = cgs.clientinfo[tourClientNum].team;
 			} else {
 				team = obituary->killerTeam;
 			}
@@ -7706,16 +7706,16 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum, const char *to
 		} else if (c == 'f') {
 			int team;
 			//qboolean suicide = qfalse;  //FIXME suicide doesn't go here, it's for killer
-			int ourClientNum;
+			int tourClientNum;
 
 			if (wolfcam_following) {
-				ourClientNum = wcg.clientNum;
+				tourClientNum = wcg.clientNum;
 			} else {
-				ourClientNum = cg.snap->ps.clientNum;
+				tourClientNum = cg.snap->ps.clientNum;
 			}
 			if (lastFrag) {
 				team = cg.lastFragVictimTeam;
-				if (cg.lastFragVictim == ourClientNum) {
+				if (cg.lastFragVictim == tourClientNum) {
 					//suicide = qtrue;
 				}
 			} else {
@@ -7746,18 +7746,18 @@ floatint_t *CG_CreateFragString (qboolean lastFrag, int indexNum, const char *to
 			j++;
 		} else if (c == 'F') {
 			int team;
-			int ourClientNum;
+			int tourClientNum;
 			qboolean suicide = qfalse;
 
 			if (wolfcam_following) {
-				ourClientNum = wcg.clientNum;
+				tourClientNum = wcg.clientNum;
 			} else {
-				ourClientNum = cg.snap->ps.clientNum;
+				tourClientNum = cg.snap->ps.clientNum;
 			}
 
 			if (lastFrag) {
-				team = cgs.clientinfo[ourClientNum].team;
-				if (cg.lastFragVictim == ourClientNum) {
+				team = cgs.clientinfo[tourClientNum].team;
+				if (cg.lastFragVictim == tourClientNum) {
 					suicide = qtrue;
 				}
 			} else {

@@ -6776,18 +6776,18 @@ char *Q_MathScript (char *script, float *val, int *error)
             ops[numOps + 1] = crandom();
             numOps += 2;
 		} else if (!Q_stricmp(token, "realtime")) {
-			float val;
+			float v;
 
-			val = DC->realTime;
+			v = DC->realTime;
             ops[numOps] = OP_VAL;
-            ops[numOps + 1] = val;
+            ops[numOps + 1] = v;
             numOps += 2;
 		} else if (!Q_stricmp(token, "gametime")) {
-			float val;
+			float v;
 
-			val = DC->cgTime;
+			v = DC->cgTime;
             ops[numOps] = OP_VAL;
-            ops[numOps + 1] = val;
+            ops[numOps + 1] = v;
             numOps += 2;
 		} else if (!Q_stricmp(token, "ownerdrawvalue")) {
 			ops[numOps] = OP_FOWNERDRAWVALUE;
@@ -6840,13 +6840,13 @@ char *Q_MathScript (char *script, float *val, int *error)
 
     // functions
     for (i = numOps - 2;  i >= 0;  i -= 2) {
-        float val, val2;
+        float tval, val2;
 
         if (ops[i] < OP_FUNCFIRST  ||  ops[i] > OP_FUNCLAST) {
             continue;
         }
 
-        val = 0;
+        tval = 0;
         if ((i + 2) < (numOps - 1)) {
             if (ops[i + 2] != OP_VAL) {
                 *error = 6;
@@ -6854,53 +6854,53 @@ char *Q_MathScript (char *script, float *val, int *error)
                 recursiveCount--;
                 return script;
             }
-            val = ops[i + 3];
+            tval = ops[i + 3];
         }
 
         if (ops[i] == OP_FSQRT) {
-            val = sqrt(val);
+            tval = sqrt(tval);
         } else if (ops[i] == OP_FCEIL) {
-            val = ceil(val);
+            tval = ceil(tval);
         } else if (ops[i] == OP_FFLOOR) {
-            val = floor(val);
+            tval = floor(tval);
         } else if (ops[i] == OP_FSIN) {
-            val = sin(DEG2RAD(val));
+            tval = sin(DEG2RAD(tval));
         } else if (ops[i] == OP_FCOS) {
-            val = cos(DEG2RAD(val));
+            tval = cos(DEG2RAD(tval));
         } else if (ops[i] == OP_FWAVE) {
-            //val = sin(val / M_PI);
+            //tval = sin(tval / M_PI);
 			// fucking q3mme -- this is what they have
-			val = sin(val * 2 * M_PI);
+			tval = sin(tval * 2 * M_PI);
         } else if (ops[i] == OP_FCLIP) {
-            if (val < 0.0) {
-                val = 0;
-            } else if (val > 1.0) {
-                val = 1;
+            if (tval < 0.0) {
+                tval = 0;
+            } else if (tval > 1.0) {
+                tval = 1;
             }
         } else if (ops[i] == OP_FACOS) {
-            val = RAD2DEG(acos(val));
+            tval = RAD2DEG(acos(tval));
         } else if (ops[i] == OP_FASIN) {
-            val = RAD2DEG(M_PI / 2.0 - acos(val));
+            tval = RAD2DEG(M_PI / 2.0 - acos(tval));
         } else if (ops[i] == OP_FATAN) {
-            val = RAD2DEG(M_PI / 2.0 - acos(val / (sqrt(val * val + 1))));
+            tval = RAD2DEG(M_PI / 2.0 - acos(tval / (sqrt(tval * tval + 1))));
 		} else if (ops[i] == OP_FATAN2) {
             val2 = ops[i + 5];
-			val = RAD2DEG(atan2(val, val2));
+			tval = RAD2DEG(atan2(tval, val2));
 			numOps -= 2;
         } else if (ops[i] == OP_FTAN) {
-			val = tan(DEG2RAD(val));
+			tval = tan(DEG2RAD(tval));
 		} else if (ops[i] == OP_FPOW) {
             val2 = ops[i + 5];
-			val = powf(val, val2);
+			tval = powf(tval, val2);
 			numOps -= 2;
 		} else if (ops[i] == OP_FOWNERDRAWVALUE) {
-			val = DC->getValue(val);
+			tval = DC->getValue(tval);
         } else {
             Com_Printf("^3qmath unknown function %f\n", ops[i]);
         }
 
         ops[i] = OP_VAL;
-        ops[i + 1] = val;
+        ops[i + 1] = tval;
 
         for (j = i + 4;  j < numOps;  j++) {
             ops[j - 2] = ops[j];

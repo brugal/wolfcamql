@@ -118,7 +118,7 @@ shutil.copy2(os.path.join("ui", "wcmenudef.h"), os.path.join(packageDir, "wolfca
 
 
 print("building source...")
-ignoreFiles = [ ".hg", ".hgignore", "build", "package-files", "package-release", os.path.join("code", "thirdparty", "libs"), "macwolfcambuild", "update-mac-binaries.sh", os.path.join("backtrace", "build"), "mac-binaries" ]
+ignoreFiles = [ ".git", ".hg", ".hgignore", "build", "package-files", "package-release", os.path.join("code", "thirdparty", "libs"), "macwolfcambuild", "update-mac-binaries.sh", os.path.join("backtrace", "build"), "mac-binaries" ]
 
 for f in glob.glob(os.path.join("backtrace", "binutils*gz")):
     ignoreFiles.append(f)

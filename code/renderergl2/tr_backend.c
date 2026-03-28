@@ -401,14 +401,14 @@ void RB_BeginDrawingView (void) {
 	{
 		clearBits |= GL_COLOR_BUFFER_BIT;	// FIXME: only if sky shaders have been used
 		if (*r_fastSkyColor->string) {
-			int v, tr, tg, tb;
+			int v, sr, sg, sb;
 
 			v = r_fastSkyColor->integer;
-			tr = (v & 0xff0000) / 0x010000;
-			tg = (v & 0x00ff00) / 0x000100;
-			tb = (v & 0x0000ff) / 0x000001;
+			sr = (v & 0xff0000) / 0x010000;
+			sg = (v & 0x00ff00) / 0x000100;
+			sb = (v & 0x0000ff) / 0x000001;
 
-			qglClearColor((float)tr / 255.0, (float)tg / 255.0, (float)tb / 255.0, 1.0);
+			qglClearColor((float)sr / 255.0, (float)sg / 255.0, (float)sb / 255.0, 1.0);
 		} else {
 			qglClearColor( 0.0f, 0.0f, 0.0f, 1.0f );        // FIXME: get color of sky
 		}
@@ -2495,14 +2495,14 @@ const void	*RB_DrawBuffer( const void *data ) {
 	// clear screen for debugging
 	if ( r_clear->integer ) {
 		if (*r_clearColor->string) {
-			int v, tr, tg, tb;
+			int v, sr, sg, sb;
 
 			v = r_clearColor->integer;
-			tr = (v & 0xff0000) / 0x010000;
-			tg = (v & 0x00ff00) / 0x000100;
-			tb = (v & 0x0000ff) / 0x000001;
+			sr = (v & 0xff0000) / 0x010000;
+			sg = (v & 0x00ff00) / 0x000100;
+			sb = (v & 0x0000ff) / 0x000001;
 
-			qglClearColor((float)tr / 255.0, (float)tg / 255.0, (float)tb / 255.0, 1.0);
+			qglClearColor((float)sr / 255.0, (float)sg / 255.0, (float)sb / 255.0, 1.0);
 		} else {
 			qglClearColor( 1, 0, 0.5, 1 );
 		}
@@ -3462,7 +3462,7 @@ void RB_ExecuteRenderCommands( const void *data ) {
 			dprintf("r1 cleardepth\n");
 
 			if (r_anaglyphMode->integer == 19  &&  tr.recordingVideo  &&  *ri.SplitVideo  &&  !tr.leftRecorded) {
-				videoFrameCommand_t cmd;
+				videoFrameCommand_t vcmd;
 
 				if (!videoCommand) {
 					//FIXME 'videoCommand' not used
@@ -3543,18 +3543,18 @@ void RB_ExecuteRenderCommands( const void *data ) {
 
 				//ri.Printf(PRINT_ALL, "^3about to record...\n");
 				//FIXME hack
-				cmd.width = ri.afdLeft->width;
-				cmd.height = ri.afdLeft->height;
-				cmd.captureBuffer = ri.afdLeft->cBuffer;
-				cmd.encodeBuffer = ri.afdLeft->eBuffer;
-				cmd.motionJpeg = (ri.afdLeft->codec == CODEC_MJPEG);
-				cmd.avi = ri.afdLeft->avi;
-				cmd.tga = ri.afdLeft->tga;
-				cmd.jpg = ri.afdLeft->jpg;
-				cmd.png = ri.afdLeft->png;
-				cmd.picCount = ri.afdMain->picCount - 1;
-				Q_strncpyz(cmd.givenFileName, ri.afdMain->givenFileName, MAX_QPATH);
-				RB_TakeVideoFrameCmd(&cmd, &shotDataLeft);
+				vcmd.width = ri.afdLeft->width;
+				vcmd.height = ri.afdLeft->height;
+				vcmd.captureBuffer = ri.afdLeft->cBuffer;
+				vcmd.encodeBuffer = ri.afdLeft->eBuffer;
+				vcmd.motionJpeg = (ri.afdLeft->codec == CODEC_MJPEG);
+				vcmd.avi = ri.afdLeft->avi;
+				vcmd.tga = ri.afdLeft->tga;
+				vcmd.jpg = ri.afdLeft->jpg;
+				vcmd.png = ri.afdLeft->png;
+				vcmd.picCount = ri.afdMain->picCount - 1;
+				Q_strncpyz(vcmd.givenFileName, ri.afdMain->givenFileName, MAX_QPATH);
+				RB_TakeVideoFrameCmd(&vcmd, &shotDataLeft);
 				tr.leftRecorded = qtrue;
 			}
 

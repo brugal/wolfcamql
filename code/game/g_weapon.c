@@ -465,13 +465,13 @@ void weapon_railgun_fire (gentity_t *ent) {
 		traceEnt = &g_entities[ trace.entityNum ];
 		if ( traceEnt->takedamage ) {
 			if (traceEnt->client) {
-				gentity_t *tent;
+				gentity_t *stent;
 
-				tent = G_TempEntity(trace.endpos, EV_MISSILE_HIT);
-				tent->s.otherEntityNum = traceEnt->s.number;
-				tent->s.eventParm = DirToByte(trace.plane.normal);
-				tent->s.weapon = WP_RAILGUN;
-				tent->s.clientNum = ent->s.clientNum;
+				stent = G_TempEntity(trace.endpos, EV_MISSILE_HIT);
+				stent->s.otherEntityNum = traceEnt->s.number;
+				stent->s.eventParm = DirToByte(trace.plane.normal);
+				stent->s.weapon = WP_RAILGUN;
+				stent->s.clientNum = ent->s.clientNum;
 			}
 #if 1  //def MPACK
 			if ( traceEnt->client && traceEnt->client->invulnerabilityTime > level.time ) {

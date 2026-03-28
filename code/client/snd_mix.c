@@ -192,7 +192,6 @@ void S_TransferPaintBuffer(int endtime)
 		count = (endtime - s_paintedtime);
 #if 0
 		for (i = 0;  i < count;  i++) {
-			int val;
 			float s;
 
 			val = paintbuffer[i].left >> 8;
@@ -220,7 +219,6 @@ void S_TransferPaintBuffer(int endtime)
 #endif
 
 		for (i = 0;  i < count;  i++) {
-			int val;
 			//float s;
 
 			val = paintbuffer[i].left >> 8;

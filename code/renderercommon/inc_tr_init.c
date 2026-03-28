@@ -211,18 +211,18 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			if ( shotData->control.overlapFrames ) {
 				/* First frame in a sequence, fill the buffer with the last frames */
 				if (shotData->control.totalIndex == 0) {
-					int i;
-					for (i = 0; i < shotData->control.overlapFrames; i++) {
-						R_MME_BlurOverlapAdd(&shotData->shot, i);
+					int j;
+					for (j = 0; j < shotData->control.overlapFrames; j++) {
+						R_MME_BlurOverlapAdd(&shotData->shot, j);
 
 						if (mme_saveDepth->integer > 0  &&  mme_saveDepth->integer != 2) {
-							R_MME_BlurOverlapAdd(&shotData->depth, i);
+							R_MME_BlurOverlapAdd(&shotData->depth, j);
 						}
 
 						//FIXME implement
 #if 0
 						if ( mme_saveStencil->integer ) {
-							R_MME_BlurOverlapAdd( blurStencil, i );
+							R_MME_BlurOverlapAdd( blurStencil, j );
 						}
 #endif
 						shotData->control.totalIndex++;
@@ -493,12 +493,12 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 
 		if (*ri.SplitVideo) {
 			int c;
-			const char *type = "png";
+			const char *stype = "png";
 			qboolean hasAlpha;
 
 			hasAlpha = fetchBufferHasAlpha;
 			if (cmd->jpg) {
-				type = "jpg";
+				stype = "jpg";
 				// alpha already removed
 				hasAlpha = qfalse;
 			}
@@ -508,7 +508,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 			*/
 			memcpy(*ri.ExtraVideoBuffer, buffer, width * height * (3 + hasAlpha));
 
-			Com_sprintf(finalName, MAX_QPATH, "videos/%s-left-%010d.%s", cmd->givenFileName, count, type);
+			Com_sprintf(finalName, MAX_QPATH, "videos/%s-left-%010d.%s", cmd->givenFileName, count, stype);
 
 			if (r_anaglyphMode->integer != 19) {
 				ri.FS_WriteFile(finalName, buffer, 1);  // create path
@@ -558,7 +558,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				}
 			}
 
-			Com_sprintf(finalName, MAX_QPATH, "videos/%s-right-%010d.%s", cmd->givenFileName, count, type);
+			Com_sprintf(finalName, MAX_QPATH, "videos/%s-right-%010d.%s", cmd->givenFileName, count, stype);
 			ri.FS_WriteFile(finalName, buffer, 1);  // create path
 
 			c = width * height * (3 + hasAlpha);
@@ -865,7 +865,7 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				//FIXME duplicate code in R_MME_GetDepth()
 				float focusStart, focusEnd, focusMul;
 				float zBase, zAdd, zRange;
-				int i;
+				int j;
 				GLfloat *out;
 
 				focusStart = mme_depthFocus->value - mme_depthRange->value;
@@ -886,10 +886,10 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 				qglReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT, GL_FLOAT, out );
 
 				/* Could probably speed this up a bit with SSE but frack it for now */
-				for (i=0;i<shotData->pixelCount;i++) {
+				for (j=0;j<shotData->pixelCount;j++) {
 					/* Read from the 0 - 1 depth */
 					//float zVal = ((float *)outAlign)[i];
-					GLfloat zVal = out[i];
+					GLfloat zVal = out[j];
 					int outVal;
 					/* Back to the original -1 to 1 range */
 					zVal = zVal * 2.0f - 1.0f;
@@ -903,21 +903,21 @@ const void *RB_TakeVideoFrameCmd (const void *data, shotData_t *shotData)
 					else
 						outVal = (zVal - focusStart) * focusMul;
 					//((byte *)out)[i] = outVal;
-					cmd->encodeBuffer[18 + i * 3 + 0] = outVal;
-					cmd->encodeBuffer[18 + i * 3 + 1] = outVal;
-					cmd->encodeBuffer[18 + i * 3 + 2] = outVal;
+					cmd->encodeBuffer[18 + j * 3 + 0] = outVal;
+					cmd->encodeBuffer[18 + j * 3 + 1] = outVal;
+					cmd->encodeBuffer[18 + j * 3 + 2] = outVal;
 				}
 			} else {  // using depth blur
-				int i;
+				int j;
 
-				for (i = 0;  i < shotData->pixelCount;  i++) {
+				for (j = 0;  j < shotData->pixelCount;  j++) {
 					int outVal;
 
-					outVal = ((byte *)shotData->depth.accum)[i];
+					outVal = ((byte *)shotData->depth.accum)[j];
 
-					cmd->encodeBuffer[18 + i * 3 + 0] = outVal;
-					cmd->encodeBuffer[18 + i * 3 + 1] = outVal;
-					cmd->encodeBuffer[18 + i * 3 + 2] = outVal;
+					cmd->encodeBuffer[18 + j * 3 + 0] = outVal;
+					cmd->encodeBuffer[18 + j * 3 + 1] = outVal;
+					cmd->encodeBuffer[18 + j * 3 + 2] = outVal;
 				}
 			}
 

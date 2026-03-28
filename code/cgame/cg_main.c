@@ -8262,7 +8262,7 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 	CG_LoadingString( "sounds" );
 
 	{
-		int i;
+		int j;
 		const char *as[] = {
 			"sound/items/poweruprespawn",
 			"sound/items/kamikazerespawn",
@@ -8280,14 +8280,14 @@ static void CG_Init (int serverMessageNum, int serverCommandSequence, int client
 		};
 
 		cg.numAllowedAmbientSounds = 0;
-		for (i = 0;  i < ARRAY_LEN(as);  i++) {
+		for (j = 0;  j < ARRAY_LEN(as);  j++) {
 			qhandle_t h;
 
-			h = trap_S_RegisterSound(as[i], qfalse);
+			h = trap_S_RegisterSound(as[j], qfalse);
 			cg.allowedAmbientSounds[cg.numAllowedAmbientSounds] = h;
 			cg.numAllowedAmbientSounds++;
 
-			Com_Printf("registered allowed ambient sound '%s' %d\n", as[i], h);
+			Com_Printf("registered allowed ambient sound '%s' %d\n", as[j], h);
 		}
 	}
 

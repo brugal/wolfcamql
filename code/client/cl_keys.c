@@ -384,20 +384,20 @@ void Field_VariableSizeDraw (field_t *edit, float x, float y, int width, int siz
 
 	//FIXME separate function
 	{
-		char *p = str;
+		char *vp = str;
 		int count = 0;
 
-		while (*p) {
+		while (*vp) {
 			int numUtf8Bytes;
 			qboolean error;
 
 			if (count == drawLen) {
-				*p = '\0';
+				*vp = '\0';
 				break;
 			}
 
-			Q_GetCpFromUtf8(p, &numUtf8Bytes, &error);
-			p += numUtf8Bytes;
+			Q_GetCpFromUtf8(vp, &numUtf8Bytes, &error);
+			vp += numUtf8Bytes;
 			count++;
 		}
 	}

@@ -410,7 +410,7 @@ qboolean CG_ParseSpawnVars( void ) {
             const char *gametypeName;
             const char *s;
             qboolean isDigitString;
-            int i;
+            int j;
 
             // 2019-01-31 older quake live maps used numbers instead of
             // strings for the gametypes.  Ex (2009 map):
@@ -419,8 +419,8 @@ qboolean CG_ParseSpawnVars( void ) {
 
             // check for all digit string so you don't trip up with '1f'
             isDigitString = qtrue;
-            for (i = 0;  i < strlen(com_token);  i++) {
-                if (!isdigit(com_token[i])) {
+            for (j = 0;  j < strlen(com_token);  j++) {
+                if (!isdigit(com_token[j])) {
                     isDigitString = qfalse;
                     break;
                 }
