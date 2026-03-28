@@ -1879,7 +1879,7 @@ char *Sys_PopenGetLine (popenData_t *p, char *buffer, int size)
 		// pass
 		retp = NULL;
 	} else if (pw->threadStatus == POPEN_DATA_AVAILABLE) {
-		char *p;
+		char *ps;
 		char *s;
 		int minSize;
 		int i;
@@ -1893,26 +1893,26 @@ char *Sys_PopenGetLine (popenData_t *p, char *buffer, int size)
 		}
 
 		s = buffer;
-		p = pw->buffer;
+		ps = pw->buffer;
 
 		//Com_Printf("^5 buffer orig: '%s'\n", pw->buffer);
 
 		for (i = 0;  i < minSize - 1;  i++) {
-			if (*p == '\0') {
-				*s = *p;
+			if (*ps == '\0') {
+				*s = *ps;
 				break;
-			} else if (*p == '\r') {
+			} else if (*ps == '\r') {
 				// skip
 				s--;
-			} else if (*p == '\n') {
-				*s = *p;
+			} else if (*ps == '\n') {
+				*s = *ps;
 				break;
 			} else {
-				*s = *p;
+				*s = *ps;
 			}
 
 			s++;
-			p++;
+			ps++;
 		}
 
 		//Com_Printf("^3 buffer:  '%s'\n", buffer);
@@ -1926,10 +1926,10 @@ char *Sys_PopenGetLine (popenData_t *p, char *buffer, int size)
 			s++;
 			*s = '\0';
 
-			p = pw->buffer;
+			ps = pw->buffer;
 			for (j = i + 1, n = 0;  j < sizeof(pw->buffer) - 1;  j++, n++) {
-				p[n] = p[j];
-				if (p[n] == '\0') {
+				ps[n] = ps[j];
+				if (ps[n] == '\0') {
 					break;
 				}
 			}
