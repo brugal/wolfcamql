@@ -11,7 +11,7 @@
 #include <string.h>
 
 #ifdef USE_INTERNAL_ZLIB
-#include "../zlib-1.3.1/zlib.h"
+#include "../zlib-1.3.2/zlib.h"
 #else
 #include <zlib.h>
 #endif

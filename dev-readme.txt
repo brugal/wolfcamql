@@ -24,7 +24,7 @@ compile freetype mac os x:
 
   # zlib has version information, try to use the same one
 
-  CPPFLAGS="-I/Users/acano/share/zlib-1.3.1" CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" ./configure --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
+  CPPFLAGS="-I/Users/acano/share/zlib-1.3.2" CFLAGS="-arch i386 -arch x86_64 -mmacosx-version-min=10.7" ./configure --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
   make
   cp objs/.libs/libfreetype.a ...
 
@@ -34,7 +34,7 @@ compile freetype win32 (from linux):
 
   # zlib has version information, try to use the same one
 
-  CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/thirdparty/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
+  CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/thirdparty/zlib-1.3.2 ./configure --host=i686-w64-mingw32 --with-zlib=yes --with-bzip2=no --with-png=no --with-brotli=no
   make
   cp objs/.libs/libfreetype.a ...
 
@@ -72,7 +72,7 @@ libspeexdsp-1.2rc3/fftwrap.c add '#define USE_KISS_FFT'
 compile curl win32 (from linux):
 
 
-CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/thirdparty/zlib-1.3.1 ./configure --host=i686-w64-mingw32 --with-schannel --without-libpsl
+CPPFLAGS=-I/home/acano/work/hg/ioquakelive-demo-player/code/thirdparty/zlib-1.3.2 ./configure --host=i686-w64-mingw32 --with-schannel --without-libpsl
 
 ...
 
@@ -93,7 +93,7 @@ pacman -S mingw-w64-cross-binutils
 
 open terminal with mingw32.exe / mingw64.exe
 
-CPPFLAGS="-I/home/acano/zlib-1.3.1" ./configure --with-schannel --disable-shared --disable-ldap --without-zstd --enable-progress-meter --without-libpsl
+CPPFLAGS="-I/home/acano/zlib-1.3.2" ./configure --with-schannel --disable-shared --disable-ldap --without-zstd --enable-progress-meter --without-libpsl
 
 make
 

@@ -1,4 +1,4 @@
-12.7test49
+12.7test50
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -24,6 +24,7 @@
 * update jpeg to version 9f
 * update opus to version 1.5.2
 * update libogg to version 1.3.6
+* update zlib to version 1.3.2
 * video file counter not appended to file name if using cl_aviAllowLargeFiles
 * cl_aviAudioMatchVideoLength  to try and match audio and video data lengths (only works with large avi and ffmpeg pipe)
 * cl_aviAudioWaitForVideoFrame  to delay writing audio before specified number of video frames
@@ -49,6 +50,7 @@
   - XDG home directory support
   - con_notifylines, to configure number of lines in notify area
   - renderergl2: reimplement greyscale as backend post after all 2D+3D draws
+  - add support for loading PVR images
 
 ---------------------------------
 12.6  2024-05-22

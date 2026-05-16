@@ -464,6 +464,8 @@ void weapon_railgun_fire (gentity_t *ent) {
 		}
 		traceEnt = &g_entities[ trace.entityNum ];
 		if ( traceEnt->takedamage ) {
+
+			// wc: testing q3mme fx missile hit for rail
 			if (traceEnt->client) {
 				gentity_t *stent;
 
