@@ -2700,6 +2700,15 @@ still broken, check lost world
 
     "// From Rec. 709-1 4.2 "Derivation of luminance signal"\n"
 
+* 2026-06-19 https://github.com/brugal/wolfcamql/issues/66
+
+for MAX_DRAWIMAGES is 2048 2D_ARRAY limit?
+
+  replace shader and merged lightmaps?
+
+* couldn't exec autoexec.cfg
+^1Com_Error(): Hunk data failed to allocate -2048 megsHunk data failed to allocate -2048 megs
+
 ----
 
 

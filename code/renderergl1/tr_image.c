@@ -940,6 +940,18 @@ image_t *R_CreateImage( const char *name, byte *pic, int width, int height,
 	}
 
 	if ( tr.numImages >= MAX_DRAWIMAGES ) {
+#if 0  // testing
+		static qboolean maxDrawImagesErrorIssued = qfalse;
+
+		if (!maxDrawImagesErrorIssued) {
+			ri.Printf(PRINT_ALL, "^2R_CreateImage: MAX_DRAWIMAGES (%d) hit", MAX_DRAWIMAGES);
+			maxDrawImagesErrorIssued = qtrue;
+		}
+
+		// return default image
+		return tr.images[0];
+#endif
+
 		ri.Error( ERR_DROP, "R_CreateImage: MAX_DRAWIMAGES (%d) hit", MAX_DRAWIMAGES);
 	}
 

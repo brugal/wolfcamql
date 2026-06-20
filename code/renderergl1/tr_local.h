@@ -59,7 +59,8 @@ typedef unsigned int glIndex_t;
 #define SHADERNUM_BITS 14
 #define	MAX_SHADERS				(1<<SHADERNUM_BITS)
 
-#define	MAX_DRAWIMAGES			2048
+//#define	MAX_DRAWIMAGES			2048
+#define	MAX_DRAWIMAGES			8192
 #define	MAX_SKINS				1024
 
 
