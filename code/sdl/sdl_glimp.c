@@ -806,7 +806,7 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, contexts[type].minorVersion );
 
 			if( ( SDL_window = SDL_CreateWindow( CLIENT_WINDOW_TITLE, x, y,
-					 glConfig.vidWidth, glConfig.vidHeight, flags ) ) == NULL )
+					 vidWidth, vidHeight, flags ) ) == NULL )
 			{
 				ri.Printf( PRINT_DEVELOPER, "SDL_CreateWindow failed: %s\n", SDL_GetError( ) );
 				break;
@@ -877,8 +877,8 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 				default: ri.Printf( PRINT_DEVELOPER, "testColorBits is %d, can't fullscreen\n", testColorBits ); continue;
 			}
 
-			desiredMode.w = glConfig.vidWidth;
-			desiredMode.h = glConfig.vidHeight;
+			desiredMode.w = vidWidth;
+			desiredMode.h = vidHeight;
 			desiredMode.refresh_rate = glConfig.displayFrequency = ri.Cvar_VariableIntegerValue( "r_displayRefresh" );
 			desiredMode.driverdata = NULL;
 
