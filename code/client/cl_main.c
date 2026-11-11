@@ -3433,8 +3433,12 @@ CL_ShutdownAll
 void CL_ShutdownAll(qboolean shutdownRef)
 {
 
-	if(CL_VideoRecording(&afdMain))
-		CL_StopVideo_f();
+	if(CL_VideoRecording(&afdMain)) {
+		if (!clc.skipFirstStopVideo) {
+			CL_StopVideo_f();
+		}
+		clc.skipFirstStopVideo = qfalse;
+	}
 
 	if(clc.demorecording)
 		CL_StopRecord_f();
@@ -6135,6 +6139,17 @@ void CL_Video_f( void )
   if (!clc.demoplaying) {  //  ||  clc.state == CA_CONNECTING) {
 	  Com_Printf( "^1The video command can only be used when playing back demos\n" );
 	  return;
+  }
+
+  /* Hack for +demo and +video on command line.  In q3 the demo command would
+     load everything before the video command is issued.  With Steam workshop
+     download Com_Frame() gets run in order to update the status of the
+     downloads.  /video could be run in those frames.
+  */
+  if (clc.state < CA_PRIMED) {
+	  clc.skipFirstStopVideo = qtrue;
+  } else {
+	  clc.skipFirstStopVideo = qfalse;
   }
 
   avi = qfalse;

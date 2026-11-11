@@ -232,6 +232,7 @@ typedef struct {
 
 	popenData_t *wfp;
 
+	qboolean skipFirstStopVideo;  // hack for /video before demo is fully loaded
 	qboolean	demowaiting;	// don't record until a non-delta message is received
 	qboolean	firstDemoFrameSkipped;
 	fileHandle_t demoReadFile;

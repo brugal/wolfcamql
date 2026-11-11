@@ -1,4 +1,4 @@
-12.7test52
+12.7test53
 
 * bug fix: QVM crash loading demo
 * fallback to dlc_gibs for EV_JUICED
@@ -52,6 +52,8 @@
   - con_notifylines, to configure number of lines in notify area
   - renderergl2: reimplement greyscale as backend post after all 2D+3D draws
   - add support for loading PVR images
+
+* bug fix:  Steam workshop check could stop video recording if both +demo and +video used with command line startup
 
 ---------------------------------
 12.6  2024-05-22
