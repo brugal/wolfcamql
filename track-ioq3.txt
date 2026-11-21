@@ -9616,3 +9616,36 @@ om/actions/runner-images/issues/12045
 
 2026-03-09-01 (done)
     Fix incorrect variable reference
+
+2026-06-29-01 (skip cmake)
+    Single source of truth for library versions
+
+2026-07-08-01
+    Improve CD key prevalidation (#880)
+
+    * Improve CD key prevalidation
+    * Use tolower instead of ascii math
+
+2026-07-08-02
+    Fix trap_BotFreeItemWeights() for qagame.qvm
+
+    Compiling qagame.qvm incorrectly mapped trap_BotFreeItemWeights() to the
+    syscall for BOTLIB_AI_SAVE_GOAL_FUZZY_LOGIC. However this is not called
+    by baseq3 or missionpack qagame.qvm so correcting it does not affect the
+    built Quake 3 QVMs.
+
+    Reported by Tobias Kuehnhammer.
+
+2026-07-16-01
+    Read and write CD key in lowercase
+
+2026-09-17-01
+    improvement: don't warn about g_sync if autoRecord
+
+2026-10-12-01
+    Update README.md to remove digital ocean sponsorship
+
+    Digital Ocean ended their open source credits program.
+
+2026-11-04-01
+    General tidy-up to Huff_Decompress (fixes #894)

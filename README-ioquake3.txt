@@ -69,12 +69,6 @@ your project. We're looking forward to hearing about it.
 
 
 # Thank You:
-
-<p>
-  <a href="https://www.digitalocean.com/">Digital Ocean<br/>
-    <img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/PoweredByDO/DO_Powered_by_Badge_blue.svg" width="201px">
-  </a>
-</p>
 ---
 <p>
 <a href="https://www.discourse.org/">Discourse<br/>
